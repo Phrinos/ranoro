@@ -19,11 +19,11 @@ import {
   Wrench,
   Package,
   Settings,
-  Building, 
+  Building,
   CalendarClock,
   DollarSign,
   Receipt,
-  LineChart, 
+  LineChart,
 } from 'lucide-react';
 
 export interface NavigationEntry {
@@ -46,7 +46,7 @@ const BASE_NAV_STRUCTURE: ReadonlyArray<Omit<NavigationEntry, 'isActive'>> = [
   { label: 'Agenda', path: '/servicios/agenda', icon: CalendarClock, groupTag: "Servicios" },
   { label: 'Lista de Servicios', path: '/servicios', icon: Wrench, groupTag: "Servicios" },
   { label: 'Historial de Servicios', path: '/servicios/historial', icon: History, groupTag: "Servicios" },
-  
+
   // Inventario Group
   { label: 'Productos', path: '/inventario', icon: Package, groupTag: "Inventario" },
   { label: 'Categorías', path: '/inventario/categorias', icon: Shapes, groupTag: "Inventario" },
@@ -55,10 +55,6 @@ const BASE_NAV_STRUCTURE: ReadonlyArray<Omit<NavigationEntry, 'isActive'>> = [
 
   // Clientes Group
   { label: 'Vehículos', path: '/vehiculos', icon: Car, groupTag: "Clientes" },
-
-  // Team Group
-  { label: 'Técnicos', path: '/tecnicos', icon: UserCog, groupTag: "Team" },
-  { label: 'Usuarios', path: '/admin/usuarios', icon: Users, groupTag: "Team" }, 
 
   // Finanzas Group
   {
@@ -81,6 +77,8 @@ const BASE_NAV_STRUCTURE: ReadonlyArray<Omit<NavigationEntry, 'isActive'>> = [
   },
 
   // Administración Group
+  { label: 'Técnicos', path: '/tecnicos', icon: UserCog, groupTag: "Administración" },
+  { label: 'Usuarios', path: '/admin/usuarios', icon: Users, groupTag: "Administración" },
   {
     label: 'Migración de Datos',
     path: '/admin/migracion-datos',
@@ -94,7 +92,7 @@ const useNavigation = (): NavigationEntry[] => {
 
   return BASE_NAV_STRUCTURE.map(entry => {
     let isActive = pathname === entry.path;
-    
+
     if (!isActive && entry.path && entry.path !== '/' && entry.path.length > 1 && pathname.startsWith(entry.path + '/')) {
         const isMoreSpecificActiveEntry = BASE_NAV_STRUCTURE.some(
           otherEntry => otherEntry.path.startsWith(pathname) && otherEntry.path.length > entry.path.length && otherEntry.path !== entry.path
@@ -103,18 +101,18 @@ const useNavigation = (): NavigationEntry[] => {
             isActive = true;
         }
     }
-    
-    if (entry.path === '/servicios' && 
-        (pathname.startsWith('/servicios/nuevo') || 
-         pathname.startsWith('/servicios/historial') || 
+
+    if (entry.path === '/servicios' &&
+        (pathname.startsWith('/servicios/nuevo') ||
+         pathname.startsWith('/servicios/historial') ||
          pathname.startsWith('/servicios/agenda'))
        ) {
-      isActive = true; 
+      isActive = true;
     }
-    if (entry.path === '/inventario' && 
-        (pathname.startsWith('/inventario/categorias') || 
+    if (entry.path === '/inventario' &&
+        (pathname.startsWith('/inventario/categorias') ||
          pathname.startsWith('/inventario/proveedores') ||
-         pathname.match(/^\/inventario\/P[0-9]+$/) 
+         pathname.match(/^\/inventario\/P[0-9]+$/)
        )) {
       isActive = true;
     }
