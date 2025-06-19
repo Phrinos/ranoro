@@ -105,6 +105,22 @@ export default function InventarioPage() {
     return { totalInventoryCost: cost, totalInventorySellingPrice: sellingPrice, lowStockItemsCount: lowStock };
   }, [inventoryItems]);
 
+  const sortedInventoryItems = useMemo(() => {
+    return [...inventoryItems].sort((a, b) => {
+      const isALowStock = a.quantity <= a.lowStockThreshold;
+      const isBLowStock = b.quantity <= b.lowStockThreshold;
+
+      if (isALowStock && !isBLowStock) {
+        return -1; // a comes first
+      }
+      if (!isALowStock && isBLowStock) {
+        return 1; // b comes first
+      }
+      // Optional: secondary sort by name if both are low stock or both are not
+      return a.name.localeCompare(b.name);
+    });
+  }, [inventoryItems]);
+
   return (
     <>
       <div className="mb-6 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -172,7 +188,7 @@ export default function InventarioPage() {
           </div>
         }
       />
-      <InventoryTable items={inventoryItems} />
+      <InventoryTable items={sortedInventoryItems} />
 
       <InventoryItemDialog
         open={isNewItemDialogOpen}
