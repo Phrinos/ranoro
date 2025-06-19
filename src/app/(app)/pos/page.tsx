@@ -8,7 +8,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Search, ListFilter, CalendarIcon as CalendarDateIcon, Receipt, ShoppingCart, CreditCard } from "lucide-react";
+import { Search, ListFilter, CalendarIcon as CalendarDateIcon, Receipt, ShoppingCart, CreditCard, DollarSign } from "lucide-react";
 import { SalesTable } from "./components/sales-table"; 
 import { placeholderSales, placeholderInventory } from "@/lib/placeholder-data";
 import type { SaleReceipt, InventoryItem, SaleItem } from "@/types";
