@@ -1,14 +1,14 @@
 
 "use client";
 
-import { useParams } from 'next/navigation';
-import { placeholderVehicles, placeholderServiceRecords, placeholderTechnicians } from '@/lib/placeholder-data';
-import type { Vehicle, ServiceRecord } from '@/types';
+import { useParams, useRouter } from 'next/navigation';
+import { placeholderVehicles, placeholderServiceRecords, placeholderTechnicians, placeholderInventory } from '@/lib/placeholder-data';
+import type { Vehicle, ServiceRecord, Technician } from '@/types';
 import { PageHeader } from '@/components/page-header';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { Archive, ShieldAlert, Edit } from 'lucide-react';
+import { Archive, ShieldAlert, Edit, Eye } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { format, parseISO } from 'date-fns';
@@ -18,17 +18,22 @@ import { useEffect, useState } from 'react';
 import { VehicleDialog } from '../components/vehicle-dialog';
 import type { VehicleFormValues } from '../components/vehicle-form';
 import { useToast } from '@/hooks/use-toast';
+import { ServiceDialog } from '../../servicios/components/service-dialog'; // Import ServiceDialog
 
 export default function VehicleDetailPage() {
   const params = useParams();
   const vehicleId = parseInt(params.id as string, 10);
   const { toast } = useToast();
+  const router = useRouter();
 
   const [vehicle, setVehicle] = useState<Vehicle | null | undefined>(undefined);
   const [services, setServices] = useState<ServiceRecord[]>([]);
   const [techniciansMap, setTechniciansMap] = useState<Record<string, string>>({});
   
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isViewServiceDialogOpen, setIsViewServiceDialogOpen] = useState(false); // State for viewing service
+  const [selectedService, setSelectedService] = useState<ServiceRecord | null>(null); // State for service to view
+
 
   useEffect(() => {
     const foundVehicle = placeholderVehicles.find(v => v.id === vehicleId);
@@ -50,15 +55,15 @@ export default function VehicleDetailPage() {
   const handleSaveEditedVehicle = async (formData: VehicleFormValues) => {
     if (!vehicle) return;
 
-    const updatedVehicle: Vehicle = {
-      ...vehicle, // Start with existing vehicle data (like ID)
-      ...formData, // Override with form data
-      year: Number(formData.year), // Ensure year is a number
+    const updatedVehicleData: Partial<Vehicle> = {
+        ...formData,
+        year: Number(formData.year),
     };
     
+    // Simulate updating the vehicle in our placeholder data
+    const updatedVehicle = { ...vehicle, ...updatedVehicleData } as Vehicle;
     setVehicle(updatedVehicle);
 
-    // Update in the placeholder array for global consistency (if needed by other parts of app)
     const pIndex = placeholderVehicles.findIndex(v => v.id === updatedVehicle.id);
     if (pIndex !== -1) {
       placeholderVehicles[pIndex] = updatedVehicle;
@@ -69,6 +74,11 @@ export default function VehicleDetailPage() {
       title: "Vehículo Actualizado",
       description: `Los datos del vehículo ${updatedVehicle.make} ${updatedVehicle.model} han sido actualizados.`,
     });
+  };
+
+  const handleServiceRowClick = (service: ServiceRecord) => {
+    setSelectedService(service);
+    setIsViewServiceDialogOpen(true);
   };
 
   if (vehicle === undefined) {
@@ -132,11 +142,11 @@ export default function VehicleDetailPage() {
             <Card>
               <CardHeader>
                 <CardTitle>Datos del Propietario</CardTitle>
-                {/* Edit button is now general for the vehicle, including owner info */}
               </CardHeader>
               <CardContent className="space-y-2">
                 <p><strong>Nombre:</strong> {vehicle.ownerName}</p>
-                <p><strong>Contacto:</strong> {vehicle.ownerContact}</p>
+                <p><strong>Teléfono:</strong> {vehicle.ownerPhone || 'N/A'}</p>
+                <p><strong>Email:</strong> {vehicle.ownerEmail || 'N/A'}</p>
               </CardContent>
             </Card>
           </div>
@@ -161,20 +171,28 @@ export default function VehicleDetailPage() {
                   <TableHeader>
                     <TableRow>
                       <TableHead>Fecha</TableHead>
+                      <TableHead>Kilometraje</TableHead>
                       <TableHead>Descripción</TableHead>
                       <TableHead>Técnico</TableHead>
                       <TableHead className="text-right">Costo Total</TableHead>
                       <TableHead>Estado</TableHead>
+                      <TableHead className="text-right">Ver</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {services.map(service => (
-                      <TableRow key={service.id}>
+                      <TableRow key={service.id} >
                         <TableCell>{format(parseISO(service.serviceDate), "dd MMM yyyy", { locale: es })}</TableCell>
+                        <TableCell>{service.mileage ? `${service.mileage.toLocaleString('es-ES')} km` : 'N/A'}</TableCell>
                         <TableCell className="max-w-xs truncate">{service.description}</TableCell>
                         <TableCell>{techniciansMap[service.technicianId] || service.technicianId}</TableCell>
                         <TableCell className="text-right">${service.totalCost.toLocaleString('es-ES', { minimumFractionDigits: 2 })}</TableCell>
                         <TableCell><Badge variant={getStatusVariant(service.status)}>{service.status}</Badge></TableCell>
+                        <TableCell className="text-right">
+                          <Button variant="ghost" size="icon" onClick={() => handleServiceRowClick(service)} aria-label="Ver Servicio">
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                        </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -194,6 +212,18 @@ export default function VehicleDetailPage() {
             vehicle={vehicle}
             onSave={handleSaveEditedVehicle}
           />
+      )}
+      {selectedService && (
+        <ServiceDialog
+          open={isViewServiceDialogOpen}
+          onOpenChange={setIsViewServiceDialogOpen}
+          service={selectedService}
+          vehicles={placeholderVehicles} // Provide necessary data for the dialog
+          technicians={placeholderTechnicians}
+          inventoryItems={placeholderInventory}
+          isReadOnly={true}
+          onSave={async () => { /* No save action in read-only */ }}
+        />
       )}
     </div>
   );

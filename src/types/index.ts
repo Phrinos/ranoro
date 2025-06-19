@@ -5,9 +5,10 @@ export interface Vehicle {
   year: number;
   vin: string;
   ownerName: string;
-  ownerContact: string;
+  ownerPhone: string; // Changed from ownerContact
+  ownerEmail?: string; // Added
   licensePlate: string;
-  serviceHistory?: Pick<ServiceRecord, 'id' | 'serviceDate' | 'description' | 'totalCost' | 'status'>[];
+  serviceHistory?: Pick<ServiceRecord, 'id' | 'serviceDate' | 'description' | 'totalCost' | 'status' | 'mileage'>[];
 }
 
 export interface ServicePart {
@@ -33,6 +34,7 @@ export interface ServiceRecord {
   totalCost: number;
   status: 'Pendiente' | 'En Progreso' | 'Completado' | 'Cancelado';
   notes?: string;
+  mileage?: number; // Added
 }
 
 export interface Technician {

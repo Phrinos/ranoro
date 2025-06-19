@@ -8,39 +8,55 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-  DialogFooter,
-  DialogClose,
 } from "@/components/ui/dialog";
 import { ServiceForm } from "./service-form";
 import type { ServiceRecord, Vehicle, Technician, InventoryItem } from "@/types";
-import { useToast } from "@/hooks/use-toast"; // Assuming you have a toast hook
+import { useToast } from "@/hooks/use-toast"; 
 
 interface ServiceDialogProps {
-  trigger: React.ReactNode;
-  service?: ServiceRecord | null; // For editing
-  vehicles: Vehicle[];
-  technicians: Technician[];
-  inventoryItems: InventoryItem[];
-  onSave?: (data: any) => Promise<void>; // Callback after successful save
+  trigger?: React.ReactNode;
+  service?: ServiceRecord | null; 
+  vehicles?: Vehicle[]; // Optional if isReadOnly and service is provided
+  technicians?: Technician[]; // Optional if isReadOnly and service is provided
+  inventoryItems?: InventoryItem[]; // Optional if isReadOnly and service is provided
+  onSave?: (data: any) => Promise<void>;
+  isReadOnly?: boolean; // Added for read-only view
+  open?: boolean; // For controlled dialog
+  onOpenChange?: (isOpen: boolean) => void; // For controlled dialog
 }
 
-export function ServiceDialog({ trigger, service, vehicles, technicians, inventoryItems, onSave }: ServiceDialogProps) {
-  const [open, setOpen] = useState(false);
+export function ServiceDialog({ 
+  trigger, 
+  service, 
+  vehicles, 
+  technicians, 
+  inventoryItems, 
+  onSave, 
+  isReadOnly = false,
+  open: controlledOpen,
+  onOpenChange: setControlledOpen 
+}: ServiceDialogProps) {
+  const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
   const { toast } = useToast();
 
+  const isControlled = controlledOpen !== undefined && setControlledOpen !== undefined;
+  const open = isControlled ? controlledOpen : uncontrolledOpen;
+  const onOpenChange = isControlled ? setControlledOpen : setUncontrolledOpen;
+
   const handleSubmit = async (values: any) => {
-    // console.log("Service data to save:", values);
-    // Here you would typically call an API to save the data
-    // For demo, we'll just simulate a save and show a toast
+    if (isReadOnly) {
+      onOpenChange(false);
+      return;
+    }
     try {
       if (onSave) {
-        await onSave(values); // If an onSave prop is provided, use it
+        await onSave(values); 
       }
       toast({
-        title: `Servicio ${service ? 'actualizado' : 'creado'} con éxito`,
-        description: `El servicio para el vehículo ha sido ${service ? 'actualizado' : 'registrado'}.`,
+        title: `Servicio ${service && !isReadOnly ? 'actualizado' : 'creado'} con éxito`, // Avoid "actualizado" if it was read-only
+        description: `El servicio ha sido ${service && !isReadOnly ? 'actualizado' : 'registrado'}.`,
       });
-      setOpen(false); // Close dialog on success
+      onOpenChange(false); 
     } catch (error) {
       console.error("Error saving service:", error);
       toast({
@@ -50,26 +66,43 @@ export function ServiceDialog({ trigger, service, vehicles, technicians, invento
       });
     }
   };
+  
+  const effectiveVehicles = vehicles || (service ? placeholderVehicles.filter(v => v.id === service.vehicleId) : []);
+  const effectiveTechnicians = technicians || (service ? placeholderTechnicians.filter(t => t.id === service.technicianId) : []);
+  const effectiveInventoryItems = inventoryItems || placeholderInventory;
+
+
+  // Ensure that placeholderVehicles, placeholderTechnicians, placeholderInventory are imported if used as fallbacks
+  // For simplicity, assuming they are available globally or imported if this component is used standalone.
+  // If not, they should be passed or fetched.
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>{trigger}</DialogTrigger>
-      <DialogContent className="sm:max-w-[600px] md:max-w-[800px] max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>{service ? "Editar Servicio" : "Nuevo Servicio"}</DialogTitle>
-          <DialogDescription>
-            {service ? "Actualiza los detalles de la orden de servicio." : "Completa la información para una nueva orden de servicio."}
-          </DialogDescription>
-        </DialogHeader>
-        <ServiceForm
-          initialData={service}
-          vehicles={vehicles}
-          technicians={technicians}
-          inventoryItems={inventoryItems}
-          onSubmit={handleSubmit}
-          onClose={() => setOpen(false)}
-        />
-      </DialogContent>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      {trigger && !isControlled && <DialogTrigger asChild onClick={() => onOpenChange(true)}>{trigger}</DialogTrigger>}
+      {open && (
+        <DialogContent className="sm:max-w-[600px] md:max-w-[800px] max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{isReadOnly ? "Detalles del Servicio" : (service ? "Editar Servicio" : "Nuevo Servicio")}</DialogTitle>
+            <DialogDescription>
+              {isReadOnly ? "Visualizando los detalles de la orden de servicio." : (service ? "Actualiza los detalles de la orden de servicio." : "Completa la información para una nueva orden de servicio.")}
+            </DialogDescription>
+          </DialogHeader>
+          <ServiceForm
+            initialData={service}
+            vehicles={effectiveVehicles}
+            technicians={effectiveTechnicians}
+            inventoryItems={effectiveInventoryItems}
+            onSubmit={handleSubmit}
+            onClose={() => onOpenChange(false)}
+            isReadOnly={isReadOnly}
+          />
+        </DialogContent>
+      )}
     </Dialog>
   );
 }
+
+// Temporary placeholder data if needed locally, ideally passed as props or fetched from context/store
+const placeholderVehicles: Vehicle[] = [];
+const placeholderTechnicians: Technician[] = [];
+const placeholderInventory: InventoryItem[] = [];

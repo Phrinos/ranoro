@@ -22,10 +22,11 @@ const vehicleFormSchema = z.object({
   vin: z.string().length(17, "El VIN debe tener 17 caracteres.").optional().or(z.literal('')),
   licensePlate: z.string().min(3, "La placa debe tener al menos 3 caracteres."),
   ownerName: z.string().min(2, "El nombre del propietario es obligatorio."),
-  ownerContact: z.string().email("Ingrese un correo electrónico válido.").or(z.string().min(7, "Ingrese un número de contacto válido.")),
+  ownerPhone: z.string().min(7, "Ingrese un número de teléfono válido."), // Changed from ownerContact
+  ownerEmail: z.string().email("Ingrese un correo electrónico válido.").optional().or(z.literal('')), // Added
 });
 
-type VehicleFormValues = z.infer<typeof vehicleFormSchema>;
+export type VehicleFormValues = z.infer<typeof vehicleFormSchema>; // Export type
 
 interface VehicleFormProps {
   initialData?: Vehicle | null;
@@ -36,14 +37,21 @@ interface VehicleFormProps {
 export function VehicleForm({ initialData, onSubmit, onClose }: VehicleFormProps) {
   const form = useForm<VehicleFormValues>({
     resolver: zodResolver(vehicleFormSchema),
-    defaultValues: initialData || {
+    defaultValues: initialData ? 
+    {
+      ...initialData,
+      ownerPhone: initialData.ownerPhone || "", // ensure ownerPhone exists
+      ownerEmail: initialData.ownerEmail || "", // ensure ownerEmail exists
+    }
+    : {
       make: "",
       model: "",
       year: new Date().getFullYear(),
       vin: "",
       licensePlate: "",
       ownerName: "",
-      ownerContact: "",
+      ownerPhone: "", // Changed
+      ownerEmail: "", // Added
     },
   });
 
@@ -115,23 +123,36 @@ export function VehicleForm({ initialData, onSubmit, onClose }: VehicleFormProps
             name="vin"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>VIN (Número de Chasis)</FormLabel>
+                <FormLabel>VIN (Número de Chasis) (Opcional)</FormLabel>
                 <FormControl>
-                  <Input placeholder="Opcional, 17 caracteres" {...field} />
+                  <Input placeholder="17 caracteres" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
+        <FormField
+          control={form.control}
+          name="ownerName"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Nombre del Propietario</FormLabel>
+              <FormControl>
+                <Input placeholder="Ej: Juan Pérez" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <FormField
             control={form.control}
-            name="ownerName"
+            name="ownerPhone"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Nombre del Propietario</FormLabel>
+                <FormLabel>Teléfono del Propietario</FormLabel>
                 <FormControl>
-                  <Input placeholder="Ej: Juan Pérez" {...field} />
+                  <Input placeholder="Ej: 555-123456" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -139,12 +160,12 @@ export function VehicleForm({ initialData, onSubmit, onClose }: VehicleFormProps
           />
           <FormField
             control={form.control}
-            name="ownerContact"
+            name="ownerEmail"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Contacto del Propietario</FormLabel>
+                <FormLabel>Email del Propietario (Opcional)</FormLabel>
                 <FormControl>
-                  <Input placeholder="Email o teléfono" {...field} />
+                  <Input type="email" placeholder="Ej: juan.perez@email.com" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>

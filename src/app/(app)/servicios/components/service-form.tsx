@@ -28,18 +28,19 @@ import type { ServiceRecord, Vehicle, Technician, InventoryItem, ServicePart } f
 const partSchema = z.object({
   partId: z.string().min(1, "Seleccione un repuesto"),
   quantity: z.coerce.number().min(1, "La cantidad debe ser al menos 1"),
-  unitPrice: z.coerce.number().optional(), // Will be populated
-  partName: z.string().optional(), // Will be populated
+  unitPrice: z.coerce.number().optional(), 
+  partName: z.string().optional(), 
 });
 
 const serviceFormSchema = z.object({
-  vehicleId: z.string().min(1, "Seleccione un vehículo"), // Kept as string for form handling
+  vehicleId: z.string().min(1, "Seleccione un vehículo"), 
   serviceDate: z.date({ required_error: "La fecha de servicio es obligatoria." }),
+  mileage: z.coerce.number().int().min(0, "El kilometraje no puede ser negativo.").optional(), // Added mileage
   description: z.string().min(5, "La descripción debe tener al menos 5 caracteres."),
   technicianId: z.string().min(1, "Seleccione un técnico"),
   partsUsed: z.array(partSchema).optional(),
   laborHours: z.coerce.number().min(0, "Las horas de mano de obra no pueden ser negativas."),
-  laborRate: z.coerce.number().min(0, "La tarifa por hora no puede ser negativa.").optional().default(2000), // Default rate
+  laborRate: z.coerce.number().min(0, "La tarifa por hora no puede ser negativa.").optional().default(2000), 
   status: z.enum(["Pendiente", "En Progreso", "Completado", "Cancelado"]),
   notes: z.string().optional(),
 });
@@ -51,23 +52,26 @@ interface ServiceFormProps {
   vehicles: Vehicle[];
   technicians: Technician[];
   inventoryItems: InventoryItem[];
-  onSubmit: (values: Omit<ServiceFormValues, 'vehicleId'> & { vehicleId: number }) => Promise<void>; // onSubmit expects numeric vehicleId
+  onSubmit: (values: Omit<ServiceFormValues, 'vehicleId'> & { vehicleId: number }) => Promise<void>; 
   onClose: () => void;
+  isReadOnly?: boolean; // Added
 }
 
-export function ServiceForm({ initialData, vehicles, technicians, inventoryItems, onSubmit, onClose }: ServiceFormProps) {
+export function ServiceForm({ initialData, vehicles, technicians, inventoryItems, onSubmit, onClose, isReadOnly = false }: ServiceFormProps) {
   const form = useForm<ServiceFormValues>({
     resolver: zodResolver(serviceFormSchema),
     defaultValues: initialData
       ? {
           ...initialData,
-          vehicleId: String(initialData.vehicleId), // Convert number to string for form
+          vehicleId: String(initialData.vehicleId), 
           serviceDate: new Date(initialData.serviceDate),
+          mileage: initialData.mileage ?? undefined, // Handle mileage
           partsUsed: initialData.partsUsed.map(p => ({...p, partName: inventoryItems.find(i => i.id === p.partId)?.name || '', unitPrice: inventoryItems.find(i => i.id === p.partId)?.unitPrice || 0 })) || [],
         }
       : {
           vehicleId: "",
           serviceDate: new Date(),
+          mileage: undefined, // Default mileage
           description: "",
           technicianId: "",
           partsUsed: [],
@@ -84,7 +88,10 @@ export function ServiceForm({ initialData, vehicles, technicians, inventoryItems
   });
 
   const handleFormSubmit = async (values: ServiceFormValues) => {
-    // Convert vehicleId back to number before submitting
+    if (isReadOnly) {
+      onClose(); // Or some other action for read-only
+      return;
+    }
     const submissionData = {
       ...values,
       vehicleId: parseInt(values.vehicleId, 10),
@@ -102,7 +109,7 @@ export function ServiceForm({ initialData, vehicles, technicians, inventoryItems
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Vehículo</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isReadOnly}>
                   <FormControl>
                     <SelectTrigger>
                       <SelectValue placeholder="Seleccione un vehículo" />
@@ -110,7 +117,7 @@ export function ServiceForm({ initialData, vehicles, technicians, inventoryItems
                   </FormControl>
                   <SelectContent>
                     {vehicles.map((vehicle) => (
-                      <SelectItem key={vehicle.id} value={String(vehicle.id)}> {/* Value must be string for SelectItem */}
+                      <SelectItem key={vehicle.id} value={String(vehicle.id)}> 
                         {vehicle.make} {vehicle.model} ({vehicle.licensePlate})
                       </SelectItem>
                     ))}
@@ -127,7 +134,7 @@ export function ServiceForm({ initialData, vehicles, technicians, inventoryItems
               <FormItem className="flex flex-col">
                 <FormLabel>Fecha de Servicio</FormLabel>
                 <Popover>
-                  <PopoverTrigger asChild>
+                  <PopoverTrigger asChild disabled={isReadOnly}>
                     <FormControl>
                       <Button
                         variant={"outline"}
@@ -135,6 +142,7 @@ export function ServiceForm({ initialData, vehicles, technicians, inventoryItems
                           "w-full pl-3 text-left font-normal",
                           !field.value && "text-muted-foreground"
                         )}
+                        disabled={isReadOnly}
                       >
                         {field.value ? (
                           format(field.value, "PPP", { locale: es })
@@ -151,7 +159,7 @@ export function ServiceForm({ initialData, vehicles, technicians, inventoryItems
                       selected={field.value}
                       onSelect={field.onChange}
                       disabled={(date) =>
-                        date > new Date() || date < new Date("1900-01-01")
+                        date > new Date() || date < new Date("1900-01-01") || isReadOnly
                       }
                       initialFocus
                       locale={es}
@@ -163,6 +171,21 @@ export function ServiceForm({ initialData, vehicles, technicians, inventoryItems
             )}
           />
         </div>
+
+        <FormField
+            control={form.control}
+            name="mileage"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Kilometraje (Opcional)</FormLabel>
+                <FormControl>
+                  <Input type="number" placeholder="Ej: 55000" {...field} disabled={isReadOnly} value={field.value ?? ''} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
         <FormField
           control={form.control}
           name="description"
@@ -170,7 +193,7 @@ export function ServiceForm({ initialData, vehicles, technicians, inventoryItems
             <FormItem>
               <FormLabel>Descripción del Servicio</FormLabel>
               <FormControl>
-                <Textarea placeholder="Ej: Cambio de aceite y filtros, revisión de frenos..." {...field} />
+                <Textarea placeholder="Ej: Cambio de aceite y filtros, revisión de frenos..." {...field} disabled={isReadOnly} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -183,7 +206,7 @@ export function ServiceForm({ initialData, vehicles, technicians, inventoryItems
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Técnico Asignado</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isReadOnly}>
                   <FormControl>
                     <SelectTrigger>
                       <SelectValue placeholder="Seleccione un técnico" />
@@ -191,7 +214,7 @@ export function ServiceForm({ initialData, vehicles, technicians, inventoryItems
                   </FormControl>
                   <SelectContent>
                     {technicians.map((technician) => (
-                      <SelectItem key={technician.id} value={technician.id}> {/* Technician ID is already string */}
+                      <SelectItem key={technician.id} value={technician.id}> 
                         {technician.name}
                       </SelectItem>
                     ))}
@@ -207,7 +230,7 @@ export function ServiceForm({ initialData, vehicles, technicians, inventoryItems
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Estado del Servicio</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isReadOnly}>
                   <FormControl>
                     <SelectTrigger>
                       <SelectValue placeholder="Seleccione un estado" />
@@ -244,6 +267,7 @@ export function ServiceForm({ initialData, vehicles, technicians, inventoryItems
                         form.setValue(`partsUsed.${index}.partName`, selectedPart?.name || '');
                       }} 
                       defaultValue={field.value}
+                      disabled={isReadOnly}
                     >
                       <FormControl>
                         <SelectTrigger>
@@ -252,7 +276,7 @@ export function ServiceForm({ initialData, vehicles, technicians, inventoryItems
                       </FormControl>
                       <SelectContent>
                         {inventoryItems.map((part) => (
-                          <SelectItem key={part.id} value={part.id} disabled={part.quantity === 0}> {/* Part ID is already string */}
+                          <SelectItem key={part.id} value={part.id} disabled={part.quantity === 0 || isReadOnly}> 
                             {part.name} (Stock: {part.quantity}) - ${part.unitPrice}
                           </SelectItem>
                         ))}
@@ -267,26 +291,30 @@ export function ServiceForm({ initialData, vehicles, technicians, inventoryItems
                 name={`partsUsed.${index}.quantity`}
                 render={({ field }) => (
                   <FormItem>
-                    <Input type="number" placeholder="Cant." {...field} className="w-20" />
+                    <Input type="number" placeholder="Cant." {...field} className="w-20" disabled={isReadOnly} />
                     <FormMessage />
                   </FormItem>
                 )}
               />
-              <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)} aria-label="Eliminar repuesto">
-                <Trash2 className="h-4 w-4 text-destructive" />
-              </Button>
+              {!isReadOnly && (
+                <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)} aria-label="Eliminar repuesto">
+                  <Trash2 className="h-4 w-4 text-destructive" />
+                </Button>
+              )}
             </div>
           ))}
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => append({ partId: "", quantity: 1, unitPrice: 0, partName: "" })}
-            className="mt-2"
-          >
-            <PlusCircle className="mr-2 h-4 w-4" />
-            Añadir Repuesto
-          </Button>
+          {!isReadOnly && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => append({ partId: "", quantity: 1, unitPrice: 0, partName: "" })}
+              className="mt-2"
+            >
+              <PlusCircle className="mr-2 h-4 w-4" />
+              Añadir Repuesto
+            </Button>
+          )}
         </FormItem>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -297,7 +325,7 @@ export function ServiceForm({ initialData, vehicles, technicians, inventoryItems
               <FormItem>
                 <FormLabel>Horas de Mano de Obra</FormLabel>
                 <FormControl>
-                  <Input type="number" step="0.1" placeholder="Ej: 2.5" {...field} />
+                  <Input type="number" step="0.1" placeholder="Ej: 2.5" {...field} disabled={isReadOnly} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -310,7 +338,7 @@ export function ServiceForm({ initialData, vehicles, technicians, inventoryItems
               <FormItem>
                 <FormLabel>Tarifa por Hora (Mano de Obra)</FormLabel>
                 <FormControl>
-                  <Input type="number" step="100" placeholder="Ej: 2000" {...field} />
+                  <Input type="number" step="100" placeholder="Ej: 2000" {...field} disabled={isReadOnly} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -324,23 +352,29 @@ export function ServiceForm({ initialData, vehicles, technicians, inventoryItems
             <FormItem>
               <FormLabel>Notas Adicionales</FormLabel>
               <FormControl>
-                <Textarea placeholder="Notas internas o para el cliente..." {...field} />
+                <Textarea placeholder="Notas internas o para el cliente..." {...field} disabled={isReadOnly} />
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
         <div className="flex justify-end gap-2 pt-4">
-          <Button type="button" variant="outline" onClick={onClose}>
-            Cancelar
-          </Button>
-          <Button type="submit" disabled={form.formState.isSubmitting}>
-            {form.formState.isSubmitting ? "Guardando..." : (initialData ? "Actualizar Servicio" : "Crear Servicio")}
-          </Button>
+          {isReadOnly ? (
+            <Button type="button" variant="outline" onClick={onClose}>
+              Cerrar
+            </Button>
+          ) : (
+            <>
+              <Button type="button" variant="outline" onClick={onClose}>
+                Cancelar
+              </Button>
+              <Button type="submit" disabled={form.formState.isSubmitting}>
+                {form.formState.isSubmitting ? "Guardando..." : (initialData ? "Actualizar Servicio" : "Crear Servicio")}
+              </Button>
+            </>
+          )}
         </div>
       </form>
     </Form>
   );
 }
-
-    

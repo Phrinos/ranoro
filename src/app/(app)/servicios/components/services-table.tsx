@@ -21,9 +21,9 @@ import { useToast } from "@/hooks/use-toast";
 
 interface ServicesTableProps {
   services: ServiceRecord[];
-  vehicles: Vehicle[]; // For editing dialog
-  technicians: Technician[]; // For editing dialog
-  inventoryItems: InventoryItem[]; // For editing dialog
+  vehicles: Vehicle[]; 
+  technicians: Technician[]; 
+  inventoryItems: InventoryItem[]; 
 }
 
 export function ServicesTable({ services: initialServices, vehicles, technicians, inventoryItems }: ServicesTableProps) {
@@ -67,7 +67,8 @@ export function ServicesTable({ services: initialServices, vehicles, technicians
       vehicleIdentifier: vehicle ? `${vehicle.make} ${vehicle.model} (${vehicle.licensePlate})` : String(service.vehicleId),
       technicianName: technician ? technician.name : service.technicianId,
       formattedDate: format(parseISO(service.serviceDate), "dd MMM yyyy", { locale: es }),
-      totalCostFormatted: `$${service.totalCost.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+      totalCostFormatted: `$${service.totalCost.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+      mileageFormatted: service.mileage ? `${service.mileage.toLocaleString('es-ES')} km` : 'N/A',
     };
   }), [services, vehicles, technicians]);
 
@@ -84,6 +85,7 @@ export function ServicesTable({ services: initialServices, vehicles, technicians
             <TableHead>ID Servicio</TableHead>
             <TableHead>Vehículo</TableHead>
             <TableHead>Fecha</TableHead>
+            <TableHead>Kilometraje</TableHead> 
             <TableHead>Técnico</TableHead>
             <TableHead>Descripción</TableHead>
             <TableHead>Costo Total</TableHead>
@@ -97,6 +99,7 @@ export function ServicesTable({ services: initialServices, vehicles, technicians
               <TableCell className="font-medium">{service.id}</TableCell>
               <TableCell>{service.vehicleIdentifier}</TableCell>
               <TableCell>{service.formattedDate}</TableCell>
+              <TableCell>{service.mileageFormatted}</TableCell> 
               <TableCell>{service.technicianName}</TableCell>
               <TableCell className="max-w-xs truncate">{service.description}</TableCell>
               <TableCell>{service.totalCostFormatted}</TableCell>
