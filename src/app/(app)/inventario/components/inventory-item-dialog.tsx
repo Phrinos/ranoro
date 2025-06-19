@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -16,7 +16,7 @@ import { useToast } from "@/hooks/use-toast";
 
 interface InventoryItemDialogProps {
   trigger?: React.ReactNode;
-  item?: InventoryItem | null;
+  item?: InventoryItem | Partial<InventoryItemFormValues> | null; // Allow partial for pre-filling
   onSave?: (data: InventoryItemFormValues) => Promise<void>;
   open?: boolean;
   onOpenChange?: (isOpen: boolean) => void;
@@ -36,6 +36,8 @@ export function InventoryItemDialog({
   const open = isControlled ? controlledOpen : uncontrolledOpen;
   const onOpenChange = isControlled ? setControlledOpen : setUncontrolledOpen;
 
+  const isEditing = item && 'id' in item && item.id; // Check if it's a full InventoryItem with an id for editing
+
   const handleSubmit = async (values: InventoryItemFormValues) => {
     try {
       if (onSave) {
@@ -52,6 +54,12 @@ export function InventoryItemDialog({
       });
     }
   };
+  
+  // When item is partial (from purchase entry for a new item), pass it as initialData.
+  // If item is a full InventoryItem, it's for editing.
+  // If item is null/undefined, it's for creating from scratch via "Nuevo Artículo" button.
+  const initialFormData = item ? item : null;
+
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -59,13 +67,13 @@ export function InventoryItemDialog({
       {open && (
         <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>{item ? "Editar Artículo de Inventario" : "Nuevo Artículo de Inventario"}</DialogTitle>
+            <DialogTitle>{isEditing ? "Editar Artículo de Inventario" : "Nuevo Artículo de Inventario"}</DialogTitle>
             <DialogDescription>
-              {item ? "Actualiza los detalles del artículo." : "Completa la información para un nuevo artículo en el inventario."}
+              {isEditing ? "Actualiza los detalles del artículo." : "Completa la información para un nuevo artículo en el inventario."}
             </DialogDescription>
           </DialogHeader>
           <InventoryItemForm
-            initialData={item}
+            initialData={initialFormData as InventoryItem | null} // Cast to what InventoryItemForm expects
             onSubmit={handleSubmit}
             onClose={() => onOpenChange(false)}
           />
