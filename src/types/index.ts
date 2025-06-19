@@ -75,6 +75,12 @@ export interface InventoryItem {
   category?: string;
 }
 
+export interface PurchaseEntryFormValues {
+  sku: string;
+  quantity: number;
+  purchasePrice: number;
+}
+
 export interface SaleItem {
   inventoryItemId: string;
   itemName: string;
