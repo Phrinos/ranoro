@@ -12,6 +12,7 @@ export interface Vehicle {
   color?: string;
   notes?: string;
   serviceHistory?: Pick<ServiceRecord, 'id' | 'serviceDate' | 'description' | 'totalCost' | 'status' | 'mileage'>[];
+  lastServiceDate?: string; // Added: Store as ISO string 'yyyy-MM-dd'
 }
 
 export interface ServicePart {

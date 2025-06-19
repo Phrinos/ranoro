@@ -12,6 +12,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import type { Vehicle } from "@/types";
+import { format, parseISO } from 'date-fns';
+import { es } from 'date-fns/locale';
 
 interface VehiclesTableProps {
   vehicles: Vehicle[];
@@ -25,7 +27,7 @@ export function VehiclesTable({ vehicles: initialVehicles }: VehiclesTableProps)
   };
 
   if (!initialVehicles.length) {
-    return <p className="text-muted-foreground text-center py-8">No hay vehículos registrados.</p>;
+    return <p className="text-muted-foreground text-center py-8">No hay vehículos registrados o que coincidan con los filtros.</p>;
   }
 
   return (
@@ -39,6 +41,7 @@ export function VehiclesTable({ vehicles: initialVehicles }: VehiclesTableProps)
             <TableHead>Año</TableHead>
             <TableHead>Propietario</TableHead>
             <TableHead>Teléfono</TableHead>
+            <TableHead>Último Servicio</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -54,6 +57,11 @@ export function VehiclesTable({ vehicles: initialVehicles }: VehiclesTableProps)
               <TableCell>{vehicle.year}</TableCell>
               <TableCell>{vehicle.ownerName}</TableCell>
               <TableCell>{vehicle.ownerPhone}</TableCell>
+              <TableCell>
+                {vehicle.lastServiceDate 
+                  ? format(parseISO(vehicle.lastServiceDate), "dd MMM yyyy", { locale: es }) 
+                  : 'N/A'}
+              </TableCell>
             </TableRow>
           ))}
         </TableBody>
