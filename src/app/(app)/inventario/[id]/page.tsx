@@ -2,7 +2,7 @@
 "use client";
 
 import { useParams, useRouter } from 'next/navigation';
-import { placeholderInventory } from '@/lib/placeholder-data';
+import { placeholderInventory, placeholderCategories } from '@/lib/placeholder-data'; // Import placeholderCategories
 import type { InventoryItem } from '@/types';
 import { PageHeader } from '@/components/page-header';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -49,6 +49,7 @@ export default function InventoryItemDetailPage() {
       sellingPrice: Number(formData.sellingPrice),
       quantity: Number(formData.quantity),
       lowStockThreshold: Number(formData.lowStockThreshold),
+      // category is already a string from formData
     };
     
     const updatedItem = { ...item, ...updatedItemData } as InventoryItem;
@@ -68,7 +69,6 @@ export default function InventoryItemDetailPage() {
   
   const handleDeleteItem = () => {
     if (!item) return;
-    // Simulate deletion
     const itemIndex = placeholderInventory.findIndex(i => i.id === item.id);
     if (itemIndex > -1) {
       placeholderInventory.splice(itemIndex, 1);
@@ -124,7 +124,7 @@ export default function InventoryItemDetailPage() {
               <CardContent className="space-y-2">
                 <p><strong>Código (SKU):</strong> {item.sku}</p>
                 <p><strong>Nombre:</strong> {item.name}</p>
-                <p><strong>Categoría:</strong> {item.category || 'N/A'}</p>
+                <p><strong>Categoría:</strong> {item.category}</p>
                 <p><strong>Descripción:</strong> {item.description || 'N/A'}</p>
                 <p><strong>Cantidad en Stock:</strong> {item.quantity}</p>
                 <p><strong>Costo Unitario:</strong> ${item.unitPrice.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
@@ -178,6 +178,7 @@ export default function InventoryItemDetailPage() {
             onOpenChange={setIsEditDialogOpen}
             item={item}
             onSave={handleSaveEditedItem}
+            // categories prop removed here, as InventoryItemDialog now imports placeholderCategories directly
           />
       )}
     </div>
