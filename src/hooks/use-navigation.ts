@@ -10,17 +10,17 @@ import {
   Shapes,
   Car,
   UserCog,
-  UserPlus,
+  Users,
   ShoppingCart,
   DatabaseZap,
   LucideIcon,
   type Icon,
   Archive,
   Wrench,
-  Users,
   Package,
   Filter,
   Settings,
+  Building, // Icon for Suppliers
 } from 'lucide-react';
 
 export interface NavigationEntry {
@@ -47,6 +47,8 @@ const BASE_NAV_STRUCTURE: ReadonlyArray<Omit<NavigationEntry, 'isActive'>> = [
   // Inventario Group
   { label: 'Productos', path: '/inventario', icon: Package, groupTag: "Inventario" },
   { label: 'Categorías', path: '/inventario/categorias', icon: Shapes, groupTag: "Inventario" },
+  { label: 'Proveedores', path: '/inventario/proveedores', icon: Building, groupTag: "Inventario" },
+
 
   // Clientes Group
   { label: 'Vehículos', path: '/vehiculos', icon: Car, groupTag: "Clientes" },
@@ -76,6 +78,8 @@ const useNavigation = (): NavigationEntry[] => {
   return BASE_NAV_STRUCTURE.map(entry => {
     let isActive = pathname === entry.path;
     
+    // More specific active check: if current path starts with entry path AND is not just the entry path itself (unless entry path is '/')
+    // and ensure that if there's an exact match for the current pathname, that one takes precedence.
     if (!isActive && entry.path && entry.path !== '/' && entry.path.length > 1 && pathname.startsWith(entry.path + '/')) {
         const isMoreSpecificActiveEntry = BASE_NAV_STRUCTURE.some(
           otherEntry => otherEntry.path === pathname && otherEntry.path.length > entry.path.length
@@ -89,4 +93,3 @@ const useNavigation = (): NavigationEntry[] => {
 };
 
 export default useNavigation;
-

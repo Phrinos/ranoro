@@ -1,5 +1,6 @@
 
-import type { Vehicle, ServiceRecord, Technician, InventoryItem, DashboardMetrics, SaleReceipt, ServicePart, TechnicianMonthlyPerformance, InventoryCategory } from '@/types';
+
+import type { Vehicle, ServiceRecord, Technician, InventoryItem, DashboardMetrics, SaleReceipt, ServicePart, TechnicianMonthlyPerformance, InventoryCategory, Supplier } from '@/types';
 import { format, subMonths, getYear, getMonth } from 'date-fns';
 import { es } from 'date-fns/locale';
 
@@ -21,13 +22,6 @@ export const placeholderTechnicians: Technician[] = [
   { id: 'T003', name: 'Miguel Ángel Torres', area: 'Mecánica General', specialty: 'Frenos y Suspensión', contactInfo: '555-9999', hireDate: '2023-03-10', monthlySalary: 48000, notes: 'Rápido y eficiente.' },
 ];
 
-export const placeholderInventory: InventoryItem[] = [
-  { id: 'P001', name: 'Filtro de Aceite Bosch', sku: 'BOSCH-OF-001', quantity: 50, unitPrice: 700, sellingPrice: 850, lowStockThreshold: 10, category: 'Filtros', supplier: 'Repuestos Express' },
-  { id: 'P002', name: 'Pastillas de Freno Brembo Delanteras', sku: 'BREMBO-BP-002', quantity: 5, unitPrice: 3000, sellingPrice: 3500, lowStockThreshold: 5, category: 'Frenos', supplier: 'AutoPartes Premium' },
-  { id: 'P003', name: 'Bujía NGK CR9EK', sku: 'NGK-SP-003', quantity: 100, unitPrice: 300, sellingPrice: 350, lowStockThreshold: 20, category: 'Motor', supplier: 'NGK Spark Plugs Co.' },
-  { id: 'P004', name: 'Aceite Motor Sintético 5W-30 (Litro)', sku: 'MOBIL-OIL-5W30', quantity: 30, unitPrice: 1000, sellingPrice: 1200, lowStockThreshold: 15, category: 'Lubricantes', supplier: 'Mobil Lubricants' },
-];
-
 export const placeholderCategories: InventoryCategory[] = [
   { id: 'CAT001', name: 'Filtros' },
   { id: 'CAT002', name: 'Frenos' },
@@ -36,6 +30,22 @@ export const placeholderCategories: InventoryCategory[] = [
   { id: 'CAT005', name: 'Suspensión' },
   { id: 'CAT006', name: 'Eléctrico' },
 ];
+
+export const placeholderSuppliers: Supplier[] = [
+  { id: 'SUP001', name: 'Repuestos Express', contactPerson: 'Ana García', phone: '555-1212', email: 'ventas@repuestosexpress.com', address: 'Calle Falsa 123, Ciudad', debtAmount: 0, debtNote: '' },
+  { id: 'SUP002', name: 'AutoPartes Premium', contactPerson: 'Luis Martínez', phone: '555-3434', email: 'luis.m@autopartespremium.com', address: 'Av. Siempreviva 742, Pueblo', debtAmount: 15000, debtNote: 'Pago pendiente factura #INV-1023' },
+  { id: 'SUP003', name: 'NGK Spark Plugs Co.', phone: '555-5656', email: 'info@ngk.com', debtAmount: 0 },
+  { id: 'SUP004', name: 'Mobil Lubricants', contactPerson: 'Carlos Rodriguez', phone: '555-8989', email: 'crodriguez@mobil.example', debtAmount: 5250.75, debtNote: 'Consignación aceites especiales' },
+];
+
+
+export const placeholderInventory: InventoryItem[] = [
+  { id: 'P001', name: 'Filtro de Aceite Bosch', sku: 'BOSCH-OF-001', quantity: 50, unitPrice: 700, sellingPrice: 850, lowStockThreshold: 10, category: 'Filtros', supplier: 'Repuestos Express' },
+  { id: 'P002', name: 'Pastillas de Freno Brembo Delanteras', sku: 'BREMBO-BP-002', quantity: 5, unitPrice: 3000, sellingPrice: 3500, lowStockThreshold: 5, category: 'Frenos', supplier: 'AutoPartes Premium' },
+  { id: 'P003', name: 'Bujía NGK CR9EK', sku: 'NGK-SP-003', quantity: 100, unitPrice: 300, sellingPrice: 350, lowStockThreshold: 20, category: 'Motor', supplier: 'NGK Spark Plugs Co.' },
+  { id: 'P004', name: 'Aceite Motor Sintético 5W-30 (Litro)', sku: 'MOBIL-OIL-5W30', quantity: 30, unitPrice: 1000, sellingPrice: 1200, lowStockThreshold: 15, category: 'Lubricantes', supplier: 'Mobil Lubricants' },
+];
+
 
 
 const samplePartsUsed1: ServicePart[] = [
