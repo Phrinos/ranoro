@@ -14,7 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { MoreHorizontal, Edit, Trash2, Eye, Clock } from "lucide-react";
 import type { ServiceRecord, Vehicle, Technician, InventoryItem } from "@/types";
-import { format, parseISO } from 'date-fns';
+import { format, parseISO, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { ServiceDialog } from './service-dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
@@ -29,7 +29,7 @@ interface ServicesTableProps {
   onServiceUpdated: (updatedService: ServiceRecord) => void;
   onServiceDeleted: (serviceId: string) => void;
   onVehicleCreated?: (newVehicle: Vehicle) => void; 
-  showDateColumn?: boolean; 
+  isHistoryView?: boolean; // To control column visibility and order for history
 }
 
 export function ServicesTable({ 
@@ -40,7 +40,7 @@ export function ServicesTable({
   onServiceUpdated, 
   onServiceDeleted,
   onVehicleCreated,
-  showDateColumn = true, 
+  isHistoryView = false,
 }: ServicesTableProps) {
   const { toast } = useToast();
   const [editingService, setEditingService] = useState<ServiceRecord | null>(null);
@@ -48,18 +48,12 @@ export function ServicesTable({
 
   const getStatusVariant = (status: ServiceRecord['status']): "default" | "secondary" | "outline" | "destructive" | "success" => {
     switch (status) {
-      case "Completado":
-        return "success";
-      case "En Progreso":
-        return "secondary";
-      case "Pendiente":
-        return "outline";
-      case "Cancelado":
-        return "destructive";
-      case "Agendado":
-        return "default"; // Or a specific "info" or "primary" variant if you add one to Badge
-      default:
-        return "default";
+      case "Completado": return "success";
+      case "En Progreso": return "secondary"; 
+      case "Pendiente": return "outline";
+      case "Cancelado": return "destructive";
+      case "Agendado": return "default"; 
+      default: return "default";
     }
   };
   
@@ -69,12 +63,21 @@ export function ServicesTable({
   };
 
   const handleDialogSave = async (formDataFromDialog: any) => {
+    // Ensure serviceDate and deliveryDateTime are correctly formatted ISO strings or undefined
+    const serviceDateISO = formDataFromDialog.serviceDate && isValid(new Date(formDataFromDialog.serviceDate)) 
+        ? new Date(formDataFromDialog.serviceDate).toISOString() 
+        : (editingService?.serviceDate || new Date().toISOString());
+
+    const deliveryDateTimeISO = formDataFromDialog.deliveryDateTime && isValid(new Date(formDataFromDialog.deliveryDateTime))
+        ? new Date(formDataFromDialog.deliveryDateTime).toISOString()
+        : undefined;
+
     const updatedServiceRecord: ServiceRecord = {
       ...(editingService as ServiceRecord), 
       ...formDataFromDialog, 
       id: editingService!.id, 
-      serviceDate: format(new Date(formDataFromDialog.serviceDate), 'yyyy-MM-dd'),
-      deliveryDateTime: formDataFromDialog.deliveryDateTime ? new Date(formDataFromDialog.deliveryDateTime).toISOString() : undefined,
+      serviceDate: serviceDateISO,
+      deliveryDateTime: deliveryDateTimeISO,
       totalCost: Number(formDataFromDialog.totalServicePrice), 
       totalSuppliesCost: Number(formDataFromDialog.totalSuppliesCost),
       serviceProfit: Number(formDataFromDialog.serviceProfit),
@@ -89,31 +92,33 @@ export function ServicesTable({
     onServiceUpdated(updatedServiceRecord);
     setEditingService(null);
     setIsEditDialogOpen(false); 
-    toast({
-      title: "Servicio Actualizado",
-      description: `El servicio para ${vehicles.find(v => v.id === updatedServiceRecord.vehicleId)?.licensePlate} ha sido actualizado.`,
-    });
+    // Toast message is handled by the parent page (HistorialServiciosPage or AgendaServiciosPage)
   };
 
 
   const memoizedServices = useMemo(() => services.map(service => {
     const vehicle = vehicles.find(v => v.id === service.vehicleId);
     const technician = technicians.find(t => t.id === service.technicianId);
+    const serviceDateObj = service.serviceDate ? parseISO(service.serviceDate) : null;
+    const deliveryDateObj = service.deliveryDateTime ? parseISO(service.deliveryDateTime) : null;
+
     return {
       ...service,
       vehicleIdentifier: vehicle ? `${vehicle.make} ${vehicle.model} (${vehicle.licensePlate})` : String(service.vehicleId),
+      vehiclePlate: vehicle ? vehicle.licensePlate : 'N/A',
+      vehicleMakeModelYear: vehicle ? `${vehicle.make} ${vehicle.model} (${vehicle.year})` : 'N/A',
       technicianName: technician ? technician.name : service.technicianId,
-      formattedDate: format(parseISO(service.serviceDate), "dd MMM yyyy", { locale: es }),
-      formattedDeliveryDateTime: service.deliveryDateTime ? format(parseISO(service.deliveryDateTime), "dd MMM yyyy, HH:mm", { locale: es }) : 'N/A',
+      formattedServiceDate: serviceDateObj && isValid(serviceDateObj) ? format(serviceDateObj, "dd MMM yyyy, HH:mm", { locale: es }) : 'Fecha Inválida',
+      formattedDeliveryDateTime: deliveryDateObj && isValid(deliveryDateObj) ? format(deliveryDateObj, "dd MMM yyyy, HH:mm", { locale: es }) : 'N/A',
       totalCostFormatted: `$${service.totalCost.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
       serviceProfitFormatted: service.serviceProfit !== undefined ? `$${service.serviceProfit.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : 'N/A',
-      mileageFormatted: service.mileage ? `${service.mileage.toLocaleString('es-ES')} km` : 'N/A',
+      mileageFormatted: service.mileage !== undefined && service.mileage !== null ? `${service.mileage.toLocaleString('es-ES')} km` : 'N/A',
     };
   }), [services, vehicles, technicians]);
 
 
   if (!memoizedServices.length) {
-    return <p className="text-muted-foreground text-center py-8">No hay órdenes de servicio registradas.</p>;
+    return <p className="text-muted-foreground text-center py-8">No hay órdenes de servicio que coincidan con los filtros.</p>;
   }
 
   return (
@@ -121,42 +126,76 @@ export function ServicesTable({
       <div className="rounded-lg border shadow-sm overflow-hidden">
         <Table>
           <TableHeader>
-            <TableRow>
-              <TableHead>ID Servicio</TableHead>
-              <TableHead>Vehículo</TableHead>
-              {showDateColumn && <TableHead>Fecha Servicio</TableHead>}
-              <TableHead>Kilometraje</TableHead> 
-              <TableHead>Técnico</TableHead>
-              <TableHead>Descripción</TableHead>
-              <TableHead className="text-right">Precio Total</TableHead>
-              <TableHead className="text-right">Ganancia</TableHead>
-              <TableHead>Estado</TableHead>
-              <TableHead>Entrega</TableHead>
-              <TableHead className="text-right">Acciones</TableHead>
-            </TableRow>
+            {isHistoryView ? (
+              <TableRow>
+                <TableHead>ID</TableHead>
+                <TableHead>Fecha Servicio</TableHead>
+                <TableHead>Fecha Entrega</TableHead>
+                <TableHead>Placas</TableHead>
+                <TableHead>Vehículo</TableHead>
+                <TableHead>Kilometraje</TableHead>
+                <TableHead>Descripción</TableHead>
+                <TableHead>Técnico</TableHead>
+                <TableHead className="text-right">Precio Total</TableHead>
+                <TableHead className="text-right">Ganancia</TableHead>
+                <TableHead>Estado</TableHead>
+                <TableHead className="text-right">Acciones</TableHead>
+              </TableRow>
+            ) : ( // Default for Agenda and Lista de Servicios
+              <TableRow>
+                <TableHead>ID</TableHead>
+                <TableHead>Vehículo</TableHead>
+                <TableHead>Técnico</TableHead>
+                <TableHead>Descripción</TableHead>
+                <TableHead>Recepción</TableHead>
+                <TableHead>Entrega</TableHead>
+                <TableHead className="text-right">Precio Total</TableHead>
+                <TableHead>Estado</TableHead>
+                <TableHead className="text-right">Acciones</TableHead>
+              </TableRow>
+            )}
           </TableHeader>
           <TableBody>
             {memoizedServices.map((service) => (
               <TableRow key={service.id}>
-                <TableCell className="font-medium">{service.id}</TableCell>
-                <TableCell>{service.vehicleIdentifier}</TableCell>
-                {showDateColumn && <TableCell>{service.formattedDate}</TableCell>}
-                <TableCell>{service.mileageFormatted}</TableCell> 
-                <TableCell>{service.technicianName}</TableCell>
-                <TableCell className="max-w-xs truncate">{service.description}</TableCell>
-                <TableCell className="text-right">{service.totalCostFormatted}</TableCell>
-                <TableCell className="text-right">{service.serviceProfitFormatted}</TableCell>
-                <TableCell>
-                  <Badge variant={getStatusVariant(service.status)}>{service.status}</Badge>
-                </TableCell>
-                <TableCell>
-                  {service.status === 'Completado' && service.deliveryDateTime ? (
-                     <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                        <Clock className="h-3 w-3"/> 
-                        {service.formattedDeliveryDateTime}
-                     </div>
-                  ) : 'N/A'}
-                </TableCell>
+                {isHistoryView ? (
+                  <>
+                    <TableCell className="font-medium">{service.id}</TableCell>
+                    <TableCell>{service.formattedServiceDate}</TableCell>
+                    <TableCell>{service.formattedDeliveryDateTime}</TableCell>
+                    <TableCell>{service.vehiclePlate}</TableCell>
+                    <TableCell>{service.vehicleMakeModelYear}</TableCell>
+                    <TableCell>{service.mileageFormatted}</TableCell>
+                    <TableCell className="max-w-xs truncate">{service.description}</TableCell>
+                    <TableCell>{service.technicianName}</TableCell>
+                    <TableCell className="text-right">{service.totalCostFormatted}</TableCell>
+                    <TableCell className="text-right">{service.serviceProfitFormatted}</TableCell>
+                    <TableCell><Badge variant={getStatusVariant(service.status)}>{service.status}</Badge></TableCell>
+                  </>
+                ) : ( // Default for Agenda and Lista de Servicios
+                  <>
+                    <TableCell className="font-medium">{service.id}</TableCell>
+                    <TableCell>{service.vehicleIdentifier}</TableCell>
+                    <TableCell>{service.technicianName}</TableCell>
+                    <TableCell className="max-w-xs truncate">{service.description}</TableCell>
+                    <TableCell>
+                        <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                            <Clock className="h-3 w-3"/>
+                            {service.formattedServiceDate}
+                        </div>
+                    </TableCell>
+                    <TableCell>
+                      {service.deliveryDateTime ? (
+                        <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                            <Clock className="h-3 w-3"/>
+                            {service.formattedDeliveryDateTime}
+                        </div>
+                      ) : 'N/A'}
+                    </TableCell>
+                    <TableCell className="text-right">{service.totalCostFormatted}</TableCell>
+                    <TableCell><Badge variant={getStatusVariant(service.status)}>{service.status}</Badge></TableCell>
+                  </>
+                )}
                 <TableCell className="text-right">
                   <Button variant="ghost" size="icon" aria-label="Editar Servicio" onClick={() => handleOpenEditDialog(services.find(s => s.id === service.id)!)}>
                     <Edit className="h-4 w-4" />
