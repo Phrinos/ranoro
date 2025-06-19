@@ -13,7 +13,7 @@ import { Search, ListFilter, CalendarIcon as CalendarDateIcon, DollarSign, LineC
 import { placeholderSales, placeholderServiceRecords, placeholderInventory, getCurrentMonthRange, getLastMonthRange, getTodayRange } from "@/lib/placeholder-data";
 import type { SaleReceipt, ServiceRecord, FinancialOperation, InventoryItem } from "@/types";
 import { useState, useEffect, useMemo } from "react";
-import { format, parseISO, compareAsc, compareDesc, isWithinInterval, isValid, startOfDay, endOfDay, isSameDay, startOfMonth, endOfMonth, subMonths } from "date-fns";
+import { format, parseISO, compareAsc, compareDesc, isWithinInterval, isValid, startOfDay, endOfDay, isSameDay } from "date-fns";
 import { es } from 'date-fns/locale';
 import type { DateRange } from "react-day-picker";
 import { cn } from "@/lib/utils";
@@ -127,6 +127,8 @@ export default function FinancialReportPage() {
       profitCurrentMonth: opsCurrentMonth.reduce((sum, op) => sum + op.profit, 0),
       totalGeneratedLastMonth: opsLastMonth.reduce((sum, op) => sum + op.totalAmount, 0),
       profitLastMonth: opsLastMonth.reduce((sum, op) => sum + op.profit, 0),
+      currentMonthFormatted: format(currentMonthRange.from, "MMMM yyyy", { locale: es }),
+      lastMonthFormatted: format(lastMonthRange.from, "MMMM yyyy", { locale: es }),
     };
   }, [combinedOperations]);
 
@@ -159,7 +161,7 @@ export default function FinancialReportPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold font-headline">{formatCurrency(summaryData.totalGeneratedCurrentMonth)}</div>
-            <p className="text-xs text-muted-foreground">{format(currentMonthRange.from, "MMMM yyyy", { locale: es })}</p>
+            <p className="text-xs text-muted-foreground">{summaryData.currentMonthFormatted}</p>
           </CardContent>
         </Card>
         <Card>
@@ -169,7 +171,7 @@ export default function FinancialReportPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold font-headline">{formatCurrency(summaryData.profitCurrentMonth)}</div>
-            <p className="text-xs text-muted-foreground">{format(currentMonthRange.from, "MMMM yyyy", { locale: es })}</p>
+            <p className="text-xs text-muted-foreground">{summaryData.currentMonthFormatted}</p>
           </CardContent>
         </Card>
         <Card>
@@ -179,7 +181,7 @@ export default function FinancialReportPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold font-headline">{formatCurrency(summaryData.totalGeneratedLastMonth)}</div>
-             <p className="text-xs text-muted-foreground">{format(lastMonthRange.from, "MMMM yyyy", { locale: es })}</p>
+             <p className="text-xs text-muted-foreground">{summaryData.lastMonthFormatted}</p>
           </CardContent>
         </Card>
         <Card>
@@ -189,7 +191,7 @@ export default function FinancialReportPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold font-headline">{formatCurrency(summaryData.profitLastMonth)}</div>
-             <p className="text-xs text-muted-foreground">{format(lastMonthRange.from, "MMMM yyyy", { locale: es })}</p>
+             <p className="text-xs text-muted-foreground">{summaryData.lastMonthFormatted}</p>
           </CardContent>
         </Card>
       </div>
