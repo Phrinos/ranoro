@@ -12,13 +12,14 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  FormDescription,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { PlusCircle, Trash2, Receipt } from "lucide-react";
-import type { InventoryItem, SaleItem } from "@/types";
+import type { InventoryItem, SaleItem, PaymentMethod } from "@/types";
 import { useToast } from "@/hooks/use-toast";
 import { useState, useEffect } from "react";
 import { placeholderSales, placeholderInventory } from "@/lib/placeholder-data";
@@ -32,17 +33,44 @@ const saleItemSchema = z.object({
   totalPrice: z.coerce.number(), 
 });
 
+const paymentMethods: [PaymentMethod, ...PaymentMethod[]] = [
+  "Efectivo", 
+  "Tarjeta", 
+  "Transferencia", 
+  "Efectivo+Transferencia", 
+  "Tarjeta+Transferencia"
+];
+
 const posFormSchema = z.object({
   items: z.array(saleItemSchema).min(1, "Debe agregar al menos un artículo a la venta."),
   customerName: z.string().optional(),
-  paymentMethod: z.enum(["Efectivo", "Tarjeta", "Transferencia"]).default("Efectivo"),
+  paymentMethod: z.enum(paymentMethods).default("Efectivo"),
+  cardFolio: z.string().optional(),
+  transferFolio: z.string().optional(),
+}).refine(data => {
+  if ((data.paymentMethod === "Tarjeta" || data.paymentMethod === "Tarjeta+Transferencia") && !data.cardFolio) {
+    return false;
+  }
+  return true;
+}, {
+  message: "El folio de la tarjeta es obligatorio para este método de pago.",
+  path: ["cardFolio"],
+}).refine(data => {
+  if ((data.paymentMethod === "Transferencia" || data.paymentMethod === "Efectivo+Transferencia" || data.paymentMethod === "Tarjeta+Transferencia") && !data.transferFolio) {
+    return false;
+  }
+  return true;
+}, {
+  message: "El folio de la transferencia es obligatorio para este método de pago.",
+  path: ["transferFolio"],
 });
+
 
 type POSFormValues = z.infer<typeof posFormSchema>;
 
 interface POSFormProps {
   inventoryItems: InventoryItem[];
-  onSaleComplete?: () => void; // Callback for when sale is done, e.g., to close a dialog
+  onSaleComplete?: () => void; 
 }
 
 export function PosForm({ inventoryItems, onSaleComplete }: POSFormProps) {
@@ -59,6 +87,8 @@ export function PosForm({ inventoryItems, onSaleComplete }: POSFormProps) {
       items: [],
       customerName: "",
       paymentMethod: "Efectivo",
+      cardFolio: "",
+      transferFolio: "",
     },
   });
 
@@ -68,6 +98,7 @@ export function PosForm({ inventoryItems, onSaleComplete }: POSFormProps) {
   });
 
   const currentItems = form.watch("items");
+  const selectedPaymentMethod = form.watch("paymentMethod");
 
   useEffect(() => {
     const currentSubTotal = currentItems.reduce((acc, item) => acc + (item.totalPrice || 0), 0);
@@ -114,11 +145,12 @@ export function PosForm({ inventoryItems, onSaleComplete }: POSFormProps) {
       totalAmount: total,
       paymentMethod: values.paymentMethod,
       customerName: values.customerName,
+      cardFolio: values.cardFolio,
+      transferFolio: values.transferFolio,
     };
 
     placeholderSales.push(newSale);
 
-    // Deduct inventory
     let stockIssues = false;
     values.items.forEach(soldItem => {
       const inventoryItemIndex = placeholderInventory.findIndex(invItem => invItem.id === soldItem.inventoryItemId);
@@ -143,13 +175,12 @@ export function PosForm({ inventoryItems, onSaleComplete }: POSFormProps) {
     });
     
     form.reset(); 
-    // Manually clear field array after reset seems to be needed sometimes
     while(fields.length > 0) remove(0); 
 
     if (onSaleComplete) {
       onSaleComplete();
     } else {
-      router.push('/pos'); // Default redirect if no callback
+      router.push('/pos'); 
     }
   };
 
@@ -274,7 +305,7 @@ export function PosForm({ inventoryItems, onSaleComplete }: POSFormProps) {
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {["Efectivo", "Tarjeta", "Transferencia"].map(method => (
+                      {paymentMethods.map(method => (
                         <SelectItem key={method} value={method}>{method}</SelectItem>
                       ))}
                     </SelectContent>
@@ -282,6 +313,36 @@ export function PosForm({ inventoryItems, onSaleComplete }: POSFormProps) {
                 </FormItem>
               )}
             />
+            {(selectedPaymentMethod === "Tarjeta" || selectedPaymentMethod === "Tarjeta+Transferencia") && (
+                 <FormField
+                    control={form.control}
+                    name="cardFolio"
+                    render={({ field }) => (
+                        <FormItem>
+                        <FormLabel>Folio Terminal (Tarjeta)</FormLabel>
+                        <FormControl>
+                            <Input placeholder="Ingrese folio de la transacción con tarjeta" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                 />
+            )}
+            {(selectedPaymentMethod === "Transferencia" || selectedPaymentMethod === "Efectivo+Transferencia" || selectedPaymentMethod === "Tarjeta+Transferencia") && (
+                <FormField
+                    control={form.control}
+                    name="transferFolio"
+                    render={({ field }) => (
+                        <FormItem>
+                        <FormLabel>Folio Transferencia</FormLabel>
+                        <FormControl>
+                            <Input placeholder="Ingrese folio/referencia de la transferencia" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                />
+            )}
           </CardContent>
           <CardFooter className="flex flex-col items-end space-y-2 pt-6">
             <div className="text-lg">Subtotal: <span className="font-semibold">${subTotal.toLocaleString('es-ES', {minimumFractionDigits: 2})}</span></div>

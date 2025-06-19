@@ -6,12 +6,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Search, ListFilter, CalendarIcon as CalendarDateIcon, Receipt, ShoppingCart, CreditCard, DollarSign } from "lucide-react";
+import { Search, ListFilter, CalendarIcon as CalendarDateIcon, Receipt, ShoppingCart, CreditCard, DollarSign, Filter as FilterIcon } from "lucide-react";
 import { SalesTable } from "./components/sales-table"; 
 import { placeholderSales, placeholderInventory } from "@/lib/placeholder-data";
-import type { SaleReceipt, InventoryItem, SaleItem } from "@/types";
+import type { SaleReceipt, InventoryItem, SaleItem, PaymentMethod } from "@/types";
 import { useState, useEffect, useMemo } from "react";
 import { format, parseISO, compareAsc, compareDesc, isWithinInterval, isValid, startOfDay, endOfDay } from "date-fns";
 import { es } from 'date-fns/locale';
@@ -32,6 +32,8 @@ export default function POSPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
   const [sortOption, setSortOption] = useState<SaleSortOption>("date_desc");
+  const [paymentMethodFilter, setPaymentMethodFilter] = useState<PaymentMethod | "all">("all");
+
 
   useEffect(() => {
     setAllSales(placeholderSales);
@@ -58,6 +60,11 @@ export default function POSPage() {
         sale.items.some(item => item.itemName.toLowerCase().includes(lowerSearchTerm))
       );
     }
+    
+    if (paymentMethodFilter !== "all") {
+        filtered = filtered.filter(sale => sale.paymentMethod === paymentMethodFilter);
+    }
+
 
     filtered.sort((a, b) => {
       switch (sortOption) {
@@ -71,7 +78,7 @@ export default function POSPage() {
       }
     });
     return filtered;
-  }, [allSales, searchTerm, dateRange, sortOption]);
+  }, [allSales, searchTerm, dateRange, sortOption, paymentMethodFilter]);
 
   const summaryData = useMemo(() => {
     const totalSalesCount = filteredAndSortedSales.length;
@@ -114,19 +121,14 @@ export default function POSPage() {
     return { totalSalesCount, totalRevenue, mostSoldItem, mostUsedPaymentMethod };
   }, [filteredAndSortedSales]);
 
+  const paymentMethodsForFilter: (PaymentMethod | "all")[] = ["all", "Efectivo", "Tarjeta", "Transferencia", "Efectivo+Transferencia", "Tarjeta+Transferencia"];
+
+
   return (
     <>
       <PageHeader
         title="Registro de Ventas"
         description="Consulta, filtra y ordena todas las ventas de mostrador."
-        actions={
-            <Button asChild>
-                <Link href="/pos/nuevo">
-                    <Receipt className="mr-2 h-4 w-4" />
-                    Registrar Nueva Venta
-                </Link>
-            </Button>
-        }
       />
 
       <div className="mb-6 grid gap-6 md:grid-cols-2 lg:grid-cols-4">
@@ -233,6 +235,24 @@ export default function POSPage() {
               <DropdownMenuRadioItem value="total_asc">Monto Total (Menor a Mayor)</DropdownMenuRadioItem>
               <DropdownMenuRadioItem value="customer_asc">Cliente (A-Z)</DropdownMenuRadioItem>
               <DropdownMenuRadioItem value="customer_desc">Cliente (Z-A)</DropdownMenuRadioItem>
+            </DropdownMenuRadioGroup>
+          </DropdownMenuContent>
+        </DropdownMenu>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" className="min-w-[180px] flex-1 sm:flex-initial">
+              <FilterIcon className="mr-2 h-4 w-4" />
+              Filtrar Pago
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuLabel>Método de Pago</DropdownMenuLabel>
+            <DropdownMenuRadioGroup value={paymentMethodFilter} onValueChange={(value) => setPaymentMethodFilter(value as PaymentMethod | "all")}>
+              {paymentMethodsForFilter.map(method => (
+                <DropdownMenuRadioItem key={method} value={method}>
+                  {method === "all" ? "Todos" : method}
+                </DropdownMenuRadioItem>
+              ))}
             </DropdownMenuRadioGroup>
           </DropdownMenuContent>
         </DropdownMenu>
