@@ -1,9 +1,10 @@
+
 "use client";
 
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { UserCircle, Settings } from "lucide-react";
-import { AppLogo } from "@/components/icons";
+// import { AppLogo } from "@/components/icons"; // AppLogo removed
 import Link from "next/link";
 import {
   DropdownMenu,
@@ -22,8 +23,10 @@ export function AppHeader() {
       </div>
       <div className="hidden items-center gap-2 md:flex">
         <Link href="/dashboard" className="flex items-center gap-2 text-lg font-semibold md:text-base text-primary">
-          <AppLogo className="h-6 w-6" />
-          <span className="sr-only">Ranoro</span>
+          {/* <AppLogo className="h-6 w-6" /> Removed */}
+          {/* Ranoro text was in sidebar, header shows nothing or page title */}
+          {/* If breadcrumbs or page title is desired here, it needs to be added */}
+          <span className="font-headline text-xl">Ranoro</span> {/* Added Ranoro text as AppLogo was removed */}
         </Link>
       </div>
       <div className="flex w-full items-center justify-end gap-4 md:ml-auto md:gap-2 lg:gap-4">
@@ -42,7 +45,7 @@ export function AppHeader() {
               <span>Configuración</span>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>Cerrar Sesión</DropdownMenuItem>
+            <DropdownMenuItem>Cerrar Sesión</DropdownMenuItem> {/* Kept logout here as per standard header UX */}
           </DropdownMenuContent>
         </DropdownMenu>
       </div>

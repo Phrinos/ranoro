@@ -1,5 +1,5 @@
 export interface Vehicle {
-  id: string;
+  id: number; // Changed to number
   make: string;
   model: string;
   year: number;
@@ -20,12 +20,12 @@ export interface ServicePart {
 
 export interface ServiceRecord {
   id: string;
-  vehicleId: string;
+  vehicleId: number; // Changed to number
   vehicleIdentifier?: string; // e.g., License Plate or VIN for display
   serviceDate: string; // ISO date string
   description: string;
   technicianId: string;
-  technicianName?: string; 
+  technicianName?: string;
   partsUsed: ServicePart[];
   laborHours: number;
   laborRate?: number; // Cost per hour

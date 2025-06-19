@@ -1,7 +1,8 @@
+
 "use client";
 
 import Link from "next/link";
-import { AppLogo } from "@/components/icons";
+// import { AppLogo } from "@/components/icons"; // AppLogo removed
 import {
   Sidebar,
   SidebarContent,
@@ -16,7 +17,7 @@ import {
 } from "@/components/ui/sidebar";
 import useNavigation, { type NavItem } from "@/hooks/use-navigation";
 import { Button } from "@/components/ui/button";
-import { LogOut } from "lucide-react";
+import { UserCircle } from "lucide-react"; // Changed from LogOut
 
 export function AppSidebar() {
   const navItems = useNavigation();
@@ -33,9 +34,10 @@ export function AppSidebar() {
   return (
     <Sidebar collapsible="icon" side="left" variant="sidebar">
       <SidebarHeader className="border-b border-sidebar-border">
-        <Link href="/dashboard" className="flex items-center gap-2 text-lg font-semibold text-sidebar-foreground hover:text-sidebar-primary transition-colors">
-          <AppLogo className="h-8 w-8" />
-          <span className="font-headline group-data-[collapsible=icon]:hidden">Ranoro</span>
+        <Link href="/dashboard" className="flex items-center justify-center text-lg font-semibold text-sidebar-foreground hover:text-sidebar-primary transition-colors h-full">
+          {/* <AppLogo className="h-8 w-8" /> Removed */}
+          <span className="font-headline text-xl group-data-[collapsible=icon]:hidden">Ranoro</span>
+          {/* When collapsed, this header will be visually empty unless "Ranoro" is styled to show an initial or an icon is added here */}
         </Link>
       </SidebarHeader>
       <SidebarContent className="p-0">
@@ -67,8 +69,8 @@ export function AppSidebar() {
       </SidebarContent>
       <SidebarFooter className="mt-auto border-t border-sidebar-border p-2">
         <Button variant="ghost" className="w-full justify-start gap-2 text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground group-data-[collapsible=icon]:justify-center">
-          <LogOut className="h-4 w-4" />
-          <span className="group-data-[collapsible=icon]:hidden">Cerrar Sesión</span>
+          <UserCircle className="h-4 w-4" />
+          <span className="group-data-[collapsible=icon]:hidden">Mi Cuenta</span>
         </Button>
       </SidebarFooter>
     </Sidebar>

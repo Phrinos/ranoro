@@ -1,3 +1,4 @@
+
 "use client";
 
 import { usePathname } from 'next/navigation';
@@ -40,7 +41,7 @@ const useNavigation = () => {
       group: "Gestión"
     },
     {
-      label: 'Vehículos',
+      label: 'Vehículos', // Changed from 'Gestión de Vehículos'
       path: '/vehiculos',
       icon: Car,
       group: "Gestión"
@@ -73,7 +74,12 @@ const useNavigation = () => {
 
   return navigationItems.map(item => ({
     ...item,
-    isActive: pathname === item.path || (item.path !== '/' && pathname.startsWith(item.path)),
+    isActive: pathname === item.path || (item.path !== '/' && pathname.startsWith(item.path) && !(item.path === '/vehiculos' && pathname.includes('/vehiculos/'))),
+    // Special handling for /vehiculos to not be active if on /vehiculos/[id]
+    // A more robust solution might involve checking exact match for parent routes
+    // For now, this prevents "Vehículos" from staying active on its detail page.
+    // If the detail page should also make "Vehiculos" active, remove the added condition.
+    // To make parent active: isActive: pathname === item.path || (item.path !== '/' && pathname.startsWith(item.path))
   }));
 };
 
