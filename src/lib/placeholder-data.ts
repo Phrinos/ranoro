@@ -1,6 +1,6 @@
 
-import type { Vehicle, ServiceRecord, Technician, InventoryItem, DashboardMetrics, SaleReceipt, SaleItem, ServicePart } from '@/types';
-import { format } from 'date-fns';
+import type { Vehicle, ServiceRecord, Technician, InventoryItem, DashboardMetrics, SaleReceipt, ServicePart, TechnicianMonthlyPerformance } from '@/types';
+import { format, subMonths, getYear, getMonth } from 'date-fns';
 import { es } from 'date-fns/locale';
 
 const today = new Date();
@@ -16,9 +16,9 @@ export const placeholderVehicles: Vehicle[] = [
 ];
 
 export const placeholderTechnicians: Technician[] = [
-  { id: 'T001', name: 'Roberto Gómez', specialty: 'Motor y Transmisión', servicesCompleted: 15, revenueGenerated: 75000 },
-  { id: 'T002', name: 'Laura Fernández', specialty: 'Electrónica y Diagnóstico', servicesCompleted: 22, revenueGenerated: 92000 },
-  { id: 'T003', name: 'Miguel Ángel Torres', specialty: 'Frenos y Suspensión', servicesCompleted: 18, revenueGenerated: 68000 },
+  { id: 'T001', name: 'Roberto Gómez', area: 'Mecánica General', specialty: 'Motor y Transmisión', contactInfo: '555-7777', hireDate: '2022-01-15', monthlySalary: 50000, notes: 'Experto en motores diesel.' },
+  { id: 'T002', name: 'Laura Fernández', area: 'Electrónica', specialty: 'Diagnóstico Electrónico', contactInfo: '555-8888', hireDate: '2021-06-01', monthlySalary: 55000, notes: 'Certificada en sistemas híbridos.' },
+  { id: 'T003', name: 'Miguel Ángel Torres', area: 'Mecánica General', specialty: 'Frenos y Suspensión', contactInfo: '555-9999', hireDate: '2023-03-10', monthlySalary: 48000, notes: 'Rápido y eficiente.' },
 ];
 
 export const placeholderInventory: InventoryItem[] = [
@@ -51,7 +51,7 @@ export const placeholderServiceRecords: ServiceRecord[] = [
     laborHours: 1.5,
     laborRate: 2000,
     laborCost: 3000,
-    totalCost: 5650 + 3000,
+    totalCost: 5650 + 3000, // parts total + labor
     status: 'Completado',
     mileage: 45000,
   },
@@ -87,11 +87,27 @@ export const placeholderServiceRecords: ServiceRecord[] = [
     status: 'Pendiente',
     mileage: 30500,
   },
+  {
+    id: 'S004',
+    vehicleId: 1,
+    vehicleIdentifier: 'PQR-123',
+    serviceDate: format(subMonths(today, 1), 'yyyy-MM-dd'),
+    description: 'Alineación y balanceo',
+    technicianId: 'T001',
+    technicianName: 'Roberto Gómez',
+    partsUsed: [],
+    laborHours: 2.5,
+    laborRate: 2000,
+    laborCost: 5000,
+    totalCost: 5000,
+    status: 'Completado',
+    mileage: 40000,
+  },
 ];
 
 export const placeholderDashboardMetrics: DashboardMetrics = {
   activeServices: placeholderServiceRecords.filter(s => s.status === 'En Progreso' || s.status === 'Pendiente').length,
-  technicianEarnings: placeholderTechnicians.reduce((sum, tech) => sum + (tech.revenueGenerated || 0), 0) / placeholderTechnicians.length, // Average for demo
+  technicianEarnings: placeholderServiceRecords.filter(s => s.status === 'Completado').reduce((sum, service) => sum + (service.laborCost || 0), 0) / placeholderTechnicians.length,
   dailyRevenue: placeholderServiceRecords.filter(s => s.status === 'Completado' && s.serviceDate === format(today, 'yyyy-MM-dd')).reduce((sum, service) => sum + service.totalCost, 0),
   lowStockAlerts: placeholderInventory.filter(item => item.quantity <= item.lowStockThreshold).length,
 };
@@ -110,4 +126,12 @@ export const placeholderSales: SaleReceipt[] = [
         paymentMethod: 'Efectivo',
         customerName: 'Cliente Ocasional'
     }
+];
+
+export const placeholderTechnicianMonthlyPerformance: TechnicianMonthlyPerformance[] = [
+  { id: 'T001-2024-07', technicianId: 'T001', monthYear: format(today, 'MMMM yyyy', { locale: es }), servicesCount: 8, revenueGenerated: 45000, earnings: 52000, penalties: 500 },
+  { id: 'T001-2024-06', technicianId: 'T001', monthYear: format(subMonths(today, 1), 'MMMM yyyy', { locale: es }), servicesCount: 7, revenueGenerated: 40000, earnings: 50000, penalties: 0 },
+  { id: 'T002-2024-07', technicianId: 'T002', monthYear: format(today, 'MMMM yyyy', { locale: es }), servicesCount: 10, revenueGenerated: 60000, earnings: 58000, penalties: 200 },
+  { id: 'T002-2024-06', technicianId: 'T002', monthYear: format(subMonths(today, 1), 'MMMM yyyy', { locale: es }), servicesCount: 9, revenueGenerated: 55000, earnings: 56000, penalties: 0 },
+  { id: 'T003-2024-07', technicianId: 'T003', monthYear: format(today, 'MMMM yyyy', { locale: es }), servicesCount: 6, revenueGenerated: 35000, earnings: 49000, penalties: 1000 },
 ];

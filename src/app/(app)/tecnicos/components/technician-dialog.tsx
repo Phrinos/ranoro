@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState } from 'react';
@@ -9,30 +10,39 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { TechnicianForm } from "./technician-form";
+import { TechnicianForm, type TechnicianFormValues } from "./technician-form";
 import type { Technician } from "@/types";
 import { useToast } from "@/hooks/use-toast";
 
 interface TechnicianDialogProps {
-  trigger: React.ReactNode;
+  trigger?: React.ReactNode;
   technician?: Technician | null;
-  onSave?: (data: any) => Promise<void>;
+  onSave?: (data: TechnicianFormValues) => Promise<void>;
+  open?: boolean;
+  onOpenChange?: (isOpen: boolean) => void;
 }
 
-export function TechnicianDialog({ trigger, technician, onSave }: TechnicianDialogProps) {
-  const [open, setOpen] = useState(false);
+export function TechnicianDialog({ 
+  trigger, 
+  technician, 
+  onSave,
+  open: controlledOpen,
+  onOpenChange: setControlledOpen 
+}: TechnicianDialogProps) {
+  const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
   const { toast } = useToast();
 
-  const handleSubmit = async (values: any) => {
+  const isControlled = controlledOpen !== undefined && setControlledOpen !== undefined;
+  const open = isControlled ? controlledOpen : uncontrolledOpen;
+  const onOpenChange = isControlled ? setControlledOpen : setUncontrolledOpen;
+
+  const handleSubmit = async (values: TechnicianFormValues) => {
     try {
       if (onSave) {
         await onSave(values);
       }
-      toast({
-        title: `Técnico ${technician ? 'actualizado' : 'creado'} con éxito`,
-        description: `El perfil de ${values.name} ha sido ${technician ? 'actualizado' : 'registrado'}.`,
-      });
-      setOpen(false);
+      // Toast message will be handled by the caller (Page or Detail Page)
+      onOpenChange(false);
     } catch (error) {
       console.error("Error saving technician:", error);
       toast({
@@ -44,21 +54,23 @@ export function TechnicianDialog({ trigger, technician, onSave }: TechnicianDial
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>{trigger}</DialogTrigger>
-      <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>{technician ? "Editar Técnico" : "Nuevo Técnico"}</DialogTitle>
-          <DialogDescription>
-            {technician ? "Actualiza los detalles del perfil del técnico." : "Completa la información para un nuevo técnico."}
-          </DialogDescription>
-        </DialogHeader>
-        <TechnicianForm
-          initialData={technician}
-          onSubmit={handleSubmit}
-          onClose={() => setOpen(false)}
-        />
-      </DialogContent>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      {trigger && !isControlled && <DialogTrigger asChild onClick={() => onOpenChange(true)}>{trigger}</DialogTrigger>}
+      {open && (
+        <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{technician ? "Editar Técnico" : "Nuevo Técnico"}</DialogTitle>
+            <DialogDescription>
+              {technician ? "Actualiza los detalles del perfil del técnico." : "Completa la información para un nuevo técnico."}
+            </DialogDescription>
+          </DialogHeader>
+          <TechnicianForm
+            initialData={technician}
+            onSubmit={handleSubmit}
+            onClose={() => onOpenChange(false)}
+          />
+        </DialogContent>
+      )}
     </Dialog>
   );
 }
