@@ -4,9 +4,8 @@
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { PlusCircle, Search, CalendarX, AlertTriangle, Archive, ListFilter } from "lucide-react";
+import { PlusCircle, Search, CalendarX, AlertTriangle, Archive, ListFilter, Filter } from "lucide-react"; // Added Filter icon
 import { VehiclesTable } from "./components/vehicles-table";
 import { VehicleDialog } from "./components/vehicle-dialog";
 import { placeholderVehicles as allVehicles, placeholderServiceRecords } from "@/lib/placeholder-data";
@@ -22,8 +21,8 @@ export default function VehiculosPage() {
   const { toast } = useToast();
   const [isNewVehicleDialogOpen, setIsNewVehicleDialogOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
-  const [activityFilter, setActivityFilter] = useState("all"); // 'all', 'inactive6', 'inactive12'
-  const [sortOption, setSortOption] = useState<string>("date_asc"); // e.g., "date_asc", "date_desc", "plate_asc", "plate_desc"
+  const [activityFilter, setActivityFilter] = useState("all"); 
+  const [sortOption, setSortOption] = useState<string>("date_asc"); 
 
 
   useEffect(() => {
@@ -34,7 +33,7 @@ export default function VehiculosPage() {
         const sortedHistory = [...history].sort((a, b) => 
           new Date(b.serviceDate).getTime() - new Date(a.serviceDate).getTime()
         );
-        lastServiceDate = sortedHistory[0].serviceDate; // Format 'yyyy-MM-dd'
+        lastServiceDate = sortedHistory[0].serviceDate; 
       }
       return {
         ...v,
@@ -60,7 +59,7 @@ export default function VehiculosPage() {
 
     const updatedVehicles = [...vehicles, newVehicle];
     setVehicles(updatedVehicles);
-    allVehicles.push(newVehicle); // Also update the global placeholder for demo consistency
+    allVehicles.push(newVehicle); 
 
     toast({
       title: "Vehículo Creado",
@@ -78,7 +77,7 @@ export default function VehiculosPage() {
     let count12 = 0;
 
     vehicles.forEach(v => {
-      if (!v.lastServiceDate) { // No service history implies inactivity
+      if (!v.lastServiceDate) { 
         count6++;
         count12++;
       } else {
@@ -97,7 +96,6 @@ export default function VehiculosPage() {
   const filteredAndSortedVehicles = useMemo(() => {
     let itemsToDisplay = [...vehicles];
 
-    // Filter by search term
     if (searchTerm) {
       itemsToDisplay = itemsToDisplay.filter(vehicle =>
         vehicle.licensePlate.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -107,19 +105,17 @@ export default function VehiculosPage() {
       );
     }
 
-    // Filter by activity
     if (activityFilter !== "all") {
       const now = new Date();
       const monthsToCompare = activityFilter === 'inactive6' ? 6 : 12;
       const thresholdDate = subMonths(now, monthsToCompare);
 
       itemsToDisplay = itemsToDisplay.filter(v => {
-        if (!v.lastServiceDate) return true; // No service history counts as inactive
+        if (!v.lastServiceDate) return true; 
         return isBefore(parseISO(v.lastServiceDate), thresholdDate);
       });
     }
     
-    // Sorting logic
     itemsToDisplay.sort((a, b) => {
       let comparison = 0;
       const dateA = a.lastServiceDate ? parseISO(a.lastServiceDate) : null;
@@ -132,20 +128,19 @@ export default function VehiculosPage() {
         case 'plate_desc':
           comparison = b.licensePlate.localeCompare(a.licensePlate);
           break;
-        case 'date_asc': // Más Antiguo (incl. nunca) a Nuevo
+        case 'date_asc': 
           if (dateA === null && dateB !== null) comparison = -1;
           else if (dateA !== null && dateB === null) comparison = 1;
           else if (dateA === null && dateB === null) comparison = 0;
           else comparison = compareAsc(dateA!, dateB!);
           break;
-        case 'date_desc': // Más Nuevo a Antiguo (incl. nunca al final)
+        case 'date_desc': 
           if (dateA !== null && dateB === null) comparison = -1;
           else if (dateA === null && dateB !== null) comparison = 1;
           else if (dateA === null && dateB === null) comparison = 0;
           else comparison = compareDesc(dateA!, dateB!);
           break;
         default:
-          // Default to date_asc if sortOption is unrecognized
           if (dateA === null && dateB !== null) comparison = -1;
           else if (dateA !== null && dateB === null) comparison = 1;
           else if (dateA === null && dateB === null) comparison = 0;
@@ -244,16 +239,22 @@ export default function VehiculosPage() {
             </DropdownMenuRadioGroup>
           </DropdownMenuContent>
         </DropdownMenu>
-        <Select value={activityFilter} onValueChange={setActivityFilter}>
-          <SelectTrigger className="w-full sm:w-auto min-w-[200px] flex-1 sm:flex-initial">
-            <SelectValue placeholder="Filtrar por actividad" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Todos los vehículos</SelectItem>
-            <SelectItem value="inactive6">Sin servicio (6+ meses)</SelectItem>
-            <SelectItem value="inactive12">Sin servicio (12+ meses)</SelectItem>
-          </SelectContent>
-        </Select>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" className="min-w-[180px] flex-1 sm:flex-initial sm:ml-2">
+              <Filter className="mr-2 h-4 w-4" /> 
+              Filtrar Actividad
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuLabel>Filtrar por Actividad</DropdownMenuLabel>
+            <DropdownMenuRadioGroup value={activityFilter} onValueChange={setActivityFilter}>
+              <DropdownMenuRadioItem value="all">Todos los vehículos</DropdownMenuRadioItem>
+              <DropdownMenuRadioItem value="inactive6">Sin servicio (6+ meses)</DropdownMenuRadioItem>
+              <DropdownMenuRadioItem value="inactive12">Sin servicio (12+ meses)</DropdownMenuRadioItem>
+            </DropdownMenuRadioGroup>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
       
       <VehiclesTable vehicles={filteredAndSortedVehicles} />
@@ -268,3 +269,4 @@ export default function VehiculosPage() {
   );
 }
 
+    
