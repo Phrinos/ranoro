@@ -22,19 +22,19 @@ export const placeholderTechnicians: Technician[] = [
 ];
 
 export const placeholderInventory: InventoryItem[] = [
-  { id: 'P001', name: 'Filtro de Aceite Bosch', sku: 'BOSCH-OF-001', quantity: 50, unitPrice: 850, lowStockThreshold: 10, category: 'Filtros' },
-  { id: 'P002', name: 'Pastillas de Freno Brembo Delanteras', sku: 'BREMBO-BP-002', quantity: 5, unitPrice: 3500, lowStockThreshold: 5, category: 'Frenos' },
-  { id: 'P003', name: 'Bujía NGK CR9EK', sku: 'NGK-SP-003', quantity: 100, unitPrice: 350, lowStockThreshold: 20, category: 'Motor' },
-  { id: 'P004', name: 'Aceite Motor Sintético 5W-30 (Litro)', sku: 'MOBIL-OIL-5W30', quantity: 30, unitPrice: 1200, lowStockThreshold: 15, category: 'Lubricantes' },
+  { id: 'P001', name: 'Filtro de Aceite Bosch', sku: 'BOSCH-OF-001', quantity: 50, unitPrice: 700, sellingPrice: 850, lowStockThreshold: 10, category: 'Filtros', supplier: 'Repuestos Express' },
+  { id: 'P002', name: 'Pastillas de Freno Brembo Delanteras', sku: 'BREMBO-BP-002', quantity: 5, unitPrice: 3000, sellingPrice: 3500, lowStockThreshold: 5, category: 'Frenos', supplier: 'AutoPartes Premium' },
+  { id: 'P003', name: 'Bujía NGK CR9EK', sku: 'NGK-SP-003', quantity: 100, unitPrice: 300, sellingPrice: 350, lowStockThreshold: 20, category: 'Motor', supplier: 'NGK Spark Plugs Co.' },
+  { id: 'P004', name: 'Aceite Motor Sintético 5W-30 (Litro)', sku: 'MOBIL-OIL-5W30', quantity: 30, unitPrice: 1000, sellingPrice: 1200, lowStockThreshold: 15, category: 'Lubricantes', supplier: 'Mobil Lubricants' },
 ];
 
 const samplePartsUsed1: ServicePart[] = [
-  { partId: 'P001', partName: 'Filtro de Aceite Bosch', quantity: 1, unitPrice: 850, totalPrice: 850 },
-  { partId: 'P004', partName: 'Aceite Motor Sintético 5W-30 (Litro)', quantity: 4, unitPrice: 1200, totalPrice: 4800 },
+  { partId: 'P001', partName: 'Filtro de Aceite Bosch', quantity: 1, unitPrice: 700, totalPrice: 700 }, // unitPrice is cost
+  { partId: 'P004', partName: 'Aceite Motor Sintético 5W-30 (Litro)', quantity: 4, unitPrice: 1000, totalPrice: 4000 }, // unitPrice is cost
 ];
 
 const samplePartsUsed2: ServicePart[] = [
-  { partId: 'P002', partName: 'Pastillas de Freno Brembo Delanteras', quantity: 1, unitPrice: 3500, totalPrice: 3500 },
+  { partId: 'P002', partName: 'Pastillas de Freno Brembo Delanteras', quantity: 1, unitPrice: 3000, totalPrice: 3000 }, // unitPrice is cost
 ];
 
 
@@ -51,7 +51,7 @@ export const placeholderServiceRecords: ServiceRecord[] = [
     laborHours: 1.5,
     laborRate: 2000,
     laborCost: 3000,
-    totalCost: 5650 + 3000, // parts total + labor
+    totalCost: (samplePartsUsed1.reduce((sum, p) => sum + (p.totalPrice || 0), 0)) + 3000, 
     status: 'Completado',
     mileage: 45000,
   },
@@ -67,7 +67,7 @@ export const placeholderServiceRecords: ServiceRecord[] = [
     laborHours: 2,
     laborRate: 2200,
     laborCost: 4400,
-    totalCost: 3500 + 4400,
+    totalCost: (samplePartsUsed2.reduce((sum, p) => sum + (p.totalPrice || 0), 0)) + 4400,
     status: 'En Progreso',
     mileage: 62000,
   },
@@ -107,7 +107,7 @@ export const placeholderServiceRecords: ServiceRecord[] = [
 
 export const placeholderDashboardMetrics: DashboardMetrics = {
   activeServices: placeholderServiceRecords.filter(s => s.status === 'En Progreso' || s.status === 'Pendiente').length,
-  technicianEarnings: placeholderServiceRecords.filter(s => s.status === 'Completado').reduce((sum, service) => sum + (service.laborCost || 0), 0) / placeholderTechnicians.length,
+  technicianEarnings: placeholderServiceRecords.filter(s => s.status === 'Completado').reduce((sum, service) => sum + (service.laborCost || 0), 0) / (placeholderTechnicians.length || 1),
   dailyRevenue: placeholderServiceRecords.filter(s => s.status === 'Completado' && s.serviceDate === format(today, 'yyyy-MM-dd')).reduce((sum, service) => sum + service.totalCost, 0),
   lowStockAlerts: placeholderInventory.filter(item => item.quantity <= item.lowStockThreshold).length,
 };
@@ -117,11 +117,11 @@ export const placeholderSales: SaleReceipt[] = [
         id: 'SALE001',
         saleDate: format(today, 'yyyy-MM-dd'),
         items: [
-            { inventoryItemId: 'P003', itemName: 'Bujía NGK CR9EK', quantity: 4, unitPrice: 350, totalPrice: 1400 },
-            { inventoryItemId: 'P001', itemName: 'Filtro de Aceite Bosch', quantity: 1, unitPrice: 850, totalPrice: 850 },
+            { inventoryItemId: 'P003', itemName: 'Bujía NGK CR9EK', quantity: 4, unitPrice: 350, totalPrice: 1400 }, // unitPrice is sellingPrice here
+            { inventoryItemId: 'P001', itemName: 'Filtro de Aceite Bosch', quantity: 1, unitPrice: 850, totalPrice: 850 }, // unitPrice is sellingPrice here
         ],
         subTotal: 2250,
-        tax: 225, // Example 10% tax
+        tax: 225, 
         totalAmount: 2475,
         paymentMethod: 'Efectivo',
         customerName: 'Cliente Ocasional'

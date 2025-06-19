@@ -1,3 +1,4 @@
+
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -18,16 +19,17 @@ import type { InventoryItem } from "@/types";
 
 const inventoryItemFormSchema = z.object({
   name: z.string().min(3, "El nombre del artículo debe tener al menos 3 caracteres."),
-  sku: z.string().min(1, "El SKU es obligatorio."),
+  sku: z.string().min(1, "El Código es obligatorio."), // "Código" instead of SKU
   description: z.string().optional(),
   quantity: z.coerce.number().int().min(0, "La cantidad no puede ser negativa."),
-  unitPrice: z.coerce.number().min(0, "El precio unitario no puede ser negativo."),
+  unitPrice: z.coerce.number().min(0, "El costo unitario no puede ser negativo."), // Cost Price
+  sellingPrice: z.coerce.number().min(0, "El precio de venta no puede ser negativo."), // Selling Price
   lowStockThreshold: z.coerce.number().int().min(0, "El umbral de stock bajo no puede ser negativo."),
   category: z.string().optional(),
   supplier: z.string().optional(),
 });
 
-type InventoryItemFormValues = z.infer<typeof inventoryItemFormSchema>;
+export type InventoryItemFormValues = z.infer<typeof inventoryItemFormSchema>;
 
 interface InventoryItemFormProps {
   initialData?: InventoryItem | null;
@@ -43,7 +45,8 @@ export function InventoryItemForm({ initialData, onSubmit, onClose }: InventoryI
       sku: "",
       description: "",
       quantity: 0,
-      unitPrice: 0,
+      unitPrice: 0, // Cost
+      sellingPrice: 0, // Selling
       lowStockThreshold: 5,
       category: "",
       supplier: "",
@@ -76,7 +79,7 @@ export function InventoryItemForm({ initialData, onSubmit, onClose }: InventoryI
             name="sku"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>SKU / Código de Barras</FormLabel>
+                <FormLabel>Código / SKU</FormLabel>
                 <FormControl>
                   <Input placeholder="Ej: FA-XYZ-001" {...field} />
                 </FormControl>
@@ -98,7 +101,7 @@ export function InventoryItemForm({ initialData, onSubmit, onClose }: InventoryI
             </FormItem>
           )}
         />
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <FormField
             control={form.control}
             name="quantity"
@@ -112,20 +115,7 @@ export function InventoryItemForm({ initialData, onSubmit, onClose }: InventoryI
               </FormItem>
             )}
           />
-          <FormField
-            control={form.control}
-            name="unitPrice"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Precio Unitario</FormLabel>
-                <FormControl>
-                  <Input type="number" step="0.01" placeholder="Ej: 15.99" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
+           <FormField
             control={form.control}
             name="lowStockThreshold"
             render={({ field }) => (
@@ -133,6 +123,34 @@ export function InventoryItemForm({ initialData, onSubmit, onClose }: InventoryI
                 <FormLabel>Umbral de Stock Bajo</FormLabel>
                 <FormControl>
                   <Input type="number" placeholder="Ej: 5" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="unitPrice" // Cost Price
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Costo Unitario</FormLabel>
+                <FormControl>
+                  <Input type="number" step="0.01" placeholder="Ej: 10.50" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="sellingPrice" // Selling Price
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Precio de Venta</FormLabel>
+                <FormControl>
+                  <Input type="number" step="0.01" placeholder="Ej: 15.99" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
