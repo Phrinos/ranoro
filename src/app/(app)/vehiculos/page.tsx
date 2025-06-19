@@ -52,13 +52,12 @@ export default function VehiculosPage() {
     const newVehicle: Vehicle = {
       id: vehicles.length > 0 ? Math.max(...vehicles.map(v => v.id)) + 1 : 1,
       ...newVehicleData,
-      serviceHistory: [], // Initialize with empty history
+      serviceHistory: [], 
       // lastServiceDate will be undefined initially
     };
 
     const updatedVehicles = [...vehicles, newVehicle];
     setVehicles(updatedVehicles);
-    // Also update the main placeholder array if desired
     allVehicles.push(newVehicle);
 
     toast({
@@ -96,7 +95,6 @@ export default function VehiculosPage() {
   const filteredAndSortedVehicles = useMemo(() => {
     let itemsToDisplay = [...vehicles];
 
-    // Filter by search term
     if (searchTerm) {
       itemsToDisplay = itemsToDisplay.filter(vehicle =>
         vehicle.licensePlate.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -106,23 +104,21 @@ export default function VehiculosPage() {
       );
     }
 
-    // Filter by activity
     if (activityFilter !== "all") {
       const now = new Date();
       const monthsToCompare = activityFilter === 'inactive6' ? 6 : 12;
       const thresholdDate = subMonths(now, monthsToCompare);
 
       itemsToDisplay = itemsToDisplay.filter(v => {
-        if (!v.lastServiceDate) return true; // Always include if no service history for inactivity filters
+        if (!v.lastServiceDate) return true; 
         return isBefore(parseISO(v.lastServiceDate), thresholdDate);
       });
     }
     
-    // Sort by last service date (nulls/undefined first, then ascending)
     itemsToDisplay.sort((a, b) => {
       if (!a.lastServiceDate && !b.lastServiceDate) return 0;
-      if (!a.lastServiceDate) return -1; // a comes first
-      if (!b.lastServiceDate) return 1;  // b comes first
+      if (!a.lastServiceDate) return -1; 
+      if (!b.lastServiceDate) return 1;  
       return compareAsc(parseISO(a.lastServiceDate), parseISO(b.lastServiceDate));
     });
 
@@ -179,17 +175,10 @@ export default function VehiculosPage() {
               <Archive className="mr-2 h-4 w-4" />
               Ver Archivados
             </Button>
-            <VehicleDialog
-              open={isNewVehicleDialogOpen}
-              onOpenChange={setIsNewVehicleDialogOpen}
-              trigger={
-                <Button onClick={() => setIsNewVehicleDialogOpen(true)}>
-                  <PlusCircle className="mr-2 h-4 w-4" />
-                  Nuevo Vehículo
-                </Button>
-              }
-              onSave={handleSaveVehicle}
-            />
+            <Button onClick={() => setIsNewVehicleDialogOpen(true)}>
+              <PlusCircle className="mr-2 h-4 w-4" />
+              Nuevo Vehículo
+            </Button>
           </div>
         }
       />
@@ -218,6 +207,13 @@ export default function VehiculosPage() {
       </div>
       
       <VehiclesTable vehicles={filteredAndSortedVehicles} />
+
+      <VehicleDialog
+        open={isNewVehicleDialogOpen}
+        onOpenChange={setIsNewVehicleDialogOpen}
+        onSave={handleSaveVehicle}
+        vehicle={null} 
+      />
     </>
   );
 }
