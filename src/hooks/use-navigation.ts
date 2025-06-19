@@ -20,7 +20,7 @@ import {
   Package,
   Filter,
   Settings,
-  Building, // Icon for Suppliers
+  Building, 
 } from 'lucide-react';
 
 export interface NavigationEntry {
@@ -31,7 +31,6 @@ export interface NavigationEntry {
   groupTag: string;
 }
 
-// Define the base structure outside the hook for stability
 const BASE_NAV_STRUCTURE: ReadonlyArray<Omit<NavigationEntry, 'isActive'>> = [
   {
     label: 'Panel Principal',
@@ -78,8 +77,6 @@ const useNavigation = (): NavigationEntry[] => {
   return BASE_NAV_STRUCTURE.map(entry => {
     let isActive = pathname === entry.path;
     
-    // More specific active check: if current path starts with entry path AND is not just the entry path itself (unless entry path is '/')
-    // and ensure that if there's an exact match for the current pathname, that one takes precedence.
     if (!isActive && entry.path && entry.path !== '/' && entry.path.length > 1 && pathname.startsWith(entry.path + '/')) {
         const isMoreSpecificActiveEntry = BASE_NAV_STRUCTURE.some(
           otherEntry => otherEntry.path === pathname && otherEntry.path.length > entry.path.length

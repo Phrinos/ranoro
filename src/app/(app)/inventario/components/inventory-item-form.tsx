@@ -15,19 +15,19 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import type { InventoryItem, InventoryCategory } from "@/types";
+import type { InventoryItem, InventoryCategory, Supplier } from "@/types";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const inventoryItemFormSchema = z.object({
-  name: z.string().min(3, "El nombre del artículo debe tener al menos 3 caracteres."),
-  sku: z.string().min(1, "El Código es obligatorio."), // "Código" instead of SKU
+  name: z.string().min(3, "El nombre del producto debe tener al menos 3 caracteres."),
+  sku: z.string().min(1, "El Código es obligatorio."),
   description: z.string().optional(),
   quantity: z.coerce.number().int().min(0, "La cantidad no puede ser negativa."),
-  unitPrice: z.coerce.number().min(0, "El costo unitario no puede ser negativo."), // Cost Price
-  sellingPrice: z.coerce.number().min(0, "El precio de venta no puede ser negativo."), // Selling Price
+  unitPrice: z.coerce.number().min(0, "El costo unitario no puede ser negativo."),
+  sellingPrice: z.coerce.number().min(0, "El precio de venta no puede ser negativo."),
   lowStockThreshold: z.coerce.number().int().min(0, "El umbral de stock bajo no puede ser negativo."),
   category: z.string().min(1, "La categoría es obligatoria."),
-  supplier: z.string().optional(),
+  supplier: z.string().min(1, "El proveedor es obligatorio."),
 });
 
 export type InventoryItemFormValues = z.infer<typeof inventoryItemFormSchema>;
@@ -37,9 +37,10 @@ interface InventoryItemFormProps {
   onSubmit: (values: InventoryItemFormValues) => Promise<void>;
   onClose: () => void;
   categories: InventoryCategory[];
+  suppliers: Supplier[];
 }
 
-export function InventoryItemForm({ initialData, onSubmit, onClose, categories }: InventoryItemFormProps) {
+export function InventoryItemForm({ initialData, onSubmit, onClose, categories, suppliers }: InventoryItemFormProps) {
   const form = useForm<InventoryItemFormValues>({
     resolver: zodResolver(inventoryItemFormSchema),
     defaultValues: initialData || {
@@ -47,10 +48,10 @@ export function InventoryItemForm({ initialData, onSubmit, onClose, categories }
       sku: "",
       description: "",
       quantity: 0,
-      unitPrice: 0, // Cost
-      sellingPrice: 0, // Selling
+      unitPrice: 0,
+      sellingPrice: 0,
       lowStockThreshold: 5,
-      category: "", // Default to empty, Select will prompt
+      category: "",
       supplier: "",
     },
   });
@@ -68,7 +69,7 @@ export function InventoryItemForm({ initialData, onSubmit, onClose, categories }
             name="name"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Nombre del Artículo</FormLabel>
+                <FormLabel>Nombre del Producto</FormLabel>
                 <FormControl>
                   <Input placeholder="Ej: Filtro de Aceite XYZ" {...field} />
                 </FormControl>
@@ -97,7 +98,7 @@ export function InventoryItemForm({ initialData, onSubmit, onClose, categories }
             <FormItem>
               <FormLabel>Descripción (Opcional)</FormLabel>
               <FormControl>
-                <Textarea placeholder="Detalles adicionales sobre el artículo..." {...field} />
+                <Textarea placeholder="Detalles adicionales sobre el producto..." {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -134,7 +135,7 @@ export function InventoryItemForm({ initialData, onSubmit, onClose, categories }
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <FormField
             control={form.control}
-            name="unitPrice" // Cost Price
+            name="unitPrice"
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Costo Unitario</FormLabel>
@@ -147,7 +148,7 @@ export function InventoryItemForm({ initialData, onSubmit, onClose, categories }
           />
           <FormField
             control={form.control}
-            name="sellingPrice" // Selling Price
+            name="sellingPrice"
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Precio de Venta</FormLabel>
@@ -189,10 +190,21 @@ export function InventoryItemForm({ initialData, onSubmit, onClose, categories }
             name="supplier"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Proveedor (Opcional)</FormLabel>
-                <FormControl>
-                  <Input placeholder="Ej: Repuestos Acme" {...field} />
-                </FormControl>
+                <FormLabel>Proveedor</FormLabel>
+                 <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Seleccione un proveedor" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {suppliers.map((supplier) => (
+                      <SelectItem key={supplier.id} value={supplier.name}>
+                        {supplier.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
                 <FormMessage />
               </FormItem>
             )}
@@ -203,7 +215,7 @@ export function InventoryItemForm({ initialData, onSubmit, onClose, categories }
             Cancelar
           </Button>
           <Button type="submit" disabled={form.formState.isSubmitting}>
-            {form.formState.isSubmitting ? "Guardando..." : (initialData ? "Actualizar Artículo" : "Crear Artículo")}
+            {form.formState.isSubmitting ? "Guardando..." : (initialData ? "Actualizar Producto" : "Crear Producto")}
           </Button>
         </div>
       </form>

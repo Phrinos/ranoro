@@ -11,17 +11,16 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { InventoryItemForm, type InventoryItemFormValues } from "./inventory-item-form";
-import type { InventoryItem, InventoryCategory } from "@/types";
+import type { InventoryItem, InventoryCategory, Supplier } from "@/types";
 import { useToast } from "@/hooks/use-toast";
-import { placeholderCategories } from '@/lib/placeholder-data';
+import { placeholderCategories, placeholderSuppliers } from '@/lib/placeholder-data';
 
 interface InventoryItemDialogProps {
   trigger?: React.ReactNode;
-  item?: InventoryItem | Partial<InventoryItemFormValues> | null; // Allow partial for pre-filling
+  item?: InventoryItem | Partial<InventoryItemFormValues> | null; 
   onSave?: (data: InventoryItemFormValues) => Promise<void>;
   open?: boolean;
   onOpenChange?: (isOpen: boolean) => void;
-  // Removed categories prop, will use imported placeholderCategories
 }
 
 export function InventoryItemDialog({ 
@@ -50,7 +49,7 @@ export function InventoryItemDialog({
       console.error("Error saving inventory item:", error);
       toast({
         title: "Error al guardar",
-        description: "No se pudo guardar el artículo. Intente de nuevo.",
+        description: "No se pudo guardar el producto. Intente de nuevo.",
         variant: "destructive",
       });
     }
@@ -64,16 +63,17 @@ export function InventoryItemDialog({
       {open && (
         <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>{isEditing ? "Editar Artículo de Inventario" : "Nuevo Artículo de Inventario"}</DialogTitle>
+            <DialogTitle>{isEditing ? "Editar Producto de Inventario" : "Nuevo Producto de Inventario"}</DialogTitle>
             <DialogDescription>
-              {isEditing ? "Actualiza los detalles del artículo." : "Completa la información para un nuevo artículo en el inventario."}
+              {isEditing ? "Actualiza los detalles del producto." : "Completa la información para un nuevo producto en el inventario."}
             </DialogDescription>
           </DialogHeader>
           <InventoryItemForm
             initialData={initialFormData as InventoryItem | null} 
             onSubmit={handleSubmit}
             onClose={() => onOpenChange(false)}
-            categories={placeholderCategories} // Pass imported categories
+            categories={placeholderCategories}
+            suppliers={placeholderSuppliers} 
           />
         </DialogContent>
       )}

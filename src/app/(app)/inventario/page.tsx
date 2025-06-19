@@ -9,7 +9,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuLabel, DropdownMenuRadio
 import { PlusCircle, Printer, ShoppingCartIcon, AlertTriangle, PackageCheck, DollarSign, Search, ListFilter } from "lucide-react";
 import { InventoryTable } from "./components/inventory-table";
 import { InventoryItemDialog } from "./components/inventory-item-dialog";
-import { placeholderInventory, placeholderCategories } from "@/lib/placeholder-data"; // Import placeholderCategories
+import { placeholderInventory, placeholderCategories, placeholderSuppliers } from "@/lib/placeholder-data";
 import type { InventoryItem } from "@/types";
 import { useState, useMemo } from "react";
 import type { InventoryItemFormValues } from "./components/inventory-item-form";
@@ -32,7 +32,7 @@ export default function InventarioPage() {
   const [newItemInitialData, setNewItemInitialData] = useState<Partial<InventoryItemFormValues> | null>(null);
 
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedCategoryFilter, setSelectedCategoryFilter] = useState("all"); // Renamed for clarity
+  const [selectedCategoryFilter, setSelectedCategoryFilter] = useState("all");
   const [sortOption, setSortOption] = useState<InventorySortOption>("stock_status_name_asc");
 
   const handleSaveNewItem = async (data: InventoryItemFormValues) => {
@@ -43,15 +43,14 @@ export default function InventarioPage() {
       sellingPrice: Number(data.sellingPrice),
       quantity: Number(data.quantity),
       lowStockThreshold: Number(data.lowStockThreshold),
-      // category is already string from data
     };
     const updatedInventory = [...inventoryItems, newItem];
     setInventoryItems(updatedInventory);
     placeholderInventory.push(newItem); 
     
     toast({
-      title: "Artículo Creado",
-      description: `El artículo ${newItem.name} ha sido agregado al inventario.`,
+      title: "Producto Creado",
+      description: `El producto ${newItem.name} ha sido agregado al inventario.`,
     });
     setIsNewItemDialogOpen(false);
     setNewItemInitialData(null);
@@ -75,7 +74,7 @@ export default function InventarioPage() {
       placeholderInventory.splice(0, placeholderInventory.length, ...updatedItems); 
       toast({
         title: "Compra Registrada",
-        description: `Se actualizó el stock y costo del artículo ${updatedItems[existingItemIndex].name}.`,
+        description: `Se actualizó el stock y costo del producto ${updatedItems[existingItemIndex].name}.`,
       });
     } else {
       setNewItemInitialData({
@@ -85,12 +84,13 @@ export default function InventarioPage() {
         name: "", 
         sellingPrice: 0, 
         lowStockThreshold: 5,
-        category: "", // Initialize category as empty, user will select in form
+        category: "",
+        supplier: "", 
       });
       setIsNewItemDialogOpen(true);
       toast({
-        title: "Artículo no encontrado",
-        description: `El código ${purchaseData.sku} no existe. Por favor, complete los datos para crear un nuevo artículo.`,
+        title: "Producto no encontrado",
+        description: `El código ${purchaseData.sku} no existe. Por favor, complete los datos para crear un nuevo producto.`,
       });
     }
     setIsPurchaseEntryDialogOpen(false);
@@ -98,7 +98,7 @@ export default function InventarioPage() {
 
   const handlePrintInventory = () => {
     toast({
-        title: "Imprimir Inventario",
+        title: "Imprimir Productos",
         description: "La funcionalidad de impresión detallada se implementará próximamente. Actualmente, esto imprimiría la vista actual.",
     });
   };
@@ -118,7 +118,7 @@ export default function InventarioPage() {
     return { totalInventoryCost: cost, totalInventorySellingPrice: sellingPriceValue, lowStockItemsCount: lowStock };
   }, [inventoryItems]);
 
-  const uniqueCategoriesForFilter = useMemo(() => { // Renamed
+  const uniqueCategoriesForFilter = useMemo(() => {
     const categories = new Set(inventoryItems.map(item => item.category).filter(Boolean) as string[]);
     return ["all", ...Array.from(categories)];
   }, [inventoryItems]);
@@ -133,7 +133,7 @@ export default function InventarioPage() {
       );
     }
 
-    if (selectedCategoryFilter && selectedCategoryFilter !== "all") { // Renamed
+    if (selectedCategoryFilter && selectedCategoryFilter !== "all") {
       itemsToDisplay = itemsToDisplay.filter(item => item.category === selectedCategoryFilter);
     }
     
@@ -147,7 +147,6 @@ export default function InventarioPage() {
         return a.name.localeCompare(b.name);
       }
 
-      // If not sorting by stock_status_name_asc, low stock items still come first within other sortings
       if (isALowStock && !isBLowStock) return -1;
       if (!isALowStock && isBLowStock) return 1;
       
@@ -161,7 +160,7 @@ export default function InventarioPage() {
         case 'quantity_desc': return b.quantity - a.quantity;
         case 'price_asc': return a.sellingPrice - b.sellingPrice;
         case 'price_desc': return b.sellingPrice - a.sellingPrice;
-        default: return a.name.localeCompare(b.name); // Fallback, though covered by stock_status_name_asc
+        default: return a.name.localeCompare(b.name); 
       }
     });
   }, [inventoryItems, searchTerm, selectedCategoryFilter, sortOption]);
@@ -186,7 +185,7 @@ export default function InventarioPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
-              Artículos con Stock Bajo
+              Productos con Stock Bajo
             </CardTitle>
             <AlertTriangle className="h-5 w-5 text-orange-500" />
           </CardHeader>
@@ -200,7 +199,7 @@ export default function InventarioPage() {
          <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
-              Total Artículos Únicos
+              Total Productos Únicos
             </CardTitle>
             <PackageCheck className="h-5 w-5 text-blue-500" />
           </CardHeader>
@@ -214,13 +213,13 @@ export default function InventarioPage() {
       </div>
 
       <PageHeader
-        title="Inventario"
+        title="Productos"
         description="Administra los niveles de stock, registra compras y ventas de repuestos."
         actions={
           <div className="flex flex-wrap gap-2">
             <Button variant="outline" onClick={handlePrintInventory}>
               <Printer className="mr-2 h-4 w-4" />
-              Imprimir Inventario
+              Imprimir Productos
             </Button>
             <Button variant="outline" onClick={() => setIsPurchaseEntryDialogOpen(true)}>
               <ShoppingCartIcon className="mr-2 h-4 w-4" />
@@ -228,7 +227,7 @@ export default function InventarioPage() {
             </Button>
             <Button onClick={() => { setNewItemInitialData(null); setIsNewItemDialogOpen(true); }}>
               <PlusCircle className="mr-2 h-4 w-4" />
-              Nuevo Artículo
+              Nuevo Producto
             </Button>
           </div>
         }
@@ -267,12 +266,12 @@ export default function InventarioPage() {
             </DropdownMenuRadioGroup>
           </DropdownMenuContent>
         </DropdownMenu>
-        <Select value={selectedCategoryFilter} onValueChange={setSelectedCategoryFilter}> {/* Renamed */}
+        <Select value={selectedCategoryFilter} onValueChange={setSelectedCategoryFilter}>
           <SelectTrigger className="w-full sm:w-auto min-w-[200px] flex-1 sm:flex-initial">
             <SelectValue placeholder="Filtrar por categoría" />
           </SelectTrigger>
           <SelectContent>
-            {uniqueCategoriesForFilter.map(category => ( // Renamed
+            {uniqueCategoriesForFilter.map(category => (
               <SelectItem key={category} value={category}>
                 {category === "all" ? "Todas las categorías" : category}
               </SelectItem>
@@ -288,7 +287,6 @@ export default function InventarioPage() {
         onOpenChange={setIsNewItemDialogOpen}
         item={newItemInitialData as InventoryItem | null} 
         onSave={handleSaveNewItem}
-        // categories prop removed here, as InventoryItemDialog now imports placeholderCategories directly
       />
 
       <PurchaseEntryDialog

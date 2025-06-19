@@ -2,7 +2,7 @@
 "use client";
 
 import { useParams, useRouter } from 'next/navigation';
-import { placeholderInventory, placeholderCategories } from '@/lib/placeholder-data'; // Import placeholderCategories
+import { placeholderInventory, placeholderCategories, placeholderSuppliers } from '@/lib/placeholder-data';
 import type { InventoryItem } from '@/types';
 import { PageHeader } from '@/components/page-header';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -49,7 +49,6 @@ export default function InventoryItemDetailPage() {
       sellingPrice: Number(formData.sellingPrice),
       quantity: Number(formData.quantity),
       lowStockThreshold: Number(formData.lowStockThreshold),
-      // category is already a string from formData
     };
     
     const updatedItem = { ...item, ...updatedItemData } as InventoryItem;
@@ -62,8 +61,8 @@ export default function InventoryItemDetailPage() {
 
     setIsEditDialogOpen(false);
     toast({
-      title: "Artículo Actualizado",
-      description: `Los datos del artículo ${updatedItem.name} han sido actualizados.`,
+      title: "Producto Actualizado",
+      description: `Los datos del producto ${updatedItem.name} han sido actualizados.`,
     });
   };
   
@@ -74,25 +73,25 @@ export default function InventoryItemDetailPage() {
       placeholderInventory.splice(itemIndex, 1);
     }
     toast({
-      title: "Artículo Eliminado",
-      description: `El artículo ${item.name} ha sido eliminado.`,
+      title: "Producto Eliminado",
+      description: `El producto ${item.name} ha sido eliminado.`,
     });
-    router.push('/inventario');
+    router.push('/inventario'); 
   };
 
 
   if (item === undefined) {
-    return <div className="container mx-auto py-8 text-center">Cargando datos del artículo...</div>;
+    return <div className="container mx-auto py-8 text-center">Cargando datos del producto...</div>;
   }
 
   if (!item) {
     return (
       <div className="container mx-auto py-8 text-center">
         <ShieldAlert className="mx-auto h-16 w-16 text-destructive mb-4" />
-        <h1 className="text-2xl font-bold">Artículo no encontrado</h1>
-        <p className="text-muted-foreground">No se pudo encontrar un artículo con el ID: {itemId}.</p>
+        <h1 className="text-2xl font-bold">Producto no encontrado</h1>
+        <p className="text-muted-foreground">No se pudo encontrar un producto con el ID: {itemId}.</p>
         <Button asChild className="mt-6">
-          <Link href="/inventario">Volver a Inventario</Link>
+          <Link href="/inventario">Volver a Productos</Link>
         </Button>
       </div>
     );
@@ -102,7 +101,7 @@ export default function InventoryItemDetailPage() {
     <div className="container mx-auto py-8">
       <PageHeader
         title={`${item.name} (Código: ${item.sku})`}
-        description={`ID Artículo: ${item.id}`}
+        description={`ID Producto: ${item.id}`}
       />
 
       <Tabs defaultValue="details" className="w-full">
@@ -115,7 +114,7 @@ export default function InventoryItemDetailPage() {
           <div className="space-y-6">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle>Detalles del Artículo</CardTitle>
+                <CardTitle>Detalles del Producto</CardTitle>
                 <Button variant="outline" size="sm" onClick={() => setIsEditDialogOpen(true)}>
                   <Edit className="mr-2 h-4 w-4" />
                   Editar
@@ -130,7 +129,7 @@ export default function InventoryItemDetailPage() {
                 <p><strong>Costo Unitario:</strong> ${item.unitPrice.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
                 <p><strong>Precio de Venta:</strong> ${item.sellingPrice.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
                 <p><strong>Umbral de Stock Bajo:</strong> {item.lowStockThreshold}</p>
-                <p><strong>Proveedor:</strong> {item.supplier || 'N/A'}</p>
+                <p><strong>Proveedor:</strong> {item.supplier}</p>
               </CardContent>
             </Card>
           </div>
@@ -139,14 +138,14 @@ export default function InventoryItemDetailPage() {
               <AlertDialogTrigger asChild>
                 <Button variant="outline" >
                   <Archive className="mr-2 h-4 w-4" />
-                  Archivar Artículo
+                  Archivar Producto
                 </Button>
               </AlertDialogTrigger>
               <AlertDialogContent>
                 <AlertDialogHeader>
-                  <AlertDialogTitle>¿Estás seguro de archivar/eliminar este artículo?</AlertDialogTitle>
+                  <AlertDialogTitle>¿Estás seguro de archivar/eliminar este producto?</AlertDialogTitle>
                   <AlertDialogDescription>
-                    Esta acción no se puede deshacer fácilmente y eliminará el artículo del inventario activo.
+                    Esta acción no se puede deshacer fácilmente y eliminará el producto del inventario activo.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
@@ -164,7 +163,7 @@ export default function InventoryItemDetailPage() {
           <Card>
             <CardHeader>
               <CardTitle>Historial de Movimientos</CardTitle>
-              <CardDescription>Esta sección mostrará el historial de entradas y salidas del artículo (Pendiente de implementación).</CardDescription>
+              <CardDescription>Esta sección mostrará el historial de entradas y salidas del producto (Pendiente de implementación).</CardDescription>
             </CardHeader>
             <CardContent>
               <p className="text-muted-foreground">Funcionalidad pendiente.</p>
@@ -178,7 +177,6 @@ export default function InventoryItemDetailPage() {
             onOpenChange={setIsEditDialogOpen}
             item={item}
             onSave={handleSaveEditedItem}
-            // categories prop removed here, as InventoryItemDialog now imports placeholderCategories directly
           />
       )}
     </div>
