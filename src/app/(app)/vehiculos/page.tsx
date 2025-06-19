@@ -5,7 +5,7 @@ import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { PlusCircle, Search, CalendarX, AlertTriangle } from "lucide-react";
+import { PlusCircle, Search, CalendarX, AlertTriangle, Archive } from "lucide-react";
 import { VehiclesTable } from "./components/vehicles-table";
 import { VehicleDialog } from "./components/vehicle-dialog";
 import { placeholderVehicles as allVehicles, placeholderServiceRecords } from "@/lib/placeholder-data";
@@ -14,7 +14,7 @@ import type { VehicleFormValues } from "./components/vehicle-form";
 import { useToast } from "@/hooks/use-toast";
 import { useState, useMemo, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { subMonths, parseISO, isBefore } from 'date-fns';
+import { subMonths, parseISO, isBefore, compareAsc } from 'date-fns';
 
 export default function VehiculosPage() {
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
@@ -93,7 +93,7 @@ export default function VehiculosPage() {
     return { inactive6MonthsCount: count6, inactive12MonthsCount: count12 };
   }, [vehicles]);
 
-  const filteredVehicles = useMemo(() => {
+  const filteredAndSortedVehicles = useMemo(() => {
     let itemsToDisplay = [...vehicles];
 
     // Filter by search term
@@ -118,8 +118,23 @@ export default function VehiculosPage() {
       });
     }
     
+    // Sort by last service date (nulls/undefined first, then ascending)
+    itemsToDisplay.sort((a, b) => {
+      if (!a.lastServiceDate && !b.lastServiceDate) return 0;
+      if (!a.lastServiceDate) return -1; // a comes first
+      if (!b.lastServiceDate) return 1;  // b comes first
+      return compareAsc(parseISO(a.lastServiceDate), parseISO(b.lastServiceDate));
+    });
+
     return itemsToDisplay;
   }, [vehicles, searchTerm, activityFilter]);
+
+  const handleShowArchived = () => {
+    toast({
+      title: "Función Próximamente",
+      description: "La visualización de vehículos archivados estará disponible en una futura actualización.",
+    });
+  };
 
 
   return (
@@ -159,17 +174,23 @@ export default function VehiculosPage() {
         title="Vehículos"
         description="Administra la información de los vehículos y su historial de servicios."
         actions={
-          <VehicleDialog
-            open={isNewVehicleDialogOpen}
-            onOpenChange={setIsNewVehicleDialogOpen}
-            trigger={
-              <Button onClick={() => setIsNewVehicleDialogOpen(true)}>
-                <PlusCircle className="mr-2 h-4 w-4" />
-                Nuevo Vehículo
-              </Button>
-            }
-            onSave={handleSaveVehicle}
-          />
+          <div className="flex flex-wrap gap-2">
+            <Button variant="outline" onClick={handleShowArchived}>
+              <Archive className="mr-2 h-4 w-4" />
+              Ver Archivados
+            </Button>
+            <VehicleDialog
+              open={isNewVehicleDialogOpen}
+              onOpenChange={setIsNewVehicleDialogOpen}
+              trigger={
+                <Button onClick={() => setIsNewVehicleDialogOpen(true)}>
+                  <PlusCircle className="mr-2 h-4 w-4" />
+                  Nuevo Vehículo
+                </Button>
+              }
+              onSave={handleSaveVehicle}
+            />
+          </div>
         }
       />
 
@@ -196,7 +217,7 @@ export default function VehiculosPage() {
         </Select>
       </div>
       
-      <VehiclesTable vehicles={filteredVehicles} />
+      <VehiclesTable vehicles={filteredAndSortedVehicles} />
     </>
   );
 }
