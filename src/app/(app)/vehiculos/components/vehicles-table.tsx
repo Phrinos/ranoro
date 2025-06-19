@@ -19,9 +19,6 @@ interface VehiclesTableProps {
 
 export function VehiclesTable({ vehicles: initialVehicles }: VehiclesTableProps) {
   const router = useRouter();
-  // Removed useState for vehicles, toast as edit/delete are removed from this table
-  // const [vehicles, setVehicles] = useState<Vehicle[]>(initialVehicles);
-  // const { toast } = useToast();
 
   const handleRowClick = (vehicleId: number) => {
     router.push(`/vehiculos/${vehicleId}`);
@@ -41,8 +38,7 @@ export function VehiclesTable({ vehicles: initialVehicles }: VehiclesTableProps)
             <TableHead>Modelo</TableHead>
             <TableHead>Año</TableHead>
             <TableHead>Propietario</TableHead>
-            <TableHead>Contacto</TableHead>
-            {/* Actions column removed */}
+            <TableHead>Teléfono</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -52,13 +48,12 @@ export function VehiclesTable({ vehicles: initialVehicles }: VehiclesTableProps)
               onClick={() => handleRowClick(vehicle.id)}
               className="cursor-pointer hover:bg-muted/50"
             >
-              <TableCell className="font-medium">{vehicle.licensePlate}</TableCell>
+              <TableCell className="font-semibold">{vehicle.licensePlate}</TableCell>
               <TableCell>{vehicle.make}</TableCell>
               <TableCell>{vehicle.model}</TableCell>
               <TableCell>{vehicle.year}</TableCell>
               <TableCell>{vehicle.ownerName}</TableCell>
-              <TableCell>{vehicle.ownerContact}</TableCell>
-              {/* Actions Cell removed */}
+              <TableCell>{vehicle.ownerPhone}</TableCell>
             </TableRow>
           ))}
         </TableBody>
