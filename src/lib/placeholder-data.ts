@@ -9,9 +9,9 @@ const twoDaysAgo = new Date(today);
 twoDaysAgo.setDate(today.getDate() - 2);
 
 export const placeholderVehicles: Vehicle[] = [
-  { id: 1, make: 'Toyota', model: 'Corolla', year: 2020, vin: 'ABC123XYZ789', ownerName: 'Juan Pérez', ownerContact: 'juan.perez@email.com', licensePlate: 'PQR-123' },
-  { id: 2, make: 'Honda', model: 'Civic', year: 2019, vin: 'DEF456UVW456', ownerName: 'Maria López', ownerContact: 'maria.lopez@email.com', licensePlate: 'STU-456' },
-  { id: 3, make: 'Ford', model: 'F-150', year: 2021, vin: 'GHI789RST123', ownerName: 'Carlos Sánchez', ownerContact: 'carlos.sanchez@email.com', licensePlate: 'VWX-789' },
+  { id: 1, make: 'Toyota', model: 'Corolla', year: 2020, vin: 'ABC123XYZ789', ownerName: 'Juan Pérez', ownerPhone: '555-1111', ownerEmail: 'juan.perez@email.com', licensePlate: 'PQR-123' },
+  { id: 2, make: 'Honda', model: 'Civic', year: 2019, vin: 'DEF456UVW456', ownerName: 'Maria López', ownerPhone: '555-2222', ownerEmail: 'maria.lopez@email.com', licensePlate: 'STU-456' },
+  { id: 3, make: 'Ford', model: 'F-150', year: 2021, vin: 'GHI789RST123', ownerName: 'Carlos Sánchez', ownerPhone: '555-3333', ownerEmail: 'carlos.sanchez@email.com', licensePlate: 'VWX-789' },
 ];
 
 export const placeholderTechnicians: Technician[] = [
@@ -40,7 +40,7 @@ const samplePartsUsed2: ServicePart[] = [
 export const placeholderServiceRecords: ServiceRecord[] = [
   {
     id: 'S001',
-    vehicleId: 1, // Changed to number
+    vehicleId: 1,
     vehicleIdentifier: 'PQR-123',
     serviceDate: format(twoDaysAgo, 'yyyy-MM-dd'),
     description: 'Cambio de aceite y filtro',
@@ -51,11 +51,12 @@ export const placeholderServiceRecords: ServiceRecord[] = [
     laborRate: 2000,
     laborCost: 3000,
     totalCost: 5650 + 3000,
-    status: 'Completado'
+    status: 'Completado',
+    mileage: 45000,
   },
   {
     id: 'S002',
-    vehicleId: 2, // Changed to number
+    vehicleId: 2,
     vehicleIdentifier: 'STU-456',
     serviceDate: format(yesterday, 'yyyy-MM-dd'),
     description: 'Revisión de frenos y cambio de pastillas delanteras',
@@ -66,11 +67,12 @@ export const placeholderServiceRecords: ServiceRecord[] = [
     laborRate: 2200,
     laborCost: 4400,
     totalCost: 3500 + 4400,
-    status: 'En Progreso'
+    status: 'En Progreso',
+    mileage: 62000,
   },
   {
     id: 'S003',
-    vehicleId: 3, // Changed to number
+    vehicleId: 3,
     vehicleIdentifier: 'VWX-789',
     serviceDate: format(today, 'yyyy-MM-dd'),
     description: 'Diagnóstico general del motor',
@@ -81,7 +83,8 @@ export const placeholderServiceRecords: ServiceRecord[] = [
     laborRate: 2500,
     laborCost: 2500,
     totalCost: 2500,
-    status: 'Pendiente'
+    status: 'Pendiente',
+    mileage: 30500,
   },
 ];
 
