@@ -1,5 +1,5 @@
 
-import type { Vehicle, ServiceRecord, Technician, InventoryItem, DashboardMetrics, SaleReceipt, ServicePart, TechnicianMonthlyPerformance } from '@/types';
+import type { Vehicle, ServiceRecord, Technician, InventoryItem, DashboardMetrics, SaleReceipt, ServicePart, TechnicianMonthlyPerformance, InventoryCategory } from '@/types';
 import { format, subMonths, getYear, getMonth } from 'date-fns';
 import { es } from 'date-fns/locale';
 
@@ -27,6 +27,16 @@ export const placeholderInventory: InventoryItem[] = [
   { id: 'P003', name: 'Bujía NGK CR9EK', sku: 'NGK-SP-003', quantity: 100, unitPrice: 300, sellingPrice: 350, lowStockThreshold: 20, category: 'Motor', supplier: 'NGK Spark Plugs Co.' },
   { id: 'P004', name: 'Aceite Motor Sintético 5W-30 (Litro)', sku: 'MOBIL-OIL-5W30', quantity: 30, unitPrice: 1000, sellingPrice: 1200, lowStockThreshold: 15, category: 'Lubricantes', supplier: 'Mobil Lubricants' },
 ];
+
+export const placeholderCategories: InventoryCategory[] = [
+  { id: 'CAT001', name: 'Filtros' },
+  { id: 'CAT002', name: 'Frenos' },
+  { id: 'CAT003', name: 'Motor' },
+  { id: 'CAT004', name: 'Lubricantes' },
+  { id: 'CAT005', name: 'Suspensión' },
+  { id: 'CAT006', name: 'Eléctrico' },
+];
+
 
 const samplePartsUsed1: ServicePart[] = [
   { partId: 'P001', partName: 'Filtro de Aceite Bosch', quantity: 1, unitPrice: 700, totalPrice: 700 }, // unitPrice is cost
@@ -135,3 +145,4 @@ export const placeholderTechnicianMonthlyPerformance: TechnicianMonthlyPerforman
   { id: 'T002-2024-06', technicianId: 'T002', monthYear: format(subMonths(today, 1), 'MMMM yyyy', { locale: es }), servicesCount: 9, revenueGenerated: 55000, earnings: 56000, penalties: 0 },
   { id: 'T003-2024-07', technicianId: 'T003', monthYear: format(today, 'MMMM yyyy', { locale: es }), servicesCount: 6, revenueGenerated: 35000, earnings: 49000, penalties: 1000 },
 ];
+
