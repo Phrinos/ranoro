@@ -1,3 +1,4 @@
+
 import * as React from "react"
 import { cva, type VariantProps } from "class-variance-authority"
 
@@ -8,14 +9,16 @@ const badgeVariants = cva(
   {
     variants: {
       variant: {
-        default:
+        default: // For "Agendado" - uses primary color (red in current theme)
           "border-transparent bg-primary text-primary-foreground hover:bg-primary/80",
-        secondary:
+        secondary: // For "En Progreso" - uses secondary color (light gray in current theme)
           "border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80",
-        destructive:
+        destructive: // For "Cancelado"
           "border-transparent bg-destructive text-destructive-foreground hover:bg-destructive/80",
-        outline: "text-foreground",
-        success: "border-transparent bg-green-600 text-primary-foreground hover:bg-green-600/80",
+        outline: // For "Pendiente" - white/transparent with border
+          "text-foreground",
+        success: // For "Completado" - green
+          "border-transparent bg-green-600 text-primary-foreground hover:bg-green-600/80",
       },
     },
     defaultVariants: {
@@ -35,3 +38,4 @@ function Badge({ className, variant, ...props }: BadgeProps) {
 }
 
 export { Badge, badgeVariants }
+
