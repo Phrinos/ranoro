@@ -40,8 +40,8 @@ export default function FinancialReportPage() {
   const calculateSaleProfit = (sale: SaleReceipt): number => {
     return sale.items.reduce((profit, saleItem) => {
         const inventoryItem = inventory.find(inv => inv.id === saleItem.inventoryItemId);
-        const costPrice = inventoryItem ? inventoryItem.unitPrice : 0; // Cost from inventory
-        const sellingPrice = saleItem.unitPrice; // Selling price from sale item
+        const costPrice = inventoryItem ? inventoryItem.unitPrice : 0; 
+        const sellingPrice = saleItem.unitPrice; 
         return profit + (sellingPrice - costPrice) * saleItem.quantity;
     }, 0);
   };
@@ -117,12 +117,24 @@ export default function FinancialReportPage() {
     const currentMonthRange = getCurrentMonthRange();
     const lastMonthRange = getLastMonthRange();
 
-    const opsToday = combinedOperations.filter(op => isSameDay(parseISO(op.date), todayRange.from));
-    const opsCurrentMonth = combinedOperations.filter(op => isWithinInterval(parseISO(op.date), currentMonthRange));
-    const opsLastMonth = combinedOperations.filter(op => isWithinInterval(parseISO(op.date), lastMonthRange));
+    const opsToday = combinedOperations.filter(op => {
+        const opDate = parseISO(op.date);
+        return isValid(opDate) && isSameDay(opDate, todayRange.from);
+    });
+    
+    const opsCurrentMonth = combinedOperations.filter(op => {
+        const opDate = parseISO(op.date);
+        return isValid(opDate) && isWithinInterval(opDate, currentMonthRange);
+    });
+    const opsLastMonth = combinedOperations.filter(op => {
+        const opDate = parseISO(op.date);
+        return isValid(opDate) && isWithinInterval(opDate, lastMonthRange);
+    });
 
     return {
       operationsTodayCount: opsToday.length,
+      totalSalesToday: opsToday.filter(op => op.type === 'Venta').reduce((sum, op) => sum + op.totalAmount, 0),
+      totalProfitToday: opsToday.reduce((sum, op) => sum + op.profit, 0),
       totalGeneratedCurrentMonth: opsCurrentMonth.reduce((sum, op) => sum + op.totalAmount, 0),
       profitCurrentMonth: opsCurrentMonth.reduce((sum, op) => sum + op.profit, 0),
       totalGeneratedLastMonth: opsLastMonth.reduce((sum, op) => sum + op.totalAmount, 0),
@@ -143,7 +155,7 @@ export default function FinancialReportPage() {
         description="Consolida ventas y servicios para un análisis financiero completo."
       />
 
-      <div className="mb-6 grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+      <div className="mb-6 grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">Ops. del Día</CardTitle>
@@ -152,6 +164,26 @@ export default function FinancialReportPage() {
           <CardContent>
             <div className="text-2xl font-bold font-headline">{summaryData.operationsTodayCount}</div>
              <p className="text-xs text-muted-foreground">Ventas y Servicios Hoy</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Ventas del Día</CardTitle>
+            <ShoppingCart className="h-5 w-5 text-purple-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold font-headline">{formatCurrency(summaryData.totalSalesToday)}</div>
+             <p className="text-xs text-muted-foreground">Total de ventas de mostrador hoy.</p>
+          </CardContent>
+        </Card>
+         <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Margen Ganancia (Día)</CardTitle>
+            <TrendingUp className="h-5 w-5 text-green-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold font-headline">{formatCurrency(summaryData.totalProfitToday)}</div>
+             <p className="text-xs text-muted-foreground">Ganancia total de operaciones hoy.</p>
           </CardContent>
         </Card>
         <Card>
@@ -321,3 +353,4 @@ export default function FinancialReportPage() {
     </>
   );
 }
+
