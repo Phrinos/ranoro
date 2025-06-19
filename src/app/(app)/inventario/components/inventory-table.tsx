@@ -26,7 +26,7 @@ export function InventoryTable({ items }: InventoryTableProps) {
   };
   
   if (!items.length) {
-    return <p className="text-muted-foreground text-center py-8">No hay artículos en el inventario.</p>;
+    return <p className="text-muted-foreground text-center py-8">No hay productos en el inventario.</p>;
   }
 
   return (
@@ -35,8 +35,8 @@ export function InventoryTable({ items }: InventoryTableProps) {
         <TableHeader>
           <TableRow>
             <TableHead>Código</TableHead>
-            <TableHead>Nombre</TableHead>
             <TableHead>Categoría</TableHead>
+            <TableHead>Nombre</TableHead>
             <TableHead className="text-right">Cantidad</TableHead>
             <TableHead className="text-right">Costo</TableHead>
             <TableHead className="text-right">Precio Venta</TableHead>
@@ -51,8 +51,8 @@ export function InventoryTable({ items }: InventoryTableProps) {
               className={`cursor-pointer hover:bg-muted/50 ${item.quantity <= item.lowStockThreshold ? "bg-orange-50 dark:bg-orange-900/30" : ""}`}
             >
               <TableCell className="font-medium">{item.sku}</TableCell>
+              <TableCell>{item.category}</TableCell>
               <TableCell>{item.name}</TableCell>
-              <TableCell>{item.category || 'N/A'}</TableCell>
               <TableCell className="text-right">{item.quantity}</TableCell>
               <TableCell className="text-right">${item.unitPrice.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
               <TableCell className="text-right">${item.sellingPrice.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>

@@ -55,7 +55,7 @@ export default function CategoriasInventarioPage() {
       counts[cat.id] = placeholderInventory.filter(item => item.category === cat.name).length;
     });
     return counts;
-  }, [categories]); // Removed placeholderInventory from deps as it's a mutable global for demo
+  }, [categories]);
 
   const filteredCategories = useMemo(() => {
     if (!searchTerm) return categories;
@@ -102,7 +102,6 @@ export default function CategoriasInventarioPage() {
     }
 
     if (editingCategory) {
-      // Edit existing category
       const updatedCategories = categories.map(cat =>
         cat.id === editingCategory.id ? { ...cat, name: categoryName } : cat
       );
@@ -115,7 +114,6 @@ export default function CategoriasInventarioPage() {
         description: `La categoría "${categoryName}" ha sido actualizada.`,
       });
     } else {
-      // Add new category
       const newCategory: InventoryCategory = {
         id: `CAT${String(categories.length + 1).padStart(3, '0')}${Date.now().toString().slice(-3)}`,
         name: categoryName,
@@ -151,7 +149,7 @@ export default function CategoriasInventarioPage() {
   return (
     <>
       <PageHeader
-        title="Categorías de Inventario"
+        title="Categorías de Productos"
         description="Administra las categorías para tus productos."
         actions={
           <div className="flex items-center gap-2 w-full sm:w-auto">
@@ -206,7 +204,6 @@ export default function CategoriasInventarioPage() {
                               <Trash2 className="h-4 w-4 text-destructive" />
                             </Button>
                           </AlertDialogTrigger>
-                          {/* Render content only if this is the category to delete */}
                           {categoryToDelete?.id === category.id && ( 
                             <AlertDialogContent>
                               <AlertDialogHeader>

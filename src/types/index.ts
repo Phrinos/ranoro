@@ -72,9 +72,9 @@ export interface InventoryItem {
   quantity: number;
   unitPrice: number; // Cost price for the business
   sellingPrice: number; // Price for customer
-  supplier?: string; // This remains a string, could be linked to Supplier.id later
+  supplier: string; 
   lowStockThreshold: number;
-  category: string; // Made mandatory
+  category: string;
 }
 
 export interface InventoryCategory {
@@ -124,4 +124,3 @@ export interface DashboardMetrics {
   dailyRevenue: number;
   lowStockAlerts: number;
 }
-

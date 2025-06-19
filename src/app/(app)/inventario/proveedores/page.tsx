@@ -85,7 +85,7 @@ export default function ProveedoresPage() {
   return (
     <>
       <PageHeader
-        title="Gestión de Proveedores"
+        title="Proveedores de Productos"
         description="Administra la información de tus proveedores y sus cuentas."
         actions={
           <div className="flex items-center gap-2 w-full sm:w-auto">
