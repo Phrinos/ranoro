@@ -276,7 +276,7 @@ export function ServiceForm({
         
         <Card>
             <CardHeader>
-                <CardTitle>Información del Vehículo</CardTitle>
+                <CardTitle>Información del Vehículo y Servicio</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
                 <div className="flex items-end gap-2">
@@ -330,131 +330,129 @@ export function ServiceForm({
                         </Button>
                     </div>
                 )}
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4">
+                    <FormField
+                    control={form.control}
+                    name="serviceDate"
+                    render={({ field }) => (
+                        <FormItem className="flex flex-col">
+                        <FormLabel>Fecha y Hora de Recepción</FormLabel>
+                        <Popover>
+                            <PopoverTrigger asChild disabled={isReadOnly}>
+                            <FormControl>
+                                <Button
+                                variant={"outline"}
+                                className={cn(
+                                    "w-full justify-start text-left font-normal",
+                                    !field.value && "text-muted-foreground"
+                                )}
+                                disabled={isReadOnly}
+                                >
+                                {field.value && isValid(field.value) ? (
+                                    format(field.value, "PPPp", { locale: es })
+                                ) : (
+                                    <span>Seleccione fecha y hora</span>
+                                )}
+                                <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                </Button>
+                            </FormControl>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0" align="start">
+                            <Calendar
+                                mode="single"
+                                selected={field.value}
+                                onSelect={(date) => {
+                                    const currentTime = field.value || setHours(setMinutes(new Date(), 30), 8);
+                                    const newDateTime = date ? 
+                                        setHours(setMinutes(startOfDay(date), currentTime.getMinutes()), currentTime.getHours()) 
+                                        : undefined;
+                                    field.onChange(newDateTime);
+                                }}
+                                disabled={(date) => date < new Date("1900-01-01") || isReadOnly }
+                                initialFocus
+                                locale={es}
+                            />
+                            <div className="p-2 border-t">
+                                <Select
+                                    value={field.value ? `${String(field.value.getHours()).padStart(2, '0')}:${String(field.value.getMinutes()).padStart(2, '0')}` : "08:30"}
+                                    onValueChange={(timeValue) => handleTimeChange(timeValue, "serviceDate")}
+                                    disabled={isReadOnly}
+                                >
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Seleccione hora" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {timeSlots.map(slot => (
+                                            <SelectItem key={slot.value} value={slot.value}>{slot.label}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            </PopoverContent>
+                        </Popover>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                    />
+                    <FormField
+                    control={form.control}
+                    name="mileage"
+                    render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Kilometraje (Opcional)</FormLabel>
+                        <FormControl>
+                        <Input type="number" placeholder="Ej: 55000" {...field} disabled={isReadOnly} value={field.value ?? ''} />
+                        </FormControl>
+                        <FormMessage />
+                    </FormItem>
+                    )}
+                    />
+                </div>
+
+                <FormField
+                    control={form.control}
+                    name="description"
+                    render={({ field }) => (
+                        <FormItem>
+                        <FormLabel>Descripción del Servicio</FormLabel>
+                        <FormControl>
+                            <Textarea placeholder="Ej: Cambio de aceite y filtros, revisión de frenos..." {...field} disabled={isReadOnly} />
+                        </FormControl>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                    />
+                <FormField
+                    control={form.control}
+                    name="totalServicePrice"
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel className="text-base font-semibold">Precio Total del Servicio (Cobro al Cliente)</FormLabel>
+                            <FormControl>
+                            <Input type="number" step="0.01" placeholder="Ej: 15000" {...field} disabled={isReadOnly} className="text-lg"/>
+                            </FormControl>
+                            <FormDescription>Este es el monto final que pagará el cliente por el servicio completo.</FormDescription>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                    />
+                
+                <FormField
+                    control={form.control}
+                    name="notes"
+                    render={({ field }) => (
+                        <FormItem>
+                        <FormLabel>Notas Adicionales (Opcional)</FormLabel>
+                        <FormControl>
+                            <Textarea placeholder="Notas internas o para el cliente..." {...field} disabled={isReadOnly} />
+                        </FormControl>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                    />
             </CardContent>
         </Card>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <FormField
-            control={form.control}
-            name="serviceDate"
-            render={({ field }) => (
-                <FormItem className="flex flex-col">
-                <FormLabel>Fecha y Hora de Recepción</FormLabel>
-                <Popover>
-                    <PopoverTrigger asChild disabled={isReadOnly}>
-                    <FormControl>
-                        <Button
-                        variant={"outline"}
-                        className={cn(
-                            "w-full justify-start text-left font-normal",
-                            !field.value && "text-muted-foreground"
-                        )}
-                        disabled={isReadOnly}
-                        >
-                        {field.value && isValid(field.value) ? (
-                            format(field.value, "PPPp", { locale: es })
-                        ) : (
-                            <span>Seleccione fecha y hora</span>
-                        )}
-                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                        </Button>
-                    </FormControl>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                        mode="single"
-                        selected={field.value}
-                        onSelect={(date) => {
-                            const currentTime = field.value || setHours(setMinutes(new Date(), 30), 8);
-                            const newDateTime = date ? 
-                                setHours(setMinutes(startOfDay(date), currentTime.getMinutes()), currentTime.getHours()) 
-                                : undefined;
-                            field.onChange(newDateTime);
-                        }}
-                        disabled={(date) => date < new Date("1900-01-01") || isReadOnly }
-                        initialFocus
-                        locale={es}
-                    />
-                    <div className="p-2 border-t">
-                        <Select
-                            value={field.value ? `${String(field.value.getHours()).padStart(2, '0')}:${String(field.value.getMinutes()).padStart(2, '0')}` : "08:30"}
-                            onValueChange={(timeValue) => handleTimeChange(timeValue, "serviceDate")}
-                            disabled={isReadOnly}
-                        >
-                            <SelectTrigger>
-                                <SelectValue placeholder="Seleccione hora" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {timeSlots.map(slot => (
-                                    <SelectItem key={slot.value} value={slot.value}>{slot.label}</SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                    </div>
-                    </PopoverContent>
-                </Popover>
-                <FormMessage />
-                </FormItem>
-            )}
-            />
-            <FormField
-            control={form.control}
-            name="mileage"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Kilometraje (Opcional)</FormLabel>
-                <FormControl>
-                  <Input type="number" placeholder="Ej: 55000" {...field} disabled={isReadOnly} value={field.value ?? ''} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
-
-
-        <FormField
-          control={form.control}
-          name="description"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Descripción del Servicio</FormLabel>
-              <FormControl>
-                <Textarea placeholder="Ej: Cambio de aceite y filtros, revisión de frenos..." {...field} disabled={isReadOnly} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-            control={form.control}
-            name="totalServicePrice"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel className="text-base font-semibold">Precio Total del Servicio (Cobro al Cliente)</FormLabel>
-                <FormControl>
-                  <Input type="number" step="0.01" placeholder="Ej: 15000" {...field} disabled={isReadOnly} className="text-lg"/>
-                </FormControl>
-                <FormDescription>Este es el monto final que pagará el cliente por el servicio completo.</FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        
-         <FormField
-          control={form.control}
-          name="notes"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Notas Adicionales (Opcional)</FormLabel>
-              <FormControl>
-                <Textarea placeholder="Notas internas o para el cliente..." {...field} disabled={isReadOnly} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <FormField
