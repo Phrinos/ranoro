@@ -9,7 +9,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuLabel, DropdownMenuRadio
 import { PlusCircle, Printer, ShoppingCartIcon, AlertTriangle, PackageCheck, DollarSign, Search, ListFilter } from "lucide-react";
 import { InventoryTable } from "./components/inventory-table";
 import { InventoryItemDialog } from "./components/inventory-item-dialog";
-import { placeholderInventory } from "@/lib/placeholder-data";
+import { placeholderInventory, placeholderCategories } from "@/lib/placeholder-data"; // Import placeholderCategories
 import type { InventoryItem } from "@/types";
 import { useState, useMemo } from "react";
 import type { InventoryItemFormValues } from "./components/inventory-item-form";
@@ -32,7 +32,7 @@ export default function InventarioPage() {
   const [newItemInitialData, setNewItemInitialData] = useState<Partial<InventoryItemFormValues> | null>(null);
 
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("all");
+  const [selectedCategoryFilter, setSelectedCategoryFilter] = useState("all"); // Renamed for clarity
   const [sortOption, setSortOption] = useState<InventorySortOption>("stock_status_name_asc");
 
   const handleSaveNewItem = async (data: InventoryItemFormValues) => {
@@ -43,6 +43,7 @@ export default function InventarioPage() {
       sellingPrice: Number(data.sellingPrice),
       quantity: Number(data.quantity),
       lowStockThreshold: Number(data.lowStockThreshold),
+      // category is already string from data
     };
     const updatedInventory = [...inventoryItems, newItem];
     setInventoryItems(updatedInventory);
@@ -83,7 +84,8 @@ export default function InventarioPage() {
         unitPrice: purchaseData.purchasePrice, 
         name: "", 
         sellingPrice: 0, 
-        lowStockThreshold: 5, 
+        lowStockThreshold: 5,
+        category: "", // Initialize category as empty, user will select in form
       });
       setIsNewItemDialogOpen(true);
       toast({
@@ -103,7 +105,7 @@ export default function InventarioPage() {
   
   const { totalInventoryCost, totalInventorySellingPrice, lowStockItemsCount } = useMemo(() => {
     let cost = 0;
-    let sellingPriceValue = 0; // Renamed to avoid conflict
+    let sellingPriceValue = 0; 
     let lowStock = 0;
 
     inventoryItems.forEach(item => {
@@ -116,7 +118,7 @@ export default function InventarioPage() {
     return { totalInventoryCost: cost, totalInventorySellingPrice: sellingPriceValue, lowStockItemsCount: lowStock };
   }, [inventoryItems]);
 
-  const uniqueCategories = useMemo(() => {
+  const uniqueCategoriesForFilter = useMemo(() => { // Renamed
     const categories = new Set(inventoryItems.map(item => item.category).filter(Boolean) as string[]);
     return ["all", ...Array.from(categories)];
   }, [inventoryItems]);
@@ -131,8 +133,8 @@ export default function InventarioPage() {
       );
     }
 
-    if (selectedCategory && selectedCategory !== "all") {
-      itemsToDisplay = itemsToDisplay.filter(item => item.category === selectedCategory);
+    if (selectedCategoryFilter && selectedCategoryFilter !== "all") { // Renamed
+      itemsToDisplay = itemsToDisplay.filter(item => item.category === selectedCategoryFilter);
     }
     
     return itemsToDisplay.sort((a, b) => {
@@ -145,8 +147,10 @@ export default function InventarioPage() {
         return a.name.localeCompare(b.name);
       }
 
+      // If not sorting by stock_status_name_asc, low stock items still come first within other sortings
       if (isALowStock && !isBLowStock) return -1;
       if (!isALowStock && isBLowStock) return 1;
+      
 
       switch (sortOption) {
         case 'name_asc': return a.name.localeCompare(b.name);
@@ -157,10 +161,10 @@ export default function InventarioPage() {
         case 'quantity_desc': return b.quantity - a.quantity;
         case 'price_asc': return a.sellingPrice - b.sellingPrice;
         case 'price_desc': return b.sellingPrice - a.sellingPrice;
-        default: return a.name.localeCompare(b.name);
+        default: return a.name.localeCompare(b.name); // Fallback, though covered by stock_status_name_asc
       }
     });
-  }, [inventoryItems, searchTerm, selectedCategory, sortOption]);
+  }, [inventoryItems, searchTerm, selectedCategoryFilter, sortOption]);
 
   return (
     <>
@@ -263,12 +267,12 @@ export default function InventarioPage() {
             </DropdownMenuRadioGroup>
           </DropdownMenuContent>
         </DropdownMenu>
-        <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+        <Select value={selectedCategoryFilter} onValueChange={setSelectedCategoryFilter}> {/* Renamed */}
           <SelectTrigger className="w-full sm:w-auto min-w-[200px] flex-1 sm:flex-initial">
             <SelectValue placeholder="Filtrar por categoría" />
           </SelectTrigger>
           <SelectContent>
-            {uniqueCategories.map(category => (
+            {uniqueCategoriesForFilter.map(category => ( // Renamed
               <SelectItem key={category} value={category}>
                 {category === "all" ? "Todas las categorías" : category}
               </SelectItem>
@@ -284,6 +288,7 @@ export default function InventarioPage() {
         onOpenChange={setIsNewItemDialogOpen}
         item={newItemInitialData as InventoryItem | null} 
         onSave={handleSaveNewItem}
+        // categories prop removed here, as InventoryItemDialog now imports placeholderCategories directly
       />
 
       <PurchaseEntryDialog
@@ -294,5 +299,3 @@ export default function InventarioPage() {
     </>
   );
 }
-
-    

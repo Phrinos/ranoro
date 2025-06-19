@@ -11,8 +11,9 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { InventoryItemForm, type InventoryItemFormValues } from "./inventory-item-form";
-import type { InventoryItem } from "@/types";
+import type { InventoryItem, InventoryCategory } from "@/types";
 import { useToast } from "@/hooks/use-toast";
+import { placeholderCategories } from '@/lib/placeholder-data';
 
 interface InventoryItemDialogProps {
   trigger?: React.ReactNode;
@@ -20,6 +21,7 @@ interface InventoryItemDialogProps {
   onSave?: (data: InventoryItemFormValues) => Promise<void>;
   open?: boolean;
   onOpenChange?: (isOpen: boolean) => void;
+  // Removed categories prop, will use imported placeholderCategories
 }
 
 export function InventoryItemDialog({ 
@@ -36,14 +38,13 @@ export function InventoryItemDialog({
   const open = isControlled ? controlledOpen : uncontrolledOpen;
   const onOpenChange = isControlled ? setControlledOpen : setUncontrolledOpen;
 
-  const isEditing = item && 'id' in item && item.id; // Check if it's a full InventoryItem with an id for editing
+  const isEditing = item && 'id' in item && item.id; 
 
   const handleSubmit = async (values: InventoryItemFormValues) => {
     try {
       if (onSave) {
         await onSave(values);
       }
-      // Toast message handled by caller for create/update differentiation
       onOpenChange(false);
     } catch (error) {
       console.error("Error saving inventory item:", error);
@@ -55,11 +56,7 @@ export function InventoryItemDialog({
     }
   };
   
-  // When item is partial (from purchase entry for a new item), pass it as initialData.
-  // If item is a full InventoryItem, it's for editing.
-  // If item is null/undefined, it's for creating from scratch via "Nuevo Artículo" button.
   const initialFormData = item ? item : null;
-
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -73,9 +70,10 @@ export function InventoryItemDialog({
             </DialogDescription>
           </DialogHeader>
           <InventoryItemForm
-            initialData={initialFormData as InventoryItem | null} // Cast to what InventoryItemForm expects
+            initialData={initialFormData as InventoryItem | null} 
             onSubmit={handleSubmit}
             onClose={() => onOpenChange(false)}
+            categories={placeholderCategories} // Pass imported categories
           />
         </DialogContent>
       )}

@@ -74,7 +74,7 @@ export interface InventoryItem {
   sellingPrice: number; // Price for customer
   supplier?: string;
   lowStockThreshold: number;
-  category?: string;
+  category: string; // Made mandatory
 }
 
 export interface InventoryCategory {

@@ -15,7 +15,8 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import type { InventoryItem } from "@/types";
+import type { InventoryItem, InventoryCategory } from "@/types";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const inventoryItemFormSchema = z.object({
   name: z.string().min(3, "El nombre del artículo debe tener al menos 3 caracteres."),
@@ -25,7 +26,7 @@ const inventoryItemFormSchema = z.object({
   unitPrice: z.coerce.number().min(0, "El costo unitario no puede ser negativo."), // Cost Price
   sellingPrice: z.coerce.number().min(0, "El precio de venta no puede ser negativo."), // Selling Price
   lowStockThreshold: z.coerce.number().int().min(0, "El umbral de stock bajo no puede ser negativo."),
-  category: z.string().optional(),
+  category: z.string().min(1, "La categoría es obligatoria."),
   supplier: z.string().optional(),
 });
 
@@ -35,9 +36,10 @@ interface InventoryItemFormProps {
   initialData?: InventoryItem | null;
   onSubmit: (values: InventoryItemFormValues) => Promise<void>;
   onClose: () => void;
+  categories: InventoryCategory[];
 }
 
-export function InventoryItemForm({ initialData, onSubmit, onClose }: InventoryItemFormProps) {
+export function InventoryItemForm({ initialData, onSubmit, onClose, categories }: InventoryItemFormProps) {
   const form = useForm<InventoryItemFormValues>({
     resolver: zodResolver(inventoryItemFormSchema),
     defaultValues: initialData || {
@@ -48,7 +50,7 @@ export function InventoryItemForm({ initialData, onSubmit, onClose }: InventoryI
       unitPrice: 0, // Cost
       sellingPrice: 0, // Selling
       lowStockThreshold: 5,
-      category: "",
+      category: "", // Default to empty, Select will prompt
       supplier: "",
     },
   });
@@ -163,10 +165,21 @@ export function InventoryItemForm({ initialData, onSubmit, onClose }: InventoryI
             name="category"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Categoría (Opcional)</FormLabel>
-                <FormControl>
-                  <Input placeholder="Ej: Filtros, Frenos" {...field} />
-                </FormControl>
+                <FormLabel>Categoría</FormLabel>
+                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Seleccione una categoría" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {categories.map((category) => (
+                      <SelectItem key={category.id} value={category.name}>
+                        {category.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
                 <FormMessage />
               </FormItem>
             )}
