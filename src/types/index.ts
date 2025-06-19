@@ -1,4 +1,5 @@
 
+
 export interface Vehicle {
   id: number; 
   make: string;
@@ -76,6 +77,11 @@ export interface InventoryItem {
   category?: string;
 }
 
+export interface InventoryCategory {
+  id: string;
+  name: string;
+}
+
 export interface PurchaseEntryFormValues {
   sku: string;
   quantity: number;
@@ -107,3 +113,4 @@ export interface DashboardMetrics {
   dailyRevenue: number;
   lowStockAlerts: number;
 }
+
