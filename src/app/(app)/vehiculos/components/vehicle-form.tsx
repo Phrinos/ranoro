@@ -1,3 +1,4 @@
+
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -13,6 +14,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import type { Vehicle } from "@/types";
 
 const vehicleFormSchema = z.object({
@@ -21,9 +23,11 @@ const vehicleFormSchema = z.object({
   year: z.coerce.number().min(1900, "El año debe ser posterior a 1900.").max(new Date().getFullYear() + 1, `El año no puede ser mayor a ${new Date().getFullYear() + 1}.`),
   vin: z.string().length(17, "El VIN debe tener 17 caracteres.").optional().or(z.literal('')),
   licensePlate: z.string().min(3, "La placa debe tener al menos 3 caracteres."),
+  color: z.string().optional(), // Added
   ownerName: z.string().min(2, "El nombre del propietario es obligatorio."),
-  ownerPhone: z.string().min(7, "Ingrese un número de teléfono válido."), // Changed from ownerContact
-  ownerEmail: z.string().email("Ingrese un correo electrónico válido.").optional().or(z.literal('')), // Added
+  ownerPhone: z.string().min(7, "Ingrese un número de teléfono válido."),
+  ownerEmail: z.string().email("Ingrese un correo electrónico válido.").optional().or(z.literal('')),
+  notes: z.string().optional(), // Added
 });
 
 export type VehicleFormValues = z.infer<typeof vehicleFormSchema>; // Export type
@@ -37,11 +41,13 @@ interface VehicleFormProps {
 export function VehicleForm({ initialData, onSubmit, onClose }: VehicleFormProps) {
   const form = useForm<VehicleFormValues>({
     resolver: zodResolver(vehicleFormSchema),
-    defaultValues: initialData ? 
+    defaultValues: initialData ?
     {
       ...initialData,
-      ownerPhone: initialData.ownerPhone || "", // ensure ownerPhone exists
-      ownerEmail: initialData.ownerEmail || "", // ensure ownerEmail exists
+      ownerPhone: initialData.ownerPhone || "",
+      ownerEmail: initialData.ownerEmail || "",
+      color: initialData.color || "", // Added
+      notes: initialData.notes || "", // Added
     }
     : {
       make: "",
@@ -49,9 +55,11 @@ export function VehicleForm({ initialData, onSubmit, onClose }: VehicleFormProps
       year: new Date().getFullYear(),
       vin: "",
       licensePlate: "",
+      color: "", // Added
       ownerName: "",
-      ownerPhone: "", // Changed
-      ownerEmail: "", // Added
+      ownerPhone: "",
+      ownerEmail: "",
+      notes: "", // Added
     },
   });
 
@@ -90,7 +98,7 @@ export function VehicleForm({ initialData, onSubmit, onClose }: VehicleFormProps
             )}
           />
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <FormField
             control={form.control}
             name="year"
@@ -112,6 +120,19 @@ export function VehicleForm({ initialData, onSubmit, onClose }: VehicleFormProps
                 <FormLabel>Placa</FormLabel>
                 <FormControl>
                   <Input placeholder="Ej: PQR-123" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="color"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Color (Opcional)</FormLabel>
+                <FormControl>
+                  <Input placeholder="Ej: Rojo" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -172,6 +193,19 @@ export function VehicleForm({ initialData, onSubmit, onClose }: VehicleFormProps
             )}
           />
         </div>
+         <FormField
+            control={form.control}
+            name="notes"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Notas (Opcional)</FormLabel>
+                <FormControl>
+                  <Textarea placeholder="Notas adicionales sobre el vehículo..." {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
         <div className="flex justify-end gap-2 pt-4">
           <Button type="button" variant="outline" onClick={onClose}>
             Cancelar

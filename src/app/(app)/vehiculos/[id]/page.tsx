@@ -31,8 +31,8 @@ export default function VehicleDetailPage() {
   const [techniciansMap, setTechniciansMap] = useState<Record<string, string>>({});
   
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [isViewServiceDialogOpen, setIsViewServiceDialogOpen] = useState(false); // State for viewing service
-  const [selectedService, setSelectedService] = useState<ServiceRecord | null>(null); // State for service to view
+  const [isViewServiceDialogOpen, setIsViewServiceDialogOpen] = useState(false);
+  const [selectedService, setSelectedService] = useState<ServiceRecord | null>(null);
 
 
   useEffect(() => {
@@ -57,13 +57,14 @@ export default function VehicleDetailPage() {
 
     const updatedVehicleData: Partial<Vehicle> = {
         ...formData,
-        year: Number(formData.year),
+        year: Number(formData.year), // Ensure year is number
     };
     
     // Simulate updating the vehicle in our placeholder data
     const updatedVehicle = { ...vehicle, ...updatedVehicleData } as Vehicle;
     setVehicle(updatedVehicle);
 
+    // Also update in the main placeholder array (for demo purposes)
     const pIndex = placeholderVehicles.findIndex(v => v.id === updatedVehicle.id);
     if (pIndex !== -1) {
       placeholderVehicles[pIndex] = updatedVehicle;
@@ -137,6 +138,13 @@ export default function VehicleDetailPage() {
                 <p><strong>Modelo:</strong> {vehicle.model}</p>
                 <p><strong>Año:</strong> {vehicle.year}</p>
                 <p><strong>VIN:</strong> {vehicle.vin || 'N/A'}</p>
+                <p><strong>Color:</strong> {vehicle.color || 'N/A'}</p>
+                {vehicle.notes && (
+                  <div className="pt-2">
+                    <p className="font-semibold">Notas del Vehículo:</p>
+                    <p className="text-sm text-muted-foreground whitespace-pre-wrap">{vehicle.notes}</p>
+                  </div>
+                )}
               </CardContent>
             </Card>
             <Card>
@@ -218,7 +226,7 @@ export default function VehicleDetailPage() {
           open={isViewServiceDialogOpen}
           onOpenChange={setIsViewServiceDialogOpen}
           service={selectedService}
-          vehicles={placeholderVehicles} // Provide necessary data for the dialog
+          vehicles={placeholderVehicles} 
           technicians={placeholderTechnicians}
           inventoryItems={placeholderInventory}
           isReadOnly={true}

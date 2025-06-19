@@ -1,3 +1,4 @@
+
 export interface Vehicle {
   id: number; // Changed to number
   make: string;
@@ -8,6 +9,8 @@ export interface Vehicle {
   ownerPhone: string; // Changed from ownerContact
   ownerEmail?: string; // Added
   licensePlate: string;
+  color?: string; // Added
+  notes?: string; // Added
   serviceHistory?: Pick<ServiceRecord, 'id' | 'serviceDate' | 'description' | 'totalCost' | 'status' | 'mileage'>[];
 }
 
