@@ -17,11 +17,10 @@ export interface Vehicle {
 }
 
 export interface ServiceSupply {
-  supplyId: string; // Renamed from partId
-  supplyName?: string; // Renamed from partName
+  supplyId: string; 
+  supplyName?: string; 
   quantity: number;
-  unitPrice?: number; // Cost price from inventory item for this supply
-  // sellingPrice is removed as totalCost of service now dictates final price
+  unitPrice?: number; 
 }
 
 export interface ServiceRecord {
@@ -32,14 +31,14 @@ export interface ServiceRecord {
   description: string;
   technicianId: string;
   technicianName?: string;
-  suppliesUsed: ServiceSupply[]; // Renamed from partsUsed
-  // laborHours, laborRate, laborCost removed
-  totalCost: number; // This will now be the "Precio Total del Servicio" (total charge to customer)
-  totalSuppliesCost?: number; // Calculated total cost of supplies to the workshop
-  serviceProfit?: number; // Calculated profit for the service (totalCost - totalSuppliesCost)
-  status: 'Pendiente' | 'En Progreso' | 'Completado' | 'Cancelado';
+  suppliesUsed: ServiceSupply[]; 
+  totalCost: number; 
+  totalSuppliesCost?: number; 
+  serviceProfit?: number; 
+  status: 'Agendado' | 'Pendiente' | 'En Progreso' | 'Completado' | 'Cancelado';
   notes?: string;
   mileage?: number;
+  deliveryDateTime?: string; 
 }
 
 export interface Technician {
@@ -70,8 +69,8 @@ export interface InventoryItem {
   sku: string; 
   description?: string;
   quantity: number;
-  unitPrice: number; // Cost price for the business
-  sellingPrice: number; // Price for customer IF SOLD INDIVIDUALLY (less relevant for service supplies now)
+  unitPrice: number; 
+  sellingPrice: number; 
   supplier: string; 
   lowStockThreshold: number;
   category: string;
@@ -120,7 +119,7 @@ export interface SaleReceipt {
 
 export interface DashboardMetrics {
   activeServices: number;
-  technicianEarnings: number; // This metric might need re-evaluation based on new costing
+  technicianEarnings: number; 
   dailyRevenue: number;
   lowStockAlerts: number;
 }

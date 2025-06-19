@@ -12,14 +12,13 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { MoreHorizontal, Edit, Trash2, Eye } from "lucide-react";
+import { MoreHorizontal, Edit, Trash2, Eye, Clock } from "lucide-react";
 import type { ServiceRecord, Vehicle, Technician, InventoryItem } from "@/types";
 import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { ServiceDialog } from './service-dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-// Removed globalPlaceholderServices import as services are passed via props
 
 
 interface ServicesTableProps {
@@ -29,7 +28,8 @@ interface ServicesTableProps {
   inventoryItems: InventoryItem[];
   onServiceUpdated: (updatedService: ServiceRecord) => void;
   onServiceDeleted: (serviceId: string) => void;
-  onVehicleCreated?: (newVehicle: Vehicle) => void; // Make optional if not all tables need it
+  onVehicleCreated?: (newVehicle: Vehicle) => void; 
+  showDateColumn?: boolean; 
 }
 
 export function ServicesTable({ 
@@ -39,7 +39,8 @@ export function ServicesTable({
   inventoryItems, 
   onServiceUpdated, 
   onServiceDeleted,
-  onVehicleCreated 
+  onVehicleCreated,
+  showDateColumn = true, 
 }: ServicesTableProps) {
   const { toast } = useToast();
   const [editingService, setEditingService] = useState<ServiceRecord | null>(null);
@@ -55,6 +56,8 @@ export function ServicesTable({
         return "outline";
       case "Cancelado":
         return "destructive";
+      case "Agendado":
+        return "default"; // Or a specific "info" or "primary" variant if you add one to Badge
       default:
         return "default";
     }
@@ -66,14 +69,12 @@ export function ServicesTable({
   };
 
   const handleDialogSave = async (formDataFromDialog: any) => {
-    // This function is called by ServiceDialog's onSave
-    // It should then call the prop function to update state in the parent (ServiciosPage)
-    // Ensure all necessary fields are correctly mapped from formDataFromDialog to ServiceRecord
     const updatedServiceRecord: ServiceRecord = {
-      ...(editingService as ServiceRecord), // Base with existing data like ID
-      ...formDataFromDialog, // Form data from dialog
-      id: editingService!.id, // Ensure ID from the service being edited
+      ...(editingService as ServiceRecord), 
+      ...formDataFromDialog, 
+      id: editingService!.id, 
       serviceDate: format(new Date(formDataFromDialog.serviceDate), 'yyyy-MM-dd'),
+      deliveryDateTime: formDataFromDialog.deliveryDateTime ? new Date(formDataFromDialog.deliveryDateTime).toISOString() : undefined,
       totalCost: Number(formDataFromDialog.totalServicePrice), 
       totalSuppliesCost: Number(formDataFromDialog.totalSuppliesCost),
       serviceProfit: Number(formDataFromDialog.serviceProfit),
@@ -103,6 +104,7 @@ export function ServicesTable({
       vehicleIdentifier: vehicle ? `${vehicle.make} ${vehicle.model} (${vehicle.licensePlate})` : String(service.vehicleId),
       technicianName: technician ? technician.name : service.technicianId,
       formattedDate: format(parseISO(service.serviceDate), "dd MMM yyyy", { locale: es }),
+      formattedDeliveryDateTime: service.deliveryDateTime ? format(parseISO(service.deliveryDateTime), "dd MMM yyyy, HH:mm", { locale: es }) : 'N/A',
       totalCostFormatted: `$${service.totalCost.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
       serviceProfitFormatted: service.serviceProfit !== undefined ? `$${service.serviceProfit.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : 'N/A',
       mileageFormatted: service.mileage ? `${service.mileage.toLocaleString('es-ES')} km` : 'N/A',
@@ -122,13 +124,14 @@ export function ServicesTable({
             <TableRow>
               <TableHead>ID Servicio</TableHead>
               <TableHead>Vehículo</TableHead>
-              <TableHead>Fecha</TableHead>
+              {showDateColumn && <TableHead>Fecha Servicio</TableHead>}
               <TableHead>Kilometraje</TableHead> 
               <TableHead>Técnico</TableHead>
               <TableHead>Descripción</TableHead>
               <TableHead className="text-right">Precio Total</TableHead>
               <TableHead className="text-right">Ganancia</TableHead>
               <TableHead>Estado</TableHead>
+              <TableHead>Entrega</TableHead>
               <TableHead className="text-right">Acciones</TableHead>
             </TableRow>
           </TableHeader>
@@ -137,7 +140,7 @@ export function ServicesTable({
               <TableRow key={service.id}>
                 <TableCell className="font-medium">{service.id}</TableCell>
                 <TableCell>{service.vehicleIdentifier}</TableCell>
-                <TableCell>{service.formattedDate}</TableCell>
+                {showDateColumn && <TableCell>{service.formattedDate}</TableCell>}
                 <TableCell>{service.mileageFormatted}</TableCell> 
                 <TableCell>{service.technicianName}</TableCell>
                 <TableCell className="max-w-xs truncate">{service.description}</TableCell>
@@ -145,6 +148,14 @@ export function ServicesTable({
                 <TableCell className="text-right">{service.serviceProfitFormatted}</TableCell>
                 <TableCell>
                   <Badge variant={getStatusVariant(service.status)}>{service.status}</Badge>
+                </TableCell>
+                <TableCell>
+                  {service.status === 'Completado' && service.deliveryDateTime ? (
+                     <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                        <Clock className="h-3 w-3"/> 
+                        {service.formattedDeliveryDateTime}
+                     </div>
+                  ) : 'N/A'}
                 </TableCell>
                 <TableCell className="text-right">
                   <Button variant="ghost" size="icon" aria-label="Editar Servicio" onClick={() => handleOpenEditDialog(services.find(s => s.id === service.id)!)}>
@@ -182,11 +193,11 @@ export function ServicesTable({
             open={isEditDialogOpen}
             onOpenChange={setIsEditDialogOpen}
             service={editingService} 
-            vehicles={vehicles} // Pass current list of vehicles
+            vehicles={vehicles} 
             technicians={technicians}
             inventoryItems={inventoryItems}
             onSave={handleDialogSave} 
-            onVehicleCreated={onVehicleCreated} // Pass down if needed
+            onVehicleCreated={onVehicleCreated} 
         />
       )}
     </>
