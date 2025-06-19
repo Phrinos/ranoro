@@ -1,3 +1,4 @@
+
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -32,7 +33,7 @@ const partSchema = z.object({
 });
 
 const serviceFormSchema = z.object({
-  vehicleId: z.string().min(1, "Seleccione un vehículo"),
+  vehicleId: z.string().min(1, "Seleccione un vehículo"), // Kept as string for form handling
   serviceDate: z.date({ required_error: "La fecha de servicio es obligatoria." }),
   description: z.string().min(5, "La descripción debe tener al menos 5 caracteres."),
   technicianId: z.string().min(1, "Seleccione un técnico"),
@@ -50,7 +51,7 @@ interface ServiceFormProps {
   vehicles: Vehicle[];
   technicians: Technician[];
   inventoryItems: InventoryItem[];
-  onSubmit: (values: ServiceFormValues) => Promise<void>;
+  onSubmit: (values: Omit<ServiceFormValues, 'vehicleId'> & { vehicleId: number }) => Promise<void>; // onSubmit expects numeric vehicleId
   onClose: () => void;
 }
 
@@ -60,6 +61,7 @@ export function ServiceForm({ initialData, vehicles, technicians, inventoryItems
     defaultValues: initialData
       ? {
           ...initialData,
+          vehicleId: String(initialData.vehicleId), // Convert number to string for form
           serviceDate: new Date(initialData.serviceDate),
           partsUsed: initialData.partsUsed.map(p => ({...p, partName: inventoryItems.find(i => i.id === p.partId)?.name || '', unitPrice: inventoryItems.find(i => i.id === p.partId)?.unitPrice || 0 })) || [],
         }
@@ -82,7 +84,12 @@ export function ServiceForm({ initialData, vehicles, technicians, inventoryItems
   });
 
   const handleFormSubmit = async (values: ServiceFormValues) => {
-    await onSubmit(values);
+    // Convert vehicleId back to number before submitting
+    const submissionData = {
+      ...values,
+      vehicleId: parseInt(values.vehicleId, 10),
+    };
+    await onSubmit(submissionData);
   };
 
   return (
@@ -103,7 +110,7 @@ export function ServiceForm({ initialData, vehicles, technicians, inventoryItems
                   </FormControl>
                   <SelectContent>
                     {vehicles.map((vehicle) => (
-                      <SelectItem key={vehicle.id} value={vehicle.id}>
+                      <SelectItem key={vehicle.id} value={String(vehicle.id)}> {/* Value must be string for SelectItem */}
                         {vehicle.make} {vehicle.model} ({vehicle.licensePlate})
                       </SelectItem>
                     ))}
@@ -184,7 +191,7 @@ export function ServiceForm({ initialData, vehicles, technicians, inventoryItems
                   </FormControl>
                   <SelectContent>
                     {technicians.map((technician) => (
-                      <SelectItem key={technician.id} value={technician.id}>
+                      <SelectItem key={technician.id} value={technician.id}> {/* Technician ID is already string */}
                         {technician.name}
                       </SelectItem>
                     ))}
@@ -245,7 +252,7 @@ export function ServiceForm({ initialData, vehicles, technicians, inventoryItems
                       </FormControl>
                       <SelectContent>
                         {inventoryItems.map((part) => (
-                          <SelectItem key={part.id} value={part.id} disabled={part.quantity === 0}>
+                          <SelectItem key={part.id} value={part.id} disabled={part.quantity === 0}> {/* Part ID is already string */}
                             {part.name} (Stock: {part.quantity}) - ${part.unitPrice}
                           </SelectItem>
                         ))}
@@ -335,3 +342,5 @@ export function ServiceForm({ initialData, vehicles, technicians, inventoryItems
     </Form>
   );
 }
+
+    
