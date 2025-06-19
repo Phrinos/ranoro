@@ -26,13 +26,28 @@ export function AppSidebar() {
   const [openCollapsibles, setOpenCollapsibles] = React.useState<Record<string, boolean>>({});
 
   React.useEffect(() => {
-    const initialOpenState: Record<string, boolean> = {};
+    const calculatedOpenStates: Record<string, boolean> = {};
     navStructure.forEach(group => {
       if (group.isCollapsible) {
-        initialOpenState[group.label] = !!group.defaultOpen || !!group.isActive;
+        calculatedOpenStates[group.label] = !!group.defaultOpen || !!group.isActive;
       }
     });
-    setOpenCollapsibles(initialOpenState);
+
+    setOpenCollapsibles(currentOpenStates => {
+      const allKeys = new Set([...Object.keys(currentOpenStates), ...Object.keys(calculatedOpenStates)]);
+      let hasChanged = false;
+      for (const key of allKeys) {
+          if (currentOpenStates[key] !== calculatedOpenStates[key]) {
+              hasChanged = true;
+              break;
+          }
+      }
+
+      if (hasChanged) {
+        return calculatedOpenStates;
+      }
+      return currentOpenStates;
+    });
   }, [navStructure]);
 
   const toggleCollapsible = (label: string) => {
