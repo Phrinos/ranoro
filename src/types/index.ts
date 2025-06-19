@@ -106,6 +106,8 @@ export interface SaleItem {
   totalPrice: number;
 }
 
+export type PaymentMethod = 'Efectivo' | 'Tarjeta' | 'Transferencia' | 'Efectivo+Transferencia' | 'Tarjeta+Transferencia';
+
 export interface SaleReceipt {
   id: string;
   saleDate: string; 
@@ -113,8 +115,10 @@ export interface SaleReceipt {
   subTotal: number;
   tax?: number;
   totalAmount: number;
-  paymentMethod?: 'Efectivo' | 'Tarjeta' | 'Transferencia';
+  paymentMethod?: PaymentMethod;
   customerName?: string;
+  cardFolio?: string;
+  transferFolio?: string;
 }
 
 export interface DashboardMetrics {
@@ -122,5 +126,15 @@ export interface DashboardMetrics {
   technicianEarnings: number; 
   dailyRevenue: number;
   lowStockAlerts: number;
+}
+
+export interface FinancialOperation {
+  id: string;
+  date: string;
+  type: 'Venta' | 'Servicio';
+  description: string; 
+  totalAmount: number;
+  profit: number;
+  originalObject: SaleReceipt | ServiceRecord; 
 }
 

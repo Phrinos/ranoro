@@ -18,12 +18,12 @@ import {
   Archive,
   Wrench,
   Package,
-  Filter,
   Settings,
   Building, 
   CalendarClock,
   DollarSign,
   Receipt,
+  LineChart, 
 } from 'lucide-react';
 
 export interface NavigationEntry {
@@ -62,7 +62,7 @@ const BASE_NAV_STRUCTURE: ReadonlyArray<Omit<NavigationEntry, 'isActive'>> = [
 
   // Finanzas Group
   {
-    label: 'Registrar Venta',
+    label: 'Nueva Venta',
     path: '/pos/nuevo',
     icon: Receipt,
     groupTag: "Finanzas"
@@ -71,6 +71,12 @@ const BASE_NAV_STRUCTURE: ReadonlyArray<Omit<NavigationEntry, 'isActive'>> = [
     label: 'Registro de Ventas',
     path: '/pos',
     icon: DollarSign,
+    groupTag: "Finanzas"
+  },
+  {
+    label: 'Reporte Financiero',
+    path: '/finanzas/reporte',
+    icon: LineChart,
     groupTag: "Finanzas"
   },
 
@@ -89,9 +95,7 @@ const useNavigation = (): NavigationEntry[] => {
   return BASE_NAV_STRUCTURE.map(entry => {
     let isActive = pathname === entry.path;
     
-    // More specific path matching for parent items
     if (!isActive && entry.path && entry.path !== '/' && entry.path.length > 1 && pathname.startsWith(entry.path + '/')) {
-        // Check if there's a more specific active entry
         const isMoreSpecificActiveEntry = BASE_NAV_STRUCTURE.some(
           otherEntry => otherEntry.path.startsWith(pathname) && otherEntry.path.length > entry.path.length && otherEntry.path !== entry.path
         );
@@ -100,22 +104,24 @@ const useNavigation = (): NavigationEntry[] => {
         }
     }
     
-    // Special handling for grouped items like /servicios, /inventario, /pos
     if (entry.path === '/servicios' && 
         (pathname.startsWith('/servicios/nuevo') || 
          pathname.startsWith('/servicios/historial') || 
          pathname.startsWith('/servicios/agenda'))
        ) {
-      isActive = true; // Keep 'Lista de Servicios' active if any sub-page is active
+      isActive = true; 
     }
     if (entry.path === '/inventario' && 
         (pathname.startsWith('/inventario/categorias') || 
          pathname.startsWith('/inventario/proveedores') ||
-         pathname.startsWith('/inventario/')) // For item detail
-       ) {
+         pathname.match(/^\/inventario\/P[0-9]+$/) 
+       )) {
       isActive = true;
     }
      if (entry.path === '/pos' && pathname.startsWith('/pos/nuevo')) {
+      isActive = true;
+    }
+     if (entry.path === '/finanzas/reporte' && pathname === '/finanzas/reporte') {
       isActive = true;
     }
 
