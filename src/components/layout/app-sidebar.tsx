@@ -3,7 +3,6 @@
 
 import Link from "next/link";
 import React from "react";
-// Collapsible and ChevronDown are no longer needed
 import {
   Sidebar,
   SidebarContent,
@@ -19,21 +18,20 @@ import {
 import useNavigation, { type NavigationEntry } from "@/hooks/use-navigation";
 import { Button } from "@/components/ui/button";
 import { UserCircle } from "lucide-react";
-// cn is still useful for other classes
-// import { cn } from "@/lib/utils"; 
 
 export function AppSidebar() {
-  const navItems = useNavigation(); // This now returns a flat list of NavigationEntry
+  const navItems = useNavigation();
 
-  // Group entries by their groupTag for visual separation
-  const groupedByTag = navItems.reduce((acc, item) => {
-    const tag = item.groupTag; // groupTag is now mandatory for grouping
-    if (!acc[tag]) {
-      acc[tag] = [];
-    }
-    acc[tag].push(item);
-    return acc;
-  }, {} as Record<string, NavigationEntry[]>);
+  const groupedByTag = React.useMemo(() => {
+    return navItems.reduce((acc, item) => {
+      const tag = item.groupTag;
+      if (!acc[tag]) {
+        acc[tag] = [];
+      }
+      acc[tag].push(item);
+      return acc;
+    }, {} as Record<string, NavigationEntry[]>);
+  }, [navItems]);
 
 
   return (
@@ -52,11 +50,12 @@ export function AppSidebar() {
             <SidebarGroupContent>
               <SidebarMenu>
                 {entriesInGroup.map((entry) => (
-                  <SidebarMenuItem key={entry.path}> {/* Use path as key for unique items */}
+                  <SidebarMenuItem key={entry.path}>
                     <SidebarMenuButton
                       asChild
                       isActive={entry.isActive}
-                      tooltip={{children: entry.label, className: "group-data-[collapsible=icon]:block hidden"}}
+                      tooltipLabel={entry.label}
+                      tooltipClassName="group-data-[collapsible=icon]:block hidden"
                     >
                       <Link href={entry.path}>
                         <entry.icon />
