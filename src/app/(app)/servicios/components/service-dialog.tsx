@@ -13,7 +13,6 @@ import {
 import { ServiceForm } from "./service-form";
 import type { ServiceRecord, Vehicle, Technician, InventoryItem } from "@/types";
 import { useToast } from "@/hooks/use-toast"; 
-// Removed direct placeholder imports from here, as they should be passed by the parent page
 
 
 interface ServiceDialogProps {
@@ -26,7 +25,7 @@ interface ServiceDialogProps {
   isReadOnly?: boolean; 
   open?: boolean; 
   onOpenChange?: (isOpen: boolean) => void; 
-  onVehicleCreated?: (newVehicle: Vehicle) => void; // Callback for when a new vehicle is created via the form
+  onVehicleCreated?: (newVehicle: Vehicle) => void; 
 }
 
 export function ServiceDialog({ 
@@ -39,7 +38,7 @@ export function ServiceDialog({
   isReadOnly = false,
   open: controlledOpen,
   onOpenChange: setControlledOpen,
-  onVehicleCreated // Receive the callback
+  onVehicleCreated 
 }: ServiceDialogProps) {
   const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
   const { toast } = useToast();
@@ -87,10 +86,11 @@ export function ServiceDialog({
             onSubmit={handleSubmit}
             onClose={() => { if (onOpenChange) onOpenChange(false); else setUncontrolledOpen(false); }}
             isReadOnly={isReadOnly}
-            onVehicleCreated={onVehicleCreated} // Pass the callback to ServiceForm
+            onVehicleCreated={onVehicleCreated} 
           />
         </DialogContent>
       )}
     </Dialog>
   );
 }
+

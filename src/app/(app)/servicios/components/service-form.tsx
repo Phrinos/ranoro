@@ -22,7 +22,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent, CardHeader, CardTitle} from "@/components/ui/card";
 import { CalendarIcon, PlusCircle, Search, Trash2, AlertCircle, Car as CarIcon, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { format, parseISO } from "date-fns";
+import { format, parseISO, setHours, setMinutes, isValid, startOfDay } from "date-fns";
 import { es } from 'date-fns/locale';
 import type { ServiceRecord, Vehicle, Technician, InventoryItem, ServiceSupply } from "@/types";
 import React, { useEffect, useState, useMemo } from "react";
@@ -42,7 +42,7 @@ const supplySchema = z.object({
 const serviceFormSchema = z.object({
   vehicleId: z.number({invalid_type_error: "Debe seleccionar o registrar un vehículo."}).positive("Debe seleccionar o registrar un vehículo.").optional(),
   vehicleLicensePlateSearch: z.string().optional(), 
-  serviceDate: z.date({ required_error: "La fecha de servicio es obligatoria." }),
+  serviceDate: z.date({ required_error: "La fecha y hora de servicio son obligatorias." }),
   mileage: z.coerce.number().int().min(0, "El kilometraje no puede ser negativo.").optional(),
   description: z.string().min(5, "La descripción debe tener al menos 5 caracteres."),
   technicianId: z.string().min(1, "Seleccione un técnico"),
@@ -60,11 +60,30 @@ interface ServiceFormProps {
   vehicles: Vehicle[]; 
   technicians: Technician[];
   inventoryItems: InventoryItem[];
-  onSubmit: (values: Omit<ServiceFormValues, 'vehicleLicensePlateSearch' | 'deliveryDateTime'> & { totalSuppliesCost?: number; serviceProfit?: number; vehicleId: number; deliveryDateTime?: string }) => Promise<void>; 
+  onSubmit: (values: Omit<ServiceFormValues, 'vehicleLicensePlateSearch'> & { serviceDate: string; deliveryDateTime?: string; totalSuppliesCost?: number; serviceProfit?: number; vehicleId: number; }) => Promise<void>; 
   onClose: () => void;
   isReadOnly?: boolean; 
   onVehicleCreated?: (newVehicle: Vehicle) => void; 
 }
+
+const generateTimeSlots = () => {
+    const slots = [];
+    for (let hour = 8; hour <= 18; hour++) {
+        if (hour === 8) {
+            slots.push({ value: `${hour}:30`, label: `08:30 AM`});
+        } else if (hour === 18) {
+            slots.push({ value: `${hour}:00`, label: `${hour}:00 PM`});
+            slots.push({ value: `${hour}:30`, label: `${hour}:30 PM`});
+        }
+         else {
+            slots.push({ value: `${hour}:00`, label: `${hour < 12 ? hour : (hour === 12 ? 12 : hour - 12)}:00 ${hour < 12 ? 'AM' : 'PM'}`});
+            slots.push({ value: `${hour}:30`, label: `${hour < 12 ? hour : (hour === 12 ? 12 : hour - 12)}:30 ${hour < 12 ? 'AM' : 'PM'}`});
+        }
+    }
+    return slots;
+};
+const timeSlots = generateTimeSlots();
+
 
 export function ServiceForm({ 
   initialData, 
@@ -91,7 +110,7 @@ export function ServiceForm({
           ...initialData,
           vehicleId: initialData.vehicleId,
           vehicleLicensePlateSearch: initialData.vehicleIdentifier || "",
-          serviceDate: new Date(initialData.serviceDate),
+          serviceDate: initialData.serviceDate ? parseISO(initialData.serviceDate) : new Date(),
           deliveryDateTime: initialData.deliveryDateTime ? parseISO(initialData.deliveryDateTime) : undefined,
           mileage: initialData.mileage ?? undefined, 
           suppliesUsed: initialData.suppliesUsed.map(s => ({
@@ -105,14 +124,14 @@ export function ServiceForm({
       : {
           vehicleId: undefined,
           vehicleLicensePlateSearch: "",
-          serviceDate: new Date(),
+          serviceDate: setHours(setMinutes(new Date(), 30), 8), // Default to 8:30 AM
           deliveryDateTime: undefined,
           mileage: undefined, 
           description: "",
           technicianId: "",
           suppliesUsed: [],
           totalServicePrice: 0,
-          status: "Agendado", // Default status
+          status: "Agendado", 
           notes: "",
         },
   });
@@ -129,6 +148,12 @@ export function ServiceForm({
         setSelectedVehicle(foundVehicle);
         form.setValue('vehicleId', foundVehicle.id);
         setVehicleLicensePlateSearch(foundVehicle.licensePlate);
+      }
+    }
+     if (initialData && initialData.serviceDate) {
+      const parsedDate = parseISO(initialData.serviceDate);
+      if (isValid(parsedDate)) {
+        form.setValue('serviceDate', parsedDate);
       }
     }
   }, [initialData, localVehicles, form]);
@@ -208,8 +233,8 @@ export function ServiceForm({
       return;
     }
     
-    const isValid = await form.trigger();
-    if (!isValid || !values.vehicleId) {
+    const isValidForm = await form.trigger();
+    if (!isValidForm || !values.vehicleId) {
          if (!values.vehicleId) {
             form.setError("vehicleId", { type: "manual", message: "Debe seleccionar o registrar un vehículo." });
         }
@@ -219,6 +244,7 @@ export function ServiceForm({
 
     const submissionData = {
       ...values, 
+      serviceDate: values.serviceDate.toISOString(),
       deliveryDateTime: values.deliveryDateTime ? values.deliveryDateTime.toISOString() : undefined,
       suppliesUsed: values.suppliesUsed?.map(s => {
         const itemDetails = inventoryItems.find(invItem => invItem.id === s.supplyId);
@@ -232,8 +258,16 @@ export function ServiceForm({
       totalSuppliesCost: totalSuppliesCost,
       serviceProfit: serviceProfit,
     };
-    await onSubmit(submissionData as Omit<ServiceFormValues, 'vehicleLicensePlateSearch' | 'deliveryDateTime'> & { totalSuppliesCost?: number; serviceProfit?: number; vehicleId: number; deliveryDateTime?:string });
+    await onSubmit(submissionData as Omit<ServiceFormValues, 'vehicleLicensePlateSearch'> & { serviceDate: string; deliveryDateTime?: string; totalSuppliesCost?: number; serviceProfit?: number; vehicleId: number; });
   };
+  
+  const handleTimeChange = (timeString: string, dateField: "serviceDate" | "deliveryDateTime") => {
+    const [hours, minutes] = timeString.split(':').map(Number);
+    const currentDate = form.getValues(dateField) || new Date();
+    const newDateTime = setHours(setMinutes(startOfDay(currentDate), minutes), hours);
+    form.setValue(dateField, newDateTime, { shouldValidate: true });
+};
+
 
   return (
     <>
@@ -305,7 +339,7 @@ export function ServiceForm({
             name="serviceDate"
             render={({ field }) => (
                 <FormItem className="flex flex-col">
-                <FormLabel>Fecha de Servicio</FormLabel>
+                <FormLabel>Fecha y Hora de Servicio</FormLabel>
                 <Popover>
                     <PopoverTrigger asChild disabled={isReadOnly}>
                     <FormControl>
@@ -317,10 +351,10 @@ export function ServiceForm({
                         )}
                         disabled={isReadOnly}
                         >
-                        {field.value ? (
-                            format(field.value, "PPP", { locale: es })
+                        {field.value && isValid(field.value) ? (
+                            format(field.value, "PPPp", { locale: es })
                         ) : (
-                            <span>Seleccione una fecha</span>
+                            <span>Seleccione fecha y hora</span>
                         )}
                         <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                         </Button>
@@ -330,13 +364,33 @@ export function ServiceForm({
                     <Calendar
                         mode="single"
                         selected={field.value}
-                        onSelect={field.onChange}
-                        disabled={(date) =>
-                        date < new Date("1900-01-01") || isReadOnly
-                        }
+                        onSelect={(date) => {
+                            const currentTime = field.value || setHours(setMinutes(new Date(), 30), 8);
+                            const newDateTime = date ? 
+                                setHours(setMinutes(startOfDay(date), currentTime.getMinutes()), currentTime.getHours()) 
+                                : undefined;
+                            field.onChange(newDateTime);
+                        }}
+                        disabled={(date) => date < new Date("1900-01-01") || isReadOnly }
                         initialFocus
                         locale={es}
                     />
+                    <div className="p-2 border-t">
+                        <Select
+                            value={field.value ? `${String(field.value.getHours()).padStart(2, '0')}:${String(field.value.getMinutes()).padStart(2, '0')}` : "08:30"}
+                            onValueChange={(timeValue) => handleTimeChange(timeValue, "serviceDate")}
+                            disabled={isReadOnly}
+                        >
+                            <SelectTrigger>
+                                <SelectValue placeholder="Seleccione hora" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {timeSlots.map(slot => (
+                                    <SelectItem key={slot.value} value={slot.value}>{slot.label}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
                     </PopoverContent>
                 </Popover>
                 <FormMessage />
@@ -450,8 +504,8 @@ export function ServiceForm({
                         )}
                         disabled={isReadOnly}
                         >
-                        {field.value ? (
-                            format(field.value, "PPPp", { locale: es }) // Added 'p' for time
+                        {field.value && isValid(field.value) ? (
+                            format(field.value, "PPPp", { locale: es }) 
                         ) : (
                             <span>Seleccione fecha y hora</span>
                         )}
@@ -465,26 +519,30 @@ export function ServiceForm({
                         selected={field.value}
                         onSelect={(date) => {
                             const currentTime = field.value || new Date();
-                            const newDateTime = date ? new Date(date.getFullYear(), date.getMonth(), date.getDate(), currentTime.getHours(), currentTime.getMinutes()) : undefined;
+                            const newDateTime = date ? 
+                                setHours(setMinutes(startOfDay(date), currentTime.getMinutes()), currentTime.getHours())
+                                : undefined;
                             field.onChange(newDateTime);
                         }}
                         disabled={isReadOnly}
                         initialFocus
                         locale={es}
                     />
-                    {/* Basic Time Input - can be improved with a dedicated time picker */}
                     <div className="p-2 border-t">
-                        <Input 
-                            type="time"
-                            value={field.value ? format(field.value, "HH:mm") : ""}
-                            onChange={(e) => {
-                                const [hours, minutes] = e.target.value.split(':').map(Number);
-                                const currentDate = field.value || new Date();
-                                field.onChange(new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate(), hours, minutes));
-                            }}
+                        <Select
+                            value={field.value ? `${String(field.value.getHours()).padStart(2, '0')}:${String(field.value.getMinutes()).padStart(2, '0')}` : "08:30"}
+                            onValueChange={(timeValue) => handleTimeChange(timeValue, "deliveryDateTime")}
                             disabled={isReadOnly}
-                            className="w-full"
-                        />
+                        >
+                            <SelectTrigger>
+                                <SelectValue placeholder="Seleccione hora" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {timeSlots.map(slot => (
+                                    <SelectItem key={slot.value} value={slot.value}>{slot.label}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
                     </div>
                     </PopoverContent>
                 </Popover>
@@ -630,3 +688,4 @@ export function ServiceForm({
     </>
   );
 }
+

@@ -8,7 +8,7 @@ import { placeholderVehicles, placeholderTechnicians, placeholderInventory, plac
 import type { ServiceRecord, Vehicle } from "@/types";
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from 'next/navigation';
-import { format } from 'date-fns';
+import { isValid, parseISO } from 'date-fns';
 
 export default function NuevoServicioPage() {
   const { toast } = useToast();
@@ -25,17 +25,20 @@ export default function NuevoServicioPage() {
   }, []);
 
   const handleSaveNewService = async (data: any) => {
+    const serviceDate = data.serviceDate && isValid(new Date(data.serviceDate)) ? new Date(data.serviceDate).toISOString() : new Date().toISOString();
+    const deliveryDateTime = data.deliveryDateTime && isValid(new Date(data.deliveryDateTime)) ? new Date(data.deliveryDateTime).toISOString() : undefined;
+
     const newService: ServiceRecord = {
       id: `S${String(placeholderServiceRecords.length + 1).padStart(3, '0')}${Date.now().toString().slice(-3)}`,
       vehicleId: data.vehicleId, 
       description: data.description,
       technicianId: data.technicianId,
-      status: data.status || "Agendado", // Default to Agendado
+      status: data.status || "Agendado", 
       notes: data.notes,
       mileage: data.mileage,
       suppliesUsed: data.suppliesUsed,
-      serviceDate: format(new Date(data.serviceDate), 'yyyy-MM-dd'),
-      deliveryDateTime: data.deliveryDateTime ? new Date(data.deliveryDateTime).toISOString() : undefined,
+      serviceDate: serviceDate,
+      deliveryDateTime: deliveryDateTime,
       totalCost: Number(data.totalServicePrice), 
       totalSuppliesCost: Number(data.totalSuppliesCost),
       serviceProfit: Number(data.serviceProfit),
@@ -44,15 +47,15 @@ export default function NuevoServicioPage() {
     
     toast({
       title: "Servicio Creado",
-      description: `El nuevo servicio para ${vehicles.find(v => v.id === newService.vehicleId)?.licensePlate} ha sido registrado. Se redireccionará a la lista.`,
+      description: `El nuevo servicio para ${vehicles.find(v => v.id === newService.vehicleId)?.licensePlate} ha sido registrado. Se redireccionará a la agenda.`,
     });
     setIsDialogOpen(false); 
-    router.push('/servicios'); 
+    router.push('/servicios/agenda'); 
   };
 
   const handleDialogClose = () => {
     setIsDialogOpen(false);
-    router.push('/servicios'); 
+    router.push('/servicios/agenda'); 
   };
 
   const handleVehicleCreated = (newVehicle: Vehicle) => {
@@ -88,3 +91,4 @@ export default function NuevoServicioPage() {
     </>
   );
 }
+

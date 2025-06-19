@@ -10,7 +10,7 @@ import { placeholderServiceRecords, placeholderVehicles, placeholderTechnicians,
 import type { ServiceRecord, Vehicle } from "@/types";
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { format, parseISO } from "date-fns";
+import { isValid, parseISO } from "date-fns";
 import { useRouter } from "next/navigation";
 
 export default function ServiciosPage() {
@@ -30,17 +30,20 @@ export default function ServiciosPage() {
 
 
   const handleSaveNewService = async (data: any) => {
+    const serviceDate = data.serviceDate && isValid(new Date(data.serviceDate)) ? new Date(data.serviceDate).toISOString() : new Date().toISOString();
+    const deliveryDateTime = data.deliveryDateTime && isValid(new Date(data.deliveryDateTime)) ? new Date(data.deliveryDateTime).toISOString() : undefined;
+    
     const newService: ServiceRecord = {
       id: `S${String(services.length + 1).padStart(3, '0')}${Date.now().toString().slice(-3)}`,
       vehicleId: data.vehicleId, 
       description: data.description,
       technicianId: data.technicianId,
-      status: data.status || "Agendado", // Default to Agendado
+      status: data.status || "Agendado", 
       notes: data.notes,
       mileage: data.mileage,
       suppliesUsed: data.suppliesUsed,
-      serviceDate: format(new Date(data.serviceDate), 'yyyy-MM-dd'),
-      deliveryDateTime: data.deliveryDateTime ? new Date(data.deliveryDateTime).toISOString() : undefined,
+      serviceDate: serviceDate,
+      deliveryDateTime: deliveryDateTime,
       totalCost: Number(data.totalServicePrice), 
       totalSuppliesCost: Number(data.totalSuppliesCost),
       serviceProfit: Number(data.serviceProfit),
@@ -92,12 +95,6 @@ export default function ServiciosPage() {
       <PageHeader
         title="Lista de Servicios"
         description="Visualiza, crea y actualiza las órdenes de servicio."
-        actions={
-           <Button onClick={() => router.push('/servicios/nuevo')}>
-            <PlusCircle className="mr-2 h-4 w-4" />
-            Nuevo Servicio
-          </Button>
-        }
       />
       <ServicesTable 
         services={services} 
@@ -123,3 +120,4 @@ export default function ServiciosPage() {
     </>
   );
 }
+

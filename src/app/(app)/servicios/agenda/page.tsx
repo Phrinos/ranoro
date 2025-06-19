@@ -13,7 +13,7 @@ import {
 import type { ServiceRecord, Vehicle, Technician, InventoryItem } from "@/types";
 import { useState, useEffect, useMemo } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { format, parseISO, compareAsc, isFuture, isToday, isPast } from "date-fns";
+import { format, parseISO, compareAsc, isFuture, isToday, isPast, isValid } from "date-fns";
 import { es } from 'date-fns/locale';
 import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -54,7 +54,28 @@ export default function AgendaServiciosPage() {
     setIsEditDialogOpen(true);
   };
 
-  const handleUpdateService = (updatedService: ServiceRecord) => {
+  const handleUpdateService = (updatedServiceData: any) => {
+    const serviceDate = updatedServiceData.serviceDate && isValid(new Date(updatedServiceData.serviceDate)) ? new Date(updatedServiceData.serviceDate).toISOString() : new Date().toISOString();
+    const deliveryDateTime = updatedServiceData.deliveryDateTime && isValid(new Date(updatedServiceData.deliveryDateTime)) ? new Date(updatedServiceData.deliveryDateTime).toISOString() : undefined;
+
+    const updatedService: ServiceRecord = {
+        ...editingService!, // Assume editingService is not null here
+        ...updatedServiceData,
+        id: editingService!.id,
+        serviceDate: serviceDate,
+        deliveryDateTime: deliveryDateTime,
+        totalCost: Number(updatedServiceData.totalServicePrice),
+        totalSuppliesCost: Number(updatedServiceData.totalSuppliesCost),
+        serviceProfit: Number(updatedServiceData.serviceProfit),
+         suppliesUsed: updatedServiceData.suppliesUsed.map((s: any) => ({
+            supplyId: s.supplyId,
+            quantity: Number(s.quantity),
+            unitPrice: Number(s.unitPrice),
+            supplyName: s.supplyName,
+        })),
+    };
+
+
     setAllServices(prevServices =>
       prevServices.map(s => (s.id === updatedService.id ? updatedService : s))
     );
@@ -67,6 +88,7 @@ export default function AgendaServiciosPage() {
       description: `El servicio para ${vehicles.find(v => v.id === updatedService.vehicleId)?.licensePlate} ha sido actualizado.`,
     });
     setIsEditDialogOpen(false);
+    setEditingService(null);
   };
 
   const handleDeleteService = (serviceId: string) => {
@@ -142,11 +164,11 @@ export default function AgendaServiciosPage() {
 
   const getStatusVariant = (status: ServiceRecord['status']): "default" | "secondary" | "outline" | "destructive" | "success" => {
     switch (status) {
-      case "Completado": return "success";
-      case "En Progreso": return "secondary";
-      case "Pendiente": return "outline";
-      case "Cancelado": return "destructive";
-      case "Agendado": return "default";
+      case "Completado": return "success"; // Green
+      case "En Progreso": return "secondary"; // Theme secondary (typically light gray, could be light blue if themed)
+      case "Pendiente": return "outline"; // White/Transparent with border
+      case "Cancelado": return "destructive"; // Red
+      case "Agendado": return "default"; // Theme default (red in current theme for primary)
       default: return "default";
     }
   };
@@ -192,8 +214,10 @@ export default function AgendaServiciosPage() {
                   {dayServices.map(service => {
                     const vehicle = vehicles.find(v => v.id === service.vehicleId);
                     const technician = techniciansState.find(t => t.id === service.technicianId);
-                    const formattedServiceDateTime = format(parseISO(service.serviceDate), "dd MMM, HH:mm", { locale: es });
-                    const formattedDelivery = service.deliveryDateTime
+                    const formattedServiceDateTime = service.serviceDate && isValid(parseISO(service.serviceDate))
+                        ? format(parseISO(service.serviceDate), "dd MMM, HH:mm", { locale: es })
+                        : 'Fecha Inválida';
+                    const formattedDelivery = service.deliveryDateTime && isValid(parseISO(service.deliveryDateTime))
                         ? format(parseISO(service.deliveryDateTime), "dd MMM, HH:mm", { locale: es })
                         : 'N/A';
                     return (
@@ -265,12 +289,6 @@ export default function AgendaServiciosPage() {
       <PageHeader
         title="Agenda de Servicios"
         description="Visualiza, busca y gestiona los servicios agendados."
-        actions={
-          <Button onClick={() => router.push('/servicios/nuevo')}>
-            <PlusCircle className="mr-2 h-4 w-4" />
-            Nuevo Servicio
-          </Button>
-        }
       />
        <div className="mb-6">
         <div className="relative">
@@ -287,8 +305,8 @@ export default function AgendaServiciosPage() {
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-2 mb-6">
-          <TabsTrigger value="futuras">Citas Futuras</TabsTrigger>
-          <TabsTrigger value="pasadas">Citas Pasadas</TabsTrigger>
+          <TabsTrigger value="futuras" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Citas Futuras</TabsTrigger>
+          <TabsTrigger value="pasadas" className="data-[state=active]:bg-secondary data-[state=active]:text-secondary-foreground">Citas Pasadas</TabsTrigger>
         </TabsList>
         <TabsContent value="futuras">
           {renderServiceGroup(groupedFutureServices)}
@@ -313,3 +331,4 @@ export default function AgendaServiciosPage() {
     </>
   );
 }
+
