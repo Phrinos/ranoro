@@ -19,6 +19,7 @@ import { format, parseISO, compareAsc, compareDesc, isWithinInterval, isValid, s
 import { es } from 'date-fns/locale';
 import type { DateRange } from "react-day-picker";
 import { useRouter } from "next/navigation";
+import { cn } from "@/lib/utils"; // Added import for cn
 
 type ServiceSortOption = 
   | "serviceDate_desc" | "serviceDate_asc"
@@ -301,3 +302,4 @@ export default function HistorialServiciosPage() {
     </>
   );
 }
+
