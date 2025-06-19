@@ -28,14 +28,14 @@ import type { ServiceRecord, Vehicle, Technician, InventoryItem, ServicePart } f
 const partSchema = z.object({
   partId: z.string().min(1, "Seleccione un repuesto"),
   quantity: z.coerce.number().min(1, "La cantidad debe ser al menos 1"),
-  unitPrice: z.coerce.number().optional(), 
+  unitPrice: z.coerce.number().optional(), // Cost price from inventory
   partName: z.string().optional(), 
 });
 
 const serviceFormSchema = z.object({
   vehicleId: z.string().min(1, "Seleccione un vehículo"), 
   serviceDate: z.date({ required_error: "La fecha de servicio es obligatoria." }),
-  mileage: z.coerce.number().int().min(0, "El kilometraje no puede ser negativo.").optional(), // Added mileage
+  mileage: z.coerce.number().int().min(0, "El kilometraje no puede ser negativo.").optional(),
   description: z.string().min(5, "La descripción debe tener al menos 5 caracteres."),
   technicianId: z.string().min(1, "Seleccione un técnico"),
   partsUsed: z.array(partSchema).optional(),
@@ -54,7 +54,7 @@ interface ServiceFormProps {
   inventoryItems: InventoryItem[];
   onSubmit: (values: Omit<ServiceFormValues, 'vehicleId'> & { vehicleId: number }) => Promise<void>; 
   onClose: () => void;
-  isReadOnly?: boolean; // Added
+  isReadOnly?: boolean; 
 }
 
 export function ServiceForm({ initialData, vehicles, technicians, inventoryItems, onSubmit, onClose, isReadOnly = false }: ServiceFormProps) {
@@ -65,13 +65,18 @@ export function ServiceForm({ initialData, vehicles, technicians, inventoryItems
           ...initialData,
           vehicleId: String(initialData.vehicleId), 
           serviceDate: new Date(initialData.serviceDate),
-          mileage: initialData.mileage ?? undefined, // Handle mileage
-          partsUsed: initialData.partsUsed.map(p => ({...p, partName: inventoryItems.find(i => i.id === p.partId)?.name || '', unitPrice: inventoryItems.find(i => i.id === p.partId)?.unitPrice || 0 })) || [],
+          mileage: initialData.mileage ?? undefined, 
+          // When loading existing data, ensure partsUsed correctly reflects partName and unitPrice (cost)
+          partsUsed: initialData.partsUsed.map(p => ({
+              ...p, 
+              partName: inventoryItems.find(i => i.id === p.partId)?.name || '', 
+              unitPrice: inventoryItems.find(i => i.id === p.partId)?.unitPrice || 0 // Ensure this is cost
+          })) || [],
         }
       : {
           vehicleId: "",
           serviceDate: new Date(),
-          mileage: undefined, // Default mileage
+          mileage: undefined, 
           description: "",
           technicianId: "",
           partsUsed: [],
@@ -89,12 +94,21 @@ export function ServiceForm({ initialData, vehicles, technicians, inventoryItems
 
   const handleFormSubmit = async (values: ServiceFormValues) => {
     if (isReadOnly) {
-      onClose(); // Or some other action for read-only
+      onClose(); 
       return;
     }
     const submissionData = {
       ...values,
       vehicleId: parseInt(values.vehicleId, 10),
+      // Ensure partsUsed for submission contains the correct unitPrice (cost)
+      partsUsed: values.partsUsed?.map(p => {
+        const itemDetails = inventoryItems.find(invItem => invItem.id === p.partId);
+        return {
+          ...p,
+          unitPrice: itemDetails?.unitPrice || 0, // Ensure cost price is submitted
+          partName: itemDetails?.name || p.partName,
+        };
+      }),
     };
     await onSubmit(submissionData);
   };
@@ -251,7 +265,7 @@ export function ServiceForm({ initialData, vehicles, technicians, inventoryItems
         </div>
         
         <FormItem>
-          <FormLabel>Repuestos Utilizados</FormLabel>
+          <FormLabel>Repuestos Utilizados (Costo de Repuesto)</FormLabel>
           {fields.map((item, index) => (
             <div key={item.id} className="flex items-end gap-2 mb-2 p-2 border rounded-md">
               <FormField
@@ -263,7 +277,7 @@ export function ServiceForm({ initialData, vehicles, technicians, inventoryItems
                       onValueChange={(value) => {
                         field.onChange(value);
                         const selectedPart = inventoryItems.find(p => p.id === value);
-                        form.setValue(`partsUsed.${index}.unitPrice`, selectedPart?.unitPrice || 0);
+                        form.setValue(`partsUsed.${index}.unitPrice`, selectedPart?.unitPrice || 0); // unitPrice is cost
                         form.setValue(`partsUsed.${index}.partName`, selectedPart?.name || '');
                       }} 
                       defaultValue={field.value}
@@ -277,7 +291,7 @@ export function ServiceForm({ initialData, vehicles, technicians, inventoryItems
                       <SelectContent>
                         {inventoryItems.map((part) => (
                           <SelectItem key={part.id} value={part.id} disabled={part.quantity === 0 || isReadOnly}> 
-                            {part.name} (Stock: {part.quantity}) - ${part.unitPrice}
+                            {part.name} (Stock: {part.quantity}) - Costo: ${part.unitPrice}
                           </SelectItem>
                         ))}
                       </SelectContent>

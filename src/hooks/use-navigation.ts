@@ -47,13 +47,13 @@ const useNavigation = () => {
       group: "Gestión"
     },
     {
-      label: 'Técnicos', // Changed from 'Gestión de Técnicos'
+      label: 'Técnicos',
       path: '/tecnicos',
       icon: Users,
       group: "Gestión"
     },
     {
-      label: 'Inventario',
+      label: 'Inventario', // Changed from 'Gestión de Inventario'
       path: '/inventario',
       icon: Archive,
       group: "Gestión"
@@ -74,7 +74,7 @@ const useNavigation = () => {
 
   return navigationItems.map(item => ({
     ...item,
-    isActive: pathname === item.path || (item.path !== '/' && pathname.startsWith(item.path) && !((item.path === '/vehiculos' && pathname.includes('/vehiculos/')) || (item.path === '/tecnicos' && pathname.includes('/tecnicos/')))),
+    isActive: pathname === item.path || (item.path !== '/' && pathname.startsWith(item.path) && !((item.path === '/vehiculos' && pathname.includes('/vehiculos/')) || (item.path === '/tecnicos' && pathname.includes('/tecnicos/')) || (item.path === '/inventario' && pathname.includes('/inventario/')))),
   }));
 };
 

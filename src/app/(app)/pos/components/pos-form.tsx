@@ -1,3 +1,4 @@
+
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -23,10 +24,10 @@ import { useState, useEffect } from "react";
 
 const saleItemSchema = z.object({
   inventoryItemId: z.string().min(1, "Seleccione un artículo."),
-  itemName: z.string(), // Will be populated
+  itemName: z.string(), 
   quantity: z.coerce.number().min(1, "La cantidad debe ser al menos 1."),
-  unitPrice: z.coerce.number(), // Will be populated
-  totalPrice: z.coerce.number(), // Will be populated
+  unitPrice: z.coerce.number(), // This will be the sellingPrice from InventoryItem
+  totalPrice: z.coerce.number(), 
 });
 
 const posFormSchema = z.object({
@@ -45,7 +46,7 @@ export function PosForm({ inventoryItems }: POSFormProps) {
   const { toast } = useToast();
   const [subTotal, setSubTotal] = useState(0);
   const [total, setTotal] = useState(0);
-  // Example tax rate - could be configurable
+  
   const TAX_RATE = 0.10; // 10%
 
   const form = useForm<POSFormValues>({
@@ -67,7 +68,7 @@ export function PosForm({ inventoryItems }: POSFormProps) {
   useEffect(() => {
     const currentSubTotal = currentItems.reduce((acc, item) => acc + (item.totalPrice || 0), 0);
     setSubTotal(currentSubTotal);
-    setTotal(currentSubTotal * (1 + TAX_RATE)); // Add tax
+    setTotal(currentSubTotal * (1 + TAX_RATE)); 
   }, [currentItems, TAX_RATE]);
 
 
@@ -83,14 +84,14 @@ export function PosForm({ inventoryItems }: POSFormProps) {
         ...form.getValues(`items.${index}`),
         inventoryItemId: selectedItem.id,
         itemName: selectedItem.name,
-        unitPrice: selectedItem.unitPrice,
-        totalPrice: selectedItem.unitPrice * quantity,
+        unitPrice: selectedItem.sellingPrice, // Use sellingPrice for sales
+        totalPrice: selectedItem.sellingPrice * quantity,
       });
     }
   };
 
   const handleQuantityChange = (index: number, quantity: number) => {
-    const unitPrice = form.getValues(`items.${index}.unitPrice`) || 0;
+    const unitPrice = form.getValues(`items.${index}.unitPrice`) || 0; // This is sellingPrice
     update(index, {
       ...form.getValues(`items.${index}`),
       quantity: quantity,
@@ -99,15 +100,14 @@ export function PosForm({ inventoryItems }: POSFormProps) {
   };
   
   const onSubmit = async (values: POSFormValues) => {
-    // console.log("Sale Data:", values, {subTotal, total});
-    // Here you would typically call an API to save the sale and update inventory
+    
     toast({
       title: "Venta Registrada",
       description: `Venta procesada por un total de $${total.toLocaleString('es-ES', {minimumFractionDigits: 2})}.`,
     });
-    form.reset(); // Reset form after successful sale
-    // Potentially clear fields array manually if reset doesn't do it:
-    // while(fields.length > 0) remove(0);
+    form.reset(); 
+    // Manually clear field array after reset
+    while(fields.length > 0) remove(0); 
   };
 
   return (

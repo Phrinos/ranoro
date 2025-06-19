@@ -1,10 +1,10 @@
 
 export interface Vehicle {
-  id: number; // Changed to number
+  id: number; 
   make: string;
   model: string;
   year: number;
-  vin?: string; // Made optional
+  vin?: string; 
   ownerName: string;
   ownerPhone: string;
   ownerEmail?: string;
@@ -18,7 +18,7 @@ export interface ServicePart {
   partId: string;
   partName?: string;
   quantity: number;
-  unitPrice?: number;
+  unitPrice?: number; // This is cost from inventory item
   totalPrice?: number;
 }
 
@@ -26,7 +26,7 @@ export interface ServiceRecord {
   id: string;
   vehicleId: number;
   vehicleIdentifier?: string;
-  serviceDate: string; // ISO date string
+  serviceDate: string; 
   description: string;
   technicianId: string;
   technicianName?: string;
@@ -43,22 +43,21 @@ export interface ServiceRecord {
 export interface Technician {
   id: string;
   name: string;
-  area: string; // Added
+  area: string; 
   specialty: string;
-  contactInfo?: string; // This will be used for Phone
-  hireDate?: string; // ISO date string
-  monthlySalary?: number; // Added
-  notes?: string; // Added
-  // servicesCompleted and revenueGenerated removed, will be part of monthly performance
+  contactInfo?: string; 
+  hireDate?: string; 
+  monthlySalary?: number; 
+  notes?: string; 
 }
 
 export interface TechnicianMonthlyPerformance {
-  id: string; // e.g., techId-year-month
+  id: string; 
   technicianId: string;
-  monthYear: string; // Format "YYYY-MM" or "Month Year" e.g. "Julio 2024"
+  monthYear: string; 
   servicesCount: number;
-  revenueGenerated: number; // Total from services
-  earnings: number; // Actual earnings (salary + bonus - penalties)
+  revenueGenerated: number; 
+  earnings: number; 
   penalties: number;
 }
 
@@ -66,10 +65,11 @@ export interface TechnicianMonthlyPerformance {
 export interface InventoryItem {
   id: string;
   name: string;
-  sku: string;
+  sku: string; // Displayed as "Código"
   description?: string;
   quantity: number;
-  unitPrice: number;
+  unitPrice: number; // Cost price for the business
+  sellingPrice: number; // Price for customer
   supplier?: string;
   lowStockThreshold: number;
   category?: string;
@@ -79,13 +79,13 @@ export interface SaleItem {
   inventoryItemId: string;
   itemName: string;
   quantity: number;
-  unitPrice: number;
+  unitPrice: number; // This will be sellingPrice from InventoryItem
   totalPrice: number;
 }
 
 export interface SaleReceipt {
   id: string;
-  saleDate: string; // ISO date string
+  saleDate: string; 
   items: SaleItem[];
   subTotal: number;
   tax?: number;
