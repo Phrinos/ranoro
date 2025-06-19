@@ -45,11 +45,11 @@ const serviceFormSchema = z.object({
   serviceDate: z.date({ required_error: "La fecha y hora de servicio son obligatorias." }),
   mileage: z.coerce.number().int().min(0, "El kilometraje no puede ser negativo.").optional(),
   description: z.string().min(5, "La descripción debe tener al menos 5 caracteres."),
+  totalServicePrice: z.coerce.number().min(0, "El precio del servicio no puede ser negativo."),
+  notes: z.string().optional(),
   technicianId: z.string().min(1, "Seleccione un técnico"),
   suppliesUsed: z.array(supplySchema).optional(),
-  totalServicePrice: z.coerce.number().min(0, "El precio del servicio no puede ser negativo."),
   status: z.enum(["Agendado", "Pendiente", "En Progreso", "Completado", "Cancelado"]),
-  notes: z.string().optional(),
   deliveryDateTime: z.date().optional(),
 });
 
@@ -339,7 +339,7 @@ export function ServiceForm({
             name="serviceDate"
             render={({ field }) => (
                 <FormItem className="flex flex-col">
-                <FormLabel>Fecha y Hora de Servicio</FormLabel>
+                <FormLabel>Fecha y Hora de Recepción</FormLabel>
                 <Popover>
                     <PopoverTrigger asChild disabled={isReadOnly}>
                     <FormControl>
@@ -426,6 +426,36 @@ export function ServiceForm({
             </FormItem>
           )}
         />
+
+        <FormField
+            control={form.control}
+            name="totalServicePrice"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-base font-semibold">Precio Total del Servicio (Cobro al Cliente)</FormLabel>
+                <FormControl>
+                  <Input type="number" step="0.01" placeholder="Ej: 15000" {...field} disabled={isReadOnly} className="text-lg"/>
+                </FormControl>
+                <FormDescription>Este es el monto final que pagará el cliente por el servicio completo.</FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        
+         <FormField
+          control={form.control}
+          name="notes"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Notas Adicionales (Opcional)</FormLabel>
+              <FormControl>
+                <Textarea placeholder="Notas internas o para el cliente..." {...field} disabled={isReadOnly} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <FormField
             control={form.control}
@@ -627,40 +657,12 @@ export function ServiceForm({
                 </div>
             </CardContent>
         </Card>
-
-        <FormField
-            control={form.control}
-            name="totalServicePrice"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel className="text-base font-semibold">Precio Total del Servicio (Cobro al Cliente)</FormLabel>
-                <FormControl>
-                  <Input type="number" step="0.01" placeholder="Ej: 15000" {...field} disabled={isReadOnly} className="text-lg"/>
-                </FormControl>
-                <FormDescription>Este es el monto final que pagará el cliente por el servicio completo.</FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
         
         <div className="p-4 border rounded-md bg-green-50 dark:bg-green-900/30">
             <p className="text-lg font-bold">Ganancia Estimada del Servicio: <span className="text-green-700 dark:text-green-400">${serviceProfit.toLocaleString('es-ES', { minimumFractionDigits: 2 })}</span></p>
             <p className="text-xs text-muted-foreground">(Precio Total Cobrado al Cliente - Costo Total de Insumos para el Taller)</p>
         </div>
 
-         <FormField
-          control={form.control}
-          name="notes"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Notas Adicionales (Opcional)</FormLabel>
-              <FormControl>
-                <Textarea placeholder="Notas internas o para el cliente..." {...field} disabled={isReadOnly} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
         <div className="flex justify-end gap-2 pt-4">
           {isReadOnly ? (
             <Button type="button" variant="outline" onClick={onClose}>
