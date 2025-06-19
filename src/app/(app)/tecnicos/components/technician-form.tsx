@@ -1,3 +1,4 @@
+
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -13,16 +14,20 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import type { Technician } from "@/types";
 
 const technicianFormSchema = z.object({
   name: z.string().min(3, "El nombre debe tener al menos 3 caracteres."),
+  area: z.string().min(3, "El área es obligatoria."),
   specialty: z.string().min(3, "La especialidad es obligatoria."),
-  contactInfo: z.string().optional(),
-  hireDate: z.string().optional(), // Consider using a date picker if complex date logic is needed
+  contactInfo: z.string().min(7, "El teléfono debe tener al menos 7 caracteres.").optional().or(z.literal('')),
+  hireDate: z.string().optional(), // Keep as string, will be formatted from date
+  monthlySalary: z.coerce.number().min(0, "El sueldo no puede ser negativo.").optional(),
+  notes: z.string().optional(),
 });
 
-type TechnicianFormValues = z.infer<typeof technicianFormSchema>;
+export type TechnicianFormValues = z.infer<typeof technicianFormSchema>;
 
 interface TechnicianFormProps {
   initialData?: Technician | null;
@@ -33,11 +38,20 @@ interface TechnicianFormProps {
 export function TechnicianForm({ initialData, onSubmit, onClose }: TechnicianFormProps) {
   const form = useForm<TechnicianFormValues>({
     resolver: zodResolver(technicianFormSchema),
-    defaultValues: initialData || {
+    defaultValues: initialData ? {
+        ...initialData,
+        hireDate: initialData.hireDate ? new Date(initialData.hireDate).toISOString().split('T')[0] : '',
+        monthlySalary: initialData.monthlySalary ?? undefined,
+        contactInfo: initialData.contactInfo ?? '',
+        notes: initialData.notes ?? '',
+    } : {
       name: "",
+      area: "",
       specialty: "",
       contactInfo: "",
-      hireDate: new Date().toISOString().split('T')[0], // Default to today
+      hireDate: new Date().toISOString().split('T')[0],
+      monthlySalary: undefined,
+      notes: "",
     },
   });
 
@@ -48,53 +62,96 @@ export function TechnicianForm({ initialData, onSubmit, onClose }: TechnicianFor
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="name"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Nombre Completo</FormLabel>
+                <FormControl>
+                  <Input placeholder="Ej: Carlos Rodríguez" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+           <FormField
+            control={form.control}
+            name="area"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Área</FormLabel>
+                <FormControl>
+                  <Input placeholder="Ej: Mecánica General, Electrónica" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+         <FormField
+            control={form.control}
+            name="specialty"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Especialidad</FormLabel>
+                <FormControl>
+                  <Input placeholder="Ej: Motores, Diagnóstico" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="contactInfo"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Teléfono</FormLabel>
+                <FormControl>
+                  <Input placeholder="Ej: 555-123456" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="hireDate"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Fecha de Contratación</FormLabel>
+                <FormControl>
+                  <Input type="date" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+        <FormField
+            control={form.control}
+            name="monthlySalary"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Sueldo Mensual (Opcional)</FormLabel>
+                <FormControl>
+                  <Input type="number" placeholder="Ej: 50000" {...field} value={field.value ?? ''} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
         <FormField
           control={form.control}
-          name="name"
+          name="notes"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Nombre Completo</FormLabel>
+              <FormLabel>Notas (Opcional)</FormLabel>
               <FormControl>
-                <Input placeholder="Ej: Carlos Rodríguez" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="specialty"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Especialidad</FormLabel>
-              <FormControl>
-                <Input placeholder="Ej: Mecánica General, Electricidad" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="contactInfo"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Información de Contacto (Email/Teléfono)</FormLabel>
-              <FormControl>
-                <Input placeholder="Ej: tecnico@email.com o 555-1234" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="hireDate"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Fecha de Contratación</FormLabel>
-              <FormControl>
-                <Input type="date" {...field} />
+                <Textarea placeholder="Notas adicionales sobre el técnico..." {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>

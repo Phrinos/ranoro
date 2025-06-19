@@ -4,13 +4,13 @@ export interface Vehicle {
   make: string;
   model: string;
   year: number;
-  vin: string;
+  vin?: string; // Made optional
   ownerName: string;
-  ownerPhone: string; // Changed from ownerContact
-  ownerEmail?: string; // Added
+  ownerPhone: string;
+  ownerEmail?: string;
   licensePlate: string;
-  color?: string; // Added
-  notes?: string; // Added
+  color?: string;
+  notes?: string;
   serviceHistory?: Pick<ServiceRecord, 'id' | 'serviceDate' | 'description' | 'totalCost' | 'status' | 'mileage'>[];
 }
 
@@ -24,31 +24,44 @@ export interface ServicePart {
 
 export interface ServiceRecord {
   id: string;
-  vehicleId: number; // Changed to number
-  vehicleIdentifier?: string; // e.g., License Plate or VIN for display
+  vehicleId: number;
+  vehicleIdentifier?: string;
   serviceDate: string; // ISO date string
   description: string;
   technicianId: string;
   technicianName?: string;
   partsUsed: ServicePart[];
   laborHours: number;
-  laborRate?: number; // Cost per hour
+  laborRate?: number;
   laborCost?: number;
   totalCost: number;
   status: 'Pendiente' | 'En Progreso' | 'Completado' | 'Cancelado';
   notes?: string;
-  mileage?: number; // Added
+  mileage?: number;
 }
 
 export interface Technician {
   id: string;
   name: string;
+  area: string; // Added
   specialty: string;
-  contactInfo?: string;
+  contactInfo?: string; // This will be used for Phone
   hireDate?: string; // ISO date string
-  servicesCompleted?: number;
-  revenueGenerated?: number;
+  monthlySalary?: number; // Added
+  notes?: string; // Added
+  // servicesCompleted and revenueGenerated removed, will be part of monthly performance
 }
+
+export interface TechnicianMonthlyPerformance {
+  id: string; // e.g., techId-year-month
+  technicianId: string;
+  monthYear: string; // Format "YYYY-MM" or "Month Year" e.g. "Julio 2024"
+  servicesCount: number;
+  revenueGenerated: number; // Total from services
+  earnings: number; // Actual earnings (salary + bonus - penalties)
+  penalties: number;
+}
+
 
 export interface InventoryItem {
   id: string;
@@ -75,15 +88,15 @@ export interface SaleReceipt {
   saleDate: string; // ISO date string
   items: SaleItem[];
   subTotal: number;
-  tax?: number; // Optional tax
+  tax?: number;
   totalAmount: number;
   paymentMethod?: 'Efectivo' | 'Tarjeta' | 'Transferencia';
-  customerName?: string; // Optional
+  customerName?: string;
 }
 
 export interface DashboardMetrics {
   activeServices: number;
-  technicianEarnings: number; // Could be sum of laborCost for completed services by technicians
-  dailyRevenue: number; // Sum of totalCost for completed services + POS sales for the day
-  lowStockAlerts: number; // Count of items where quantity <= lowStockThreshold
+  technicianEarnings: number;
+  dailyRevenue: number;
+  lowStockAlerts: number;
 }
