@@ -3,27 +3,32 @@
 
 import { useParams } from 'next/navigation';
 import { placeholderVehicles, placeholderServiceRecords, placeholderTechnicians } from '@/lib/placeholder-data';
-import type { Vehicle, ServiceRecord, Technician } from '@/types';
+import type { Vehicle, ServiceRecord } from '@/types';
 import { PageHeader } from '@/components/page-header';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { Archive, ShieldAlert } from 'lucide-react';
+import { Archive, ShieldAlert, Edit } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
+import { VehicleDialog } from '../components/vehicle-dialog';
+import type { VehicleFormValues } from '../components/vehicle-form';
+import { useToast } from '@/hooks/use-toast';
 
 export default function VehicleDetailPage() {
   const params = useParams();
   const vehicleId = parseInt(params.id as string, 10);
+  const { toast } = useToast();
 
-  const [vehicle, setVehicle] = useState<Vehicle | null | undefined>(undefined); // undefined for loading, null if not found
+  const [vehicle, setVehicle] = useState<Vehicle | null | undefined>(undefined);
   const [services, setServices] = useState<ServiceRecord[]>([]);
   const [techniciansMap, setTechniciansMap] = useState<Record<string, string>>({});
-
+  
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
   useEffect(() => {
     const foundVehicle = placeholderVehicles.find(v => v.id === vehicleId);
@@ -42,6 +47,29 @@ export default function VehicleDetailPage() {
 
   }, [vehicleId]);
 
+  const handleSaveEditedVehicle = async (formData: VehicleFormValues) => {
+    if (!vehicle) return;
+
+    const updatedVehicle: Vehicle = {
+      ...vehicle, // Start with existing vehicle data (like ID)
+      ...formData, // Override with form data
+      year: Number(formData.year), // Ensure year is a number
+    };
+    
+    setVehicle(updatedVehicle);
+
+    // Update in the placeholder array for global consistency (if needed by other parts of app)
+    const pIndex = placeholderVehicles.findIndex(v => v.id === updatedVehicle.id);
+    if (pIndex !== -1) {
+      placeholderVehicles[pIndex] = updatedVehicle;
+    }
+
+    setIsEditDialogOpen(false);
+    toast({
+      title: "Vehículo Actualizado",
+      description: `Los datos del vehículo ${updatedVehicle.make} ${updatedVehicle.model} han sido actualizados.`,
+    });
+  };
 
   if (vehicle === undefined) {
     return <div className="container mx-auto py-8 text-center">Cargando datos del vehículo...</div>;
@@ -60,9 +88,9 @@ export default function VehicleDetailPage() {
     );
   }
 
-  const getStatusVariant = (status: ServiceRecord['status']) => {
+  const getStatusVariant = (status: ServiceRecord['status']): "default" | "secondary" | "outline" | "destructive" | "success" => {
     switch (status) {
-      case "Completado": return "default";
+      case "Completado": return "success";
       case "En Progreso": return "secondary";
       case "Pendiente": return "outline";
       case "Cancelado": return "destructive";
@@ -77,17 +105,21 @@ export default function VehicleDetailPage() {
         description={`ID Vehículo: ${vehicle.id}`}
       />
 
-      <Tabs defaultValue="info" className="w-full">
-        <TabsList className="grid w-full grid-cols-2 md:w-1/2 lg:w-1/3 mb-6">
-          <TabsTrigger value="info">Información del Vehículo</TabsTrigger>
-          <TabsTrigger value="history">Historial de Servicios</TabsTrigger>
+      <Tabs defaultValue="details" className="w-full">
+        <TabsList className="grid w-full grid-cols-2 md:grid-cols-2 lg:w-1/3 mb-6">
+          <TabsTrigger value="details" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Detalles</TabsTrigger>
+          <TabsTrigger value="services" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Servicios</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="info">
-          <div className="grid md:grid-cols-2 gap-6">
+        <TabsContent value="details">
+          <div className="space-y-6">
             <Card>
-              <CardHeader>
+              <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle>Datos del Vehículo</CardTitle>
+                <Button variant="outline" size="sm" onClick={() => setIsEditDialogOpen(true)}>
+                  <Edit className="mr-2 h-4 w-4" />
+                  Editar
+                </Button>
               </CardHeader>
               <CardContent className="space-y-2">
                 <p><strong>Placa:</strong> {vehicle.licensePlate}</p>
@@ -100,6 +132,7 @@ export default function VehicleDetailPage() {
             <Card>
               <CardHeader>
                 <CardTitle>Datos del Propietario</CardTitle>
+                {/* Edit button is now general for the vehicle, including owner info */}
               </CardHeader>
               <CardContent className="space-y-2">
                 <p><strong>Nombre:</strong> {vehicle.ownerName}</p>
@@ -115,7 +148,7 @@ export default function VehicleDetailPage() {
           </div>
         </TabsContent>
 
-        <TabsContent value="history">
+        <TabsContent value="services">
           <Card>
             <CardHeader>
               <CardTitle>Historial de Servicios</CardTitle>
@@ -154,6 +187,14 @@ export default function VehicleDetailPage() {
           </Card>
         </TabsContent>
       </Tabs>
+      {vehicle && (
+         <VehicleDialog
+            open={isEditDialogOpen}
+            onOpenChange={setIsEditDialogOpen}
+            vehicle={vehicle}
+            onSave={handleSaveEditedVehicle}
+          />
+      )}
     </div>
   );
 }

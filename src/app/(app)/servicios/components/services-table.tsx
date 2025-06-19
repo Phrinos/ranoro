@@ -11,7 +11,6 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { MoreHorizontal, Edit, Trash2, Eye } from "lucide-react";
 import type { ServiceRecord, Vehicle, Technician, InventoryItem } from "@/types";
 import { format, parseISO } from 'date-fns';
@@ -31,14 +30,14 @@ export function ServicesTable({ services: initialServices, vehicles, technicians
   const [services, setServices] = useState<ServiceRecord[]>(initialServices);
   const { toast } = useToast();
 
-  const getStatusVariant = (status: ServiceRecord['status']) => {
+  const getStatusVariant = (status: ServiceRecord['status']): "default" | "secondary" | "outline" | "destructive" | "success" => {
     switch (status) {
       case "Completado":
-        return "default"; // Greenish in some themes
+        return "success";
       case "En Progreso":
-        return "secondary"; // Bluish/Yellowish
+        return "secondary";
       case "Pendiente":
-        return "outline"; // Grayish
+        return "outline";
       case "Cancelado":
         return "destructive";
       default:
@@ -47,17 +46,12 @@ export function ServicesTable({ services: initialServices, vehicles, technicians
   };
   
   const handleUpdateService = async (updatedServiceData: any) => {
-    // Simulate API call for updating service
-    // console.log("Updating service:", updatedServiceData);
     setServices(prevServices => 
         prevServices.map(s => s.id === updatedServiceData.id ? { ...s, ...updatedServiceData, serviceDate: format(new Date(updatedServiceData.serviceDate), 'yyyy-MM-dd') } : s)
     );
-    // In a real app, you might refetch or update state based on API response.
   };
 
   const handleDeleteService = (serviceId: string) => {
-    // Simulate API call for deleting service
-    // console.log("Deleting service:", serviceId);
     setServices(prevServices => prevServices.filter(s => s.id !== serviceId));
     toast({
       title: "Servicio Eliminado",
@@ -70,7 +64,7 @@ export function ServicesTable({ services: initialServices, vehicles, technicians
     const technician = technicians.find(t => t.id === service.technicianId);
     return {
       ...service,
-      vehicleIdentifier: vehicle ? `${vehicle.make} ${vehicle.model} (${vehicle.licensePlate})` : service.vehicleId,
+      vehicleIdentifier: vehicle ? `${vehicle.make} ${vehicle.model} (${vehicle.licensePlate})` : String(service.vehicleId),
       technicianName: technician ? technician.name : service.technicianId,
       formattedDate: format(parseISO(service.serviceDate), "dd MMM yyyy", { locale: es }),
       totalCostFormatted: `$${service.totalCost.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
@@ -116,7 +110,7 @@ export function ServicesTable({ services: initialServices, vehicles, technicians
                       <Edit className="h-4 w-4" />
                     </Button>
                   }
-                  service={services.find(s => s.id === service.id)} // Pass original service data for editing
+                  service={services.find(s => s.id === service.id)} 
                   vehicles={vehicles}
                   technicians={technicians}
                   inventoryItems={inventoryItems}
@@ -143,10 +137,6 @@ export function ServicesTable({ services: initialServices, vehicles, technicians
                     </AlertDialogFooter>
                   </AlertDialogContent>
                 </AlertDialog>
-                {/* Future: View Details Dialog/Page */}
-                 {/* <Button variant="ghost" size="icon" aria-label="Ver Detalles">
-                    <Eye className="h-4 w-4" />
-                  </Button> */}
               </TableCell>
             </TableRow>
           ))}
