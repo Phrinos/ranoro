@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -92,8 +93,8 @@ const SidebarProvider = React.forwardRef<
     // Helper to toggle the sidebar.
     const toggleSidebar = React.useCallback(() => {
       return isMobile
-        ? setOpenMobile((open) => !open)
-        : setOpen((open) => !open)
+        ? setOpenMobile((openMobileValue) => !openMobileValue) // Use functional update
+        : setOpen((openValue) => !openValue) // Use functional update
     }, [isMobile, setOpen, setOpenMobile])
 
     // Adds a keyboard shortcut to toggle the sidebar.
@@ -538,7 +539,8 @@ const SidebarMenuButton = React.forwardRef<
   React.ComponentProps<"button"> & {
     asChild?: boolean
     isActive?: boolean
-    tooltip?: string | React.ComponentProps<typeof TooltipContent>
+    tooltipLabel?: string; // Changed from 'tooltip'
+    tooltipClassName?: string; // Added for className of tooltip
   } & VariantProps<typeof sidebarMenuButtonVariants>
 >(
   (
@@ -547,7 +549,8 @@ const SidebarMenuButton = React.forwardRef<
       isActive = false,
       variant = "default",
       size = "default",
-      tooltip,
+      tooltipLabel, // Changed
+      tooltipClassName, // Added
       className,
       ...props
     },
@@ -567,14 +570,8 @@ const SidebarMenuButton = React.forwardRef<
       />
     )
 
-    if (!tooltip) {
+    if (!tooltipLabel) {
       return button
-    }
-
-    if (typeof tooltip === "string") {
-      tooltip = {
-        children: tooltip,
-      }
     }
 
     return (
@@ -583,9 +580,11 @@ const SidebarMenuButton = React.forwardRef<
         <TooltipContent
           side="right"
           align="center"
+          className={tooltipClassName} // Use direct prop
           hidden={state !== "collapsed" || isMobile}
-          {...tooltip}
-        />
+        >
+          {tooltipLabel} {/* Use direct prop */}
+        </TooltipContent>
       </Tooltip>
     )
   }
