@@ -2,7 +2,7 @@ import { PageHeader } from "@/components/page-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { placeholderDashboardMetrics } from "@/lib/placeholder-data";
-import { Activity, Users, DollarSign, Package, ArrowRight } from "lucide-react";
+import { Activity, Users, DollarSign, Package, ArrowRight } from "lucide-react"; // Changed PackageWarning to Package
 import Link from "next/link";
 
 export default function DashboardPage() {
@@ -12,7 +12,7 @@ export default function DashboardPage() {
     { title: "Servicios Activos", value: metrics.activeServices, icon: Activity, color: "text-blue-500", unit: "" },
     { title: "Ganancias Prom. Técnico", value: metrics.technicianEarnings, icon: Users, color: "text-green-500", unit: "$" },
     { title: "Ingresos Diarios", value: metrics.dailyRevenue, icon: DollarSign, color: "text-purple-500", unit: "$" },
-    { title: "Alertas de Stock Bajo", value: metrics.lowStockAlerts, icon: Package, color: "text-orange-500", unit: "" },
+    { title: "Alertas de Stock Bajo", value: metrics.lowStockAlerts, icon: Package, color: "text-orange-500", unit: "" }, // Changed to Package
   ];
 
   const quickAccessLinks = [
