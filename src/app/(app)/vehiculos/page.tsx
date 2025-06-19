@@ -22,6 +22,9 @@ export default function VehiculosPage() {
   const [isNewVehicleDialogOpen, setIsNewVehicleDialogOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [activityFilter, setActivityFilter] = useState("all"); // 'all', 'inactive6', 'inactive12'
+  const [sortField, setSortField] = useState<string>("lastServiceDate");
+  const [sortDirection, setSortDirection] = useState<string>("asc");
+
 
   useEffect(() => {
     const vehiclesWithLastService = allVehicles.map(v => {
@@ -53,7 +56,6 @@ export default function VehiculosPage() {
       id: vehicles.length > 0 ? Math.max(...vehicles.map(v => v.id)) + 1 : 1,
       ...newVehicleData,
       serviceHistory: [], 
-      // lastServiceDate will be undefined initially
     };
 
     const updatedVehicles = [...vehicles, newVehicle];
@@ -115,15 +117,27 @@ export default function VehiculosPage() {
       });
     }
     
+    // Sorting logic
     itemsToDisplay.sort((a, b) => {
-      if (!a.lastServiceDate && !b.lastServiceDate) return 0;
-      if (!a.lastServiceDate) return -1; 
-      if (!b.lastServiceDate) return 1;  
-      return compareAsc(parseISO(a.lastServiceDate), parseISO(b.lastServiceDate));
+      if (sortField === "licensePlate") {
+        const comparison = a.licensePlate.localeCompare(b.licensePlate);
+        return sortDirection === "asc" ? comparison : -comparison;
+      } else if (sortField === "lastServiceDate") {
+        const dateA = a.lastServiceDate ? parseISO(a.lastServiceDate) : null;
+        const dateB = b.lastServiceDate ? parseISO(b.lastServiceDate) : null;
+
+        if (!dateA && !dateB) return 0; 
+        if (!dateA) return sortDirection === "asc" ? -1 : 1; 
+        if (!dateB) return sortDirection === "asc" ? 1 : -1; 
+
+        const comparison = compareAsc(dateA, dateB);
+        return sortDirection === "asc" ? comparison : -comparison;
+      }
+      return 0;
     });
 
     return itemsToDisplay;
-  }, [vehicles, searchTerm, activityFilter]);
+  }, [vehicles, searchTerm, activityFilter, sortField, sortDirection]);
 
   const handleShowArchived = () => {
     toast({
@@ -183,25 +197,43 @@ export default function VehiculosPage() {
         }
       />
 
-      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center">
-        <div className="relative flex-1">
+      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:flex-wrap">
+        <div className="relative flex-1 min-w-[200px] sm:min-w-[300px]">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
             type="search"
             placeholder="Buscar por placa, marca, modelo o propietario..."
-            className="w-full rounded-lg bg-background pl-8 sm:w-[300px] md:w-[400px]"
+            className="w-full rounded-lg bg-background pl-8"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
         <Select value={activityFilter} onValueChange={setActivityFilter}>
-          <SelectTrigger className="w-full sm:w-[280px]">
+          <SelectTrigger className="w-full sm:w-auto min-w-[200px] flex-1 sm:flex-initial">
             <SelectValue placeholder="Filtrar por actividad" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Todos los vehículos</SelectItem>
             <SelectItem value="inactive6">Sin servicio (6+ meses)</SelectItem>
             <SelectItem value="inactive12">Sin servicio (12+ meses)</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select value={sortField} onValueChange={setSortField}>
+          <SelectTrigger className="w-full sm:w-auto min-w-[180px] flex-1 sm:flex-initial">
+            <SelectValue placeholder="Ordenar por" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="lastServiceDate">Último Servicio</SelectItem>
+            <SelectItem value="licensePlate">Placa</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select value={sortDirection} onValueChange={setSortDirection}>
+          <SelectTrigger className="w-full sm:w-auto min-w-[150px] flex-1 sm:flex-initial">
+            <SelectValue placeholder="Dirección" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="asc">Ascendente</SelectItem>
+            <SelectItem value="desc">Descendente</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -217,3 +249,4 @@ export default function VehiculosPage() {
     </>
   );
 }
+
