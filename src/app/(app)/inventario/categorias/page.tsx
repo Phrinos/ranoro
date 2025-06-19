@@ -1,15 +1,15 @@
 
 "use client";
 
-import { useState } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { PageHeader } from "@/components/page-header";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Trash2 } from "lucide-react";
+import { PlusCircle, Trash2, Edit, Search } from "lucide-react";
 import { useToast } from '@/hooks/use-toast';
-import { placeholderCategories } from '@/lib/placeholder-data';
-import type { InventoryCategory } from '@/types';
+import { placeholderCategories, placeholderInventory } from '@/lib/placeholder-data';
+import type { InventoryCategory, InventoryItem } from '@/types';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -21,16 +21,65 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 export default function CategoriasInventarioPage() {
   const [categories, setCategories] = useState<InventoryCategory[]>(placeholderCategories);
-  const [newCategoryName, setNewCategoryName] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [isCategoryDialogOpen, setIsCategoryDialogOpen] = useState(false);
+  const [editingCategory, setEditingCategory] = useState<InventoryCategory | null>(null);
+  const [currentCategoryName, setCurrentCategoryName] = useState('');
   const [categoryToDelete, setCategoryToDelete] = useState<InventoryCategory | null>(null);
   const { toast } = useToast();
 
-  const handleAddCategory = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newCategoryName.trim()) {
+  const categoryProductCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    categories.forEach(cat => {
+      counts[cat.id] = placeholderInventory.filter(item => item.category === cat.name).length;
+    });
+    return counts;
+  }, [categories]); // Removed placeholderInventory from deps as it's a mutable global for demo
+
+  const filteredCategories = useMemo(() => {
+    if (!searchTerm) return categories;
+    return categories.filter(cat =>
+      cat.name.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [categories, searchTerm]);
+
+  const handleOpenAddDialog = () => {
+    setEditingCategory(null);
+    setCurrentCategoryName('');
+    setIsCategoryDialogOpen(true);
+  };
+
+  const handleOpenEditDialog = (category: InventoryCategory) => {
+    setEditingCategory(category);
+    setCurrentCategoryName(category.name);
+    setIsCategoryDialogOpen(true);
+  };
+
+  const handleSaveCategory = (e?: React.FormEvent) => {
+    e?.preventDefault();
+    const categoryName = currentCategoryName.trim();
+    if (!categoryName) {
       toast({
         title: "Nombre Vacío",
         description: "El nombre de la categoría no puede estar vacío.",
@@ -38,27 +87,49 @@ export default function CategoriasInventarioPage() {
       });
       return;
     }
-    if (categories.some(cat => cat.name.toLowerCase() === newCategoryName.trim().toLowerCase())) {
+
+    const isDuplicate = categories.some(
+      cat => cat.name.toLowerCase() === categoryName.toLowerCase() && cat.id !== editingCategory?.id
+    );
+
+    if (isDuplicate) {
       toast({
         title: "Categoría Duplicada",
-        description: `La categoría "${newCategoryName.trim()}" ya existe.`,
+        description: `La categoría "${categoryName}" ya existe.`,
         variant: "destructive",
       });
       return;
     }
 
-    const newCategory: InventoryCategory = {
-      id: `CAT${String(categories.length + 1).padStart(3, '0')}${Date.now().toString().slice(-3)}`,
-      name: newCategoryName.trim(),
-    };
-
-    setCategories(prev => [...prev, newCategory]);
-    placeholderCategories.push(newCategory); // Also update placeholder for demo persistence
-    setNewCategoryName('');
-    toast({
-      title: "Categoría Agregada",
-      description: `La categoría "${newCategory.name}" ha sido creada.`,
-    });
+    if (editingCategory) {
+      // Edit existing category
+      const updatedCategories = categories.map(cat =>
+        cat.id === editingCategory.id ? { ...cat, name: categoryName } : cat
+      );
+      setCategories(updatedCategories);
+      const pIndex = placeholderCategories.findIndex(cat => cat.id === editingCategory.id);
+      if (pIndex !== -1) placeholderCategories[pIndex].name = categoryName;
+      
+      toast({
+        title: "Categoría Actualizada",
+        description: `La categoría "${categoryName}" ha sido actualizada.`,
+      });
+    } else {
+      // Add new category
+      const newCategory: InventoryCategory = {
+        id: `CAT${String(categories.length + 1).padStart(3, '0')}${Date.now().toString().slice(-3)}`,
+        name: categoryName,
+      };
+      setCategories(prev => [...prev, newCategory]);
+      placeholderCategories.push(newCategory);
+      toast({
+        title: "Categoría Agregada",
+        description: `La categoría "${newCategory.name}" ha sido creada.`,
+      });
+    }
+    setIsCategoryDialogOpen(false);
+    setEditingCategory(null);
+    setCurrentCategoryName('');
   };
 
   const handleDeleteCategory = () => {
@@ -82,83 +153,127 @@ export default function CategoriasInventarioPage() {
       <PageHeader
         title="Categorías de Inventario"
         description="Administra las categorías para tus productos."
+        actions={
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            <div className="relative flex-1 sm:flex-initial">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                type="search"
+                placeholder="Buscar categorías..."
+                className="pl-8 sm:w-[300px]"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+            <Button onClick={handleOpenAddDialog}>
+              <PlusCircle className="mr-2 h-4 w-4" />
+              Nueva Categoría
+            </Button>
+          </div>
+        }
       />
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        <Card>
-          <CardHeader>
-            <CardTitle>Nueva Categoría</CardTitle>
-            <CardDescription>Añade una nueva categoría al sistema.</CardDescription>
-          </CardHeader>
-          <form onSubmit={handleAddCategory}>
-            <CardContent>
-              <Input
-                type="text"
-                placeholder="Nombre de la categoría (ej: Aceites)"
-                value={newCategoryName}
-                onChange={(e) => setNewCategoryName(e.target.value)}
-              />
-            </CardContent>
-            <CardFooter>
-              <Button type="submit" className="w-full">
-                <PlusCircle className="mr-2 h-4 w-4" />
-                Agregar Categoría
-              </Button>
-            </CardFooter>
-          </form>
-        </Card>
-
-        <Card className="lg:col-span-2">
-          <CardHeader>
-            <CardTitle>Categorías Existentes</CardTitle>
-            <CardDescription>Lista de todas las categorías de productos.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {categories.length > 0 ? (
-              <ul className="space-y-2">
-                {categories.map((category) => (
-                  <li
-                    key={category.id}
-                    className="flex items-center justify-between p-3 border rounded-md hover:bg-muted/50"
-                  >
-                    <span className="font-medium">{category.name}</span>
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button variant="ghost" size="icon" onClick={() => setCategoryToDelete(category)}>
-                          <Trash2 className="h-4 w-4 text-destructive" />
+      <Card>
+        <CardHeader>
+          <CardTitle>Lista de Categorías</CardTitle>
+          <CardDescription>
+            Visualiza, edita y elimina categorías de productos. La columna 'Productos' muestra cuántos artículos pertenecen a cada categoría.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {filteredCategories.length > 0 ? (
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Nombre de la Categoría</TableHead>
+                    <TableHead className="text-right">Productos</TableHead>
+                    <TableHead className="text-right">Acciones</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredCategories.map((category) => (
+                    <TableRow key={category.id}>
+                      <TableCell className="font-medium">{category.name}</TableCell>
+                      <TableCell className="text-right">{categoryProductCounts[category.id] || 0}</TableCell>
+                      <TableCell className="text-right">
+                        <Button variant="ghost" size="icon" onClick={() => handleOpenEditDialog(category)} className="mr-2">
+                          <Edit className="h-4 w-4" />
                         </Button>
-                      </AlertDialogTrigger>
-                      {/* AlertDialogContent will only render if categoryToDelete matches this item implicitly */}
-                      {categoryToDelete?.id === category.id && (
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>¿Eliminar Categoría?</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              ¿Estás seguro de que quieres eliminar la categoría "{categoryToDelete.name}"? 
-                              Esta acción no se puede deshacer.
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel onClick={() => setCategoryToDelete(null)}>Cancelar</AlertDialogCancel>
-                            <AlertDialogAction
-                              onClick={handleDeleteCategory}
-                              className="bg-destructive hover:bg-destructive/90"
-                            >
-                              Sí, Eliminar
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      )}
-                    </AlertDialog>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="text-muted-foreground text-center py-4">No hay categorías registradas.</p>
-            )}
-          </CardContent>
-        </Card>
-      </div>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="ghost" size="icon" onClick={() => setCategoryToDelete(category)}>
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          {/* Render content only if this is the category to delete */}
+                          {categoryToDelete?.id === category.id && ( 
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>¿Eliminar Categoría?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  ¿Estás seguro de que quieres eliminar la categoría "{categoryToDelete.name}"? 
+                                  Esta acción no se puede deshacer. Los productos en esta categoría no serán eliminados pero quedarán sin categoría.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel onClick={() => setCategoryToDelete(null)}>Cancelar</AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={handleDeleteCategory}
+                                  className="bg-destructive hover:bg-destructive/90"
+                                >
+                                  Sí, Eliminar
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          )}
+                        </AlertDialog>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          ) : (
+            <p className="text-muted-foreground text-center py-4">
+              {searchTerm ? "No se encontraron categorías." : "No hay categorías registradas."}
+            </p>
+          )}
+        </CardContent>
+      </Card>
+
+      <Dialog open={isCategoryDialogOpen} onOpenChange={setIsCategoryDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <form onSubmit={handleSaveCategory}>
+            <DialogHeader>
+              <DialogTitle>{editingCategory ? 'Editar Categoría' : 'Nueva Categoría'}</DialogTitle>
+              <DialogDescription>
+                {editingCategory ? 'Modifica el nombre de la categoría.' : 'Ingresa el nombre para la nueva categoría.'}
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="category-name" className="text-right">
+                  Nombre
+                </Label>
+                <Input
+                  id="category-name"
+                  value={currentCategoryName}
+                  onChange={(e) => setCurrentCategoryName(e.target.value)}
+                  className="col-span-3"
+                  placeholder="Ej: Aceites"
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setIsCategoryDialogOpen(false)}>
+                Cancelar
+              </Button>
+              <Button type="submit">{editingCategory ? 'Guardar Cambios' : 'Crear Categoría'}</Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
