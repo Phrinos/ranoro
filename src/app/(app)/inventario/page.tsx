@@ -3,7 +3,9 @@
 
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Printer, ShoppingCartIcon, AlertTriangle, PackageCheck, DollarSign } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { PlusCircle, Printer, ShoppingCartIcon, AlertTriangle, PackageCheck, DollarSign, Search } from "lucide-react";
 import { InventoryTable } from "./components/inventory-table";
 import { InventoryItemDialog } from "./components/inventory-item-dialog";
 import { placeholderInventory } from "@/lib/placeholder-data";
@@ -20,6 +22,9 @@ export default function InventarioPage() {
   const [isNewItemDialogOpen, setIsNewItemDialogOpen] = useState(false);
   const [isPurchaseEntryDialogOpen, setIsPurchaseEntryDialogOpen] = useState(false);
   const [newItemInitialData, setNewItemInitialData] = useState<Partial<InventoryItemFormValues> | null>(null);
+
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("all");
 
   const handleSaveNewItem = async (data: InventoryItemFormValues) => {
     const newItem: InventoryItem = {
@@ -105,21 +110,41 @@ export default function InventarioPage() {
     return { totalInventoryCost: cost, totalInventorySellingPrice: sellingPrice, lowStockItemsCount: lowStock };
   }, [inventoryItems]);
 
-  const sortedInventoryItems = useMemo(() => {
-    return [...inventoryItems].sort((a, b) => {
+  const uniqueCategories = useMemo(() => {
+    const categories = new Set(inventoryItems.map(item => item.category).filter(Boolean) as string[]);
+    return ["all", ...Array.from(categories)];
+  }, [inventoryItems]);
+
+  const filteredAndSortedInventoryItems = useMemo(() => {
+    let itemsToDisplay = [...inventoryItems];
+
+    // Filter by search term
+    if (searchTerm) {
+      itemsToDisplay = itemsToDisplay.filter(item =>
+        item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        item.sku.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+
+    // Filter by category
+    if (selectedCategory && selectedCategory !== "all") {
+      itemsToDisplay = itemsToDisplay.filter(item => item.category === selectedCategory);
+    }
+    
+    // Sort: low stock first, then by name
+    return itemsToDisplay.sort((a, b) => {
       const isALowStock = a.quantity <= a.lowStockThreshold;
       const isBLowStock = b.quantity <= b.lowStockThreshold;
 
       if (isALowStock && !isBLowStock) {
-        return -1; // a comes first
+        return -1; 
       }
       if (!isALowStock && isBLowStock) {
-        return 1; // b comes first
+        return 1; 
       }
-      // Optional: secondary sort by name if both are low stock or both are not
       return a.name.localeCompare(b.name);
     });
-  }, [inventoryItems]);
+  }, [inventoryItems, searchTerm, selectedCategory]);
 
   return (
     <>
@@ -188,7 +213,33 @@ export default function InventarioPage() {
           </div>
         }
       />
-      <InventoryTable items={sortedInventoryItems} />
+
+      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center">
+        <div className="relative flex-1">
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input
+            type="search"
+            placeholder="Buscar por código o nombre..."
+            className="w-full rounded-lg bg-background pl-8 sm:w-[300px]"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
+        <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+          <SelectTrigger className="w-full sm:w-[200px]">
+            <SelectValue placeholder="Filtrar por categoría" />
+          </SelectTrigger>
+          <SelectContent>
+            {uniqueCategories.map(category => (
+              <SelectItem key={category} value={category}>
+                {category === "all" ? "Todas las categorías" : category}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      <InventoryTable items={filteredAndSortedInventoryItems} />
 
       <InventoryItemDialog
         open={isNewItemDialogOpen}
@@ -205,3 +256,4 @@ export default function InventarioPage() {
     </>
   );
 }
+
