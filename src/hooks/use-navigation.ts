@@ -6,7 +6,7 @@ import {
   LayoutDashboard,
   Wrench,
   Car,
-  Users as UsersIcon, // Renamed to avoid conflict
+  Users as UsersIcon,
   Archive,
   ShoppingCart,
   DatabaseZap,
@@ -17,86 +17,47 @@ import {
   UserCog,
   UserPlus,
   LucideIcon,
-  ChevronDown,
-  UsersRound,
+  UsersRound, // Keep for Clientes as requested
 } from 'lucide-react';
 import type { Icon } from 'lucide-react';
 
-export interface NavSubItem {
-  label: string;
-  path: string;
-  icon: LucideIcon | Icon;
-  isActive?: boolean;
-  disabled?: boolean;
-  external?: boolean;
-}
-
+// Simplified Navigation Entry - no more subItems or collapsible properties
 export interface NavigationEntry {
   label: string;
   icon: LucideIcon | Icon;
-  path?: string; // For direct links
-  isCollapsible?: boolean; // True if this group is a collapsible submenu
-  defaultOpen?: boolean; // If collapsible, should it be open by default?
-  subItems?: NavSubItem[]; // For collapsible groups
-  isActive?: boolean; // Group itself is active if one of its children is
-  groupTag?: string; // For top-level visual grouping in the sidebar (e.g., "Principal", "Gestión")
+  path: string; 
+  isActive?: boolean;
+  groupTag: string; // For top-level visual grouping (e.g., "Principal", "Servicios")
 }
-
 
 const useNavigation = (): NavigationEntry[] => {
   const pathname = usePathname();
 
-  const structure: NavigationEntry[] = [
+  // All items are now top-level, grouped by `groupTag`
+  const navStructure: NavigationEntry[] = [
     {
       label: 'Panel Principal',
       path: '/dashboard',
       icon: LayoutDashboard,
       groupTag: "Principal"
     },
-    {
-      label: 'Servicios',
-      icon: Wrench,
-      isCollapsible: true,
-      defaultOpen: pathname.startsWith('/servicios'),
-      groupTag: "Gestión",
-      subItems: [
-        { label: 'Lista de Servicios', path: '/servicios', icon: List },
-        { label: 'Historial de Servicios', path: '/servicios/historial', icon: History },
-        { label: 'Nuevo Servicio', path: '/servicios/nuevo', icon: PlusCircle },
-      ]
-    },
-    {
-      label: 'Inventario',
-      icon: Archive,
-      isCollapsible: true,
-      defaultOpen: pathname.startsWith('/inventario'),
-      groupTag: "Gestión",
-      subItems: [
-        { label: 'Lista de Inventario', path: '/inventario', icon: List },
-        { label: 'Categorías', path: '/inventario/categorias', icon: Shapes },
-      ]
-    },
-    {
-      label: 'Clientes',
-      icon: UsersRound, // Using UsersRound for Clientes group
-      isCollapsible: true,
-      defaultOpen: pathname.startsWith('/vehiculos'),
-      groupTag: "Gestión",
-      subItems: [
-        { label: 'Vehículos', path: '/vehiculos', icon: Car },
-      ]
-    },
-    {
-      label: 'Team',
-      icon: UsersIcon, // Using UsersIcon for Team group
-      isCollapsible: true,
-      defaultOpen: pathname.startsWith('/tecnicos') || pathname.startsWith('/admin/usuarios'),
-      groupTag: "Gestión",
-      subItems: [
-        { label: 'Técnicos', path: '/tecnicos', icon: UserCog },
-        { label: 'Usuarios', path: '/admin/usuarios', icon: UserPlus },
-      ]
-    },
+    // Servicios Group
+    { label: 'Lista de Servicios', path: '/servicios', icon: List, groupTag: "Servicios" },
+    { label: 'Historial de Servicios', path: '/servicios/historial', icon: History, groupTag: "Servicios" },
+    { label: 'Nuevo Servicio', path: '/servicios/nuevo', icon: PlusCircle, groupTag: "Servicios" },
+    
+    // Inventario Group
+    { label: 'Lista de Inventario', path: '/inventario', icon: List, groupTag: "Inventario" },
+    { label: 'Categorías', path: '/inventario/categorias', icon: Shapes, groupTag: "Inventario" },
+
+    // Clientes Group
+    { label: 'Vehículos', path: '/vehiculos', icon: Car, groupTag: "Clientes" },
+
+    // Team Group
+    { label: 'Técnicos', path: '/tecnicos', icon: UserCog, groupTag: "Team" },
+    { label: 'Usuarios', path: '/admin/usuarios', icon: UserPlus, groupTag: "Team" },
+
+    // Other operational items
     {
       label: 'Punto de Venta',
       path: '/pos',
@@ -111,31 +72,20 @@ const useNavigation = (): NavigationEntry[] => {
     },
   ];
 
-  return structure.map(entry => {
-    let entryIsActive = false;
-    if (entry.path) {
-      // Exact match for top-level direct links unless it's a base path for details
-      const isDetailPage = (entry.path === '/vehiculos' && pathname.startsWith('/vehiculos/')) ||
-                           (entry.path === '/tecnicos' && pathname.startsWith('/tecnicos/')) ||
-                           (entry.path === '/inventario' && pathname.startsWith('/inventario/'));
-      if (isDetailPage) {
-        entryIsActive = false; // Parent link itself is not active if a detail page is active
-      } else {
-        entryIsActive = pathname === entry.path || (entry.path !== '/' && pathname.startsWith(entry.path));
-      }
+  return navStructure.map(entry => {
+    // An item is active if its path is an exact match,
+    // OR if its path is a base for the current path (e.g., /vehiculos is active for /vehiculos/1)
+    // and the current path is not another explicitly defined navigation entry.
+    let isActive = pathname === entry.path;
+    if (!isActive && entry.path !== '/' && entry.path.length > 1 && pathname.startsWith(entry.path + '/')) {
+        // Check if the current pathname is NOT another defined navigation entry.
+        // This prevents '/vehiculos' (list) being active if '/vehiculos/OTRA_COSA_DEFINIDA' is the current page.
+        const isExplicitSubPath = navStructure.some(e => e.path === pathname && e.path !== entry.path);
+        if (!isExplicitSubPath) {
+            isActive = true;
+        }
     }
-
-    if (entry.subItems) {
-      let subItemIsActive = false;
-      entry.subItems = entry.subItems.map(subItem => {
-        // More specific active check for sub-items
-        const isActive = pathname === subItem.path || (subItem.path !== '/' && pathname.startsWith(subItem.path));
-        if (isActive) subItemIsActive = true;
-        return { ...subItem, isActive };
-      });
-      if (subItemIsActive) entryIsActive = true; // Group is active if any sub-item is active
-    }
-    return { ...entry, isActive: entryIsActive };
+    return { ...entry, isActive };
   });
 };
 
