@@ -72,7 +72,7 @@ export interface InventoryItem {
   quantity: number;
   unitPrice: number; // Cost price for the business
   sellingPrice: number; // Price for customer
-  supplier?: string;
+  supplier?: string; // This remains a string, could be linked to Supplier.id later
   lowStockThreshold: number;
   category: string; // Made mandatory
 }
@@ -80,6 +80,17 @@ export interface InventoryItem {
 export interface InventoryCategory {
   id: string;
   name: string;
+}
+
+export interface Supplier {
+  id: string;
+  name: string;
+  contactPerson?: string;
+  phone?: string;
+  email?: string;
+  address?: string;
+  debtAmount?: number;
+  debtNote?: string;
 }
 
 export interface PurchaseEntryFormValues {
@@ -90,7 +101,7 @@ export interface PurchaseEntryFormValues {
 
 export interface SaleItem {
   inventoryItemId: string;
-  itemName: string;
+  itemName:string;
   quantity: number;
   unitPrice: number; // This will be sellingPrice from InventoryItem
   totalPrice: number;
