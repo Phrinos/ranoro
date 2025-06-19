@@ -41,16 +41,18 @@ export default function ProveedoresPage() {
     placeholderServiceRecords.forEach(service => {
       const serviceDate = parseISO(service.serviceDate);
       if (isWithinInterval(serviceDate, { start: lastMonthStart, end: lastMonthEnd })) {
-        service.partsUsed.forEach(part => {
-          const inventoryItem = placeholderInventory.find(item => item.id === part.partId);
-          if (inventoryItem && inventoryItem.supplier) {
-            const supplierName = inventoryItem.supplier; // Assuming supplier name is stored directly
-            if (!supplierPurchaseQuantity[supplierName]) {
-              supplierPurchaseQuantity[supplierName] = { name: supplierName, quantity: 0 };
+        if (service.suppliesUsed && Array.isArray(service.suppliesUsed)) { // Check if suppliesUsed exists and is an array
+          service.suppliesUsed.forEach(part => {
+            const inventoryItem = placeholderInventory.find(item => item.id === part.supplyId); // Changed part.partId to part.supplyId
+            if (inventoryItem && inventoryItem.supplier) {
+              const supplierName = inventoryItem.supplier; 
+              if (!supplierPurchaseQuantity[supplierName]) {
+                supplierPurchaseQuantity[supplierName] = { name: supplierName, quantity: 0 };
+              }
+              supplierPurchaseQuantity[supplierName].quantity += part.quantity;
             }
-            supplierPurchaseQuantity[supplierName].quantity += part.quantity;
-          }
-        });
+          });
+        }
       }
     });
 
@@ -241,5 +243,7 @@ export default function ProveedoresPage() {
     </>
   );
 }
+
+    
 
     
