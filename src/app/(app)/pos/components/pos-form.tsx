@@ -21,12 +21,14 @@ import { PlusCircle, Trash2, Receipt } from "lucide-react";
 import type { InventoryItem, SaleItem } from "@/types";
 import { useToast } from "@/hooks/use-toast";
 import { useState, useEffect } from "react";
+import { placeholderSales, placeholderInventory } from "@/lib/placeholder-data";
+import { useRouter } from "next/navigation";
 
 const saleItemSchema = z.object({
   inventoryItemId: z.string().min(1, "Seleccione un artículo."),
   itemName: z.string(), 
   quantity: z.coerce.number().min(1, "La cantidad debe ser al menos 1."),
-  unitPrice: z.coerce.number(), // This will be the sellingPrice from InventoryItem
+  unitPrice: z.coerce.number(), 
   totalPrice: z.coerce.number(), 
 });
 
@@ -40,14 +42,16 @@ type POSFormValues = z.infer<typeof posFormSchema>;
 
 interface POSFormProps {
   inventoryItems: InventoryItem[];
+  onSaleComplete?: () => void; // Callback for when sale is done, e.g., to close a dialog
 }
 
-export function PosForm({ inventoryItems }: POSFormProps) {
+export function PosForm({ inventoryItems, onSaleComplete }: POSFormProps) {
   const { toast } = useToast();
+  const router = useRouter();
   const [subTotal, setSubTotal] = useState(0);
   const [total, setTotal] = useState(0);
   
-  const TAX_RATE = 0.10; // 10%
+  const TAX_RATE = 0.10; 
 
   const form = useForm<POSFormValues>({
     resolver: zodResolver(posFormSchema),
@@ -84,14 +88,14 @@ export function PosForm({ inventoryItems }: POSFormProps) {
         ...form.getValues(`items.${index}`),
         inventoryItemId: selectedItem.id,
         itemName: selectedItem.name,
-        unitPrice: selectedItem.sellingPrice, // Use sellingPrice for sales
+        unitPrice: selectedItem.sellingPrice, 
         totalPrice: selectedItem.sellingPrice * quantity,
       });
     }
   };
 
   const handleQuantityChange = (index: number, quantity: number) => {
-    const unitPrice = form.getValues(`items.${index}.unitPrice`) || 0; // This is sellingPrice
+    const unitPrice = form.getValues(`items.${index}.unitPrice`) || 0; 
     update(index, {
       ...form.getValues(`items.${index}`),
       quantity: quantity,
@@ -100,14 +104,53 @@ export function PosForm({ inventoryItems }: POSFormProps) {
   };
   
   const onSubmit = async (values: POSFormValues) => {
+    const newSaleId = `SALE${String(placeholderSales.length + 1).padStart(3, '0')}${Date.now().toString().slice(-3)}`;
+    const newSale = {
+      id: newSaleId,
+      saleDate: new Date().toISOString(),
+      items: values.items,
+      subTotal: subTotal,
+      tax: subTotal * TAX_RATE,
+      totalAmount: total,
+      paymentMethod: values.paymentMethod,
+      customerName: values.customerName,
+    };
+
+    placeholderSales.push(newSale);
+
+    // Deduct inventory
+    let stockIssues = false;
+    values.items.forEach(soldItem => {
+      const inventoryItemIndex = placeholderInventory.findIndex(invItem => invItem.id === soldItem.inventoryItemId);
+      if (inventoryItemIndex !== -1) {
+        const currentStock = placeholderInventory[inventoryItemIndex].quantity;
+        if (currentStock < soldItem.quantity) {
+          toast({
+            title: "Stock Insuficiente (Advertencia)",
+            description: `No hay suficiente stock para ${soldItem.itemName}. Stock actual: ${currentStock}. Vendiendo ${soldItem.quantity}. El stock quedará negativo.`,
+            variant: "destructive",
+            duration: 5000,
+          });
+          stockIssues = true; 
+        }
+        placeholderInventory[inventoryItemIndex].quantity -= soldItem.quantity;
+      }
+    });
     
     toast({
       title: "Venta Registrada",
-      description: `Venta procesada por un total de $${total.toLocaleString('es-ES', {minimumFractionDigits: 2})}.`,
+      description: `Venta ${newSaleId} procesada por un total de $${total.toLocaleString('es-ES', {minimumFractionDigits: 2})}.`,
     });
+    
     form.reset(); 
-    // Manually clear field array after reset
+    // Manually clear field array after reset seems to be needed sometimes
     while(fields.length > 0) remove(0); 
+
+    if (onSaleComplete) {
+      onSaleComplete();
+    } else {
+      router.push('/pos'); // Default redirect if no callback
+    }
   };
 
   return (
@@ -141,7 +184,7 @@ export function PosForm({ inventoryItems }: POSFormProps) {
                           </FormControl>
                           <SelectContent>
                             {inventoryItems.map((item) => (
-                              <SelectItem key={item.id} value={item.id} disabled={item.quantity === 0}>
+                              <SelectItem key={item.id} value={item.id} disabled={item.quantity <= 0 && !currentItems.find(ci => ci.inventoryItemId === item.id && ci.quantity > 0 )}>
                                 {item.name} (Stock: {item.quantity})
                               </SelectItem>
                             ))}
@@ -159,12 +202,13 @@ export function PosForm({ inventoryItems }: POSFormProps) {
                         <FormLabel className="text-xs">Cantidad</FormLabel>
                         <Input
                           type="number"
+                          min="1"
                           placeholder="Cant."
                           {...controllerField}
                           onChange={(e) => {
                             const val = parseInt(e.target.value, 10);
-                            controllerField.onChange(val);
-                            handleQuantityChange(index, val);
+                            controllerField.onChange(val >= 1 ? val : 1);
+                            handleQuantityChange(index, val >= 1 ? val : 1);
                           }}
                           className="w-24"
                         />

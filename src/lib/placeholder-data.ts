@@ -1,13 +1,11 @@
 
-import type { Vehicle, ServiceRecord, Technician, InventoryItem, DashboardMetrics, SaleReceipt, ServiceSupply, TechnicianMonthlyPerformance, InventoryCategory, Supplier } from '@/types';
-import { format, subMonths, addDays, getYear, getMonth, setHours, setMinutes } from 'date-fns';
+import type { Vehicle, ServiceRecord, Technician, InventoryItem, DashboardMetrics, SaleReceipt, ServiceSupply, TechnicianMonthlyPerformance, InventoryCategory, Supplier, SaleItem } from '@/types';
+import { format, subMonths, addDays, getYear, getMonth, setHours, setMinutes, subDays } from 'date-fns';
 import { es } from 'date-fns/locale';
 
 const today = new Date();
-const yesterday = new Date(today);
-yesterday.setDate(today.getDate() - 1);
-const twoDaysAgo = new Date(today);
-twoDaysAgo.setDate(today.getDate() - 2);
+const yesterday = subDays(today,1);
+const twoDaysAgo = subDays(today,2);
 const tomorrow = addDays(today, 1);
 const dayAfterTomorrow = addDays(today, 2);
 
@@ -41,10 +39,12 @@ export const placeholderSuppliers: Supplier[] = [
 
 
 export const placeholderInventory: InventoryItem[] = [
-  { id: 'P001', name: 'Filtro de Aceite Bosch', sku: 'BOSCH-OF-001', quantity: 50, unitPrice: 700, sellingPrice: 850, lowStockThreshold: 10, category: 'Filtros', supplier: 'Repuestos Express' },
-  { id: 'P002', name: 'Pastillas de Freno Brembo Delanteras', sku: 'BREMBO-BP-002', quantity: 5, unitPrice: 3000, sellingPrice: 3500, lowStockThreshold: 5, category: 'Frenos', supplier: 'AutoPartes Premium' },
-  { id: 'P003', name: 'Bujía NGK CR9EK', sku: 'NGK-SP-003', quantity: 100, unitPrice: 300, sellingPrice: 350, lowStockThreshold: 20, category: 'Motor', supplier: 'NGK Spark Plugs Co.' },
-  { id: 'P004', name: 'Aceite Motor Sintético 5W-30 (Litro)', sku: 'MOBIL-OIL-5W30', quantity: 30, unitPrice: 1000, sellingPrice: 1200, lowStockThreshold: 15, category: 'Lubricantes', supplier: 'Mobil Lubricants' },
+  { id: 'P001', name: 'Filtro de Aceite Bosch', sku: 'BOSCH-OF-001', quantity: 150, unitPrice: 700, sellingPrice: 850, lowStockThreshold: 10, category: 'Filtros', supplier: 'Repuestos Express' },
+  { id: 'P002', name: 'Pastillas de Freno Brembo Delanteras', sku: 'BREMBO-BP-002', quantity: 25, unitPrice: 3000, sellingPrice: 3500, lowStockThreshold: 5, category: 'Frenos', supplier: 'AutoPartes Premium' },
+  { id: 'P003', name: 'Bujía NGK CR9EK', sku: 'NGK-SP-003', quantity: 200, unitPrice: 300, sellingPrice: 350, lowStockThreshold: 20, category: 'Motor', supplier: 'NGK Spark Plugs Co.' },
+  { id: 'P004', name: 'Aceite Motor Sintético 5W-30 (Litro)', sku: 'MOBIL-OIL-5W30', quantity: 130, unitPrice: 1000, sellingPrice: 1200, lowStockThreshold: 15, category: 'Lubricantes', supplier: 'Mobil Lubricants' },
+  { id: 'P005', name: 'Amortiguador Delantero KYB', sku: 'KYB-SHOCK-F001', quantity: 10, unitPrice: 4500, sellingPrice: 5500, lowStockThreshold: 4, category: 'Suspensión', supplier: 'Repuestos Express'},
+  { id: 'P006', name: 'Batería LTH 12V', sku: 'LTH-BAT-12V', quantity: 8, unitPrice: 2500, sellingPrice: 3200, lowStockThreshold: 3, category: 'Eléctrico', supplier: 'AutoPartes Premium'},
 ];
 
 
@@ -65,7 +65,7 @@ export const placeholderServiceRecords: ServiceRecord[] = [
     id: 'S001',
     vehicleId: 1,
     vehicleIdentifier: 'PQR-123',
-    serviceDate: format(twoDaysAgo, 'yyyy-MM-dd HH:mm:ss'), // Using full ISO for consistency with new form
+    serviceDate: setHours(setMinutes(twoDaysAgo, 0), 9).toISOString(),
     description: 'Cambio de aceite y filtro',
     technicianId: 'T001',
     technicianName: 'Roberto Gómez',
@@ -81,7 +81,7 @@ export const placeholderServiceRecords: ServiceRecord[] = [
     id: 'S002',
     vehicleId: 2,
     vehicleIdentifier: 'STU-456',
-    serviceDate: format(yesterday, 'yyyy-MM-dd HH:mm:ss'),
+    serviceDate: setHours(setMinutes(yesterday, 30), 11).toISOString(),
     description: 'Revisión de frenos y cambio de pastillas delanteras',
     technicianId: 'T003',
     technicianName: 'Miguel Ángel Torres',
@@ -96,7 +96,7 @@ export const placeholderServiceRecords: ServiceRecord[] = [
     id: 'S003',
     vehicleId: 3,
     vehicleIdentifier: 'VWX-789',
-    serviceDate: format(today, 'yyyy-MM-dd HH:mm:ss'),
+    serviceDate: setHours(setMinutes(today, 0), 14).toISOString(),
     description: 'Diagnóstico general del motor',
     technicianId: 'T002',
     technicianName: 'Laura Fernández',
@@ -111,7 +111,7 @@ export const placeholderServiceRecords: ServiceRecord[] = [
     id: 'S004',
     vehicleId: 1,
     vehicleIdentifier: 'PQR-123',
-    serviceDate: format(subMonths(today, 1), 'yyyy-MM-dd HH:mm:ss'),
+    serviceDate: setHours(setMinutes(subMonths(today, 1), 0), 10).toISOString(),
     description: 'Alineación y balanceo',
     technicianId: 'T001',
     technicianName: 'Roberto Gómez',
@@ -127,7 +127,7 @@ export const placeholderServiceRecords: ServiceRecord[] = [
     id: 'S005',
     vehicleId: 2,
     vehicleIdentifier: 'STU-456',
-    serviceDate: format(setHours(setMinutes(tomorrow, 0), 10), 'yyyy-MM-dd HH:mm:ss'), // Example: Tomorrow at 10:00
+    serviceDate: setHours(setMinutes(tomorrow, 0), 10).toISOString(), 
     description: 'Revisión de luces y sistema eléctrico',
     technicianId: 'T002',
     technicianName: 'Laura Fernández',
@@ -142,7 +142,7 @@ export const placeholderServiceRecords: ServiceRecord[] = [
     id: 'S006',
     vehicleId: 3,
     vehicleIdentifier: 'VWX-789',
-    serviceDate: format(setHours(setMinutes(dayAfterTomorrow, 30), 14), 'yyyy-MM-dd HH:mm:ss'), // Example: Day after tomorrow at 14:30
+    serviceDate: setHours(setMinutes(dayAfterTomorrow, 30), 14).toISOString(), 
     description: 'Mantenimiento preventivo mayor',
     technicianId: 'T001',
     technicianName: 'Roberto Gómez',
@@ -158,23 +158,47 @@ export const placeholderServiceRecords: ServiceRecord[] = [
 export const placeholderDashboardMetrics: DashboardMetrics = {
   activeServices: placeholderServiceRecords.filter(s => s.status === 'En Progreso' || s.status === 'Pendiente' || s.status === 'Agendado').length,
   technicianEarnings: placeholderTechnicians.reduce((sum, tech) => sum + (tech.monthlySalary || 0), 0) / (placeholderTechnicians.length || 1) ,
-  dailyRevenue: 0, // Set to 0 or null, will be calculated client-side in DashboardPage
+  dailyRevenue: 0, 
   lowStockAlerts: placeholderInventory.filter(item => item.quantity <= item.lowStockThreshold).length,
 };
 
 export const placeholderSales: SaleReceipt[] = [
     {
         id: 'SALE001',
-        saleDate: format(today, 'yyyy-MM-dd'), // Ensure this uses the module-level 'today'
+        saleDate: setHours(setMinutes(today, 15), 10).toISOString(),
         items: [
             { inventoryItemId: 'P003', itemName: 'Bujía NGK CR9EK', quantity: 4, unitPrice: 350, totalPrice: 1400 },
             { inventoryItemId: 'P001', itemName: 'Filtro de Aceite Bosch', quantity: 1, unitPrice: 850, totalPrice: 850 },
         ],
         subTotal: 2250,
-        tax: 225,
+        tax: 225, // Assuming 10% tax
         totalAmount: 2475,
         paymentMethod: 'Efectivo',
         customerName: 'Cliente Ocasional'
+    },
+    {
+        id: 'SALE002',
+        saleDate: setHours(setMinutes(yesterday, 30), 16).toISOString(),
+        items: [
+            { inventoryItemId: 'P004', itemName: 'Aceite Motor Sintético 5W-30 (Litro)', quantity: 5, unitPrice: 1200, totalPrice: 6000 },
+        ],
+        subTotal: 6000,
+        tax: 600,
+        totalAmount: 6600,
+        paymentMethod: 'Tarjeta',
+        customerName: 'Ana Torres'
+    },
+    {
+        id: 'SALE003',
+        saleDate: setHours(setMinutes(twoDaysAgo, 0), 11).toISOString(),
+        items: [
+            { inventoryItemId: 'P002', itemName: 'Pastillas de Freno Brembo Delanteras', quantity: 1, unitPrice: 3500, totalPrice: 3500 },
+            { inventoryItemId: 'P005', itemName: 'Amortiguador Delantero KYB', quantity: 2, unitPrice: 5500, totalPrice: 11000 },
+        ],
+        subTotal: 14500,
+        tax: 1450,
+        totalAmount: 15950,
+        paymentMethod: 'Transferencia',
     }
 ];
 

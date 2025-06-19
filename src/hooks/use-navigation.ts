@@ -22,6 +22,8 @@ import {
   Settings,
   Building, 
   CalendarClock,
+  DollarSign,
+  Receipt,
 } from 'lucide-react';
 
 export interface NavigationEntry {
@@ -56,15 +58,23 @@ const BASE_NAV_STRUCTURE: ReadonlyArray<Omit<NavigationEntry, 'isActive'>> = [
 
   // Team Group
   { label: 'Técnicos', path: '/tecnicos', icon: UserCog, groupTag: "Team" },
-  { label: 'Usuarios', path: '/admin/usuarios', icon: Users, groupTag: "Team" }, // Placeholder, page not created
+  { label: 'Usuarios', path: '/admin/usuarios', icon: Users, groupTag: "Team" }, 
 
-  // Other operational items
+  // Finanzas Group
   {
-    label: 'Punto de Venta',
-    path: '/pos',
-    icon: ShoppingCart,
-    groupTag: "Operaciones"
+    label: 'Registrar Venta',
+    path: '/pos/nuevo',
+    icon: Receipt,
+    groupTag: "Finanzas"
   },
+  {
+    label: 'Registro de Ventas',
+    path: '/pos',
+    icon: DollarSign,
+    groupTag: "Finanzas"
+  },
+
+  // Administración Group
   {
     label: 'Migración de Datos',
     path: '/admin/migracion-datos',
@@ -79,7 +89,9 @@ const useNavigation = (): NavigationEntry[] => {
   return BASE_NAV_STRUCTURE.map(entry => {
     let isActive = pathname === entry.path;
     
+    // More specific path matching for parent items
     if (!isActive && entry.path && entry.path !== '/' && entry.path.length > 1 && pathname.startsWith(entry.path + '/')) {
+        // Check if there's a more specific active entry
         const isMoreSpecificActiveEntry = BASE_NAV_STRUCTURE.some(
           otherEntry => otherEntry.path.startsWith(pathname) && otherEntry.path.length > entry.path.length && otherEntry.path !== entry.path
         );
@@ -88,11 +100,22 @@ const useNavigation = (): NavigationEntry[] => {
         }
     }
     
+    // Special handling for grouped items like /servicios, /inventario, /pos
     if (entry.path === '/servicios' && 
-        (pathname === '/servicios/nuevo' || 
-         pathname === '/servicios/historial' || 
-         pathname === '/servicios/agenda')
+        (pathname.startsWith('/servicios/nuevo') || 
+         pathname.startsWith('/servicios/historial') || 
+         pathname.startsWith('/servicios/agenda'))
        ) {
+      isActive = true; // Keep 'Lista de Servicios' active if any sub-page is active
+    }
+    if (entry.path === '/inventario' && 
+        (pathname.startsWith('/inventario/categorias') || 
+         pathname.startsWith('/inventario/proveedores') ||
+         pathname.startsWith('/inventario/')) // For item detail
+       ) {
+      isActive = true;
+    }
+     if (entry.path === '/pos' && pathname.startsWith('/pos/nuevo')) {
       isActive = true;
     }
 
