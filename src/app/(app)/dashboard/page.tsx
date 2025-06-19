@@ -1,22 +1,53 @@
+
+"use client";
+
+import { useEffect, useState } from "react";
+import { format, parseISO } from "date-fns";
 import { PageHeader } from "@/components/page-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { placeholderDashboardMetrics } from "@/lib/placeholder-data";
-import { Activity, Users, DollarSign, Package, ArrowRight } from "lucide-react"; // Changed PackageWarning to Package
+import { placeholderDashboardMetrics as staticMetrics, placeholderServiceRecords } from "@/lib/placeholder-data";
+import type { DashboardMetrics } from "@/types";
+import { Activity, Users, DollarSign, Package, ArrowRight } from "lucide-react";
 import Link from "next/link";
 
 export default function DashboardPage() {
-  const metrics = placeholderDashboardMetrics;
+  const [metrics, setMetrics] = useState<DashboardMetrics>(staticMetrics);
+
+  useEffect(() => {
+    const clientToday = new Date();
+    const formattedClientToday = format(clientToday, 'yyyy-MM-dd');
+
+    const currentDailyRevenue = placeholderServiceRecords
+      .filter(s => {
+        // Assuming serviceDate in placeholderServiceRecords includes time if it's an ISO string
+        // or is already 'yyyy-MM-dd'. We need to reliably compare just the date part.
+        try {
+          const serviceDay = format(parseISO(s.serviceDate), 'yyyy-MM-dd');
+          return s.status === 'Completado' && serviceDay === formattedClientToday;
+        } catch (e) {
+          // Fallback for cases where serviceDate might not be a full ISO string parsable by parseISO
+          // This could happen if some serviceDate are just 'yyyy-MM-dd'
+          return s.status === 'Completado' && s.serviceDate.startsWith(formattedClientToday);
+        }
+      })
+      .reduce((sum, service) => sum + service.totalCost, 0);
+
+    setMetrics(prevMetrics => ({
+      ...prevMetrics,
+      dailyRevenue: currentDailyRevenue,
+    }));
+  }, []);
 
   const kpiCards = [
     { title: "Servicios Activos", value: metrics.activeServices, icon: Activity, color: "text-blue-500", unit: "" },
     { title: "Ganancias Prom. Técnico", value: metrics.technicianEarnings, icon: Users, color: "text-green-500", unit: "$" },
     { title: "Ingresos Diarios", value: metrics.dailyRevenue, icon: DollarSign, color: "text-purple-500", unit: "$" },
-    { title: "Alertas de Stock Bajo", value: metrics.lowStockAlerts, icon: Package, color: "text-orange-500", unit: "" }, // Changed to Package
+    { title: "Alertas de Stock Bajo", value: metrics.lowStockAlerts, icon: Package, color: "text-orange-500", unit: "" },
   ];
 
   const quickAccessLinks = [
-    { label: "Nuevo Servicio", path: "/servicios#nuevo", color: "bg-primary hover:bg-primary/90" },
+    { label: "Nuevo Servicio", path: "/servicios/nuevo", color: "bg-primary hover:bg-primary/90" },
     { label: "Registrar Venta", path: "/pos", color: "bg-accent hover:bg-accent/90 text-accent-foreground" },
     { label: "Ver Inventario", path: "/inventario", color: "bg-secondary hover:bg-secondary/80 text-secondary-foreground" },
     { label: "Gestionar Vehículos", path: "/vehiculos", color: "bg-secondary hover:bg-secondary/80 text-secondary-foreground" },
@@ -40,7 +71,7 @@ export default function DashboardPage() {
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold font-headline">
-                {kpi.unit}{kpi.value.toLocaleString('es-ES')}
+                {kpi.unit}{(kpi.value || 0).toLocaleString('es-ES')}
               </div>
             </CardContent>
           </Card>
@@ -62,7 +93,6 @@ export default function DashboardPage() {
         </CardContent>
       </Card>
 
-      {/* Placeholder for future charts or more detailed sections */}
       <div className="grid gap-6 md:grid-cols-2">
         <Card className="shadow-lg">
           <CardHeader>

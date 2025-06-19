@@ -1,5 +1,4 @@
 
-
 import type { Vehicle, ServiceRecord, Technician, InventoryItem, DashboardMetrics, SaleReceipt, ServiceSupply, TechnicianMonthlyPerformance, InventoryCategory, Supplier } from '@/types';
 import { format, subMonths, addDays, getYear, getMonth, setHours, setMinutes } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -50,13 +49,13 @@ export const placeholderInventory: InventoryItem[] = [
 
 
 const sampleSuppliesUsed1: ServiceSupply[] = [
-  { supplyId: 'P001', supplyName: 'Filtro de Aceite Bosch', quantity: 1, unitPrice: 700 }, 
-  { supplyId: 'P004', supplyName: 'Aceite Motor Sintético 5W-30 (Litro)', quantity: 4, unitPrice: 1000 }, 
+  { supplyId: 'P001', supplyName: 'Filtro de Aceite Bosch', quantity: 1, unitPrice: 700 },
+  { supplyId: 'P004', supplyName: 'Aceite Motor Sintético 5W-30 (Litro)', quantity: 4, unitPrice: 1000 },
 ];
 const totalSuppliesCost1 = sampleSuppliesUsed1.reduce((sum, s) => sum + (s.unitPrice || 0) * s.quantity, 0);
 
 const sampleSuppliesUsed2: ServiceSupply[] = [
-  { supplyId: 'P002', supplyName: 'Pastillas de Freno Brembo Delanteras', quantity: 1, unitPrice: 3000 }, 
+  { supplyId: 'P002', supplyName: 'Pastillas de Freno Brembo Delanteras', quantity: 1, unitPrice: 3000 },
 ];
 const totalSuppliesCost2 = sampleSuppliesUsed2.reduce((sum, s) => sum + (s.unitPrice || 0) * s.quantity, 0);
 
@@ -66,28 +65,28 @@ export const placeholderServiceRecords: ServiceRecord[] = [
     id: 'S001',
     vehicleId: 1,
     vehicleIdentifier: 'PQR-123',
-    serviceDate: format(twoDaysAgo, 'yyyy-MM-dd'),
+    serviceDate: format(twoDaysAgo, 'yyyy-MM-dd HH:mm:ss'), // Using full ISO for consistency with new form
     description: 'Cambio de aceite y filtro',
     technicianId: 'T001',
     technicianName: 'Roberto Gómez',
     suppliesUsed: sampleSuppliesUsed1,
-    totalCost: 6000, 
+    totalCost: 6000,
     totalSuppliesCost: totalSuppliesCost1,
     serviceProfit: 6000 - totalSuppliesCost1,
     status: 'Completado',
     mileage: 45000,
-    deliveryDateTime: setHours(setMinutes(twoDaysAgo, 30), 17).toISOString(), // Entregado a las 5:30 PM
+    deliveryDateTime: setHours(setMinutes(twoDaysAgo, 30), 17).toISOString(),
   },
   {
     id: 'S002',
     vehicleId: 2,
     vehicleIdentifier: 'STU-456',
-    serviceDate: format(yesterday, 'yyyy-MM-dd'),
+    serviceDate: format(yesterday, 'yyyy-MM-dd HH:mm:ss'),
     description: 'Revisión de frenos y cambio de pastillas delanteras',
     technicianId: 'T003',
     technicianName: 'Miguel Ángel Torres',
     suppliesUsed: sampleSuppliesUsed2,
-    totalCost: 7500, 
+    totalCost: 7500,
     totalSuppliesCost: totalSuppliesCost2,
     serviceProfit: 7500 - totalSuppliesCost2,
     status: 'En Progreso',
@@ -97,12 +96,12 @@ export const placeholderServiceRecords: ServiceRecord[] = [
     id: 'S003',
     vehicleId: 3,
     vehicleIdentifier: 'VWX-789',
-    serviceDate: format(today, 'yyyy-MM-dd'),
+    serviceDate: format(today, 'yyyy-MM-dd HH:mm:ss'),
     description: 'Diagnóstico general del motor',
     technicianId: 'T002',
     technicianName: 'Laura Fernández',
     suppliesUsed: [],
-    totalCost: 3000, 
+    totalCost: 3000,
     totalSuppliesCost: 0,
     serviceProfit: 3000 - 0,
     status: 'Pendiente',
@@ -112,7 +111,7 @@ export const placeholderServiceRecords: ServiceRecord[] = [
     id: 'S004',
     vehicleId: 1,
     vehicleIdentifier: 'PQR-123',
-    serviceDate: format(subMonths(today, 1), 'yyyy-MM-dd'),
+    serviceDate: format(subMonths(today, 1), 'yyyy-MM-dd HH:mm:ss'),
     description: 'Alineación y balanceo',
     technicianId: 'T001',
     technicianName: 'Roberto Gómez',
@@ -122,13 +121,13 @@ export const placeholderServiceRecords: ServiceRecord[] = [
     serviceProfit: 5000,
     status: 'Completado',
     mileage: 40000,
-    deliveryDateTime: setHours(setMinutes(subMonths(today, 1), 0), 16).toISOString(), // Entregado a las 4:00 PM
+    deliveryDateTime: setHours(setMinutes(subMonths(today, 1), 0), 16).toISOString(),
   },
   {
     id: 'S005',
     vehicleId: 2,
     vehicleIdentifier: 'STU-456',
-    serviceDate: format(tomorrow, 'yyyy-MM-dd'),
+    serviceDate: format(setHours(setMinutes(tomorrow, 0), 10), 'yyyy-MM-dd HH:mm:ss'), // Example: Tomorrow at 10:00
     description: 'Revisión de luces y sistema eléctrico',
     technicianId: 'T002',
     technicianName: 'Laura Fernández',
@@ -143,11 +142,11 @@ export const placeholderServiceRecords: ServiceRecord[] = [
     id: 'S006',
     vehicleId: 3,
     vehicleIdentifier: 'VWX-789',
-    serviceDate: format(dayAfterTomorrow, 'yyyy-MM-dd'),
+    serviceDate: format(setHours(setMinutes(dayAfterTomorrow, 30), 14), 'yyyy-MM-dd HH:mm:ss'), // Example: Day after tomorrow at 14:30
     description: 'Mantenimiento preventivo mayor',
     technicianId: 'T001',
     technicianName: 'Roberto Gómez',
-    suppliesUsed: sampleSuppliesUsed1, // Reusing for example
+    suppliesUsed: sampleSuppliesUsed1,
     totalCost: 12000,
     totalSuppliesCost: totalSuppliesCost1,
     serviceProfit: 12000 - totalSuppliesCost1,
@@ -158,21 +157,21 @@ export const placeholderServiceRecords: ServiceRecord[] = [
 
 export const placeholderDashboardMetrics: DashboardMetrics = {
   activeServices: placeholderServiceRecords.filter(s => s.status === 'En Progreso' || s.status === 'Pendiente' || s.status === 'Agendado').length,
-  technicianEarnings: placeholderTechnicians.reduce((sum, tech) => sum + (tech.monthlySalary || 0), 0) / (placeholderTechnicians.length || 1) , 
-  dailyRevenue: placeholderServiceRecords.filter(s => s.status === 'Completado' && s.serviceDate === format(today, 'yyyy-MM-dd')).reduce((sum, service) => sum + service.totalCost, 0),
+  technicianEarnings: placeholderTechnicians.reduce((sum, tech) => sum + (tech.monthlySalary || 0), 0) / (placeholderTechnicians.length || 1) ,
+  dailyRevenue: 0, // Set to 0 or null, will be calculated client-side in DashboardPage
   lowStockAlerts: placeholderInventory.filter(item => item.quantity <= item.lowStockThreshold).length,
 };
 
 export const placeholderSales: SaleReceipt[] = [
     {
         id: 'SALE001',
-        saleDate: format(today, 'yyyy-MM-dd'),
+        saleDate: format(today, 'yyyy-MM-dd'), // Ensure this uses the module-level 'today'
         items: [
-            { inventoryItemId: 'P003', itemName: 'Bujía NGK CR9EK', quantity: 4, unitPrice: 350, totalPrice: 1400 }, 
-            { inventoryItemId: 'P001', itemName: 'Filtro de Aceite Bosch', quantity: 1, unitPrice: 850, totalPrice: 850 }, 
+            { inventoryItemId: 'P003', itemName: 'Bujía NGK CR9EK', quantity: 4, unitPrice: 350, totalPrice: 1400 },
+            { inventoryItemId: 'P001', itemName: 'Filtro de Aceite Bosch', quantity: 1, unitPrice: 850, totalPrice: 850 },
         ],
         subTotal: 2250,
-        tax: 225, 
+        tax: 225,
         totalAmount: 2475,
         paymentMethod: 'Efectivo',
         customerName: 'Cliente Ocasional'
@@ -186,4 +185,3 @@ export const placeholderTechnicianMonthlyPerformance: TechnicianMonthlyPerforman
   { id: 'T002-2024-06', technicianId: 'T002', monthYear: format(subMonths(today, 1), 'MMMM yyyy', { locale: es }), servicesCount: 9, revenueGenerated: 55000, earnings: 56000, penalties: 0 },
   { id: 'T003-2024-07', technicianId: 'T003', monthYear: format(today, 'MMMM yyyy', { locale: es }), servicesCount: 6, revenueGenerated: 35000, earnings: 49000, penalties: 1000 },
 ];
-
