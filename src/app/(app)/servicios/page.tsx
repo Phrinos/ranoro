@@ -10,7 +10,7 @@ import { placeholderServiceRecords, placeholderVehicles, placeholderTechnicians,
 import type { ServiceRecord, Vehicle } from "@/types";
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { format } from "date-fns";
+import { format, parseISO } from "date-fns";
 import { useRouter } from "next/navigation";
 
 export default function ServiciosPage() {
@@ -18,12 +18,11 @@ export default function ServiciosPage() {
   const router = useRouter();
   const [services, setServices] = useState<ServiceRecord[]>(placeholderServiceRecords);
   const [vehicles, setVehicles] = useState<Vehicle[]>(placeholderVehicles); 
-  const [technicians, setTechniciansState] = useState(placeholderTechnicians); // Assuming static for now
-  const [inventoryItems, setInventoryItemsState] = useState(placeholderInventory); // Assuming static for now
+  const [technicians, setTechniciansState] = useState(placeholderTechnicians); 
+  const [inventoryItems, setInventoryItemsState] = useState(placeholderInventory); 
   
   const [isNewServiceDialogOpen, setIsNewServiceDialogOpen] = useState(false);
 
-  // Effect to re-sync if global placeholders change (e.g. after vehicle creation on another page)
   useEffect(() => {
     setServices(placeholderServiceRecords);
     setVehicles(placeholderVehicles);
@@ -33,21 +32,21 @@ export default function ServiciosPage() {
   const handleSaveNewService = async (data: any) => {
     const newService: ServiceRecord = {
       id: `S${String(services.length + 1).padStart(3, '0')}${Date.now().toString().slice(-3)}`,
-      vehicleId: data.vehicleId, // vehicleId is directly from form data now
+      vehicleId: data.vehicleId, 
       description: data.description,
       technicianId: data.technicianId,
-      status: data.status,
+      status: data.status || "Agendado", // Default to Agendado
       notes: data.notes,
       mileage: data.mileage,
       suppliesUsed: data.suppliesUsed,
       serviceDate: format(new Date(data.serviceDate), 'yyyy-MM-dd'),
+      deliveryDateTime: data.deliveryDateTime ? new Date(data.deliveryDateTime).toISOString() : undefined,
       totalCost: Number(data.totalServicePrice), 
       totalSuppliesCost: Number(data.totalSuppliesCost),
       serviceProfit: Number(data.serviceProfit),
     };
     const updatedServices = [...services, newService];
     setServices(updatedServices);
-    // Also update the global placeholder array
     placeholderServiceRecords.push(newService); 
     
     toast({
@@ -81,10 +80,7 @@ export default function ServiciosPage() {
   };
   
   const handleVehicleCreated = (newVehicle: Vehicle) => {
-    // This updates the local 'vehicles' state used by the dialog on this page.
-    // The placeholderVehicles array is assumed to be updated by the VehicleDialog/Form itself for demo.
     setVehicles(prev => {
-      // Avoid duplicates if placeholderVehicles was already updated
       if (prev.find(v => v.id === newVehicle.id)) return prev;
       return [...prev, newVehicle];
     });
@@ -97,12 +93,6 @@ export default function ServiciosPage() {
         title="Lista de Servicios"
         description="Visualiza, crea y actualiza las órdenes de servicio."
         actions={
-          // Button to open dialog for new service
-          // <Button onClick={() => setIsNewServiceDialogOpen(true)}>
-          //   <PlusCircle className="mr-2 h-4 w-4" />
-          //   Nuevo Servicio
-          // </Button>
-          // Or navigate to the dedicated "Nuevo Servicio" page
            <Button onClick={() => router.push('/servicios/nuevo')}>
             <PlusCircle className="mr-2 h-4 w-4" />
             Nuevo Servicio
@@ -116,19 +106,18 @@ export default function ServiciosPage() {
         inventoryItems={inventoryItems}
         onServiceUpdated={handleUpdateService}
         onServiceDeleted={handleDeleteService}
-        onVehicleCreated={handleVehicleCreated} // Pass down the handler
+        onVehicleCreated={handleVehicleCreated} 
       />
-      {/* Dialog for creating new service directly from this page (if not using dedicated page) */}
       {isNewServiceDialogOpen && (
         <ServiceDialog
           open={isNewServiceDialogOpen}
           onOpenChange={setIsNewServiceDialogOpen}
           service={null} 
-          vehicles={vehicles} // Pass current vehicles list
+          vehicles={vehicles} 
           technicians={technicians}
           inventoryItems={inventoryItems}
           onSave={handleSaveNewService}
-          onVehicleCreated={handleVehicleCreated} // Pass handler to update vehicles list
+          onVehicleCreated={handleVehicleCreated} 
         />
       )}
     </>

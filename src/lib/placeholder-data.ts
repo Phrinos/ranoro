@@ -1,7 +1,7 @@
 
 
 import type { Vehicle, ServiceRecord, Technician, InventoryItem, DashboardMetrics, SaleReceipt, ServiceSupply, TechnicianMonthlyPerformance, InventoryCategory, Supplier } from '@/types';
-import { format, subMonths, getYear, getMonth } from 'date-fns';
+import { format, subMonths, addDays, getYear, getMonth, setHours, setMinutes } from 'date-fns';
 import { es } from 'date-fns/locale';
 
 const today = new Date();
@@ -9,6 +9,8 @@ const yesterday = new Date(today);
 yesterday.setDate(today.getDate() - 1);
 const twoDaysAgo = new Date(today);
 twoDaysAgo.setDate(today.getDate() - 2);
+const tomorrow = addDays(today, 1);
+const dayAfterTomorrow = addDays(today, 2);
 
 export const placeholderVehicles: Vehicle[] = [
   { id: 1, make: 'Toyota', model: 'Corolla', year: 2020, vin: 'ABC123XYZ789', ownerName: 'Juan Pérez', ownerPhone: '555-1111', ownerEmail: 'juan.perez@email.com', licensePlate: 'PQR-123', color: 'Rojo', notes: 'Cliente frecuente, prefiere aceite sintético.' },
@@ -69,11 +71,12 @@ export const placeholderServiceRecords: ServiceRecord[] = [
     technicianId: 'T001',
     technicianName: 'Roberto Gómez',
     suppliesUsed: sampleSuppliesUsed1,
-    totalCost: 6000, // Example total charge to customer
+    totalCost: 6000, 
     totalSuppliesCost: totalSuppliesCost1,
     serviceProfit: 6000 - totalSuppliesCost1,
     status: 'Completado',
     mileage: 45000,
+    deliveryDateTime: setHours(setMinutes(twoDaysAgo, 30), 17).toISOString(), // Entregado a las 5:30 PM
   },
   {
     id: 'S002',
@@ -84,7 +87,7 @@ export const placeholderServiceRecords: ServiceRecord[] = [
     technicianId: 'T003',
     technicianName: 'Miguel Ángel Torres',
     suppliesUsed: sampleSuppliesUsed2,
-    totalCost: 7500, // Example total charge to customer
+    totalCost: 7500, 
     totalSuppliesCost: totalSuppliesCost2,
     serviceProfit: 7500 - totalSuppliesCost2,
     status: 'En Progreso',
@@ -99,7 +102,7 @@ export const placeholderServiceRecords: ServiceRecord[] = [
     technicianId: 'T002',
     technicianName: 'Laura Fernández',
     suppliesUsed: [],
-    totalCost: 3000, // Example total charge to customer (pure labor/diag)
+    totalCost: 3000, 
     totalSuppliesCost: 0,
     serviceProfit: 3000 - 0,
     status: 'Pendiente',
@@ -119,12 +122,42 @@ export const placeholderServiceRecords: ServiceRecord[] = [
     serviceProfit: 5000,
     status: 'Completado',
     mileage: 40000,
+    deliveryDateTime: setHours(setMinutes(subMonths(today, 1), 0), 16).toISOString(), // Entregado a las 4:00 PM
+  },
+  {
+    id: 'S005',
+    vehicleId: 2,
+    vehicleIdentifier: 'STU-456',
+    serviceDate: format(tomorrow, 'yyyy-MM-dd'),
+    description: 'Revisión de luces y sistema eléctrico',
+    technicianId: 'T002',
+    technicianName: 'Laura Fernández',
+    suppliesUsed: [],
+    totalCost: 4000,
+    totalSuppliesCost: 0,
+    serviceProfit: 4000,
+    status: 'Agendado',
+    mileage: 62300,
+  },
+  {
+    id: 'S006',
+    vehicleId: 3,
+    vehicleIdentifier: 'VWX-789',
+    serviceDate: format(dayAfterTomorrow, 'yyyy-MM-dd'),
+    description: 'Mantenimiento preventivo mayor',
+    technicianId: 'T001',
+    technicianName: 'Roberto Gómez',
+    suppliesUsed: sampleSuppliesUsed1, // Reusing for example
+    totalCost: 12000,
+    totalSuppliesCost: totalSuppliesCost1,
+    serviceProfit: 12000 - totalSuppliesCost1,
+    status: 'Agendado',
+    mileage: 31000,
   },
 ];
 
 export const placeholderDashboardMetrics: DashboardMetrics = {
-  activeServices: placeholderServiceRecords.filter(s => s.status === 'En Progreso' || s.status === 'Pendiente').length,
-  // Technician earnings metric might need adjustment based on new profit calculations or if salary is the primary factor
+  activeServices: placeholderServiceRecords.filter(s => s.status === 'En Progreso' || s.status === 'Pendiente' || s.status === 'Agendado').length,
   technicianEarnings: placeholderTechnicians.reduce((sum, tech) => sum + (tech.monthlySalary || 0), 0) / (placeholderTechnicians.length || 1) , 
   dailyRevenue: placeholderServiceRecords.filter(s => s.status === 'Completado' && s.serviceDate === format(today, 'yyyy-MM-dd')).reduce((sum, service) => sum + service.totalCost, 0),
   lowStockAlerts: placeholderInventory.filter(item => item.quantity <= item.lowStockThreshold).length,

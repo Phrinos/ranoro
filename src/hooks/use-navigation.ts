@@ -21,6 +21,7 @@ import {
   Filter,
   Settings,
   Building, 
+  CalendarClock,
 } from 'lucide-react';
 
 export interface NavigationEntry {
@@ -40,6 +41,7 @@ const BASE_NAV_STRUCTURE: ReadonlyArray<Omit<NavigationEntry, 'isActive'>> = [
   },
   // Servicios Group
   { label: 'Nuevo Servicio', path: '/servicios/nuevo', icon: PlusCircle, groupTag: "Servicios" },
+  { label: 'Agenda', path: '/servicios/agenda', icon: CalendarClock, groupTag: "Servicios" },
   { label: 'Lista de Servicios', path: '/servicios', icon: Wrench, groupTag: "Servicios" },
   { label: 'Historial de Servicios', path: '/servicios/historial', icon: History, groupTag: "Servicios" },
   
@@ -77,19 +79,20 @@ const useNavigation = (): NavigationEntry[] => {
   return BASE_NAV_STRUCTURE.map(entry => {
     let isActive = pathname === entry.path;
     
-    // Check if current path starts with entry path for parent active state,
-    // but only if it's not the root and not an exact match for another more specific entry.
     if (!isActive && entry.path && entry.path !== '/' && entry.path.length > 1 && pathname.startsWith(entry.path + '/')) {
         const isMoreSpecificActiveEntry = BASE_NAV_STRUCTURE.some(
-          otherEntry => otherEntry.path === pathname && otherEntry.path.length > entry.path.length
+          otherEntry => otherEntry.path.startsWith(pathname) && otherEntry.path.length > entry.path.length && otherEntry.path !== entry.path
         );
         if (!isMoreSpecificActiveEntry) {
             isActive = true;
         }
     }
-    // Special case for /servicios and /servicios/nuevo - /servicios should be active if /servicios/nuevo is active
-    // Also make /servicios active if /servicios/historial is active
-    if (entry.path === '/servicios' && (pathname.startsWith('/servicios/nuevo') || pathname.startsWith('/servicios/historial'))) {
+    
+    if (entry.path === '/servicios' && 
+        (pathname === '/servicios/nuevo' || 
+         pathname === '/servicios/historial' || 
+         pathname === '/servicios/agenda')
+       ) {
       isActive = true;
     }
 

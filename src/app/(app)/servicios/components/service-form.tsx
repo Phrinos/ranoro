@@ -20,22 +20,22 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent, CardHeader, CardTitle} from "@/components/ui/card";
-import { CalendarIcon, PlusCircle, Search, Trash2, AlertCircle, Car as CarIcon } from "lucide-react";
+import { CalendarIcon, PlusCircle, Search, Trash2, AlertCircle, Car as CarIcon, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { format } from "date-fns";
+import { format, parseISO } from "date-fns";
 import { es } from 'date-fns/locale';
 import type { ServiceRecord, Vehicle, Technician, InventoryItem, ServiceSupply } from "@/types";
 import React, { useEffect, useState, useMemo } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { VehicleDialog } from "../../vehiculos/components/vehicle-dialog";
 import type { VehicleFormValues } from "../../vehiculos/components/vehicle-form";
-import { placeholderVehicles as defaultPlaceholderVehicles } from "@/lib/placeholder-data"; // Import with alias if needed
+import { placeholderVehicles as defaultPlaceholderVehicles } from "@/lib/placeholder-data";
 
 
 const supplySchema = z.object({
   supplyId: z.string().min(1, "Seleccione un insumo"),
   quantity: z.coerce.number().min(1, "La cantidad debe ser al menos 1."),
-  unitPrice: z.coerce.number().optional(), // Cost price from inventory
+  unitPrice: z.coerce.number().optional(), 
   supplyName: z.string().optional(), 
 });
 
@@ -47,9 +47,10 @@ const serviceFormSchema = z.object({
   description: z.string().min(5, "La descripción debe tener al menos 5 caracteres."),
   technicianId: z.string().min(1, "Seleccione un técnico"),
   suppliesUsed: z.array(supplySchema).optional(),
-  totalServicePrice: z.coerce.number().min(0, "El precio del servicio no puede ser negativo."), // Renamed from totalCost
-  status: z.enum(["Pendiente", "En Progreso", "Completado", "Cancelado"]),
+  totalServicePrice: z.coerce.number().min(0, "El precio del servicio no puede ser negativo."),
+  status: z.enum(["Agendado", "Pendiente", "En Progreso", "Completado", "Cancelado"]),
   notes: z.string().optional(),
+  deliveryDateTime: z.date().optional(),
 });
 
 type ServiceFormValues = z.infer<typeof serviceFormSchema>;
@@ -59,10 +60,10 @@ interface ServiceFormProps {
   vehicles: Vehicle[]; 
   technicians: Technician[];
   inventoryItems: InventoryItem[];
-  onSubmit: (values: Omit<ServiceFormValues, 'vehicleLicensePlateSearch'> & { totalSuppliesCost?: number; serviceProfit?: number; vehicleId: number; }) => Promise<void>; 
+  onSubmit: (values: Omit<ServiceFormValues, 'vehicleLicensePlateSearch' | 'deliveryDateTime'> & { totalSuppliesCost?: number; serviceProfit?: number; vehicleId: number; deliveryDateTime?: string }) => Promise<void>; 
   onClose: () => void;
   isReadOnly?: boolean; 
-  onVehicleCreated?: (newVehicle: Vehicle) => void; // Callback when a new vehicle is created
+  onVehicleCreated?: (newVehicle: Vehicle) => void; 
 }
 
 export function ServiceForm({ 
@@ -80,7 +81,6 @@ export function ServiceForm({
   const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
   const [vehicleNotFound, setVehicleNotFound] = useState(false);
   const [isVehicleDialogOpen, setIsVehicleDialogOpen] = useState(false);
-   // Local list of vehicles, initialized from props, can be updated by new vehicle creation
   const [localVehicles, setLocalVehicles] = useState<Vehicle[]>(parentVehicles);
 
 
@@ -92,6 +92,7 @@ export function ServiceForm({
           vehicleId: initialData.vehicleId,
           vehicleLicensePlateSearch: initialData.vehicleIdentifier || "",
           serviceDate: new Date(initialData.serviceDate),
+          deliveryDateTime: initialData.deliveryDateTime ? parseISO(initialData.deliveryDateTime) : undefined,
           mileage: initialData.mileage ?? undefined, 
           suppliesUsed: initialData.suppliesUsed.map(s => ({
               supplyId: s.supplyId,
@@ -99,29 +100,29 @@ export function ServiceForm({
               supplyName: inventoryItems.find(i => i.id === s.supplyId)?.name || s.supplyName || '', 
               unitPrice: inventoryItems.find(i => i.id === s.supplyId)?.unitPrice || s.unitPrice || 0 
           })) || [],
-          totalServicePrice: initialData.totalCost, // totalCost from record is the totalServicePrice for the form
+          totalServicePrice: initialData.totalCost, 
         }
       : {
           vehicleId: undefined,
           vehicleLicensePlateSearch: "",
           serviceDate: new Date(),
+          deliveryDateTime: undefined,
           mileage: undefined, 
           description: "",
           technicianId: "",
           suppliesUsed: [],
           totalServicePrice: 0,
-          status: "Pendiente",
+          status: "Agendado", // Default status
           notes: "",
         },
   });
 
   useEffect(() => {
-    setLocalVehicles(parentVehicles); // Sync with parent's vehicle list if it changes
+    setLocalVehicles(parentVehicles); 
   }, [parentVehicles]);
 
 
   useEffect(() => {
-    // Pre-select vehicle if initialData and vehicleId are provided
     if (initialData && initialData.vehicleId) {
       const foundVehicle = localVehicles.find(v => v.id === initialData.vehicleId);
       if (foundVehicle) {
@@ -131,6 +132,15 @@ export function ServiceForm({
       }
     }
   }, [initialData, localVehicles, form]);
+  
+  const watchedStatus = form.watch("status");
+
+  useEffect(() => {
+    if (watchedStatus === "Completado" && !form.getValues("deliveryDateTime")) {
+      form.setValue("deliveryDateTime", new Date());
+    }
+  }, [watchedStatus, form]);
+
 
   const { fields, append, remove } = useFieldArray({
     control: form.control,
@@ -172,22 +182,21 @@ export function ServiceForm({
   
   const handleSaveNewVehicle = async (vehicleData: VehicleFormValues) => {
     const newVehicle: Vehicle = {
-      id: defaultPlaceholderVehicles.reduce((maxId, v) => Math.max(v.id, maxId), 0) + 1, // Ensure unique ID for demo
+      id: defaultPlaceholderVehicles.reduce((maxId, v) => Math.max(v.id, maxId), 0) + 1,
       ...vehicleData,
       year: Number(vehicleData.year),
     };
     
-    // Update the global placeholder list (for demo purposes, in real app this would be an API call and state update)
     defaultPlaceholderVehicles.push(newVehicle);
-    setLocalVehicles(prev => [...prev, newVehicle]); // Update local list for current form session
+    setLocalVehicles(prev => [...prev, newVehicle]); 
 
     setSelectedVehicle(newVehicle);
     form.setValue('vehicleId', newVehicle.id, { shouldValidate: true });
-    setVehicleLicensePlateSearch(newVehicle.licensePlate); // Update search bar with new plate
+    setVehicleLicensePlateSearch(newVehicle.licensePlate); 
     setVehicleNotFound(false);
     setIsVehicleDialogOpen(false);
     toast({ title: "Vehículo Registrado", description: `Se registró ${newVehicle.make} ${newVehicle.model} (${newVehicle.licensePlate}).`});
-    if (onVehicleCreated) { // Notify parent component (e.g., page)
+    if (onVehicleCreated) { 
         onVehicleCreated(newVehicle);
     }
   };
@@ -198,7 +207,7 @@ export function ServiceForm({
       onClose(); 
       return;
     }
-    // Trigger validation manually before submission, especially for vehicleId
+    
     const isValid = await form.trigger();
     if (!isValid || !values.vehicleId) {
          if (!values.vehicleId) {
@@ -209,7 +218,8 @@ export function ServiceForm({
     }
 
     const submissionData = {
-      ...values, // vehicleId is already here from form state
+      ...values, 
+      deliveryDateTime: values.deliveryDateTime ? values.deliveryDateTime.toISOString() : undefined,
       suppliesUsed: values.suppliesUsed?.map(s => {
         const itemDetails = inventoryItems.find(invItem => invItem.id === s.supplyId);
         return {
@@ -221,9 +231,8 @@ export function ServiceForm({
       }),
       totalSuppliesCost: totalSuppliesCost,
       serviceProfit: serviceProfit,
-      // totalServicePrice from form is already 'totalCost' conceptually for ServiceRecord
     };
-    await onSubmit(submissionData as Omit<ServiceFormValues, 'vehicleLicensePlateSearch'> & { totalSuppliesCost?: number; serviceProfit?: number; vehicleId: number; });
+    await onSubmit(submissionData as Omit<ServiceFormValues, 'vehicleLicensePlateSearch' | 'deliveryDateTime'> & { totalSuppliesCost?: number; serviceProfit?: number; vehicleId: number; deliveryDateTime?:string });
   };
 
   return (
@@ -250,12 +259,11 @@ export function ServiceForm({
                                 value={vehicleLicensePlateSearch}
                                 onChange={(e) => {
                                     setVehicleLicensePlateSearch(e.target.value);
-                                    field.onChange(e.target.value); // Keep RHF in sync
+                                    field.onChange(e.target.value); 
                                 }}
                                 disabled={isReadOnly} 
                             />
                             </FormControl>
-                             {/* FormMessage for vehicleLicensePlateSearch is not standard, vehicleId handles validation */}
                         </FormItem>
                         )}
                     />
@@ -268,7 +276,7 @@ export function ServiceForm({
                  <FormField
                     control={form.control}
                     name="vehicleId"
-                    render={() => ( <FormMessage /> )} // Only for displaying error related to vehicleId
+                    render={() => ( <FormMessage /> )} 
                   />
                 {selectedVehicle && (
                     <div className="p-3 border rounded-md bg-muted text-sm">
@@ -291,52 +299,51 @@ export function ServiceForm({
             </CardContent>
         </Card>
 
-
-        <FormField
-          control={form.control}
-          name="serviceDate"
-          render={({ field }) => (
-            <FormItem className="flex flex-col">
-              <FormLabel>Fecha de Servicio</FormLabel>
-              <Popover>
-                <PopoverTrigger asChild disabled={isReadOnly}>
-                  <FormControl>
-                    <Button
-                      variant={"outline"}
-                      className={cn(
-                        "w-full justify-start text-left font-normal",
-                        !field.value && "text-muted-foreground"
-                      )}
-                      disabled={isReadOnly}
-                    >
-                      {field.value ? (
-                        format(field.value, "PPP", { locale: es })
-                      ) : (
-                        <span>Seleccione una fecha</span>
-                      )}
-                      <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                    </Button>
-                  </FormControl>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={field.value}
-                    onSelect={field.onChange}
-                    disabled={(date) =>
-                      date > new Date() || date < new Date("1900-01-01") || isReadOnly
-                    }
-                    initialFocus
-                    locale={es}
-                  />
-                </PopoverContent>
-              </Popover>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <FormField
+            control={form.control}
+            name="serviceDate"
+            render={({ field }) => (
+                <FormItem className="flex flex-col">
+                <FormLabel>Fecha de Servicio</FormLabel>
+                <Popover>
+                    <PopoverTrigger asChild disabled={isReadOnly}>
+                    <FormControl>
+                        <Button
+                        variant={"outline"}
+                        className={cn(
+                            "w-full justify-start text-left font-normal",
+                            !field.value && "text-muted-foreground"
+                        )}
+                        disabled={isReadOnly}
+                        >
+                        {field.value ? (
+                            format(field.value, "PPP", { locale: es })
+                        ) : (
+                            <span>Seleccione una fecha</span>
+                        )}
+                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                        </Button>
+                    </FormControl>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                        mode="single"
+                        selected={field.value}
+                        onSelect={field.onChange}
+                        disabled={(date) =>
+                        date < new Date("1900-01-01") || isReadOnly
+                        }
+                        initialFocus
+                        locale={es}
+                    />
+                    </PopoverContent>
+                </Popover>
+                <FormMessage />
+                </FormItem>
+            )}
+            />
+            <FormField
             control={form.control}
             name="mileage"
             render={({ field }) => (
@@ -349,6 +356,8 @@ export function ServiceForm({
               </FormItem>
             )}
           />
+        </div>
+
 
         <FormField
           control={form.control}
@@ -394,14 +403,23 @@ export function ServiceForm({
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Estado del Servicio</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isReadOnly}>
+                <Select 
+                    onValueChange={(value) => {
+                        field.onChange(value);
+                        if (value === "Completado" && !form.getValues("deliveryDateTime")) {
+                            form.setValue("deliveryDateTime", new Date());
+                        }
+                    }} 
+                    defaultValue={field.value} 
+                    disabled={isReadOnly}
+                >
                   <FormControl>
                     <SelectTrigger>
                       <SelectValue placeholder="Seleccione un estado" />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    {["Pendiente", "En Progreso", "Completado", "Cancelado"].map((status) => (
+                    {["Agendado", "Pendiente", "En Progreso", "Completado", "Cancelado"].map((status) => (
                       <SelectItem key={status} value={status}>
                         {status}
                       </SelectItem>
@@ -414,6 +432,68 @@ export function ServiceForm({
           />
         </div>
         
+        {watchedStatus === "Completado" && (
+            <FormField
+            control={form.control}
+            name="deliveryDateTime"
+            render={({ field }) => (
+                <FormItem className="flex flex-col">
+                <FormLabel>Fecha y Hora de Entrega</FormLabel>
+                <Popover>
+                    <PopoverTrigger asChild disabled={isReadOnly}>
+                    <FormControl>
+                        <Button
+                        variant={"outline"}
+                        className={cn(
+                            "w-full justify-start text-left font-normal",
+                            !field.value && "text-muted-foreground"
+                        )}
+                        disabled={isReadOnly}
+                        >
+                        {field.value ? (
+                            format(field.value, "PPPp", { locale: es }) // Added 'p' for time
+                        ) : (
+                            <span>Seleccione fecha y hora</span>
+                        )}
+                        <Clock className="ml-auto h-4 w-4 opacity-50" />
+                        </Button>
+                    </FormControl>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                        mode="single"
+                        selected={field.value}
+                        onSelect={(date) => {
+                            const currentTime = field.value || new Date();
+                            const newDateTime = date ? new Date(date.getFullYear(), date.getMonth(), date.getDate(), currentTime.getHours(), currentTime.getMinutes()) : undefined;
+                            field.onChange(newDateTime);
+                        }}
+                        disabled={isReadOnly}
+                        initialFocus
+                        locale={es}
+                    />
+                    {/* Basic Time Input - can be improved with a dedicated time picker */}
+                    <div className="p-2 border-t">
+                        <Input 
+                            type="time"
+                            value={field.value ? format(field.value, "HH:mm") : ""}
+                            onChange={(e) => {
+                                const [hours, minutes] = e.target.value.split(':').map(Number);
+                                const currentDate = field.value || new Date();
+                                field.onChange(new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate(), hours, minutes));
+                            }}
+                            disabled={isReadOnly}
+                            className="w-full"
+                        />
+                    </div>
+                    </PopoverContent>
+                </Popover>
+                <FormMessage />
+                </FormItem>
+            )}
+            />
+        )}
+
         <Card>
             <CardHeader>
                 <CardTitle>Insumos Utilizados</CardTitle>
@@ -545,7 +625,7 @@ export function ServiceForm({
         open={isVehicleDialogOpen}
         onOpenChange={setIsVehicleDialogOpen}
         onSave={handleSaveNewVehicle}
-        vehicle={null} // Always for new vehicle creation
+        vehicle={null} 
     />
     </>
   );

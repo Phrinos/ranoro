@@ -1,8 +1,7 @@
 
 "use client";
 
-import { useState, useEffect }
-from 'react';
+import { useState, useEffect } from 'react';
 import { PageHeader } from "@/components/page-header";
 import { ServiceDialog } from "../components/service-dialog";
 import { placeholderVehicles, placeholderTechnicians, placeholderInventory, placeholderServiceRecords } from "@/lib/placeholder-data";
@@ -15,16 +14,13 @@ export default function NuevoServicioPage() {
   const { toast } = useToast();
   const router = useRouter();
   
-  // Manage local state for vehicles that might be created on this page
   const [vehicles, setVehicles] = useState<Vehicle[]>(placeholderVehicles);
-  const technicians = placeholderTechnicians; // Assuming static for now
-  const inventoryItems = placeholderInventory; // Assuming static for now
+  const technicians = placeholderTechnicians; 
+  const inventoryItems = placeholderInventory; 
 
-  // The dialog should always be open on this page
   const [isDialogOpen, setIsDialogOpen] = useState(true); 
 
   useEffect(() => {
-    // Ensure dialog is open when component mounts
     setIsDialogOpen(true);
   }, []);
 
@@ -34,11 +30,12 @@ export default function NuevoServicioPage() {
       vehicleId: data.vehicleId, 
       description: data.description,
       technicianId: data.technicianId,
-      status: data.status,
+      status: data.status || "Agendado", // Default to Agendado
       notes: data.notes,
       mileage: data.mileage,
       suppliesUsed: data.suppliesUsed,
       serviceDate: format(new Date(data.serviceDate), 'yyyy-MM-dd'),
+      deliveryDateTime: data.deliveryDateTime ? new Date(data.deliveryDateTime).toISOString() : undefined,
       totalCost: Number(data.totalServicePrice), 
       totalSuppliesCost: Number(data.totalSuppliesCost),
       serviceProfit: Number(data.serviceProfit),
@@ -59,12 +56,10 @@ export default function NuevoServicioPage() {
   };
 
   const handleVehicleCreated = (newVehicle: Vehicle) => {
-    // This updates the local 'vehicles' state used by the dialog on this page.
     setVehicles(prev => {
-      if (prev.find(v => v.id === newVehicle.id)) return prev; // Avoid duplicates
+      if (prev.find(v => v.id === newVehicle.id)) return prev; 
       return [...prev, newVehicle];
     });
-    // The global placeholderVehicles is updated by the VehicleDialog/Form itself in this demo setup.
   };
 
   return (
@@ -76,7 +71,7 @@ export default function NuevoServicioPage() {
       <ServiceDialog
         open={isDialogOpen}
         onOpenChange={(isOpen) => {
-          if (!isOpen) { // If dialog is being closed (e.g. by X or Esc)
+          if (!isOpen) { 
             handleDialogClose();
           } else {
             setIsDialogOpen(true);
