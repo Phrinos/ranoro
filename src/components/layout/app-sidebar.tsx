@@ -2,7 +2,8 @@
 "use client";
 
 import Link from "next/link";
-// import { AppLogo } from "@/components/icons"; // AppLogo removed
+import React from "react";
+import * as Collapsible from '@radix-ui/react-collapsible';
 import {
   Sidebar,
   SidebarContent,
@@ -15,51 +16,116 @@ import {
   SidebarGroupLabel,
   SidebarGroupContent,
 } from "@/components/ui/sidebar";
-import useNavigation, { type NavItem } from "@/hooks/use-navigation";
+import useNavigation, { type NavigationEntry } from "@/hooks/use-navigation";
 import { Button } from "@/components/ui/button";
-import { UserCircle } from "lucide-react"; // Changed from LogOut
+import { UserCircle, ChevronDown } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 export function AppSidebar() {
-  const navItems = useNavigation();
+  const navStructure = useNavigation();
+  const [openCollapsibles, setOpenCollapsibles] = React.useState<Record<string, boolean>>({});
 
-  const groupedNavItems = navItems.reduce((acc, item) => {
-    const groupName = item.group || "Otros";
-    if (!acc[groupName]) {
-      acc[groupName] = [];
+  React.useEffect(() => {
+    const initialOpenState: Record<string, boolean> = {};
+    navStructure.forEach(group => {
+      if (group.isCollapsible) {
+        initialOpenState[group.label] = !!group.defaultOpen || !!group.isActive;
+      }
+    });
+    setOpenCollapsibles(initialOpenState);
+  }, [navStructure]);
+
+  const toggleCollapsible = (label: string) => {
+    setOpenCollapsibles(prev => ({ ...prev, [label]: !prev[label] }));
+  };
+  
+  // Group entries by their groupTag for visual separation
+  const groupedByTag = navStructure.reduce((acc, item) => {
+    const tag = item.groupTag || "Otros";
+    if (!acc[tag]) {
+      acc[tag] = [];
     }
-    acc[groupName].push(item);
+    acc[tag].push(item);
     return acc;
-  }, {} as Record<string, NavItem[]>);
+  }, {} as Record<string, NavigationEntry[]>);
+
 
   return (
     <Sidebar collapsible="icon" side="left" variant="sidebar">
       <SidebarHeader className="border-b border-sidebar-border">
         <Link href="/dashboard" className="flex items-center justify-center text-lg font-semibold text-sidebar-foreground hover:text-sidebar-primary transition-colors h-full">
-          {/* <AppLogo className="h-8 w-8" /> Removed */}
           <span className="font-headline text-xl group-data-[collapsible=icon]:hidden">Ranoro</span>
-          {/* When collapsed, this header will be visually empty unless "Ranoro" is styled to show an initial or an icon is added here */}
         </Link>
       </SidebarHeader>
       <SidebarContent className="p-0">
-        {Object.entries(groupedNavItems).map(([groupName, items]) => (
-          <SidebarGroup key={groupName} className="p-2">
+        {Object.entries(groupedByTag).map(([tag, entries]) => (
+          <SidebarGroup key={tag} className="p-2">
             <SidebarGroupLabel className="group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0">
-              <span className="group-data-[collapsible=icon]:hidden">{groupName}</span>
+              <span className="group-data-[collapsible=icon]:hidden">{tag}</span>
             </SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
-                {items.map((item) => (
-                  <SidebarMenuItem key={item.path}>
-                    <SidebarMenuButton
-                      asChild
-                      isActive={item.isActive}
-                      tooltip={{children: item.label, className: "group-data-[collapsible=icon]:block hidden"}}
-                    >
-                      <Link href={item.path}>
-                        <item.icon />
-                        <span>{item.label}</span>
-                      </Link>
-                    </SidebarMenuButton>
+                {entries.map((entry) => (
+                  <SidebarMenuItem key={entry.label}>
+                    {entry.isCollapsible && entry.subItems ? (
+                       <Collapsible.Root
+                        open={openCollapsibles[entry.label]}
+                        onOpenChange={() => toggleCollapsible(entry.label)}
+                        className="w-full"
+                      >
+                        <Collapsible.Trigger asChild>
+                          <SidebarMenuButton
+                            className="flex justify-between w-full group-data-[collapsible=icon]:justify-center"
+                            isActive={entry.isActive}
+                            tooltip={{children: entry.label, className: "group-data-[collapsible=icon]:block hidden"}}
+                          >
+                            <div className="flex items-center gap-2">
+                              <entry.icon />
+                              <span className="group-data-[collapsible=icon]:hidden">{entry.label}</span>
+                            </div>
+                            <ChevronDown 
+                              className={cn(
+                                "h-4 w-4 transition-transform group-data-[collapsible=icon]:hidden",
+                                openCollapsibles[entry.label] && "rotate-180"
+                              )} 
+                            />
+                          </SidebarMenuButton>
+                        </Collapsible.Trigger>
+                        <Collapsible.Content className="overflow-hidden transition-all data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down">
+                          {/* Collapsed view for sub-items needs specific handling if desired, or they just disappear */}
+                          <div className="group-data-[collapsible=icon]:hidden">
+                            <SidebarMenu className="ml-4 mt-1 pl_2 border-l border-sidebar-border/50">
+                              {entry.subItems.map((subItem) => (
+                                <SidebarMenuItem key={subItem.path || subItem.label}>
+                                  <SidebarMenuButton
+                                    asChild
+                                    isActive={subItem.isActive}
+                                    size="sm"
+                                    tooltip={{children: subItem.label, className: "group-data-[collapsible=icon]:block hidden"}}
+                                  >
+                                    <Link href={subItem.path || "#"}>
+                                      <subItem.icon />
+                                      <span>{subItem.label}</span>
+                                    </Link>
+                                  </SidebarMenuButton>
+                                </SidebarMenuItem>
+                              ))}
+                            </SidebarMenu>
+                          </div>
+                        </Collapsible.Content>
+                      </Collapsible.Root>
+                    ) : (
+                      <SidebarMenuButton
+                        asChild
+                        isActive={entry.isActive}
+                        tooltip={{children: entry.label, className: "group-data-[collapsible=icon]:block hidden"}}
+                      >
+                        <Link href={entry.path || "#"}>
+                          <entry.icon />
+                           <span className="group-data-[collapsible=icon]:hidden">{entry.label}</span>
+                        </Link>
+                      </SidebarMenuButton>
+                    )}
                   </SidebarMenuItem>
                 ))}
               </SidebarMenu>
