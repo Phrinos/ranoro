@@ -74,10 +74,10 @@ export default function LoginPage() {
     <div className="flex min-h-screen flex-col items-center justify-center bg-muted/40 p-4">
       <div className="mb-8 text-center">
         <Image
-          src="/ranoro-logo.png"
+          src="/ranoro-logo.png" 
           alt="Ranoro Logo"
-          width={250}
-          height={80}
+          width={250} 
+          height={83} 
           priority
           className="mx-auto"
           data-ai-hint="ranoro logo"
