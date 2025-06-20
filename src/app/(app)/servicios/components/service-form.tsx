@@ -31,7 +31,7 @@ import { VehicleDialog } from "../../vehiculos/components/vehicle-dialog";
 import type { VehicleFormValues } from "../../vehiculos/components/vehicle-form";
 import { placeholderVehicles as defaultPlaceholderVehicles } from "@/lib/placeholder-data";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label"; // Added import
+import { Label } from "@/components/ui/label"; 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 
@@ -260,7 +260,7 @@ export function ServiceForm({
     }
     
     const isValidForm = await form.trigger();
-    if (!isValidForm || (mode === 'service' && !values.vehicleId) ) { // vehicleId might be optional for generic quotes
+    if (!isValidForm || (mode === 'service' && !values.vehicleId) ) { 
          if (mode === 'service' && !values.vehicleId) {
             form.setError("vehicleId", { type: "manual", message: "Debe seleccionar o registrar un vehículo." });
         }
@@ -303,25 +303,26 @@ export function ServiceForm({
     } else { // mode === 'quote'
       const quoteData: QuoteRecord = {
         id: initialDataQuote?.id || `Q_NEW_${Date.now()}`,
-        quoteDate: values.serviceDate.toISOString(), // Use serviceDate field for quoteDate
+        quoteDate: values.serviceDate.toISOString(), 
         vehicleId: values.vehicleId,
         vehicleIdentifier: selectedVehicle?.licensePlate || values.vehicleLicensePlateSearch,
         description: values.description,
-        preparedByTechnicianId: values.technicianId,
-        preparedByTechnicianName: technicians.find(t => t.id === values.technicianId)?.name,
+        // preparedByTechnicianId and preparedByTechnicianName will be set by the calling page (NuevaCotizacionPage)
+        preparedByTechnicianId: undefined, 
+        preparedByTechnicianName: undefined,
         suppliesProposed: values.suppliesUsed?.map(s => {
           const itemDetails = inventoryItems.find(invItem => invItem.id === s.supplyId);
           return {
             supplyId: s.supplyId,
             quantity: s.quantity,
-            unitPrice: itemDetails?.sellingPrice || 0, // For quotes, use selling price of item for line items
+            unitPrice: itemDetails?.sellingPrice || 0, 
             supplyName: itemDetails?.name || s.supplyName,
           };
         }) || [],
-        estimatedTotalCost: currentTotalServicePrice, // This is the final price for the client
+        estimatedTotalCost: currentTotalServicePrice, 
         estimatedSubTotal: currentTotalServicePrice / (1 + IVA_RATE),
         estimatedTaxAmount: currentTotalServicePrice - (currentTotalServicePrice / (1 + IVA_RATE)),
-        estimatedTotalSuppliesCost: currentTotalSuppliesCost, // Cost to workshop
+        estimatedTotalSuppliesCost: currentTotalSuppliesCost, 
         estimatedProfit: currentTotalServicePrice - currentTotalSuppliesCost,
         notes: values.notes,
         mileage: values.mileage,
@@ -358,7 +359,7 @@ export function ServiceForm({
       supplyId: supplyItem.id,
       supplyName: supplyItem.name,
       quantity: quantity,
-      unitPrice: mode === 'quote' ? supplyItem.sellingPrice : supplyItem.unitPrice, // Use sellingPrice for quote item display, unitPrice for service cost
+      unitPrice: mode === 'quote' ? supplyItem.sellingPrice : supplyItem.unitPrice, 
     });
     
     setAddSupplyDialogState({ selectedSupplyId: '', quantity: 1 }); 
@@ -374,7 +375,7 @@ export function ServiceForm({
 
   const cardTitleText = mode === 'quote' ? "Información del Vehículo y Cotización" : "Información del Vehículo y Servicio";
   const dateLabelText = mode === 'quote' ? "Fecha de Cotización" : "Fecha y Hora de Recepción";
-  const technicianLabelText = mode === 'quote' ? "Preparado por" : "Técnico Asignado";
+  const technicianLabelText = mode === 'service' ? "Técnico Asignado" : ""; // No label for quote mode as field is hidden
   const totalCostLabelText = mode === 'quote' ? "Costo Estimado (IVA incluido)" : "Costo del Servicio (IVA incluido)";
   const submitButtonText = mode === 'quote' ? "Generar PDF de Cotización" : (initialDataService ? "Actualizar Servicio" : "Crear Servicio");
 
@@ -494,7 +495,7 @@ export function ServiceForm({
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 items-end">
                     <FormField
                     control={form.control}
-                    name="serviceDate" // Name remains serviceDate for schema simplicity
+                    name="serviceDate" 
                     render={({ field }) => (
                         <FormItem className="flex flex-col">
                         <FormLabel>{dateLabelText}</FormLabel>
@@ -598,35 +599,37 @@ export function ServiceForm({
                 />
                 
                 <div className="grid grid-cols-1 md:grid-cols-5 gap-4 pt-4 items-end">
-                    <FormField
-                        control={form.control}
-                        name="technicianId"
-                        render={({ field }) => (
-                          <FormItem className="md:col-span-2">
-                            <FormLabel className="text-lg">{technicianLabelText}</FormLabel>
-                            <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isReadOnly}>
-                              <FormControl>
-                                <SelectTrigger>
-                                  <SelectValue placeholder={`Seleccione un ${mode === 'quote' ? 'preparador' : 'técnico'}`} />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                {technicians.map((technician) => (
-                                  <SelectItem key={technician.id} value={technician.id}> 
-                                    {technician.name}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
+                    {mode === 'service' && ( 
+                      <FormField
+                          control={form.control}
+                          name="technicianId"
+                          render={({ field }) => (
+                            <FormItem className="md:col-span-2">
+                              <FormLabel className="text-lg">{technicianLabelText}</FormLabel>
+                              <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isReadOnly}>
+                                <FormControl>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Seleccione un técnico" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  {technicians.map((technician) => (
+                                    <SelectItem key={technician.id} value={technician.id}> 
+                                      {technician.name}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                    )}
                     <FormField
                         control={form.control}
                         name="totalServicePrice"
                         render={({ field }) => (
-                            <FormItem className="md:col-span-3">
+                            <FormItem className={mode === 'service' ? "md:col-span-3" : "md:col-span-5"}>
                                 <FormLabel className="text-lg">{totalCostLabelText}</FormLabel>
                                 <FormControl>
                                 <Input type="number" step="0.01" placeholder="Ej: 1740.00" {...field} disabled={isReadOnly} className="text-lg font-medium"/>
@@ -726,8 +729,8 @@ export function ServiceForm({
                                 {fields.map((item, index) => {
                                     const currentItemDetails = inventoryItems.find(invItem => invItem.id === item.supplyId);
                                     const unitPriceForCalc = mode === 'quote' 
-                                        ? (item.unitPrice || currentItemDetails?.sellingPrice || 0) // for quote lines, show client-facing prices
-                                        : (item.unitPrice || currentItemDetails?.unitPrice || 0); // for service, show workshop cost
+                                        ? (item.unitPrice || currentItemDetails?.sellingPrice || 0) 
+                                        : (item.unitPrice || currentItemDetails?.unitPrice || 0); 
                                     const totalItemPrice = unitPriceForCalc * item.quantity;
                                     return (
                                         <TableRow key={item.id}>
@@ -772,9 +775,9 @@ export function ServiceForm({
                                 mode === 'quote' 
                                 ? watchedSupplies?.reduce((sum, supply) => {
                                     const item = inventoryItems.find(i => i.id === supply.supplyId);
-                                    return sum + (item?.sellingPrice || supply.unitPrice || 0) * supply.quantity; // Use sellingPrice for quote total
+                                    return sum + (item?.sellingPrice || supply.unitPrice || 0) * supply.quantity; 
                                   }, 0) || 0
-                                : totalSuppliesCost // Use workshop cost for service
+                                : totalSuppliesCost 
                             )}
                         </span>
                     </p>
@@ -791,7 +794,7 @@ export function ServiceForm({
             </CardHeader>
             <CardContent className="space-y-1 text-lg">
                 <div className="flex justify-between pt-1">
-                    <span>{mode === 'quote' ? 'Costo Estimado Cliente (IVA Incluido):' : 'Costo del Servicio (Cliente, IVA Incluido):'}</span> 
+                    <span>{mode === 'quote' ? 'Costo Estimado Cliente (IVA Incluido):' : 'Costo del Servicio (IVA incluido):'}</span> 
                     <span className="font-semibold text-blue-600 dark:text-blue-400">{formatCurrency(watchedTotalServicePrice)}</span>
                 </div>
                 <div className="flex justify-between">
