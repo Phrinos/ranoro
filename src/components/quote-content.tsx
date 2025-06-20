@@ -2,7 +2,7 @@
 "use client";
 
 import type { QuoteRecord, Vehicle, Technician } from '@/types';
-import { format, parseISO, isValid } from 'date-fns';
+import { format, parseISO, isValid, addDays } from 'date-fns'; // Added addDays
 import { es } from 'date-fns/locale';
 import React, { useEffect, useState } from 'react';
 import Image from 'next/image';
@@ -35,12 +35,16 @@ export function QuoteContent({ quote, vehicle, preparedByTechnician, previewWork
     if (previewWorkshopInfo) {
       setWorkshopInfo({...initialWorkshopInfo, ...previewWorkshopInfo});
     } else {
-      const storedInfo = localStorage.getItem(LOCALSTORAGE_KEY);
-      if (storedInfo) {
-        try {
-          setWorkshopInfo({...initialWorkshopInfo, ...JSON.parse(storedInfo)});
-        } catch (e) {
-          console.error("Failed to parse workshop info from localStorage", e);
+      if (typeof window !== 'undefined') {
+        const storedInfo = localStorage.getItem(LOCALSTORAGE_KEY);
+        if (storedInfo) {
+          try {
+            setWorkshopInfo({...initialWorkshopInfo, ...JSON.parse(storedInfo)});
+          } catch (e) {
+            console.error("Failed to parse workshop info from localStorage", e);
+            setWorkshopInfo(initialWorkshopInfo);
+          }
+        } else {
           setWorkshopInfo(initialWorkshopInfo);
         }
       } else {
@@ -69,7 +73,7 @@ export function QuoteContent({ quote, vehicle, preparedByTechnician, previewWork
   );
 
   const validityDays = 30; // Example validity
-  const validityDate = format(addDays(quoteDate, validityDays), "dd 'de' MMMM 'de' yyyy", { locale: es });
+  const validityDate = isValid(quoteDate) ? format(addDays(quoteDate, validityDays), "dd 'de' MMMM 'de' yyyy", { locale: es }) : 'N/A';
 
   return (
     <div className="font-sans bg-white text-black p-6 printable-ticket ticket-preview-content max-w-4xl mx-auto text-sm print:max-w-full print:text-xs print:p-4">
@@ -83,6 +87,7 @@ export function QuoteContent({ quote, vehicle, preparedByTechnician, previewWork
             height={50} 
             className="mb-2"
             data-ai-hint="workshop logo"
+            priority={typeof window === 'undefined'} // Only priority on server for initial load
             />
           <h1 className="text-2xl font-bold text-gray-800">{workshopInfo.name}</h1>
           <p>{workshopInfo.addressLine1}</p>
