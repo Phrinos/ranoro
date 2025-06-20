@@ -39,31 +39,44 @@ export interface NavigationEntry {
 }
 
 const BASE_NAV_STRUCTURE: ReadonlyArray<Omit<NavigationEntry, 'isActive'>> = [
-  // Principal
+  // Mi Taller
   {
     label: 'Panel Principal',
     path: '/dashboard',
     icon: LayoutDashboard,
-    groupTag: "Principal"
+    groupTag: "Mi Taller"
   },
-  { label: 'Vehículos', path: '/vehiculos', icon: Car, groupTag: "Principal" },
+  { 
+    label: 'Vehículos', 
+    path: '/vehiculos', 
+    icon: Car, 
+    groupTag: "Mi Taller" 
+  },
   {
     label: 'Cotizaciones', 
     path: '/cotizaciones/historial', 
     icon: FileText, 
-    groupTag: "Principal"
+    groupTag: "Mi Taller"
   },
-  
-  // Servicios
-  { label: 'Agenda', path: '/servicios/agenda', icon: CalendarClock, groupTag: "Servicios" },
-  { label: 'Servicios', path: '/servicios/historial', icon: Wrench, groupTag: "Servicios" },
+  { 
+    label: 'Agenda', 
+    path: '/servicios/agenda', 
+    icon: CalendarClock, 
+    groupTag: "Mi Taller" 
+  },
+  { 
+    label: 'Servicios', 
+    path: '/servicios/historial', 
+    icon: Wrench, 
+    groupTag: "Mi Taller" 
+  },
   {
     label: 'Punto de Venta', 
     path: '/pos',
     icon: Receipt, 
-    groupTag: "Servicios" // Moved from Finanzas to Servicios
+    groupTag: "Mi Taller"
   },
-
+  
   // Finanzas
   {
     label: 'Reporte Financiero',
@@ -97,7 +110,7 @@ const BASE_NAV_STRUCTURE: ReadonlyArray<Omit<NavigationEntry, 'isActive'>> = [
   },
 ];
 
-const DESIRED_GROUP_ORDER = ["Principal", "Servicios", "Finanzas", "Inventario", "Administración"];
+const DESIRED_GROUP_ORDER = ["Mi Taller", "Finanzas", "Inventario", "Administración"];
 
 
 const useNavigation = (): NavigationEntry[] => {
@@ -108,49 +121,62 @@ const useNavigation = (): NavigationEntry[] => {
   const entriesWithActiveState = filteredNavStructure.map(entry => {
     let isActive = pathname === entry.path;
 
+    // More specific active check for parent paths
     if (!isActive && entry.path && entry.path !== '/' && entry.path.length > 1 && pathname.startsWith(entry.path + '/')) {
+        // Check if there's a more specific active entry (e.g., a sub-page)
         const isMoreSpecificActiveEntry = filteredNavStructure.some(
           otherEntry => otherEntry.path.startsWith(pathname) && otherEntry.path.length > entry.path.length && otherEntry.path !== entry.path
         );
         if (!isMoreSpecificActiveEntry) {
+            // If no more specific entry is active, then this parent path can be considered active
             isActive = true;
         }
     }
     
-    if (entry.path === '/cotizaciones/historial' && (pathname === '/cotizaciones/historial' || pathname.startsWith('/cotizaciones/nuevo'))) {
+    // Special handling for /cotizaciones/historial to be active also for /cotizaciones/nuevo
+    if (entry.path === '/cotizaciones/historial' && pathname.startsWith('/cotizaciones/nuevo')) {
         isActive = true;
     }
     
+    // Special handling for /servicios/historial to be active also for /servicios/nuevo and /servicios/agenda
+    // This rule might need adjustment if Agenda has its own top-level item and shouldn't make "Servicios" active
     if (entry.path === '/servicios/historial' && 
-        (pathname === '/servicios/historial' || 
-         pathname.startsWith('/servicios/nuevo') || 
-         pathname.startsWith('/servicios/agenda'))) {
+        (pathname.startsWith('/servicios/nuevo'))) {
       isActive = true;
     }
+    if (entry.path === '/servicios/agenda' && pathname.startsWith('/servicios/agenda')) {
+        isActive = true;
+    }
     
+    // Special handling for /inventario to be active for its sub-pages
     if (entry.path === '/inventario' &&
         (pathname.startsWith('/inventario/categorias') ||
          pathname.startsWith('/inventario/proveedores') ||
-         pathname.match(/^\/inventario\/P[0-9]+$/) || 
-         pathname.match(/^\/inventario\/[a-zA-Z0-9_-]+$/) && !pathname.includes('categorias') && !pathname.includes('proveedores')
+         pathname.match(/^\/inventario\/P[0-9]+$/) || // Matches /inventario/P001 etc.
+         pathname.match(/^\/inventario\/[a-zA-Z0-9_-]+$/) && !pathname.includes('categorias') && !pathname.includes('proveedores') // Matches detail page
        )) {
       isActive = true;
     }
 
-     if (entry.path === '/pos' && (pathname === '/pos' || pathname.startsWith('/pos/nuevo'))) {
+     // Special handling for /pos to be active for /pos/nuevo
+     if (entry.path === '/pos' && pathname.startsWith('/pos/nuevo')) {
       isActive = true;
     }
 
+     // Prevent /admin/usuarios from being active if /admin/roles is active
      if (entry.path === '/admin/usuarios' && pathname.startsWith('/admin/roles')) { 
         isActive = false; 
     }
+    // Ensure /admin/roles is active when on its page
     if (entry.path === '/admin/roles' && pathname === '/admin/roles') {
         isActive = true;
     }
 
+
     return { ...entry, isActive };
   });
   
+  // Group by tag
   const groupedByTag = entriesWithActiveState.reduce((acc, item) => {
       const tag = item.groupTag;
       if (!acc[tag]) {
@@ -160,8 +186,11 @@ const useNavigation = (): NavigationEntry[] => {
       return acc;
     }, {} as Record<string, NavigationEntry[]>);
 
+  // Sort groups by DESIRED_GROUP_ORDER, then sort items within each group by their original order in BASE_NAV_STRUCTURE
   const sortedGroupEntries = DESIRED_GROUP_ORDER.reduce((acc, groupName) => {
     if (groupedByTag[groupName]) {
+      // Sort items within the group based on their original index in BASE_NAV_STRUCTURE
+      // This preserves the explicit order defined in BASE_NAV_STRUCTURE for items within the same group
       const groupItems = groupedByTag[groupName].sort((a, b) => {
         return BASE_NAV_STRUCTURE.findIndex(nav => nav.path === a.path) - BASE_NAV_STRUCTURE.findIndex(nav => nav.path === b.path);
       });
