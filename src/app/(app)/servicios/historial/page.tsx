@@ -8,7 +8,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Search, ListFilter, CalendarIcon as CalendarDateIcon, DollarSign, TrendingUp, Car as CarIcon, Wrench as WrenchIcon } from "lucide-react";
+import { Search, ListFilter, CalendarIcon as CalendarDateIcon, DollarSign, TrendingUp, Car as CarIcon, Wrench as WrenchIcon, PlusCircle } from "lucide-react";
 import { ServicesTable } from "../components/services-table"; 
 import { ServiceDialog } from "../components/service-dialog"; 
 import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
@@ -21,6 +21,7 @@ import { format, parseISO, compareAsc, compareDesc, isWithinInterval, isValid, s
 import { es } from 'date-fns/locale';
 import type { DateRange } from "react-day-picker";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { cn } from "@/lib/utils";
 
 type ServiceSortOption = 
@@ -188,8 +189,16 @@ export default function HistorialServiciosPage() {
   return (
     <>
       <PageHeader
-        title="Historial de Servicios"
+        title="Servicios"
         description="Consulta, filtra y ordena todas las órdenes de servicio registradas."
+        actions={
+          <Button asChild>
+            <Link href="/servicios/nuevo">
+              <PlusCircle className="mr-2 h-4 w-4" />
+              Nuevo Servicio
+            </Link>
+          </Button>
+        }
       />
 
       <div className="mb-6 grid gap-6 md:grid-cols-2 lg:grid-cols-4">
