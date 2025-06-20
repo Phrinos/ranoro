@@ -20,7 +20,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent, CardHeader, CardTitle} from "@/components/ui/card";
-import { CalendarIcon, PlusCircle, Search, Trash2, AlertCircle, Car as CarIcon, Clock } from "lucide-react";
+import { CalendarIcon, PlusCircle, Search, Trash2, AlertCircle, Car as CarIcon, Clock, DollarSign } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format, parseISO, setHours, setMinutes, isValid, startOfDay } from "date-fns";
 import { es } from 'date-fns/locale';
@@ -35,7 +35,7 @@ import { placeholderVehicles as defaultPlaceholderVehicles } from "@/lib/placeho
 const supplySchema = z.object({
   supplyId: z.string().min(1, "Seleccione un insumo"),
   quantity: z.coerce.number().min(1, "La cantidad debe ser al menos 1."),
-  unitPrice: z.coerce.number().optional(), // Cost price for the workshop
+  unitPrice: z.coerce.number().optional(), 
   supplyName: z.string().optional(), 
 });
 
@@ -45,7 +45,7 @@ const serviceFormSchema = z.object({
   serviceDate: z.date({ required_error: "La fecha y hora de servicio son obligatorias." }),
   mileage: z.coerce.number().int().min(0, "El kilometraje no puede ser negativo.").optional(),
   description: z.string().min(5, "La descripción debe tener al menos 5 caracteres."),
-  totalServicePrice: z.coerce.number().min(0, "El precio del servicio no puede ser negativo."), // This is the final, tax-inclusive price
+  totalServicePrice: z.coerce.number().min(0, "El precio del servicio no puede ser negativo."), 
   notes: z.string().optional(),
   technicianId: z.string().min(1, "Seleccione un técnico"),
   suppliesUsed: z.array(supplySchema).optional(),
@@ -60,7 +60,7 @@ interface ServiceFormProps {
   vehicles: Vehicle[]; 
   technicians: Technician[];
   inventoryItems: InventoryItem[];
-  onSubmit: (data: ServiceRecord) => Promise<void>; // Changed to expect full ServiceRecord for print ticket
+  onSubmit: (data: ServiceRecord) => Promise<void>; 
   onClose: () => void;
   isReadOnly?: boolean; 
   onVehicleCreated?: (newVehicle: Vehicle) => void; 
@@ -70,16 +70,16 @@ const IVA_RATE = 0.16;
 
 const generateTimeSlots = () => {
     const slots = [];
-    for (let hour = 8; hour <= 18; hour++) {
-        if (hour === 8) {
+    for (let hour = 8; hour <= 18; hour++) { // Adjust range as needed, e.g. 8 AM to 6:30 PM
+        if (hour === 8) { // Start at 8:30 for example
             slots.push({ value: `${hour}:30`, label: `08:30 AM`});
-        } else if (hour === 18) {
+        } else if (hour === 18) { // End at 6:30 PM for example
             slots.push({ value: `${hour}:00`, label: `${hour}:00 PM`});
             slots.push({ value: `${hour}:30`, label: `${hour}:30 PM`});
         }
-         else {
-            slots.push({ value: `${hour}:00`, label: `${hour < 12 ? hour : (hour === 12 ? 12 : hour - 12)}:00 ${hour < 12 ? 'AM' : 'PM'}`});
-            slots.push({ value: `${hour}:30`, label: `${hour < 12 ? hour : (hour === 12 ? 12 : hour - 12)}:30 ${hour < 12 ? 'AM' : 'PM'}`});
+         else { // Regular slots
+            slots.push({ value: `${hour}:00`, label: `${String(hour).padStart(2, '0')}:00 ${hour < 12 ? 'AM' : 'PM'}`});
+            slots.push({ value: `${hour}:30`, label: `${String(hour).padStart(2, '0')}:30 ${hour < 12 ? 'AM' : 'PM'}`});
         }
     }
     return slots;
@@ -119,14 +119,14 @@ export function ServiceForm({
               supplyId: s.supplyId,
               quantity: s.quantity,
               supplyName: inventoryItems.find(i => i.id === s.supplyId)?.name || s.supplyName || '', 
-              unitPrice: inventoryItems.find(i => i.id === s.supplyId)?.unitPrice || s.unitPrice || 0 // cost price
+              unitPrice: inventoryItems.find(i => i.id === s.supplyId)?.unitPrice || s.unitPrice || 0 
           })) || [],
-          totalServicePrice: initialData.totalCost, // totalCost from record is final tax-inclusive price
+          totalServicePrice: initialData.totalCost, 
         }
       : {
           vehicleId: undefined,
           vehicleLicensePlateSearch: "",
-          serviceDate: setHours(setMinutes(new Date(), 30), 8), // Default to 8:30 AM
+          serviceDate: setHours(setMinutes(new Date(), 30), 8), 
           deliveryDateTime: undefined,
           mileage: undefined, 
           description: "",
@@ -254,7 +254,7 @@ export function ServiceForm({
     }
     
     const completeServiceData: ServiceRecord = {
-      id: initialData?.id || `S_NEW_${Date.now()}`, // Placeholder for new, parent should assign final
+      id: initialData?.id || `S_NEW_${Date.now()}`, 
       vehicleId: values.vehicleId!,
       vehicleIdentifier: selectedVehicle?.licensePlate || values.vehicleLicensePlateSearch,
       serviceDate: values.serviceDate.toISOString(),
@@ -291,6 +291,10 @@ export function ServiceForm({
     form.setValue(dateField, newDateTime, { shouldValidate: true });
 };
 
+const formatCurrency = (amount: number | undefined) => {
+    if (amount === undefined) return '$0.00';
+    return `$${amount.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+};
 
   return (
     <>
@@ -302,12 +306,12 @@ export function ServiceForm({
                 <CardTitle>Información del Vehículo y Servicio</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-                <div className="flex items-end gap-2">
+                <div className="flex flex-col sm:flex-row items-end gap-2">
                     <FormField
                         control={form.control}
                         name="vehicleLicensePlateSearch"
                         render={({ field }) => (
-                        <FormItem className="flex-1">
+                        <FormItem className="flex-1 w-full sm:w-auto">
                             <FormLabel>Placa del Vehículo</FormLabel>
                             <FormControl>
                             <Input 
@@ -315,17 +319,18 @@ export function ServiceForm({
                                 {...field} 
                                 value={vehicleLicensePlateSearch}
                                 onChange={(e) => {
-                                    setVehicleLicensePlateSearch(e.target.value);
-                                    field.onChange(e.target.value); 
+                                    setVehicleLicensePlateSearch(e.target.value.toUpperCase());
+                                    field.onChange(e.target.value.toUpperCase()); 
                                 }}
                                 disabled={isReadOnly} 
+                                className="uppercase"
                             />
                             </FormControl>
                         </FormItem>
                         )}
                     />
                     {!isReadOnly && (
-                        <Button type="button" onClick={handleSearchVehicle} variant="outline">
+                        <Button type="button" onClick={handleSearchVehicle} variant="outline" className="w-full sm:w-auto mt-2 sm:mt-0">
                             <Search className="mr-2 h-4 w-4" /> Buscar
                         </Button>
                     )}
@@ -343,12 +348,12 @@ export function ServiceForm({
                     </div>
                 )}
                 {vehicleNotFound && !selectedVehicle && !isReadOnly && (
-                    <div className="p-3 border border-orange-500 rounded-md bg-orange-50 text-sm text-orange-700 flex items-center justify-between">
+                    <div className="p-3 border border-orange-500 rounded-md bg-orange-50 dark:bg-orange-900/30 dark:text-orange-300 text-sm text-orange-700 flex flex-col sm:flex-row items-center justify-between gap-2">
                         <div className="flex items-center gap-2">
-                            <AlertCircle className="h-5 w-5"/>
+                            <AlertCircle className="h-5 w-5 shrink-0"/>
                             <p>Vehículo con placa "{vehicleLicensePlateSearch}" no encontrado.</p>
                         </div>
-                        <Button type="button" size="sm" variant="outline" onClick={() => setIsVehicleDialogOpen(true)}>
+                        <Button type="button" size="sm" variant="outline" onClick={() => setIsVehicleDialogOpen(true)} className="w-full sm:w-auto">
                             <CarIcon className="mr-2 h-4 w-4"/> Registrar Nuevo Vehículo
                         </Button>
                     </div>
@@ -453,7 +458,7 @@ export function ServiceForm({
                         <FormItem>
                             <FormLabel className="text-base font-semibold">Precio Total del Servicio (Cobro al Cliente, IVA Incluido)</FormLabel>
                             <FormControl>
-                            <Input type="number" step="0.01" placeholder="Ej: 1740 (IVA Inc.)" {...field} disabled={isReadOnly} className="text-lg"/>
+                            <Input type="number" step="0.01" placeholder="Ej: 1740.00" {...field} disabled={isReadOnly} className="text-lg font-medium"/>
                             </FormControl>
                             <FormDescription>Este es el monto final que pagará el cliente por el servicio completo (IVA incluido).</FormDescription>
                             <FormMessage />
@@ -620,7 +625,7 @@ export function ServiceForm({
                             onValueChange={(value) => {
                                 field.onChange(value);
                                 const selectedSupply = inventoryItems.find(s => s.id === value);
-                                form.setValue(`suppliesUsed.${index}.unitPrice`, selectedSupply?.unitPrice || 0); // Cost price
+                                form.setValue(`suppliesUsed.${index}.unitPrice`, selectedSupply?.unitPrice || 0); 
                                 form.setValue(`suppliesUsed.${index}.supplyName`, selectedSupply?.name || '');
                             }} 
                             defaultValue={field.value}
@@ -633,8 +638,8 @@ export function ServiceForm({
                             </FormControl>
                             <SelectContent>
                                 {inventoryItems.map((supply) => (
-                                <SelectItem key={supply.id} value={supply.id} disabled={supply.quantity === 0 || isReadOnly}> 
-                                    {supply.name} (Stock: {supply.quantity}) - Costo: ${supply.unitPrice.toLocaleString('es-ES')}
+                                <SelectItem key={supply.id} value={supply.id} disabled={(supply.quantity === 0 && supply.id !== item.supplyId) || isReadOnly}> 
+                                    {supply.name} (Stock: {supply.quantity}) - Costo: {formatCurrency(supply.unitPrice)}
                                 </SelectItem>
                                 ))}
                             </SelectContent>
@@ -674,19 +679,28 @@ export function ServiceForm({
                     </Button>
                 )}
                  <div className="mt-4 text-sm font-medium">
-                    <p>Costo Total de Insumos (para el taller): ${totalSuppliesCost.toLocaleString('es-ES', { minimumFractionDigits: 2 })}</p>
+                    <p>Costo Total de Insumos (para el taller): <span className="font-semibold">{formatCurrency(totalSuppliesCost)}</span></p>
                 </div>
             </CardContent>
         </Card>
         
-        <div className="p-4 border rounded-md bg-green-50 dark:bg-green-900/30">
-            <p className="text-base">Subtotal Servicio (sin IVA): <span className="font-semibold">${serviceSubTotal.toLocaleString('es-ES', { minimumFractionDigits: 2 })}</span></p>
-            <p className="text-base">IVA ({IVA_RATE * 100}%): <span className="font-semibold">${serviceTaxAmount.toLocaleString('es-ES', { minimumFractionDigits: 2 })}</span></p>
-            <p className="text-lg font-bold">Precio Total (IVA Incluido): <span className="text-green-700 dark:text-green-400">${watchedTotalServicePrice.toLocaleString('es-ES', { minimumFractionDigits: 2 })}</span></p>
-            <hr className="my-2"/>
-            <p className="text-lg font-bold">Ganancia Estimada del Servicio: <span className="text-green-700 dark:text-green-400">${serviceProfit.toLocaleString('es-ES', { minimumFractionDigits: 2 })}</span></p>
-            <p className="text-xs text-muted-foreground">(Subtotal Servicio - Costo Total de Insumos para el Taller)</p>
-        </div>
+        <Card className="bg-muted/30 dark:bg-muted/20">
+            <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2">
+                    <DollarSign className="h-5 w-5 text-green-600"/>
+                    Resumen Financiero del Servicio
+                </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-1 text-sm">
+                <div className="flex justify-between"><span>Subtotal Servicio (sin IVA):</span> <span className="font-medium">{formatCurrency(serviceSubTotal)}</span></div>
+                <div className="flex justify-between"><span>IVA ({IVA_RATE * 100}%):</span> <span className="font-medium">{formatCurrency(serviceTaxAmount)}</span></div>
+                <div className="flex justify-between text-base font-semibold pt-1 border-t mt-1"><span>Precio Total (IVA Incluido):</span> <span className="text-primary">{formatCurrency(watchedTotalServicePrice)}</span></div>
+                <hr className="my-2 border-dashed"/>
+                <div className="flex justify-between text-lg font-bold text-green-700 dark:text-green-400"><span>Ganancia Estimada del Servicio:</span> <span>{formatCurrency(serviceProfit)}</span></div>
+                <p className="text-xs text-muted-foreground text-right">(Precio Total - IVA - Costo de Insumos)</p>
+            </CardContent>
+        </Card>
+
 
         <div className="flex justify-end gap-2 pt-4">
           {isReadOnly ? (

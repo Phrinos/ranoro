@@ -41,8 +41,7 @@ export default function FinancialReportPage() {
   const calculateSaleProfit = (sale: SaleReceipt): number => {
     return sale.items.reduce((profit, saleItem) => {
         const inventoryItem = inventory.find(inv => inv.id === saleItem.inventoryItemId);
-        const costPrice = inventoryItem ? inventoryItem.unitPrice : 0; // inventoryItem.unitPrice is cost to workshop
-        // saleItem.unitPrice is final selling price (tax-inclusive)
+        const costPrice = inventoryItem ? inventoryItem.unitPrice : 0; 
         const sellingPriceSubTotal = saleItem.unitPrice / (1 + IVA_RATE); 
         return profit + (sellingPriceSubTotal - costPrice) * saleItem.quantity;
     }, 0);
@@ -54,7 +53,7 @@ export default function FinancialReportPage() {
       date: sale.saleDate,
       type: 'Venta',
       description: `Venta a ${sale.customerName || 'Cliente Mostrador'} - ${sale.items.length} artículo(s)`,
-      totalAmount: sale.totalAmount, // Final tax-inclusive amount
+      totalAmount: sale.totalAmount, 
       profit: calculateSaleProfit(sale),
       originalObject: sale,
     }));
@@ -64,8 +63,8 @@ export default function FinancialReportPage() {
       date: service.serviceDate,
       type: 'Servicio',
       description: service.description,
-      totalAmount: service.totalCost, // Final tax-inclusive amount
-      profit: service.serviceProfit || 0, // Profit is already (subTotal - suppliesCost)
+      totalAmount: service.totalCost, 
+      profit: service.serviceProfit || 0, 
       originalObject: service,
     }));
 
@@ -116,8 +115,8 @@ export default function FinancialReportPage() {
 
   const summaryData = useMemo(() => {
     const todayRange = getTodayRange();
-    const currentMonthDateRange = getCurrentMonthRange(); // Renamed to avoid conflict
-    const lastMonthDateRange = getLastMonthRange(); // Renamed to avoid conflict
+    const currentMonthDateRange = getCurrentMonthRange(); 
+    const lastMonthDateRange = getLastMonthRange(); 
 
     const opsToday = combinedOperations.filter(op => {
         const opDate = parseISO(op.date);
@@ -155,7 +154,7 @@ export default function FinancialReportPage() {
   }, [combinedOperations]);
 
   const formatCurrency = (amount: number) => {
-    return `$${amount.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    return `$${amount.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   };
 
   return (
@@ -313,13 +312,13 @@ export default function FinancialReportPage() {
                             <TableRow key={`${op.type}-${op.id}`}>
                             <TableCell>{format(parseISO(op.date), "dd MMM yyyy, HH:mm", { locale: es })}</TableCell>
                             <TableCell>
-                                <span className={`px-2 py-1 text-xs rounded-full font-medium ${op.type === 'Venta' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'}`}>
+                                <span className={`px-2 py-1 text-xs rounded-full font-medium ${op.type === 'Venta' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-200' : 'bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-200'}`}>
                                     {op.type}
                                 </span>
                             </TableCell>
                             <TableCell className="font-medium">{op.id}</TableCell>
                             <TableCell className="max-w-xs truncate">
-                                {op.type === 'Venta' ? (op.originalObject as SaleReceipt).customerName || 'N/A' : (op.originalObject as ServiceRecord).vehicleIdentifier}
+                                {op.type === 'Venta' ? (op.originalObject as SaleReceipt).customerName || 'Cliente Mostrador' : (op.originalObject as ServiceRecord).vehicleIdentifier || 'N/A'}
                                 <p className="text-xs text-muted-foreground truncate">{op.description}</p>
                             </TableCell>
                             <TableCell className="text-right">{formatCurrency(op.totalAmount)}</TableCell>

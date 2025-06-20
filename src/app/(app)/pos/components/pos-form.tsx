@@ -29,8 +29,8 @@ const saleItemSchema = z.object({
   inventoryItemId: z.string().min(1, "Seleccione un artículo."),
   itemName: z.string(), 
   quantity: z.coerce.number().min(1, "La cantidad debe ser al menos 1."),
-  unitPrice: z.coerce.number(), // This is the final selling price per unit (tax-inclusive)
-  totalPrice: z.coerce.number(), // This is quantity * unitPrice (tax-inclusive)
+  unitPrice: z.coerce.number(), 
+  totalPrice: z.coerce.number(), 
 });
 
 const paymentMethods: [PaymentMethod, ...PaymentMethod[]] = [
@@ -124,14 +124,14 @@ export function PosForm({ inventoryItems, onSaleComplete }: POSFormProps) {
         ...form.getValues(`items.${index}`),
         inventoryItemId: selectedItem.id,
         itemName: selectedItem.name,
-        unitPrice: selectedItem.sellingPrice, // sellingPrice from inventory is tax-inclusive
+        unitPrice: selectedItem.sellingPrice, 
         totalPrice: selectedItem.sellingPrice * quantity,
       });
     }
   };
 
   const handleQuantityChange = (index: number, quantity: number) => {
-    const unitPrice = form.getValues(`items.${index}.unitPrice`) || 0; // unitPrice is tax-inclusive
+    const unitPrice = form.getValues(`items.${index}.unitPrice`) || 0; 
     update(index, {
       ...form.getValues(`items.${index}`),
       quantity: quantity,
@@ -187,17 +187,23 @@ export function PosForm({ inventoryItems, onSaleComplete }: POSFormProps) {
     
     toast({
       title: "Venta Registrada",
-      description: `Venta ${newSaleId} procesada por un total de $${newSaleTotalAmount.toLocaleString('es-ES', {minimumFractionDigits: 2})}.`,
+      description: `Venta ${newSaleId} procesada por un total de $${newSaleTotalAmount.toLocaleString('es-MX', {minimumFractionDigits: 2})}.`,
     });
     
     if (onSaleComplete) {
-      onSaleComplete(newSale); // Pass the newSale data
+      onSaleComplete(newSale); 
     } else {
       form.reset(); 
       while(fields.length > 0) remove(0);
       router.push('/pos'); 
     }
   };
+  
+  const formatCurrency = (amount: number | undefined) => {
+    if (amount === undefined) return '$0.00';
+    return `$${amount.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  };
+
 
   return (
     <Form {...form}>
@@ -209,7 +215,7 @@ export function PosForm({ inventoryItems, onSaleComplete }: POSFormProps) {
           <CardContent>
             <ScrollArea className="h-[300px] pr-4">
               {fields.map((field, index) => (
-                <div key={field.id} className="flex items-end gap-2 mb-4 p-3 border rounded-md bg-muted/20">
+                <div key={field.id} className="flex items-end gap-2 mb-4 p-3 border rounded-md bg-muted/20 dark:bg-muted/50">
                   <FormField
                     control={form.control}
                     name={`items.${index}.inventoryItemId`}
@@ -231,7 +237,7 @@ export function PosForm({ inventoryItems, onSaleComplete }: POSFormProps) {
                           <SelectContent>
                             {inventoryItems.map((item) => (
                               <SelectItem key={item.id} value={item.id} disabled={item.quantity <= 0 && !currentItems.find(ci => ci.inventoryItemId === item.id && ci.quantity > 0 )}>
-                                {item.name} (Stock: {item.quantity}) - ${item.sellingPrice.toLocaleString('es-ES')} c/u (IVA Inc.)
+                                {item.name} (Stock: {item.quantity}) - {formatCurrency(item.sellingPrice)} c/u (IVA Inc.)
                               </SelectItem>
                             ))}
                           </SelectContent>
@@ -267,8 +273,8 @@ export function PosForm({ inventoryItems, onSaleComplete }: POSFormProps) {
                       <Input 
                         type="text" 
                         readOnly 
-                        value={`$${(form.getValues(`items.${index}.totalPrice`) || 0).toLocaleString('es-ES')}`} 
-                        className="bg-muted border-none"
+                        value={formatCurrency(form.getValues(`items.${index}.totalPrice`))} 
+                        className="bg-muted/50 dark:bg-muted/80 border-none text-sm font-medium"
                       />
                     </div>
                   <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)} aria-label="Eliminar artículo">
@@ -360,9 +366,9 @@ export function PosForm({ inventoryItems, onSaleComplete }: POSFormProps) {
             )}
           </CardContent>
           <CardFooter className="flex flex-col items-end space-y-2 pt-6">
-            <div className="text-lg">Subtotal: <span className="font-semibold">${subTotalState.toLocaleString('es-ES', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span></div>
-            <div className="text-sm text-muted-foreground">IVA ({IVA_RATE*100}%): <span className="font-semibold">${taxState.toLocaleString('es-ES', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span></div>
-            <div className="text-2xl font-bold">Total: <span className="text-primary">${totalState.toLocaleString('es-ES', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span></div>
+            <div className="text-lg">Subtotal: <span className="font-semibold">{formatCurrency(subTotalState)}</span></div>
+            <div className="text-sm text-muted-foreground">IVA ({(IVA_RATE*100).toFixed(0)}%): <span className="font-semibold">{formatCurrency(taxState)}</span></div>
+            <div className="text-2xl font-bold">Total: <span className="text-primary">{formatCurrency(totalState)}</span></div>
             <Button type="submit" size="lg" className="mt-4 w-full md:w-auto" disabled={form.formState.isSubmitting || fields.length === 0}>
               <Receipt className="mr-2 h-5 w-5" />
               {form.formState.isSubmitting ? "Procesando..." : "Completar Venta"}

@@ -41,13 +41,15 @@ export default function DashboardPage() {
     const completedToday = enrichedServices.filter(s => {
       if (s.status !== 'Completado') return false;
       try {
-        const serviceDay = parseISO(s.serviceDate); // Assuming serviceDate reflects completion or main service day
+        // For "Completado Hoy", we should check against the deliveryDateTime if available and status is 'Completado'
+        // or serviceDate if deliveryDateTime is not set yet for a completed service (though ideally it should be)
+        const completionOrServiceDate = s.deliveryDateTime ? s.deliveryDateTime : s.serviceDate;
+        const serviceDay = parseISO(completionOrServiceDate); 
         return isToday(serviceDay);
       } catch (e) {
         console.error("Error parsing service date for dashboard:", s.serviceDate, e);
-        // Fallback for dates that might not be full ISO (though placeholder-data should be consistent)
-        // This part of the logic might need adjustment based on actual date formats if they vary.
-        // For now, parseISO is standard.
+        // Fallback for dates that might not be full ISO.
+        // Consider using serviceDate if deliveryDateTime is problematic or not set.
         return s.serviceDate.startsWith(format(clientToday, 'yyyy-MM-dd'));
       }
     });
@@ -58,7 +60,7 @@ export default function DashboardPage() {
   }, []);
 
   const KanbanColumn = ({ title, services, icon: IconCmp, emptyMessage }: { title: string, services: EnrichedServiceRecord[], icon: React.ElementType, emptyMessage: string }) => (
-    <Card className="flex flex-col shadow-lg h-[calc(100vh-10rem)]"> {/* Adjust height as needed */}
+    <Card className="flex flex-col shadow-lg h-[calc(100vh-12rem)]"> {/* Adjust height as needed */}
       <CardHeader className="pb-3 sticky top-0 bg-card z-10 border-b">
         <CardTitle className="text-lg font-semibold flex items-center gap-2">
           <IconCmp className="h-5 w-5 text-primary" />
@@ -80,7 +82,7 @@ export default function DashboardPage() {
               <Card key={service.id} className="shadow-md hover:shadow-lg transition-shadow duration-200">
                 <CardHeader className="pb-2 pt-3 px-4">
                   <CardTitle className="text-base font-medium flex items-center gap-2">
-                    <Car className="h-4 w-4 text-muted-foreground"/> {service.vehicleInfo}
+                    <Car className="h-4 w-4 text-muted-foreground shrink-0"/> {service.vehicleInfo}
                   </CardTitle>
                    <CardDescription className="text-xs text-muted-foreground">ID Servicio: {service.id}</CardDescription>
                 </CardHeader>
@@ -95,9 +97,14 @@ export default function DashboardPage() {
                   </div>
                    {service.deliveryDateTime && service.status === "Completado" && (
                      <p className="text-xs text-green-600">
-                        Entregado: {format(parseISO(service.deliveryDateTime), "dd MMM, HH:mm", { locale: es })}
+                        Entregado: {format(parseISO(service.deliveryDateTime), "dd MMM yyyy, HH:mm", { locale: es })}
                      </p>
                    )}
+                    {service.status === "En Progreso" && service.serviceDate && (
+                        <p className="text-xs text-blue-600">
+                            Recepción: {format(parseISO(service.serviceDate), "dd MMM yyyy, HH:mm", { locale: es })}
+                        </p>
+                    )}
                 </CardContent>
               </Card>
             ))
