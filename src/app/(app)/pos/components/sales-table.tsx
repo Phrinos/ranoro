@@ -11,7 +11,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge"; // Badge component is imported
+import { Badge } from "@/components/ui/badge"; 
 import type { SaleReceipt } from "@/types";
 import { format, parseISO, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -22,8 +22,7 @@ interface SalesTableProps {
   onReprintTicket: (sale: SaleReceipt) => void;
 }
 
-// Define the explicit type for badge variants used in this component
-// This type lists the valid string literals for the Badge's variant prop.
+// Explicitly define the allowed badge variants as a string literal union type
 type BadgeVariantType =
   | "default"
   | "secondary"
@@ -44,7 +43,6 @@ export function SalesTable({ sales, onReprintTicket }: SalesTableProps) {
     return `$${amount.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   };
 
-  // This function now returns the explicit string literal union type BadgeVariantType
   const getPaymentMethodVariant = (method?: SaleReceipt['paymentMethod']): BadgeVariantType => {
     switch (method) {
       case "Efectivo": return "success";
@@ -86,7 +84,6 @@ export function SalesTable({ sales, onReprintTicket }: SalesTableProps) {
                 <TableCell>{sale.customerName || 'N/A'}</TableCell>
                 <TableCell className="text-center">{sale.items.length}</TableCell>
                 <TableCell>
-                  {/* The Badge component is used here. Its 'variant' prop expects one of the strings defined in BadgeVariantType */}
                   <Badge variant={getPaymentMethodVariant(sale.paymentMethod)}>
                     {sale.paymentMethod}
                   </Badge>
