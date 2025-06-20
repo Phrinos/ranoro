@@ -11,21 +11,16 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge"; // badgeVariants no longer imported here
+import { Badge, type BadgeProps } from "@/components/ui/badge"; // Import BadgeProps
 import type { SaleReceipt } from "@/types";
 import { format, parseISO, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Printer } from "lucide-react";
-// VariantProps import removed
 
 interface SalesTableProps {
   sales: SaleReceipt[];
   onReprintTicket: (sale: SaleReceipt) => void;
 }
-
-// Define a simpler type for badge variants used by payment methods
-type PaymentMethodBadgeVariant = "success" | "purple" | "blue" | "lightGreen" | "lightPurple" | "outline" | "default" | "secondary" | "destructive" | undefined;
-
 
 export function SalesTable({ sales, onReprintTicket }: SalesTableProps) {
   if (!sales.length) {
@@ -36,7 +31,8 @@ export function SalesTable({ sales, onReprintTicket }: SalesTableProps) {
     return `$${amount.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   };
 
-  const getPaymentMethodVariant = (method?: SaleReceipt['paymentMethod']): PaymentMethodBadgeVariant => {
+  // Use BadgeProps['variant'] for the return type
+  const getPaymentMethodVariant = (method?: SaleReceipt['paymentMethod']): BadgeProps['variant'] => {
     switch (method) {
       case "Efectivo": return "success";
       case "Tarjeta": return "purple";
