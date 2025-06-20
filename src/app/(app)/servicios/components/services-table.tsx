@@ -61,34 +61,20 @@ export function ServicesTable({
     setIsEditDialogOpen(true);
   };
 
-  const handleDialogSave = async (formDataFromDialog: any) => {
-    // Ensure serviceDate and deliveryDateTime are correctly formatted ISO strings or undefined
-    const serviceDateISO = formDataFromDialog.serviceDate && isValid(new Date(formDataFromDialog.serviceDate)) 
-        ? new Date(formDataFromDialog.serviceDate).toISOString() 
-        : (editingService?.serviceDate || new Date().toISOString());
-
-    const deliveryDateTimeISO = formDataFromDialog.deliveryDateTime && isValid(new Date(formDataFromDialog.deliveryDateTime))
-        ? new Date(formDataFromDialog.deliveryDateTime).toISOString()
-        : undefined;
-
-    const updatedServiceRecord: ServiceRecord = {
-      ...(editingService as ServiceRecord), 
-      ...formDataFromDialog, 
-      id: editingService!.id, 
-      serviceDate: serviceDateISO,
-      deliveryDateTime: deliveryDateTimeISO,
-      totalCost: Number(formDataFromDialog.totalServicePrice), 
-      totalSuppliesCost: Number(formDataFromDialog.totalSuppliesCost),
-      serviceProfit: Number(formDataFromDialog.serviceProfit),
-      suppliesUsed: formDataFromDialog.suppliesUsed.map((s: any) => ({
-        supplyId: s.supplyId,
-        quantity: Number(s.quantity),
-        unitPrice: Number(s.unitPrice),
-        supplyName: s.supplyName,
-      })),
+  const handleDialogSave = async (serviceDataFromForm: ServiceRecord) => {
+    // serviceDataFromForm is the complete ServiceRecord object constructed by ServiceForm.
+    // It already includes calculated totalCost, subTotal, taxAmount, profit, etc.,
+    // and the correct id if it was an edit operation.
+    
+    // Ensure the ID from the original editingService is preserved, just in case
+    // ServiceForm logic for ID assignment had a different temporary ID for new items.
+    // For edits, ServiceForm correctly uses initialDataService.id.
+    const finalServiceData = {
+      ...serviceDataFromForm,
+      id: editingService!.id, // Crucial for ensuring we update the correct record
     };
 
-    onServiceUpdated(updatedServiceRecord);
+    onServiceUpdated(finalServiceData);
     setEditingService(null);
     setIsEditDialogOpen(false); 
     // Toast message is handled by the parent page (HistorialServiciosPage or AgendaServiciosPage)
@@ -241,3 +227,4 @@ export function ServicesTable({
     </>
   );
 }
+
