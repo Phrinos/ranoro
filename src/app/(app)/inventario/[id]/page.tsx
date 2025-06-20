@@ -8,7 +8,7 @@ import { PageHeader } from '@/components/page-header';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { Archive, Edit, ShieldAlert } from 'lucide-react';
+import { Archive, Edit, ShieldAlert, Package, Server } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { InventoryItemDialog } from '../components/inventory-item-dialog';
@@ -45,10 +45,11 @@ export default function InventoryItemDetailPage() {
 
     const updatedItemData: Partial<InventoryItem> = {
       ...formData,
+      isService: formData.isService || false,
+      quantity: formData.isService ? 0 : Number(formData.quantity),
+      lowStockThreshold: formData.isService ? 0 : Number(formData.lowStockThreshold),
       unitPrice: Number(formData.unitPrice),
       sellingPrice: Number(formData.sellingPrice),
-      quantity: Number(formData.quantity),
-      lowStockThreshold: Number(formData.lowStockThreshold),
     };
     
     const updatedItem = { ...item, ...updatedItemData } as InventoryItem;
@@ -61,8 +62,8 @@ export default function InventoryItemDetailPage() {
 
     setIsEditDialogOpen(false);
     toast({
-      title: "Producto Actualizado",
-      description: `Los datos del producto ${updatedItem.name} han sido actualizados.`,
+      title: "Ítem Actualizado",
+      description: `Los datos de ${updatedItem.name} han sido actualizados.`,
     });
   };
   
@@ -73,25 +74,25 @@ export default function InventoryItemDetailPage() {
       placeholderInventory.splice(itemIndex, 1);
     }
     toast({
-      title: "Producto Eliminado",
-      description: `El producto ${item.name} ha sido eliminado.`,
+      title: "Ítem Eliminado",
+      description: `${item.name} ha sido eliminado.`,
     });
     router.push('/inventario'); 
   };
 
 
   if (item === undefined) {
-    return <div className="container mx-auto py-8 text-center">Cargando datos del producto...</div>;
+    return <div className="container mx-auto py-8 text-center">Cargando datos del ítem...</div>;
   }
 
   if (!item) {
     return (
       <div className="container mx-auto py-8 text-center">
         <ShieldAlert className="mx-auto h-16 w-16 text-destructive mb-4" />
-        <h1 className="text-2xl font-bold">Producto no encontrado</h1>
-        <p className="text-muted-foreground">No se pudo encontrar un producto con el ID: {itemId}.</p>
+        <h1 className="text-2xl font-bold">Ítem no encontrado</h1>
+        <p className="text-muted-foreground">No se pudo encontrar un ítem con el ID: {itemId}.</p>
         <Button asChild className="mt-6">
-          <Link href="/inventario">Volver a Productos</Link>
+          <Link href="/inventario">Volver a Productos y Servicios</Link>
         </Button>
       </div>
     );
@@ -101,12 +102,12 @@ export default function InventoryItemDetailPage() {
     <div className="container mx-auto py-8">
       <PageHeader
         title={`${item.name} (Código: ${item.sku})`}
-        description={`ID Producto: ${item.id}`}
+        description={`ID Ítem: ${item.id}`}
       />
 
       <Tabs defaultValue="details" className="w-full">
         <TabsList className="grid w-full grid-cols-2 md:grid-cols-2 lg:w-1/3 mb-6">
-          <TabsTrigger value="details" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Información del Producto</TabsTrigger>
+          <TabsTrigger value="details" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Información del Ítem</TabsTrigger>
           <TabsTrigger value="history" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Historial (Pendiente)</TabsTrigger>
         </TabsList>
 
@@ -114,7 +115,10 @@ export default function InventoryItemDetailPage() {
           <div className="space-y-6">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle>Detalles del Producto</CardTitle>
+                <CardTitle className="flex items-center gap-2">
+                  {item.isService ? <Server className="h-5 w-5 text-muted-foreground"/> : <Package className="h-5 w-5 text-muted-foreground"/>}
+                  Detalles del {item.isService ? 'Servicio' : 'Producto'}
+                </CardTitle>
                 <Button variant="outline" size="sm" onClick={() => setIsEditDialogOpen(true)}>
                   <Edit className="mr-2 h-4 w-4" />
                   Editar
@@ -123,12 +127,17 @@ export default function InventoryItemDetailPage() {
               <CardContent className="space-y-2">
                 <p><strong>Código (SKU):</strong> {item.sku}</p>
                 <p><strong>Nombre:</strong> {item.name}</p>
+                <p><strong>Tipo:</strong> {item.isService ? 'Servicio' : 'Producto'}</p>
                 <p><strong>Categoría:</strong> {item.category}</p>
                 <p><strong>Descripción:</strong> {item.description || 'N/A'}</p>
-                <p><strong>Cantidad en Stock:</strong> {item.quantity}</p>
-                <p><strong>Costo Unitario:</strong> ${item.unitPrice.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
-                <p><strong>Precio de Venta:</strong> ${item.sellingPrice.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
-                <p><strong>Umbral de Stock Bajo:</strong> {item.lowStockThreshold}</p>
+                {!item.isService && (
+                  <>
+                    <p><strong>Cantidad en Stock:</strong> {item.quantity}</p>
+                    <p><strong>Umbral de Stock Bajo:</strong> {item.lowStockThreshold}</p>
+                  </>
+                )}
+                <p><strong>Costo Unitario (Taller):</strong> ${item.unitPrice.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                <p><strong>Precio de Venta (Cliente):</strong> ${item.sellingPrice.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
                 <p><strong>Proveedor:</strong> {item.supplier}</p>
               </CardContent>
             </Card>
@@ -136,22 +145,22 @@ export default function InventoryItemDetailPage() {
           <div className="mt-8 flex justify-start">
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                <Button variant="outline" >
+                <Button variant="destructive" >
                   <Archive className="mr-2 h-4 w-4" />
-                  Archivar Producto
+                  Eliminar Ítem
                 </Button>
               </AlertDialogTrigger>
               <AlertDialogContent>
                 <AlertDialogHeader>
-                  <AlertDialogTitle>¿Estás seguro de archivar/eliminar este producto?</AlertDialogTitle>
+                  <AlertDialogTitle>¿Estás seguro de eliminar este ítem?</AlertDialogTitle>
                   <AlertDialogDescription>
-                    Esta acción no se puede deshacer fácilmente y eliminará el producto del inventario activo.
+                    Esta acción no se puede deshacer y eliminará permanentemente el ítem {item.name} del inventario.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                   <AlertDialogCancel>Cancelar</AlertDialogCancel>
                   <AlertDialogAction onClick={handleDeleteItem} className="bg-destructive hover:bg-destructive/90">
-                    Sí, Archivar/Eliminar
+                    Sí, Eliminar
                   </AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>
@@ -177,6 +186,8 @@ export default function InventoryItemDetailPage() {
             onOpenChange={setIsEditDialogOpen}
             item={item}
             onSave={handleSaveEditedItem}
+            categories={placeholderCategories} 
+            suppliers={placeholderSuppliers}
           />
       )}
     </div>

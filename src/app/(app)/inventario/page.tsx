@@ -11,7 +11,7 @@ import { InventoryTable } from "./components/inventory-table";
 import { InventoryItemDialog } from "./components/inventory-item-dialog";
 import { placeholderInventory, placeholderCategories, placeholderSuppliers } from "@/lib/placeholder-data";
 import type { InventoryItem } from "@/types";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import type { InventoryItemFormValues } from "./components/inventory-item-form";
 import { PurchaseItemSelectionDialog } from "./components/purchase-item-selection-dialog";
 import { PurchaseDetailsEntryDialog, type PurchaseDetailsFormValues } from "./components/purchase-details-entry-dialog";
@@ -19,18 +19,18 @@ import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 type InventorySortOption = 
-  | "stock_status_name_asc"
+  | "stock_status_name_asc" // Default: Low stock first, then by name A-Z
   | "name_asc" | "name_desc"
   | "sku_asc" | "sku_desc"
-  | "quantity_asc" | "quantity_desc"
-  | "price_asc" | "price_desc";
+  | "quantity_asc" | "quantity_desc" // Will only apply to non-service items
+  | "price_asc" | "price_desc"
+  | "type_asc"; // New: Products first, then Services, then by name
 
 export default function InventarioPage() {
   const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>(placeholderInventory);
   const { toast } = useToast();
   const [isNewItemDialogOpen, setIsNewItemDialogOpen] = useState(false);
   
-  // States for new purchase entry flow
   const [isPurchaseItemSelectionDialogOpen, setIsPurchaseItemSelectionDialogOpen] = useState(false);
   const [isPurchaseDetailsEntryDialogOpen, setIsPurchaseDetailsEntryDialogOpen] = useState(false);
   const [selectedItemForPurchase, setSelectedItemForPurchase] = useState<InventoryItem | null>(null);
@@ -47,10 +47,11 @@ export default function InventarioPage() {
     const newItem: InventoryItem = {
       id: `P${String(inventoryItems.length + 1).padStart(3, '0')}${Date.now().toString().slice(-3)}`, 
       ...data,
+      isService: data.isService || false,
+      quantity: data.isService ? 0 : Number(data.quantity),
+      lowStockThreshold: data.isService ? 0 : Number(data.lowStockThreshold),
       unitPrice: Number(data.unitPrice),
       sellingPrice: Number(data.sellingPrice),
-      quantity: Number(data.quantity),
-      lowStockThreshold: Number(data.lowStockThreshold),
     };
     
     const updatedInventory = [...inventoryItems, newItem];
@@ -58,26 +59,30 @@ export default function InventarioPage() {
     placeholderInventory.push(newItem); 
     
     toast({
-      title: "Producto Creado",
-      description: `El producto ${newItem.name} ha sido agregado al inventario.`,
+      title: "Producto/Servicio Creado",
+      description: `El ítem ${newItem.name} ha sido agregado al inventario.`,
     });
     setIsNewItemDialogOpen(false);
 
     if (isCreatingItemForPurchaseFlow) {
-      setNewlyCreatedItemForPurchase(newItem); // Store it temporarily
+      setNewlyCreatedItemForPurchase(newItem); 
       setIsCreatingItemForPurchaseFlow(false); 
-      // The useEffect below will pick this up and open the details dialog
     }
   };
 
-  // Effect to open PurchaseDetailsEntryDialog after a new item is created in purchase flow
   useEffect(() => {
     if (newlyCreatedItemForPurchase) {
       setSelectedItemForPurchase(newlyCreatedItemForPurchase);
-      setIsPurchaseDetailsEntryDialogOpen(true);
-      setNewlyCreatedItemForPurchase(null); // Reset for next time
+      // If it's a service, we might not need purchase details, but for consistency:
+      if (newlyCreatedItemForPurchase.isService) {
+         toast({ title: "Servicio Creado", description: `${newlyCreatedItemForPurchase.name} ha sido creado. No requiere ingreso de compra.`});
+         setNewlyCreatedItemForPurchase(null);
+      } else {
+        setIsPurchaseDetailsEntryDialogOpen(true);
+      }
+      setNewlyCreatedItemForPurchase(null);
     }
-  }, [newlyCreatedItemForPurchase]);
+  }, [newlyCreatedItemForPurchase, toast]);
 
 
   const handleOpenPurchaseItemSelection = () => {
@@ -88,19 +93,24 @@ export default function InventarioPage() {
   const handleItemSelectedForPurchase = (item: InventoryItem) => {
     setSelectedItemForPurchase(item);
     setIsPurchaseItemSelectionDialogOpen(false);
-    setIsPurchaseDetailsEntryDialogOpen(true);
+    if (item.isService) {
+        toast({ title: "Es un Servicio", description: `${item.name} es un servicio y no requiere ingreso de compra de stock.`, variant: "default" });
+        setSelectedItemForPurchase(null);
+    } else {
+        setIsPurchaseDetailsEntryDialogOpen(true);
+    }
   };
   
   const handleCreateNewItemForPurchase = (searchTerm: string) => {
     setIsCreatingItemForPurchaseFlow(true);
-    setSearchTermForNewItemPurchase(searchTerm); // Store search term to prefill
+    setSearchTermForNewItemPurchase(searchTerm); 
     setIsPurchaseItemSelectionDialogOpen(false);
-    setIsNewItemDialogOpen(true); // This will open the standard InventoryItemDialog
+    setIsNewItemDialogOpen(true); 
   };
 
   const handleSavePurchaseDetails = (details: PurchaseDetailsFormValues) => {
-    if (!selectedItemForPurchase) {
-      toast({ title: "Error", description: "No hay un artículo seleccionado para la compra.", variant: "destructive" });
+    if (!selectedItemForPurchase || selectedItemForPurchase.isService) {
+      toast({ title: "Error", description: "No hay un artículo de stock seleccionado para la compra o es un servicio.", variant: "destructive" });
       return;
     }
 
@@ -117,7 +127,7 @@ export default function InventarioPage() {
       sellingPrice: details.newSellingPrice,
     };
     placeholderInventory[itemIndex] = updatedItem;
-    setInventoryItems([...placeholderInventory]); // Trigger re-render
+    setInventoryItems([...placeholderInventory]); 
 
     toast({
       title: "Compra Registrada",
@@ -142,10 +152,12 @@ export default function InventarioPage() {
     let lowStock = 0;
 
     inventoryItems.forEach(item => {
-      cost += item.quantity * item.unitPrice;
-      sellingPriceValue += item.quantity * item.sellingPrice;
-      if (item.quantity <= item.lowStockThreshold) {
-        lowStock++;
+      if (!item.isService) { // Only count stockable items for these metrics
+        cost += item.quantity * item.unitPrice;
+        sellingPriceValue += item.quantity * item.sellingPrice;
+        if (item.quantity <= item.lowStockThreshold) {
+          lowStock++;
+        }
       }
     });
     return { totalInventoryCost: cost, totalInventorySellingPrice: sellingPriceValue, lowStockItemsCount: lowStock };
@@ -171,17 +183,24 @@ export default function InventarioPage() {
     }
     
     return itemsToDisplay.sort((a, b) => {
-      const isALowStock = a.quantity <= a.lowStockThreshold;
-      const isBLowStock = b.quantity <= b.lowStockThreshold;
+      const isALowStock = !a.isService && a.quantity <= a.lowStockThreshold;
+      const isBLowStock = !b.isService && b.quantity <= b.lowStockThreshold;
 
       if (sortOption === "stock_status_name_asc") {
         if (isALowStock && !isBLowStock) return -1;
         if (!isALowStock && isBLowStock) return 1;
         return a.name.localeCompare(b.name);
       }
-
-      if (isALowStock && !isBLowStock) return -1;
-      if (!isALowStock && isBLowStock) return 1;
+      
+      if (sortOption === "type_asc") {
+        if (a.isService && !b.isService) return 1;
+        if (!a.isService && b.isService) return -1;
+        return a.name.localeCompare(b.name);
+      }
+      
+      // For other sort options, low stock items might still appear first if not sorting by type
+      if (isALowStock && !isBLowStock && sortOption !== 'quantity_asc' && sortOption !== 'quantity_desc') return -1;
+      if (!isALowStock && isBLowStock && sortOption !== 'quantity_asc' && sortOption !== 'quantity_desc') return 1;
       
 
       switch (sortOption) {
@@ -189,8 +208,14 @@ export default function InventarioPage() {
         case 'name_desc': return b.name.localeCompare(a.name);
         case 'sku_asc': return a.sku.localeCompare(b.sku);
         case 'sku_desc': return b.sku.localeCompare(a.sku);
-        case 'quantity_asc': return a.quantity - b.quantity;
-        case 'quantity_desc': return b.quantity - a.quantity;
+        case 'quantity_asc': 
+          if(a.isService) return 1; // services last
+          if(b.isService) return -1; // services last
+          return a.quantity - b.quantity;
+        case 'quantity_desc': 
+          if(a.isService) return 1;
+          if(b.isService) return -1;
+          return b.quantity - a.quantity;
         case 'price_asc': return a.sellingPrice - b.sellingPrice;
         case 'price_desc': return b.sellingPrice - a.sellingPrice;
         default: return a.name.localeCompare(b.name); 
@@ -204,14 +229,14 @@ export default function InventarioPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
-              Costo Total del Inventario
+              Costo Total del Inventario (Productos)
             </CardTitle>
             <DollarSign className="h-5 w-5 text-green-500" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold font-headline">${totalInventoryCost.toLocaleString('es-ES')}</div>
             <p className="text-xs text-muted-foreground">
-              Valor de Venta Total: ${totalInventorySellingPrice.toLocaleString('es-ES')}
+              Valor Venta Total (Productos): ${totalInventorySellingPrice.toLocaleString('es-ES')}
             </p>
           </CardContent>
         </Card>
@@ -232,35 +257,35 @@ export default function InventarioPage() {
          <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
-              Total Productos Únicos
+              Total Ítems Únicos (Prod. y Serv.)
             </CardTitle>
             <PackageCheck className="h-5 w-5 text-blue-500" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold font-headline">{inventoryItems.length}</div>
             <p className="text-xs text-muted-foreground">
-              Tipos de productos diferentes en stock.
+              Tipos de productos y servicios diferentes.
             </p>
           </CardContent>
         </Card>
       </div>
 
       <PageHeader
-        title="Productos"
-        description="Administra los niveles de stock, registra compras y ventas de repuestos."
+        title="Productos y Servicios"
+        description="Administra productos, servicios, niveles de stock y registra compras."
         actions={
           <div className="flex flex-wrap gap-2">
             <Button variant="outline" onClick={handlePrintInventory}>
               <Printer className="mr-2 h-4 w-4" />
-              Imprimir Productos
+              Imprimir Lista
             </Button>
             <Button variant="outline" onClick={handleOpenPurchaseItemSelection}>
               <ShoppingCartIcon className="mr-2 h-4 w-4" />
-              Ingresar Compra
+              Ingresar Compra de Producto
             </Button>
             <Button onClick={() => { setIsCreatingItemForPurchaseFlow(false); setIsNewItemDialogOpen(true); }}>
               <PlusCircle className="mr-2 h-4 w-4" />
-              Nuevo Producto
+              Nuevo Producto/Servicio
             </Button>
           </div>
         }
@@ -288,12 +313,13 @@ export default function InventarioPage() {
             <DropdownMenuLabel>Ordenar por</DropdownMenuLabel>
             <DropdownMenuRadioGroup value={sortOption} onValueChange={(value) => setSortOption(value as InventorySortOption)}>
               <DropdownMenuRadioItem value="stock_status_name_asc">Stock Bajo (luego Nombre A-Z)</DropdownMenuRadioItem>
+              <DropdownMenuRadioItem value="type_asc">Tipo (Producto, luego Servicio)</DropdownMenuRadioItem>
               <DropdownMenuRadioItem value="name_asc">Nombre (A-Z)</DropdownMenuRadioItem>
               <DropdownMenuRadioItem value="name_desc">Nombre (Z-A)</DropdownMenuRadioItem>
               <DropdownMenuRadioItem value="sku_asc">Código (A-Z)</DropdownMenuRadioItem>
               <DropdownMenuRadioItem value="sku_desc">Código (Z-A)</DropdownMenuRadioItem>
-              <DropdownMenuRadioItem value="quantity_asc">Cantidad (Menor a Mayor)</DropdownMenuRadioItem>
-              <DropdownMenuRadioItem value="quantity_desc">Cantidad (Mayor a Menor)</DropdownMenuRadioItem>
+              <DropdownMenuRadioItem value="quantity_asc">Cantidad (Menor a Mayor, solo productos)</DropdownMenuRadioItem>
+              <DropdownMenuRadioItem value="quantity_desc">Cantidad (Mayor a Menor, solo productos)</DropdownMenuRadioItem>
               <DropdownMenuRadioItem value="price_asc">Precio Venta (Menor a Mayor)</DropdownMenuRadioItem>
               <DropdownMenuRadioItem value="price_desc">Precio Venta (Mayor a Menor)</DropdownMenuRadioItem>
             </DropdownMenuRadioGroup>
@@ -318,7 +344,7 @@ export default function InventarioPage() {
       <InventoryItemDialog
         open={isNewItemDialogOpen}
         onOpenChange={setIsNewItemDialogOpen}
-        item={isCreatingItemForPurchaseFlow ? { sku: searchTermForNewItemPurchase, name: searchTermForNewItemPurchase } : null}
+        item={isCreatingItemForPurchaseFlow ? { sku: searchTermForNewItemPurchase, name: searchTermForNewItemPurchase, isService: false } : null}
         onSave={handleSaveNewItem}
         categories={placeholderCategories} 
         suppliers={placeholderSuppliers}
@@ -332,7 +358,7 @@ export default function InventarioPage() {
         onCreateNew={handleCreateNewItemForPurchase}
       />
 
-      {selectedItemForPurchase && (
+      {selectedItemForPurchase && !selectedItemForPurchase.isService && (
         <PurchaseDetailsEntryDialog
           open={isPurchaseDetailsEntryDialogOpen}
           onOpenChange={setIsPurchaseDetailsEntryDialogOpen}

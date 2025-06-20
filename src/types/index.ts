@@ -86,6 +86,7 @@ export interface InventoryItem {
   supplier: string; 
   lowStockThreshold: number;
   category: string;
+  isService?: boolean; // Added to mark item as a service or non-stock-tracked
 }
 
 export interface InventoryCategory {
@@ -191,3 +192,4 @@ export interface MonthlyFixedExpense {
   name: string;
   amount: number;
 }
+

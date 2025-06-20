@@ -38,6 +38,7 @@ export const placeholderCategories: InventoryCategory[] = [
   { id: 'CAT004', name: 'Lubricantes' },
   { id: 'CAT005', name: 'Suspensión' },
   { id: 'CAT006', name: 'Eléctrico' },
+  { id: 'CAT007', name: 'Servicios' },
 ];
 
 export const placeholderSuppliers: Supplier[] = [
@@ -45,18 +46,21 @@ export const placeholderSuppliers: Supplier[] = [
   { id: 'SUP002', name: 'AutoPartes Premium', contactPerson: 'Luis Martínez', phone: '555-3434', email: 'luis.m@autopartespremium.com', address: 'Av. Siempreviva 742, Pueblo', debtAmount: 15000, debtNote: 'Pago pendiente factura #INV-1023' },
   { id: 'SUP003', name: 'NGK Spark Plugs Co.', phone: '555-5656', email: 'info@ngk.com', debtAmount: 0 },
   { id: 'SUP004', name: 'Mobil Lubricants', contactPerson: 'Carlos Rodriguez', phone: '555-8989', email: 'crodriguez@mobil.example', debtAmount: 5250.75, debtNote: 'Consignación aceites especiales' },
+  { id: 'SUP000', name: 'N/A (Servicio Interno)', contactPerson: '', phone: '', email: '', address: '', debtAmount: 0, debtNote: 'Proveedor para servicios o items no comprados.' },
 ];
 
 
 // unitPrice is cost to workshop (pre-tax)
 // sellingPrice is final selling price to customer (tax-inclusive)
 export let placeholderInventory: InventoryItem[] = [
-  { id: 'P001', name: 'Filtro de Aceite Bosch', sku: 'BOSCH-OF-001', quantity: 150, unitPrice: 70, sellingPrice: 98.60, lowStockThreshold: 10, category: 'Filtros', supplier: 'Repuestos Express' }, // 70 * 1.16 = 81.2, let's make it a bit more for profit margin, sellingPrice with tax = 98.60 -> subtotal = 85
-  { id: 'P002', name: 'Pastillas de Freno Brembo Delanteras', sku: 'BREMBO-BP-002', quantity: 25, unitPrice: 300, sellingPrice: 406, lowStockThreshold: 5, category: 'Frenos', supplier: 'AutoPartes Premium' }, // 300 -> sellingPrice with tax = 406 -> subtotal = 350
-  { id: 'P003', name: 'Bujía NGK CR9EK', sku: 'NGK-SP-003', quantity: 200, unitPrice: 30, sellingPrice: 40.60, lowStockThreshold: 20, category: 'Motor', supplier: 'NGK Spark Plugs Co.' }, // 30 -> sellingPrice with tax = 40.60 -> subtotal = 35
-  { id: 'P004', name: 'Aceite Motor Sintético 5W-30 (Litro)', sku: 'MOBIL-OIL-5W30', quantity: 130, unitPrice: 100, sellingPrice: 139.20, lowStockThreshold: 15, category: 'Lubricantes', supplier: 'Mobil Lubricants' }, // 100 -> sellingPrice with tax = 139.20 -> subtotal = 120
-  { id: 'P005', name: 'Amortiguador Delantero KYB', sku: 'KYB-SHOCK-F001', quantity: 10, unitPrice: 450, sellingPrice: 638, lowStockThreshold: 4, category: 'Suspensión', supplier: 'Repuestos Express'}, // 450 -> sellingPrice with tax = 638 -> subtotal = 550
-  { id: 'P006', name: 'Batería LTH 12V', sku: 'LTH-BAT-12V', quantity: 8, unitPrice: 250, sellingPrice: 371.20, lowStockThreshold: 3, category: 'Eléctrico', supplier: 'AutoPartes Premium'}, // 250 -> sellingPrice with tax = 371.20 -> subtotal = 320
+  { id: 'P001', name: 'Filtro de Aceite Bosch', sku: 'BOSCH-OF-001', quantity: 150, unitPrice: 70, sellingPrice: 98.60, lowStockThreshold: 10, category: 'Filtros', supplier: 'Repuestos Express', isService: false }, // 70 * 1.16 = 81.2, let's make it a bit more for profit margin, sellingPrice with tax = 98.60 -> subtotal = 85
+  { id: 'P002', name: 'Pastillas de Freno Brembo Delanteras', sku: 'BREMBO-BP-002', quantity: 25, unitPrice: 300, sellingPrice: 406, lowStockThreshold: 5, category: 'Frenos', supplier: 'AutoPartes Premium', isService: false }, // 300 -> sellingPrice with tax = 406 -> subtotal = 350
+  { id: 'P003', name: 'Bujía NGK CR9EK', sku: 'NGK-SP-003', quantity: 200, unitPrice: 30, sellingPrice: 40.60, lowStockThreshold: 20, category: 'Motor', supplier: 'NGK Spark Plugs Co.', isService: false }, // 30 -> sellingPrice with tax = 40.60 -> subtotal = 35
+  { id: 'P004', name: 'Aceite Motor Sintético 5W-30 (Litro)', sku: 'MOBIL-OIL-5W30', quantity: 130, unitPrice: 100, sellingPrice: 139.20, lowStockThreshold: 15, category: 'Lubricantes', supplier: 'Mobil Lubricants', isService: false }, // 100 -> sellingPrice with tax = 139.20 -> subtotal = 120
+  { id: 'P005', name: 'Amortiguador Delantero KYB', sku: 'KYB-SHOCK-F001', quantity: 10, unitPrice: 450, sellingPrice: 638, lowStockThreshold: 4, category: 'Suspensión', supplier: 'Repuestos Express', isService: false}, // 450 -> sellingPrice with tax = 638 -> subtotal = 550
+  { id: 'P006', name: 'Batería LTH 12V', sku: 'LTH-BAT-12V', quantity: 8, unitPrice: 250, sellingPrice: 371.20, lowStockThreshold: 3, category: 'Eléctrico', supplier: 'AutoPartes Premium', isService: false}, // 250 -> sellingPrice with tax = 371.20 -> subtotal = 320
+  { id: 'SERV001', name: 'Mano de Obra Mecánica (Hora)', sku: 'SERV-MEC-HR', quantity: 0, unitPrice: 0, sellingPrice: 350, lowStockThreshold: 0, category: 'Servicios', supplier: 'N/A (Servicio Interno)', isService: true },
+  { id: 'SERV002', name: 'Diagnóstico Computarizado', sku: 'SERV-DIAG', quantity: 0, unitPrice: 0, sellingPrice: 580, lowStockThreshold: 0, category: 'Servicios', supplier: 'N/A (Servicio Interno)', isService: true },
 ];
 
 
@@ -75,7 +79,7 @@ const totalSuppliesCost2 = sampleSuppliesUsed2.reduce((sum, s) => sum + (s.unitP
 // ServiceRecord: totalCost is final, tax-inclusive
 // subTotal = totalCost / 1.16
 // taxAmount = totalCost - subTotal
-// serviceProfit = totalCost - totalSuppliesCost (where totalCost is IVA inclusive, and totalSuppliesCost is workshop cost)
+// serviceProfit = totalCost - totalSuppliesCost (where totalCost is IVA Incluido, and totalSuppliesCost is workshop cost)
 export let placeholderServiceRecords: ServiceRecord[] = [
   {
     id: 'S001',
@@ -205,7 +209,7 @@ export const placeholderDashboardMetrics: DashboardMetrics = {
   activeServices: placeholderServiceRecords.filter(s => s.status === 'Reparando' || s.status === 'Agendado').length,
   technicianEarnings: placeholderTechnicians.reduce((sum, tech) => sum + (tech.monthlySalary || 0), 0) / (placeholderTechnicians.length || 1) ,
   dailyRevenue: 0, 
-  lowStockAlerts: placeholderInventory.filter(item => item.quantity <= item.lowStockThreshold).length,
+  lowStockAlerts: placeholderInventory.filter(item => !item.isService && item.quantity <= item.lowStockThreshold).length,
 };
 
 // SaleReceipt: items.unitPrice is final tax-inclusive per unit. items.totalPrice = quantity * unitPrice
@@ -336,4 +340,5 @@ export const calculateSaleProfit = (sale: SaleReceipt, inventory: InventoryItem[
       return profit + (sellingPriceSubTotal - costPrice) * saleItem.quantity;
   }, 0);
 };
+
 
