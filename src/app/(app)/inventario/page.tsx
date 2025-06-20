@@ -73,14 +73,12 @@ export default function InventarioPage() {
   useEffect(() => {
     if (newlyCreatedItemForPurchase) {
       setSelectedItemForPurchase(newlyCreatedItemForPurchase);
-      // If it's a service, we might not need purchase details, but for consistency:
       if (newlyCreatedItemForPurchase.isService) {
          toast({ title: "Servicio Creado", description: `${newlyCreatedItemForPurchase.name} ha sido creado. No requiere ingreso de compra.`});
-         setNewlyCreatedItemForPurchase(null);
       } else {
         setIsPurchaseDetailsEntryDialogOpen(true);
       }
-      setNewlyCreatedItemForPurchase(null);
+      setNewlyCreatedItemForPurchase(null); // Clear it after processing
     }
   }, [newlyCreatedItemForPurchase, toast]);
 
@@ -373,3 +371,5 @@ export default function InventarioPage() {
     </>
   );
 }
+
+    
