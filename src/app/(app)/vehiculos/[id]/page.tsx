@@ -3,7 +3,7 @@
 
 import { useParams, useRouter } from 'next/navigation';
 import { placeholderVehicles, placeholderServiceRecords, placeholderTechnicians, placeholderInventory } from '@/lib/placeholder-data';
-import type { Vehicle, ServiceRecord, Technician } from '@/types';
+import type { Vehicle, ServiceRecord, Technician, QuoteRecord, InventoryItem } from '@/types';
 import { PageHeader } from '@/components/page-header';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -78,7 +78,17 @@ export default function VehicleDetailPage() {
     });
   };
   
-  const handleServiceUpdated = async (updatedService: ServiceRecord) => {
+  const handleServiceUpdated = async (data: ServiceRecord | QuoteRecord) => {
+    if (!('status' in data)) { // Check if it's a ServiceRecord
+      toast({
+        title: "Error de Tipo",
+        description: "Se esperaba un registro de servicio para actualizar.",
+        variant: "destructive",
+      });
+      return;
+    }
+    const updatedService = data as ServiceRecord;
+
     setServices(prevServices =>
       prevServices.map(s => (s.id === updatedService.id ? updatedService : s))
     );
@@ -86,7 +96,7 @@ export default function VehicleDetailPage() {
     if (pIndex !== -1) {
       placeholderServiceRecords[pIndex] = updatedService;
     }
-    setIsViewServiceDialogOpen(false); // Close the service view/edit dialog
+    setIsViewServiceDialogOpen(false); 
     toast({
       title: "Servicio Actualizado",
       description: `El servicio ${updatedService.id} para el vehículo ${vehicle?.licensePlate} ha sido actualizado.`,
@@ -246,8 +256,9 @@ export default function VehicleDetailPage() {
           vehicles={placeholderVehicles} 
           technicians={technicians}
           inventoryItems={placeholderInventory}
-          isReadOnly={false} // Allow editing from here
+          isReadOnly={false} 
           onSave={handleServiceUpdated}
+          mode="service"
         />
       )}
       {currentServiceForTicket && vehicle && (
@@ -259,7 +270,7 @@ export default function VehicleDetailPage() {
         >
           <TicketContent 
             service={currentServiceForTicket} 
-            vehicle={vehicle} // Use the main vehicle state for the ticket
+            vehicle={vehicle} 
             technician={currentTechnicianForTicket || undefined}
           />
         </PrintTicketDialog>

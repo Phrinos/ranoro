@@ -7,7 +7,7 @@ import { ServiceDialog } from "../../servicios/components/service-dialog";
 import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
 import { QuoteContent } from '@/components/quote-content'; 
 import { placeholderVehicles, placeholderTechnicians, placeholderInventory, placeholderQuotes } from "@/lib/placeholder-data";
-import type { QuoteRecord, Vehicle, Technician, ServiceRecord, User } from "@/types"; // Added User type
+import type { QuoteRecord, Vehicle, Technician, ServiceRecord, User, InventoryItem } from "@/types"; 
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
@@ -20,16 +20,12 @@ export default function NuevaCotizacionPage() {
   const router = useRouter();
   
   const [vehicles, setVehicles] = useState<Vehicle[]>(placeholderVehicles);
-  // Technicians list is not directly used for selection in quote mode anymore
-  // const technicians = placeholderTechnicians; 
   const inventoryItems = placeholderInventory; 
 
   const [dialogStep, setDialogStep] = useState<DialogStep>('quote_form');
   const [currentQuoteForPdf, setCurrentQuoteForPdf] = useState<QuoteRecord | null>(null);
   const [currentVehicleForPdf, setCurrentVehicleForPdf] = useState<Vehicle | null>(null);
-  // const [currentTechnicianForPdf, setCurrentTechnicianForPdf] = useState<Technician | null>(null); // Removed this state
 
-  // Workshop info for sharing messages - ideally fetched once globally
   const [workshopInfo, setWorkshopInfo] = useState<{name?: string}>({});
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -45,7 +41,16 @@ export default function NuevaCotizacionPage() {
     }
   }, [dialogStep, router]);
 
-  const handleGenerateQuotePdf = async (formData: QuoteRecord) => { 
+  const handleGenerateQuotePdf = async (data: ServiceRecord | QuoteRecord) => { 
+    if (!('estimatedTotalCost' in data)) { // Check if it's a QuoteRecord
+      toast({
+        title: "Error de Tipo",
+        description: "Se esperaba un registro de cotización.",
+        variant: "destructive",
+      });
+      return;
+    }
+    const formData = data as QuoteRecord;
     
     let authUserName = "Usuario del Sistema";
     let authUserId = "system_user";
@@ -59,7 +64,6 @@ export default function NuevaCotizacionPage() {
           authUserId = authUser.id;
         } catch (e) {
           console.error("Failed to parse authUser for quote preparer:", e);
-          // Fallback to default if parsing fails
         }
       }
     }
@@ -76,7 +80,6 @@ export default function NuevaCotizacionPage() {
     setCurrentQuoteForPdf(newQuote);
     const vehicleForQuote = vehicles.find(v => v.id === newQuote.vehicleId);
     setCurrentVehicleForPdf(vehicleForQuote || null);
-    // The logic for setting currentTechnicianForPdf has been removed as QuoteContent uses quote.preparedByTechnicianName
     
     toast({
       title: "Cotización Lista",
@@ -95,7 +98,6 @@ export default function NuevaCotizacionPage() {
   const handlePrintDialogClose = () => {
     setCurrentQuoteForPdf(null);
     setCurrentVehicleForPdf(null);
-    // setCurrentTechnicianForPdf(null); // Removed
     setDialogStep('closed'); 
   };
 
@@ -119,7 +121,7 @@ export default function NuevaCotizacionPage() {
       `Descripción: ${currentQuoteForPdf.description}\n` +
       `Monto Total Estimado: $${currentQuoteForPdf.estimatedTotalCost.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}\n\n` +
       `Por favor, revise el PDF adjunto para más detalles o imprima la cotización desde la vista previa.\n\n` +
-      `Saludos cordiales,\n${currentQuoteForPdf.preparedByTechnicianName || workshopInfo?.name || 'El equipo del Taller'}` // Use preparer name if available
+      `Saludos cordiales,\n${currentQuoteForPdf.preparedByTechnicianName || workshopInfo?.name || 'El equipo del Taller'}`
     );
     const mailtoLink = `mailto:${currentVehicleForPdf.ownerEmail || ''}?subject=${subject}&body=${body}`;
     window.open(mailtoLink, '_blank');
@@ -136,7 +138,7 @@ export default function NuevaCotizacionPage() {
       `Hola ${currentVehicleForPdf.ownerName || 'Cliente'}, le enviamos su cotización de servicio ${currentQuoteForPdf.id} de ${workshopInfo?.name || 'nuestro taller'} para su vehículo ${currentVehicleForPdf.make} ${currentVehicleForPdf.model} (${currentVehicleForPdf.licensePlate}).\n` +
       `Descripción: ${currentQuoteForPdf.description}\n` +
       `Monto Total Estimado: $${currentQuoteForPdf.estimatedTotalCost.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}\n\n` +
-      `Preparado por: ${currentQuoteForPdf.preparedByTechnicianName || ''}\n` + // Add preparer
+      `Preparado por: ${currentQuoteForPdf.preparedByTechnicianName || ''}\n` + 
       `Puede ver más detalles cuando le enviemos el PDF o lo imprima.`
     );
     const whatsappLink = `https://wa.me/${phoneNumber}?text=${message}`;
@@ -159,9 +161,9 @@ export default function NuevaCotizacionPage() {
           }}
           quote={null} 
           vehicles={vehicles}
-          technicians={[]} // Pass empty array as technician selector is hidden in quote mode
+          technicians={[]} 
           inventoryItems={inventoryItems}
-          onSave={handleGenerateQuotePdf as (data: ServiceRecord | QuoteRecord) => Promise<void>}
+          onSave={handleGenerateQuotePdf}
           onVehicleCreated={handleVehicleCreated}
           mode="quote" 
         />
@@ -182,7 +184,6 @@ export default function NuevaCotizacionPage() {
           <QuoteContent 
             quote={currentQuoteForPdf} 
             vehicle={currentVehicleForPdf || undefined}
-            // preparedByTechnician prop removed
           />
           <div className="mt-4 flex flex-col sm:flex-row gap-2 justify-center print-hidden border-t pt-4">
             <Button variant="outline" onClick={handleSendEmail} disabled={!currentVehicleForPdf?.ownerEmail}>
@@ -199,4 +200,3 @@ export default function NuevaCotizacionPage() {
     </>
   );
 }
-

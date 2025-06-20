@@ -7,7 +7,7 @@ import { ServiceDialog } from "../components/service-dialog";
 import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
 import { TicketContent } from '@/components/ticket-content';
 import { placeholderVehicles, placeholderTechnicians, placeholderInventory, placeholderServiceRecords } from "@/lib/placeholder-data";
-import type { ServiceRecord, Vehicle, Technician } from "@/types";
+import type { ServiceRecord, Vehicle, Technician, QuoteRecord, InventoryItem } from "@/types";
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from 'next/navigation';
 
@@ -32,7 +32,18 @@ export default function NuevoServicioPage() {
     }
   }, [dialogStep, router]);
 
-  const handleSaveNewService = async (serviceData: ServiceRecord) => {
+  const handleSaveNewService = async (data: ServiceRecord | QuoteRecord) => {
+    // Since this page is for "Nuevo Servicio", we expect ServiceRecord
+    if (!('status' in data)) { // 'status' is a property unique to ServiceRecord
+      toast({
+        title: "Error de Tipo",
+        description: "Se esperaba un registro de servicio.",
+        variant: "destructive",
+      });
+      return;
+    }
+    const serviceData = data as ServiceRecord;
+
     const newService: ServiceRecord = {
       ...serviceData,
       id: `S${String(placeholderServiceRecords.length + 1).padStart(3, '0')}${Date.now().toString().slice(-3)}`,
@@ -54,8 +65,8 @@ export default function NuevoServicioPage() {
     }
   };
 
-  const handleServiceDialogExternalClose = () => { // Called when ServiceDialog is closed by X or overlay
-     if (dialogStep === 'service') { // Only redirect if it was closed from 'service' step without completion
+  const handleServiceDialogExternalClose = () => { 
+     if (dialogStep === 'service') { 
       setDialogStep('closed');
     }
   };
@@ -96,6 +107,7 @@ export default function NuevoServicioPage() {
           inventoryItems={inventoryItems}
           onSave={handleSaveNewService}
           onVehicleCreated={handleVehicleCreated}
+          mode="service"
         />
       )}
 
