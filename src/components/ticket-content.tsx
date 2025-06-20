@@ -53,7 +53,7 @@ export function TicketContent({ sale, service, vehicle, technician, previewWorks
   const formattedPrintDate = format(now, "dd/MM/yyyy HH:mm:ss", { locale: es });
 
   const formatCurrency = (amount: number | undefined) => {
-    if (amount === undefined) return 'N/A';
+    if (typeof amount !== 'number' || isNaN(amount)) return '$0.00'; // Safeguard for NaN/undefined
     return `$${amount.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   };
 
@@ -75,6 +75,11 @@ export function TicketContent({ sale, service, vehicle, technician, previewWorks
   };
   const operationDate = getOperationDate();
   const formattedOperationDate = isValid(operationDate) ? format(operationDate, "dd/MM/yy HH:mm", { locale: es }) : 'N/A';
+
+  // Safeguard values for service ticket display
+  const serviceTotalCost = (typeof service?.totalCost === 'number' && !isNaN(service.totalCost)) ? service.totalCost : 0;
+  const serviceSubTotal = (typeof service?.subTotal === 'number' && !isNaN(service.subTotal)) ? service.subTotal : serviceTotalCost / (1 + IVA_RATE);
+  const serviceTaxAmount = (typeof service?.taxAmount === 'number' && !isNaN(service.taxAmount)) ? service.taxAmount : serviceTotalCost - serviceSubTotal;
 
 
   return (
@@ -130,19 +135,18 @@ export function TicketContent({ sale, service, vehicle, technician, previewWorks
           <p className="my-1">Descripción: {service.description}</p>
           {service.suppliesUsed && service.suppliesUsed.length > 0 && (
             <>
-              <p className="font-semibold mt-1">Refacciones (costo taller):</p>
+              <p className="font-semibold mt-1">Refacciones:</p>
               {service.suppliesUsed.map((supply, idx) => (
-                <div key={idx} className="flex justify-between text-xs">
+                <div key={idx} className="text-xs">
                   <span>{supply.quantity} x {supply.supplyName || `ID: ${supply.supplyId}`}</span>
-                  <span>{formatCurrency((supply.unitPrice || 0) * supply.quantity)}</span>
                 </div>
               ))}
             </>
           )}
           {renderDashedLine()}
-          {renderLine("SUBTOTAL SERVICIO:", formatCurrency(service.subTotal))}
-          {renderLine(`IVA (${(IVA_RATE*100).toFixed(0)}%):`, formatCurrency(service.taxAmount))}
-          {renderLine("TOTAL SERVICIO:", formatCurrency(service.totalCost), true)}
+          {renderLine("SUBTOTAL SERVICIO:", formatCurrency(serviceSubTotal))}
+          {renderLine(`IVA (${(IVA_RATE*100).toFixed(0)}%):`, formatCurrency(serviceTaxAmount))}
+          {renderLine("TOTAL SERVICIO:", formatCurrency(serviceTotalCost), true)}
            {service.deliveryDateTime && isValid(parseISO(service.deliveryDateTime)) && (
             <p className="text-xs mt-1">Fecha Entrega: {format(parseISO(service.deliveryDateTime), "dd/MM/yy HH:mm", { locale: es })}</p>
            )}
@@ -154,3 +158,4 @@ export function TicketContent({ sale, service, vehicle, technician, previewWorks
     </div>
   );
 }
+
