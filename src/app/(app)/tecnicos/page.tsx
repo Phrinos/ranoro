@@ -7,10 +7,10 @@ import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { PlusCircle, ListFilter, TrendingUp, DollarSign as DollarSignIcon, CalendarIcon as CalendarDateIcon } from "lucide-react";
+import { PlusCircle, ListFilter, TrendingUp, DollarSign as DollarSignIcon, CalendarIcon as CalendarDateIcon, BadgeCent } from "lucide-react"; // Added BadgeCent
 import { TechniciansTable } from "./components/technicians-table";
 import { TechnicianDialog } from "./components/technician-dialog";
-import { placeholderTechnicians, placeholderServiceRecords } from "@/lib/placeholder-data";
+import { placeholderTechnicians, placeholderServiceRecords, TECH_STAFF_COMMISSION_RATE } from "@/lib/placeholder-data";
 import type { Technician, ServiceRecord } from "@/types";
 import type { TechnicianFormValues } from "./components/technician-form";
 import { parseISO, compareAsc, compareDesc, startOfMonth, endOfMonth, isWithinInterval, format, isValid, startOfDay, endOfDay } from 'date-fns';
@@ -32,6 +32,7 @@ interface AggregatedTechnicianPerformance {
   technicianName: string;
   totalRevenue: number;
   totalProfit: number;
+  totalCommissionEarned: number; 
 }
 
 export default function TecnicosPage() {
@@ -66,6 +67,7 @@ export default function TecnicosPage() {
     return technicians.map(tech => {
       const techServices = placeholderServiceRecords.filter(service => {
         if (service.technicianId !== tech.id) return false;
+        if (service.status !== 'Completado') return false; // Only count completed services for commission
         const serviceDate = parseISO(service.serviceDate);
         if (!isValid(serviceDate)) return false;
         return isWithinInterval(serviceDate, { start: dateFrom, end: dateTo });
@@ -73,12 +75,14 @@ export default function TecnicosPage() {
 
       const totalRevenue = techServices.reduce((sum, s) => sum + s.totalCost, 0);
       const totalProfit = techServices.reduce((sum, s) => sum + (s.serviceProfit || 0), 0);
+      const totalCommissionEarned = techServices.reduce((sum, s) => sum + (s.serviceProfit || 0) * TECH_STAFF_COMMISSION_RATE, 0);
       
       return {
         technicianId: tech.id,
         technicianName: tech.name,
         totalRevenue,
         totalProfit,
+        totalCommissionEarned,
       };
     });
   }, [technicians, filterDateRange]);
@@ -126,7 +130,7 @@ export default function TecnicosPage() {
           <div>
             <CardTitle>Resumen de Rendimiento por Staff Técnico</CardTitle>
             <CardDescription>
-              Totales de ingresos y ganancias para cada miembro del staff técnico basados en el rango de fechas seleccionado.
+              Totales de ingresos, ganancias y comisiones para cada miembro del staff técnico basados en el rango de fechas seleccionado (solo servicios completados).
               Predeterminado al mes actual si no se selecciona un rango.
             </CardDescription>
           </div>
@@ -184,6 +188,10 @@ export default function TecnicosPage() {
                       <span className="text-muted-foreground">Ganancia Total:</span>
                       <span className="font-semibold text-green-600">{formatCurrency(techPerf.totalProfit)}</span>
                     </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-muted-foreground flex items-center gap-1"><BadgeCent className="h-3.5 w-3.5"/>Comisión Ganada:</span>
+                      <span className="font-semibold text-blue-600">{formatCurrency(techPerf.totalCommissionEarned)}</span>
+                    </div>
                   </CardContent>
                 </Card>
               ))}
@@ -234,6 +242,7 @@ export default function TecnicosPage() {
     
 
     
+
 
 
 

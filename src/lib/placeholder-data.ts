@@ -10,6 +10,8 @@ const tomorrow = addDays(today, 1);
 const dayAfterTomorrow = addDays(today, 2);
 
 export const IVA_RATE = 0.16; // Export IVA_RATE
+export const TECH_STAFF_COMMISSION_RATE = 0.05; // 5% commission for technical staff on their service profit
+export const ADMIN_STAFF_COMMISSION_RATE = 0.01; // 1% commission for each admin staff on general service profit
 
 export const placeholderVehicles: Vehicle[] = [
   { id: 1, make: 'Toyota', model: 'Corolla', year: 2020, vin: 'ABC123XYZ789', ownerName: 'Juan Pérez', ownerPhone: '555-1111', ownerEmail: 'juan.perez@email.com', licensePlate: 'PQR-123', color: 'Rojo', notes: 'Cliente frecuente, prefiere aceite sintético.' },
@@ -334,3 +336,4 @@ export const calculateSaleProfit = (sale: SaleReceipt, inventory: InventoryItem[
       return profit + (sellingPriceSubTotal - costPrice) * saleItem.quantity;
   }, 0);
 };
+
