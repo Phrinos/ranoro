@@ -31,6 +31,17 @@ export function SalesTable({ sales, onReprintTicket }: SalesTableProps) {
     return `$${amount.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   };
 
+  const getPaymentMethodVariant = (method?: SaleReceipt['paymentMethod']): VariantProps<typeof Badge>['variant'] => {
+    switch (method) {
+      case "Efectivo": return "success";
+      case "Tarjeta": return "purple";
+      case "Transferencia": return "blue";
+      case "Efectivo+Transferencia": return "lightGreen";
+      case "Tarjeta+Transferencia": return "lightPurple";
+      default: return "outline";
+    }
+  };
+
   return (
     <div className="rounded-lg border shadow-sm overflow-hidden">
       <Table>
@@ -61,7 +72,7 @@ export function SalesTable({ sales, onReprintTicket }: SalesTableProps) {
                 <TableCell>{sale.customerName || 'N/A'}</TableCell>
                 <TableCell className="text-center">{sale.items.length}</TableCell>
                 <TableCell>
-                  <Badge variant={sale.paymentMethod === "Efectivo" ? "secondary" : sale.paymentMethod === "Tarjeta" ? "default" : "outline"}>
+                  <Badge variant={getPaymentMethodVariant(sale.paymentMethod)}>
                     {sale.paymentMethod}
                   </Badge>
                 </TableCell>
