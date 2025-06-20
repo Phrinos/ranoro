@@ -10,7 +10,7 @@ import {
   placeholderTechnicians,
   placeholderInventory
 } from "@/lib/placeholder-data";
-import type { ServiceRecord, Vehicle, Technician, InventoryItem } from "@/types";
+import type { ServiceRecord, Vehicle, Technician, InventoryItem, QuoteRecord } from "@/types";
 import { useState, useEffect, useMemo } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { format, parseISO, compareAsc, isFuture, isToday, isPast, isValid } from "date-fns";
@@ -61,7 +61,20 @@ export default function AgendaServiciosPage() {
     setIsEditDialogOpen(true);
   };
 
-  const handleUpdateService = async (updatedServiceData: ServiceRecord) => {
+  const handleUpdateService = async (data: ServiceRecord | QuoteRecord) => {
+    // In this context (AgendaServiciosPage), we are always updating ServiceRecords.
+    // The ServiceDialog's onSave prop is (data: ServiceRecord | QuoteRecord).
+    // So, we assert the type here.
+    if (!('status' in data)) { // 'status' is a property unique to ServiceRecord vs QuoteRecord for this check
+      toast({
+        title: "Error de Tipo",
+        description: "Se esperaba un registro de servicio para actualizar.",
+        variant: "destructive",
+      });
+      return;
+    }
+    const updatedServiceData = data as ServiceRecord;
+
     setAllServices(prevServices =>
       prevServices.map(s => (s.id === updatedServiceData.id ? updatedServiceData : s))
     );
@@ -341,3 +354,4 @@ export default function AgendaServiciosPage() {
     </>
   );
 }
+
