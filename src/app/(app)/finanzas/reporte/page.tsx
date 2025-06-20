@@ -131,10 +131,18 @@ export default function FinancialReportPage() {
         return isValid(opDate) && isWithinInterval(opDate, lastMonthRange);
     });
 
+    const salesTodayCount = opsToday.filter(op => op.type === 'Venta').length;
+    const servicesTodayCount = opsToday.filter(op => op.type === 'Servicio').length;
+    const totalGeneratedToday = opsToday.reduce((sum, op) => sum + op.totalAmount, 0);
+    const totalProfitToday = opsToday.reduce((sum, op) => sum + op.profit, 0);
+
+
     return {
       operationsTodayCount: opsToday.length,
-      totalSalesToday: opsToday.filter(op => op.type === 'Venta').reduce((sum, op) => sum + op.totalAmount, 0),
-      totalProfitToday: opsToday.reduce((sum, op) => sum + op.profit, 0),
+      salesTodayCount,
+      servicesTodayCount,
+      totalGeneratedToday,
+      totalProfitToday,
       totalGeneratedCurrentMonth: opsCurrentMonth.reduce((sum, op) => sum + op.totalAmount, 0),
       profitCurrentMonth: opsCurrentMonth.reduce((sum, op) => sum + op.profit, 0),
       totalGeneratedLastMonth: opsLastMonth.reduce((sum, op) => sum + op.totalAmount, 0),
@@ -155,7 +163,7 @@ export default function FinancialReportPage() {
         description="Consolida ventas y servicios para un análisis financiero completo."
       />
 
-      <div className="mb-6 grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+      <div className="mb-6 grid gap-6 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">Ops. del Día</CardTitle>
@@ -163,67 +171,41 @@ export default function FinancialReportPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold font-headline">{summaryData.operationsTodayCount}</div>
-             <p className="text-xs text-muted-foreground">Ventas y Servicios Hoy</p>
+             <p className="text-xs text-muted-foreground">
+                {summaryData.salesTodayCount} Ventas, {summaryData.servicesTodayCount} Servicios
+             </p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Ventas del Día</CardTitle>
-            <ShoppingCart className="h-5 w-5 text-purple-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold font-headline">{formatCurrency(summaryData.totalSalesToday)}</div>
-             <p className="text-xs text-muted-foreground">Total de ventas de mostrador hoy.</p>
-          </CardContent>
-        </Card>
-         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Margen Ganancia (Día)</CardTitle>
-            <TrendingUp className="h-5 w-5 text-green-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold font-headline">{formatCurrency(summaryData.totalProfitToday)}</div>
-             <p className="text-xs text-muted-foreground">Ganancia total de operaciones hoy.</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Total Generado (Mes Actual)</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Resultados del Día</CardTitle>
             <DollarSign className="h-5 w-5 text-green-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold font-headline">{formatCurrency(summaryData.totalGeneratedCurrentMonth)}</div>
-            <p className="text-xs text-muted-foreground">{summaryData.currentMonthFormatted}</p>
+            <div className="text-2xl font-bold font-headline">{formatCurrency(summaryData.totalGeneratedToday)}</div>
+             <p className="text-xs text-muted-foreground">
+                Ganancia: {formatCurrency(summaryData.totalProfitToday)}
+             </p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Ganancia (Mes Actual)</CardTitle>
-            <TrendingUp className="h-5 w-5 text-purple-500" />
+            <CardTitle className="text-sm font-medium text-muted-foreground">{summaryData.currentMonthFormatted}</CardTitle>
+            <DollarSign className="h-5 w-5 text-purple-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold font-headline">{formatCurrency(summaryData.profitCurrentMonth)}</div>
-            <p className="text-xs text-muted-foreground">{summaryData.currentMonthFormatted}</p>
+            <div className="text-2xl font-bold font-headline">{formatCurrency(summaryData.totalGeneratedCurrentMonth)}</div>
+            <p className="text-xs text-muted-foreground">Ganancia: {formatCurrency(summaryData.profitCurrentMonth)}</p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Total Generado (Mes Pasado)</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">{summaryData.lastMonthFormatted}</CardTitle>
             <DollarSign className="h-5 w-5 text-gray-500" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold font-headline">{formatCurrency(summaryData.totalGeneratedLastMonth)}</div>
-             <p className="text-xs text-muted-foreground">{summaryData.lastMonthFormatted}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Ganancia (Mes Pasado)</CardTitle>
-            <TrendingUp className="h-5 w-5 text-gray-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold font-headline">{formatCurrency(summaryData.profitLastMonth)}</div>
-             <p className="text-xs text-muted-foreground">{summaryData.lastMonthFormatted}</p>
+             <p className="text-xs text-muted-foreground">Ganancia: {formatCurrency(summaryData.profitLastMonth)}</p>
           </CardContent>
         </Card>
       </div>

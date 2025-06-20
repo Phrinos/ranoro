@@ -19,6 +19,8 @@ import useNavigation, { type NavigationEntry } from "@/hooks/use-navigation";
 import { Button } from "@/components/ui/button";
 import { UserCircle } from "lucide-react";
 
+const DESIRED_GROUP_ORDER = ["Principal", "Clientes", "Servicios", "Finanzas", "Inventario", "Administración"];
+
 export function AppSidebar() {
   const navItems = useNavigation();
 
@@ -33,6 +35,12 @@ export function AppSidebar() {
     }, {} as Record<string, NavigationEntry[]>);
   }, [navItems]);
 
+  const sortedGroupEntries = React.useMemo(() => {
+    return Object.entries(groupedByTag).sort(([tagA], [tagB]) => {
+      return DESIRED_GROUP_ORDER.indexOf(tagA) - DESIRED_GROUP_ORDER.indexOf(tagB);
+    });
+  }, [groupedByTag]);
+
 
   return (
     <Sidebar collapsible="icon" side="left" variant="sidebar">
@@ -42,7 +50,7 @@ export function AppSidebar() {
         </Link>
       </SidebarHeader>
       <SidebarContent className="p-0">
-        {Object.entries(groupedByTag).map(([tag, entriesInGroup]) => (
+        {sortedGroupEntries.map(([tag, entriesInGroup]) => (
           <SidebarGroup key={tag} className="p-2">
             <SidebarGroupLabel className="group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0">
               <span className="group-data-[collapsible=icon]:hidden">{tag}</span>
@@ -78,3 +86,4 @@ export function AppSidebar() {
     </Sidebar>
   );
 }
+
