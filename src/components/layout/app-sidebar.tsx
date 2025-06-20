@@ -67,7 +67,6 @@ export function AppSidebar() {
     <Sidebar collapsible="icon" side="left" variant="sidebar">
       <SidebarHeader className="border-b border-sidebar-border h-16 flex items-center justify-center">
         <Link href="/dashboard" className="flex items-center justify-center text-lg font-semibold text-sidebar-foreground hover:text-sidebar-primary transition-colors h-full">
-          {/* Logo visible cuando el menú está expandido */}
           <Image
             src="/ranoro-logo.png"
             alt="Ranoro Logo"
@@ -77,7 +76,6 @@ export function AppSidebar() {
             data-ai-hint="ranoro logo"
             priority
           />
-          {/* Logo visible cuando el menú está colapsado (modo ícono) */}
           <Image
             src="/ranoro-logo.png"
             alt="Ranoro Logo Icon"
@@ -131,10 +129,6 @@ export function AppSidebar() {
             <DropdownMenuItem onClick={() => router.push('/perfil')}>
               <UserCog className="mr-2 h-4 w-4" />
               <span>Mi Perfil</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => router.push('/admin/configuracion-ticket')}>
-              <Settings className="mr-2 h-4 w-4" />
-              <span>Configuración de Ticket</span>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={handleLogout}>
