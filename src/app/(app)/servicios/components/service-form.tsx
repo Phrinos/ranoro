@@ -53,23 +53,14 @@ const serviceFormSchema = z.object({
   deliveryDateTime: z.date().optional(),
 });
 
-type ServiceFormValues = z.infer<typeof serviceFormSchema>;
+export type ServiceFormValues = z.infer<typeof serviceFormSchema>;
 
 interface ServiceFormProps {
   initialData?: ServiceRecord | null;
   vehicles: Vehicle[]; 
   technicians: Technician[];
   inventoryItems: InventoryItem[];
-  onSubmit: (values: Omit<ServiceFormValues, 'vehicleLicensePlateSearch'> & { 
-    serviceDate: string; 
-    deliveryDateTime?: string; 
-    subTotal?: number;
-    taxAmount?: number;
-    totalCost: number; // This is the final, tax-inclusive price
-    totalSuppliesCost?: number; 
-    serviceProfit?: number; 
-    vehicleId: number; 
-  }) => Promise<void>; 
+  onSubmit: (data: ServiceRecord) => Promise<void>; // Changed to expect full ServiceRecord for print ticket
   onClose: () => void;
   isReadOnly?: boolean; 
   onVehicleCreated?: (newVehicle: Vehicle) => void; 
@@ -184,18 +175,23 @@ export function ServiceForm({
   });
 
   const watchedSupplies = form.watch("suppliesUsed");
-  const watchedTotalServicePrice = form.watch("totalServicePrice"); // This is final, tax-inclusive price
+  const watchedTotalServicePrice = form.watch("totalServicePrice"); 
 
   const totalSuppliesCost = React.useMemo(() => {
     return watchedSupplies?.reduce((sum, supply) => {
       const item = inventoryItems.find(i => i.id === supply.supplyId);
-      return sum + (item?.unitPrice || 0) * supply.quantity; // item.unitPrice is cost to workshop
+      return sum + (item?.unitPrice || 0) * supply.quantity; 
     }, 0) || 0;
   }, [watchedSupplies, inventoryItems]);
 
   const serviceSubTotal = React.useMemo(() => {
     return watchedTotalServicePrice / (1 + IVA_RATE);
   }, [watchedTotalServicePrice]);
+  
+  const serviceTaxAmount = React.useMemo(() => {
+    return watchedTotalServicePrice - serviceSubTotal;
+  }, [watchedTotalServicePrice, serviceSubTotal]);
+
 
   const serviceProfit = React.useMemo(() => {
     return serviceSubTotal - totalSuppliesCost;
@@ -257,40 +253,35 @@ export function ServiceForm({
       return;
     }
     
-    const finalServicePrice = values.totalServicePrice;
-    const calculatedSubTotal = finalServicePrice / (1 + IVA_RATE);
-    const calculatedTaxAmount = finalServicePrice - calculatedSubTotal;
-    const calculatedServiceProfit = calculatedSubTotal - totalSuppliesCost;
-
-    const submissionData = {
-      ...values, 
+    const completeServiceData: ServiceRecord = {
+      id: initialData?.id || `S_NEW_${Date.now()}`, // Placeholder for new, parent should assign final
+      vehicleId: values.vehicleId!,
+      vehicleIdentifier: selectedVehicle?.licensePlate || values.vehicleLicensePlateSearch,
       serviceDate: values.serviceDate.toISOString(),
       deliveryDateTime: values.deliveryDateTime ? values.deliveryDateTime.toISOString() : undefined,
+      description: values.description,
+      technicianId: values.technicianId,
+      technicianName: technicians.find(t => t.id === values.technicianId)?.name,
+      status: values.status,
+      mileage: values.mileage,
+      notes: values.notes,
       suppliesUsed: values.suppliesUsed?.map(s => {
         const itemDetails = inventoryItems.find(invItem => invItem.id === s.supplyId);
         return {
           supplyId: s.supplyId,
           quantity: s.quantity,
-          unitPrice: itemDetails?.unitPrice || 0, // Cost price
+          unitPrice: itemDetails?.unitPrice || 0, 
           supplyName: itemDetails?.name || s.supplyName,
         };
-      }),
-      subTotal: calculatedSubTotal,
-      taxAmount: calculatedTaxAmount,
-      totalCost: finalServicePrice, // Final tax-inclusive price
+      }) || [],
+      totalCost: values.totalServicePrice,
+      subTotal: serviceSubTotal,
+      taxAmount: serviceTaxAmount,
       totalSuppliesCost: totalSuppliesCost,
-      serviceProfit: calculatedServiceProfit,
+      serviceProfit: serviceProfit,
     };
-    await onSubmit(submissionData as Omit<ServiceFormValues, 'vehicleLicensePlateSearch'> & { 
-      serviceDate: string; 
-      deliveryDateTime?: string; 
-      subTotal?: number;
-      taxAmount?: number;
-      totalCost: number;
-      totalSuppliesCost?: number; 
-      serviceProfit?: number; 
-      vehicleId: number; 
-    });
+    
+    await onSubmit(completeServiceData);
   };
   
   const handleTimeChange = (timeString: string, dateField: "serviceDate" | "deliveryDateTime") => {
@@ -690,7 +681,7 @@ export function ServiceForm({
         
         <div className="p-4 border rounded-md bg-green-50 dark:bg-green-900/30">
             <p className="text-base">Subtotal Servicio (sin IVA): <span className="font-semibold">${serviceSubTotal.toLocaleString('es-ES', { minimumFractionDigits: 2 })}</span></p>
-            <p className="text-base">IVA ({IVA_RATE * 100}%): <span className="font-semibold">${(watchedTotalServicePrice - serviceSubTotal).toLocaleString('es-ES', { minimumFractionDigits: 2 })}</span></p>
+            <p className="text-base">IVA ({IVA_RATE * 100}%): <span className="font-semibold">${serviceTaxAmount.toLocaleString('es-ES', { minimumFractionDigits: 2 })}</span></p>
             <p className="text-lg font-bold">Precio Total (IVA Incluido): <span className="text-green-700 dark:text-green-400">${watchedTotalServicePrice.toLocaleString('es-ES', { minimumFractionDigits: 2 })}</span></p>
             <hr className="my-2"/>
             <p className="text-lg font-bold">Ganancia Estimada del Servicio: <span className="text-green-700 dark:text-green-400">${serviceProfit.toLocaleString('es-ES', { minimumFractionDigits: 2 })}</span></p>

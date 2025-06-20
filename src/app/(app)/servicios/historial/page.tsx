@@ -8,9 +8,11 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Search, ListFilter, CalendarIcon as CalendarDateIcon, DollarSign, TrendingUp, Car as CarIcon, Wrench as WrenchIcon } from "lucide-react"; // Renamed CalendarIcon to avoid conflict
+import { Search, ListFilter, CalendarIcon as CalendarDateIcon, DollarSign, TrendingUp, Car as CarIcon, Wrench as WrenchIcon } from "lucide-react";
 import { ServicesTable } from "../components/services-table"; 
 import { ServiceDialog } from "../components/service-dialog"; 
+import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
+import { TicketContent } from '@/components/ticket-content';
 import { placeholderServiceRecords, placeholderVehicles, placeholderTechnicians, placeholderInventory } from "@/lib/placeholder-data";
 import type { ServiceRecord, Vehicle, Technician, InventoryItem } from "@/types";
 import { useState, useEffect, useMemo } from "react";
@@ -19,7 +21,7 @@ import { format, parseISO, compareAsc, compareDesc, isWithinInterval, isValid, s
 import { es } from 'date-fns/locale';
 import type { DateRange } from "react-day-picker";
 import { useRouter } from "next/navigation";
-import { cn } from "@/lib/utils"; // Added import for cn
+import { cn } from "@/lib/utils";
 
 type ServiceSortOption = 
   | "serviceDate_desc" | "serviceDate_asc"
@@ -41,6 +43,12 @@ export default function HistorialServiciosPage() {
   const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
   const [sortOption, setSortOption] = useState<ServiceSortOption>("serviceDate_desc");
 
+  const [showPrintTicketDialog, setShowPrintTicketDialog] = useState(false);
+  const [currentServiceForTicket, setCurrentServiceForTicket] = useState<ServiceRecord | null>(null);
+  const [currentVehicleForTicket, setCurrentVehicleForTicket] = useState<Vehicle | null>(null);
+  const [currentTechnicianForTicket, setCurrentTechnicianForTicket] = useState<Technician | null>(null);
+
+
   useEffect(() => {
     setAllServices(placeholderServiceRecords);
     setVehicles(placeholderVehicles);
@@ -51,7 +59,6 @@ export default function HistorialServiciosPage() {
   const filteredAndSortedServices = useMemo(() => {
     let filtered = [...allServices];
 
-    // Filter by Date Range
     if (dateRange?.from) {
       filtered = filtered.filter(service => {
         const serviceDate = parseISO(service.serviceDate);
@@ -62,7 +69,6 @@ export default function HistorialServiciosPage() {
       });
     }
 
-    // Filter by Search Term
     if (searchTerm) {
       const lowerSearchTerm = searchTerm.toLowerCase();
       filtered = filtered.filter(service => {
@@ -82,7 +88,6 @@ export default function HistorialServiciosPage() {
       });
     }
 
-    // Sort
     filtered.sort((a, b) => {
       const vehicleA = vehicles.find(v => v.id === a.vehicleId);
       const vehicleB = vehicles.find(v => v.id === b.vehicleId);
@@ -146,6 +151,13 @@ export default function HistorialServiciosPage() {
       title: "Servicio Actualizado",
       description: `El servicio ${updatedService.id} ha sido actualizado.`,
     });
+
+    if (updatedService.status === 'Completado') {
+      setCurrentServiceForTicket(updatedService);
+      setCurrentVehicleForTicket(vehicles.find(v => v.id === updatedService.vehicleId) || null);
+      setCurrentTechnicianForTicket(technicians.find(t => t.id === updatedService.technicianId) || null);
+      setShowPrintTicketDialog(true);
+    }
   };
 
   const handleDeleteService = (serviceId: string) => {
@@ -165,7 +177,9 @@ export default function HistorialServiciosPage() {
     setVehicles(prev => {
       if(prev.find(v=> v.id === newVehicle.id)) return prev;
       const updatedVehicles = [...prev, newVehicle];
-      placeholderVehicles.push(newVehicle);
+       if (!placeholderVehicles.find(v => v.id === newVehicle.id)) {
+         placeholderVehicles.push(newVehicle);
+       }
       return updatedVehicles;
     });
   };
@@ -299,7 +313,21 @@ export default function HistorialServiciosPage() {
         onVehicleCreated={handleVehicleCreated}
         isHistoryView={true}
       />
+
+      {currentServiceForTicket && (
+        <PrintTicketDialog
+          open={showPrintTicketDialog}
+          onOpenChange={setShowPrintTicketDialog}
+          title="Comprobante de Servicio"
+          onDialogClose={() => setCurrentServiceForTicket(null)}
+        >
+          <TicketContent 
+            service={currentServiceForTicket} 
+            vehicle={currentVehicleForTicket || undefined}
+            technician={currentTechnicianForTicket || undefined}
+          />
+        </PrintTicketDialog>
+      )}
     </>
   );
 }
-

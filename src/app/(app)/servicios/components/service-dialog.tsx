@@ -21,7 +21,7 @@ interface ServiceDialogProps {
   vehicles: Vehicle[]; 
   technicians: Technician[]; 
   inventoryItems: InventoryItem[]; 
-  onSave: (data: any) => Promise<void>; 
+  onSave: (data: ServiceRecord) => Promise<void>; // Expect full ServiceRecord for print ticket
   isReadOnly?: boolean; 
   open?: boolean; 
   onOpenChange?: (isOpen: boolean) => void; 
@@ -47,16 +47,17 @@ export function ServiceDialog({
   const open = isControlled ? controlledOpen : uncontrolledOpen;
   const onOpenChange = isControlled ? setControlledOpen : setUncontrolledOpen;
 
-  const handleSubmit = async (values: any) => {
+  const handleSubmit = async (serviceData: ServiceRecord) => { // Expect full ServiceRecord
     if (isReadOnly) {
       if (onOpenChange) onOpenChange(false);
       else setUncontrolledOpen(false);
       return;
     }
     try {
-      await onSave(values); 
-      if (onOpenChange) onOpenChange(false);
-      else setUncontrolledOpen(false);
+      await onSave(serviceData); 
+      // Parent component will handle toast and dialog closing logic, 
+      // including potentially opening a print ticket dialog.
+      // So, no onOpenChange(false) here directly.
     } catch (error) {
       console.error("Error saving service from dialog:", error);
       toast({
@@ -71,7 +72,7 @@ export function ServiceDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       {trigger && !isControlled && <DialogTrigger asChild onClick={() => onOpenChange(true)}>{trigger}</DialogTrigger>}
       {open && (
-        <DialogContent className="sm:max-w-[600px] md:max-w-[800px] lg:max-w-[900px] xl:max-w-[1000px] max-h-[90vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-[600px] md:max-w-[800px] lg:max-w-[900px] xl:max-w-[1000px] max-h-[90vh] overflow-y-auto print:hidden">
           <DialogHeader>
             <DialogTitle>{isReadOnly ? "Detalles del Servicio" : (service ? "Editar Servicio" : "Nuevo Servicio")}</DialogTitle>
             <DialogDescription>
@@ -93,4 +94,3 @@ export function ServiceDialog({
     </Dialog>
   );
 }
-

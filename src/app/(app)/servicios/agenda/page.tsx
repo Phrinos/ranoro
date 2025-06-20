@@ -23,6 +23,8 @@ import { ServiceDialog } from "../components/service-dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
+import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
+import { TicketContent } from '@/components/ticket-content';
 
 interface GroupedServices {
   [date: string]: ServiceRecord[];
@@ -41,6 +43,11 @@ export default function AgendaServiciosPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState("futuras");
 
+  const [showPrintTicketDialog, setShowPrintTicketDialog] = useState(false);
+  const [currentServiceForTicket, setCurrentServiceForTicket] = useState<ServiceRecord | null>(null);
+  const [currentVehicleForTicket, setCurrentVehicleForTicket] = useState<Vehicle | null>(null);
+  const [currentTechnicianForTicket, setCurrentTechnicianForTicket] = useState<Technician | null>(null);
+
 
   useEffect(() => {
     setAllServices(placeholderServiceRecords);
@@ -54,41 +61,27 @@ export default function AgendaServiciosPage() {
     setIsEditDialogOpen(true);
   };
 
-  const handleUpdateService = (updatedServiceData: any) => {
-    const serviceDate = updatedServiceData.serviceDate && isValid(new Date(updatedServiceData.serviceDate)) ? new Date(updatedServiceData.serviceDate).toISOString() : new Date().toISOString();
-    const deliveryDateTime = updatedServiceData.deliveryDateTime && isValid(new Date(updatedServiceData.deliveryDateTime)) ? new Date(updatedServiceData.deliveryDateTime).toISOString() : undefined;
-
-    const updatedService: ServiceRecord = {
-        ...editingService!, // Assume editingService is not null here
-        ...updatedServiceData,
-        id: editingService!.id,
-        serviceDate: serviceDate,
-        deliveryDateTime: deliveryDateTime,
-        totalCost: Number(updatedServiceData.totalServicePrice),
-        totalSuppliesCost: Number(updatedServiceData.totalSuppliesCost),
-        serviceProfit: Number(updatedServiceData.serviceProfit),
-         suppliesUsed: updatedServiceData.suppliesUsed.map((s: any) => ({
-            supplyId: s.supplyId,
-            quantity: Number(s.quantity),
-            unitPrice: Number(s.unitPrice),
-            supplyName: s.supplyName,
-        })),
-    };
-
-
+  const handleUpdateService = async (updatedServiceData: ServiceRecord) => {
     setAllServices(prevServices =>
-      prevServices.map(s => (s.id === updatedService.id ? updatedService : s))
+      prevServices.map(s => (s.id === updatedServiceData.id ? updatedServiceData : s))
     );
-    const pIndex = placeholderServiceRecords.findIndex(s => s.id === updatedService.id);
+    const pIndex = placeholderServiceRecords.findIndex(s => s.id === updatedServiceData.id);
     if (pIndex !== -1) {
-      placeholderServiceRecords[pIndex] = updatedService;
+      placeholderServiceRecords[pIndex] = updatedServiceData;
     }
      toast({
       title: "Servicio Actualizado",
-      description: `El servicio para ${vehicles.find(v => v.id === updatedService.vehicleId)?.licensePlate} ha sido actualizado.`,
+      description: `El servicio para ${vehicles.find(v => v.id === updatedServiceData.vehicleId)?.licensePlate} ha sido actualizado.`,
     });
     setIsEditDialogOpen(false);
     setEditingService(null);
+
+    if (updatedServiceData.status === 'Completado') {
+      setCurrentServiceForTicket(updatedServiceData);
+      setCurrentVehicleForTicket(vehicles.find(v => v.id === updatedServiceData.vehicleId) || null);
+      setCurrentTechnicianForTicket(techniciansState.find(t => t.id === updatedServiceData.technicianId) || null);
+      setShowPrintTicketDialog(true);
+    }
   };
 
   const handleDeleteService = (serviceId: string) => {
@@ -107,7 +100,11 @@ export default function AgendaServiciosPage() {
   const onVehicleCreated = (newVehicle: Vehicle) => {
     setVehicles(currentVehicles => {
       if (currentVehicles.find(v => v.id === newVehicle.id)) return currentVehicles;
-      return [...currentVehicles, newVehicle];
+      const updated = [...currentVehicles, newVehicle];
+      if (!placeholderVehicles.find(v => v.id === newVehicle.id)) {
+         placeholderVehicles.push(newVehicle);
+      }
+      return updated;
     });
   };
 
@@ -164,11 +161,11 @@ export default function AgendaServiciosPage() {
 
   const getStatusVariant = (status: ServiceRecord['status']): "default" | "secondary" | "outline" | "destructive" | "success" => {
     switch (status) {
-      case "Completado": return "success"; // Green
-      case "En Progreso": return "secondary"; // Theme secondary (typically light gray, could be light blue if themed)
-      case "Pendiente": return "outline"; // White/Transparent with border
-      case "Cancelado": return "destructive"; // Red
-      case "Agendado": return "default"; // Theme default (red in current theme for primary)
+      case "Completado": return "success"; 
+      case "En Progreso": return "secondary"; 
+      case "Pendiente": return "outline"; 
+      case "Cancelado": return "destructive"; 
+      case "Agendado": return "default"; 
       default: return "default";
     }
   };
@@ -328,7 +325,20 @@ export default function AgendaServiciosPage() {
           onVehicleCreated={onVehicleCreated}
         />
       )}
+      {currentServiceForTicket && (
+        <PrintTicketDialog
+          open={showPrintTicketDialog}
+          onOpenChange={setShowPrintTicketDialog}
+          title="Comprobante de Servicio"
+          onDialogClose={() => setCurrentServiceForTicket(null)}
+        >
+          <TicketContent 
+            service={currentServiceForTicket} 
+            vehicle={currentVehicleForTicket || undefined}
+            technician={currentTechnicianForTicket || undefined}
+          />
+        </PrintTicketDialog>
+      )}
     </>
   );
 }
-
