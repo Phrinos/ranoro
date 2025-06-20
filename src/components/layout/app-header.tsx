@@ -3,7 +3,7 @@
 
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
-import { UserCircle, Settings, LogOut, UserCog } from "lucide-react"; // Added UserCog
+import { UserCircle, Settings, LogOut, UserCog } from "lucide-react"; 
 import Link from "next/link";
 import { useRouter } from "next/navigation"; 
 import {
@@ -52,10 +52,6 @@ export function AppHeader() {
             <DropdownMenuItem onClick={() => router.push('/perfil')}>
               <UserCog className="mr-2 h-4 w-4" />
               <span>Mi Perfil</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => router.push('/admin/configuracion-ticket')}>
-              <Settings className="mr-2 h-4 w-4" />
-              <span>Configuración de Ticket</span>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={handleLogout}>
