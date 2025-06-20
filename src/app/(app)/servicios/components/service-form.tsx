@@ -347,7 +347,7 @@ export function ServiceForm({
         
         <Card>
             <CardHeader>
-                <CardTitle>Información del Vehículo y Servicio</CardTitle>
+                <CardTitle className="text-lg">Información del Vehículo y Servicio</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
                 <div className="flex flex-col sm:flex-row items-end gap-2">
@@ -672,7 +672,7 @@ export function ServiceForm({
 
         <Card>
             <CardHeader>
-                <CardTitle>Insumos Utilizados</CardTitle>
+                <CardTitle className="text-lg">Insumos Utilizados</CardTitle>
             </CardHeader>
             <CardContent>
                 {fields.length > 0 && (
@@ -830,3 +830,4 @@ export function ServiceForm({
     </>
   );
 }
+
