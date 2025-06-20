@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useEffect } from 'react'; // Added useEffect to import
+import React, { useEffect } from 'react'; // Ensured useEffect is imported
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
