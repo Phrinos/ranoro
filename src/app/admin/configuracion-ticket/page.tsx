@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -11,7 +11,10 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from '@/hooks/use-toast';
-import { Save } from 'lucide-react';
+import { Save, Eye } from 'lucide-react';
+import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
+import { TicketContent } from '@/components/ticket-content';
+import type { SaleReceipt, SaleItem } from '@/types';
 
 const LOCALSTORAGE_KEY = 'workshopTicketInfo';
 
@@ -33,8 +36,25 @@ const ticketConfigSchema = z.object({
 
 type TicketConfigFormValues = z.infer<typeof ticketConfigSchema>;
 
+const sampleSaleForPreview: SaleReceipt = {
+  id: "PREVIEW-001",
+  saleDate: new Date().toISOString(),
+  items: [
+    { inventoryItemId: "SAMPLE01", itemName: "Articulo Ejemplo 1", quantity: 2, unitPrice: 116, totalPrice: 232 },
+    { inventoryItemId: "SAMPLE02", itemName: "Articulo Ejemplo 2", quantity: 1, unitPrice: 58, totalPrice: 58 },
+  ],
+  subTotal: (232 / 1.16) + (58 / 1.16),
+  tax: (232 - (232 / 1.16)) + (58 - (58 / 1.16)),
+  totalAmount: 232 + 58,
+  paymentMethod: "Efectivo",
+  customerName: "Cliente de Muestra",
+};
+
+
 export default function ConfiguracionTicketPage() {
   const { toast } = useToast();
+  const [isPreviewDialogOpen, setIsPreviewDialogOpen] = useState(false);
+  const [currentPreviewInfo, setCurrentPreviewInfo] = useState<TicketConfigFormValues>(defaultWorkshopInfo);
 
   const form = useForm<TicketConfigFormValues>({
     resolver: zodResolver(ticketConfigSchema),
@@ -47,10 +67,14 @@ export default function ConfiguracionTicketPage() {
       try {
         const parsedInfo = JSON.parse(storedInfo);
         form.reset(parsedInfo);
+        setCurrentPreviewInfo(parsedInfo); // Initialize preview info
       } catch (e) {
         console.error("Failed to parse workshop info from localStorage", e);
         form.reset(defaultWorkshopInfo);
+        setCurrentPreviewInfo(defaultWorkshopInfo);
       }
+    } else {
+      setCurrentPreviewInfo(defaultWorkshopInfo);
     }
   }, [form]);
 
@@ -61,6 +85,7 @@ export default function ConfiguracionTicketPage() {
         title: "Configuración Guardada",
         description: "La información del ticket ha sido actualizada.",
       });
+      setCurrentPreviewInfo(data); // Update preview info on save
     } catch (e) {
       console.error("Failed to save workshop info to localStorage", e);
       toast({
@@ -69,6 +94,11 @@ export default function ConfiguracionTicketPage() {
         variant: "destructive",
       });
     }
+  };
+
+  const handlePreview = () => {
+    setCurrentPreviewInfo(form.getValues());
+    setIsPreviewDialogOpen(true);
   };
 
   return (
@@ -152,14 +182,30 @@ export default function ConfiguracionTicketPage() {
                   </FormItem>
                 )}
               />
-              <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
-                <Save className="mr-2 h-4 w-4" />
-                {form.formState.isSubmitting ? "Guardando..." : "Guardar Cambios"}
-              </Button>
+              <div className="flex flex-col sm:flex-row gap-2">
+                <Button type="button" variant="outline" onClick={handlePreview} className="w-full sm:w-auto">
+                  <Eye className="mr-2 h-4 w-4" />
+                  Vista Previa de Ticket
+                </Button>
+                <Button type="submit" className="w-full sm:w-auto flex-grow" disabled={form.formState.isSubmitting}>
+                  <Save className="mr-2 h-4 w-4" />
+                  {form.formState.isSubmitting ? "Guardando..." : "Guardar Cambios"}
+                </Button>
+              </div>
             </form>
           </Form>
         </CardContent>
       </Card>
+
+      {isPreviewDialogOpen && (
+        <PrintTicketDialog
+          open={isPreviewDialogOpen}
+          onOpenChange={setIsPreviewDialogOpen}
+          title="Vista Previa de Ticket"
+        >
+          <TicketContent sale={sampleSaleForPreview} previewWorkshopInfo={currentPreviewInfo} />
+        </PrintTicketDialog>
+      )}
     </div>
   );
 }

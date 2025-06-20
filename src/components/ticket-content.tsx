@@ -1,19 +1,12 @@
 
 "use client";
 
-import type { SaleReceipt, ServiceRecord, Vehicle, Technician, SaleItem } from '@/types';
+import type { SaleReceipt, ServiceRecord, Vehicle, Technician } from '@/types';
 import { format, parseISO, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
 import React, { useEffect, useState } from 'react';
 
-interface TicketContentProps {
-  sale?: SaleReceipt;
-  service?: ServiceRecord;
-  vehicle?: Vehicle; // For service tickets
-  technician?: Technician; // For service tickets
-}
-
-const defaultWorkshopInfo = {
+const initialWorkshopInfo = {
   name: "RANORO",
   phone: "4491425323",
   addressLine1: "Av. de la Convencion de 1914 No. 1421",
@@ -21,27 +14,43 @@ const defaultWorkshopInfo = {
   cityState: "Aguascalientes, Ags.",
 };
 
+type WorkshopInfoType = typeof initialWorkshopInfo;
+
+interface TicketContentProps {
+  sale?: SaleReceipt;
+  service?: ServiceRecord;
+  vehicle?: Vehicle; 
+  technician?: Technician; 
+  previewWorkshopInfo?: WorkshopInfoType;
+}
+
 const IVA_RATE = 0.16;
 const LOCALSTORAGE_KEY = 'workshopTicketInfo';
 
-export function TicketContent({ sale, service, vehicle, technician }: TicketContentProps) {
-  const [workshopInfo, setWorkshopInfo] = useState(defaultWorkshopInfo);
+export function TicketContent({ sale, service, vehicle, technician, previewWorkshopInfo }: TicketContentProps) {
+  const [workshopInfo, setWorkshopInfo] = useState<WorkshopInfoType>(initialWorkshopInfo);
 
   useEffect(() => {
-    const storedInfo = localStorage.getItem(LOCALSTORAGE_KEY);
-    if (storedInfo) {
-      try {
-        setWorkshopInfo(JSON.parse(storedInfo));
-      } catch (e) {
-        console.error("Failed to parse workshop info from localStorage", e);
-        setWorkshopInfo(defaultWorkshopInfo);
+    if (previewWorkshopInfo) {
+      setWorkshopInfo(previewWorkshopInfo);
+    } else {
+      const storedInfo = localStorage.getItem(LOCALSTORAGE_KEY);
+      if (storedInfo) {
+        try {
+          setWorkshopInfo(JSON.parse(storedInfo));
+        } catch (e) {
+          console.error("Failed to parse workshop info from localStorage", e);
+          setWorkshopInfo(initialWorkshopInfo);
+        }
+      } else {
+        setWorkshopInfo(initialWorkshopInfo);
       }
     }
-  }, []);
+  }, [previewWorkshopInfo]);
 
 
   const now = new Date();
-  const formattedDate = format(now, "dd/MM/yyyy HH:mm:ss", { locale: es });
+  const formattedPrintDate = format(now, "dd/MM/yyyy HH:mm:ss", { locale: es });
 
   const formatCurrency = (amount: number | undefined) => {
     if (amount === undefined) return 'N/A';
@@ -58,6 +67,15 @@ export function TicketContent({ sale, service, vehicle, technician }: TicketCont
   const renderDashedLine = () => (
     <div className="border-t border-dashed border-neutral-400 my-1"></div>
   );
+  
+  const getOperationDate = () => {
+    if (sale?.saleDate) return parseISO(sale.saleDate);
+    if (service?.serviceDate) return parseISO(service.serviceDate);
+    return now; // Fallback to current date if no operation date
+  };
+  const operationDate = getOperationDate();
+  const formattedOperationDate = isValid(operationDate) ? format(operationDate, "dd/MM/yy HH:mm", { locale: es }) : 'N/A';
+
 
   return (
     <div className="font-mono bg-white text-black p-2 ticket-preview-content max-w-[300px] mx-auto text-[10px] leading-tight print:max-w-full print:text-[9px] print:p-0">
@@ -65,13 +83,13 @@ export function TicketContent({ sale, service, vehicle, technician }: TicketCont
         <h1 className="text-lg font-bold">{workshopInfo.name}</h1>
         <p>{workshopInfo.phone}</p>
         <p>{workshopInfo.addressLine1}</p>
-        <p>{workshopInfo.addressLine2}</p>
+        {workshopInfo.addressLine2 && <p>{workshopInfo.addressLine2}</p>}
         <p>{workshopInfo.cityState}</p>
       </div>
 
-      <p className="text-xs">Fecha Impresión: {formattedDate}</p>
-      {sale && <p className="text-xs">Folio Venta: {sale.id} ({format(parseISO(sale.saleDate), "dd/MM/yy HH:mm", { locale: es })})</p>}
-      {service && <p className="text-xs">Folio Servicio: {service.id} ({format(parseISO(service.serviceDate), "dd/MM/yy HH:mm", { locale: es })})</p>}
+      <p className="text-xs">Fecha Impresión: {formattedPrintDate}</p>
+      {sale && <p className="text-xs">Folio Venta: {sale.id} ({formattedOperationDate})</p>}
+      {service && <p className="text-xs">Folio Servicio: {service.id} ({formattedOperationDate})</p>}
       {sale?.customerName && <p className="text-xs">Cliente: {sale.customerName}</p>}
       
       {renderDashedLine()}
@@ -90,7 +108,7 @@ export function TicketContent({ sale, service, vehicle, technician }: TicketCont
           ))}
           {renderDashedLine()}
           {renderLine("SUBTOTAL:", formatCurrency(sale.subTotal))}
-          {renderLine(`IVA (${IVA_RATE * 100}%):`, formatCurrency(sale.tax))}
+          {renderLine(`IVA (${(IVA_RATE * 100).toFixed(0)}%):`, formatCurrency(sale.tax))}
           {renderLine("TOTAL:", formatCurrency(sale.totalAmount), true)}
           {renderDashedLine()}
           <p className="text-xs">Método Pago: {sale.paymentMethod}</p>
@@ -123,8 +141,11 @@ export function TicketContent({ sale, service, vehicle, technician }: TicketCont
           )}
           {renderDashedLine()}
           {renderLine("SUBTOTAL SERVICIO:", formatCurrency(service.subTotal))}
-          {renderLine(`IVA (${IVA_RATE * 100}%):`, formatCurrency(service.taxAmount))}
+          {renderLine(`IVA (${(IVA_RATE*100).toFixed(0)}%):`, formatCurrency(service.taxAmount))}
           {renderLine("TOTAL SERVICIO:", formatCurrency(service.totalCost), true)}
+           {service.deliveryDateTime && isValid(parseISO(service.deliveryDateTime)) && (
+            <p className="text-xs mt-1">Fecha Entrega: {format(parseISO(service.deliveryDateTime), "dd/MM/yy HH:mm", { locale: es })}</p>
+           )}
         </>
       )}
 
