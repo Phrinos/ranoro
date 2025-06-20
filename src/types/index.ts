@@ -140,3 +140,13 @@ export interface FinancialOperation {
   originalObject: SaleReceipt | ServiceRecord; 
 }
 
+export type UserRole = 'superadmin' | 'admin' | 'tecnico' | 'ventas';
+
+export interface User {
+  id: string;
+  name: string;
+  email: string;
+  role: UserRole;
+  password?: string; // Only for creation/update, not stored in localStorage directly
+}
+
