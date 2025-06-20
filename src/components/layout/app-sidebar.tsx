@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/sidebar";
 import useNavigation, { type NavigationEntry } from "@/hooks/use-navigation";
 import { Button } from "@/components/ui/button";
-import { UserCircle, UserCog, Settings, LogOut } from "lucide-react";
+import { UserCircle, UserCog, Settings, LogOut, Users, ShieldQuestion, DatabaseZap } from "lucide-react"; // Added Users, ShieldQuestion, DatabaseZap
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -29,19 +29,37 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
+import type { User } from '@/types'; // Import User type for role check
 
-const DESIRED_GROUP_ORDER = ["Principal", "Clientes", "Servicios", "Finanzas", "Inventario", "Administración"];
+// const DESIRED_GROUP_ORDER = ["Principal", "Clientes", "Servicios", "Finanzas", "Inventario", "Administración"];
+// Updated DESIRED_GROUP_ORDER is now managed within useNavigation.ts
 
 export function AppSidebar() {
   const navItems = useNavigation();
   const router = useRouter();
   const { toast } = useToast();
+  const [currentUser, setCurrentUser] = React.useState<User | null>(null);
+
+  React.useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const authUserString = localStorage.getItem('authUser');
+      if (authUserString) {
+        try {
+          setCurrentUser(JSON.parse(authUserString));
+        } catch (e) {
+          console.error("Failed to parse authUser for sidebar:", e);
+          setCurrentUser(null);
+        }
+      }
+    }
+  }, []);
 
   const handleLogout = () => {
     if (typeof window !== 'undefined') {
       localStorage.removeItem('authUser');
     }
     toast({ title: 'Sesión Cerrada', description: 'Has cerrado sesión exitosamente.' });
+    setCurrentUser(null); // Clear current user on logout
     router.push('/login');
   };
 
@@ -56,11 +74,18 @@ export function AppSidebar() {
     }, {} as Record<string, NavigationEntry[]>);
   }, [navItems]);
 
+  // DESIRED_GROUP_ORDER is now implicitly handled by the order in useNavigation
   const sortedGroupEntries = React.useMemo(() => {
-    return Object.entries(groupedByTag).sort(([tagA], [tagB]) => {
-      return DESIRED_GROUP_ORDER.indexOf(tagA) - DESIRED_GROUP_ORDER.indexOf(tagB);
-    });
-  }, [groupedByTag]);
+    const orderedGroupNames = navItems.reduce((acc, item) => {
+        if (!acc.includes(item.groupTag)) {
+            acc.push(item.groupTag);
+        }
+        return acc;
+    }, [] as string[]);
+    
+    return orderedGroupNames.map(groupName => [groupName, groupedByTag[groupName] || []]);
+
+  }, [groupedByTag, navItems]);
 
 
   return (
@@ -89,13 +114,13 @@ export function AppSidebar() {
       </SidebarHeader>
       <SidebarContent className="p-0">
         {sortedGroupEntries.map(([tag, entriesInGroup]) => (
-          <SidebarGroup key={tag} className="p-2">
+          <SidebarGroup key={tag as string} className="p-2">
             <SidebarGroupLabel className="group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0">
-              <span className="group-data-[collapsible=icon]:hidden">{tag}</span>
+              <span className="group-data-[collapsible=icon]:hidden">{tag as string}</span>
             </SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
-                {entriesInGroup.map((entry) => (
+                {(entriesInGroup as NavigationEntry[]).map((entry) => (
                   <SidebarMenuItem key={entry.path}>
                     <SidebarMenuButton
                       asChild
@@ -120,16 +145,34 @@ export function AppSidebar() {
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="w-full justify-start gap-2 text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground group-data-[collapsible=icon]:justify-center">
               <UserCircle className="h-4 w-4" />
-              <span className="group-data-[collapsible=icon]:hidden">Mi Cuenta</span>
+              <span className="group-data-[collapsible=icon]:hidden">{currentUser?.name || "Mi Cuenta"}</span>
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" side="top" className="mb-1 w-[var(--sidebar-width-icon)] group-data-[state=expanded]:w-[var(--sidebar-width)] sm:w-[var(--sidebar-width-mobile)] md:w-56">
-            <DropdownMenuLabel>Mi Cuenta</DropdownMenuLabel>
+            <DropdownMenuLabel>{currentUser?.name || "Mi Cuenta"}</DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={() => router.push('/perfil')}>
               <UserCog className="mr-2 h-4 w-4" />
               <span>Mi Perfil</span>
             </DropdownMenuItem>
+            {(currentUser?.role === 'admin' || currentUser?.role === 'superadmin') && (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuLabel>Administración</DropdownMenuLabel>
+                <DropdownMenuItem onClick={() => router.push('/admin/usuarios')}>
+                  <Users className="mr-2 h-4 w-4" />
+                  <span>Usuarios</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => router.push('/admin/roles')}>
+                  <ShieldQuestion className="mr-2 h-4 w-4" />
+                  <span>Roles y Permisos</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => router.push('/admin/migracion-datos')}>
+                  <DatabaseZap className="mr-2 h-4 w-4" />
+                  <span>Migración de Datos</span>
+                </DropdownMenuItem>
+              </>
+            )}
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={handleLogout}>
               <LogOut className="mr-2 h-4 w-4 text-destructive" />
