@@ -28,7 +28,7 @@ type DateRangeOption = 'currentMonth' | 'lastMonth';
 
 const chartConfig = {
   costOfServices: {
-    label: "Otros Costos (Ingresos - Ganancia)",
+    label: "Costos del Servicio", // Ajustado para mayor claridad
     color: "hsl(var(--chart-1))", // Light Blue
   },
   totalProfit: {
@@ -82,17 +82,16 @@ export default function TecnicosPage() {
       const totalRevenue = techServicesInRange.reduce((sum, service) => sum + service.totalCost, 0);
       const actualProfit = techServicesInRange.reduce((sum, service) => sum + (service.serviceProfit || 0), 0);
       
-      // For the chart, ensure profit is not negative if it's part of revenue breakdown
       const displayProfit = Math.max(0, actualProfit);
-      const costOfServices = totalRevenue - displayProfit; // This is the part of revenue that isn't profit
+      const costOfServices = totalRevenue - displayProfit; 
       
       return {
         name: tech.name,
-        totalRevenue, // Keep original total revenue for potential other uses
-        totalProfit: displayProfit, // Use non-negative profit for stacking
-        costOfServices: costOfServices < 0 ? 0 : costOfServices, // Cost shouldn't be negative
+        totalRevenue, 
+        totalProfit: displayProfit, 
+        costOfServices: costOfServices < 0 ? 0 : costOfServices, 
       };
-    }).filter(data => data.totalRevenue > 0); // Only include techs with activity
+    }).filter(data => data.totalRevenue > 0);
 
   }, [technicians, dateRangeOption]);
 
@@ -169,7 +168,7 @@ export default function TecnicosPage() {
           <div>
             <CardTitle>Rendimiento de Técnicos</CardTitle>
             <CardDescription>
-              Ingresos y ganancia generada por técnico en el período seleccionado. La barra completa representa los Ingresos Totales.
+              Ingresos totales y ganancia neta por técnico. La barra completa representa el ingreso total.
             </CardDescription>
           </div>
           <Select value={dateRangeOption} onValueChange={(value) => setDateRangeOption(value as DateRangeOption)}>
@@ -187,7 +186,7 @@ export default function TecnicosPage() {
             <ChartContainer config={chartConfig} className="min-h-[300px] w-full">
               <BarChart 
                 data={technicianPerformanceData} 
-                margin={{ top: 5, right: 20, left: 0, bottom: 20 }} // Increased bottom margin for angled labels
+                margin={{ top: 5, right: 20, left: 0, bottom: 20 }} 
               >
                 <CartesianGrid strokeDasharray="3 3" vertical={false} />
                 <XAxis 
@@ -195,10 +194,10 @@ export default function TecnicosPage() {
                   tickLine={false} 
                   axisLine={false} 
                   tickMargin={8} 
-                  angle={-30} // Angle labels for better fit
-                  textAnchor="end" // Anchor angled labels correctly
-                  interval={0} // Show all labels
-                  height={60} // Allocate more height for angled labels
+                  angle={-30} 
+                  textAnchor="end" 
+                  interval={0} 
+                  height={60} 
                 />
                 <YAxis 
                   tickFormatter={(value) => `$${value.toLocaleString('es-MX')}`}
@@ -256,3 +255,4 @@ export default function TecnicosPage() {
     
 
     
+
