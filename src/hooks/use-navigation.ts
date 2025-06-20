@@ -55,16 +55,15 @@ const BASE_NAV_STRUCTURE: ReadonlyArray<Omit<NavigationEntry, 'isActive'>> = [
   },
   
   // Servicios
-  { label: 'Servicios', path: '/servicios/historial', icon: Wrench, groupTag: "Servicios" },
   { label: 'Agenda', path: '/servicios/agenda', icon: CalendarClock, groupTag: "Servicios" },
-  { label: 'Lista de Servicios', path: '/servicios', icon: List, groupTag: "Servicios" },
+  { label: 'Servicios', path: '/servicios/historial', icon: Wrench, groupTag: "Servicios" },
 
 
   // Finanzas
   {
-    label: 'Punto de Venta', // Renamed from 'Registro de Ventas'
+    label: 'Punto de Venta', 
     path: '/pos',
-    icon: Receipt, // Changed icon from DollarSign
+    icon: Receipt, 
     groupTag: "Finanzas"
   },
   {
@@ -119,10 +118,12 @@ const useNavigation = (): NavigationEntry[] => {
         }
     }
     
+    // Specific handling for "Cotizaciones" (covers /historial and /nuevo)
     if (entry.path === '/cotizaciones/historial' && (pathname === '/cotizaciones/historial' || pathname.startsWith('/cotizaciones/nuevo'))) {
         isActive = true;
     }
     
+    // Specific handling for "Servicios" (covers /historial, /nuevo, /agenda)
     if (entry.path === '/servicios/historial' && 
         (pathname === '/servicios/historial' || 
          pathname.startsWith('/servicios/nuevo') || 
@@ -130,36 +131,30 @@ const useNavigation = (): NavigationEntry[] => {
       isActive = true;
     }
     
-    if (entry.path === '/servicios' &&
-        (pathname.startsWith('/servicios/nuevo') ||
-         pathname.startsWith('/servicios/historial') ||
-         pathname.startsWith('/servicios/agenda'))
-       ) {
-      if (entry.label === 'Lista de Servicios') isActive = true;
-      else if (entry.label === 'Servicios') isActive = false; 
-    }
-
+    // Specific handling for "Inventario" parent item
     if (entry.path === '/inventario' &&
         (pathname.startsWith('/inventario/categorias') ||
          pathname.startsWith('/inventario/proveedores') ||
-         pathname.match(/^\/inventario\/P[0-9]+$/) 
+         pathname.match(/^\/inventario\/P[0-9]+$/) || // For item detail pages like /inventario/P001
+         pathname.match(/^\/inventario\/[a-zA-Z0-9_-]+$/) && !pathname.includes('categorias') && !pathname.includes('proveedores') // General detail page
        )) {
       isActive = true;
     }
 
-     if (entry.path === '/pos' && pathname.startsWith('/pos/nuevo')) {
+    // Specific handling for "Punto de Venta" (covers /pos and /pos/nuevo)
+     if (entry.path === '/pos' && (pathname === '/pos' || pathname.startsWith('/pos/nuevo'))) {
       isActive = true;
     }
 
-     if (entry.path === '/finanzas/reporte' && pathname === '/finanzas/reporte') {
-      isActive = true;
-    }
-    if (entry.path === '/admin/usuarios' && pathname.startsWith('/admin/roles')) { 
+    // Specific handling for admin section parent items
+     if (entry.path === '/admin/usuarios' && pathname.startsWith('/admin/roles')) { 
         isActive = false; 
     }
     if (entry.path === '/admin/roles' && pathname === '/admin/roles') {
         isActive = true;
     }
+    // Ensure "Servicios" (the group, if we had one) isn't active if "Agenda" is the more specific one,
+    // but our "Servicios" item points to /servicios/historial, so the above logic handles it.
 
     return { ...entry, isActive };
   });
@@ -175,7 +170,11 @@ const useNavigation = (): NavigationEntry[] => {
 
   const sortedGroupEntries = DESIRED_GROUP_ORDER.reduce((acc, groupName) => {
     if (groupedByTag[groupName]) {
-      acc.push(...groupedByTag[groupName]);
+      // Sort items within the group according to their order in BASE_NAV_STRUCTURE
+      const groupItems = groupedByTag[groupName].sort((a, b) => {
+        return BASE_NAV_STRUCTURE.findIndex(nav => nav.path === a.path) - BASE_NAV_STRUCTURE.findIndex(nav => nav.path === b.path);
+      });
+      acc.push(...groupItems);
     }
     return acc;
   }, [] as NavigationEntry[]);
@@ -185,3 +184,4 @@ const useNavigation = (): NavigationEntry[] => {
 };
 
 export default useNavigation;
+
