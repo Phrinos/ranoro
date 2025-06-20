@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { PlusCircle, ListFilter, Search, Users, DollarSign, CalendarIcon as CalendarDateIcon, BadgeCent } from "lucide-react";
 import { AdministrativeStaffTable } from "./components/administrative-staff-table";
 import { AdministrativeStaffDialog } from "./components/administrative-staff-dialog";
-import { placeholderAdministrativeStaff, placeholderServiceRecords, ADMIN_STAFF_COMMISSION_RATE } from "@/lib/placeholder-data";
+import { placeholderAdministrativeStaff, placeholderServiceRecords } from "@/lib/placeholder-data";
 import type { AdministrativeStaff, ServiceRecord } from "@/types";
 import type { AdministrativeStaffFormValues } from "./components/administrative-staff-form";
 import { useToast } from "@/hooks/use-toast";
@@ -17,7 +17,7 @@ import { parseISO, compareAsc, compareDesc, format, isValid, startOfMonth, endOf
 import { es } from 'date-fns/locale';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar"; // Added missing import
+import { Calendar } from "@/components/ui/calendar";
 import type { DateRange } from "react-day-picker";
 import { cn } from "@/lib/utils";
 
@@ -31,7 +31,7 @@ interface AggregatedAdminStaffPerformance {
   staffId: string;
   staffName: string;
   baseSalary: number;
-  commissionEarned: number;
+  commissionEarned: number; // "Potencial" commission
   totalEarnings: number;
 }
 
@@ -52,6 +52,7 @@ export default function AdministrativosPage() {
       ...data,
       hireDate: data.hireDate ? new Date(data.hireDate).toISOString().split('T')[0] : undefined,
       monthlySalary: Number(data.monthlySalary) || undefined,
+      commissionRate: data.commissionRate ? Number(data.commissionRate) : undefined,
     };
     const updatedStaffList = [...staffList, newStaffMember];
     setStaffList(updatedStaffList);
@@ -114,16 +115,16 @@ export default function AdministrativosPage() {
         return isWithinInterval(serviceDate, { start: dateFrom, end: dateTo });
     });
 
-    const totalProfitFromCompletedServices = completedServicesInRange.reduce((sum, s) => sum + (s.serviceProfit || 0), 0);
+    const totalProfitFromCompletedServicesInRange = completedServicesInRange.reduce((sum, s) => sum + (s.serviceProfit || 0), 0);
 
     return staffList.map(staff => {
-      const commissionEarned = totalProfitFromCompletedServices * ADMIN_STAFF_COMMISSION_RATE;
+      const commissionEarned = totalProfitFromCompletedServicesInRange * (staff.commissionRate || 0);
       const baseSalary = staff.monthlySalary || 0;
       return {
         staffId: staff.id,
         staffName: staff.name,
         baseSalary,
-        commissionEarned,
+        commissionEarned, // This is "potential" commission
         totalEarnings: baseSalary + commissionEarned,
       };
     });
@@ -170,8 +171,8 @@ export default function AdministrativosPage() {
           <div>
             <CardTitle>Resumen de Rendimiento y Comisiones</CardTitle>
             <CardDescription>
-              Comisiones ganadas por el staff administrativo basadas en servicios completados en el rango de fechas seleccionado.
-              Predeterminado al mes actual si no se selecciona un rango.
+              Comisiones potenciales ganadas por el staff administrativo basadas en servicios completados en el rango de fechas seleccionado.
+              La comisión final se calcula y liquida mensualmente después de cubrir los gastos fijos del taller, como se refleja en el Resumen Financiero.
             </CardDescription>
           </div>
           <Popover>
@@ -225,11 +226,11 @@ export default function AdministrativosPage() {
                       <span className="font-semibold">{formatCurrency(staffPerf.baseSalary)}</span>
                     </div>
                     <div className="flex justify-between items-center">
-                      <span className="text-muted-foreground flex items-center gap-1"><BadgeCent className="h-3.5 w-3.5"/>Comisión Ganada:</span>
+                      <span className="text-muted-foreground flex items-center gap-1"><BadgeCent className="h-3.5 w-3.5"/>Comisión Potencial:</span>
                       <span className="font-semibold text-blue-600">{formatCurrency(staffPerf.commissionEarned)}</span>
                     </div>
                      <div className="flex justify-between font-bold pt-1 border-t mt-1">
-                      <span className="text-muted-foreground">Total Ganado:</span>
+                      <span className="text-muted-foreground">Total Ganado (Potencial):</span>
                       <span className="text-green-600">{formatCurrency(staffPerf.totalEarnings)}</span>
                     </div>
                   </CardContent>
@@ -292,3 +293,4 @@ export default function AdministrativosPage() {
     </>
   );
 }
+

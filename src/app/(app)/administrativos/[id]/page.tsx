@@ -7,7 +7,7 @@ import type { AdministrativeStaff } from '@/types';
 import { PageHeader } from '@/components/page-header';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Archive, Edit, ShieldAlert, CalendarDays, Phone, DollarSign, StickyNote } from 'lucide-react';
+import { Archive, Edit, ShieldAlert, CalendarDays, Phone, DollarSign, StickyNote, Percent } from 'lucide-react'; // Added Percent
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { AdministrativeStaffDialog } from '../components/administrative-staff-dialog';
@@ -49,6 +49,7 @@ export default function AdministrativeStaffDetailPage() {
         ...formData,
         hireDate: formData.hireDate ? new Date(formData.hireDate).toISOString().split('T')[0] : undefined,
         monthlySalary: Number(formData.monthlySalary) || undefined,
+        commissionRate: formData.commissionRate ? Number(formData.commissionRate) : undefined,
     };
     
     const updatedStaffMember = { ...staffMember, ...updatedStaffData } as AdministrativeStaff;
@@ -130,6 +131,10 @@ export default function AdministrativeStaffDetailPage() {
                     <DollarSign className="h-4 w-4 text-muted-foreground"/>
                     <strong className="text-muted-foreground">Sueldo Mensual:</strong> ${staffMember.monthlySalary ? staffMember.monthlySalary.toLocaleString('es-ES', {minimumFractionDigits: 2}) : 'N/A'}
                 </div>
+                <div className="flex items-center gap-2">
+                    <Percent className="h-4 w-4 text-muted-foreground"/>
+                    <strong className="text-muted-foreground">Comisión:</strong> {staffMember.commissionRate !== undefined ? `${(staffMember.commissionRate * 100).toFixed(1)}%` : 'N/A'}
+                </div>
                 {staffMember.notes && (
                 <div className="md:col-span-2 pt-2 flex items-start gap-2">
                     <StickyNote className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0"/>
@@ -178,3 +183,4 @@ export default function AdministrativeStaffDetailPage() {
     </div>
   );
 }
+

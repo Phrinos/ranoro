@@ -16,8 +16,6 @@ import {
   placeholderAdministrativeStaff,
   calculateSaleProfit,
   IVA_RATE, 
-  TECH_STAFF_COMMISSION_RATE,
-  ADMIN_STAFF_COMMISSION_RATE,
 } from "@/lib/placeholder-data";
 import type { SaleReceipt, ServiceRecord, Technician, MonthlyFixedExpense, InventoryItem, AdministrativeStaff } from "@/types";
 import {
@@ -64,42 +62,51 @@ export default function ResumenFinancieroPage() {
     const totalOperationalIncome = totalIncomeFromSales + totalIncomeFromServices;
 
     const totalProfitFromSales = salesThisMonth.reduce((sum, sale) => sum + calculateSaleProfit(sale, inventory, IVA_RATE), 0);
-    const totalProfitFromServices = servicesThisMonth.reduce((sum, service) => sum + (service.serviceProfit || 0), 0);
+    const totalProfitFromServices = completedServicesThisMonth.reduce((sum, service) => sum + (service.serviceProfit || 0), 0);
     const totalOperationalProfit = totalProfitFromSales + totalProfitFromServices;
 
     const totalTechnicianSalaries = placeholderTechnicians.reduce((sum, tech) => sum + (tech.monthlySalary || 0), 0);
     const totalAdministrativeSalaries = placeholderAdministrativeStaff.reduce((sum, staff) => sum + (staff.monthlySalary || 0), 0);
-    const totalSalaries = totalTechnicianSalaries + totalAdministrativeSalaries;
+    const totalBaseSalaries = totalTechnicianSalaries + totalAdministrativeSalaries;
 
     const totalFixedExpensesFromState = currentFixedExpenses.reduce((sum, expense) => sum + expense.amount, 0);
 
-    // Calculate commissions for the month
-    let totalTechnicianCommissions = 0;
-    placeholderTechnicians.forEach(tech => {
+    // Commission Calculation (Conditional)
+    let totalTechnicianCommissionsMonth = 0;
+    let totalAdministrativeCommissionsMonth = 0;
+    const isWorkshopProfitableAfterFixedCosts = (totalOperationalProfit - totalFixedExpensesFromState) > 0;
+
+    if (isWorkshopProfitableAfterFixedCosts) {
+      // Technician Commissions
+      placeholderTechnicians.forEach(tech => {
         const techServicesThisMonth = completedServicesThisMonth.filter(s => s.technicianId === tech.id);
-        totalTechnicianCommissions += techServicesThisMonth.reduce((sum, s) => sum + (s.serviceProfit || 0) * TECH_STAFF_COMMISSION_RATE, 0);
-    });
+        totalTechnicianCommissionsMonth += techServicesThisMonth.reduce((sum, s) => sum + (s.serviceProfit || 0) * (tech.commissionRate || 0), 0);
+      });
 
-    const totalProfitFromAllCompletedServices = completedServicesThisMonth.reduce((sum, s) => sum + (s.serviceProfit || 0), 0);
-    const totalAdministrativeCommissions = totalProfitFromAllCompletedServices * ADMIN_STAFF_COMMISSION_RATE * placeholderAdministrativeStaff.length;
-
-
-    const totalExpenses = totalSalaries + totalFixedExpensesFromState + totalTechnicianCommissions + totalAdministrativeCommissions;
+      // Administrative Commissions
+      const totalProfitFromAllCompletedServicesInMonth = completedServicesThisMonth.reduce((sum, s) => sum + (s.serviceProfit || 0), 0);
+      placeholderAdministrativeStaff.forEach(adminStaff => {
+        totalAdministrativeCommissionsMonth += totalProfitFromAllCompletedServicesInMonth * (adminStaff.commissionRate || 0);
+      });
+    }
+    
+    const totalExpenses = totalBaseSalaries + totalFixedExpensesFromState + totalTechnicianCommissionsMonth + totalAdministrativeCommissionsMonth;
     const netProfit = totalOperationalProfit - totalExpenses;
 
     return {
       monthYearLabel: format(selectedDate, "MMMM yyyy", { locale: es }),
       totalOperationalIncome,
       totalOperationalProfit,
-      totalSalaries,
+      totalSalaries: totalBaseSalaries, // Renamed for clarity
       totalTechnicianSalaries,
       totalAdministrativeSalaries,
       fixedExpenses: currentFixedExpenses, 
       totalFixedExpenses: totalFixedExpensesFromState,
-      totalTechnicianCommissions,
-      totalAdministrativeCommissions,
+      totalTechnicianCommissions: totalTechnicianCommissionsMonth, // Use calculated commissions
+      totalAdministrativeCommissions: totalAdministrativeCommissionsMonth, // Use calculated commissions
       totalExpenses,
       netProfit,
+      isProfitableForCommissions: isWorkshopProfitableAfterFixedCosts,
     };
   }, [selectedDate, inventory, currentFixedExpenses]);
 
@@ -200,20 +207,12 @@ export default function ResumenFinancieroPage() {
           </CardHeader>
           <CardContent className="space-y-3 text-base">
             <div className="flex justify-between items-center">
-              <span className="text-muted-foreground flex items-center gap-1"><Users className="h-4 w-4"/>Sueldos (Staff Técnico):</span>
+              <span className="text-muted-foreground flex items-center gap-1"><Users className="h-4 w-4"/>Sueldos Base (Staff Técnico):</span>
               <span className="font-semibold">{formatCurrency(financialSummary.totalTechnicianSalaries)}</span>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-muted-foreground flex items-center gap-1"><Users className="h-4 w-4"/>Sueldos (Staff Admin.):</span>
+              <span className="text-muted-foreground flex items-center gap-1"><Users className="h-4 w-4"/>Sueldos Base (Staff Admin.):</span>
               <span className="font-semibold">{formatCurrency(financialSummary.totalAdministrativeSalaries)}</span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-muted-foreground flex items-center gap-1"><BadgeCent className="h-4 w-4"/>Comisiones (Staff Técnico):</span>
-              <span className="font-semibold">{formatCurrency(financialSummary.totalTechnicianCommissions)}</span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-muted-foreground flex items-center gap-1"><BadgeCent className="h-4 w-4"/>Comisiones (Staff Admin.):</span>
-              <span className="font-semibold">{formatCurrency(financialSummary.totalAdministrativeCommissions)}</span>
             </div>
             {financialSummary.fixedExpenses.map(expense => (
               <div key={expense.id} className="flex justify-between items-center">
@@ -221,6 +220,15 @@ export default function ResumenFinancieroPage() {
                 <span className="font-semibold">{formatCurrency(expense.amount)}</span>
               </div>
             ))}
+            <hr className="my-1 border-border/50"/>
+            <div className="flex justify-between items-center">
+              <span className="text-muted-foreground flex items-center gap-1"><BadgeCent className="h-4 w-4"/>Comisiones Pagadas (Técnicos):</span>
+              <span className="font-semibold">{formatCurrency(financialSummary.totalTechnicianCommissions)}</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-muted-foreground flex items-center gap-1"><BadgeCent className="h-4 w-4"/>Comisiones Pagadas (Admin.):</span>
+              <span className="font-semibold">{formatCurrency(financialSummary.totalAdministrativeCommissions)}</span>
+            </div>
             <hr className="my-2 border-border/70"/>
             <div className="flex justify-between font-bold text-lg">
               <span>Total de Gastos:</span>
@@ -244,6 +252,9 @@ export default function ResumenFinancieroPage() {
             <p className="text-sm text-muted-foreground mt-2">
               (Ganancia Bruta Operativa - Total de Gastos)
             </p>
+            {!financialSummary.isProfitableForCommissions && (
+                 <p className="text-xs text-orange-600 mt-2">(Nota: Las comisiones son $0 este mes porque no se cubrieron los gastos fijos con la ganancia operativa.)</p>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -257,9 +268,11 @@ export default function ResumenFinancieroPage() {
         </CardHeader>
         <CardContent className="text-sm text-blue-700 dark:text-blue-300 space-y-1">
             <p>• La <strong>Ganancia Bruta Operativa</strong> se calcula como: (Ingresos Totales de Ventas - Costo de los Productos Vendidos) + (Ingresos Totales de Servicios - Costo de los Insumos Usados en Servicios).</p>
-            <p>• Los <strong>Sueldos</strong> (Staff Técnico y Administrativo) y <strong>Gastos Fijos Mensuales</strong> (Renta, Servicios, etc.) son valores configurables.</p>
-            <p>• Las <strong>Comisiones</strong> se calculan sobre la ganancia de los servicios completados en el mes: {TECH_STAFF_COMMISSION_RATE*100}% para cada técnico sobre sus servicios, y {ADMIN_STAFF_COMMISSION_RATE*100}% para cada miembro administrativo sobre el total de servicios.</p>
-            <p>• El <strong>Resultado Neto</strong> es la Ganancia Bruta Operativa menos el Total de Gastos (Sueldos + Comisiones + Gastos Fijos).</p>
+            <p>• Los <strong>Sueldos Base</strong> y <strong>Gastos Fijos Mensuales</strong> son valores configurables.</p>
+            <p>• Las <strong>Comisiones Pagadas</strong> se calculan sobre la ganancia de los servicios completados en el mes y se liquidan solo si la Ganancia Bruta Operativa del mes supera el Total de Gastos Fijos. Cada miembro del staff tiene su propio porcentaje de comisión.</p>
+            <p>  - **Técnicos**: Comisión sobre la ganancia de sus propios servicios.</p>
+            <p>  - **Administrativos**: Comisión sobre la ganancia total de todos los servicios completados en el mes.</p>
+            <p>• El <strong>Resultado Neto</strong> es la Ganancia Bruta Operativa menos el Total de Gastos (Sueldos Base + Gastos Fijos + Comisiones Pagadas).</p>
         </CardContent>
       </Card>
 
@@ -271,4 +284,5 @@ export default function ResumenFinancieroPage() {
     </>
   );
 }
+
 

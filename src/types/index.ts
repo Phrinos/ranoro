@@ -52,6 +52,7 @@ export interface Technician {
   hireDate?: string; 
   monthlySalary?: number; 
   notes?: string; 
+  commissionRate?: number; // Example: 0.05 for 5%
 }
 
 export interface AdministrativeStaff {
@@ -62,6 +63,7 @@ export interface AdministrativeStaff {
   hireDate?: string;
   monthlySalary?: number;
   notes?: string;
+  commissionRate?: number; // Example: 0.01 for 1%
 }
 
 export interface TechnicianMonthlyPerformance {
@@ -192,4 +194,5 @@ export interface MonthlyFixedExpense {
   name: string;
   amount: number;
 }
+
 

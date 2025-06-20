@@ -8,7 +8,7 @@ import { PageHeader } from '@/components/page-header';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { Archive, Edit, ShieldAlert } from 'lucide-react';
+import { Archive, Edit, ShieldAlert, User, Phone, CalendarDays, DollarSign, Percent, StickyNote } from 'lucide-react'; // Added Percent
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
@@ -45,7 +45,8 @@ export default function TechnicianDetailPage() {
     const updatedTechnicianData: Partial<Technician> = {
         ...formData,
         hireDate: formData.hireDate ? new Date(formData.hireDate).toISOString().split('T')[0] : undefined,
-        monthlySalary: Number(formData.monthlySalary)
+        monthlySalary: Number(formData.monthlySalary),
+        commissionRate: formData.commissionRate ? Number(formData.commissionRate) : undefined,
     };
     
     const updatedTechnician = { ...technician, ...updatedTechnicianData } as Technician;
@@ -105,18 +106,34 @@ export default function TechnicianDetailPage() {
                   Editar
                 </Button>
               </CardHeader>
-              <CardContent className="space-y-2">
-                <p><strong>ID:</strong> {technician.id}</p>
-                <p><strong>Nombre:</strong> {technician.name}</p>
-                <p><strong>Área:</strong> {technician.area}</p>
-                <p><strong>Especialidad:</strong> {technician.specialty}</p>
-                <p><strong>Teléfono:</strong> {technician.contactInfo || 'N/A'}</p>
-                <p><strong>Fecha de Contratación:</strong> {hireDateFormatted}</p>
-                <p><strong>Sueldo Mensual:</strong> ${technician.monthlySalary ? technician.monthlySalary.toLocaleString('es-ES') : 'N/A'}</p>
+              <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 text-sm">
+                <div><strong className="text-muted-foreground">ID:</strong> {technician.id}</div>
+                <div><strong className="text-muted-foreground">Nombre:</strong> {technician.name}</div>
+                <div><strong className="text-muted-foreground">Área:</strong> {technician.area}</div>
+                <div><strong className="text-muted-foreground">Especialidad:</strong> {technician.specialty}</div>
+                <div className="flex items-center gap-2">
+                    <Phone className="h-4 w-4 text-muted-foreground"/>
+                    <strong className="text-muted-foreground">Teléfono:</strong> {technician.contactInfo || 'N/A'}
+                </div>
+                <div className="flex items-center gap-2">
+                    <CalendarDays className="h-4 w-4 text-muted-foreground"/>
+                    <strong className="text-muted-foreground">Fecha de Contratación:</strong> {hireDateFormatted}
+                </div>
+                <div className="flex items-center gap-2">
+                    <DollarSign className="h-4 w-4 text-muted-foreground"/>
+                    <strong className="text-muted-foreground">Sueldo Mensual:</strong> ${technician.monthlySalary ? technician.monthlySalary.toLocaleString('es-ES', {minimumFractionDigits: 2}) : 'N/A'}
+                </div>
+                <div className="flex items-center gap-2">
+                    <Percent className="h-4 w-4 text-muted-foreground"/>
+                    <strong className="text-muted-foreground">Comisión:</strong> {technician.commissionRate !== undefined ? `${(technician.commissionRate * 100).toFixed(1)}%` : 'N/A'}
+                </div>
                 {technician.notes && (
-                  <div className="pt-2">
-                    <p className="font-semibold">Notas:</p>
-                    <p className="text-sm text-muted-foreground whitespace-pre-wrap">{technician.notes}</p>
+                  <div className="md:col-span-2 pt-2 flex items-start gap-2">
+                    <StickyNote className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0"/>
+                    <div>
+                        <p className="font-semibold text-muted-foreground">Notas:</p>
+                        <p className="text-sm text-foreground whitespace-pre-wrap">{technician.notes}</p>
+                    </div>
                   </div>
                 )}
               </CardContent>
@@ -180,3 +197,4 @@ export default function TechnicianDetailPage() {
     </div>
   );
 }
+
