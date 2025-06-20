@@ -7,10 +7,9 @@ import { ServiceDialog } from "../servicios/components/service-dialog"; // Reusi
 import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
 import { QuoteContent } from '@/components/quote-content'; // New component for quote PDF
 import { placeholderVehicles, placeholderTechnicians, placeholderInventory } from "@/lib/placeholder-data";
-import type { QuoteRecord, Vehicle, Technician, ServiceRecord, ServiceSupply } from "@/types";
+import type { QuoteRecord, Vehicle, Technician, ServiceRecord } from "@/types";
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from 'next/navigation';
-import { format, parseISO } from 'date-fns'; // For formatting dates if needed
 
 type DialogStep = 'quote_form' | 'print_preview' | 'closed';
 
@@ -34,39 +33,23 @@ export default function NuevaCotizacionPage() {
     }
   }, [dialogStep, router]);
 
-  const handleGenerateQuotePdf = async (formData: any) => { // formData will be ServiceFormValues initially
+  // formData here is the QuoteRecord object constructed by ServiceForm
+  const handleGenerateQuotePdf = async (formData: QuoteRecord) => { 
     
-    const IVA_RATE = 0.16;
-    const totalSuppliesCostWorkshop = formData.suppliesUsed?.reduce((sum: number, supply: ServiceSupply) => {
-        const item = inventoryItems.find(i => i.id === supply.supplyId);
-        return sum + (item?.unitPrice || supply.unitPrice || 0) * supply.quantity;
-    }, 0) || 0;
-
-
+    // The formData is already a QuoteRecord. We just assign a final ID.
+    // All calculations like estimatedSubTotal, estimatedTaxAmount, estimatedTotalSuppliesCost,
+    // and estimatedProfit are already done by ServiceForm.
     const newQuote: QuoteRecord = {
-      id: `COT${String(Date.now()).slice(-6)}`,
-      quoteDate: formData.serviceDate.toISOString(), // serviceDate from form is quoteDate here
-      vehicleId: formData.vehicleId,
-      vehicleIdentifier: vehicles.find(v => v.id === formData.vehicleId)?.licensePlate || formData.vehicleLicensePlateSearch,
-      description: formData.description,
-      preparedByTechnicianId: formData.technicianId,
-      preparedByTechnicianName: technicians.find(t => t.id === formData.technicianId)?.name,
-      suppliesProposed: formData.suppliesUsed?.map((s: any) => ({
-        supplyId: s.supplyId,
-        quantity: s.quantity,
-        unitPrice: inventoryItems.find(i => i.id === s.supplyId)?.sellingPrice || s.unitPrice || 0, // Use sellingPrice for quote line items
-        supplyName: inventoryItems.find(i => i.id === s.supplyId)?.name || s.supplyName,
-      })) || [],
-      estimatedTotalCost: Number(formData.totalServicePrice),
-      estimatedSubTotal: Number(formData.totalServicePrice) / (1 + IVA_RATE),
-      estimatedTaxAmount: Number(formData.totalServicePrice) - (Number(formData.totalServicePrice) / (1 + IVA_RATE)),
-      estimatedTotalSuppliesCost: totalSuppliesCostWorkshop, // Cost to workshop
-      estimatedProfit: Number(formData.totalServicePrice) - totalSuppliesCostWorkshop,
-      notes: formData.notes,
-      mileage: formData.mileage,
+      ...formData, // Spread the incoming QuoteRecord
+      id: `COT${String(Date.now()).slice(-6)}`, // Assign a new, final ID
+      // vehicleIdentifier will come from formData.vehicleIdentifier
+      // preparedByTechnicianName will come from formData.preparedByTechnicianName
+      // suppliesProposed will come from formData.suppliesProposed
+      // estimatedTotalCost, estimatedSubTotal, estimatedTaxAmount, estimatedTotalSuppliesCost, estimatedProfit
+      // are all already correctly set in formData by ServiceForm.
     };
     
-    // placeholderQuotes.push(newQuote); // If you want to store quotes in memory
+    // placeholderQuotes.push(newQuote); // If you want to store quotes in memory (optional)
 
     setCurrentQuoteForPdf(newQuote);
     setCurrentVehicleForPdf(vehicles.find(v => v.id === newQuote.vehicleId) || null);
@@ -120,7 +103,9 @@ export default function NuevaCotizacionPage() {
           vehicles={vehicles}
           technicians={technicians}
           inventoryItems={inventoryItems}
-          onSave={handleGenerateQuotePdf as any} // Cast because onSave expects specific types
+          // The cast is necessary because ServiceDialog's onSave prop expects (data: ServiceRecord | QuoteRecord)
+          // but here we know it will be called with QuoteRecord due to mode="quote".
+          onSave={handleGenerateQuotePdf as (data: ServiceRecord | QuoteRecord) => Promise<void>}
           onVehicleCreated={handleVehicleCreated}
           mode="quote" // Set mode to quote
         />
