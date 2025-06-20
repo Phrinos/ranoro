@@ -13,7 +13,7 @@ import {
 import { InventoryItemForm, type InventoryItemFormValues } from "./inventory-item-form";
 import type { InventoryItem, InventoryCategory, Supplier } from "@/types";
 import { useToast } from "@/hooks/use-toast";
-import { placeholderCategories, placeholderSuppliers } from '@/lib/placeholder-data';
+import { placeholderCategories, placeholderSuppliers } from '@/lib/placeholder-data'; // Ensure these are imported if not passed as props
 
 interface InventoryItemDialogProps {
   trigger?: React.ReactNode;
@@ -21,6 +21,8 @@ interface InventoryItemDialogProps {
   onSave?: (data: InventoryItemFormValues) => Promise<void>;
   open?: boolean;
   onOpenChange?: (isOpen: boolean) => void;
+  categories?: InventoryCategory[]; // Optional prop
+  suppliers?: Supplier[]; // Optional prop
 }
 
 export function InventoryItemDialog({ 
@@ -28,7 +30,9 @@ export function InventoryItemDialog({
   item, 
   onSave,
   open: controlledOpen,
-  onOpenChange: setControlledOpen
+  onOpenChange: setControlledOpen,
+  categories: categoriesProp,
+  suppliers: suppliersProp,
 }: InventoryItemDialogProps) {
   const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
   const { toast } = useToast();
@@ -38,6 +42,11 @@ export function InventoryItemDialog({
   const onOpenChange = isControlled ? setControlledOpen : setUncontrolledOpen;
 
   const isEditing = item && 'id' in item && item.id; 
+
+  // Use passed props for categories/suppliers, or fallback to imported placeholders
+  const categoriesToUse = categoriesProp || placeholderCategories;
+  const suppliersToUse = suppliersProp || placeholderSuppliers;
+
 
   const handleSubmit = async (values: InventoryItemFormValues) => {
     try {
@@ -72,11 +81,12 @@ export function InventoryItemDialog({
             initialData={initialFormData as InventoryItem | null} 
             onSubmit={handleSubmit}
             onClose={() => onOpenChange(false)}
-            categories={placeholderCategories}
-            suppliers={placeholderSuppliers} 
+            categories={categoriesToUse}
+            suppliers={suppliersToUse} 
           />
         </DialogContent>
       )}
     </Dialog>
   );
 }
+

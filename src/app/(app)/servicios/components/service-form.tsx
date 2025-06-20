@@ -20,20 +20,23 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent, CardHeader, CardTitle} from "@/components/ui/card";
-import { CalendarIcon, PlusCircle, Search, Trash2, AlertCircle, Car as CarIcon, Clock, DollarSign } from "lucide-react";
+import { CalendarIcon, PlusCircle, Search, Trash2, AlertCircle, Car as CarIcon, Clock, DollarSign, PackagePlus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format, parseISO, setHours, setMinutes, isValid, startOfDay } from "date-fns";
 import { es } from 'date-fns/locale';
-import type { ServiceRecord, Vehicle, Technician, InventoryItem, ServiceSupply, QuoteRecord } from "@/types";
+import type { ServiceRecord, Vehicle, Technician, InventoryItem, ServiceSupply, QuoteRecord, InventoryCategory, Supplier } from "@/types";
 import React, { useEffect, useState, useMemo } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { VehicleDialog } from "../../vehiculos/components/vehicle-dialog";
 import type { VehicleFormValues } from "../../vehiculos/components/vehicle-form";
-import { placeholderVehicles as defaultPlaceholderVehicles } from "@/lib/placeholder-data";
+import { placeholderVehicles as defaultPlaceholderVehicles, placeholderInventory, placeholderCategories, placeholderSuppliers } from "@/lib/placeholder-data";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label"; 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { InventoryItemDialog } from "../../../inventario/components/inventory-item-dialog";
+import type { InventoryItemFormValues } from "../../../inventario/components/inventory-item-form";
 
 
 const supplySchema = z.object({
@@ -43,16 +46,15 @@ const supplySchema = z.object({
   supplyName: z.string().optional(), 
 });
 
-// Adjusted schema to handle optional fields for quote mode
 const serviceFormSchemaBase = z.object({
   vehicleId: z.number({invalid_type_error: "Debe seleccionar o registrar un vehículo."}).positive("Debe seleccionar o registrar un vehículo.").optional(),
   vehicleLicensePlateSearch: z.string().optional(), 
-  serviceDate: z.date({ required_error: "La fecha es obligatoria." }), // Label changes based on mode
+  serviceDate: z.date({ required_error: "La fecha es obligatoria." }),
   mileage: z.coerce.number().int().min(0, "El kilometraje no puede ser negativo.").optional(),
   description: z.string().min(5, "La descripción debe tener al menos 5 caracteres."),
-  totalServicePrice: z.coerce.number().min(0, "El costo no puede ser negativo."), // Label changes
+  totalServicePrice: z.coerce.number().min(0, "El costo no puede ser negativo."),
   notes: z.string().optional(),
-  technicianId: z.string().optional(), // Optional for quote, label changes
+  technicianId: z.string().optional(), 
   suppliesUsed: z.array(supplySchema).optional(),
   status: z.enum(["Agendado", "Reparando", "Completado", "Cancelado"]).optional(),
   deliveryDateTime: z.date().optional(),
@@ -66,12 +68,13 @@ interface ServiceFormProps {
   initialDataQuote?: Partial<QuoteRecord> | null;
   vehicles: Vehicle[]; 
   technicians: Technician[];
-  inventoryItems: InventoryItem[];
+  inventoryItems: InventoryItem[]; // Prop for initial inventory items
   onSubmit: (data: ServiceRecord | QuoteRecord) => Promise<void>; 
   onClose: () => void;
   isReadOnly?: boolean; 
   onVehicleCreated?: (newVehicle: Vehicle) => void; 
   mode?: 'service' | 'quote';
+  onInventoryItemCreatedFromService?: (newItem: InventoryItem) => void; // Optional: To notify parent of new items
 }
 
 const IVA_RATE = 0.16;
@@ -95,22 +98,18 @@ const generateTimeSlots = () => {
 const timeSlots = generateTimeSlots();
 
 
-interface AddSupplyDialogState {
-  selectedSupplyId: string;
-  quantity: number;
-}
-
 export function ServiceForm({ 
   initialDataService, 
   initialDataQuote,
   vehicles: parentVehicles, 
   technicians, 
-  inventoryItems, 
+  inventoryItems: inventoryItemsProp, 
   onSubmit, 
   onClose, 
   isReadOnly = false,
   onVehicleCreated,
-  mode = 'service'
+  mode = 'service',
+  onInventoryItemCreatedFromService
 }: ServiceFormProps) {
   const { toast } = useToast();
   const initialData = mode === 'service' ? initialDataService : initialDataQuote;
@@ -121,9 +120,17 @@ export function ServiceForm({
   const [vehicleNotFound, setVehicleNotFound] = useState(false);
   const [isVehicleDialogOpen, setIsVehicleDialogOpen] = useState(false);
   const [localVehicles, setLocalVehicles] = useState<Vehicle[]>(parentVehicles);
+  
+  const [currentInventoryItems, setCurrentInventoryItems] = useState<InventoryItem[]>(inventoryItemsProp);
 
   const [isAddSupplyDialogOpen, setIsAddSupplyDialogOpen] = useState(false);
-  const [addSupplyDialogState, setAddSupplyDialogState] = useState<AddSupplyDialogState>({ selectedSupplyId: '', quantity: 1 });
+  const [addSupplySearchTerm, setAddSupplySearchTerm] = useState('');
+  const [addSupplyQuantity, setAddSupplyQuantity] = useState(1);
+  const [filteredInventoryForDialog, setFilteredInventoryForDialog] = useState<InventoryItem[]>([]);
+  const [selectedInventoryItemForDialog, setSelectedInventoryItemForDialog] = useState<InventoryItem | null>(null);
+
+  const [isNewInventoryItemDialogOpen, setIsNewInventoryItemDialogOpen] = useState(false);
+  const [newSupplyInitialData, setNewSupplyInitialData] = useState<Partial<InventoryItemFormValues> | null>(null);
 
 
   const form = useForm<ServiceFormValues>({
@@ -139,8 +146,8 @@ export function ServiceForm({
           suppliesUsed: (mode === 'service' ? initialDataService?.suppliesUsed : initialDataQuote?.suppliesProposed)?.map(s => ({
               supplyId: s.supplyId,
               quantity: s.quantity,
-              supplyName: inventoryItems.find(i => i.id === s.supplyId)?.name || s.supplyName || '', 
-              unitPrice: inventoryItems.find(i => i.id === s.supplyId)?.unitPrice || s.unitPrice || 0 
+              supplyName: currentInventoryItems.find(i => i.id === s.supplyId)?.name || s.supplyName || '', 
+              unitPrice: currentInventoryItems.find(i => i.id === s.supplyId)?.unitPrice || s.unitPrice || 0 
           })) || [],
           totalServicePrice: mode === 'service' ? initialDataService?.totalCost : initialDataQuote?.estimatedTotalCost, 
           status: mode === 'service' ? initialDataService?.status : undefined,
@@ -164,6 +171,10 @@ export function ServiceForm({
   useEffect(() => {
     setLocalVehicles(parentVehicles); 
   }, [parentVehicles]);
+
+  useEffect(() => {
+    setCurrentInventoryItems(inventoryItemsProp);
+  }, [inventoryItemsProp]);
 
 
   useEffect(() => {
@@ -203,10 +214,10 @@ export function ServiceForm({
 
   const totalSuppliesCost = React.useMemo(() => {
     return watchedSupplies?.reduce((sum, supply) => {
-      const item = inventoryItems.find(i => i.id === supply.supplyId);
+      const item = currentInventoryItems.find(i => i.id === supply.supplyId);
       return sum + (item?.unitPrice || supply.unitPrice || 0) * supply.quantity; 
     }, 0) || 0;
-  }, [watchedSupplies, inventoryItems]);
+  }, [watchedSupplies, currentInventoryItems]);
 
   const serviceProfit = React.useMemo(() => {
     return watchedTotalServicePrice - totalSuppliesCost;
@@ -279,13 +290,13 @@ export function ServiceForm({
         serviceDate: values.serviceDate.toISOString(),
         deliveryDateTime: values.deliveryDateTime ? values.deliveryDateTime.toISOString() : undefined,
         description: values.description,
-        technicianId: values.technicianId!, // Service always needs a technician
+        technicianId: values.technicianId!,
         technicianName: technicians.find(t => t.id === values.technicianId)?.name,
-        status: values.status!, // Service always has a status
+        status: values.status!, 
         mileage: values.mileage,
         notes: values.notes,
         suppliesUsed: values.suppliesUsed?.map(s => {
-          const itemDetails = inventoryItems.find(invItem => invItem.id === s.supplyId);
+          const itemDetails = currentInventoryItems.find(invItem => invItem.id === s.supplyId);
           return {
             supplyId: s.supplyId,
             quantity: s.quantity,
@@ -300,18 +311,17 @@ export function ServiceForm({
         serviceProfit: currentTotalServicePrice - currentTotalSuppliesCost, 
       };
       await onSubmit(serviceData);
-    } else { // mode === 'quote'
+    } else { 
       const quoteData: QuoteRecord = {
         id: initialDataQuote?.id || `Q_NEW_${Date.now()}`,
         quoteDate: values.serviceDate.toISOString(), 
         vehicleId: values.vehicleId,
         vehicleIdentifier: selectedVehicle?.licensePlate || values.vehicleLicensePlateSearch,
         description: values.description,
-        // preparedByTechnicianId and preparedByTechnicianName will be set by the calling page (NuevaCotizacionPage)
-        preparedByTechnicianId: undefined, 
-        preparedByTechnicianName: undefined,
+        preparedByTechnicianId: values.technicianId, // User ID will be set by parent page
+        preparedByTechnicianName: technicians.find(t => t.id === values.technicianId)?.name, // User name will be set by parent page
         suppliesProposed: values.suppliesUsed?.map(s => {
-          const itemDetails = inventoryItems.find(invItem => invItem.id === s.supplyId);
+          const itemDetails = currentInventoryItems.find(invItem => invItem.id === s.supplyId);
           return {
             supplyId: s.supplyId,
             quantity: s.quantity,
@@ -322,8 +332,20 @@ export function ServiceForm({
         estimatedTotalCost: currentTotalServicePrice, 
         estimatedSubTotal: currentTotalServicePrice / (1 + IVA_RATE),
         estimatedTaxAmount: currentTotalServicePrice - (currentTotalServicePrice / (1 + IVA_RATE)),
-        estimatedTotalSuppliesCost: currentTotalSuppliesCost, 
-        estimatedProfit: currentTotalServicePrice - currentTotalSuppliesCost,
+        estimatedTotalSuppliesCost: currentInventoryItems.reduce((sum, supply) => { // Recalculate for selling price for quotes
+             const proposedSupply = values.suppliesUsed?.find(s => s.supplyId === supply.id);
+             if (proposedSupply) {
+                 return sum + (supply.sellingPrice * proposedSupply.quantity);
+             }
+             return sum;
+        },0),
+        estimatedProfit: currentTotalServicePrice - (currentInventoryItems.reduce((sum, supply) => {
+             const proposedSupply = values.suppliesUsed?.find(s => s.supplyId === supply.id);
+             if (proposedSupply) {
+                 return sum + (supply.unitPrice * proposedSupply.quantity); // Profit based on cost price
+             }
+             return sum;
+        },0)),
         notes: values.notes,
         mileage: values.mileage,
       };
@@ -343,29 +365,6 @@ export function ServiceForm({
       return `$${amount.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   };
   
-  const handleAddSupplyFromDialog = () => {
-    const { selectedSupplyId, quantity } = addSupplyDialogState;
-    if (!selectedSupplyId || quantity <= 0) {
-      toast({ title: "Datos incompletos", description: "Seleccione un insumo y una cantidad válida.", variant: "destructive" });
-      return;
-    }
-    const supplyItem = inventoryItems.find(item => item.id === selectedSupplyId);
-    if (!supplyItem) {
-      toast({ title: "Insumo no encontrado", variant: "destructive" });
-      return;
-    }
-
-    append({
-      supplyId: supplyItem.id,
-      supplyName: supplyItem.name,
-      quantity: quantity,
-      unitPrice: mode === 'quote' ? supplyItem.sellingPrice : supplyItem.unitPrice, 
-    });
-    
-    setAddSupplyDialogState({ selectedSupplyId: '', quantity: 1 }); 
-    setIsAddSupplyDialogOpen(false);
-  };
-
   const handleVehiclePlateKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
     if (event.key === 'Enter') {
       event.preventDefault();
@@ -375,9 +374,93 @@ export function ServiceForm({
 
   const cardTitleText = mode === 'quote' ? "Información del Vehículo y Cotización" : "Información del Vehículo y Servicio";
   const dateLabelText = mode === 'quote' ? "Fecha de Cotización" : "Fecha y Hora de Recepción";
-  const technicianLabelText = mode === 'service' ? "Técnico Asignado" : ""; // No label for quote mode as field is hidden
+  const technicianLabelText = mode === 'service' ? "Técnico Asignado" : "";
   const totalCostLabelText = mode === 'quote' ? "Costo Estimado (IVA incluido)" : "Costo del Servicio (IVA incluido)";
   const submitButtonText = mode === 'quote' ? "Generar PDF de Cotización" : (initialDataService ? "Actualizar Servicio" : "Crear Servicio");
+
+  // --- Add Supply Dialog Logic ---
+  useEffect(() => {
+    if (addSupplySearchTerm.trim() === '') {
+        setFilteredInventoryForDialog(currentInventoryItems.slice(0,10)); // Show some initial items or recently added
+        return;
+    }
+    const lowerSearchTerm = addSupplySearchTerm.toLowerCase();
+    setFilteredInventoryForDialog(
+        currentInventoryItems.filter(item =>
+            item.name.toLowerCase().includes(lowerSearchTerm) ||
+            item.sku.toLowerCase().includes(lowerSearchTerm)
+        ).slice(0, 10) 
+    );
+  }, [addSupplySearchTerm, currentInventoryItems]);
+
+  const handleSelectSupplyFromSearch = (item: InventoryItem) => {
+      setSelectedInventoryItemForDialog(item);
+      setAddSupplySearchTerm(item.name); 
+      setFilteredInventoryForDialog([]); 
+  };
+
+  const handleAddSupplyConfirmed = () => {
+      if (!selectedInventoryItemForDialog || addSupplyQuantity <= 0) {
+          toast({ title: "Datos incompletos", description: "Seleccione un insumo de la búsqueda y una cantidad válida.", variant: "destructive" });
+          return;
+      }
+      append({
+          supplyId: selectedInventoryItemForDialog.id,
+          supplyName: selectedInventoryItemForDialog.name,
+          quantity: addSupplyQuantity,
+          unitPrice: mode === 'quote' ? selectedInventoryItemForDialog.sellingPrice : selectedInventoryItemForDialog.unitPrice,
+      });
+      setIsAddSupplyDialogOpen(false);
+      setAddSupplySearchTerm('');
+      setAddSupplyQuantity(1);
+      setSelectedInventoryItemForDialog(null);
+  };
+
+  const handleOpenCreateNewSupplyDialog = () => {
+      setNewSupplyInitialData({
+          name: addSupplySearchTerm, 
+          sku: '', 
+          quantity: 0,
+          unitPrice: 0,
+          sellingPrice: 0,
+          lowStockThreshold: 5,
+          category: placeholderCategories.length > 0 ? placeholderCategories[0].name : "",
+          supplier: placeholderSuppliers.length > 0 ? placeholderSuppliers[0].name : "",
+      });
+      setIsAddSupplyDialogOpen(false); 
+      setIsNewInventoryItemDialogOpen(true);
+  };
+
+  const handleNewSupplyCreated = async (newItemFormValues: InventoryItemFormValues) => {
+      const newInventoryItem: InventoryItem = {
+          id: `P_SVC_${Date.now()}`, 
+          ...newItemFormValues,
+          unitPrice: Number(newItemFormValues.unitPrice),
+          sellingPrice: Number(newItemFormValues.sellingPrice),
+          quantity: Number(newItemFormValues.quantity),
+          lowStockThreshold: Number(newItemFormValues.lowStockThreshold),
+      };
+      placeholderInventory.push(newInventoryItem);
+      setCurrentInventoryItems(prev => [...prev, newInventoryItem]);
+      if (onInventoryItemCreatedFromService) {
+          onInventoryItemCreatedFromService(newInventoryItem);
+      }
+      toast({
+          title: "Nuevo Insumo Creado",
+          description: `${newInventoryItem.name} ha sido agregado al inventario y añadido al ${mode === 'quote' ? 'presupuesto' : 'servicio'}.`,
+      });
+      append({
+          supplyId: newInventoryItem.id,
+          supplyName: newInventoryItem.name,
+          quantity: 1, 
+          unitPrice: mode === 'quote' ? newInventoryItem.sellingPrice : newInventoryItem.unitPrice,
+      });
+      setIsNewInventoryItemDialogOpen(false);
+      setNewSupplyInitialData(null);
+      setAddSupplySearchTerm('');
+      setAddSupplyQuantity(1);
+      setSelectedInventoryItemForDialog(null);
+  };
 
 
   return (
@@ -426,7 +509,7 @@ export function ServiceForm({
                             )}
                         />
                     )}
-                    <div className={`flex flex-col sm:flex-row items-end gap-2 ${mode === 'quote' ? 'md:col-span-2' : ''}`}>
+                    <div className={`flex flex-col sm:flex-row items-end gap-2 ${mode === 'quote' || (mode === 'service' && !form.watch('status')) ? 'md:col-span-2' : ''} ${mode === 'service' && form.watch('status') ? '' : 'md:col-span-2'}`}>
                         <FormField
                             control={form.control}
                             name="vehicleLicensePlateSearch"
@@ -451,7 +534,7 @@ export function ServiceForm({
                             )}
                         />
                         {!isReadOnly && (
-                            <Button type="button" onClick={handleSearchVehicle} variant="outline" size="icon" className="w-10 sm:w-10 mt-2 sm:mt-0">
+                            <Button type="button" onClick={handleSearchVehicle} variant="outline" size="icon" className="w-10 h-10 sm:w-10 sm:h-10 mt-2 sm:mt-0">
                                 <Search className="h-4 w-4" />
                                 <span className="sr-only">Buscar Placa</span>
                             </Button>
@@ -465,16 +548,6 @@ export function ServiceForm({
                   />
                 {selectedVehicle && (
                     <div className="p-3 border rounded-md bg-muted text-sm space-y-1">
-                        {mode === 'service' && form.getValues("status") && (
-                             <Badge variant={
-                                form.getValues("status") === "Completado" ? "success" :
-                                form.getValues("status") === "Reparando" ? "secondary" :
-                                form.getValues("status") === "Cancelado" ? "destructive" :
-                                "default"
-                             } className="mb-1 inline-block">
-                                {form.getValues("status")}
-                             </Badge>
-                        )}
                         <p><strong>Placa:</strong> {selectedVehicle.licensePlate}</p>
                         <p><strong>Vehículo Seleccionado:</strong> {selectedVehicle.make} {selectedVehicle.model} ({selectedVehicle.year})</p>
                         <p><strong>Propietario:</strong> {selectedVehicle.ownerName}</p>
@@ -727,7 +800,7 @@ export function ServiceForm({
                             </TableHeader>
                             <TableBody>
                                 {fields.map((item, index) => {
-                                    const currentItemDetails = inventoryItems.find(invItem => invItem.id === item.supplyId);
+                                    const currentItemDetails = currentInventoryItems.find(invItem => invItem.id === item.supplyId);
                                     const unitPriceForCalc = mode === 'quote' 
                                         ? (item.unitPrice || currentItemDetails?.sellingPrice || 0) 
                                         : (item.unitPrice || currentItemDetails?.unitPrice || 0); 
@@ -758,7 +831,10 @@ export function ServiceForm({
                     variant="outline"
                     size="sm"
                     onClick={() => {
-                        setAddSupplyDialogState({ selectedSupplyId: '', quantity: 1 }); 
+                        setSelectedInventoryItemForDialog(null); // Clear previous selection
+                        setAddSupplySearchTerm(''); // Clear search term
+                        setAddSupplyQuantity(1); // Reset quantity
+                        setFilteredInventoryForDialog(currentInventoryItems.slice(0,10)); // Show initial list
                         setIsAddSupplyDialogOpen(true);
                     }}
                     className="mt-4"
@@ -774,7 +850,7 @@ export function ServiceForm({
                             {formatCurrency(
                                 mode === 'quote' 
                                 ? watchedSupplies?.reduce((sum, supply) => {
-                                    const item = inventoryItems.find(i => i.id === supply.supplyId);
+                                    const item = currentInventoryItems.find(i => i.id === supply.supplyId);
                                     return sum + (item?.sellingPrice || supply.unitPrice || 0) * supply.quantity; 
                                   }, 0) || 0
                                 : totalSuppliesCost 
@@ -837,48 +913,92 @@ export function ServiceForm({
     />
 
     <Dialog open={isAddSupplyDialogOpen} onOpenChange={setIsAddSupplyDialogOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-lg">
             <DialogHeader>
                 <DialogTitle>Añadir Insumo al {mode === 'quote' ? 'Presupuesto' : 'Servicio'}</DialogTitle>
-                <DialogDescription>Seleccione el insumo y la cantidad a {mode === 'quote' ? 'proponer' : 'utilizar'}.</DialogDescription>
+                <DialogDescription>Busque por nombre o SKU. Si no existe, puede crearlo.</DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-4">
-                <div className="space-y-2">
-                    <Label htmlFor="supply-select">Insumo</Label>
-                    <Select
-                        value={addSupplyDialogState.selectedSupplyId}
-                        onValueChange={(value) => setAddSupplyDialogState(prev => ({...prev, selectedSupplyId: value}))}
-                    >
-                        <SelectTrigger id="supply-select">
-                            <SelectValue placeholder="Seleccione un insumo" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {inventoryItems.map((supply) => (
-                                <SelectItem key={supply.id} value={supply.id} disabled={supply.quantity === 0 && mode === 'service'}>
-                                    {supply.name} (Stock: {supply.quantity}) - 
-                                    {mode === 'quote' ? ` Venta: ${formatCurrency(supply.sellingPrice)}` : ` Costo: ${formatCurrency(supply.unitPrice)}`}
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
+                <div className="relative">
+                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input
+                        id="supply-search"
+                        placeholder="Buscar insumo por nombre o SKU..."
+                        value={addSupplySearchTerm}
+                        onChange={(e) => {
+                            setAddSupplySearchTerm(e.target.value);
+                            setSelectedInventoryItemForDialog(null); // Clear selection when search term changes
+                        }}
+                        className="pl-8"
+                    />
                 </div>
+                {addSupplySearchTerm && filteredInventoryForDialog.length > 0 && !selectedInventoryItemForDialog && (
+                    <ScrollArea className="h-[150px] border rounded-md">
+                        <div className="p-2 space-y-1">
+                            {filteredInventoryForDialog.map(item => (
+                                <Button
+                                    key={item.id}
+                                    variant="ghost"
+                                    className="w-full justify-start text-left h-auto py-1.5 px-2"
+                                    onClick={() => handleSelectSupplyFromSearch(item)}
+                                >
+                                    <div>
+                                        <p className="font-medium">{item.name} <span className="text-xs text-muted-foreground">({item.sku})</span></p>
+                                        <p className="text-xs text-muted-foreground">
+                                            Stock: {item.quantity} | {mode === 'quote' ? `Venta: ${formatCurrency(item.sellingPrice)}` : `Costo: ${formatCurrency(item.unitPrice)}`}
+                                        </p>
+                                    </div>
+                                </Button>
+                            ))}
+                        </div>
+                    </ScrollArea>
+                )}
+                {selectedInventoryItemForDialog && (
+                    <div className="p-2 border rounded-md bg-muted">
+                        <p className="font-medium text-sm">Seleccionado: {selectedInventoryItemForDialog.name}</p>
+                        <p className="text-xs text-muted-foreground">
+                            {mode === 'quote' ? `Precio Venta: ${formatCurrency(selectedInventoryItemForDialog.sellingPrice)}` : `Costo Taller: ${formatCurrency(selectedInventoryItemForDialog.unitPrice)}`}
+                        </p>
+                    </div>
+                )}
+                {addSupplySearchTerm && filteredInventoryForDialog.length === 0 && !selectedInventoryItemForDialog && (
+                    <div className="text-center py-2 text-sm text-muted-foreground">
+                        <p>No se encontró el insumo "{addSupplySearchTerm}".</p>
+                        <Button variant="link" size="sm" onClick={handleOpenCreateNewSupplyDialog} className="text-primary">
+                            <PackagePlus className="mr-2 h-4 w-4"/>Crear Nuevo Insumo
+                        </Button>
+                    </div>
+                )}
                 <div className="space-y-2">
                     <Label htmlFor="supply-quantity">Cantidad</Label>
                     <Input
                         id="supply-quantity"
                         type="number"
                         min="1"
-                        value={addSupplyDialogState.quantity}
-                        onChange={(e) => setAddSupplyDialogState(prev => ({...prev, quantity: parseInt(e.target.value,10) || 1 }))}
+                        value={addSupplyQuantity}
+                        onChange={(e) => setAddSupplyQuantity(parseInt(e.target.value,10) || 1 )}
                     />
                 </div>
             </div>
             <DialogFooter>
                 <Button type="button" variant="outline" onClick={() => setIsAddSupplyDialogOpen(false)}>Cancelar</Button>
-                <Button type="button" onClick={handleAddSupplyFromDialog}>Añadir Insumo</Button>
+                <Button type="button" onClick={handleAddSupplyConfirmed} disabled={!selectedInventoryItemForDialog}>Añadir Insumo Seleccionado</Button>
             </DialogFooter>
         </DialogContent>
     </Dialog>
+
+    {isNewInventoryItemDialogOpen && (
+      <InventoryItemDialog
+        open={isNewInventoryItemDialogOpen}
+        onOpenChange={setIsNewInventoryItemDialogOpen}
+        item={newSupplyInitialData}
+        onSave={handleNewSupplyCreated}
+        // Categories and Suppliers are needed by InventoryItemForm inside InventoryItemDialog
+        // These should be available in the scope or passed down.
+        // Assuming placeholderCategories and placeholderSuppliers are imported and available globally for this demo.
+      />
+    )}
     </>
   );
 }
+
