@@ -175,3 +175,4 @@ export interface AppRole {
   name: string;
   permissions: string[]; // Array of permission strings/keys
 }
+
