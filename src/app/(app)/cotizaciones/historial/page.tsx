@@ -12,8 +12,8 @@ import { Search, ListFilter, CalendarIcon as CalendarDateIcon, FileText, DollarS
 import { QuotesTable } from "../components/quotes-table"; 
 import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
 import { QuoteContent } from '@/components/quote-content';
-import { placeholderQuotes, placeholderVehicles, placeholderTechnicians } from "@/lib/placeholder-data";
-import type { QuoteRecord, Vehicle, Technician } from "@/types";
+import { placeholderQuotes, placeholderVehicles } from "@/lib/placeholder-data"; // Removed placeholderTechnicians as it's not used
+import type { QuoteRecord, Vehicle } from "@/types"; // Removed Technician type as it's not used
 import { useState, useEffect, useMemo } from "react";
 import { format, parseISO, compareAsc, compareDesc, isWithinInterval, isValid, startOfDay, endOfDay } from "date-fns";
 import { es } from 'date-fns/locale';
@@ -29,7 +29,7 @@ type QuoteSortOption =
 export default function HistorialCotizacionesPage() {
   const [allQuotes, setAllQuotes] = useState<QuoteRecord[]>(placeholderQuotes);
   const [vehicles, setVehicles] = useState<Vehicle[]>(placeholderVehicles);
-  const [technicians, setTechnicians] = useState<Technician[]>(placeholderTechnicians);
+  // const [technicians, setTechnicians] = useState<Technician[]>(placeholderTechnicians); // Removed
   
   const [searchTerm, setSearchTerm] = useState("");
   const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
@@ -38,7 +38,7 @@ export default function HistorialCotizacionesPage() {
   const [isViewQuoteDialogOpen, setIsViewQuoteDialogOpen] = useState(false);
   const [selectedQuoteForView, setSelectedQuoteForView] = useState<QuoteRecord | null>(null);
   const [vehicleForSelectedQuote, setVehicleForSelectedQuote] = useState<Vehicle | null>(null);
-  const [technicianForSelectedQuote, setTechnicianForSelectedQuote] = useState<Technician | null>(null);
+  // const [technicianForSelectedQuote, setTechnicianForSelectedQuote] = useState<Technician | null>(null); // Removed this state
 
 
   useEffect(() => {
@@ -48,7 +48,7 @@ export default function HistorialCotizacionesPage() {
     );
     setAllQuotes(sortedInitialQuotes); 
     setVehicles(placeholderVehicles);
-    setTechnicians(placeholderTechnicians);
+    // setTechnicians(placeholderTechnicians); // Removed
   }, []);
 
   const filteredAndSortedQuotes = useMemo(() => {
@@ -98,12 +98,8 @@ export default function HistorialCotizacionesPage() {
   const handleViewQuote = (quote: QuoteRecord) => {
     setSelectedQuoteForView(quote);
     setVehicleForSelectedQuote(vehicles.find(v => v.id === quote.vehicleId) || null);
-    // For preparedBy, we use the info stored directly in the quote record
-    if (quote.preparedByTechnicianId && quote.preparedByTechnicianName) {
-        setTechnicianForSelectedQuote({ id: quote.preparedByTechnicianId, name: quote.preparedByTechnicianName });
-    } else {
-        setTechnicianForSelectedQuote(null);
-    }
+    // The logic for setting technicianForSelectedQuote has been removed
+    // as QuoteContent will use quote.preparedByTechnicianName
     setIsViewQuoteDialogOpen(true);
   };
 
@@ -111,7 +107,7 @@ export default function HistorialCotizacionesPage() {
     setIsViewQuoteDialogOpen(false);
     setSelectedQuoteForView(null);
     setVehicleForSelectedQuote(null);
-    setTechnicianForSelectedQuote(null);
+    // setTechnicianForSelectedQuote(null); // Removed
   };
 
 
@@ -230,7 +226,7 @@ export default function HistorialCotizacionesPage() {
           <QuoteContent 
             quote={selectedQuoteForView} 
             vehicle={vehicleForSelectedQuote || undefined}
-            preparedByTechnician={technicianForSelectedQuote || undefined}
+            // preparedByTechnician prop removed
           />
         </PrintTicketDialog>
       )}
