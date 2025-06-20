@@ -61,7 +61,7 @@ export default function AdministrativeStaffDetailPage() {
 
     setIsEditDialogOpen(false);
     toast({
-      title: "Personal Actualizado",
+      title: "Staff Administrativo Actualizado",
       description: `Los datos de ${updatedStaffMember.name} han sido actualizados.`,
     });
   };
@@ -73,7 +73,7 @@ export default function AdministrativeStaffDetailPage() {
       placeholderAdministrativeStaff.splice(staffIndex, 1);
     }
     toast({
-      title: "Personal Eliminado",
+      title: "Staff Eliminado",
       description: `El registro de ${staffMember.name} ha sido eliminado.`,
     });
     router.push('/administrativos'); 
@@ -81,17 +81,17 @@ export default function AdministrativeStaffDetailPage() {
 
 
   if (staffMember === undefined) {
-    return <div className="container mx-auto py-8 text-center">Cargando datos del personal...</div>;
+    return <div className="container mx-auto py-8 text-center">Cargando datos del staff...</div>;
   }
 
   if (!staffMember) {
     return (
       <div className="container mx-auto py-8 text-center">
          <ShieldAlert className="mx-auto h-16 w-16 text-destructive mb-4" />
-        <h1 className="text-2xl font-bold">Personal no encontrado</h1>
+        <h1 className="text-2xl font-bold">Staff Administrativo no encontrado</h1>
         <p className="text-muted-foreground">No se pudo encontrar un registro con el ID: {staffId}.</p>
         <Button asChild className="mt-6">
-          <Link href="/administrativos">Volver a Personal</Link>
+          <Link href="/administrativos">Volver a Staff Administrativo</Link>
         </Button>
       </div>
     );
@@ -103,12 +103,12 @@ export default function AdministrativeStaffDetailPage() {
     <div className="container mx-auto py-8">
       <PageHeader
         title={`${staffMember.name} - ${staffMember.roleOrArea}`}
-        description={`ID Personal: ${staffMember.id}`}
+        description={`ID Staff: ${staffMember.id}`}
       />
 
         <Card className="shadow-lg">
             <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle>Datos del Personal</CardTitle>
+            <CardTitle>Datos del Miembro del Staff Administrativo</CardTitle>
             <Button variant="outline" size="sm" onClick={() => setIsEditDialogOpen(true)}>
                 <Edit className="mr-2 h-4 w-4" />
                 Editar
@@ -147,12 +147,12 @@ export default function AdministrativeStaffDetailPage() {
               <AlertDialogTrigger asChild>
                 <Button variant="destructive" >
                   <Archive className="mr-2 h-4 w-4" />
-                  Eliminar Personal
+                  Eliminar Miembro del Staff
                 </Button>
               </AlertDialogTrigger>
               <AlertDialogContent>
                 <AlertDialogHeader>
-                  <AlertDialogTitle>¿Estás seguro de eliminar este registro de personal?</AlertDialogTitle>
+                  <AlertDialogTitle>¿Estás seguro de eliminar este registro de staff?</AlertDialogTitle>
                   <AlertDialogDescription>
                     Esta acción no se puede deshacer y eliminará permanentemente el registro de {staffMember.name}.
                   </AlertDialogDescription>

@@ -22,7 +22,7 @@ const technicianFormSchema = z.object({
   area: z.string().min(3, "El área es obligatoria."),
   specialty: z.string().min(3, "La especialidad es obligatoria."),
   contactInfo: z.string().min(7, "El teléfono debe tener al menos 7 caracteres.").optional().or(z.literal('')),
-  hireDate: z.string().optional(), // Keep as string, will be formatted from date
+  hireDate: z.string().optional(), 
   monthlySalary: z.coerce.number().min(0, "El sueldo no puede ser negativo.").optional(),
   notes: z.string().optional(),
 });
@@ -151,7 +151,7 @@ export function TechnicianForm({ initialData, onSubmit, onClose }: TechnicianFor
             <FormItem>
               <FormLabel>Notas (Opcional)</FormLabel>
               <FormControl>
-                <Textarea placeholder="Notas adicionales sobre el técnico..." {...field} />
+                <Textarea placeholder="Notas adicionales sobre el miembro del staff..." {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -162,7 +162,7 @@ export function TechnicianForm({ initialData, onSubmit, onClose }: TechnicianFor
             Cancelar
           </Button>
           <Button type="submit" disabled={form.formState.isSubmitting}>
-            {form.formState.isSubmitting ? "Guardando..." : (initialData ? "Actualizar Técnico" : "Crear Técnico")}
+            {form.formState.isSubmitting ? "Guardando..." : (initialData ? "Actualizar Staff" : "Crear Staff")}
           </Button>
         </div>
       </form>

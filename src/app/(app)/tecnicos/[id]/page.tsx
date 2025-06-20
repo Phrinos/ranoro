@@ -58,23 +58,23 @@ export default function TechnicianDetailPage() {
 
     setIsEditDialogOpen(false);
     toast({
-      title: "Técnico Actualizado",
-      description: `Los datos del técnico ${updatedTechnician.name} han sido actualizados.`,
+      title: "Staff Técnico Actualizado",
+      description: `Los datos de ${updatedTechnician.name} han sido actualizados.`,
     });
   };
 
   if (technician === undefined) {
-    return <div className="container mx-auto py-8 text-center">Cargando datos del técnico...</div>;
+    return <div className="container mx-auto py-8 text-center">Cargando datos del miembro del staff...</div>;
   }
 
   if (!technician) {
     return (
       <div className="container mx-auto py-8 text-center">
          <ShieldAlert className="mx-auto h-16 w-16 text-destructive mb-4" />
-        <h1 className="text-2xl font-bold">Técnico no encontrado</h1>
-        <p className="text-muted-foreground">No se pudo encontrar un técnico con el ID: {technicianId}.</p>
+        <h1 className="text-2xl font-bold">Miembro del Staff Técnico no encontrado</h1>
+        <p className="text-muted-foreground">No se pudo encontrar un miembro del staff con el ID: {technicianId}.</p>
         <Button asChild className="mt-6">
-          <Link href="/tecnicos">Volver a Técnicos</Link>
+          <Link href="/tecnicos">Volver a Staff Técnico</Link>
         </Button>
       </div>
     );
@@ -86,7 +86,7 @@ export default function TechnicianDetailPage() {
     <div className="container mx-auto py-8">
       <PageHeader
         title={`${technician.name} - ${technician.area}`}
-        description={`ID Técnico: ${technician.id}`}
+        description={`ID Staff: ${technician.id}`}
       />
 
       <Tabs defaultValue="details" className="w-full">
@@ -99,7 +99,7 @@ export default function TechnicianDetailPage() {
           <div className="space-y-6">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle>Datos del Técnico</CardTitle>
+                <CardTitle>Datos del Miembro del Staff Técnico</CardTitle>
                 <Button variant="outline" size="sm" onClick={() => setIsEditDialogOpen(true)}>
                   <Edit className="mr-2 h-4 w-4" />
                   Editar
@@ -125,7 +125,7 @@ export default function TechnicianDetailPage() {
           <div className="mt-8 flex justify-start">
             <Button variant="outline">
               <Archive className="mr-2 h-4 w-4" />
-              Archivar Técnico
+              Archivar Miembro del Staff
             </Button>
           </div>
         </TabsContent>
@@ -134,7 +134,7 @@ export default function TechnicianDetailPage() {
           <Card>
             <CardHeader>
               <CardTitle>Historial de Rendimiento Mensual</CardTitle>
-              <CardDescription>Desglose del rendimiento del técnico por mes.</CardDescription>
+              <CardDescription>Desglose del rendimiento del miembro del staff técnico por mes.</CardDescription>
             </CardHeader>
             <CardContent>
               {performance.length > 0 ? (
@@ -163,7 +163,7 @@ export default function TechnicianDetailPage() {
                 </Table>
                 </div>
               ) : (
-                <p className="text-muted-foreground">No hay historial de rendimiento para este técnico.</p>
+                <p className="text-muted-foreground">No hay historial de rendimiento para este miembro del staff.</p>
               )}
             </CardContent>
           </Card>

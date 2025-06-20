@@ -46,7 +46,7 @@ export function AdministrativeStaffDialog({
       console.error("Error saving administrative staff:", error);
       toast({
         title: "Error al guardar",
-        description: "No se pudo guardar el registro del personal. Intente de nuevo.",
+        description: "No se pudo guardar el registro del staff administrativo. Intente de nuevo.",
         variant: "destructive",
       });
     }
@@ -58,9 +58,9 @@ export function AdministrativeStaffDialog({
       {open && (
         <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>{staffMember ? "Editar Personal Administrativo" : "Nuevo Personal Administrativo"}</DialogTitle>
+            <DialogTitle>{staffMember ? "Editar Miembro del Staff Administrativo" : "Nuevo Miembro del Staff Administrativo"}</DialogTitle>
             <DialogDescription>
-              {staffMember ? "Actualiza los detalles del perfil del personal." : "Completa la información para un nuevo miembro del personal."}
+              {staffMember ? "Actualiza los detalles del perfil del staff." : "Completa la información para un nuevo miembro del staff."}
             </DialogDescription>
           </DialogHeader>
           <AdministrativeStaffForm

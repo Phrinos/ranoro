@@ -59,7 +59,7 @@ export default function TecnicosPage() {
   const aggregatedTechnicianPerformance = useMemo((): AggregatedTechnicianPerformance[] => {
     let dateFrom = filterDateRange?.from ? startOfDay(filterDateRange.from) : startOfMonth(new Date());
     let dateTo = filterDateRange?.to ? endOfDay(filterDateRange.to) : endOfMonth(new Date());
-    if (filterDateRange?.from && !filterDateRange.to) { // If only 'from' is selected, consider it a single day range
+    if (filterDateRange?.from && !filterDateRange.to) { 
         dateTo = endOfDay(filterDateRange.from);
     }
 
@@ -117,16 +117,16 @@ export default function TecnicosPage() {
   return (
     <>
       <PageHeader
-        title="Técnicos"
-        description="Administra los perfiles y el rendimiento de los técnicos."
+        title="Staff Técnico"
+        description="Administra los perfiles y el rendimiento del staff técnico."
       />
 
       <Card className="mb-6">
         <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
-            <CardTitle>Resumen de Rendimiento por Técnico</CardTitle>
+            <CardTitle>Resumen de Rendimiento por Staff Técnico</CardTitle>
             <CardDescription>
-              Totales de ingresos y ganancias para cada técnico basados en el rango de fechas seleccionado.
+              Totales de ingresos y ganancias para cada miembro del staff técnico basados en el rango de fechas seleccionado.
               Predeterminado al mes actual si no se selecciona un rango.
             </CardDescription>
           </div>
@@ -220,7 +220,7 @@ export default function TecnicosPage() {
           trigger={
             <Button>
               <PlusCircle className="mr-2 h-4 w-4" />
-              Nuevo Técnico
+              Nuevo Staff Técnico
             </Button>
           }
           onSave={handleSaveTechnician}
@@ -234,6 +234,7 @@ export default function TecnicosPage() {
     
 
     
+
 
 
 
