@@ -729,3 +729,4 @@ const formatCurrency = (amount: number | undefined) => {
     </>
   );
 }
+

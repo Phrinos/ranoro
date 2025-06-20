@@ -18,7 +18,7 @@ import { es } from 'date-fns/locale';
 import type { DateRange } from "react-day-picker";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
 import { ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLegendContent } from "@/components/ui/chart";
 import { cn } from "@/lib/utils";
 
@@ -61,7 +61,6 @@ export default function TecnicosPage() {
     placeholderTechnicians.length > 0 ? placeholderTechnicians[0].id : undefined
   );
   const [filterDateRange, setFilterDateRange] = useState<DateRange | undefined>(() => {
-    // Default to current month
     const now = new Date();
     return { from: startOfMonth(now), to: endOfMonth(now) };
   });
@@ -90,7 +89,7 @@ export default function TecnicosPage() {
   const aggregatedTechnicianPerformance = useMemo((): AggregatedTechnicianPerformance[] => {
     let dateFrom = filterDateRange?.from ? startOfDay(filterDateRange.from) : startOfMonth(new Date());
     let dateTo = filterDateRange?.to ? endOfDay(filterDateRange.to) : endOfMonth(new Date());
-    if (filterDateRange?.from && !filterDateRange.to) { // If only 'from' is selected, use it as single day
+    if (filterDateRange?.from && !filterDateRange.to) {
         dateTo = endOfDay(filterDateRange.from);
     }
 
@@ -124,7 +123,7 @@ export default function TecnicosPage() {
     if (filterDateRange?.from) {
       chartStartDate = startOfDay(filterDateRange.from);
       chartEndDate = filterDateRange.to ? endOfDay(filterDateRange.to) : endOfDay(filterDateRange.from);
-    } else { // Default to current month if no range selected
+    } else { 
       const now = new Date();
       chartStartDate = startOfMonth(now);
       chartEndDate = endOfMonth(now);
@@ -238,6 +237,7 @@ export default function TecnicosPage() {
             </CardTitle>
             <CardDescription>
               Visualiza ingresos y ganancias diarias para el técnico y rango de fechas elegidos.
+              Predeterminado al mes actual si no se selecciona un rango.
             </CardDescription>
           </div>
           <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
@@ -275,7 +275,7 @@ export default function TecnicosPage() {
                       format(filterDateRange.from, "LLL dd, y", { locale: es })
                     )
                   ) : (
-                    <span>Seleccione rango (def: Mes Actual)</span>
+                    <span>Seleccione rango</span>
                   )}
                 </Button>
               </PopoverTrigger>
@@ -361,18 +361,17 @@ export default function TecnicosPage() {
           <CardTitle>Resumen de Rendimiento por Técnico (Rango Seleccionado)</CardTitle>
           <CardDescription>
             Totales de ingresos y ganancias para cada técnico basados en el rango de fechas seleccionado arriba.
-            Predeterminado al mes actual si no se selecciona un rango.
           </CardDescription>
         </CardHeader>
         <CardContent>
           {aggregatedTechnicianPerformance.length > 0 ? (
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {aggregatedTechnicianPerformance.map(techPerf => (
-                <Card key={techPerf.technicianId} className="shadow-md">
-                  <CardHeader className="pb-2">
+                <Card key={techPerf.technicianId} className="shadow-sm border">
+                  <CardHeader className="pb-3 pt-4">
                     <CardTitle className="text-base font-medium">{techPerf.technicianName}</CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-1 text-sm">
+                  <CardContent className="space-y-1 text-sm pb-4">
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Ingresos Totales:</span>
                       <span className="font-semibold">{formatCurrency(techPerf.totalRevenue)}</span>
@@ -399,6 +398,7 @@ export default function TecnicosPage() {
     
 
     
+
 
 
 

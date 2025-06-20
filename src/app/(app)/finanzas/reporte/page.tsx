@@ -312,7 +312,7 @@ export default function FinancialReportPage() {
                             <TableRow key={`${op.type}-${op.id}`}>
                             <TableCell>{format(parseISO(op.date), "dd MMM yyyy, HH:mm", { locale: es })}</TableCell>
                             <TableCell>
-                                <span className={`px-2 py-1 text-xs rounded-full font-medium ${op.type === 'Venta' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-200' : 'bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-200'}`}>
+                                <span className={`px-2 py-1 text-xs rounded-full font-medium ${op.type === 'Venta' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300' : 'bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300'}`}>
                                     {op.type}
                                 </span>
                             </TableCell>
