@@ -13,7 +13,8 @@ import { placeholderInventory, placeholderCategories, placeholderSuppliers } fro
 import type { InventoryItem } from "@/types";
 import { useState, useMemo } from "react";
 import type { InventoryItemFormValues } from "./components/inventory-item-form";
-import { PurchaseEntryDialog, type PurchaseEntryFormValues } from "./components/purchase-entry-dialog";
+import { PurchaseItemSelectionDialog } from "./components/purchase-item-selection-dialog";
+import { PurchaseDetailsEntryDialog, type PurchaseDetailsFormValues } from "./components/purchase-details-entry-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -28,8 +29,15 @@ export default function InventarioPage() {
   const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>(placeholderInventory);
   const { toast } = useToast();
   const [isNewItemDialogOpen, setIsNewItemDialogOpen] = useState(false);
-  const [isPurchaseEntryDialogOpen, setIsPurchaseEntryDialogOpen] = useState(false);
-  const [newItemInitialData, setNewItemInitialData] = useState<Partial<InventoryItemFormValues> | null>(null);
+  
+  // States for new purchase entry flow
+  const [isPurchaseItemSelectionDialogOpen, setIsPurchaseItemSelectionDialogOpen] = useState(false);
+  const [isPurchaseDetailsEntryDialogOpen, setIsPurchaseDetailsEntryDialogOpen] = useState(false);
+  const [selectedItemForPurchase, setSelectedItemForPurchase] = useState<InventoryItem | null>(null);
+  const [isCreatingItemForPurchaseFlow, setIsCreatingItemForPurchaseFlow] = useState(false);
+  const [newlyCreatedItemForPurchase, setNewlyCreatedItemForPurchase] = useState<InventoryItem | null>(null);
+  const [searchTermForNewItemPurchase, setSearchTermForNewItemPurchase] = useState('');
+
 
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategoryFilter, setSelectedCategoryFilter] = useState("all");
@@ -44,6 +52,7 @@ export default function InventarioPage() {
       quantity: Number(data.quantity),
       lowStockThreshold: Number(data.lowStockThreshold),
     };
+    
     const updatedInventory = [...inventoryItems, newItem];
     setInventoryItems(updatedInventory);
     placeholderInventory.push(newItem); 
@@ -53,48 +62,72 @@ export default function InventarioPage() {
       description: `El producto ${newItem.name} ha sido agregado al inventario.`,
     });
     setIsNewItemDialogOpen(false);
-    setNewItemInitialData(null);
-  };
 
-  const handleSavePurchaseEntry = async (purchaseData: PurchaseEntryFormValues) => {
-    const existingItemIndex = inventoryItems.findIndex(item => item.sku.toLowerCase() === purchaseData.sku.toLowerCase());
-
-    if (existingItemIndex !== -1) {
-      const updatedItems = inventoryItems.map((item, index) => {
-        if (index === existingItemIndex) {
-          return {
-            ...item,
-            quantity: item.quantity + purchaseData.quantity,
-            unitPrice: purchaseData.purchasePrice, 
-          };
-        }
-        return item;
-      });
-      setInventoryItems(updatedItems);
-      placeholderInventory.splice(0, placeholderInventory.length, ...updatedItems); 
-      toast({
-        title: "Compra Registrada",
-        description: `Se actualizó el stock y costo del producto ${updatedItems[existingItemIndex].name}.`,
-      });
-    } else {
-      setNewItemInitialData({
-        sku: purchaseData.sku,
-        quantity: purchaseData.quantity,
-        unitPrice: purchaseData.purchasePrice, 
-        name: "", 
-        sellingPrice: 0, 
-        lowStockThreshold: 5,
-        category: "",
-        supplier: "", 
-      });
-      setIsNewItemDialogOpen(true);
-      toast({
-        title: "Producto no encontrado",
-        description: `El código ${purchaseData.sku} no existe. Por favor, complete los datos para crear un nuevo producto.`,
-      });
+    if (isCreatingItemForPurchaseFlow) {
+      setNewlyCreatedItemForPurchase(newItem); // Store it temporarily
+      setIsCreatingItemForPurchaseFlow(false); 
+      // The useEffect below will pick this up and open the details dialog
     }
-    setIsPurchaseEntryDialogOpen(false);
   };
+
+  // Effect to open PurchaseDetailsEntryDialog after a new item is created in purchase flow
+  useEffect(() => {
+    if (newlyCreatedItemForPurchase) {
+      setSelectedItemForPurchase(newlyCreatedItemForPurchase);
+      setIsPurchaseDetailsEntryDialogOpen(true);
+      setNewlyCreatedItemForPurchase(null); // Reset for next time
+    }
+  }, [newlyCreatedItemForPurchase]);
+
+
+  const handleOpenPurchaseItemSelection = () => {
+    setSelectedItemForPurchase(null);
+    setIsPurchaseItemSelectionDialogOpen(true);
+  };
+
+  const handleItemSelectedForPurchase = (item: InventoryItem) => {
+    setSelectedItemForPurchase(item);
+    setIsPurchaseItemSelectionDialogOpen(false);
+    setIsPurchaseDetailsEntryDialogOpen(true);
+  };
+  
+  const handleCreateNewItemForPurchase = (searchTerm: string) => {
+    setIsCreatingItemForPurchaseFlow(true);
+    setSearchTermForNewItemPurchase(searchTerm); // Store search term to prefill
+    setIsPurchaseItemSelectionDialogOpen(false);
+    setIsNewItemDialogOpen(true); // This will open the standard InventoryItemDialog
+  };
+
+  const handleSavePurchaseDetails = (details: PurchaseDetailsFormValues) => {
+    if (!selectedItemForPurchase) {
+      toast({ title: "Error", description: "No hay un artículo seleccionado para la compra.", variant: "destructive" });
+      return;
+    }
+
+    const itemIndex = placeholderInventory.findIndex(item => item.id === selectedItemForPurchase.id);
+    if (itemIndex === -1) {
+       toast({ title: "Error", description: `El artículo ${selectedItemForPurchase.name} no se encontró para actualizar.`, variant: "destructive" });
+       return;
+    }
+
+    const updatedItem = {
+      ...placeholderInventory[itemIndex],
+      quantity: placeholderInventory[itemIndex].quantity + details.quantityPurchased,
+      unitPrice: details.newCostPrice,
+      sellingPrice: details.newSellingPrice,
+    };
+    placeholderInventory[itemIndex] = updatedItem;
+    setInventoryItems([...placeholderInventory]); // Trigger re-render
+
+    toast({
+      title: "Compra Registrada",
+      description: `Se actualizó el stock, costo y precio de venta para ${updatedItem.name}.`,
+    });
+
+    setIsPurchaseDetailsEntryDialogOpen(false);
+    setSelectedItemForPurchase(null);
+  };
+
 
   const handlePrintInventory = () => {
     toast({
@@ -221,11 +254,11 @@ export default function InventarioPage() {
               <Printer className="mr-2 h-4 w-4" />
               Imprimir Productos
             </Button>
-            <Button variant="outline" onClick={() => setIsPurchaseEntryDialogOpen(true)}>
+            <Button variant="outline" onClick={handleOpenPurchaseItemSelection}>
               <ShoppingCartIcon className="mr-2 h-4 w-4" />
               Ingresar Compra
             </Button>
-            <Button onClick={() => { setNewItemInitialData(null); setIsNewItemDialogOpen(true); }}>
+            <Button onClick={() => { setIsCreatingItemForPurchaseFlow(false); setIsNewItemDialogOpen(true); }}>
               <PlusCircle className="mr-2 h-4 w-4" />
               Nuevo Producto
             </Button>
@@ -285,15 +318,32 @@ export default function InventarioPage() {
       <InventoryItemDialog
         open={isNewItemDialogOpen}
         onOpenChange={setIsNewItemDialogOpen}
-        item={newItemInitialData as InventoryItem | null} 
+        item={isCreatingItemForPurchaseFlow ? { sku: searchTermForNewItemPurchase, name: searchTermForNewItemPurchase } : null}
         onSave={handleSaveNewItem}
+        categories={placeholderCategories} 
+        suppliers={placeholderSuppliers}
       />
 
-      <PurchaseEntryDialog
-        open={isPurchaseEntryDialogOpen}
-        onOpenChange={setIsPurchaseEntryDialogOpen}
-        onSave={handleSavePurchaseEntry}
+      <PurchaseItemSelectionDialog
+        open={isPurchaseItemSelectionDialogOpen}
+        onOpenChange={setIsPurchaseItemSelectionDialogOpen}
+        inventoryItems={inventoryItems}
+        onItemSelected={handleItemSelectedForPurchase}
+        onCreateNew={handleCreateNewItemForPurchase}
       />
+
+      {selectedItemForPurchase && (
+        <PurchaseDetailsEntryDialog
+          open={isPurchaseDetailsEntryDialogOpen}
+          onOpenChange={setIsPurchaseDetailsEntryDialogOpen}
+          item={selectedItemForPurchase}
+          onSave={handleSavePurchaseDetails}
+          onClose={() => {
+            setIsPurchaseDetailsEntryDialogOpen(false);
+            setSelectedItemForPurchase(null);
+          }}
+        />
+      )}
     </>
   );
 }
