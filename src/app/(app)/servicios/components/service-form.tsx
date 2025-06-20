@@ -31,6 +31,7 @@ import { VehicleDialog } from "../../vehiculos/components/vehicle-dialog";
 import type { VehicleFormValues } from "../../vehiculos/components/vehicle-form";
 import { placeholderVehicles as defaultPlaceholderVehicles } from "@/lib/placeholder-data";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label"; // Added import for Label
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 
@@ -684,7 +685,7 @@ export function ServiceForm({
                     variant="outline"
                     size="sm"
                     onClick={() => {
-                        setAddSupplyDialogState({ selectedSupplyId: '', quantity: 1 }); // Reset dialog state
+                        setAddSupplyDialogState({ selectedSupplyId: '', quantity: 1 }); 
                         setIsAddSupplyDialogOpen(true);
                     }}
                     className="mt-4"
@@ -796,6 +797,3 @@ export function ServiceForm({
     </>
   );
 }
-
-
-    
