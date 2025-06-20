@@ -7,20 +7,18 @@ import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { PlusCircle, ListFilter, TrendingUp, DollarSign as DollarSignIcon, LineChart as LineChartIcon, CalendarIcon as CalendarDateIcon } from "lucide-react";
+import { PlusCircle, ListFilter, TrendingUp, DollarSign as DollarSignIcon, CalendarIcon as CalendarDateIcon } from "lucide-react";
 import { TechniciansTable } from "./components/technicians-table";
 import { TechnicianDialog } from "./components/technician-dialog";
 import { placeholderTechnicians, placeholderServiceRecords } from "@/lib/placeholder-data";
 import type { Technician, ServiceRecord } from "@/types";
 import type { TechnicianFormValues } from "./components/technician-form";
-import { parseISO, compareAsc, compareDesc, startOfMonth, endOfMonth, subMonths, isWithinInterval, format, eachDayOfInterval, isValid, startOfDay, endOfDay } from 'date-fns';
+import { parseISO, compareAsc, compareDesc, startOfMonth, endOfMonth, isWithinInterval, format, isValid, startOfDay, endOfDay } from 'date-fns';
 import { es } from 'date-fns/locale';
 import type { DateRange } from "react-day-picker";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
-import { ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLegendContent } from "@/components/ui/chart";
 import { cn } from "@/lib/utils";
+
 
 type TechnicianSortOption = 
   | "name_asc" | "name_desc"
@@ -28,23 +26,6 @@ type TechnicianSortOption =
   | "hireDate_asc" | "hireDate_desc"
   | "salary_asc" | "salary_desc";
 
-const lineChartConfig = {
-  totalRevenue: {
-    label: "Ingresos Diarios",
-    color: "hsl(var(--chart-1))", 
-  },
-  totalProfit: {
-    label: "Ganancia Diaria",
-    color: "hsl(var(--chart-2))", 
-  },
-} satisfies ChartConfig;
-
-interface DailyPerformanceData {
-  dateLabel: string; 
-  fullDate: string; 
-  totalRevenue: number;
-  totalProfit: number;
-}
 
 interface AggregatedTechnicianPerformance {
   technicianId: string;
@@ -57,9 +38,6 @@ export default function TecnicosPage() {
   const [technicians, setTechnicians] = useState<Technician[]>(placeholderTechnicians);
   const [sortOption, setSortOption] = useState<TechnicianSortOption>("name_asc");
   
-  const [selectedTechnicianIdForChart, setSelectedTechnicianIdForChart] = useState<string | undefined>(
-    placeholderTechnicians.length > 0 ? placeholderTechnicians[0].id : undefined
-  );
   const [filterDateRange, setFilterDateRange] = useState<DateRange | undefined>(() => {
     const now = new Date();
     return { from: startOfMonth(now), to: endOfMonth(now) };
@@ -75,24 +53,15 @@ export default function TecnicosPage() {
     const updatedTechnicians = [...technicians, newTechnician];
     setTechnicians(updatedTechnicians);
     placeholderTechnicians.push(newTechnician);
-    if (!selectedTechnicianIdForChart && updatedTechnicians.length > 0) {
-      setSelectedTechnicianIdForChart(updatedTechnicians[0].id);
-    }
   };
   
-  useEffect(() => {
-    if (!selectedTechnicianIdForChart && technicians.length > 0) {
-      setSelectedTechnicianIdForChart(technicians[0].id);
-    }
-  }, [technicians, selectedTechnicianIdForChart]);
 
   const aggregatedTechnicianPerformance = useMemo((): AggregatedTechnicianPerformance[] => {
     let dateFrom = filterDateRange?.from ? startOfDay(filterDateRange.from) : startOfMonth(new Date());
     let dateTo = filterDateRange?.to ? endOfDay(filterDateRange.to) : endOfMonth(new Date());
-    if (filterDateRange?.from && !filterDateRange.to) {
+    if (filterDateRange?.from && !filterDateRange.to) { // If only 'from' is selected, consider it a single day range
         dateTo = endOfDay(filterDateRange.from);
     }
-
 
     return technicians.map(tech => {
       const techServices = placeholderServiceRecords.filter(service => {
@@ -113,48 +82,6 @@ export default function TecnicosPage() {
       };
     });
   }, [technicians, filterDateRange]);
-
-
-  const lineChartData = useMemo((): DailyPerformanceData[] => {
-    if (!selectedTechnicianIdForChart) return [];
-
-    let chartStartDate: Date, chartEndDate: Date;
-
-    if (filterDateRange?.from) {
-      chartStartDate = startOfDay(filterDateRange.from);
-      chartEndDate = filterDateRange.to ? endOfDay(filterDateRange.to) : endOfDay(filterDateRange.from);
-    } else { 
-      const now = new Date();
-      chartStartDate = startOfMonth(now);
-      chartEndDate = endOfMonth(now);
-    }
-    
-    const daysInInterval = eachDayOfInterval({ start: chartStartDate, end: chartEndDate });
-    
-    const techServices = placeholderServiceRecords.filter(
-      service => service.technicianId === selectedTechnicianIdForChart
-    );
-
-    const dailyData = daysInInterval.map(day => {
-      const servicesOnDay = techServices.filter(service => {
-        if (!service.serviceDate || !isValid(parseISO(service.serviceDate))) return false;
-        return format(parseISO(service.serviceDate), 'yyyy-MM-dd') === format(day, 'yyyy-MM-dd');
-      });
-
-      const dailyRevenue = servicesOnDay.reduce((sum, service) => sum + service.totalCost, 0);
-      const dailyProfit = servicesOnDay.reduce((sum, service) => sum + (service.serviceProfit || 0), 0);
-      
-      return {
-        fullDate: format(day, 'yyyy-MM-dd'),
-        dateLabel: format(day, 'd MMM', { locale: es }),
-        totalRevenue: dailyRevenue,
-        totalProfit: dailyProfit,
-      };
-    });
-    
-    return dailyData.sort((a,b) => compareAsc(parseISO(a.fullDate), parseISO(b.fullDate)));
-
-  }, [selectedTechnicianIdForChart, filterDateRange]);
 
 
   const sortedTechniciansForTable = useMemo(() => {
@@ -195,11 +122,50 @@ export default function TecnicosPage() {
       />
 
       <Card className="mb-6">
-        <CardHeader>
-          <CardTitle>Resumen de Rendimiento por Técnico (Rango Seleccionado)</CardTitle>
-          <CardDescription>
-            Totales de ingresos y ganancias para cada técnico basados en el rango de fechas seleccionado abajo.
-          </CardDescription>
+        <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div>
+            <CardTitle>Resumen de Rendimiento por Técnico</CardTitle>
+            <CardDescription>
+              Totales de ingresos y ganancias para cada técnico basados en el rango de fechas seleccionado.
+              Predeterminado al mes actual si no se selecciona un rango.
+            </CardDescription>
+          </div>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant={"outline"}
+                className={cn(
+                  "w-full sm:w-[280px] justify-start text-left font-normal",
+                  !filterDateRange && "text-muted-foreground"
+                )}
+              >
+                <CalendarDateIcon className="mr-2 h-4 w-4" />
+                {filterDateRange?.from ? (
+                  filterDateRange.to ? (
+                    <>
+                      {format(filterDateRange.from, "LLL dd, y", { locale: es })} -{" "}
+                      {format(filterDateRange.to, "LLL dd, y", { locale: es })}
+                    </>
+                  ) : (
+                    format(filterDateRange.from, "LLL dd, y", { locale: es })
+                  )
+                ) : (
+                  <span>Seleccione rango</span>
+                )}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="end">
+              <Calendar
+                initialFocus
+                mode="range"
+                defaultMonth={filterDateRange?.from}
+                selected={filterDateRange}
+                onSelect={setFilterDateRange}
+                numberOfMonths={2}
+                locale={es}
+              />
+            </PopoverContent>
+          </Popover>
         </CardHeader>
         <CardContent>
           {aggregatedTechnicianPerformance.length > 0 ? (
@@ -224,134 +190,6 @@ export default function TecnicosPage() {
             </div>
           ) : (
             <p className="text-muted-foreground text-center py-4">No hay datos de rendimiento para mostrar con el filtro actual.</p>
-          )}
-        </CardContent>
-      </Card>
-
-      <Card className="mb-6">
-        <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div>
-            <CardTitle className="flex items-center gap-2">
-              <LineChartIcon className="h-6 w-6 text-primary" />
-              Rendimiento Diario del Técnico Seleccionado
-            </CardTitle>
-            <CardDescription>
-              Visualiza ingresos y ganancias diarias para el técnico y rango de fechas elegidos.
-              Predeterminado al mes actual si no se selecciona un rango.
-            </CardDescription>
-          </div>
-          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-            <Select 
-              value={selectedTechnicianIdForChart} 
-              onValueChange={setSelectedTechnicianIdForChart}
-              disabled={technicians.length === 0}
-            >
-              <SelectTrigger className="w-full sm:w-[200px]">
-                <SelectValue placeholder="Seleccionar Técnico" />
-              </SelectTrigger>
-              <SelectContent>
-                {technicians.map(tech => (
-                  <SelectItem key={tech.id} value={tech.id}>{tech.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant={"outline"}
-                  className={cn(
-                    "w-full sm:w-[280px] justify-start text-left font-normal",
-                    !filterDateRange && "text-muted-foreground"
-                  )}
-                >
-                  <CalendarDateIcon className="mr-2 h-4 w-4" />
-                  {filterDateRange?.from ? (
-                    filterDateRange.to ? (
-                      <>
-                        {format(filterDateRange.from, "LLL dd, y", { locale: es })} -{" "}
-                        {format(filterDateRange.to, "LLL dd, y", { locale: es })}
-                      </>
-                    ) : (
-                      format(filterDateRange.from, "LLL dd, y", { locale: es })
-                    )
-                  ) : (
-                    <span>Seleccione rango</span>
-                  )}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="end">
-                <Calendar
-                  initialFocus
-                  mode="range"
-                  defaultMonth={filterDateRange?.from}
-                  selected={filterDateRange}
-                  onSelect={setFilterDateRange}
-                  numberOfMonths={2}
-                  locale={es}
-                />
-              </PopoverContent>
-            </Popover>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {selectedTechnicianIdForChart && lineChartData.length > 0 ? (
-            <ChartContainer config={lineChartConfig} className="min-h-[300px] w-full">
-              <LineChart 
-                data={lineChartData} 
-                margin={{ top: 5, right: 30, left: 20, bottom: 5 }} 
-              >
-                <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                <XAxis 
-                  dataKey="dateLabel" 
-                  tickLine={false} 
-                  axisLine={false} 
-                  tickMargin={8} 
-                  interval="preserveStartEnd"
-                />
-                <YAxis 
-                  tickFormatter={(value) => `$${value.toLocaleString('es-MX')}`}
-                  tickLine={false}
-                  axisLine={false}
-                  tickMargin={8}
-                  width={80}
-                />
-                <ChartTooltip
-                  cursor={true}
-                  content={<ChartTooltipContent 
-                              indicator="dot" 
-                              formatter={(value, name) => {
-                                const configEntry = lineChartConfig[name as keyof typeof lineChartConfig];
-                                const label = configEntry?.label || name;
-                                return `${label}: $${Number(value).toLocaleString('es-MX')}`;
-                              }} 
-                            />}
-                />
-                <ChartLegend content={<ChartLegendContent />} />
-                <Line 
-                  type="monotone" 
-                  dataKey="totalRevenue" 
-                  stroke="var(--color-totalRevenue)" 
-                  strokeWidth={2} 
-                  dot={{ r: 4, fill: "var(--color-totalRevenue)" }}
-                  activeDot={{ r: 6 }}
-                  name={lineChartConfig.totalRevenue.label as string}
-                />
-                <Line 
-                  type="monotone" 
-                  dataKey="totalProfit" 
-                  stroke="var(--color-totalProfit)" 
-                  strokeWidth={2}
-                  dot={{ r: 4, fill: "var(--color-totalProfit)" }}
-                  activeDot={{ r: 6 }}
-                  name={lineChartConfig.totalProfit.label as string}
-                />
-              </LineChart>
-            </ChartContainer>
-          ) : (
-            <p className="text-muted-foreground text-center py-8">
-              { !selectedTechnicianIdForChart ? "Por favor, seleccione un técnico para ver su rendimiento." : 
-                "No hay datos de rendimiento para el técnico y período seleccionados."}
-            </p>
           )}
         </CardContent>
       </Card>
@@ -396,6 +234,7 @@ export default function TecnicosPage() {
     
 
     
+
 
 
 
