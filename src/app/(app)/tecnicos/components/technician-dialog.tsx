@@ -41,13 +41,12 @@ export function TechnicianDialog({
       if (onSave) {
         await onSave(values);
       }
-      // Toast message will be handled by the caller (Page or Detail Page)
       onOpenChange(false);
     } catch (error) {
       console.error("Error saving technician:", error);
       toast({
         title: "Error al guardar",
-        description: "No se pudo guardar el técnico. Intente de nuevo.",
+        description: "No se pudo guardar el miembro del staff técnico. Intente de nuevo.",
         variant: "destructive",
       });
     }
@@ -59,9 +58,9 @@ export function TechnicianDialog({
       {open && (
         <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>{technician ? "Editar Técnico" : "Nuevo Técnico"}</DialogTitle>
+            <DialogTitle>{technician ? "Editar Miembro del Staff Técnico" : "Nuevo Miembro del Staff Técnico"}</DialogTitle>
             <DialogDescription>
-              {technician ? "Actualiza los detalles del perfil del técnico." : "Completa la información para un nuevo técnico."}
+              {technician ? "Actualiza los detalles del perfil del miembro del staff técnico." : "Completa la información para un nuevo miembro del staff técnico."}
             </DialogDescription>
           </DialogHeader>
           <TechnicianForm

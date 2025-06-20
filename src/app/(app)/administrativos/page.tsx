@@ -39,8 +39,8 @@ export default function AdministrativosPage() {
     setStaffList(updatedStaffList);
     placeholderAdministrativeStaff.push(newStaffMember);
     toast({
-        title: "Personal Creado",
-        description: `${newStaffMember.name} ha sido agregado al personal administrativo.`,
+        title: "Staff Creado",
+        description: `${newStaffMember.name} ha sido agregado al staff administrativo.`,
     });
   };
   
@@ -85,15 +85,15 @@ export default function AdministrativosPage() {
   return (
     <>
       <PageHeader
-        title="Personal Administrativo"
-        description="Gestiona los perfiles del personal administrativo y sus roles."
+        title="Staff Administrativo"
+        description="Gestiona los perfiles del staff administrativo y sus roles."
       />
 
       <div className="mb-6 grid gap-6 md:grid-cols-2">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
-              Total Personal Administrativo
+              Total Staff Administrativo
             </CardTitle>
             <Users className="h-5 w-5 text-blue-500" />
           </CardHeader>
@@ -152,7 +152,7 @@ export default function AdministrativosPage() {
             trigger={
                 <Button className="flex-1 sm:flex-initial">
                 <PlusCircle className="mr-2 h-4 w-4" />
-                Nuevo Personal
+                Nuevo Staff Administrativo
                 </Button>
             }
             onSave={handleSaveStaff}

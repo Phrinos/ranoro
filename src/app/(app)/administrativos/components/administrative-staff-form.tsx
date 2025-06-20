@@ -147,7 +147,7 @@ export function AdministrativeStaffForm({ initialData, onSubmit, onClose }: Admi
             Cancelar
           </Button>
           <Button type="submit" disabled={form.formState.isSubmitting}>
-            {form.formState.isSubmitting ? "Guardando..." : (initialData ? "Actualizar Personal" : "Crear Personal")}
+            {form.formState.isSubmitting ? "Guardando..." : (initialData ? "Actualizar Staff" : "Crear Staff")}
           </Button>
         </div>
       </form>

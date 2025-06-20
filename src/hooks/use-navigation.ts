@@ -28,7 +28,7 @@ import {
   FileText, 
   ClipboardList, 
   BarChart3, 
-  Briefcase // Added Briefcase for Administrativos
+  Briefcase
 } from 'lucide-react';
 
 export interface NavigationEntry {
@@ -86,29 +86,28 @@ const BASE_NAV_STRUCTURE: ReadonlyArray<Omit<NavigationEntry, 'isActive'>> = [
   
   // Mi Oficina
   {
-    label: 'Resumen Financiero', 
-    path: '/finanzas/resumen',
-    icon: BarChart3, 
-    groupTag: "Mi Oficina"
-  },
-  {
     label: 'Informe de Ventas', 
     path: '/finanzas/reporte',
     icon: LineChart,
     groupTag: "Mi Oficina"
   },
-  { 
-    label: 'Técnicos', 
-    path: '/tecnicos', 
-    icon: UserCog, 
+  {
+    label: 'Resumen Financiero', 
+    path: '/finanzas/resumen',
+    icon: BarChart3, 
     groupTag: "Mi Oficina"
   },
   { 
-    label: 'Administrativos', 
+    label: 'Staff Técnico', 
+    path: '/tecnicos', 
+    icon: UserCog, 
+    groupTag: "Mi Oficina" 
+  },
+  { 
+    label: 'Staff Administrativo', 
     path: '/administrativos', 
     icon: Briefcase, 
     groupTag: "Mi Oficina",
-    adminOnly: true 
   },
   {
     label: 'Configurar Ticket',
@@ -193,7 +192,6 @@ const useNavigation = (): NavigationEntry[] => {
   const sortedGroupEntries = DESIRED_GROUP_ORDER.reduce((acc, groupName) => {
     if (groupedByTag[groupName]) {
       const groupItems = groupedByTag[groupName].sort((a, b) => {
-        // Find original index in BASE_NAV_STRUCTURE to maintain defined order within groups
         const indexA = BASE_NAV_STRUCTURE.findIndex(nav => nav.path === a.path && nav.groupTag === a.groupTag);
         const indexB = BASE_NAV_STRUCTURE.findIndex(nav => nav.path === b.path && nav.groupTag === b.groupTag);
         return indexA - indexB;
