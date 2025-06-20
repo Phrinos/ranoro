@@ -83,7 +83,7 @@ export function TicketContent({ sale, service, vehicle, technician, previewWorks
 
 
   return (
-    <div className="font-mono bg-white text-black p-2 ticket-preview-content max-w-[300px] mx-auto text-[10px] leading-tight print:max-w-full print:text-[9px] print:p-0">
+    <div className="font-mono bg-white text-black p-2 ticket-preview-content max-w-[300px] mx-auto text-[10px] leading-tight print:max-w-full print:text-[9px] print:p-0 pt-5 pb-5">
       <div className="text-center mb-2">
         <h1 className="text-lg font-bold">{workshopInfo.name}</h1>
         <p>{workshopInfo.phone}</p>
