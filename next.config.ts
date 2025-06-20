@@ -3,7 +3,7 @@ import type {NextConfig} from 'next';
 
 const nextConfig: NextConfig = {
   /* config options here */
-  // Cache invalidation comment: 2024-07-25
+  // Cache invalidation comment: 2024-07-26 - Review
   typescript: {
     ignoreBuildErrors: !!false, // Changed for production
   },
@@ -23,3 +23,5 @@ const nextConfig: NextConfig = {
 };
 
 export default nextConfig;
+
+    
