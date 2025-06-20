@@ -192,41 +192,41 @@ export default function TecnicosPage() {
       <PageHeader
         title="Técnicos"
         description="Administra los perfiles y el rendimiento de los técnicos."
-        actions={
-          <div className="flex items-center gap-2">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline">
-                  <ListFilter className="mr-2 h-4 w-4" />
-                  Ordenar Tabla
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuLabel>Ordenar tabla por</DropdownMenuLabel>
-                <DropdownMenuRadioGroup value={sortOption} onValueChange={(value) => setSortOption(value as TechnicianSortOption)}>
-                  <DropdownMenuRadioItem value="name_asc">Nombre (A-Z)</DropdownMenuRadioItem>
-                  <DropdownMenuRadioItem value="name_desc">Nombre (Z-A)</DropdownMenuRadioItem>
-                  <DropdownMenuRadioItem value="area_asc">Área (A-Z)</DropdownMenuRadioItem>
-                  <DropdownMenuRadioItem value="area_desc">Área (Z-A)</DropdownMenuRadioItem>
-                  <DropdownMenuRadioItem value="hireDate_asc">Fecha Contratación (Antiguo a Nuevo)</DropdownMenuRadioItem>
-                  <DropdownMenuRadioItem value="hireDate_desc">Fecha Contratación (Nuevo a Antiguo)</DropdownMenuRadioItem>
-                  <DropdownMenuRadioItem value="salary_asc">Sueldo (Menor a Mayor)</DropdownMenuRadioItem>
-                  <DropdownMenuRadioItem value="salary_desc">Sueldo (Mayor a Menor)</DropdownMenuRadioItem>
-                </DropdownMenuRadioGroup>
-              </DropdownMenuContent>
-            </DropdownMenu>
-            <TechnicianDialog
-              trigger={
-                <Button>
-                  <PlusCircle className="mr-2 h-4 w-4" />
-                  Nuevo Técnico
-                </Button>
-              }
-              onSave={handleSaveTechnician}
-            />
-          </div>
-        }
       />
+
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle>Resumen de Rendimiento por Técnico (Rango Seleccionado)</CardTitle>
+          <CardDescription>
+            Totales de ingresos y ganancias para cada técnico basados en el rango de fechas seleccionado abajo.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {aggregatedTechnicianPerformance.length > 0 ? (
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              {aggregatedTechnicianPerformance.map(techPerf => (
+                <Card key={techPerf.technicianId} className="shadow-sm border">
+                  <CardHeader className="pb-3 pt-4">
+                    <CardTitle className="text-base font-medium">{techPerf.technicianName}</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-1 text-sm pb-4">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Ingresos Totales:</span>
+                      <span className="font-semibold">{formatCurrency(techPerf.totalRevenue)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Ganancia Total:</span>
+                      <span className="font-semibold text-green-600">{formatCurrency(techPerf.totalProfit)}</span>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <p className="text-muted-foreground text-center py-4">No hay datos de rendimiento para mostrar con el filtro actual.</p>
+          )}
+        </CardContent>
+      </Card>
 
       <Card className="mb-6">
         <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -356,40 +356,38 @@ export default function TecnicosPage() {
         </CardContent>
       </Card>
 
-      <Card className="mb-6">
-        <CardHeader>
-          <CardTitle>Resumen de Rendimiento por Técnico (Rango Seleccionado)</CardTitle>
-          <CardDescription>
-            Totales de ingresos y ganancias para cada técnico basados en el rango de fechas seleccionado arriba.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {aggregatedTechnicianPerformance.length > 0 ? (
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-              {aggregatedTechnicianPerformance.map(techPerf => (
-                <Card key={techPerf.technicianId} className="shadow-sm border">
-                  <CardHeader className="pb-3 pt-4">
-                    <CardTitle className="text-base font-medium">{techPerf.technicianName}</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-1 text-sm pb-4">
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Ingresos Totales:</span>
-                      <span className="font-semibold">{formatCurrency(techPerf.totalRevenue)}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Ganancia Total:</span>
-                      <span className="font-semibold text-green-600">{formatCurrency(techPerf.totalProfit)}</span>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          ) : (
-            <p className="text-muted-foreground text-center py-4">No hay datos de rendimiento para mostrar con el filtro actual.</p>
-          )}
-        </CardContent>
-      </Card>
-
+      <div className="mb-4 flex items-center justify-end gap-2">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline">
+              <ListFilter className="mr-2 h-4 w-4" />
+              Ordenar Tabla
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuLabel>Ordenar tabla por</DropdownMenuLabel>
+            <DropdownMenuRadioGroup value={sortOption} onValueChange={(value) => setSortOption(value as TechnicianSortOption)}>
+              <DropdownMenuRadioItem value="name_asc">Nombre (A-Z)</DropdownMenuRadioItem>
+              <DropdownMenuRadioItem value="name_desc">Nombre (Z-A)</DropdownMenuRadioItem>
+              <DropdownMenuRadioItem value="area_asc">Área (A-Z)</DropdownMenuRadioItem>
+              <DropdownMenuRadioItem value="area_desc">Área (Z-A)</DropdownMenuRadioItem>
+              <DropdownMenuRadioItem value="hireDate_asc">Fecha Contratación (Antiguo a Nuevo)</DropdownMenuRadioItem>
+              <DropdownMenuRadioItem value="hireDate_desc">Fecha Contratación (Nuevo a Antiguo)</DropdownMenuRadioItem>
+              <DropdownMenuRadioItem value="salary_asc">Sueldo (Menor a Mayor)</DropdownMenuRadioItem>
+              <DropdownMenuRadioItem value="salary_desc">Sueldo (Mayor a Menor)</DropdownMenuRadioItem>
+            </DropdownMenuRadioGroup>
+          </DropdownMenuContent>
+        </DropdownMenu>
+        <TechnicianDialog
+          trigger={
+            <Button>
+              <PlusCircle className="mr-2 h-4 w-4" />
+              Nuevo Técnico
+            </Button>
+          }
+          onSave={handleSaveTechnician}
+        />
+      </div>
 
       <TechniciansTable technicians={sortedTechniciansForTable} />
     </>
@@ -398,6 +396,7 @@ export default function TecnicosPage() {
     
 
     
+
 
 
 
