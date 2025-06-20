@@ -70,12 +70,11 @@ type POSFormValues = z.infer<typeof posFormSchema>;
 
 interface POSFormProps {
   inventoryItems: InventoryItem[];
-  onSaleComplete?: (saleData: SaleReceipt) => void; 
+  onSaleComplete: (saleData: SaleReceipt) => void; 
 }
 
 export function PosForm({ inventoryItems, onSaleComplete }: POSFormProps) {
   const { toast } = useToast();
-  const router = useRouter();
   const [subTotalState, setSubTotalState] = useState(0);
   const [taxState, setTaxState] = useState(0);
   const [totalState, setTotalState] = useState(0);
@@ -190,13 +189,7 @@ export function PosForm({ inventoryItems, onSaleComplete }: POSFormProps) {
       description: `Venta ${newSaleId} procesada por un total de $${newSaleTotalAmount.toLocaleString('es-MX', {minimumFractionDigits: 2})}.`,
     });
     
-    if (onSaleComplete) {
-      onSaleComplete(newSale); 
-    } else {
-      form.reset(); 
-      while(fields.length > 0) remove(0);
-      router.push('/pos'); 
-    }
+    onSaleComplete(newSale);
   };
   
   const formatCurrency = (amount: number | undefined) => {
@@ -379,3 +372,4 @@ export function PosForm({ inventoryItems, onSaleComplete }: POSFormProps) {
     </Form>
   );
 }
+

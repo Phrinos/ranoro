@@ -7,7 +7,7 @@ import { PosDialog } from "../components/pos-dialog";
 import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
 import { TicketContent } from '@/components/ticket-content';
 import { placeholderInventory } from "@/lib/placeholder-data";
-import type { SaleReceipt, Vehicle, Technician } from '@/types'; // Asegúrate de tener Vehicle y Technician si los usas para TicketContent
+import type { SaleReceipt, Vehicle, Technician } from '@/types'; 
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from 'next/navigation';
 import {
@@ -24,14 +24,12 @@ import {
 type DialogStep = 'pos' | 'confirm_sale' | 'print' | 'closed';
 
 export default function NuevaVentaPage() {
-  const { toast } = useToast(); // Toast sigue siendo útil para notificaciones no modales
+  const { toast } = useToast(); 
   const router = useRouter();
   
   const inventoryItems = placeholderInventory; 
   const [dialogStep, setDialogStep] = useState<DialogStep>('pos');
   const [currentSaleForTicket, setCurrentSaleForTicket] = useState<SaleReceipt | null>(null);
-  // Si el TicketContent necesita vehicle o technician, necesitarías estados para ellos también.
-  // Por ahora, asumimos que SaleReceipt es suficiente para el ticket de venta.
 
   useEffect(() => {
     if (dialogStep === 'closed') {
@@ -41,28 +39,14 @@ export default function NuevaVentaPage() {
 
   const handleSaleCompletion = (saleData: SaleReceipt) => {
     setCurrentSaleForTicket(saleData);
-    // El toast de "Venta Registrada" ya se muestra desde PosForm.
-    // Si quisieras un toast específico aquí, podrías añadirlo.
-    setDialogStep('confirm_sale'); // Transición al paso de confirmación
+    // Toast for "Venta Registrada" is shown from PosForm.
+    setDialogStep('confirm_sale'); 
   };
 
-  const handlePosDialogExternalClose = () => {
-    if (dialogStep === 'pos') { 
+  const handlePosDialogExternalClose = () => { 
+     if (dialogStep === 'pos') { 
       setDialogStep('closed');
     }
-  };
-
-  const handleConfirmationDialogClose = () => {
-    // Si el usuario cierra el diálogo de confirmación sin proceder (ej. con ESC),
-    // decidimos si ir a imprimir o cerrar todo. 
-    // Por el requisito de "automáticamente imprimir" tras la confirmación,
-    // el flujo principal es a través del botón de acción del AlertDialog.
-    // Si se cierra sin acción, podríamos ir a 'closed'.
-    // Por simplicidad y para seguir el flujo del botón de acción, no hacemos nada aquí explícitamente
-    // a menos que el onOpenChange del AlertDialog lo active.
-    // Dejaremos que el botón de acción del AlertDialog maneje la transición a 'print'.
-    // Si el AlertDialog se cierra por otra vía (ej. onOpenChange(false)), podría llevar a 'closed'.
-    // Esta función puede no ser necesaria si el AlertDialog solo se cierra a través de sus botones.
   };
   
   const handleProceedToPrint = () => {
@@ -96,10 +80,8 @@ export default function NuevaVentaPage() {
         <AlertDialog 
             open={true} 
             onOpenChange={(isOpen) => {
-                // Si el diálogo se cierra sin usar el botón de acción (ej. ESC),
-                // decidimos el comportamiento. Podría ser cerrar todo e ir a 'closed'.
                 if (!isOpen) {
-                    setCurrentSaleForTicket(null); // Limpiar datos de venta si se cancela la impresión
+                    setCurrentSaleForTicket(null); 
                     setDialogStep('closed');
                 }
             }}
@@ -128,7 +110,7 @@ export default function NuevaVentaPage() {
           }}
           title="Ticket de Venta"
           onDialogClose={handlePrintDialogClose}
-          autoPrint={true} // Habilitar impresión automática
+          autoPrint={true} 
         >
           <TicketContent sale={currentSaleForTicket} />
         </PrintTicketDialog>

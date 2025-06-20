@@ -11,7 +11,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { PosForm } from "./pos-form";
-import type { InventoryItem } from "@/types";
+import type { InventoryItem, SaleReceipt } from "@/types"; // Added SaleReceipt
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from 'next/navigation';
 
@@ -20,7 +20,7 @@ interface PosDialogProps {
   inventoryItems: InventoryItem[];
   open?: boolean;
   onOpenChange?: (isOpen: boolean) => void;
-  onSaleCompleteRedirectPath?: string;
+  onSaleComplete: (saleData: SaleReceipt) => void; // Changed to pass SaleReceipt
 }
 
 export function PosDialog({ 
@@ -28,11 +28,11 @@ export function PosDialog({
   inventoryItems,
   open: controlledOpen,
   onOpenChange: setControlledOpen,
-  onSaleCompleteRedirectPath = "/pos" // Default redirect path
+  onSaleComplete 
 }: PosDialogProps) {
   const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
-  const router = useRouter();
-  const { toast } = useToast();
+  // const router = useRouter(); // Not used here anymore
+  // const { toast } = useToast(); // Toast for sale complete is handled in PosForm
 
   const isControlled = controlledOpen !== undefined && setControlledOpen !== undefined;
   const open = isControlled ? controlledOpen : uncontrolledOpen;
@@ -43,18 +43,12 @@ export function PosDialog({
     } else {
       setUncontrolledOpen(isOpen);
     }
-    if (!isOpen && isControlled && setControlledOpen) { // If dialog is controlled and is being closed
-        router.push(onSaleCompleteRedirectPath); // Redirect on close if controlled
-    }
+    // Redirection logic is now handled by the parent page (NuevaVentaPage)
   };
 
-  const handleSaleComplete = () => {
-    if (isControlled && setControlledOpen) {
-      setControlledOpen(false); // This will trigger the redirect in handleOpenChange
-    } else {
-      setUncontrolledOpen(false);
-      router.push(onSaleCompleteRedirectPath);
-    }
+  const handleSaleCompleteInDialog = (saleData: SaleReceipt) => {
+    onSaleComplete(saleData); // Pass the sale data up
+    // Dialog closure will be handled by the parent page based on its flow
   };
 
 
@@ -71,10 +65,11 @@ export function PosDialog({
           </DialogHeader>
           <PosForm
             inventoryItems={inventoryItems}
-            onSaleComplete={handleSaleComplete}
+            onSaleComplete={handleSaleCompleteInDialog}
           />
         </DialogContent>
       )}
     </Dialog>
   );
 }
+
