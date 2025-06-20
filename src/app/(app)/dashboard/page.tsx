@@ -2,7 +2,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { format, parseISO, isToday, isFuture, isValid } from "date-fns";
+import { format, parseISO, isToday, isFuture, isValid, compareAsc } from "date-fns"; // Added compareAsc
 import { es } from 'date-fns/locale';
 import { PageHeader } from "@/components/page-header";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
