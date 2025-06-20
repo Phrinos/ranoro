@@ -31,7 +31,7 @@ import { VehicleDialog } from "../../vehiculos/components/vehicle-dialog";
 import type { VehicleFormValues } from "../../vehiculos/components/vehicle-form";
 import { placeholderVehicles as defaultPlaceholderVehicles } from "@/lib/placeholder-data";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label"; // Import Label
+import { Label } from "@/components/ui/label"; 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 
@@ -386,15 +386,15 @@ export function ServiceForm({
                   />
                 {selectedVehicle && (
                     <div className="p-3 border rounded-md bg-muted text-sm space-y-1">
-                        <p><strong>Vehículo Seleccionado:</strong> {selectedVehicle.make} {selectedVehicle.model} ({selectedVehicle.year})</p>
-                         {watchedStatus && (
-                            <div>
+                        {watchedStatus && (
+                            <div className="mb-1">
                                 <Badge variant={getStatusVariant(watchedStatus)} className="text-xs">
                                     {watchedStatus}
                                 </Badge>
                             </div>
                         )}
                         <p><strong>Placa:</strong> {selectedVehicle.licensePlate}</p>
+                        <p><strong>Vehículo Seleccionado:</strong> {selectedVehicle.make} {selectedVehicle.model} ({selectedVehicle.year})</p>
                         <p><strong>Propietario:</strong> {selectedVehicle.ownerName}</p>
                     </div>
                 )}
@@ -830,3 +830,4 @@ export function ServiceForm({
   );
 }
 
+    
