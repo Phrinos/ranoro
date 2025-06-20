@@ -1,6 +1,6 @@
 
 
-import type { Vehicle, ServiceRecord, Technician, InventoryItem, DashboardMetrics, SaleReceipt, ServiceSupply, TechnicianMonthlyPerformance, InventoryCategory, Supplier, SaleItem, PaymentMethod } from '@/types';
+import type { Vehicle, ServiceRecord, Technician, InventoryItem, DashboardMetrics, SaleReceipt, ServiceSupply, TechnicianMonthlyPerformance, InventoryCategory, Supplier, SaleItem, PaymentMethod, AppRole } from '@/types';
 import { format, subMonths, addDays, getYear, getMonth, setHours, setMinutes, subDays, startOfMonth, endOfMonth, startOfToday, endOfToday, startOfYesterday, endOfYesterday } from 'date-fns';
 import { es } from 'date-fns/locale';
 
@@ -268,6 +268,14 @@ export const placeholderTechnicianMonthlyPerformance: TechnicianMonthlyPerforman
   { id: 'T003-2024-07', technicianId: 'T003', monthYear: format(today, 'MMMM yyyy', { locale: es }), servicesCount: 6, revenueGenerated: 3500, earnings: 4900, penalties: 100 },
 ];
 
+export const placeholderAppRoles: AppRole[] = [
+    { id: 'role_superadmin', name: 'Superadmin', permissions: ['all'] }, // 'all' could be a special permission
+    { id: 'role_admin', name: 'Admin', permissions: ['dashboard:view', 'services:create', 'services:edit', 'inventory:manage', 'users:manage', 'finances:view_report'] },
+    { id: 'role_tecnico', name: 'Técnico', permissions: ['dashboard:view', 'services:edit', 'inventory:view'] },
+    { id: 'role_ventas', name: 'Ventas', permissions: ['dashboard:view', 'pos:create_sale', 'pos:view_sales', 'inventory:view'] },
+];
+
+
 // Helper functions to get date ranges
 export const getCurrentMonthRange = () => {
     const now = new Date();
@@ -298,3 +306,6 @@ export const getYesterdayRange = () => {
         to: endOfYesterday()
     };
 };
+
+// Constant for LocalStorage Key for AppRoles
+export const USER_ROLES_LOCALSTORAGE_KEY = 'appRoles';

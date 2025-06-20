@@ -148,5 +148,12 @@ export interface User {
   email: string;
   role: UserRole;
   password?: string; // Only for creation/update, not stored in localStorage directly
+  phone?: string; // Added phone field
+}
+
+export interface AppRole {
+  id: string;
+  name: string;
+  permissions: string[]; // Array of permission strings/keys
 }
 

@@ -24,6 +24,7 @@ import {
   DollarSign,
   Receipt,
   LineChart,
+  ShieldQuestion, // Added ShieldQuestion
 } from 'lucide-react';
 
 export interface NavigationEntry {
@@ -32,6 +33,7 @@ export interface NavigationEntry {
   path: string;
   isActive?: boolean;
   groupTag: string;
+  adminOnly?: boolean; // For conditional rendering based on role later
 }
 
 const BASE_NAV_STRUCTURE: ReadonlyArray<Omit<NavigationEntry, 'isActive'>> = [
@@ -77,19 +79,22 @@ const BASE_NAV_STRUCTURE: ReadonlyArray<Omit<NavigationEntry, 'isActive'>> = [
   { label: 'Proveedores', path: '/inventario/proveedores', icon: Building, groupTag: "Inventario" },
   
   // Administración
-  { label: 'Técnicos', path: '/tecnicos', icon: UserCog, groupTag: "Administración" },
-  { label: 'Usuarios', path: '/admin/usuarios', icon: Users, groupTag: "Administración" },
+  { label: 'Técnicos', path: '/tecnicos', icon: UserCog, groupTag: "Administración", adminOnly: true },
+  { label: 'Usuarios', path: '/admin/usuarios', icon: Users, groupTag: "Administración", adminOnly: true },
+  { label: 'Roles y Permisos', path: '/admin/roles', icon: ShieldQuestion, groupTag: "Administración", adminOnly: true }, // Added Roles link
   {
     label: 'Migración de Datos',
     path: '/admin/migracion-datos',
     icon: DatabaseZap,
-    groupTag: "Administración"
+    groupTag: "Administración",
+    adminOnly: true
   },
   {
     label: 'Configurar Ticket',
     path: '/admin/configuracion-ticket',
     icon: Settings,
-    groupTag: "Administración"
+    groupTag: "Administración",
+    adminOnly: true
   },
 ];
 
@@ -99,12 +104,18 @@ const DESIRED_GROUP_ORDER = ["Principal", "Clientes", "Servicios", "Finanzas", "
 const useNavigation = (): NavigationEntry[] => {
   const pathname = usePathname();
 
-  const entriesWithActiveState = BASE_NAV_STRUCTURE.map(entry => {
+  // In a real app, you'd get the user's role here to filter adminOnly links
+  // const currentUserRole = typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('authUser') || '{}').role : null;
+  // const filteredNavStructure = BASE_NAV_STRUCTURE.filter(entry => 
+  //   !entry.adminOnly || (currentUserRole === 'admin' || currentUserRole === 'superadmin')
+  // );
+  const filteredNavStructure = BASE_NAV_STRUCTURE; // For now, show all
+
+  const entriesWithActiveState = filteredNavStructure.map(entry => {
     let isActive = pathname === entry.path;
 
-    // More specific paths should take precedence for active state
     if (!isActive && entry.path && entry.path !== '/' && entry.path.length > 1 && pathname.startsWith(entry.path + '/')) {
-        const isMoreSpecificActiveEntry = BASE_NAV_STRUCTURE.some(
+        const isMoreSpecificActiveEntry = filteredNavStructure.some(
           otherEntry => otherEntry.path.startsWith(pathname) && otherEntry.path.length > entry.path.length && otherEntry.path !== entry.path
         );
         if (!isMoreSpecificActiveEntry) {
@@ -112,7 +123,6 @@ const useNavigation = (): NavigationEntry[] => {
         }
     }
     
-    // Handle special cases where a parent route should be active
     if (entry.path === '/servicios' &&
         (pathname.startsWith('/servicios/nuevo') ||
          pathname.startsWith('/servicios/historial') ||
@@ -133,12 +143,17 @@ const useNavigation = (): NavigationEntry[] => {
      if (entry.path === '/finanzas/reporte' && pathname === '/finanzas/reporte') {
       isActive = true;
     }
+    if (entry.path === '/admin/usuarios' && pathname.startsWith('/admin/roles')) { // Make Usuarios active if on Roles
+        isActive = false; // Ensure only one is active
+    }
+    if (entry.path === '/admin/roles' && pathname === '/admin/roles') {
+        isActive = true;
+    }
 
 
     return { ...entry, isActive };
   });
   
-  // Group and sort
   const groupedByTag = entriesWithActiveState.reduce((acc, item) => {
       const tag = item.groupTag;
       if (!acc[tag]) {

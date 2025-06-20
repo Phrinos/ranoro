@@ -3,9 +3,9 @@
 
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
-import { UserCircle, Settings, LogOut } from "lucide-react"; // Added LogOut
+import { UserCircle, Settings, LogOut, UserCog } from "lucide-react"; // Added UserCog
 import Link from "next/link";
-import { useRouter } from "next/navigation"; // Added useRouter
+import { useRouter } from "next/navigation"; 
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,7 +14,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useToast } from "@/hooks/use-toast"; // Added useToast
+import { useToast } from "@/hooks/use-toast"; 
 
 export function AppHeader() {
   const router = useRouter();
@@ -49,9 +49,13 @@ export function AppHeader() {
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>Mi Cuenta</DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => router.push('/admin/configuracion-ticket')}> {/* Example link */}
+            <DropdownMenuItem onClick={() => router.push('/perfil')}>
+              <UserCog className="mr-2 h-4 w-4" />
+              <span>Mi Perfil</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => router.push('/admin/configuracion-ticket')}>
               <Settings className="mr-2 h-4 w-4" />
-              <span>Configuración</span>
+              <span>Configuración de Ticket</span>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={handleLogout}>
