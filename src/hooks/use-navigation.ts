@@ -27,7 +27,8 @@ import {
   ShieldQuestion,
   FileText, 
   ClipboardList, 
-  BarChart3, // Added for Resumen Financiero
+  BarChart3, 
+  Briefcase // Added Briefcase for Administrativos
 } from 'lucide-react';
 
 export interface NavigationEntry {
@@ -85,13 +86,13 @@ const BASE_NAV_STRUCTURE: ReadonlyArray<Omit<NavigationEntry, 'isActive'>> = [
   
   // Mi Oficina
   {
-    label: 'Resumen Financiero', // New Item
+    label: 'Resumen Financiero', 
     path: '/finanzas/resumen',
     icon: BarChart3, 
     groupTag: "Mi Oficina"
   },
   {
-    label: 'Informe de Ventas', // Renamed
+    label: 'Informe de Ventas', 
     path: '/finanzas/reporte',
     icon: LineChart,
     groupTag: "Mi Oficina"
@@ -100,7 +101,13 @@ const BASE_NAV_STRUCTURE: ReadonlyArray<Omit<NavigationEntry, 'isActive'>> = [
     label: 'Técnicos', 
     path: '/tecnicos', 
     icon: UserCog, 
-    groupTag: "Mi Oficina", 
+    groupTag: "Mi Oficina"
+  },
+  { 
+    label: 'Administrativos', 
+    path: '/administrativos', 
+    icon: Briefcase, 
+    groupTag: "Mi Oficina",
     adminOnly: true 
   },
   {
@@ -186,7 +193,10 @@ const useNavigation = (): NavigationEntry[] => {
   const sortedGroupEntries = DESIRED_GROUP_ORDER.reduce((acc, groupName) => {
     if (groupedByTag[groupName]) {
       const groupItems = groupedByTag[groupName].sort((a, b) => {
-        return BASE_NAV_STRUCTURE.findIndex(nav => nav.path === a.path) - BASE_NAV_STRUCTURE.findIndex(nav => nav.path === b.path);
+        // Find original index in BASE_NAV_STRUCTURE to maintain defined order within groups
+        const indexA = BASE_NAV_STRUCTURE.findIndex(nav => nav.path === a.path && nav.groupTag === a.groupTag);
+        const indexB = BASE_NAV_STRUCTURE.findIndex(nav => nav.path === b.path && nav.groupTag === b.groupTag);
+        return indexA - indexB;
       });
       acc.push(...groupItems);
     }

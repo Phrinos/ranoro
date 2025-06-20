@@ -1,5 +1,5 @@
 
-import type { Vehicle, ServiceRecord, Technician, InventoryItem, DashboardMetrics, SaleReceipt, ServiceSupply, TechnicianMonthlyPerformance, InventoryCategory, Supplier, SaleItem, PaymentMethod, AppRole, QuoteRecord, MonthlyFixedExpense } from '@/types'; // Added QuoteRecord, MonthlyFixedExpense
+import type { Vehicle, ServiceRecord, Technician, InventoryItem, DashboardMetrics, SaleReceipt, ServiceSupply, TechnicianMonthlyPerformance, InventoryCategory, Supplier, SaleItem, PaymentMethod, AppRole, QuoteRecord, MonthlyFixedExpense, AdministrativeStaff } from '@/types'; // Added QuoteRecord, MonthlyFixedExpense
 import { format, subMonths, addDays, getYear, getMonth, setHours, setMinutes, subDays, startOfMonth, endOfMonth, startOfToday, endOfToday, startOfYesterday, endOfYesterday } from 'date-fns';
 import { es } from 'date-fns/locale';
 
@@ -24,6 +24,11 @@ export const placeholderTechnicians: Technician[] = [
   { id: 'T003', name: 'Miguel Ángel Torres', area: 'Mecánica General', specialty: 'Frenos y Suspensión', contactInfo: '555-9999', hireDate: '2023-03-10', monthlySalary: 11000, notes: 'Rápido y eficiente.' },
 ];
 
+export const placeholderAdministrativeStaff: AdministrativeStaff[] = [
+  { id: 'ADM001', name: 'Sofía Vargas', roleOrArea: 'Gerente de Oficina', hireDate: '2020-05-10', monthlySalary: 18000, contactInfo: '555-0011', notes: 'Responsable de administración general y atención al cliente.' },
+  { id: 'ADM002', name: 'Luis Morales', roleOrArea: 'Recepción', hireDate: '2023-08-01', monthlySalary: 9000, contactInfo: '555-0012', notes: 'Encargado de agendar citas y recibir clientes.' },
+];
+
 export const placeholderCategories: InventoryCategory[] = [
   { id: 'CAT001', name: 'Filtros' },
   { id: 'CAT002', name: 'Frenos' },
@@ -43,7 +48,7 @@ export const placeholderSuppliers: Supplier[] = [
 
 // unitPrice is cost to workshop (pre-tax)
 // sellingPrice is final selling price to customer (tax-inclusive)
-export const placeholderInventory: InventoryItem[] = [
+export let placeholderInventory: InventoryItem[] = [
   { id: 'P001', name: 'Filtro de Aceite Bosch', sku: 'BOSCH-OF-001', quantity: 150, unitPrice: 70, sellingPrice: 98.60, lowStockThreshold: 10, category: 'Filtros', supplier: 'Repuestos Express' }, // 70 * 1.16 = 81.2, let's make it a bit more for profit margin, sellingPrice with tax = 98.60 -> subtotal = 85
   { id: 'P002', name: 'Pastillas de Freno Brembo Delanteras', sku: 'BREMBO-BP-002', quantity: 25, unitPrice: 300, sellingPrice: 406, lowStockThreshold: 5, category: 'Frenos', supplier: 'AutoPartes Premium' }, // 300 -> sellingPrice with tax = 406 -> subtotal = 350
   { id: 'P003', name: 'Bujía NGK CR9EK', sku: 'NGK-SP-003', quantity: 200, unitPrice: 30, sellingPrice: 40.60, lowStockThreshold: 20, category: 'Motor', supplier: 'NGK Spark Plugs Co.' }, // 30 -> sellingPrice with tax = 40.60 -> subtotal = 35
@@ -69,7 +74,7 @@ const totalSuppliesCost2 = sampleSuppliesUsed2.reduce((sum, s) => sum + (s.unitP
 // subTotal = totalCost / 1.16
 // taxAmount = totalCost - subTotal
 // serviceProfit = totalCost - totalSuppliesCost (where totalCost is IVA inclusive, and totalSuppliesCost is workshop cost)
-export const placeholderServiceRecords: ServiceRecord[] = [
+export let placeholderServiceRecords: ServiceRecord[] = [
   {
     id: 'S001',
     vehicleId: 1,
@@ -205,7 +210,7 @@ export const placeholderDashboardMetrics: DashboardMetrics = {
 // totalAmount = sum of items.totalPrice
 // subTotal = totalAmount / 1.16
 // tax = totalAmount - subTotal
-export const placeholderSales: SaleReceipt[] = [
+export let placeholderSales: SaleReceipt[] = [
     {
         id: 'SALE001',
         saleDate: setHours(setMinutes(today, 15), 10).toISOString(),
@@ -275,7 +280,7 @@ export const placeholderAppRoles: AppRole[] = [
     { id: 'role_ventas', name: 'Ventas', permissions: ['dashboard:view', 'pos:create_sale', 'pos:view_sales', 'inventory:view'] },
 ];
 
-export const placeholderQuotes: QuoteRecord[] = []; // New placeholder for quotes
+export let placeholderQuotes: QuoteRecord[] = []; // New placeholder for quotes
 
 
 // Helper functions to get date ranges
@@ -312,7 +317,7 @@ export const getYesterdayRange = () => {
 // Constant for LocalStorage Key for AppRoles
 export const USER_ROLES_LOCALSTORAGE_KEY = 'appRoles';
 
-export const placeholderFixedMonthlyExpenses: MonthlyFixedExpense[] = [
+export let placeholderFixedMonthlyExpenses: MonthlyFixedExpense[] = [
   { id: 'rent', name: 'Renta del Local', amount: 15000 },
   { id: 'utilities', name: 'Servicios (Luz, Agua, Internet)', amount: 3500 },
   { id: 'cleaning', name: 'Limpieza y Mantenimiento General', amount: 1200 },

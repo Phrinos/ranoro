@@ -54,6 +54,16 @@ export interface Technician {
   notes?: string; 
 }
 
+export interface AdministrativeStaff {
+  id: string;
+  name: string;
+  roleOrArea: string; 
+  contactInfo?: string;
+  hireDate?: string;
+  monthlySalary?: number;
+  notes?: string;
+}
+
 export interface TechnicianMonthlyPerformance {
   id: string; 
   technicianId: string;
