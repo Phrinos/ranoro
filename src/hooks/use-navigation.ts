@@ -54,24 +54,17 @@ const BASE_NAV_STRUCTURE: ReadonlyArray<Omit<NavigationEntry, 'isActive'>> = [
     groupTag: "Principal"
   },
   
-  // Servicios - Reordered
-  { label: 'Nuevo Servicio', path: '/servicios/nuevo', icon: PlusCircle, groupTag: "Servicios" },
-  { label: 'Servicios', path: '/servicios/historial', icon: Wrench, groupTag: "Servicios" }, // Renamed from Historial de Servicios
+  // Servicios
+  { label: 'Servicios', path: '/servicios/historial', icon: Wrench, groupTag: "Servicios" },
   { label: 'Agenda', path: '/servicios/agenda', icon: CalendarClock, groupTag: "Servicios" },
-  { label: 'Lista de Servicios', path: '/servicios', icon: List, groupTag: "Servicios" }, // Changed icon for clarity
+  { label: 'Lista de Servicios', path: '/servicios', icon: List, groupTag: "Servicios" },
 
 
   // Finanzas
   {
-    label: 'Nueva Venta',
-    path: '/pos/nuevo',
-    icon: Receipt,
-    groupTag: "Finanzas"
-  },
-  {
-    label: 'Registro de Ventas',
+    label: 'Punto de Venta', // Renamed from 'Registro de Ventas'
     path: '/pos',
-    icon: DollarSign,
+    icon: Receipt, // Changed icon from DollarSign
     groupTag: "Finanzas"
   },
   {
@@ -126,25 +119,24 @@ const useNavigation = (): NavigationEntry[] => {
         }
     }
     
-    // Specific active states based on new structure
     if (entry.path === '/cotizaciones/historial' && (pathname === '/cotizaciones/historial' || pathname.startsWith('/cotizaciones/nuevo'))) {
         isActive = true;
     }
-    if (entry.path === '/servicios/historial' && (pathname === '/servicios/historial' || pathname.startsWith('/servicios/nuevo') || pathname.startsWith('/servicios/agenda'))) {
+    
+    if (entry.path === '/servicios/historial' && 
+        (pathname === '/servicios/historial' || 
+         pathname.startsWith('/servicios/nuevo') || 
+         pathname.startsWith('/servicios/agenda'))) {
       isActive = true;
     }
     
-    // Original logic for other parent active states
     if (entry.path === '/servicios' &&
         (pathname.startsWith('/servicios/nuevo') ||
          pathname.startsWith('/servicios/historial') ||
          pathname.startsWith('/servicios/agenda'))
        ) {
-      // Ensure this doesn't override the more specific /servicios/historial if "Lista de Servicios" should be active
-      // If "Lista de Servicios" is active, "Servicios" (historial) shouldn't also be.
-      // The more specific path match should take precedence.
       if (entry.label === 'Lista de Servicios') isActive = true;
-      else if (entry.label === 'Servicios') isActive = false; // Prevent both from being active if not intended
+      else if (entry.label === 'Servicios') isActive = false; 
     }
 
     if (entry.path === '/inventario' &&
@@ -154,9 +146,11 @@ const useNavigation = (): NavigationEntry[] => {
        )) {
       isActive = true;
     }
+
      if (entry.path === '/pos' && pathname.startsWith('/pos/nuevo')) {
       isActive = true;
     }
+
      if (entry.path === '/finanzas/reporte' && pathname === '/finanzas/reporte') {
       isActive = true;
     }

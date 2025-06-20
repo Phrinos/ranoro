@@ -8,7 +8,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Search, ListFilter, CalendarIcon as CalendarDateIcon, Receipt, ShoppingCart, CreditCard, DollarSign, Filter as FilterIcon, Printer } from "lucide-react";
+import { Search, ListFilter, CalendarIcon as CalendarDateIcon, Receipt, ShoppingCart, CreditCard, DollarSign, Filter as FilterIcon, Printer, PlusCircle } from "lucide-react"; // Added PlusCircle
 import { SalesTable } from "./components/sales-table"; 
 import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
 import { TicketContent } from '@/components/ticket-content';
@@ -142,8 +142,16 @@ export default function POSPage() {
   return (
     <>
       <PageHeader
-        title="Registro de Ventas"
+        title="Punto de Venta"
         description="Consulta, filtra y ordena todas las ventas de mostrador."
+        actions={
+          <Button asChild>
+            <Link href="/pos/nuevo">
+              <PlusCircle className="mr-2 h-4 w-4" />
+              Nueva Venta
+            </Link>
+          </Button>
+        }
       />
 
       <div className="mb-6 grid gap-6 md:grid-cols-2 lg:grid-cols-4">
