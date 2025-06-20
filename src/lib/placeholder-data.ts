@@ -15,6 +15,7 @@ export const placeholderVehicles: Vehicle[] = [
   { id: 1, make: 'Toyota', model: 'Corolla', year: 2020, vin: 'ABC123XYZ789', ownerName: 'Juan Pérez', ownerPhone: '555-1111', ownerEmail: 'juan.perez@email.com', licensePlate: 'PQR-123', color: 'Rojo', notes: 'Cliente frecuente, prefiere aceite sintético.' },
   { id: 2, make: 'Honda', model: 'Civic', year: 2019, vin: 'DEF456UVW456', ownerName: 'Maria López', ownerPhone: '555-2222', ownerEmail: 'maria.lopez@email.com', licensePlate: 'STU-456', color: 'Azul Metálico', notes: 'Revisar alineación en próxima visita.' },
   { id: 3, make: 'Ford', model: 'F-150', year: 2021, vin: 'GHI789RST123', ownerName: 'Carlos Sánchez', ownerPhone: '555-3333', ownerEmail: 'carlos.sanchez@email.com', licensePlate: 'VWX-789', color: 'Negro', notes: 'Uso rudo, verificar suspensión.' },
+  { id: 4, make: 'Toyota', model: 'Corolla', year: 2022, vin: 'VINCOROLLA004', ownerName: 'Arturo Valdelamar', ownerPhone: '4493930914', ownerEmail: 'pantacomputacion@gmail.com', licensePlate: 'AAA123A', color: 'Rojo', notes: 'Nuevo cliente.' },
 ];
 
 export const placeholderTechnicians: Technician[] = [
@@ -101,7 +102,7 @@ export const placeholderServiceRecords: ServiceRecord[] = [
     taxAmount: 870 - (870 / (1 + IVA_RATE)),
     totalSuppliesCost: totalSuppliesCost2,
     serviceProfit: 870 - totalSuppliesCost2,
-    status: 'Reparando', // Changed from 'En Progreso'
+    status: 'Reparando', 
     mileage: 62000,
   },
   {
@@ -118,7 +119,7 @@ export const placeholderServiceRecords: ServiceRecord[] = [
     taxAmount: 348 - (348 / (1 + IVA_RATE)),
     totalSuppliesCost: 0,
     serviceProfit: 348 - 0,
-    status: 'Reparando', // Changed from 'Pendiente'
+    status: 'Reparando', 
     mileage: 30500,
   },
   {
@@ -310,3 +311,4 @@ export const getYesterdayRange = () => {
 
 // Constant for LocalStorage Key for AppRoles
 export const USER_ROLES_LOCALSTORAGE_KEY = 'appRoles';
+
