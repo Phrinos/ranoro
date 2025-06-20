@@ -17,7 +17,7 @@ import { parseISO, compareAsc, compareDesc, format, isValid, startOfMonth, endOf
 import { es } from 'date-fns/locale';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
+import { Calendar } from "@/components/ui/calendar"; // Added this import
 import type { DateRange } from "react-day-picker";
 import { cn } from "@/lib/utils";
 
@@ -41,10 +41,15 @@ export default function AdministrativosPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [sortOption, setSortOption] = useState<StaffSortOption>("name_asc");
   
-  const [filterDateRange, setFilterDateRange] = useState<DateRange | undefined>(() => {
-    const now = new Date();
-    return { from: startOfMonth(now), to: endOfMonth(now) };
-  });
+  const [filterDateRange, setFilterDateRange] = useState<DateRange | undefined>(undefined);
+
+  useEffect(() => {
+    // Initialize date range on client side to avoid hydration issues
+    if (typeof window !== 'undefined') {
+        const now = new Date();
+        setFilterDateRange({ from: startOfMonth(now), to: endOfMonth(now) });
+    }
+  }, []);
   
   const handleSaveStaff = async (data: AdministrativeStaffFormValues) => {
     const newStaffMember: AdministrativeStaff = {
@@ -102,11 +107,18 @@ export default function AdministrativosPage() {
   }, [staffList]);
 
   const aggregatedAdminPerformance = useMemo((): AggregatedAdminStaffPerformance[] => {
-    let dateFrom = filterDateRange?.from ? startOfDay(filterDateRange.from) : startOfMonth(new Date());
-    let dateTo = filterDateRange?.to ? endOfDay(filterDateRange.to) : endOfMonth(new Date());
-    if (filterDateRange?.from && !filterDateRange.to) { 
-        dateTo = endOfDay(filterDateRange.from);
+    if (!filterDateRange || !filterDateRange.from) {
+        return staffList.map(staff => ({
+            staffId: staff.id,
+            staffName: staff.name,
+            baseSalary: staff.monthlySalary || 0,
+            commissionEarned: 0,
+            totalEarnings: staff.monthlySalary || 0,
+        }));
     }
+
+    let dateFrom = startOfDay(filterDateRange.from);
+    let dateTo = filterDateRange.to ? endOfDay(filterDateRange.to) : endOfDay(filterDateRange.from);
 
     const completedServicesInRange = placeholderServiceRecords.filter(service => {
         if (service.status !== 'Completado') return false;
