@@ -11,7 +11,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { Badge } from "@/components/ui/badge"; // Badge component is imported
 import type { SaleReceipt } from "@/types";
 import { format, parseISO, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -23,15 +23,16 @@ interface SalesTableProps {
 }
 
 // Define the explicit type for badge variants used in this component
-type BadgeVariantType = 
-  | "default" 
-  | "secondary" 
-  | "destructive" 
-  | "outline" 
-  | "success" 
-  | "purple" 
-  | "blue" 
-  | "lightGreen" 
+// This type lists the valid string literals for the Badge's variant prop.
+type BadgeVariantType =
+  | "default"
+  | "secondary"
+  | "destructive"
+  | "outline"
+  | "success"
+  | "purple"
+  | "blue"
+  | "lightGreen"
   | "lightPurple";
 
 export function SalesTable({ sales, onReprintTicket }: SalesTableProps) {
@@ -43,6 +44,7 @@ export function SalesTable({ sales, onReprintTicket }: SalesTableProps) {
     return `$${amount.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   };
 
+  // This function now returns the explicit string literal union type BadgeVariantType
   const getPaymentMethodVariant = (method?: SaleReceipt['paymentMethod']): BadgeVariantType => {
     switch (method) {
       case "Efectivo": return "success";
@@ -73,10 +75,10 @@ export function SalesTable({ sales, onReprintTicket }: SalesTableProps) {
         <TableBody>
           {sales.map((sale) => {
             const saleDate = parseISO(sale.saleDate);
-            const formattedDate = isValid(saleDate) 
-              ? format(saleDate, "dd MMM yyyy, HH:mm", { locale: es }) 
+            const formattedDate = isValid(saleDate)
+              ? format(saleDate, "dd MMM yyyy, HH:mm", { locale: es })
               : 'Fecha Inválida';
-            
+
             return (
               <TableRow key={sale.id}>
                 <TableCell className="font-medium">{sale.id}</TableCell>
@@ -84,6 +86,7 @@ export function SalesTable({ sales, onReprintTicket }: SalesTableProps) {
                 <TableCell>{sale.customerName || 'N/A'}</TableCell>
                 <TableCell className="text-center">{sale.items.length}</TableCell>
                 <TableCell>
+                  {/* The Badge component is used here. Its 'variant' prop expects one of the strings defined in BadgeVariantType */}
                   <Badge variant={getPaymentMethodVariant(sale.paymentMethod)}>
                     {sale.paymentMethod}
                   </Badge>
