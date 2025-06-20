@@ -17,8 +17,16 @@ const badgeVariants = cva(
           "border-transparent bg-destructive text-destructive-foreground hover:bg-destructive/80",
         outline: // For "Pendiente" - white/transparent with border
           "text-foreground",
-        success: // For "Completado" - green
+        success: // For "Completado" and "Efectivo" - green
           "border-transparent bg-green-600 text-primary-foreground hover:bg-green-600/80",
+        purple: // For "Tarjeta"
+          "border-transparent bg-purple-500 text-white hover:bg-purple-500/80 dark:bg-purple-600 dark:hover:bg-purple-600/80",
+        blue: // For "Transferencia"
+          "border-transparent bg-blue-500 text-white hover:bg-blue-500/80 dark:bg-blue-600 dark:hover:bg-blue-600/80",
+        lightGreen: // For "Efectivo+Transferencia"
+          "border-transparent bg-green-300 text-green-800 hover:bg-green-300/80 dark:bg-green-700 dark:text-green-100 dark:hover:bg-green-700/80",
+        lightPurple: // For "Tarjeta+Transferencia"
+          "border-transparent bg-purple-300 text-purple-800 hover:bg-purple-300/80 dark:bg-purple-700 dark:text-purple-100 dark:hover:bg-purple-700/80",
       },
     },
     defaultVariants: {
