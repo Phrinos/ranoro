@@ -325,6 +325,13 @@ export function ServiceForm({
     setIsAddSupplyDialogOpen(false);
   };
 
+  const handleVehiclePlateKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      handleSearchVehicle();
+    }
+  };
+
 
   return (
     <>
@@ -388,6 +395,7 @@ export function ServiceForm({
                                     }}
                                     disabled={isReadOnly} 
                                     className="uppercase"
+                                    onKeyDown={handleVehiclePlateKeyDown}
                                 />
                                 </FormControl>
                             </FormItem>
@@ -560,11 +568,10 @@ export function ServiceForm({
                         name="totalServicePrice"
                         render={({ field }) => (
                             <FormItem>
-                                <FormLabel>Costo del Servicio</FormLabel>
+                                <FormLabel className="text-lg">Costo del Servicio (IVA incluido)</FormLabel>
                                 <FormControl>
                                 <Input type="number" step="0.01" placeholder="Ej: 1740.00" {...field} disabled={isReadOnly} className="text-lg font-medium"/>
                                 </FormControl>
-                                <FormDescription>Monto final que pagará el cliente (IVA incluido).</FormDescription>
                                 <FormMessage />
                             </FormItem>
                         )}
@@ -719,7 +726,7 @@ export function ServiceForm({
                     <span className="font-medium text-red-600 dark:text-red-400">{formatCurrency(totalSuppliesCost)}</span>
                 </div>
                 <hr className="my-2 border-dashed"/>
-                <div className="flex justify-between font-bold text-green-700 dark:text-green-400">
+                <div className="flex justify-between font-bold text-green-700 dark:text-green-400 text-base">
                     <span>(=) Ganancia Estimada del Servicio:</span> 
                     <span>{formatCurrency(serviceProfit)}</span>
                 </div>
@@ -799,3 +806,4 @@ export function ServiceForm({
     </>
   );
 }
+
