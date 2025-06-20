@@ -41,7 +41,7 @@ export default function NuevaCotizacionPage() {
 
   useEffect(() => {
     if (dialogStep === 'closed') {
-      router.push('/dashboard'); 
+      router.push('/cotizaciones/historial'); 
     }
   }, [dialogStep, router]);
 
@@ -200,3 +200,4 @@ export default function NuevaCotizacionPage() {
     </>
   );
 }
+

@@ -190,3 +190,4 @@ export function QuoteContent({ quote, vehicle, preparedByTechnician, previewWork
     </div>
   );
 }
+
