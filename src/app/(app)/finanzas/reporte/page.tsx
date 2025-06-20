@@ -10,7 +10,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuLabel, DropdownMenuRadio
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Search, ListFilter, CalendarIcon as CalendarDateIcon, DollarSign, LineChart, ShoppingCart, Wrench, TrendingUp, Activity } from "lucide-react";
-import { placeholderSales, placeholderServiceRecords, placeholderInventory, getCurrentMonthRange, getLastMonthRange, getTodayRange } from "@/lib/placeholder-data";
+import { placeholderSales, placeholderServiceRecords, placeholderInventory, getCurrentMonthRange, getLastMonthRange, getTodayRange, calculateSaleProfit } from "@/lib/placeholder-data";
 import type { SaleReceipt, ServiceRecord, FinancialOperation, InventoryItem } from "@/types";
 import { useState, useEffect, useMemo } from "react";
 import { format, parseISO, compareAsc, compareDesc, isWithinInterval, isValid, startOfDay, endOfDay, isSameDay } from "date-fns";
@@ -26,7 +26,7 @@ type OperationSortOption =
   | "profit_desc" | "profit_asc";
 
 type OperationTypeFilter = "all" | "Venta" | "Servicio";
-const IVA_RATE = 0.16;
+const IVA_RATE = 0.16; // This is defined in placeholder-data.ts but also used here. Ensure consistency or import.
 
 export default function FinancialReportPage() {
   const [allSales, setAllSales] = useState<SaleReceipt[]>(placeholderSales);
@@ -38,14 +38,7 @@ export default function FinancialReportPage() {
   const [sortOption, setSortOption] = useState<OperationSortOption>("date_desc");
   const [operationTypeFilter, setOperationTypeFilter] = useState<OperationTypeFilter>("all");
 
-  const calculateSaleProfit = (sale: SaleReceipt): number => {
-    return sale.items.reduce((profit, saleItem) => {
-        const inventoryItem = inventory.find(inv => inv.id === saleItem.inventoryItemId);
-        const costPrice = inventoryItem ? inventoryItem.unitPrice : 0; 
-        const sellingPriceSubTotal = saleItem.unitPrice / (1 + IVA_RATE); 
-        return profit + (sellingPriceSubTotal - costPrice) * saleItem.quantity;
-    }, 0);
-  };
+  // calculateSaleProfit is now imported from placeholder-data
 
   const combinedOperations = useMemo((): FinancialOperation[] => {
     const salesOperations: FinancialOperation[] = allSales.map(sale => ({
@@ -54,7 +47,7 @@ export default function FinancialReportPage() {
       type: 'Venta',
       description: `Venta a ${sale.customerName || 'Cliente Mostrador'} - ${sale.items.length} artículo(s)`,
       totalAmount: sale.totalAmount, 
-      profit: calculateSaleProfit(sale),
+      profit: calculateSaleProfit(sale, inventory, IVA_RATE), // Pass inventory and IVA_RATE
       originalObject: sale,
     }));
 
@@ -160,8 +153,8 @@ export default function FinancialReportPage() {
   return (
     <>
       <PageHeader
-        title="Reporte Financiero"
-        description="Consolida ventas y servicios para un análisis financiero completo."
+        title="Informe de Ventas"
+        description="Consolida ventas y servicios para un análisis detallado de ingresos y ganancias."
       />
 
       <div className="mb-6 grid gap-6 md:grid-cols-2 lg:grid-cols-4">

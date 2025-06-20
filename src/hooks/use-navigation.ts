@@ -27,6 +27,7 @@ import {
   ShieldQuestion,
   FileText, 
   ClipboardList, 
+  BarChart3, // Added for Resumen Financiero
 } from 'lucide-react';
 
 export interface NavigationEntry {
@@ -84,7 +85,13 @@ const BASE_NAV_STRUCTURE: ReadonlyArray<Omit<NavigationEntry, 'isActive'>> = [
   
   // Mi Oficina
   {
-    label: 'Reporte Financiero',
+    label: 'Resumen Financiero', // New Item
+    path: '/finanzas/resumen',
+    icon: BarChart3, 
+    groupTag: "Mi Oficina"
+  },
+  {
+    label: 'Informe de Ventas', // Renamed
     path: '/finanzas/reporte',
     icon: LineChart,
     groupTag: "Mi Oficina"
@@ -103,8 +110,6 @@ const BASE_NAV_STRUCTURE: ReadonlyArray<Omit<NavigationEntry, 'isActive'>> = [
     groupTag: "Mi Oficina",
     adminOnly: true
   },
-  // Items removed from here and moved to "Mi Cuenta" dropdown:
-  // Usuarios, Roles y Permisos, Migración de Datos
 ];
 
 const DESIRED_GROUP_ORDER = ["Mi Taller", "Mi Inventario", "Mi Oficina"];
@@ -154,6 +159,14 @@ const useNavigation = (): NavigationEntry[] => {
     
     // Ensure "Mi Oficina" items activate the group correctly
     if (entry.groupTag === "Mi Oficina" && pathname.startsWith(entry.path)) {
+        isActive = true;
+    }
+    // Make "Informe de Ventas" active if on "/finanzas/reporte"
+     if (entry.path === '/finanzas/reporte' && pathname === '/finanzas/reporte') {
+        isActive = true;
+    }
+    // Make "Resumen Financiero" active if on "/finanzas/resumen"
+    if (entry.path === '/finanzas/resumen' && pathname === '/finanzas/resumen') {
         isActive = true;
     }
 
