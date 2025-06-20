@@ -24,7 +24,7 @@ import {
   DollarSign,
   Receipt,
   LineChart,
-  ShieldQuestion, // Added ShieldQuestion
+  ShieldQuestion,
 } from 'lucide-react';
 
 export interface NavigationEntry {
@@ -44,8 +44,7 @@ const BASE_NAV_STRUCTURE: ReadonlyArray<Omit<NavigationEntry, 'isActive'>> = [
     icon: LayoutDashboard,
     groupTag: "Principal"
   },
-  // Clientes
-  { label: 'Vehículos', path: '/vehiculos', icon: Car, groupTag: "Clientes" },
+  { label: 'Vehículos', path: '/vehiculos', icon: Car, groupTag: "Principal" },
   
   // Servicios
   { label: 'Nuevo Servicio', path: '/servicios/nuevo', icon: PlusCircle, groupTag: "Servicios" },
@@ -81,7 +80,7 @@ const BASE_NAV_STRUCTURE: ReadonlyArray<Omit<NavigationEntry, 'isActive'>> = [
   // Administración
   { label: 'Técnicos', path: '/tecnicos', icon: UserCog, groupTag: "Administración", adminOnly: true },
   { label: 'Usuarios', path: '/admin/usuarios', icon: Users, groupTag: "Administración", adminOnly: true },
-  { label: 'Roles y Permisos', path: '/admin/roles', icon: ShieldQuestion, groupTag: "Administración", adminOnly: true }, // Added Roles link
+  { label: 'Roles y Permisos', path: '/admin/roles', icon: ShieldQuestion, groupTag: "Administración", adminOnly: true },
   {
     label: 'Migración de Datos',
     path: '/admin/migracion-datos',
@@ -98,7 +97,7 @@ const BASE_NAV_STRUCTURE: ReadonlyArray<Omit<NavigationEntry, 'isActive'>> = [
   },
 ];
 
-const DESIRED_GROUP_ORDER = ["Principal", "Clientes", "Servicios", "Finanzas", "Inventario", "Administración"];
+const DESIRED_GROUP_ORDER = ["Principal", "Servicios", "Finanzas", "Inventario", "Administración"];
 
 
 const useNavigation = (): NavigationEntry[] => {
