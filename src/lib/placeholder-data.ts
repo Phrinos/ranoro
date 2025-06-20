@@ -1,5 +1,5 @@
 
-import type { Vehicle, ServiceRecord, Technician, InventoryItem, DashboardMetrics, SaleReceipt, ServiceSupply, TechnicianMonthlyPerformance, InventoryCategory, Supplier, SaleItem, PaymentMethod, AppRole } from '@/types';
+import type { Vehicle, ServiceRecord, Technician, InventoryItem, DashboardMetrics, SaleReceipt, ServiceSupply, TechnicianMonthlyPerformance, InventoryCategory, Supplier, SaleItem, PaymentMethod, AppRole, QuoteRecord } from '@/types'; // Added QuoteRecord
 import { format, subMonths, addDays, getYear, getMonth, setHours, setMinutes, subDays, startOfMonth, endOfMonth, startOfToday, endOfToday, startOfYesterday, endOfYesterday } from 'date-fns';
 import { es } from 'date-fns/locale';
 
@@ -67,7 +67,7 @@ const totalSuppliesCost2 = sampleSuppliesUsed2.reduce((sum, s) => sum + (s.unitP
 // ServiceRecord: totalCost is final, tax-inclusive
 // subTotal = totalCost / 1.16
 // taxAmount = totalCost - subTotal
-// serviceProfit = subTotal - totalSuppliesCost
+// serviceProfit = totalCost - totalSuppliesCost (where totalCost is IVA inclusive, and totalSuppliesCost is workshop cost)
 export const placeholderServiceRecords: ServiceRecord[] = [
   {
     id: 'S001',
@@ -82,7 +82,7 @@ export const placeholderServiceRecords: ServiceRecord[] = [
     subTotal: 696 / (1 + IVA_RATE),
     taxAmount: 696 - (696 / (1 + IVA_RATE)),
     totalSuppliesCost: totalSuppliesCost1,
-    serviceProfit: (696 / (1 + IVA_RATE)) - totalSuppliesCost1,
+    serviceProfit: 696 - totalSuppliesCost1,
     status: 'Completado',
     mileage: 45000,
     deliveryDateTime: setHours(setMinutes(twoDaysAgo, 30), 17).toISOString(),
@@ -100,8 +100,8 @@ export const placeholderServiceRecords: ServiceRecord[] = [
     subTotal: 870 / (1 + IVA_RATE),
     taxAmount: 870 - (870 / (1 + IVA_RATE)),
     totalSuppliesCost: totalSuppliesCost2,
-    serviceProfit: (870 / (1 + IVA_RATE)) - totalSuppliesCost2,
-    status: 'Reparando',
+    serviceProfit: 870 - totalSuppliesCost2,
+    status: 'Reparando', // Changed from 'En Progreso'
     mileage: 62000,
   },
   {
@@ -117,8 +117,8 @@ export const placeholderServiceRecords: ServiceRecord[] = [
     subTotal: 348 / (1 + IVA_RATE),
     taxAmount: 348 - (348 / (1 + IVA_RATE)),
     totalSuppliesCost: 0,
-    serviceProfit: (348 / (1 + IVA_RATE)) - 0,
-    status: 'Reparando',
+    serviceProfit: 348 - 0,
+    status: 'Reparando', // Changed from 'Pendiente'
     mileage: 30500,
   },
   {
@@ -134,7 +134,7 @@ export const placeholderServiceRecords: ServiceRecord[] = [
     subTotal: 580 / (1 + IVA_RATE),
     taxAmount: 580 - (580 / (1 + IVA_RATE)),
     totalSuppliesCost: 0,
-    serviceProfit: (580 / (1 + IVA_RATE)),
+    serviceProfit: 580 - 0,
     status: 'Completado',
     mileage: 40000,
     deliveryDateTime: setHours(setMinutes(subMonths(today, 1), 0), 16).toISOString(),
@@ -152,7 +152,7 @@ export const placeholderServiceRecords: ServiceRecord[] = [
     subTotal: 464 / (1 + IVA_RATE),
     taxAmount: 464 - (464 / (1 + IVA_RATE)),
     totalSuppliesCost: 0,
-    serviceProfit: (464 / (1 + IVA_RATE)),
+    serviceProfit: 464 - 0,
     status: 'Agendado',
     mileage: 62300,
   },
@@ -169,7 +169,7 @@ export const placeholderServiceRecords: ServiceRecord[] = [
     subTotal: 1392 / (1 + IVA_RATE),
     taxAmount: 1392 - (1392 / (1 + IVA_RATE)),
     totalSuppliesCost: totalSuppliesCost1,
-    serviceProfit: (1392 / (1 + IVA_RATE)) - totalSuppliesCost1,
+    serviceProfit: 1392 - totalSuppliesCost1,
     status: 'Agendado',
     mileage: 31000,
   },
@@ -186,7 +186,7 @@ export const placeholderServiceRecords: ServiceRecord[] = [
     subTotal: 174 / (1 + IVA_RATE),
     taxAmount: 174 - (174 / (1 + IVA_RATE)),
     totalSuppliesCost: 0,
-    serviceProfit: (174 / (1 + IVA_RATE)),
+    serviceProfit: 174 - 0,
     status: 'Completado',
     mileage: 45500,
     deliveryDateTime: setHours(setMinutes(today, 30), 10).toISOString(),
@@ -273,6 +273,8 @@ export const placeholderAppRoles: AppRole[] = [
     { id: 'role_tecnico', name: 'Técnico', permissions: ['dashboard:view', 'services:edit', 'inventory:view'] },
     { id: 'role_ventas', name: 'Ventas', permissions: ['dashboard:view', 'pos:create_sale', 'pos:view_sales', 'inventory:view'] },
 ];
+
+export const placeholderQuotes: QuoteRecord[] = []; // New placeholder for quotes
 
 
 // Helper functions to get date ranges

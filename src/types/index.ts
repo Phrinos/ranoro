@@ -1,4 +1,5 @@
 
+
 export interface Vehicle {
   id: number; 
   make: string;
@@ -33,7 +34,7 @@ export interface ServiceRecord {
   suppliesUsed: ServiceSupply[]; 
   subTotal?: number; // Pre-tax amount
   taxAmount?: number; // IVA amount
-  totalCost: number; // Final, tax-inclusive price
+  totalCost: number; // Final, tax-inclusive price. For services, this is the "Costo del Servicio (IVA incluido)"
   totalSuppliesCost?: number; // Cost of supplies to the workshop (pre-tax)
   serviceProfit?: number; // Profit: (totalCost IVA Incluido) - totalSuppliesCost
   status: 'Agendado' | 'Reparando' | 'Completado' | 'Cancelado';
@@ -121,6 +122,25 @@ export interface SaleReceipt {
   cardFolio?: string;
   transferFolio?: string;
 }
+
+export interface QuoteRecord {
+  id: string;
+  quoteDate: string;
+  vehicleId?: number; // Optional if quote is generic initially
+  vehicleIdentifier?: string;
+  description: string;
+  preparedByTechnicianId?: string; // Who prepared the quote
+  preparedByTechnicianName?: string;
+  suppliesProposed: ServiceSupply[]; // Renamed from suppliesUsed
+  estimatedTotalCost: number; // Final, tax-inclusive estimated price for the customer
+  estimatedSubTotal?: number;
+  estimatedTaxAmount?: number;
+  estimatedTotalSuppliesCost?: number; // Cost of supplies to the workshop (pre-tax) for this quote
+  estimatedProfit?: number; // Profit: estimatedTotalCost - estimatedTotalSuppliesCost
+  notes?: string; // For validity, terms, etc.
+  mileage?: number; // Current mileage at time of quote
+}
+
 
 export interface DashboardMetrics {
   activeServices: number;

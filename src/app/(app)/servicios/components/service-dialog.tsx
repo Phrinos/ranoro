@@ -11,26 +11,29 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { ServiceForm } from "./service-form";
-import type { ServiceRecord, Vehicle, Technician, InventoryItem } from "@/types";
+import type { ServiceRecord, Vehicle, Technician, InventoryItem, QuoteRecord } from "@/types";
 import { useToast } from "@/hooks/use-toast"; 
 
 
 interface ServiceDialogProps {
   trigger?: React.ReactNode;
   service?: ServiceRecord | null; 
+  quote?: Partial<QuoteRecord> | null; // For quote mode initialization
   vehicles: Vehicle[]; 
   technicians: Technician[]; 
   inventoryItems: InventoryItem[]; 
-  onSave: (data: ServiceRecord) => Promise<void>; // Expect full ServiceRecord for print ticket
+  onSave: (data: ServiceRecord | QuoteRecord) => Promise<void>; 
   isReadOnly?: boolean; 
   open?: boolean; 
   onOpenChange?: (isOpen: boolean) => void; 
   onVehicleCreated?: (newVehicle: Vehicle) => void; 
+  mode?: 'service' | 'quote'; // New mode prop
 }
 
 export function ServiceDialog({ 
   trigger, 
   service, 
+  quote,
   vehicles, 
   technicians, 
   inventoryItems, 
@@ -38,7 +41,8 @@ export function ServiceDialog({
   isReadOnly = false,
   open: controlledOpen,
   onOpenChange: setControlledOpen,
-  onVehicleCreated 
+  onVehicleCreated,
+  mode = 'service' // Default to service mode
 }: ServiceDialogProps) {
   const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
   const { toast } = useToast();
@@ -47,40 +51,48 @@ export function ServiceDialog({
   const open = isControlled ? controlledOpen : uncontrolledOpen;
   const onOpenChange = isControlled ? setControlledOpen : setUncontrolledOpen;
 
-  const handleSubmit = async (serviceData: ServiceRecord) => { // Expect full ServiceRecord
+  const handleSubmit = async (formData: ServiceRecord | QuoteRecord) => { 
     if (isReadOnly) {
       if (onOpenChange) onOpenChange(false);
       else setUncontrolledOpen(false);
       return;
     }
     try {
-      await onSave(serviceData); 
-      // Parent component will handle toast and dialog closing logic, 
-      // including potentially opening a print ticket dialog.
-      // So, no onOpenChange(false) here directly.
+      await onSave(formData); 
     } catch (error) {
-      console.error("Error saving service from dialog:", error);
+      console.error(`Error saving ${mode} from dialog:`, error);
       toast({
-        title: "Error al Guardar Servicio",
-        description: "Ocurrió un problema al intentar guardar el servicio desde el diálogo.",
+        title: `Error al Guardar ${mode === 'quote' ? 'Cotización' : 'Servicio'}`,
+        description: `Ocurrió un problema al intentar guardar desde el diálogo.`,
         variant: "destructive",
       });
     }
   };
   
+  const dialogTitle = isReadOnly 
+    ? (mode === 'quote' ? "Detalles de la Cotización" : "Detalles del Servicio")
+    : (service || quote 
+      ? (mode === 'quote' ? "Editar Cotización" : "Editar Servicio") 
+      : (mode === 'quote' ? "Nueva Cotización" : "Nuevo Servicio"));
+
+  const dialogDescription = isReadOnly
+    ? (mode === 'quote' ? "Visualizando los detalles de la cotización." : "Visualizando los detalles de la orden de servicio.")
+    : (service || quote
+      ? (mode === 'quote' ? "Actualiza los detalles de la cotización." : "Actualiza los detalles de la orden de servicio.")
+      : (mode === 'quote' ? "Completa la información para una nueva cotización." : "Completa la información para una nueva orden de servicio."));
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       {trigger && !isControlled && <DialogTrigger asChild onClick={() => onOpenChange(true)}>{trigger}</DialogTrigger>}
       {open && (
         <DialogContent className="sm:max-w-[600px] md:max-w-[800px] lg:max-w-[900px] xl:max-w-[1000px] max-h-[90vh] overflow-y-auto print:hidden">
           <DialogHeader>
-            <DialogTitle>{isReadOnly ? "Detalles del Servicio" : (service ? "Editar Servicio" : "Nuevo Servicio")}</DialogTitle>
-            <DialogDescription>
-              {isReadOnly ? "Visualizando los detalles de la orden de servicio." : (service ? "Actualiza los detalles de la orden de servicio." : "Completa la información para una nueva orden de servicio.")}
-            </DialogDescription>
+            <DialogTitle>{dialogTitle}</DialogTitle>
+            <DialogDescription>{dialogDescription}</DialogDescription>
           </DialogHeader>
           <ServiceForm
-            initialData={service}
+            initialDataService={mode === 'service' ? service : null}
+            initialDataQuote={mode === 'quote' ? (quote || service as any) : null} // Allow service data to seed quote
             vehicles={vehicles} 
             technicians={technicians}
             inventoryItems={inventoryItems}
@@ -88,6 +100,7 @@ export function ServiceDialog({
             onClose={() => { if (onOpenChange) onOpenChange(false); else setUncontrolledOpen(false); }}
             isReadOnly={isReadOnly}
             onVehicleCreated={onVehicleCreated} 
+            mode={mode}
           />
         </DialogContent>
       )}
