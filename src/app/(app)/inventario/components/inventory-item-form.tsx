@@ -1,6 +1,7 @@
 
 "use client";
 
+import React, { useEffect } from 'react'; // Added useEffect to import
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
@@ -88,7 +89,7 @@ export function InventoryItemForm({ initialData, onSubmit, onClose, categories, 
   };
   
   // Set default category and supplier if not already set by initialData
-  React.useEffect(() => {
+  useEffect(() => { // Changed from React.useEffect
     if (!form.getValues('category') && categories.length > 0) {
       form.setValue('category', categories[0].name);
     }
@@ -285,3 +286,4 @@ export function InventoryItemForm({ initialData, onSubmit, onClose, categories, 
     </Form>
   );
 }
+
