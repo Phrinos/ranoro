@@ -24,14 +24,14 @@ import { CalendarIcon, PlusCircle, Search, Trash2, AlertCircle, Car as CarIcon, 
 import { cn } from "@/lib/utils";
 import { format, parseISO, setHours, setMinutes, isValid, startOfDay } from "date-fns";
 import { es } from 'date-fns/locale';
-import type { ServiceRecord, Vehicle, Technician, InventoryItem, ServiceSupply } from "@/types";
+import type { ServiceRecord, Vehicle, Technician, InventoryItem, ServiceSupply, QuoteRecord } from "@/types";
 import React, { useEffect, useState, useMemo } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { VehicleDialog } from "../../vehiculos/components/vehicle-dialog";
 import type { VehicleFormValues } from "../../vehiculos/components/vehicle-form";
 import { placeholderVehicles as defaultPlaceholderVehicles } from "@/lib/placeholder-data";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
+import { Label } from "@/components/ui/label"; // Added import
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 
@@ -43,31 +43,35 @@ const supplySchema = z.object({
   supplyName: z.string().optional(), 
 });
 
-const serviceFormSchema = z.object({
+// Adjusted schema to handle optional fields for quote mode
+const serviceFormSchemaBase = z.object({
   vehicleId: z.number({invalid_type_error: "Debe seleccionar o registrar un vehículo."}).positive("Debe seleccionar o registrar un vehículo.").optional(),
   vehicleLicensePlateSearch: z.string().optional(), 
-  serviceDate: z.date({ required_error: "La fecha y hora de servicio son obligatorias." }),
+  serviceDate: z.date({ required_error: "La fecha es obligatoria." }), // Label changes based on mode
   mileage: z.coerce.number().int().min(0, "El kilometraje no puede ser negativo.").optional(),
   description: z.string().min(5, "La descripción debe tener al menos 5 caracteres."),
-  totalServicePrice: z.coerce.number().min(0, "El costo del servicio no puede ser negativo."), 
+  totalServicePrice: z.coerce.number().min(0, "El costo no puede ser negativo."), // Label changes
   notes: z.string().optional(),
-  technicianId: z.string().min(1, "Seleccione un técnico"),
+  technicianId: z.string().optional(), // Optional for quote, label changes
   suppliesUsed: z.array(supplySchema).optional(),
-  status: z.enum(["Agendado", "Reparando", "Completado", "Cancelado"]),
+  status: z.enum(["Agendado", "Reparando", "Completado", "Cancelado"]).optional(),
   deliveryDateTime: z.date().optional(),
 });
 
-export type ServiceFormValues = z.infer<typeof serviceFormSchema>;
+
+export type ServiceFormValues = z.infer<typeof serviceFormSchemaBase>;
 
 interface ServiceFormProps {
-  initialData?: ServiceRecord | null;
+  initialDataService?: ServiceRecord | null;
+  initialDataQuote?: Partial<QuoteRecord> | null;
   vehicles: Vehicle[]; 
   technicians: Technician[];
   inventoryItems: InventoryItem[];
-  onSubmit: (data: ServiceRecord) => Promise<void>; 
+  onSubmit: (data: ServiceRecord | QuoteRecord) => Promise<void>; 
   onClose: () => void;
   isReadOnly?: boolean; 
   onVehicleCreated?: (newVehicle: Vehicle) => void; 
+  mode?: 'service' | 'quote';
 }
 
 const IVA_RATE = 0.16;
@@ -97,17 +101,22 @@ interface AddSupplyDialogState {
 }
 
 export function ServiceForm({ 
-  initialData, 
+  initialDataService, 
+  initialDataQuote,
   vehicles: parentVehicles, 
   technicians, 
   inventoryItems, 
   onSubmit, 
   onClose, 
   isReadOnly = false,
-  onVehicleCreated
+  onVehicleCreated,
+  mode = 'service'
 }: ServiceFormProps) {
   const { toast } = useToast();
-  const [vehicleLicensePlateSearch, setVehicleLicensePlateSearch] = useState(initialData?.vehicleIdentifier || "");
+  const initialData = mode === 'service' ? initialDataService : initialDataQuote;
+  const initialVehicleIdentifier = mode === 'service' ? initialDataService?.vehicleIdentifier : initialDataQuote?.vehicleIdentifier;
+
+  const [vehicleLicensePlateSearch, setVehicleLicensePlateSearch] = useState(initialVehicleIdentifier || "");
   const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
   const [vehicleNotFound, setVehicleNotFound] = useState(false);
   const [isVehicleDialogOpen, setIsVehicleDialogOpen] = useState(false);
@@ -118,22 +127,24 @@ export function ServiceForm({
 
 
   const form = useForm<ServiceFormValues>({
-    resolver: zodResolver(serviceFormSchema),
+    resolver: zodResolver(serviceFormSchemaBase),
     defaultValues: initialData
       ? {
           ...initialData,
           vehicleId: initialData.vehicleId,
-          vehicleLicensePlateSearch: initialData.vehicleIdentifier || "",
-          serviceDate: initialData.serviceDate ? parseISO(initialData.serviceDate) : new Date(),
-          deliveryDateTime: initialData.deliveryDateTime ? parseISO(initialData.deliveryDateTime) : undefined,
+          vehicleLicensePlateSearch: initialVehicleIdentifier || "",
+          serviceDate: initialData.serviceDate || initialData.quoteDate ? parseISO(initialData.serviceDate || initialData.quoteDate!) : new Date(),
+          deliveryDateTime: mode === 'service' && initialDataService?.deliveryDateTime ? parseISO(initialDataService.deliveryDateTime) : undefined,
           mileage: initialData.mileage ?? undefined, 
-          suppliesUsed: initialData.suppliesUsed.map(s => ({
+          suppliesUsed: (mode === 'service' ? initialDataService?.suppliesUsed : initialDataQuote?.suppliesProposed)?.map(s => ({
               supplyId: s.supplyId,
               quantity: s.quantity,
               supplyName: inventoryItems.find(i => i.id === s.supplyId)?.name || s.supplyName || '', 
               unitPrice: inventoryItems.find(i => i.id === s.supplyId)?.unitPrice || s.unitPrice || 0 
           })) || [],
-          totalServicePrice: initialData.totalCost, 
+          totalServicePrice: mode === 'service' ? initialDataService?.totalCost : initialDataQuote?.estimatedTotalCost, 
+          status: mode === 'service' ? initialDataService?.status : undefined,
+          technicianId: mode === 'service' ? initialDataService?.technicianId : initialDataQuote?.preparedByTechnicianId,
         }
       : {
           vehicleId: undefined,
@@ -145,7 +156,7 @@ export function ServiceForm({
           technicianId: "",
           suppliesUsed: [],
           totalServicePrice: 0,
-          status: "Agendado", 
+          status: mode === 'service' ? "Agendado" : undefined, 
           notes: "",
         },
   });
@@ -156,29 +167,30 @@ export function ServiceForm({
 
 
   useEffect(() => {
-    if (initialData && initialData.vehicleId) {
-      const foundVehicle = localVehicles.find(v => v.id === initialData.vehicleId);
+    const currentInitialData = mode === 'service' ? initialDataService : initialDataQuote;
+    if (currentInitialData && currentInitialData.vehicleId) {
+      const foundVehicle = localVehicles.find(v => v.id === currentInitialData.vehicleId);
       if (foundVehicle) {
         setSelectedVehicle(foundVehicle);
         form.setValue('vehicleId', foundVehicle.id);
         setVehicleLicensePlateSearch(foundVehicle.licensePlate);
       }
     }
-     if (initialData && initialData.serviceDate) {
-      const parsedDate = parseISO(initialData.serviceDate);
+     if (currentInitialData && (currentInitialData.serviceDate || currentInitialData.quoteDate)) {
+      const parsedDate = parseISO(currentInitialData.serviceDate || currentInitialData.quoteDate!);
       if (isValid(parsedDate)) {
         form.setValue('serviceDate', parsedDate);
       }
     }
-  }, [initialData, localVehicles, form]);
+  }, [initialDataService, initialDataQuote, mode, localVehicles, form]);
   
   const watchedStatus = form.watch("status");
 
   useEffect(() => {
-    if (watchedStatus === "Completado" && !form.getValues("deliveryDateTime")) {
+    if (mode === 'service' && watchedStatus === "Completado" && !form.getValues("deliveryDateTime")) {
       form.setValue("deliveryDateTime", new Date());
     }
-  }, [watchedStatus, form]);
+  }, [watchedStatus, form, mode]);
 
 
   const { fields, append, remove } = useFieldArray({
@@ -248,8 +260,8 @@ export function ServiceForm({
     }
     
     const isValidForm = await form.trigger();
-    if (!isValidForm || !values.vehicleId) {
-         if (!values.vehicleId) {
+    if (!isValidForm || (mode === 'service' && !values.vehicleId) ) { // vehicleId might be optional for generic quotes
+         if (mode === 'service' && !values.vehicleId) {
             form.setError("vehicleId", { type: "manual", message: "Debe seleccionar o registrar un vehículo." });
         }
       toast({ title: "Formulario Incompleto", description: "Por favor, revise los campos marcados.", variant: "destructive"});
@@ -259,35 +271,63 @@ export function ServiceForm({
     const currentTotalServicePrice = values.totalServicePrice || 0;
     const currentTotalSuppliesCost = totalSuppliesCost; 
 
-    const completeServiceData: ServiceRecord = {
-      id: initialData?.id || `S_NEW_${Date.now()}`, 
-      vehicleId: values.vehicleId!,
-      vehicleIdentifier: selectedVehicle?.licensePlate || values.vehicleLicensePlateSearch,
-      serviceDate: values.serviceDate.toISOString(),
-      deliveryDateTime: values.deliveryDateTime ? values.deliveryDateTime.toISOString() : undefined,
-      description: values.description,
-      technicianId: values.technicianId,
-      technicianName: technicians.find(t => t.id === values.technicianId)?.name,
-      status: values.status,
-      mileage: values.mileage,
-      notes: values.notes,
-      suppliesUsed: values.suppliesUsed?.map(s => {
-        const itemDetails = inventoryItems.find(invItem => invItem.id === s.supplyId);
-        return {
-          supplyId: s.supplyId,
-          quantity: s.quantity,
-          unitPrice: itemDetails?.unitPrice || s.unitPrice || 0, 
-          supplyName: itemDetails?.name || s.supplyName,
-        };
-      }) || [],
-      totalCost: currentTotalServicePrice, 
-      subTotal: currentTotalServicePrice / (1 + IVA_RATE), 
-      taxAmount: currentTotalServicePrice - (currentTotalServicePrice / (1 + IVA_RATE)), 
-      totalSuppliesCost: currentTotalSuppliesCost, 
-      serviceProfit: currentTotalServicePrice - currentTotalSuppliesCost, 
-    };
-    
-    await onSubmit(completeServiceData);
+    if (mode === 'service') {
+      const serviceData: ServiceRecord = {
+        id: initialDataService?.id || `S_NEW_${Date.now()}`, 
+        vehicleId: values.vehicleId!,
+        vehicleIdentifier: selectedVehicle?.licensePlate || values.vehicleLicensePlateSearch,
+        serviceDate: values.serviceDate.toISOString(),
+        deliveryDateTime: values.deliveryDateTime ? values.deliveryDateTime.toISOString() : undefined,
+        description: values.description,
+        technicianId: values.technicianId!, // Service always needs a technician
+        technicianName: technicians.find(t => t.id === values.technicianId)?.name,
+        status: values.status!, // Service always has a status
+        mileage: values.mileage,
+        notes: values.notes,
+        suppliesUsed: values.suppliesUsed?.map(s => {
+          const itemDetails = inventoryItems.find(invItem => invItem.id === s.supplyId);
+          return {
+            supplyId: s.supplyId,
+            quantity: s.quantity,
+            unitPrice: itemDetails?.unitPrice || s.unitPrice || 0, 
+            supplyName: itemDetails?.name || s.supplyName,
+          };
+        }) || [],
+        totalCost: currentTotalServicePrice, 
+        subTotal: currentTotalServicePrice / (1 + IVA_RATE), 
+        taxAmount: currentTotalServicePrice - (currentTotalServicePrice / (1 + IVA_RATE)), 
+        totalSuppliesCost: currentTotalSuppliesCost, 
+        serviceProfit: currentTotalServicePrice - currentTotalSuppliesCost, 
+      };
+      await onSubmit(serviceData);
+    } else { // mode === 'quote'
+      const quoteData: QuoteRecord = {
+        id: initialDataQuote?.id || `Q_NEW_${Date.now()}`,
+        quoteDate: values.serviceDate.toISOString(), // Use serviceDate field for quoteDate
+        vehicleId: values.vehicleId,
+        vehicleIdentifier: selectedVehicle?.licensePlate || values.vehicleLicensePlateSearch,
+        description: values.description,
+        preparedByTechnicianId: values.technicianId,
+        preparedByTechnicianName: technicians.find(t => t.id === values.technicianId)?.name,
+        suppliesProposed: values.suppliesUsed?.map(s => {
+          const itemDetails = inventoryItems.find(invItem => invItem.id === s.supplyId);
+          return {
+            supplyId: s.supplyId,
+            quantity: s.quantity,
+            unitPrice: itemDetails?.sellingPrice || 0, // For quotes, use selling price of item for line items
+            supplyName: itemDetails?.name || s.supplyName,
+          };
+        }) || [],
+        estimatedTotalCost: currentTotalServicePrice, // This is the final price for the client
+        estimatedSubTotal: currentTotalServicePrice / (1 + IVA_RATE),
+        estimatedTaxAmount: currentTotalServicePrice - (currentTotalServicePrice / (1 + IVA_RATE)),
+        estimatedTotalSuppliesCost: currentTotalSuppliesCost, // Cost to workshop
+        estimatedProfit: currentTotalServicePrice - currentTotalSuppliesCost,
+        notes: values.notes,
+        mileage: values.mileage,
+      };
+      await onSubmit(quoteData);
+    }
   };
   
   const handleTimeChange = (timeString: string, dateField: "serviceDate" | "deliveryDateTime") => {
@@ -318,7 +358,7 @@ export function ServiceForm({
       supplyId: supplyItem.id,
       supplyName: supplyItem.name,
       quantity: quantity,
-      unitPrice: supplyItem.unitPrice,
+      unitPrice: mode === 'quote' ? supplyItem.sellingPrice : supplyItem.unitPrice, // Use sellingPrice for quote item display, unitPrice for service cost
     });
     
     setAddSupplyDialogState({ selectedSupplyId: '', quantity: 1 }); 
@@ -332,6 +372,12 @@ export function ServiceForm({
     }
   };
 
+  const cardTitleText = mode === 'quote' ? "Información del Vehículo y Cotización" : "Información del Vehículo y Servicio";
+  const dateLabelText = mode === 'quote' ? "Fecha de Cotización" : "Fecha y Hora de Recepción";
+  const technicianLabelText = mode === 'quote' ? "Preparado por" : "Técnico Asignado";
+  const totalCostLabelText = mode === 'quote' ? "Costo Estimado (IVA incluido)" : "Costo del Servicio (IVA incluido)";
+  const submitButtonText = mode === 'quote' ? "Generar PDF de Cotización" : (initialDataService ? "Actualizar Servicio" : "Crear Servicio");
+
 
   return (
     <>
@@ -340,44 +386,46 @@ export function ServiceForm({
         
         <Card>
             <CardHeader>
-                <CardTitle className="text-lg">Información del Vehículo y Servicio</CardTitle>
+                <CardTitle className="text-lg">{cardTitleText}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
-                    <FormField
-                        control={form.control}
-                        name="status"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Estado del Servicio</FormLabel>
-                            <Select 
-                                onValueChange={(value) => {
-                                    field.onChange(value);
-                                    if (value === "Completado" && !form.getValues("deliveryDateTime")) {
-                                        form.setValue("deliveryDateTime", new Date());
-                                    }
-                                }} 
-                                defaultValue={field.value} 
-                                disabled={isReadOnly}
-                            >
-                              <FormControl>
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Seleccione un estado" />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                {["Agendado", "Reparando", "Completado", "Cancelado"].map((statusVal) => (
-                                  <SelectItem key={statusVal} value={statusVal}>
-                                    {statusVal}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    <div className="flex flex-col sm:flex-row items-end gap-2">
+                    {mode === 'service' && (
+                        <FormField
+                            control={form.control}
+                            name="status"
+                            render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Estado del Servicio</FormLabel>
+                                <Select 
+                                    onValueChange={(value) => {
+                                        field.onChange(value);
+                                        if (value === "Completado" && !form.getValues("deliveryDateTime")) {
+                                            form.setValue("deliveryDateTime", new Date());
+                                        }
+                                    }} 
+                                    defaultValue={field.value} 
+                                    disabled={isReadOnly}
+                                >
+                                <FormControl>
+                                    <SelectTrigger>
+                                    <SelectValue placeholder="Seleccione un estado" />
+                                    </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                    {["Agendado", "Reparando", "Completado", "Cancelado"].map((statusVal) => (
+                                    <SelectItem key={statusVal} value={statusVal}>
+                                        {statusVal}
+                                    </SelectItem>
+                                    ))}
+                                </SelectContent>
+                                </Select>
+                                <FormMessage />
+                            </FormItem>
+                            )}
+                        />
+                    )}
+                    <div className={`flex flex-col sm:flex-row items-end gap-2 ${mode === 'quote' ? 'md:col-span-2' : ''}`}>
                         <FormField
                             control={form.control}
                             name="vehicleLicensePlateSearch"
@@ -416,6 +464,16 @@ export function ServiceForm({
                   />
                 {selectedVehicle && (
                     <div className="p-3 border rounded-md bg-muted text-sm space-y-1">
+                        {mode === 'service' && form.getValues("status") && (
+                             <Badge variant={
+                                form.getValues("status") === "Completado" ? "success" :
+                                form.getValues("status") === "Reparando" ? "secondary" :
+                                form.getValues("status") === "Cancelado" ? "destructive" :
+                                "default"
+                             } className="mb-1 inline-block">
+                                {form.getValues("status")}
+                             </Badge>
+                        )}
                         <p><strong>Placa:</strong> {selectedVehicle.licensePlate}</p>
                         <p><strong>Vehículo Seleccionado:</strong> {selectedVehicle.make} {selectedVehicle.model} ({selectedVehicle.year})</p>
                         <p><strong>Propietario:</strong> {selectedVehicle.ownerName}</p>
@@ -436,10 +494,10 @@ export function ServiceForm({
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 items-end">
                     <FormField
                     control={form.control}
-                    name="serviceDate"
+                    name="serviceDate" // Name remains serviceDate for schema simplicity
                     render={({ field }) => (
                         <FormItem className="flex flex-col">
-                        <FormLabel>Fecha y Hora de Recepción</FormLabel>
+                        <FormLabel>{dateLabelText}</FormLabel>
                         <Popover>
                             <PopoverTrigger asChild disabled={isReadOnly}>
                             <FormControl>
@@ -517,7 +575,7 @@ export function ServiceForm({
                     name="description"
                     render={({ field }) => (
                         <FormItem>
-                        <FormLabel>Descripción del Servicio</FormLabel>
+                        <FormLabel>Descripción del {mode === 'quote' ? 'Trabajo a Cotizar' : 'Servicio'}</FormLabel>
                         <FormControl>
                             <Textarea placeholder="Ej: Cambio de aceite y filtros, revisión de frenos..." {...field} disabled={isReadOnly} />
                         </FormControl>
@@ -532,24 +590,24 @@ export function ServiceForm({
                         <FormItem>
                         <FormLabel>Notas Adicionales (Opcional)</FormLabel>
                         <FormControl>
-                            <Textarea placeholder="Notas internas o para el cliente..." {...field} disabled={isReadOnly} />
+                            <Textarea placeholder={mode === 'quote' ? "Ej: Validez de la cotización, condiciones..." : "Notas internas o para el cliente..."} {...field} disabled={isReadOnly} />
                         </FormControl>
                         <FormMessage />
                         </FormItem>
                     )}
                 />
                 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 items-end">
+                <div className="grid grid-cols-1 md:grid-cols-5 gap-4 pt-4 items-end">
                     <FormField
                         control={form.control}
                         name="technicianId"
                         render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="text-lg">Técnico Asignado</FormLabel>
+                          <FormItem className="md:col-span-2">
+                            <FormLabel className="text-lg">{technicianLabelText}</FormLabel>
                             <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isReadOnly}>
                               <FormControl>
                                 <SelectTrigger>
-                                  <SelectValue placeholder="Seleccione un técnico" />
+                                  <SelectValue placeholder={`Seleccione un ${mode === 'quote' ? 'preparador' : 'técnico'}`} />
                                 </SelectTrigger>
                               </FormControl>
                               <SelectContent>
@@ -568,8 +626,8 @@ export function ServiceForm({
                         control={form.control}
                         name="totalServicePrice"
                         render={({ field }) => (
-                            <FormItem>
-                                <FormLabel className="text-lg">Costo del Servicio (IVA incluido)</FormLabel>
+                            <FormItem className="md:col-span-3">
+                                <FormLabel className="text-lg">{totalCostLabelText}</FormLabel>
                                 <FormControl>
                                 <Input type="number" step="0.01" placeholder="Ej: 1740.00" {...field} disabled={isReadOnly} className="text-lg font-medium"/>
                                 </FormControl>
@@ -581,7 +639,7 @@ export function ServiceForm({
             </CardContent>
         </Card>
         
-        {watchedStatus === "Completado" && (
+        {mode === 'service' && watchedStatus === "Completado" && (
             <FormField
             control={form.control}
             name="deliveryDateTime"
@@ -649,7 +707,7 @@ export function ServiceForm({
 
         <Card>
             <CardHeader>
-                <CardTitle className="text-lg">Insumos Utilizados</CardTitle>
+                <CardTitle className="text-lg">{mode === 'quote' ? "Insumos Propuestos" : "Insumos Utilizados"}</CardTitle>
             </CardHeader>
             <CardContent>
                 {fields.length > 0 && (
@@ -659,22 +717,24 @@ export function ServiceForm({
                                 <TableRow>
                                     <TableHead>Insumo</TableHead>
                                     <TableHead className="text-center">Cant.</TableHead>
-                                    <TableHead className="text-right">Costo Unit.</TableHead>
-                                    <TableHead className="text-right">Costo Total</TableHead>
+                                    <TableHead className="text-right">{mode === 'quote' ? 'Precio Venta Unit. (IVA Inc.)' : 'Costo Unit. (Taller)'}</TableHead>
+                                    <TableHead className="text-right">{mode === 'quote' ? 'Precio Total (IVA Inc.)' : 'Costo Total (Taller)'}</TableHead>
                                     {!isReadOnly && <TableHead className="text-right">Acción</TableHead>}
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
                                 {fields.map((item, index) => {
-                                    const currentItem = inventoryItems.find(invItem => invItem.id === item.supplyId);
-                                    const unitCost = item.unitPrice || currentItem?.unitPrice || 0;
-                                    const totalCost = unitCost * item.quantity;
+                                    const currentItemDetails = inventoryItems.find(invItem => invItem.id === item.supplyId);
+                                    const unitPriceForCalc = mode === 'quote' 
+                                        ? (item.unitPrice || currentItemDetails?.sellingPrice || 0) // for quote lines, show client-facing prices
+                                        : (item.unitPrice || currentItemDetails?.unitPrice || 0); // for service, show workshop cost
+                                    const totalItemPrice = unitPriceForCalc * item.quantity;
                                     return (
                                         <TableRow key={item.id}>
-                                            <TableCell className="font-medium">{item.supplyName || currentItem?.name || 'N/A'}</TableCell>
+                                            <TableCell className="font-medium">{item.supplyName || currentItemDetails?.name || 'N/A'}</TableCell>
                                             <TableCell className="text-center">{item.quantity}</TableCell>
-                                            <TableCell className="text-right">{formatCurrency(unitCost)}</TableCell>
-                                            <TableCell className="text-right">{formatCurrency(totalCost)}</TableCell>
+                                            <TableCell className="text-right">{formatCurrency(unitPriceForCalc)}</TableCell>
+                                            <TableCell className="text-right">{formatCurrency(totalItemPrice)}</TableCell>
                                             {!isReadOnly && (
                                                 <TableCell className="text-right">
                                                     <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)} aria-label="Eliminar insumo" className="text-destructive hover:text-destructive/90">
@@ -704,8 +764,20 @@ export function ServiceForm({
                     Añadir Insumo
                     </Button>
                 )}
-                <div className="mt-4 text-lg font-medium text-right">
-                    <p>Costo Total de Insumos (para el taller): <span className="font-semibold">{formatCurrency(totalSuppliesCost)}</span></p>
+                 <div className="mt-4 text-lg font-medium text-right">
+                    <p>
+                        {mode === 'quote' ? "Costo Total de Insumos (para cotización, IVA Inc.):" : "Costo Total de Insumos (para el taller):"}
+                        <span className="font-semibold">
+                            {formatCurrency(
+                                mode === 'quote' 
+                                ? watchedSupplies?.reduce((sum, supply) => {
+                                    const item = inventoryItems.find(i => i.id === supply.supplyId);
+                                    return sum + (item?.sellingPrice || supply.unitPrice || 0) * supply.quantity; // Use sellingPrice for quote total
+                                  }, 0) || 0
+                                : totalSuppliesCost // Use workshop cost for service
+                            )}
+                        </span>
+                    </p>
                 </div>
             </CardContent>
         </Card>
@@ -719,7 +791,7 @@ export function ServiceForm({
             </CardHeader>
             <CardContent className="space-y-1 text-lg">
                 <div className="flex justify-between pt-1">
-                    <span>Costo del Servicio (Cliente, IVA Incluido):</span> 
+                    <span>{mode === 'quote' ? 'Costo Estimado Cliente (IVA Incluido):' : 'Costo del Servicio (Cliente, IVA Incluido):'}</span> 
                     <span className="font-semibold text-blue-600 dark:text-blue-400">{formatCurrency(watchedTotalServicePrice)}</span>
                 </div>
                 <div className="flex justify-between">
@@ -728,7 +800,7 @@ export function ServiceForm({
                 </div>
                 <hr className="my-2 border-dashed"/>
                 <div className="flex justify-between font-bold text-green-700 dark:text-green-400">
-                    <span>(=) Ganancia Estimada del Servicio:</span> 
+                    <span>(=) Ganancia Estimada del {mode === 'quote' ? 'Trabajo Cotizado' : 'Servicio'}:</span> 
                     <span>{formatCurrency(serviceProfit)}</span>
                 </div>
             </CardContent>
@@ -745,8 +817,8 @@ export function ServiceForm({
               <Button type="button" variant="outline" onClick={onClose}>
                 Cancelar
               </Button>
-              <Button type="submit" disabled={form.formState.isSubmitting || (!form.getValues('vehicleId') && !initialData) }>
-                {form.formState.isSubmitting ? "Guardando..." : (initialData ? "Actualizar Servicio" : "Crear Servicio")}
+              <Button type="submit" disabled={form.formState.isSubmitting || (mode === 'service' && !form.getValues('vehicleId') && !initialDataService) }>
+                {form.formState.isSubmitting ? "Guardando..." : submitButtonText}
               </Button>
             </>
           )}
@@ -764,8 +836,8 @@ export function ServiceForm({
     <Dialog open={isAddSupplyDialogOpen} onOpenChange={setIsAddSupplyDialogOpen}>
         <DialogContent className="sm:max-w-md">
             <DialogHeader>
-                <DialogTitle>Añadir Insumo al Servicio</DialogTitle>
-                <DialogDescription>Seleccione el insumo y la cantidad a utilizar.</DialogDescription>
+                <DialogTitle>Añadir Insumo al {mode === 'quote' ? 'Presupuesto' : 'Servicio'}</DialogTitle>
+                <DialogDescription>Seleccione el insumo y la cantidad a {mode === 'quote' ? 'proponer' : 'utilizar'}.</DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-4">
                 <div className="space-y-2">
@@ -779,8 +851,9 @@ export function ServiceForm({
                         </SelectTrigger>
                         <SelectContent>
                             {inventoryItems.map((supply) => (
-                                <SelectItem key={supply.id} value={supply.id} disabled={supply.quantity === 0}>
-                                    {supply.name} (Stock: {supply.quantity}) - Costo: {formatCurrency(supply.unitPrice)}
+                                <SelectItem key={supply.id} value={supply.id} disabled={supply.quantity === 0 && mode === 'service'}>
+                                    {supply.name} (Stock: {supply.quantity}) - 
+                                    {mode === 'quote' ? ` Venta: ${formatCurrency(supply.sellingPrice)}` : ` Costo: ${formatCurrency(supply.unitPrice)}`}
                                 </SelectItem>
                             ))}
                         </SelectContent>

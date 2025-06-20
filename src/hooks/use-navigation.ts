@@ -25,6 +25,7 @@ import {
   Receipt,
   LineChart,
   ShieldQuestion,
+  FileText, // Added for Cotizaciones
 } from 'lucide-react';
 
 export interface NavigationEntry {
@@ -45,12 +46,19 @@ const BASE_NAV_STRUCTURE: ReadonlyArray<Omit<NavigationEntry, 'isActive'>> = [
     groupTag: "Principal"
   },
   { label: 'Vehículos', path: '/vehiculos', icon: Car, groupTag: "Principal" },
+  {
+    label: 'Cotizaciones', // New Item
+    path: '/cotizaciones',
+    icon: FileText,
+    groupTag: "Principal"
+  },
   
-  // Servicios
+  // Servicios - Reordered
   { label: 'Nuevo Servicio', path: '/servicios/nuevo', icon: PlusCircle, groupTag: "Servicios" },
+  { label: 'Historial de Servicios', path: '/servicios/historial', icon: History, groupTag: "Servicios" },
   { label: 'Agenda', path: '/servicios/agenda', icon: CalendarClock, groupTag: "Servicios" },
   { label: 'Lista de Servicios', path: '/servicios', icon: Wrench, groupTag: "Servicios" },
-  { label: 'Historial de Servicios', path: '/servicios/historial', icon: History, groupTag: "Servicios" },
+
 
   // Finanzas
   {
@@ -113,6 +121,7 @@ const useNavigation = (): NavigationEntry[] => {
   const entriesWithActiveState = filteredNavStructure.map(entry => {
     let isActive = pathname === entry.path;
 
+    // Make parent active if a child route is active, but not if a more specific nav entry exists
     if (!isActive && entry.path && entry.path !== '/' && entry.path.length > 1 && pathname.startsWith(entry.path + '/')) {
         const isMoreSpecificActiveEntry = filteredNavStructure.some(
           otherEntry => otherEntry.path.startsWith(pathname) && otherEntry.path.length > entry.path.length && otherEntry.path !== entry.path
@@ -122,6 +131,7 @@ const useNavigation = (): NavigationEntry[] => {
         }
     }
     
+    // Specific overrides for parent active states based on child routes
     if (entry.path === '/servicios' &&
         (pathname.startsWith('/servicios/nuevo') ||
          pathname.startsWith('/servicios/historial') ||
@@ -146,6 +156,9 @@ const useNavigation = (): NavigationEntry[] => {
         isActive = false; // Ensure only one is active
     }
     if (entry.path === '/admin/roles' && pathname === '/admin/roles') {
+        isActive = true;
+    }
+    if (entry.path === '/cotizaciones' && pathname.startsWith('/cotizaciones')) { // For the new Cotizaciones section
         isActive = true;
     }
 
