@@ -43,7 +43,8 @@ const supplySchema = z.object({
   supplyId: z.string().min(1, "Seleccione un insumo"),
   quantity: z.coerce.number().min(1, "La cantidad debe ser al menos 1."),
   unitPrice: z.coerce.number().optional(), 
-  supplyName: z.string().optional(), 
+  supplyName: z.string().optional(),
+  isService: z.boolean().optional(), // To know if it's a service
 });
 
 const serviceFormSchemaBase = z.object({
@@ -147,7 +148,8 @@ export function ServiceForm({
               supplyId: s.supplyId,
               quantity: s.quantity,
               supplyName: currentInventoryItems.find(i => i.id === s.supplyId)?.name || s.supplyName || '', 
-              unitPrice: currentInventoryItems.find(i => i.id === s.supplyId)?.unitPrice || s.unitPrice || 0 
+              unitPrice: currentInventoryItems.find(i => i.id === s.supplyId)?.unitPrice || s.unitPrice || 0,
+              isService: currentInventoryItems.find(i => i.id === s.supplyId)?.isService || false,
           })) || [],
           totalServicePrice: mode === 'service' ? initialDataService?.totalCost : initialDataQuote?.estimatedTotalCost, 
           status: mode === 'service' ? initialDataService?.status : undefined,
@@ -215,13 +217,24 @@ export function ServiceForm({
   const totalSuppliesCost = React.useMemo(() => {
     return watchedSupplies?.reduce((sum, supply) => {
       const item = currentInventoryItems.find(i => i.id === supply.supplyId);
-      return sum + (item?.unitPrice || supply.unitPrice || 0) * supply.quantity; 
+      // Use unitPrice for services (cost to workshop), sellingPrice for quotes (cost to client)
+      const costBasis = mode === 'quote' 
+        ? (item?.sellingPrice || supply.unitPrice || 0) 
+        : (item?.unitPrice || supply.unitPrice || 0);
+      return sum + costBasis * supply.quantity; 
     }, 0) || 0;
-  }, [watchedSupplies, currentInventoryItems]);
+  }, [watchedSupplies, currentInventoryItems, mode]);
+
 
   const serviceProfit = React.useMemo(() => {
-    return watchedTotalServicePrice - totalSuppliesCost;
-  }, [watchedTotalServicePrice, totalSuppliesCost]);
+    // For profit calculation, always use the workshop's cost for supplies (item.unitPrice).
+    const actualSuppliesWorkshopCost = watchedSupplies?.reduce((sum, supply) => {
+        const item = currentInventoryItems.find(i => i.id === supply.supplyId);
+        return sum + (item?.unitPrice || 0) * supply.quantity; // Always use workshop cost for profit calc
+    }, 0) || 0;
+    return watchedTotalServicePrice - actualSuppliesWorkshopCost;
+  }, [watchedTotalServicePrice, watchedSupplies, currentInventoryItems]);
+
 
   const handleSearchVehicle = () => {
     if (!vehicleLicensePlateSearch.trim()) {
@@ -280,7 +293,13 @@ export function ServiceForm({
     }
     
     const currentTotalServicePrice = values.totalServicePrice || 0;
-    const currentTotalSuppliesCost = totalSuppliesCost; 
+    // Recalculate actualSuppliesWorkshopCost for saving, ensuring it always uses workshop cost
+    const actualSuppliesWorkshopCostForSave = values.suppliesUsed?.reduce((sum, s) => {
+        const itemDetails = currentInventoryItems.find(invItem => invItem.id === s.supplyId);
+        return sum + (itemDetails?.unitPrice || 0) * s.quantity; 
+    }, 0) || 0;
+    const calculatedProfitForSave = currentTotalServicePrice - actualSuppliesWorkshopCostForSave;
+
 
     if (mode === 'service') {
       const serviceData: ServiceRecord = {
@@ -307,8 +326,8 @@ export function ServiceForm({
         totalCost: currentTotalServicePrice, 
         subTotal: currentTotalServicePrice / (1 + IVA_RATE), 
         taxAmount: currentTotalServicePrice - (currentTotalServicePrice / (1 + IVA_RATE)), 
-        totalSuppliesCost: currentTotalSuppliesCost, 
-        serviceProfit: currentTotalServicePrice - currentTotalSuppliesCost, 
+        totalSuppliesCost: actualSuppliesWorkshopCostForSave, 
+        serviceProfit: calculatedProfitForSave, 
       };
       await onSubmit(serviceData);
     } else { 
@@ -325,27 +344,15 @@ export function ServiceForm({
           return {
             supplyId: s.supplyId,
             quantity: s.quantity,
-            unitPrice: itemDetails?.sellingPrice || 0, 
+            unitPrice: itemDetails?.sellingPrice || 0, // Cost to client (selling price)
             supplyName: itemDetails?.name || s.supplyName,
           };
         }) || [],
         estimatedTotalCost: currentTotalServicePrice, 
         estimatedSubTotal: currentTotalServicePrice / (1 + IVA_RATE),
         estimatedTaxAmount: currentTotalServicePrice - (currentTotalServicePrice / (1 + IVA_RATE)),
-        estimatedTotalSuppliesCost: currentInventoryItems.reduce((sum, supply) => { 
-             const proposedSupply = values.suppliesUsed?.find(s => s.supplyId === supply.id);
-             if (proposedSupply) {
-                 return sum + (supply.sellingPrice * proposedSupply.quantity);
-             }
-             return sum;
-        },0),
-        estimatedProfit: currentTotalServicePrice - (currentInventoryItems.reduce((sum, supply) => {
-             const proposedSupply = values.suppliesUsed?.find(s => s.supplyId === supply.id);
-             if (proposedSupply) {
-                 return sum + (supply.unitPrice * proposedSupply.quantity); 
-             }
-             return sum;
-        },0)),
+        estimatedTotalSuppliesCost: actualSuppliesWorkshopCostForSave, // Cost to workshop
+        estimatedProfit: calculatedProfitForSave, // Profit based on workshop cost
         notes: values.notes,
         mileage: values.mileage,
       };
@@ -375,20 +382,20 @@ export function ServiceForm({
   const cardTitleText = mode === 'quote' ? "Información del Vehículo y Cotización" : "Información del Vehículo y Servicio";
   const dateLabelText = mode === 'quote' ? "Fecha de Cotización" : "Fecha y Hora de Recepción";
   const totalCostLabelText = mode === 'quote' ? "Costo Estimado (IVA incluido)" : "Costo del Servicio (IVA incluido)";
-  const technicianLabelText = mode === 'service' ? "Técnico Asignado" : ""; // Will be hidden in quote mode via conditional rendering
+  const technicianLabelText = mode === 'service' ? "Técnico Asignado" : ""; 
   const submitButtonText = mode === 'quote' ? "Generar PDF de Cotización" : (initialDataService ? "Actualizar Servicio" : "Crear Servicio");
 
   // --- Add Supply Dialog Logic ---
   useEffect(() => {
     if (addSupplySearchTerm.trim() === '') {
-        setFilteredInventoryForDialog(currentInventoryItems.slice(0,10)); // Show some initial items or recently added
+        setFilteredInventoryForDialog(currentInventoryItems.filter(item => item.isService || item.quantity > 0).slice(0,10));
         return;
     }
     const lowerSearchTerm = addSupplySearchTerm.toLowerCase();
     setFilteredInventoryForDialog(
         currentInventoryItems.filter(item =>
-            item.name.toLowerCase().includes(lowerSearchTerm) ||
-            item.sku.toLowerCase().includes(lowerSearchTerm)
+            (item.name.toLowerCase().includes(lowerSearchTerm) ||
+            item.sku.toLowerCase().includes(lowerSearchTerm)) && (item.isService || item.quantity > 0)
         ).slice(0, 10) 
     );
   }, [addSupplySearchTerm, currentInventoryItems]);
@@ -404,11 +411,16 @@ export function ServiceForm({
           toast({ title: "Datos incompletos", description: "Seleccione un insumo de la búsqueda y una cantidad válida.", variant: "destructive" });
           return;
       }
+      if (!selectedInventoryItemForDialog.isService && selectedInventoryItemForDialog.quantity < addSupplyQuantity) {
+          toast({ title: "Stock Insuficiente", description: `Solo hay ${selectedInventoryItemForDialog.quantity} unidades de ${selectedInventoryItemForDialog.name}.`, variant: "destructive" });
+          return;
+      }
       append({
           supplyId: selectedInventoryItemForDialog.id,
           supplyName: selectedInventoryItemForDialog.name,
           quantity: addSupplyQuantity,
           unitPrice: mode === 'quote' ? selectedInventoryItemForDialog.sellingPrice : selectedInventoryItemForDialog.unitPrice,
+          isService: selectedInventoryItemForDialog.isService || false,
       });
       setIsAddSupplyDialogOpen(false);
       setAddSupplySearchTerm('');
@@ -424,6 +436,7 @@ export function ServiceForm({
           unitPrice: 0,
           sellingPrice: 0,
           lowStockThreshold: 5,
+          isService: false, // Default to product, can be changed in dialog
           category: placeholderCategories.length > 0 ? placeholderCategories[0].name : "",
           supplier: placeholderSuppliers.length > 0 ? placeholderSuppliers[0].name : "",
       });
@@ -435,10 +448,11 @@ export function ServiceForm({
       const newInventoryItem: InventoryItem = {
           id: `P_SVC_${Date.now()}`, 
           ...newItemFormValues,
+          isService: newItemFormValues.isService || false,
+          quantity: newItemFormValues.isService ? 0 : Number(newItemFormValues.quantity),
+          lowStockThreshold: newItemFormValues.isService ? 0 : Number(newItemFormValues.lowStockThreshold),
           unitPrice: Number(newItemFormValues.unitPrice),
           sellingPrice: Number(newItemFormValues.sellingPrice),
-          quantity: Number(newItemFormValues.quantity),
-          lowStockThreshold: Number(newItemFormValues.lowStockThreshold),
       };
       placeholderInventory.push(newInventoryItem);
       setCurrentInventoryItems(prev => [...prev, newInventoryItem]);
@@ -446,7 +460,7 @@ export function ServiceForm({
           onInventoryItemCreatedFromService(newInventoryItem);
       }
       toast({
-          title: "Nuevo Insumo Creado",
+          title: "Nuevo Ítem Creado",
           description: `${newInventoryItem.name} ha sido agregado al inventario y añadido al ${mode === 'quote' ? 'presupuesto' : 'servicio'}.`,
       });
       append({
@@ -454,6 +468,7 @@ export function ServiceForm({
           supplyName: newInventoryItem.name,
           quantity: 1, 
           unitPrice: mode === 'quote' ? newInventoryItem.sellingPrice : newInventoryItem.unitPrice,
+          isService: newInventoryItem.isService,
       });
       setIsNewInventoryItemDialogOpen(false);
       setNewSupplyInitialData(null);
@@ -783,7 +798,7 @@ export function ServiceForm({
 
         <Card>
             <CardHeader>
-                <CardTitle className="text-lg">{mode === 'quote' ? "Insumos Propuestos" : "Insumos Utilizados"}</CardTitle>
+                <CardTitle className="text-lg">{mode === 'quote' ? "Insumos/Servicios Propuestos" : "Insumos/Servicios Utilizados"}</CardTitle>
             </CardHeader>
             <CardContent>
                 {fields.length > 0 && (
@@ -791,7 +806,7 @@ export function ServiceForm({
                         <Table>
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead>Insumo</TableHead>
+                                    <TableHead>Insumo/Servicio</TableHead>
                                     <TableHead className="text-center">Cant.</TableHead>
                                     <TableHead className="text-right">{mode === 'quote' ? 'Precio Venta Unit. (IVA Inc.)' : 'Costo Unit. (Taller)'}</TableHead>
                                     <TableHead className="text-right">{mode === 'quote' ? 'Precio Total (IVA Inc.)' : 'Costo Total (Taller)'}</TableHead>
@@ -831,30 +846,23 @@ export function ServiceForm({
                     variant="outline"
                     size="sm"
                     onClick={() => {
-                        setSelectedInventoryItemForDialog(null); // Clear previous selection
-                        setAddSupplySearchTerm(''); // Clear search term
-                        setAddSupplyQuantity(1); // Reset quantity
-                        setFilteredInventoryForDialog(currentInventoryItems.slice(0,10)); // Show initial list
+                        setSelectedInventoryItemForDialog(null); 
+                        setAddSupplySearchTerm(''); 
+                        setAddSupplyQuantity(1); 
+                        setFilteredInventoryForDialog(currentInventoryItems.filter(item => item.isService || item.quantity > 0).slice(0,10)); 
                         setIsAddSupplyDialogOpen(true);
                     }}
                     className="mt-4"
                     >
                     <PlusCircle className="mr-2 h-4 w-4" />
-                    Añadir Insumo
+                    Añadir Insumo/Servicio
                     </Button>
                 )}
                  <div className="mt-4 text-lg font-medium text-right">
                     <p>
-                        {mode === 'quote' ? "Costo Total de Insumos (para cotización, IVA Inc.):" : "Costo Total de Insumos (para el taller):"}
+                        {mode === 'quote' ? "Costo Total de Insumos/Servicios (para cotización, IVA Inc.):" : "Costo Total de Insumos/Servicios (para el taller):"}
                         <span className="font-semibold">
-                            {formatCurrency(
-                                mode === 'quote' 
-                                ? watchedSupplies?.reduce((sum, supply) => {
-                                    const item = currentInventoryItems.find(i => i.id === supply.supplyId);
-                                    return sum + (item?.sellingPrice || supply.unitPrice || 0) * supply.quantity; 
-                                  }, 0) || 0
-                                : totalSuppliesCost 
-                            )}
+                            {formatCurrency(totalSuppliesCost)}
                         </span>
                     </p>
                 </div>
@@ -875,7 +883,14 @@ export function ServiceForm({
                 </div>
                 <div className="flex justify-between">
                     <span>(-) Costo Insumos (Taller):</span> 
-                    <span className="font-medium text-red-600 dark:text-red-400">{formatCurrency(totalSuppliesCost)}</span>
+                    <span className="font-medium text-red-600 dark:text-red-400">
+                         {formatCurrency(
+                            watchedSupplies?.reduce((sum, supply) => {
+                                const item = currentInventoryItems.find(i => i.id === supply.supplyId);
+                                return sum + (item?.unitPrice || 0) * supply.quantity; // Always use workshop cost for this line
+                            }, 0) || 0
+                        )}
+                    </span>
                 </div>
                 <hr className="my-2 border-dashed"/>
                 <div className="flex justify-between font-bold text-green-700 dark:text-green-400">
@@ -915,7 +930,7 @@ export function ServiceForm({
     <Dialog open={isAddSupplyDialogOpen} onOpenChange={setIsAddSupplyDialogOpen}>
         <DialogContent className="sm:max-w-lg">
             <DialogHeader>
-                <DialogTitle>Añadir Insumo al {mode === 'quote' ? 'Presupuesto' : 'Servicio'}</DialogTitle>
+                <DialogTitle>Añadir Insumo/Servicio al {mode === 'quote' ? 'Presupuesto' : 'Servicio'}</DialogTitle>
                 <DialogDescription>Busque por nombre o SKU. Si no existe, puede crearlo.</DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-4">
@@ -923,11 +938,11 @@ export function ServiceForm({
                     <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                     <Input
                         id="supply-search"
-                        placeholder="Buscar insumo por nombre o SKU..."
+                        placeholder="Buscar insumo/servicio por nombre o SKU..."
                         value={addSupplySearchTerm}
                         onChange={(e) => {
                             setAddSupplySearchTerm(e.target.value);
-                            setSelectedInventoryItemForDialog(null); // Clear selection when search term changes
+                            setSelectedInventoryItemForDialog(null); 
                         }}
                         className="pl-8"
                     />
@@ -945,7 +960,7 @@ export function ServiceForm({
                                     <div>
                                         <p className="font-medium">{item.name} <span className="text-xs text-muted-foreground">({item.sku})</span></p>
                                         <p className="text-xs text-muted-foreground">
-                                            Stock: {item.quantity} | {mode === 'quote' ? `Venta: ${formatCurrency(item.sellingPrice)}` : `Costo: ${formatCurrency(item.unitPrice)}`}
+                                            {item.isService ? 'Servicio' : `Stock: ${item.quantity}`} | {mode === 'quote' ? `Venta: ${formatCurrency(item.sellingPrice)}` : `Costo: ${formatCurrency(item.unitPrice)}`}
                                         </p>
                                     </div>
                                 </Button>
@@ -963,9 +978,9 @@ export function ServiceForm({
                 )}
                 {addSupplySearchTerm && filteredInventoryForDialog.length === 0 && !selectedInventoryItemForDialog && (
                     <div className="text-center py-2 text-sm text-muted-foreground">
-                        <p>No se encontró el insumo "{addSupplySearchTerm}".</p>
+                        <p>No se encontró el ítem "{addSupplySearchTerm}".</p>
                         <Button variant="link" size="sm" onClick={handleOpenCreateNewSupplyDialog} className="text-primary">
-                            <PackagePlus className="mr-2 h-4 w-4"/>Crear Nuevo Insumo
+                            <PackagePlus className="mr-2 h-4 w-4"/>Crear Nuevo Ítem
                         </Button>
                     </div>
                 )}
@@ -982,7 +997,7 @@ export function ServiceForm({
             </div>
             <DialogFooter>
                 <Button type="button" variant="outline" onClick={() => setIsAddSupplyDialogOpen(false)}>Cancelar</Button>
-                <Button type="button" onClick={handleAddSupplyConfirmed} disabled={!selectedInventoryItemForDialog}>Añadir Insumo Seleccionado</Button>
+                <Button type="button" onClick={handleAddSupplyConfirmed} disabled={!selectedInventoryItemForDialog}>Añadir Ítem Seleccionado</Button>
             </DialogFooter>
         </DialogContent>
     </Dialog>

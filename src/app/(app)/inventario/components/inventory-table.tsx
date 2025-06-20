@@ -26,7 +26,7 @@ export function InventoryTable({ items }: InventoryTableProps) {
   };
   
   if (!items.length) {
-    return <p className="text-muted-foreground text-center py-8">No hay productos en el inventario.</p>;
+    return <p className="text-muted-foreground text-center py-8">No hay productos o servicios en el inventario.</p>;
   }
 
   return (
@@ -48,16 +48,18 @@ export function InventoryTable({ items }: InventoryTableProps) {
             <TableRow 
               key={item.id} 
               onClick={() => handleRowClick(item.id)}
-              className={`cursor-pointer hover:bg-muted/50 ${item.quantity <= item.lowStockThreshold ? "bg-orange-50 dark:bg-orange-900/30" : ""}`}
+              className={`cursor-pointer hover:bg-muted/50 ${!item.isService && item.quantity <= item.lowStockThreshold ? "bg-orange-50 dark:bg-orange-900/30" : ""}`}
             >
               <TableCell className="font-medium">{item.sku}</TableCell>
               <TableCell>{item.category}</TableCell>
               <TableCell>{item.name}</TableCell>
-              <TableCell className="text-right">{item.quantity}</TableCell>
+              <TableCell className="text-right">
+                {item.isService ? <Badge variant="outline">Servicio</Badge> : item.quantity}
+              </TableCell>
               <TableCell className="text-right">${item.unitPrice.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
               <TableCell className="text-right">${item.sellingPrice.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
               <TableCell>
-                {item.quantity <= item.lowStockThreshold && (
+                {!item.isService && item.quantity <= item.lowStockThreshold && (
                   <Badge variant="destructive">Bajo</Badge>
                 )}
               </TableCell>

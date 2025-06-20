@@ -34,7 +34,8 @@ const saleItemSchema = z.object({
   itemName: z.string(), 
   quantity: z.coerce.number().min(1, "La cantidad debe ser al menos 1."),
   unitPrice: z.coerce.number(), 
-  totalPrice: z.coerce.number(), 
+  totalPrice: z.coerce.number(),
+  isService: z.boolean().optional(), // Added to know if it's a service
 });
 
 const paymentMethods: [PaymentMethod, ...PaymentMethod[]] = [
@@ -136,7 +137,7 @@ export function PosForm({ inventoryItems: parentInventoryItems, onSaleComplete, 
     setSelectedInventoryItemForDialog(null);
     setAddItemSearchTerm('');
     setAddItemQuantity(1);
-    setFilteredInventoryForDialog(currentInventoryItems.filter(item => item.quantity > 0).slice(0,10));
+    setFilteredInventoryForDialog(currentInventoryItems.filter(item => item.isService || item.quantity > 0).slice(0,10));
     setIsAddItemDialogOpen(true);
   };
   
@@ -170,7 +171,7 @@ export function PosForm({ inventoryItems: parentInventoryItems, onSaleComplete, 
 
     values.items.forEach(soldItem => {
       const inventoryItemIndex = placeholderInventory.findIndex(invItem => invItem.id === soldItem.inventoryItemId);
-      if (inventoryItemIndex !== -1) {
+      if (inventoryItemIndex !== -1 && !placeholderInventory[inventoryItemIndex].isService) { // Only deduct stock for non-service items
         const currentStock = placeholderInventory[inventoryItemIndex].quantity;
         if (currentStock < soldItem.quantity) {
           toast({
@@ -184,12 +185,6 @@ export function PosForm({ inventoryItems: parentInventoryItems, onSaleComplete, 
       }
     });
     
-    // Toast removed, will be handled by parent (NuevaVentaPage) after dialog transition
-    // toast({
-    //   title: "Venta Registrada",
-    //   description: `Venta ${newSaleId} procesada por $${newSaleTotalAmount.toLocaleString('es-MX', {minimumFractionDigits: 2})}. Ticket listo para previsualizar/imprimir.`,
-    // });
-    
     onSaleComplete(newSale);
   };
   
@@ -201,14 +196,14 @@ export function PosForm({ inventoryItems: parentInventoryItems, onSaleComplete, 
   // --- Add Item Dialog Logic ---
   useEffect(() => {
     if (addItemSearchTerm.trim() === '') {
-        setFilteredInventoryForDialog(currentInventoryItems.filter(item => item.quantity > 0).slice(0,10));
+        setFilteredInventoryForDialog(currentInventoryItems.filter(item => item.isService || item.quantity > 0).slice(0,10));
         return;
     }
     const lowerSearchTerm = addItemSearchTerm.toLowerCase();
     setFilteredInventoryForDialog(
         currentInventoryItems.filter(item =>
             (item.name.toLowerCase().includes(lowerSearchTerm) ||
-            item.sku.toLowerCase().includes(lowerSearchTerm)) && item.quantity > 0
+            item.sku.toLowerCase().includes(lowerSearchTerm)) && (item.isService || item.quantity > 0)
         ).slice(0, 10) 
     );
   }, [addItemSearchTerm, currentInventoryItems]);
@@ -224,7 +219,7 @@ export function PosForm({ inventoryItems: parentInventoryItems, onSaleComplete, 
           toast({ title: "Datos incompletos", description: "Seleccione un artículo y una cantidad válida.", variant: "destructive" });
           return;
       }
-      if (selectedInventoryItemForDialog.quantity < addItemQuantity) {
+      if (!selectedInventoryItemForDialog.isService && selectedInventoryItemForDialog.quantity < addItemQuantity) {
           toast({ title: "Stock Insuficiente", description: `Solo hay ${selectedInventoryItemForDialog.quantity} unidades de ${selectedInventoryItemForDialog.name}.`, variant: "destructive" });
           return;
       }
@@ -234,6 +229,7 @@ export function PosForm({ inventoryItems: parentInventoryItems, onSaleComplete, 
           quantity: addItemQuantity,
           unitPrice: selectedInventoryItemForDialog.sellingPrice, // Selling price for POS
           totalPrice: selectedInventoryItemForDialog.sellingPrice * addItemQuantity,
+          isService: selectedInventoryItemForDialog.isService || false,
       });
       setIsAddItemDialogOpen(false);
       setAddItemSearchTerm('');
@@ -245,10 +241,11 @@ export function PosForm({ inventoryItems: parentInventoryItems, onSaleComplete, 
       setNewItemInitialData({
           name: addItemSearchTerm, 
           sku: '', 
-          quantity: 0, // New items start with 0, updated via purchase entry
+          quantity: 0, 
           unitPrice: 0,
           sellingPrice: 0,
           lowStockThreshold: 5,
+          isService: false, // Default to product, can be changed in the dialog
           category: placeholderCategories.length > 0 ? placeholderCategories[0].name : "",
           supplier: placeholderSuppliers.length > 0 ? placeholderSuppliers[0].name : "",
       });
@@ -260,34 +257,36 @@ export function PosForm({ inventoryItems: parentInventoryItems, onSaleComplete, 
       const newInventoryItem: InventoryItem = {
           id: `P_POS_${Date.now()}`, 
           ...newItemFormValues,
+          isService: newItemFormValues.isService || false,
+          quantity: newItemFormValues.isService ? 0 : Number(newItemFormValues.quantity),
+          lowStockThreshold: newItemFormValues.isService ? 0 : Number(newItemFormValues.lowStockThreshold),
           unitPrice: Number(newItemFormValues.unitPrice),
           sellingPrice: Number(newItemFormValues.sellingPrice),
-          quantity: Number(newItemFormValues.quantity), // This will be the initial stock from the form
-          lowStockThreshold: Number(newItemFormValues.lowStockThreshold),
       };
-      placeholderInventory.push(newInventoryItem); // Add to global store
-      setCurrentInventoryItems(prev => [...prev, newInventoryItem]); // Update local list for dialog
+      placeholderInventory.push(newInventoryItem); 
+      setCurrentInventoryItems(prev => [...prev, newInventoryItem]); 
       
-      if (onInventoryItemCreated) { // Notify parent page
+      if (onInventoryItemCreated) { 
           onInventoryItemCreated(newInventoryItem);
       }
       
       toast({
-          title: "Nuevo Artículo Creado",
+          title: "Nuevo Ítem Creado",
           description: `${newInventoryItem.name} ha sido agregado al inventario y añadido a la venta.`,
       });
       
-      append({ // Add the newly created item to the current sale
+      append({ 
           inventoryItemId: newInventoryItem.id,
           itemName: newInventoryItem.name,
-          quantity: newItemFormValues.quantity > 0 ? newItemFormValues.quantity : 1, // Use entered qty or default to 1
+          quantity: newItemFormValues.isService ? 1 : (newItemFormValues.quantity > 0 ? newItemFormValues.quantity : 1), 
           unitPrice: newInventoryItem.sellingPrice,
-          totalPrice: newInventoryItem.sellingPrice * (newItemFormValues.quantity > 0 ? newItemFormValues.quantity : 1),
+          totalPrice: newInventoryItem.sellingPrice * (newItemFormValues.isService ? 1 : (newItemFormValues.quantity > 0 ? newItemFormValues.quantity : 1)),
+          isService: newInventoryItem.isService,
       });
       
       setIsNewInventoryItemDialogOpen(false);
       setNewItemInitialData(null);
-      setAddItemSearchTerm(''); // Reset search dialog
+      setAddItemSearchTerm(''); 
       setAddItemQuantity(1);
       setSelectedInventoryItemForDialog(null);
   };
@@ -331,7 +330,7 @@ export function PosForm({ inventoryItems: parentInventoryItems, onSaleComplete, 
                             controllerField.onChange(newQuantity);
                             const unitPrice = form.getValues(`items.${index}.unitPrice`) || 0;
                             const itemDetails = currentInventoryItems.find(invItem => invItem.id === form.getValues(`items.${index}.inventoryItemId`));
-                            if (itemDetails && newQuantity > itemDetails.quantity) {
+                            if (itemDetails && !itemDetails.isService && newQuantity > itemDetails.quantity) {
                                 toast({ title: "Stock Insuficiente", description: `Solo hay ${itemDetails.quantity} unidades de ${itemDetails.name}.`, variant: "destructive", duration: 3000});
                             }
                             update(index, {
@@ -369,7 +368,7 @@ export function PosForm({ inventoryItems: parentInventoryItems, onSaleComplete, 
               className="mt-4"
             >
               <PlusCircle className="mr-2 h-4 w-4" />
-              Añadir Artículo
+              Añadir Artículo/Servicio
             </Button>
           </CardContent>
         </Card>
@@ -459,7 +458,7 @@ export function PosForm({ inventoryItems: parentInventoryItems, onSaleComplete, 
     <Dialog open={isAddItemDialogOpen} onOpenChange={setIsAddItemDialogOpen}>
         <DialogContent className="sm:max-w-lg">
             <DialogHeader>
-                <DialogTitle>Añadir Artículo a la Venta</DialogTitle>
+                <DialogTitle>Añadir Artículo/Servicio a la Venta</DialogTitle>
                 <DialogDescription>Busque por nombre o SKU. Si no existe, puede crearlo.</DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-4">
@@ -467,7 +466,7 @@ export function PosForm({ inventoryItems: parentInventoryItems, onSaleComplete, 
                     <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                     <Input
                         id="item-search"
-                        placeholder="Buscar artículo por nombre o SKU..."
+                        placeholder="Buscar artículo/servicio por nombre o SKU..."
                         value={addItemSearchTerm}
                         onChange={(e) => {
                             setAddItemSearchTerm(e.target.value);
@@ -489,7 +488,7 @@ export function PosForm({ inventoryItems: parentInventoryItems, onSaleComplete, 
                                     <div>
                                         <p className="font-medium">{item.name} <span className="text-xs text-muted-foreground">({item.sku})</span></p>
                                         <p className="text-xs text-muted-foreground">
-                                            Stock: {item.quantity} | Venta: {formatCurrency(item.sellingPrice)}
+                                            {item.isService ? 'Servicio' : `Stock: ${item.quantity}`} | Venta: {formatCurrency(item.sellingPrice)}
                                         </p>
                                     </div>
                                 </Button>
@@ -505,9 +504,9 @@ export function PosForm({ inventoryItems: parentInventoryItems, onSaleComplete, 
                 )}
                 {addItemSearchTerm && filteredInventoryForDialog.length === 0 && !selectedInventoryItemForDialog && (
                     <div className="text-center py-2 text-sm text-muted-foreground">
-                        <p>No se encontró el artículo "{addItemSearchTerm}".</p>
+                        <p>No se encontró el ítem "{addItemSearchTerm}".</p>
                         <Button variant="link" size="sm" onClick={handleOpenCreateNewItemDialog} className="text-primary">
-                            <PackagePlus className="mr-2 h-4 w-4"/>Crear Nuevo Artículo
+                            <PackagePlus className="mr-2 h-4 w-4"/>Crear Nuevo Ítem
                         </Button>
                     </div>
                 )}
@@ -524,7 +523,7 @@ export function PosForm({ inventoryItems: parentInventoryItems, onSaleComplete, 
             </div>
             <DialogFooter>
                 <Button type="button" variant="outline" onClick={() => setIsAddItemDialogOpen(false)}>Cancelar</Button>
-                <Button type="button" onClick={handleAddItemConfirmed} disabled={!selectedInventoryItemForDialog}>Añadir Artículo Seleccionado</Button>
+                <Button type="button" onClick={handleAddItemConfirmed} disabled={!selectedInventoryItemForDialog}>Añadir Ítem Seleccionado</Button>
             </DialogFooter>
         </DialogContent>
     </Dialog>
@@ -542,4 +541,3 @@ export function PosForm({ inventoryItems: parentInventoryItems, onSaleComplete, 
     </>
   );
 }
-
