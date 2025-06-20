@@ -31,7 +31,7 @@ import { VehicleDialog } from "../../vehiculos/components/vehicle-dialog";
 import type { VehicleFormValues } from "../../vehiculos/components/vehicle-form";
 import { placeholderVehicles as defaultPlaceholderVehicles } from "@/lib/placeholder-data";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
+import { Label } from "@/components/ui/label"; // Import Label
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 
@@ -385,21 +385,17 @@ export function ServiceForm({
                     render={() => ( <FormMessage /> )} 
                   />
                 {selectedVehicle && (
-                    <div className="p-3 border rounded-md bg-muted text-sm">
-                        <div className="flex justify-between items-start">
+                    <div className="p-3 border rounded-md bg-muted text-sm space-y-1">
+                        <p><strong>Vehículo Seleccionado:</strong> {selectedVehicle.make} {selectedVehicle.model} ({selectedVehicle.year})</p>
+                         {watchedStatus && (
                             <div>
-                                <p><strong>Vehículo Seleccionado:</strong> {selectedVehicle.make} {selectedVehicle.model} ({selectedVehicle.year})</p>
-                                <div className="flex items-center gap-2 mt-1">
-                                    <p><strong>Placa:</strong> {selectedVehicle.licensePlate}</p>
-                                    {watchedStatus && (
-                                        <Badge variant={getStatusVariant(watchedStatus)} className="text-xs">
-                                            {watchedStatus}
-                                        </Badge>
-                                    )}
-                                </div>
-                                <p className="mt-1"><strong>Propietario:</strong> {selectedVehicle.ownerName}</p>
+                                <Badge variant={getStatusVariant(watchedStatus)} className="text-xs">
+                                    {watchedStatus}
+                                </Badge>
                             </div>
-                        </div>
+                        )}
+                        <p><strong>Placa:</strong> {selectedVehicle.licensePlate}</p>
+                        <p><strong>Propietario:</strong> {selectedVehicle.ownerName}</p>
                     </div>
                 )}
                 {vehicleNotFound && !selectedVehicle && !isReadOnly && (
@@ -518,29 +514,32 @@ export function ServiceForm({
                         <FormMessage />
                         </FormItem>
                     )}
-                    />
+                />
                 
-                {currentTechnician && !isReadOnly && (
-                     <div className="pt-2">
-                        <FormLabel>Técnico Asignado:</FormLabel>
-                        <p className="text-sm font-medium pt-1">{currentTechnician.name}</p>
-                    </div>
-                )}
-
-                <FormField
-                    control={form.control}
-                    name="totalServicePrice"
-                    render={({ field }) => (
-                        <FormItem className="pt-2">
-                            <FormLabel className="text-base font-semibold">Precio Total del Servicio (Cobro al Cliente, IVA Incluido)</FormLabel>
-                            <FormControl>
-                            <Input type="number" step="0.01" placeholder="Ej: 1740.00" {...field} disabled={isReadOnly} className="text-lg font-medium"/>
-                            </FormControl>
-                            <FormDescription>Este es el monto final que pagará el cliente por el servicio completo (IVA incluido).</FormDescription>
-                            <FormMessage />
-                        </FormItem>
+                <div className="grid grid-cols-1 md:grid-cols-5 gap-4 pt-4 items-end">
+                    {currentTechnician && !isReadOnly && (
+                        <div className="md:col-span-2 flex flex-col">
+                            <FormLabel>Técnico Asignado</FormLabel>
+                            <p className="text-sm font-medium pt-1 h-10 flex items-center border border-transparent">
+                                {currentTechnician.name}
+                            </p>
+                        </div>
                     )}
+                    <FormField
+                        control={form.control}
+                        name="totalServicePrice"
+                        render={({ field }) => (
+                            <FormItem className={`${currentTechnician && !isReadOnly ? "md:col-span-3" : "md:col-span-5"}`}>
+                                <FormLabel className="text-base font-semibold">Precio Total del Servicio (Cobro al Cliente, IVA Incluido)</FormLabel>
+                                <FormControl>
+                                <Input type="number" step="0.01" placeholder="Ej: 1740.00" {...field} disabled={isReadOnly} className="text-lg font-medium"/>
+                                </FormControl>
+                                <FormDescription>Este es el monto final que pagará el cliente por el servicio completo (IVA incluido).</FormDescription>
+                                <FormMessage />
+                            </FormItem>
+                        )}
                     />
+                </div>
             </CardContent>
         </Card>
 
@@ -741,16 +740,16 @@ export function ServiceForm({
                 </CardTitle>
             </CardHeader>
             <CardContent className="space-y-1 text-sm">
-                <div className="flex justify-between text-sm pt-1">
+                <div className="flex justify-between pt-1">
                     <span>Precio Total Cliente (IVA Incluido):</span> 
                     <span className="font-semibold text-blue-600 dark:text-blue-400">{formatCurrency(watchedTotalServicePrice)}</span>
                 </div>
-                <div className="flex justify-between text-sm">
+                <div className="flex justify-between">
                     <span>(-) Costo Insumos (Taller):</span> 
                     <span className="font-medium text-red-600 dark:text-red-400">{formatCurrency(totalSuppliesCost)}</span>
                 </div>
                 <hr className="my-2 border-dashed"/>
-                <div className="flex justify-between text-sm font-bold text-green-700 dark:text-green-400">
+                <div className="flex justify-between font-bold text-green-700 dark:text-green-400">
                     <span>(=) Ganancia Estimada del Servicio:</span> 
                     <span>{formatCurrency(serviceProfit)}</span>
                 </div>
