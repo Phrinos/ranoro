@@ -18,7 +18,9 @@ import { useEffect, useState } from 'react';
 import { VehicleDialog } from '../components/vehicle-dialog';
 import type { VehicleFormValues } from '../components/vehicle-form';
 import { useToast } from '@/hooks/use-toast';
-import { ServiceDialog } from '../../servicios/components/service-dialog'; // Import ServiceDialog
+import { ServiceDialog } from '../../servicios/components/service-dialog'; 
+import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
+import { TicketContent } from '@/components/ticket-content';
 
 export default function VehicleDetailPage() {
   const params = useParams();
@@ -28,11 +30,15 @@ export default function VehicleDetailPage() {
 
   const [vehicle, setVehicle] = useState<Vehicle | null | undefined>(undefined);
   const [services, setServices] = useState<ServiceRecord[]>([]);
-  const [techniciansMap, setTechniciansMap] = useState<Record<string, string>>({});
+  const [technicians, setTechnicians] = useState<Technician[]>(placeholderTechnicians);
   
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isViewServiceDialogOpen, setIsViewServiceDialogOpen] = useState(false);
   const [selectedService, setSelectedService] = useState<ServiceRecord | null>(null);
+
+  const [showPrintTicketDialog, setShowPrintTicketDialog] = useState(false);
+  const [currentServiceForTicket, setCurrentServiceForTicket] = useState<ServiceRecord | null>(null);
+  const [currentTechnicianForTicket, setCurrentTechnicianForTicket] = useState<Technician | null>(null);
 
 
   useEffect(() => {
@@ -40,15 +46,12 @@ export default function VehicleDetailPage() {
     setVehicle(foundVehicle || null);
 
     if (foundVehicle) {
-      const vehicleServices = placeholderServiceRecords.filter(s => s.vehicleId === foundVehicle.id);
+      const vehicleServices = placeholderServiceRecords.filter(s => s.vehicleId === foundVehicle.id)
+        .sort((a, b) => parseISO(b.serviceDate).getTime() - parseISO(a.serviceDate).getTime());
       setServices(vehicleServices);
     }
     
-    const techMap: Record<string, string> = {};
-    placeholderTechnicians.forEach(tech => {
-      techMap[tech.id] = tech.name;
-    });
-    setTechniciansMap(techMap);
+    setTechnicians(placeholderTechnicians);
 
   }, [vehicleId]);
 
@@ -57,14 +60,12 @@ export default function VehicleDetailPage() {
 
     const updatedVehicleData: Partial<Vehicle> = {
         ...formData,
-        year: Number(formData.year), // Ensure year is number
+        year: Number(formData.year), 
     };
     
-    // Simulate updating the vehicle in our placeholder data
     const updatedVehicle = { ...vehicle, ...updatedVehicleData } as Vehicle;
     setVehicle(updatedVehicle);
 
-    // Also update in the main placeholder array (for demo purposes)
     const pIndex = placeholderVehicles.findIndex(v => v.id === updatedVehicle.id);
     if (pIndex !== -1) {
       placeholderVehicles[pIndex] = updatedVehicle;
@@ -76,6 +77,28 @@ export default function VehicleDetailPage() {
       description: `Los datos del vehículo ${updatedVehicle.make} ${updatedVehicle.model} han sido actualizados.`,
     });
   };
+  
+  const handleServiceUpdated = async (updatedService: ServiceRecord) => {
+    setServices(prevServices =>
+      prevServices.map(s => (s.id === updatedService.id ? updatedService : s))
+    );
+    const pIndex = placeholderServiceRecords.findIndex(s => s.id === updatedService.id);
+    if (pIndex !== -1) {
+      placeholderServiceRecords[pIndex] = updatedService;
+    }
+    setIsViewServiceDialogOpen(false); // Close the service view/edit dialog
+    toast({
+      title: "Servicio Actualizado",
+      description: `El servicio ${updatedService.id} para el vehículo ${vehicle?.licensePlate} ha sido actualizado.`,
+    });
+
+    if (updatedService.status === 'Completado') {
+      setCurrentServiceForTicket(updatedService);
+      setCurrentTechnicianForTicket(technicians.find(t => t.id === updatedService.technicianId) || null);
+      setShowPrintTicketDialog(true);
+    }
+  };
+
 
   const handleServiceRowClick = (service: ServiceRecord) => {
     setSelectedService(service);
@@ -170,7 +193,7 @@ export default function VehicleDetailPage() {
           <Card>
             <CardHeader>
               <CardTitle>Historial de Servicios</CardTitle>
-              <CardDescription>Servicios realizados a este vehículo.</CardDescription>
+              <CardDescription>Servicios realizados a este vehículo. Haz clic en una fila para ver/editar.</CardDescription>
             </CardHeader>
             <CardContent>
               {services.length > 0 ? (
@@ -184,23 +207,17 @@ export default function VehicleDetailPage() {
                       <TableHead>Técnico</TableHead>
                       <TableHead className="text-right">Costo Total</TableHead>
                       <TableHead>Estado</TableHead>
-                      <TableHead className="text-right">Ver</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {services.map(service => (
-                      <TableRow key={service.id} >
-                        <TableCell>{format(parseISO(service.serviceDate), "dd MMM yyyy", { locale: es })}</TableCell>
+                      <TableRow key={service.id} onClick={() => handleServiceRowClick(service)} className="cursor-pointer hover:bg-muted/50">
+                        <TableCell>{format(parseISO(service.serviceDate), "dd MMM yyyy, HH:mm", { locale: es })}</TableCell>
                         <TableCell>{service.mileage ? `${service.mileage.toLocaleString('es-ES')} km` : 'N/A'}</TableCell>
                         <TableCell className="max-w-xs truncate">{service.description}</TableCell>
-                        <TableCell>{techniciansMap[service.technicianId] || service.technicianId}</TableCell>
+                        <TableCell>{technicians.find(t => t.id === service.technicianId)?.name || service.technicianId}</TableCell>
                         <TableCell className="text-right">${service.totalCost.toLocaleString('es-ES', { minimumFractionDigits: 2 })}</TableCell>
                         <TableCell><Badge variant={getStatusVariant(service.status)}>{service.status}</Badge></TableCell>
-                        <TableCell className="text-right">
-                          <Button variant="ghost" size="icon" onClick={() => handleServiceRowClick(service)} aria-label="Ver Servicio">
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                        </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -227,11 +244,25 @@ export default function VehicleDetailPage() {
           onOpenChange={setIsViewServiceDialogOpen}
           service={selectedService}
           vehicles={placeholderVehicles} 
-          technicians={placeholderTechnicians}
+          technicians={technicians}
           inventoryItems={placeholderInventory}
-          isReadOnly={true}
-          onSave={async () => { /* No save action in read-only */ }}
+          isReadOnly={false} // Allow editing from here
+          onSave={handleServiceUpdated}
         />
+      )}
+      {currentServiceForTicket && vehicle && (
+        <PrintTicketDialog
+          open={showPrintTicketDialog}
+          onOpenChange={setShowPrintTicketDialog}
+          title="Comprobante de Servicio"
+          onDialogClose={() => setCurrentServiceForTicket(null)}
+        >
+          <TicketContent 
+            service={currentServiceForTicket} 
+            vehicle={vehicle} // Use the main vehicle state for the ticket
+            technician={currentTechnicianForTicket || undefined}
+          />
+        </PrintTicketDialog>
       )}
     </div>
   );

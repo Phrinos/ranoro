@@ -19,7 +19,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { PlusCircle, Trash2, Receipt } from "lucide-react";
-import type { InventoryItem, SaleItem, PaymentMethod } from "@/types";
+import type { InventoryItem, SaleItem, PaymentMethod, SaleReceipt } from "@/types";
 import { useToast } from "@/hooks/use-toast";
 import { useState, useEffect } from "react";
 import { placeholderSales, placeholderInventory } from "@/lib/placeholder-data";
@@ -70,7 +70,7 @@ type POSFormValues = z.infer<typeof posFormSchema>;
 
 interface POSFormProps {
   inventoryItems: InventoryItem[];
-  onSaleComplete?: () => void; 
+  onSaleComplete?: (saleData: SaleReceipt) => void; 
 }
 
 export function PosForm({ inventoryItems, onSaleComplete }: POSFormProps) {
@@ -146,15 +146,15 @@ export function PosForm({ inventoryItems, onSaleComplete }: POSFormProps) {
     const newSaleSubTotal = newSaleTotalAmount / (1 + IVA_RATE);
     const newSaleTax = newSaleTotalAmount - newSaleSubTotal;
 
-    const newSale = {
+    const newSale: SaleReceipt = {
       id: newSaleId,
       saleDate: new Date().toISOString(),
-      items: values.items.map(item => ({ // Ensure unitPrice and totalPrice are correctly stored
+      items: values.items.map(item => ({ 
         inventoryItemId: item.inventoryItemId,
         itemName: item.itemName,
         quantity: item.quantity,
-        unitPrice: item.unitPrice, // This is the final tax-inclusive price per unit
-        totalPrice: item.totalPrice, // This is final tax-inclusive total for the line
+        unitPrice: item.unitPrice, 
+        totalPrice: item.totalPrice, 
       })),
       subTotal: newSaleSubTotal,
       tax: newSaleTax,
@@ -190,12 +190,11 @@ export function PosForm({ inventoryItems, onSaleComplete }: POSFormProps) {
       description: `Venta ${newSaleId} procesada por un total de $${newSaleTotalAmount.toLocaleString('es-ES', {minimumFractionDigits: 2})}.`,
     });
     
-    form.reset(); 
-    while(fields.length > 0) remove(0); 
-
     if (onSaleComplete) {
-      onSaleComplete();
+      onSaleComplete(newSale); // Pass the newSale data
     } else {
+      form.reset(); 
+      while(fields.length > 0) remove(0);
       router.push('/pos'); 
     }
   };

@@ -102,3 +102,42 @@ body {
     @apply bg-background text-foreground;
   }
 }
+
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  .printable-ticket, .printable-ticket * {
+    visibility: visible;
+  }
+  .printable-ticket {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: auto;
+    margin: 0;
+    padding: 0;
+    border: none;
+    box-shadow: none;
+  }
+  .ticket-preview-content {
+    color: black !important; /* Ensure text is black for printing */
+    background-color: white !important; /* Ensure background is white */
+    font-size: 9pt !important; /* Adjust font size for thermal printers */
+    line-height: 1.2 !important;
+    max-width: 100% !important; /* Use full width of paper */
+    margin: 0 auto !important;
+    padding: 0 !important;
+  }
+  
+  .ticket-container {
+     padding: 0 !important;
+     margin: 0 !important;
+  }
+  
+  @page {
+    size: 80mm auto; /* Common thermal printer width */
+    margin: 0mm;
+  }
+}
