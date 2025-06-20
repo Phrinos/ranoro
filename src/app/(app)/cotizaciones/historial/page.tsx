@@ -33,7 +33,7 @@ export default function HistorialCotizacionesPage() {
   
   const [searchTerm, setSearchTerm] = useState("");
   const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
-  const [sortOption, setSortOption] = useState<QuoteSortOption>("date_desc");
+  const [sortOption, setSortOption] = useState<QuoteSortOption>("date_desc"); // Default to newest first
 
   const [isViewQuoteDialogOpen, setIsViewQuoteDialogOpen] = useState(false);
   const [selectedQuoteForView, setSelectedQuoteForView] = useState<QuoteRecord | null>(null);
@@ -42,7 +42,11 @@ export default function HistorialCotizacionesPage() {
 
 
   useEffect(() => {
-    setAllQuotes(placeholderQuotes); 
+    // Sort initial quotes by date descending (newest first)
+    const sortedInitialQuotes = [...placeholderQuotes].sort((a, b) => 
+      compareDesc(parseISO(a.quoteDate), parseISO(b.quoteDate))
+    );
+    setAllQuotes(sortedInitialQuotes); 
     setVehicles(placeholderVehicles);
     setTechnicians(placeholderTechnicians);
   }, []);
@@ -94,7 +98,12 @@ export default function HistorialCotizacionesPage() {
   const handleViewQuote = (quote: QuoteRecord) => {
     setSelectedQuoteForView(quote);
     setVehicleForSelectedQuote(vehicles.find(v => v.id === quote.vehicleId) || null);
-    setTechnicianForSelectedQuote(technicians.find(t => t.id === quote.preparedByTechnicianId) || null);
+    // For preparedBy, we use the info stored directly in the quote record
+    if (quote.preparedByTechnicianId && quote.preparedByTechnicianName) {
+        setTechnicianForSelectedQuote({ id: quote.preparedByTechnicianId, name: quote.preparedByTechnicianName });
+    } else {
+        setTechnicianForSelectedQuote(null);
+    }
     setIsViewQuoteDialogOpen(true);
   };
 
@@ -228,3 +237,4 @@ export default function HistorialCotizacionesPage() {
     </>
   );
 }
+
