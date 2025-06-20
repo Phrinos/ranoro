@@ -35,8 +35,8 @@ import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { InventoryItemDialog } from "../../../inventario/components/inventory-item-dialog";
-import type { InventoryItemFormValues } from "../../../inventario/components/inventory-item-form";
+import { InventoryItemDialog } from "../../inventario/components/inventory-item-dialog";
+import type { InventoryItemFormValues } from "../../inventario/components/inventory-item-form";
 
 
 const supplySchema = z.object({
@@ -151,7 +151,7 @@ export function ServiceForm({
           })) || [],
           totalServicePrice: mode === 'service' ? initialDataService?.totalCost : initialDataQuote?.estimatedTotalCost, 
           status: mode === 'service' ? initialDataService?.status : undefined,
-          technicianId: mode === 'service' ? initialDataService?.technicianId : initialDataQuote?.preparedByTechnicianId,
+          technicianId: mode === 'service' ? initialDataService?.technicianId : (initialDataQuote as QuoteRecord)?.preparedByTechnicianId,
         }
       : {
           vehicleId: undefined,
@@ -271,8 +271,8 @@ export function ServiceForm({
     }
     
     const isValidForm = await form.trigger();
-    if (!isValidForm || (mode === 'service' && !values.vehicleId) ) { 
-         if (mode === 'service' && !values.vehicleId) {
+    if (!isValidForm || (!values.vehicleId && mode === 'service') ) { 
+        if (mode === 'service' && !values.vehicleId) {
             form.setError("vehicleId", { type: "manual", message: "Debe seleccionar o registrar un vehículo." });
         }
       toast({ title: "Formulario Incompleto", description: "Por favor, revise los campos marcados.", variant: "destructive"});
@@ -313,13 +313,13 @@ export function ServiceForm({
       await onSubmit(serviceData);
     } else { 
       const quoteData: QuoteRecord = {
-        id: initialDataQuote?.id || `Q_NEW_${Date.now()}`,
+        id: (initialDataQuote as QuoteRecord)?.id || `Q_NEW_${Date.now()}`,
         quoteDate: values.serviceDate.toISOString(), 
         vehicleId: values.vehicleId,
         vehicleIdentifier: selectedVehicle?.licensePlate || values.vehicleLicensePlateSearch,
         description: values.description,
-        preparedByTechnicianId: values.technicianId, // User ID will be set by parent page
-        preparedByTechnicianName: technicians.find(t => t.id === values.technicianId)?.name, // User name will be set by parent page
+        preparedByTechnicianId: values.technicianId, 
+        preparedByTechnicianName: technicians.find(t => t.id === values.technicianId)?.name, 
         suppliesProposed: values.suppliesUsed?.map(s => {
           const itemDetails = currentInventoryItems.find(invItem => invItem.id === s.supplyId);
           return {
@@ -332,7 +332,7 @@ export function ServiceForm({
         estimatedTotalCost: currentTotalServicePrice, 
         estimatedSubTotal: currentTotalServicePrice / (1 + IVA_RATE),
         estimatedTaxAmount: currentTotalServicePrice - (currentTotalServicePrice / (1 + IVA_RATE)),
-        estimatedTotalSuppliesCost: currentInventoryItems.reduce((sum, supply) => { // Recalculate for selling price for quotes
+        estimatedTotalSuppliesCost: currentInventoryItems.reduce((sum, supply) => { 
              const proposedSupply = values.suppliesUsed?.find(s => s.supplyId === supply.id);
              if (proposedSupply) {
                  return sum + (supply.sellingPrice * proposedSupply.quantity);
@@ -342,7 +342,7 @@ export function ServiceForm({
         estimatedProfit: currentTotalServicePrice - (currentInventoryItems.reduce((sum, supply) => {
              const proposedSupply = values.suppliesUsed?.find(s => s.supplyId === supply.id);
              if (proposedSupply) {
-                 return sum + (supply.unitPrice * proposedSupply.quantity); // Profit based on cost price
+                 return sum + (supply.unitPrice * proposedSupply.quantity); 
              }
              return sum;
         },0)),
@@ -374,8 +374,8 @@ export function ServiceForm({
 
   const cardTitleText = mode === 'quote' ? "Información del Vehículo y Cotización" : "Información del Vehículo y Servicio";
   const dateLabelText = mode === 'quote' ? "Fecha de Cotización" : "Fecha y Hora de Recepción";
-  const technicianLabelText = mode === 'service' ? "Técnico Asignado" : "";
   const totalCostLabelText = mode === 'quote' ? "Costo Estimado (IVA incluido)" : "Costo del Servicio (IVA incluido)";
+  const technicianLabelText = mode === 'service' ? "Técnico Asignado" : ""; // Will be hidden in quote mode via conditional rendering
   const submitButtonText = mode === 'quote' ? "Generar PDF de Cotización" : (initialDataService ? "Actualizar Servicio" : "Crear Servicio");
 
   // --- Add Supply Dialog Logic ---
@@ -534,7 +534,7 @@ export function ServiceForm({
                             )}
                         />
                         {!isReadOnly && (
-                            <Button type="button" onClick={handleSearchVehicle} variant="outline" size="icon" className="w-10 h-10 sm:w-10 sm:h-10 mt-2 sm:mt-0">
+                            <Button type="button" onClick={handleSearchVehicle} variant="outline" size="icon" className="w-10 h-10 sm:w-10 sm:h-10 mt-2 sm:mt-0 shrink-0">
                                 <Search className="h-4 w-4" />
                                 <span className="sr-only">Buscar Placa</span>
                             </Button>
@@ -671,13 +671,13 @@ export function ServiceForm({
                     )}
                 />
                 
-                <div className="grid grid-cols-1 md:grid-cols-5 gap-4 pt-4 items-end">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 items-end">
                     {mode === 'service' && ( 
                       <FormField
                           control={form.control}
                           name="technicianId"
                           render={({ field }) => (
-                            <FormItem className="md:col-span-2">
+                            <FormItem className="md:col-span-1">
                               <FormLabel className="text-lg">{technicianLabelText}</FormLabel>
                               <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isReadOnly}>
                                 <FormControl>
@@ -702,7 +702,7 @@ export function ServiceForm({
                         control={form.control}
                         name="totalServicePrice"
                         render={({ field }) => (
-                            <FormItem className={mode === 'service' ? "md:col-span-3" : "md:col-span-5"}>
+                            <FormItem className={mode === 'service' ? "md:col-span-1" : "md:col-span-2"}>
                                 <FormLabel className="text-lg">{totalCostLabelText}</FormLabel>
                                 <FormControl>
                                 <Input type="number" step="0.01" placeholder="Ej: 1740.00" {...field} disabled={isReadOnly} className="text-lg font-medium"/>
@@ -870,7 +870,7 @@ export function ServiceForm({
             </CardHeader>
             <CardContent className="space-y-1 text-lg">
                 <div className="flex justify-between pt-1">
-                    <span>{mode === 'quote' ? 'Costo Estimado Cliente (IVA Incluido):' : 'Costo del Servicio (IVA incluido):'}</span> 
+                    <span>{totalCostLabelText}:</span> 
                     <span className="font-semibold text-blue-600 dark:text-blue-400">{formatCurrency(watchedTotalServicePrice)}</span>
                 </div>
                 <div className="flex justify-between">
@@ -993,12 +993,10 @@ export function ServiceForm({
         onOpenChange={setIsNewInventoryItemDialogOpen}
         item={newSupplyInitialData}
         onSave={handleNewSupplyCreated}
-        // Categories and Suppliers are needed by InventoryItemForm inside InventoryItemDialog
-        // These should be available in the scope or passed down.
-        // Assuming placeholderCategories and placeholderSuppliers are imported and available globally for this demo.
+        categories={placeholderCategories}
+        suppliers={placeholderSuppliers}
       />
     )}
     </>
   );
 }
-
