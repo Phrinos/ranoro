@@ -31,7 +31,6 @@ export function SalesTable({ sales, onReprintTicket }: SalesTableProps) {
     return `$${amount.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   };
 
-  // Use BadgeProps['variant'] for the return type
   const getPaymentMethodVariant = (method?: SaleReceipt['paymentMethod']): BadgeProps['variant'] => {
     switch (method) {
       case "Efectivo": return "success";
@@ -93,4 +92,3 @@ export function SalesTable({ sales, onReprintTicket }: SalesTableProps) {
     </div>
   );
 }
-
