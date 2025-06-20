@@ -30,6 +30,8 @@ import { useToast } from "@/hooks/use-toast";
 import { VehicleDialog } from "../../vehiculos/components/vehicle-dialog";
 import type { VehicleFormValues } from "../../vehiculos/components/vehicle-form";
 import { placeholderVehicles as defaultPlaceholderVehicles } from "@/lib/placeholder-data";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 
 const supplySchema = z.object({
@@ -70,14 +72,14 @@ const IVA_RATE = 0.16;
 
 const generateTimeSlots = () => {
     const slots = [];
-    for (let hour = 8; hour <= 18; hour++) { // Adjust range as needed, e.g. 8 AM to 6:30 PM
-        if (hour === 8) { // Start at 8:30 for example
+    for (let hour = 8; hour <= 18; hour++) { 
+        if (hour === 8) { 
             slots.push({ value: `${hour}:30`, label: `08:30 AM`});
-        } else if (hour === 18) { // End at 6:30 PM for example
+        } else if (hour === 18) { 
             slots.push({ value: `${hour}:00`, label: `${hour}:00 PM`});
             slots.push({ value: `${hour}:30`, label: `${hour}:30 PM`});
         }
-         else { // Regular slots
+         else { 
             slots.push({ value: `${hour}:00`, label: `${String(hour).padStart(2, '0')}:00 ${hour < 12 ? 'AM' : 'PM'}`});
             slots.push({ value: `${hour}:30`, label: `${String(hour).padStart(2, '0')}:30 ${hour < 12 ? 'AM' : 'PM'}`});
         }
@@ -86,6 +88,11 @@ const generateTimeSlots = () => {
 };
 const timeSlots = generateTimeSlots();
 
+
+interface AddSupplyDialogState {
+  selectedSupplyId: string;
+  quantity: number;
+}
 
 export function ServiceForm({ 
   initialData, 
@@ -103,6 +110,9 @@ export function ServiceForm({
   const [vehicleNotFound, setVehicleNotFound] = useState(false);
   const [isVehicleDialogOpen, setIsVehicleDialogOpen] = useState(false);
   const [localVehicles, setLocalVehicles] = useState<Vehicle[]>(parentVehicles);
+
+  const [isAddSupplyDialogOpen, setIsAddSupplyDialogOpen] = useState(false);
+  const [addSupplyDialogState, setAddSupplyDialogState] = useState<AddSupplyDialogState>({ selectedSupplyId: '', quantity: 1 });
 
 
   const form = useForm<ServiceFormValues>({
@@ -180,12 +190,11 @@ export function ServiceForm({
   const totalSuppliesCost = React.useMemo(() => {
     return watchedSupplies?.reduce((sum, supply) => {
       const item = inventoryItems.find(i => i.id === supply.supplyId);
-      return sum + (item?.unitPrice || 0) * supply.quantity; 
+      return sum + (item?.unitPrice || supply.unitPrice || 0) * supply.quantity; 
     }, 0) || 0;
   }, [watchedSupplies, inventoryItems]);
 
   const serviceProfit = React.useMemo(() => {
-    // Ganancia = Precio Total Cliente (IVA Inc) - Costo Total Insumos (Taller, sin IVA)
     return watchedTotalServicePrice - totalSuppliesCost;
   }, [watchedTotalServicePrice, totalSuppliesCost]);
 
@@ -265,15 +274,15 @@ export function ServiceForm({
         return {
           supplyId: s.supplyId,
           quantity: s.quantity,
-          unitPrice: itemDetails?.unitPrice || 0, 
+          unitPrice: itemDetails?.unitPrice || s.unitPrice || 0, 
           supplyName: itemDetails?.name || s.supplyName,
         };
       }) || [],
-      totalCost: currentTotalServicePrice, // Total a cobrar al cliente (IVA incluido)
-      subTotal: currentTotalServicePrice / (1 + IVA_RATE), // Subtotal (sin IVA)
-      taxAmount: currentTotalServicePrice - (currentTotalServicePrice / (1 + IVA_RATE)), // Monto de IVA
-      totalSuppliesCost: currentTotalSuppliesCost, // Costo de insumos para el taller (sin IVA)
-      serviceProfit: currentTotalServicePrice - currentTotalSuppliesCost, // Ganancia: Total Cliente (IVA Inc) - Costo Insumos (Taller, sin IVA)
+      totalCost: currentTotalServicePrice, 
+      subTotal: currentTotalServicePrice / (1 + IVA_RATE), 
+      taxAmount: currentTotalServicePrice - (currentTotalServicePrice / (1 + IVA_RATE)), 
+      totalSuppliesCost: currentTotalSuppliesCost, 
+      serviceProfit: currentTotalServicePrice - currentTotalSuppliesCost, 
     };
     
     await onSubmit(completeServiceData);
@@ -284,12 +293,36 @@ export function ServiceForm({
     const currentDate = form.getValues(dateField) || new Date();
     const newDateTime = setHours(setMinutes(startOfDay(currentDate), minutes), hours);
     form.setValue(dateField, newDateTime, { shouldValidate: true });
-};
+  };
 
-const formatCurrency = (amount: number | undefined) => {
-    if (amount === undefined) return '$0.00';
-    return `$${amount.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-};
+  const formatCurrency = (amount: number | undefined) => {
+      if (amount === undefined) return '$0.00';
+      return `$${amount.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  };
+  
+  const handleAddSupplyFromDialog = () => {
+    const { selectedSupplyId, quantity } = addSupplyDialogState;
+    if (!selectedSupplyId || quantity <= 0) {
+      toast({ title: "Datos incompletos", description: "Seleccione un insumo y una cantidad válida.", variant: "destructive" });
+      return;
+    }
+    const supplyItem = inventoryItems.find(item => item.id === selectedSupplyId);
+    if (!supplyItem) {
+      toast({ title: "Insumo no encontrado", variant: "destructive" });
+      return;
+    }
+
+    append({
+      supplyId: supplyItem.id,
+      supplyName: supplyItem.name,
+      quantity: quantity,
+      unitPrice: supplyItem.unitPrice,
+    });
+    
+    setAddSupplyDialogState({ selectedSupplyId: '', quantity: 1 }); // Reset dialog form
+    setIsAddSupplyDialogOpen(false);
+  };
+
 
   return (
     <>
@@ -608,76 +641,59 @@ const formatCurrency = (amount: number | undefined) => {
                 <CardTitle>Insumos Utilizados</CardTitle>
             </CardHeader>
             <CardContent>
-                <div className="space-y-4">
-                {fields.map((item, index) => (
-                    <div key={item.id} className="flex items-end gap-2 mb-4 p-3 border rounded-md bg-muted/30 dark:bg-muted/50">
-                      <FormField
-                          control={form.control}
-                          name={`suppliesUsed.${index}.supplyId`}
-                          render={({ field }) => (
-                          <FormItem className="flex-1">
-                              <FormLabel className="text-xs">Insumo</FormLabel>
-                              <Select 
-                                onValueChange={(value) => {
-                                    field.onChange(value);
-                                    const selectedSupply = inventoryItems.find(s => s.id === value);
-                                    form.setValue(`suppliesUsed.${index}.unitPrice`, selectedSupply?.unitPrice || 0); 
-                                    form.setValue(`suppliesUsed.${index}.supplyName`, selectedSupply?.name || '');
-                                }} 
-                                defaultValue={field.value}
-                                disabled={isReadOnly}
-                              >
-                              <FormControl>
-                                  <SelectTrigger>
-                                  <SelectValue placeholder="Seleccione insumo" />
-                                  </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                  {inventoryItems.map((supply) => (
-                                  <SelectItem key={supply.id} value={supply.id} disabled={(supply.quantity === 0 && supply.id !== item.supplyId) || isReadOnly}> 
-                                      {supply.name} (Stock: {supply.quantity}) - Costo: {formatCurrency(supply.unitPrice)}
-                                  </SelectItem>
-                                  ))}
-                              </SelectContent>
-                              </Select>
-                              <FormMessage />
-                          </FormItem>
-                          )}
-                      />
-                      <FormField
-                          control={form.control}
-                          name={`suppliesUsed.${index}.quantity`}
-                          render={({ field }) => (
-                          <FormItem>
-                              <FormLabel className="text-xs">Cantidad</FormLabel>
-                              <FormControl>
-                                  <Input type="number" placeholder="Cant." {...field} className="w-24" disabled={isReadOnly} />
-                              </FormControl>
-                              <FormMessage />
-                          </FormItem>
-                          )}
-                      />
-                      {!isReadOnly && (
-                          <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)} aria-label="Eliminar insumo" className="text-destructive hover:text-destructive/90">
-                              <Trash2 className="h-4 w-4" />
-                          </Button>
-                      )}
+                {fields.length > 0 && (
+                    <div className="rounded-md border mb-4">
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Insumo</TableHead>
+                                    <TableHead className="text-center">Cant.</TableHead>
+                                    <TableHead className="text-right">Costo Unit.</TableHead>
+                                    <TableHead className="text-right">Costo Total</TableHead>
+                                    {!isReadOnly && <TableHead className="text-right">Acción</TableHead>}
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {fields.map((item, index) => {
+                                    const currentItem = inventoryItems.find(invItem => invItem.id === item.supplyId);
+                                    const unitCost = item.unitPrice || currentItem?.unitPrice || 0;
+                                    const totalCost = unitCost * item.quantity;
+                                    return (
+                                        <TableRow key={item.id}>
+                                            <TableCell className="font-medium">{item.supplyName || currentItem?.name || 'N/A'}</TableCell>
+                                            <TableCell className="text-center">{item.quantity}</TableCell>
+                                            <TableCell className="text-right">{formatCurrency(unitCost)}</TableCell>
+                                            <TableCell className="text-right">{formatCurrency(totalCost)}</TableCell>
+                                            {!isReadOnly && (
+                                                <TableCell className="text-right">
+                                                    <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)} aria-label="Eliminar insumo" className="text-destructive hover:text-destructive/90">
+                                                        <Trash2 className="h-4 w-4" />
+                                                    </Button>
+                                                </TableCell>
+                                            )}
+                                        </TableRow>
+                                    );
+                                })}
+                            </TableBody>
+                        </Table>
                     </div>
-                ))}
-                </div>
-                {!isReadOnly && (
+                )}
+                 {!isReadOnly && (
                     <Button
                     type="button"
                     variant="outline"
                     size="sm"
-                    onClick={() => append({ supplyId: "", quantity: 1, unitPrice: 0, supplyName: "" })}
+                    onClick={() => {
+                        setAddSupplyDialogState({ selectedSupplyId: '', quantity: 1 }); // Reset dialog state
+                        setIsAddSupplyDialogOpen(true);
+                    }}
                     className="mt-4"
                     >
                     <PlusCircle className="mr-2 h-4 w-4" />
                     Añadir Insumo
                     </Button>
                 )}
-                 <div className="mt-4 text-sm font-medium text-right">
+                <div className="mt-4 text-sm font-medium text-right">
                     <p>Costo Total de Insumos (para el taller): <span className="font-semibold">{formatCurrency(totalSuppliesCost)}</span></p>
                 </div>
             </CardContent>
@@ -727,12 +743,59 @@ const formatCurrency = (amount: number | undefined) => {
         </div>
       </form>
     </Form>
+
     <VehicleDialog
         open={isVehicleDialogOpen}
         onOpenChange={setIsVehicleDialogOpen}
         onSave={handleSaveNewVehicle}
         vehicle={null} 
     />
+
+    <Dialog open={isAddSupplyDialogOpen} onOpenChange={setIsAddSupplyDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+                <DialogTitle>Añadir Insumo al Servicio</DialogTitle>
+                <DialogDescription>Seleccione el insumo y la cantidad a utilizar.</DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+                <div className="space-y-2">
+                    <Label htmlFor="supply-select">Insumo</Label>
+                    <Select
+                        value={addSupplyDialogState.selectedSupplyId}
+                        onValueChange={(value) => setAddSupplyDialogState(prev => ({...prev, selectedSupplyId: value}))}
+                    >
+                        <SelectTrigger id="supply-select">
+                            <SelectValue placeholder="Seleccione un insumo" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {inventoryItems.map((supply) => (
+                                <SelectItem key={supply.id} value={supply.id} disabled={supply.quantity === 0}>
+                                    {supply.name} (Stock: {supply.quantity}) - Costo: {formatCurrency(supply.unitPrice)}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor="supply-quantity">Cantidad</Label>
+                    <Input
+                        id="supply-quantity"
+                        type="number"
+                        min="1"
+                        value={addSupplyDialogState.quantity}
+                        onChange={(e) => setAddSupplyDialogState(prev => ({...prev, quantity: parseInt(e.target.value,10) || 1 }))}
+                    />
+                </div>
+            </div>
+            <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => setIsAddSupplyDialogOpen(false)}>Cancelar</Button>
+                <Button type="button" onClick={handleAddSupplyFromDialog}>Añadir Insumo</Button>
+            </DialogFooter>
+        </DialogContent>
+    </Dialog>
     </>
   );
 }
+
+
+    
