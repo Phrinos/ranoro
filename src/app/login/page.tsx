@@ -77,10 +77,10 @@ export default function LoginPage() {
           src="/ranoro-logo.png" 
           alt="Ranoro Logo"
           width={250} 
-          height={83} 
+          height={80} 
           priority
           className="mx-auto"
-          data-ai-hint="ranoro logo"
+          data-ai-hint="ranoro-logo"
         />
         <p className="mt-3 text-lg font-medium text-foreground">
           ¡Tu taller en una App!
