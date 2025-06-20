@@ -11,36 +11,36 @@ import type { SaleReceipt } from '@/types';
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from 'next/navigation';
 
+type DialogStep = 'pos' | 'print' | 'closed';
+
 export default function NuevaVentaPage() {
   const { toast } = useToast();
   const router = useRouter();
   
   const inventoryItems = placeholderInventory; 
-  const [isPosDialogOpen, setIsPosDialogOpen] = useState(true); 
-  const [showPrintTicketDialog, setShowPrintTicketDialog] = useState(false);
+  const [dialogStep, setDialogStep] = useState<DialogStep>('pos');
   const [currentSaleForTicket, setCurrentSaleForTicket] = useState<SaleReceipt | null>(null);
 
   useEffect(() => {
-    setIsPosDialogOpen(true); // Ensure dialog is open when page loads
-  }, []);
-
-  const handlePosDialogClose = (isOpen: boolean) => {
-    setIsPosDialogOpen(isOpen);
-    if (!isOpen && !currentSaleForTicket) { // If POS dialog closed WITHOUT completing a sale
-      router.push('/pos'); 
+    if (dialogStep === 'closed') {
+      router.push('/pos');
     }
-  };
+  }, [dialogStep, router]);
 
   const handleSaleCompletion = (saleData: SaleReceipt) => {
     setCurrentSaleForTicket(saleData);
-    setIsPosDialogOpen(false); // Close POS dialog
-    setShowPrintTicketDialog(true); // Open Print dialog
+    setDialogStep('print'); // Transition to print step
   };
-  
+
+  const handlePosDialogExternalClose = () => { // Called when PosDialog is closed by X or overlay
+    if (dialogStep === 'pos') { // Only redirect if it was closed from 'pos' step without completion
+      setDialogStep('closed');
+    }
+  };
+
   const handlePrintDialogClose = () => {
-    setShowPrintTicketDialog(false);
-    setCurrentSaleForTicket(null);
-    router.push('/pos'); // Redirect after closing print dialog
+    setCurrentSaleForTicket(null); // Clear ticket data
+    setDialogStep('closed'); // Transition to closed, which will redirect via useEffect
   };
 
 
@@ -50,28 +50,32 @@ export default function NuevaVentaPage() {
         title="Registrar Nueva Venta"
         description="Complete los artículos y detalles para la nueva venta."
       />
-      {isPosDialogOpen && (
+      {dialogStep === 'pos' && (
         <PosDialog
           inventoryItems={inventoryItems}
-          open={isPosDialogOpen}
-          onOpenChange={handlePosDialogClose}
-          onSaleComplete={handleSaleCompletion} 
-          onSaleCompleteRedirectPath="/pos" // Fallback, but handled by handleSaleCompletion now
+          open={true} // Always open when in 'pos' step
+          onOpenChange={(isOpen) => { // This is for X button or overlay click
+            if (!isOpen) handlePosDialogExternalClose();
+          }}
+          onSaleComplete={handleSaleCompletion} // This is for form submission
+          // onSaleCompleteRedirectPath is not used by this setup, parent handles redirect
         />
       )}
 
-      {currentSaleForTicket && (
+      {dialogStep === 'print' && currentSaleForTicket && (
         <PrintTicketDialog
-          open={showPrintTicketDialog}
-          onOpenChange={setShowPrintTicketDialog}
+          open={true} // Always open when in 'print' step
+          onOpenChange={(isOpen) => { // This is for X button or overlay click
+            if (!isOpen) handlePrintDialogClose();
+          }}
           title="Ticket de Venta"
-          onDialogClose={handlePrintDialogClose}
+          onDialogClose={handlePrintDialogClose} // Ensure this is also connected for explicit close actions
         >
           <TicketContent sale={currentSaleForTicket} />
         </PrintTicketDialog>
       )}
       
-      {!isPosDialogOpen && !showPrintTicketDialog && (
+      {dialogStep === 'closed' && (
         <div className="text-center p-8">
           <p className="text-muted-foreground">Redireccionando...</p>
         </div>
@@ -79,3 +83,4 @@ export default function NuevaVentaPage() {
     </>
   );
 }
+
