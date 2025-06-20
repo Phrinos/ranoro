@@ -175,7 +175,7 @@ export function ServiceForm({
   });
 
   const watchedSupplies = form.watch("suppliesUsed");
-  const watchedTotalServicePrice = form.watch("totalServicePrice"); 
+  const watchedTotalServicePrice = form.watch("totalServicePrice") || 0; 
 
   const totalSuppliesCost = React.useMemo(() => {
     return watchedSupplies?.reduce((sum, supply) => {
@@ -184,18 +184,9 @@ export function ServiceForm({
     }, 0) || 0;
   }, [watchedSupplies, inventoryItems]);
 
-  const serviceSubTotal = React.useMemo(() => {
-    return watchedTotalServicePrice / (1 + IVA_RATE);
-  }, [watchedTotalServicePrice]);
-  
-  const serviceTaxAmount = React.useMemo(() => {
-    return watchedTotalServicePrice - serviceSubTotal;
-  }, [watchedTotalServicePrice, serviceSubTotal]);
-
-
   const serviceProfit = React.useMemo(() => {
-    return serviceSubTotal - totalSuppliesCost;
-  }, [serviceSubTotal, totalSuppliesCost]);
+    return watchedTotalServicePrice - totalSuppliesCost;
+  }, [watchedTotalServicePrice, totalSuppliesCost]);
 
   const handleSearchVehicle = () => {
     if (!vehicleLicensePlateSearch.trim()) {
@@ -253,6 +244,9 @@ export function ServiceForm({
       return;
     }
     
+    const currentTotalServicePrice = values.totalServicePrice || 0;
+    const currentTotalSuppliesCost = totalSuppliesCost; // Use the memoized value
+
     const completeServiceData: ServiceRecord = {
       id: initialData?.id || `S_NEW_${Date.now()}`, 
       vehicleId: values.vehicleId!,
@@ -274,11 +268,11 @@ export function ServiceForm({
           supplyName: itemDetails?.name || s.supplyName,
         };
       }) || [],
-      totalCost: values.totalServicePrice,
-      subTotal: serviceSubTotal,
-      taxAmount: serviceTaxAmount,
-      totalSuppliesCost: totalSuppliesCost,
-      serviceProfit: serviceProfit,
+      totalCost: currentTotalServicePrice,
+      subTotal: currentTotalServicePrice / (1 + IVA_RATE),
+      taxAmount: currentTotalServicePrice - (currentTotalServicePrice / (1 + IVA_RATE)),
+      totalSuppliesCost: currentTotalSuppliesCost,
+      serviceProfit: currentTotalServicePrice - currentTotalSuppliesCost, // Updated profit calculation
     };
     
     await onSubmit(completeServiceData);
@@ -692,12 +686,20 @@ const formatCurrency = (amount: number | undefined) => {
                 </CardTitle>
             </CardHeader>
             <CardContent className="space-y-1 text-sm">
-                <div className="flex justify-between"><span>Subtotal Servicio (sin IVA):</span> <span className="font-medium">{formatCurrency(serviceSubTotal)}</span></div>
-                <div className="flex justify-between"><span>IVA ({IVA_RATE * 100}%):</span> <span className="font-medium">{formatCurrency(serviceTaxAmount)}</span></div>
-                <div className="flex justify-between text-base font-semibold pt-1 border-t mt-1"><span>Precio Total (IVA Incluido):</span> <span className="text-primary">{formatCurrency(watchedTotalServicePrice)}</span></div>
+                <div className="flex justify-between text-base font-semibold pt-1">
+                    <span>Precio Total Cliente (IVA Incluido):</span> 
+                    <span className="text-primary">{formatCurrency(watchedTotalServicePrice)}</span>
+                </div>
+                <div className="flex justify-between">
+                    <span>(-) Costo Insumos (Taller):</span> 
+                    <span className="font-medium">{formatCurrency(totalSuppliesCost)}</span>
+                </div>
                 <hr className="my-2 border-dashed"/>
-                <div className="flex justify-between text-lg font-bold text-green-700 dark:text-green-400"><span>Ganancia Estimada del Servicio:</span> <span>{formatCurrency(serviceProfit)}</span></div>
-                <p className="text-xs text-muted-foreground text-right">(Precio Total - IVA - Costo de Insumos)</p>
+                <div className="flex justify-between text-lg font-bold text-green-700 dark:text-green-400">
+                    <span>(=) Ganancia Estimada del Servicio:</span> 
+                    <span>{formatCurrency(serviceProfit)}</span>
+                </div>
+                <p className="text-xs text-muted-foreground text-right">(Precio Total Cliente - Costo de Insumos para el Taller)</p>
             </CardContent>
         </Card>
 
