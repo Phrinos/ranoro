@@ -1,5 +1,5 @@
 
-import type { Vehicle, ServiceRecord, Technician, InventoryItem, DashboardMetrics, SaleReceipt, ServiceSupply, TechnicianMonthlyPerformance, InventoryCategory, Supplier, SaleItem, PaymentMethod, AppRole, QuoteRecord } from '@/types'; // Added QuoteRecord
+import type { Vehicle, ServiceRecord, Technician, InventoryItem, DashboardMetrics, SaleReceipt, ServiceSupply, TechnicianMonthlyPerformance, InventoryCategory, Supplier, SaleItem, PaymentMethod, AppRole, QuoteRecord, MonthlyFixedExpense } from '@/types'; // Added QuoteRecord, MonthlyFixedExpense
 import { format, subMonths, addDays, getYear, getMonth, setHours, setMinutes, subDays, startOfMonth, endOfMonth, startOfToday, endOfToday, startOfYesterday, endOfYesterday } from 'date-fns';
 import { es } from 'date-fns/locale';
 
@@ -9,7 +9,7 @@ const twoDaysAgo = subDays(today,2);
 const tomorrow = addDays(today, 1);
 const dayAfterTomorrow = addDays(today, 2);
 
-const IVA_RATE = 0.16;
+export const IVA_RATE = 0.16; // Export IVA_RATE
 
 export const placeholderVehicles: Vehicle[] = [
   { id: 1, make: 'Toyota', model: 'Corolla', year: 2020, vin: 'ABC123XYZ789', ownerName: 'Juan Pérez', ownerPhone: '555-1111', ownerEmail: 'juan.perez@email.com', licensePlate: 'PQR-123', color: 'Rojo', notes: 'Cliente frecuente, prefiere aceite sintético.' },
@@ -19,9 +19,9 @@ export const placeholderVehicles: Vehicle[] = [
 ];
 
 export const placeholderTechnicians: Technician[] = [
-  { id: 'T001', name: 'Roberto Gómez', area: 'Mecánica General', specialty: 'Motor y Transmisión', contactInfo: '555-7777', hireDate: '2022-01-15', monthlySalary: 50000, notes: 'Experto en motores diesel.' },
-  { id: 'T002', name: 'Laura Fernández', area: 'Electrónica', specialty: 'Diagnóstico Electrónico', contactInfo: '555-8888', hireDate: '2021-06-01', monthlySalary: 55000, notes: 'Certificada en sistemas híbridos.' },
-  { id: 'T003', name: 'Miguel Ángel Torres', area: 'Mecánica General', specialty: 'Frenos y Suspensión', contactInfo: '555-9999', hireDate: '2023-03-10', monthlySalary: 48000, notes: 'Rápido y eficiente.' },
+  { id: 'T001', name: 'Roberto Gómez', area: 'Mecánica General', specialty: 'Motor y Transmisión', contactInfo: '555-7777', hireDate: '2022-01-15', monthlySalary: 12000, notes: 'Experto en motores diesel.' },
+  { id: 'T002', name: 'Laura Fernández', area: 'Electrónica', specialty: 'Diagnóstico Electrónico', contactInfo: '555-8888', hireDate: '2021-06-01', monthlySalary: 13500, notes: 'Certificada en sistemas híbridos.' },
+  { id: 'T003', name: 'Miguel Ángel Torres', area: 'Mecánica General', specialty: 'Frenos y Suspensión', contactInfo: '555-9999', hireDate: '2023-03-10', monthlySalary: 11000, notes: 'Rápido y eficiente.' },
 ];
 
 export const placeholderCategories: InventoryCategory[] = [
@@ -312,4 +312,20 @@ export const getYesterdayRange = () => {
 // Constant for LocalStorage Key for AppRoles
 export const USER_ROLES_LOCALSTORAGE_KEY = 'appRoles';
 
+export const placeholderFixedMonthlyExpenses: MonthlyFixedExpense[] = [
+  { id: 'rent', name: 'Renta del Local', amount: 15000 },
+  { id: 'utilities', name: 'Servicios (Luz, Agua, Internet)', amount: 3500 },
+  { id: 'cleaning', name: 'Limpieza y Mantenimiento General', amount: 1200 },
+  { id: 'software', name: 'Software y Licencias', amount: 800 },
+];
 
+// Exported function to calculate sale profit
+export const calculateSaleProfit = (sale: SaleReceipt, inventory: InventoryItem[], ivaRate: number): number => {
+  return sale.items.reduce((profit, saleItem) => {
+      const inventoryItem = inventory.find(inv => inv.id === saleItem.inventoryItemId);
+      // If inventoryItem.unitPrice is cost_pre_tax and saleItem.unitPrice is selling_price_with_tax
+      const costPrice = inventoryItem ? inventoryItem.unitPrice : 0; 
+      const sellingPriceSubTotal = saleItem.unitPrice / (1 + ivaRate); 
+      return profit + (sellingPriceSubTotal - costPrice) * saleItem.quantity;
+  }, 0);
+};

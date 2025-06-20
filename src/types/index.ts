@@ -176,3 +176,8 @@ export interface AppRole {
   permissions: string[]; // Array of permission strings/keys
 }
 
+export interface MonthlyFixedExpense {
+  id: string;
+  name: string;
+  amount: number;
+}
