@@ -123,8 +123,8 @@ export default function LoginPage() {
           </form>
         </CardContent>
         <CardFooter className="flex flex-col items-center justify-center text-center text-xs text-muted-foreground">
-          <p>Este es un sistema de gestión de taller.</p>
-          <p>Contacte al administrador si tiene problemas.</p>
+          <p>Sistema de Administración de Taller</p>
+          <p>Diseñado y Desarrollado por Arturo Valdelamar</p>
         </CardFooter>
       </Card>
     </div>
