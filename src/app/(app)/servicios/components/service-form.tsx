@@ -31,7 +31,7 @@ import { VehicleDialog } from "../../vehiculos/components/vehicle-dialog";
 import type { VehicleFormValues } from "../../vehiculos/components/vehicle-form";
 import { placeholderVehicles as defaultPlaceholderVehicles } from "@/lib/placeholder-data";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label"; 
+import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 
@@ -95,17 +95,6 @@ interface AddSupplyDialogState {
   selectedSupplyId: string;
   quantity: number;
 }
-
-const getStatusVariant = (status: ServiceRecord['status']): "default" | "secondary" | "outline" | "destructive" | "success" => {
-    switch (status) {
-      case "Completado": return "success";
-      case "En Progreso": return "secondary";
-      case "Pendiente": return "outline";
-      case "Cancelado": return "destructive";
-      case "Agendado": return "default";
-      default: return "default";
-    }
-  };
 
 export function ServiceForm({ 
   initialData, 
@@ -184,9 +173,6 @@ export function ServiceForm({
   }, [initialData, localVehicles, form]);
   
   const watchedStatus = form.watch("status");
-  const watchedTechnicianId = form.watch("technicianId");
-  const currentTechnician = useMemo(() => technicians.find(t => t.id === watchedTechnicianId), [technicians, watchedTechnicianId]);
-
 
   useEffect(() => {
     if (watchedStatus === "Completado" && !form.getValues("deliveryDateTime")) {
@@ -350,34 +336,69 @@ export function ServiceForm({
                 <CardTitle className="text-lg">Información del Vehículo y Servicio</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-                <div className="flex flex-col sm:flex-row items-end gap-2">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
                     <FormField
                         control={form.control}
-                        name="vehicleLicensePlateSearch"
+                        name="status"
                         render={({ field }) => (
-                        <FormItem className="flex-1 w-full sm:w-auto">
-                            <FormLabel>Placa del Vehículo</FormLabel>
-                            <FormControl>
-                            <Input 
-                                placeholder="Buscar o ingresar placa..." 
-                                {...field} 
-                                value={vehicleLicensePlateSearch}
-                                onChange={(e) => {
-                                    setVehicleLicensePlateSearch(e.target.value.toUpperCase());
-                                    field.onChange(e.target.value.toUpperCase()); 
-                                }}
-                                disabled={isReadOnly} 
-                                className="uppercase"
-                            />
-                            </FormControl>
-                        </FormItem>
+                          <FormItem>
+                            <FormLabel>Estado del Servicio</FormLabel>
+                            <Select 
+                                onValueChange={(value) => {
+                                    field.onChange(value);
+                                    if (value === "Completado" && !form.getValues("deliveryDateTime")) {
+                                        form.setValue("deliveryDateTime", new Date());
+                                    }
+                                }} 
+                                defaultValue={field.value} 
+                                disabled={isReadOnly}
+                            >
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Seleccione un estado" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                {["Agendado", "Pendiente", "En Progreso", "Completado", "Cancelado"].map((statusVal) => (
+                                  <SelectItem key={statusVal} value={statusVal}>
+                                    {statusVal}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
                         )}
-                    />
-                    {!isReadOnly && (
-                        <Button type="button" onClick={handleSearchVehicle} variant="outline" className="w-full sm:w-auto mt-2 sm:mt-0">
-                            <Search className="mr-2 h-4 w-4" /> Buscar
-                        </Button>
-                    )}
+                      />
+                    <div className="flex flex-col sm:flex-row items-end gap-2">
+                        <FormField
+                            control={form.control}
+                            name="vehicleLicensePlateSearch"
+                            render={({ field }) => (
+                            <FormItem className="flex-1 w-full sm:w-auto">
+                                <FormLabel>Placa del Vehículo</FormLabel>
+                                <FormControl>
+                                <Input 
+                                    placeholder="Buscar o ingresar placa..." 
+                                    {...field} 
+                                    value={vehicleLicensePlateSearch}
+                                    onChange={(e) => {
+                                        setVehicleLicensePlateSearch(e.target.value.toUpperCase());
+                                        field.onChange(e.target.value.toUpperCase()); 
+                                    }}
+                                    disabled={isReadOnly} 
+                                    className="uppercase"
+                                />
+                                </FormControl>
+                            </FormItem>
+                            )}
+                        />
+                        {!isReadOnly && (
+                            <Button type="button" onClick={handleSearchVehicle} variant="outline" className="w-full sm:w-auto mt-2 sm:mt-0">
+                                <Search className="mr-2 h-4 w-4" /> Buscar
+                            </Button>
+                        )}
+                    </div>
                 </div>
                  <FormField
                     control={form.control}
@@ -386,13 +407,6 @@ export function ServiceForm({
                   />
                 {selectedVehicle && (
                     <div className="p-3 border rounded-md bg-muted text-sm space-y-1">
-                        {watchedStatus && (
-                            <div className="mb-1">
-                                <Badge variant={getStatusVariant(watchedStatus)} className="text-xs">
-                                    {watchedStatus}
-                                </Badge>
-                            </div>
-                        )}
                         <p><strong>Placa:</strong> {selectedVehicle.licensePlate}</p>
                         <p><strong>Vehículo Seleccionado:</strong> {selectedVehicle.make} {selectedVehicle.model} ({selectedVehicle.year})</p>
                         <p><strong>Propietario:</strong> {selectedVehicle.ownerName}</p>
@@ -516,20 +530,36 @@ export function ServiceForm({
                     )}
                 />
                 
-                <div className="grid grid-cols-1 md:grid-cols-5 gap-4 pt-4 items-end">
-                    {currentTechnician && !isReadOnly && (
-                        <div className="md:col-span-2 flex flex-col">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 items-end">
+                    <FormField
+                        control={form.control}
+                        name="technicianId"
+                        render={({ field }) => (
+                          <FormItem>
                             <FormLabel>Técnico Asignado</FormLabel>
-                            <p className="text-sm font-medium pt-1 h-10 flex items-center border border-transparent">
-                                {currentTechnician.name}
-                            </p>
-                        </div>
-                    )}
+                            <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isReadOnly}>
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Seleccione un técnico" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                {technicians.map((technician) => (
+                                  <SelectItem key={technician.id} value={technician.id}> 
+                                    {technician.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
                     <FormField
                         control={form.control}
                         name="totalServicePrice"
                         render={({ field }) => (
-                            <FormItem className={`${currentTechnician && !isReadOnly ? "md:col-span-3" : "md:col-span-5"}`}>
+                            <FormItem>
                                 <FormLabel className="text-base font-semibold">Precio Total del Servicio (Cobro al Cliente, IVA Incluido)</FormLabel>
                                 <FormControl>
                                 <Input type="number" step="0.01" placeholder="Ej: 1740.00" {...field} disabled={isReadOnly} className="text-lg font-medium"/>
@@ -542,66 +572,6 @@ export function ServiceForm({
                 </div>
             </CardContent>
         </Card>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <FormField
-            control={form.control}
-            name="technicianId"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Técnico Asignado</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isReadOnly}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Seleccione un técnico" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {technicians.map((technician) => (
-                      <SelectItem key={technician.id} value={technician.id}> 
-                        {technician.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="status"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Estado del Servicio</FormLabel>
-                <Select 
-                    onValueChange={(value) => {
-                        field.onChange(value);
-                        if (value === "Completado" && !form.getValues("deliveryDateTime")) {
-                            form.setValue("deliveryDateTime", new Date());
-                        }
-                    }} 
-                    defaultValue={field.value} 
-                    disabled={isReadOnly}
-                >
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Seleccione un estado" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {["Agendado", "Pendiente", "En Progreso", "Completado", "Cancelado"].map((status) => (
-                      <SelectItem key={status} value={status}>
-                        {status}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
         
         {watchedStatus === "Completado" && (
             <FormField
