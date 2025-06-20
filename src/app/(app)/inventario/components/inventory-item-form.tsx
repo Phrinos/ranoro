@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useEffect } from 'react'; // Ensured useEffect is imported
+import { useEffect } from 'react'; // Changed from import React, { useEffect }
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
@@ -19,7 +19,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import type { InventoryItem, InventoryCategory, Supplier } from "@/types";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox"; // Import Checkbox
+import { Checkbox } from "@/components/ui/checkbox";
 
 const inventoryItemFormSchema = z.object({
   name: z.string().min(3, "El nombre del producto debe tener al menos 3 caracteres."),
@@ -72,8 +72,8 @@ export function InventoryItemForm({ initialData, onSubmit, onClose, categories, 
       unitPrice: 0,
       sellingPrice: 0,
       lowStockThreshold: 5,
-      category: categories.length > 0 ? categories[0].name : "", // Ensure default category is set if available
-      supplier: suppliers.length > 0 ? suppliers[0].name : "", // Ensure default supplier is set if available
+      category: categories.length > 0 ? categories[0].name : "", 
+      supplier: suppliers.length > 0 ? suppliers[0].name : "", 
     },
   });
 
@@ -88,8 +88,7 @@ export function InventoryItemForm({ initialData, onSubmit, onClose, categories, 
     await onSubmit(submissionValues);
   };
   
-  // Set default category and supplier if not already set by initialData
-  useEffect(() => { // Changed from React.useEffect
+  useEffect(() => { 
     if (!form.getValues('category') && categories.length > 0) {
       form.setValue('category', categories[0].name);
     }
@@ -286,4 +285,3 @@ export function InventoryItemForm({ initialData, onSubmit, onClose, categories, 
     </Form>
   );
 }
-
