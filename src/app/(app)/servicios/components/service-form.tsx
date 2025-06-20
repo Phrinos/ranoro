@@ -185,6 +185,7 @@ export function ServiceForm({
   }, [watchedSupplies, inventoryItems]);
 
   const serviceProfit = React.useMemo(() => {
+    // Ganancia = Precio Total Cliente (IVA Inc) - Costo Total Insumos (Taller, sin IVA)
     return watchedTotalServicePrice - totalSuppliesCost;
   }, [watchedTotalServicePrice, totalSuppliesCost]);
 
@@ -245,7 +246,7 @@ export function ServiceForm({
     }
     
     const currentTotalServicePrice = values.totalServicePrice || 0;
-    const currentTotalSuppliesCost = totalSuppliesCost; // Use the memoized value
+    const currentTotalSuppliesCost = totalSuppliesCost; 
 
     const completeServiceData: ServiceRecord = {
       id: initialData?.id || `S_NEW_${Date.now()}`, 
@@ -268,11 +269,11 @@ export function ServiceForm({
           supplyName: itemDetails?.name || s.supplyName,
         };
       }) || [],
-      totalCost: currentTotalServicePrice,
-      subTotal: currentTotalServicePrice / (1 + IVA_RATE),
-      taxAmount: currentTotalServicePrice - (currentTotalServicePrice / (1 + IVA_RATE)),
-      totalSuppliesCost: currentTotalSuppliesCost,
-      serviceProfit: currentTotalServicePrice - currentTotalSuppliesCost, // Updated profit calculation
+      totalCost: currentTotalServicePrice, // Total a cobrar al cliente (IVA incluido)
+      subTotal: currentTotalServicePrice / (1 + IVA_RATE), // Subtotal (sin IVA)
+      taxAmount: currentTotalServicePrice - (currentTotalServicePrice / (1 + IVA_RATE)), // Monto de IVA
+      totalSuppliesCost: currentTotalSuppliesCost, // Costo de insumos para el taller (sin IVA)
+      serviceProfit: currentTotalServicePrice - currentTotalSuppliesCost, // Ganancia: Total Cliente (IVA Inc) - Costo Insumos (Taller, sin IVA)
     };
     
     await onSubmit(completeServiceData);
@@ -607,14 +608,15 @@ const formatCurrency = (amount: number | undefined) => {
                 <CardTitle>Insumos Utilizados</CardTitle>
             </CardHeader>
             <CardContent>
+                <div className="space-y-4">
                 {fields.map((item, index) => (
-                    <div key={item.id} className="flex items-end gap-2 mb-2 p-2 border rounded-md">
+                    <div key={item.id} className="p-3 border rounded-md bg-muted/30 dark:bg-muted/50 space-y-3">
                     <FormField
                         control={form.control}
                         name={`suppliesUsed.${index}.supplyId`}
                         render={({ field }) => (
-                        <FormItem className="flex-1">
-                            <FormLabel className="text-xs">Insumo</FormLabel>
+                        <FormItem>
+                            <FormLabel>Insumo</FormLabel>
                             <Select 
                             onValueChange={(value) => {
                                 field.onChange(value);
@@ -647,26 +649,32 @@ const formatCurrency = (amount: number | undefined) => {
                         name={`suppliesUsed.${index}.quantity`}
                         render={({ field }) => (
                         <FormItem>
-                             <FormLabel className="text-xs">Cantidad</FormLabel>
-                            <Input type="number" placeholder="Cant." {...field} className="w-20" disabled={isReadOnly} />
+                             <FormLabel>Cantidad</FormLabel>
+                            <FormControl>
+                                <Input type="number" placeholder="Cant." {...field} className="w-full md:w-1/3" disabled={isReadOnly} />
+                            </FormControl>
                             <FormMessage />
                         </FormItem>
                         )}
                     />
                     {!isReadOnly && (
-                        <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)} aria-label="Eliminar insumo">
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
+                        <div className="flex justify-end">
+                            <Button type="button" variant="ghost" size="sm" onClick={() => remove(index)} aria-label="Eliminar insumo" className="text-destructive hover:text-destructive/90">
+                                <Trash2 className="mr-1 h-4 w-4" />
+                                Eliminar Insumo
+                            </Button>
+                        </div>
                     )}
                     </div>
                 ))}
+                </div>
                 {!isReadOnly && (
                     <Button
                     type="button"
                     variant="outline"
                     size="sm"
                     onClick={() => append({ supplyId: "", quantity: 1, unitPrice: 0, supplyName: "" })}
-                    className="mt-2"
+                    className="mt-4"
                     >
                     <PlusCircle className="mr-2 h-4 w-4" />
                     Añadir Insumo
@@ -686,20 +694,20 @@ const formatCurrency = (amount: number | undefined) => {
                 </CardTitle>
             </CardHeader>
             <CardContent className="space-y-1 text-sm">
-                <div className="flex justify-between text-base font-semibold pt-1">
+                <div className="flex justify-between text-base pt-1">
                     <span>Precio Total Cliente (IVA Incluido):</span> 
-                    <span className="text-primary">{formatCurrency(watchedTotalServicePrice)}</span>
+                    <span className="font-semibold text-blue-600 dark:text-blue-400">{formatCurrency(watchedTotalServicePrice)}</span>
                 </div>
                 <div className="flex justify-between">
                     <span>(-) Costo Insumos (Taller):</span> 
-                    <span className="font-medium">{formatCurrency(totalSuppliesCost)}</span>
+                    <span className="font-medium text-red-600 dark:text-red-400">{formatCurrency(totalSuppliesCost)}</span>
                 </div>
                 <hr className="my-2 border-dashed"/>
                 <div className="flex justify-between text-lg font-bold text-green-700 dark:text-green-400">
                     <span>(=) Ganancia Estimada del Servicio:</span> 
                     <span>{formatCurrency(serviceProfit)}</span>
                 </div>
-                <p className="text-xs text-muted-foreground text-right">(Precio Total Cliente - Costo de Insumos para el Taller)</p>
+                <p className="text-xs text-muted-foreground text-right">(Precio Total Cliente (IVA Inc) - Costo Insumos (Taller, sin IVA))</p>
             </CardContent>
         </Card>
 
@@ -732,3 +740,4 @@ const formatCurrency = (amount: number | undefined) => {
   );
 }
 
+    
