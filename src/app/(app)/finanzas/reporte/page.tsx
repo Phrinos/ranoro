@@ -9,16 +9,17 @@ import { Calendar } from "@/components/ui/calendar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Search, ListFilter, CalendarIcon as CalendarDateIcon, DollarSign, LineChart, ShoppingCart, Wrench, TrendingUp, Activity } from "lucide-react";
-import { placeholderSales, placeholderServiceRecords, placeholderInventory, getCurrentMonthRange, getLastMonthRange, getTodayRange, calculateSaleProfit } from "@/lib/placeholder-data";
-import type { SaleReceipt, ServiceRecord, FinancialOperation, InventoryItem } from "@/types";
+import { Search, ListFilter, CalendarIcon as CalendarDateIcon, DollarSign, LineChart, ShoppingCart, Wrench, TrendingUp, Activity, Printer } from "lucide-react";
+import { placeholderSales, placeholderServiceRecords, placeholderInventory, getCurrentMonthRange, getLastMonthRange, getTodayRange, calculateSaleProfit, IVA_RATE } from "@/lib/placeholder-data";
+import type { SaleReceipt, ServiceRecord, FinancialOperation, InventoryItem, PaymentMethod } from "@/types";
 import { useState, useEffect, useMemo } from "react";
 import { format, parseISO, compareAsc, compareDesc, isWithinInterval, isValid, startOfDay, endOfDay, isSameDay } from "date-fns";
 import { es } from 'date-fns/locale';
 import type { DateRange } from "react-day-picker";
 import { cn } from "@/lib/utils";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-
+import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
+import { CorteDiaContent } from '../components/corte-dia-content';
 
 type OperationSortOption = 
   | "date_desc" | "date_asc"
@@ -26,7 +27,14 @@ type OperationSortOption =
   | "profit_desc" | "profit_asc";
 
 type OperationTypeFilter = "all" | "Venta" | "Servicio";
-const IVA_RATE = 0.16; // This is defined in placeholder-data.ts but also used here. Ensure consistency or import.
+
+interface CorteDiaData {
+  date: string;
+  salesByPaymentMethod: Record<string, number>;
+  totalSales: number;
+  totalCompletedServices: number;
+  grandTotal: number;
+}
 
 export default function FinancialReportPage() {
   const [allSales, setAllSales] = useState<SaleReceipt[]>(placeholderSales);
@@ -38,7 +46,9 @@ export default function FinancialReportPage() {
   const [sortOption, setSortOption] = useState<OperationSortOption>("date_desc");
   const [operationTypeFilter, setOperationTypeFilter] = useState<OperationTypeFilter>("all");
 
-  // calculateSaleProfit is now imported from placeholder-data
+  const [isCorteDiaDialogOpen, setIsCorteDiaDialogOpen] = useState(false);
+  const [corteDiaData, setCorteDiaData] = useState<CorteDiaData | null>(null);
+
 
   const combinedOperations = useMemo((): FinancialOperation[] => {
     const salesOperations: FinancialOperation[] = allSales.map(sale => ({
@@ -47,7 +57,7 @@ export default function FinancialReportPage() {
       type: 'Venta',
       description: `Venta a ${sale.customerName || 'Cliente Mostrador'} - ${sale.items.length} artículo(s)`,
       totalAmount: sale.totalAmount, 
-      profit: calculateSaleProfit(sale, inventory, IVA_RATE), // Pass inventory and IVA_RATE
+      profit: calculateSaleProfit(sale, inventory, IVA_RATE),
       originalObject: sale,
     }));
 
@@ -146,6 +156,40 @@ export default function FinancialReportPage() {
     };
   }, [combinedOperations]);
 
+  const handleGenerateCorteDia = () => {
+    const todayRange = getTodayRange();
+    const salesToday = allSales.filter(sale => {
+      const saleDate = parseISO(sale.saleDate);
+      return isValid(saleDate) && isSameDay(saleDate, todayRange.from);
+    });
+
+    const servicesTodayCompleted = allServices.filter(service => {
+      const serviceDate = parseISO(service.serviceDate); // Assuming serviceDate is when it's considered "for the day"
+      return isValid(serviceDate) && isSameDay(serviceDate, todayRange.from) && service.status === 'Completado';
+    });
+
+    const salesByPaymentMethod: Record<string, number> = {};
+    let totalSalesAmount = 0;
+
+    salesToday.forEach(sale => {
+      const method = sale.paymentMethod || 'Desconocido';
+      salesByPaymentMethod[method] = (salesByPaymentMethod[method] || 0) + sale.totalAmount;
+      totalSalesAmount += sale.totalAmount;
+    });
+
+    const totalCompletedServicesAmount = servicesTodayCompleted.reduce((sum, service) => sum + service.totalCost, 0);
+    const grandTotal = totalSalesAmount + totalCompletedServicesAmount;
+
+    setCorteDiaData({
+      date: todayRange.from.toISOString(),
+      salesByPaymentMethod,
+      totalSales: totalSalesAmount,
+      totalCompletedServices: totalCompletedServicesAmount,
+      grandTotal,
+    });
+    setIsCorteDiaDialogOpen(true);
+  };
+
   const formatCurrency = (amount: number) => {
     return `$${amount.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   };
@@ -155,6 +199,12 @@ export default function FinancialReportPage() {
       <PageHeader
         title="Informe de Ventas"
         description="Consolida ventas y servicios para un análisis detallado de ingresos y ganancias."
+        actions={
+          <Button onClick={handleGenerateCorteDia} variant="outline">
+            <Printer className="mr-2 h-4 w-4" />
+            Realizar Corte del Día
+          </Button>
+        }
       />
 
       <div className="mb-6 grid gap-6 md:grid-cols-2 lg:grid-cols-4">
@@ -326,6 +376,20 @@ export default function FinancialReportPage() {
             )}
         </CardContent>
       </Card>
+      
+      {isCorteDiaDialogOpen && corteDiaData && (
+        <PrintTicketDialog
+          open={isCorteDiaDialogOpen}
+          onOpenChange={setIsCorteDiaDialogOpen}
+          title="Corte del Día"
+          printButtonText="Imprimir Corte"
+          dialogContentClassName="printable-ticket-dialog" 
+          onDialogClose={() => setCorteDiaData(null)}
+        >
+          <CorteDiaContent reportData={corteDiaData} />
+        </PrintTicketDialog>
+      )}
     </>
   );
 }
+
