@@ -3,13 +3,13 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image'; // Import next/image
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from '@/hooks/use-toast';
 import type { User } from '@/types';
-import { AppLogo } from '@/components/icons'; 
 
 export default function LoginPage() {
   const router = useRouter();
@@ -20,11 +20,10 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    // Check if user is already authenticated
     if (typeof window !== 'undefined') {
       const authUser = localStorage.getItem('authUser');
       if (authUser) {
-        router.replace('/dashboard'); // Use replace to avoid login page in history
+        router.replace('/dashboard'); 
       }
     }
   }, [router]);
@@ -34,7 +33,6 @@ export default function LoginPage() {
     setIsLoading(true);
     setError('');
 
-    // Simulate API call
     await new Promise(resolve => setTimeout(resolve, 500));
 
     if (email === 'arturo@ranoro.mx' && password === 'CA1abaza') {
@@ -43,6 +41,7 @@ export default function LoginPage() {
         name: 'Arturo Ranoro',
         email: 'arturo@ranoro.mx',
         role: 'superadmin',
+        phone: '4491234567'
       };
       if (typeof window !== 'undefined') {
         localStorage.setItem('authUser', JSON.stringify(superAdminUser));
@@ -50,11 +49,10 @@ export default function LoginPage() {
       toast({ title: 'Inicio de Sesión Exitoso', description: `Bienvenido, ${superAdminUser.name}!` });
       router.push('/dashboard');
     } else {
-      // Check against other users (simulated)
       if (typeof window !== 'undefined') {
         const storedUsersString = localStorage.getItem('appUsers');
         const storedUsers: User[] = storedUsersString ? JSON.parse(storedUsersString) : [];
-        const foundUser = storedUsers.find(u => u.email === email && u.password === password); // Password check is insecure here!
+        const foundUser = storedUsers.find(u => u.email === email && u.password === password); 
         
         if (foundUser) {
           localStorage.setItem('authUser', JSON.stringify(foundUser));
@@ -74,11 +72,22 @@ export default function LoginPage() {
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-muted/40 p-4">
+      <div className="mb-8 text-center">
+        <Image
+          src="https://placehold.co/150x50.png"
+          alt="Ranoro Logo"
+          width={150}
+          height={50}
+          priority
+          className="mx-auto"
+          data-ai-hint="company logo"
+        />
+        <p className="mt-3 text-lg font-medium text-foreground">
+          ¡Tu taller en una App!
+        </p>
+      </div>
       <Card className="w-full max-w-sm shadow-xl">
         <CardHeader className="space-y-1 text-center">
-          <div className="flex justify-center mb-4">
-            <AppLogo className="h-12 w-12 text-primary" />
-          </div>
           <CardTitle className="text-2xl font-bold font-headline">Bienvenido a Ranoro</CardTitle>
           <CardDescription>Ingresa tus credenciales para acceder al sistema</CardDescription>
         </CardHeader>
@@ -121,4 +130,3 @@ export default function LoginPage() {
     </div>
   );
 }
-
