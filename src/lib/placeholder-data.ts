@@ -287,7 +287,60 @@ export const placeholderAppRoles: AppRole[] = [
     { id: 'role_ventas', name: 'Ventas', permissions: ['dashboard:view', 'pos:create_sale', 'pos:view_sales', 'inventory:view'] },
 ];
 
-export let placeholderQuotes: QuoteRecord[] = []; // New placeholder for quotes
+// Calculate selling price for example supplies based on existing inventory data
+const itemP002 = placeholderInventory.find(i => i.id === 'P002');
+const sellingPriceP002 = itemP002 ? itemP002.sellingPrice : 0; // sellingPrice is tax-inclusive
+const unitPriceP002Workshop = itemP002 ? itemP002.unitPrice : 0; // cost to workshop
+
+const itemSERV001 = placeholderInventory.find(i => i.id === 'SERV001');
+const sellingPriceSERV001 = itemSERV001 ? itemSERV001.sellingPrice : 0; // sellingPrice is tax-inclusive
+const unitPriceSERV001Workshop = itemSERV001 ? itemSERV001.unitPrice : 0; // cost to workshop
+
+const exampleQuoteSupplies: ServiceSupply[] = [
+  { 
+    supplyId: 'P002', 
+    supplyName: 'Pastillas de Freno Brembo Delanteras', 
+    quantity: 1, 
+    unitPrice: sellingPriceP002 // For quote, unitPrice means price_to_client (tax-inclusive)
+  },
+  { 
+    supplyId: 'SERV001', 
+    supplyName: 'Mano de Obra Mecánica (Hora)', 
+    quantity: 2, 
+    unitPrice: sellingPriceSERV001 // Price_to_client for labor
+  },
+];
+
+const exampleEstimatedTotalCost = exampleQuoteSupplies.reduce((sum, s) => sum + (s.unitPrice || 0) * s.quantity, 0);
+const exampleEstimatedSubTotal = exampleEstimatedTotalCost / (1 + IVA_RATE);
+const exampleEstimatedTaxAmount = exampleEstimatedTotalCost - exampleEstimatedSubTotal;
+
+const exampleEstimatedTotalSuppliesCostToWorkshop = 
+    (1 * unitPriceP002Workshop) + 
+    (2 * unitPriceSERV001Workshop);
+
+const exampleEstimatedProfit = exampleEstimatedTotalCost - exampleEstimatedTotalSuppliesCostToWorkshop;
+
+
+export let placeholderQuotes: QuoteRecord[] = [
+  {
+    id: 'COT2024001',
+    quoteDate: subDays(today, 5).toISOString(),
+    vehicleId: 1,
+    vehicleIdentifier: placeholderVehicles.find(v => v.id === 1)?.licensePlate,
+    description: 'Reemplazo de balatas delanteras y rectificación de discos. Incluye revisión de niveles y presión de neumáticos.',
+    preparedByTechnicianId: 'T001',
+    preparedByTechnicianName: placeholderTechnicians.find(t => t.id === 'T001')?.name,
+    suppliesProposed: exampleQuoteSupplies,
+    estimatedTotalCost: exampleEstimatedTotalCost,
+    estimatedSubTotal: exampleEstimatedSubTotal,
+    estimatedTaxAmount: exampleEstimatedTaxAmount,
+    estimatedTotalSuppliesCost: exampleEstimatedTotalSuppliesCostToWorkshop,
+    estimatedProfit: exampleEstimatedProfit,
+    notes: 'Esta cotización es válida por 15 días. No incluye trabajos adicionales no especificados.',
+    mileage: 48000,
+  }
+]; 
 
 
 // Helper functions to get date ranges
@@ -341,6 +394,7 @@ export const calculateSaleProfit = (sale: SaleReceipt, inventory: InventoryItem[
       return profit + (sellingPriceSubTotal - costPrice) * saleItem.quantity;
   }, 0);
 };
+
 
 
 
