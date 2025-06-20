@@ -17,6 +17,7 @@ import { parseISO, compareAsc, compareDesc, format, isValid, startOfMonth, endOf
 import { es } from 'date-fns/locale';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar"; // Added missing import
 import type { DateRange } from "react-day-picker";
 import { cn } from "@/lib/utils";
 
@@ -291,4 +292,3 @@ export default function AdministrativosPage() {
     </>
   );
 }
-
