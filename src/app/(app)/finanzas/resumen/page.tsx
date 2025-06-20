@@ -12,11 +12,12 @@ import {
   placeholderServiceRecords,
   placeholderTechnicians,
   placeholderFixedMonthlyExpenses,
-  placeholderInventory, // Import placeholderInventory
+  placeholderInventory, 
+  placeholderAdministrativeStaff, // Import administrative staff
   calculateSaleProfit,
-  IVA_RATE, // Import IVA_RATE
+  IVA_RATE, 
 } from "@/lib/placeholder-data";
-import type { SaleReceipt, ServiceRecord, Technician, MonthlyFixedExpense, InventoryItem } from "@/types";
+import type { SaleReceipt, ServiceRecord, Technician, MonthlyFixedExpense, InventoryItem, AdministrativeStaff } from "@/types";
 import {
   format,
   parseISO,
@@ -30,12 +31,15 @@ import {
   getMonth,
 } from "date-fns";
 import { es } from 'date-fns/locale';
-import { CalendarIcon, ChevronLeft, ChevronRight, DollarSign, TrendingUp, TrendingDown, Landmark, Users, Info } from "lucide-react";
+import { CalendarIcon, ChevronLeft, ChevronRight, DollarSign, TrendingUp, TrendingDown, Landmark, Users, Info, Pencil } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { FixedExpensesDialog } from "../components/fixed-expenses-dialog"; // Import the dialog
 
 export default function ResumenFinancieroPage() {
   const [selectedDate, setSelectedDate] = useState<Date>(startOfMonth(new Date()));
-  const [inventory, setInventory] = useState<InventoryItem[]>(placeholderInventory); // Add inventory state
+  const [inventory, setInventory] = useState<InventoryItem[]>(placeholderInventory); 
+  const [currentFixedExpenses, setCurrentFixedExpenses] = useState<MonthlyFixedExpense[]>(placeholderFixedMonthlyExpenses);
+  const [isExpensesDialogOpen, setIsExpensesDialogOpen] = useState(false);
 
   const financialSummary = useMemo(() => {
     const currentMonthStart = startOfMonth(selectedDate);
@@ -55,29 +59,36 @@ export default function ResumenFinancieroPage() {
     const totalIncomeFromServices = servicesThisMonth.reduce((sum, service) => sum + service.totalCost, 0);
     const totalOperationalIncome = totalIncomeFromSales + totalIncomeFromServices;
 
-    // Use the imported calculateSaleProfit function
     const totalProfitFromSales = salesThisMonth.reduce((sum, sale) => sum + calculateSaleProfit(sale, inventory, IVA_RATE), 0);
     const totalProfitFromServices = servicesThisMonth.reduce((sum, service) => sum + (service.serviceProfit || 0), 0);
     const totalOperationalProfit = totalProfitFromSales + totalProfitFromServices;
 
     const totalTechnicianSalaries = placeholderTechnicians.reduce((sum, tech) => sum + (tech.monthlySalary || 0), 0);
+    const totalAdministrativeSalaries = placeholderAdministrativeStaff.reduce((sum, staff) => sum + (staff.monthlySalary || 0), 0);
+    const totalSalaries = totalTechnicianSalaries + totalAdministrativeSalaries;
 
-    const totalFixedExpenses = placeholderFixedMonthlyExpenses.reduce((sum, expense) => sum + expense.amount, 0);
+    const totalFixedExpensesFromState = currentFixedExpenses.reduce((sum, expense) => sum + expense.amount, 0);
 
-    const totalExpenses = totalTechnicianSalaries + totalFixedExpenses;
+    const totalExpenses = totalSalaries + totalFixedExpensesFromState;
     const netProfit = totalOperationalProfit - totalExpenses;
 
     return {
       monthYearLabel: format(selectedDate, "MMMM yyyy", { locale: es }),
       totalOperationalIncome,
       totalOperationalProfit,
+      totalSalaries,
       totalTechnicianSalaries,
-      fixedExpenses: placeholderFixedMonthlyExpenses,
-      totalFixedExpenses,
+      totalAdministrativeSalaries,
+      fixedExpenses: currentFixedExpenses, // Use state for dynamic display
+      totalFixedExpenses: totalFixedExpensesFromState,
       totalExpenses,
       netProfit,
     };
-  }, [selectedDate, inventory]); // Add inventory to dependency array
+  }, [selectedDate, inventory, currentFixedExpenses]);
+
+  const handleExpensesUpdated = (updatedExpenses: MonthlyFixedExpense[]) => {
+    setCurrentFixedExpenses([...updatedExpenses]); // Update local state to trigger re-calculation
+  };
 
   const handlePreviousMonth = () => {
     setSelectedDate(prev => subMonths(prev, 1));
@@ -94,6 +105,12 @@ export default function ResumenFinancieroPage() {
       <PageHeader
         title="Resumen Financiero Mensual"
         description="Visualiza los ingresos, gastos y ganancias netas de cada mes."
+        actions={
+            <Button variant="outline" onClick={() => setIsExpensesDialogOpen(true)}>
+                <Pencil className="mr-2 h-4 w-4" />
+                Editar Gastos Fijos
+            </Button>
+        }
       />
 
       <div className="mb-6 flex items-center justify-center gap-4">
@@ -105,10 +122,10 @@ export default function ResumenFinancieroPage() {
             <Button
               variant={"outline"}
               className={cn(
-                "w-auto min-w-[200px] justify-center text-left font-semibold text-lg px-6 py-3", // Increased padding and min-width
+                "w-auto min-w-[200px] justify-center text-left font-semibold text-lg px-6 py-3", 
               )}
             >
-              <CalendarIcon className="mr-3 h-5 w-5" /> {/* Increased margin */}
+              <CalendarIcon className="mr-3 h-5 w-5" /> 
               {format(selectedDate, "MMMM yyyy", { locale: es })}
             </Button>
           </PopoverTrigger>
@@ -160,14 +177,18 @@ export default function ResumenFinancieroPage() {
           <CardHeader>
             <CardTitle className="text-xl flex items-center gap-2">
               <TrendingDown className="h-6 w-6 text-red-500" />
-              Gastos Fijos y Sueldos
+              Gastos y Sueldos
             </CardTitle>
              <CardDescription>Costos operativos del mes de {financialSummary.monthYearLabel}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3 text-base">
             <div className="flex justify-between items-center">
-              <span className="text-muted-foreground flex items-center gap-1"><Users className="h-4 w-4"/>Sueldos de Técnicos:</span>
+              <span className="text-muted-foreground flex items-center gap-1"><Users className="h-4 w-4"/>Sueldos (Técnicos):</span>
               <span className="font-semibold">{formatCurrency(financialSummary.totalTechnicianSalaries)}</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-muted-foreground flex items-center gap-1"><Users className="h-4 w-4"/>Sueldos (Admin.):</span>
+              <span className="font-semibold">{formatCurrency(financialSummary.totalAdministrativeSalaries)}</span>
             </div>
             {financialSummary.fixedExpenses.map(expense => (
               <div key={expense.id} className="flex justify-between items-center">
@@ -211,11 +232,16 @@ export default function ResumenFinancieroPage() {
         </CardHeader>
         <CardContent className="text-sm text-blue-700 dark:text-blue-300 space-y-1">
             <p>• La <strong>Ganancia Bruta Operativa</strong> se calcula como: (Ingresos Totales de Ventas - Costo de los Productos Vendidos) + (Ingresos Totales de Servicios - Costo de los Insumos Usados en Servicios).</p>
-            <p>• Los <strong>Sueldos de Técnicos</strong> y <strong>Gastos Fijos Mensuales</strong> (Renta, Servicios, etc.) son valores predefinidos en el sistema para este demo.</p>
+            <p>• Los <strong>Sueldos</strong> (Técnicos y Administrativos) y <strong>Gastos Fijos Mensuales</strong> (Renta, Servicios, etc.) son valores configurables.</p>
             <p>• El <strong>Resultado Neto</strong> es la Ganancia Bruta Operativa menos el Total de Gastos (Sueldos + Gastos Fijos).</p>
-            <p>• Esta página no incluye gastos variables adicionales que no estén preconfigurados.</p>
         </CardContent>
       </Card>
+
+      <FixedExpensesDialog
+        open={isExpensesDialogOpen}
+        onOpenChange={setIsExpensesDialogOpen}
+        onExpensesUpdated={handleExpensesUpdated}
+      />
     </>
   );
 }

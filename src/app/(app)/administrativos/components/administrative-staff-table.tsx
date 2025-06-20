@@ -1,0 +1,67 @@
+
+"use client";
+
+import React from "react";
+import { useRouter } from "next/navigation";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import type { AdministrativeStaff } from "@/types";
+import { format, parseISO } from 'date-fns';
+import { es } from 'date-fns/locale';
+
+interface AdministrativeStaffTableProps {
+  staffList: AdministrativeStaff[];
+}
+
+export function AdministrativeStaffTable({ staffList }: AdministrativeStaffTableProps) {
+  const router = useRouter();
+
+  const handleRowClick = (staffId: string) => {
+    router.push(`/administrativos/${staffId}`);
+  };
+
+  if (!staffList.length) {
+    return <p className="text-muted-foreground text-center py-8">No hay personal administrativo registrado.</p>;
+  }
+
+  return (
+    <div className="rounded-lg border shadow-sm overflow-hidden">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>ID</TableHead>
+            <TableHead>Nombre</TableHead>
+            <TableHead>Rol/Área</TableHead>
+            <TableHead>Teléfono</TableHead>
+            <TableHead>Fecha Contratación</TableHead>
+            <TableHead className="text-right">Sueldo Mensual</TableHead>
+            <TableHead>Notas</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {staffList.map((staff) => (
+            <TableRow 
+              key={staff.id} 
+              onClick={() => handleRowClick(staff.id)}
+              className="cursor-pointer hover:bg-muted/50"
+            >
+              <TableCell className="font-medium">{staff.id}</TableCell>
+              <TableCell className="font-semibold">{staff.name}</TableCell>
+              <TableCell>{staff.roleOrArea}</TableCell>
+              <TableCell>{staff.contactInfo || 'N/A'}</TableCell>
+              <TableCell>{staff.hireDate ? format(parseISO(staff.hireDate), "dd MMM yyyy", { locale: es }) : 'N/A'}</TableCell>
+              <TableCell className="text-right">${(staff.monthlySalary || 0).toLocaleString('es-ES', { minimumFractionDigits: 2 })}</TableCell>
+              <TableCell className="max-w-xs truncate">{staff.notes || 'N/A'}</TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </div>
+  );
+}
