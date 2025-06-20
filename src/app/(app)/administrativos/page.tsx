@@ -6,15 +6,19 @@ import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
-import { PlusCircle, ListFilter, Search, Users, DollarSign } from "lucide-react";
+import { PlusCircle, ListFilter, Search, Users, DollarSign, CalendarIcon as CalendarDateIcon, BadgeCent } from "lucide-react";
 import { AdministrativeStaffTable } from "./components/administrative-staff-table";
 import { AdministrativeStaffDialog } from "./components/administrative-staff-dialog";
-import { placeholderAdministrativeStaff } from "@/lib/placeholder-data";
-import type { AdministrativeStaff } from "@/types";
+import { placeholderAdministrativeStaff, placeholderServiceRecords, ADMIN_STAFF_COMMISSION_RATE } from "@/lib/placeholder-data";
+import type { AdministrativeStaff, ServiceRecord } from "@/types";
 import type { AdministrativeStaffFormValues } from "./components/administrative-staff-form";
 import { useToast } from "@/hooks/use-toast";
-import { parseISO, compareAsc, compareDesc } from 'date-fns';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { parseISO, compareAsc, compareDesc, format, isValid, startOfMonth, endOfMonth, isWithinInterval, startOfDay, endOfDay } from 'date-fns';
+import { es } from 'date-fns/locale';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import type { DateRange } from "react-day-picker";
+import { cn } from "@/lib/utils";
 
 type StaffSortOption = 
   | "name_asc" | "name_desc"
@@ -22,11 +26,24 @@ type StaffSortOption =
   | "hireDate_asc" | "hireDate_desc"
   | "salary_asc" | "salary_desc";
 
+interface AggregatedAdminStaffPerformance {
+  staffId: string;
+  staffName: string;
+  baseSalary: number;
+  commissionEarned: number;
+  totalEarnings: number;
+}
+
 export default function AdministrativosPage() {
   const { toast } = useToast();
   const [staffList, setStaffList] = useState<AdministrativeStaff[]>(placeholderAdministrativeStaff);
   const [searchTerm, setSearchTerm] = useState('');
   const [sortOption, setSortOption] = useState<StaffSortOption>("name_asc");
+  
+  const [filterDateRange, setFilterDateRange] = useState<DateRange | undefined>(() => {
+    const now = new Date();
+    return { from: startOfMonth(now), to: endOfMonth(now) };
+  });
   
   const handleSaveStaff = async (data: AdministrativeStaffFormValues) => {
     const newStaffMember: AdministrativeStaff = {
@@ -82,6 +99,39 @@ export default function AdministrativosPage() {
     return staffList.reduce((sum, staff) => sum + (staff.monthlySalary || 0), 0);
   }, [staffList]);
 
+  const aggregatedAdminPerformance = useMemo((): AggregatedAdminStaffPerformance[] => {
+    let dateFrom = filterDateRange?.from ? startOfDay(filterDateRange.from) : startOfMonth(new Date());
+    let dateTo = filterDateRange?.to ? endOfDay(filterDateRange.to) : endOfMonth(new Date());
+    if (filterDateRange?.from && !filterDateRange.to) { 
+        dateTo = endOfDay(filterDateRange.from);
+    }
+
+    const completedServicesInRange = placeholderServiceRecords.filter(service => {
+        if (service.status !== 'Completado') return false;
+        const serviceDate = parseISO(service.serviceDate);
+        if (!isValid(serviceDate)) return false;
+        return isWithinInterval(serviceDate, { start: dateFrom, end: dateTo });
+    });
+
+    const totalProfitFromCompletedServices = completedServicesInRange.reduce((sum, s) => sum + (s.serviceProfit || 0), 0);
+
+    return staffList.map(staff => {
+      const commissionEarned = totalProfitFromCompletedServices * ADMIN_STAFF_COMMISSION_RATE;
+      const baseSalary = staff.monthlySalary || 0;
+      return {
+        staffId: staff.id,
+        staffName: staff.name,
+        baseSalary,
+        commissionEarned,
+        totalEarnings: baseSalary + commissionEarned,
+      };
+    });
+  }, [staffList, filterDateRange]);
+  
+  const formatCurrency = (amount: number) => {
+    return `$${amount.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  };
+
   return (
     <>
       <PageHeader
@@ -104,15 +154,92 @@ export default function AdministrativosPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
-              Costo Total de Nómina Admin. (Mensual)
+              Costo Total de Nómina Admin. (Mensual Base)
             </CardTitle>
             <DollarSign className="h-5 w-5 text-green-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold font-headline">${totalMonthlyAdministrativeSalaries.toLocaleString('es-MX', { minimumFractionDigits: 2 })}</div>
+            <div className="text-2xl font-bold font-headline">{formatCurrency(totalMonthlyAdministrativeSalaries)}</div>
           </CardContent>
         </Card>
       </div>
+
+      <Card className="mb-6">
+        <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div>
+            <CardTitle>Resumen de Rendimiento y Comisiones</CardTitle>
+            <CardDescription>
+              Comisiones ganadas por el staff administrativo basadas en servicios completados en el rango de fechas seleccionado.
+              Predeterminado al mes actual si no se selecciona un rango.
+            </CardDescription>
+          </div>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant={"outline"}
+                className={cn(
+                  "w-full sm:w-[280px] justify-start text-left font-normal",
+                  !filterDateRange && "text-muted-foreground"
+                )}
+              >
+                <CalendarDateIcon className="mr-2 h-4 w-4" />
+                {filterDateRange?.from ? (
+                  filterDateRange.to ? (
+                    <>
+                      {format(filterDateRange.from, "LLL dd, y", { locale: es })} -{" "}
+                      {format(filterDateRange.to, "LLL dd, y", { locale: es })}
+                    </>
+                  ) : (
+                    format(filterDateRange.from, "LLL dd, y", { locale: es })
+                  )
+                ) : (
+                  <span>Seleccione rango</span>
+                )}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="end">
+              <Calendar
+                initialFocus
+                mode="range"
+                defaultMonth={filterDateRange?.from}
+                selected={filterDateRange}
+                onSelect={setFilterDateRange}
+                numberOfMonths={2}
+                locale={es}
+              />
+            </PopoverContent>
+          </Popover>
+        </CardHeader>
+        <CardContent>
+          {aggregatedAdminPerformance.length > 0 ? (
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              {aggregatedAdminPerformance.map(staffPerf => (
+                <Card key={staffPerf.staffId} className="shadow-sm border">
+                  <CardHeader className="pb-3 pt-4">
+                    <CardTitle className="text-base font-medium">{staffPerf.staffName}</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-1 text-sm pb-4">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Salario Base:</span>
+                      <span className="font-semibold">{formatCurrency(staffPerf.baseSalary)}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-muted-foreground flex items-center gap-1"><BadgeCent className="h-3.5 w-3.5"/>Comisión Ganada:</span>
+                      <span className="font-semibold text-blue-600">{formatCurrency(staffPerf.commissionEarned)}</span>
+                    </div>
+                     <div className="flex justify-between font-bold pt-1 border-t mt-1">
+                      <span className="text-muted-foreground">Total Ganado:</span>
+                      <span className="text-green-600">{formatCurrency(staffPerf.totalEarnings)}</span>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <p className="text-muted-foreground text-center py-4">No hay datos de rendimiento para mostrar con el filtro actual.</p>
+          )}
+        </CardContent>
+      </Card>
 
 
       <div className="mb-4 flex flex-col sm:flex-row items-center justify-between gap-2">
@@ -131,7 +258,7 @@ export default function AdministrativosPage() {
             <DropdownMenuTrigger asChild>
                 <Button variant="outline" className="flex-1 sm:flex-initial">
                 <ListFilter className="mr-2 h-4 w-4" />
-                Ordenar
+                Ordenar Tabla
                 </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
@@ -164,3 +291,4 @@ export default function AdministrativosPage() {
     </>
   );
 }
+

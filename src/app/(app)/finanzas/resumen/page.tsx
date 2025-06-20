@@ -13,9 +13,11 @@ import {
   placeholderTechnicians,
   placeholderFixedMonthlyExpenses,
   placeholderInventory, 
-  placeholderAdministrativeStaff, // Import administrative staff
+  placeholderAdministrativeStaff,
   calculateSaleProfit,
   IVA_RATE, 
+  TECH_STAFF_COMMISSION_RATE,
+  ADMIN_STAFF_COMMISSION_RATE,
 } from "@/lib/placeholder-data";
 import type { SaleReceipt, ServiceRecord, Technician, MonthlyFixedExpense, InventoryItem, AdministrativeStaff } from "@/types";
 import {
@@ -31,9 +33,9 @@ import {
   getMonth,
 } from "date-fns";
 import { es } from 'date-fns/locale';
-import { CalendarIcon, ChevronLeft, ChevronRight, DollarSign, TrendingUp, TrendingDown, Landmark, Users, Info, Pencil } from "lucide-react";
+import { CalendarIcon, ChevronLeft, ChevronRight, DollarSign, TrendingUp, TrendingDown, Landmark, Users, Info, Pencil, BadgeCent } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { FixedExpensesDialog } from "../components/fixed-expenses-dialog"; // Import the dialog
+import { FixedExpensesDialog } from "../components/fixed-expenses-dialog"; 
 
 export default function ResumenFinancieroPage() {
   const [selectedDate, setSelectedDate] = useState<Date>(startOfMonth(new Date()));
@@ -54,6 +56,8 @@ export default function ResumenFinancieroPage() {
       const serviceDate = parseISO(service.serviceDate);
       return isValid(serviceDate) && isWithinInterval(serviceDate, { start: currentMonthStart, end: currentMonthEnd });
     });
+    
+    const completedServicesThisMonth = servicesThisMonth.filter(s => s.status === 'Completado');
 
     const totalIncomeFromSales = salesThisMonth.reduce((sum, sale) => sum + sale.totalAmount, 0);
     const totalIncomeFromServices = servicesThisMonth.reduce((sum, service) => sum + service.totalCost, 0);
@@ -69,7 +73,18 @@ export default function ResumenFinancieroPage() {
 
     const totalFixedExpensesFromState = currentFixedExpenses.reduce((sum, expense) => sum + expense.amount, 0);
 
-    const totalExpenses = totalSalaries + totalFixedExpensesFromState;
+    // Calculate commissions for the month
+    let totalTechnicianCommissions = 0;
+    placeholderTechnicians.forEach(tech => {
+        const techServicesThisMonth = completedServicesThisMonth.filter(s => s.technicianId === tech.id);
+        totalTechnicianCommissions += techServicesThisMonth.reduce((sum, s) => sum + (s.serviceProfit || 0) * TECH_STAFF_COMMISSION_RATE, 0);
+    });
+
+    const totalProfitFromAllCompletedServices = completedServicesThisMonth.reduce((sum, s) => sum + (s.serviceProfit || 0), 0);
+    const totalAdministrativeCommissions = totalProfitFromAllCompletedServices * ADMIN_STAFF_COMMISSION_RATE * placeholderAdministrativeStaff.length;
+
+
+    const totalExpenses = totalSalaries + totalFixedExpensesFromState + totalTechnicianCommissions + totalAdministrativeCommissions;
     const netProfit = totalOperationalProfit - totalExpenses;
 
     return {
@@ -79,15 +94,17 @@ export default function ResumenFinancieroPage() {
       totalSalaries,
       totalTechnicianSalaries,
       totalAdministrativeSalaries,
-      fixedExpenses: currentFixedExpenses, // Use state for dynamic display
+      fixedExpenses: currentFixedExpenses, 
       totalFixedExpenses: totalFixedExpensesFromState,
+      totalTechnicianCommissions,
+      totalAdministrativeCommissions,
       totalExpenses,
       netProfit,
     };
   }, [selectedDate, inventory, currentFixedExpenses]);
 
   const handleExpensesUpdated = (updatedExpenses: MonthlyFixedExpense[]) => {
-    setCurrentFixedExpenses([...updatedExpenses]); // Update local state to trigger re-calculation
+    setCurrentFixedExpenses([...updatedExpenses]); 
   };
 
   const handlePreviousMonth = () => {
@@ -177,18 +194,26 @@ export default function ResumenFinancieroPage() {
           <CardHeader>
             <CardTitle className="text-xl flex items-center gap-2">
               <TrendingDown className="h-6 w-6 text-red-500" />
-              Gastos y Sueldos
+              Gastos, Sueldos y Comisiones
             </CardTitle>
              <CardDescription>Costos operativos del mes de {financialSummary.monthYearLabel}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3 text-base">
             <div className="flex justify-between items-center">
-              <span className="text-muted-foreground flex items-center gap-1"><Users className="h-4 w-4"/>Sueldos (Técnicos):</span>
+              <span className="text-muted-foreground flex items-center gap-1"><Users className="h-4 w-4"/>Sueldos (Staff Técnico):</span>
               <span className="font-semibold">{formatCurrency(financialSummary.totalTechnicianSalaries)}</span>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-muted-foreground flex items-center gap-1"><Users className="h-4 w-4"/>Sueldos (Admin.):</span>
+              <span className="text-muted-foreground flex items-center gap-1"><Users className="h-4 w-4"/>Sueldos (Staff Admin.):</span>
               <span className="font-semibold">{formatCurrency(financialSummary.totalAdministrativeSalaries)}</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-muted-foreground flex items-center gap-1"><BadgeCent className="h-4 w-4"/>Comisiones (Staff Técnico):</span>
+              <span className="font-semibold">{formatCurrency(financialSummary.totalTechnicianCommissions)}</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-muted-foreground flex items-center gap-1"><BadgeCent className="h-4 w-4"/>Comisiones (Staff Admin.):</span>
+              <span className="font-semibold">{formatCurrency(financialSummary.totalAdministrativeCommissions)}</span>
             </div>
             {financialSummary.fixedExpenses.map(expense => (
               <div key={expense.id} className="flex justify-between items-center">
@@ -232,8 +257,9 @@ export default function ResumenFinancieroPage() {
         </CardHeader>
         <CardContent className="text-sm text-blue-700 dark:text-blue-300 space-y-1">
             <p>• La <strong>Ganancia Bruta Operativa</strong> se calcula como: (Ingresos Totales de Ventas - Costo de los Productos Vendidos) + (Ingresos Totales de Servicios - Costo de los Insumos Usados en Servicios).</p>
-            <p>• Los <strong>Sueldos</strong> (Técnicos y Administrativos) y <strong>Gastos Fijos Mensuales</strong> (Renta, Servicios, etc.) son valores configurables.</p>
-            <p>• El <strong>Resultado Neto</strong> es la Ganancia Bruta Operativa menos el Total de Gastos (Sueldos + Gastos Fijos).</p>
+            <p>• Los <strong>Sueldos</strong> (Staff Técnico y Administrativo) y <strong>Gastos Fijos Mensuales</strong> (Renta, Servicios, etc.) son valores configurables.</p>
+            <p>• Las <strong>Comisiones</strong> se calculan sobre la ganancia de los servicios completados en el mes: {TECH_STAFF_COMMISSION_RATE*100}% para cada técnico sobre sus servicios, y {ADMIN_STAFF_COMMISSION_RATE*100}% para cada miembro administrativo sobre el total de servicios.</p>
+            <p>• El <strong>Resultado Neto</strong> es la Ganancia Bruta Operativa menos el Total de Gastos (Sueldos + Comisiones + Gastos Fijos).</p>
         </CardContent>
       </Card>
 
@@ -245,3 +271,4 @@ export default function ResumenFinancieroPage() {
     </>
   );
 }
+
