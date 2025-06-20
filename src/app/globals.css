@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -110,37 +111,75 @@ body {
   body * {
     visibility: hidden;
   }
-  .printable-ticket, .printable-ticket * {
+  .print-hidden {
+    display: none !important;
+  }
+  
+  /* Styles for Thermal Ticket (80mm) */
+  .printable-ticket-dialog .printable-ticket, 
+  .printable-ticket-dialog .printable-ticket * {
     visibility: visible;
   }
-  .printable-ticket {
+  .printable-ticket-dialog .printable-ticket {
     position: absolute;
     left: 0;
     top: 0;
-    width: 100%;
+    width: 100%; /* Will be constrained by @page size for 80mm */
     height: auto;
     margin: 0;
-    padding: 0;
+    padding: 0; /* Small padding might be needed, like 2mm */
     border: none;
     box-shadow: none;
-  }
-  .ticket-preview-content {
-    color: black !important; /* Ensure text is black for printing */
-    background-color: white !important; /* Ensure background is white */
-    font-size: 9pt !important; /* Adjust font size for thermal printers */
+    font-size: 9pt !important; 
     line-height: 1.2 !important;
-    max-width: 100% !important; /* Use full width of paper */
+    color: black !important; 
+    background-color: white !important; 
+  }
+  .printable-ticket-dialog .ticket-preview-content { /* Match class in TicketContent */
+    max-width: 100% !important;
     margin: 0 auto !important;
     padding: 0 !important;
   }
-  
-  .ticket-container {
+   .printable-ticket-dialog .ticket-container {
      padding: 0 !important;
      margin: 0 !important;
   }
-  
-  @page {
-    size: 80mm auto; /* Common thermal printer width */
-    margin: 0mm;
+
+  /* Styles for Letter Size Quote */
+  .printable-quote-dialog .printable-quote,
+  .printable-quote-dialog .printable-quote * {
+    visibility: visible;
   }
+  .printable-quote-dialog .printable-quote {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%; /* Will be constrained by @page size for letter */
+    height: auto; /* Or min-height for full page feel */
+    margin: 0 auto; /* Center content on the page */
+    padding: 20mm 15mm; /* Margins for letter size */
+    border: none;
+    box-shadow: none;
+    font-size: 11pt !important; /* Standard document font size */
+    line-height: 1.4 !important;
+    color: black !important; 
+    background-color: white !important; 
+  }
+   .printable-quote-dialog .quote-preview-content { /* Match class in QuoteContent */
+    max-width: 100% !important; /* Use full width of paper */
+    margin: 0 auto !important;
+    padding: 0 !important; /* Padding is handled by .printable-quote */
+  }
+
+  @page {
+    size: auto; /* Default to printer settings, often letter */
+    margin: 0mm; /* Remove browser default margins */
+  }
+
+  /* Specific @page rules if needed, but often browser handles letter/A4 correctly if content is sized well */
+  /* Example: To force letter specifically for quote prints if content has a specific class */
+  /* @page printable-quote-page { size: letter; margin: 20mm 15mm; } */
+  /* body.printing-quote { @page { size: letter; margin: 20mm 15mm; } } */
+  /* This level of control is hard with just CSS, relying on content sizing + user print settings for Letter is common */
 }
+

@@ -1,0 +1,73 @@
+
+"use client";
+
+import React from "react";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
+import type { QuoteRecord } from "@/types";
+import { format, parseISO, isValid } from 'date-fns';
+import { es } from 'date-fns/locale';
+import { Eye, Printer } from "lucide-react";
+
+interface QuotesTableProps {
+  quotes: QuoteRecord[];
+  onViewQuote: (quote: QuoteRecord) => void;
+}
+
+export function QuotesTable({ quotes, onViewQuote }: QuotesTableProps) {
+  if (!quotes.length) {
+    return <p className="text-muted-foreground text-center py-8">No hay cotizaciones registradas que coincidan con los filtros.</p>;
+  }
+
+  const formatCurrency = (amount: number | undefined) => {
+    if (amount === undefined) return 'N/A';
+    return `$${amount.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  };
+
+  return (
+    <div className="rounded-lg border shadow-sm overflow-hidden">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Folio</TableHead>
+            <TableHead>Fecha</TableHead>
+            <TableHead>Cliente/Vehículo</TableHead>
+            <TableHead>Descripción</TableHead>
+            <TableHead className="text-right">Monto Estimado</TableHead>
+            <TableHead className="text-right">Acciones</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {quotes.map((quote) => {
+            const quoteDate = parseISO(quote.quoteDate);
+            const formattedDate = isValid(quoteDate) 
+              ? format(quoteDate, "dd MMM yyyy", { locale: es }) 
+              : 'Fecha Inválida';
+            
+            return (
+              <TableRow key={quote.id}>
+                <TableCell className="font-medium">{quote.id}</TableCell>
+                <TableCell>{formattedDate}</TableCell>
+                <TableCell>{quote.vehicleIdentifier || 'N/A'}</TableCell>
+                <TableCell className="max-w-xs truncate">{quote.description}</TableCell>
+                <TableCell className="text-right font-semibold">{formatCurrency(quote.estimatedTotalCost)}</TableCell>
+                <TableCell className="text-right">
+                  <Button variant="ghost" size="icon" onClick={() => onViewQuote(quote)} title="Ver / Reimprimir Cotización">
+                    <Eye className="h-4 w-4" />
+                  </Button>
+                </TableCell>
+              </TableRow>
+            );
+          })}
+        </TableBody>
+      </Table>
+    </div>
+  );
+}

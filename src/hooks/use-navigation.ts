@@ -25,7 +25,8 @@ import {
   Receipt,
   LineChart,
   ShieldQuestion,
-  FileText, // Added for Cotizaciones
+  FileText, 
+  ClipboardList, // For Historial de Cotizaciones
 } from 'lucide-react';
 
 export interface NavigationEntry {
@@ -47,9 +48,15 @@ const BASE_NAV_STRUCTURE: ReadonlyArray<Omit<NavigationEntry, 'isActive'>> = [
   },
   { label: 'Vehículos', path: '/vehiculos', icon: Car, groupTag: "Principal" },
   {
-    label: 'Cotizaciones', // New Item
-    path: '/cotizaciones',
+    label: 'Nueva Cotización', 
+    path: '/cotizaciones/nuevo', // Path updated
     icon: FileText,
+    groupTag: "Principal"
+  },
+  {
+    label: 'Historial de Cotizaciones', // New Item
+    path: '/cotizaciones/historial',
+    icon: ClipboardList, // Using ClipboardList for quote history
     groupTag: "Principal"
   },
   
@@ -158,7 +165,16 @@ const useNavigation = (): NavigationEntry[] => {
     if (entry.path === '/admin/roles' && pathname === '/admin/roles') {
         isActive = true;
     }
-    if (entry.path === '/cotizaciones' && pathname.startsWith('/cotizaciones')) { // For the new Cotizaciones section
+    // For "Nueva Cotización" make it active if path is /cotizaciones/nuevo
+    if (entry.path === '/cotizaciones/nuevo' && pathname.startsWith('/cotizaciones/nuevo')) {
+        isActive = true;
+    }
+    // For "Historial de Cotizaciones" make it active if path is /cotizaciones/historial
+    if (entry.path === '/cotizaciones/historial' && pathname.startsWith('/cotizaciones/historial')) {
+        isActive = true;
+    }
+    // If on /cotizaciones (which redirects to /nuevo), also make "Nueva Cotización" active
+    if (entry.path === '/cotizaciones/nuevo' && pathname === '/cotizaciones') {
         isActive = true;
     }
 
@@ -187,3 +203,4 @@ const useNavigation = (): NavigationEntry[] => {
 };
 
 export default useNavigation;
+

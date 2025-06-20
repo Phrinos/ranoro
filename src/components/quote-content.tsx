@@ -2,7 +2,7 @@
 "use client";
 
 import type { QuoteRecord, Vehicle, Technician } from '@/types';
-import { format, parseISO, isValid, addDays } from 'date-fns'; // Added addDays
+import { format, parseISO, isValid, addDays } from 'date-fns';
 import { es } from 'date-fns/locale';
 import React, { useEffect, useState } from 'react';
 import Image from 'next/image';
@@ -13,7 +13,7 @@ const initialWorkshopInfo = {
   addressLine1: "Av. de la Convencion de 1914 No. 1421",
   addressLine2: "Jardines de la Concepcion, C.P. 20267",
   cityState: "Aguascalientes, Ags.",
-  logoUrl: "/ranoro-logo.png" // Assuming logo is in public folder
+  logoUrl: "/ranoro-logo.png" 
 };
 
 type WorkshopInfoType = typeof initialWorkshopInfo;
@@ -22,10 +22,10 @@ interface QuoteContentProps {
   quote: QuoteRecord;
   vehicle?: Vehicle; 
   preparedByTechnician?: Technician; 
-  previewWorkshopInfo?: WorkshopInfoType; // For potential live preview from config page
+  previewWorkshopInfo?: WorkshopInfoType; 
 }
 
-const IVA_RATE = 0.16; // Define IVA_RATE if used in calculations here
+const IVA_RATE = 0.16; 
 const LOCALSTORAGE_KEY = 'workshopTicketInfo';
 
 export function QuoteContent({ quote, vehicle, preparedByTechnician, previewWorkshopInfo }: QuoteContentProps) {
@@ -72,11 +72,12 @@ export function QuoteContent({ quote, vehicle, preparedByTechnician, previewWork
     </div>
   );
 
-  const validityDays = 30; // Example validity
+  const validityDays = 30; 
   const validityDate = isValid(quoteDate) ? format(addDays(quoteDate, validityDays), "dd 'de' MMMM 'de' yyyy", { locale: es }) : 'N/A';
 
   return (
-    <div className="font-sans bg-white text-black p-6 printable-ticket ticket-preview-content max-w-4xl mx-auto text-sm print:max-w-full print:text-xs print:p-4">
+    // printable-quote and quote-preview-content classes used for print styling
+    <div className="font-sans bg-white text-black p-6 printable-quote quote-preview-content max-w-4xl mx-auto text-sm print:text-base">
       {/* Header */}
       <div className="flex justify-between items-start mb-6 border-b pb-4">
         <div>
@@ -87,7 +88,7 @@ export function QuoteContent({ quote, vehicle, preparedByTechnician, previewWork
             height={50} 
             className="mb-2"
             data-ai-hint="workshop logo"
-            priority={typeof window === 'undefined'} // Only priority on server for initial load
+            priority={typeof window === 'undefined'} 
             />
           <h1 className="text-2xl font-bold text-gray-800">{workshopInfo.name}</h1>
           <p>{workshopInfo.addressLine1}</p>
@@ -170,7 +171,7 @@ export function QuoteContent({ quote, vehicle, preparedByTechnician, previewWork
               <p className="text-xs text-gray-600 whitespace-pre-wrap mb-2">{quote.notes}</p>
             </>
           )}
-           {validityDays > 0 && (
+           {isValid(quoteDate) && validityDays > 0 && (
              <p className="text-xs text-gray-600 mb-1">Esta cotización es válida hasta el {validityDate}. Precios sujetos a cambio sin previo aviso después de esta fecha.</p>
            )}
           <p className="text-xs text-gray-600">Precios en MXN. Esta cotización no incluye trabajos no especificados.</p>
@@ -181,7 +182,7 @@ export function QuoteContent({ quote, vehicle, preparedByTechnician, previewWork
       {/* Footer */}
       <div className="text-center text-xs text-gray-500 border-t pt-4">
         <p>¡Gracias por considerar nuestros servicios!</p>
-        <p className="print:block hidden">Impreso el: {formattedPrintDate}</p>
+        <p className="print-block hidden">Impreso el: {formattedPrintDate}</p>
       </div>
     </div>
   );
