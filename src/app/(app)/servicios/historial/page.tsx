@@ -14,7 +14,7 @@ import { ServiceDialog } from "../components/service-dialog";
 import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
 import { TicketContent } from '@/components/ticket-content';
 import { placeholderServiceRecords, placeholderVehicles, placeholderTechnicians, placeholderInventory } from "@/lib/placeholder-data";
-import type { ServiceRecord, Vehicle, Technician, InventoryItem } from "@/types";
+import type { ServiceRecord, Vehicle, Technician, InventoryItem, QuoteRecord } from "@/types";
 import { useState, useEffect, useMemo } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { format, parseISO, compareAsc, compareDesc, isWithinInterval, isValid, startOfDay, endOfDay } from "date-fns";
@@ -106,7 +106,7 @@ export default function HistorialServiciosPage() {
           }
           const dateComparison = compareDesc(parseISO(a.serviceDate), parseISO(b.serviceDate));
           if (dateComparison !== 0) return dateComparison;
-          return a.id.localeCompare(b.id); // Fallback
+          return a.id.localeCompare(b.id); 
         }
         case "deliveryDate_asc":
           if (!a.deliveryDateTime) return 1; if (!b.deliveryDateTime) return -1;
@@ -163,7 +163,17 @@ export default function HistorialServiciosPage() {
     return { totalServices, totalRevenue, totalProfit, mostCommonVehicle };
   }, [filteredAndSortedServices, vehicles]);
 
-  const handleUpdateService = (updatedService: ServiceRecord) => {
+  const handleUpdateService = (data: ServiceRecord | QuoteRecord) => {
+    if (!('status' in data)) { 
+      toast({
+        title: "Error de Tipo",
+        description: "Se esperaba un registro de servicio para actualizar.",
+        variant: "destructive",
+      });
+      return;
+    }
+    const updatedService = data as ServiceRecord;
+
     setAllServices(prevServices => 
         prevServices.map(s => s.id === updatedService.id ? updatedService : s)
     );
@@ -363,4 +373,3 @@ export default function HistorialServiciosPage() {
     </>
   );
 }
-
