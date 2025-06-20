@@ -11,11 +11,12 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { Badge, badgeVariants } from "@/components/ui/badge"; // Import badgeVariants
 import type { SaleReceipt } from "@/types";
 import { format, parseISO, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Printer } from "lucide-react";
+import type { VariantProps } from "class-variance-authority"; // Import VariantProps
 
 interface SalesTableProps {
   sales: SaleReceipt[];
@@ -31,7 +32,7 @@ export function SalesTable({ sales, onReprintTicket }: SalesTableProps) {
     return `$${amount.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   };
 
-  const getPaymentMethodVariant = (method?: SaleReceipt['paymentMethod']): VariantProps<typeof Badge>['variant'] => {
+  const getPaymentMethodVariant = (method?: SaleReceipt['paymentMethod']): VariantProps<typeof badgeVariants>['variant'] => {
     switch (method) {
       case "Efectivo": return "success";
       case "Tarjeta": return "purple";
@@ -92,3 +93,4 @@ export function SalesTable({ sales, onReprintTicket }: SalesTableProps) {
     </div>
   );
 }
+
