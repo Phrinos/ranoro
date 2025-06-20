@@ -42,7 +42,7 @@ export default function HistorialCotizacionesPage() {
 
 
   useEffect(() => {
-    setAllQuotes(placeholderQuotes); // Load quotes from placeholder data
+    setAllQuotes(placeholderQuotes); 
     setVehicles(placeholderVehicles);
     setTechnicians(placeholderTechnicians);
   }, []);
@@ -109,7 +109,7 @@ export default function HistorialCotizacionesPage() {
   return (
     <>
       <PageHeader
-        title="Historial de Cotizaciones"
+        title="Cotizaciones"
         description="Consulta, filtra y ordena todas las cotizaciones generadas."
         actions={
           <Button asChild>
@@ -228,4 +228,3 @@ export default function HistorialCotizacionesPage() {
     </>
   );
 }
-
