@@ -1,35 +1,38 @@
 
 "use client";
 
-import { useEffect, useState } from "react";
-import { format, parseISO, isToday, isFuture, isValid, compareAsc } from "date-fns"; // Added compareAsc
+import { useEffect, useState, useCallback } from "react";
+import { format, parseISO, isToday, isFuture, isValid, compareAsc } from "date-fns";
 import { es } from 'date-fns/locale';
 import { PageHeader } from "@/components/page-header";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { placeholderServiceRecords, placeholderVehicles, placeholderTechnicians } from "@/lib/placeholder-data";
-import type { ServiceRecord, Vehicle, Technician } from "@/types";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { placeholderServiceRecords, placeholderVehicles, placeholderTechnicians, placeholderInventory } from "@/lib/placeholder-data";
+import type { ServiceRecord, Vehicle, Technician, InventoryItem, User } from "@/types";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
-import { Car, User, Wrench, CheckCircle, CalendarClock, Clock, AlertTriangle } from "lucide-react";
+import { User as UserIcon, Wrench, CheckCircle, CalendarClock, Clock, AlertTriangle } from "lucide-react"; // Changed Car to UserIcon
+import { ServiceDialog } from "../servicios/components/service-dialog";
+import { useToast } from "@/hooks/use-toast";
 
 interface EnrichedServiceRecord extends ServiceRecord {
   vehicleInfo?: string;
   technicianName?: string;
 }
 
-// Renamed from KanbanColumn and adapted
 const DashboardServiceSection = ({ 
   title, 
   services, 
   icon: IconCmp, 
   emptyMessage,
-  isLoading // Added isLoading prop
+  isLoading,
+  onServiceClick // Added onServiceClick prop
 }: { 
   title: string, 
   services: EnrichedServiceRecord[], 
   icon: React.ElementType, 
   emptyMessage: string,
-  isLoading: boolean 
+  isLoading: boolean,
+  onServiceClick: (service: EnrichedServiceRecord) => void; 
 }) => (
   <Card className="flex flex-col shadow-lg">
     <CardHeader className="pb-3 sticky top-0 bg-card z-10 border-b">
@@ -38,14 +41,13 @@ const DashboardServiceSection = ({
         {title} ({services.length})
       </CardTitle>
     </CardHeader>
-    <ScrollArea className="flex-grow h-[calc(100vh/3-8rem)] min-h-[200px]"> {/* Adjusted height */}
+    <ScrollArea className="flex-grow h-[calc(100vh/3-8rem)] min-h-[200px]">
       <CardContent className="p-4 space-y-3">
         {isLoading && services.length === 0 ? (
-           Array.from({ length: 2 }).map((_, index) => ( // Show fewer skeletons for horizontal layout
-            <Card key={index} className="p-4 animate-pulse w-full">
-              <div className="flex gap-4">
-                <div className="flex-shrink-0 bg-muted rounded h-10 w-10"></div>
-                <div className="flex-grow space-y-2">
+           Array.from({ length: 2 }).map((_, index) => (
+            <Card key={index} className="p-2.5 animate-pulse w-full"> {/* Reduced padding */}
+              <div className="flex gap-3"> {/* Reduced gap */}
+                <div className="flex-grow space-y-1.5"> {/* Reduced space-y */}
                   <div className="h-4 bg-muted rounded w-3/4"></div>
                   <div className="h-3 bg-muted rounded w-1/2"></div>
                   <div className="h-3 bg-muted rounded w-full"></div>
@@ -65,29 +67,32 @@ const DashboardServiceSection = ({
             else if (service.status === "Cancelado") statusVariant = "destructive";
 
             return (
-              <Card key={service.id} className="w-full shadow-sm hover:shadow-md transition-shadow duration-150">
-                <CardContent className="p-3 flex flex-col sm:flex-row items-start gap-3">
-                  <div className="flex-shrink-0 pt-1">
-                    <Car className="h-8 w-8 text-primary" />
-                  </div>
-                  <div className="flex-grow space-y-1 w-full">
-                    <div className="flex flex-col sm:flex-row justify-between sm:items-center">
-                      <h4 className="text-sm font-semibold text-foreground">{service.vehicleInfo}</h4>
-                      <Badge variant={statusVariant} className="mt-1 sm:mt-0 text-xs">{service.status}</Badge>
+              <Card 
+                key={service.id} 
+                className="w-full shadow-sm hover:shadow-md transition-shadow duration-150 cursor-pointer hover:bg-muted/50"
+                onClick={() => onServiceClick(service)}
+              >
+                <CardContent className="p-2.5 flex flex-col gap-2"> {/* Reduced padding */}
+                  <div className="flex-grow space-y-0.5 w-full"> {/* Reduced space-y */}
+                    <div className="flex flex-row justify-between items-center">
+                      <h4 className="text-sm font-semibold text-foreground truncate" title={service.vehicleInfo}>{service.vehicleInfo}</h4>
+                      <Badge variant={statusVariant} className="text-xs shrink-0">{service.status}</Badge>
                     </div>
-                    <p className="text-xs text-muted-foreground">ID Servicio: {service.id}</p>
-                    <p className="text-xs text-foreground pt-0.5">{service.description}</p>
-                    <div className="flex flex-col sm:flex-row justify-between text-xs text-muted-foreground pt-0.5">
-                      <div className="flex items-center gap-1">
-                        <User className="h-3 w-3" /> {service.technicianName || 'N/A'}
+                    <p className="text-xs text-muted-foreground">ID: {service.id}</p>
+                    <p className="text-xs text-foreground pt-0.5 truncate" title={service.description}>{service.description}</p>
+                    <div className="flex flex-col sm:flex-row justify-between text-xs text-muted-foreground pt-0.5 gap-x-2">
+                      <div className="flex items-center gap-1 truncate" title={service.technicianName || 'N/A'}>
+                        <UserIcon className="h-3 w-3 shrink-0" /> <span className="truncate">{service.technicianName || 'N/A'}</span>
                       </div>
                       <div className="flex items-center gap-1">
-                        <Clock className="h-3 w-3" />
+                        <Clock className="h-3 w-3 shrink-0" />
+                        <span className="whitespace-nowrap">
                         {service.status === "Completado" && service.deliveryDateTime && isValid(parseISO(service.deliveryDateTime))
                           ? `Entregado: ${format(parseISO(service.deliveryDateTime), "dd MMM, HH:mm", { locale: es })}`
                           : service.serviceDate && isValid(parseISO(service.serviceDate))
                             ? `Recepción: ${format(parseISO(service.serviceDate), "dd MMM, HH:mm", { locale: es })}`
                             : 'N/A'}
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -105,18 +110,27 @@ const DashboardServiceSection = ({
 
 
 export default function DashboardPage() {
+  const [userName, setUserName] = useState<string | null>(null);
   const [repairingServices, setRepairingServices] = useState<EnrichedServiceRecord[]>([]);
   const [scheduledServices, setScheduledServices] = useState<EnrichedServiceRecord[]>([]);
   const [completedTodayServices, setCompletedTodayServices] = useState<EnrichedServiceRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
+  const [vehicles, setVehiclesState] = useState<Vehicle[]>(placeholderVehicles);
+  const [technicians, setTechniciansState] = useState<Technician[]>(placeholderTechnicians);
+  const [inventoryItems, setInventoryItemsState] = useState<InventoryItem[]>(placeholderInventory);
+  
+  const [isServiceDialogOpen, setIsServiceDialogOpen] = useState(false);
+  const [selectedServiceForDialog, setSelectedServiceForDialog] = useState<ServiceRecord | null>(null);
+  const { toast } = useToast();
+
+  const loadAndFilterServices = useCallback(() => {
     setIsLoading(true);
     const clientToday = new Date();
 
     const enrichedServices = placeholderServiceRecords.map(service => {
-      const vehicle = placeholderVehicles.find(v => v.id === service.vehicleId);
-      const technician = placeholderTechnicians.find(t => t.id === service.technicianId);
+      const vehicle = vehicles.find(v => v.id === service.vehicleId);
+      const technician = technicians.find(t => t.id === service.technicianId);
       return {
         ...service,
         vehicleInfo: vehicle ? `${vehicle.licensePlate} - ${vehicle.make} ${vehicle.model}` : `Vehículo ID: ${service.vehicleId}`,
@@ -135,7 +149,7 @@ export default function DashboardPage() {
         console.error("Error parsing service date for scheduled services:", s.serviceDate, e);
         return false; 
       }
-    });
+    }).sort((a,b) => compareAsc(parseISO(a.serviceDate), parseISO(b.serviceDate)));
     
     const completedToday = enrichedServices.filter(s => {
       if (s.status !== 'Completado') return false;
@@ -145,22 +159,79 @@ export default function DashboardPage() {
         return isValid(serviceDay) && isToday(serviceDay);
       } catch (e) {
         console.error("Error parsing service date for completed today:", s.serviceDate, e);
-        // Fallback for potentially problematic date strings if parseISO fails
         return (s.deliveryDateTime || s.serviceDate).startsWith(format(clientToday, 'yyyy-MM-dd'));
       }
     });
 
     setRepairingServices(repairing);
-    setScheduledServices(scheduled.sort((a,b) => compareAsc(parseISO(a.serviceDate), parseISO(b.serviceDate)))); // Sort upcoming
+    setScheduledServices(scheduled);
     setCompletedTodayServices(completedToday);
     setIsLoading(false);
-  }, []);
+  }, [vehicles, technicians]);
+
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const authUserString = localStorage.getItem('authUser');
+      if (authUserString) {
+        try {
+          const authUser: User = JSON.parse(authUserString);
+          setUserName(authUser.name);
+        } catch (e) {
+          console.error("Failed to parse authUser for dashboard welcome message:", e);
+        }
+      }
+    }
+    loadAndFilterServices();
+  }, [loadAndFilterServices]);
+
+  const handleOpenServiceDialog = (service: EnrichedServiceRecord) => {
+    const originalService = placeholderServiceRecords.find(s => s.id === service.id);
+    if (originalService) {
+        setSelectedServiceForDialog(originalService);
+        setIsServiceDialogOpen(true);
+    } else {
+        toast({
+            title: "Error",
+            description: "No se pudo encontrar el servicio original para mostrar detalles.",
+            variant: "destructive"
+        });
+    }
+  };
+  
+  const handleUpdateService = async (updatedServiceData: ServiceRecord) => {
+    const pIndex = placeholderServiceRecords.findIndex(s => s.id === updatedServiceData.id);
+    if (pIndex !== -1) {
+      placeholderServiceRecords[pIndex] = updatedServiceData;
+    }
+    loadAndFilterServices(); // Re-filter and update dashboard sections
+    toast({
+      title: "Servicio Actualizado",
+      description: `El servicio ${updatedServiceData.id} ha sido actualizado.`,
+    });
+    setIsServiceDialogOpen(false);
+    setSelectedServiceForDialog(null);
+    // Note: Auto-printing ticket logic from dashboard is omitted for brevity here,
+    // but could be added if needed, similar to other service pages.
+  };
+
+  const onVehicleCreated = (newVehicle: Vehicle) => {
+    setVehiclesState(currentVehicles => {
+      if (currentVehicles.find(v => v.id === newVehicle.id)) return currentVehicles;
+      const updated = [...currentVehicles, newVehicle];
+      if (!placeholderVehicles.find(v => v.id === newVehicle.id)) {
+         placeholderVehicles.push(newVehicle);
+      }
+      return updated;
+    });
+    toast({ title: "Vehículo Registrado", description: `El vehículo ${newVehicle.licensePlate} ha sido agregado.` });
+  };
 
 
   return (
     <div className="container mx-auto py-8 flex flex-col h-full">
       <PageHeader
-        title="Panel Principal de Taller"
+        title={userName ? `¡Bienvenido, ${userName}!` : "Panel Principal de Taller"}
         description="Vista del estado actual de los servicios."
       />
 
@@ -168,16 +239,18 @@ export default function DashboardPage() {
         <DashboardServiceSection 
           title="En Reparación" 
           services={repairingServices} 
-          icon={Wrench} // Changed icon
+          icon={Wrench}
           emptyMessage="No hay servicios en reparación actualmente."
           isLoading={isLoading}
+          onServiceClick={handleOpenServiceDialog}
         />
         <DashboardServiceSection 
           title="Agendados (Hoy/Futuro)" 
           services={scheduledServices} 
-          icon={CalendarClock} // Changed icon
+          icon={CalendarClock}
           emptyMessage="No hay servicios agendados."
           isLoading={isLoading}
+          onServiceClick={handleOpenServiceDialog}
         />
         <DashboardServiceSection 
           title="Completados Hoy" 
@@ -185,9 +258,21 @@ export default function DashboardPage() {
           icon={CheckCircle}
           emptyMessage="No se han completado servicios hoy."
           isLoading={isLoading}
+          onServiceClick={handleOpenServiceDialog}
         />
       </div>
+      {isServiceDialogOpen && selectedServiceForDialog && (
+        <ServiceDialog
+          open={isServiceDialogOpen}
+          onOpenChange={setIsServiceDialogOpen}
+          service={selectedServiceForDialog}
+          vehicles={vehicles}
+          technicians={technicians}
+          inventoryItems={inventoryItems}
+          onSave={handleUpdateService}
+          onVehicleCreated={onVehicleCreated}
+        />
+      )}
     </div>
   );
 }
-
