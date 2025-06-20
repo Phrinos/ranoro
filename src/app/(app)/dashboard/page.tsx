@@ -7,7 +7,7 @@ import { es } from 'date-fns/locale';
 import { PageHeader } from "@/components/page-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { placeholderServiceRecords, placeholderVehicles, placeholderTechnicians, placeholderInventory } from "@/lib/placeholder-data";
-import type { ServiceRecord, Vehicle, Technician, InventoryItem, User } from "@/types";
+import type { ServiceRecord, Vehicle, Technician, InventoryItem, User, QuoteRecord } from "@/types";
 // ScrollArea is removed as per request
 import { Badge } from "@/components/ui/badge";
 import { User as UserIcon, Wrench, CheckCircle, CalendarClock, Clock, AlertTriangle } from "lucide-react"; 
@@ -178,7 +178,10 @@ export default function DashboardPage() {
           setUserName(authUser.name);
         } catch (e) {
           console.error("Failed to parse authUser for dashboard welcome message:", e);
+          setUserName(null);
         }
+      } else {
+         setUserName(null);
       }
     }
     loadAndFilterServices();
@@ -198,7 +201,11 @@ export default function DashboardPage() {
     }
   };
   
-  const handleUpdateService = async (updatedServiceData: ServiceRecord) => {
+  const handleUpdateService = async (data: ServiceRecord | QuoteRecord) => {
+    // In the context of the dashboard, 'data' will always be a ServiceRecord
+    // because the ServiceDialog is instantiated in 'service' mode.
+    const updatedServiceData = data as ServiceRecord;
+
     const pIndex = placeholderServiceRecords.findIndex(s => s.id === updatedServiceData.id);
     if (pIndex !== -1) {
       placeholderServiceRecords[pIndex] = updatedServiceData;
