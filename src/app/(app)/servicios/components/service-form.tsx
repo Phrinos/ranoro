@@ -49,7 +49,7 @@ const serviceFormSchema = z.object({
   serviceDate: z.date({ required_error: "La fecha y hora de servicio son obligatorias." }),
   mileage: z.coerce.number().int().min(0, "El kilometraje no puede ser negativo.").optional(),
   description: z.string().min(5, "La descripción debe tener al menos 5 caracteres."),
-  totalServicePrice: z.coerce.number().min(0, "El precio del servicio no puede ser negativo."), 
+  totalServicePrice: z.coerce.number().min(0, "El costo del servicio no puede ser negativo."), 
   notes: z.string().optional(),
   technicianId: z.string().min(1, "Seleccione un técnico"),
   suppliesUsed: z.array(supplySchema).optional(),
@@ -424,7 +424,7 @@ export function ServiceForm({
                     </div>
                 )}
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 items-end">
                     <FormField
                     control={form.control}
                     name="serviceDate"
@@ -536,7 +536,7 @@ export function ServiceForm({
                         name="technicianId"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Técnico Asignado</FormLabel>
+                            <FormLabel className="text-lg">Técnico Asignado</FormLabel>
                             <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isReadOnly}>
                               <FormControl>
                                 <SelectTrigger>
@@ -560,11 +560,11 @@ export function ServiceForm({
                         name="totalServicePrice"
                         render={({ field }) => (
                             <FormItem>
-                                <FormLabel className="text-base font-semibold">Precio Total del Servicio (Cobro al Cliente, IVA Incluido)</FormLabel>
+                                <FormLabel>Costo del Servicio</FormLabel>
                                 <FormControl>
                                 <Input type="number" step="0.01" placeholder="Ej: 1740.00" {...field} disabled={isReadOnly} className="text-lg font-medium"/>
                                 </FormControl>
-                                <FormDescription>Este es el monto final que pagará el cliente por el servicio completo (IVA incluido).</FormDescription>
+                                <FormDescription>Monto final que pagará el cliente (IVA incluido).</FormDescription>
                                 <FormMessage />
                             </FormItem>
                         )}
@@ -711,7 +711,7 @@ export function ServiceForm({
             </CardHeader>
             <CardContent className="space-y-1 text-sm">
                 <div className="flex justify-between pt-1">
-                    <span>Precio Total Cliente (IVA Incluido):</span> 
+                    <span>Costo del Servicio (Cliente, IVA Incluido):</span> 
                     <span className="font-semibold text-blue-600 dark:text-blue-400">{formatCurrency(watchedTotalServicePrice)}</span>
                 </div>
                 <div className="flex justify-between">
@@ -723,7 +723,7 @@ export function ServiceForm({
                     <span>(=) Ganancia Estimada del Servicio:</span> 
                     <span>{formatCurrency(serviceProfit)}</span>
                 </div>
-                <p className="text-xs text-muted-foreground text-right">(Precio Total Cliente (IVA Inc) - Costo Insumos (Taller, sin IVA))</p>
+                <p className="text-xs text-muted-foreground text-right">(Costo del Servicio (Cliente, IVA Inc) - Costo Insumos (Taller, sin IVA))</p>
             </CardContent>
         </Card>
 
@@ -799,5 +799,3 @@ export function ServiceForm({
     </>
   );
 }
-
-    
