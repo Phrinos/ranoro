@@ -74,13 +74,13 @@ export default function LoginPage() {
     <div className="flex min-h-screen flex-col items-center justify-center bg-muted/40 p-4">
       <div className="mb-8 text-center">
         <Image
-          src="https://placehold.co/150x50.png"
+          src="https://placehold.co/250x80.png" // Updated placeholder dimensions
           alt="Ranoro Logo"
-          width={150}
-          height={50}
+          width={250} // Updated width
+          height={80} // Updated height
           priority
           className="mx-auto"
-          data-ai-hint="company logo"
+          data-ai-hint="ranoro logo" // Updated hint
         />
         <p className="mt-3 text-lg font-medium text-foreground">
           ¡Tu taller en una App!
@@ -89,7 +89,6 @@ export default function LoginPage() {
       <Card className="w-full max-w-sm shadow-xl">
         <CardHeader className="space-y-1 text-center">
           <CardTitle className="text-2xl font-bold font-headline">Bienvenido a Ranoro</CardTitle>
-          {/* <CardDescription>Ingresa tus credenciales para acceder al sistema</CardDescription> */}
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
