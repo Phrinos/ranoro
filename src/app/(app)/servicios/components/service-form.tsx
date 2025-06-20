@@ -610,61 +610,58 @@ const formatCurrency = (amount: number | undefined) => {
             <CardContent>
                 <div className="space-y-4">
                 {fields.map((item, index) => (
-                    <div key={item.id} className="p-3 border rounded-md bg-muted/30 dark:bg-muted/50 space-y-3">
-                    <FormField
-                        control={form.control}
-                        name={`suppliesUsed.${index}.supplyId`}
-                        render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Insumo</FormLabel>
-                            <Select 
-                            onValueChange={(value) => {
-                                field.onChange(value);
-                                const selectedSupply = inventoryItems.find(s => s.id === value);
-                                form.setValue(`suppliesUsed.${index}.unitPrice`, selectedSupply?.unitPrice || 0); 
-                                form.setValue(`suppliesUsed.${index}.supplyName`, selectedSupply?.name || '');
-                            }} 
-                            defaultValue={field.value}
-                            disabled={isReadOnly}
-                            >
-                            <FormControl>
-                                <SelectTrigger>
-                                <SelectValue placeholder="Seleccione insumo" />
-                                </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                                {inventoryItems.map((supply) => (
-                                <SelectItem key={supply.id} value={supply.id} disabled={(supply.quantity === 0 && supply.id !== item.supplyId) || isReadOnly}> 
-                                    {supply.name} (Stock: {supply.quantity}) - Costo: {formatCurrency(supply.unitPrice)}
-                                </SelectItem>
-                                ))}
-                            </SelectContent>
-                            </Select>
-                            <FormMessage />
-                        </FormItem>
-                        )}
-                    />
-                    <FormField
-                        control={form.control}
-                        name={`suppliesUsed.${index}.quantity`}
-                        render={({ field }) => (
-                        <FormItem>
-                             <FormLabel>Cantidad</FormLabel>
-                            <FormControl>
-                                <Input type="number" placeholder="Cant." {...field} className="w-full md:w-1/3" disabled={isReadOnly} />
-                            </FormControl>
-                            <FormMessage />
-                        </FormItem>
-                        )}
-                    />
-                    {!isReadOnly && (
-                        <div className="flex justify-end">
-                            <Button type="button" variant="ghost" size="sm" onClick={() => remove(index)} aria-label="Eliminar insumo" className="text-destructive hover:text-destructive/90">
-                                <Trash2 className="mr-1 h-4 w-4" />
-                                Eliminar Insumo
-                            </Button>
-                        </div>
-                    )}
+                    <div key={item.id} className="flex items-end gap-2 mb-4 p-3 border rounded-md bg-muted/30 dark:bg-muted/50">
+                      <FormField
+                          control={form.control}
+                          name={`suppliesUsed.${index}.supplyId`}
+                          render={({ field }) => (
+                          <FormItem className="flex-1">
+                              <FormLabel className="text-xs">Insumo</FormLabel>
+                              <Select 
+                                onValueChange={(value) => {
+                                    field.onChange(value);
+                                    const selectedSupply = inventoryItems.find(s => s.id === value);
+                                    form.setValue(`suppliesUsed.${index}.unitPrice`, selectedSupply?.unitPrice || 0); 
+                                    form.setValue(`suppliesUsed.${index}.supplyName`, selectedSupply?.name || '');
+                                }} 
+                                defaultValue={field.value}
+                                disabled={isReadOnly}
+                              >
+                              <FormControl>
+                                  <SelectTrigger>
+                                  <SelectValue placeholder="Seleccione insumo" />
+                                  </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                  {inventoryItems.map((supply) => (
+                                  <SelectItem key={supply.id} value={supply.id} disabled={(supply.quantity === 0 && supply.id !== item.supplyId) || isReadOnly}> 
+                                      {supply.name} (Stock: {supply.quantity}) - Costo: {formatCurrency(supply.unitPrice)}
+                                  </SelectItem>
+                                  ))}
+                              </SelectContent>
+                              </Select>
+                              <FormMessage />
+                          </FormItem>
+                          )}
+                      />
+                      <FormField
+                          control={form.control}
+                          name={`suppliesUsed.${index}.quantity`}
+                          render={({ field }) => (
+                          <FormItem>
+                              <FormLabel className="text-xs">Cantidad</FormLabel>
+                              <FormControl>
+                                  <Input type="number" placeholder="Cant." {...field} className="w-24" disabled={isReadOnly} />
+                              </FormControl>
+                              <FormMessage />
+                          </FormItem>
+                          )}
+                      />
+                      {!isReadOnly && (
+                          <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)} aria-label="Eliminar insumo" className="text-destructive hover:text-destructive/90">
+                              <Trash2 className="h-4 w-4" />
+                          </Button>
+                      )}
                     </div>
                 ))}
                 </div>
@@ -680,13 +677,13 @@ const formatCurrency = (amount: number | undefined) => {
                     Añadir Insumo
                     </Button>
                 )}
-                 <div className="mt-4 text-sm font-medium">
+                 <div className="mt-4 text-sm font-medium text-right">
                     <p>Costo Total de Insumos (para el taller): <span className="font-semibold">{formatCurrency(totalSuppliesCost)}</span></p>
                 </div>
             </CardContent>
         </Card>
         
-        <Card className="bg-muted/30 dark:bg-muted/20">
+        <Card className="bg-card">
             <CardHeader>
                 <CardTitle className="text-lg flex items-center gap-2">
                     <DollarSign className="h-5 w-5 text-green-600"/>
@@ -739,5 +736,3 @@ const formatCurrency = (amount: number | undefined) => {
     </>
   );
 }
-
-    
