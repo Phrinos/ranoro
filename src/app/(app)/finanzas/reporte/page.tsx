@@ -128,11 +128,11 @@ export default function FinancialReportPage() {
     
     const opsCurrentMonth = combinedOperations.filter(op => {
         const opDate = parseISO(op.date);
-        return isValid(opDate) && isWithinInterval(opDate, currentMonthDateRange);
+        return isValid(opDate) && isWithinInterval(opDate, { start: currentMonthDateRange.from, end: currentMonthDateRange.to });
     });
     const opsLastMonth = combinedOperations.filter(op => {
         const opDate = parseISO(op.date);
-        return isValid(opDate) && isWithinInterval(opDate, lastMonthDateRange);
+        return isValid(opDate) && isWithinInterval(opDate, { start: lastMonthDateRange.from, end: lastMonthDateRange.to });
     });
 
     const salesTodayCount = opsToday.filter(op => op.type === 'Venta').length;
