@@ -125,9 +125,9 @@ export default function VehicleDetailPage() {
   const getStatusVariant = (status: ServiceRecord['status']): "default" | "secondary" | "outline" | "destructive" | "success" => {
     switch (status) {
       case "Completado": return "success";
-      case "En Progreso": return "secondary";
-      case "Pendiente": return "outline";
+      case "Reparando": return "secondary";
       case "Cancelado": return "destructive";
+      case "Agendado": return "default";
       default: return "default";
     }
   };

@@ -1,5 +1,4 @@
 
-
 import type { Vehicle, ServiceRecord, Technician, InventoryItem, DashboardMetrics, SaleReceipt, ServiceSupply, TechnicianMonthlyPerformance, InventoryCategory, Supplier, SaleItem, PaymentMethod, AppRole } from '@/types';
 import { format, subMonths, addDays, getYear, getMonth, setHours, setMinutes, subDays, startOfMonth, endOfMonth, startOfToday, endOfToday, startOfYesterday, endOfYesterday } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -79,7 +78,7 @@ export const placeholderServiceRecords: ServiceRecord[] = [
     technicianId: 'T001',
     technicianName: 'Roberto Gómez',
     suppliesUsed: sampleSuppliesUsed1,
-    totalCost: 696, // Final price (e.g., 600 subtotal + 96 IVA)
+    totalCost: 696, 
     subTotal: 696 / (1 + IVA_RATE),
     taxAmount: 696 - (696 / (1 + IVA_RATE)),
     totalSuppliesCost: totalSuppliesCost1,
@@ -97,12 +96,12 @@ export const placeholderServiceRecords: ServiceRecord[] = [
     technicianId: 'T003',
     technicianName: 'Miguel Ángel Torres',
     suppliesUsed: sampleSuppliesUsed2,
-    totalCost: 870, // Final price (e.g., 750 subtotal + 120 IVA)
+    totalCost: 870, 
     subTotal: 870 / (1 + IVA_RATE),
     taxAmount: 870 - (870 / (1 + IVA_RATE)),
     totalSuppliesCost: totalSuppliesCost2,
     serviceProfit: (870 / (1 + IVA_RATE)) - totalSuppliesCost2,
-    status: 'En Progreso',
+    status: 'Reparando',
     mileage: 62000,
   },
   {
@@ -114,12 +113,12 @@ export const placeholderServiceRecords: ServiceRecord[] = [
     technicianId: 'T002',
     technicianName: 'Laura Fernández',
     suppliesUsed: [],
-    totalCost: 348, // Final price (e.g., 300 subtotal + 48 IVA)
+    totalCost: 348, 
     subTotal: 348 / (1 + IVA_RATE),
     taxAmount: 348 - (348 / (1 + IVA_RATE)),
     totalSuppliesCost: 0,
     serviceProfit: (348 / (1 + IVA_RATE)) - 0,
-    status: 'Pendiente',
+    status: 'Reparando',
     mileage: 30500,
   },
   {
@@ -131,7 +130,7 @@ export const placeholderServiceRecords: ServiceRecord[] = [
     technicianId: 'T001',
     technicianName: 'Roberto Gómez',
     suppliesUsed: [],
-    totalCost: 580, // Final price (e.g., 500 subtotal + 80 IVA)
+    totalCost: 580, 
     subTotal: 580 / (1 + IVA_RATE),
     taxAmount: 580 - (580 / (1 + IVA_RATE)),
     totalSuppliesCost: 0,
@@ -149,7 +148,7 @@ export const placeholderServiceRecords: ServiceRecord[] = [
     technicianId: 'T002',
     technicianName: 'Laura Fernández',
     suppliesUsed: [],
-    totalCost: 464, // Final price (e.g., 400 subtotal + 64 IVA)
+    totalCost: 464, 
     subTotal: 464 / (1 + IVA_RATE),
     taxAmount: 464 - (464 / (1 + IVA_RATE)),
     totalSuppliesCost: 0,
@@ -166,7 +165,7 @@ export const placeholderServiceRecords: ServiceRecord[] = [
     technicianId: 'T001',
     technicianName: 'Roberto Gómez',
     suppliesUsed: sampleSuppliesUsed1,
-    totalCost: 1392, // Final price (e.g., 1200 subtotal + 192 IVA)
+    totalCost: 1392, 
     subTotal: 1392 / (1 + IVA_RATE),
     taxAmount: 1392 - (1392 / (1 + IVA_RATE)),
     totalSuppliesCost: totalSuppliesCost1,
@@ -183,7 +182,7 @@ export const placeholderServiceRecords: ServiceRecord[] = [
     technicianId: 'T003',
     technicianName: 'Miguel Ángel Torres',
     suppliesUsed: [],
-    totalCost: 174, // Final price (e.g., 150 subtotal + 24 IVA)
+    totalCost: 174, 
     subTotal: 174 / (1 + IVA_RATE),
     taxAmount: 174 - (174 / (1 + IVA_RATE)),
     totalSuppliesCost: 0,
@@ -195,7 +194,7 @@ export const placeholderServiceRecords: ServiceRecord[] = [
 ];
 
 export const placeholderDashboardMetrics: DashboardMetrics = {
-  activeServices: placeholderServiceRecords.filter(s => s.status === 'En Progreso' || s.status === 'Pendiente' || s.status === 'Agendado').length,
+  activeServices: placeholderServiceRecords.filter(s => s.status === 'Reparando' || s.status === 'Agendado').length,
   technicianEarnings: placeholderTechnicians.reduce((sum, tech) => sum + (tech.monthlySalary || 0), 0) / (placeholderTechnicians.length || 1) ,
   dailyRevenue: 0, 
   lowStockAlerts: placeholderInventory.filter(item => item.quantity <= item.lowStockThreshold).length,

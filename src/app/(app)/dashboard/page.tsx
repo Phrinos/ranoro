@@ -36,7 +36,7 @@ export default function DashboardPage() {
       };
     });
 
-    const inProg = enrichedServices.filter(s => s.status === 'En Progreso');
+    const inProg = enrichedServices.filter(s => s.status === 'Reparando' || s.status === 'Agendado');
     
     const completedToday = enrichedServices.filter(s => {
       if (s.status !== 'Completado') return false;
@@ -96,7 +96,7 @@ export default function DashboardPage() {
                         Entregado: {format(parseISO(service.deliveryDateTime), "dd MMM yyyy, HH:mm", { locale: es })}
                      </p>
                    )}
-                    {service.status === "En Progreso" && service.serviceDate && (
+                    {(service.status === "Reparando" || service.status === "Agendado") && service.serviceDate && (
                         <p className="text-xs text-blue-600">
                             Recepción: {format(parseISO(service.serviceDate), "dd MMM yyyy, HH:mm", { locale: es })}
                         </p>
@@ -121,10 +121,10 @@ export default function DashboardPage() {
 
       <div className="grid flex-grow gap-6 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-2">
         <KanbanColumn 
-          title="En Progreso" 
+          title="En Curso (Reparando/Agendado)" 
           services={inProgressServices} 
           icon={Loader2}
-          emptyMessage="No hay servicios en progreso actualmente."
+          emptyMessage="No hay servicios en curso actualmente."
         />
         <KanbanColumn 
           title="Completado Hoy" 
