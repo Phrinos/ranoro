@@ -2,120 +2,133 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { format, parseISO } from "date-fns";
+import { format, parseISO, isToday } from "date-fns";
+import { es } from 'date-fns/locale';
 import { PageHeader } from "@/components/page-header";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { placeholderDashboardMetrics as staticMetrics, placeholderServiceRecords } from "@/lib/placeholder-data";
-import type { DashboardMetrics } from "@/types";
-import { Activity, Users, DollarSign, Package, ArrowRight } from "lucide-react";
-import Link from "next/link";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { placeholderServiceRecords, placeholderVehicles, placeholderTechnicians } from "@/lib/placeholder-data";
+import type { ServiceRecord, Vehicle, Technician } from "@/types";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Separator } from "@/components/ui/separator";
+import { Car, User, Wrench, CheckCircle, Loader2 } from "lucide-react";
+
+interface EnrichedServiceRecord extends ServiceRecord {
+  vehicleInfo?: string;
+  technicianName?: string;
+}
 
 export default function DashboardPage() {
-  const [metrics, setMetrics] = useState<DashboardMetrics>(staticMetrics);
+  const [inProgressServices, setInProgressServices] = useState<EnrichedServiceRecord[]>([]);
+  const [completedTodayServices, setCompletedTodayServices] = useState<EnrichedServiceRecord[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    setIsLoading(true);
     const clientToday = new Date();
-    const formattedClientToday = format(clientToday, 'yyyy-MM-dd');
 
-    const currentDailyRevenue = placeholderServiceRecords
-      .filter(s => {
-        // Assuming serviceDate in placeholderServiceRecords includes time if it's an ISO string
-        // or is already 'yyyy-MM-dd'. We need to reliably compare just the date part.
-        try {
-          const serviceDay = format(parseISO(s.serviceDate), 'yyyy-MM-dd');
-          return s.status === 'Completado' && serviceDay === formattedClientToday;
-        } catch (e) {
-          // Fallback for cases where serviceDate might not be a full ISO string parsable by parseISO
-          // This could happen if some serviceDate are just 'yyyy-MM-dd'
-          return s.status === 'Completado' && s.serviceDate.startsWith(formattedClientToday);
-        }
-      })
-      .reduce((sum, service) => sum + service.totalCost, 0);
+    const enrichedServices = placeholderServiceRecords.map(service => {
+      const vehicle = placeholderVehicles.find(v => v.id === service.vehicleId);
+      const technician = placeholderTechnicians.find(t => t.id === service.technicianId);
+      return {
+        ...service,
+        vehicleInfo: vehicle ? `${vehicle.licensePlate} - ${vehicle.make} ${vehicle.model}` : `Vehículo ID: ${service.vehicleId}`,
+        technicianName: technician ? technician.name : `Técnico ID: ${service.technicianId}`,
+      };
+    });
 
-    setMetrics(prevMetrics => ({
-      ...prevMetrics,
-      dailyRevenue: currentDailyRevenue,
-    }));
+    const inProg = enrichedServices.filter(s => s.status === 'En Progreso');
+    
+    const completedToday = enrichedServices.filter(s => {
+      if (s.status !== 'Completado') return false;
+      try {
+        const serviceDay = parseISO(s.serviceDate); // Assuming serviceDate reflects completion or main service day
+        return isToday(serviceDay);
+      } catch (e) {
+        console.error("Error parsing service date for dashboard:", s.serviceDate, e);
+        // Fallback for dates that might not be full ISO (though placeholder-data should be consistent)
+        // This part of the logic might need adjustment based on actual date formats if they vary.
+        // For now, parseISO is standard.
+        return s.serviceDate.startsWith(format(clientToday, 'yyyy-MM-dd'));
+      }
+    });
+
+    setInProgressServices(inProg);
+    setCompletedTodayServices(completedToday);
+    setIsLoading(false);
   }, []);
 
-  const kpiCards = [
-    { title: "Servicios Activos", value: metrics.activeServices, icon: Activity, color: "text-blue-500", unit: "" },
-    { title: "Ganancias Prom. Técnico", value: metrics.technicianEarnings, icon: Users, color: "text-green-500", unit: "$" },
-    { title: "Ingresos Diarios", value: metrics.dailyRevenue, icon: DollarSign, color: "text-purple-500", unit: "$" },
-    { title: "Alertas de Stock Bajo", value: metrics.lowStockAlerts, icon: Package, color: "text-orange-500", unit: "" },
-  ];
-
-  const quickAccessLinks = [
-    { label: "Nuevo Servicio", path: "/servicios/nuevo", color: "bg-primary hover:bg-primary/90" },
-    { label: "Registrar Venta", path: "/pos", color: "bg-accent hover:bg-accent/90 text-accent-foreground" },
-    { label: "Ver Inventario", path: "/inventario", color: "bg-secondary hover:bg-secondary/80 text-secondary-foreground" },
-    { label: "Gestionar Vehículos", path: "/vehiculos", color: "bg-secondary hover:bg-secondary/80 text-secondary-foreground" },
-  ];
+  const KanbanColumn = ({ title, services, icon: IconCmp, emptyMessage }: { title: string, services: EnrichedServiceRecord[], icon: React.ElementType, emptyMessage: string }) => (
+    <Card className="flex flex-col shadow-lg h-[calc(100vh-10rem)]"> {/* Adjust height as needed */}
+      <CardHeader className="pb-3 sticky top-0 bg-card z-10 border-b">
+        <CardTitle className="text-lg font-semibold flex items-center gap-2">
+          <IconCmp className="h-5 w-5 text-primary" />
+          {title} ({services.length})
+        </CardTitle>
+      </CardHeader>
+      <ScrollArea className="flex-grow">
+        <CardContent className="p-4 space-y-4">
+          {isLoading && services.length === 0 ? (
+             Array.from({ length: 3 }).map((_, index) => (
+              <Card key={index} className="p-4 animate-pulse">
+                <div className="h-4 bg-muted rounded w-3/4 mb-2"></div>
+                <div className="h-3 bg-muted rounded w-1/2 mb-1"></div>
+                <div className="h-3 bg-muted rounded w-1/3"></div>
+              </Card>
+            ))
+          ) : services.length > 0 ? (
+            services.map((service) => (
+              <Card key={service.id} className="shadow-md hover:shadow-lg transition-shadow duration-200">
+                <CardHeader className="pb-2 pt-3 px-4">
+                  <CardTitle className="text-base font-medium flex items-center gap-2">
+                    <Car className="h-4 w-4 text-muted-foreground"/> {service.vehicleInfo}
+                  </CardTitle>
+                   <CardDescription className="text-xs text-muted-foreground">ID Servicio: {service.id}</CardDescription>
+                </CardHeader>
+                <CardContent className="pb-3 px-4 space-y-1">
+                  <div className="flex items-start gap-2 text-sm">
+                    <Wrench className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0"/>
+                    <p className="font-normal">{service.description}</p>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm">
+                    <User className="h-4 w-4 text-muted-foreground shrink-0"/> 
+                    <p className="text-muted-foreground">{service.technicianName || 'N/A'}</p>
+                  </div>
+                   {service.deliveryDateTime && service.status === "Completado" && (
+                     <p className="text-xs text-green-600">
+                        Entregado: {format(parseISO(service.deliveryDateTime), "dd MMM, HH:mm", { locale: es })}
+                     </p>
+                   )}
+                </CardContent>
+              </Card>
+            ))
+          ) : (
+            <p className="text-muted-foreground text-center py-10">{emptyMessage}</p>
+          )}
+        </CardContent>
+      </ScrollArea>
+    </Card>
+  );
 
   return (
-    <div className="container mx-auto py-8">
+    <div className="container mx-auto py-8 flex flex-col h-full">
       <PageHeader
-        title="Panel Principal"
-        description="Resumen general de la actividad del taller."
+        title="Panel Principal de Taller"
+        description="Vista Kanban del estado de los servicios."
       />
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-8">
-        {kpiCards.map((kpi) => (
-          <Card key={kpi.title} className="shadow-lg hover:shadow-xl transition-shadow duration-300">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                {kpi.title}
-              </CardTitle>
-              <kpi.icon className={`h-5 w-5 ${kpi.color}`} />
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold font-headline">
-                {kpi.unit}{(kpi.value || 0).toLocaleString('es-ES')}
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      <Card className="shadow-lg mb-8">
-        <CardHeader>
-          <CardTitle>Acceso Rápido</CardTitle>
-        </CardHeader>
-        <CardContent className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {quickAccessLinks.map(link => (
-            <Button key={link.path} asChild className={`w-full text-base py-6 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 ${link.color}`}>
-              <Link href={link.path} className="flex items-center justify-center gap-2">
-                {link.label} <ArrowRight className="h-4 w-4" />
-              </Link>
-            </Button>
-          ))}
-        </CardContent>
-      </Card>
-
-      <div className="grid gap-6 md:grid-cols-2">
-        <Card className="shadow-lg">
-          <CardHeader>
-            <CardTitle>Actividad Reciente (Próximamente)</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-muted-foreground">Aquí se mostrará un resumen de las últimas actividades.</p>
-             <div className="mt-4 h-48 bg-muted rounded-md flex items-center justify-center">
-              <p className="text-sm text-muted-foreground">Gráfico de actividad</p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="shadow-lg">
-          <CardHeader>
-            <CardTitle>Notificaciones Importantes (Próximamente)</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-muted-foreground">Aquí se mostrarán alertas y notificaciones.</p>
-            <div className="mt-4 h-48 bg-muted rounded-md flex items-center justify-center">
-              <p className="text-sm text-muted-foreground">Lista de notificaciones</p>
-            </div>
-          </CardContent>
-        </Card>
+      <div className="grid flex-grow gap-6 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-2">
+        <KanbanColumn 
+          title="En Progreso" 
+          services={inProgressServices} 
+          icon={Loader2}
+          emptyMessage="No hay servicios en progreso actualmente."
+        />
+        <KanbanColumn 
+          title="Completado Hoy" 
+          services={completedTodayServices} 
+          icon={CheckCircle}
+          emptyMessage="No se han completado servicios hoy."
+        />
       </div>
     </div>
   );
