@@ -76,9 +76,7 @@ export function QuoteContent({ quote, vehicle, preparedByTechnician, previewWork
   const validityDate = isValid(quoteDate) ? format(addDays(quoteDate, validityDays), "dd 'de' MMMM 'de' yyyy", { locale: es }) : 'N/A';
 
   return (
-    // printable-quote and quote-preview-content classes used for print styling
     <div className="font-sans bg-white text-black p-6 printable-quote quote-preview-content max-w-4xl mx-auto text-sm print:text-base">
-      {/* Header */}
       <div className="flex justify-between items-start mb-6 border-b pb-4">
         <div>
           <Image 
@@ -103,7 +101,6 @@ export function QuoteContent({ quote, vehicle, preparedByTechnician, previewWork
         </div>
       </div>
 
-      {/* Client and Vehicle Info */}
       <div className="grid grid-cols-2 gap-4 mb-6">
         <div>
           <h3 className="font-semibold text-gray-700 mb-1">Cliente:</h3>
@@ -120,13 +117,11 @@ export function QuoteContent({ quote, vehicle, preparedByTechnician, previewWork
         </div>
       </div>
 
-      {/* Description of Work */}
       <div className="mb-6">
         <h3 className="font-semibold text-gray-700 mb-1">Descripción del Trabajo a Realizar:</h3>
         <p className="text-gray-800 whitespace-pre-wrap">{quote.description}</p>
       </div>
 
-      {/* Supplies / Parts */}
       {quote.suppliesProposed && quote.suppliesProposed.length > 0 && (
         <div className="mb-6">
           <h3 className="font-semibold text-gray-700 mb-2">Refacciones y Materiales Propuestos (Precios con IVA):</h3>
@@ -153,7 +148,6 @@ export function QuoteContent({ quote, vehicle, preparedByTechnician, previewWork
         </div>
       )}
       
-      {/* Totals */}
       <div className="flex justify-end mb-6">
         <div className="w-full max-w-xs space-y-1">
           {quote.estimatedSubTotal !== undefined && renderLine("Subtotal:", formatCurrency(quote.estimatedSubTotal))}
@@ -162,7 +156,6 @@ export function QuoteContent({ quote, vehicle, preparedByTechnician, previewWork
         </div>
       </div>
 
-      {/* Notes and Terms */}
       {(quote.notes || preparedByTechnician || validityDays > 0) && (
         <div className="mb-6 border-t pt-4">
           {quote.notes && (
@@ -175,14 +168,24 @@ export function QuoteContent({ quote, vehicle, preparedByTechnician, previewWork
              <p className="text-xs text-gray-600 mb-1">Esta cotización es válida hasta el {validityDate}. Precios sujetos a cambio sin previo aviso después de esta fecha.</p>
            )}
           <p className="text-xs text-gray-600">Precios en MXN. Esta cotización no incluye trabajos no especificados.</p>
-          {preparedByTechnician && <p className="text-xs text-gray-600 mt-2">Preparado por: {preparedByTechnician.name}</p>}
+          {/* Display the preparer's name from the quote object, which is set from the logged-in user */}
+          {quote.preparedByTechnicianName && <p className="text-xs text-gray-600 mt-2">Preparado por: {quote.preparedByTechnicianName}</p>}
         </div>
       )}
       
-      {/* Footer */}
-      <div className="text-center text-xs text-gray-500 border-t pt-4">
-        <p>¡Gracias por considerar nuestros servicios!</p>
-        <p className="print-block hidden">Impreso el: {formattedPrintDate}</p>
+      <div className="text-center text-xs text-gray-500 border-t pt-4 space-y-1">
+        <p className="font-semibold">¡Gracias por confiar en Ranoro!</p>
+        <p>
+          Valoramos sinceramente la oportunidad de atender su vehículo. En nuestro taller de mecánica, 
+          carrocería y pintura nos comprometemos a brindarle un servicio honesto, transparente y de la más 
+          alta calidad, respaldado por un equipo de profesionales certificados y piezas con garantía.
+        </p>
+        <p>
+          Si tiene alguna pregunta sobre esta cotización o desea información adicional, contáctenos: 
+          estaremos encantados de ayudarle. Agradecemos su preferencia y esperamos darle la bienvenida 
+          pronto en nuestras instalaciones en Aguascalientes.
+        </p>
+        <p className="print-block hidden pt-2">Impreso el: {formattedPrintDate}</p>
       </div>
     </div>
   );
