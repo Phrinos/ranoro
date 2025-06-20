@@ -15,14 +15,16 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useToast } from '@/hooks/use-toast';
 import type { User, UserRole } from '@/types';
-import { PlusCircle, Trash2, Edit, Search } from "lucide-react";
+import { PlusCircle, Trash2, Edit, Search, ShieldQuestion } from "lucide-react"; // Added ShieldQuestion
+import { useRouter } from 'next/navigation'; // Added useRouter
 
 const USER_LOCALSTORAGE_KEY = 'appUsers';
 const AUTH_USER_LOCALSTORAGE_KEY = 'authUser';
 
-const userSchema = z.object({
+const userFormSchema = z.object({
   name: z.string().min(3, "El nombre debe tener al menos 3 caracteres."),
   email: z.string().email("Ingrese un correo electrónico válido."),
+  phone: z.string().optional(), // Added phone
   role: z.enum(['superadmin', 'admin', 'tecnico', 'ventas'], { required_error: "Seleccione un rol." }),
   password: z.string().min(6, "La contraseña debe tener al menos 6 caracteres."),
   confirmPassword: z.string().min(6, "Confirme la contraseña."),
@@ -31,18 +33,20 @@ const userSchema = z.object({
   path: ["confirmPassword"],
 });
 
-type UserFormValues = z.infer<typeof userSchema>;
+type UserFormValues = z.infer<typeof userFormSchema>;
 
 const defaultSuperAdmin: User = {
   id: 'user_superadmin_default',
   name: 'Arturo Ranoro (Superadmin)',
   email: 'arturo@ranoro.mx',
   role: 'superadmin',
-  password: 'CA1abaza' // For display/edit, not for direct login comparison without hashing in real app
+  password: 'CA1abaza',
+  phone: '4491234567' 
 };
 
 export default function UsuariosPage() {
   const { toast } = useToast();
+  const router = useRouter(); // Initialize useRouter
   const [users, setUsers] = useState<User[]>([]);
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -51,8 +55,8 @@ export default function UsuariosPage() {
 
 
   const form = useForm<UserFormValues>({
-    resolver: zodResolver(userSchema),
-    defaultValues: { name: '', email: '', role: 'tecnico', password: '', confirmPassword: '' },
+    resolver: zodResolver(userFormSchema),
+    defaultValues: { name: '', email: '', phone: '', role: 'tecnico', password: '', confirmPassword: '' },
   });
 
   useEffect(() => {
@@ -63,7 +67,6 @@ export default function UsuariosPage() {
       const storedUsersString = localStorage.getItem(USER_LOCALSTORAGE_KEY);
       let loadedUsers: User[] = storedUsersString ? JSON.parse(storedUsersString) : [];
       
-      // Ensure superadmin exists
       if (!loadedUsers.find(u => u.email === defaultSuperAdmin.email)) {
         loadedUsers = [defaultSuperAdmin, ...loadedUsers];
         localStorage.setItem(USER_LOCALSTORAGE_KEY, JSON.stringify(loadedUsers));
@@ -74,8 +77,9 @@ export default function UsuariosPage() {
 
   const canEditOrDelete = (user: User): boolean => {
     if (!currentUser) return false;
-    if (currentUser.role === 'superadmin') return user.email !== currentUser.email; // Superadmin can't delete/edit self
-    return false; // Other roles cannot edit/delete
+    if (currentUser.role === 'superadmin') return user.email !== currentUser.email;
+    if (currentUser.role === 'admin') return user.role !== 'superadmin' && user.email !== currentUser.email;
+    return false; 
   };
   
   const canCreateUsers = (): boolean => {
@@ -97,13 +101,14 @@ export default function UsuariosPage() {
       form.reset({
         name: userToEdit.name,
         email: userToEdit.email,
+        phone: userToEdit.phone || '',
         role: userToEdit.role,
-        password: userToEdit.password || '', // Assuming password might be stored for edit, very insecure for demo
+        password: userToEdit.password || '', 
         confirmPassword: userToEdit.password || '',
       });
     } else {
       setEditingUser(null);
-      form.reset({ name: '', email: '', role: 'tecnico', password: '', confirmPassword: '' });
+      form.reset({ name: '', email: '', phone: '', role: 'tecnico', password: '', confirmPassword: '' });
     }
     setIsFormOpen(true);
   };
@@ -111,12 +116,21 @@ export default function UsuariosPage() {
   const onSubmit = (data: UserFormValues) => {
     let updatedUsers: User[];
     if (editingUser) {
-      updatedUsers = users.map(u => u.id === editingUser.id ? { ...editingUser, ...data } : u);
+      if (!canEditOrDelete(editingUser)) {
+        toast({ title: 'Acción no permitida', description: 'No tienes permisos para editar este usuario.', variant: 'destructive' });
+        return;
+      }
+      updatedUsers = users.map(u => u.id === editingUser.id ? { ...editingUser, ...data, phone: data.phone || undefined } : u);
       toast({ title: 'Usuario Actualizado', description: `El usuario ${data.name} ha sido actualizado.` });
     } else {
+      if (!canCreateUsers()) {
+        toast({ title: 'Acción no permitida', description: 'No tienes permisos para crear usuarios.', variant: 'destructive' });
+        return;
+      }
       const newUser: User = {
         id: `user_${Date.now()}`,
         ...data,
+        phone: data.phone || undefined,
       };
       updatedUsers = [...users, newUser];
       toast({ title: 'Usuario Creado', description: `El usuario ${data.name} ha sido creado.` });
@@ -147,10 +161,19 @@ export default function UsuariosPage() {
       <PageHeader
         title="Gestión de Usuarios"
         description="Crea, edita y elimina usuarios del sistema."
-        actions={ canCreateUsers() &&
-          <Button onClick={() => handleOpenForm()}>
-            <PlusCircle className="mr-2 h-4 w-4" /> Nuevo Usuario
-          </Button>
+        actions={
+          <div className="flex flex-col sm:flex-row gap-2">
+            {canCreateUsers() && (
+              <Button onClick={() => handleOpenForm()}>
+                <PlusCircle className="mr-2 h-4 w-4" /> Nuevo Usuario
+              </Button>
+            )}
+            {(currentUser?.role === 'superadmin') && (
+              <Button variant="outline" onClick={() => router.push('/admin/roles')}>
+                <ShieldQuestion className="mr-2 h-4 w-4" /> Gestionar Roles
+              </Button>
+            )}
+          </div>
         }
       />
 
@@ -181,6 +204,7 @@ export default function UsuariosPage() {
                 <TableRow>
                   <TableHead>Nombre</TableHead>
                   <TableHead>Email</TableHead>
+                  <TableHead>Teléfono</TableHead>
                   <TableHead>Rol</TableHead>
                   <TableHead className="text-right">Acciones</TableHead>
                 </TableRow>
@@ -190,19 +214,20 @@ export default function UsuariosPage() {
                   <TableRow key={user.id}>
                     <TableCell className="font-medium">{user.name}</TableCell>
                     <TableCell>{user.email}</TableCell>
+                    <TableCell>{user.phone || 'N/A'}</TableCell>
                     <TableCell>
                       <span className={`px-2 py-1 text-xs rounded-full font-medium ${
-                        user.role === 'superadmin' ? 'bg-red-100 text-red-700' :
-                        user.role === 'admin' ? 'bg-blue-100 text-blue-700' :
-                        user.role === 'tecnico' ? 'bg-green-100 text-green-700' :
-                        'bg-yellow-100 text-yellow-700'}`}>
+                        user.role === 'superadmin' ? 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300' :
+                        user.role === 'admin' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300' :
+                        user.role === 'tecnico' ? 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300' :
+                        'bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300'}`}>
                         {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
                       </span>
                     </TableCell>
                     <TableCell className="text-right">
                       {canEditOrDelete(user) && (
                         <>
-                          <Button variant="ghost" size="icon" onClick={() => handleOpenForm(user)} className="mr-2" disabled={!canCreateUsers()}>
+                          <Button variant="ghost" size="icon" onClick={() => handleOpenForm(user)} className="mr-2" disabled={!canCreateUsers() && currentUser?.id !== user.id /* Allow self-edit for some fields later */}>
                             <Edit className="h-4 w-4" />
                           </Button>
                           <AlertDialog>
@@ -245,7 +270,7 @@ export default function UsuariosPage() {
         </CardContent>
       </Card>
 
-      {isFormOpen && canCreateUsers() && (
+      {isFormOpen && (canCreateUsers() || editingUser) && (
         <Card className="mt-8 shadow-lg">
           <CardHeader>
             <CardTitle>{editingUser ? 'Editar Usuario' : 'Crear Nuevo Usuario'}</CardTitle>
@@ -277,11 +302,26 @@ export default function UsuariosPage() {
                 />
                 <FormField
                   control={form.control}
+                  name="phone"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Teléfono (Opcional)</FormLabel>
+                      <FormControl><Input type="tel" {...field} placeholder="Ej: 4491234567" /></FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
                   name="role"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Rol</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <Select 
+                        onValueChange={field.onChange} 
+                        defaultValue={field.value}
+                        disabled={editingUser?.email === defaultSuperAdmin.email && currentUser?.email !== defaultSuperAdmin.email} // Superadmin role can only be changed by self or another superadmin
+                      >
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Seleccione un rol" />
@@ -303,7 +343,7 @@ export default function UsuariosPage() {
                   name="password"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Contraseña</FormLabel>
+                      <FormLabel>{editingUser ? 'Nueva Contraseña (Dejar en blanco para no cambiar)' : 'Contraseña'}</FormLabel>
                       <FormControl><Input type="password" {...field} placeholder="••••••••" /></FormControl>
                       <FormMessage />
                     </FormItem>
@@ -314,7 +354,7 @@ export default function UsuariosPage() {
                   name="confirmPassword"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Confirmar Contraseña</FormLabel>
+                      <FormLabel>{editingUser ? 'Confirmar Nueva Contraseña' : 'Confirmar Contraseña'}</FormLabel>
                       <FormControl><Input type="password" {...field} placeholder="••••••••" /></FormControl>
                       <FormMessage />
                     </FormItem>
