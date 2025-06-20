@@ -1,21 +1,21 @@
 
 "use client";
 
+import { useState, useMemo, useEffect } from 'react';
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { PlusCircle, ListFilter, TrendingUp, DollarSign as DollarSignIcon } from "lucide-react";
+import { PlusCircle, ListFilter, TrendingUp, DollarSign as DollarSignIcon, LineChart as LineChartIcon } from "lucide-react";
 import { TechniciansTable } from "./components/technicians-table";
 import { TechnicianDialog } from "./components/technician-dialog";
 import { placeholderTechnicians, placeholderServiceRecords } from "@/lib/placeholder-data";
-import type { Technician } from "@/types";
-import { useState, useMemo } from "react";
+import type { Technician, ServiceRecord } from "@/types";
 import type { TechnicianFormValues } from "./components/technician-form";
-import { parseISO, compareAsc, compareDesc, startOfMonth, endOfMonth, subMonths, isWithinInterval, format } from 'date-fns';
+import { parseISO, compareAsc, compareDesc, startOfMonth, endOfMonth, subMonths, isWithinInterval, format, eachDayOfInterval, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLegendContent } from "@/components/ui/chart";
 
 type TechnicianSortOption = 
@@ -24,30 +24,34 @@ type TechnicianSortOption =
   | "hireDate_asc" | "hireDate_desc"
   | "salary_asc" | "salary_desc";
 
-type DateRangeOption = 'currentMonth' | 'lastMonth';
+type ChartDateRangeOption = 'currentMonth' | 'lastMonth';
 
-const chartConfig = {
-  costOfServices: {
-    label: "Costos del Servicio", // Ajustado para mayor claridad
-    color: "hsl(var(--chart-1))", // Light Blue
+const lineChartConfig = {
+  totalRevenue: {
+    label: "Ingresos Totales",
+    color: "hsl(var(--chart-1))", // Blue
   },
   totalProfit: {
-    label: "Ganancia Neta",
-    color: "hsl(var(--chart-2))", // Light Green
+    label: "Ganancia Total",
+    color: "hsl(var(--chart-2))", // Green
   },
 } satisfies ChartConfig;
 
-interface TechnicianPerformanceChartData {
-  name: string;
+interface DailyPerformanceData {
+  dateLabel: string; // e.g., "1 Jul", "2 Jul"
+  fullDate: string; // e.g., "2024-07-01" for sorting
   totalRevenue: number;
   totalProfit: number;
-  costOfServices: number;
 }
 
 export default function TecnicosPage() {
   const [technicians, setTechnicians] = useState<Technician[]>(placeholderTechnicians);
   const [sortOption, setSortOption] = useState<TechnicianSortOption>("name_asc");
-  const [dateRangeOption, setDateRangeOption] = useState<DateRangeOption>('currentMonth');
+  
+  const [selectedTechnicianId, setSelectedTechnicianId] = useState<string | undefined>(
+    placeholderTechnicians.length > 0 ? placeholderTechnicians[0].id : undefined
+  );
+  const [chartDateRangeOption, setChartDateRangeOption] = useState<ChartDateRangeOption>('currentMonth');
 
   const handleSaveTechnician = async (data: TechnicianFormValues) => {
     const newTechnician: Technician = {
@@ -56,44 +60,61 @@ export default function TecnicosPage() {
       hireDate: data.hireDate ? new Date(data.hireDate).toISOString().split('T')[0] : undefined,
       monthlySalary: Number(data.monthlySalary)
     };
-    setTechnicians(prev => [...prev, newTechnician]);
+    const updatedTechnicians = [...technicians, newTechnician];
+    setTechnicians(updatedTechnicians);
     placeholderTechnicians.push(newTechnician);
+    if (!selectedTechnicianId && updatedTechnicians.length > 0) {
+      setSelectedTechnicianId(updatedTechnicians[0].id);
+    }
   };
+  
+  useEffect(() => {
+    if (!selectedTechnicianId && technicians.length > 0) {
+      setSelectedTechnicianId(technicians[0].id);
+    }
+  }, [technicians, selectedTechnicianId]);
 
-  const technicianPerformanceData = useMemo((): TechnicianPerformanceChartData[] => {
+  const lineChartData = useMemo((): DailyPerformanceData[] => {
+    if (!selectedTechnicianId) return [];
+
     const now = new Date();
-    let startDate: Date, endDate: Date;
+    let chartStartDate: Date, chartEndDate: Date;
 
-    if (dateRangeOption === 'currentMonth') {
-      startDate = startOfMonth(now);
-      endDate = endOfMonth(now);
+    if (chartDateRangeOption === 'currentMonth') {
+      chartStartDate = startOfMonth(now);
+      chartEndDate = endOfMonth(now);
     } else { // lastMonth
       const lastMonthDate = subMonths(now, 1);
-      startDate = startOfMonth(lastMonthDate);
-      endDate = endOfMonth(lastMonthDate);
+      chartStartDate = startOfMonth(lastMonthDate);
+      chartEndDate = endOfMonth(lastMonthDate);
     }
 
-    return technicians.map(tech => {
-      const techServicesInRange = placeholderServiceRecords.filter(service => {
-        const serviceDate = parseISO(service.serviceDate);
-        return service.technicianId === tech.id && isWithinInterval(serviceDate, { start: startDate, end: endDate });
+    const daysInInterval = eachDayOfInterval({ start: chartStartDate, end: chartEndDate });
+    
+    const techServices = placeholderServiceRecords.filter(
+      service => service.technicianId === selectedTechnicianId
+    );
+
+    const dailyData = daysInInterval.map(day => {
+      const servicesOnDay = techServices.filter(service => {
+        if (!service.serviceDate || !isValid(parseISO(service.serviceDate))) return false;
+        return format(parseISO(service.serviceDate), 'yyyy-MM-dd') === format(day, 'yyyy-MM-dd');
       });
 
-      const totalRevenue = techServicesInRange.reduce((sum, service) => sum + service.totalCost, 0);
-      const actualProfit = techServicesInRange.reduce((sum, service) => sum + (service.serviceProfit || 0), 0);
-      
-      const displayProfit = Math.max(0, actualProfit);
-      const costOfServices = totalRevenue - displayProfit; 
+      const dailyRevenue = servicesOnDay.reduce((sum, service) => sum + service.totalCost, 0);
+      const dailyProfit = servicesOnDay.reduce((sum, service) => sum + (service.serviceProfit || 0), 0);
       
       return {
-        name: tech.name,
-        totalRevenue, 
-        totalProfit: displayProfit, 
-        costOfServices: costOfServices < 0 ? 0 : costOfServices, 
+        fullDate: format(day, 'yyyy-MM-dd'),
+        dateLabel: format(day, 'd MMM', { locale: es }),
+        totalRevenue: dailyRevenue,
+        totalProfit: dailyProfit,
       };
-    }).filter(data => data.totalRevenue > 0);
+    });
+    
+    return dailyData.sort((a,b) => compareAsc(parseISO(a.fullDate), parseISO(b.fullDate)));
 
-  }, [technicians, dateRangeOption]);
+  }, [selectedTechnicianId, chartDateRangeOption]);
 
 
   const sortedTechniciansForTable = useMemo(() => {
@@ -164,85 +185,104 @@ export default function TecnicosPage() {
       />
 
       <Card className="mb-6">
-        <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+        <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
-            <CardTitle>Rendimiento de Técnicos</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <LineChartIcon className="h-6 w-6 text-primary" />
+              Rendimiento Diario del Técnico
+            </CardTitle>
             <CardDescription>
-              Ingresos totales y ganancia neta por técnico. La barra completa representa el ingreso total.
+              Ingresos totales y ganancia neta generados por día por el técnico seleccionado.
             </CardDescription>
           </div>
-          <Select value={dateRangeOption} onValueChange={(value) => setDateRangeOption(value as DateRangeOption)}>
-            <SelectTrigger className="w-full sm:w-[180px]">
-              <SelectValue placeholder="Seleccionar Rango" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="currentMonth">Este Mes</SelectItem>
-              <SelectItem value="lastMonth">Mes Pasado</SelectItem>
-            </SelectContent>
-          </Select>
+          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+            <Select 
+              value={selectedTechnicianId} 
+              onValueChange={setSelectedTechnicianId}
+              disabled={technicians.length === 0}
+            >
+              <SelectTrigger className="w-full sm:w-[200px]">
+                <SelectValue placeholder="Seleccionar Técnico" />
+              </SelectTrigger>
+              <SelectContent>
+                {technicians.map(tech => (
+                  <SelectItem key={tech.id} value={tech.id}>{tech.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={chartDateRangeOption} onValueChange={(value) => setChartDateRangeOption(value as ChartDateRangeOption)}>
+              <SelectTrigger className="w-full sm:w-[180px]">
+                <SelectValue placeholder="Seleccionar Rango" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="currentMonth">Este Mes</SelectItem>
+                <SelectItem value="lastMonth">Mes Pasado</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </CardHeader>
         <CardContent>
-          {technicianPerformanceData.length > 0 ? (
-            <ChartContainer config={chartConfig} className="min-h-[300px] w-full">
-              <BarChart 
-                data={technicianPerformanceData} 
-                margin={{ top: 5, right: 20, left: 0, bottom: 20 }} 
+          {selectedTechnicianId && lineChartData.length > 0 ? (
+            <ChartContainer config={lineChartConfig} className="min-h-[300px] w-full">
+              <LineChart 
+                data={lineChartData} 
+                margin={{ top: 5, right: 20, left: 0, bottom: 5 }} 
               >
                 <CartesianGrid strokeDasharray="3 3" vertical={false} />
                 <XAxis 
-                  dataKey="name" 
+                  dataKey="dateLabel" 
                   tickLine={false} 
                   axisLine={false} 
                   tickMargin={8} 
-                  angle={-30} 
-                  textAnchor="end" 
-                  interval={0} 
-                  height={60} 
+                  interval="preserveStartEnd" // Show more ticks if space allows
                 />
                 <YAxis 
                   tickFormatter={(value) => `$${value.toLocaleString('es-MX')}`}
                   tickLine={false}
                   axisLine={false}
                   tickMargin={8}
+                  width={80}
                 />
                 <ChartTooltip
                   cursor={true}
                   content={<ChartTooltipContent 
                               indicator="dot" 
-                              formatter={(value, name, item) => {
-                                const fullItem = item.payload as TechnicianPerformanceChartData;
-                                if (name === 'totalProfit') {
-                                  return `${(chartConfig.totalProfit.label as string)}: $${Number(value).toLocaleString('es-MX')}`;
+                              formatter={(value, name) => {
+                                if (name === 'totalRevenue') {
+                                  return `${(lineChartConfig.totalRevenue.label as string)}: $${Number(value).toLocaleString('es-MX')}`;
                                 }
-                                if (name === 'costOfServices') {
-                                   return `${(chartConfig.costOfServices.label as string)}: $${Number(value).toLocaleString('es-MX')}`;
+                                if (name === 'totalProfit') {
+                                   return `${(lineChartConfig.totalProfit.label as string)}: $${Number(value).toLocaleString('es-MX')}`;
                                 }
                                 return `$${Number(value).toLocaleString('es-MX')}`;
                               }} 
-                              labelFormatter={(label, payload) => {
-                                if (payload && payload.length > 0) {
-                                  const data = payload[0].payload as TechnicianPerformanceChartData;
-                                  return (
-                                    <div>
-                                      <p className="font-medium">{data.name}</p>
-                                      <p className="text-xs text-muted-foreground">
-                                        Ingresos Totales: ${data.totalRevenue.toLocaleString('es-MX')}
-                                      </p>
-                                    </div>
-                                  );
-                                }
-                                return label;
-                              }}
                             />}
                 />
                 <ChartLegend content={<ChartLegendContent />} />
-                <Bar dataKey="costOfServices" stackId="a" fill="var(--color-costOfServices)" radius={[0, 0, 4, 4]} />
-                <Bar dataKey="totalProfit" stackId="a" fill="var(--color-totalProfit)" radius={[4, 4, 0, 0]} />
-              </BarChart>
+                <Line 
+                  type="monotone" 
+                  dataKey="totalRevenue" 
+                  stroke="var(--color-totalRevenue)" 
+                  strokeWidth={2} 
+                  dot={{ r: 4, fill: "var(--color-totalRevenue)" }}
+                  activeDot={{ r: 6 }}
+                  name={lineChartConfig.totalRevenue.label as string}
+                />
+                <Line 
+                  type="monotone" 
+                  dataKey="totalProfit" 
+                  stroke="var(--color-totalProfit)" 
+                  strokeWidth={2}
+                  dot={{ r: 4, fill: "var(--color-totalProfit)" }}
+                  activeDot={{ r: 6 }}
+                  name={lineChartConfig.totalProfit.label as string}
+                />
+              </LineChart>
             </ChartContainer>
           ) : (
             <p className="text-muted-foreground text-center py-8">
-              No hay datos de rendimiento para mostrar en el período seleccionado.
+              { !selectedTechnicianId ? "Por favor, seleccione un técnico para ver su rendimiento." : 
+                "No hay datos de rendimiento para el técnico y período seleccionados."}
             </p>
           )}
         </CardContent>
@@ -255,4 +295,5 @@ export default function TecnicosPage() {
     
 
     
+
 
