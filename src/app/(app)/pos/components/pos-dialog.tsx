@@ -11,7 +11,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { PosForm } from "./pos-form";
-import type { InventoryItem, SaleReceipt } from "@/types"; // Added SaleReceipt
+import type { InventoryItem, SaleReceipt } from "@/types"; 
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from 'next/navigation';
 
@@ -20,7 +20,8 @@ interface PosDialogProps {
   inventoryItems: InventoryItem[];
   open?: boolean;
   onOpenChange?: (isOpen: boolean) => void;
-  onSaleComplete: (saleData: SaleReceipt) => void; // Changed to pass SaleReceipt
+  onSaleComplete: (saleData: SaleReceipt) => void; 
+  onInventoryItemCreated?: (newItem: InventoryItem) => void; // Add this prop
 }
 
 export function PosDialog({ 
@@ -28,12 +29,11 @@ export function PosDialog({
   inventoryItems,
   open: controlledOpen,
   onOpenChange: setControlledOpen,
-  onSaleComplete 
+  onSaleComplete,
+  onInventoryItemCreated // Destructure the new prop
 }: PosDialogProps) {
   const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
-  // const router = useRouter(); // Not used here anymore
-  // const { toast } = useToast(); // Toast for sale complete is handled in PosForm
-
+  
   const isControlled = controlledOpen !== undefined && setControlledOpen !== undefined;
   const open = isControlled ? controlledOpen : uncontrolledOpen;
   
@@ -43,12 +43,10 @@ export function PosDialog({
     } else {
       setUncontrolledOpen(isOpen);
     }
-    // Redirection logic is now handled by the parent page (NuevaVentaPage)
   };
 
   const handleSaleCompleteInDialog = (saleData: SaleReceipt) => {
-    onSaleComplete(saleData); // Pass the sale data up
-    // Dialog closure will be handled by the parent page based on its flow
+    onSaleComplete(saleData); 
   };
 
 
@@ -66,6 +64,7 @@ export function PosDialog({
           <PosForm
             inventoryItems={inventoryItems}
             onSaleComplete={handleSaleCompleteInDialog}
+            onInventoryItemCreated={onInventoryItemCreated} // Pass it down
           />
         </DialogContent>
       )}

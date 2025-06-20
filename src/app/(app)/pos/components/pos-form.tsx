@@ -18,12 +18,16 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { PlusCircle, Trash2, Receipt } from "lucide-react";
+import { PlusCircle, Trash2, Receipt, Search, PackagePlus } from "lucide-react";
 import type { InventoryItem, SaleItem, PaymentMethod, SaleReceipt } from "@/types";
 import { useToast } from "@/hooks/use-toast";
 import { useState, useEffect } from "react";
-import { placeholderSales, placeholderInventory } from "@/lib/placeholder-data";
-import { useRouter } from "next/navigation";
+import { placeholderSales, placeholderInventory, placeholderCategories, placeholderSuppliers } from "@/lib/placeholder-data";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { InventoryItemDialog } from "../../inventario/components/inventory-item-dialog";
+import type { InventoryItemFormValues } from "../../inventario/components/inventory-item-form";
+
 
 const saleItemSchema = z.object({
   inventoryItemId: z.string().min(1, "Seleccione un artículo."),
@@ -71,15 +75,28 @@ type POSFormValues = z.infer<typeof posFormSchema>;
 interface POSFormProps {
   inventoryItems: InventoryItem[];
   onSaleComplete: (saleData: SaleReceipt) => void; 
+  onInventoryItemCreated?: (newItem: InventoryItem) => void;
 }
 
-export function PosForm({ inventoryItems, onSaleComplete }: POSFormProps) {
+export function PosForm({ inventoryItems: parentInventoryItems, onSaleComplete, onInventoryItemCreated }: POSFormProps) {
   const { toast } = useToast();
   const [subTotalState, setSubTotalState] = useState(0);
   const [taxState, setTaxState] = useState(0);
   const [totalState, setTotalState] = useState(0);
   
   const IVA_RATE = 0.16; 
+
+  const [currentInventoryItems, setCurrentInventoryItems] = useState<InventoryItem[]>(parentInventoryItems);
+
+  const [isAddItemDialogOpen, setIsAddItemDialogOpen] = useState(false);
+  const [addItemSearchTerm, setAddItemSearchTerm] = useState('');
+  const [addItemQuantity, setAddItemQuantity] = useState(1);
+  const [filteredInventoryForDialog, setFilteredInventoryForDialog] = useState<InventoryItem[]>([]);
+  const [selectedInventoryItemForDialog, setSelectedInventoryItemForDialog] = useState<InventoryItem | null>(null);
+
+  const [isNewInventoryItemDialogOpen, setIsNewInventoryItemDialogOpen] = useState(false);
+  const [newItemInitialData, setNewItemInitialData] = useState<Partial<InventoryItemFormValues> | null>(null);
+
 
   const form = useForm<POSFormValues>({
     resolver: zodResolver(posFormSchema),
@@ -101,6 +118,10 @@ export function PosForm({ inventoryItems, onSaleComplete }: POSFormProps) {
   const selectedPaymentMethod = form.watch("paymentMethod");
 
   useEffect(() => {
+    setCurrentInventoryItems(parentInventoryItems);
+  }, [parentInventoryItems]);
+
+  useEffect(() => {
     const currentTotalAmount = currentItems.reduce((acc, item) => acc + (item.totalPrice || 0), 0);
     const currentSubTotal = currentTotalAmount / (1 + IVA_RATE);
     const currentTax = currentTotalAmount - currentSubTotal;
@@ -111,31 +132,12 @@ export function PosForm({ inventoryItems, onSaleComplete }: POSFormProps) {
   }, [currentItems, IVA_RATE]);
 
 
-  const handleAddItem = () => {
-    append({ inventoryItemId: "", itemName: "", quantity: 1, unitPrice: 0, totalPrice: 0 });
-  };
-
-  const handleItemChange = (index: number, itemId: string) => {
-    const selectedItem = inventoryItems.find(item => item.id === itemId);
-    if (selectedItem) {
-      const quantity = form.getValues(`items.${index}.quantity`) || 1;
-      update(index, {
-        ...form.getValues(`items.${index}`),
-        inventoryItemId: selectedItem.id,
-        itemName: selectedItem.name,
-        unitPrice: selectedItem.sellingPrice, 
-        totalPrice: selectedItem.sellingPrice * quantity,
-      });
-    }
-  };
-
-  const handleQuantityChange = (index: number, quantity: number) => {
-    const unitPrice = form.getValues(`items.${index}.unitPrice`) || 0; 
-    update(index, {
-      ...form.getValues(`items.${index}`),
-      quantity: quantity,
-      totalPrice: unitPrice * quantity,
-    });
+  const handleOpenAddItemDialog = () => {
+    setSelectedInventoryItemForDialog(null);
+    setAddItemSearchTerm('');
+    setAddItemQuantity(1);
+    setFilteredInventoryForDialog(currentInventoryItems.filter(item => item.quantity > 0).slice(0,10));
+    setIsAddItemDialogOpen(true);
   };
   
   const onSubmit = async (values: POSFormValues) => {
@@ -166,7 +168,6 @@ export function PosForm({ inventoryItems, onSaleComplete }: POSFormProps) {
 
     placeholderSales.push(newSale);
 
-    let stockIssues = false;
     values.items.forEach(soldItem => {
       const inventoryItemIndex = placeholderInventory.findIndex(invItem => invItem.id === soldItem.inventoryItemId);
       if (inventoryItemIndex !== -1) {
@@ -176,18 +177,18 @@ export function PosForm({ inventoryItems, onSaleComplete }: POSFormProps) {
             title: "Stock Insuficiente (Advertencia)",
             description: `No hay suficiente stock para ${soldItem.itemName}. Stock actual: ${currentStock}. Vendiendo ${soldItem.quantity}. El stock quedará negativo.`,
             variant: "destructive",
-            duration: 5000,
+            duration: 7000,
           });
-          stockIssues = true; 
         }
         placeholderInventory[inventoryItemIndex].quantity -= soldItem.quantity;
       }
     });
     
-    toast({
-      title: "Venta Registrada",
-      description: `Venta ${newSaleId} procesada por un total de $${newSaleTotalAmount.toLocaleString('es-MX', {minimumFractionDigits: 2})}.`,
-    });
+    // Toast removed, will be handled by parent (NuevaVentaPage) after dialog transition
+    // toast({
+    //   title: "Venta Registrada",
+    //   description: `Venta ${newSaleId} procesada por $${newSaleTotalAmount.toLocaleString('es-MX', {minimumFractionDigits: 2})}. Ticket listo para previsualizar/imprimir.`,
+    // });
     
     onSaleComplete(newSale);
   };
@@ -197,8 +198,103 @@ export function PosForm({ inventoryItems, onSaleComplete }: POSFormProps) {
     return `$${amount.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   };
 
+  // --- Add Item Dialog Logic ---
+  useEffect(() => {
+    if (addItemSearchTerm.trim() === '') {
+        setFilteredInventoryForDialog(currentInventoryItems.filter(item => item.quantity > 0).slice(0,10));
+        return;
+    }
+    const lowerSearchTerm = addItemSearchTerm.toLowerCase();
+    setFilteredInventoryForDialog(
+        currentInventoryItems.filter(item =>
+            (item.name.toLowerCase().includes(lowerSearchTerm) ||
+            item.sku.toLowerCase().includes(lowerSearchTerm)) && item.quantity > 0
+        ).slice(0, 10) 
+    );
+  }, [addItemSearchTerm, currentInventoryItems]);
+
+  const handleSelectItemFromSearch = (item: InventoryItem) => {
+      setSelectedInventoryItemForDialog(item);
+      setAddItemSearchTerm(item.name); 
+      setFilteredInventoryForDialog([]); 
+  };
+
+  const handleAddItemConfirmed = () => {
+      if (!selectedInventoryItemForDialog || addItemQuantity <= 0) {
+          toast({ title: "Datos incompletos", description: "Seleccione un artículo y una cantidad válida.", variant: "destructive" });
+          return;
+      }
+      if (selectedInventoryItemForDialog.quantity < addItemQuantity) {
+          toast({ title: "Stock Insuficiente", description: `Solo hay ${selectedInventoryItemForDialog.quantity} unidades de ${selectedInventoryItemForDialog.name}.`, variant: "destructive" });
+          return;
+      }
+      append({
+          inventoryItemId: selectedInventoryItemForDialog.id,
+          itemName: selectedInventoryItemForDialog.name,
+          quantity: addItemQuantity,
+          unitPrice: selectedInventoryItemForDialog.sellingPrice, // Selling price for POS
+          totalPrice: selectedInventoryItemForDialog.sellingPrice * addItemQuantity,
+      });
+      setIsAddItemDialogOpen(false);
+      setAddItemSearchTerm('');
+      setAddItemQuantity(1);
+      setSelectedInventoryItemForDialog(null);
+  };
+
+  const handleOpenCreateNewItemDialog = () => {
+      setNewItemInitialData({
+          name: addItemSearchTerm, 
+          sku: '', 
+          quantity: 0, // New items start with 0, updated via purchase entry
+          unitPrice: 0,
+          sellingPrice: 0,
+          lowStockThreshold: 5,
+          category: placeholderCategories.length > 0 ? placeholderCategories[0].name : "",
+          supplier: placeholderSuppliers.length > 0 ? placeholderSuppliers[0].name : "",
+      });
+      setIsAddItemDialogOpen(false); 
+      setIsNewInventoryItemDialogOpen(true);
+  };
+
+  const handleNewItemCreated = async (newItemFormValues: InventoryItemFormValues) => {
+      const newInventoryItem: InventoryItem = {
+          id: `P_POS_${Date.now()}`, 
+          ...newItemFormValues,
+          unitPrice: Number(newItemFormValues.unitPrice),
+          sellingPrice: Number(newItemFormValues.sellingPrice),
+          quantity: Number(newItemFormValues.quantity), // This will be the initial stock from the form
+          lowStockThreshold: Number(newItemFormValues.lowStockThreshold),
+      };
+      placeholderInventory.push(newInventoryItem); // Add to global store
+      setCurrentInventoryItems(prev => [...prev, newInventoryItem]); // Update local list for dialog
+      
+      if (onInventoryItemCreated) { // Notify parent page
+          onInventoryItemCreated(newInventoryItem);
+      }
+      
+      toast({
+          title: "Nuevo Artículo Creado",
+          description: `${newInventoryItem.name} ha sido agregado al inventario y añadido a la venta.`,
+      });
+      
+      append({ // Add the newly created item to the current sale
+          inventoryItemId: newInventoryItem.id,
+          itemName: newInventoryItem.name,
+          quantity: newItemFormValues.quantity > 0 ? newItemFormValues.quantity : 1, // Use entered qty or default to 1
+          unitPrice: newInventoryItem.sellingPrice,
+          totalPrice: newInventoryItem.sellingPrice * (newItemFormValues.quantity > 0 ? newItemFormValues.quantity : 1),
+      });
+      
+      setIsNewInventoryItemDialogOpen(false);
+      setNewItemInitialData(null);
+      setAddItemSearchTerm(''); // Reset search dialog
+      setAddItemQuantity(1);
+      setSelectedInventoryItemForDialog(null);
+  };
+
 
   return (
+    <>
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         <Card>
@@ -209,37 +305,16 @@ export function PosForm({ inventoryItems, onSaleComplete }: POSFormProps) {
             <ScrollArea className="h-[300px] pr-4">
               {fields.map((field, index) => (
                 <div key={field.id} className="flex items-end gap-2 mb-4 p-3 border rounded-md bg-muted/20 dark:bg-muted/50">
-                  <FormField
-                    control={form.control}
-                    name={`items.${index}.inventoryItemId`}
-                    render={({ field: controllerField }) => (
-                      <FormItem className="flex-1">
+                    <div className="flex-1">
                         <FormLabel className="text-xs">Artículo</FormLabel>
-                        <Select
-                          onValueChange={(value) => {
-                            controllerField.onChange(value);
-                            handleItemChange(index, value);
-                          }}
-                          defaultValue={controllerField.value}
-                        >
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Seleccione un artículo" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {inventoryItems.map((item) => (
-                              <SelectItem key={item.id} value={item.id} disabled={item.quantity <= 0 && !currentItems.find(ci => ci.inventoryItemId === item.id && ci.quantity > 0 )}>
-                                {item.name} (Stock: {item.quantity}) - {formatCurrency(item.sellingPrice)} c/u (IVA Inc.)
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
+                        <Input 
+                            type="text" 
+                            readOnly 
+                            value={`${field.itemName} (${formatCurrency(field.unitPrice)} c/u)`} 
+                            className="bg-muted/30 dark:bg-muted/60 border-none text-sm font-medium w-full"
+                        />
+                    </div>
+                   <FormField
                     control={form.control}
                     name={`items.${index}.quantity`}
                     render={({ field: controllerField }) => (
@@ -252,8 +327,18 @@ export function PosForm({ inventoryItems, onSaleComplete }: POSFormProps) {
                           {...controllerField}
                           onChange={(e) => {
                             const val = parseInt(e.target.value, 10);
-                            controllerField.onChange(val >= 1 ? val : 1);
-                            handleQuantityChange(index, val >= 1 ? val : 1);
+                            const newQuantity = val >= 1 ? val : 1;
+                            controllerField.onChange(newQuantity);
+                            const unitPrice = form.getValues(`items.${index}.unitPrice`) || 0;
+                            const itemDetails = currentInventoryItems.find(invItem => invItem.id === form.getValues(`items.${index}.inventoryItemId`));
+                            if (itemDetails && newQuantity > itemDetails.quantity) {
+                                toast({ title: "Stock Insuficiente", description: `Solo hay ${itemDetails.quantity} unidades de ${itemDetails.name}.`, variant: "destructive", duration: 3000});
+                            }
+                            update(index, {
+                              ...form.getValues(`items.${index}`),
+                              quantity: newQuantity,
+                              totalPrice: unitPrice * newQuantity,
+                            });
                           }}
                           className="w-24"
                         />
@@ -280,7 +365,7 @@ export function PosForm({ inventoryItems, onSaleComplete }: POSFormProps) {
               type="button"
               variant="outline"
               size="sm"
-              onClick={handleAddItem}
+              onClick={handleOpenAddItemDialog}
               className="mt-4"
             >
               <PlusCircle className="mr-2 h-4 w-4" />
@@ -370,6 +455,91 @@ export function PosForm({ inventoryItems, onSaleComplete }: POSFormProps) {
         </Card>
       </form>
     </Form>
+
+    <Dialog open={isAddItemDialogOpen} onOpenChange={setIsAddItemDialogOpen}>
+        <DialogContent className="sm:max-w-lg">
+            <DialogHeader>
+                <DialogTitle>Añadir Artículo a la Venta</DialogTitle>
+                <DialogDescription>Busque por nombre o SKU. Si no existe, puede crearlo.</DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+                <div className="relative">
+                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input
+                        id="item-search"
+                        placeholder="Buscar artículo por nombre o SKU..."
+                        value={addItemSearchTerm}
+                        onChange={(e) => {
+                            setAddItemSearchTerm(e.target.value);
+                            setSelectedInventoryItemForDialog(null); 
+                        }}
+                        className="pl-8"
+                    />
+                </div>
+                {addItemSearchTerm && filteredInventoryForDialog.length > 0 && !selectedInventoryItemForDialog && (
+                    <ScrollArea className="h-[150px] border rounded-md">
+                        <div className="p-2 space-y-1">
+                            {filteredInventoryForDialog.map(item => (
+                                <Button
+                                    key={item.id}
+                                    variant="ghost"
+                                    className="w-full justify-start text-left h-auto py-1.5 px-2"
+                                    onClick={() => handleSelectItemFromSearch(item)}
+                                >
+                                    <div>
+                                        <p className="font-medium">{item.name} <span className="text-xs text-muted-foreground">({item.sku})</span></p>
+                                        <p className="text-xs text-muted-foreground">
+                                            Stock: {item.quantity} | Venta: {formatCurrency(item.sellingPrice)}
+                                        </p>
+                                    </div>
+                                </Button>
+                            ))}
+                        </div>
+                    </ScrollArea>
+                )}
+                {selectedInventoryItemForDialog && (
+                    <div className="p-2 border rounded-md bg-muted">
+                        <p className="font-medium text-sm">Seleccionado: {selectedInventoryItemForDialog.name}</p>
+                        <p className="text-xs text-muted-foreground">Precio Venta: {formatCurrency(selectedInventoryItemForDialog.sellingPrice)}</p>
+                    </div>
+                )}
+                {addItemSearchTerm && filteredInventoryForDialog.length === 0 && !selectedInventoryItemForDialog && (
+                    <div className="text-center py-2 text-sm text-muted-foreground">
+                        <p>No se encontró el artículo "{addItemSearchTerm}".</p>
+                        <Button variant="link" size="sm" onClick={handleOpenCreateNewItemDialog} className="text-primary">
+                            <PackagePlus className="mr-2 h-4 w-4"/>Crear Nuevo Artículo
+                        </Button>
+                    </div>
+                )}
+                <div className="space-y-2">
+                    <Label htmlFor="item-quantity">Cantidad</Label>
+                    <Input
+                        id="item-quantity"
+                        type="number"
+                        min="1"
+                        value={addItemQuantity}
+                        onChange={(e) => setAddItemQuantity(parseInt(e.target.value,10) || 1 )}
+                    />
+                </div>
+            </div>
+            <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => setIsAddItemDialogOpen(false)}>Cancelar</Button>
+                <Button type="button" onClick={handleAddItemConfirmed} disabled={!selectedInventoryItemForDialog}>Añadir Artículo Seleccionado</Button>
+            </DialogFooter>
+        </DialogContent>
+    </Dialog>
+
+    {isNewInventoryItemDialogOpen && (
+      <InventoryItemDialog
+        open={isNewInventoryItemDialogOpen}
+        onOpenChange={setIsNewInventoryItemDialogOpen}
+        item={newItemInitialData}
+        onSave={handleNewItemCreated}
+        categories={placeholderCategories} 
+        suppliers={placeholderSuppliers}
+      />
+    )}
+    </>
   );
 }
 
