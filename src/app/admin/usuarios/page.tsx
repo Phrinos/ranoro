@@ -15,8 +15,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useToast } from '@/hooks/use-toast';
 import type { User, UserRole } from '@/types';
-import { PlusCircle, Trash2, Edit, Search, ShieldQuestion } from "lucide-react"; // Added ShieldQuestion
-import { useRouter } from 'next/navigation'; // Added useRouter
+import { PlusCircle, Trash2, Edit, Search, ShieldQuestion } from "lucide-react";
+import { useRouter } from 'next/navigation';
 
 const USER_LOCALSTORAGE_KEY = 'appUsers';
 const AUTH_USER_LOCALSTORAGE_KEY = 'authUser';
@@ -24,7 +24,7 @@ const AUTH_USER_LOCALSTORAGE_KEY = 'authUser';
 const userFormSchema = z.object({
   name: z.string().min(3, "El nombre debe tener al menos 3 caracteres."),
   email: z.string().email("Ingrese un correo electrónico válido."),
-  phone: z.string().optional(), // Added phone
+  phone: z.string().optional(),
   role: z.enum(['superadmin', 'admin', 'tecnico', 'ventas'], { required_error: "Seleccione un rol." }),
   password: z.string().min(6, "La contraseña debe tener al menos 6 caracteres."),
   confirmPassword: z.string().min(6, "Confirme la contraseña."),
@@ -44,9 +44,18 @@ const defaultSuperAdmin: User = {
   phone: '4491234567' 
 };
 
+const defaultAdminDiana: User = {
+  id: 'user_admin_diana',
+  name: 'Diana Arriaga',
+  email: 'diana.arriaga@ranoro.mx',
+  role: 'admin',
+  password: 'Ranoro@2025', // Store actual password for demo purposes
+  phone: '4497654321' // Example phone
+};
+
 export default function UsuariosPage() {
   const { toast } = useToast();
-  const router = useRouter(); // Initialize useRouter
+  const router = useRouter();
   const [users, setUsers] = useState<User[]>([]);
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -67,8 +76,17 @@ export default function UsuariosPage() {
       const storedUsersString = localStorage.getItem(USER_LOCALSTORAGE_KEY);
       let loadedUsers: User[] = storedUsersString ? JSON.parse(storedUsersString) : [];
       
+      let usersUpdated = false;
       if (!loadedUsers.find(u => u.email === defaultSuperAdmin.email)) {
         loadedUsers = [defaultSuperAdmin, ...loadedUsers];
+        usersUpdated = true;
+      }
+      if (!loadedUsers.find(u => u.email === defaultAdminDiana.email)) {
+        loadedUsers.push(defaultAdminDiana); // Add Diana if she's not there
+        usersUpdated = true;
+      }
+
+      if (usersUpdated) {
         localStorage.setItem(USER_LOCALSTORAGE_KEY, JSON.stringify(loadedUsers));
       }
       setUsers(loadedUsers);
@@ -320,7 +338,7 @@ export default function UsuariosPage() {
                       <Select 
                         onValueChange={field.onChange} 
                         defaultValue={field.value}
-                        disabled={editingUser?.email === defaultSuperAdmin.email && currentUser?.email !== defaultSuperAdmin.email} // Superadmin role can only be changed by self or another superadmin
+                        disabled={editingUser?.email === defaultSuperAdmin.email && currentUser?.email !== defaultSuperAdmin.email}
                       >
                         <FormControl>
                           <SelectTrigger>
