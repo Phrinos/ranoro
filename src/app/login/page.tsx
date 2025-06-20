@@ -74,13 +74,13 @@ export default function LoginPage() {
     <div className="flex min-h-screen flex-col items-center justify-center bg-muted/40 p-4">
       <div className="mb-8 text-center">
         <Image
-          src="https://placehold.co/250x80.png" // Updated placeholder dimensions
+          src="/ranoro-logo.png" 
           alt="Ranoro Logo"
-          width={250} // Updated width
-          height={80} // Updated height
+          width={250} 
+          height={80} 
           priority
           className="mx-auto"
-          data-ai-hint="ranoro logo" // Updated hint
+          data-ai-hint="ranoro logo"
         />
         <p className="mt-3 text-lg font-medium text-foreground">
           ¡Tu taller en una App!
