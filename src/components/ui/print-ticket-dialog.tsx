@@ -1,7 +1,7 @@
 
 "use client";
 
-import React from 'react';
+import React, { useEffect } from 'react'; // Import useEffect
 import {
   Dialog,
   DialogContent,
@@ -18,7 +18,8 @@ interface PrintTicketDialogProps {
   onOpenChange: (isOpen: boolean) => void;
   title: string;
   children: React.ReactNode; // This will be the <TicketContent />
-  onDialogClose?: () => void; // Optional: callback when dialog is closed
+  onDialogClose?: () => void; 
+  autoPrint?: boolean; // Nueva propiedad
 }
 
 export function PrintTicketDialog({
@@ -26,8 +27,19 @@ export function PrintTicketDialog({
   onOpenChange,
   title,
   children,
-  onDialogClose
+  onDialogClose,
+  autoPrint = false // Valor por defecto
 }: PrintTicketDialogProps) {
+
+  useEffect(() => {
+    if (autoPrint && open) {
+      // Un pequeño retraso para asegurar que el contenido del diálogo se renderice completamente
+      const timer = setTimeout(() => {
+        window.print();
+      }, 300); 
+      return () => clearTimeout(timer);
+    }
+  }, [autoPrint, open]);
 
   const handlePrint = () => {
     window.print();
