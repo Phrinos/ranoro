@@ -3,9 +3,9 @@
 
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
-import { UserCircle, Settings } from "lucide-react";
-// import { AppLogo } from "@/components/icons"; // AppLogo removed
+import { UserCircle, Settings, LogOut } from "lucide-react"; // Added LogOut
 import Link from "next/link";
+import { useRouter } from "next/navigation"; // Added useRouter
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,8 +14,20 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useToast } from "@/hooks/use-toast"; // Added useToast
 
 export function AppHeader() {
+  const router = useRouter();
+  const { toast } = useToast();
+
+  const handleLogout = () => {
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('authUser');
+    }
+    toast({ title: 'Sesión Cerrada', description: 'Has cerrado sesión exitosamente.' });
+    router.push('/login');
+  };
+
   return (
     <header className="sticky top-0 z-40 flex h-16 items-center gap-4 border-b bg-background px-4 md:px-6">
       <div className="md:hidden">
@@ -23,10 +35,7 @@ export function AppHeader() {
       </div>
       <div className="hidden items-center gap-2 md:flex">
         <Link href="/dashboard" className="flex items-center gap-2 text-lg font-semibold md:text-base text-primary">
-          {/* <AppLogo className="h-6 w-6" /> Removed */}
-          {/* Ranoro text was in sidebar, header shows nothing or page title */}
-          {/* If breadcrumbs or page title is desired here, it needs to be added */}
-          <span className="font-headline text-xl">Ranoro</span> {/* Added Ranoro text as AppLogo was removed */}
+          <span className="font-headline text-xl">Ranoro</span>
         </Link>
       </div>
       <div className="flex w-full items-center justify-end gap-4 md:ml-auto md:gap-2 lg:gap-4">
@@ -40,12 +49,15 @@ export function AppHeader() {
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>Mi Cuenta</DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>
+            <DropdownMenuItem onClick={() => router.push('/admin/configuracion-ticket')}> {/* Example link */}
               <Settings className="mr-2 h-4 w-4" />
               <span>Configuración</span>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>Cerrar Sesión</DropdownMenuItem> {/* Kept logout here as per standard header UX */}
+            <DropdownMenuItem onClick={handleLogout}>
+              <LogOut className="mr-2 h-4 w-4 text-destructive" />
+              <span className="text-destructive">Cerrar Sesión</span>
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>

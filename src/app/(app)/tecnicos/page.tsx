@@ -8,7 +8,7 @@ import { PlusCircle, ListFilter, TrendingUp, DollarSign as DollarSignIcon } from
 import { TechniciansTable } from "./components/technicians-table";
 import { TechnicianDialog } from "./components/technician-dialog";
 import { placeholderTechnicians, placeholderServiceRecords } from "@/lib/placeholder-data";
-import type { Technician, ServiceRecord } from "@/types";
+import type { Technician } from "@/types";
 import { useState, useMemo } from "react";
 import type { TechnicianFormValues } from "./components/technician-form";
 import { parseISO, compareAsc, compareDesc, startOfMonth, endOfMonth, subMonths, isWithinInterval, format } from 'date-fns';
@@ -27,17 +27,22 @@ type TechnicianSortOption =
 type DateRangeOption = 'currentMonth' | 'lastMonth';
 
 const chartConfig = {
-  totalRevenue: {
-    label: "Ingresos Totales",
-    color: "hsl(var(--chart-1))",
-    icon: DollarSignIcon,
+  costOfServices: {
+    label: "Otros Costos (Ingresos - Ganancia)",
+    color: "hsl(var(--chart-1))", // Light Blue
   },
   totalProfit: {
-    label: "Ganancia Total",
-    color: "hsl(var(--chart-2))",
-    icon: TrendingUp,
+    label: "Ganancia Neta",
+    color: "hsl(var(--chart-2))", // Light Green
   },
 } satisfies ChartConfig;
+
+interface TechnicianPerformanceChartData {
+  name: string;
+  totalRevenue: number;
+  totalProfit: number;
+  costOfServices: number;
+}
 
 export default function TecnicosPage() {
   const [technicians, setTechnicians] = useState<Technician[]>(placeholderTechnicians);
@@ -55,7 +60,7 @@ export default function TecnicosPage() {
     placeholderTechnicians.push(newTechnician);
   };
 
-  const technicianPerformanceData = useMemo(() => {
+  const technicianPerformanceData = useMemo((): TechnicianPerformanceChartData[] => {
     const now = new Date();
     let startDate: Date, endDate: Date;
 
@@ -75,14 +80,19 @@ export default function TecnicosPage() {
       });
 
       const totalRevenue = techServicesInRange.reduce((sum, service) => sum + service.totalCost, 0);
-      const totalProfit = techServicesInRange.reduce((sum, service) => sum + (service.serviceProfit || 0), 0);
+      const actualProfit = techServicesInRange.reduce((sum, service) => sum + (service.serviceProfit || 0), 0);
+      
+      // For the chart, ensure profit is not negative if it's part of revenue breakdown
+      const displayProfit = Math.max(0, actualProfit);
+      const costOfServices = totalRevenue - displayProfit; // This is the part of revenue that isn't profit
       
       return {
         name: tech.name,
-        totalRevenue,
-        totalProfit,
+        totalRevenue, // Keep original total revenue for potential other uses
+        totalProfit: displayProfit, // Use non-negative profit for stacking
+        costOfServices: costOfServices < 0 ? 0 : costOfServices, // Cost shouldn't be negative
       };
-    }).filter(data => data.totalRevenue > 0 || data.totalProfit > 0); // Only include techs with activity
+    }).filter(data => data.totalRevenue > 0); // Only include techs with activity
 
   }, [technicians, dateRangeOption]);
 
@@ -159,7 +169,7 @@ export default function TecnicosPage() {
           <div>
             <CardTitle>Rendimiento de Técnicos</CardTitle>
             <CardDescription>
-              Ingresos totales y ganancia total generada por técnico en el período seleccionado.
+              Ingresos y ganancia generada por técnico en el período seleccionado. La barra completa representa los Ingresos Totales.
             </CardDescription>
           </div>
           <Select value={dateRangeOption} onValueChange={(value) => setDateRangeOption(value as DateRangeOption)}>
@@ -175,17 +185,20 @@ export default function TecnicosPage() {
         <CardContent>
           {technicianPerformanceData.length > 0 ? (
             <ChartContainer config={chartConfig} className="min-h-[300px] w-full">
-              <BarChart data={technicianPerformanceData} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
+              <BarChart 
+                data={technicianPerformanceData} 
+                margin={{ top: 5, right: 20, left: 0, bottom: 20 }} // Increased bottom margin for angled labels
+              >
                 <CartesianGrid strokeDasharray="3 3" vertical={false} />
                 <XAxis 
                   dataKey="name" 
                   tickLine={false} 
                   axisLine={false} 
                   tickMargin={8} 
-                  angle={-15}
-                  textAnchor="end"
-                  height={50}
-                  interval={0} 
+                  angle={-30} // Angle labels for better fit
+                  textAnchor="end" // Anchor angled labels correctly
+                  interval={0} // Show all labels
+                  height={60} // Allocate more height for angled labels
                 />
                 <YAxis 
                   tickFormatter={(value) => `$${value.toLocaleString('es-MX')}`}
@@ -194,12 +207,38 @@ export default function TecnicosPage() {
                   tickMargin={8}
                 />
                 <ChartTooltip
-                  cursor={false}
-                  content={<ChartTooltipContent indicator="dot" />}
+                  cursor={true}
+                  content={<ChartTooltipContent 
+                              indicator="dot" 
+                              formatter={(value, name, item) => {
+                                const fullItem = item.payload as TechnicianPerformanceChartData;
+                                if (name === 'totalProfit') {
+                                  return `${(chartConfig.totalProfit.label as string)}: $${Number(value).toLocaleString('es-MX')}`;
+                                }
+                                if (name === 'costOfServices') {
+                                   return `${(chartConfig.costOfServices.label as string)}: $${Number(value).toLocaleString('es-MX')}`;
+                                }
+                                return `$${Number(value).toLocaleString('es-MX')}`;
+                              }} 
+                              labelFormatter={(label, payload) => {
+                                if (payload && payload.length > 0) {
+                                  const data = payload[0].payload as TechnicianPerformanceChartData;
+                                  return (
+                                    <div>
+                                      <p className="font-medium">{data.name}</p>
+                                      <p className="text-xs text-muted-foreground">
+                                        Ingresos Totales: ${data.totalRevenue.toLocaleString('es-MX')}
+                                      </p>
+                                    </div>
+                                  );
+                                }
+                                return label;
+                              }}
+                            />}
                 />
-                <Legend content={<ChartLegendContent />} />
-                <Bar dataKey="totalRevenue" fill="var(--color-totalRevenue)" radius={4} name="Ingresos Totales" />
-                <Bar dataKey="totalProfit" fill="var(--color-totalProfit)" radius={4} name="Ganancia Total" />
+                <ChartLegend content={<ChartLegendContent />} />
+                <Bar dataKey="costOfServices" stackId="a" fill="var(--color-costOfServices)" radius={[0, 0, 4, 4]} />
+                <Bar dataKey="totalProfit" stackId="a" fill="var(--color-totalProfit)" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ChartContainer>
           ) : (
