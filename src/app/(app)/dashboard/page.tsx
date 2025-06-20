@@ -8,9 +8,9 @@ import { PageHeader } from "@/components/page-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { placeholderServiceRecords, placeholderVehicles, placeholderTechnicians, placeholderInventory } from "@/lib/placeholder-data";
 import type { ServiceRecord, Vehicle, Technician, InventoryItem, User } from "@/types";
-import { ScrollArea } from "@/components/ui/scroll-area";
+// ScrollArea is removed as per request
 import { Badge } from "@/components/ui/badge";
-import { User as UserIcon, Wrench, CheckCircle, CalendarClock, Clock, AlertTriangle } from "lucide-react"; // Changed Car to UserIcon
+import { User as UserIcon, Wrench, CheckCircle, CalendarClock, Clock, AlertTriangle } from "lucide-react"; 
 import { ServiceDialog } from "../servicios/components/service-dialog";
 import { useToast } from "@/hooks/use-toast";
 
@@ -25,7 +25,7 @@ const DashboardServiceSection = ({
   icon: IconCmp, 
   emptyMessage,
   isLoading,
-  onServiceClick // Added onServiceClick prop
+  onServiceClick 
 }: { 
   title: string, 
   services: EnrichedServiceRecord[], 
@@ -41,70 +41,69 @@ const DashboardServiceSection = ({
         {title} ({services.length})
       </CardTitle>
     </CardHeader>
-    <ScrollArea className="flex-grow h-[calc(100vh/3-8rem)] min-h-[200px]">
-      <CardContent className="p-4 space-y-3">
-        {isLoading && services.length === 0 ? (
-           Array.from({ length: 2 }).map((_, index) => (
-            <Card key={index} className="p-2.5 animate-pulse w-full"> {/* Reduced padding */}
-              <div className="flex gap-3"> {/* Reduced gap */}
-                <div className="flex-grow space-y-1.5"> {/* Reduced space-y */}
-                  <div className="h-4 bg-muted rounded w-3/4"></div>
-                  <div className="h-3 bg-muted rounded w-1/2"></div>
-                  <div className="h-3 bg-muted rounded w-full"></div>
-                  <div className="flex justify-between">
-                    <div className="h-3 bg-muted rounded w-1/3"></div>
-                    <div className="h-3 bg-muted rounded w-1/3"></div>
-                  </div>
+    {/* ScrollArea removed, CardContent directly child of Card */}
+    <CardContent className="p-2 space-y-2"> {/* Reduced padding from p-4 to p-2, space-y from 3 to 2 */}
+      {isLoading && services.length === 0 ? (
+          Array.from({ length: 2 }).map((_, index) => (
+          <Card key={index} className="p-2.5 animate-pulse w-full"> 
+            <div className="flex gap-3"> 
+              <div className="flex-grow space-y-1.5"> 
+                <div className="h-4 bg-muted rounded w-3/4"></div>
+                <div className="h-3 bg-muted rounded w-1/2"></div>
+                <div className="h-3 bg-muted rounded w-full"></div>
+                <div className="flex justify-between">
+                  <div className="h-3 bg-muted rounded w-1/3"></div>
+                  <div className="h-3 bg-muted rounded w-1/3"></div>
                 </div>
               </div>
-            </Card>
-          ))
-        ) : services.length > 0 ? (
-          services.map((service) => {
-            let statusVariant: "default" | "secondary" | "outline" | "destructive" | "success" = "default";
-            if (service.status === "Reparando") statusVariant = "secondary";
-            else if (service.status === "Completado") statusVariant = "success";
-            else if (service.status === "Cancelado") statusVariant = "destructive";
+            </div>
+          </Card>
+        ))
+      ) : services.length > 0 ? (
+        services.map((service) => {
+          let statusVariant: "default" | "secondary" | "outline" | "destructive" | "success" = "default";
+          if (service.status === "Reparando") statusVariant = "secondary";
+          else if (service.status === "Completado") statusVariant = "success";
+          else if (service.status === "Cancelado") statusVariant = "destructive";
 
-            return (
-              <Card 
-                key={service.id} 
-                className="w-full shadow-sm hover:shadow-md transition-shadow duration-150 cursor-pointer hover:bg-muted/50"
-                onClick={() => onServiceClick(service)}
-              >
-                <CardContent className="p-2.5 flex flex-col gap-2"> {/* Reduced padding */}
-                  <div className="flex-grow space-y-0.5 w-full"> {/* Reduced space-y */}
-                    <div className="flex flex-row justify-between items-center">
-                      <h4 className="text-sm font-semibold text-foreground truncate" title={service.vehicleInfo}>{service.vehicleInfo}</h4>
-                      <Badge variant={statusVariant} className="text-xs shrink-0">{service.status}</Badge>
+          return (
+            <Card 
+              key={service.id} 
+              className="w-full shadow-sm hover:shadow-md transition-shadow duration-150 cursor-pointer hover:bg-muted/50"
+              onClick={() => onServiceClick(service)}
+            >
+              <CardContent className="p-2.5 flex flex-col gap-2"> 
+                <div className="flex-grow space-y-0.5 w-full"> 
+                  <div className="flex flex-row justify-between items-center">
+                    <h4 className="text-sm font-semibold text-foreground truncate" title={service.vehicleInfo}>{service.vehicleInfo}</h4>
+                    <Badge variant={statusVariant} className="text-xs shrink-0">{service.status}</Badge>
+                  </div>
+                  <p className="text-xs text-muted-foreground">ID: {service.id}</p>
+                  <p className="text-xs text-foreground pt-0.5 truncate" title={service.description}>{service.description}</p>
+                  <div className="flex flex-col sm:flex-row justify-between text-xs text-muted-foreground pt-0.5 gap-x-2">
+                    <div className="flex items-center gap-1 truncate" title={service.technicianName || 'N/A'}>
+                      <UserIcon className="h-3 w-3 shrink-0" /> <span className="truncate">{service.technicianName || 'N/A'}</span>
                     </div>
-                    <p className="text-xs text-muted-foreground">ID: {service.id}</p>
-                    <p className="text-xs text-foreground pt-0.5 truncate" title={service.description}>{service.description}</p>
-                    <div className="flex flex-col sm:flex-row justify-between text-xs text-muted-foreground pt-0.5 gap-x-2">
-                      <div className="flex items-center gap-1 truncate" title={service.technicianName || 'N/A'}>
-                        <UserIcon className="h-3 w-3 shrink-0" /> <span className="truncate">{service.technicianName || 'N/A'}</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Clock className="h-3 w-3 shrink-0" />
-                        <span className="whitespace-nowrap">
-                        {service.status === "Completado" && service.deliveryDateTime && isValid(parseISO(service.deliveryDateTime))
-                          ? `Entregado: ${format(parseISO(service.deliveryDateTime), "dd MMM, HH:mm", { locale: es })}`
-                          : service.serviceDate && isValid(parseISO(service.serviceDate))
-                            ? `Recepción: ${format(parseISO(service.serviceDate), "dd MMM, HH:mm", { locale: es })}`
-                            : 'N/A'}
-                        </span>
-                      </div>
+                    <div className="flex items-center gap-1">
+                      <Clock className="h-3 w-3 shrink-0" />
+                      <span className="whitespace-nowrap">
+                      {service.status === "Completado" && service.deliveryDateTime && isValid(parseISO(service.deliveryDateTime))
+                        ? `Entregado: ${format(parseISO(service.deliveryDateTime), "dd MMM, HH:mm", { locale: es })}`
+                        : service.serviceDate && isValid(parseISO(service.serviceDate))
+                          ? `Recepción: ${format(parseISO(service.serviceDate), "dd MMM, HH:mm", { locale: es })}`
+                          : 'N/A'}
+                      </span>
                     </div>
                   </div>
-                </CardContent>
-              </Card>
-            );
-          })
-        ) : (
-          <p className="text-muted-foreground text-center py-10">{emptyMessage}</p>
-        )}
-      </CardContent>
-    </ScrollArea>
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })
+      ) : (
+        <p className="text-muted-foreground text-center py-10">{emptyMessage}</p>
+      )}
+    </CardContent>
   </Card>
 );
 
@@ -204,15 +203,13 @@ export default function DashboardPage() {
     if (pIndex !== -1) {
       placeholderServiceRecords[pIndex] = updatedServiceData;
     }
-    loadAndFilterServices(); // Re-filter and update dashboard sections
+    loadAndFilterServices(); 
     toast({
       title: "Servicio Actualizado",
       description: `El servicio ${updatedServiceData.id} ha sido actualizado.`,
     });
     setIsServiceDialogOpen(false);
     setSelectedServiceForDialog(null);
-    // Note: Auto-printing ticket logic from dashboard is omitted for brevity here,
-    // but could be added if needed, similar to other service pages.
   };
 
   const onVehicleCreated = (newVehicle: Vehicle) => {
@@ -229,13 +226,13 @@ export default function DashboardPage() {
 
 
   return (
-    <div className="container mx-auto py-8 flex flex-col h-full">
+    <div className="container mx-auto py-8 flex flex-col"> {/* Removed h-full to allow natural height */}
       <PageHeader
         title={userName ? `¡Bienvenido, ${userName}!` : "Panel Principal de Taller"}
         description="Vista del estado actual de los servicios."
       />
 
-      <div className="flex flex-col gap-6">
+      <div className="flex flex-col gap-6"> {/* Sections will stack and expand as needed */}
         <DashboardServiceSection 
           title="En Reparación" 
           services={repairingServices} 
@@ -276,3 +273,4 @@ export default function DashboardPage() {
     </div>
   );
 }
+
