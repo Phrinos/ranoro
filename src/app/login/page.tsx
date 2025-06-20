@@ -123,8 +123,9 @@ export default function LoginPage() {
             </Button>
           </form>
         </CardContent>
-        <CardFooter className="text-center text-xs text-muted-foreground">
-          <p>Este es un sistema de gestión de taller. <br/> Contacte al administrador si tiene problemas.</p>
+        <CardFooter className="flex flex-col items-center justify-center text-center text-xs text-muted-foreground">
+          <p>Este es un sistema de gestión de taller.</p>
+          <p>Contacte al administrador si tiene problemas.</p>
         </CardFooter>
       </Card>
     </div>
