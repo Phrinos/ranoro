@@ -4,6 +4,7 @@
 import type { SaleReceipt, ServiceRecord, Vehicle, Technician, SaleItem } from '@/types';
 import { format, parseISO, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
+import React, { useEffect, useState } from 'react';
 
 interface TicketContentProps {
   sale?: SaleReceipt;
@@ -12,7 +13,7 @@ interface TicketContentProps {
   technician?: Technician; // For service tickets
 }
 
-const workshopInfo = {
+const defaultWorkshopInfo = {
   name: "RANORO",
   phone: "4491425323",
   addressLine1: "Av. de la Convencion de 1914 No. 1421",
@@ -21,8 +22,24 @@ const workshopInfo = {
 };
 
 const IVA_RATE = 0.16;
+const LOCALSTORAGE_KEY = 'workshopTicketInfo';
 
 export function TicketContent({ sale, service, vehicle, technician }: TicketContentProps) {
+  const [workshopInfo, setWorkshopInfo] = useState(defaultWorkshopInfo);
+
+  useEffect(() => {
+    const storedInfo = localStorage.getItem(LOCALSTORAGE_KEY);
+    if (storedInfo) {
+      try {
+        setWorkshopInfo(JSON.parse(storedInfo));
+      } catch (e) {
+        console.error("Failed to parse workshop info from localStorage", e);
+        setWorkshopInfo(defaultWorkshopInfo);
+      }
+    }
+  }, []);
+
+
   const now = new Date();
   const formattedDate = format(now, "dd/MM/yyyy HH:mm:ss", { locale: es });
 
@@ -52,9 +69,9 @@ export function TicketContent({ sale, service, vehicle, technician }: TicketCont
         <p>{workshopInfo.cityState}</p>
       </div>
 
-      <p className="text-xs">Fecha: {formattedDate}</p>
-      {sale && <p className="text-xs">Folio Venta: {sale.id}</p>}
-      {service && <p className="text-xs">Folio Servicio: {service.id}</p>}
+      <p className="text-xs">Fecha Impresión: {formattedDate}</p>
+      {sale && <p className="text-xs">Folio Venta: {sale.id} ({format(parseISO(sale.saleDate), "dd/MM/yy HH:mm", { locale: es })})</p>}
+      {service && <p className="text-xs">Folio Servicio: {service.id} ({format(parseISO(service.serviceDate), "dd/MM/yy HH:mm", { locale: es })})</p>}
       {sale?.customerName && <p className="text-xs">Cliente: {sale.customerName}</p>}
       
       {renderDashedLine()}
@@ -95,7 +112,7 @@ export function TicketContent({ sale, service, vehicle, technician }: TicketCont
           <p className="my-1">Descripción: {service.description}</p>
           {service.suppliesUsed && service.suppliesUsed.length > 0 && (
             <>
-              <p className="font-semibold mt-1">Refacciones:</p>
+              <p className="font-semibold mt-1">Refacciones (costo taller):</p>
               {service.suppliesUsed.map((supply, idx) => (
                 <div key={idx} className="flex justify-between text-xs">
                   <span>{supply.quantity} x {supply.supplyName || `ID: ${supply.supplyId}`}</span>
