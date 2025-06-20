@@ -94,8 +94,20 @@ export default function HistorialServiciosPage() {
       const vehicleB = vehicles.find(v => v.id === b.vehicleId);
 
       switch (sortOption) {
-        case "serviceDate_asc": return compareAsc(parseISO(a.serviceDate), parseISO(b.serviceDate));
-        case "serviceDate_desc": return compareDesc(parseISO(a.serviceDate), parseISO(b.serviceDate));
+        case "serviceDate_asc": 
+          return compareAsc(parseISO(a.serviceDate), parseISO(b.serviceDate));
+        case "serviceDate_desc": {
+          const statusOrder = { "Agendado": 1, "Reparando": 2, "Completado": 3, "Cancelado": 3 };
+          const statusAVal = statusOrder[a.status as keyof typeof statusOrder] || 4;
+          const statusBVal = statusOrder[b.status as keyof typeof statusOrder] || 4;
+
+          if (statusAVal !== statusBVal) {
+            return statusAVal - statusBVal;
+          }
+          const dateComparison = compareDesc(parseISO(a.serviceDate), parseISO(b.serviceDate));
+          if (dateComparison !== 0) return dateComparison;
+          return a.id.localeCompare(b.id); // Fallback
+        }
         case "deliveryDate_asc":
           if (!a.deliveryDateTime) return 1; if (!b.deliveryDateTime) return -1;
           return compareAsc(parseISO(a.deliveryDateTime), parseISO(b.deliveryDateTime));
@@ -108,7 +120,18 @@ export default function HistorialServiciosPage() {
         case "price_desc": return b.totalCost - a.totalCost;
         case "status_asc": return a.status.localeCompare(b.status);
         case "status_desc": return b.status.localeCompare(a.status);
-        default: return compareDesc(parseISO(a.serviceDate), parseISO(b.serviceDate));
+        default: {
+          const defaultStatusOrderSort = { "Agendado": 1, "Reparando": 2, "Completado": 3, "Cancelado": 3 };
+          const defaultStatusASortVal = defaultStatusOrderSort[a.status as keyof typeof defaultStatusOrderSort] || 4;
+          const defaultStatusBSortVal = defaultStatusOrderSort[b.status as keyof typeof defaultStatusOrderSort] || 4;
+
+          if (defaultStatusASortVal !== defaultStatusBSortVal) {
+            return defaultStatusASortVal - defaultStatusBSortVal;
+          }
+          const dateComparisonDefault = compareDesc(parseISO(a.serviceDate), parseISO(b.serviceDate));
+          if (dateComparisonDefault !== 0) return dateComparisonDefault;
+          return a.id.localeCompare(b.id); 
+        }
       }
     });
     return filtered;
@@ -340,3 +363,4 @@ export default function HistorialServiciosPage() {
     </>
   );
 }
+

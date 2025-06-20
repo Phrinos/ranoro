@@ -8,9 +8,9 @@ import { ServicesTable } from "./components/services-table";
 import { ServiceDialog } from "./components/service-dialog";
 import { placeholderServiceRecords, placeholderVehicles, placeholderTechnicians, placeholderInventory } from "@/lib/placeholder-data";
 import type { ServiceRecord, Vehicle } from "@/types";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { isValid, parseISO } from "date-fns";
+import { isValid, parseISO, compareDesc, compareAsc } from "date-fns";
 import { useRouter } from "next/navigation";
 
 export default function ServiciosPage() {
@@ -89,6 +89,29 @@ export default function ServiciosPage() {
     });
   };
 
+  const sortedServicesForTable = useMemo(() => {
+    const servicesToSort = [...services];
+    servicesToSort.sort((a, b) => {
+      const statusOrder = { "Agendado": 1, "Reparando": 2, "Completado": 3, "Cancelado": 3 };
+      const statusAVal = statusOrder[a.status as keyof typeof statusOrder] || 4;
+      const statusBVal = statusOrder[b.status as keyof typeof statusOrder] || 4;
+
+      if (statusAVal !== statusBVal) {
+        return statusAVal - statusBVal;
+      }
+      
+      const dateA = parseISO(a.serviceDate);
+      const dateB = parseISO(b.serviceDate);
+
+      if (isValid(dateA) && isValid(dateB)) {
+         const dateComparison = compareDesc(dateA, dateB);
+         if (dateComparison !== 0) return dateComparison;
+      }
+      return a.id.localeCompare(b.id); // Fallback
+    });
+    return servicesToSort;
+  }, [services]);
+
 
   return (
     <>
@@ -97,7 +120,7 @@ export default function ServiciosPage() {
         description="Visualiza, crea y actualiza las órdenes de servicio."
       />
       <ServicesTable 
-        services={services} 
+        services={sortedServicesForTable} 
         vehicles={vehicles}
         technicians={technicians}
         inventoryItems={inventoryItems}
