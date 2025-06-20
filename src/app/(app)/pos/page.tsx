@@ -8,8 +8,10 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Search, ListFilter, CalendarIcon as CalendarDateIcon, Receipt, ShoppingCart, CreditCard, DollarSign, Filter as FilterIcon } from "lucide-react";
+import { Search, ListFilter, CalendarIcon as CalendarDateIcon, Receipt, ShoppingCart, CreditCard, DollarSign, Filter as FilterIcon, Printer } from "lucide-react";
 import { SalesTable } from "./components/sales-table"; 
+import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
+import { TicketContent } from '@/components/ticket-content';
 import { placeholderSales, placeholderInventory } from "@/lib/placeholder-data";
 import type { SaleReceipt, InventoryItem, SaleItem, PaymentMethod } from "@/types";
 import { useState, useEffect, useMemo } from "react";
@@ -33,6 +35,9 @@ export default function POSPage() {
   const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
   const [sortOption, setSortOption] = useState<SaleSortOption>("date_desc");
   const [paymentMethodFilter, setPaymentMethodFilter] = useState<PaymentMethod | "all">("all");
+
+  const [isReprintDialogOpen, setIsReprintDialogOpen] = useState(false);
+  const [selectedSaleForReprint, setSelectedSaleForReprint] = useState<SaleReceipt | null>(null);
 
 
   useEffect(() => {
@@ -122,6 +127,16 @@ export default function POSPage() {
   }, [filteredAndSortedSales]);
 
   const paymentMethodsForFilter: (PaymentMethod | "all")[] = ["all", "Efectivo", "Tarjeta", "Transferencia", "Efectivo+Transferencia", "Tarjeta+Transferencia"];
+
+  const handleReprintSale = (sale: SaleReceipt) => {
+    setSelectedSaleForReprint(sale);
+    setIsReprintDialogOpen(true);
+  };
+
+  const handleReprintDialogClose = () => {
+    setIsReprintDialogOpen(false);
+    setSelectedSaleForReprint(null);
+  };
 
 
   return (
@@ -258,7 +273,18 @@ export default function POSPage() {
         </DropdownMenu>
       </div>
 
-      <SalesTable sales={filteredAndSortedSales} />
+      <SalesTable sales={filteredAndSortedSales} onReprintTicket={handleReprintSale} />
+
+      {isReprintDialogOpen && selectedSaleForReprint && (
+        <PrintTicketDialog
+          open={isReprintDialogOpen}
+          onOpenChange={setIsReprintDialogOpen}
+          title="Reimprimir Ticket de Venta"
+          onDialogClose={handleReprintDialogClose}
+        >
+          <TicketContent sale={selectedSaleForReprint} />
+        </PrintTicketDialog>
+      )}
     </>
   );
 }

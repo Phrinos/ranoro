@@ -10,16 +10,19 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import type { SaleReceipt } from "@/types";
 import { format, parseISO, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { Printer } from "lucide-react";
 
 interface SalesTableProps {
   sales: SaleReceipt[];
+  onReprintTicket: (sale: SaleReceipt) => void;
 }
 
-export function SalesTable({ sales }: SalesTableProps) {
+export function SalesTable({ sales, onReprintTicket }: SalesTableProps) {
   if (!sales.length) {
     return <p className="text-muted-foreground text-center py-8">No hay ventas registradas que coincidan con los filtros.</p>;
   }
@@ -41,6 +44,7 @@ export function SalesTable({ sales }: SalesTableProps) {
             <TableHead className="text-right">Subtotal</TableHead>
             <TableHead className="text-right">Impuestos</TableHead>
             <TableHead className="text-right">Total</TableHead>
+            <TableHead className="text-right">Acciones</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -64,6 +68,11 @@ export function SalesTable({ sales }: SalesTableProps) {
                 <TableCell className="text-right">{formatCurrency(sale.subTotal)}</TableCell>
                 <TableCell className="text-right">{formatCurrency(sale.tax || 0)}</TableCell>
                 <TableCell className="text-right font-semibold">{formatCurrency(sale.totalAmount)}</TableCell>
+                <TableCell className="text-right">
+                  <Button variant="ghost" size="icon" onClick={() => onReprintTicket(sale)} title="Reimprimir Ticket">
+                    <Printer className="h-4 w-4" />
+                  </Button>
+                </TableCell>
               </TableRow>
             );
           })}
