@@ -27,7 +27,7 @@ export default function NuevaCotizacionPage() {
   const [dialogStep, setDialogStep] = useState<DialogStep>('quote_form');
   const [currentQuoteForPdf, setCurrentQuoteForPdf] = useState<QuoteRecord | null>(null);
   const [currentVehicleForPdf, setCurrentVehicleForPdf] = useState<Vehicle | null>(null);
-  const [currentTechnicianForPdf, setCurrentTechnicianForPdf] = useState<Technician | null>(null); // Will hold preparer info
+  // const [currentTechnicianForPdf, setCurrentTechnicianForPdf] = useState<Technician | null>(null); // Removed this state
 
   // Workshop info for sharing messages - ideally fetched once globally
   const [workshopInfo, setWorkshopInfo] = useState<{name?: string}>({});
@@ -76,8 +76,7 @@ export default function NuevaCotizacionPage() {
     setCurrentQuoteForPdf(newQuote);
     const vehicleForQuote = vehicles.find(v => v.id === newQuote.vehicleId);
     setCurrentVehicleForPdf(vehicleForQuote || null);
-    // Set preparer info from the quote for the PDF content
-    setCurrentTechnicianForPdf({ id: newQuote.preparedByTechnicianId!, name: newQuote.preparedByTechnicianName! });
+    // The logic for setting currentTechnicianForPdf has been removed as QuoteContent uses quote.preparedByTechnicianName
     
     toast({
       title: "Cotización Lista",
@@ -96,7 +95,7 @@ export default function NuevaCotizacionPage() {
   const handlePrintDialogClose = () => {
     setCurrentQuoteForPdf(null);
     setCurrentVehicleForPdf(null);
-    setCurrentTechnicianForPdf(null);
+    // setCurrentTechnicianForPdf(null); // Removed
     setDialogStep('closed'); 
   };
 
@@ -183,7 +182,7 @@ export default function NuevaCotizacionPage() {
           <QuoteContent 
             quote={currentQuoteForPdf} 
             vehicle={currentVehicleForPdf || undefined}
-            preparedByTechnician={currentTechnicianForPdf || undefined}
+            // preparedByTechnician prop removed
           />
           <div className="mt-4 flex flex-col sm:flex-row gap-2 justify-center print-hidden border-t pt-4">
             <Button variant="outline" onClick={handleSendEmail} disabled={!currentVehicleForPdf?.ownerEmail}>
