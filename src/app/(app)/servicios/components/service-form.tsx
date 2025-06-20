@@ -53,7 +53,7 @@ const serviceFormSchema = z.object({
   notes: z.string().optional(),
   technicianId: z.string().min(1, "Seleccione un técnico"),
   suppliesUsed: z.array(supplySchema).optional(),
-  status: z.enum(["Agendado", "Pendiente", "En Progreso", "Completado", "Cancelado"]),
+  status: z.enum(["Agendado", "Reparando", "Completado", "Cancelado"]),
   deliveryDateTime: z.date().optional(),
 });
 
@@ -366,7 +366,7 @@ export function ServiceForm({
                                 </SelectTrigger>
                               </FormControl>
                               <SelectContent>
-                                {["Agendado", "Pendiente", "En Progreso", "Completado", "Cancelado"].map((statusVal) => (
+                                {["Agendado", "Reparando", "Completado", "Cancelado"].map((statusVal) => (
                                   <SelectItem key={statusVal} value={statusVal}>
                                     {statusVal}
                                   </SelectItem>
@@ -402,8 +402,9 @@ export function ServiceForm({
                             )}
                         />
                         {!isReadOnly && (
-                            <Button type="button" onClick={handleSearchVehicle} variant="outline" className="w-full sm:w-auto mt-2 sm:mt-0">
-                                <Search className="mr-2 h-4 w-4" /> Buscar
+                            <Button type="button" onClick={handleSearchVehicle} variant="outline" size="icon" className="w-10 sm:w-10 mt-2 sm:mt-0">
+                                <Search className="h-4 w-4" />
+                                <span className="sr-only">Buscar Placa</span>
                             </Button>
                         )}
                     </div>
@@ -703,7 +704,7 @@ export function ServiceForm({
                     Añadir Insumo
                     </Button>
                 )}
-                <div className="mt-4 text-sm font-medium text-right">
+                <div className="mt-4 text-lg font-medium text-right">
                     <p>Costo Total de Insumos (para el taller): <span className="font-semibold">{formatCurrency(totalSuppliesCost)}</span></p>
                 </div>
             </CardContent>
@@ -716,7 +717,7 @@ export function ServiceForm({
                     Resumen Financiero
                 </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-1 text-sm">
+            <CardContent className="space-y-1 text-lg">
                 <div className="flex justify-between pt-1">
                     <span>Costo del Servicio (Cliente, IVA Incluido):</span> 
                     <span className="font-semibold text-blue-600 dark:text-blue-400">{formatCurrency(watchedTotalServicePrice)}</span>
@@ -726,11 +727,10 @@ export function ServiceForm({
                     <span className="font-medium text-red-600 dark:text-red-400">{formatCurrency(totalSuppliesCost)}</span>
                 </div>
                 <hr className="my-2 border-dashed"/>
-                <div className="flex justify-between font-bold text-green-700 dark:text-green-400 text-base">
+                <div className="flex justify-between font-bold text-green-700 dark:text-green-400">
                     <span>(=) Ganancia Estimada del Servicio:</span> 
                     <span>{formatCurrency(serviceProfit)}</span>
                 </div>
-                <p className="text-xs text-muted-foreground text-right">(Costo del Servicio (Cliente, IVA Inc) - Costo Insumos (Taller, sin IVA))</p>
             </CardContent>
         </Card>
 
@@ -806,4 +806,3 @@ export function ServiceForm({
     </>
   );
 }
-

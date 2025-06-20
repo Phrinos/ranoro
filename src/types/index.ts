@@ -1,5 +1,4 @@
 
-
 export interface Vehicle {
   id: number; 
   make: string;
@@ -37,7 +36,7 @@ export interface ServiceRecord {
   totalCost: number; // Final, tax-inclusive price
   totalSuppliesCost?: number; // Cost of supplies to the workshop (pre-tax)
   serviceProfit?: number; // Profit: (totalCost IVA Incluido) - totalSuppliesCost
-  status: 'Agendado' | 'Pendiente' | 'En Progreso' | 'Completado' | 'Cancelado';
+  status: 'Agendado' | 'Reparando' | 'Completado' | 'Cancelado';
   notes?: string;
   mileage?: number;
   deliveryDateTime?: string; 
@@ -156,4 +155,3 @@ export interface AppRole {
   name: string;
   permissions: string[]; // Array of permission strings/keys
 }
-
