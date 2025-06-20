@@ -53,6 +53,8 @@ export function InventoryItemDialog({
       if (onSave) {
         await onSave(values);
       }
+      // Toast message is handled by the parent page (InventarioPage)
+      // to provide context (created vs. updated vs. created for purchase)
       onOpenChange(false);
     } catch (error) {
       console.error("Error saving inventory item:", error);
@@ -64,7 +66,21 @@ export function InventoryItemDialog({
     }
   };
   
-  const initialFormData = item ? item : null;
+  // When creating an item, partial data might be passed (e.g., SKU from search)
+  const initialFormData = item ? {
+    name: 'name' in item ? item.name || '' : '',
+    sku: 'sku' in item ? item.sku || '' : '',
+    description: 'description' in item ? item.description || '' : '',
+    quantity: 'quantity' in item ? item.quantity || 0 : 0,
+    unitPrice: 'unitPrice' in item ? item.unitPrice || 0 : 0,
+    sellingPrice: 'sellingPrice' in item ? item.sellingPrice || 0 : 0,
+    lowStockThreshold: 'lowStockThreshold' in item ? item.lowStockThreshold || 5 : 5,
+    category: 'category' in item ? item.category || (categoriesToUse.length > 0 ? categoriesToUse[0].name : '') : (categoriesToUse.length > 0 ? categoriesToUse[0].name : ''),
+    supplier: 'supplier' in item ? item.supplier || (suppliersToUse.length > 0 ? suppliersToUse[0].name : '') : (suppliersToUse.length > 0 ? suppliersToUse[0].name : ''),
+    // Include id if it's an existing item for editing
+    ...(isEditing && 'id' in item && {id: item.id})
+  } : null;
+
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
