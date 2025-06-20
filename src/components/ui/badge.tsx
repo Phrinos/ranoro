@@ -45,4 +45,5 @@ function Badge({ className, variant, ...props }: BadgeProps) {
   )
 }
 
-export { Badge, badgeVariants, type BadgeProps } // Added 'type BadgeProps' to exports
+export { Badge, badgeVariants, type BadgeProps }
+
