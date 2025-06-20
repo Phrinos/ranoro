@@ -10,8 +10,9 @@ const tomorrow = addDays(today, 1);
 const dayAfterTomorrow = addDays(today, 2);
 
 export const IVA_RATE = 0.16; // Export IVA_RATE
-export const TECH_STAFF_COMMISSION_RATE = 0.05; // 5% commission for technical staff on their service profit
-export const ADMIN_STAFF_COMMISSION_RATE = 0.01; // 1% commission for each admin staff on general service profit
+// Global commission rates are removed, now individual per staff member.
+// export const TECH_STAFF_COMMISSION_RATE = 0.05; 
+// export const ADMIN_STAFF_COMMISSION_RATE = 0.01; 
 
 export const placeholderVehicles: Vehicle[] = [
   { id: 1, make: 'Toyota', model: 'Corolla', year: 2020, vin: 'ABC123XYZ789', ownerName: 'Juan Pérez', ownerPhone: '555-1111', ownerEmail: 'juan.perez@email.com', licensePlate: 'PQR-123', color: 'Rojo', notes: 'Cliente frecuente, prefiere aceite sintético.' },
@@ -21,14 +22,14 @@ export const placeholderVehicles: Vehicle[] = [
 ];
 
 export const placeholderTechnicians: Technician[] = [
-  { id: 'T001', name: 'Roberto Gómez', area: 'Mecánica General', specialty: 'Motor y Transmisión', contactInfo: '555-7777', hireDate: '2022-01-15', monthlySalary: 12000, notes: 'Experto en motores diesel.' },
-  { id: 'T002', name: 'Laura Fernández', area: 'Electrónica', specialty: 'Diagnóstico Electrónico', contactInfo: '555-8888', hireDate: '2021-06-01', monthlySalary: 13500, notes: 'Certificada en sistemas híbridos.' },
-  { id: 'T003', name: 'Miguel Ángel Torres', area: 'Mecánica General', specialty: 'Frenos y Suspensión', contactInfo: '555-9999', hireDate: '2023-03-10', monthlySalary: 11000, notes: 'Rápido y eficiente.' },
+  { id: 'T001', name: 'Roberto Gómez', area: 'Mecánica General', specialty: 'Motor y Transmisión', contactInfo: '555-7777', hireDate: '2022-01-15', monthlySalary: 12000, commissionRate: 0.05, notes: 'Experto en motores diesel.' },
+  { id: 'T002', name: 'Laura Fernández', area: 'Electrónica', specialty: 'Diagnóstico Electrónico', contactInfo: '555-8888', hireDate: '2021-06-01', monthlySalary: 13500, commissionRate: 0.06, notes: 'Certificada en sistemas híbridos.' },
+  { id: 'T003', name: 'Miguel Ángel Torres', area: 'Mecánica General', specialty: 'Frenos y Suspensión', contactInfo: '555-9999', hireDate: '2023-03-10', monthlySalary: 11000, commissionRate: 0.04, notes: 'Rápido y eficiente.' },
 ];
 
 export const placeholderAdministrativeStaff: AdministrativeStaff[] = [
-  { id: 'ADM001', name: 'Sofía Vargas', roleOrArea: 'Gerente de Oficina', hireDate: '2020-05-10', monthlySalary: 18000, contactInfo: '555-0011', notes: 'Responsable de administración general y atención al cliente.' },
-  { id: 'ADM002', name: 'Luis Morales', roleOrArea: 'Recepción', hireDate: '2023-08-01', monthlySalary: 9000, contactInfo: '555-0012', notes: 'Encargado de agendar citas y recibir clientes.' },
+  { id: 'ADM001', name: 'Sofía Vargas', roleOrArea: 'Gerente de Oficina', hireDate: '2020-05-10', monthlySalary: 18000, contactInfo: '555-0011', commissionRate: 0.015, notes: 'Responsable de administración general y atención al cliente.' },
+  { id: 'ADM002', name: 'Luis Morales', roleOrArea: 'Recepción', hireDate: '2023-08-01', monthlySalary: 9000, contactInfo: '555-0012', commissionRate: 0.005, notes: 'Encargado de agendar citas y recibir clientes.' },
 ];
 
 export const placeholderCategories: InventoryCategory[] = [
@@ -340,5 +341,6 @@ export const calculateSaleProfit = (sale: SaleReceipt, inventory: InventoryItem[
       return profit + (sellingPriceSubTotal - costPrice) * saleItem.quantity;
   }, 0);
 };
+
 
 

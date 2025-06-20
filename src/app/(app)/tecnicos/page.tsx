@@ -10,7 +10,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { PlusCircle, ListFilter, TrendingUp, DollarSign as DollarSignIcon, CalendarIcon as CalendarDateIcon, BadgeCent } from "lucide-react"; // Added BadgeCent
 import { TechniciansTable } from "./components/technicians-table";
 import { TechnicianDialog } from "./components/technician-dialog";
-import { placeholderTechnicians, placeholderServiceRecords, TECH_STAFF_COMMISSION_RATE } from "@/lib/placeholder-data";
+import { placeholderTechnicians, placeholderServiceRecords } from "@/lib/placeholder-data";
 import type { Technician, ServiceRecord } from "@/types";
 import type { TechnicianFormValues } from "./components/technician-form";
 import { parseISO, compareAsc, compareDesc, startOfMonth, endOfMonth, isWithinInterval, format, isValid, startOfDay, endOfDay } from 'date-fns';
@@ -49,7 +49,8 @@ export default function TecnicosPage() {
       id: `T${String(technicians.length + 1).padStart(3, '0')}${Date.now().toString().slice(-3)}`, 
       ...data,
       hireDate: data.hireDate ? new Date(data.hireDate).toISOString().split('T')[0] : undefined,
-      monthlySalary: Number(data.monthlySalary)
+      monthlySalary: Number(data.monthlySalary),
+      commissionRate: data.commissionRate ? Number(data.commissionRate) : undefined,
     };
     const updatedTechnicians = [...technicians, newTechnician];
     setTechnicians(updatedTechnicians);
@@ -75,7 +76,7 @@ export default function TecnicosPage() {
 
       const totalRevenue = techServices.reduce((sum, s) => sum + s.totalCost, 0);
       const totalProfit = techServices.reduce((sum, s) => sum + (s.serviceProfit || 0), 0);
-      const totalCommissionEarned = techServices.reduce((sum, s) => sum + (s.serviceProfit || 0) * TECH_STAFF_COMMISSION_RATE, 0);
+      const totalCommissionEarned = techServices.reduce((sum, s) => sum + (s.serviceProfit || 0) * (tech.commissionRate || 0), 0);
       
       return {
         technicianId: tech.id,
@@ -130,8 +131,8 @@ export default function TecnicosPage() {
           <div>
             <CardTitle>Resumen de Rendimiento por Staff Técnico</CardTitle>
             <CardDescription>
-              Totales de ingresos, ganancias y comisiones para cada miembro del staff técnico basados en el rango de fechas seleccionado (solo servicios completados).
-              Predeterminado al mes actual si no se selecciona un rango.
+              Totales de ingresos, ganancias y comisiones potenciales para cada miembro del staff técnico basados en el rango de fechas seleccionado (solo servicios completados).
+              La comisión final se calcula y liquida mensualmente después de cubrir los gastos fijos del taller, como se refleja en el Resumen Financiero.
             </CardDescription>
           </div>
           <Popover>
@@ -189,7 +190,7 @@ export default function TecnicosPage() {
                       <span className="font-semibold text-green-600">{formatCurrency(techPerf.totalProfit)}</span>
                     </div>
                     <div className="flex justify-between items-center">
-                      <span className="text-muted-foreground flex items-center gap-1"><BadgeCent className="h-3.5 w-3.5"/>Comisión Ganada:</span>
+                      <span className="text-muted-foreground flex items-center gap-1"><BadgeCent className="h-3.5 w-3.5"/>Comisión Potencial:</span>
                       <span className="font-semibold text-blue-600">{formatCurrency(techPerf.totalCommissionEarned)}</span>
                     </div>
                   </CardContent>
@@ -242,6 +243,7 @@ export default function TecnicosPage() {
     
 
     
+
 
 
 

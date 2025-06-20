@@ -12,6 +12,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  FormDescription,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -24,6 +25,7 @@ const technicianFormSchema = z.object({
   contactInfo: z.string().min(7, "El teléfono debe tener al menos 7 caracteres.").optional().or(z.literal('')),
   hireDate: z.string().optional(), 
   monthlySalary: z.coerce.number().min(0, "El sueldo no puede ser negativo.").optional(),
+  commissionRate: z.coerce.number().min(0, "La comisión no puede ser negativa.").max(1, "La comisión no puede ser mayor a 1 (100%).").optional(),
   notes: z.string().optional(),
 });
 
@@ -42,6 +44,7 @@ export function TechnicianForm({ initialData, onSubmit, onClose }: TechnicianFor
         ...initialData,
         hireDate: initialData.hireDate ? new Date(initialData.hireDate).toISOString().split('T')[0] : '',
         monthlySalary: initialData.monthlySalary ?? undefined,
+        commissionRate: initialData.commissionRate ?? undefined,
         contactInfo: initialData.contactInfo ?? '',
         notes: initialData.notes ?? '',
     } : {
@@ -51,6 +54,7 @@ export function TechnicianForm({ initialData, onSubmit, onClose }: TechnicianFor
       contactInfo: "",
       hireDate: new Date().toISOString().split('T')[0],
       monthlySalary: undefined,
+      commissionRate: 0.05, // Default 5%
       notes: "",
     },
   });
@@ -131,19 +135,35 @@ export function TechnicianForm({ initialData, onSubmit, onClose }: TechnicianFor
             )}
           />
         </div>
-        <FormField
-            control={form.control}
-            name="monthlySalary"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Sueldo Mensual (Opcional)</FormLabel>
-                <FormControl>
-                  <Input type="number" placeholder="Ej: 50000" {...field} value={field.value ?? ''} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <FormField
+                control={form.control}
+                name="monthlySalary"
+                render={({ field }) => (
+                <FormItem>
+                    <FormLabel>Sueldo Mensual (Opcional)</FormLabel>
+                    <FormControl>
+                    <Input type="number" step="0.01" placeholder="Ej: 50000" {...field} value={field.value ?? ''} />
+                    </FormControl>
+                    <FormMessage />
+                </FormItem>
+                )}
+            />
+            <FormField
+                control={form.control}
+                name="commissionRate"
+                render={({ field }) => (
+                <FormItem>
+                    <FormLabel>Porcentaje de Comisión (Opcional)</FormLabel>
+                    <FormControl>
+                    <Input type="number" step="0.01" min="0" max="1" placeholder="Ej: 0.05 (para 5%)" {...field} value={field.value ?? ''} />
+                    </FormControl>
+                    <FormDescription>Ingrese como decimal (ej: 0.05 para 5%).</FormDescription>
+                    <FormMessage />
+                </FormItem>
+                )}
+            />
+        </div>
         <FormField
           control={form.control}
           name="notes"
@@ -169,3 +189,4 @@ export function TechnicianForm({ initialData, onSubmit, onClose }: TechnicianFor
     </Form>
   );
 }
+
