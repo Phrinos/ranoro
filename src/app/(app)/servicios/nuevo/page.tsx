@@ -10,7 +10,8 @@ import { placeholderVehicles, placeholderTechnicians, placeholderInventory, plac
 import type { ServiceRecord, Vehicle, Technician } from "@/types";
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from 'next/navigation';
-import { isValid, parseISO } from 'date-fns';
+
+type DialogStep = 'service' | 'print' | 'closed';
 
 export default function NuevoServicioPage() {
   const { toast } = useToast();
@@ -20,16 +21,16 @@ export default function NuevoServicioPage() {
   const technicians = placeholderTechnicians; 
   const inventoryItems = placeholderInventory; 
 
-  const [isServiceDialogOpen, setIsServiceDialogOpen] = useState(true); 
-  const [showPrintTicketDialog, setShowPrintTicketDialog] = useState(false);
+  const [dialogStep, setDialogStep] = useState<DialogStep>('service');
   const [currentServiceForTicket, setCurrentServiceForTicket] = useState<ServiceRecord | null>(null);
   const [currentVehicleForTicket, setCurrentVehicleForTicket] = useState<Vehicle | null>(null);
   const [currentTechnicianForTicket, setCurrentTechnicianForTicket] = useState<Technician | null>(null);
 
-
   useEffect(() => {
-    setIsServiceDialogOpen(true);
-  }, []);
+    if (dialogStep === 'closed') {
+      router.push('/servicios/agenda');
+    }
+  }, [dialogStep, router]);
 
   const handleSaveNewService = async (serviceData: ServiceRecord) => {
     const newService: ServiceRecord = {
@@ -43,42 +44,38 @@ export default function NuevoServicioPage() {
       description: `El nuevo servicio para ${vehicles.find(v => v.id === newService.vehicleId)?.licensePlate} ha sido registrado.`,
     });
     
-    setIsServiceDialogOpen(false); 
-
     if (newService.status === 'Completado') {
       setCurrentServiceForTicket(newService);
       setCurrentVehicleForTicket(vehicles.find(v => v.id === newService.vehicleId) || null);
       setCurrentTechnicianForTicket(technicians.find(t => t.id === newService.technicianId) || null);
-      setShowPrintTicketDialog(true);
+      setDialogStep('print');
     } else {
-      router.push('/servicios/agenda');
+      setDialogStep('closed'); 
     }
   };
 
-  const handleServiceDialogClose = (isOpen: boolean) => {
-    setIsServiceDialogOpen(isOpen);
-    if (!isOpen && !currentServiceForTicket) { // Closed without saving or completing
-        router.push('/servicios/agenda'); 
+  const handleServiceDialogExternalClose = () => { // Called when ServiceDialog is closed by X or overlay
+     if (dialogStep === 'service') { // Only redirect if it was closed from 'service' step without completion
+      setDialogStep('closed');
     }
   };
 
   const handlePrintDialogClose = () => {
-    setShowPrintTicketDialog(false);
     setCurrentServiceForTicket(null);
-    router.push('/servicios/agenda'); 
+    setCurrentVehicleForTicket(null);
+    setCurrentTechnicianForTicket(null);
+    setDialogStep('closed'); 
   };
-
 
   const handleVehicleCreated = (newVehicle: Vehicle) => {
     setVehicles(prev => {
       if (prev.find(v => v.id === newVehicle.id)) return prev; 
-      return [...prev, newVehicle];
+      const updatedVehicles = [...prev, newVehicle];
+      if (!placeholderVehicles.find(v => v.id === newVehicle.id)) {
+         placeholderVehicles.push(newVehicle);
+      }
+      return updatedVehicles;
     });
-     // Also update the global placeholder if necessary for other parts of the app
-    const existsInGlobal = placeholderVehicles.some(v => v.id === newVehicle.id);
-    if (!existsInGlobal) {
-        placeholderVehicles.push(newVehicle);
-    }
   };
 
   return (
@@ -87,10 +84,12 @@ export default function NuevoServicioPage() {
         title="Registrar Nuevo Servicio"
         description="Complete los detalles para la nueva orden de servicio."
       />
-      {isServiceDialogOpen && (
+      {dialogStep === 'service' && (
         <ServiceDialog
-          open={isServiceDialogOpen}
-          onOpenChange={handleServiceDialogClose}
+          open={true}
+          onOpenChange={(isOpen) => {
+             if (!isOpen) handleServiceDialogExternalClose();
+          }}
           service={null} 
           vehicles={vehicles}
           technicians={technicians}
@@ -100,10 +99,12 @@ export default function NuevoServicioPage() {
         />
       )}
 
-      {currentServiceForTicket && (
+      {dialogStep === 'print' && currentServiceForTicket && (
         <PrintTicketDialog
-          open={showPrintTicketDialog}
-          onOpenChange={setShowPrintTicketDialog} 
+          open={true}
+          onOpenChange={(isOpen) => {
+            if (!isOpen) handlePrintDialogClose();
+          }} 
           title="Comprobante de Servicio"
           onDialogClose={handlePrintDialogClose}
         >
@@ -115,7 +116,7 @@ export default function NuevoServicioPage() {
         </PrintTicketDialog>
       )}
 
-      {!isServiceDialogOpen && !showPrintTicketDialog && <p className="text-center text-muted-foreground">Redireccionando...</p>}
+      {dialogStep === 'closed' && <p className="text-center text-muted-foreground">Redireccionando...</p>}
     </>
   );
 }
