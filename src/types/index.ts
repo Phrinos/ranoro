@@ -32,9 +32,11 @@ export interface ServiceRecord {
   technicianId: string;
   technicianName?: string;
   suppliesUsed: ServiceSupply[]; 
-  totalCost: number; 
-  totalSuppliesCost?: number; 
-  serviceProfit?: number; 
+  subTotal?: number; // Pre-tax amount
+  taxAmount?: number; // IVA amount
+  totalCost: number; // Final, tax-inclusive price
+  totalSuppliesCost?: number; // Cost of supplies to the workshop (pre-tax)
+  serviceProfit?: number; // Profit: (subTotal) - totalSuppliesCost
   status: 'Agendado' | 'Pendiente' | 'En Progreso' | 'Completado' | 'Cancelado';
   notes?: string;
   mileage?: number;
@@ -69,8 +71,8 @@ export interface InventoryItem {
   sku: string; 
   description?: string;
   quantity: number;
-  unitPrice: number; 
-  sellingPrice: number; 
+  unitPrice: number; // Cost to the workshop (pre-tax)
+  sellingPrice: number; // Final selling price to customer (tax-inclusive)
   supplier: string; 
   lowStockThreshold: number;
   category: string;
@@ -102,8 +104,8 @@ export interface SaleItem {
   inventoryItemId: string;
   itemName:string;
   quantity: number;
-  unitPrice: number; 
-  totalPrice: number;
+  unitPrice: number; // Final selling price per unit (tax-inclusive)
+  totalPrice: number; // quantity * unitPrice (final total for this line item, tax-inclusive)
 }
 
 export type PaymentMethod = 'Efectivo' | 'Tarjeta' | 'Transferencia' | 'Efectivo+Transferencia' | 'Tarjeta+Transferencia';
@@ -112,9 +114,9 @@ export interface SaleReceipt {
   id: string;
   saleDate: string; 
   items: SaleItem[];
-  subTotal: number;
-  tax?: number;
-  totalAmount: number;
+  subTotal: number; // Pre-tax subtotal of the sale
+  tax: number; // Calculated IVA amount
+  totalAmount: number; // Final, tax-inclusive total amount of the sale (subTotal + tax)
   paymentMethod?: PaymentMethod;
   customerName?: string;
   cardFolio?: string;
@@ -133,7 +135,7 @@ export interface FinancialOperation {
   date: string;
   type: 'Venta' | 'Servicio';
   description: string; 
-  totalAmount: number;
+  totalAmount: number; // This is the final, tax-inclusive amount
   profit: number;
   originalObject: SaleReceipt | ServiceRecord; 
 }

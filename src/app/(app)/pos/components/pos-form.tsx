@@ -29,8 +29,8 @@ const saleItemSchema = z.object({
   inventoryItemId: z.string().min(1, "Seleccione un artículo."),
   itemName: z.string(), 
   quantity: z.coerce.number().min(1, "La cantidad debe ser al menos 1."),
-  unitPrice: z.coerce.number(), 
-  totalPrice: z.coerce.number(), 
+  unitPrice: z.coerce.number(), // This is the final selling price per unit (tax-inclusive)
+  totalPrice: z.coerce.number(), // This is quantity * unitPrice (tax-inclusive)
 });
 
 const paymentMethods: [PaymentMethod, ...PaymentMethod[]] = [
@@ -76,10 +76,11 @@ interface POSFormProps {
 export function PosForm({ inventoryItems, onSaleComplete }: POSFormProps) {
   const { toast } = useToast();
   const router = useRouter();
-  const [subTotal, setSubTotal] = useState(0);
-  const [total, setTotal] = useState(0);
+  const [subTotalState, setSubTotalState] = useState(0);
+  const [taxState, setTaxState] = useState(0);
+  const [totalState, setTotalState] = useState(0);
   
-  const TAX_RATE = 0.10; 
+  const IVA_RATE = 0.16; 
 
   const form = useForm<POSFormValues>({
     resolver: zodResolver(posFormSchema),
@@ -101,10 +102,14 @@ export function PosForm({ inventoryItems, onSaleComplete }: POSFormProps) {
   const selectedPaymentMethod = form.watch("paymentMethod");
 
   useEffect(() => {
-    const currentSubTotal = currentItems.reduce((acc, item) => acc + (item.totalPrice || 0), 0);
-    setSubTotal(currentSubTotal);
-    setTotal(currentSubTotal * (1 + TAX_RATE)); 
-  }, [currentItems, TAX_RATE]);
+    const currentTotalAmount = currentItems.reduce((acc, item) => acc + (item.totalPrice || 0), 0);
+    const currentSubTotal = currentTotalAmount / (1 + IVA_RATE);
+    const currentTax = currentTotalAmount - currentSubTotal;
+    
+    setSubTotalState(currentSubTotal);
+    setTaxState(currentTax);
+    setTotalState(currentTotalAmount);
+  }, [currentItems, IVA_RATE]);
 
 
   const handleAddItem = () => {
@@ -119,14 +124,14 @@ export function PosForm({ inventoryItems, onSaleComplete }: POSFormProps) {
         ...form.getValues(`items.${index}`),
         inventoryItemId: selectedItem.id,
         itemName: selectedItem.name,
-        unitPrice: selectedItem.sellingPrice, 
+        unitPrice: selectedItem.sellingPrice, // sellingPrice from inventory is tax-inclusive
         totalPrice: selectedItem.sellingPrice * quantity,
       });
     }
   };
 
   const handleQuantityChange = (index: number, quantity: number) => {
-    const unitPrice = form.getValues(`items.${index}.unitPrice`) || 0; 
+    const unitPrice = form.getValues(`items.${index}.unitPrice`) || 0; // unitPrice is tax-inclusive
     update(index, {
       ...form.getValues(`items.${index}`),
       quantity: quantity,
@@ -136,13 +141,24 @@ export function PosForm({ inventoryItems, onSaleComplete }: POSFormProps) {
   
   const onSubmit = async (values: POSFormValues) => {
     const newSaleId = `SALE${String(placeholderSales.length + 1).padStart(3, '0')}${Date.now().toString().slice(-3)}`;
+    
+    const newSaleTotalAmount = values.items.reduce((sum, item) => sum + item.totalPrice, 0);
+    const newSaleSubTotal = newSaleTotalAmount / (1 + IVA_RATE);
+    const newSaleTax = newSaleTotalAmount - newSaleSubTotal;
+
     const newSale = {
       id: newSaleId,
       saleDate: new Date().toISOString(),
-      items: values.items,
-      subTotal: subTotal,
-      tax: subTotal * TAX_RATE,
-      totalAmount: total,
+      items: values.items.map(item => ({ // Ensure unitPrice and totalPrice are correctly stored
+        inventoryItemId: item.inventoryItemId,
+        itemName: item.itemName,
+        quantity: item.quantity,
+        unitPrice: item.unitPrice, // This is the final tax-inclusive price per unit
+        totalPrice: item.totalPrice, // This is final tax-inclusive total for the line
+      })),
+      subTotal: newSaleSubTotal,
+      tax: newSaleTax,
+      totalAmount: newSaleTotalAmount,
       paymentMethod: values.paymentMethod,
       customerName: values.customerName,
       cardFolio: values.cardFolio,
@@ -171,7 +187,7 @@ export function PosForm({ inventoryItems, onSaleComplete }: POSFormProps) {
     
     toast({
       title: "Venta Registrada",
-      description: `Venta ${newSaleId} procesada por un total de $${total.toLocaleString('es-ES', {minimumFractionDigits: 2})}.`,
+      description: `Venta ${newSaleId} procesada por un total de $${newSaleTotalAmount.toLocaleString('es-ES', {minimumFractionDigits: 2})}.`,
     });
     
     form.reset(); 
@@ -216,7 +232,7 @@ export function PosForm({ inventoryItems, onSaleComplete }: POSFormProps) {
                           <SelectContent>
                             {inventoryItems.map((item) => (
                               <SelectItem key={item.id} value={item.id} disabled={item.quantity <= 0 && !currentItems.find(ci => ci.inventoryItemId === item.id && ci.quantity > 0 )}>
-                                {item.name} (Stock: {item.quantity})
+                                {item.name} (Stock: {item.quantity}) - ${item.sellingPrice.toLocaleString('es-ES')} c/u (IVA Inc.)
                               </SelectItem>
                             ))}
                           </SelectContent>
@@ -248,7 +264,7 @@ export function PosForm({ inventoryItems, onSaleComplete }: POSFormProps) {
                     )}
                   />
                    <div className="w-28">
-                      <FormLabel className="text-xs">Precio Total</FormLabel>
+                      <FormLabel className="text-xs">Precio Total (IVA Inc.)</FormLabel>
                       <Input 
                         type="text" 
                         readOnly 
@@ -345,9 +361,9 @@ export function PosForm({ inventoryItems, onSaleComplete }: POSFormProps) {
             )}
           </CardContent>
           <CardFooter className="flex flex-col items-end space-y-2 pt-6">
-            <div className="text-lg">Subtotal: <span className="font-semibold">${subTotal.toLocaleString('es-ES', {minimumFractionDigits: 2})}</span></div>
-            <div className="text-sm text-muted-foreground">Impuestos ({TAX_RATE*100}%): <span className="font-semibold">${(subTotal * TAX_RATE).toLocaleString('es-ES', {minimumFractionDigits: 2})}</span></div>
-            <div className="text-2xl font-bold">Total: <span className="text-primary">${total.toLocaleString('es-ES', {minimumFractionDigits: 2})}</span></div>
+            <div className="text-lg">Subtotal: <span className="font-semibold">${subTotalState.toLocaleString('es-ES', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span></div>
+            <div className="text-sm text-muted-foreground">IVA ({IVA_RATE*100}%): <span className="font-semibold">${taxState.toLocaleString('es-ES', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span></div>
+            <div className="text-2xl font-bold">Total: <span className="text-primary">${totalState.toLocaleString('es-ES', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span></div>
             <Button type="submit" size="lg" className="mt-4 w-full md:w-auto" disabled={form.formState.isSubmitting || fields.length === 0}>
               <Receipt className="mr-2 h-5 w-5" />
               {form.formState.isSubmitting ? "Procesando..." : "Completar Venta"}

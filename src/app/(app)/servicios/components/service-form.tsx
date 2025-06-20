@@ -35,7 +35,7 @@ import { placeholderVehicles as defaultPlaceholderVehicles } from "@/lib/placeho
 const supplySchema = z.object({
   supplyId: z.string().min(1, "Seleccione un insumo"),
   quantity: z.coerce.number().min(1, "La cantidad debe ser al menos 1."),
-  unitPrice: z.coerce.number().optional(), 
+  unitPrice: z.coerce.number().optional(), // Cost price for the workshop
   supplyName: z.string().optional(), 
 });
 
@@ -45,7 +45,7 @@ const serviceFormSchema = z.object({
   serviceDate: z.date({ required_error: "La fecha y hora de servicio son obligatorias." }),
   mileage: z.coerce.number().int().min(0, "El kilometraje no puede ser negativo.").optional(),
   description: z.string().min(5, "La descripción debe tener al menos 5 caracteres."),
-  totalServicePrice: z.coerce.number().min(0, "El precio del servicio no puede ser negativo."),
+  totalServicePrice: z.coerce.number().min(0, "El precio del servicio no puede ser negativo."), // This is the final, tax-inclusive price
   notes: z.string().optional(),
   technicianId: z.string().min(1, "Seleccione un técnico"),
   suppliesUsed: z.array(supplySchema).optional(),
@@ -60,11 +60,22 @@ interface ServiceFormProps {
   vehicles: Vehicle[]; 
   technicians: Technician[];
   inventoryItems: InventoryItem[];
-  onSubmit: (values: Omit<ServiceFormValues, 'vehicleLicensePlateSearch'> & { serviceDate: string; deliveryDateTime?: string; totalSuppliesCost?: number; serviceProfit?: number; vehicleId: number; }) => Promise<void>; 
+  onSubmit: (values: Omit<ServiceFormValues, 'vehicleLicensePlateSearch'> & { 
+    serviceDate: string; 
+    deliveryDateTime?: string; 
+    subTotal?: number;
+    taxAmount?: number;
+    totalCost: number; // This is the final, tax-inclusive price
+    totalSuppliesCost?: number; 
+    serviceProfit?: number; 
+    vehicleId: number; 
+  }) => Promise<void>; 
   onClose: () => void;
   isReadOnly?: boolean; 
   onVehicleCreated?: (newVehicle: Vehicle) => void; 
 }
+
+const IVA_RATE = 0.16;
 
 const generateTimeSlots = () => {
     const slots = [];
@@ -117,9 +128,9 @@ export function ServiceForm({
               supplyId: s.supplyId,
               quantity: s.quantity,
               supplyName: inventoryItems.find(i => i.id === s.supplyId)?.name || s.supplyName || '', 
-              unitPrice: inventoryItems.find(i => i.id === s.supplyId)?.unitPrice || s.unitPrice || 0 
+              unitPrice: inventoryItems.find(i => i.id === s.supplyId)?.unitPrice || s.unitPrice || 0 // cost price
           })) || [],
-          totalServicePrice: initialData.totalCost, 
+          totalServicePrice: initialData.totalCost, // totalCost from record is final tax-inclusive price
         }
       : {
           vehicleId: undefined,
@@ -173,18 +184,22 @@ export function ServiceForm({
   });
 
   const watchedSupplies = form.watch("suppliesUsed");
-  const watchedTotalServicePrice = form.watch("totalServicePrice");
+  const watchedTotalServicePrice = form.watch("totalServicePrice"); // This is final, tax-inclusive price
 
   const totalSuppliesCost = React.useMemo(() => {
     return watchedSupplies?.reduce((sum, supply) => {
       const item = inventoryItems.find(i => i.id === supply.supplyId);
-      return sum + (item?.unitPrice || 0) * supply.quantity;
+      return sum + (item?.unitPrice || 0) * supply.quantity; // item.unitPrice is cost to workshop
     }, 0) || 0;
   }, [watchedSupplies, inventoryItems]);
 
+  const serviceSubTotal = React.useMemo(() => {
+    return watchedTotalServicePrice / (1 + IVA_RATE);
+  }, [watchedTotalServicePrice]);
+
   const serviceProfit = React.useMemo(() => {
-    return watchedTotalServicePrice - totalSuppliesCost;
-  }, [watchedTotalServicePrice, totalSuppliesCost]);
+    return serviceSubTotal - totalSuppliesCost;
+  }, [serviceSubTotal, totalSuppliesCost]);
 
   const handleSearchVehicle = () => {
     if (!vehicleLicensePlateSearch.trim()) {
@@ -241,6 +256,11 @@ export function ServiceForm({
       toast({ title: "Formulario Incompleto", description: "Por favor, revise los campos marcados.", variant: "destructive"});
       return;
     }
+    
+    const finalServicePrice = values.totalServicePrice;
+    const calculatedSubTotal = finalServicePrice / (1 + IVA_RATE);
+    const calculatedTaxAmount = finalServicePrice - calculatedSubTotal;
+    const calculatedServiceProfit = calculatedSubTotal - totalSuppliesCost;
 
     const submissionData = {
       ...values, 
@@ -251,14 +271,26 @@ export function ServiceForm({
         return {
           supplyId: s.supplyId,
           quantity: s.quantity,
-          unitPrice: itemDetails?.unitPrice || 0, 
+          unitPrice: itemDetails?.unitPrice || 0, // Cost price
           supplyName: itemDetails?.name || s.supplyName,
         };
       }),
+      subTotal: calculatedSubTotal,
+      taxAmount: calculatedTaxAmount,
+      totalCost: finalServicePrice, // Final tax-inclusive price
       totalSuppliesCost: totalSuppliesCost,
-      serviceProfit: serviceProfit,
+      serviceProfit: calculatedServiceProfit,
     };
-    await onSubmit(submissionData as Omit<ServiceFormValues, 'vehicleLicensePlateSearch'> & { serviceDate: string; deliveryDateTime?: string; totalSuppliesCost?: number; serviceProfit?: number; vehicleId: number; });
+    await onSubmit(submissionData as Omit<ServiceFormValues, 'vehicleLicensePlateSearch'> & { 
+      serviceDate: string; 
+      deliveryDateTime?: string; 
+      subTotal?: number;
+      taxAmount?: number;
+      totalCost: number;
+      totalSuppliesCost?: number; 
+      serviceProfit?: number; 
+      vehicleId: number; 
+    });
   };
   
   const handleTimeChange = (timeString: string, dateField: "serviceDate" | "deliveryDateTime") => {
@@ -428,11 +460,11 @@ export function ServiceForm({
                     name="totalServicePrice"
                     render={({ field }) => (
                         <FormItem>
-                            <FormLabel className="text-base font-semibold">Precio Total del Servicio (Cobro al Cliente)</FormLabel>
+                            <FormLabel className="text-base font-semibold">Precio Total del Servicio (Cobro al Cliente, IVA Incluido)</FormLabel>
                             <FormControl>
-                            <Input type="number" step="0.01" placeholder="Ej: 15000" {...field} disabled={isReadOnly} className="text-lg"/>
+                            <Input type="number" step="0.01" placeholder="Ej: 1740 (IVA Inc.)" {...field} disabled={isReadOnly} className="text-lg"/>
                             </FormControl>
-                            <FormDescription>Este es el monto final que pagará el cliente por el servicio completo.</FormDescription>
+                            <FormDescription>Este es el monto final que pagará el cliente por el servicio completo (IVA incluido).</FormDescription>
                             <FormMessage />
                         </FormItem>
                     )}
@@ -597,7 +629,7 @@ export function ServiceForm({
                             onValueChange={(value) => {
                                 field.onChange(value);
                                 const selectedSupply = inventoryItems.find(s => s.id === value);
-                                form.setValue(`suppliesUsed.${index}.unitPrice`, selectedSupply?.unitPrice || 0); 
+                                form.setValue(`suppliesUsed.${index}.unitPrice`, selectedSupply?.unitPrice || 0); // Cost price
                                 form.setValue(`suppliesUsed.${index}.supplyName`, selectedSupply?.name || '');
                             }} 
                             defaultValue={field.value}
@@ -657,8 +689,12 @@ export function ServiceForm({
         </Card>
         
         <div className="p-4 border rounded-md bg-green-50 dark:bg-green-900/30">
+            <p className="text-base">Subtotal Servicio (sin IVA): <span className="font-semibold">${serviceSubTotal.toLocaleString('es-ES', { minimumFractionDigits: 2 })}</span></p>
+            <p className="text-base">IVA ({IVA_RATE * 100}%): <span className="font-semibold">${(watchedTotalServicePrice - serviceSubTotal).toLocaleString('es-ES', { minimumFractionDigits: 2 })}</span></p>
+            <p className="text-lg font-bold">Precio Total (IVA Incluido): <span className="text-green-700 dark:text-green-400">${watchedTotalServicePrice.toLocaleString('es-ES', { minimumFractionDigits: 2 })}</span></p>
+            <hr className="my-2"/>
             <p className="text-lg font-bold">Ganancia Estimada del Servicio: <span className="text-green-700 dark:text-green-400">${serviceProfit.toLocaleString('es-ES', { minimumFractionDigits: 2 })}</span></p>
-            <p className="text-xs text-muted-foreground">(Precio Total Cobrado al Cliente - Costo Total de Insumos para el Taller)</p>
+            <p className="text-xs text-muted-foreground">(Subtotal Servicio - Costo Total de Insumos para el Taller)</p>
         </div>
 
         <div className="flex justify-end gap-2 pt-4">
@@ -688,4 +724,3 @@ export function ServiceForm({
     </>
   );
 }
-

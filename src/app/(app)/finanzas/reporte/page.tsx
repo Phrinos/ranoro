@@ -26,6 +26,7 @@ type OperationSortOption =
   | "profit_desc" | "profit_asc";
 
 type OperationTypeFilter = "all" | "Venta" | "Servicio";
+const IVA_RATE = 0.16;
 
 export default function FinancialReportPage() {
   const [allSales, setAllSales] = useState<SaleReceipt[]>(placeholderSales);
@@ -40,9 +41,10 @@ export default function FinancialReportPage() {
   const calculateSaleProfit = (sale: SaleReceipt): number => {
     return sale.items.reduce((profit, saleItem) => {
         const inventoryItem = inventory.find(inv => inv.id === saleItem.inventoryItemId);
-        const costPrice = inventoryItem ? inventoryItem.unitPrice : 0; 
-        const sellingPrice = saleItem.unitPrice; 
-        return profit + (sellingPrice - costPrice) * saleItem.quantity;
+        const costPrice = inventoryItem ? inventoryItem.unitPrice : 0; // inventoryItem.unitPrice is cost to workshop
+        // saleItem.unitPrice is final selling price (tax-inclusive)
+        const sellingPriceSubTotal = saleItem.unitPrice / (1 + IVA_RATE); 
+        return profit + (sellingPriceSubTotal - costPrice) * saleItem.quantity;
     }, 0);
   };
 
@@ -52,7 +54,7 @@ export default function FinancialReportPage() {
       date: sale.saleDate,
       type: 'Venta',
       description: `Venta a ${sale.customerName || 'Cliente Mostrador'} - ${sale.items.length} artículo(s)`,
-      totalAmount: sale.totalAmount,
+      totalAmount: sale.totalAmount, // Final tax-inclusive amount
       profit: calculateSaleProfit(sale),
       originalObject: sale,
     }));
@@ -62,8 +64,8 @@ export default function FinancialReportPage() {
       date: service.serviceDate,
       type: 'Servicio',
       description: service.description,
-      totalAmount: service.totalCost,
-      profit: service.serviceProfit || 0,
+      totalAmount: service.totalCost, // Final tax-inclusive amount
+      profit: service.serviceProfit || 0, // Profit is already (subTotal - suppliesCost)
       originalObject: service,
     }));
 
@@ -114,8 +116,8 @@ export default function FinancialReportPage() {
 
   const summaryData = useMemo(() => {
     const todayRange = getTodayRange();
-    const currentMonthRange = getCurrentMonthRange();
-    const lastMonthRange = getLastMonthRange();
+    const currentMonthDateRange = getCurrentMonthRange(); // Renamed to avoid conflict
+    const lastMonthDateRange = getLastMonthRange(); // Renamed to avoid conflict
 
     const opsToday = combinedOperations.filter(op => {
         const opDate = parseISO(op.date);
@@ -124,11 +126,11 @@ export default function FinancialReportPage() {
     
     const opsCurrentMonth = combinedOperations.filter(op => {
         const opDate = parseISO(op.date);
-        return isValid(opDate) && isWithinInterval(opDate, currentMonthRange);
+        return isValid(opDate) && isWithinInterval(opDate, currentMonthDateRange);
     });
     const opsLastMonth = combinedOperations.filter(op => {
         const opDate = parseISO(op.date);
-        return isValid(opDate) && isWithinInterval(opDate, lastMonthRange);
+        return isValid(opDate) && isWithinInterval(opDate, lastMonthDateRange);
     });
 
     const salesTodayCount = opsToday.filter(op => op.type === 'Venta').length;
@@ -147,8 +149,8 @@ export default function FinancialReportPage() {
       profitCurrentMonth: opsCurrentMonth.reduce((sum, op) => sum + op.profit, 0),
       totalGeneratedLastMonth: opsLastMonth.reduce((sum, op) => sum + op.totalAmount, 0),
       profitLastMonth: opsLastMonth.reduce((sum, op) => sum + op.profit, 0),
-      currentMonthFormatted: format(currentMonthRange.from, "MMMM yyyy", { locale: es }),
-      lastMonthFormatted: format(lastMonthRange.from, "MMMM yyyy", { locale: es }),
+      currentMonthFormatted: format(currentMonthDateRange.from, "MMMM yyyy", { locale: es }),
+      lastMonthFormatted: format(lastMonthDateRange.from, "MMMM yyyy", { locale: es }),
     };
   }, [combinedOperations]);
 
@@ -302,7 +304,7 @@ export default function FinancialReportPage() {
                             <TableHead>Tipo</TableHead>
                             <TableHead>ID Operación</TableHead>
                             <TableHead>Descripción / Cliente / Vehículo</TableHead>
-                            <TableHead className="text-right">Monto Total</TableHead>
+                            <TableHead className="text-right">Monto Total (IVA Inc.)</TableHead>
                             <TableHead className="text-right">Ganancia</TableHead>
                         </TableRow>
                         </TableHeader>
@@ -335,4 +337,3 @@ export default function FinancialReportPage() {
     </>
   );
 }
-
