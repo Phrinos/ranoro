@@ -5,6 +5,7 @@ import type { SaleReceipt, ServiceRecord, Vehicle, Technician } from '@/types';
 import { format, parseISO, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
 import React, { useEffect, useState } from 'react';
+import Image from 'next/image';
 
 const initialWorkshopInfo = {
   name: "RANORO",
@@ -12,6 +13,7 @@ const initialWorkshopInfo = {
   addressLine1: "Av. de la Convencion de 1914 No. 1421",
   addressLine2: "Jardines de la Concepcion, C.P. 20267",
   cityState: "Aguascalientes, Ags.",
+  logoUrl: "/ranoro-logo.png"
 };
 
 type WorkshopInfoType = typeof initialWorkshopInfo;
@@ -24,138 +26,155 @@ interface TicketContentProps {
   previewWorkshopInfo?: WorkshopInfoType;
 }
 
-const IVA_RATE = 0.16;
 const LOCALSTORAGE_KEY = 'workshopTicketInfo';
+const IVA_RATE = 0.16;
 
-export function TicketContent({ sale, service, vehicle, technician, previewWorkshopInfo }: TicketContentProps) {
+export const TicketContent = React.forwardRef<HTMLDivElement, TicketContentProps>(
+  ({ sale, service, vehicle, technician, previewWorkshopInfo }, ref) => {
   const [workshopInfo, setWorkshopInfo] = useState<WorkshopInfoType>(initialWorkshopInfo);
 
   useEffect(() => {
-    if (previewWorkshopInfo) {
-      setWorkshopInfo(previewWorkshopInfo);
-    } else {
+    const infoSource = previewWorkshopInfo 
+      ? { ...initialWorkshopInfo, ...previewWorkshopInfo }
+      : initialWorkshopInfo;
+
+    if (typeof window !== 'undefined' && !previewWorkshopInfo) {
       const storedInfo = localStorage.getItem(LOCALSTORAGE_KEY);
-      if (storedInfo) {
-        try {
-          setWorkshopInfo(JSON.parse(storedInfo));
-        } catch (e) {
-          console.error("Failed to parse workshop info from localStorage", e);
-          setWorkshopInfo(initialWorkshopInfo);
-        }
-      } else {
-        setWorkshopInfo(initialWorkshopInfo);
+      try {
+        setWorkshopInfo(storedInfo ? { ...infoSource, ...JSON.parse(storedInfo) } : infoSource);
+      } catch (e) {
+        console.error("Failed to parse workshop info from localStorage", e);
+        setWorkshopInfo(infoSource);
       }
+    } else {
+      setWorkshopInfo(infoSource);
     }
   }, [previewWorkshopInfo]);
 
-
-  const now = new Date();
-  const formattedPrintDate = format(now, "dd/MM/yyyy HH:mm:ss", { locale: es });
+  const operation = sale || service;
+  const operationType = sale ? 'Venta' : 'Servicio';
+  const operationId = sale?.id || service?.id;
+  const operationDateStr = sale?.saleDate || service?.serviceDate;
+  const operationDate = operationDateStr ? parseISO(operationDateStr) : new Date();
 
   const formatCurrency = (amount: number | undefined) => {
-    if (typeof amount !== 'number' || isNaN(amount)) return '$0.00'; // Safeguard for NaN/undefined
+    if (amount === undefined) return 'N/A';
     return `$${amount.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   };
-
-  const renderLine = (label: string, value: string, isBoldValue: boolean = false) => (
-    <div className="flex justify-between text-xs">
-      <span>{label}</span>
-      <span className={isBoldValue ? "font-semibold" : ""}>{value}</span>
-    </div>
-  );
-
-  const renderDashedLine = () => (
-    <div className="border-t border-dashed border-neutral-400 my-1"></div>
-  );
   
-  const getOperationDate = () => {
-    if (sale?.saleDate) return parseISO(sale.saleDate);
-    if (service?.serviceDate) return parseISO(service.serviceDate);
-    return now; // Fallback to current date if no operation date
-  };
-  const operationDate = getOperationDate();
-  const formattedOperationDate = isValid(operationDate) ? format(operationDate, "dd/MM/yy HH:mm", { locale: es }) : 'N/A';
-
-  // Safeguard values for service ticket display
-  const serviceTotalCost = (typeof service?.totalCost === 'number' && !isNaN(service.totalCost)) ? service.totalCost : 0;
-  const serviceSubTotal = (typeof service?.subTotal === 'number' && !isNaN(service.subTotal)) ? service.subTotal : serviceTotalCost / (1 + IVA_RATE);
-  const serviceTaxAmount = (typeof service?.taxAmount === 'number' && !isNaN(service.taxAmount)) ? service.taxAmount : serviceTotalCost - serviceSubTotal;
-
+  const items = sale?.items || service?.suppliesUsed || [];
+  const subTotal = sale?.subTotal || service?.subTotal || 0;
+  const tax = sale?.tax || service?.taxAmount || 0;
+  const totalAmount = sale?.totalAmount || service?.totalCost || 0;
 
   return (
-    <div className="font-mono bg-white text-black p-2 ticket-preview-content max-w-[300px] mx-auto text-[10px] leading-tight print:max-w-full print:text-[9px] print:p-0 pt-5 pb-5">
-      <div className="text-center mb-2">
-        <h1 className="text-lg font-bold">{workshopInfo.name}</h1>
-        <p>{workshopInfo.phone}</p>
-        <p>{workshopInfo.addressLine1}</p>
-        {workshopInfo.addressLine2 && <p>{workshopInfo.addressLine2}</p>}
-        <p>{workshopInfo.cityState}</p>
-      </div>
+    <div 
+      id="ticketToExport"
+      ref={ref}
+      className="font-sans bg-white text-black shadow-lg printable-content mx-auto w-[794px] min-h-[1020px] p-16 text-[13px] md:text-[14px] lg:text-[15px]"
+    >
+      <header className="flex justify-between items-start mb-8 border-b border-gray-300 pb-4">
+        <div>
+          <Image 
+            src={workshopInfo.logoUrl} 
+            alt={`${workshopInfo.name} Logo`} 
+            width={180} 
+            height={60} 
+            className="mb-3"
+            data-ai-hint="workshop logo"
+            priority
+          />
+          <h1 className="text-2xl font-bold text-gray-800">{workshopInfo.name}</h1>
+          <p>{workshopInfo.addressLine1}</p>
+          {workshopInfo.addressLine2 && <p>{workshopInfo.addressLine2}</p>}
+          <p>{workshopInfo.cityState}</p>
+          <p>Tel: {workshopInfo.phone}</p>
+        </div>
+        <div className="text-right">
+          <h2 className="text-3xl font-semibold text-primary uppercase">{operationType === 'Venta' ? 'Recibo de Venta' : 'Orden de Servicio'}</h2>
+          <p className="mt-2">Folio: <span className="font-medium">{operationId}</span></p>
+          <p>Fecha: <span className="font-medium">{isValid(operationDate) ? format(operationDate, "dd 'de' MMMM 'de' yyyy", { locale: es }) : 'N/A'}</span></p>
+        </div>
+      </header>
 
-      <p className="text-xs">Fecha Impresión: {formattedPrintDate}</p>
-      {sale && <p className="text-xs">Folio Venta: {sale.id} ({formattedOperationDate})</p>}
-      {service && <p className="text-xs">Folio Servicio: {service.id} ({formattedOperationDate})</p>}
-      {sale?.customerName && <p className="text-xs">Cliente: {sale.customerName}</p>}
-      
-      {renderDashedLine()}
-
-      {sale && (
-        <>
-          <div className="text-center font-semibold my-1">DETALLE DE VENTA</div>
-          {sale.items.map((item, index) => (
-            <div key={index} className="my-0.5">
-              <p>{item.quantity} x {item.itemName}</p>
-              <div className="flex justify-end">
-                <span>@ {formatCurrency(item.unitPrice / (1 + IVA_RATE))} c/u</span>
-                <span className="ml-2 w-16 text-right">{formatCurrency(item.totalPrice / (1 + IVA_RATE))}</span>
-              </div>
-            </div>
-          ))}
-          {renderDashedLine()}
-          {renderLine("SUBTOTAL:", formatCurrency(sale.subTotal))}
-          {renderLine(`IVA (${(IVA_RATE * 100).toFixed(0)}%):`, formatCurrency(sale.tax))}
-          {renderLine("TOTAL:", formatCurrency(sale.totalAmount), true)}
-          {renderDashedLine()}
-          <p className="text-xs">Método Pago: {sale.paymentMethod}</p>
-          {sale.cardFolio && <p className="text-xs">Folio Tarjeta: {sale.cardFolio}</p>}
-          {sale.transferFolio && <p className="text-xs">Folio Transf: {sale.transferFolio}</p>}
-        </>
-      )}
-
-      {service && (
-        <>
-          <div className="text-center font-semibold my-1">DETALLE DE SERVICIO</div>
+      {(vehicle || sale?.customerName) && (
+        <section className="grid grid-cols-2 gap-8 mb-8">
+          <div className="bg-gray-50 p-4 rounded-md border border-gray-200">
+            <h3 className="font-semibold text-gray-700 mb-2 border-b pb-1">Cliente:</h3>
+            {vehicle ? (
+                <>
+                    <p>{vehicle.ownerName}</p>
+                    <p>{vehicle.ownerPhone}</p>
+                    <p>{vehicle.ownerEmail}</p>
+                </>
+            ) : <p>{sale?.customerName}</p>}
+          </div>
           {vehicle && (
-            <>
-              <p>Vehículo: {vehicle.make} {vehicle.model} ({vehicle.year})</p>
-              <p>Placas: {vehicle.licensePlate}</p>
-            </>
+             <div className="bg-gray-50 p-4 rounded-md border border-gray-200">
+                <h3 className="font-semibold text-gray-700 mb-2 border-b pb-1">Vehículo:</h3>
+                <p>{`${vehicle.make} ${vehicle.model} (${vehicle.year})`}</p>
+                <p>Placas: {vehicle.licensePlate}</p>
+                <p>VIN: {vehicle.vin || 'N/A'}</p>
+                {service?.mileage !== undefined && <p>Kilometraje: {service.mileage.toLocaleString('es-ES')} km</p>}
+            </div>
           )}
-          {technician && <p>Técnico: {technician.name}</p>}
-          <p className="my-1">Descripción: {service.description}</p>
-          {service.suppliesUsed && service.suppliesUsed.length > 0 && (
-            <>
-              <p className="font-semibold mt-1">Refacciones:</p>
-              {service.suppliesUsed.map((supply, idx) => (
-                <div key={idx} className="text-xs">
-                  <span>{supply.quantity} x {supply.supplyName || `ID: ${supply.supplyId}`}</span>
-                </div>
-              ))}
-            </>
-          )}
-          {renderDashedLine()}
-          {renderLine("SUBTOTAL SERVICIO:", formatCurrency(serviceSubTotal))}
-          {renderLine(`IVA (${(IVA_RATE*100).toFixed(0)}%):`, formatCurrency(serviceTaxAmount))}
-          {renderLine("TOTAL SERVICIO:", formatCurrency(serviceTotalCost), true)}
-           {service.deliveryDateTime && isValid(parseISO(service.deliveryDateTime)) && (
-            <p className="text-xs mt-1">Fecha Entrega: {format(parseISO(service.deliveryDateTime), "dd/MM/yy HH:mm", { locale: es })}</p>
-           )}
-        </>
+        </section>
+      )}
+      
+      {service && (
+        <section className="mb-8">
+            <h3 className="font-semibold text-base text-gray-700 mb-2 border-b pb-2">Descripción del Servicio:</h3>
+            <p className="text-gray-800 whitespace-pre-wrap">{service.description}</p>
+        </section>
       )}
 
-      {renderDashedLine()}
-      <p className="text-center text-xs mt-2">¡Gracias por su preferencia!</p>
+      {items.length > 0 && (
+        <section className="mb-8">
+          <h3 className="font-semibold text-base text-gray-700 mb-3">Detalle:</h3>
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="border-b-2 border-gray-300 bg-gray-100">
+                <th className="py-2 px-3 font-semibold text-gray-600">Cantidad</th>
+                <th className="py-2 px-3 font-semibold text-gray-600">Descripción</th>
+                <th className="py-2 px-3 font-semibold text-gray-600 text-right">Precio Unit. (IVA Inc.)</th>
+                <th className="py-2 px-3 font-semibold text-gray-600 text-right">Importe (IVA Inc.)</th>
+              </tr>
+            </thead>
+            <tbody>
+              {items.map((item, idx) => {
+                  const unitPrice = 'unitPrice' in item ? (item.unitPrice || 0) : 0;
+                  const totalPrice = 'totalPrice' in item ? (item.totalPrice || unitPrice * item.quantity) : (unitPrice * item.quantity);
+                  const itemName = 'itemName' in item ? item.itemName : ('supplyName' in item ? item.supplyName : 'Artículo desconocido');
+                  return (
+                    <tr key={idx} className="border-b border-gray-200">
+                      <td className="py-2 px-3">{item.quantity}</td>
+                      <td className="py-2 px-3">{itemName}</td>
+                      <td className="py-2 px-3 text-right">{formatCurrency(unitPrice)}</td>
+                      <td className="py-2 px-3 text-right">{formatCurrency(totalPrice)}</td>
+                    </tr>
+                  )
+                })}
+            </tbody>
+          </table>
+        </section>
+      )}
+      
+      <section className="flex justify-end mb-8">
+        <div className="w-full max-w-sm space-y-2">
+          {subTotal > 0 && <div><span className="text-gray-700">Subtotal:</span><span className="float-right">{formatCurrency(subTotal)}</span></div>}
+          {tax > 0 && <div><span className="text-gray-700">IVA ({(IVA_RATE * 100).toFixed(0)}%):</span><span className="float-right">{formatCurrency(tax)}</span></div>}
+          <div className="border-t-2 pt-2 border-gray-300"><span className="font-bold text-lg text-primary">Total:</span><span className="float-right font-bold text-lg text-primary">{formatCurrency(totalAmount)}</span></div>
+        </div>
+      </section>
+
+      <footer className="text-xs text-gray-600 mt-auto border-t border-gray-300 pt-4">
+        <div className="text-center space-y-1">
+          <p className="font-semibold">¡Gracias por su preferencia!</p>
+          <p>Para cualquier duda o aclaración, no dude en contactarnos.</p>
+        </div>
+      </footer>
     </div>
   );
-}
+});
 
+TicketContent.displayName = "TicketContent";

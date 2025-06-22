@@ -115,7 +115,7 @@ body {
     display: none !important;
   }
 
-  /* --- Generic Print Rules --- */
+  /* --- Generic Print Rules for Letter Size --- */
   .printable-content, .printable-content * {
     visibility: visible;
   }
@@ -128,55 +128,14 @@ body {
     padding: 0;
     border: none;
     box-shadow: none;
-  }
-  
-  /* --- Rules for Letter-sized Documents (Quotes) --- */
-  @page {
-    size: letter portrait;
-    margin: 1in;
-  }
-  .printable-quote {
-    font-size: 11pt !important;
-    line-height: 1.4 !important;
     color: black !important;
     background-color: white !important;
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
   }
-
-
-  /* --- Rules for Thermal Tickets --- */
-  .printable-ticket-dialog .ticket-preview-content, 
-  .printable-ticket-dialog .ticket-preview-content * {
-    visibility: visible !important;
-  }
-  .printable-ticket-dialog {
-    position: fixed !important;
-    left: 0 !important;
-    top: 0 !important;
-    width: 100% !important;
-    height: 100% !important;
-    padding: 0 !important;
-    margin: 0 !important;
-    background: white !important;
-  }
-
-  .printable-ticket-dialog .ticket-preview-content {
-    display: block !important;
-    position: absolute !important;
-    left: 50% !important;
-    top: 0 !important;
-    transform: translateX(-50%) !important;
-    width: 72mm !important;
-    max-width: 72mm !important;
-    margin: 0 auto !important;
-    padding: 2mm !important;
-    font-size: 9pt !important; 
-    line-height: 1.2 !important;
-    color: black !important; 
-    background-color: white !important;
-    box-shadow: none !important;
-    border: none !important; 
+  
+  @page {
+    size: letter portrait;
+    margin: 1in;
   }
 }
-
