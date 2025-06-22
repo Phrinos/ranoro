@@ -108,13 +108,7 @@ export default function AdministrativosPage() {
 
   const aggregatedAdminPerformance = useMemo((): AggregatedAdminStaffPerformance[] => {
     if (!filterDateRange || !filterDateRange.from) {
-        return staffList.map(staff => ({
-            staffId: staff.id,
-            staffName: staff.name,
-            baseSalary: staff.monthlySalary || 0,
-            commissionEarned: 0,
-            totalEarnings: staff.monthlySalary || 0,
-        }));
+        return []; // Return empty array on server and initial client render to prevent hydration error
     }
 
     let dateFrom = startOfDay(filterDateRange.from);
@@ -305,4 +299,3 @@ export default function AdministrativosPage() {
     </>
   );
 }
-
