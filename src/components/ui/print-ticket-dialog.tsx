@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useEffect } from 'react'; 
+import React, { useEffect, useRef } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -10,8 +10,10 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Printer, X } from 'lucide-react';
+import { Printer, Download } from 'lucide-react';
 import { cn } from "@/lib/utils";
+import html2pdf from 'html2pdf.js';
+import { useToast } from '@/hooks/use-toast';
 
 interface PrintTicketDialogProps {
   open: boolean;
@@ -22,7 +24,7 @@ interface PrintTicketDialogProps {
   autoPrint?: boolean; 
   printButtonText?: string;
   dialogContentClassName?: string;
-  footerActions?: React.ReactNode; // New prop for additional buttons
+  footerActions?: React.ReactNode;
 }
 
 export function PrintTicketDialog({
@@ -36,18 +38,53 @@ export function PrintTicketDialog({
   dialogContentClassName = "",
   footerActions
 }: PrintTicketDialogProps) {
+  const contentRef = useRef<HTMLDivElement>(null);
+  const { toast } = useToast();
 
   useEffect(() => {
     if (autoPrint && open) {
       const timer = setTimeout(() => {
         window.print();
-      }, 300); 
+      }, 500); 
       return () => clearTimeout(timer);
     }
   }, [autoPrint, open]);
 
   const handlePrint = () => {
     window.print();
+  };
+
+  const handleDownloadPDF = () => {
+    const element = contentRef.current;
+    if (element) {
+      const pdfFileName = `${title.replace(/[:\s/]/g, '_')}.pdf`;
+      const opt = {
+        margin: 0,
+        filename: pdfFileName,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true },
+        jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
+      };
+
+      toast({
+        title: "Generando PDF...",
+        description: `Se está preparando el archivo ${pdfFileName}.`,
+      });
+
+      html2pdf().from(element).set(opt).save().then(() => {
+        toast({
+          title: "PDF Descargado",
+          description: "El archivo se ha guardado exitosamente.",
+        });
+      }).catch(err => {
+        toast({
+          title: "Error al generar PDF",
+          description: "Ocurrió un problema al crear el archivo.",
+          variant: "destructive",
+        });
+        console.error("PDF generation error:", err);
+      });
+    }
   };
 
   const handleClose = () => {
@@ -59,31 +96,29 @@ export function PrintTicketDialog({
 
   return (
     <Dialog open={open} onOpenChange={(isOpen) => {
-        if (!isOpen) {
-            handleClose();
-        } else {
-            onOpenChange(true);
-        }
+        if (!isOpen) handleClose();
+        else onOpenChange(true);
     }}>
       <DialogContent className={cn(
-        "sm:max-w-xl", // Adjusted for quote preview
-        dialogContentClassName?.includes('quote') && "sm:max-w-4xl",
+        "sm:max-w-4xl", // Make dialog wider to accommodate letter-sized content
         "print:max-w-full print:border-none print:shadow-none print:p-0",
         dialogContentClassName
       )}>
-        <DialogHeader className="print:hidden">
+        <DialogHeader className="print-hidden">
           <DialogTitle>{title}</DialogTitle>
         </DialogHeader>
         
-        <div className="my-4 max-h-[70vh] overflow-y-auto bg-muted/50 p-2 sm:p-4 rounded-md print:overflow-visible print:max-h-none print:bg-transparent">
-          <div className="ticket-container printable-content">
-            {children} 
-          </div>
+        <div className="my-4 max-h-[70vh] overflow-y-auto bg-muted/50 p-4 rounded-md print:overflow-visible print:max-h-none print:bg-transparent">
+          {React.cloneElement(children as React.ReactElement, { ref: contentRef })}
         </div>
 
-        <DialogFooter className="print:hidden sm:justify-between">
+        <DialogFooter className="print-hidden sm:justify-between">
           <div className="flex flex-col sm:flex-row gap-2">
             {footerActions}
+            <Button type="button" variant="outline" onClick={handleDownloadPDF}>
+              <Download className="mr-2 h-4 w-4" />
+              Descargar PDF
+            </Button>
           </div>
           <Button type="button" onClick={handlePrint}>
             <Printer className="mr-2 h-4 w-4" /> {printButtonText}
