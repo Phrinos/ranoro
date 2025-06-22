@@ -23,6 +23,7 @@ export default function VehiculosPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [activityFilter, setActivityFilter] = useState("all"); 
   const [sortOption, setSortOption] = useState<string>("date_asc"); 
+  const [activityCounts, setActivityCounts] = useState({ inactive6MonthsCount: 0, inactive12MonthsCount: 0 });
 
 
   useEffect(() => {
@@ -43,6 +44,31 @@ export default function VehiculosPage() {
     });
     setVehicles(vehiclesWithLastService);
   }, []);
+  
+  useEffect(() => {
+    const now = new Date();
+    const sixMonthsAgo = subMonths(now, 6);
+    const twelveMonthsAgo = subMonths(now, 12);
+    
+    let count6 = 0;
+    let count12 = 0;
+
+    vehicles.forEach(v => {
+      if (!v.lastServiceDate) { 
+        count6++;
+        count12++;
+      } else {
+        const lastService = parseISO(v.lastServiceDate);
+        if (isBefore(lastService, sixMonthsAgo)) {
+          count6++;
+        }
+        if (isBefore(lastService, twelveMonthsAgo)) {
+          count12++;
+        }
+      }
+    });
+    setActivityCounts({ inactive6MonthsCount: count6, inactive12MonthsCount: count12 });
+  }, [vehicles]);
 
 
   const handleSaveVehicle = async (data: VehicleFormValues) => {
@@ -67,31 +93,6 @@ export default function VehiculosPage() {
     });
     setIsNewVehicleDialogOpen(false);
   };
-
-  const { inactive6MonthsCount, inactive12MonthsCount } = useMemo(() => {
-    const now = new Date();
-    const sixMonthsAgo = subMonths(now, 6);
-    const twelveMonthsAgo = subMonths(now, 12);
-    
-    let count6 = 0;
-    let count12 = 0;
-
-    vehicles.forEach(v => {
-      if (!v.lastServiceDate) { 
-        count6++;
-        count12++;
-      } else {
-        const lastService = parseISO(v.lastServiceDate);
-        if (isBefore(lastService, sixMonthsAgo)) {
-          count6++;
-        }
-        if (isBefore(lastService, twelveMonthsAgo)) {
-          count12++;
-        }
-      }
-    });
-    return { inactive6MonthsCount: count6, inactive12MonthsCount: count12 };
-  }, [vehicles]);
 
   const filteredAndSortedVehicles = useMemo(() => {
     let itemsToDisplay = [...vehicles];
@@ -172,7 +173,7 @@ export default function VehiculosPage() {
             <CalendarX className="h-5 w-5 text-orange-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold font-headline">{inactive6MonthsCount}</div>
+            <div className="text-2xl font-bold font-headline">{activityCounts.inactive6MonthsCount}</div>
             <p className="text-xs text-muted-foreground">
               Potencialmente necesitan seguimiento.
             </p>
@@ -186,7 +187,7 @@ export default function VehiculosPage() {
             <AlertTriangle className="h-5 w-5 text-destructive" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold font-headline">{inactive12MonthsCount}</div>
+            <div className="text-2xl font-bold font-headline">{activityCounts.inactive12MonthsCount}</div>
             <p className="text-xs text-muted-foreground">
               Considerar contactar para mantenimiento.
             </p>
@@ -268,5 +269,3 @@ export default function VehiculosPage() {
     </>
   );
 }
-
-    

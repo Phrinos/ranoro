@@ -65,13 +65,7 @@ export default function TecnicosPage() {
 
   const aggregatedTechnicianPerformance = useMemo((): AggregatedTechnicianPerformance[] => {
     if (!filterDateRange || !filterDateRange.from) {
-      return technicians.map(tech => ({
-        technicianId: tech.id,
-        technicianName: tech.name,
-        totalRevenue: 0,
-        totalProfit: 0,
-        totalCommissionEarned: 0,
-      }));
+      return []; // Return empty array on server and initial client render to prevent hydration error
     }
 
     let dateFrom = startOfDay(filterDateRange.from);
