@@ -70,7 +70,7 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
     <div 
       ref={ref}
       data-format="letter"
-      className="font-sans bg-white text-black shadow-lg printable-quote printable-content mx-auto w-[794px] min-h-[1020px] p-16 text-sm flex flex-col"
+      className="font-sans bg-white text-black shadow-lg printable-quote printable-content mx-auto w-[794px] h-[1020px] p-16 text-sm flex flex-col"
     >
       <header className="flex justify-between items-start mb-8 border-b border-gray-300 pb-4">
         <div>
@@ -97,6 +97,7 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
         </div>
       </header>
 
+      {/* Main content area will grow to push the totals and footer down */}
       <main className="flex-grow">
         <section className="grid grid-cols-2 gap-8 mb-8">
             <div className="bg-gray-50 p-4 rounded-md border border-gray-200">
@@ -148,30 +149,31 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
             </table>
             </section>
         )}
-        
-        <section className="flex justify-end mt-8">
-            <div className="w-full max-w-sm space-y-2 text-base">
-                {quote.estimatedSubTotal !== undefined && (
-                    <div className="flex justify-between">
-                        <span>Subtotal:</span>
-                        <span className="font-medium">{formatCurrency(quote.estimatedSubTotal)}</span>
-                    </div>
-                )}
-                {quote.estimatedTaxAmount !== undefined && (
-                    <div className="flex justify-between">
-                        <span>IVA ({(IVA_RATE * 100).toFixed(0)}%):</span>
-                        <span className="font-medium">{formatCurrency(quote.estimatedTaxAmount)}</span>
-                    </div>
-                )}
-                <div className="flex justify-between text-xl font-bold border-t-2 pt-2 mt-2 border-gray-300 text-primary">
-                    <span>Total Estimado:</span>
-                    <span>{formatCurrency(quote.estimatedTotalCost)}</span>
-                </div>
-            </div>
-        </section>
       </main>
 
-      <footer className="text-xs text-gray-600 mt-8 border-t border-gray-300 pt-4">
+      {/* Totals section, now outside of the main growing content */}
+      <section className="flex justify-end pt-4">
+        <div className="w-full max-w-sm space-y-2 text-base">
+            {quote.estimatedSubTotal !== undefined && (
+                <div className="flex justify-between">
+                    <span>Subtotal:</span>
+                    <span className="font-medium">{formatCurrency(quote.estimatedSubTotal)}</span>
+                </div>
+            )}
+            {quote.estimatedTaxAmount !== undefined && (
+                <div className="flex justify-between">
+                    <span>IVA ({(IVA_RATE * 100).toFixed(0)}%):</span>
+                    <span className="font-medium">{formatCurrency(quote.estimatedTaxAmount)}</span>
+                </div>
+            )}
+            <div className="flex justify-between text-xl font-bold border-t-2 pt-2 mt-2 border-gray-300 text-primary">
+                <span>Total Estimado:</span>
+                <span>{formatCurrency(quote.estimatedTotalCost)}</span>
+            </div>
+        </div>
+      </section>
+
+      <footer className="text-xs text-gray-600 mt-6 border-t border-gray-300 pt-4">
         <div className="mb-4">
           <h4 className="font-semibold text-gray-700 mb-1">Notas y Condiciones:</h4>
           <p className="leading-snug">
