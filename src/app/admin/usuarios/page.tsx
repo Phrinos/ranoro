@@ -44,15 +44,6 @@ const defaultSuperAdmin: User = {
   phone: '4491234567' 
 };
 
-const defaultAdminDiana: User = {
-  id: 'user_admin_diana',
-  name: 'Diana Arriaga',
-  email: 'diana.arriaga@ranoro.mx',
-  role: 'admin',
-  password: 'Ranoro@2025', // Store actual password for demo purposes
-  phone: '4497654321' // Example phone
-};
-
 export default function UsuariosPage() {
   const { toast } = useToast();
   const router = useRouter();
@@ -79,10 +70,6 @@ export default function UsuariosPage() {
       let usersUpdated = false;
       if (!loadedUsers.find(u => u.email === defaultSuperAdmin.email)) {
         loadedUsers = [defaultSuperAdmin, ...loadedUsers];
-        usersUpdated = true;
-      }
-      if (!loadedUsers.find(u => u.email === defaultAdminDiana.email)) {
-        loadedUsers.push(defaultAdminDiana); // Add Diana if she's not there
         usersUpdated = true;
       }
 
