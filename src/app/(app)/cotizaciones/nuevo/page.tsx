@@ -124,7 +124,7 @@ export default function NuevaCotizacionPage() {
     const pdfFileName = `Cotizacion-${currentQuoteForPdf.id}.pdf`;
 
     const opt = {
-      margin:       1,
+      margin:       0.5,
       filename:     pdfFileName,
       image:        { type: 'jpeg', quality: 0.98 },
       html2canvas:  { scale: 2, useCORS: true, letterRendering: true },
@@ -171,15 +171,21 @@ export default function NuevaCotizacionPage() {
       toast({ title: "Faltan Datos", description: "No se encontró el teléfono del cliente para enviar por WhatsApp.", variant: "destructive" });
       return;
     }
+    
+    const shareUrl = `${window.location.origin}/c/${currentQuoteForPdf.id}`;
+
+    const message = encodeURIComponent(
+      `Hola ${currentVehicleForPdf.ownerName || 'Cliente'}, le compartimos su cotización de servicio de ${workshopInfo?.name || 'nuestro taller'} para su vehículo ${currentVehicleForPdf.make} ${currentVehicleForPdf.model}.\n\n` +
+      `Puede ver los detalles en el siguiente enlace:\n${shareUrl}\n\n` +
+      `También le hemos adjuntado el PDF a continuación para sus registros. ¡Gracias por su confianza!`
+    );
+    
     generateAndDownloadPdf();
     setTimeout(() => {
-      const phoneNumber = currentVehicleForPdf.ownerPhone.replace(/\D/g, ''); 
-      const message = encodeURIComponent(
-      `Hola ${currentVehicleForPdf.ownerName || 'Cliente'}, le enviamos su cotización de servicio ${currentQuoteForPdf.id} de ${workshopInfo?.name || 'nuestro taller'} para su vehículo ${currentVehicleForPdf.make} ${currentVehicleForPdf.model}. Le hemos enviado el PDF a su dispositivo para que pueda adjuntarlo.`
-      );
+      const phoneNumber = currentVehicleForPdf.ownerPhone!.replace(/\D/g, ''); 
       const whatsappLink = `https://wa.me/${phoneNumber}?text=${message}`;
       window.open(whatsappLink, '_blank');
-    }, 1000);
+    }, 1500);
   };
 
 

@@ -180,7 +180,7 @@ export default function HistorialCotizacionesPage() {
     const element = quoteContentRef.current;
     const pdfFileName = `Cotizacion-${quoteToPrint.id}.pdf`;
     const opt = {
-      margin: 1, // inches
+      margin: 0.5,
       filename: pdfFileName,
       image: { type: 'jpeg', quality: 0.98 },
       html2canvas: { scale: 2, useCORS: true, letterRendering: true },
@@ -216,14 +216,20 @@ export default function HistorialCotizacionesPage() {
         toast({ title: "Faltan Datos", description: "El cliente no tiene un teléfono registrado.", variant: "destructive" });
         return;
     }
-    generateAndDownloadPdf(quoteForAction);
+    
+    const shareUrl = `${window.location.origin}/c/${quoteForAction.id}`;
+
+    const message = encodeURIComponent(
+      `Hola ${vehicleForAction.ownerName || 'Cliente'}, le compartimos su cotización de servicio de ${workshopInfo?.name || 'nuestro taller'} para su vehículo ${vehicleForAction.make} ${vehicleForAction.model}.\n\n` +
+      `Puede ver los detalles en el siguiente enlace:\n${shareUrl}\n\n` +
+      `También le hemos adjuntado el PDF a continuación para sus registros. ¡Gracias por su confianza!`
+    );
+
+    generateAndDownloadPdf(quoteForAction); 
     setTimeout(() => {
         const phoneNumber = vehicleForAction.ownerPhone!.replace(/\D/g, ''); 
-        const message = encodeURIComponent(
-          `Hola ${vehicleForAction.ownerName || 'Cliente'}, le enviamos su cotización de servicio ${quoteForAction.id} de ${workshopInfo?.name || 'nuestro taller'} para su vehículo ${vehicleForAction.make} ${vehicleForAction.model}. Le hemos enviado el PDF a su dispositivo para que pueda adjuntarlo.`
-        );
         window.open(`https://wa.me/${phoneNumber}?text=${message}`, '_blank');
-    }, 1000);
+    }, 1500);
   };
 
   return (
