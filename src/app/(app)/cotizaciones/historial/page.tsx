@@ -14,13 +14,15 @@ import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
 import { QuoteContent } from '@/components/quote-content';
 import { placeholderQuotes, placeholderVehicles } from "@/lib/placeholder-data"; 
 import type { QuoteRecord, Vehicle, User } from "@/types"; 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { format, parseISO, compareAsc, compareDesc, isWithinInterval, isValid, startOfDay, endOfDay } from "date-fns";
 import { es } from 'date-fns/locale';
 import type { DateRange } from "react-day-picker";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 
 type QuoteSortOption = 
   | "date_desc" | "date_asc"
@@ -41,6 +43,9 @@ export default function HistorialCotizacionesPage() {
   const [vehicleForSelectedQuote, setVehicleForSelectedQuote] = useState<Vehicle | null>(null);
   
   const [workshopInfo, setWorkshopInfo] = useState<{name?: string}>({});
+  const quoteContentRef = useRef<HTMLDivElement>(null);
+
+
   useEffect(() => {
     if (typeof window !== 'undefined') {
         const stored = localStorage.getItem('workshopTicketInfo');
@@ -123,38 +128,74 @@ export default function HistorialCotizacionesPage() {
     setVehicleForSelectedQuote(null);
   };
   
-  const handleSendEmail = () => {
-    if (!selectedQuoteForView || !vehicleForSelectedQuote) return;
-    const subject = encodeURIComponent(`Cotización de Servicio: ${selectedQuoteForView.id} - ${workshopInfo?.name || 'Su Taller'}`);
-    const body = encodeURIComponent(
-      `Estimado/a ${vehicleForSelectedQuote.ownerName || 'Cliente'},\n\n` +
-      `Le adjuntamos la cotización ${selectedQuoteForView.id} para su vehículo ${vehicleForSelectedQuote.make} ${vehicleForSelectedQuote.model} (${vehicleForSelectedQuote.licensePlate}).\n\n` +
-      `Descripción: ${selectedQuoteForView.description}\n` +
-      `Monto Total Estimado: $${selectedQuoteForView.estimatedTotalCost.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}\n\n` +
-      `Por favor, revise el PDF adjunto para más detalles o imprima la cotización desde la vista previa.\n\n` +
-      `Saludos cordiales,\n${selectedQuoteForView.preparedByTechnicianName || workshopInfo?.name || 'El equipo del Taller'}`
-    );
-    const mailtoLink = `mailto:${vehicleForSelectedQuote.ownerEmail || ''}?subject=${subject}&body=${body}`;
-    window.open(mailtoLink, '_blank');
-    toast({ title: "Preparando Email", description: "Se abrirá su cliente de correo. Considere adjuntar el PDF generado." });
+  const generatePdf = async () => {
+    if (!quoteContentRef.current) {
+        toast({ title: "Error", description: "No se pudo generar el PDF.", variant: "destructive" });
+        return null;
+    }
+    const canvas = await html2canvas(quoteContentRef.current, { scale: 3 });
+    const imgData = canvas.toDataURL('image/png');
+    
+    const pdf = new jsPDF('p', 'mm', 'letter');
+    const pdfWidth = pdf.internal.pageSize.getWidth();
+    const pdfHeight = pdf.internal.pageSize.getHeight();
+    const imgWidth = canvas.width;
+    const imgHeight = canvas.height;
+    const ratio = imgWidth / imgHeight;
+    const imgPdfWidth = pdfWidth;
+    const imgPdfHeight = imgPdfWidth / ratio;
+    
+    let heightLeft = imgPdfHeight;
+    let position = 0;
+    
+    pdf.addImage(imgData, 'PNG', 0, position, imgPdfWidth, imgPdfHeight);
+    heightLeft -= pdfHeight;
+    
+    while (heightLeft > 0) {
+        position = heightLeft - imgPdfHeight;
+        pdf.addPage();
+        pdf.addImage(imgData, 'PNG', 0, position, imgPdfWidth, imgPdfHeight);
+        heightLeft -= pdfHeight;
+    }
+    return pdf;
   };
 
-  const handleSendWhatsApp = () => {
+  const handleSendEmail = async () => {
+    if (!selectedQuoteForView || !vehicleForSelectedQuote) return;
+    
+    const pdf = await generatePdf();
+    if (pdf) {
+      pdf.save(`Cotizacion-${selectedQuoteForView.id}.pdf`);
+      toast({ title: "PDF Descargado", description: "El PDF de la cotización ha sido descargado. Por favor, adjúntalo manualmente a tu correo." });
+      
+      const subject = encodeURIComponent(`Cotización de Servicio: ${selectedQuoteForView.id} - ${workshopInfo?.name || 'Su Taller'}`);
+      const body = encodeURIComponent(
+        `Estimado/a ${vehicleForSelectedQuote.ownerName || 'Cliente'},\n\n` +
+        `Adjunto encontrará la cotización de servicio solicitada.\n\n`+
+        `Saludos cordiales,\n${selectedQuoteForView.preparedByTechnicianName || workshopInfo?.name || 'El equipo del Taller'}`
+      );
+      const mailtoLink = `mailto:${vehicleForSelectedQuote.ownerEmail || ''}?subject=${subject}&body=${body}`;
+      window.open(mailtoLink, '_blank');
+    }
+  };
+
+  const handleSendWhatsApp = async () => {
     if (!selectedQuoteForView || !vehicleForSelectedQuote || !vehicleForSelectedQuote.ownerPhone) {
       toast({ title: "Faltan Datos", description: "No se encontró el teléfono del cliente para enviar por WhatsApp.", variant: "destructive" });
       return;
     }
-    const phoneNumber = vehicleForSelectedQuote.ownerPhone.replace(/\D/g, ''); 
-    const message = encodeURIComponent(
-      `Hola ${vehicleForSelectedQuote.ownerName || 'Cliente'}, le enviamos su cotización de servicio ${selectedQuoteForView.id} de ${workshopInfo?.name || 'nuestro taller'} para su vehículo ${vehicleForSelectedQuote.make} ${vehicleForSelectedQuote.model} (${vehicleForSelectedQuote.licensePlate}).\n` +
-      `Descripción: ${selectedQuoteForView.description}\n` +
-      `Monto Total Estimado: $${selectedQuoteForView.estimatedTotalCost.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}\n\n` +
-      `Preparado por: ${selectedQuoteForView.preparedByTechnicianName || ''}\n` + 
-      `Puede ver más detalles cuando le enviemos el PDF o lo imprima.`
-    );
-    const whatsappLink = `https://wa.me/${phoneNumber}?text=${message}`;
-    window.open(whatsappLink, '_blank');
-    toast({ title: "Abriendo WhatsApp", description: "Se abrirá WhatsApp para enviar el mensaje." });
+    const pdf = await generatePdf();
+    if(pdf) {
+        pdf.save(`Cotizacion-${selectedQuoteForView.id}.pdf`);
+        toast({ title: "PDF Descargado", description: "El PDF de la cotización ha sido descargado. Por favor, adjúntalo manualmente a tu conversación de WhatsApp." });
+        
+        const phoneNumber = vehicleForSelectedQuote.ownerPhone.replace(/\D/g, ''); 
+        const message = encodeURIComponent(
+          `Hola ${vehicleForSelectedQuote.ownerName || 'Cliente'}, le enviamos su cotización de servicio ${selectedQuoteForView.id} de ${workshopInfo?.name || 'nuestro taller'} para su vehículo ${vehicleForSelectedQuote.make} ${vehicleForSelectedQuote.model}. Le hemos enviado el PDF a su dispositivo para que pueda adjuntarlo.`
+        );
+        const whatsappLink = `https://wa.me/${phoneNumber}?text=${message}`;
+        window.open(whatsappLink, '_blank');
+    }
   };
 
 
@@ -269,19 +310,22 @@ export default function HistorialCotizacionesPage() {
           printButtonText="Imprimir Cotización"
           dialogContentClassName="printable-quote-dialog"
           onDialogClose={handleViewDialogClose}
+          footerActions={
+            <>
+              <Button variant="outline" onClick={handleSendEmail} disabled={!vehicleForSelectedQuote?.ownerEmail}>
+                <Mail className="mr-2 h-4 w-4" /> Enviar por Email
+              </Button>
+              <Button variant="outline" onClick={handleSendWhatsApp} disabled={!vehicleForSelectedQuote?.ownerPhone}>
+                <MessageSquare className="mr-2 h-4 w-4" /> Enviar por WhatsApp
+              </Button>
+            </>
+          }
         >
           <QuoteContent 
+            ref={quoteContentRef}
             quote={selectedQuoteForView} 
             vehicle={vehicleForSelectedQuote || undefined}
           />
-           <div className="mt-4 flex flex-col sm:flex-row gap-2 justify-center print-hidden border-t pt-4">
-            <Button variant="outline" onClick={handleSendEmail} disabled={!vehicleForSelectedQuote?.ownerEmail}>
-              <Mail className="mr-2 h-4 w-4" /> Enviar por Email
-            </Button>
-            <Button variant="outline" onClick={handleSendWhatsApp} disabled={!vehicleForSelectedQuote?.ownerPhone}>
-              <MessageSquare className="mr-2 h-4 w-4" /> Enviar por WhatsApp
-            </Button>
-          </div>
         </PrintTicketDialog>
       )}
     </>

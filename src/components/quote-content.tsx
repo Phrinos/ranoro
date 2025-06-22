@@ -28,7 +28,8 @@ interface QuoteContentProps {
 const IVA_RATE = 0.16; 
 const LOCALSTORAGE_KEY = 'workshopTicketInfo';
 
-export function QuoteContent({ quote, vehicle, preparedByTechnician, previewWorkshopInfo }: QuoteContentProps) {
+export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
+  ({ quote, vehicle, preparedByTechnician, previewWorkshopInfo }, ref) => {
   const [workshopInfo, setWorkshopInfo] = useState<WorkshopInfoType>(initialWorkshopInfo);
 
   useEffect(() => {
@@ -76,8 +77,10 @@ export function QuoteContent({ quote, vehicle, preparedByTechnician, previewWork
   const validityDate = isValid(quoteDate) ? format(addDays(quoteDate, validityDays), "dd 'de' MMMM 'de' yyyy", { locale: es }) : 'N/A';
 
   return (
-    // Re-styled for a better letter-sized preview inside a scrollable container
-    <div className="font-sans bg-white text-black shadow-lg printable-quote printable-content mx-auto w-[794px] min-h-[1020px] p-16 text-sm">
+    <div 
+      ref={ref}
+      className="font-sans bg-white text-black shadow-lg printable-quote printable-content mx-auto w-[794px] min-h-[1020px] p-16 text-sm"
+    >
       <header className="flex justify-between items-start mb-8 border-b border-gray-300 pb-4">
         <div>
           <Image 
@@ -182,4 +185,6 @@ export function QuoteContent({ quote, vehicle, preparedByTechnician, previewWork
       </footer>
     </div>
   );
-}
+});
+
+QuoteContent.displayName = "QuoteContent";
