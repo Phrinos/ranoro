@@ -3,7 +3,9 @@ import type { Vehicle, ServiceRecord, Technician, InventoryItem, DashboardMetric
 import { format, subMonths, addDays, getYear, getMonth, setHours, setMinutes, subDays, startOfMonth, endOfMonth, startOfToday, endOfToday, startOfYesterday, endOfYesterday } from 'date-fns';
 import { es } from 'date-fns/locale';
 
-const today = new Date();
+const refDate = new Date('2025-06-20T12:00:00.000Z'); // A fixed reference date
+
+const today = refDate;
 const yesterday = subDays(today,1);
 const twoDaysAgo = subDays(today,2);
 const threeDaysAgo = subDays(today,3);
