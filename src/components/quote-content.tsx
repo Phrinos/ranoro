@@ -73,7 +73,7 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
     </div>
   );
 
-  const validityDays = 30; 
+  const validityDays = 15; 
   const validityDate = isValid(quoteDate) ? format(addDays(quoteDate, validityDays), "dd 'de' MMMM 'de' yyyy", { locale: es }) : 'N/A';
 
   return (
@@ -163,8 +163,10 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
       <footer className="text-xs text-gray-600 mt-auto border-t border-gray-300 pt-4">
         <div className="mb-4">
           <h4 className="font-semibold text-gray-700 mb-1">Notas y Condiciones:</h4>
-          <p className="mb-1">Precios en MXN. Esta cotización es válida hasta el {validityDate}. Esta cotización no incluye trabajos no especificados.</p>
-          {quote.preparedByTechnicianName && <p className="mt-2">Cotización realizada por: {quote.preparedByTechnicianName}</p>}
+          <p>
+            {quote.preparedByTechnicianName && `Cotización realizada por: ${quote.preparedByTechnicianName}. `}
+            Precios en MXN. Esta cotización es válida hasta el {validityDate}. Esta cotización no incluye trabajos no especificados.
+          </p>
         </div>
         <div className="text-left space-y-1">
             <p className="font-semibold">¡Gracias por confiar en Ranoro!</p>
