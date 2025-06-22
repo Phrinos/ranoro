@@ -54,6 +54,7 @@ export default function ResumenFinancieroPage() {
       return {
         monthYearLabel: "Cargando...",
         totalOperationalIncome: 0,
+        totalCostOfGoods: 0,
         totalOperationalProfit: 0,
         totalSalaries: 0,
         totalTechnicianSalaries: 0,
@@ -84,32 +85,39 @@ export default function ResumenFinancieroPage() {
     const completedServicesThisMonth = servicesThisMonth.filter(s => s.status === 'Completado');
 
     const totalIncomeFromSales = salesThisMonth.reduce((sum, sale) => sum + sale.totalAmount, 0);
-    const totalIncomeFromServices = servicesThisMonth.reduce((sum, service) => sum + service.totalCost, 0);
+    const totalIncomeFromServices = completedServicesThisMonth.reduce((sum, service) => sum + service.totalCost, 0);
     const totalOperationalIncome = totalIncomeFromSales + totalIncomeFromServices;
+
+    const totalCostOfGoodsFromSales = salesThisMonth.reduce((totalCost, sale) => {
+      const saleCost = sale.items.reduce((cost, saleItem) => {
+        const inventoryItem = inventory.find(inv => inv.id === saleItem.inventoryItemId);
+        const costPrice = inventoryItem ? inventoryItem.unitPrice : 0;
+        return cost + (costPrice * saleItem.quantity);
+      }, 0);
+      return totalCost + saleCost;
+    }, 0);
+    const totalCostOfGoodsFromServices = completedServicesThisMonth.reduce((sum, service) => sum + (service.totalSuppliesCost || 0), 0);
+    const totalCostOfGoods = totalCostOfGoodsFromSales + totalCostOfGoodsFromServices;
 
     const totalProfitFromSales = salesThisMonth.reduce((sum, sale) => sum + calculateSaleProfit(sale, inventory, IVA_RATE), 0);
     const totalProfitFromServices = completedServicesThisMonth.reduce((sum, service) => sum + (service.serviceProfit || 0), 0);
     const totalOperationalProfit = totalProfitFromSales + totalProfitFromServices;
-
+    
     const totalTechnicianSalaries = placeholderTechnicians.reduce((sum, tech) => sum + (tech.monthlySalary || 0), 0);
     const totalAdministrativeSalaries = placeholderAdministrativeStaff.reduce((sum, staff) => sum + (staff.monthlySalary || 0), 0);
     const totalBaseSalaries = totalTechnicianSalaries + totalAdministrativeSalaries;
 
     const totalFixedExpensesFromState = currentFixedExpenses.reduce((sum, expense) => sum + expense.amount, 0);
 
-    // Commission Calculation (Conditional)
     let totalTechnicianCommissionsMonth = 0;
     let totalAdministrativeCommissionsMonth = 0;
     const isWorkshopProfitableAfterFixedCosts = (totalOperationalProfit - totalFixedExpensesFromState) > 0;
 
     if (isWorkshopProfitableAfterFixedCosts) {
-      // Technician Commissions
       placeholderTechnicians.forEach(tech => {
         const techServicesThisMonth = completedServicesThisMonth.filter(s => s.technicianId === tech.id);
         totalTechnicianCommissionsMonth += techServicesThisMonth.reduce((sum, s) => sum + (s.serviceProfit || 0) * (tech.commissionRate || 0), 0);
       });
-
-      // Administrative Commissions
       const totalProfitFromAllCompletedServicesInMonth = completedServicesThisMonth.reduce((sum, s) => sum + (s.serviceProfit || 0), 0);
       placeholderAdministrativeStaff.forEach(adminStaff => {
         totalAdministrativeCommissionsMonth += totalProfitFromAllCompletedServicesInMonth * (adminStaff.commissionRate || 0);
@@ -122,14 +130,15 @@ export default function ResumenFinancieroPage() {
     return {
       monthYearLabel: format(selectedDate, "MMMM yyyy", { locale: es }),
       totalOperationalIncome,
+      totalCostOfGoods,
       totalOperationalProfit,
-      totalSalaries: totalBaseSalaries, // Renamed for clarity
+      totalSalaries: totalBaseSalaries,
       totalTechnicianSalaries,
       totalAdministrativeSalaries,
       fixedExpenses: currentFixedExpenses, 
       totalFixedExpenses: totalFixedExpensesFromState,
-      totalTechnicianCommissions: totalTechnicianCommissionsMonth, // Use calculated commissions
-      totalAdministrativeCommissions: totalAdministrativeCommissionsMonth, // Use calculated commissions
+      totalTechnicianCommissions: totalTechnicianCommissionsMonth,
+      totalAdministrativeCommissions: totalAdministrativeCommissionsMonth,
       totalExpenses,
       netProfit,
       isProfitableForCommissions: isWorkshopProfitableAfterFixedCosts,
@@ -199,6 +208,37 @@ export default function ResumenFinancieroPage() {
         </Button>
       </div>
       
+      <Card className="mb-8 bg-card shadow-lg">
+        <CardHeader>
+          <CardTitle className="text-xl">Resumen General del Mes</CardTitle>
+          <CardDescription>Cálculo de la ganancia real para {financialSummary.monthYearLabel}</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3 text-base">
+          <div className="flex justify-between items-center">
+            <span className="text-muted-foreground">Ingresos Operativos Totales (Ventas y Servicios):</span>
+            <span className="font-semibold text-lg text-green-600">{formatCurrency(financialSummary.totalOperationalIncome)}</span>
+          </div>
+          <div className="flex justify-between items-center">
+            <span className="text-muted-foreground">(-) Costo Total de Insumos (Compras):</span>
+            <span className="font-semibold text-lg text-orange-500">-{formatCurrency(financialSummary.totalCostOfGoods)}</span>
+          </div>
+          <hr className="my-1 border-dashed"/>
+          <div className="flex justify-between items-center font-medium">
+            <span className="text-foreground">(=) Ganancia Bruta Operativa:</span>
+            <span className="font-semibold text-lg">{formatCurrency(financialSummary.totalOperationalProfit)}</span>
+          </div>
+          <div className="flex justify-between items-center">
+            <span className="text-muted-foreground">(-) Total de Gastos (Sueldos, Fijos, Comisiones):</span>
+            <span className="font-semibold text-lg text-red-600">-{formatCurrency(financialSummary.totalExpenses)}</span>
+          </div>
+          <hr className="my-2 border-primary/30"/>
+          <div className="flex justify-between font-bold text-xl pt-2">
+            <span>(=) Resultado Neto del Mes (Ganancia Real):</span>
+            <span className={financialSummary.netProfit >= 0 ? 'text-green-600' : 'text-red-600'}>{formatCurrency(financialSummary.netProfit)}</span>
+          </div>
+        </CardContent>
+      </Card>
+
       <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-3">
         <Card className="lg:col-span-1">
           <CardHeader>
