@@ -97,8 +97,8 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
         </div>
       </header>
 
-      {/* Main content area will grow to push the totals and footer down */}
-      <main className="flex-grow">
+      {/* Main content area */}
+      <main>
         <section className="grid grid-cols-2 gap-8 mb-8">
             <div className="bg-gray-50 p-4 rounded-md border border-gray-200">
             <h3 className="font-semibold text-gray-700 mb-2 border-b pb-1">Cliente:</h3>
@@ -151,43 +151,45 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
         )}
       </main>
 
-      {/* Totals section, now outside of the main growing content */}
-      <section className="flex justify-end pt-4">
-        <div className="w-full max-w-sm space-y-2 text-base">
-            {quote.estimatedSubTotal !== undefined && (
-                <div className="flex justify-between">
-                    <span>Subtotal:</span>
-                    <span className="font-medium">{formatCurrency(quote.estimatedSubTotal)}</span>
+      {/* Footer section that will be pushed to the bottom */}
+      <footer className="mt-auto pt-4">
+        <section className="flex justify-end">
+            <div className="w-full max-w-sm space-y-2 text-base">
+                {quote.estimatedSubTotal !== undefined && (
+                    <div className="flex justify-between">
+                        <span>Subtotal:</span>
+                        <span className="font-medium">{formatCurrency(quote.estimatedSubTotal)}</span>
+                    </div>
+                )}
+                {quote.estimatedTaxAmount !== undefined && (
+                    <div className="flex justify-between">
+                        <span>IVA ({(IVA_RATE * 100).toFixed(0)}%):</span>
+                        <span className="font-medium">{formatCurrency(quote.estimatedTaxAmount)}</span>
+                    </div>
+                )}
+                <div className="flex justify-between text-xl font-bold border-t-2 pt-2 mt-2 border-gray-300 text-primary">
+                    <span>Total Estimado:</span>
+                    <span>{formatCurrency(quote.estimatedTotalCost)}</span>
                 </div>
-            )}
-            {quote.estimatedTaxAmount !== undefined && (
-                <div className="flex justify-between">
-                    <span>IVA ({(IVA_RATE * 100).toFixed(0)}%):</span>
-                    <span className="font-medium">{formatCurrency(quote.estimatedTaxAmount)}</span>
-                </div>
-            )}
-            <div className="flex justify-between text-xl font-bold border-t-2 pt-2 mt-2 border-gray-300 text-primary">
-                <span>Total Estimado:</span>
-                <span>{formatCurrency(quote.estimatedTotalCost)}</span>
             </div>
-        </div>
-      </section>
+        </section>
 
-      <footer className="text-xs text-gray-600 mt-6 border-t border-gray-300 pt-4">
-        <div className="mb-4">
-          <h4 className="font-semibold text-gray-700 mb-1">Notas y Condiciones:</h4>
-          <p className="leading-snug">
-            {`Cotización realizada por: ${quote.preparedByTechnicianName || 'N/A'}. `}
-            Precios en MXN. Esta cotización es válida hasta el {validityDate}. Esta cotización no incluye trabajos no especificados.
-          </p>
-          {quote.notes && <p className="leading-snug mt-1">Notas adicionales: {quote.notes}</p>}
-        </div>
-        <div className="text-left space-y-1 leading-snug">
-            <p className="font-semibold">¡Gracias por confiar en Ranoro!</p>
-            <p>
-            Valoramos sinceramente la oportunidad de atender su vehículo. Nos comprometemos a brindarle un servicio honesto, transparente y de la más alta calidad. Si tiene alguna pregunta, contáctenos, estaremos encantados de ayudarle.
+        <div className="text-xs text-gray-600 mt-6 border-t border-gray-300 pt-4">
+            <div className="mb-4">
+            <h4 className="font-semibold text-gray-700 mb-1">Notas y Condiciones:</h4>
+            <p className="leading-snug">
+                {`Cotización realizada por: ${quote.preparedByTechnicianName || 'N/A'}. `}
+                Precios en MXN. Esta cotización es válida hasta el {validityDate}. Esta cotización no incluye trabajos no especificados.
             </p>
-            <p className="print-block hidden pt-2">Impreso el: {formattedPrintDate}</p>
+            {quote.notes && <p className="leading-snug mt-1">Notas adicionales: {quote.notes}</p>}
+            </div>
+            <div className="text-left space-y-1 leading-snug">
+                <p className="font-semibold">¡Gracias por confiar en Ranoro!</p>
+                <p>
+                Valoramos sinceramente la oportunidad de atender su vehículo. Nos comprometemos a brindarle un servicio honesto, transparente y de la más alta calidad. Si tiene alguna pregunta, contáctenos, estaremos encantados de ayudarle.
+                </p>
+                <p className="print-block hidden pt-2">Impreso el: {formattedPrintDate}</p>
+            </div>
         </div>
       </footer>
     </div>
