@@ -1,4 +1,3 @@
-
 "use client";
 
 import type { QuoteRecord, Vehicle, Technician } from '@/types';
@@ -108,7 +107,7 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
 
       <section className="grid grid-cols-2 gap-8 mb-8">
         <div className="bg-gray-50 p-4 rounded-md border border-gray-200">
-          <h3 className="font-semibold text-gray-700 mb-2 border-b pb-2">Cliente:</h3>
+          <h3 className="font-semibold text-gray-700 mb-2 border-b pb-3">Cliente:</h3>
           <div className="space-y-0 leading-tight">
             <div>{vehicle?.ownerName || 'N/A'}</div>
             <div>{vehicle?.ownerPhone || 'N/A'}</div>
@@ -116,7 +115,7 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
           </div>
         </div>
         <div className="bg-gray-50 p-4 rounded-md border border-gray-200">
-          <h3 className="font-semibold text-gray-700 mb-2 border-b pb-2">Vehículo:</h3>
+          <h3 className="font-semibold text-gray-700 mb-2 border-b pb-3">Vehículo:</h3>
           <div className="space-y-0 leading-tight">
             <div>{vehicle ? `${vehicle.make} ${vehicle.model} (${vehicle.year})` : quote.vehicleIdentifier || 'N/A'}</div>
             <div>Placas: {vehicle?.licensePlate || 'N/A'}</div>
@@ -127,7 +126,7 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
       </section>
 
       <section className="mb-8">
-        <h3 className="font-semibold text-base text-gray-700 mb-2 border-b pb-2">Descripción del Trabajo a Realizar:</h3>
+        <h3 className="font-semibold text-base text-gray-700 mb-2 border-b pb-3">Descripción del Trabajo a Realizar:</h3>
         <p className="text-gray-800 whitespace-pre-wrap">{quote.description}</p>
       </section>
 
