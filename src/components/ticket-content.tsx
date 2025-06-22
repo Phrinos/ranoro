@@ -5,7 +5,6 @@ import type { SaleReceipt, ServiceRecord, Vehicle, Technician } from '@/types';
 import { format, parseISO, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
 import React, { useEffect, useState } from 'react';
-import Image from 'next/image';
 
 const initialWorkshopInfo = {
   name: "RANORO",
@@ -27,7 +26,6 @@ interface TicketContentProps {
 }
 
 const LOCALSTORAGE_KEY = 'workshopTicketInfo';
-const IVA_RATE = 0.16;
 
 export const TicketContent = React.forwardRef<HTMLDivElement, TicketContentProps>(
   ({ sale, service, vehicle, technician, previewWorkshopInfo }, ref) => {
@@ -56,9 +54,10 @@ export const TicketContent = React.forwardRef<HTMLDivElement, TicketContentProps
   const operationId = sale?.id || service?.id;
   const operationDateStr = sale?.saleDate || service?.serviceDate;
   const operationDate = operationDateStr ? parseISO(operationDateStr) : new Date();
+  const formattedDateTime = isValid(operationDate) ? format(operationDate, "dd/MM/yyyy HH:mm:ss", { locale: es }) : 'N/A';
 
   const formatCurrency = (amount: number | undefined) => {
-    if (amount === undefined) return 'N/A';
+    if (typeof amount !== 'number' || isNaN(amount)) return '$0.00';
     return `$${amount.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   };
   
@@ -67,112 +66,94 @@ export const TicketContent = React.forwardRef<HTMLDivElement, TicketContentProps
   const tax = sale?.tax || service?.taxAmount || 0;
   const totalAmount = sale?.totalAmount || service?.totalCost || 0;
 
+  const renderLine = (label: string, value: string, isBold: boolean = false) => (
+    <div className="flex justify-between">
+      <span>{label}</span>
+      <span className={isBold ? "font-semibold" : ""}>{value}</span>
+    </div>
+  );
+
+  const renderDashedLine = () => (
+    <div className="border-t border-dashed border-neutral-400 my-1"></div>
+  );
+
   return (
     <div 
       id="ticketToExport"
       ref={ref}
-      className="font-sans bg-white text-black shadow-lg printable-content mx-auto w-[794px] min-h-[1020px] p-16 text-[13px] md:text-[14px] lg:text-[15px]"
+      data-format="receipt"
+      className="font-mono bg-white text-black p-2 ticket-preview-content max-w-[300px] mx-auto text-[10px] leading-tight print:max-w-full print:text-[9px] print:p-0"
     >
-      <header className="flex justify-between items-start mb-8 border-b border-gray-300 pb-4">
-        <div>
-          <Image 
-            src={workshopInfo.logoUrl} 
-            alt={`${workshopInfo.name} Logo`} 
-            width={180} 
-            height={60} 
-            className="mb-3"
-            data-ai-hint="workshop logo"
-            priority
-          />
-          <h1 className="text-2xl font-bold text-gray-800">{workshopInfo.name}</h1>
-          <p>{workshopInfo.addressLine1}</p>
-          {workshopInfo.addressLine2 && <p>{workshopInfo.addressLine2}</p>}
-          <p>{workshopInfo.cityState}</p>
-          <p>Tel: {workshopInfo.phone}</p>
-        </div>
-        <div className="text-right">
-          <h2 className="text-3xl font-semibold text-primary uppercase">{operationType === 'Venta' ? 'Recibo de Venta' : 'Orden de Servicio'}</h2>
-          <p className="mt-2">Folio: <span className="font-medium">{operationId}</span></p>
-          <p>Fecha: <span className="font-medium">{isValid(operationDate) ? format(operationDate, "dd 'de' MMMM 'de' yyyy", { locale: es }) : 'N/A'}</span></p>
-        </div>
-      </header>
+      <div className="text-center mb-2">
+        <img src={workshopInfo.logoUrl} alt="Logo" className="w-32 mx-auto mb-1" data-ai-hint="workshop logo"/>
+        <h1 className="text-base font-bold">{workshopInfo.name}</h1>
+        <p>{workshopInfo.addressLine1}</p>
+        {workshopInfo.addressLine2 && <p>{workshopInfo.addressLine2}</p>}
+        <p>{workshopInfo.cityState}</p>
+        <p>Tel: {workshopInfo.phone}</p>
+      </div>
 
-      {(vehicle || sale?.customerName) && (
-        <section className="grid grid-cols-2 gap-8 mb-8">
-          <div className="bg-gray-50 p-4 rounded-md border border-gray-200">
-            <h3 className="font-semibold text-gray-700 mb-2 border-b pb-1">Cliente:</h3>
-            {vehicle ? (
-                <>
-                    <p>{vehicle.ownerName}</p>
-                    <p>{vehicle.ownerPhone}</p>
-                    <p>{vehicle.ownerEmail}</p>
-                </>
-            ) : <p>{sale?.customerName}</p>}
-          </div>
-          {vehicle && (
-             <div className="bg-gray-50 p-4 rounded-md border border-gray-200">
-                <h3 className="font-semibold text-gray-700 mb-2 border-b pb-1">Vehículo:</h3>
-                <p>{`${vehicle.make} ${vehicle.model} (${vehicle.year})`}</p>
-                <p>Placas: {vehicle.licensePlate}</p>
-                <p>VIN: {vehicle.vin || 'N/A'}</p>
-                {service?.mileage !== undefined && <p>Kilometraje: {service.mileage.toLocaleString('es-ES')} km</p>}
-            </div>
-          )}
-        </section>
+      {renderDashedLine()}
+      
+      <p>Folio: {operationId}</p>
+      <p>Fecha: {formattedDateTime}</p>
+      {sale?.customerName && <p>Cliente: {sale.customerName}</p>}
+      {vehicle && (
+        <>
+          <p>Cliente: {vehicle.ownerName}</p>
+          <p>Vehículo: {vehicle.make} {vehicle.model} ({vehicle.licensePlate})</p>
+        </>
+      )}
+      {technician && <p>Atendió: {technician.name}</p>}
+      
+      {renderDashedLine()}
+
+      {service?.description && (
+        <>
+          <p className="font-semibold text-center my-1">SERVICIO REALIZADO</p>
+          <p className="whitespace-pre-wrap text-left mb-1">{service.description}</p>
+          {renderDashedLine()}
+        </>
       )}
       
-      {service && (
-        <section className="mb-8">
-            <h3 className="font-semibold text-base text-gray-700 mb-2 border-b pb-2">Descripción del Servicio:</h3>
-            <p className="text-gray-800 whitespace-pre-wrap">{service.description}</p>
-        </section>
-      )}
-
-      {items.length > 0 && (
-        <section className="mb-8">
-          <h3 className="font-semibold text-base text-gray-700 mb-3">Detalle:</h3>
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="border-b-2 border-gray-300 bg-gray-100">
-                <th className="py-2 px-3 font-semibold text-gray-600">Cantidad</th>
-                <th className="py-2 px-3 font-semibold text-gray-600">Descripción</th>
-                <th className="py-2 px-3 font-semibold text-gray-600 text-right">Precio Unit. (IVA Inc.)</th>
-                <th className="py-2 px-3 font-semibold text-gray-600 text-right">Importe (IVA Inc.)</th>
-              </tr>
-            </thead>
-            <tbody>
-              {items.map((item, idx) => {
-                  const unitPrice = 'unitPrice' in item ? (item.unitPrice || 0) : 0;
-                  const totalPrice = 'totalPrice' in item ? (item.totalPrice || unitPrice * item.quantity) : (unitPrice * item.quantity);
-                  const itemName = 'itemName' in item ? item.itemName : ('supplyName' in item ? item.supplyName : 'Artículo desconocido');
-                  return (
-                    <tr key={idx} className="border-b border-gray-200">
-                      <td className="py-2 px-3">{item.quantity}</td>
-                      <td className="py-2 px-3">{itemName}</td>
-                      <td className="py-2 px-3 text-right">{formatCurrency(unitPrice)}</td>
-                      <td className="py-2 px-3 text-right">{formatCurrency(totalPrice)}</td>
-                    </tr>
-                  )
-                })}
-            </tbody>
-          </table>
-        </section>
-      )}
+      <div className="font-semibold text-center my-1">DETALLE</div>
       
-      <section className="flex justify-end mb-8">
-        <div className="w-full max-w-sm space-y-2">
-          {subTotal > 0 && <div><span className="text-gray-700">Subtotal:</span><span className="float-right">{formatCurrency(subTotal)}</span></div>}
-          {tax > 0 && <div><span className="text-gray-700">IVA ({(IVA_RATE * 100).toFixed(0)}%):</span><span className="float-right">{formatCurrency(tax)}</span></div>}
-          <div className="border-t-2 pt-2 border-gray-300"><span className="font-bold text-lg text-primary">Total:</span><span className="float-right font-bold text-lg text-primary">{formatCurrency(totalAmount)}</span></div>
-        </div>
-      </section>
+      {items.map((item, idx) => {
+          const unitPrice = 'unitPrice' in item ? (item.unitPrice || 0) : 0;
+          const totalPrice = ('totalPrice' in item && item.totalPrice) ? item.totalPrice : (unitPrice * item.quantity);
+          const itemName = 'itemName' in item ? item.itemName : ('supplyName' in item ? item.supplyName : 'Artículo desconocido');
+          return (
+              <div key={idx} className="mb-0.5">
+                  <p className="truncate">{itemName}</p>
+                  <div className="flex justify-between">
+                      <span>&nbsp;&nbsp;{item.quantity} x {formatCurrency(unitPrice)}</span>
+                      <span className="font-medium">{formatCurrency(totalPrice)}</span>
+                  </div>
+              </div>
+          )
+      })}
 
-      <footer className="text-xs text-gray-600 mt-auto border-t border-gray-300 pt-4">
-        <div className="text-center space-y-1">
+      {renderDashedLine()}
+
+      <div className="space-y-0.5 mt-1">
+          {renderLine("Subtotal:", formatCurrency(subTotal))}
+          {renderLine(`IVA:`, formatCurrency(tax))}
+          {renderLine("TOTAL:", formatCurrency(totalAmount), true)}
+      </div>
+      
+      {sale?.paymentMethod && (
+          <>
+              {renderDashedLine()}
+              <p className="text-center">Pagado con: {sale.paymentMethod}</p>
+          </>
+      )}
+
+      {renderDashedLine()}
+
+      <div className="text-center mt-2 space-y-1">
           <p className="font-semibold">¡Gracias por su preferencia!</p>
-          <p>Para cualquier duda o aclaración, no dude en contactarnos.</p>
-        </div>
-      </footer>
+          <p>Para dudas o aclaraciones, no dude en contactarnos.</p>
+      </div>
     </div>
   );
 });

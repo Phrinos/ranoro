@@ -41,41 +41,72 @@ export function PrintTicketDialog({
   const contentRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
-  useEffect(() => {
-    if (autoPrint && open) {
-      const timer = setTimeout(() => {
-        handlePrint();
-      }, 500); 
-      return () => clearTimeout(timer);
+  const getPdfOptions = () => {
+    const format = contentRef.current?.querySelector('[data-format]')?.getAttribute('data-format') || 'letter';
+    const pdfFileName = `${title.replace(/[:\s/]/g, '_')}.pdf`;
+
+    if (format === 'receipt') {
+        return {
+            margin: [2, 2, 2, 2], // Margin in mm [top, right, bottom, left]
+            filename: pdfFileName,
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: { scale: 3, useCORS: true, letterRendering: true },
+            jsPDF: { unit: 'mm', format: [80, 297], orientation: 'portrait' }
+        };
     }
-  }, [autoPrint, open]);
+    
+    // Default to letter format for quotes etc.
+    return {
+        margin: 0.5,
+        filename: pdfFileName,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true, letterRendering: true },
+        jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
+    };
+  };
 
   const handlePrint = () => {
     const element = contentRef.current;
     if (element) {
-      const pdfFileName = `${title.replace(/[:\s/]/g, '_')}.pdf`;
-      const opt = {
-        margin: 0,
-        filename: pdfFileName,
-        image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2, useCORS: true },
-        jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
-      };
+      const opt = getPdfOptions();
 
       toast({
         title: "Generando Vista de Impresión...",
-        description: `Se está preparando el archivo ${pdfFileName}.`,
+        description: "Esto puede tomar un momento.",
       });
-      
-      html2pdf().from(element).set(opt).output('bloburl').then((url) => {
-        window.open(url, '_blank');
+
+      html2pdf().from(element).set(opt).output('datauristring').then((dataUrl) => {
+        const iframe = document.createElement('iframe');
+        iframe.style.position = 'fixed';
+        iframe.style.width = '0';
+        iframe.style.height = '0';
+        iframe.style.border = '0';
+        iframe.src = dataUrl;
+        document.body.appendChild(iframe);
+
+        iframe.onload = () => {
+            const iframeWindow = iframe.contentWindow;
+            if (iframeWindow) {
+                try {
+                    iframe.focus();
+                    iframeWindow.print();
+                } catch (e) {
+                    console.error("Error calling print from iframe:", e);
+                    toast({
+                        title: "Error de Impresión",
+                        description: "No se pudo abrir el diálogo de impresión.",
+                        variant: "destructive"
+                    });
+                } finally {
+                     setTimeout(() => {
+                        document.body.removeChild(iframe);
+                     }, 1000);
+                }
+            }
+        };
       }).catch(err => {
-        toast({
-          title: "Error al generar PDF para imprimir",
-          description: "Ocurrió un problema al crear el archivo.",
-          variant: "destructive",
-        });
-        console.error("PDF generation error for printing:", err);
+         toast({ title: "Error al Generar PDF", description: "Ocurrió un problema al crear el archivo de impresión.", variant: "destructive" });
+         console.error("PDF generation for print error:", err);
       });
     }
   };
@@ -83,18 +114,11 @@ export function PrintTicketDialog({
   const handleDownloadPDF = () => {
     const element = contentRef.current;
     if (element) {
-      const pdfFileName = `${title.replace(/[:\s/]/g, '_')}.pdf`;
-      const opt = {
-        margin: 0,
-        filename: pdfFileName,
-        image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2, useCORS: true },
-        jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
-      };
+      const opt = getPdfOptions();
 
       toast({
         title: "Generando PDF...",
-        description: `Se está preparando el archivo ${pdfFileName}.`,
+        description: `Se está preparando ${opt.filename}.`,
       });
 
       html2pdf().from(element).set(opt).save().then(() => {
@@ -119,6 +143,16 @@ export function PrintTicketDialog({
       onDialogClose();
     }
   };
+  
+  useEffect(() => {
+    if (autoPrint && open) {
+      const timer = setTimeout(() => {
+        handlePrint();
+      }, 500); 
+      return () => clearTimeout(timer);
+    }
+  }, [autoPrint, open]);
+
 
   return (
     <Dialog open={open} onOpenChange={(isOpen) => {
@@ -126,7 +160,7 @@ export function PrintTicketDialog({
         else onOpenChange(true);
     }}>
       <DialogContent className={cn(
-        "sm:max-w-4xl printable-content", // Make dialog wider and add printable-content class
+        "sm:max-w-4xl printable-content",
         "print:max-w-full print:border-none print:shadow-none print:p-0",
         dialogContentClassName
       )}>
