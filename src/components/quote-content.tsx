@@ -108,7 +108,7 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
 
       <section className="grid grid-cols-2 gap-8 mb-8">
         <div className="bg-gray-50 p-4 rounded-md border border-gray-200">
-          <h3 className="font-semibold text-gray-700 mb-2 border-b pb-1">Cliente:</h3>
+          <h3 className="font-semibold text-gray-700 mb-2 border-b pb-2">Cliente:</h3>
           <div className="space-y-0 leading-tight">
             <div>{vehicle?.ownerName || 'N/A'}</div>
             <div>{vehicle?.ownerPhone || 'N/A'}</div>
@@ -116,7 +116,7 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
           </div>
         </div>
         <div className="bg-gray-50 p-4 rounded-md border border-gray-200">
-          <h3 className="font-semibold text-gray-700 mb-2 border-b pb-1">Vehículo:</h3>
+          <h3 className="font-semibold text-gray-700 mb-2 border-b pb-2">Vehículo:</h3>
           <div className="space-y-0 leading-tight">
             <div>{vehicle ? `${vehicle.make} ${vehicle.model} (${vehicle.year})` : quote.vehicleIdentifier || 'N/A'}</div>
             <div>Placas: {vehicle?.licensePlate || 'N/A'}</div>
@@ -137,10 +137,10 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="border-b-2 border-gray-300 bg-gray-100">
-                <th className="py-2 px-3 font-semibold text-gray-600">Cantidad</th>
-                <th className="py-2 px-3 font-semibold text-gray-600">Descripción</th>
-                <th className="py-2 px-3 font-semibold text-gray-600 text-right">Precio Unit.</th>
-                <th className="py-2 px-3 font-semibold text-gray-600 text-right">Importe</th>
+                <th className="py-3 px-3 font-semibold text-gray-600">Cantidad</th>
+                <th className="py-3 px-3 font-semibold text-gray-600">Descripción</th>
+                <th className="py-3 px-3 font-semibold text-gray-600 text-right">Precio Unit.</th>
+                <th className="py-3 px-3 font-semibold text-gray-600 text-right">Importe</th>
               </tr>
             </thead>
             <tbody>
