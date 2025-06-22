@@ -14,14 +14,17 @@ import { Button } from "@/components/ui/button";
 import type { QuoteRecord } from "@/types";
 import { format, parseISO, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { Eye, Printer } from "lucide-react";
+import { Eye, Edit, Wrench } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 
 interface QuotesTableProps {
   quotes: QuoteRecord[];
   onViewQuote: (quote: QuoteRecord) => void;
+  onEditQuote: (quote: QuoteRecord) => void;
+  onGenerateService: (quote: QuoteRecord) => void;
 }
 
-export function QuotesTable({ quotes, onViewQuote }: QuotesTableProps) {
+export function QuotesTable({ quotes, onViewQuote, onEditQuote, onGenerateService }: QuotesTableProps) {
   if (!quotes.length) {
     return <p className="text-muted-foreground text-center py-8">No hay cotizaciones registradas que coincidan con los filtros.</p>;
   }
@@ -41,6 +44,7 @@ export function QuotesTable({ quotes, onViewQuote }: QuotesTableProps) {
             <TableHead>Cliente/Vehículo</TableHead>
             <TableHead>Descripción</TableHead>
             <TableHead className="text-right">Monto Estimado</TableHead>
+            <TableHead>Estado</TableHead>
             <TableHead className="text-right">Acciones</TableHead>
           </TableRow>
         </TableHeader>
@@ -58,9 +62,22 @@ export function QuotesTable({ quotes, onViewQuote }: QuotesTableProps) {
                 <TableCell>{quote.vehicleIdentifier || 'N/A'}</TableCell>
                 <TableCell className="max-w-xs truncate">{quote.description}</TableCell>
                 <TableCell className="text-right font-semibold">{formatCurrency(quote.estimatedTotalCost)}</TableCell>
-                <TableCell className="text-right">
+                <TableCell>
+                  {quote.serviceId ? (
+                    <Badge variant="success">Convertido</Badge>
+                  ) : (
+                    <Badge variant="outline">Pendiente</Badge>
+                  )}
+                </TableCell>
+                <TableCell className="text-right space-x-1">
                   <Button variant="ghost" size="icon" onClick={() => onViewQuote(quote)} title="Ver / Reimprimir Cotización">
                     <Eye className="h-4 w-4" />
+                  </Button>
+                  <Button variant="ghost" size="icon" onClick={() => onEditQuote(quote)} title="Editar Cotización">
+                    <Edit className="h-4 w-4" />
+                  </Button>
+                   <Button variant="ghost" size="icon" onClick={() => onGenerateService(quote)} title="Generar Servicio" disabled={!!quote.serviceId}>
+                    <Wrench className="h-4 w-4" />
                   </Button>
                 </TableCell>
               </TableRow>
