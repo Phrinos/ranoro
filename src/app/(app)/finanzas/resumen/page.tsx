@@ -54,6 +54,8 @@ export default function ResumenFinancieroPage() {
       return {
         monthYearLabel: "Cargando...",
         totalOperationalIncome: 0,
+        totalIncomeFromSales: 0,
+        totalIncomeFromServices: 0,
         totalCostOfGoods: 0,
         totalOperationalProfit: 0,
         totalSalaries: 0,
@@ -130,6 +132,8 @@ export default function ResumenFinancieroPage() {
     return {
       monthYearLabel: format(selectedDate, "MMMM yyyy", { locale: es }),
       totalOperationalIncome,
+      totalIncomeFromSales,
+      totalIncomeFromServices,
       totalCostOfGoods,
       totalOperationalProfit,
       totalSalaries: totalBaseSalaries,
@@ -249,9 +253,13 @@ export default function ResumenFinancieroPage() {
             <CardDescription>Operaciones del mes de {financialSummary.monthYearLabel}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3 text-base">
+             <div className="flex justify-between items-center">
+              <span className="text-muted-foreground">Ingreso por Ventas (POS):</span>
+              <span className="font-semibold">{formatCurrency(financialSummary.totalIncomeFromSales)}</span>
+            </div>
             <div className="flex justify-between items-center">
-              <span className="text-muted-foreground">Ingresos Operativos Totales:</span>
-              <span className="font-semibold text-lg">{formatCurrency(financialSummary.totalOperationalIncome)}</span>
+              <span className="text-muted-foreground">Ingreso por Servicios:</span>
+              <span className="font-semibold">{formatCurrency(financialSummary.totalIncomeFromServices)}</span>
             </div>
             <hr className="my-1 border-border/50"/>
             <div className="flex justify-between items-center">
