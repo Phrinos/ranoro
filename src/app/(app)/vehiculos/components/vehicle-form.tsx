@@ -38,6 +38,23 @@ interface VehicleFormProps {
   onClose: () => void;
 }
 
+// Helper functions for text transformation
+const capitalizeWords = (str: string) => {
+  if (!str) return '';
+  return str.replace(/\b\w/g, char => char.toUpperCase());
+};
+
+const capitalizeSentences = (str: string) => {
+    if (!str) return '';
+    let processedStr = str.trim();
+    // Capitalize the very first letter of the whole string
+    processedStr = processedStr.charAt(0).toUpperCase() + processedStr.slice(1);
+    // Capitalize the letter after each period and one or more spaces
+    processedStr = processedStr.replace(/(\.\s+)([a-z])/g, (_match, p1, p2) => p1 + p2.toUpperCase());
+    return processedStr;
+};
+
+
 export function VehicleForm({ initialData, onSubmit, onClose }: VehicleFormProps) {
   const form = useForm<VehicleFormValues>({
     resolver: zodResolver(vehicleFormSchema),
@@ -78,7 +95,7 @@ export function VehicleForm({ initialData, onSubmit, onClose }: VehicleFormProps
               <FormItem>
                 <FormLabel>Marca</FormLabel>
                 <FormControl>
-                  <Input placeholder="Ej: Toyota" {...field} />
+                  <Input placeholder="Ej: Toyota" {...field} onChange={(e) => field.onChange(capitalizeWords(e.target.value))} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -91,7 +108,7 @@ export function VehicleForm({ initialData, onSubmit, onClose }: VehicleFormProps
               <FormItem>
                 <FormLabel>Modelo</FormLabel>
                 <FormControl>
-                  <Input placeholder="Ej: Corolla" {...field} />
+                  <Input placeholder="Ej: Corolla" {...field} onChange={(e) => field.onChange(capitalizeWords(e.target.value))} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -119,7 +136,7 @@ export function VehicleForm({ initialData, onSubmit, onClose }: VehicleFormProps
               <FormItem>
                 <FormLabel>Placa</FormLabel>
                 <FormControl>
-                  <Input placeholder="Ej: PQR-123" {...field} />
+                  <Input placeholder="Ej: PQR-123" {...field} onChange={(e) => field.onChange(e.target.value.toUpperCase())} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -132,7 +149,7 @@ export function VehicleForm({ initialData, onSubmit, onClose }: VehicleFormProps
               <FormItem>
                 <FormLabel>Color (Opcional)</FormLabel>
                 <FormControl>
-                  <Input placeholder="Ej: Rojo" {...field} />
+                  <Input placeholder="Ej: Rojo" {...field} onChange={(e) => field.onChange(capitalizeWords(e.target.value))} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -159,7 +176,7 @@ export function VehicleForm({ initialData, onSubmit, onClose }: VehicleFormProps
             <FormItem>
               <FormLabel>Nombre del Propietario</FormLabel>
               <FormControl>
-                <Input placeholder="Ej: Juan Pérez" {...field} />
+                <Input placeholder="Ej: Juan Pérez" {...field} onChange={(e) => field.onChange(capitalizeWords(e.target.value))} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -186,7 +203,7 @@ export function VehicleForm({ initialData, onSubmit, onClose }: VehicleFormProps
               <FormItem>
                 <FormLabel>Email del Propietario (Opcional)</FormLabel>
                 <FormControl>
-                  <Input type="email" placeholder="Ej: juan.perez@email.com" {...field} />
+                  <Input type="email" placeholder="Ej: juan.perez@email.com" {...field} onChange={(e) => field.onChange(e.target.value.toLowerCase())} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -200,7 +217,7 @@ export function VehicleForm({ initialData, onSubmit, onClose }: VehicleFormProps
               <FormItem>
                 <FormLabel>Notas (Opcional)</FormLabel>
                 <FormControl>
-                  <Textarea placeholder="Notas adicionales sobre el vehículo..." {...field} />
+                  <Textarea placeholder="Notas adicionales sobre el vehículo..." {...field} onChange={(e) => field.onChange(capitalizeSentences(e.target.value))} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
