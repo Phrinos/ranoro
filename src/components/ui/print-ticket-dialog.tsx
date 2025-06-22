@@ -22,6 +22,7 @@ interface PrintTicketDialogProps {
   autoPrint?: boolean; 
   printButtonText?: string;
   dialogContentClassName?: string;
+  footerActions?: React.ReactNode; // New prop for additional buttons
 }
 
 export function PrintTicketDialog({
@@ -32,7 +33,8 @@ export function PrintTicketDialog({
   onDialogClose,
   autoPrint = false,
   printButtonText = "Imprimir",
-  dialogContentClassName = ""
+  dialogContentClassName = "",
+  footerActions
 }: PrintTicketDialogProps) {
 
   useEffect(() => {
@@ -64,11 +66,8 @@ export function PrintTicketDialog({
         }
     }}>
       <DialogContent className={cn(
-        // Default small dialog size for tickets
-        "sm:max-w-md", 
-        // Make the dialog for quotes wider for a better preview
+        "sm:max-w-xl", // Adjusted for quote preview
         dialogContentClassName?.includes('quote') && "sm:max-w-4xl",
-        // Base print styles
         "print:max-w-full print:border-none print:shadow-none print:p-0",
         dialogContentClassName
       )}>
@@ -76,30 +75,15 @@ export function PrintTicketDialog({
           <DialogTitle>{title}</DialogTitle>
         </DialogHeader>
         
-        {/* Adds a scrollable viewport for the content */}
-        <div className="my-4 max-h-[70vh] overflow-y-auto bg-muted/50 p-2 sm:p-4 rounded-md print:hidden">
-          <div className="ticket-container">
+        <div className="my-4 max-h-[70vh] overflow-y-auto bg-muted/50 p-2 sm:p-4 rounded-md print:overflow-visible print:max-h-none print:bg-transparent">
+          <div className="ticket-container printable-content">
             {children} 
           </div>
         </div>
 
-        {/* For printing, the content is rendered directly without the scroll container */}
-        <div className="hidden print:block">
-           {children}
-        </div>
-
         <DialogFooter className="print:hidden sm:justify-between">
-          <Button type="button" variant="outline" onClick={handleClose}>
-            <X className="mr-2 h-4 w-4" /> Cerrar
-          </Button>
-          <div className="flex-grow" />
-          {/* This div will contain other action buttons like Send Email/WhatsApp */}
-          <div className="flex gap-2 print-hidden">
-             {React.Children.toArray(children).map((child: any) => 
-                child.props.quote ? (child.props.children || []) : []
-             ).flat().filter((grandChild: any) => 
-                grandChild.props.className?.includes('print-hidden')
-             )}
+          <div className="flex flex-col sm:flex-row gap-2">
+            {footerActions}
           </div>
           <Button type="button" onClick={handlePrint}>
             <Printer className="mr-2 h-4 w-4" /> {printButtonText}
