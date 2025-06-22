@@ -1,4 +1,3 @@
-
 "use client";
 
 import { PageHeader } from "@/components/page-header";
@@ -25,6 +24,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
 import { TicketContent } from '@/components/ticket-content';
+import Link from "next/link";
 
 interface GroupedServices {
   [date: string]: ServiceRecord[];
@@ -298,6 +298,14 @@ export default function AgendaServiciosPage() {
       <PageHeader
         title="Agenda de Servicios"
         description="Visualiza, busca y gestiona los servicios agendados."
+        actions={
+          <Button asChild>
+            <Link href="/servicios/nuevo">
+              <PlusCircle className="mr-2 h-4 w-4" />
+              Nuevo Servicio
+            </Link>
+          </Button>
+        }
       />
        <div className="mb-6">
         <div className="relative">
@@ -354,4 +362,3 @@ export default function AgendaServiciosPage() {
     </>
   );
 }
-
