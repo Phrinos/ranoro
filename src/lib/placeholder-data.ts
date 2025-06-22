@@ -3,6 +3,7 @@ import type { Vehicle, ServiceRecord, Technician, InventoryItem, DashboardMetric
 import { format, subMonths, addDays, getYear, getMonth, setHours, setMinutes, subDays, startOfMonth, endOfMonth, startOfToday, endOfToday, startOfYesterday, endOfYesterday } from 'date-fns';
 import { es } from 'date-fns/locale';
 
+const STATIC_NOW = new Date('2024-07-26T12:00:00Z');
 export const IVA_RATE = 0.16;
 
 // =======================================
@@ -89,8 +90,8 @@ export let placeholderServiceRecords: ServiceRecord[] = [
     id: 'S001',
     vehicleId: 1,
     vehicleIdentifier: 'ABC-123',
-    serviceDate: subDays(new Date(), 5).toISOString(),
-    deliveryDateTime: subDays(new Date(), 4).toISOString(),
+    serviceDate: subDays(STATIC_NOW, 5).toISOString(),
+    deliveryDateTime: subDays(STATIC_NOW, 4).toISOString(),
     description: 'Servicio de afinación menor completo y revisión de niveles.',
     technicianId: 'T001',
     technicianName: 'Carlos Rodríguez',
@@ -105,7 +106,7 @@ export let placeholderServiceRecords: ServiceRecord[] = [
     id: 'S002',
     vehicleId: 2,
     vehicleIdentifier: 'XYZ-789',
-    serviceDate: subDays(new Date(), 1).toISOString(),
+    serviceDate: subDays(STATIC_NOW, 1).toISOString(),
     description: 'Reemplazo de balatas delanteras y purga de sistema de frenos.',
     technicianId: 'T002',
     technicianName: 'Miguel Torres',
@@ -120,7 +121,7 @@ export let placeholderServiceRecords: ServiceRecord[] = [
     id: 'S003',
     vehicleId: 3,
     vehicleIdentifier: 'PQR-456',
-    serviceDate: addDays(new Date(), 3).toISOString(),
+    serviceDate: addDays(STATIC_NOW, 3).toISOString(),
     description: 'Diagnóstico de falla en sistema eléctrico (Check Engine).',
     technicianId: 'T002',
     technicianName: 'Miguel Torres',
@@ -137,7 +138,7 @@ export let placeholderServiceRecords: ServiceRecord[] = [
 export let placeholderQuotes: QuoteRecord[] = [
   {
     id: 'Q001',
-    quoteDate: subDays(new Date(), 20).toISOString(),
+    quoteDate: subDays(STATIC_NOW, 20).toISOString(),
     vehicleId: 1,
     vehicleIdentifier: 'ABC-123',
     description: 'Cambio de amortiguadores delanteros y traseros.',
@@ -154,7 +155,7 @@ export let placeholderQuotes: QuoteRecord[] = [
   },
   {
     id: 'Q002',
-    quoteDate: subDays(new Date(), 8).toISOString(),
+    quoteDate: subDays(STATIC_NOW, 8).toISOString(),
     vehicleId: 2,
     vehicleIdentifier: 'XYZ-789',
     description: 'Servicio de afinación mayor.',
@@ -176,7 +177,7 @@ const totalSale1 = saleItems1.reduce((sum, item) => sum + item.totalPrice, 0);
 export let placeholderSales: SaleReceipt[] = [
   {
     id: 'SALE001',
-    saleDate: subDays(new Date(), 2).toISOString(),
+    saleDate: subDays(STATIC_NOW, 2).toISOString(),
     items: saleItems1,
     subTotal: totalSale1 / (1 + IVA_RATE),
     tax: totalSale1 - (totalSale1 / (1 + IVA_RATE)),
@@ -203,8 +204,8 @@ export const placeholderDashboardMetrics: DashboardMetrics = {
 };
 
 export const placeholderTechnicianMonthlyPerformance: TechnicianMonthlyPerformance[] = [
-    { id: 'PERF001', technicianId: 'T001', monthYear: format(subMonths(new Date(), 1), 'MMMM yyyy', { locale: es }), servicesCount: 15, revenueGenerated: 35000, earnings: 3500, penalties: 0 },
-    { id: 'PERF002', technicianId: 'T002', monthYear: format(subMonths(new Date(), 1), 'MMMM yyyy', { locale: es }), servicesCount: 12, revenueGenerated: 42000, earnings: 6300, penalties: 200 },
+    { id: 'PERF001', technicianId: 'T001', monthYear: format(subMonths(STATIC_NOW, 1), 'MMMM yyyy', { locale: es }), servicesCount: 15, revenueGenerated: 35000, earnings: 3500, penalties: 0 },
+    { id: 'PERF002', technicianId: 'T002', monthYear: format(subMonths(STATIC_NOW, 1), 'MMMM yyyy', { locale: es }), servicesCount: 12, revenueGenerated: 42000, earnings: 6300, penalties: 200 },
 ];
 
 export const placeholderAppRoles: AppRole[] = [];
