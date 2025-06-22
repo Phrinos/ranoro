@@ -163,7 +163,7 @@ export function VehicleForm({ initialData, onSubmit, onClose }: VehicleFormProps
               <FormItem>
                 <FormLabel>VIN (Número de Chasis) (Opcional)</FormLabel>
                 <FormControl>
-                  <Input placeholder="17 caracteres" {...field} />
+                  <Input placeholder="17 caracteres" {...field} onChange={(e) => field.onChange(e.target.value.toUpperCase())} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
