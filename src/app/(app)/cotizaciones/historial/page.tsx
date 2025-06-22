@@ -212,24 +212,28 @@ export default function HistorialCotizacionesPage() {
   const handleSendWhatsApp = (quoteForAction: QuoteRecord | null) => {
     if (!quoteForAction) return;
     const vehicleForAction = vehicles.find(v => v.id === quoteForAction.vehicleId);
-    if (!vehicleForAction?.ownerPhone) {
-        toast({ title: "Faltan Datos", description: "El cliente no tiene un teléfono registrado.", variant: "destructive" });
+    if (!vehicleForAction) {
+        toast({ title: "Faltan Datos", description: "No se encontró el vehículo asociado.", variant: "destructive" });
         return;
     }
-    
+
     const shareUrl = `${window.location.origin}/c/${quoteForAction.id}`;
+    
+    const message = `Hola ${vehicleForAction.ownerName || 'Cliente'}, Gracias por confiar en ${workshopInfo?.name || 'RANORO'}. Le enviamos su cotización de servicio ${quoteForAction.id} de nuestro taller para su vehículo ${vehicleForAction.make} ${vehicleForAction.model} ${vehicleForAction.year}. En este link encontrara el PDF de la cotizacion: ${shareUrl}`;
 
-    const message = encodeURIComponent(
-      `Hola ${vehicleForAction.ownerName || 'Cliente'}, le compartimos su cotización de servicio de ${workshopInfo?.name || 'nuestro taller'} para su vehículo ${vehicleForAction.make} ${vehicleForAction.model}.\n\n` +
-      `Puede ver los detalles en el siguiente enlace:\n${shareUrl}\n\n` +
-      `También le hemos adjuntado el PDF a continuación para sus registros. ¡Gracias por su confianza!`
-    );
-
-    generateAndDownloadPdf(quoteForAction); 
-    setTimeout(() => {
-        const phoneNumber = vehicleForAction.ownerPhone!.replace(/\D/g, ''); 
-        window.open(`https://wa.me/${phoneNumber}?text=${message}`, '_blank');
-    }, 1500);
+    navigator.clipboard.writeText(message).then(() => {
+        toast({
+            title: "Mensaje Copiado",
+            description: "El mensaje para WhatsApp ha sido copiado a tu portapapeles.",
+        });
+    }).catch(err => {
+        console.error("Could not copy text: ", err);
+        toast({
+            title: "Error al Copiar",
+            description: "No se pudo copiar el mensaje. Por favor, intente de nuevo.",
+            variant: "destructive",
+        });
+    });
   };
 
   return (
@@ -352,8 +356,8 @@ export default function HistorialCotizacionesPage() {
               <Button variant="outline" onClick={() => handleSendEmail(selectedQuoteForView)} disabled={!vehicles.find(v => v.id === selectedQuoteForView.vehicleId)?.ownerEmail}>
                 <Mail className="mr-2 h-4 w-4" /> Enviar por Email
               </Button>
-              <Button variant="outline" onClick={() => handleSendWhatsApp(selectedQuoteForView)} disabled={!vehicles.find(v => v.id === selectedQuoteForView.vehicleId)?.ownerPhone}>
-                <MessageSquare className="mr-2 h-4 w-4" /> Enviar por WhatsApp
+              <Button variant="outline" onClick={() => handleSendWhatsApp(selectedQuoteForView)}>
+                <MessageSquare className="mr-2 h-4 w-4" /> Copiar para WhatsApp
               </Button>
             </>
           }
