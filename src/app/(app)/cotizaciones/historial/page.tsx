@@ -8,7 +8,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Search, ListFilter, CalendarIcon as CalendarDateIcon, FileText, DollarSign, Mail, MessageSquare } from "lucide-react";
+import { Search, ListFilter, CalendarIcon as CalendarDateIcon, FileText, DollarSign, MessageSquare } from "lucide-react";
 import { QuotesTable } from "../components/quotes-table"; 
 import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
 import { QuoteContent } from '@/components/quote-content';
@@ -190,25 +190,6 @@ export default function HistorialCotizacionesPage() {
     html2pdf().from(element).set(opt).save();
   };
 
-  const handleSendEmail = (quoteForAction: QuoteRecord | null) => {
-    if (!quoteForAction) return;
-    const vehicleForAction = vehicles.find(v => v.id === quoteForAction.vehicleId);
-    if (!vehicleForAction?.ownerEmail) {
-        toast({ title: "Faltan Datos", description: "El cliente no tiene un email registrado.", variant: "destructive" });
-        return;
-    }
-    generateAndDownloadPdf(quoteForAction);
-    setTimeout(() => {
-        const subject = encodeURIComponent(`Cotización de Servicio: ${quoteForAction.id} - ${workshopInfo?.name || 'Su Taller'}`);
-        const body = encodeURIComponent(
-            `Estimado/a ${vehicleForAction.ownerName || 'Cliente'},\n\n` +
-            `Hemos generado un PDF con su cotización, el cual debería haberse descargado en su dispositivo. Por favor, no olvide adjuntarlo a este correo.\n\n`+
-            `Saludos cordiales,\n${quoteForAction.preparedByTechnicianName || workshopInfo?.name || 'El equipo del Taller'}`
-        );
-        window.open(`mailto:${vehicleForAction.ownerEmail}?subject=${subject}&body=${body}`, '_blank');
-    }, 1000);
-  };
-
   const handleSendWhatsApp = (quoteForAction: QuoteRecord | null) => {
     if (!quoteForAction) return;
     const vehicleForAction = vehicles.find(v => v.id === quoteForAction.vehicleId);
@@ -353,9 +334,6 @@ export default function HistorialCotizacionesPage() {
           onDialogClose={() => setSelectedQuoteForView(null)}
           footerActions={
             <>
-              <Button variant="outline" onClick={() => handleSendEmail(selectedQuoteForView)} disabled={!vehicles.find(v => v.id === selectedQuoteForView.vehicleId)?.ownerEmail}>
-                <Mail className="mr-2 h-4 w-4" /> Enviar por Email
-              </Button>
               <Button variant="outline" onClick={() => handleSendWhatsApp(selectedQuoteForView)}>
                 <MessageSquare className="mr-2 h-4 w-4" /> Copiar para WhatsApp
               </Button>

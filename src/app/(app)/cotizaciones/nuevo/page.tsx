@@ -11,7 +11,7 @@ import type { QuoteRecord, Vehicle, Technician, ServiceRecord, User, InventoryIt
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { Mail, MessageSquare } from 'lucide-react'; 
+import { MessageSquare } from 'lucide-react'; 
 import html2pdf from 'html2pdf.js';
 
 type DialogStep = 'quote_form' | 'print_preview' | 'closed';
@@ -151,21 +151,6 @@ export default function NuevaCotizacionPage() {
       });
   };
 
-  const handleSendEmail = () => {
-    if (!currentQuoteForPdf || !currentVehicleForPdf) return;
-    generateAndDownloadPdf();
-    setTimeout(() => {
-      const subject = encodeURIComponent(`Cotización de Servicio: ${currentQuoteForPdf.id} - ${workshopInfo?.name || 'Su Taller'}`);
-      const body = encodeURIComponent(
-      `Estimado/a ${currentVehicleForPdf.ownerName || 'Cliente'},\n\n` +
-      `Adjunto encontrará la cotización de servicio solicitada que ha sido descargada en su dispositivo. Por favor, no olvide adjuntarla.\n\n`+
-      `Saludos cordiales,\n${currentQuoteForPdf.preparedByTechnicianName || workshopInfo?.name || 'El equipo del Taller'}`
-      );
-      const mailtoLink = `mailto:${currentVehicleForPdf.ownerEmail || ''}?subject=${subject}&body=${body}`;
-      window.open(mailtoLink, '_blank');
-    }, 1000);
-  };
-
   const handleSendWhatsApp = () => {
     if (!currentQuoteForPdf || !currentVehicleForPdf) {
       toast({ title: "Faltan Datos", description: "No se puede generar el mensaje sin datos de cotización y vehículo.", variant: "destructive" });
@@ -227,9 +212,6 @@ export default function NuevaCotizacionPage() {
           autoPrint={false} 
           footerActions={
              <>
-                <Button variant="outline" onClick={handleSendEmail} disabled={!currentVehicleForPdf?.ownerEmail}>
-                    <Mail className="mr-2 h-4 w-4" /> Enviar por Email
-                </Button>
                 <Button variant="outline" onClick={handleSendWhatsApp}>
                     <MessageSquare className="mr-2 h-4 w-4" /> Copiar para WhatsApp
                 </Button>
