@@ -1,4 +1,3 @@
-
 "use client";
 
 import type { SaleReceipt, ServiceRecord, Vehicle, Technician } from '@/types';
@@ -84,12 +83,9 @@ export const TicketContent = React.forwardRef<HTMLDivElement, TicketContentProps
       data-format="receipt"
       className="font-mono bg-white text-black p-2 ticket-preview-content max-w-[300px] mx-auto text-[10px] leading-snug print:max-w-full print:text-[9px] print:p-0"
     >
+      <div className="h-10"></div> {/* Spacer for top margin */}
       <div className="text-center mb-1">
         <img src={workshopInfo.logoUrl} alt="Logo" className="w-32 mx-auto mb-1" data-ai-hint="workshop logo"/>
-        <div>{workshopInfo.addressLine1}</div>
-        {workshopInfo.addressLine2 && <div>{workshopInfo.addressLine2}</div>}
-        <div>{workshopInfo.cityState}</div>
-        <div>Tel: {workshopInfo.phone}</div>
       </div>
 
       {renderDashedLine()}
@@ -117,20 +113,22 @@ export const TicketContent = React.forwardRef<HTMLDivElement, TicketContentProps
       
       <div className="font-semibold text-center my-1">DETALLE</div>
       
-      {items.map((item, idx) => {
-          const unitPrice = 'unitPrice' in item ? (item.unitPrice || 0) : 0;
-          const totalPrice = ('totalPrice' in item && item.totalPrice) ? item.totalPrice : (unitPrice * item.quantity);
-          const itemName = 'itemName' in item ? item.itemName : ('supplyName' in item ? item.supplyName : 'Artículo desconocido');
-          return (
-              <div key={idx} className="py-0.5">
-                  <div className="w-full">{itemName}</div>
-                  <div className="flex justify-between">
-                      <span>&nbsp;&nbsp;{item.quantity} x {formatCurrency(unitPrice)}</span>
-                      <span className="font-medium">{formatCurrency(totalPrice)}</span>
-                  </div>
-              </div>
-          )
-      })}
+      <div className="py-0.5 space-y-1">
+        {items.map((item, idx) => {
+            const unitPrice = 'unitPrice' in item ? (item.unitPrice || 0) : 0;
+            const totalPrice = ('totalPrice' in item && item.totalPrice) ? item.totalPrice : (unitPrice * item.quantity);
+            const itemName = 'itemName' in item ? item.itemName : ('supplyName' in item ? item.supplyName : 'Artículo desconocido');
+            return (
+                <div key={idx}>
+                    <div className="w-full">{itemName}</div>
+                    <div className="flex justify-between">
+                        <span>&nbsp;&nbsp;{item.quantity} x {formatCurrency(unitPrice)}</span>
+                        <span className="font-medium">{formatCurrency(totalPrice)}</span>
+                    </div>
+                </div>
+            )
+        })}
+      </div>
 
       {renderDashedLine()}
 
@@ -153,6 +151,7 @@ export const TicketContent = React.forwardRef<HTMLDivElement, TicketContentProps
           <div className="font-semibold">¡Gracias por su preferencia!</div>
           <div>Para dudas o aclaraciones, no dude en contactarnos.</div>
       </div>
+      <div className="h-10"></div> {/* Spacer for bottom margin */}
     </div>
   );
 });
