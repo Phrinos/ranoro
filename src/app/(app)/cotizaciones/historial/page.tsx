@@ -8,13 +8,14 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Search, ListFilter, CalendarIcon as CalendarDateIcon, FileText, DollarSign } from "lucide-react";
+import { Search, ListFilter, CalendarIcon as CalendarDateIcon, FileText, DollarSign, Mail, MessageSquare } from "lucide-react";
 import { QuotesTable } from "../components/quotes-table"; 
 import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
 import { QuoteContent } from '@/components/quote-content';
-import { placeholderQuotes, placeholderVehicles } from "@/lib/placeholder-data"; // Removed placeholderTechnicians as it's not used
-import type { QuoteRecord, Vehicle } from "@/types"; // Removed Technician type as it's not used
+import { placeholderQuotes, placeholderVehicles } from "@/lib/placeholder-data"; 
+import type { QuoteRecord, Vehicle, User } from "@/types"; 
 import { useState, useEffect, useMemo } from "react";
+import { useToast } from "@/hooks/use-toast";
 import { format, parseISO, compareAsc, compareDesc, isWithinInterval, isValid, startOfDay, endOfDay } from "date-fns";
 import { es } from 'date-fns/locale';
 import type { DateRange } from "react-day-picker";
@@ -29,29 +30,33 @@ type QuoteSortOption =
 export default function HistorialCotizacionesPage() {
   const [allQuotes, setAllQuotes] = useState<QuoteRecord[]>(placeholderQuotes);
   const [vehicles, setVehicles] = useState<Vehicle[]>(placeholderVehicles);
-  // const [technicians, setTechnicians] = useState<Technician[]>(placeholderTechnicians); // Removed
+  const { toast } = useToast();
   
   const [searchTerm, setSearchTerm] = useState("");
   const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
-  const [sortOption, setSortOption] = useState<QuoteSortOption>("date_desc"); // Default to newest first
+  const [sortOption, setSortOption] = useState<QuoteSortOption>("date_desc"); 
 
   const [isViewQuoteDialogOpen, setIsViewQuoteDialogOpen] = useState(false);
   const [selectedQuoteForView, setSelectedQuoteForView] = useState<QuoteRecord | null>(null);
   const [vehicleForSelectedQuote, setVehicleForSelectedQuote] = useState<Vehicle | null>(null);
-  // const [technicianForSelectedQuote, setTechnicianForSelectedQuote] = useState<Technician | null>(null); // Removed this state
-
+  
+  const [workshopInfo, setWorkshopInfo] = useState<{name?: string}>({});
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+        const stored = localStorage.getItem('workshopTicketInfo');
+        if (stored) setWorkshopInfo(JSON.parse(stored));
+    }
+  }, []);
 
   useEffect(() => {
-    // Sort initial quotes by date descending (newest first)
     const sortedInitialQuotes = [...placeholderQuotes].sort((a, b) => 
       compareDesc(
-        parseISO(a.quoteDate ?? ""),   // si viene vacío, pasa cadena vacía
+        parseISO(a.quoteDate ?? ""),
         parseISO(b.quoteDate ?? "")
       )      
     );
     setAllQuotes(sortedInitialQuotes); 
     setVehicles(placeholderVehicles);
-    // setTechnicians(placeholderTechnicians); // Removed
   }, []);
 
   const filteredAndSortedQuotes = useMemo(() => {
@@ -80,7 +85,7 @@ export default function HistorialCotizacionesPage() {
       switch (sortOption) {
         case "date_asc":
   return compareAsc(
-    parseISO(a.quoteDate ?? ""),   // ← si viene vacío usa ""
+    parseISO(a.quoteDate ?? ""),
     parseISO(b.quoteDate ?? "")
   );
         case "date_desc":
@@ -109,8 +114,6 @@ export default function HistorialCotizacionesPage() {
   const handleViewQuote = (quote: QuoteRecord) => {
     setSelectedQuoteForView(quote);
     setVehicleForSelectedQuote(vehicles.find(v => v.id === quote.vehicleId) || null);
-    // The logic for setting technicianForSelectedQuote has been removed
-    // as QuoteContent will use quote.preparedByTechnicianName
     setIsViewQuoteDialogOpen(true);
   };
 
@@ -118,7 +121,40 @@ export default function HistorialCotizacionesPage() {
     setIsViewQuoteDialogOpen(false);
     setSelectedQuoteForView(null);
     setVehicleForSelectedQuote(null);
-    // setTechnicianForSelectedQuote(null); // Removed
+  };
+  
+  const handleSendEmail = () => {
+    if (!selectedQuoteForView || !vehicleForSelectedQuote) return;
+    const subject = encodeURIComponent(`Cotización de Servicio: ${selectedQuoteForView.id} - ${workshopInfo?.name || 'Su Taller'}`);
+    const body = encodeURIComponent(
+      `Estimado/a ${vehicleForSelectedQuote.ownerName || 'Cliente'},\n\n` +
+      `Le adjuntamos la cotización ${selectedQuoteForView.id} para su vehículo ${vehicleForSelectedQuote.make} ${vehicleForSelectedQuote.model} (${vehicleForSelectedQuote.licensePlate}).\n\n` +
+      `Descripción: ${selectedQuoteForView.description}\n` +
+      `Monto Total Estimado: $${selectedQuoteForView.estimatedTotalCost.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}\n\n` +
+      `Por favor, revise el PDF adjunto para más detalles o imprima la cotización desde la vista previa.\n\n` +
+      `Saludos cordiales,\n${selectedQuoteForView.preparedByTechnicianName || workshopInfo?.name || 'El equipo del Taller'}`
+    );
+    const mailtoLink = `mailto:${vehicleForSelectedQuote.ownerEmail || ''}?subject=${subject}&body=${body}`;
+    window.open(mailtoLink, '_blank');
+    toast({ title: "Preparando Email", description: "Se abrirá su cliente de correo. Considere adjuntar el PDF generado." });
+  };
+
+  const handleSendWhatsApp = () => {
+    if (!selectedQuoteForView || !vehicleForSelectedQuote || !vehicleForSelectedQuote.ownerPhone) {
+      toast({ title: "Faltan Datos", description: "No se encontró el teléfono del cliente para enviar por WhatsApp.", variant: "destructive" });
+      return;
+    }
+    const phoneNumber = vehicleForSelectedQuote.ownerPhone.replace(/\D/g, ''); 
+    const message = encodeURIComponent(
+      `Hola ${vehicleForSelectedQuote.ownerName || 'Cliente'}, le enviamos su cotización de servicio ${selectedQuoteForView.id} de ${workshopInfo?.name || 'nuestro taller'} para su vehículo ${vehicleForSelectedQuote.make} ${vehicleForSelectedQuote.model} (${vehicleForSelectedQuote.licensePlate}).\n` +
+      `Descripción: ${selectedQuoteForView.description}\n` +
+      `Monto Total Estimado: $${selectedQuoteForView.estimatedTotalCost.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}\n\n` +
+      `Preparado por: ${selectedQuoteForView.preparedByTechnicianName || ''}\n` + 
+      `Puede ver más detalles cuando le enviemos el PDF o lo imprima.`
+    );
+    const whatsappLink = `https://wa.me/${phoneNumber}?text=${message}`;
+    window.open(whatsappLink, '_blank');
+    toast({ title: "Abriendo WhatsApp", description: "Se abrirá WhatsApp para enviar el mensaje." });
   };
 
 
@@ -237,11 +273,17 @@ export default function HistorialCotizacionesPage() {
           <QuoteContent 
             quote={selectedQuoteForView} 
             vehicle={vehicleForSelectedQuote || undefined}
-            // preparedByTechnician prop removed
           />
+           <div className="mt-4 flex flex-col sm:flex-row gap-2 justify-center print-hidden border-t pt-4">
+            <Button variant="outline" onClick={handleSendEmail} disabled={!vehicleForSelectedQuote?.ownerEmail}>
+              <Mail className="mr-2 h-4 w-4" /> Enviar por Email
+            </Button>
+            <Button variant="outline" onClick={handleSendWhatsApp} disabled={!vehicleForSelectedQuote?.ownerPhone}>
+              <MessageSquare className="mr-2 h-4 w-4" /> Enviar por WhatsApp
+            </Button>
+          </div>
         </PrintTicketDialog>
       )}
     </>
   );
 }
-

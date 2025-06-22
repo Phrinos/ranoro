@@ -76,7 +76,7 @@ export function QuoteContent({ quote, vehicle, preparedByTechnician, previewWork
   const validityDate = isValid(quoteDate) ? format(addDays(quoteDate, validityDays), "dd 'de' MMMM 'de' yyyy", { locale: es }) : 'N/A';
 
   return (
-    <div className="font-sans bg-white text-black p-6 printable-quote quote-preview-content max-w-4xl mx-auto text-sm print:text-base">
+    <div className="font-sans bg-white text-black p-4 printable-quote quote-preview-content max-w-4xl mx-auto text-xs print:text-sm">
       <div className="flex justify-between items-start mb-6 border-b pb-4">
         <div>
           <Image 
@@ -88,14 +88,14 @@ export function QuoteContent({ quote, vehicle, preparedByTechnician, previewWork
             data-ai-hint="workshop logo"
             priority={typeof window === 'undefined'} 
             />
-          <h1 className="text-2xl font-bold text-gray-800">{workshopInfo.name}</h1>
+          <h1 className="text-xl font-bold text-gray-800">{workshopInfo.name}</h1>
           <p>{workshopInfo.addressLine1}</p>
           {workshopInfo.addressLine2 && <p>{workshopInfo.addressLine2}</p>}
           <p>{workshopInfo.cityState}</p>
           <p>Tel: {workshopInfo.phone}</p>
         </div>
         <div className="text-right">
-          <h2 className="text-xl font-semibold text-primary">COTIZACIÓN</h2>
+          <h2 className="text-lg font-semibold text-primary">COTIZACIÓN</h2>
           <p>Folio: <span className="font-medium">{quote.id}</span></p>
           <p>Fecha: <span className="font-medium">{formattedQuoteDate}</span></p>
         </div>
@@ -152,7 +152,7 @@ export function QuoteContent({ quote, vehicle, preparedByTechnician, previewWork
         <div className="w-full max-w-xs space-y-1">
           {quote.estimatedSubTotal !== undefined && renderLine("Subtotal:", formatCurrency(quote.estimatedSubTotal))}
           {quote.estimatedTaxAmount !== undefined && renderLine(`IVA (${(IVA_RATE * 100).toFixed(0)}%):`, formatCurrency(quote.estimatedTaxAmount))}
-          {renderLine("Total Estimado:", formatCurrency(quote.estimatedTotalCost), true, "text-lg text-primary")}
+          {renderLine("Total Estimado:", formatCurrency(quote.estimatedTotalCost), true, "text-base text-primary")}
         </div>
       </div>
 
@@ -190,4 +190,3 @@ export function QuoteContent({ quote, vehicle, preparedByTechnician, previewWork
     </div>
   );
 }
-
