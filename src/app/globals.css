@@ -129,11 +129,11 @@ body {
     transform: none !important;
   }
 
-  .printable-ticket-dialog .printable-ticket, 
-  .printable-ticket-dialog .printable-ticket * {
+  .printable-ticket-dialog .ticket-preview-content, 
+  .printable-ticket-dialog .ticket-preview-content * {
     visibility: visible !important;
   }
-  .printable-ticket-dialog .printable-ticket {
+  .printable-ticket-dialog .ticket-preview-content {
     /* This div is inside the DialogContent's children (e.g., root of TicketContent) */
     width: 72mm !important; /* Approx 80mm - print margins */
     max-width: 72mm !important; /* Explicit max-width */
@@ -199,4 +199,3 @@ body {
   /* @page ticket { size: 80mm auto; margin: 1mm; } */
   /* .printable-ticket-dialog .printable-ticket { page: ticket; } */
 }
-
