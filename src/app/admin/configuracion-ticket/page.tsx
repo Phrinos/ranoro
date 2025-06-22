@@ -203,7 +203,10 @@ export default function ConfiguracionTicketPage() {
           onOpenChange={setIsPreviewDialogOpen}
           title="Vista Previa de Ticket"
         >
-          <TicketContent sale={sampleSaleForPreview} previewWorkshopInfo={currentPreviewInfo} />
+          <TicketContent
+  sale={sampleSaleForPreview as any}
+  previewWorkshopInfo={currentPreviewInfo as any}
+/>
         </PrintTicketDialog>
       )}
     </div>

@@ -36,12 +36,38 @@ import { cn } from "@/lib/utils";
 import { FixedExpensesDialog } from "../components/fixed-expenses-dialog"; 
 
 export default function ResumenFinancieroPage() {
-  const [selectedDate, setSelectedDate] = useState<Date>(startOfMonth(new Date()));
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [inventory, setInventory] = useState<InventoryItem[]>(placeholderInventory); 
   const [currentFixedExpenses, setCurrentFixedExpenses] = useState<MonthlyFixedExpense[]>(placeholderFixedMonthlyExpenses);
   const [isExpensesDialogOpen, setIsExpensesDialogOpen] = useState(false);
 
+  useEffect(() => {
+    // Initialize date on client side to avoid hydration issues
+    if (typeof window !== 'undefined') {
+      setSelectedDate(startOfMonth(new Date()));
+    }
+  }, []);
+
   const financialSummary = useMemo(() => {
+    if (!selectedDate) {
+      // Return a default/loading state if date is not set yet
+      return {
+        monthYearLabel: "Cargando...",
+        totalOperationalIncome: 0,
+        totalOperationalProfit: 0,
+        totalSalaries: 0,
+        totalTechnicianSalaries: 0,
+        totalAdministrativeSalaries: 0,
+        fixedExpenses: [],
+        totalFixedExpenses: 0,
+        totalTechnicianCommissions: 0,
+        totalAdministrativeCommissions: 0,
+        totalExpenses: 0,
+        netProfit: 0,
+        isProfitableForCommissions: false,
+      };
+    }
+
     const currentMonthStart = startOfMonth(selectedDate);
     const currentMonthEnd = endOfMonth(selectedDate);
 
@@ -115,11 +141,11 @@ export default function ResumenFinancieroPage() {
   };
 
   const handlePreviousMonth = () => {
-    setSelectedDate(prev => subMonths(prev, 1));
+    setSelectedDate(prev => prev ? subMonths(prev, 1) : null);
   };
 
   const handleNextMonth = () => {
-    setSelectedDate(prev => addMonths(prev, 1));
+    setSelectedDate(prev => prev ? addMonths(prev, 1) : null);
   };
   
   const formatCurrency = (amount: number) => `$${amount.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -138,7 +164,7 @@ export default function ResumenFinancieroPage() {
       />
 
       <div className="mb-6 flex items-center justify-center gap-4">
-        <Button variant="outline" size="icon" onClick={handlePreviousMonth} aria-label="Mes anterior">
+        <Button variant="outline" size="icon" onClick={handlePreviousMonth} aria-label="Mes anterior" disabled={!selectedDate}>
           <ChevronLeft className="h-4 w-4" />
         </Button>
         <Popover>
@@ -148,9 +174,10 @@ export default function ResumenFinancieroPage() {
               className={cn(
                 "w-auto min-w-[200px] justify-center text-left font-semibold text-lg px-6 py-3", 
               )}
+              disabled={!selectedDate}
             >
               <CalendarIcon className="mr-3 h-5 w-5" /> 
-              {format(selectedDate, "MMMM yyyy", { locale: es })}
+              {selectedDate ? format(selectedDate, "MMMM yyyy", { locale: es }) : "Cargando..."}
             </Button>
           </PopoverTrigger>
           <PopoverContent className="w-auto p-0">
@@ -159,7 +186,7 @@ export default function ResumenFinancieroPage() {
               selected={selectedDate}
               onSelect={(date) => date && setSelectedDate(startOfMonth(date))}
               initialFocus
-              defaultMonth={selectedDate}
+              defaultMonth={selectedDate || new Date()}
               captionLayout="dropdown-buttons"
               fromYear={getYear(new Date()) - 5}
               toYear={getYear(new Date()) + 5}
@@ -167,7 +194,7 @@ export default function ResumenFinancieroPage() {
             />
           </PopoverContent>
         </Popover>
-        <Button variant="outline" size="icon" onClick={handleNextMonth} aria-label="Mes siguiente" disabled={endOfMonth(selectedDate) >= endOfMonth(new Date())}>
+        <Button variant="outline" size="icon" onClick={handleNextMonth} aria-label="Mes siguiente" disabled={!selectedDate || endOfMonth(selectedDate) >= endOfMonth(new Date())}>
           <ChevronRight className="h-4 w-4" />
         </Button>
       </div>
@@ -284,5 +311,3 @@ export default function ResumenFinancieroPage() {
     </>
   );
 }
-
-

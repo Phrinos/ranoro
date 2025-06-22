@@ -50,7 +50,7 @@ const supplySchema = z.object({
 const serviceFormSchemaBase = z.object({
   vehicleId: z.number({invalid_type_error: "Debe seleccionar o registrar un vehículo."}).positive("Debe seleccionar o registrar un vehículo.").optional(),
   vehicleLicensePlateSearch: z.string().optional(),
-  serviceDate: z.date({ required_error: "La fecha es obligatoria." }),
+  serviceDate: z.date({ required_error: "La fecha es obligatoria." }).optional(),
   mileage: z.coerce.number().int().min(0, "El kilometraje no puede ser negativo.").optional(),
   description: z.string().min(5, "La descripción debe tener al menos 5 caracteres."),
   totalServicePrice: z.coerce.number().min(0, "El costo no puede ser negativo."),
@@ -141,7 +141,7 @@ export function ServiceForm({
           ...initialData,
           vehicleId: initialData.vehicleId,
           vehicleLicensePlateSearch: initialVehicleIdentifier || "",
-          serviceDate: initialData.serviceDate || initialData.quoteDate ? parseISO(initialData.serviceDate || initialData.quoteDate!) : new Date(),
+          serviceDate: (initialData.serviceDate || initialData.quoteDate) ? parseISO((initialData.serviceDate ?? "") || (initialData.quoteDate ?? "")) : undefined,
           deliveryDateTime: mode === 'service' && initialDataService?.deliveryDateTime ? parseISO(initialDataService.deliveryDateTime) : undefined,
           mileage: initialData.mileage ?? undefined,
           suppliesUsed: (mode === 'service' ? initialDataService?.suppliesUsed : initialDataQuote?.suppliesProposed)?.map(s => ({
@@ -158,7 +158,7 @@ export function ServiceForm({
       : {
           vehicleId: undefined,
           vehicleLicensePlateSearch: "",
-          serviceDate: setHours(setMinutes(new Date(), 30), 8),
+          serviceDate: undefined,
           deliveryDateTime: undefined,
           mileage: undefined,
           description: "",
@@ -178,22 +178,27 @@ export function ServiceForm({
     setCurrentInventoryItems(inventoryItemsProp);
   }, [inventoryItemsProp]);
 
-
   useEffect(() => {
     const currentInitialData = mode === 'service' ? initialDataService : initialDataQuote;
-    if (currentInitialData && currentInitialData.vehicleId) {
-      const foundVehicle = localVehicles.find(v => v.id === currentInitialData.vehicleId);
-      if (foundVehicle) {
-        setSelectedVehicle(foundVehicle);
-        form.setValue('vehicleId', foundVehicle.id);
-        setVehicleLicensePlateSearch(foundVehicle.licensePlate);
+    if (currentInitialData) {
+      if (currentInitialData.vehicleId) {
+        const foundVehicle = localVehicles.find(v => v.id === currentInitialData.vehicleId);
+        if (foundVehicle) {
+          setSelectedVehicle(foundVehicle);
+          form.setValue('vehicleId', foundVehicle.id);
+          setVehicleLicensePlateSearch(foundVehicle.licensePlate);
+        }
       }
-    }
-     if (currentInitialData && (currentInitialData.serviceDate || currentInitialData.quoteDate)) {
-      const parsedDate = parseISO(currentInitialData.serviceDate || currentInitialData.quoteDate!);
-      if (isValid(parsedDate)) {
-        form.setValue('serviceDate', parsedDate);
+      const dateToParse = currentInitialData.serviceDate || currentInitialData.quoteDate;
+      if (dateToParse) {
+        const parsedDate = parseISO(dateToParse);
+        if (isValid(parsedDate)) {
+          form.setValue('serviceDate', parsedDate);
+        }
       }
+    } else {
+      // It's a new form, set default date on the client side
+      form.setValue('serviceDate', setHours(setMinutes(new Date(), 30), 8));
     }
   }, [initialDataService, initialDataQuote, mode, localVehicles, form]);
 
@@ -217,7 +222,6 @@ export function ServiceForm({
   const totalSuppliesCost = React.useMemo(() => {
     return watchedSupplies?.reduce((sum, supply) => {
       const item = currentInventoryItems.find(i => i.id === supply.supplyId);
-      // Use unitPrice for services (cost to workshop), sellingPrice for quotes (cost to client)
       const costBasis = mode === 'quote'
         ? (item?.sellingPrice || supply.unitPrice || 0)
         : (item?.unitPrice || supply.unitPrice || 0);
@@ -227,7 +231,6 @@ export function ServiceForm({
 
 
   const serviceProfit = React.useMemo(() => {
-    // For profit calculation, always use the workshop's cost for supplies (item.unitPrice).
     const actualSuppliesWorkshopCost = watchedSupplies?.reduce((sum, supply) => {
         const item = currentInventoryItems.find(i => i.id === supply.supplyId);
         return sum + (item?.unitPrice || 0) * supply.quantity; // Always use workshop cost for profit calc
@@ -284,16 +287,18 @@ export function ServiceForm({
     }
 
     const isValidForm = await form.trigger();
-    if (!isValidForm || (!values.vehicleId && mode === 'service') ) {
+    if (!isValidForm || (!values.vehicleId && mode === 'service') || !values.serviceDate ) {
         if (mode === 'service' && !values.vehicleId) {
             form.setError("vehicleId", { type: "manual", message: "Debe seleccionar o registrar un vehículo." });
+        }
+        if (!values.serviceDate) {
+            form.setError("serviceDate", { type: "manual", message: "La fecha es obligatoria." });
         }
       toast({ title: "Formulario Incompleto", description: "Por favor, revise los campos marcados.", variant: "destructive"});
       return;
     }
 
     const currentTotalServicePrice = values.totalServicePrice || 0;
-    // Recalculate actualSuppliesWorkshopCost for saving, ensuring it always uses workshop cost
     const actualSuppliesWorkshopCostForSave = values.suppliesUsed?.reduce((sum, s) => {
         const itemDetails = currentInventoryItems.find(invItem => invItem.id === s.supplyId);
         return sum + (itemDetails?.unitPrice || 0) * s.quantity;

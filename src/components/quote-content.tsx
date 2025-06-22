@@ -55,7 +55,7 @@ export function QuoteContent({ quote, vehicle, preparedByTechnician, previewWork
 
   const now = new Date();
   const formattedPrintDate = format(now, "dd 'de' MMMM 'de' yyyy, HH:mm:ss", { locale: es });
-  const quoteDate = parseISO(quote.quoteDate);
+  const quoteDate = parseISO(quote.quoteDate ?? "");
   const formattedQuoteDate = isValid(quoteDate) ? format(quoteDate, "dd 'de' MMMM 'de' yyyy", { locale: es }) : 'N/A';
 
   const formatCurrency = (amount: number | undefined) => {

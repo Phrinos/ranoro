@@ -33,7 +33,7 @@ import {
 
 export interface NavigationEntry {
   label: string;
-  icon: LucideIcon | Icon;
+  icon: LucideIcon | typeof Icon;
   path: string;
   isActive?: boolean;
   groupTag: string;

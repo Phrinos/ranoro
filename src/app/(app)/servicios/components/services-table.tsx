@@ -220,7 +220,7 @@ export function ServicesTable({
             vehicles={vehicles} 
             technicians={technicians}
             inventoryItems={inventoryItems}
-            onSave={handleDialogSave} 
+            onSave={handleDialogSave as any}
             onVehicleCreated={onVehicleCreated} 
         />
       )}

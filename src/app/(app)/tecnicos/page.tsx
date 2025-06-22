@@ -39,10 +39,15 @@ export default function TecnicosPage() {
   const [technicians, setTechnicians] = useState<Technician[]>(placeholderTechnicians);
   const [sortOption, setSortOption] = useState<TechnicianSortOption>("name_asc");
   
-  const [filterDateRange, setFilterDateRange] = useState<DateRange | undefined>(() => {
-    const now = new Date();
-    return { from: startOfMonth(now), to: endOfMonth(now) };
-  });
+  const [filterDateRange, setFilterDateRange] = useState<DateRange | undefined>(undefined);
+
+  useEffect(() => {
+    // Initialize date range on client side to avoid hydration issues
+    if (typeof window !== 'undefined') {
+        const now = new Date();
+        setFilterDateRange({ from: startOfMonth(now), to: endOfMonth(now) });
+    }
+  }, []);
 
   const handleSaveTechnician = async (data: TechnicianFormValues) => {
     const newTechnician: Technician = {
@@ -59,12 +64,19 @@ export default function TecnicosPage() {
   
 
   const aggregatedTechnicianPerformance = useMemo((): AggregatedTechnicianPerformance[] => {
-    let dateFrom = filterDateRange?.from ? startOfDay(filterDateRange.from) : startOfMonth(new Date());
-    let dateTo = filterDateRange?.to ? endOfDay(filterDateRange.to) : endOfMonth(new Date());
-    if (filterDateRange?.from && !filterDateRange.to) { 
-        dateTo = endOfDay(filterDateRange.from);
+    if (!filterDateRange || !filterDateRange.from) {
+      return technicians.map(tech => ({
+        technicianId: tech.id,
+        technicianName: tech.name,
+        totalRevenue: 0,
+        totalProfit: 0,
+        totalCommissionEarned: 0,
+      }));
     }
 
+    let dateFrom = startOfDay(filterDateRange.from);
+    let dateTo = filterDateRange.to ? endOfDay(filterDateRange.to) : endOfDay(filterDateRange.from);
+    
     return technicians.map(tech => {
       const techServices = placeholderServiceRecords.filter(service => {
         if (service.technicianId !== tech.id) return false;
@@ -103,7 +115,7 @@ export default function TecnicosPage() {
           if (!b.hireDate) return -1;
           return compareAsc(parseISO(a.hireDate), parseISO(b.hireDate));
         case 'hireDate_desc':
-          if (!a.hireDate) return 1;
+          if (!a.hireDate) return 1; 
           if (!b.hireDate) return -1;
           return compareDesc(parseISO(a.hireDate), parseISO(b.hireDate));
         case 'salary_asc': return (a.monthlySalary || 0) - (b.monthlySalary || 0);
@@ -240,15 +252,3 @@ export default function TecnicosPage() {
     </>
   );
 }
-    
-
-    
-
-
-
-
-
-
-
-
-

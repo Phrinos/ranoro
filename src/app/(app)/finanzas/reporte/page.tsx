@@ -36,6 +36,20 @@ interface CorteDiaData {
   grandTotal: number;
 }
 
+interface SummaryData {
+  operationsTodayCount: number;
+  salesTodayCount: number;
+  servicesTodayCount: number;
+  totalGeneratedToday: number;
+  totalProfitToday: number;
+  totalGeneratedCurrentMonth: number;
+  profitCurrentMonth: number;
+  totalGeneratedLastMonth: number;
+  profitLastMonth: number;
+  currentMonthFormatted: string;
+  lastMonthFormatted: string;
+}
+
 export default function FinancialReportPage() {
   const [allSales, setAllSales] = useState<SaleReceipt[]>(placeholderSales);
   const [allServices, setAllServices] = useState<ServiceRecord[]>(placeholderServiceRecords);
@@ -48,7 +62,6 @@ export default function FinancialReportPage() {
 
   const [isCorteDiaDialogOpen, setIsCorteDiaDialogOpen] = useState(false);
   const [corteDiaData, setCorteDiaData] = useState<CorteDiaData | null>(null);
-
 
   const combinedOperations = useMemo((): FinancialOperation[] => {
     const salesOperations: FinancialOperation[] = allSales.map(sale => ({
@@ -115,8 +128,10 @@ export default function FinancialReportPage() {
     });
     return filtered;
   }, [combinedOperations, searchTerm, dateRange, sortOption, operationTypeFilter]);
+  
+  const [summaryData, setSummaryData] = useState<SummaryData | null>(null);
 
-  const summaryData = useMemo(() => {
+  useEffect(() => {
     const todayRange = getTodayRange();
     const currentMonthDateRange = getCurrentMonthRange(); 
     const lastMonthDateRange = getLastMonthRange(); 
@@ -140,8 +155,7 @@ export default function FinancialReportPage() {
     const totalGeneratedToday = opsToday.reduce((sum, op) => sum + op.totalAmount, 0);
     const totalProfitToday = opsToday.reduce((sum, op) => sum + op.profit, 0);
 
-
-    return {
+    setSummaryData({
       operationsTodayCount: opsToday.length,
       salesTodayCount,
       servicesTodayCount,
@@ -153,8 +167,9 @@ export default function FinancialReportPage() {
       profitLastMonth: opsLastMonth.reduce((sum, op) => sum + op.profit, 0),
       currentMonthFormatted: format(currentMonthDateRange.from, "MMMM yyyy", { locale: es }),
       lastMonthFormatted: format(lastMonthDateRange.from, "MMMM yyyy", { locale: es }),
-    };
+    });
   }, [combinedOperations]);
+
 
   const handleGenerateCorteDia = () => {
     const todayRange = getTodayRange();
@@ -214,9 +229,9 @@ export default function FinancialReportPage() {
             <Activity className="h-5 w-5 text-blue-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold font-headline">{summaryData.operationsTodayCount}</div>
+            <div className="text-2xl font-bold font-headline">{summaryData?.operationsTodayCount ?? 0}</div>
              <p className="text-xs text-muted-foreground">
-                {summaryData.salesTodayCount} Ventas, {summaryData.servicesTodayCount} Servicios
+                {summaryData?.salesTodayCount ?? 0} Ventas, {summaryData?.servicesTodayCount ?? 0} Servicios
              </p>
           </CardContent>
         </Card>
@@ -226,30 +241,30 @@ export default function FinancialReportPage() {
             <DollarSign className="h-5 w-5 text-green-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold font-headline">{formatCurrency(summaryData.totalGeneratedToday)}</div>
+            <div className="text-2xl font-bold font-headline">{formatCurrency(summaryData?.totalGeneratedToday ?? 0)}</div>
              <p className="text-xs text-muted-foreground">
-                Ganancia: {formatCurrency(summaryData.totalProfitToday)}
+                Ganancia: {formatCurrency(summaryData?.totalProfitToday ?? 0)}
              </p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">{summaryData.currentMonthFormatted}</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">{summaryData?.currentMonthFormatted ?? "..."}</CardTitle>
             <DollarSign className="h-5 w-5 text-purple-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold font-headline">{formatCurrency(summaryData.totalGeneratedCurrentMonth)}</div>
-            <p className="text-xs text-muted-foreground">Ganancia: {formatCurrency(summaryData.profitCurrentMonth)}</p>
+            <div className="text-2xl font-bold font-headline">{formatCurrency(summaryData?.totalGeneratedCurrentMonth ?? 0)}</div>
+            <p className="text-xs text-muted-foreground">Ganancia: {formatCurrency(summaryData?.profitCurrentMonth ?? 0)}</p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">{summaryData.lastMonthFormatted}</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">{summaryData?.lastMonthFormatted ?? "..."}</CardTitle>
             <DollarSign className="h-5 w-5 text-gray-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold font-headline">{formatCurrency(summaryData.totalGeneratedLastMonth)}</div>
-             <p className="text-xs text-muted-foreground">Ganancia: {formatCurrency(summaryData.profitLastMonth)}</p>
+            <div className="text-2xl font-bold font-headline">{formatCurrency(summaryData?.totalGeneratedLastMonth ?? 0)}</div>
+             <p className="text-xs text-muted-foreground">Ganancia: {formatCurrency(summaryData?.profitLastMonth ?? 0)}</p>
           </CardContent>
         </Card>
       </div>
@@ -392,4 +407,3 @@ export default function FinancialReportPage() {
     </>
   );
 }
-
