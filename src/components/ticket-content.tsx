@@ -1,3 +1,4 @@
+
 "use client";
 
 import type { SaleReceipt, ServiceRecord, Vehicle, Technician } from '@/types';
@@ -73,7 +74,7 @@ export const TicketContent = React.forwardRef<HTMLDivElement, TicketContentProps
   );
 
   const renderDashedLine = () => (
-    <div className="border-t border-dashed border-neutral-400 mt-3 mb-1"></div>
+    <div className="border-t border-dashed border-neutral-400 my-3"></div>
   );
 
   return (
