@@ -116,16 +116,15 @@ body {
   }
   
   /* === Styles for Thermal Ticket (e.g., 80mm POS receipts, service orders) === */
-  /* These styles apply when DialogContent has the class "printable-ticket-dialog" (default or explicitly set) */
-  .printable-ticket-dialog { /* This is the DialogContent */
+  .printable-ticket-dialog {
     box-shadow: none !important;
     border: none !important;
     padding: 0 !important;
     margin: 0 !important;
-    width: auto !important; /* Allow content to dictate width */
+    width: auto !important;
     max-width: none !important;
     height: auto !important;
-    position: static !important; /* Reset dialog positioning */
+    position: static !important;
     transform: none !important;
   }
 
@@ -134,68 +133,61 @@ body {
     visibility: visible !important;
   }
   .printable-ticket-dialog .ticket-preview-content {
-    /* This div is inside the DialogContent's children (e.g., root of TicketContent) */
-    width: 72mm !important; /* Approx 80mm - print margins */
-    max-width: 72mm !important; /* Explicit max-width */
-    margin: 0 auto !important; /* Center ticket if paper is wider */
-    padding: 2mm !important; /* Small padding for thermal ticket */
+    width: 72mm !important;
+    max-width: 72mm !important;
+    margin: 0 auto !important;
+    padding: 2mm !important;
     font-size: 9pt !important; 
     line-height: 1.2 !important;
     color: black !important; 
     background-color: white !important; 
   }
-   .printable-ticket-dialog .ticket-preview-content { /* Match class in TicketContent/CorteDiaContent */
+  .printable-ticket-dialog .ticket-preview-content {
     max-width: 100% !important;
     margin: 0 !important;
     padding: 0 !important;
   }
-   .printable-ticket-dialog .ticket-container { /* Wrapper div inside PrintTicketDialog for TicketContent */
+  .printable-ticket-dialog .ticket-container {
      padding: 0 !important;
      margin: 0 !important;
   }
 
   /* === Styles for Letter Size Quote === */
-  /* These styles apply when DialogContent has the class "printable-quote-dialog" */
-  .printable-quote-dialog { /* This is the DialogContent */
+  .printable-quote-dialog {
     visibility: hidden !important; /* Hide the dialog box itself to allow full page content */
-    display: none !important; /* Remove from layout flow */
   }
 
   .printable-quote-dialog .printable-quote,
   .printable-quote-dialog .printable-quote * {
     visibility: visible !important;
   }
-  .printable-quote-dialog .printable-quote { /* This is the root div from QuoteContent */
-    position: fixed !important; /* Take it out of normal flow and relative to viewport */
+  .printable-quote-dialog .printable-quote {
+    position: fixed !important;
     left: 0 !important;
     top: 0 !important;
     width: 8.5in !important;
-    min-height: 11in !important; /* Use min-height to allow content to expand if needed */
-    height: auto; /* Allow content to flow beyond 11in if necessary (multi-page) */
+    min-height: 11in !important;
+    height: auto;
     margin: 0 !important;
-    padding: 0.75in !important; /* Margins for letter paper */
+    padding: 0.75in !important;
     border: none !important;
     box-shadow: none !important;
     font-size: 11pt !important;
     line-height: 1.4 !important;
     color: black !important;
     background-color: white !important;
-    overflow: visible !important; /* Important for multi-page content */
-    -webkit-print-color-adjust: exact !important; /* Ensure background and colors print */
+    overflow: visible !important;
+    -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
   }
-   .printable-quote-dialog .quote-preview-content { /* This is also the root div in QuoteContent */
-    max-width: 100% !important; /* Should fill the .printable-quote container */
+   .printable-quote-dialog .quote-preview-content {
+    max-width: 100% !important;
     margin: 0 !important;
-    padding: 0 !important; /* Padding is handled by .printable-quote */
+    padding: 0 !important;
   }
 
   @page {
-    size: letter; /* Default page size for quotes */
-    margin: 0; /* Remove browser default margins for the page itself */
+    size: letter;
+    margin: 0;
   }
-  
-  /* Specific @page for thermal tickets if needed, though usually handled by printer driver */
-  /* @page ticket { size: 80mm auto; margin: 1mm; } */
-  /* .printable-ticket-dialog .printable-ticket { page: ticket; } */
 }

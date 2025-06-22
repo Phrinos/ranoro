@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Printer, X } from 'lucide-react';
+import { cn } from "@/lib/utils";
 
 interface PrintTicketDialogProps {
   open: boolean;
@@ -19,8 +20,8 @@ interface PrintTicketDialogProps {
   children: React.ReactNode; 
   onDialogClose?: () => void; 
   autoPrint?: boolean; 
-  printButtonText?: string; // New prop for custom print button text
-  dialogContentClassName?: string; // New prop for custom dialog content class
+  printButtonText?: string;
+  dialogContentClassName?: string;
 }
 
 export function PrintTicketDialog({
@@ -30,8 +31,8 @@ export function PrintTicketDialog({
   children,
   onDialogClose,
   autoPrint = false,
-  printButtonText = "Imprimir Ticket", // Default value
-  dialogContentClassName = "printable-ticket-dialog" // Default class for tickets
+  printButtonText = "Imprimir",
+  dialogContentClassName = "printable-ticket-dialog"
 }: PrintTicketDialogProps) {
 
   useEffect(() => {
@@ -56,14 +57,18 @@ export function PrintTicketDialog({
 
   return (
     <Dialog open={open} onOpenChange={(isOpen) => {
-        onOpenChange(isOpen);
-        if(!isOpen && onDialogClose) {
-            onDialogClose();
+        if (!isOpen) {
+            handleClose();
+        } else {
+            onOpenChange(true);
         }
     }}>
       <DialogContent className={cn(
-        "sm:max-w-md print:max-w-full print:border-none print:shadow-none print:p-0",
-        dialogContentClassName // Apply custom class here
+        // Make the dialog for quotes wider for a better preview
+        dialogContentClassName?.includes('quote') ? "sm:max-w-4xl" : "sm:max-w-md",
+        // Base print styles remain the same
+        "print:max-w-full print:border-none print:shadow-none print:p-0",
+        dialogContentClassName
       )}>
         <DialogHeader className="print:hidden">
           <DialogTitle>{title}</DialogTitle>
@@ -73,11 +78,6 @@ export function PrintTicketDialog({
           {children} 
         </div>
 
-        {/* Footer is now conditional based on children containing their own actions or if this is used */}
-        {/* If children include custom actions, this footer might be redundant or need adjustment */}
-        {/* For now, keeping default footer if no custom actions are passed implicitly via children */}
-        {/* The new share buttons in cotizaciones/nuevo/page.tsx will be outside this default footer if placed in children */}
-        
         <DialogFooter className="print:hidden sm:justify-between">
           <Button type="button" variant="outline" onClick={handleClose}>
             <X className="mr-2 h-4 w-4" /> Cerrar
@@ -90,9 +90,3 @@ export function PrintTicketDialog({
     </Dialog>
   );
 }
-
-// Helper function to conditionally add cn, not strictly needed if always passing string
-function cn(...classes: (string | undefined | null | false)[]): string {
-  return classes.filter(Boolean).join(' ');
-}
-
