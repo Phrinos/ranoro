@@ -65,7 +65,7 @@ export function PrintTicketDialog({
     }}>
       <DialogContent className={cn(
         // Make the dialog for quotes wider for a better preview
-        dialogContentClassName?.includes('quote') ? "sm:max-w-4xl" : "sm:max-w-md",
+        dialogContentClassName?.includes('quote') ? "sm:max-w-xl" : "sm:max-w-md",
         // Base print styles remain the same
         "print:max-w-full print:border-none print:shadow-none print:p-0",
         dialogContentClassName
