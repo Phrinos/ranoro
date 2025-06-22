@@ -214,13 +214,11 @@ export const placeholderAppRoles: AppRole[] = [];
 // ===          FUNCIONES HELPER         ===
 // =======================================
 export const getCurrentMonthRange = () => {
-    const now = new Date();
-    return { from: startOfMonth(now), to: endOfMonth(now) };
+    return { from: startOfMonth(STATIC_NOW), to: endOfMonth(STATIC_NOW) };
 };
 
 export const getLastMonthRange = () => {
-    const now = new Date();
-    const lastMonthDate = subMonths(now, 1);
+    const lastMonthDate = subMonths(STATIC_NOW, 1);
     return { from: startOfMonth(lastMonthDate), to: endOfMonth(lastMonthDate) };
 };
 
