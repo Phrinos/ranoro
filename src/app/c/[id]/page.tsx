@@ -52,11 +52,11 @@ export default function PublicQuoteViewPage() {
     const element = quoteContentRef.current;
     const pdfFileName = `Cotizacion-${quote.id}.pdf`;
     const opt = {
-      margin:       0.59,
+      margin:       15,
       filename:     pdfFileName,
       image:        { type: 'jpeg', quality: 0.98 },
-      html2canvas:  { scale: 2, useCORS: true },
-      jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
+      html2canvas:  { scale: 2, useCORS: true, letterRendering: true },
+      jsPDF:        { unit: 'mm', format: 'letter', orientation: 'portrait' }
     };
     toast({ title: "Generando PDF...", description: `Se está preparando ${pdfFileName}.` });
     html2pdf().from(element).set(opt).save();
@@ -67,11 +67,11 @@ export default function PublicQuoteViewPage() {
     const element = quoteContentRef.current;
     const pdfFileName = `Cotizacion-${quote.id}.pdf`;
     const opt = {
-      margin:       0.59,
+      margin:       15,
       filename:     pdfFileName,
       image:        { type: 'jpeg', quality: 0.98 },
-      html2canvas:  { scale: 2, useCORS: true },
-      jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
+      html2canvas:  { scale: 2, useCORS: true, letterRendering: true },
+      jsPDF:        { unit: 'mm', format: 'letter', orientation: 'portrait' }
     };
 
     html2pdf().from(element).set(opt).output('bloburl').then((url: string) => {
