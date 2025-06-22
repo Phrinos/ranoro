@@ -44,14 +44,40 @@ export function PrintTicketDialog({
   useEffect(() => {
     if (autoPrint && open) {
       const timer = setTimeout(() => {
-        window.print();
+        handlePrint();
       }, 500); 
       return () => clearTimeout(timer);
     }
   }, [autoPrint, open]);
 
   const handlePrint = () => {
-    window.print();
+    const element = contentRef.current;
+    if (element) {
+      const pdfFileName = `${title.replace(/[:\s/]/g, '_')}.pdf`;
+      const opt = {
+        margin: 0,
+        filename: pdfFileName,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true },
+        jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
+      };
+
+      toast({
+        title: "Generando Vista de Impresión...",
+        description: `Se está preparando el archivo ${pdfFileName}.`,
+      });
+      
+      html2pdf().from(element).set(opt).output('bloburl').then((url) => {
+        window.open(url, '_blank');
+      }).catch(err => {
+        toast({
+          title: "Error al generar PDF para imprimir",
+          description: "Ocurrió un problema al crear el archivo.",
+          variant: "destructive",
+        });
+        console.error("PDF generation error for printing:", err);
+      });
+    }
   };
 
   const handleDownloadPDF = () => {
