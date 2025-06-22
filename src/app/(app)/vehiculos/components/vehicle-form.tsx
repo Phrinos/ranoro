@@ -16,11 +16,12 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import type { Vehicle } from "@/types";
+import { useEffect } from "react";
 
 const vehicleFormSchema = z.object({
   make: z.string().min(2, "La marca debe tener al menos 2 caracteres."),
   model: z.string().min(1, "El modelo es obligatorio."),
-  year: z.coerce.number().min(1900, "El año debe ser posterior a 1900.").max(new Date().getFullYear() + 1, `El año no puede ser mayor a ${new Date().getFullYear() + 1}.`),
+  year: z.coerce.number().min(1900, "El año debe ser posterior a 1900.").max(2040, `El año no puede ser mayor a 2040.`),
   vin: z.string().length(17, "El VIN debe tener 17 caracteres.").optional().or(z.literal('')),
   licensePlate: z.string().min(3, "La placa debe tener al menos 3 caracteres."),
   color: z.string().optional(), // Added
@@ -69,7 +70,7 @@ export function VehicleForm({ initialData, onSubmit, onClose }: VehicleFormProps
     : {
       make: "",
       model: "",
-      year: new Date().getFullYear(),
+      year: undefined,
       vin: "",
       licensePlate: "",
       color: "", // Added
@@ -79,6 +80,12 @@ export function VehicleForm({ initialData, onSubmit, onClose }: VehicleFormProps
       notes: "", // Added
     },
   });
+
+  useEffect(() => {
+    if (!initialData) {
+      form.setValue('year', new Date().getFullYear());
+    }
+  }, [initialData, form]);
 
   const handleFormSubmit = async (values: VehicleFormValues) => {
     await onSubmit(values);
