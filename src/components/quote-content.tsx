@@ -161,20 +161,15 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
       </section>
 
       <footer className="text-xs text-gray-600 mt-auto border-t border-gray-300 pt-4">
-        {(quote.preparedByTechnicianName || validityDays > 0) && (
-            <div className="mb-4">
-                <h4 className="font-semibold text-gray-700 mb-1">Notas y Condiciones:</h4>
-                <p className="mb-1">Precios en MXN. Esta cotización es válida hasta el {validityDate}. Esta cotización no incluye trabajos no especificados.</p>
-                {quote.preparedByTechnicianName && <p className="mt-2">Cotización realizada por: {quote.preparedByTechnicianName}</p>}
-            </div>
-        )}
-        <div className="text-center space-y-1">
+        <div className="mb-4">
+          <h4 className="font-semibold text-gray-700 mb-1">Notas y Condiciones:</h4>
+          <p className="mb-1">Precios en MXN. Esta cotización es válida hasta el {validityDate}. Esta cotización no incluye trabajos no especificados.</p>
+          {quote.preparedByTechnicianName && <p className="mt-2">Cotización realizada por: {quote.preparedByTechnicianName}</p>}
+        </div>
+        <div className="text-left space-y-1">
             <p className="font-semibold">¡Gracias por confiar en Ranoro!</p>
             <p>
-            Valoramos sinceramente la oportunidad de atender su vehículo. Nos comprometemos a brindarle un servicio honesto, transparente y de la más alta calidad.
-            </p>
-            <p>
-            Si tiene alguna pregunta, contáctenos, estaremos encantados de ayudarle.
+            Valoramos sinceramente la oportunidad de atender su vehículo. Nos comprometemos a brindarle un servicio honesto, transparente y de la más alta calidad. Si tiene alguna pregunta, contáctenos, estaremos encantados de ayudarle.
             </p>
             <p className="print-block hidden pt-2">Impreso el: {formattedPrintDate}</p>
         </div>
