@@ -82,7 +82,7 @@ export const TicketContent = React.forwardRef<HTMLDivElement, TicketContentProps
       id="ticketToExport"
       ref={ref}
       data-format="receipt"
-      className="font-mono bg-white text-black p-2 ticket-preview-content max-w-[300px] mx-auto text-[10px] leading-tight print:max-w-full print:text-[9px] print:p-0"
+      className="font-mono bg-white text-black p-2 ticket-preview-content max-w-[300px] mx-auto text-[10px] leading-snug print:max-w-full print:text-[9px] print:p-0"
     >
       <div className="text-center mb-1">
         <img src={workshopInfo.logoUrl} alt="Logo" className="w-32 mx-auto mb-1" data-ai-hint="workshop logo"/>
@@ -123,8 +123,8 @@ export const TicketContent = React.forwardRef<HTMLDivElement, TicketContentProps
           const totalPrice = ('totalPrice' in item && item.totalPrice) ? item.totalPrice : (unitPrice * item.quantity);
           const itemName = 'itemName' in item ? item.itemName : ('supplyName' in item ? item.supplyName : 'Artículo desconocido');
           return (
-              <div key={idx}>
-                  <div className="truncate">{itemName}</div>
+              <div key={idx} className="py-0.5">
+                  <div>{itemName}</div>
                   <div className="flex justify-between">
                       <span>&nbsp;&nbsp;{item.quantity} x {formatCurrency(unitPrice)}</span>
                       <span className="font-medium">{formatCurrency(totalPrice)}</span>
