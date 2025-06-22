@@ -161,15 +161,11 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
       </section>
 
       <footer className="text-xs text-gray-600 mt-auto border-t border-gray-300 pt-4">
-        {(quote.notes || preparedByTechnician || validityDays > 0) && (
+        {(quote.preparedByTechnicianName || validityDays > 0) && (
             <div className="mb-4">
                 <h4 className="font-semibold text-gray-700 mb-1">Notas y Condiciones:</h4>
-                {quote.notes && <p className="whitespace-pre-wrap mb-2">{quote.notes}</p>}
-                {isValid(quoteDate) && validityDays > 0 && (
-                    <p className="mb-1">Esta cotización es válida hasta el {validityDate}. Precios sujetos a cambio sin previo aviso después de esta fecha.</p>
-                )}
-                <p>Precios en MXN. Esta cotización no incluye trabajos no especificados.</p>
-                {quote.preparedByTechnicianName && <p className="mt-2">Preparado por: {quote.preparedByTechnicianName}</p>}
+                <p className="mb-1">Precios en MXN. Esta cotización es válida hasta el {validityDate}. Esta cotización no incluye trabajos no especificados.</p>
+                {quote.preparedByTechnicianName && <p className="mt-2">Cotización realizada por: {quote.preparedByTechnicianName}</p>}
             </div>
         )}
         <div className="text-center space-y-1">
