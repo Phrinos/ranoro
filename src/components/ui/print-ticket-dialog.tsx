@@ -75,7 +75,7 @@ export function PrintTicketDialog({
         description: "Esto puede tomar un momento.",
       });
 
-      html2pdf().from(element).set(opt).output('datauristring').then((dataUrl) => {
+      html2pdf().from(element).set(opt).output('datauristring').then((dataUrl: string) => {
         const iframe = document.createElement('iframe');
         iframe.style.position = 'fixed';
         iframe.style.width = '0';
@@ -104,7 +104,7 @@ export function PrintTicketDialog({
                 }
             }
         };
-      }).catch(err => {
+      }).catch((err: any) => {
          toast({ title: "Error al Generar PDF", description: "Ocurrió un problema al crear el archivo de impresión.", variant: "destructive" });
          console.error("PDF generation for print error:", err);
       });
@@ -126,7 +126,7 @@ export function PrintTicketDialog({
           title: "PDF Descargado",
           description: "El archivo se ha guardado exitosamente.",
         });
-      }).catch(err => {
+      }).catch((err: any) => {
         toast({
           title: "Error al generar PDF",
           description: "Ocurrió un problema al crear el archivo.",

@@ -74,7 +74,7 @@ export default function PublicQuoteViewPage() {
       jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
     };
 
-    html2pdf().from(element).set(opt).output('bloburl').then((url) => {
+    html2pdf().from(element).set(opt).output('bloburl').then((url: string) => {
       const printWindow = window.open(url);
       if (printWindow) {
         printWindow.onload = () => {
