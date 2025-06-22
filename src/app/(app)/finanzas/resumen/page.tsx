@@ -56,6 +56,8 @@ export default function ResumenFinancieroPage() {
         totalOperationalIncome: 0,
         totalIncomeFromSales: 0,
         totalIncomeFromServices: 0,
+        totalProfitFromSales: 0,
+        totalProfitFromServices: 0,
         totalCostOfGoods: 0,
         totalOperationalProfit: 0,
         totalSalaries: 0,
@@ -134,6 +136,8 @@ export default function ResumenFinancieroPage() {
       totalOperationalIncome,
       totalIncomeFromSales,
       totalIncomeFromServices,
+      totalProfitFromSales,
+      totalProfitFromServices,
       totalCostOfGoods,
       totalOperationalProfit,
       totalSalaries: totalBaseSalaries,
@@ -261,13 +265,22 @@ export default function ResumenFinancieroPage() {
               <span className="text-muted-foreground">Ingreso por Servicios:</span>
               <span className="font-semibold">{formatCurrency(financialSummary.totalIncomeFromServices)}</span>
             </div>
+            <hr className="my-1 border-dashed"/>
+            <div className="flex justify-between items-center">
+              <span className="text-muted-foreground">Ganancia por Ventas:</span>
+              <span className="font-semibold text-green-600">{formatCurrency(financialSummary.totalProfitFromSales)}</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-muted-foreground">Ganancia por Servicios:</span>
+              <span className="font-semibold text-green-600">{formatCurrency(financialSummary.totalProfitFromServices)}</span>
+            </div>
             <hr className="my-1 border-border/50"/>
             <div className="flex justify-between items-center">
-              <span className="text-muted-foreground">Ganancia Bruta Operativa:</span>
+              <span className="text-foreground font-medium">Ganancia Bruta Operativa:</span>
               <span className="font-semibold text-lg text-green-600">{formatCurrency(financialSummary.totalOperationalProfit)}</span>
             </div>
              <CardDescription className="text-xs pt-1">
-                (Ingresos Totales - Costo de Insumos/Partes)
+                (Suma de ganancias de ventas y servicios)
             </CardDescription>
           </CardContent>
         </Card>
