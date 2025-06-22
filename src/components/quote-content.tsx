@@ -90,31 +90,39 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
             data-ai-hint="workshop logo"
           />
           <h1 className="text-2xl font-bold text-gray-800">{workshopInfo.name}</h1>
-          <p>{workshopInfo.addressLine1}</p>
-          {workshopInfo.addressLine2 && <p>{workshopInfo.addressLine2}</p>}
-          <p>{workshopInfo.cityState}</p>
-          <p>Tel: {workshopInfo.phone}</p>
+          <div className="space-y-0 leading-tight">
+            <div>{workshopInfo.addressLine1}</div>
+            {workshopInfo.addressLine2 && <div>{workshopInfo.addressLine2}</div>}
+            <div>{workshopInfo.cityState}</div>
+            <div>Tel: {workshopInfo.phone}</div>
+          </div>
         </div>
         <div className="text-right">
           <h2 className="text-3xl font-semibold text-primary">COTIZACIÓN</h2>
-          <p className="mt-2">Folio: <span className="font-medium">{quote.id}</span></p>
-          <p>Fecha: <span className="font-medium">{formattedQuoteDate}</span></p>
+          <div className="space-y-0 leading-tight mt-2">
+            <div>Folio: <span className="font-medium">{quote.id}</span></div>
+            <div>Fecha: <span className="font-medium">{formattedQuoteDate}</span></div>
+          </div>
         </div>
       </header>
 
       <section className="grid grid-cols-2 gap-8 mb-8">
         <div className="bg-gray-50 p-4 rounded-md border border-gray-200">
           <h3 className="font-semibold text-gray-700 mb-2 border-b pb-1">Cliente:</h3>
-          <p>{vehicle?.ownerName || 'N/A'}</p>
-          <p>{vehicle?.ownerPhone || 'N/A'}</p>
-          <p>{vehicle?.ownerEmail || 'N/A'}</p>
+          <div className="space-y-0 leading-tight">
+            <div>{vehicle?.ownerName || 'N/A'}</div>
+            <div>{vehicle?.ownerPhone || 'N/A'}</div>
+            <div>{vehicle?.ownerEmail || 'N/A'}</div>
+          </div>
         </div>
         <div className="bg-gray-50 p-4 rounded-md border border-gray-200">
           <h3 className="font-semibold text-gray-700 mb-2 border-b pb-1">Vehículo:</h3>
-          <p>{vehicle ? `${vehicle.make} ${vehicle.model} (${vehicle.year})` : quote.vehicleIdentifier || 'N/A'}</p>
-          <p>Placas: {vehicle?.licensePlate || 'N/A'}</p>
-          <p>VIN: {vehicle?.vin || 'N/A'}</p>
-          {quote.mileage !== undefined && <p>Kilometraje: {quote.mileage.toLocaleString('es-ES')} km</p>}
+          <div className="space-y-0 leading-tight">
+            <div>{vehicle ? `${vehicle.make} ${vehicle.model} (${vehicle.year})` : quote.vehicleIdentifier || 'N/A'}</div>
+            <div>Placas: {vehicle?.licensePlate || 'N/A'}</div>
+            <div>VIN: {vehicle?.vin || 'N/A'}</div>
+            {quote.mileage !== undefined && <div>Kilometraje: {quote.mileage.toLocaleString('es-ES')} km</div>}
+          </div>
         </div>
       </section>
 
@@ -160,12 +168,12 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
       <footer className="text-xs text-gray-600 mt-auto border-t border-gray-300 pt-4">
         <div className="mb-4">
           <h4 className="font-semibold text-gray-700 mb-1">Notas y Condiciones:</h4>
-          <p>
+          <p className="leading-snug">
             {`Cotización realizada por: ${quote.preparedByTechnicianName || 'N/A'}. `}
             Precios en MXN. Esta cotización es válida hasta el {validityDate}. Esta cotización no incluye trabajos no especificados.
           </p>
         </div>
-        <div className="text-left space-y-1">
+        <div className="text-left space-y-1 leading-snug">
             <p className="font-semibold">¡Gracias por confiar en Ranoro!</p>
             <p>
             Valoramos sinceramente la oportunidad de atender su vehículo. Nos comprometemos a brindarle un servicio honesto, transparente y de la más alta calidad. Si tiene alguna pregunta, contáctenos, estaremos encantados de ayudarle.
