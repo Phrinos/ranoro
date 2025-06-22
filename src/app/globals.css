@@ -111,27 +111,30 @@ body {
   body * {
     visibility: hidden;
   }
-  .print-hidden {
-    display: none !important;
-  }
-
-  /* --- Generic Print Rules for Letter Size --- */
+  /* Make the printable content and its children visible */
   .printable-content, .printable-content * {
     visibility: visible;
   }
+  /* Style the printable content to take up the whole page */
   .printable-content {
-    position: absolute;
-    left: 0;
+    position: fixed; /* Use fixed to ensure it's relative to the viewport */
     top: 0;
-    width: 100%;
+    left: 0;
+    width: 100vw;
+    height: auto; /* Allow content to flow */
+    min-height: 100vh;
     margin: 0;
     padding: 0;
-    border: none;
-    box-shadow: none;
-    color: black !important;
-    background-color: white !important;
+    border: none !important;
+    box-shadow: none !important;
+    background: white !important;
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
+  }
+
+  /* Explicitly hide elements marked with .print-hidden inside the printable area */
+  .printable-content .print-hidden {
+    display: none !important;
   }
   
   @page {

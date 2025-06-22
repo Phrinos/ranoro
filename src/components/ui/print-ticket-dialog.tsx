@@ -100,7 +100,7 @@ export function PrintTicketDialog({
         else onOpenChange(true);
     }}>
       <DialogContent className={cn(
-        "sm:max-w-4xl", // Make dialog wider to accommodate letter-sized content
+        "sm:max-w-4xl printable-content", // Make dialog wider and add printable-content class
         "print:max-w-full print:border-none print:shadow-none print:p-0",
         dialogContentClassName
       )}>
@@ -108,7 +108,7 @@ export function PrintTicketDialog({
           <DialogTitle>{title}</DialogTitle>
         </DialogHeader>
         
-        <div className="my-4 max-h-[70vh] overflow-y-auto bg-muted/50 p-4 rounded-md print:overflow-visible print:max-h-none print:bg-transparent">
+        <div className="my-4 max-h-[70vh] overflow-y-auto bg-muted/50 p-4 rounded-md print:overflow-visible print:max-h-none print:bg-transparent print:p-0 print:m-0">
           {React.cloneElement(children as React.ReactElement, { ref: contentRef })}
         </div>
 

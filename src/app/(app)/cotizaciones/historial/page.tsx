@@ -137,7 +137,7 @@ export default function HistorialCotizacionesPage() {
     const pdfFileName = `Cotizacion-${selectedQuoteForView.id}.pdf`;
 
     const opt = {
-      margin:       0.5,
+      margin:       1,
       filename:     pdfFileName,
       image:        { type: 'jpeg', quality: 0.98 },
       html2canvas:  { scale: 2, useCORS: true, letterRendering: true },

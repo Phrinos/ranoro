@@ -5,7 +5,6 @@ import type { QuoteRecord, Vehicle, Technician } from '@/types';
 import { format, parseISO, isValid, addDays } from 'date-fns';
 import { es } from 'date-fns/locale';
 import React, { useEffect, useState } from 'react';
-import Image from 'next/image';
 
 const initialWorkshopInfo = {
   name: "RANORO",
@@ -83,15 +82,13 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
     >
       <header className="flex justify-between items-start mb-8 border-b border-gray-300 pb-4">
         <div>
-          <Image 
+          {/* Using a standard img tag for better compatibility with html2pdf */}
+          <img 
             src={workshopInfo.logoUrl} 
             alt={`${workshopInfo.name} Logo`} 
-            width={180} 
-            height={60} 
-            className="mb-3"
+            style={{ width: '180px', height: 'auto', marginBottom: '0.75rem' }} 
             data-ai-hint="workshop logo"
-            priority={typeof window === 'undefined'} 
-            />
+          />
           <h1 className="text-2xl font-bold text-gray-800">{workshopInfo.name}</h1>
           <p>{workshopInfo.addressLine1}</p>
           {workshopInfo.addressLine2 && <p>{workshopInfo.addressLine2}</p>}
@@ -164,7 +161,7 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
         <div className="mb-4">
           <h4 className="font-semibold text-gray-700 mb-1">Notas y Condiciones:</h4>
           <p>
-            {quote.preparedByTechnicianName && `Cotización realizada por: ${quote.preparedByTechnicianName}. `}
+            {`Cotización realizada por: ${quote.preparedByTechnicianName || 'N/A'}. `}
             Precios en MXN. Esta cotización es válida hasta el {validityDate}. Esta cotización no incluye trabajos no especificados.
           </p>
         </div>
