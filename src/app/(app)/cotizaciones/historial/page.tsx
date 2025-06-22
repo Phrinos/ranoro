@@ -21,8 +21,7 @@ import { es } from 'date-fns/locale';
 import type { DateRange } from "react-day-picker";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
-import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
+import html2pdf from 'html2pdf.js';
 
 type QuoteSortOption = 
   | "date_desc" | "date_asc"
@@ -128,74 +127,76 @@ export default function HistorialCotizacionesPage() {
     setVehicleForSelectedQuote(null);
   };
   
-  const generatePdf = async () => {
-    if (!quoteContentRef.current) {
-        toast({ title: "Error", description: "No se pudo generar el PDF.", variant: "destructive" });
-        return null;
+  const generateAndDownloadPdf = () => {
+    if (!quoteContentRef.current || !selectedQuoteForView) {
+      toast({ title: "Error", description: "No se pudo generar el PDF.", variant: "destructive" });
+      return;
     }
-    const canvas = await html2canvas(quoteContentRef.current, { scale: 3 });
-    const imgData = canvas.toDataURL('image/png');
+
+    const element = quoteContentRef.current;
+    const pdfFileName = `Cotizacion-${selectedQuoteForView.id}.pdf`;
+
+    const opt = {
+      margin:       0.5,
+      filename:     pdfFileName,
+      image:        { type: 'jpeg', quality: 0.98 },
+      html2canvas:  { scale: 2, useCORS: true, letterRendering: true },
+      jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
+    };
     
-    const pdf = new jsPDF('p', 'mm', 'letter');
-    const pdfWidth = pdf.internal.pageSize.getWidth();
-    const pdfHeight = pdf.internal.pageSize.getHeight();
-    const imgWidth = canvas.width;
-    const imgHeight = canvas.height;
-    const ratio = imgWidth / imgHeight;
-    const imgPdfWidth = pdfWidth;
-    const imgPdfHeight = imgPdfWidth / ratio;
-    
-    let heightLeft = imgPdfHeight;
-    let position = 0;
-    
-    pdf.addImage(imgData, 'PNG', 0, position, imgPdfWidth, imgPdfHeight);
-    heightLeft -= pdfHeight;
-    
-    while (heightLeft > 0) {
-        position = heightLeft - imgPdfHeight;
-        pdf.addPage();
-        pdf.addImage(imgData, 'PNG', 0, position, imgPdfWidth, imgPdfHeight);
-        heightLeft -= pdfHeight;
-    }
-    return pdf;
+    toast({
+      title: "Generando PDF...",
+      description: `Se está preparando el archivo ${pdfFileName}.`,
+    });
+
+    html2pdf().from(element).set(opt).save().then(() => {
+      toast({
+        title: "PDF Descargado",
+        description: `El archivo ${pdfFileName} se ha guardado exitosamente.`,
+      });
+    }).catch(err => {
+      toast({
+        title: "Error al generar PDF",
+        description: "Ocurrió un problema al crear el archivo.",
+        variant: "destructive",
+      });
+      console.error("PDF generation error:", err);
+    });
   };
 
-  const handleSendEmail = async () => {
+  const handleSendEmail = () => {
     if (!selectedQuoteForView || !vehicleForSelectedQuote) return;
     
-    const pdf = await generatePdf();
-    if (pdf) {
-      pdf.save(`Cotizacion-${selectedQuoteForView.id}.pdf`);
-      toast({ title: "PDF Descargado", description: "El PDF de la cotización ha sido descargado. Por favor, adjúntalo manualmente a tu correo." });
-      
+    generateAndDownloadPdf();
+
+    setTimeout(() => {
       const subject = encodeURIComponent(`Cotización de Servicio: ${selectedQuoteForView.id} - ${workshopInfo?.name || 'Su Taller'}`);
       const body = encodeURIComponent(
         `Estimado/a ${vehicleForSelectedQuote.ownerName || 'Cliente'},\n\n` +
-        `Adjunto encontrará la cotización de servicio solicitada.\n\n`+
+        `Adjunto encontrará la cotización de servicio solicitada que ha sido descargada en su dispositivo. Por favor, no olvide adjuntarla.\n\n`+
         `Saludos cordiales,\n${selectedQuoteForView.preparedByTechnicianName || workshopInfo?.name || 'El equipo del Taller'}`
       );
       const mailtoLink = `mailto:${vehicleForSelectedQuote.ownerEmail || ''}?subject=${subject}&body=${body}`;
       window.open(mailtoLink, '_blank');
-    }
+    }, 1000);
   };
 
-  const handleSendWhatsApp = async () => {
+  const handleSendWhatsApp = () => {
     if (!selectedQuoteForView || !vehicleForSelectedQuote || !vehicleForSelectedQuote.ownerPhone) {
       toast({ title: "Faltan Datos", description: "No se encontró el teléfono del cliente para enviar por WhatsApp.", variant: "destructive" });
       return;
     }
-    const pdf = await generatePdf();
-    if(pdf) {
-        pdf.save(`Cotizacion-${selectedQuoteForView.id}.pdf`);
-        toast({ title: "PDF Descargado", description: "El PDF de la cotización ha sido descargado. Por favor, adjúntalo manualmente a tu conversación de WhatsApp." });
-        
+
+    generateAndDownloadPdf();
+    
+    setTimeout(() => {
         const phoneNumber = vehicleForSelectedQuote.ownerPhone.replace(/\D/g, ''); 
         const message = encodeURIComponent(
           `Hola ${vehicleForSelectedQuote.ownerName || 'Cliente'}, le enviamos su cotización de servicio ${selectedQuoteForView.id} de ${workshopInfo?.name || 'nuestro taller'} para su vehículo ${vehicleForSelectedQuote.make} ${vehicleForSelectedQuote.model}. Le hemos enviado el PDF a su dispositivo para que pueda adjuntarlo.`
         );
         const whatsappLink = `https://wa.me/${phoneNumber}?text=${message}`;
         window.open(whatsappLink, '_blank');
-    }
+    }, 1000);
   };
 
 
