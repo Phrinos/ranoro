@@ -200,7 +200,7 @@ export default function ResumenFinancieroPage() {
           <PopoverContent className="w-auto p-0">
             <Calendar
               mode="single"
-              selected={selectedDate}
+              selected={selectedDate || undefined}
               onSelect={(date) => date && setSelectedDate(startOfMonth(date))}
               initialFocus
               defaultMonth={selectedDate || new Date()}

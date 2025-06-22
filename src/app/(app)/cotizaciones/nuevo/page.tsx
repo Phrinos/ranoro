@@ -1,122 +1,130 @@
-
 "use client";
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from "react";
 import { PageHeader } from "@/components/page-header";
-import { ServiceDialog } from "../../servicios/components/service-dialog"; 
-import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
-import { QuoteContent } from '@/components/quote-content'; 
-import { placeholderVehicles, placeholderTechnicians, placeholderInventory, placeholderQuotes } from "@/lib/placeholder-data";
-import type { QuoteRecord, Vehicle, Technician, ServiceRecord, User, InventoryItem } from "@/types"; 
+import { ServiceDialog } from "../../servicios/components/service-dialog";
+import { PrintTicketDialog } from "@/components/ui/print-ticket-dialog";
+import { QuoteContent } from "@/components/quote-content";
+import {
+  placeholderVehicles,
+  placeholderTechnicians,
+  placeholderInventory,
+  placeholderQuotes,
+} from "@/lib/placeholder-data";
+import type {
+  QuoteRecord,
+  Vehicle,
+  Technician,
+  ServiceRecord,
+  User,
+  InventoryItem,
+} from "@/types";
 import { useToast } from "@/hooks/use-toast";
-import { useRouter } from 'next/navigation';
-import { Button } from '@/components/ui/button';
-import { MessageSquare } from 'lucide-react'; 
-import html2pdf from 'html2pdf.js';
+import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { MessageSquare } from "lucide-react";
+import html2pdf from "html2pdf.js";
 
-type DialogStep = 'quote_form' | 'print_preview' | 'closed';
+/* --------------------------------------------------
+   TIPOS Y CONSTANTES
+-------------------------------------------------- */
+
+type DialogStep = "quote_form" | "print_preview" | "closed";
+
+/* --------------------------------------------------
+   COMPONENTE PRINCIPAL
+-------------------------------------------------- */
 
 export default function NuevaCotizacionPage() {
   const { toast } = useToast();
   const router = useRouter();
-  
-  const [vehicles, setVehicles] = useState<Vehicle[]>(placeholderVehicles);
-  const inventoryItems = placeholderInventory; 
 
-  const [dialogStep, setDialogStep] = useState<DialogStep>('quote_form');
-  const [currentQuoteForPdf, setCurrentQuoteForPdf] = useState<QuoteRecord | null>(null);
-  const [currentVehicleForPdf, setCurrentVehicleForPdf] = useState<Vehicle | null>(null);
+  /* ---------- Estado general ---------- */
+  const [vehicles, setVehicles] = useState<Vehicle[]>(placeholderVehicles);
+  const inventoryItems = placeholderInventory;
+
+  const [dialogStep, setDialogStep] = useState<DialogStep>("quote_form");
+  const [currentQuoteForPdf, setCurrentQuoteForPdf] = useState<QuoteRecord | null>(
+    null
+  );
+  const [currentVehicleForPdf, setCurrentVehicleForPdf] =
+    useState<Vehicle | null>(null);
   const quoteContentRef = useRef<HTMLDivElement>(null);
 
-  const [workshopInfo, setWorkshopInfo] = useState<{name?: string}>({});
+  /* ---------- Info del taller (localStorage) ---------- */
+  const [workshopInfo, setWorkshopInfo] = useState<{ name?: string }>({});
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-        const stored = localStorage.getItem('workshopTicketInfo');
-        if (stored) setWorkshopInfo(JSON.parse(stored));
+    if (typeof window !== "undefined") {
+      const stored = localStorage.getItem("workshopTicketInfo");
+      if (stored) setWorkshopInfo(JSON.parse(stored));
     }
   }, []);
 
-
+  /* ---------- Redirección al cerrar ---------- */
   useEffect(() => {
-    if (dialogStep === 'closed') {
-      router.push('/cotizaciones/historial'); 
+    if (dialogStep === "closed") {
+      router.push("/cotizaciones/historial");
     }
   }, [dialogStep, router]);
 
-  const handleGenerateQuotePdf = async (data: ServiceRecord | QuoteRecord) => { 
-    if (!('estimatedTotalCost' in data)) { // Check if it's a QuoteRecord
+  /* --------------------------------------------------
+     1. Crear cotización y pasar a vista previa
+  -------------------------------------------------- */
+  const handleGenerateQuotePdf = async (data: ServiceRecord | QuoteRecord) => {
+    if (!("estimatedTotalCost" in data)) {
       toast({
-        title: "Error de Tipo",
+        title: "Error de tipo",
         description: "Se esperaba un registro de cotización.",
         variant: "destructive",
       });
       return;
     }
-    const formData = data as QuoteRecord;
-    
+
+    // Usuario actual para preparedBy
     let authUserName = "Usuario del Sistema";
     let authUserId = "system_user";
-
-    if (typeof window !== 'undefined') {
-      const authUserString = localStorage.getItem('authUser');
+    if (typeof window !== "undefined") {
+      const authUserString = localStorage.getItem("authUser");
       if (authUserString) {
         try {
-          const authUser: User = JSON.parse(authUserString); 
+          const authUser: User = JSON.parse(authUserString);
           authUserName = authUser.name;
           authUserId = authUser.id;
         } catch (e) {
-          console.error("Failed to parse authUser for quote preparer:", e);
+          console.error("Failed to parse authUser:", e);
         }
       }
     }
-    
+
     const newQuote: QuoteRecord = {
-      ...formData, 
-      id: `COT${String(Date.now()).slice(-6)}`, 
+      ...(data as QuoteRecord),
+      id: `COT${String(Date.now()).slice(-6)}`,
       preparedByTechnicianId: authUserId,
       preparedByTechnicianName: authUserName,
     };
-    
-    placeholderQuotes.push(newQuote); 
 
+    placeholderQuotes.push(newQuote);
     setCurrentQuoteForPdf(newQuote);
-    const vehicleForQuote = vehicles.find(v => v.id === newQuote.vehicleId);
-    setCurrentVehicleForPdf(vehicleForQuote || null);
-    
+    setCurrentVehicleForPdf(
+      vehicles.find((v) => v.id === newQuote.vehicleId) || null
+    );
     toast({
-      title: "Cotización Lista",
+      title: "Cotización lista",
       description: `La cotización ${newQuote.id} está lista para generar el PDF.`,
     });
-    
-    setDialogStep('print_preview');
+    setDialogStep("print_preview");
   };
 
-  const handleDialogExternalClose = () => { 
-     if (dialogStep === 'quote_form') { 
-      setDialogStep('closed');
-    }
-  };
-
-  const handlePrintDialogClose = () => {
-    setCurrentQuoteForPdf(null);
-    setCurrentVehicleForPdf(null);
-    setDialogStep('closed'); 
-  };
-
-  const handleVehicleCreated = (newVehicle: Vehicle) => {
-    setVehicles(prev => {
-      if (prev.find(v => v.id === newVehicle.id)) return prev; 
-      const updatedVehicles = [...prev, newVehicle];
-      if (!placeholderVehicles.find(v => v.id === newVehicle.id)) {
-         placeholderVehicles.push(newVehicle);
-      }
-      return updatedVehicles;
-    });
-  };
-
+  /* --------------------------------------------------
+     2. Generar y descargar PDF
+  -------------------------------------------------- */
   const generateAndDownloadPdf = () => {
     if (!quoteContentRef.current || !currentQuoteForPdf) {
-      toast({ title: "Error", description: "No se pudo generar el PDF.", variant: "destructive" });
+      toast({
+        title: "Error",
+        description: "No se pudo generar el PDF.",
+        variant: "destructive",
+      });
       return;
     }
 
@@ -124,109 +132,135 @@ export default function NuevaCotizacionPage() {
     const pdfFileName = `Cotizacion-${currentQuoteForPdf.id}.pdf`;
 
     const opt = {
-      margin:       0.5,
-      filename:     pdfFileName,
-      image:        { type: 'jpeg', quality: 0.98 },
-      html2canvas:  { scale: 2, useCORS: true, letterRendering: true },
-      jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
-    };
-    
+      margin: 0.5,
+      filename: pdfFileName,
+      image: { type: "jpeg", quality: 0.98 },
+      html2canvas: { scale: 2, useCORS: true, letterRendering: true },
+      jsPDF: { unit: "in", format: "letter", orientation: "portrait" },
+    } as const;
+
     toast({
-      title: "Generando PDF...",
+      title: "Generando PDF…",
       description: `Se está preparando el archivo ${pdfFileName}.`,
     });
 
-    html2pdf().from(element).set(opt).save().then(() => {
+    html2pdf()
+      .set(opt)
+      .from(element)
+      .save()
+      .then(() => {
         toast({
-          title: "PDF Descargado",
+          title: "PDF creado",
           description: `El archivo ${pdfFileName} se ha guardado exitosamente.`,
         });
-      }).catch(err => {
+      })
+      .catch((err: unknown) => {
+        console.error("PDF generation error:", err);
         toast({
           title: "Error al generar PDF",
           description: "Ocurrió un problema al crear el archivo.",
           variant: "destructive",
         });
-        console.error("PDF generation error:", err);
       });
   };
 
+  /* --------------------------------------------------
+     3. Copiar mensaje de WhatsApp
+  -------------------------------------------------- */
   const handleSendWhatsApp = () => {
     if (!currentQuoteForPdf || !currentVehicleForPdf) {
-      toast({ title: "Faltan Datos", description: "No se puede generar el mensaje sin datos de cotización y vehículo.", variant: "destructive" });
+      toast({
+        title: "Faltan datos",
+        description: "No se puede generar el mensaje sin datos.",
+        variant: "destructive",
+      });
       return;
     }
-    
+
     const shareUrl = `${window.location.origin}/c/${currentQuoteForPdf.id}`;
+    const { ownerName = "Cliente", make, model, year } = currentVehicleForPdf;
 
-    const message = `Hola ${currentVehicleForPdf.ownerName || 'Cliente'}, Gracias por confiar en ${workshopInfo?.name || 'RANORO'}. Le enviamos su cotización de servicio ${currentQuoteForPdf.id} de nuestro taller para su vehículo ${currentVehicleForPdf.make} ${currentVehicleForPdf.model} ${currentVehicleForPdf.year}. En este link encontrara el PDF de la cotizacion: ${shareUrl}`;
+    const message = `Hola ${ownerName}, gracias por confiar en ${
+      workshopInfo?.name ?? "RANORO"
+    }. Le enviamos su cotización ${currentQuoteForPdf.id} para su ${make} ${model} ${year}. Puede consultarla aquí: ${shareUrl}`;
 
-    navigator.clipboard.writeText(message).then(() => {
+    navigator.clipboard
+      .writeText(message)
+      .then(() => {
         toast({
-            title: "Mensaje Copiado",
-            description: "El mensaje para WhatsApp ha sido copiado a tu portapapeles.",
+          title: "Mensaje copiado",
+          description: "El mensaje fue copiado al portapapeles.",
         });
-    }).catch(err => {
-        console.error("Could not copy text: ", err);
+      })
+      .catch((err: unknown) => {
+        console.error("Clipboard error:", err);
         toast({
-            title: "Error al Copiar",
-            description: "No se pudo copiar el mensaje. Por favor, intenta de nuevo.",
-            variant: "destructive",
+          title: "Error al copiar",
+          description: "No se pudo copiar el mensaje.",
+          variant: "destructive",
         });
-    });
+      });
   };
 
-
+  /* --------------------------------------------------
+     4. Render
+  -------------------------------------------------- */
   return (
     <>
       <PageHeader
         title="Generar Nueva Cotización"
         description="Complete los detalles para la nueva cotización."
       />
-      {dialogStep === 'quote_form' && (
+
+      {/* ---------- Paso 1: Formulario ---------- */}
+      {dialogStep === "quote_form" && (
         <ServiceDialog
-          open={true}
-          onOpenChange={(isOpen) => {
-             if (!isOpen) handleDialogExternalClose();
-          }}
-          quote={null} 
+          open
+          onOpenChange={(open) => !open && setDialogStep("closed")}
+          quote={null}
           vehicles={vehicles}
-          technicians={[]} 
+          technicians={[]}
           inventoryItems={inventoryItems}
           onSave={handleGenerateQuotePdf}
-          onVehicleCreated={handleVehicleCreated}
-          mode="quote" 
+          onVehicleCreated={(v) => {
+            if (!vehicles.find((x) => x.id === v.id)) {
+              setVehicles((prev) => [...prev, v]);
+              if (!placeholderVehicles.find((x) => x.id === v.id))
+                placeholderVehicles.push(v);
+            }
+          }}
+          mode="quote"
         />
       )}
 
-      {dialogStep === 'print_preview' && currentQuoteForPdf && (
+      {/* ---------- Paso 2: Vista previa ---------- */}
+      {dialogStep === "print_preview" && currentQuoteForPdf && (
         <PrintTicketDialog
-          open={true}
-          onOpenChange={(isOpen) => {
-            if (!isOpen) handlePrintDialogClose();
-          }} 
+          open
+          onOpenChange={(open) => !open && setDialogStep("closed")}
           title="Vista Previa de Cotización"
-          printButtonText="Imprimir Cotización" 
-          dialogContentClassName="printable-quote-dialog" 
-          onDialogClose={handlePrintDialogClose}
-          autoPrint={false} 
+          printButtonText="Imprimir Cotización"
+          dialogContentClassName="printable-quote-dialog"
           footerActions={
-             <>
-                <Button variant="outline" onClick={handleSendWhatsApp}>
-                    <MessageSquare className="mr-2 h-4 w-4" /> Copiar para WhatsApp
-                </Button>
-             </>
+            <Button variant="outline" onClick={handleSendWhatsApp}>
+              <MessageSquare className="mr-2 h-4 w-4" /> Copiar para WhatsApp
+            </Button>
           }
+          onDialogClose={() => setDialogStep("closed")}
+          autoPrint={false}
         >
-          <QuoteContent 
+          <QuoteContent
             ref={quoteContentRef}
-            quote={currentQuoteForPdf} 
-            vehicle={currentVehicleForPdf || undefined}
+            quote={currentQuoteForPdf}
+            vehicle={currentVehicleForPdf ?? undefined}
           />
         </PrintTicketDialog>
       )}
 
-      {dialogStep === 'closed' && <p className="text-center text-muted-foreground">Redireccionando...</p>}
+      {/* ---------- Paso 3: Redirección ---------- */}
+      {dialogStep === "closed" && (
+        <p className="text-center text-muted-foreground">Redireccionando...</p>
+      )}
     </>
   );
 }
