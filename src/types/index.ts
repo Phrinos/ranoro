@@ -41,6 +41,7 @@ export interface ServiceRecord {
   notes?: string;
   mileage?: number;
   deliveryDateTime?: string; 
+  quoteDate?: string;   // ← ¡nuevo! lo marcamos opcional
 }
 
 export interface Technician {
@@ -138,7 +139,8 @@ export interface SaleReceipt {
 
 export interface QuoteRecord {
   id: string;
-  quoteDate: string;
+  serviceDate?: string; 
+  quoteDate?: string;
   vehicleId?: number; // Optional if quote is generic initially
   vehicleIdentifier?: string;
   description: string;

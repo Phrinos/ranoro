@@ -1,4 +1,3 @@
-
 "use client";
 
 import Link from "next/link";
@@ -18,7 +17,15 @@ import {
 } from "@/components/ui/sidebar";
 import useNavigation, { type NavigationEntry } from "@/hooks/use-navigation";
 import { Button } from "@/components/ui/button";
-import { UserCircle, UserCog, Settings, LogOut, Users, ShieldQuestion, DatabaseZap } from "lucide-react"; // Added Users, ShieldQuestion, DatabaseZap
+import {
+  UserCircle,
+  UserCog,
+  Settings,
+  LogOut,
+  Users,
+  ShieldQuestion,
+  DatabaseZap,
+} from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -29,10 +36,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
-import type { User } from '@/types'; // Import User type for role check
-
-// const DESIRED_GROUP_ORDER = ["Principal", "Clientes", "Servicios", "Finanzas", "Inventario", "Administración"];
-// Updated DESIRED_GROUP_ORDER is now managed within useNavigation.ts
+import type { User } from "@/types";
 
 export function AppSidebar() {
   const navItems = useNavigation();
@@ -41,8 +45,8 @@ export function AppSidebar() {
   const [currentUser, setCurrentUser] = React.useState<User | null>(null);
 
   React.useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const authUserString = localStorage.getItem('authUser');
+    if (typeof window !== "undefined") {
+      const authUserString = localStorage.getItem("authUser");
       if (authUserString) {
         try {
           setCurrentUser(JSON.parse(authUserString));
@@ -55,12 +59,15 @@ export function AppSidebar() {
   }, []);
 
   const handleLogout = () => {
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('authUser');
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("authUser");
     }
-    toast({ title: 'Sesión Cerrada', description: 'Has cerrado sesión exitosamente.' });
-    setCurrentUser(null); // Clear current user on logout
-    router.push('/login');
+    toast({
+      title: "Sesión Cerrada",
+      description: "Has cerrado sesión exitosamente.",
+    });
+    setCurrentUser(null);
+    router.push("/login");
   };
 
   const groupedByTag = React.useMemo(() => {
@@ -74,29 +81,32 @@ export function AppSidebar() {
     }, {} as Record<string, NavigationEntry[]>);
   }, [navItems]);
 
-  // DESIRED_GROUP_ORDER is now implicitly handled by the order in useNavigation
   const sortedGroupEntries = React.useMemo(() => {
     const orderedGroupNames = navItems.reduce((acc, item) => {
-        if (!acc.includes(item.groupTag)) {
-            acc.push(item.groupTag);
-        }
-        return acc;
+      if (!acc.includes(item.groupTag)) {
+        acc.push(item.groupTag);
+      }
+      return acc;
     }, [] as string[]);
-    
-    return orderedGroupNames.map(groupName => [groupName, groupedByTag[groupName] || []]);
 
+    return orderedGroupNames.map((groupName) => [
+      groupName,
+      groupedByTag[groupName] || [],
+    ]);
   }, [groupedByTag, navItems]);
-
 
   return (
     <Sidebar collapsible="icon" side="left" variant="sidebar">
       <SidebarHeader className="border-b border-sidebar-border h-16 flex items-center justify-center">
-        <Link href="/dashboard" className="flex items-center justify-center text-lg font-semibold text-sidebar-foreground hover:text-sidebar-primary transition-colors h-full">
+        <Link
+          href="/dashboard"
+          className="flex items-center justify-center text-lg font-semibold text-sidebar-foreground hover:text-sidebar-primary transition-colors h-full"
+        >
           <Image
             src="/ranoro-logo.png"
             alt="Ranoro Logo"
             width={100}
-            height={32} 
+            height={32}
             className="group-data-[collapsible=icon]:hidden dark:invert"
             data-ai-hint="ranoro logo"
             priority
@@ -104,7 +114,7 @@ export function AppSidebar() {
           <Image
             src="/ranoro-logo.png"
             alt="Ranoro Logo Icon"
-            width={28} 
+            width={28}
             height={28}
             className="hidden group-data-[collapsible=icon]:block dark:invert"
             data-ai-hint="ranoro logo icon"
@@ -116,7 +126,9 @@ export function AppSidebar() {
         {sortedGroupEntries.map(([tag, entriesInGroup]) => (
           <SidebarGroup key={tag as string} className="p-2">
             <SidebarGroupLabel className="group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0">
-              <span className="group-data-[collapsible=icon]:hidden">{tag as string}</span>
+              <span className="group-data-[collapsible=icon]:hidden">
+                {tag as string}
+              </span>
             </SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
@@ -129,8 +141,10 @@ export function AppSidebar() {
                       tooltipClassName="group-data-[collapsible=icon]:block hidden"
                     >
                       <Link href={entry.path}>
-                        <entry.icon />
-                         <span className="group-data-[collapsible=icon]:hidden">{entry.label}</span>
+                        {React.createElement(entry.icon as any)}
+                        <span className="group-data-[collapsible=icon]:hidden">
+                          {entry.label}
+                        </span>
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
@@ -143,31 +157,42 @@ export function AppSidebar() {
       <SidebarFooter className="mt-auto border-t border-sidebar-border p-2">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="w-full justify-start gap-2 text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground group-data-[collapsible=icon]:justify-center">
+            <Button
+              variant="ghost"
+              className="w-full justify-start gap-2 text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground group-data-[collapsible=icon]:justify-center"
+            >
               <UserCircle className="h-4 w-4" />
-              <span className="group-data-[collapsible=icon]:hidden">{currentUser?.name || "Mi Cuenta"}</span>
+              <span className="group-data-[collapsible=icon]:hidden">
+                {currentUser?.name || "Mi Cuenta"}
+              </span>
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" side="top" className="mb-1 w-[var(--sidebar-width-icon)] group-data-[state=expanded]:w-[var(--sidebar-width)] sm:w-[var(--sidebar-width-mobile)] md:w-56">
-            <DropdownMenuLabel>{currentUser?.name || "Mi Cuenta"}</DropdownMenuLabel>
+          <DropdownMenuContent
+            align="end"
+            side="top"
+            className="mb-1 w-[var(--sidebar-width-icon)] group-data-[state=expanded]:w-[var(--sidebar-width)] sm:w-[var(--sidebar-width-mobile)] md:w-56"
+          >
+            <DropdownMenuLabel>
+              {currentUser?.name || "Mi Cuenta"}
+            </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => router.push('/perfil')}>
+            <DropdownMenuItem onClick={() => router.push("/perfil")}>
               <UserCog className="mr-2 h-4 w-4" />
               <span>Mi Perfil</span>
             </DropdownMenuItem>
-            {(currentUser?.role === 'admin' || currentUser?.role === 'superadmin') && (
+            {(currentUser?.role === "admin" || currentUser?.role === "superadmin") && (
               <>
                 <DropdownMenuSeparator />
                 <DropdownMenuLabel>Administración</DropdownMenuLabel>
-                <DropdownMenuItem onClick={() => router.push('/admin/usuarios')}>
+                <DropdownMenuItem onClick={() => router.push("/admin/usuarios")}>
                   <Users className="mr-2 h-4 w-4" />
                   <span>Usuarios</span>
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => router.push('/admin/roles')}>
+                <DropdownMenuItem onClick={() => router.push("/admin/roles")}>
                   <ShieldQuestion className="mr-2 h-4 w-4" />
                   <span>Roles y Permisos</span>
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => router.push('/admin/migracion-datos')}>
+                <DropdownMenuItem onClick={() => router.push("/admin/migracion-datos")}>
                   <DatabaseZap className="mr-2 h-4 w-4" />
                   <span>Migración de Datos</span>
                 </DropdownMenuItem>

@@ -1,6 +1,7 @@
 
 "use client";
 
+import { useEffect } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
@@ -50,12 +51,20 @@ export function AdministrativeStaffForm({ initialData, onSubmit, onClose }: Admi
       name: "",
       roleOrArea: "",
       contactInfo: "",
-      hireDate: new Date().toISOString().split('T')[0],
+      hireDate: "", // Set to empty initially
       monthlySalary: undefined,
       commissionRate: 0.01, // Default 1%
       notes: "",
     },
   });
+  
+  useEffect(() => {
+    // If it's a new form, set the default date on the client side to prevent hydration errors.
+    if (!initialData) {
+      form.setValue('hireDate', new Date().toISOString().split('T')[0]);
+    }
+  }, [initialData, form]);
+
 
   const handleFormSubmit = async (values: AdministrativeStaffFormValues) => {
     await onSubmit(values);
@@ -174,4 +183,3 @@ export function AdministrativeStaffForm({ initialData, onSubmit, onClose }: Admi
     </Form>
   );
 }
-

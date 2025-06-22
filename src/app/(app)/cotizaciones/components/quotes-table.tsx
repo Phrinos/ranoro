@@ -46,7 +46,7 @@ export function QuotesTable({ quotes, onViewQuote }: QuotesTableProps) {
         </TableHeader>
         <TableBody>
           {quotes.map((quote) => {
-            const quoteDate = parseISO(quote.quoteDate);
+            const quoteDate = quote.quoteDate ? parseISO(quote.quoteDate) : new Date();
             const formattedDate = isValid(quoteDate) 
               ? format(quoteDate, "dd MMM yyyy", { locale: es }) 
               : 'Fecha Inválida';

@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { PageHeader } from "@/components/page-header";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -28,12 +28,9 @@ export default function ProveedoresPage() {
   const [editingSupplier, setEditingSupplier] = useState<Supplier | null>(null);
   const [sortOption, setSortOption] = useState<SupplierSortOption>("name_asc");
   const { toast } = useToast();
+  const [topSupplierLastMonth, setTopSupplierLastMonth] = useState<{ name: string; quantity: number } | null>(null);
 
-  const totalDebtWithSuppliers = useMemo(() => {
-    return suppliers.reduce((total, supplier) => total + (supplier.debtAmount || 0), 0);
-  }, [suppliers]);
-
-  const topSupplierLastMonth = useMemo(() => {
+  useEffect(() => {
     const lastMonthStart = startOfMonth(subMonths(new Date(), 1));
     const lastMonthEnd = endOfMonth(subMonths(new Date(), 1));
     const supplierPurchaseQuantity: Record<string, { name: string, quantity: number }> = {};
@@ -41,11 +38,11 @@ export default function ProveedoresPage() {
     placeholderServiceRecords.forEach(service => {
       const serviceDate = parseISO(service.serviceDate);
       if (isWithinInterval(serviceDate, { start: lastMonthStart, end: lastMonthEnd })) {
-        if (service.suppliesUsed && Array.isArray(service.suppliesUsed)) { // Check if suppliesUsed exists and is an array
+        if (service.suppliesUsed && Array.isArray(service.suppliesUsed)) {
           service.suppliesUsed.forEach(part => {
-            const inventoryItem = placeholderInventory.find(item => item.id === part.supplyId); // Changed part.partId to part.supplyId
+            const inventoryItem = placeholderInventory.find(item => item.id === part.supplyId);
             if (inventoryItem && inventoryItem.supplier) {
-              const supplierName = inventoryItem.supplier; 
+              const supplierName = inventoryItem.supplier;
               if (!supplierPurchaseQuantity[supplierName]) {
                 supplierPurchaseQuantity[supplierName] = { name: supplierName, quantity: 0 };
               }
@@ -62,9 +59,12 @@ export default function ProveedoresPage() {
         topSupplier = supplierInfo;
       }
     }
-    return topSupplier;
+    setTopSupplierLastMonth(topSupplier);
   }, []);
 
+  const totalDebtWithSuppliers = useMemo(() => {
+    return suppliers.reduce((total, supplier) => total + (supplier.debtAmount || 0), 0);
+  }, [suppliers]);
 
   const filteredAndSortedSuppliers = useMemo(() => {
     let itemsToDisplay = [...suppliers];
@@ -243,7 +243,3 @@ export default function ProveedoresPage() {
     </>
   );
 }
-
-    
-
-    

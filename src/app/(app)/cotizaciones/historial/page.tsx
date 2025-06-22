@@ -44,7 +44,10 @@ export default function HistorialCotizacionesPage() {
   useEffect(() => {
     // Sort initial quotes by date descending (newest first)
     const sortedInitialQuotes = [...placeholderQuotes].sort((a, b) => 
-      compareDesc(parseISO(a.quoteDate), parseISO(b.quoteDate))
+      compareDesc(
+        parseISO(a.quoteDate ?? ""),   // si viene vacío, pasa cadena vacía
+        parseISO(b.quoteDate ?? "")
+      )      
     );
     setAllQuotes(sortedInitialQuotes); 
     setVehicles(placeholderVehicles);
@@ -56,7 +59,7 @@ export default function HistorialCotizacionesPage() {
 
     if (dateRange?.from) {
       filtered = filtered.filter(quote => {
-        const quoteDate = parseISO(quote.quoteDate);
+        const quoteDate = parseISO(quote.quoteDate ?? "");
         if (!isValid(quoteDate)) return false;
         const from = startOfDay(dateRange.from!);
         const to = dateRange.to ? endOfDay(dateRange.to) : endOfDay(dateRange.from!);
@@ -75,13 +78,21 @@ export default function HistorialCotizacionesPage() {
     
     filtered.sort((a, b) => {
       switch (sortOption) {
-        case "date_asc": return compareAsc(parseISO(a.quoteDate), parseISO(b.quoteDate));
-        case "date_desc": return compareDesc(parseISO(a.quoteDate), parseISO(b.quoteDate));
+        case "date_asc":
+  return compareAsc(
+    parseISO(a.quoteDate ?? ""),   // ← si viene vacío usa ""
+    parseISO(b.quoteDate ?? "")
+  );
+        case "date_desc":
+  return compareDesc(
+    parseISO(a.quoteDate ?? ""),
+    parseISO(b.quoteDate ?? "")
+  );
         case "total_asc": return a.estimatedTotalCost - b.estimatedTotalCost;
         case "total_desc": return b.estimatedTotalCost - a.estimatedTotalCost;
         case "vehicle_asc": return (a.vehicleIdentifier || '').localeCompare(b.vehicleIdentifier || '');
         case "vehicle_desc": return (b.vehicleIdentifier || '').localeCompare(a.vehicleIdentifier || '');
-        default: return compareDesc(parseISO(a.quoteDate), parseISO(b.quoteDate));
+        default: return compareDesc(parseISO(a.quoteDate ?? ""), parseISO(b.quoteDate ?? ""));
       }
     });
     return filtered;
