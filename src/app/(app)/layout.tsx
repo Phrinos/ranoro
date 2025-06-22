@@ -1,7 +1,7 @@
 
-"use client"; // Required for useEffect and useRouter
+"use client"; // Required for useEffect, useState, and useRouter
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/layout/app-sidebar";
@@ -13,21 +13,35 @@ export default function AppLayout({
 }) {
   const router = useRouter();
   const pathname = usePathname();
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null); // null = checking, true = yes, false = no
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const authUser = localStorage.getItem('authUser');
-      if (!authUser && pathname !== '/login') { // Avoid redirect loop if already on login
+    // This effect runs only on the client, after the initial server render.
+    const authUser = localStorage.getItem('authUser');
+    if (authUser) {
+      setIsAuthenticated(true);
+    } else {
+      setIsAuthenticated(false);
+      // Redirect to login only if not already there, to prevent a loop.
+      if (pathname !== '/login') { 
         router.replace('/login');
       }
     }
   }, [router, pathname]);
 
-  // Prevent rendering children if redirecting (optional, but can avoid flash of content)
-  if (typeof window !== 'undefined' && !localStorage.getItem('authUser') && pathname !== '/login') {
-    return null; 
+  // While checking authentication status, render nothing to avoid a flash of the layout.
+  // This state is only `null` on the very first client-side render.
+  if (isAuthenticated === null) {
+    return null; // Or a full-page loading spinner
+  }
+
+  // If not authenticated, the useEffect above will have already triggered a redirect.
+  // We return null here to prevent the main layout from rendering and flashing before the redirect happens.
+  if (!isAuthenticated) {
+    return null;
   }
   
+  // If we've confirmed the user is authenticated, render the main app layout.
   return (
     <SidebarProvider defaultOpen={true}>
       <AppSidebar />
