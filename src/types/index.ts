@@ -147,13 +147,14 @@ export interface QuoteRecord {
   preparedByTechnicianId?: string; // Who prepared the quote
   preparedByTechnicianName?: string;
   suppliesProposed: ServiceSupply[]; // Renamed from suppliesUsed
-  estimatedTotalCost: number; // Final, tax-inclusive estimated price for the customer
+  estimatedTotalCost?: number; // Final, tax-inclusive estimated price for the customer
   estimatedSubTotal?: number;
   estimatedTaxAmount?: number;
   estimatedTotalSuppliesCost?: number; // Cost of supplies to the workshop (pre-tax) for this quote
   estimatedProfit?: number; // Profit: estimatedTotalCost - estimatedTotalSuppliesCost
   notes?: string; // For validity, terms, etc.
   mileage?: number; // Current mileage at time of quote
+  serviceId?: string; // ID of the service record if this quote was converted
 }
 
 
@@ -196,5 +197,3 @@ export interface MonthlyFixedExpense {
   name: string;
   amount: number;
 }
-
-

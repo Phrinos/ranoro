@@ -48,15 +48,17 @@ const supplySchema = z.object({
 });
 
 const serviceFormSchemaBase = z.object({
+  id: z.string().optional(), // For identifying existing records
   vehicleId: z.number({invalid_type_error: "Debe seleccionar o registrar un vehículo."}).positive("Debe seleccionar o registrar un vehículo.").optional(),
   vehicleLicensePlateSearch: z.string().optional(),
   serviceDate: z.date({ required_error: "La fecha es obligatoria." }).optional(),
+  quoteDate: z.date().optional(), // For quote mode
   mileage: z.coerce.number().int().min(0, "El kilometraje no puede ser negativo.").optional(),
   description: z.string().min(5, "La descripción debe tener al menos 5 caracteres."),
-  totalServicePrice: z.coerce.number().min(0, "El costo no puede ser negativo."),
+  totalServicePrice: z.coerce.number().min(0, "El costo no puede ser negativo.").optional(), // Quote: estimatedTotalCost, Service: totalCost
   notes: z.string().optional(),
   technicianId: z.string().optional(),
-  suppliesUsed: z.array(supplySchema).optional(),
+  suppliesUsed: z.array(supplySchema).optional(), // Quote: suppliesProposed, Service: suppliesUsed
   status: z.enum(["Agendado", "Reparando", "Completado", "Cancelado"]).optional(),
   deliveryDateTime: z.date().optional(),
 });
@@ -113,8 +115,10 @@ export function ServiceForm({
   onInventoryItemCreatedFromService
 }: ServiceFormProps) {
   const { toast } = useToast();
-  const initialData = mode === 'service' ? initialDataService : initialDataQuote;
-  const initialVehicleIdentifier = mode === 'service' ? initialDataService?.vehicleIdentifier : initialDataQuote?.vehicleIdentifier;
+  
+  const isConvertingQuote = mode === 'service' && !initialDataService && !!initialDataQuote;
+  const initialData = isConvertingQuote ? initialDataQuote : (mode === 'service' ? initialDataService : initialDataQuote);
+  const initialVehicleIdentifier = initialData?.vehicleIdentifier;
 
   const [vehicleLicensePlateSearch, setVehicleLicensePlateSearch] = useState(initialVehicleIdentifier || "");
   const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
@@ -136,38 +140,21 @@ export function ServiceForm({
 
   const form = useForm<ServiceFormValues>({
     resolver: zodResolver(serviceFormSchemaBase),
-    defaultValues: initialData
-      ? {
-          ...initialData,
-          vehicleId: initialData.vehicleId,
-          vehicleLicensePlateSearch: initialVehicleIdentifier || "",
-          serviceDate: (initialData.serviceDate || initialData.quoteDate) ? parseISO((initialData.serviceDate ?? "") || (initialData.quoteDate ?? "")) : undefined,
-          deliveryDateTime: mode === 'service' && initialDataService?.deliveryDateTime ? parseISO(initialDataService.deliveryDateTime) : undefined,
-          mileage: initialData.mileage ?? undefined,
-          suppliesUsed: (mode === 'service' ? initialDataService?.suppliesUsed : initialDataQuote?.suppliesProposed)?.map(s => ({
-              supplyId: s.supplyId,
-              quantity: s.quantity,
-              supplyName: currentInventoryItems.find(i => i.id === s.supplyId)?.name || s.supplyName || '',
-              unitPrice: currentInventoryItems.find(i => i.id === s.supplyId)?.unitPrice || s.unitPrice || 0,
-              isService: currentInventoryItems.find(i => i.id === s.supplyId)?.isService || false,
-          })) || [],
-          totalServicePrice: mode === 'service' ? initialDataService?.totalCost : initialDataQuote?.estimatedTotalCost,
-          status: mode === 'service' ? initialDataService?.status : undefined,
-          technicianId: mode === 'service' ? initialDataService?.technicianId : (initialDataQuote as QuoteRecord)?.preparedByTechnicianId,
-        }
-      : {
-          vehicleId: undefined,
-          vehicleLicensePlateSearch: "",
-          serviceDate: undefined,
-          deliveryDateTime: undefined,
-          mileage: undefined,
-          description: "",
-          technicianId: "",
-          suppliesUsed: [],
-          totalServicePrice: 0,
-          status: mode === 'service' ? "Agendado" : undefined,
-          notes: "",
-        },
+    // This defaultValues block will be overridden by useEffect, but it's good practice.
+    defaultValues: {
+        id: initialData?.id || undefined,
+        vehicleId: initialData?.vehicleId || undefined,
+        vehicleLicensePlateSearch: initialVehicleIdentifier || "",
+        serviceDate: new Date(),
+        mileage: initialData?.mileage || undefined,
+        description: initialData?.description || "",
+        totalServicePrice: (initialData as ServiceRecord)?.totalCost || (initialData as QuoteRecord)?.estimatedTotalCost || 0,
+        notes: initialData?.notes || "",
+        technicianId: (initialData as ServiceRecord)?.technicianId || (initialData as QuoteRecord)?.preparedByTechnicianId || "",
+        suppliesUsed: [],
+        status: mode === 'service' ? ((initialData as ServiceRecord)?.status || 'Agendado') : undefined,
+        deliveryDateTime: undefined,
+    }
   });
 
   useEffect(() => {
@@ -178,29 +165,53 @@ export function ServiceForm({
     setCurrentInventoryItems(inventoryItemsProp);
   }, [inventoryItemsProp]);
 
+  // Main effect to set form values from initialData
   useEffect(() => {
-    const currentInitialData = mode === 'service' ? initialDataService : initialDataQuote;
-    if (currentInitialData) {
-      if (currentInitialData.vehicleId) {
-        const foundVehicle = localVehicles.find(v => v.id === currentInitialData.vehicleId);
-        if (foundVehicle) {
-          setSelectedVehicle(foundVehicle);
-          form.setValue('vehicleId', foundVehicle.id);
-          setVehicleLicensePlateSearch(foundVehicle.licensePlate);
+    const isConverting = mode === 'service' && !initialDataService && !!initialDataQuote;
+    const data = isConverting ? initialDataQuote : (mode === 'service' ? initialDataService : initialDataQuote);
+    
+    if (data) {
+        const vehicle = localVehicles.find(v => v.id === data.vehicleId);
+        if (vehicle) {
+            setSelectedVehicle(vehicle);
+            setVehicleLicensePlateSearch(vehicle.licensePlate);
         }
-      }
-      const dateToParse = currentInitialData.serviceDate || currentInitialData.quoteDate;
-      if (dateToParse) {
-        const parsedDate = parseISO(dateToParse);
-        if (isValid(parsedDate)) {
-          form.setValue('serviceDate', parsedDate);
-        }
-      }
+
+        const supplies = (isConverting || mode === 'quote') ? (data as QuoteRecord).suppliesProposed : (data as ServiceRecord).suppliesUsed;
+        const mappedSupplies = supplies?.map(s => {
+            const itemDetails = currentInventoryItems.find(i => i.id === s.supplyId);
+            const unitPrice = (isConverting || mode === 'quote') 
+                ? (itemDetails?.sellingPrice ?? s.unitPrice ?? 0) // Use selling price for quotes/conversion
+                : (itemDetails?.unitPrice ?? s.unitPrice ?? 0); // Use cost price for existing services
+            return {
+                supplyId: s.supplyId,
+                supplyName: itemDetails?.name || s.supplyName || '',
+                quantity: s.quantity,
+                unitPrice: unitPrice,
+                isService: itemDetails?.isService || false,
+            };
+        }) || [];
+
+        form.reset({
+            id: data.id,
+            vehicleId: data.vehicleId,
+            vehicleLicensePlateSearch: vehicle?.licensePlate || data.vehicleIdentifier || "",
+            serviceDate: data.serviceDate || data.quoteDate ? parseISO(data.serviceDate || data.quoteDate!) : new Date(),
+            deliveryDateTime: (data as ServiceRecord)?.deliveryDateTime ? parseISO((data as ServiceRecord).deliveryDateTime!) : undefined,
+            mileage: data.mileage || undefined,
+            description: data.description || "",
+            notes: data.notes || "",
+            technicianId: (data as ServiceRecord)?.technicianId || (data as QuoteRecord)?.preparedByTechnicianId || undefined,
+            totalServicePrice: (data as ServiceRecord)?.totalCost ?? (data as QuoteRecord)?.estimatedTotalCost ?? 0,
+            status: mode === 'service' ? ((data as ServiceRecord)?.status || 'Agendado') : undefined,
+            suppliesUsed: mappedSupplies,
+        });
     } else {
-      // It's a new form, set default date on the client side
+      // Set default for new forms
       form.setValue('serviceDate', setHours(setMinutes(new Date(), 30), 8));
     }
-  }, [initialDataService, initialDataQuote, mode, localVehicles, form]);
+  }, [initialDataService, initialDataQuote, mode, localVehicles, currentInventoryItems, form]);
+
 
   const watchedStatus = form.watch("status");
 
@@ -219,24 +230,30 @@ export function ServiceForm({
   const watchedSupplies = form.watch("suppliesUsed");
   const watchedTotalServicePrice = form.watch("totalServicePrice") || 0;
 
-  const totalSuppliesCost = React.useMemo(() => {
+  // This calculates the cost of supplies TO THE WORKSHOP, regardless of mode.
+  const totalSuppliesWorkshopCost = React.useMemo(() => {
     return watchedSupplies?.reduce((sum, supply) => {
       const item = currentInventoryItems.find(i => i.id === supply.supplyId);
-      const costBasis = mode === 'quote'
-        ? (item?.sellingPrice || supply.unitPrice || 0)
-        : (item?.unitPrice || supply.unitPrice || 0);
-      return sum + costBasis * supply.quantity;
+      return sum + (item?.unitPrice || 0) * supply.quantity;
     }, 0) || 0;
-  }, [watchedSupplies, currentInventoryItems, mode]);
+  }, [watchedSupplies, currentInventoryItems]);
+
+  // This calculates the total price of supplies as charged TO THE CUSTOMER.
+  const totalSuppliesSellingPrice = React.useMemo(() => {
+      return watchedSupplies?.reduce((sum, supply) => {
+          const item = currentInventoryItems.find(i => i.id === supply.supplyId);
+          // For quotes/conversion, the form's unitPrice *is* the selling price. For existing services, we need to look it up.
+          const sellingPrice = (mode === 'quote' || isConvertingQuote) 
+            ? (supply.unitPrice || 0) 
+            : (item?.sellingPrice || 0);
+          return sum + sellingPrice * supply.quantity;
+      }, 0) || 0;
+  }, [watchedSupplies, currentInventoryItems, mode, isConvertingQuote]);
 
 
   const serviceProfit = React.useMemo(() => {
-    const actualSuppliesWorkshopCost = watchedSupplies?.reduce((sum, supply) => {
-        const item = currentInventoryItems.find(i => i.id === supply.supplyId);
-        return sum + (item?.unitPrice || 0) * supply.quantity; // Always use workshop cost for profit calc
-    }, 0) || 0;
-    return watchedTotalServicePrice - actualSuppliesWorkshopCost;
-  }, [watchedTotalServicePrice, watchedSupplies, currentInventoryItems]);
+    return watchedTotalServicePrice - totalSuppliesWorkshopCost;
+  }, [watchedTotalServicePrice, totalSuppliesWorkshopCost]);
 
 
   const handleSearchVehicle = () => {
@@ -287,8 +304,8 @@ export function ServiceForm({
     }
 
     const isValidForm = await form.trigger();
-    if (!isValidForm || (!values.vehicleId && mode === 'service') || !values.serviceDate ) {
-        if (mode === 'service' && !values.vehicleId) {
+    if (!isValidForm || !values.vehicleId || !values.serviceDate ) {
+        if (!values.vehicleId) {
             form.setError("vehicleId", { type: "manual", message: "Debe seleccionar o registrar un vehículo." });
         }
         if (!values.serviceDate) {
@@ -298,14 +315,10 @@ export function ServiceForm({
       return;
     }
 
-    const currentTotalServicePrice = values.totalServicePrice || 0;
-    const actualSuppliesWorkshopCostForSave = values.suppliesUsed?.reduce((sum, s) => {
-        const itemDetails = currentInventoryItems.find(invItem => invItem.id === s.supplyId);
-        return sum + (itemDetails?.unitPrice || 0) * s.quantity;
-    }, 0) || 0;
-    const calculatedProfitForSave = currentTotalServicePrice - actualSuppliesWorkshopCostForSave;
-
-
+    const finalTotalCost = values.totalServicePrice || 0;
+    const finalSubTotal = finalTotalCost / (1 + IVA_RATE);
+    const finalTaxAmount = finalTotalCost - finalSubTotal;
+    
     if (mode === 'service') {
       const serviceData: ServiceRecord = {
         id: initialDataService?.id || `S_NEW_${Date.now()}`,
@@ -319,23 +332,20 @@ export function ServiceForm({
         status: values.status!,
         mileage: values.mileage,
         notes: values.notes,
-        suppliesUsed: values.suppliesUsed?.map(s => {
-          const itemDetails = currentInventoryItems.find(invItem => invItem.id === s.supplyId);
-          return {
-            supplyId: s.supplyId,
-            quantity: s.quantity,
-            unitPrice: itemDetails?.unitPrice || s.unitPrice || 0,
-            supplyName: itemDetails?.name || s.supplyName,
-          };
-        }) || [],
-        totalCost: currentTotalServicePrice,
-        subTotal: currentTotalServicePrice / (1 + IVA_RATE),
-        taxAmount: currentTotalServicePrice - (currentTotalServicePrice / (1 + IVA_RATE)),
-        totalSuppliesCost: actualSuppliesWorkshopCostForSave,
-        serviceProfit: calculatedProfitForSave,
+        suppliesUsed: values.suppliesUsed?.map(s => ({
+          supplyId: s.supplyId,
+          quantity: s.quantity,
+          unitPrice: currentInventoryItems.find(i => i.id === s.supplyId)?.unitPrice || 0, // Ensure cost price
+          supplyName: s.supplyName,
+        })) || [],
+        totalCost: finalTotalCost,
+        subTotal: finalSubTotal,
+        taxAmount: finalTaxAmount,
+        totalSuppliesCost: totalSuppliesWorkshopCost,
+        serviceProfit: finalTotalCost - totalSuppliesWorkshopCost,
       };
       await onSubmit(serviceData);
-    } else {
+    } else { // mode === 'quote'
       const quoteData: QuoteRecord = {
         id: (initialDataQuote as QuoteRecord)?.id || `Q_NEW_${Date.now()}`,
         quoteDate: values.serviceDate.toISOString(),
@@ -344,20 +354,17 @@ export function ServiceForm({
         description: values.description,
         preparedByTechnicianId: values.technicianId,
         preparedByTechnicianName: technicians.find(t => t.id === values.technicianId)?.name,
-        suppliesProposed: values.suppliesUsed?.map(s => {
-          const itemDetails = currentInventoryItems.find(invItem => invItem.id === s.supplyId);
-          return {
-            supplyId: s.supplyId,
-            quantity: s.quantity,
-            unitPrice: itemDetails?.sellingPrice || 0, // Cost to client (selling price)
-            supplyName: itemDetails?.name || s.supplyName,
-          };
-        }) || [],
-        estimatedTotalCost: currentTotalServicePrice,
-        estimatedSubTotal: currentTotalServicePrice / (1 + IVA_RATE),
-        estimatedTaxAmount: currentTotalServicePrice - (currentTotalServicePrice / (1 + IVA_RATE)),
-        estimatedTotalSuppliesCost: actualSuppliesWorkshopCostForSave, // Cost to workshop
-        estimatedProfit: calculatedProfitForSave, // Profit based on workshop cost
+        suppliesProposed: values.suppliesUsed?.map(s => ({
+          supplyId: s.supplyId,
+          quantity: s.quantity,
+          unitPrice: s.unitPrice || 0, // This is already the selling price
+          supplyName: s.supplyName,
+        })) || [],
+        estimatedTotalCost: finalTotalCost,
+        estimatedSubTotal: finalSubTotal,
+        estimatedTaxAmount: finalTaxAmount,
+        estimatedTotalSuppliesCost: totalSuppliesWorkshopCost,
+        estimatedProfit: finalTotalCost - totalSuppliesWorkshopCost,
         notes: values.notes,
         mileage: values.mileage,
       };
@@ -387,20 +394,20 @@ export function ServiceForm({
   const cardTitleText = mode === 'quote' ? "Información del Vehículo y Cotización" : "Información del Vehículo y Servicio";
   const dateLabelText = mode === 'quote' ? "Fecha de Cotización" : "Fecha y Hora de Recepción";
   const totalCostLabelText = mode === 'quote' ? "Costo Estimado (IVA incluido)" : "Costo del Servicio (IVA incluido)";
-  const technicianLabelText = mode === 'service' ? "Técnico Asignado" : "";
-  const submitButtonText = mode === 'quote' ? "Generar PDF de Cotización" : (initialDataService ? "Actualizar Servicio" : "Crear Servicio");
+  const technicianLabelText = mode === 'quote' ? "Preparado por" : "Técnico Asignado";
+  const submitButtonText = mode === 'quote' ? "Guardar Cotización" : (initialDataService ? "Actualizar Servicio" : "Crear Servicio");
 
   // --- Add Supply Dialog Logic ---
   useEffect(() => {
     if (addSupplySearchTerm.trim() === '') {
-        setFilteredInventoryForDialog(currentInventoryItems.filter(item => item.isService || item.quantity > 0).slice(0,10));
+        setFilteredInventoryForDialog(currentInventoryItems.slice(0,10));
         return;
     }
     const lowerSearchTerm = addSupplySearchTerm.toLowerCase();
     setFilteredInventoryForDialog(
         currentInventoryItems.filter(item =>
             (item.name.toLowerCase().includes(lowerSearchTerm) ||
-            item.sku.toLowerCase().includes(lowerSearchTerm)) && (item.isService || item.quantity > 0)
+            item.sku.toLowerCase().includes(lowerSearchTerm))
         ).slice(0, 10)
     );
   }, [addSupplySearchTerm, currentInventoryItems]);
@@ -692,7 +699,7 @@ export function ServiceForm({
                 />
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 items-end">
-                    {mode === 'service' && (
+                    
                       <FormField
                           control={form.control}
                           name="technicianId"
@@ -717,12 +724,12 @@ export function ServiceForm({
                             </FormItem>
                           )}
                         />
-                    )}
+                    
                     <FormField
                         control={form.control}
                         name="totalServicePrice"
                         render={({ field }) => (
-                            <FormItem className={mode === 'service' ? "md:col-span-1" : "md:col-span-2"}>
+                            <FormItem className="md:col-span-1">
                                 <FormLabel className="text-lg">{totalCostLabelText}</FormLabel>
                                 <FormControl>
                                 <Input type="number" step="0.01" placeholder="Ej: 1740.00" {...field} disabled={isReadOnly} className="text-lg font-medium"/>
@@ -821,9 +828,7 @@ export function ServiceForm({
                             <TableBody>
                                 {fields.map((item, index) => {
                                     const currentItemDetails = currentInventoryItems.find(invItem => invItem.id === item.supplyId);
-                                    const unitPriceForCalc = mode === 'quote'
-                                        ? (item.unitPrice || currentItemDetails?.sellingPrice || 0)
-                                        : (item.unitPrice || currentItemDetails?.unitPrice || 0);
+                                    const unitPriceForCalc = item.unitPrice || 0;
                                     const totalItemPrice = unitPriceForCalc * item.quantity;
                                     return (
                                         <TableRow key={item.id}>
@@ -854,7 +859,7 @@ export function ServiceForm({
                         setSelectedInventoryItemForDialog(null);
                         setAddSupplySearchTerm('');
                         setAddSupplyQuantity(1);
-                        setFilteredInventoryForDialog(currentInventoryItems.filter(item => item.isService || item.quantity > 0).slice(0,10));
+                        setFilteredInventoryForDialog(currentInventoryItems.slice(0,10));
                         setIsAddSupplyDialogOpen(true);
                     }}
                     className="mt-4"
@@ -865,9 +870,9 @@ export function ServiceForm({
                 )}
                  <div className="mt-4 text-lg font-medium text-right">
                     <p>
-                        {mode === 'quote' ? "Costo Total de Insumos/Servicios (para cotización, IVA Inc.):" : "Costo Total de Insumos/Servicios (para el taller):"}
+                        {mode === 'quote' ? "Total de Insumos/Servicios (para cotización, IVA Inc.):" : "Costo Total de Insumos/Servicios (para el taller):"}
                         <span className="font-semibold">
-                            {formatCurrency(totalSuppliesCost)}
+                            {formatCurrency(mode === 'quote' ? totalSuppliesSellingPrice : totalSuppliesWorkshopCost)}
                         </span>
                     </p>
                 </div>
@@ -889,12 +894,7 @@ export function ServiceForm({
                 <div className="flex justify-between">
                     <span>(-) Costo Insumos (Taller):</span>
                     <span className="font-medium text-red-600 dark:text-red-400">
-                         {formatCurrency(
-                            watchedSupplies?.reduce((sum, supply) => {
-                                const item = currentInventoryItems.find(i => i.id === supply.supplyId);
-                                return sum + (item?.unitPrice || 0) * supply.quantity; // Always use workshop cost for this line
-                            }, 0) || 0
-                        )}
+                         {formatCurrency(totalSuppliesWorkshopCost)}
                     </span>
                 </div>
                 <hr className="my-2 border-dashed"/>
@@ -916,7 +916,7 @@ export function ServiceForm({
               <Button type="button" variant="outline" onClick={onClose}>
                 Cancelar
               </Button>
-              <Button type="submit" disabled={form.formState.isSubmitting || (mode === 'service' && !form.getValues('vehicleId') && !initialDataService) }>
+              <Button type="submit" disabled={form.formState.isSubmitting || (!form.getValues('vehicleId') && !initialDataService) }>
                 {form.formState.isSubmitting ? "Guardando..." : submitButtonText}
               </Button>
             </>

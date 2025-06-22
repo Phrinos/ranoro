@@ -12,8 +12,8 @@ import { Search, ListFilter, CalendarIcon as CalendarDateIcon, FileText, DollarS
 import { QuotesTable } from "../components/quotes-table"; 
 import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
 import { QuoteContent } from '@/components/quote-content';
-import { placeholderQuotes, placeholderVehicles } from "@/lib/placeholder-data"; 
-import type { QuoteRecord, Vehicle, User } from "@/types"; 
+import { placeholderQuotes, placeholderVehicles, placeholderTechnicians, placeholderServiceRecords, placeholderInventory } from "@/lib/placeholder-data"; 
+import type { QuoteRecord, Vehicle, User, ServiceRecord, Technician, InventoryItem } from "@/types"; 
 import { useState, useEffect, useMemo, useRef } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { format, parseISO, compareAsc, compareDesc, isWithinInterval, isValid, startOfDay, endOfDay } from "date-fns";
@@ -22,6 +22,8 @@ import type { DateRange } from "react-day-picker";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import html2pdf from 'html2pdf.js';
+import { ServiceDialog } from "../../servicios/components/service-dialog";
+
 
 type QuoteSortOption = 
   | "date_desc" | "date_asc"
@@ -31,6 +33,9 @@ type QuoteSortOption =
 export default function HistorialCotizacionesPage() {
   const [allQuotes, setAllQuotes] = useState<QuoteRecord[]>(placeholderQuotes);
   const [vehicles, setVehicles] = useState<Vehicle[]>(placeholderVehicles);
+  const [technicians, setTechnicians] = useState<Technician[]>(placeholderTechnicians);
+  const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>(placeholderInventory);
+
   const { toast } = useToast();
   
   const [searchTerm, setSearchTerm] = useState("");
@@ -39,6 +44,13 @@ export default function HistorialCotizacionesPage() {
 
   const [isViewQuoteDialogOpen, setIsViewQuoteDialogOpen] = useState(false);
   const [selectedQuoteForView, setSelectedQuoteForView] = useState<QuoteRecord | null>(null);
+  
+  const [isEditQuoteDialogOpen, setIsEditQuoteDialogOpen] = useState(false);
+  const [selectedQuoteForEdit, setSelectedQuoteForEdit] = useState<QuoteRecord | null>(null);
+
+  const [isGenerateServiceDialogOpen, setIsGenerateServiceDialogOpen] = useState(false);
+  const [quoteToConvert, setQuoteToConvert] = useState<QuoteRecord | null>(null);
+
   const [vehicleForSelectedQuote, setVehicleForSelectedQuote] = useState<Vehicle | null>(null);
   
   const [workshopInfo, setWorkshopInfo] = useState<{name?: string}>({});
@@ -53,14 +65,15 @@ export default function HistorialCotizacionesPage() {
   }, []);
 
   useEffect(() => {
+    // Initial data load can be done here if needed.
+    // For this example, we use the directly imported placeholder data.
     const sortedInitialQuotes = [...placeholderQuotes].sort((a, b) => 
-      compareDesc(
-        parseISO(a.quoteDate ?? ""),
-        parseISO(b.quoteDate ?? "")
-      )      
+        compareDesc(parseISO(a.quoteDate ?? ""), parseISO(b.quoteDate ?? ""))      
     );
-    setAllQuotes(sortedInitialQuotes); 
+    setAllQuotes(sortedInitialQuotes);
     setVehicles(placeholderVehicles);
+    setTechnicians(placeholderTechnicians);
+    setInventoryItems(placeholderInventory);
   }, []);
 
   const filteredAndSortedQuotes = useMemo(() => {
@@ -88,17 +101,11 @@ export default function HistorialCotizacionesPage() {
     filtered.sort((a, b) => {
       switch (sortOption) {
         case "date_asc":
-  return compareAsc(
-    parseISO(a.quoteDate ?? ""),
-    parseISO(b.quoteDate ?? "")
-  );
+          return compareAsc(parseISO(a.quoteDate ?? ""), parseISO(b.quoteDate ?? ""));
         case "date_desc":
-  return compareDesc(
-    parseISO(a.quoteDate ?? ""),
-    parseISO(b.quoteDate ?? "")
-  );
-        case "total_asc": return a.estimatedTotalCost - b.estimatedTotalCost;
-        case "total_desc": return b.estimatedTotalCost - a.estimatedTotalCost;
+          return compareDesc(parseISO(a.quoteDate ?? ""), parseISO(b.quoteDate ?? ""));
+        case "total_asc": return (a.estimatedTotalCost || 0) - (b.estimatedTotalCost || 0);
+        case "total_desc": return (b.estimatedTotalCost || 0) - (a.estimatedTotalCost || 0);
         case "vehicle_asc": return (a.vehicleIdentifier || '').localeCompare(b.vehicleIdentifier || '');
         case "vehicle_desc": return (b.vehicleIdentifier || '').localeCompare(a.vehicleIdentifier || '');
         default: return compareDesc(parseISO(a.quoteDate ?? ""), parseISO(b.quoteDate ?? ""));
@@ -109,7 +116,7 @@ export default function HistorialCotizacionesPage() {
 
   const summaryData = useMemo(() => {
     const totalQuotesCount = filteredAndSortedQuotes.length;
-    const totalEstimatedValue = filteredAndSortedQuotes.reduce((sum, q) => sum + q.estimatedTotalCost, 0);
+    const totalEstimatedValue = filteredAndSortedQuotes.reduce((sum, q) => sum + (q.estimatedTotalCost || 0), 0);
     
     return { totalQuotesCount, totalEstimatedValue };
   }, [filteredAndSortedQuotes]);
@@ -120,85 +127,104 @@ export default function HistorialCotizacionesPage() {
     setVehicleForSelectedQuote(vehicles.find(v => v.id === quote.vehicleId) || null);
     setIsViewQuoteDialogOpen(true);
   };
-
-  const handleViewDialogClose = () => {
-    setIsViewQuoteDialogOpen(false);
-    setSelectedQuoteForView(null);
-    setVehicleForSelectedQuote(null);
+  
+  const handleEditQuote = (quote: QuoteRecord) => {
+    setSelectedQuoteForEdit(quote);
+    setIsEditQuoteDialogOpen(true);
   };
   
-  const generateAndDownloadPdf = () => {
-    if (!quoteContentRef.current || !selectedQuoteForView) {
+  const handleGenerateService = (quote: QuoteRecord) => {
+    if (quote.serviceId) {
+      toast({ title: "Ya Convertido", description: `Esta cotización ya fue convertida al servicio ID: ${quote.serviceId}.` });
+      return;
+    }
+    setQuoteToConvert(quote);
+    setIsGenerateServiceDialogOpen(true);
+  };
+
+  const handleSaveEditedQuote = async (data: ServiceRecord | QuoteRecord) => {
+      const editedQuote = data as QuoteRecord;
+      const quoteIndex = placeholderQuotes.findIndex(q => q.id === editedQuote.id);
+      if (quoteIndex !== -1) {
+          placeholderQuotes[quoteIndex] = editedQuote;
+          setAllQuotes([...placeholderQuotes]);
+          toast({ title: "Cotización Actualizada", description: `La cotización ${editedQuote.id} se actualizó correctamente.` });
+      }
+      setIsEditQuoteDialogOpen(false);
+  };
+  
+  const handleSaveServiceFromQuote = async (data: ServiceRecord | QuoteRecord) => {
+      const newService = data as ServiceRecord;
+      if (!quoteToConvert) return;
+
+      const newServiceId = `S${String(placeholderServiceRecords.length + 1).padStart(3, '0')}${Date.now().toString().slice(-3)}`;
+      const serviceToSave: ServiceRecord = { ...newService, id: newServiceId };
+      placeholderServiceRecords.push(serviceToSave);
+
+      const quoteIndex = placeholderQuotes.findIndex(q => q.id === quoteToConvert.id);
+      if (quoteIndex !== -1) {
+          placeholderQuotes[quoteIndex].serviceId = newServiceId;
+          setAllQuotes([...placeholderQuotes]);
+      }
+      
+      toast({ title: "Servicio Generado", description: `Se creó el servicio ${newServiceId} desde la cotización.` });
+      setIsGenerateServiceDialogOpen(false);
+  };
+
+
+  const generateAndDownloadPdf = (quoteToPrint: QuoteRecord | null) => {
+    if (!quoteContentRef.current || !quoteToPrint) {
       toast({ title: "Error", description: "No se pudo generar el PDF.", variant: "destructive" });
       return;
     }
-
     const element = quoteContentRef.current;
-    const pdfFileName = `Cotizacion-${selectedQuoteForView.id}.pdf`;
-
+    const pdfFileName = `Cotizacion-${quoteToPrint.id}.pdf`;
     const opt = {
-      margin:       1,
-      filename:     pdfFileName,
-      image:        { type: 'jpeg', quality: 0.98 },
-      html2canvas:  { scale: 2, useCORS: true, letterRendering: true },
-      jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
+      margin: 1, // inches
+      filename: pdfFileName,
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2, useCORS: true, letterRendering: true },
+      jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
     };
-    
-    toast({
-      title: "Generando PDF...",
-      description: `Se está preparando el archivo ${pdfFileName}.`,
-    });
-
-    html2pdf().from(element).set(opt).save().then(() => {
-      toast({
-        title: "PDF Descargado",
-        description: `El archivo ${pdfFileName} se ha guardado exitosamente.`,
-      });
-    }).catch(err => {
-      toast({
-        title: "Error al generar PDF",
-        description: "Ocurrió un problema al crear el archivo.",
-        variant: "destructive",
-      });
-      console.error("PDF generation error:", err);
-    });
+    toast({ title: "Generando PDF...", description: `Se está preparando ${pdfFileName}.` });
+    html2pdf().from(element).set(opt).save();
   };
 
-  const handleSendEmail = () => {
-    if (!selectedQuoteForView || !vehicleForSelectedQuote) return;
-    
-    generateAndDownloadPdf();
-
-    setTimeout(() => {
-      const subject = encodeURIComponent(`Cotización de Servicio: ${selectedQuoteForView.id} - ${workshopInfo?.name || 'Su Taller'}`);
-      const body = encodeURIComponent(
-        `Estimado/a ${vehicleForSelectedQuote.ownerName || 'Cliente'},\n\n` +
-        `Adjunto encontrará la cotización de servicio solicitada que ha sido descargada en su dispositivo. Por favor, no olvide adjuntarla.\n\n`+
-        `Saludos cordiales,\n${selectedQuoteForView.preparedByTechnicianName || workshopInfo?.name || 'El equipo del Taller'}`
-      );
-      const mailtoLink = `mailto:${vehicleForSelectedQuote.ownerEmail || ''}?subject=${subject}&body=${body}`;
-      window.open(mailtoLink, '_blank');
-    }, 1000);
-  };
-
-  const handleSendWhatsApp = () => {
-    if (!selectedQuoteForView || !vehicleForSelectedQuote || !vehicleForSelectedQuote.ownerPhone) {
-      toast({ title: "Faltan Datos", description: "No se encontró el teléfono del cliente para enviar por WhatsApp.", variant: "destructive" });
-      return;
+  const handleSendEmail = (quoteForAction: QuoteRecord | null) => {
+    if (!quoteForAction) return;
+    const vehicleForAction = vehicles.find(v => v.id === quoteForAction.vehicleId);
+    if (!vehicleForAction?.ownerEmail) {
+        toast({ title: "Faltan Datos", description: "El cliente no tiene un email registrado.", variant: "destructive" });
+        return;
     }
-
-    generateAndDownloadPdf();
-    
+    generateAndDownloadPdf(quoteForAction);
     setTimeout(() => {
-        const phoneNumber = vehicleForSelectedQuote.ownerPhone.replace(/\D/g, ''); 
-        const message = encodeURIComponent(
-          `Hola ${vehicleForSelectedQuote.ownerName || 'Cliente'}, le enviamos su cotización de servicio ${selectedQuoteForView.id} de ${workshopInfo?.name || 'nuestro taller'} para su vehículo ${vehicleForSelectedQuote.make} ${vehicleForSelectedQuote.model}. Le hemos enviado el PDF a su dispositivo para que pueda adjuntarlo.`
+        const subject = encodeURIComponent(`Cotización de Servicio: ${quoteForAction.id} - ${workshopInfo?.name || 'Su Taller'}`);
+        const body = encodeURIComponent(
+            `Estimado/a ${vehicleForAction.ownerName || 'Cliente'},\n\n` +
+            `Hemos generado un PDF con su cotización, el cual debería haberse descargado en su dispositivo. Por favor, no olvide adjuntarlo a este correo.\n\n`+
+            `Saludos cordiales,\n${quoteForAction.preparedByTechnicianName || workshopInfo?.name || 'El equipo del Taller'}`
         );
-        const whatsappLink = `https://wa.me/${phoneNumber}?text=${message}`;
-        window.open(whatsappLink, '_blank');
+        window.open(`mailto:${vehicleForAction.ownerEmail}?subject=${subject}&body=${body}`, '_blank');
     }, 1000);
   };
 
+  const handleSendWhatsApp = (quoteForAction: QuoteRecord | null) => {
+    if (!quoteForAction) return;
+    const vehicleForAction = vehicles.find(v => v.id === quoteForAction.vehicleId);
+    if (!vehicleForAction?.ownerPhone) {
+        toast({ title: "Faltan Datos", description: "El cliente no tiene un teléfono registrado.", variant: "destructive" });
+        return;
+    }
+    generateAndDownloadPdf(quoteForAction);
+    setTimeout(() => {
+        const phoneNumber = vehicleForAction.ownerPhone!.replace(/\D/g, ''); 
+        const message = encodeURIComponent(
+          `Hola ${vehicleForAction.ownerName || 'Cliente'}, le enviamos su cotización de servicio ${quoteForAction.id} de ${workshopInfo?.name || 'nuestro taller'} para su vehículo ${vehicleForAction.make} ${vehicleForAction.model}. Le hemos enviado el PDF a su dispositivo para que pueda adjuntarlo.`
+        );
+        window.open(`https://wa.me/${phoneNumber}?text=${message}`, '_blank');
+    }, 1000);
+  };
 
   return (
     <>
@@ -228,7 +254,7 @@ export default function HistorialCotizacionesPage() {
             <DollarSign className="h-5 w-5 text-green-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold font-headline">${summaryData.totalEstimatedValue.toLocaleString('es-ES')}</div>
+            <div className="text-2xl font-bold font-headline">${(summaryData.totalEstimatedValue || 0).toLocaleString('es-ES')}</div>
           </CardContent>
         </Card>
       </div>
@@ -301,22 +327,26 @@ export default function HistorialCotizacionesPage() {
         </DropdownMenu>
       </div>
 
-      <QuotesTable quotes={filteredAndSortedQuotes} onViewQuote={handleViewQuote} />
+      <QuotesTable 
+        quotes={filteredAndSortedQuotes} 
+        onViewQuote={handleViewQuote} 
+        onEditQuote={handleEditQuote}
+        onGenerateService={handleGenerateService}
+      />
 
       {isViewQuoteDialogOpen && selectedQuoteForView && (
         <PrintTicketDialog
           open={isViewQuoteDialogOpen}
           onOpenChange={setIsViewQuoteDialogOpen}
           title={`Cotización: ${selectedQuoteForView.id}`}
-          printButtonText="Imprimir Cotización"
           dialogContentClassName="printable-quote-dialog"
-          onDialogClose={handleViewDialogClose}
+          onDialogClose={() => setSelectedQuoteForView(null)}
           footerActions={
             <>
-              <Button variant="outline" onClick={handleSendEmail} disabled={!vehicleForSelectedQuote?.ownerEmail}>
+              <Button variant="outline" onClick={() => handleSendEmail(selectedQuoteForView)} disabled={!vehicles.find(v => v.id === selectedQuoteForView.vehicleId)?.ownerEmail}>
                 <Mail className="mr-2 h-4 w-4" /> Enviar por Email
               </Button>
-              <Button variant="outline" onClick={handleSendWhatsApp} disabled={!vehicleForSelectedQuote?.ownerPhone}>
+              <Button variant="outline" onClick={() => handleSendWhatsApp(selectedQuoteForView)} disabled={!vehicles.find(v => v.id === selectedQuoteForView.vehicleId)?.ownerPhone}>
                 <MessageSquare className="mr-2 h-4 w-4" /> Enviar por WhatsApp
               </Button>
             </>
@@ -325,10 +355,37 @@ export default function HistorialCotizacionesPage() {
           <QuoteContent 
             ref={quoteContentRef}
             quote={selectedQuoteForView} 
-            vehicle={vehicleForSelectedQuote || undefined}
+            vehicle={vehicles.find(v => v.id === selectedQuoteForView.vehicleId) || undefined}
           />
         </PrintTicketDialog>
       )}
+
+      {isEditQuoteDialogOpen && selectedQuoteForEdit && (
+         <ServiceDialog
+            open={isEditQuoteDialogOpen}
+            onOpenChange={setIsEditQuoteDialogOpen}
+            quote={selectedQuoteForEdit}
+            vehicles={vehicles}
+            technicians={technicians}
+            inventoryItems={inventoryItems}
+            onSave={handleSaveEditedQuote}
+            mode="quote"
+         />
+      )}
+      
+      {isGenerateServiceDialogOpen && quoteToConvert && (
+          <ServiceDialog
+            open={isGenerateServiceDialogOpen}
+            onOpenChange={setIsGenerateServiceDialogOpen}
+            quote={quoteToConvert}
+            vehicles={vehicles}
+            technicians={technicians}
+            inventoryItems={inventoryItems}
+            onSave={handleSaveServiceFromQuote}
+            mode="service"
+          />
+      )}
+
     </>
   );
 }
