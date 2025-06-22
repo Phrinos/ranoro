@@ -74,7 +74,7 @@ export const TicketContent = React.forwardRef<HTMLDivElement, TicketContentProps
   );
 
   const renderDashedLine = () => (
-    <div className="border-t border-dashed border-neutral-400 my-1"></div>
+    <div className="border-t border-dashed border-neutral-400 mt-2 mb-1"></div>
   );
 
   return (
@@ -86,7 +86,6 @@ export const TicketContent = React.forwardRef<HTMLDivElement, TicketContentProps
     >
       <div className="text-center mb-1">
         <img src={workshopInfo.logoUrl} alt="Logo" className="w-32 mx-auto mb-1" data-ai-hint="workshop logo"/>
-        <h1 className="text-base font-bold">{workshopInfo.name}</h1>
         <div>{workshopInfo.addressLine1}</div>
         {workshopInfo.addressLine2 && <div>{workshopInfo.addressLine2}</div>}
         <div>{workshopInfo.cityState}</div>
@@ -124,7 +123,7 @@ export const TicketContent = React.forwardRef<HTMLDivElement, TicketContentProps
           const itemName = 'itemName' in item ? item.itemName : ('supplyName' in item ? item.supplyName : 'Artículo desconocido');
           return (
               <div key={idx} className="py-0.5">
-                  <div>{itemName}</div>
+                  <div className="w-full">{itemName}</div>
                   <div className="flex justify-between">
                       <span>&nbsp;&nbsp;{item.quantity} x {formatCurrency(unitPrice)}</span>
                       <span className="font-medium">{formatCurrency(totalPrice)}</span>
