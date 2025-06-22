@@ -92,7 +92,7 @@ export function ServiceDialog({
           </DialogHeader>
           <ServiceForm
             initialDataService={mode === 'service' ? service : null}
-            initialDataQuote={mode === 'quote' ? (quote || service as any) : null} // Allow service data to seed quote
+            initialDataQuote={quote || (mode === 'quote' ? (service as any) : null)}
             vehicles={vehicles} 
             technicians={technicians}
             inventoryItems={inventoryItems}
