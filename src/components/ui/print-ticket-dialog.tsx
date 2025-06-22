@@ -75,35 +75,22 @@ export function PrintTicketDialog({
         description: "Esto puede tomar un momento.",
       });
 
-      html2pdf().from(element).set(opt).output('datauristring').then((dataUrl: string) => {
-        const iframe = document.createElement('iframe');
-        iframe.style.position = 'fixed';
-        iframe.style.width = '0';
-        iframe.style.height = '0';
-        iframe.style.border = '0';
-        iframe.src = dataUrl;
-        document.body.appendChild(iframe);
-
-        iframe.onload = () => {
-            const iframeWindow = iframe.contentWindow;
-            if (iframeWindow) {
-                try {
-                    iframe.focus();
-                    iframeWindow.print();
-                } catch (e) {
-                    console.error("Error calling print from iframe:", e);
-                    toast({
-                        title: "Error de Impresión",
-                        description: "No se pudo abrir el diálogo de impresión.",
-                        variant: "destructive"
-                    });
-                } finally {
-                     setTimeout(() => {
-                        document.body.removeChild(iframe);
-                     }, 1000);
-                }
-            }
-        };
+      html2pdf().from(element).set(opt).output('bloburl').then((url: string) => {
+        const printWindow = window.open(url);
+        if (printWindow) {
+          printWindow.onload = () => {
+              setTimeout(() => {
+                  try {
+                      printWindow.print();
+                  } catch(e) {
+                       toast({ title: "Error de Impresión", description: "El diálogo de impresión fue bloqueado. Por favor, permita las ventanas emergentes.", variant: "destructive"});
+                       console.error("Print failed:", e);
+                  }
+              }, 250); // Small delay to ensure PDF is fully rendered
+          };
+        } else {
+          toast({ title: "Error", description: "No se pudo abrir la ventana de impresión. Verifique si su navegador bloquea las ventanas emergentes.", variant: "destructive"});
+        }
       }).catch((err: any) => {
          toast({ title: "Error al Generar PDF", description: "Ocurrió un problema al crear el archivo de impresión.", variant: "destructive" });
          console.error("PDF generation for print error:", err);
