@@ -62,16 +62,7 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
     if (amount === undefined) return 'N/A';
     return `$${amount.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   };
-
-  const renderLine = (label: string, value: string | number | undefined, isBoldValue: boolean = false, valueClass?: string) => (
-    <div className="flex justify-between py-0.5">
-      <span className="text-gray-700">{label}</span>
-      <span className={`${isBoldValue ? "font-semibold" : ""} ${valueClass || 'text-gray-900'}`}>
-        {typeof value === 'number' ? formatCurrency(value) : value}
-      </span>
-    </div>
-  );
-
+  
   const validityDays = 15; 
   const validityDate = isValid(quoteDate) ? format(addDays(quoteDate, validityDays), "dd 'de' MMMM 'de' yyyy", { locale: es }) : 'N/A';
 
@@ -79,11 +70,10 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
     <div 
       ref={ref}
       data-format="letter"
-      className="font-sans bg-white text-black shadow-lg printable-quote printable-content mx-auto w-[794px] min-h-[1020px] p-16 text-sm"
+      className="font-sans bg-white text-black shadow-lg printable-quote printable-content mx-auto w-[794px] min-h-[1020px] p-16 text-sm flex flex-col"
     >
       <header className="flex justify-between items-start mb-8 border-b border-gray-300 pb-4">
         <div>
-          {/* Using a standard img tag for better compatibility with html2pdf */}
           <img 
             src={workshopInfo.logoUrl} 
             alt={`${workshopInfo.name} Logo`} 
@@ -107,72 +97,88 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
         </div>
       </header>
 
-      <section className="grid grid-cols-2 gap-8 mb-8">
-        <div className="bg-gray-50 p-4 rounded-md border border-gray-200">
-          <h3 className="font-semibold text-gray-700 mb-2 border-b pb-4">Cliente:</h3>
-          <div className="space-y-1 leading-tight">
-            <div>{vehicle?.ownerName || 'N/A'}</div>
-            <div>{vehicle?.ownerPhone || 'N/A'}</div>
-            <div>{vehicle?.ownerEmail || 'N/A'}</div>
-          </div>
-        </div>
-        <div className="bg-gray-50 p-4 rounded-md border border-gray-200">
-          <h3 className="font-semibold text-gray-700 mb-2 border-b pb-4">Vehículo:</h3>
-          <div className="space-y-1 leading-tight">
-            <div>{vehicle ? `${vehicle.make} ${vehicle.model} (${vehicle.year})` : quote.vehicleIdentifier || 'N/A'}</div>
-            <div>Placas: {vehicle?.licensePlate || 'N/A'}</div>
-            <div>VIN: {vehicle?.vin || 'N/A'}</div>
-            {quote.mileage !== undefined && <div>Kilometraje: {quote.mileage.toLocaleString('es-ES')} km</div>}
-          </div>
-        </div>
-      </section>
-
-      <section className="mb-8">
-        <h3 className="font-semibold text-base text-gray-700 mb-2 border-b pb-4">Descripción del Trabajo a Realizar:</h3>
-        <p className="text-gray-800 whitespace-pre-wrap">{quote.description}</p>
-      </section>
-
-      {quote.suppliesProposed && quote.suppliesProposed.length > 0 && (
-        <section className="mb-8">
-          <h3 className="font-semibold text-base text-gray-700 mb-3">Refacciones y Materiales Propuestos (Precios con IVA):</h3>
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="border-b-2 border-gray-300 bg-gray-100">
-                <th className="py-4 px-3 font-semibold text-gray-600">Cantidad</th>
-                <th className="py-4 px-3 font-semibold text-gray-600">Descripción</th>
-                <th className="py-4 px-3 font-semibold text-gray-600 text-right">Precio Unit.</th>
-                <th className="py-4 px-3 font-semibold text-gray-600 text-right">Importe</th>
-              </tr>
-            </thead>
-            <tbody>
-              {quote.suppliesProposed.map((supply, idx) => (
-                <tr key={idx} className="border-b border-gray-200">
-                  <td className="py-2 px-3">{supply.quantity}</td>
-                  <td className="py-2 px-3">{supply.supplyName || `ID: ${supply.supplyId}`}</td>
-                  <td className="py-2 px-3 text-right">{formatCurrency(supply.unitPrice)}</td>
-                  <td className="py-2 px-3 text-right">{formatCurrency((supply.unitPrice || 0) * supply.quantity)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+      <main className="flex-grow">
+        <section className="grid grid-cols-2 gap-8 mb-8">
+            <div className="bg-gray-50 p-4 rounded-md border border-gray-200">
+            <h3 className="font-semibold text-gray-700 mb-2 border-b pb-1">Cliente:</h3>
+            <div className="space-y-1 leading-tight pt-1">
+                <div>{vehicle?.ownerName || 'N/A'}</div>
+                <div>{vehicle?.ownerPhone || 'N/A'}</div>
+                <div>{vehicle?.ownerEmail || 'N/A'}</div>
+            </div>
+            </div>
+            <div className="bg-gray-50 p-4 rounded-md border border-gray-200">
+            <h3 className="font-semibold text-gray-700 mb-2 border-b pb-1">Vehículo:</h3>
+            <div className="space-y-1 leading-tight pt-1">
+                <div>{vehicle ? `${vehicle.make} ${vehicle.model} (${vehicle.year})` : quote.vehicleIdentifier || 'N/A'}</div>
+                <div>Placas: {vehicle?.licensePlate || 'N/A'}</div>
+                <div>VIN: {vehicle?.vin || 'N/A'}</div>
+                {quote.mileage !== undefined && <div>Kilometraje: {quote.mileage.toLocaleString('es-ES')} km</div>}
+            </div>
+            </div>
         </section>
-      )}
-      
-      <section className="flex justify-end mb-8">
-        <div className="w-full max-w-sm space-y-2 text-base">
-          {quote.estimatedSubTotal !== undefined && renderLine("Subtotal:", formatCurrency(quote.estimatedSubTotal))}
-          {quote.estimatedTaxAmount !== undefined && renderLine(`IVA (${(IVA_RATE * 100).toFixed(0)}%):`, formatCurrency(quote.estimatedTaxAmount))}
-          {renderLine("Total Estimado:", formatCurrency(quote.estimatedTotalCost), true, "text-xl text-primary font-bold border-t-2 pt-2 border-gray-300")}
-        </div>
-      </section>
 
-      <footer className="text-xs text-gray-600 mt-auto border-t border-gray-300 pt-4">
+        <section className="mb-8">
+            <h3 className="font-semibold text-base text-gray-700 mb-2 border-b pb-2">Descripción del Trabajo a Realizar:</h3>
+            <p className="text-gray-800 whitespace-pre-wrap pt-2">{quote.description}</p>
+        </section>
+
+        {quote.suppliesProposed && quote.suppliesProposed.length > 0 && (
+            <section className="mb-8">
+            <h3 className="font-semibold text-base text-gray-700 mb-3">Refacciones y Materiales Propuestos (Precios con IVA):</h3>
+            <table className="w-full text-left border-collapse">
+                <thead>
+                <tr className="border-b-2 border-gray-300 bg-gray-100">
+                    <th className="py-2 px-3 font-semibold text-gray-600">Cantidad</th>
+                    <th className="py-2 px-3 font-semibold text-gray-600">Descripción</th>
+                    <th className="py-2 px-3 font-semibold text-gray-600 text-right">Precio Unit.</th>
+                    <th className="py-2 px-3 font-semibold text-gray-600 text-right">Importe</th>
+                </tr>
+                </thead>
+                <tbody>
+                {quote.suppliesProposed.map((supply, idx) => (
+                    <tr key={idx} className="border-b border-gray-200">
+                    <td className="py-2 px-3">{supply.quantity}</td>
+                    <td className="py-2 px-3">{supply.supplyName || `ID: ${supply.supplyId}`}</td>
+                    <td className="py-2 px-3 text-right">{formatCurrency(supply.unitPrice)}</td>
+                    <td className="py-2 px-3 text-right">{formatCurrency((supply.unitPrice || 0) * supply.quantity)}</td>
+                    </tr>
+                ))}
+                </tbody>
+            </table>
+            </section>
+        )}
+        
+        <section className="flex justify-end mt-8">
+            <div className="w-full max-w-sm space-y-2 text-base">
+                {quote.estimatedSubTotal !== undefined && (
+                    <div className="flex justify-between">
+                        <span>Subtotal:</span>
+                        <span className="font-medium">{formatCurrency(quote.estimatedSubTotal)}</span>
+                    </div>
+                )}
+                {quote.estimatedTaxAmount !== undefined && (
+                    <div className="flex justify-between">
+                        <span>IVA ({(IVA_RATE * 100).toFixed(0)}%):</span>
+                        <span className="font-medium">{formatCurrency(quote.estimatedTaxAmount)}</span>
+                    </div>
+                )}
+                <div className="flex justify-between text-xl font-bold border-t-2 pt-2 mt-2 border-gray-300 text-primary">
+                    <span>Total Estimado:</span>
+                    <span>{formatCurrency(quote.estimatedTotalCost)}</span>
+                </div>
+            </div>
+        </section>
+      </main>
+
+      <footer className="text-xs text-gray-600 mt-8 border-t border-gray-300 pt-4">
         <div className="mb-4">
           <h4 className="font-semibold text-gray-700 mb-1">Notas y Condiciones:</h4>
           <p className="leading-snug">
             {`Cotización realizada por: ${quote.preparedByTechnicianName || 'N/A'}. `}
             Precios en MXN. Esta cotización es válida hasta el {validityDate}. Esta cotización no incluye trabajos no especificados.
           </p>
+          {quote.notes && <p className="leading-snug mt-1">Notas adicionales: {quote.notes}</p>}
         </div>
         <div className="text-left space-y-1 leading-snug">
             <p className="font-semibold">¡Gracias por confiar en Ranoro!</p>
