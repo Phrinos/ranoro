@@ -76,117 +76,110 @@ export function QuoteContent({ quote, vehicle, preparedByTechnician, previewWork
   const validityDate = isValid(quoteDate) ? format(addDays(quoteDate, validityDays), "dd 'de' MMMM 'de' yyyy", { locale: es }) : 'N/A';
 
   return (
-    <div className="font-sans bg-white text-black p-4 printable-quote quote-preview-content max-w-4xl mx-auto text-xs print:text-sm">
-      <div className="flex justify-between items-start mb-6 border-b pb-4">
+    // Re-styled for a better letter-sized preview inside a scrollable container
+    <div className="font-sans bg-white text-black shadow-lg printable-quote printable-content mx-auto w-[794px] min-h-[1020px] p-16 text-sm">
+      <header className="flex justify-between items-start mb-8 border-b border-gray-300 pb-4">
         <div>
           <Image 
             src={workshopInfo.logoUrl} 
             alt={`${workshopInfo.name} Logo`} 
-            width={150} 
-            height={50} 
-            className="mb-2"
+            width={180} 
+            height={60} 
+            className="mb-3"
             data-ai-hint="workshop logo"
             priority={typeof window === 'undefined'} 
             />
-          <h1 className="text-xl font-bold text-gray-800">{workshopInfo.name}</h1>
+          <h1 className="text-2xl font-bold text-gray-800">{workshopInfo.name}</h1>
           <p>{workshopInfo.addressLine1}</p>
           {workshopInfo.addressLine2 && <p>{workshopInfo.addressLine2}</p>}
           <p>{workshopInfo.cityState}</p>
           <p>Tel: {workshopInfo.phone}</p>
         </div>
         <div className="text-right">
-          <h2 className="text-lg font-semibold text-primary">COTIZACIÓN</h2>
-          <p>Folio: <span className="font-medium">{quote.id}</span></p>
+          <h2 className="text-3xl font-semibold text-primary">COTIZACIÓN</h2>
+          <p className="mt-2">Folio: <span className="font-medium">{quote.id}</span></p>
           <p>Fecha: <span className="font-medium">{formattedQuoteDate}</span></p>
         </div>
-      </div>
+      </header>
 
-      <div className="grid grid-cols-2 gap-4 mb-6">
-        <div>
-          <h3 className="font-semibold text-gray-700 mb-1">Cliente:</h3>
+      <section className="grid grid-cols-2 gap-8 mb-8">
+        <div className="bg-gray-50 p-4 rounded-md border border-gray-200">
+          <h3 className="font-semibold text-gray-700 mb-2 border-b pb-1">Cliente:</h3>
           <p>{vehicle?.ownerName || 'N/A'}</p>
           <p>{vehicle?.ownerPhone || 'N/A'}</p>
           <p>{vehicle?.ownerEmail || 'N/A'}</p>
         </div>
-        <div>
-          <h3 className="font-semibold text-gray-700 mb-1">Vehículo:</h3>
+        <div className="bg-gray-50 p-4 rounded-md border border-gray-200">
+          <h3 className="font-semibold text-gray-700 mb-2 border-b pb-1">Vehículo:</h3>
           <p>{vehicle ? `${vehicle.make} ${vehicle.model} (${vehicle.year})` : quote.vehicleIdentifier || 'N/A'}</p>
           <p>Placas: {vehicle?.licensePlate || 'N/A'}</p>
           <p>VIN: {vehicle?.vin || 'N/A'}</p>
           {quote.mileage !== undefined && <p>Kilometraje: {quote.mileage.toLocaleString('es-ES')} km</p>}
         </div>
-      </div>
+      </section>
 
-      <div className="mb-6">
-        <h3 className="font-semibold text-gray-700 mb-1">Descripción del Trabajo a Realizar:</h3>
+      <section className="mb-8">
+        <h3 className="font-semibold text-base text-gray-700 mb-2 border-b pb-2">Descripción del Trabajo a Realizar:</h3>
         <p className="text-gray-800 whitespace-pre-wrap">{quote.description}</p>
-      </div>
+      </section>
 
       {quote.suppliesProposed && quote.suppliesProposed.length > 0 && (
-        <div className="mb-6">
-          <h3 className="font-semibold text-gray-700 mb-2">Refacciones y Materiales Propuestos (Precios con IVA):</h3>
+        <section className="mb-8">
+          <h3 className="font-semibold text-base text-gray-700 mb-3">Refacciones y Materiales Propuestos (Precios con IVA):</h3>
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="border-b">
-                <th className="py-1 px-2 font-medium text-gray-600">Cantidad</th>
-                <th className="py-1 px-2 font-medium text-gray-600">Descripción</th>
-                <th className="py-1 px-2 font-medium text-gray-600 text-right">Precio Unit.</th>
-                <th className="py-1 px-2 font-medium text-gray-600 text-right">Importe</th>
+              <tr className="border-b-2 border-gray-300 bg-gray-100">
+                <th className="py-2 px-3 font-semibold text-gray-600">Cantidad</th>
+                <th className="py-2 px-3 font-semibold text-gray-600">Descripción</th>
+                <th className="py-2 px-3 font-semibold text-gray-600 text-right">Precio Unit.</th>
+                <th className="py-2 px-3 font-semibold text-gray-600 text-right">Importe</th>
               </tr>
             </thead>
             <tbody>
               {quote.suppliesProposed.map((supply, idx) => (
                 <tr key={idx} className="border-b border-gray-200">
-                  <td className="py-1 px-2">{supply.quantity}</td>
-                  <td className="py-1 px-2">{supply.supplyName || `ID: ${supply.supplyId}`}</td>
-                  <td className="py-1 px-2 text-right">{formatCurrency(supply.unitPrice)}</td>
-                  <td className="py-1 px-2 text-right">{formatCurrency((supply.unitPrice || 0) * supply.quantity)}</td>
+                  <td className="py-2 px-3">{supply.quantity}</td>
+                  <td className="py-2 px-3">{supply.supplyName || `ID: ${supply.supplyId}`}</td>
+                  <td className="py-2 px-3 text-right">{formatCurrency(supply.unitPrice)}</td>
+                  <td className="py-2 px-3 text-right">{formatCurrency((supply.unitPrice || 0) * supply.quantity)}</td>
                 </tr>
               ))}
             </tbody>
           </table>
-        </div>
+        </section>
       )}
       
-      <div className="flex justify-end mb-6">
-        <div className="w-full max-w-xs space-y-1">
+      <section className="flex justify-end mb-8">
+        <div className="w-full max-w-sm space-y-2 text-base">
           {quote.estimatedSubTotal !== undefined && renderLine("Subtotal:", formatCurrency(quote.estimatedSubTotal))}
           {quote.estimatedTaxAmount !== undefined && renderLine(`IVA (${(IVA_RATE * 100).toFixed(0)}%):`, formatCurrency(quote.estimatedTaxAmount))}
-          {renderLine("Total Estimado:", formatCurrency(quote.estimatedTotalCost), true, "text-base text-primary")}
+          {renderLine("Total Estimado:", formatCurrency(quote.estimatedTotalCost), true, "text-xl text-primary font-bold border-t-2 pt-2 border-gray-300")}
         </div>
-      </div>
+      </section>
 
-      {(quote.notes || preparedByTechnician || validityDays > 0) && (
-        <div className="mb-6 border-t pt-4">
-          {quote.notes && (
-            <>
-              <h4 className="font-semibold text-gray-700 mb-1">Notas Adicionales:</h4>
-              <p className="text-xs text-gray-600 whitespace-pre-wrap mb-2">{quote.notes}</p>
-            </>
-          )}
-           {isValid(quoteDate) && validityDays > 0 && (
-             <p className="text-xs text-gray-600 mb-1">Esta cotización es válida hasta el {validityDate}. Precios sujetos a cambio sin previo aviso después de esta fecha.</p>
-           )}
-          <p className="text-xs text-gray-600">Precios en MXN. Esta cotización no incluye trabajos no especificados.</p>
-          {/* Display the preparer's name from the quote object, which is set from the logged-in user */}
-          {quote.preparedByTechnicianName && <p className="text-xs text-gray-600 mt-2">Preparado por: {quote.preparedByTechnicianName}</p>}
+      <footer className="text-xs text-gray-600 mt-auto border-t border-gray-300 pt-4">
+        {(quote.notes || preparedByTechnician || validityDays > 0) && (
+            <div className="mb-4">
+                <h4 className="font-semibold text-gray-700 mb-1">Notas y Condiciones:</h4>
+                {quote.notes && <p className="whitespace-pre-wrap mb-2">{quote.notes}</p>}
+                {isValid(quoteDate) && validityDays > 0 && (
+                    <p className="mb-1">Esta cotización es válida hasta el {validityDate}. Precios sujetos a cambio sin previo aviso después de esta fecha.</p>
+                )}
+                <p>Precios en MXN. Esta cotización no incluye trabajos no especificados.</p>
+                {quote.preparedByTechnicianName && <p className="mt-2">Preparado por: {quote.preparedByTechnicianName}</p>}
+            </div>
+        )}
+        <div className="text-center space-y-1">
+            <p className="font-semibold">¡Gracias por confiar en Ranoro!</p>
+            <p>
+            Valoramos sinceramente la oportunidad de atender su vehículo. Nos comprometemos a brindarle un servicio honesto, transparente y de la más alta calidad.
+            </p>
+            <p>
+            Si tiene alguna pregunta, contáctenos, estaremos encantados de ayudarle.
+            </p>
+            <p className="print-block hidden pt-2">Impreso el: {formattedPrintDate}</p>
         </div>
-      )}
-      
-      <div className="text-center text-xs text-gray-500 border-t pt-4 space-y-1">
-        <p className="font-semibold">¡Gracias por confiar en Ranoro!</p>
-        <p>
-          Valoramos sinceramente la oportunidad de atender su vehículo. En nuestro taller de mecánica, 
-          carrocería y pintura nos comprometemos a brindarle un servicio honesto, transparente y de la más 
-          alta calidad, respaldado por un equipo de profesionales certificados y piezas con garantía.
-        </p>
-        <p>
-          Si tiene alguna pregunta sobre esta cotización o desea información adicional, contáctenos: 
-          estaremos encantados de ayudarle. Agradecemos su preferencia y esperamos darle la bienvenida 
-          pronto en nuestras instalaciones en Aguascalientes.
-        </p>
-        <p className="print-block hidden pt-2">Impreso el: {formattedPrintDate}</p>
-      </div>
+      </footer>
     </div>
   );
 }

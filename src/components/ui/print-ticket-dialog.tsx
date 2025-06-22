@@ -32,7 +32,7 @@ export function PrintTicketDialog({
   onDialogClose,
   autoPrint = false,
   printButtonText = "Imprimir",
-  dialogContentClassName = "printable-ticket-dialog"
+  dialogContentClassName = ""
 }: PrintTicketDialogProps) {
 
   useEffect(() => {
@@ -64,9 +64,11 @@ export function PrintTicketDialog({
         }
     }}>
       <DialogContent className={cn(
+        // Default small dialog size for tickets
+        "sm:max-w-md", 
         // Make the dialog for quotes wider for a better preview
-        dialogContentClassName?.includes('quote') ? "sm:max-w-xl" : "sm:max-w-md",
-        // Base print styles remain the same
+        dialogContentClassName?.includes('quote') && "sm:max-w-4xl",
+        // Base print styles
         "print:max-w-full print:border-none print:shadow-none print:p-0",
         dialogContentClassName
       )}>
@@ -74,14 +76,31 @@ export function PrintTicketDialog({
           <DialogTitle>{title}</DialogTitle>
         </DialogHeader>
         
-        <div className="ticket-container my-4">
-          {children} 
+        {/* Adds a scrollable viewport for the content */}
+        <div className="my-4 max-h-[70vh] overflow-y-auto bg-muted/50 p-2 sm:p-4 rounded-md print:hidden">
+          <div className="ticket-container">
+            {children} 
+          </div>
+        </div>
+
+        {/* For printing, the content is rendered directly without the scroll container */}
+        <div className="hidden print:block">
+           {children}
         </div>
 
         <DialogFooter className="print:hidden sm:justify-between">
           <Button type="button" variant="outline" onClick={handleClose}>
             <X className="mr-2 h-4 w-4" /> Cerrar
           </Button>
+          <div className="flex-grow" />
+          {/* This div will contain other action buttons like Send Email/WhatsApp */}
+          <div className="flex gap-2 print-hidden">
+             {React.Children.toArray(children).map((child: any) => 
+                child.props.quote ? (child.props.children || []) : []
+             ).flat().filter((grandChild: any) => 
+                grandChild.props.className?.includes('print-hidden')
+             )}
+          </div>
           <Button type="button" onClick={handlePrint}>
             <Printer className="mr-2 h-4 w-4" /> {printButtonText}
           </Button>
