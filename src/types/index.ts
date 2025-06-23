@@ -55,6 +55,7 @@ export interface Technician {
   monthlySalary?: number; 
   notes?: string; 
   commissionRate?: number; // Example: 0.05 for 5%
+  standardHoursPerDay?: number;
   isArchived?: boolean;
 }
 

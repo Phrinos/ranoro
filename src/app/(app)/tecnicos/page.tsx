@@ -56,8 +56,9 @@ export default function TecnicosPage() {
       id: `T${String(technicians.length + 1).padStart(3, '0')}${Date.now().toString().slice(-3)}`, 
       ...data,
       hireDate: data.hireDate ? new Date(data.hireDate).toISOString().split('T')[0] : undefined,
-      monthlySalary: Number(data.monthlySalary),
+      monthlySalary: Number(data.monthlySalary) || undefined,
       commissionRate: data.commissionRate ? Number(data.commissionRate) : undefined,
+      standardHoursPerDay: data.standardHoursPerDay ? Number(data.standardHoursPerDay) : 8,
       isArchived: false,
     };
     const updatedTechnicians = [...technicians, newTechnician];

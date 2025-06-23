@@ -55,8 +55,9 @@ export default function TechnicianDetailPage() {
     const updatedTechnicianData: Partial<Technician> = {
         ...formData,
         hireDate: formData.hireDate ? new Date(formData.hireDate).toISOString().split('T')[0] : undefined,
-        monthlySalary: Number(formData.monthlySalary),
+        monthlySalary: Number(formData.monthlySalary) || undefined,
         commissionRate: formData.commissionRate ? Number(formData.commissionRate) : undefined,
+        standardHoursPerDay: formData.standardHoursPerDay ? Number(formData.standardHoursPerDay) : undefined,
     };
     
     const updatedTechnician = { ...technician, ...updatedTechnicianData } as Technician;

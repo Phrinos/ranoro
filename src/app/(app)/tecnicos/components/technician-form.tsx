@@ -27,6 +27,7 @@ const technicianFormSchema = z.object({
   hireDate: z.string().optional(), 
   monthlySalary: z.coerce.number().min(0, "El sueldo no puede ser negativo.").optional(),
   commissionRate: z.coerce.number().min(0, "La comisión no puede ser negativa.").max(1, "La comisión no puede ser mayor a 1 (100%).").optional(),
+  standardHoursPerDay: z.coerce.number().min(1, "Debe ser al menos 1 hora.").max(16, "No puede ser más de 16 horas.").optional(),
   notes: z.string().optional(),
 });
 
@@ -46,6 +47,7 @@ export function TechnicianForm({ initialData, onSubmit, onClose }: TechnicianFor
         hireDate: initialData.hireDate ? new Date(initialData.hireDate).toISOString().split('T')[0] : '',
         monthlySalary: initialData.monthlySalary ?? undefined,
         commissionRate: initialData.commissionRate ?? undefined,
+        standardHoursPerDay: initialData.standardHoursPerDay ?? 8,
         contactInfo: initialData.contactInfo ?? '',
         notes: initialData.notes ?? '',
     } : {
@@ -56,6 +58,7 @@ export function TechnicianForm({ initialData, onSubmit, onClose }: TechnicianFor
       hireDate: "", // Set to empty initially
       monthlySalary: undefined,
       commissionRate: 0.05, // Default 5%
+      standardHoursPerDay: 8,
       notes: "",
     },
   });
@@ -172,6 +175,20 @@ export function TechnicianForm({ initialData, onSubmit, onClose }: TechnicianFor
                 )}
             />
         </div>
+         <FormField
+            control={form.control}
+            name="standardHoursPerDay"
+            render={({ field }) => (
+            <FormItem>
+                <FormLabel>Horas Laborales Estándar (Opcional)</FormLabel>
+                <FormControl>
+                <Input type="number" step="1" min="1" max="16" placeholder="Ej: 8" {...field} value={field.value ?? ''} />
+                </FormControl>
+                <FormDescription>Horas estándar por día para calcular capacidad.</FormDescription>
+                <FormMessage />
+            </FormItem>
+            )}
+        />
         <FormField
           control={form.control}
           name="notes"
