@@ -61,13 +61,13 @@ export const placeholderVehicles: Vehicle[] = [
 // ===          PERSONAL          ===
 // =======================================
 export const placeholderTechnicians: Technician[] = [
-  { id: 'T001', name: 'Carlos Rodríguez', area: 'Mecánica General', specialty: 'Motores y Transmisiones', hireDate: '2022-01-15', monthlySalary: 12000, commissionRate: 0.10 },
-  { id: 'T002', name: 'Miguel Torres', area: 'Electrónica y Diagnóstico', specialty: 'Sistemas Eléctricos', hireDate: '2021-08-20', monthlySalary: 14000, commissionRate: 0.15 },
+  { id: 'T001', name: 'Carlos Rodríguez', area: 'Mecánica General', specialty: 'Motores y Transmisiones', hireDate: '2022-01-15', monthlySalary: 12000, commissionRate: 0.10, isArchived: false },
+  { id: 'T002', name: 'Miguel Torres', area: 'Electrónica y Diagnóstico', specialty: 'Sistemas Eléctricos', hireDate: '2021-08-20', monthlySalary: 14000, commissionRate: 0.15, isArchived: false },
 ];
 
 export const placeholderAdministrativeStaff: AdministrativeStaff[] = [
-  { id: 'ADM001', name: 'Laura Gómez', roleOrArea: 'Gerente de Taller', hireDate: '2020-03-10', monthlySalary: 25000, commissionRate: 0.02 },
-  { id: 'ADM002', name: 'Javier Castillo', roleOrArea: 'Recepción y Ventas', hireDate: '2023-05-01', monthlySalary: 9000, commissionRate: 0.01 },
+  { id: 'ADM001', name: 'Laura Gómez', roleOrArea: 'Gerente de Taller', hireDate: '2020-03-10', monthlySalary: 25000, commissionRate: 0.02, isArchived: false },
+  { id: 'ADM002', name: 'Javier Castillo', roleOrArea: 'Recepción y Ventas', hireDate: '2023-05-01', monthlySalary: 9000, commissionRate: 0.01, isArchived: false },
 ];
 
 // =======================================
