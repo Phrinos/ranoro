@@ -121,6 +121,7 @@ body {
   /* Position the printable content area to take up the entire page */
   .printable-content {
     position: absolute;
+    display: block !important; /* Override shadcn's 'grid' display */
     left: 0;
     top: 0;
     width: 100%;
@@ -140,7 +141,7 @@ body {
   }
 
   /* Specific styling for thermal receipt format */
-  .printable-content[data-format="receipt"] {
+  .printable-content [data-format="receipt"] {
       width: 80mm;
       padding: 3mm;
       color: black;
@@ -148,7 +149,7 @@ body {
   }
   
   /* Specific styling for letter format */
-  .printable-content[data-format="letter"] {
+  .printable-content [data-format="letter"] {
       padding: 1in;
   }
 
