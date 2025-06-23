@@ -212,8 +212,11 @@ export default function ResumenFinancieroPage() {
       
       <Card className="mb-8 bg-card shadow-lg">
         <CardHeader>
-          <CardTitle className="text-xl">Resumen General del Mes</CardTitle>
-          <CardDescription>Cálculo de la ganancia real para {financialSummary.monthYearLabel}</CardDescription>
+          <CardTitle className="text-xl flex items-center gap-2">
+            <DollarSign className="h-6 w-6 text-primary" />
+            Resumen General del Mes
+          </CardTitle>
+          <CardDescription>Cálculo de la ganancia neta para {financialSummary.monthYearLabel}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-3 text-base">
           <div className="flex justify-between items-center">
@@ -235,7 +238,7 @@ export default function ResumenFinancieroPage() {
           </div>
           <hr className="my-2 border-primary/30"/>
           <div className="flex justify-between font-bold text-xl pt-2">
-            <span>(=) Resultado Neto del Mes (Ganancia Real):</span>
+            <span>(=) Resultado Neto del Mes:</span>
             <span className={financialSummary.netProfit >= 0 ? 'text-green-600' : 'text-red-600'}>{formatCurrency(financialSummary.netProfit)}</span>
           </div>
         </CardContent>
@@ -328,19 +331,20 @@ export default function ResumenFinancieroPage() {
       </div>
       
       <Card className="mt-8 bg-blue-50 dark:bg-blue-900/30 border-blue-200 dark:border-blue-700">
-        <CardHeader className="flex flex-row items-center gap-3">
-            <Info className="h-6 w-6 text-blue-600 dark:text-blue-400"/>
+        <CardHeader className="flex flex-row items-start gap-3">
+            <Info className="h-6 w-6 text-blue-600 dark:text-blue-400 shrink-0 mt-1"/>
             <div>
-                <CardTitle className="text-blue-800 dark:text-blue-300">Notas sobre el Cálculo</CardTitle>
+                <CardTitle className="text-blue-800 dark:text-blue-300">¿Cómo se calcula el resumen?</CardTitle>
+                <CardDescription className="text-blue-700/80 dark:text-blue-300/80">
+                  Un desglose simplificado de los términos clave.
+                </CardDescription>
             </div>
         </CardHeader>
-        <CardContent className="text-sm text-blue-700 dark:text-blue-300 space-y-1">
-            <p>• La <strong>Ganancia Bruta Operativa</strong> se calcula como: (Ingresos Totales de Ventas - Costo de los Productos Vendidos) + (Ingresos Totales de Servicios - Costo de los Insumos Usados en Servicios).</p>
-            <p>• Los <strong>Sueldos Base</strong> y <strong>Gastos Fijos Mensuales</strong> son valores configurables.</p>
-            <p>• Las <strong>Comisiones Pagadas</strong> se calculan sobre la ganancia de los servicios completados en el mes y se liquidan solo si la Ganancia Bruta Operativa del mes supera el Total de Gastos Fijos. Cada miembro del staff tiene su propio porcentaje de comisión.</p>
-            <p>  - **Técnicos**: Comisión sobre la ganancia de sus propios servicios.</p>
-            <p>  - **Administrativos**: Comisión sobre la ganancia total de todos los servicios completados en el mes.</p>
-            <p>• El <strong>Resultado Neto</strong> es la Ganancia Bruta Operativa menos el Total de Gastos (Sueldos Base + Gastos Fijos + Comisiones Pagadas).</p>
+        <CardContent className="text-sm text-blue-700 dark:text-blue-300 space-y-2 pl-12">
+            <p><strong>• Ganancia Bruta Operativa:</strong> Ingresos totales (ventas + servicios) menos el costo de los insumos y refacciones utilizados.</p>
+            <p><strong>• Gastos Totales:</strong> Suma de sueldos base, gastos fijos (renta, luz, etc.) y comisiones.</p>
+            <p><strong>• Comisiones:</strong> Se pagan a técnicos y administrativos sobre la ganancia de los servicios completados, <strong>solo si el taller es rentable</strong> (es decir, si la Ganancia Bruta supera los Gastos Fijos).</p>
+            <p><strong>• Resultado Neto:</strong> Es la Ganancia Bruta Operativa menos los Gastos Totales. Representa la ganancia real del taller en el mes.</p>
         </CardContent>
       </Card>
 
