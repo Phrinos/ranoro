@@ -256,14 +256,14 @@ export default function AgendaServiciosPage() {
                       <div className="flex flex-wrap justify-start items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
                         <div className="flex items-center gap-1 font-medium text-foreground" title="Hora de Recepción">
                           <Clock className="h-4 w-4 text-muted-foreground" />
-                          <span>{formattedServiceTime}</span>
+                          <span>Recepción: {formattedServiceTime}</span>
                         </div>
                         <span title={`Técnico: ${technician ? technician.name : 'N/A'}`}>
                             Téc: <span className="font-medium text-foreground">{technician ? technician.name : 'N/A'}</span>
                         </span>
                         <div className="flex items-center gap-1" title="Fecha de Entrega">
                             <CalendarCheck className="h-4 w-4" />
-                            <span>{formattedDelivery}</span>
+                            <span>Entrega: {formattedDelivery}</span>
                         </div>
                       </div>
                   </div>
