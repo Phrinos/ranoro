@@ -38,7 +38,7 @@ export function SuppliersTable({ suppliers, onEdit, onDelete }: SuppliersTablePr
   }
 
   return (
-    <div className="rounded-lg border shadow-sm overflow-hidden">
+    <div className="rounded-lg border shadow-sm">
       <Table>
         <TableHeader className="bg-white">
           <TableRow>

@@ -1,3 +1,4 @@
+
 "use client";
 
 import React from "react";
@@ -56,7 +57,7 @@ export function SalesTable({ sales, onReprintTicket, inventoryItems }: SalesTabl
   };
 
   return (
-    <div className="rounded-lg border shadow-sm overflow-hidden">
+    <div className="rounded-lg border shadow-sm">
       <Table>
         <TableHeader className="bg-white">
           <TableRow>

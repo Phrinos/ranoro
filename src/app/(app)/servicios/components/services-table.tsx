@@ -108,7 +108,7 @@ export function ServicesTable({
 
   return (
     <>
-      <div className="rounded-lg border shadow-sm overflow-hidden">
+      <div className="rounded-lg border shadow-sm">
         <Table>
           <TableHeader className="bg-white">
             {isHistoryView ? (
@@ -227,4 +227,3 @@ export function ServicesTable({
     </>
   );
 }
-
