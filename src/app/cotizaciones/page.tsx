@@ -1,7 +1,2 @@
-
-// This file is neutralized to prevent route conflicts.
-// The active page is at /src/app/(app)/cotizaciones/page.tsx
-
-export default function ConflictingCotizacionesBasePage() {
-  return null;
-}
+// This file is intentionally left blank to resolve a route conflict.
+// The active page is located in /src/app/(app)/cotizaciones/page.tsx.
