@@ -40,14 +40,14 @@ export function SuppliersTable({ suppliers, onEdit, onDelete }: SuppliersTablePr
   return (
     <div className="rounded-lg border shadow-sm overflow-hidden">
       <Table>
-        <TableHeader>
+        <TableHeader className="bg-white">
           <TableRow>
-            <TableHead>Nombre</TableHead>
-            <TableHead>Contacto</TableHead>
-            <TableHead>Teléfono</TableHead>
-            <TableHead className="text-right">Deuda</TableHead>
-            <TableHead>Nota Deuda</TableHead>
-            <TableHead className="text-right">Acciones</TableHead>
+            <TableHead className="font-bold">Nombre</TableHead>
+            <TableHead className="font-bold">Contacto</TableHead>
+            <TableHead className="font-bold">Teléfono</TableHead>
+            <TableHead className="text-right font-bold">Deuda</TableHead>
+            <TableHead className="font-bold">Nota Deuda</TableHead>
+            <TableHead className="text-right font-bold">Acciones</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>

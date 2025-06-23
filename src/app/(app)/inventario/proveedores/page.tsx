@@ -2,7 +2,6 @@
 "use client";
 
 import { useState, useMemo, useEffect } from 'react';
-import { PageHeader } from "@/components/page-header";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -178,52 +177,47 @@ export default function ProveedoresPage() {
         </Card>
       </div>
 
-      <PageHeader
-        title="Proveedores de Productos"
-        description="Administra la información de tus proveedores y sus cuentas."
-        actions={
-          <div className="flex flex-col sm:flex-row items-center gap-2 w-full sm:w-auto">
-            <div className="relative flex-1 sm:flex-initial w-full sm:w-auto">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                type="search"
-                placeholder="Buscar proveedores..."
-                className="pl-8 w-full sm:w-[250px] lg:w-[300px]"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </div>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="w-full sm:w-auto">
-                  <ListFilter className="mr-2 h-4 w-4" />
-                  Ordenar
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuLabel>Ordenar por</DropdownMenuLabel>
-                <DropdownMenuRadioGroup value={sortOption} onValueChange={(value) => setSortOption(value as SupplierSortOption)}>
-                  <DropdownMenuRadioItem value="name_asc">Nombre (A-Z)</DropdownMenuRadioItem>
-                  <DropdownMenuRadioItem value="name_desc">Nombre (Z-A)</DropdownMenuRadioItem>
-                  <DropdownMenuRadioItem value="debt_desc">Deuda (Mayor a Menor)</DropdownMenuRadioItem>
-                  <DropdownMenuRadioItem value="debt_asc">Deuda (Menor a Mayor)</DropdownMenuRadioItem>
-                </DropdownMenuRadioGroup>
-              </DropdownMenuContent>
-            </DropdownMenu>
-            <Button onClick={() => handleOpenDialog()} className="w-full sm:w-auto">
-              <PlusCircle className="mr-2 h-4 w-4" />
-              Nuevo Proveedor
-            </Button>
-          </div>
-        }
-      />
-
       <Card>
         <CardHeader>
           <CardTitle>Lista de Proveedores</CardTitle>
           <CardDescription>
             Visualiza, edita y elimina proveedores. La columna 'Deuda' muestra el monto pendiente.
           </CardDescription>
+           <div className="pt-4 flex flex-col sm:flex-row items-center justify-between gap-2 w-full">
+                <div className="relative flex-1 sm:flex-initial w-full sm:w-auto">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                    type="search"
+                    placeholder="Buscar proveedores..."
+                    className="pl-8 w-full sm:w-[250px] lg:w-[300px] bg-white"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                />
+                </div>
+                <div className="flex items-center gap-2 w-full sm:w-auto">
+                    <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button variant="outline" className="w-full sm:w-auto bg-white">
+                        <ListFilter className="mr-2 h-4 w-4" />
+                        Ordenar
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                        <DropdownMenuLabel>Ordenar por</DropdownMenuLabel>
+                        <DropdownMenuRadioGroup value={sortOption} onValueChange={(value) => setSortOption(value as SupplierSortOption)}>
+                        <DropdownMenuRadioItem value="name_asc">Nombre (A-Z)</DropdownMenuRadioItem>
+                        <DropdownMenuRadioItem value="name_desc">Nombre (Z-A)</DropdownMenuRadioItem>
+                        <DropdownMenuRadioItem value="debt_desc">Deuda (Mayor a Menor)</DropdownMenuRadioItem>
+                        <DropdownMenuRadioItem value="debt_asc">Deuda (Menor a Mayor)</DropdownMenuRadioItem>
+                        </DropdownMenuRadioGroup>
+                    </DropdownMenuContent>
+                    </DropdownMenu>
+                    <Button onClick={() => handleOpenDialog()} className="w-full sm:w-auto">
+                    <PlusCircle className="mr-2 h-4 w-4" />
+                    Nuevo Proveedor
+                    </Button>
+                </div>
+            </div>
         </CardHeader>
         <CardContent>
           <SuppliersTable
