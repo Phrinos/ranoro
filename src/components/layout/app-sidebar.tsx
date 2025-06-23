@@ -180,7 +180,7 @@ export function AppSidebar() {
               <UserCog className="mr-2 h-4 w-4" />
               <span>Mi Perfil</span>
             </DropdownMenuItem>
-            {(currentUser?.role === "admin" || currentUser?.role === "superadmin") && (
+            {(currentUser?.role === "Admin" || currentUser?.role === "Superadmin") && (
               <>
                 <DropdownMenuSeparator />
                 <DropdownMenuLabel>Administración</DropdownMenuLabel>
