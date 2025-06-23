@@ -5,7 +5,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
-import { PlusCircle, ListFilter, Search, Users, DollarSign, CalendarIcon as CalendarDateIcon, BadgeCent } from "lucide-react";
+import { PlusCircle, ListFilter, Search, Users, DollarSign, CalendarIcon as CalendarDateIcon, BadgeCent, Archive } from "lucide-react";
 import { AdministrativeStaffTable } from "./components/administrative-staff-table";
 import { AdministrativeStaffDialog } from "./components/administrative-staff-dialog";
 import { placeholderAdministrativeStaff, placeholderServiceRecords } from "@/lib/placeholder-data";
@@ -39,6 +39,7 @@ export default function AdministrativosPage() {
   const [staffList, setStaffList] = useState<AdministrativeStaff[]>(placeholderAdministrativeStaff);
   const [searchTerm, setSearchTerm] = useState('');
   const [sortOption, setSortOption] = useState<StaffSortOption>("name_asc");
+  const [showArchived, setShowArchived] = useState(false);
   
   const [filterDateRange, setFilterDateRange] = useState<DateRange | undefined>(undefined);
 
@@ -57,6 +58,7 @@ export default function AdministrativosPage() {
       hireDate: data.hireDate ? new Date(data.hireDate).toISOString().split('T')[0] : undefined,
       monthlySalary: Number(data.monthlySalary) || undefined,
       commissionRate: data.commissionRate ? Number(data.commissionRate) : undefined,
+      isArchived: false,
     };
     const updatedStaffList = [...staffList, newStaffMember];
     setStaffList(updatedStaffList);
@@ -68,7 +70,8 @@ export default function AdministrativosPage() {
   };
   
   const filteredAndSortedStaff = useMemo(() => {
-    let itemsToDisplay = [...staffList];
+    let itemsToDisplay = staffList.filter(staff => showArchived ? staff.isArchived === true : !staff.isArchived);
+
     if (searchTerm) {
       const lowerSearchTerm = searchTerm.toLowerCase();
       itemsToDisplay = itemsToDisplay.filter(staff =>
@@ -98,11 +101,11 @@ export default function AdministrativosPage() {
       }
     });
     return itemsToDisplay;
-  }, [staffList, searchTerm, sortOption]);
+  }, [staffList, searchTerm, sortOption, showArchived]);
 
-  const totalAdministrativeStaff = useMemo(() => staffList.length, [staffList]);
+  const totalAdministrativeStaff = useMemo(() => staffList.filter(s => !s.isArchived).length, [staffList]);
   const totalMonthlyAdministrativeSalaries = useMemo(() => {
-    return staffList.reduce((sum, staff) => sum + (staff.monthlySalary || 0), 0);
+    return staffList.filter(s => !s.isArchived).reduce((sum, staff) => sum + (staff.monthlySalary || 0), 0);
   }, [staffList]);
 
   const aggregatedAdminPerformance = useMemo((): AggregatedAdminStaffPerformance[] => {
@@ -122,7 +125,9 @@ export default function AdministrativosPage() {
 
     const totalProfitFromCompletedServicesInRange = completedServicesInRange.reduce((sum, s) => sum + (s.serviceProfit || 0), 0);
 
-    return staffList.map(staff => {
+    const activeStaff = staffList.filter(s => !s.isArchived);
+
+    return activeStaff.map(staff => {
       const commissionEarned = totalProfitFromCompletedServicesInRange * (staff.commissionRate || 0);
       const baseSalary = staff.monthlySalary || 0;
       return {
@@ -259,6 +264,10 @@ export default function AdministrativosPage() {
               />
             </div>
             <div className="flex items-center gap-2 w-full sm:w-auto">
+                <Button variant="outline" className="w-full sm:w-auto bg-white" onClick={() => setShowArchived(!showArchived)}>
+                    <Archive className="mr-2 h-4 w-4" />
+                    {showArchived ? "Ver Activos" : "Ver Archivados"}
+                </Button>
                 <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                     <Button variant="outline" className="w-full sm:w-auto bg-white">

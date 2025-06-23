@@ -67,15 +67,15 @@ export default function AdministrativeStaffDetailPage() {
     });
   };
 
-  const handleDeleteStaff = () => {
+  const handleArchiveStaff = () => {
     if (!staffMember) return;
     const staffIndex = placeholderAdministrativeStaff.findIndex(s => s.id === staffMember.id);
     if (staffIndex > -1) {
-      placeholderAdministrativeStaff.splice(staffIndex, 1);
+      placeholderAdministrativeStaff[staffIndex].isArchived = true;
     }
     toast({
-      title: "Staff Eliminado",
-      description: `El registro de ${staffMember.name} ha sido eliminado.`,
+      title: "Staff Archivado",
+      description: `El registro de ${staffMember.name} ha sido archivado.`,
     });
     router.push('/administrativos'); 
   };
@@ -152,20 +152,20 @@ export default function AdministrativeStaffDetailPage() {
               <AlertDialogTrigger asChild>
                 <Button variant="destructive" >
                   <Archive className="mr-2 h-4 w-4" />
-                  Eliminar Miembro del Staff
+                  Archivar Miembro del Staff
                 </Button>
               </AlertDialogTrigger>
               <AlertDialogContent>
                 <AlertDialogHeader>
-                  <AlertDialogTitle>¿Estás seguro de eliminar este registro de staff?</AlertDialogTitle>
+                  <AlertDialogTitle>¿Estás seguro de archivar este registro de staff?</AlertDialogTitle>
                   <AlertDialogDescription>
-                    Esta acción no se puede deshacer y eliminará permanentemente el registro de {staffMember.name}.
+                    Esta acción marcará el registro de {staffMember.name} como archivado y lo ocultará de las listas principales. Podrás recuperarlo desde la vista de "Archivados".
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                   <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                  <AlertDialogAction onClick={handleDeleteStaff} className="bg-destructive hover:bg-destructive/90">
-                    Sí, Eliminar
+                  <AlertDialogAction onClick={handleArchiveStaff} className="bg-destructive hover:bg-destructive/90">
+                    Sí, Archivar
                   </AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>

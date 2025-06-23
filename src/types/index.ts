@@ -55,6 +55,7 @@ export interface Technician {
   monthlySalary?: number; 
   notes?: string; 
   commissionRate?: number; // Example: 0.05 for 5%
+  isArchived?: boolean;
 }
 
 export interface AdministrativeStaff {
@@ -66,6 +67,7 @@ export interface AdministrativeStaff {
   monthlySalary?: number;
   notes?: string;
   commissionRate?: number; // Example: 0.01 for 1%
+  isArchived?: boolean;
 }
 
 export interface TechnicianMonthlyPerformance {

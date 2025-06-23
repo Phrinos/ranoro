@@ -17,6 +17,17 @@ import type { TechnicianFormValues } from '../components/technician-form';
 import { useToast } from '@/hooks/use-toast';
 import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 export default function TechnicianDetailPage() {
   const params = useParams();
@@ -62,6 +73,19 @@ export default function TechnicianDetailPage() {
       title: "Staff Técnico Actualizado",
       description: `Los datos de ${updatedTechnician.name} han sido actualizados.`,
     });
+  };
+
+  const handleArchiveTechnician = () => {
+    if (!technician) return;
+    const techIndex = placeholderTechnicians.findIndex(t => t.id === technician.id);
+    if (techIndex > -1) {
+      placeholderTechnicians[techIndex].isArchived = true;
+    }
+    toast({
+      title: "Staff Archivado",
+      description: `El registro de ${technician.name} ha sido archivado.`,
+    });
+    router.push('/tecnicos');
   };
 
   if (technician === undefined) {
@@ -140,10 +164,28 @@ export default function TechnicianDetailPage() {
             </Card>
           </div>
           <div className="mt-8 flex justify-start">
-            <Button variant="outline">
-              <Archive className="mr-2 h-4 w-4" />
-              Archivar Miembro del Staff
-            </Button>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="destructive">
+                  <Archive className="mr-2 h-4 w-4" />
+                  Archivar Miembro del Staff
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>¿Estás seguro de archivar este registro de staff?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Esta acción marcará el registro de {technician.name} como archivado y lo ocultará de las listas principales. Podrás recuperarlo desde la vista de "Archivados".
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleArchiveTechnician} className="bg-destructive hover:bg-destructive/90">
+                    Sí, Archivar
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </div>
         </TabsContent>
 

@@ -7,7 +7,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuLabel, DropdownMenuRadio
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { Input } from "@/components/ui/input";
-import { PlusCircle, ListFilter, TrendingUp, DollarSign as DollarSignIcon, CalendarIcon as CalendarDateIcon, BadgeCent, Users, Search } from "lucide-react";
+import { PlusCircle, ListFilter, TrendingUp, DollarSign as DollarSignIcon, CalendarIcon as CalendarDateIcon, BadgeCent, Users, Search, Archive } from "lucide-react";
 import { TechniciansTable } from "./components/technicians-table";
 import { TechnicianDialog } from "./components/technician-dialog";
 import { placeholderTechnicians, placeholderServiceRecords } from "@/lib/placeholder-data";
@@ -39,6 +39,7 @@ export default function TecnicosPage() {
   const [technicians, setTechnicians] = useState<Technician[]>(placeholderTechnicians);
   const [searchTerm, setSearchTerm] = useState('');
   const [sortOption, setSortOption] = useState<TechnicianSortOption>("name_asc");
+  const [showArchived, setShowArchived] = useState(false);
   
   const [filterDateRange, setFilterDateRange] = useState<DateRange | undefined>(undefined);
 
@@ -57,15 +58,16 @@ export default function TecnicosPage() {
       hireDate: data.hireDate ? new Date(data.hireDate).toISOString().split('T')[0] : undefined,
       monthlySalary: Number(data.monthlySalary),
       commissionRate: data.commissionRate ? Number(data.commissionRate) : undefined,
+      isArchived: false,
     };
     const updatedTechnicians = [...technicians, newTechnician];
     setTechnicians(updatedTechnicians);
     placeholderTechnicians.push(newTechnician);
   };
   
-  const totalTechnicians = useMemo(() => technicians.length, [technicians]);
+  const totalTechnicians = useMemo(() => technicians.filter(t => !t.isArchived).length, [technicians]);
   const totalMonthlyTechnicianSalaries = useMemo(() => {
-      return technicians.reduce((sum, tech) => sum + (tech.monthlySalary || 0), 0);
+      return technicians.filter(t => !t.isArchived).reduce((sum, tech) => sum + (tech.monthlySalary || 0), 0);
   }, [technicians]);
 
   const aggregatedTechnicianPerformance = useMemo((): AggregatedTechnicianPerformance[] => {
@@ -76,7 +78,9 @@ export default function TecnicosPage() {
     let dateFrom = startOfDay(filterDateRange.from);
     let dateTo = filterDateRange.to ? endOfDay(filterDateRange.to) : endOfDay(filterDateRange.from);
     
-    return technicians.map(tech => {
+    const activeTechnicians = technicians.filter(t => !t.isArchived);
+    
+    return activeTechnicians.map(tech => {
       const techServices = placeholderServiceRecords.filter(service => {
         if (service.technicianId !== tech.id) return false;
         if (service.status !== 'Completado') return false; // Only count completed services for commission
@@ -101,7 +105,7 @@ export default function TecnicosPage() {
 
 
   const filteredAndSortedTechnicians = useMemo(() => {
-    let itemsToDisplay = [...technicians];
+    let itemsToDisplay = technicians.filter(tech => showArchived ? tech.isArchived === true : !tech.isArchived);
 
     if (searchTerm) {
       const lowerSearchTerm = searchTerm.toLowerCase();
@@ -133,7 +137,7 @@ export default function TecnicosPage() {
       }
     });
     return itemsToDisplay;
-  }, [technicians, searchTerm, sortOption]);
+  }, [technicians, searchTerm, sortOption, showArchived]);
 
   const formatCurrency = (amount: number) => {
     return `$${amount.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -146,7 +150,7 @@ export default function TecnicosPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
-              Total Staff Técnico
+              Total Staff Técnico Activo
             </CardTitle>
             <Users className="h-5 w-5 text-blue-500" />
           </CardHeader>
@@ -259,6 +263,10 @@ export default function TecnicosPage() {
               />
             </div>
             <div className="flex items-center gap-2 w-full sm:w-auto">
+                <Button variant="outline" className="w-full sm:w-auto bg-white" onClick={() => setShowArchived(!showArchived)}>
+                    <Archive className="mr-2 h-4 w-4" />
+                    {showArchived ? "Ver Activos" : "Ver Archivados"}
+                </Button>
                 <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                     <Button variant="outline" className="w-full sm:w-auto bg-white">
@@ -284,7 +292,7 @@ export default function TecnicosPage() {
                 trigger={
                     <Button className="w-full sm:w-auto">
                     <PlusCircle className="mr-2 h-4 w-4" />
-                    Nuevo Staff Técnico
+                    Nuevo Técnico
                     </Button>
                 }
                 onSave={handleSaveTechnician}
