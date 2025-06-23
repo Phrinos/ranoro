@@ -130,10 +130,9 @@ export default function TecnicosPage() {
       <Card className="mb-6">
         <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
-            <CardTitle>Resumen de Rendimiento por Staff Técnico</CardTitle>
+            <CardTitle>Rendimiento Individual</CardTitle>
             <CardDescription>
-              Totales de ingresos, ganancias y comisiones potenciales para cada miembro del staff técnico basados en el rango de fechas seleccionado (solo servicios completados).
-              La comisión final se calcula y liquida mensualmente después de cubrir los gastos fijos del taller, como se refleja en el Resumen Financiero.
+              Comisiones potenciales ganadas por el staff técnico, basadas en servicios completados en el rango de fechas seleccionado. La comisión final se calcula y liquida mensualmente si el taller es rentable, como se refleja en el Resumen Financiero.
             </CardDescription>
           </div>
           <Popover>
