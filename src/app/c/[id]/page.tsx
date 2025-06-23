@@ -52,7 +52,7 @@ export default function PublicQuoteViewPage() {
     const element = quoteContentRef.current;
     const pdfFileName = `Cotizacion-${quote.id}.pdf`;
     const opt = {
-      margin: 5,
+      margin: 7.5,
       filename: pdfFileName,
       image: { type: 'jpeg', quality: 0.98 },
       html2canvas:  { scale: 2, useCORS: true, letterRendering: true },
