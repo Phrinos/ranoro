@@ -2,12 +2,11 @@
 "use client";
 
 import { useState, useMemo, useEffect } from 'react';
-import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { PlusCircle, ListFilter, TrendingUp, DollarSign as DollarSignIcon, CalendarIcon as CalendarDateIcon, BadgeCent } from "lucide-react"; // Added BadgeCent
+import { PlusCircle, ListFilter, TrendingUp, DollarSign as DollarSignIcon, CalendarIcon as CalendarDateIcon, BadgeCent, Users } from "lucide-react";
 import { TechniciansTable } from "./components/technicians-table";
 import { TechnicianDialog } from "./components/technician-dialog";
 import { placeholderTechnicians, placeholderServiceRecords } from "@/lib/placeholder-data";
@@ -62,6 +61,10 @@ export default function TecnicosPage() {
     placeholderTechnicians.push(newTechnician);
   };
   
+  const totalTechnicians = useMemo(() => technicians.length, [technicians]);
+  const totalMonthlyTechnicianSalaries = useMemo(() => {
+      return technicians.reduce((sum, tech) => sum + (tech.monthlySalary || 0), 0);
+  }, [technicians]);
 
   const aggregatedTechnicianPerformance = useMemo((): AggregatedTechnicianPerformance[] => {
     if (!filterDateRange || !filterDateRange.from) {
@@ -127,6 +130,31 @@ export default function TecnicosPage() {
 
   return (
     <>
+      <div className="mb-6 grid gap-6 md:grid-cols-2">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Total Staff Técnico
+            </CardTitle>
+            <Users className="h-5 w-5 text-blue-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold font-headline">{totalTechnicians}</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Costo Total de Nómina Técnica (Mensual Base)
+            </CardTitle>
+            <DollarSignIcon className="h-5 w-5 text-green-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold font-headline">{formatCurrency(totalMonthlyTechnicianSalaries)}</div>
+          </CardContent>
+        </Card>
+      </div>
+
       <Card className="mb-6">
         <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
