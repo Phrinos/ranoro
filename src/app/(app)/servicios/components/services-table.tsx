@@ -2,23 +2,16 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { MoreHorizontal, Edit, Trash2, Eye, Clock } from "lucide-react";
-import type { ServiceRecord, Vehicle, Technician, InventoryItem } from "@/types";
+import { Edit, Trash2, DollarSign, Wrench, Calendar, User, Tag, FileText, TrendingUp, CalendarCheck } from "lucide-react";
+import type { ServiceRecord, Vehicle, Technician, InventoryItem, QuoteRecord } from "@/types";
 import { format, parseISO, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { ServiceDialog } from './service-dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
+import { Card, CardContent } from "@/components/ui/card";
 
 
 interface ServicesTableProps {
@@ -29,7 +22,7 @@ interface ServicesTableProps {
   onServiceUpdated: (updatedService: ServiceRecord) => void;
   onServiceDeleted: (serviceId: string) => void;
   onVehicleCreated?: (newVehicle: Vehicle) => void; 
-  isHistoryView?: boolean; // To control column visibility and order for history
+  isHistoryView?: boolean;
 }
 
 export function ServicesTable({ 
@@ -61,25 +54,16 @@ export function ServicesTable({
     setIsEditDialogOpen(true);
   };
 
-  const handleDialogSave = async (serviceDataFromForm: ServiceRecord) => {
-    // serviceDataFromForm is the complete ServiceRecord object constructed by ServiceForm.
-    // It already includes calculated totalCost, subTotal, taxAmount, profit, etc.,
-    // and the correct id if it was an edit operation.
-    
-    // Ensure the ID from the original editingService is preserved, just in case
-    // ServiceForm logic for ID assignment had a different temporary ID for new items.
-    // For edits, ServiceForm correctly uses initialDataService.id.
-    const finalServiceData = {
-      ...serviceDataFromForm,
-      id: editingService!.id, // Crucial for ensuring we update the correct record
-    };
-
+  const handleDialogSave = async (serviceDataFromForm: ServiceRecord | QuoteRecord) => {
+    if (!('status' in serviceDataFromForm)) {
+      toast({ title: "Error de Tipo", description: "Se esperaba un registro de servicio para actualizar.", variant: "destructive" });
+      return;
+    }
+    const finalServiceData = { ...serviceDataFromForm, id: editingService!.id };
     onServiceUpdated(finalServiceData);
     setEditingService(null);
     setIsEditDialogOpen(false); 
-    // Toast message is handled by the parent page (HistorialServiciosPage or AgendaServiciosPage)
   };
-
 
   const memoizedServices = useMemo(() => services.map(service => {
     const vehicle = vehicles.find(v => v.id === service.vehicleId);
@@ -93,14 +77,14 @@ export function ServicesTable({
       vehiclePlate: vehicle ? vehicle.licensePlate : 'N/A',
       vehicleMakeModelYear: vehicle ? `${vehicle.make} ${vehicle.model} (${vehicle.year})` : 'N/A',
       technicianName: technician ? technician.name : service.technicianId,
-      formattedServiceDate: serviceDateObj && isValid(serviceDateObj) ? format(serviceDateObj, "dd MMM yyyy, HH:mm", { locale: es }) : 'Fecha Inválida',
-      formattedDeliveryDateTime: deliveryDateObj && isValid(deliveryDateObj) ? format(deliveryDateObj, "dd MMM yyyy, HH:mm", { locale: es }) : 'N/A',
+      formattedServiceDate: serviceDateObj && isValid(serviceDateObj) ? format(serviceDateObj, "dd MMM yy, HH:mm", { locale: es }) : 'N/A',
+      formattedDeliveryDateTime: deliveryDateObj && isValid(deliveryDateObj) ? format(deliveryDateObj, "dd MMM yy, HH:mm", { locale: es }) : 'N/A',
       totalCostFormatted: `$${service.totalCost.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+      totalSuppliesCostFormatted: service.totalSuppliesCost !== undefined ? `$${service.totalSuppliesCost.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : 'N/A',
       serviceProfitFormatted: service.serviceProfit !== undefined ? `$${service.serviceProfit.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : 'N/A',
       mileageFormatted: service.mileage !== undefined && service.mileage !== null ? `${service.mileage.toLocaleString('es-ES')} km` : 'N/A',
     };
   }), [services, vehicles, technicians]);
-
 
   if (!memoizedServices.length) {
     return <p className="text-muted-foreground text-center py-8">No hay órdenes de servicio que coincidan con los filtros.</p>;
@@ -108,80 +92,58 @@ export function ServicesTable({
 
   return (
     <>
-      <div className="rounded-lg border shadow-sm">
-        <Table>
-          <TableHeader className="bg-white">
-            {isHistoryView ? (
-              <TableRow>
-                <TableHead className="font-bold">ID</TableHead>
-                <TableHead className="font-bold">Fecha Servicio</TableHead>
-                <TableHead className="font-bold">Fecha Entrega</TableHead>
-                <TableHead className="font-bold">Placas</TableHead>
-                <TableHead className="font-bold">Vehículo</TableHead>
-                <TableHead className="font-bold">Kilometraje</TableHead>
-                <TableHead className="font-bold">Descripción</TableHead>
-                <TableHead className="font-bold">Técnico</TableHead>
-                <TableHead className="font-bold">Precio Total</TableHead>
-                <TableHead className="font-bold">Ganancia</TableHead>
-                <TableHead className="font-bold">Estado</TableHead>
-                <TableHead className="font-bold">Acciones</TableHead>
-              </TableRow>
-            ) : ( // Default for Agenda and Lista de Servicios
-              <TableRow>
-                <TableHead>ID</TableHead>
-                <TableHead>Vehículo</TableHead>
-                <TableHead>Técnico</TableHead>
-                <TableHead>Descripción</TableHead>
-                <TableHead>Recepción</TableHead>
-                <TableHead>Entrega</TableHead>
-                <TableHead className="text-right">Precio Total</TableHead>
-                <TableHead>Estado</TableHead>
-                <TableHead className="text-right">Acciones</TableHead>
-              </TableRow>
-            )}
-          </TableHeader>
-          <TableBody>
-            {memoizedServices.map((service) => (
-              <TableRow key={service.id}>
-                {isHistoryView ? (
-                  <>
-                    <TableCell className="font-medium">{service.id}</TableCell>
-                    <TableCell>{service.formattedServiceDate}</TableCell>
-                    <TableCell>{service.formattedDeliveryDateTime}</TableCell>
-                    <TableCell className="font-bold">{service.vehiclePlate}</TableCell>
-                    <TableCell>{service.vehicleMakeModelYear}</TableCell>
-                    <TableCell>{service.mileageFormatted}</TableCell>
-                    <TableCell className="font-bold">{service.description}</TableCell>
-                    <TableCell>{service.technicianName}</TableCell>
-                    <TableCell className="text-right">{service.totalCostFormatted}</TableCell>
-                    <TableCell className="text-right">{service.serviceProfitFormatted}</TableCell>
-                    <TableCell><Badge variant={getStatusVariant(service.status)}>{service.status}</Badge></TableCell>
-                  </>
-                ) : ( // Default for Agenda and Lista de Servicios
-                  <>
-                    <TableCell className="font-medium">{service.id}</TableCell>
-                    <TableCell>{service.vehicleIdentifier}</TableCell>
-                    <TableCell>{service.technicianName}</TableCell>
-                    <TableCell>{service.description}</TableCell>
-                    <TableCell>
-                        <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                            <Clock className="h-3 w-3"/>
-                            {service.formattedServiceDate}
-                        </div>
-                    </TableCell>
-                    <TableCell>
-                      {service.deliveryDateTime ? (
-                        <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                            <Clock className="h-3 w-3"/>
-                            {service.formattedDeliveryDateTime}
-                        </div>
-                      ) : 'N/A'}
-                    </TableCell>
-                    <TableCell className="text-right">{service.totalCostFormatted}</TableCell>
-                    <TableCell><Badge variant={getStatusVariant(service.status)}>{service.status}</Badge></TableCell>
-                  </>
-                )}
-                <TableCell className="text-right">
+      <div className="space-y-4">
+        {memoizedServices.map((service) => (
+          <Card key={service.id} className="shadow-sm">
+            <CardContent className="p-4 space-y-3">
+              {/* Linea 1 */}
+              <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+                <div className="flex items-center gap-2">
+                  <Tag className="h-4 w-4 text-muted-foreground" />
+                  <span className="font-bold text-primary">{service.id}</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Calendar className="h-4 w-4" />
+                  <span>{service.formattedServiceDate}</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm font-medium text-foreground flex-1 min-w-[200px]">
+                  <Wrench className="h-4 w-4 text-muted-foreground" />
+                  <span className="truncate" title={`${service.vehicleMakeModelYear} - ${service.mileageFormatted}`}>
+                    {service.vehicleMakeModelYear} - {service.mileageFormatted}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2 font-semibold text-lg text-foreground">
+                  <DollarSign className="h-5 w-5 text-muted-foreground"/>
+                  <span>{service.totalCostFormatted}</span>
+                </div>
+                <div>
+                  <Badge variant={getStatusVariant(service.status)}>{service.status}</Badge>
+                </div>
+              </div>
+
+              <div className="border-t border-dashed -mx-4 my-2"></div>
+              
+              {/* Linea 2 */}
+              <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <DollarSign className="h-4 w-4"/>
+                    <span>Costo: {service.totalSuppliesCostFormatted}</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <CalendarCheck className="h-4 w-4" />
+                  <span>Entrega: {service.formattedDeliveryDateTime}</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm text-foreground flex-1 min-w-[300px]">
+                  <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
+                  <p className="truncate" title={`${service.description} (Téc: ${service.technicianName})`}>
+                    {service.description} <span className="text-muted-foreground">({service.technicianName})</span>
+                  </p>
+                </div>
+                <div className="flex items-center gap-2 font-semibold text-green-600">
+                  <TrendingUp className="h-4 w-4" />
+                  <span>Ganancia: {service.serviceProfitFormatted}</span>
+                </div>
+                <div className="flex items-center gap-1">
                   <Button variant="ghost" size="icon" aria-label="Editar Servicio" onClick={() => handleOpenEditDialog(services.find(s => s.id === service.id)!)}>
                     <Edit className="h-4 w-4" />
                   </Button>
@@ -206,12 +168,13 @@ export function ServicesTable({
                       </AlertDialogFooter>
                     </AlertDialogContent>
                   </AlertDialog>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
       </div>
+
       {isEditDialogOpen && editingService && (
         <ServiceDialog
             open={isEditDialogOpen}
