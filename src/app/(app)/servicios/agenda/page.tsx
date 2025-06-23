@@ -17,7 +17,6 @@ import { format, parseISO, compareAsc, isFuture, isToday, isPast, isValid, addDa
 import { es } from 'date-fns/locale';
 import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { ServiceDialog } from "../components/service-dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
@@ -225,89 +224,89 @@ export default function AgendaServiciosPage() {
               )}
             </div>
           </CardHeader>
-          <CardContent>
-            <div className="rounded-md border overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>ID</TableHead>
-                    <TableHead>Vehículo</TableHead>
-                    <TableHead>Técnico</TableHead>
-                    <TableHead>Descripción</TableHead>
-                    <TableHead>Recepción</TableHead>
-                    <TableHead>Entrega</TableHead>
-                    <TableHead className="text-right">Precio Total</TableHead>
-                    <TableHead>Estado</TableHead>
-                    <TableHead className="text-right">Acciones</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {dayServices.map(service => {
-                    const vehicle = vehicles.find(v => v.id === service.vehicleId);
-                    const technician = techniciansState.find(t => t.id === service.technicianId);
-                    const formattedServiceDateTime = service.serviceDate && isValid(parseISO(service.serviceDate))
-                        ? format(parseISO(service.serviceDate), "dd MMM, HH:mm", { locale: es })
-                        : 'Fecha Inválida';
-                    const formattedDelivery = service.deliveryDateTime && isValid(parseISO(service.deliveryDateTime))
-                        ? format(parseISO(service.deliveryDateTime), "dd MMM, HH:mm", { locale: es })
-                        : 'N/A';
-                    return (
-                      <TableRow key={service.id}>
-                        <TableCell className="font-medium">{service.id}</TableCell>
-                        <TableCell>{vehicle ? `${vehicle.make} ${vehicle.model} (${vehicle.licensePlate})` : service.vehicleId}</TableCell>
-                        <TableCell>{technician ? technician.name : service.technicianId}</TableCell>
-                        <TableCell className="max-w-xs truncate">{service.description}</TableCell>
-                        <TableCell>
-                            <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                                <Clock className="h-3 w-3"/>
-                                {formattedServiceDateTime}
-                            </div>
-                        </TableCell>
-                        <TableCell>
-                          {service.deliveryDateTime ? (
-                            <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                                <Clock className="h-3 w-3"/>
-                                {formattedDelivery}
-                            </div>
-                          ) : 'N/A'}
-                        </TableCell>
-                        <TableCell className="text-right">${service.totalCost.toLocaleString('es-ES')}</TableCell>
-                        <TableCell><Badge variant={getStatusVariant(service.status)}>{service.status}</Badge></TableCell>
-                        <TableCell className="text-right">
-                          <Button variant="ghost" size="icon" onClick={() => handleOpenEditDialog(service)}>
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button variant="ghost" size="icon">
-                                <Trash2 className="h-4 w-4 text-destructive" />
-                              </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>¿Eliminar Servicio?</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  Esta acción no se puede deshacer. ¿Seguro que quieres eliminar este servicio?
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                <AlertDialogAction
-                                  onClick={() => handleDeleteService(service.id)}
-                                  className="bg-destructive hover:bg-destructive/90"
-                                >
-                                  Sí, Eliminar
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-            </div>
+          <CardContent className="space-y-4">
+            {dayServices.map(service => {
+              const vehicle = vehicles.find(v => v.id === service.vehicleId);
+              const technician = techniciansState.find(t => t.id === service.technicianId);
+              const formattedServiceDateTime = service.serviceDate && isValid(parseISO(service.serviceDate))
+                  ? format(parseISO(service.serviceDate), "dd MMM, HH:mm", { locale: es })
+                  : 'Fecha Inválida';
+              const formattedDelivery = service.deliveryDateTime && isValid(parseISO(service.deliveryDateTime))
+                  ? format(parseISO(service.deliveryDateTime), "dd MMM, HH:mm", { locale: es })
+                  : 'N/A';
+
+              return (
+                <div key={service.id} className="flex items-center gap-4 rounded-lg border p-4 shadow-sm hover:bg-muted/50 transition-colors">
+                  {/* ID Column */}
+                  <div className="flex flex-col items-center justify-center border-r pr-4 text-center">
+                    <span className="text-xs font-medium text-muted-foreground">ID</span>
+                    <span className="font-bold text-lg text-primary">{service.id}</span>
+                  </div>
+
+                  {/* Main Content Area */}
+                  <div className="flex-grow space-y-2">
+                    {/* First Line */}
+                    <div className="flex justify-between items-start gap-4">
+                      <div className="flex-1">
+                        <p className="font-semibold text-base">{vehicle ? `${vehicle.make} ${vehicle.model} (${vehicle.licensePlate})` : service.vehicleId}</p>
+                        <p className="text-sm text-muted-foreground truncate">{service.description}</p>
+                      </div>
+                      <p className="font-bold text-lg whitespace-nowrap">${service.totalCost.toLocaleString('es-ES')}</p>
+                    </div>
+                    
+                    {/* Divider */}
+                    <div className="border-t border-dashed"></div>
+
+                    {/* Second Line */}
+                    <div className="flex flex-wrap justify-between items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                      <span title={`Técnico: ${technician ? technician.name : 'N/A'}`}>
+                        Téc: <span className="font-medium text-foreground">{technician ? technician.name : 'N/A'}</span>
+                      </span>
+                      <div className="flex items-center gap-1" title="Recepción">
+                        <Calendar className="h-3 w-3" />
+                        <span>{formattedServiceDateTime}</span>
+                      </div>
+                      <div className="flex items-center gap-1" title="Entrega">
+                        <CalendarCheck className="h-3 w-3" />
+                        <span>{formattedDelivery}</span>
+                      </div>
+                      <Badge variant={getStatusVariant(service.status)}>{service.status}</Badge>
+                    </div>
+                  </div>
+
+                  {/* Actions Column */}
+                  <div className="flex flex-col items-center justify-center border-l pl-4 gap-1">
+                    <Button variant="ghost" size="icon" onClick={() => handleOpenEditDialog(service)} title="Editar Servicio">
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="ghost" size="icon" title="Eliminar Servicio">
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>¿Eliminar Servicio?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Esta acción no se puede deshacer. ¿Seguro que quieres eliminar este servicio?
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={() => handleDeleteService(service.id)}
+                            className="bg-destructive hover:bg-destructive/90"
+                          >
+                            Sí, Eliminar
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
+                </div>
+              );
+            })}
           </CardContent>
         </Card>
       );
