@@ -1,4 +1,3 @@
-
 "use client";
 
 import React from "react";
@@ -12,14 +11,16 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge"; 
-import type { SaleReceipt } from "@/types";
+import type { SaleReceipt, InventoryItem } from "@/types";
 import { format, parseISO, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Printer } from "lucide-react";
+import { calculateSaleProfit, IVA_RATE } from "@/lib/placeholder-data";
 
 interface SalesTableProps {
   sales: SaleReceipt[];
   onReprintTicket: (sale: SaleReceipt) => void;
+  inventoryItems: InventoryItem[];
 }
 
 // Explicitly define the allowed badge variants as a string literal union type
@@ -34,7 +35,7 @@ type BadgeVariantType =
   | "lightGreen"
   | "lightPurple";
 
-export function SalesTable({ sales, onReprintTicket }: SalesTableProps) {
+export function SalesTable({ sales, onReprintTicket, inventoryItems }: SalesTableProps) {
   if (!sales.length) {
     return <p className="text-muted-foreground text-center py-8">No hay ventas registradas que coincidan con los filtros.</p>;
   }
@@ -64,10 +65,9 @@ export function SalesTable({ sales, onReprintTicket }: SalesTableProps) {
             <TableHead className="font-bold">Cliente</TableHead>
             <TableHead className="font-bold"># Artículos</TableHead>
             <TableHead className="font-bold">Método Pago</TableHead>
-            <TableHead className="font-bold">Subtotal</TableHead>
-            <TableHead className="font-bold">Impuestos</TableHead>
-            <TableHead className="font-bold">Total</TableHead>
-            <TableHead className="font-bold">Acciones</TableHead>
+            <TableHead className="text-right font-bold">Total</TableHead>
+            <TableHead className="text-right font-bold">Ganancia</TableHead>
+            <TableHead className="text-right font-bold">Acciones</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -76,6 +76,8 @@ export function SalesTable({ sales, onReprintTicket }: SalesTableProps) {
             const formattedDate = isValid(saleDate)
               ? format(saleDate, "dd MMM yyyy, HH:mm", { locale: es })
               : 'Fecha Inválida';
+            
+            const profit = calculateSaleProfit(sale, inventoryItems, IVA_RATE);
 
             return (
               <TableRow key={sale.id}>
@@ -88,9 +90,8 @@ export function SalesTable({ sales, onReprintTicket }: SalesTableProps) {
                     {sale.paymentMethod}
                   </Badge>
                 </TableCell>
-                <TableCell className="text-right">{formatCurrency(sale.subTotal)}</TableCell>
-                <TableCell className="text-right">{formatCurrency(sale.tax || 0)}</TableCell>
                 <TableCell className="text-right font-semibold">{formatCurrency(sale.totalAmount)}</TableCell>
+                <TableCell className="text-right font-semibold text-green-600">{formatCurrency(profit)}</TableCell>
                 <TableCell className="text-right">
                   <Button variant="ghost" size="icon" onClick={() => onReprintTicket(sale)} title="Reimprimir Ticket">
                     <Printer className="h-4 w-4" />
