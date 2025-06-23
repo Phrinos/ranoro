@@ -30,7 +30,8 @@ import {
   ClipboardList, 
   BarChart3, 
   Briefcase,
-  BarChartHorizontal
+  BarChartHorizontal,
+  Database
 } from 'lucide-react';
 import type { User, AppRole } from '@/types';
 
@@ -133,6 +134,13 @@ const BASE_NAV_STRUCTURE: ReadonlyArray<Omit<NavigationEntry, 'isActive'>> = [
     groupTag: "Mi Oficina",
     permissions: ['ticket_config:manage']
   },
+  {
+    label: 'Respaldos',
+    path: '/admin/respaldos',
+    icon: Database,
+    groupTag: "Mi Oficina",
+    permissions: ['backup:manage']
+  },
 ];
 
 const ALL_AVAILABLE_PERMISSIONS = [
@@ -150,6 +158,7 @@ const ALL_AVAILABLE_PERMISSIONS = [
     { id: 'users:manage', label: 'Gestionar Usuarios (Admin)' },
     { id: 'roles:manage', label: 'Gestionar Roles y Permisos (Admin)' },
     { id: 'ticket_config:manage', label: 'Configurar Ticket (Admin)' },
+    { id: 'backup:manage', label: 'Gestionar Respaldos (Admin)' },
 ];
 
 const DESIRED_GROUP_ORDER = ["Mi Taller", "Mi Inventario", "Mi Oficina"];
@@ -183,8 +192,8 @@ const useNavigation = (): NavigationEntry[] => {
       
       if (loadedRoles.length === 0) {
         const adminPermissions = ALL_AVAILABLE_PERMISSIONS
-            .map(p => p.id)
-            .filter(id => !['users:manage', 'roles:manage', 'ticket_config:manage'].includes(id));
+            .filter(p => !['users:manage', 'roles:manage'].includes(p.id))
+            .map(p => p.id);
         
         const defaultRoles: AppRole[] = [
             { id: 'role_superadmin_default', name: 'Superadmin', permissions: ALL_AVAILABLE_PERMISSIONS.map(p => p.id) },
