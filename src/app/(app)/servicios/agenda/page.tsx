@@ -228,9 +228,9 @@ export default function AgendaServiciosPage() {
             {dayServices.map(service => {
               const vehicle = vehicles.find(v => v.id === service.vehicleId);
               const technician = techniciansState.find(t => t.id === service.technicianId);
-              const formattedServiceDateTime = service.serviceDate && isValid(parseISO(service.serviceDate))
-                  ? format(parseISO(service.serviceDate), "dd MMM, HH:mm", { locale: es })
-                  : 'Fecha Inválida';
+              const formattedServiceTime = service.serviceDate && isValid(parseISO(service.serviceDate))
+                  ? format(parseISO(service.serviceDate), "HH:mm", { locale: es })
+                  : 'Hora Inválida';
               const formattedDelivery = service.deliveryDateTime && isValid(parseISO(service.deliveryDateTime))
                   ? format(parseISO(service.deliveryDateTime), "dd MMM, HH:mm", { locale: es })
                   : 'N/A';
@@ -254,14 +254,14 @@ export default function AgendaServiciosPage() {
                       </div>
                       <div className="border-t border-dashed"></div>
                       <div className="flex flex-wrap justify-start items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
+                        <div className="flex items-center gap-1 font-medium text-foreground" title="Hora de Recepción">
+                          <Clock className="h-4 w-4 text-muted-foreground" />
+                          <span>{formattedServiceTime}</span>
+                        </div>
                         <span title={`Técnico: ${technician ? technician.name : 'N/A'}`}>
                             Téc: <span className="font-medium text-foreground">{technician ? technician.name : 'N/A'}</span>
                         </span>
-                        <div className="flex items-center gap-1" title="Recepción">
-                            <Calendar className="h-4 w-4" />
-                            <span>{formattedServiceDateTime}</span>
-                        </div>
-                        <div className="flex items-center gap-1" title="Entrega">
+                        <div className="flex items-center gap-1" title="Fecha de Entrega">
                             <CalendarCheck className="h-4 w-4" />
                             <span>{formattedDelivery}</span>
                         </div>
