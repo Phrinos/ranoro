@@ -237,13 +237,11 @@ export default function AgendaServiciosPage() {
 
               return (
                 <div key={service.id} className="flex items-stretch gap-4 rounded-lg border p-4 shadow-sm hover:bg-muted/50 transition-colors">
-                  {/* ID Column */}
                   <div className="flex flex-col items-center justify-center border-r pr-4 text-center w-20 shrink-0">
                     <span className="text-xs font-medium text-muted-foreground">ID</span>
                     <span className="block font-bold text-lg text-primary">{service.id}</span>
                   </div>
 
-                  {/* Main Content Area */}
                   <div className="flex-grow space-y-2">
                       <div className="flex justify-between items-start gap-4">
                         <div className="flex-1">
@@ -255,7 +253,11 @@ export default function AgendaServiciosPage() {
                       <div className="border-t border-dashed"></div>
                       <div className="flex flex-wrap justify-start items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
                         <div className="flex items-center gap-1 font-medium text-foreground" title="Hora de Recepción">
-                          <Clock className="h-4 w-4" />
+                          {service.status === 'Reparando' || service.status === 'Completado' ? (
+                              <CheckCircle className="h-4 w-4 text-green-600" />
+                          ) : (
+                              <Clock className="h-4 w-4" />
+                          )}
                           <span>Recepción: {formattedServiceTime}</span>
                         </div>
                         <span title={`Técnico: ${technician ? technician.name : 'N/A'}`}>
@@ -272,7 +274,6 @@ export default function AgendaServiciosPage() {
                       </div>
                   </div>
 
-                  {/* Status & Actions Column */}
                   <div className="flex flex-col items-center justify-between border-l pl-4 w-28 shrink-0">
                       <Badge variant={getStatusVariant(service.status)} className="w-full justify-center mb-2">{service.status}</Badge>
                       <div className="flex flex-row items-center justify-center gap-1">
