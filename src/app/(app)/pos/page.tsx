@@ -15,7 +15,7 @@ import { TicketContent } from '@/components/ticket-content';
 import { placeholderSales, placeholderInventory } from "@/lib/placeholder-data";
 import type { SaleReceipt, InventoryItem, SaleItem, PaymentMethod } from "@/types";
 import { useState, useEffect, useMemo } from "react";
-import { format, parseISO, compareAsc, compareDesc, isWithinInterval, isValid, startOfDay, endOfDay } from "date-fns";
+import { format, parseISO, compareAsc, compareDesc, isWithinInterval, isValid, startOfDay, endOfDay, startOfWeek, endOfWeek } from "date-fns";
 import { es } from 'date-fns/locale';
 import type { DateRange } from "react-day-picker";
 import { useRouter } from "next/navigation";
@@ -41,6 +41,12 @@ export default function POSPage() {
 
 
   useEffect(() => {
+    // Default the date range to the current week (Monday-Sunday) on component mount
+    const today = new Date();
+    const start = startOfWeek(today, { weekStartsOn: 1 }); // 1 = Monday
+    const end = endOfWeek(today, { weekStartsOn: 1 }); // 1 = Monday
+    setDateRange({ from: start, to: end });
+
     setAllSales(placeholderSales);
   }, []);
 
@@ -201,7 +207,7 @@ export default function POSPage() {
           <Input
             type="search"
             placeholder="Buscar por ID, cliente, artículo..."
-            className="w-full rounded-lg bg-card pl-8"
+            className="w-full rounded-lg bg-white pl-8"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
@@ -211,7 +217,7 @@ export default function POSPage() {
             <Button
               variant={"outline"}
               className={cn(
-                "min-w-[240px] justify-start text-left font-normal flex-1 sm:flex-initial bg-card",
+                "min-w-[240px] justify-start text-left font-normal flex-1 sm:flex-initial bg-white",
                 !dateRange && "text-muted-foreground"
               )}
             >
@@ -244,7 +250,7 @@ export default function POSPage() {
         </Popover>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="outline" className="min-w-[150px] flex-1 sm:flex-initial bg-card">
+            <Button variant="outline" className="min-w-[150px] flex-1 sm:flex-initial bg-white">
               <ListFilter className="mr-2 h-4 w-4" />
               Ordenar
             </Button>
@@ -263,7 +269,7 @@ export default function POSPage() {
         </DropdownMenu>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="outline" className="min-w-[180px] flex-1 sm:flex-initial bg-card">
+            <Button variant="outline" className="min-w-[180px] flex-1 sm:flex-initial bg-white">
               <FilterIcon className="mr-2 h-4 w-4" />
               Filtrar Pago
             </Button>
