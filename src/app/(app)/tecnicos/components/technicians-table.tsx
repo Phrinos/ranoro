@@ -59,7 +59,7 @@ export function TechniciansTable({ technicians: initialTechnicians }: Technician
               <TableCell>{technician.specialty}</TableCell>
               <TableCell>{technician.hireDate ? format(parseISO(technician.hireDate), "dd MMM yyyy", { locale: es }) : 'N/A'}</TableCell>
               <TableCell className="text-right">${(technician.monthlySalary || 0).toLocaleString('es-ES')}</TableCell>
-              <TableCell className="max-w-xs truncate">{technician.notes || 'N/A'}</TableCell>
+              <TableCell>{technician.notes || 'N/A'}</TableCell>
             </TableRow>
           ))}
         </TableBody>

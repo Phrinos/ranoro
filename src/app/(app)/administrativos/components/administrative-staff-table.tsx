@@ -57,7 +57,7 @@ export function AdministrativeStaffTable({ staffList }: AdministrativeStaffTable
               <TableCell>{staff.contactInfo || 'N/A'}</TableCell>
               <TableCell>{staff.hireDate ? format(parseISO(staff.hireDate), "dd MMM yyyy", { locale: es }) : 'N/A'}</TableCell>
               <TableCell className="text-right">${(staff.monthlySalary || 0).toLocaleString('es-ES', { minimumFractionDigits: 2 })}</TableCell>
-              <TableCell className="max-w-xs truncate">{staff.notes || 'N/A'}</TableCell>
+              <TableCell>{staff.notes || 'N/A'}</TableCell>
             </TableRow>
           ))}
         </TableBody>

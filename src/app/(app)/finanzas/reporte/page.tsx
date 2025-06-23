@@ -351,7 +351,7 @@ export default function FinancialReportPage() {
         </CardHeader>
         <CardContent>
             {filteredAndSortedOperations.length > 0 ? (
-                <div className="rounded-md border overflow-x-auto">
+                <div className="rounded-md border">
                     <Table>
                         <TableHeader>
                         <TableRow>
@@ -373,9 +373,9 @@ export default function FinancialReportPage() {
                                 </span>
                             </TableCell>
                             <TableCell className="font-medium">{op.id}</TableCell>
-                            <TableCell className="max-w-xs truncate">
+                            <TableCell>
                                 {op.type === 'Venta' ? (op.originalObject as SaleReceipt).customerName || 'Cliente Mostrador' : (op.originalObject as ServiceRecord).vehicleIdentifier || 'N/A'}
-                                <p className="text-xs text-muted-foreground truncate">{op.description}</p>
+                                <p className="text-xs text-muted-foreground">{op.description}</p>
                             </TableCell>
                             <TableCell className="text-right">{formatCurrency(op.totalAmount)}</TableCell>
                             <TableCell className="text-right">{formatCurrency(op.profit)}</TableCell>

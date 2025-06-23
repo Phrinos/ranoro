@@ -151,7 +151,7 @@ export function ServicesTable({
                     <TableCell className="font-bold">{service.vehiclePlate}</TableCell>
                     <TableCell>{service.vehicleMakeModelYear}</TableCell>
                     <TableCell>{service.mileageFormatted}</TableCell>
-                    <TableCell className="font-bold max-w-xs truncate">{service.description}</TableCell>
+                    <TableCell className="font-bold">{service.description}</TableCell>
                     <TableCell>{service.technicianName}</TableCell>
                     <TableCell className="text-right">{service.totalCostFormatted}</TableCell>
                     <TableCell className="text-right">{service.serviceProfitFormatted}</TableCell>
@@ -162,7 +162,7 @@ export function ServicesTable({
                     <TableCell className="font-medium">{service.id}</TableCell>
                     <TableCell>{service.vehicleIdentifier}</TableCell>
                     <TableCell>{service.technicianName}</TableCell>
-                    <TableCell className="max-w-xs truncate">{service.description}</TableCell>
+                    <TableCell>{service.description}</TableCell>
                     <TableCell>
                         <div className="flex items-center gap-1 text-xs text-muted-foreground">
                             <Clock className="h-3 w-3"/>
