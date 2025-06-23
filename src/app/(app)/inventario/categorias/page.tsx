@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useMemo, useEffect } from 'react';
@@ -155,8 +154,8 @@ export default function CategoriasInventarioPage() {
                     Visualiza, edita y elimina categorías. La columna 'Productos' muestra cuántos artículos pertenecen a cada categoría.
                 </CardDescription>
             </div>
-             <div className="flex items-center gap-2 w-full sm:w-auto">
-                <div className="relative flex-1 sm:flex-initial">
+             <div className="flex justify-between items-center w-full">
+                <div className="relative">
                     <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                     <Input
                         type="search"
