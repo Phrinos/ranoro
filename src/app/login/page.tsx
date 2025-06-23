@@ -33,14 +33,19 @@ export default function LoginPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
-    setError('');
-
+    
     if (!isDataLoaded) {
         setError("Los datos de la aplicación aún se están cargando. Por favor, espere un momento.");
-        setIsLoading(false);
+        toast({
+            title: 'Cargando datos...',
+            description: 'Por favor, espera un momento antes de iniciar sesión.',
+            variant: 'default',
+        });
         return;
     }
+    
+    setIsLoading(true);
+    setError('');
 
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
