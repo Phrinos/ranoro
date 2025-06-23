@@ -1,15 +1,15 @@
-
 "use client";
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/layout/app-sidebar";
-import { hydrateFromFirestore, placeholderUsers, AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
+import { hydrateFromFirestore, placeholderUsers, AUTH_USER_LOCALSTORAGE_KEY, persistToFirestore } from '@/lib/placeholder-data';
 import { onAuthStateChanged, signOut } from 'firebase/auth'; 
 import { auth } from '@root/lib/firebaseClient.js';
 import { Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import type { User } from '@/types';
 
 export default function AppLayout({
   children,
@@ -31,17 +31,39 @@ export default function AppLayout({
         setIsHydrating(true);
         try {
           await hydrateFromFirestore();
-          const appUser = placeholderUsers.find(u => u.id === user.uid);
+          let appUser = placeholderUsers.find(u => u.id === user.uid);
 
           if (appUser) {
+            // User exists in our DB, proceed.
             localStorage.setItem(AUTH_USER_LOCALSTORAGE_KEY, JSON.stringify(appUser));
-            // Hydration complete, show page content.
             setIsHydrating(false); 
           } else {
-            console.error(`Authentication Error: User with UID ${user.uid} exists in Firebase but not in the application database. Logging out.`);
-            toast({ title: "Error de Sincronización", description: "Tu usuario de Firebase no está registrado en la app.", variant: "destructive" });
-            await signOut(auth);
-            // onAuthStateChanged will fire again with user=null
+            // User exists in Firebase Auth, but not in our app's database.
+            // Create a new user record for them "Just-In-Time".
+            console.log(`User with UID ${user.uid} not found in app DB. Creating new user record...`);
+            
+            const newUser: User = {
+              id: user.uid,
+              email: user.email!,
+              name: user.displayName || user.email!.split('@')[0],
+              role: 'Tecnico', // Assign a default, non-admin role.
+              phone: user.phoneNumber || undefined,
+            };
+            
+            placeholderUsers.push(newUser); // Add to in-memory list
+            localStorage.setItem(AUTH_USER_LOCALSTORAGE_KEY, JSON.stringify(newUser));
+            
+            // Persist the new user to Firestore in the background
+            persistToFirestore().catch(err => {
+              console.error("Failed to persist newly created user:", err);
+            });
+            
+            toast({
+              title: "¡Bienvenido!",
+              description: `Hemos creado un perfil para ti con el rol por defecto.`,
+            });
+            
+            setIsHydrating(false); // We can now proceed
           }
         } catch (error) {
           console.error("Hydration failed:", error);
