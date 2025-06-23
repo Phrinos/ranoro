@@ -33,15 +33,15 @@ export function AdministrativeStaffTable({ staffList }: AdministrativeStaffTable
   return (
     <div className="rounded-lg border shadow-sm overflow-hidden">
       <Table>
-        <TableHeader>
+        <TableHeader className="bg-white">
           <TableRow>
-            <TableHead>ID</TableHead>
-            <TableHead>Nombre</TableHead>
-            <TableHead>Rol/Área</TableHead>
-            <TableHead>Teléfono</TableHead>
-            <TableHead>Fecha Contratación</TableHead>
-            <TableHead className="text-right">Sueldo Mensual</TableHead>
-            <TableHead>Notas</TableHead>
+            <TableHead className="font-bold">ID</TableHead>
+            <TableHead className="font-bold">Nombre</TableHead>
+            <TableHead className="font-bold">Rol/Área</TableHead>
+            <TableHead className="font-bold">Teléfono</TableHead>
+            <TableHead className="font-bold">Fecha Contratación</TableHead>
+            <TableHead className="text-right font-bold">Sueldo Mensual</TableHead>
+            <TableHead className="font-bold">Notas</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
