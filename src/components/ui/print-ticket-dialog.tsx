@@ -57,7 +57,7 @@ export function PrintTicketDialog({
     
     // Default to letter format for quotes etc.
     return {
-        margin: 7.5,
+        margin: 10,
         filename: pdfFileName,
         image: { type: 'jpeg', quality: 0.98 },
         html2canvas: { scale: 2, useCORS: true, letterRendering: true },
@@ -71,26 +71,40 @@ export function PrintTicketDialog({
       const opt = getPdfOptions();
 
       toast({
-        title: "Generando Vista de Impresión...",
-        description: "Esto puede tomar un momento.",
+        title: "Preparando impresión...",
+        description: "Generando el documento. Por favor espere.",
       });
 
-      html2pdf().from(element).set(opt).output('bloburl').then((url: string) => {
-        const printWindow = window.open(url);
-        if (printWindow) {
-          printWindow.onload = () => {
-              setTimeout(() => {
-                  try {
-                      printWindow.print();
-                  } catch(e) {
-                       toast({ title: "Error de Impresión", description: "El diálogo de impresión fue bloqueado. Por favor, permita las ventanas emergentes.", variant: "destructive"});
-                       console.error("Print failed:", e);
-                  }
-              }, 250); // Small delay to ensure PDF is fully rendered
-          };
-        } else {
-          toast({ title: "Error", description: "No se pudo abrir la ventana de impresión. Verifique si su navegador bloquea las ventanas emergentes.", variant: "destructive"});
-        }
+      html2pdf().from(element).set(opt).output('datauristring').then((pdfDataUri: string) => {
+        const iframe = document.createElement('iframe');
+        iframe.style.position = 'fixed';
+        iframe.style.width = '0';
+        iframe.style.height = '0';
+        iframe.style.border = 'none';
+        iframe.src = pdfDataUri;
+
+        iframe.onload = function() {
+          try {
+            iframe.contentWindow?.focus();
+            iframe.contentWindow?.print();
+          } catch(e) {
+            toast({
+              title: "Error de Impresión",
+              description: "No se pudo iniciar la impresión. Intente descargar el PDF y imprimirlo manualmente.",
+              variant: "destructive"
+            });
+            console.error("Print failed:", e);
+          }
+        };
+        
+        document.body.appendChild(iframe);
+
+        // Clean up the iframe after a delay
+        setTimeout(() => {
+            if (document.body.contains(iframe)) {
+                document.body.removeChild(iframe);
+            }
+        }, 30000); // Remove after 30 seconds
       }).catch((err: any) => {
          toast({ title: "Error al Generar PDF", description: "Ocurrió un problema al crear el archivo de impresión.", variant: "destructive" });
          console.error("PDF generation for print error:", err);
