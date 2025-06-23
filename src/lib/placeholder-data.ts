@@ -1,5 +1,5 @@
 
-import type { Vehicle, ServiceRecord, Technician, InventoryItem, DashboardMetrics, SaleReceipt, ServiceSupply, TechnicianMonthlyPerformance, InventoryCategory, Supplier, SaleItem, PaymentMethod, AppRole, QuoteRecord, MonthlyFixedExpense, AdministrativeStaff } from '@/types';
+import type { Vehicle, ServiceRecord, Technician, InventoryItem, DashboardMetrics, SaleReceipt, ServiceSupply, TechnicianMonthlyPerformance, InventoryCategory, Supplier, SaleItem, PaymentMethod, AppRole, QuoteRecord, MonthlyFixedExpense, AdministrativeStaff, User } from '@/types';
 import { format, subMonths, addDays, getYear, getMonth, setHours, setMinutes, subDays, startOfMonth, endOfMonth, startOfDay, endOfDay } from 'date-fns';
 import { es } from 'date-fns/locale';
 
@@ -29,6 +29,22 @@ export const placeholderVehicles: Vehicle[] = [];
 export const placeholderTechnicians: Technician[] = [];
 
 export const placeholderAdministrativeStaff: AdministrativeStaff[] = [];
+
+// =======================================
+// ===          USUARIOS Y ROLES         ===
+// =======================================
+export const defaultSuperAdmin: User = {
+  id: 'user_superadmin_default',
+  name: 'Arturo Ranoro (Superadmin)',
+  email: 'arturo@ranoro.mx',
+  role: 'Superadmin',
+  password: 'CA1abaza',
+  phone: '4491234567' 
+};
+
+export const USER_LOCALSTORAGE_KEY = 'appUsers';
+export const AUTH_USER_LOCALSTORAGE_KEY = 'authUser';
+export const ROLES_LOCALSTORAGE_KEY = 'appRoles';
 
 // =======================================
 // ===          OPERACIONES          ===
@@ -78,8 +94,6 @@ export const getYesterdayRange = () => {
     const yesterday = subDays(STATIC_NOW, 1);
     return { from: startOfDay(yesterday), to: endOfDay(yesterday) };
 };
-
-export const USER_ROLES_LOCALSTORAGE_KEY = 'appRoles';
 
 export const calculateSaleProfit = (sale: SaleReceipt, inventory: InventoryItem[], ivaRate: number): number => {
   return sale.items.reduce((profit, saleItem) => {
