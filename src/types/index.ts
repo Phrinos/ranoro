@@ -21,7 +21,7 @@ export interface ServiceSupply {
   supplyName?: string; 
   quantity: number;
   unitPrice?: number;
-  unitType?: 'units' | 'ml';
+  unitType?: 'units' | 'ml' | 'liters';
 }
 
 export interface ServiceRecord {
@@ -91,7 +91,7 @@ export interface InventoryItem {
   lowStockThreshold: number;
   category: string;
   isService?: boolean;
-  unitType?: 'units' | 'ml';
+  unitType?: 'units' | 'ml' | 'liters';
 }
 
 export interface InventoryCategory {
