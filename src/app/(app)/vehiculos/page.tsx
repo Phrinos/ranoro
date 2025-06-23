@@ -200,7 +200,7 @@ export default function VehiculosPage() {
         description="Administra la información de los vehículos y su historial de servicios."
         actions={
           <div className="flex flex-wrap gap-2">
-            <Button variant="outline" onClick={handleShowArchived}>
+            <Button variant="secondary" onClick={handleShowArchived}>
               <Archive className="mr-2 h-4 w-4" />
               Ver Archivados
             </Button>
@@ -218,14 +218,14 @@ export default function VehiculosPage() {
           <Input
             type="search"
             placeholder="Buscar por placa, marca, modelo o propietario..."
-            className="w-full rounded-lg bg-background pl-8"
+            className="w-full rounded-lg bg-card pl-8"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="outline" className="min-w-[150px] flex-1 sm:flex-initial sm:ml-2">
+            <Button variant="outline" className="min-w-[150px] flex-1 sm:flex-initial sm:ml-2 bg-card">
               <ListFilter className="mr-2 h-4 w-4" />
               Ordenar
             </Button>
@@ -242,7 +242,7 @@ export default function VehiculosPage() {
         </DropdownMenu>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="outline" className="min-w-[180px] flex-1 sm:flex-initial sm:ml-2">
+            <Button variant="outline" className="min-w-[180px] flex-1 sm:flex-initial sm:ml-2 bg-card">
               <Filter className="mr-2 h-4 w-4" /> 
               Filtrar Actividad
             </Button>

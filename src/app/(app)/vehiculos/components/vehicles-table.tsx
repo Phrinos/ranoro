@@ -33,15 +33,15 @@ export function VehiclesTable({ vehicles: initialVehicles }: VehiclesTableProps)
   return (
     <div className="rounded-lg border shadow-sm overflow-hidden">
       <Table>
-        <TableHeader>
+        <TableHeader className="bg-white">
           <TableRow>
-            <TableHead>Placa</TableHead>
-            <TableHead>Marca</TableHead>
-            <TableHead>Modelo</TableHead>
-            <TableHead>Año</TableHead>
-            <TableHead>Propietario</TableHead>
-            <TableHead>Teléfono</TableHead>
-            <TableHead>Último Servicio</TableHead>
+            <TableHead className="font-bold">Placa</TableHead>
+            <TableHead className="font-bold">Marca</TableHead>
+            <TableHead className="font-bold">Modelo</TableHead>
+            <TableHead className="font-bold">Año</TableHead>
+            <TableHead className="font-bold">Propietario</TableHead>
+            <TableHead className="font-bold">Teléfono</TableHead>
+            <TableHead className="font-bold">Último Servicio</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
