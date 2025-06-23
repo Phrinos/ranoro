@@ -106,7 +106,7 @@ export default function PublicQuoteViewPage() {
 
   return (
     <div className="container mx-auto">
-        <Card className="max-w-4xl mx-auto mb-6 print-hidden">
+        <Card className="max-w-4xl mx-auto mb-6 print:hidden">
             <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div>
                     <CardTitle>Vista Pública de Cotización: {quote.id}</CardTitle>
@@ -117,7 +117,7 @@ export default function PublicQuoteViewPage() {
                  </div>
             </CardHeader>
         </Card>
-      <div className="bg-white mx-auto shadow-2xl">
+      <div className="bg-white mx-auto shadow-2xl printable-content">
          <QuoteContent ref={quoteContentRef} quote={quote} vehicle={vehicle || undefined} />
       </div>
     </div>

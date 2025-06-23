@@ -23,7 +23,7 @@ import type {
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { MessageSquare } from "lucide-react";
+import { MessageSquare, Download } from "lucide-react";
 import html2pdf from "html2pdf.js";
 
 /* --------------------------------------------------
@@ -124,6 +124,25 @@ export default function NuevaCotizacionPage() {
     setDialogStep("print_preview");
   };
 
+  const handleDownloadPdf = () => {
+    if (!quoteContentRef.current || !currentQuoteForPdf) {
+      toast({ title: "Error", description: "No se pudo generar el PDF.", variant: "destructive" });
+      return;
+    }
+    const element = quoteContentRef.current;
+    const pdfFileName = `Cotizacion-${currentQuoteForPdf.id}.pdf`;
+    const opt = {
+      margin: 7.5,
+      filename: pdfFileName,
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2, useCORS: true, letterRendering: true },
+      jsPDF: { unit: 'mm', format: 'letter', orientation: 'portrait' }
+    };
+    toast({ title: "Generando PDF...", description: `Se está preparando ${pdfFileName}.` });
+    html2pdf().from(element).set(opt).save();
+  };
+
+
   /* --------------------------------------------------
      3. Copiar mensaje de WhatsApp
   -------------------------------------------------- */
@@ -202,9 +221,14 @@ export default function NuevaCotizacionPage() {
           title="Vista Previa de Cotización"
           dialogContentClassName="printable-quote-dialog"
           footerActions={
-            <Button variant="outline" onClick={handleSendWhatsApp}>
-              <MessageSquare className="mr-2 h-4 w-4" /> Copiar para WhatsApp
-            </Button>
+            <>
+              <Button variant="outline" onClick={handleSendWhatsApp}>
+                <MessageSquare className="mr-2 h-4 w-4" /> Copiar para WhatsApp
+              </Button>
+              <Button onClick={handleDownloadPdf}>
+                <Download className="mr-2 h-4 w-4" /> Descargar PDF
+              </Button>
+            </>
           }
           onDialogClose={() => setDialogStep("closed")}
         >

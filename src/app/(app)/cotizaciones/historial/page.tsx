@@ -8,7 +8,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Search, ListFilter, CalendarIcon as CalendarDateIcon, FileText, DollarSign, MessageSquare, PlusCircle } from "lucide-react";
+import { Search, ListFilter, CalendarIcon as CalendarDateIcon, FileText, DollarSign, MessageSquare, PlusCircle, Download } from "lucide-react";
 import { QuotesTable } from "../components/quotes-table"; 
 import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
 import { QuoteContent } from '@/components/quote-content';
@@ -340,6 +340,9 @@ export default function HistorialCotizacionesPage() {
             <>
               <Button variant="outline" onClick={() => handleSendWhatsApp(selectedQuoteForView)}>
                 <MessageSquare className="mr-2 h-4 w-4" /> Copiar para WhatsApp
+              </Button>
+              <Button onClick={() => generateAndDownloadPdf(selectedQuoteForView)}>
+                 <Download className="mr-2 h-4 w-4" /> Descargar PDF
               </Button>
             </>
           }

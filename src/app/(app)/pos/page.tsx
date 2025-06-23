@@ -1,3 +1,4 @@
+
 "use client";
 
 import { PageHeader } from "@/components/page-header";
@@ -13,7 +14,7 @@ import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
 import { TicketContent } from '@/components/ticket-content';
 import { placeholderSales, placeholderInventory, calculateSaleProfit, IVA_RATE } from "@/lib/placeholder-data";
 import type { SaleReceipt, InventoryItem, SaleItem, PaymentMethod } from "@/types";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { format, parseISO, compareAsc, compareDesc, isWithinInterval, isValid, startOfDay, endOfDay, startOfWeek, endOfWeek } from "date-fns";
 import { es } from 'date-fns/locale';
 import type { DateRange } from "react-day-picker";
@@ -29,6 +30,7 @@ type SaleSortOption =
 export default function POSPage() {
   const router = useRouter();
   const [allSales, setAllSales] = useState<SaleReceipt[]>(placeholderSales);
+  const ticketContentRef = useRef<HTMLDivElement>(null);
   
   const [searchTerm, setSearchTerm] = useState("");
   const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
@@ -125,6 +127,10 @@ export default function POSPage() {
   const handleReprintDialogClose = () => {
     setIsReprintDialogOpen(false);
     setSelectedSaleForReprint(null);
+  };
+
+  const handlePrintTicket = () => {
+    window.print();
   };
 
 
@@ -278,8 +284,14 @@ export default function POSPage() {
           onOpenChange={setIsReprintDialogOpen}
           title="Reimprimir Ticket de Venta"
           onDialogClose={handleReprintDialogClose}
+          dialogContentClassName="printable-content"
+          footerActions={
+             <Button onClick={handlePrintTicket}>
+                <Printer className="mr-2 h-4 w-4" /> Imprimir Ticket
+            </Button>
+          }
         >
-          <TicketContent sale={selectedSaleForReprint} />
+          <TicketContent ref={ticketContentRef} sale={selectedSaleForReprint} />
         </PrintTicketDialog>
       )}
     </>

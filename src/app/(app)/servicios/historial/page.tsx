@@ -8,14 +8,14 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Search, ListFilter, CalendarIcon as CalendarDateIcon, DollarSign, TrendingUp, Car as CarIcon, Wrench as WrenchIcon, PlusCircle } from "lucide-react";
+import { Search, ListFilter, CalendarIcon as CalendarDateIcon, DollarSign, TrendingUp, Car as CarIcon, Wrench as WrenchIcon, PlusCircle, Printer } from "lucide-react";
 import { ServicesTable } from "../components/services-table"; 
 import { ServiceDialog } from "../components/service-dialog"; 
 import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
 import { TicketContent } from '@/components/ticket-content';
 import { placeholderServiceRecords, placeholderVehicles, placeholderTechnicians, placeholderInventory } from "@/lib/placeholder-data";
 import type { ServiceRecord, Vehicle, Technician, InventoryItem, QuoteRecord } from "@/types";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { format, parseISO, compareAsc, compareDesc, isWithinInterval, isValid, startOfDay, endOfDay } from "date-fns";
 import { es } from 'date-fns/locale';
@@ -34,6 +34,7 @@ type ServiceSortOption =
 export default function HistorialServiciosPage() {
   const { toast } = useToast();
   const router = useRouter();
+  const ticketContentRef = useRef<HTMLDivElement>(null);
   
   const [allServices, setAllServices] = useState<ServiceRecord[]>(placeholderServiceRecords);
   const [vehicles, setVehicles] = useState<Vehicle[]>(placeholderVehicles); 
@@ -217,6 +218,10 @@ export default function HistorialServiciosPage() {
       return updatedVehicles;
     });
   };
+  
+  const handlePrintTicket = () => {
+    window.print();
+  };
 
 
   return (
@@ -362,8 +367,15 @@ export default function HistorialServiciosPage() {
           onOpenChange={setShowPrintTicketDialog}
           title="Comprobante de Servicio"
           onDialogClose={() => setCurrentServiceForTicket(null)}
+          dialogContentClassName="printable-content"
+          footerActions={
+             <Button onClick={handlePrintTicket}>
+                <Printer className="mr-2 h-4 w-4" /> Imprimir Comprobante
+            </Button>
+          }
         >
           <TicketContent 
+            ref={ticketContentRef}
             service={currentServiceForTicket} 
             vehicle={currentVehicleForTicket || undefined}
             technician={currentTechnicianForTicket || undefined}
