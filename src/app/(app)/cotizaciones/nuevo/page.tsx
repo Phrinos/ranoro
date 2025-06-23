@@ -132,11 +132,11 @@ export default function NuevaCotizacionPage() {
     const pdfFileName = `Cotizacion-${currentQuoteForPdf.id}.pdf`;
 
     const opt = {
-      margin: 0.5,
+      margin: 7.5,
       filename: pdfFileName,
       image: { type: "jpeg", quality: 0.98 },
       html2canvas: { scale: 2, useCORS: true, letterRendering: true },
-      jsPDF: { unit: "in", format: "letter", orientation: "portrait" },
+      jsPDF: { unit: "mm", format: "letter", orientation: "portrait" },
     } as const;
 
     toast({
