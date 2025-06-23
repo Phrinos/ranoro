@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -20,39 +21,23 @@ export default function LoginPage() {
   const [password, setPassword] = useState('CA1abaza');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [isDataLoaded, setIsDataLoaded] = useState(false);
-
-  // Hydrate data from Firestore on component mount
-  useEffect(() => {
-    const loadData = async () => {
-        await hydrateFromFirestore();
-        setIsDataLoaded(true);
-    };
-    loadData();
-  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!isDataLoaded) {
-        setError("Los datos de la aplicación aún se están cargando. Por favor, espere un momento.");
-        toast({
-            title: 'Cargando datos...',
-            description: 'Por favor, espera un momento antes de iniciar sesión.',
-            variant: 'default',
-        });
-        return;
-    }
-    
     setIsLoading(true);
     setError('');
 
     try {
+      // Step 1: Ensure data is loaded from Firestore before proceeding.
+      // The function has an internal guard to prevent multiple executions per session.
+      await hydrateFromFirestore();
+
+      // Step 2: Authenticate with Firebase.
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const firebaseUser = userCredential.user;
 
       if (firebaseUser) {
-        // Find the application user by matching the Firebase UID with the user's ID
+        // Step 3: Find the corresponding user in the now-hydrated application data.
         const foundAppUser = placeholderUsers.find(
           u => u.id === firebaseUser.uid
         );
@@ -65,10 +50,11 @@ export default function LoginPage() {
           });
           router.push('/dashboard');
         } else {
-          setError('Usuario autenticado pero no encontrado en el sistema. Contacte al administrador.');
+          const errorMessage = 'Usuario autenticado en Firebase pero no encontrado en la base de datos de la aplicación. Contacte al administrador.';
+          setError(errorMessage);
            toast({
             title: 'Error de Sincronización de Usuario',
-            description: 'Tu cuenta de Firebase no está registrada en la aplicación.',
+            description: 'Tu cuenta no está registrada en el sistema del taller.',
             variant: 'destructive',
           });
         }
@@ -124,7 +110,7 @@ export default function LoginPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                disabled={isLoading || !isDataLoaded}
+                disabled={isLoading}
               />
             </div>
             <div className="space-y-2">
@@ -136,12 +122,12 @@ export default function LoginPage() {
                 placeholder="••••••••"
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                disabled={isLoading || !isDataLoaded}
+                disabled={isLoading}
               />
             </div>
             {error && <p className="text-sm text-destructive">{error}</p>}
-            <Button type="submit" className="w-full" disabled={isLoading || !isDataLoaded}>
-              {isLoading ? 'Ingresando...' : (isDataLoaded ? 'Ingresar' : 'Cargando datos...')}
+            <Button type="submit" className="w-full" disabled={isLoading}>
+              {isLoading ? 'Ingresando...' : 'Ingresar'}
             </Button>
           </form>
         </CardContent>
