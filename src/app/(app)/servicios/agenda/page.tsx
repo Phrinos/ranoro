@@ -3,7 +3,7 @@
 
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Edit, Trash2, Clock, Search as SearchIcon, Calendar, CalendarCheck, CheckCircle, User as UserIcon } from "lucide-react";
+import { PlusCircle, Edit, Trash2, Clock, Search as SearchIcon, Calendar, CalendarCheck, CheckCircle, Wrench } from "lucide-react";
 import {
   placeholderServiceRecords,
   placeholderVehicles,
@@ -230,70 +230,75 @@ export default function AgendaServiciosPage() {
                   <CardContent className="p-4 space-y-3">
                     {/* Top line */}
                     <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2 text-sm text-muted-foreground border-b pb-3">
-                      <div className="flex items-center gap-1.5 font-medium">
-                        <span className="text-primary">{service.id}</span>
-                      </div>
-                      <div className="flex items-center gap-1.5" title="Hora de Recepción">
-                        {(service.status === 'Reparando' || service.status === 'Completado') ? <CheckCircle className="h-4 w-4 text-green-600" /> : <Clock className="h-4 w-4" />}
-                        <span>Recepción: {formattedServiceTime}</span>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <UserIcon className="h-4 w-4" />
-                        <span>Técnico: {technician ? technician.name : 'N/A'}</span>
-                      </div>
-                      <div className="flex items-center gap-1.5" title="Fecha de Entrega">
-                        {service.status === 'Completado' ? <CheckCircle className="h-4 w-4 text-green-600" /> : <CalendarCheck className="h-4 w-4" />}
-                        <span>Entrega: {formattedDelivery}</span>
-                      </div>
-                      <div>
-                        <Badge variant={getStatusVariant(service.status)}>{service.status}</Badge>
-                      </div>
+                        <div className="flex items-center gap-1.5 font-medium">
+                            <span className="text-primary">{service.id}</span>
+                        </div>
+                        <div className="flex items-center gap-1.5" title="Hora de Recepción">
+                            {(service.status === 'Reparando' || service.status === 'Completado') ? <CheckCircle className="h-4 w-4 text-green-600" /> : <Clock className="h-4 w-4" />}
+                            <span>Recepción: {formattedServiceTime}</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                            <Wrench className="h-4 w-4" />
+                            <span>{technician ? technician.name : 'N/A'}</span>
+                        </div>
+                        <div className="flex items-center gap-1.5" title="Fecha de Entrega">
+                            {service.status === 'Completado' ? <CheckCircle className="h-4 w-4 text-green-600" /> : <CalendarCheck className="h-4 w-4" />}
+                            <span>Entrega: {formattedDelivery}</span>
+                        </div>
+                        <div>
+                            <Badge variant={getStatusVariant(service.status)}>{service.status}</Badge>
+                        </div>
                     </div>
 
                     {/* Bottom part */}
-                    <div>
-                      <div className="flex justify-between items-start gap-4">
-                        <div className="flex-grow">
-                          <h4 className="font-semibold text-base">
-                            {vehicle ? `${vehicle.licensePlate} - ${vehicle.make} ${vehicle.model} ${vehicle.year}` : service.vehicleId}
-                          </h4>
-                          <p className="text-sm text-muted-foreground mt-1">
-                            {service.description}
+                    <div className="mt-4 flex items-start gap-4">
+                        {/* Cost Column */}
+                        <div className="w-24 shrink-0">
+                          <p className="font-bold text-lg text-primary">
+                            ${service.totalCost.toLocaleString('es-ES')}
                           </p>
                         </div>
-                        <div className="flex items-center gap-4 shrink-0">
-                          <p className="font-bold text-lg whitespace-nowrap">${service.totalCost.toLocaleString('es-ES')}</p>
-                          <div className="flex">
+
+                        {/* Info Column */}
+                        <div className="flex-grow">
+                            <h4 className="font-semibold text-base">
+                                {vehicle ? `${vehicle.licensePlate} - ${vehicle.make} ${vehicle.model} ${vehicle.year}` : service.vehicleId}
+                            </h4>
+                            <p className="text-sm text-muted-foreground mt-1">
+                                {service.description}
+                            </p>
+                        </div>
+
+                        {/* Actions Column */}
+                        <div className="flex shrink-0">
                             <Button variant="ghost" size="icon" onClick={() => handleOpenEditDialog(service)} title="Editar Servicio">
-                              <Edit className="h-4 w-4" />
+                                <Edit className="h-4 w-4" />
                             </Button>
                             <AlertDialog>
-                              <AlertDialogTrigger asChild>
+                                <AlertDialogTrigger asChild>
                                 <Button variant="ghost" size="icon" title="Eliminar Servicio">
-                                  <Trash2 className="h-4 w-4 text-destructive" />
+                                    <Trash2 className="h-4 w-4 text-destructive" />
                                 </Button>
-                              </AlertDialogTrigger>
-                              <AlertDialogContent>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
                                 <AlertDialogHeader>
-                                  <AlertDialogTitle>¿Eliminar Servicio?</AlertDialogTitle>
-                                  <AlertDialogDescription>
+                                    <AlertDialogTitle>¿Eliminar Servicio?</AlertDialogTitle>
+                                    <AlertDialogDescription>
                                     Esta acción no se puede deshacer. ¿Seguro que quieres eliminar este servicio?
-                                  </AlertDialogDescription>
+                                    </AlertDialogDescription>
                                 </AlertDialogHeader>
                                 <AlertDialogFooter>
-                                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                  <AlertDialogAction
+                                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                    <AlertDialogAction
                                     onClick={() => handleDeleteService(service.id)}
                                     className="bg-destructive hover:bg-destructive/90"
-                                  >
+                                    >
                                     Sí, Eliminar
-                                  </AlertDialogAction>
+                                    </AlertDialogAction>
                                 </AlertDialogFooter>
-                              </AlertDialogContent>
+                                </AlertDialogContent>
                             </AlertDialog>
-                          </div>
                         </div>
-                      </div>
                     </div>
                   </CardContent>
                 </Card>
