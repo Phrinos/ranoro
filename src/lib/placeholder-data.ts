@@ -9,9 +9,9 @@ export const IVA_RATE = 0.16;
 // =======================================
 // ===          CATEGORÍAS Y PROVEEDORES          ===
 // =======================================
-export const placeholderCategories: InventoryCategory[] = [];
+export let placeholderCategories: InventoryCategory[] = [];
 
-export const placeholderSuppliers: Supplier[] = [];
+export let placeholderSuppliers: Supplier[] = [];
 
 // =======================================
 // ===          INVENTARIO          ===
@@ -21,14 +21,14 @@ export let placeholderInventory: InventoryItem[] = [];
 // =======================================
 // ===          VEHÍCULOS          ===
 // =======================================
-export const placeholderVehicles: Vehicle[] = [];
+export let placeholderVehicles: Vehicle[] = [];
 
 // =======================================
 // ===          PERSONAL          ===
 // =======================================
-export const placeholderTechnicians: Technician[] = [];
+export let placeholderTechnicians: Technician[] = [];
 
-export const placeholderAdministrativeStaff: AdministrativeStaff[] = [];
+export let placeholderAdministrativeStaff: AdministrativeStaff[] = [];
 
 // =======================================
 // ===          USUARIOS Y ROLES         ===
@@ -70,9 +70,96 @@ export const placeholderDashboardMetrics: DashboardMetrics = {
   lowStockAlerts: 0,
 };
 
-export const placeholderTechnicianMonthlyPerformance: TechnicianMonthlyPerformance[] = [];
+export let placeholderTechnicianMonthlyPerformance: TechnicianMonthlyPerformance[] = [];
 
-export const placeholderAppRoles: AppRole[] = [];
+export let placeholderAppRoles: AppRole[] = [];
+
+// =======================================
+// ===  LÓGICA DE PERSISTENCIA DE DATOS  ===
+// =======================================
+
+const DATA_KEYS = {
+    categories: 'placeholderCategories',
+    suppliers: 'placeholderSuppliers',
+    inventory: 'placeholderInventory',
+    vehicles: 'placeholderVehicles',
+    technicians: 'placeholderTechnicians',
+    administrativeStaff: 'placeholderAdministrativeStaff',
+    serviceRecords: 'placeholderServiceRecords',
+    quotes: 'placeholderQuotes',
+    sales: 'placeholderSales',
+    fixedExpenses: 'placeholderFixedMonthlyExpenses',
+    technicianPerformance: 'placeholderTechnicianMonthlyPerformance',
+    appRoles: 'placeholderAppRoles',
+};
+
+const DATA_ARRAYS = {
+    [DATA_KEYS.categories]: placeholderCategories,
+    [DATA_KEYS.suppliers]: placeholderSuppliers,
+    [DATA_KEYS.inventory]: placeholderInventory,
+    [DATA_KEYS.vehicles]: placeholderVehicles,
+    [DATA_KEYS.technicians]: placeholderTechnicians,
+    [DATA_KEYS.administrativeStaff]: placeholderAdministrativeStaff,
+    [DATA_KEYS.serviceRecords]: placeholderServiceRecords,
+    [DATA_KEYS.quotes]: placeholderQuotes,
+    [DATA_KEYS.sales]: placeholderSales,
+    [DATA_KEYS.fixedExpenses]: placeholderFixedMonthlyExpenses,
+    [DATA_KEYS.technicianPerformance]: placeholderTechnicianMonthlyPerformance,
+    [DATA_KEYS.appRoles]: placeholderAppRoles,
+};
+
+/**
+ * Carga todos los datos de la aplicación desde localStorage.
+ * Solo se ejecuta una vez por sesión en el lado del cliente.
+ */
+export function hydrateFromLocalStorage() {
+  if (typeof window === 'undefined' || (window as any).__APP_HYDRATED__) {
+    return;
+  }
+
+  console.log("Hydrating application data from localStorage...");
+
+  for (const key in DATA_KEYS) {
+      const storageKey = DATA_KEYS[key as keyof typeof DATA_KEYS];
+      const targetArray = DATA_ARRAYS[storageKey];
+      
+      try {
+          const storedData = localStorage.getItem(storageKey);
+          if (storedData) {
+              const parsedData = JSON.parse(storedData);
+              if (Array.isArray(parsedData)) {
+                  // Limpia el array en memoria y lo llena con los datos de localStorage
+                  targetArray.splice(0, targetArray.length, ...parsedData);
+              }
+          }
+      } catch (e) {
+          console.error(`Error hydrating ${storageKey}:`, e);
+      }
+  }
+
+  (window as any).__APP_HYDRATED__ = true;
+}
+
+/**
+ * Guarda todos los datos de la aplicación en localStorage.
+ */
+export function persistToLocalStorage() {
+  if (typeof window === 'undefined') {
+    return;
+  }
+  
+  console.log("Persisting application data to localStorage...");
+
+  for (const key in DATA_KEYS) {
+    const storageKey = DATA_KEYS[key as keyof typeof DATA_KEYS];
+    const sourceArray = DATA_ARRAYS[storageKey];
+    try {
+        localStorage.setItem(storageKey, JSON.stringify(sourceArray));
+    } catch (e) {
+        console.error(`Error persisting ${storageKey}:`, e);
+    }
+  }
+}
 
 // =======================================
 // ===          FUNCIONES HELPER         ===
@@ -103,4 +190,3 @@ export const calculateSaleProfit = (sale: SaleReceipt, inventory: InventoryItem[
       return profit + (sellingPriceSubTotal - costPrice) * saleItem.quantity;
   }, 0);
 };
-
