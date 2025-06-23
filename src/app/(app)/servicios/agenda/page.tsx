@@ -212,12 +212,12 @@ export default function AgendaServiciosPage() {
       const dailyProfit = dayServices.reduce((sum, service) => sum + (service.serviceProfit || 0), 0);
       return (
         <div key={date} className="mb-6">
-          <div className="flex justify-between items-center mb-3 bg-slate-700 dark:bg-slate-800 text-white p-3 rounded-lg shadow-md">
+          <div className="flex justify-between items-center mb-3 bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-slate-200 p-3 rounded-lg shadow-md">
               <h3 className="text-lg font-semibold">
                   {format(parseISO(date), "EEEE, dd 'de' MMMM 'de' yyyy", { locale: es })}
               </h3>
               <div className="text-right">
-                  <p className="text-sm font-medium text-slate-300">Ganancia Estimada del Día</p>
+                  <p className="text-sm font-medium text-slate-600 dark:text-slate-300">Ganancia Estimada del Día</p>
                   <p className="text-xl font-bold">
                       {`$${dailyProfit.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
                   </p>
@@ -238,11 +238,11 @@ export default function AgendaServiciosPage() {
                     <div className="flex items-center">
                         <div className="w-32 shrink-0 text-left px-4">
                             <p className="text-xs text-muted-foreground">ID Servicio</p>
-                            <p className="font-bold text-base text-black">
+                            <p className="font-bold text-sm text-foreground">
                                 {service.id}
                             </p>
                             <p className="text-xs text-muted-foreground mt-2">Costo</p>
-                            <p className="font-bold text-lg text-black">
+                            <p className="font-bold text-xl text-foreground">
                                 ${service.totalCost.toLocaleString('es-ES')}
                             </p>
                         </div>
