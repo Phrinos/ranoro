@@ -262,7 +262,7 @@ export default function FinancialReportPage() {
         <CardHeader>
             <div className="flex flex-col sm:flex-row items-center justify-between gap-2">
                 <CardTitle>Detalle de Operaciones</CardTitle>
-                 <Button onClick={handleGenerateCorteDia} variant="outline">
+                 <Button onClick={handleGenerateCorteDia} className="bg-blue-200 text-blue-800 hover:bg-blue-300 dark:bg-blue-800 dark:text-blue-200 dark:hover:bg-blue-700">
                     <Printer className="mr-2 h-4 w-4" />
                     Realizar Corte del Día
                 </Button>
@@ -355,12 +355,12 @@ export default function FinancialReportPage() {
                     <Table>
                         <TableHeader>
                         <TableRow>
-                            <TableHead>Fecha</TableHead>
-                            <TableHead>Tipo</TableHead>
-                            <TableHead>ID Operación</TableHead>
-                            <TableHead>Descripción / Cliente / Vehículo</TableHead>
-                            <TableHead className="text-right">Monto Total (IVA Inc.)</TableHead>
-                            <TableHead className="text-right">Ganancia</TableHead>
+                            <TableHead className="font-bold">Fecha</TableHead>
+                            <TableHead className="font-bold">Tipo</TableHead>
+                            <TableHead className="font-bold">ID Operación</TableHead>
+                            <TableHead className="font-bold">Descripción / Cliente / Vehículo</TableHead>
+                            <TableHead className="text-right font-bold">Monto Total (IVA Inc.)</TableHead>
+                            <TableHead className="text-right font-bold">Ganancia</TableHead>
                         </TableRow>
                         </TableHeader>
                         <TableBody>
