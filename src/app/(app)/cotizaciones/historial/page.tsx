@@ -212,7 +212,7 @@ export default function HistorialCotizacionesPage() {
         console.error("Could not copy text: ", err);
         toast({
             title: "Error al Copiar",
-            description: "No se pudo copiar el mensaje. Por favor, intente de nuevo.",
+            description: "No se pudo copiar el mensaje.",
             variant: "destructive",
         });
     });
@@ -220,19 +220,6 @@ export default function HistorialCotizacionesPage() {
 
   return (
     <>
-      <PageHeader
-        title="Cotizaciones"
-        description="Consulta, filtra y ordena todas las cotizaciones generadas."
-        actions={
-          <Button asChild>
-            <Link href="/cotizaciones/nuevo">
-              <PlusCircle className="mr-2 h-4 w-4" />
-              Nueva Cotización
-            </Link>
-          </Button>
-        }
-      />
-
       <div className="mb-6 grid gap-6 md:grid-cols-2">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -253,6 +240,19 @@ export default function HistorialCotizacionesPage() {
           </CardContent>
         </Card>
       </div>
+
+      <PageHeader
+        title="Cotizaciones"
+        description="Consulta, filtra y ordena todas las cotizaciones generadas."
+        actions={
+          <Button asChild>
+            <Link href="/cotizaciones/nuevo">
+              <PlusCircle className="mr-2 h-4 w-4" />
+              Nueva Cotización
+            </Link>
+          </Button>
+        }
+      />
 
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:flex-wrap">
         <div className="relative flex-1 min-w-[200px] sm:min-w-[300px]">
