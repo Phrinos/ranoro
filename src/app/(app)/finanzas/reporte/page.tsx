@@ -211,17 +211,6 @@ export default function FinancialReportPage() {
 
   return (
     <>
-      <PageHeader
-        title="Informe de Ventas"
-        description="Consolida ventas y servicios para un análisis detallado de ingresos y ganancias."
-        actions={
-          <Button onClick={handleGenerateCorteDia} variant="outline">
-            <Printer className="mr-2 h-4 w-4" />
-            Realizar Corte del Día
-          </Button>
-        }
-      />
-
       <div className="mb-6 grid gap-6 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -269,87 +258,96 @@ export default function FinancialReportPage() {
         </Card>
       </div>
 
-      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:flex-wrap">
-        <div className="relative flex-1 min-w-[200px] sm:min-w-[300px]">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            type="search"
-            placeholder="Buscar por ID, cliente, vehículo..."
-            className="w-full rounded-lg bg-background pl-8"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </div>
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button
-              variant={"outline"}
-              className={cn(
-                "min-w-[240px] justify-start text-left font-normal flex-1 sm:flex-initial",
-                !dateRange && "text-muted-foreground"
-              )}
-            >
-              <CalendarDateIcon className="mr-2 h-4 w-4" />
-              {dateRange?.from ? (
-                dateRange.to ? (
-                  <>
-                    {format(dateRange.from, "LLL dd, y", { locale: es })} -{" "}
-                    {format(dateRange.to, "LLL dd, y", { locale: es })}
-                  </>
-                ) : (
-                  format(dateRange.from, "LLL dd, y", { locale: es })
-                )
-              ) : (
-                <span>Seleccione rango de fechas</span>
-              )}
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-auto p-0" align="start">
-            <Calendar
-              initialFocus
-              mode="range"
-              defaultMonth={dateRange?.from}
-              selected={dateRange}
-              onSelect={setDateRange}
-              numberOfMonths={2}
-              locale={es}
-            />
-          </PopoverContent>
-        </Popover>
-         <Select value={operationTypeFilter} onValueChange={(value) => setOperationTypeFilter(value as OperationTypeFilter)}>
-          <SelectTrigger className="w-full sm:w-auto min-w-[180px] flex-1 sm:flex-initial">
-            <SelectValue placeholder="Filtrar por tipo" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Todas las Operaciones</SelectItem>
-            <SelectItem value="Venta">Solo Ventas</SelectItem>
-            <SelectItem value="Servicio">Solo Servicios</SelectItem>
-          </SelectContent>
-        </Select>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" className="min-w-[150px] flex-1 sm:flex-initial">
-              <ListFilter className="mr-2 h-4 w-4" />
-              Ordenar
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuLabel>Ordenar por</DropdownMenuLabel>
-            <DropdownMenuRadioGroup value={sortOption} onValueChange={(value) => setSortOption(value as OperationSortOption)}>
-              <DropdownMenuRadioItem value="date_desc">Fecha (Más Reciente)</DropdownMenuRadioItem>
-              <DropdownMenuRadioItem value="date_asc">Fecha (Más Antiguo)</DropdownMenuRadioItem>
-              <DropdownMenuRadioItem value="amount_desc">Monto Total (Mayor a Menor)</DropdownMenuRadioItem>
-              <DropdownMenuRadioItem value="amount_asc">Monto Total (Menor a Mayor)</DropdownMenuRadioItem>
-              <DropdownMenuRadioItem value="profit_desc">Ganancia (Mayor a Menor)</DropdownMenuRadioItem>
-              <DropdownMenuRadioItem value="profit_asc">Ganancia (Menor a Mayor)</DropdownMenuRadioItem>
-            </DropdownMenuRadioGroup>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
-
       <Card>
         <CardHeader>
-            <CardTitle>Detalle de Operaciones</CardTitle>
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-2">
+                <CardTitle>Detalle de Operaciones</CardTitle>
+                 <Button onClick={handleGenerateCorteDia} variant="outline">
+                    <Printer className="mr-2 h-4 w-4" />
+                    Realizar Corte del Día
+                </Button>
+            </div>
+            <div className="pt-4 space-y-4">
+                <div className="flex flex-col sm:flex-row items-center gap-4">
+                    <div className="relative flex-1 w-full">
+                      <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        type="search"
+                        placeholder="Buscar por ID, cliente, vehículo..."
+                        className="w-full rounded-lg bg-white pl-8"
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                      />
+                    </div>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant={"outline"}
+                          className={cn(
+                            "w-full sm:w-auto sm:min-w-[240px] justify-start text-left font-normal flex-1 sm:flex-initial bg-white",
+                            !dateRange && "text-muted-foreground"
+                          )}
+                        >
+                          <CalendarDateIcon className="mr-2 h-4 w-4" />
+                          {dateRange?.from ? (
+                            dateRange.to ? (
+                              <>
+                                {format(dateRange.from, "LLL dd, y", { locale: es })} -{" "}
+                                {format(dateRange.to, "LLL dd, y", { locale: es })}
+                              </>
+                            ) : (
+                              format(dateRange.from, "LLL dd, y", { locale: es })
+                            )
+                          ) : (
+                            <span>Seleccione rango de fechas</span>
+                          )}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          initialFocus
+                          mode="range"
+                          defaultMonth={dateRange?.from}
+                          selected={dateRange}
+                          onSelect={setDateRange}
+                          numberOfMonths={2}
+                          locale={es}
+                        />
+                      </PopoverContent>
+                    </Popover>
+                </div>
+                <div className="flex flex-col sm:flex-row items-center gap-4">
+                    <Select value={operationTypeFilter} onValueChange={(value) => setOperationTypeFilter(value as OperationTypeFilter)}>
+                        <SelectTrigger className="w-full sm:w-auto min-w-[180px] flex-1 sm:flex-initial bg-white">
+                            <SelectValue placeholder="Filtrar por tipo" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">Todas las Operaciones</SelectItem>
+                            <SelectItem value="Venta">Solo Ventas</SelectItem>
+                            <SelectItem value="Servicio">Solo Servicios</SelectItem>
+                        </SelectContent>
+                    </Select>
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="outline" className="min-w-[150px] w-full sm:w-auto flex-1 sm:flex-initial bg-white">
+                            <ListFilter className="mr-2 h-4 w-4" />
+                            Ordenar
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                            <DropdownMenuLabel>Ordenar por</DropdownMenuLabel>
+                            <DropdownMenuRadioGroup value={sortOption} onValueChange={(value) => setSortOption(value as OperationSortOption)}>
+                            <DropdownMenuRadioItem value="date_desc">Fecha (Más Reciente)</DropdownMenuRadioItem>
+                            <DropdownMenuRadioItem value="date_asc">Fecha (Más Antiguo)</DropdownMenuRadioItem>
+                            <DropdownMenuRadioItem value="amount_desc">Monto Total (Mayor a Menor)</DropdownMenuRadioItem>
+                            <DropdownMenuRadioItem value="amount_asc">Monto Total (Menor a Mayor)</DropdownMenuRadioItem>
+                            <DropdownMenuRadioItem value="profit_desc">Ganancia (Mayor a Menor)</DropdownMenuRadioItem>
+                            <DropdownMenuRadioItem value="profit_asc">Ganancia (Menor a Mayor)</DropdownMenuRadioItem>
+                            </DropdownMenuRadioGroup>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                </div>
+            </div>
         </CardHeader>
         <CardContent>
             {filteredAndSortedOperations.length > 0 ? (
