@@ -31,7 +31,8 @@ import {
   BarChart3, 
   Briefcase,
   BarChartHorizontal,
-  Database
+  Database,
+  BookOpen
 } from 'lucide-react';
 import type { User, AppRole } from '@/types';
 
@@ -134,6 +135,13 @@ const BASE_NAV_STRUCTURE: ReadonlyArray<Omit<NavigationEntry, 'isActive'>> = [
     groupTag: "Mi Oficina",
     permissions: ['ticket_config:manage']
   },
+  {
+    label: 'Manual de Usuario',
+    path: '/manual',
+    icon: BookOpen,
+    groupTag: "Soporte",
+    permissions: ['dashboard:view'] // Everyone can see it
+  },
 ];
 
 const ALL_AVAILABLE_PERMISSIONS = [
@@ -154,7 +162,7 @@ const ALL_AVAILABLE_PERMISSIONS = [
     { id: 'backup:manage', label: 'Gestionar Respaldos (Admin)' },
 ];
 
-const DESIRED_GROUP_ORDER = ["Mi Taller", "Mi Inventario", "Mi Oficina"];
+const DESIRED_GROUP_ORDER = ["Mi Taller", "Mi Inventario", "Mi Oficina", "Soporte"];
 
 
 const useNavigation = (): NavigationEntry[] => {
@@ -260,6 +268,9 @@ const useNavigation = (): NavigationEntry[] => {
         isActive = true;
     }
     if (entry.path === '/finanzas/resumen' && pathname === '/finanzas/resumen') {
+        isActive = true;
+    }
+    if (entry.path === '/manual' && pathname === '/manual') {
         isActive = true;
     }
 
