@@ -2,16 +2,16 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import Image from 'next/image'; // Import next/image
+import Image from 'next/image';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from '@/hooks/use-toast';
 import type { User } from '@/types';
-import { defaultSuperAdmin, USER_LOCALSTORAGE_KEY, AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
-import { getAuth, signInWithEmailAndPassword } from 'firebase/auth'; // Firebase Auth
-import { auth } from '../../../lib/firebaseClient'; // Your initialized auth instance
+import { placeholderUsers, hydrateFromFirestore, AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
+import { signInWithEmailAndPassword } from 'firebase/auth';
+import { auth } from '@root/lib/firebaseClient.js';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -20,39 +20,38 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isDataLoaded, setIsDataLoaded] = useState(false);
+
+  // Hydrate data from Firestore on component mount
+  useEffect(() => {
+    const loadData = async () => {
+        await hydrateFromFirestore();
+        setIsDataLoaded(true);
+    };
+    loadData();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setError('');
 
+    if (!isDataLoaded) {
+        setError("Los datos de la aplicación aún se están cargando. Por favor, espere un momento.");
+        setIsLoading(false);
+        return;
+    }
+
     try {
-      // 1. Authenticate with Firebase
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       
-      // 2. If Firebase login is successful, find the user in our local user list to get roles etc.
-      if (userCredential.user && typeof window !== 'undefined') {
-        const storedUsersString = localStorage.getItem(USER_LOCALSTORAGE_KEY);
-        let appUsers: User[] = [];
-        try {
-          appUsers = storedUsersString ? JSON.parse(storedUsersString) : [];
-        } catch (err) {
-          console.error("Error parsing users from localStorage:", err);
-          appUsers = [];
-        }
-        
-        // Ensure superadmin exists in the list for login purposes.
-        if (!appUsers.some(u => u.email.toLowerCase() === defaultSuperAdmin.email.toLowerCase())) {
-          appUsers.unshift(defaultSuperAdmin);
-          localStorage.setItem(USER_LOCALSTORAGE_KEY, JSON.stringify(appUsers));
-        }
-
-        const foundAppUser = appUsers.find(
+      if (userCredential.user) {
+        // Find user in our application's user list (now from placeholderUsers)
+        const foundAppUser = placeholderUsers.find(
           u => u.email.toLowerCase() === email.toLowerCase()
         );
 
         if (foundAppUser) {
-          // 3. Store our app-specific user object for the session
           localStorage.setItem(AUTH_USER_LOCALSTORAGE_KEY, JSON.stringify(foundAppUser));
           toast({
             title: 'Inicio de Sesión Exitoso',
@@ -60,8 +59,6 @@ export default function LoginPage() {
           });
           router.push('/dashboard');
         } else {
-          // This case is unlikely if user exists in Firebase Auth but not in our list,
-          // but it's good to handle it.
           setError('Usuario autenticado pero no encontrado en el sistema. Contacte al administrador.');
            toast({
             title: 'Error de Sincronización de Usuario',
@@ -121,7 +118,7 @@ export default function LoginPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                disabled={isLoading}
+                disabled={isLoading || !isDataLoaded}
               />
             </div>
             <div className="space-y-2">
@@ -133,12 +130,12 @@ export default function LoginPage() {
                 placeholder="••••••••"
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                disabled={isLoading}
+                disabled={isLoading || !isDataLoaded}
               />
             </div>
             {error && <p className="text-sm text-destructive">{error}</p>}
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? 'Ingresando...' : 'Ingresar'}
+            <Button type="submit" className="w-full" disabled={isLoading || !isDataLoaded}>
+              {isLoading ? 'Ingresando...' : (isDataLoaded ? 'Ingresar' : 'Cargando datos...')}
             </Button>
           </form>
         </CardContent>

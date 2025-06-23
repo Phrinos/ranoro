@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useEffect, useState } from 'react';
@@ -15,7 +14,7 @@ import type { User } from '@/types';
 import { Save } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { getAuth, onAuthStateChanged, updatePassword, reauthenticateWithCredential, EmailAuthProvider } from 'firebase/auth';
-import { auth } from '../../../lib/firebaseClient';
+import { auth } from '@root/lib/firebaseClient.js';
 import { USER_LOCALSTORAGE_KEY, AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
 
 

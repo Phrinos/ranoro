@@ -1,4 +1,3 @@
-
 "use client";
 
 import Link from "next/link";
@@ -40,7 +39,7 @@ import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import type { User } from "@/types";
 import { signOut } from "firebase/auth"; // Firebase
-import { auth } from "../../../lib/firebaseClient"; // Firebase
+import { auth } from "@root/lib/firebaseClient.js"; // Firebase
 
 export function AppSidebar() {
   const navItems = useNavigation();
