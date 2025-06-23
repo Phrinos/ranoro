@@ -2,6 +2,9 @@
 import type { Vehicle, ServiceRecord, Technician, InventoryItem, DashboardMetrics, SaleReceipt, ServiceSupply, TechnicianMonthlyPerformance, InventoryCategory, Supplier, SaleItem, PaymentMethod, AppRole, QuoteRecord, MonthlyFixedExpense, AdministrativeStaff, User } from '@/types';
 import { format, subMonths, addDays, getYear, getMonth, setHours, setMinutes, subDays, startOfMonth, endOfMonth, startOfDay, endOfDay } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { db } from '../../lib/firebaseClient';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
+
 
 const STATIC_NOW = new Date(); // Use real time for production
 export const IVA_RATE = 0.16;
@@ -78,116 +81,83 @@ export let placeholderAppRoles: AppRole[] = [];
 // ===  LÓGICA DE PERSISTENCIA DE DATOS  ===
 // =======================================
 
-export const DATA_KEYS = {
-    categories: 'placeholderCategories',
-    suppliers: 'placeholderSuppliers',
-    inventory: 'placeholderInventory',
-    vehicles: 'placeholderVehicles',
-    technicians: 'placeholderTechnicians',
-    administrativeStaff: 'placeholderAdministrativeStaff',
-    serviceRecords: 'placeholderServiceRecords',
-    quotes: 'placeholderQuotes',
-    sales: 'placeholderSales',
-    fixedExpenses: 'placeholderFixedMonthlyExpenses',
-    technicianPerformance: 'placeholderTechnicianMonthlyPerformance',
-    appRoles: 'placeholderAppRoles',
-};
+const DB_PATH = 'database/main'; // The single document in Firestore to hold all data
 
 const DATA_ARRAYS = {
-    [DATA_KEYS.categories]: placeholderCategories,
-    [DATA_KEYS.suppliers]: placeholderSuppliers,
-    [DATA_KEYS.inventory]: placeholderInventory,
-    [DATA_KEYS.vehicles]: placeholderVehicles,
-    [DATA_KEYS.technicians]: placeholderTechnicians,
-    [DATA_KEYS.administrativeStaff]: placeholderAdministrativeStaff,
-    [DATA_KEYS.serviceRecords]: placeholderServiceRecords,
-    [DATA_KEYS.quotes]: placeholderQuotes,
-    [DATA_KEYS.sales]: placeholderSales,
-    [DATA_KEYS.fixedExpenses]: placeholderFixedMonthlyExpenses,
-    [DATA_KEYS.technicianPerformance]: placeholderTechnicianMonthlyPerformance,
-    [DATA_KEYS.appRoles]: placeholderAppRoles,
+    categories: placeholderCategories,
+    suppliers: placeholderSuppliers,
+    inventory: placeholderInventory,
+    vehicles: placeholderVehicles,
+    technicians: placeholderTechnicians,
+    administrativeStaff: placeholderAdministrativeStaff,
+    serviceRecords: placeholderServiceRecords,
+    quotes: placeholderQuotes,
+    sales: placeholderSales,
+    fixedExpenses: placeholderFixedMonthlyExpenses,
+    technicianPerformance: placeholderTechnicianMonthlyPerformance,
+    appRoles: placeholderAppRoles,
 };
 
 /**
- * Carga todos los datos de la aplicación desde localStorage.
- * Solo se ejecuta una vez por sesión en el lado del cliente.
+ * Loads all application data from a single Firestore document.
+ * Runs only once per session on the client side.
  */
-export function hydrateFromLocalStorage() {
+export async function hydrateFromFirestore() {
   if (typeof window === 'undefined' || (window as any).__APP_HYDRATED__) {
     return;
   }
 
-  console.log("Hydrating application data from localStorage...");
+  console.log("Hydrating application data from Firestore...");
 
-  for (const key in DATA_KEYS) {
-      const storageKey = DATA_KEYS[key as keyof typeof DATA_KEYS];
-      const targetArray = DATA_ARRAYS[storageKey];
-      
-      try {
-          const storedData = localStorage.getItem(storageKey);
-          if (storedData) {
-              const parsedData = JSON.parse(storedData);
-              if (Array.isArray(parsedData)) {
-                  // Limpia el array en memoria y lo llena con los datos de localStorage
-                  targetArray.splice(0, targetArray.length, ...parsedData);
-              }
-          }
-      } catch (e) {
-          console.error(`Error hydrating ${storageKey}:`, e);
-      }
+  const docRef = doc(db, DB_PATH);
+  
+  try {
+    const docSnap = await getDoc(docRef);
+
+    if (docSnap.exists()) {
+        const firestoreData = docSnap.data();
+        for (const key in DATA_ARRAYS) {
+            if (firestoreData[key] && Array.isArray(firestoreData[key])) {
+                const targetArray = DATA_ARRAYS[key as keyof typeof DATA_ARRAYS];
+                targetArray.splice(0, targetArray.length, ...firestoreData[key]);
+            }
+        }
+        console.log("Data successfully hydrated from Firestore.");
+    } else {
+        console.log("No database document found. Seeding with initial data and persisting to Firestore.");
+        // If no document exists, this is likely the first run ever.
+        // We persist the initial (potentially empty) placeholder data.
+        await persistToFirestore();
+    }
+  } catch (error) {
+    console.error("Error hydrating data from Firestore:", error);
   }
 
   (window as any).__APP_HYDRATED__ = true;
 }
 
 /**
- * Guarda todos los datos de la aplicación en localStorage.
+ * Saves the entire application state from memory to a single Firestore document.
  */
-export function persistToLocalStorage() {
-  if (typeof window === 'undefined') {
+export async function persistToFirestore() {
+  if (typeof window === 'undefined' || !(window as any).__APP_HYDRATED__) {
+    // Do not persist if hydration hasn't occurred, to avoid overwriting cloud data with empty arrays.
     return;
   }
   
-  console.log("Persisting application data to localStorage...");
+  console.log("Persisting application data to Firestore...");
 
-  for (const key in DATA_KEYS) {
-    const storageKey = DATA_KEYS[key as keyof typeof DATA_KEYS];
-    const sourceArray = DATA_ARRAYS[storageKey];
-    try {
-        localStorage.setItem(storageKey, JSON.stringify(sourceArray));
-    } catch (e) {
-        console.error(`Error persisting ${storageKey}:`, e);
-    }
-  }
-}
-
-/**
- * Gathers all data from memory into a single object for backup.
- */
-export function getAllData() {
   const allData: { [key: string]: any[] } = {};
-  for (const key in DATA_KEYS) {
-    const storageKey = DATA_KEYS[key as keyof typeof DATA_KEYS];
-    const sourceArray = DATA_ARRAYS[storageKey];
-    allData[storageKey] = sourceArray;
+  for (const key in DATA_ARRAYS) {
+      allData[key] = DATA_ARRAYS[key as keyof typeof DATA_ARRAYS];
   }
-  return allData;
-}
 
-/**
- * Restores all data from a backup object and persists it.
- */
-export function restoreAllData(backupData: { [key: string]: any[] }) {
-  for (const key in DATA_KEYS) {
-    const storageKey = DATA_KEYS[key as keyof typeof DATA_KEYS];
-    const targetArray = DATA_ARRAYS[storageKey];
-    if (backupData[storageKey] && Array.isArray(backupData[storageKey])) {
-      // Clear the in-memory array and fill it with backup data
-      targetArray.splice(0, targetArray.length, ...backupData[storageKey]);
-    }
+  try {
+    await setDoc(doc(db, DB_PATH), allData);
+    console.log("Data successfully persisted to Firestore.");
+  } catch (e) {
+    console.error("Error persisting data to Firestore:", e);
   }
-  // After restoring to memory, persist immediately to localStorage
-  persistToLocalStorage();
 }
 
 

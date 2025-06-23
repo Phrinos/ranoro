@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/layout/app-sidebar";
-import { hydrateFromLocalStorage, persistToLocalStorage } from '@/lib/placeholder-data'; // Import persistence functions
+import { hydrateFromFirestore, persistToFirestore } from '@/lib/placeholder-data'; // Import persistence functions
 
 export default function AppLayout({
   children,
@@ -33,31 +33,45 @@ export default function AppLayout({
 
   // This effect handles data persistence
   useEffect(() => {
-    // On initial client-side load, hydrate data from localStorage.
-    // This needs to run after authentication check to avoid running on login page.
-    if (isAuthenticated) {
-      hydrateFromLocalStorage();
-    }
+    const runAsyncHydration = async () => {
+        // On initial client-side load, hydrate data from Firestore.
+        // This needs to run after authentication check to avoid running on login page.
+        if (isAuthenticated) {
+            await hydrateFromFirestore();
+        }
+    };
+    
+    runAsyncHydration();
 
-    // Function to persist data to localStorage
-    const handlePersist = () => {
+    // Function to persist data to Firestore
+    const handlePersist = async () => {
       // We check for `document.hidden` because the event fires on both hide and show
-      if (document.visibilityState === 'hidden') {
-        persistToLocalStorage();
+      if (document.visibilityState === 'hidden' && isAuthenticated) {
+        await persistToFirestore();
       }
     };
     
     // Add event listeners for persisting data when tab is hidden or closed.
     document.addEventListener('visibilitychange', handlePersist);
-    window.addEventListener('beforeunload', persistToLocalStorage);
+    window.addEventListener('beforeunload', () => {
+        if(isAuthenticated) {
+            persistToFirestore();
+        }
+    });
 
     // Cleanup function to remove listeners when the component unmounts.
     return () => {
       document.removeEventListener('visibilitychange', handlePersist);
-      window.removeEventListener('beforeunload', persistToLocalStorage);
+      window.removeEventListener('beforeunload', () => {
+        if(isAuthenticated) {
+            persistToFirestore();
+        }
+    });
       
       // Also persist one last time on cleanup, just in case.
-      persistToLocalStorage();
+      if(isAuthenticated) {
+        persistToFirestore();
+      }
     };
   }, [isAuthenticated]); // Rerun this effect if authentication state changes.
 

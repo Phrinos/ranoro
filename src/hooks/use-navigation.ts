@@ -134,13 +134,6 @@ const BASE_NAV_STRUCTURE: ReadonlyArray<Omit<NavigationEntry, 'isActive'>> = [
     groupTag: "Mi Oficina",
     permissions: ['ticket_config:manage']
   },
-  {
-    label: 'Respaldos',
-    path: '/admin/respaldos',
-    icon: Database,
-    groupTag: "Mi Oficina",
-    permissions: ['backup:manage']
-  },
 ];
 
 const ALL_AVAILABLE_PERMISSIONS = [
