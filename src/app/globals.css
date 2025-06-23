@@ -141,7 +141,7 @@ body {
   
   .printable-content [data-format="receipt"] {
       width: 80mm;
-      padding: 3mm;
+      padding: 1cm 3mm;
       color: black;
       background-color: white;
   }
