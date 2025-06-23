@@ -209,19 +209,11 @@ export default function AgendaServiciosPage() {
     }
 
     return Object.entries(groupedServicesData).map(([date, dayServices]) => {
-      const dailyProfit = dayServices.reduce((sum, service) => sum + (service.serviceProfit || 0), 0);
       return (
         <div key={date} className="mb-6">
-          <div className="flex justify-between items-center mb-2">
-            <h3 className="text-lg font-semibold text-primary">
-              {format(parseISO(date), "EEEE, dd 'de' MMMM 'de' yyyy", { locale: es })}
-            </h3>
-            {dailyProfit > 0 && (
-              <span className="text-md font-medium text-green-600">
-                Ganancia del Día: ${dailyProfit.toLocaleString('es-ES', { minimumFractionDigits: 2 })}
-              </span>
-            )}
-          </div>
+          <h3 className="text-lg font-semibold text-primary mb-2">
+            {format(parseISO(date), "EEEE, dd 'de' MMMM 'de' yyyy", { locale: es })}
+          </h3>
           <div className="space-y-4">
             {dayServices.map(service => {
               const vehicle = vehicles.find(v => v.id === service.vehicleId);
@@ -269,7 +261,7 @@ export default function AgendaServiciosPage() {
                             {service.description}
                           </p>
                         </div>
-                        <div className="flex items-center gap-2 shrink-0">
+                        <div className="flex items-center gap-4 shrink-0">
                           <p className="font-bold text-lg whitespace-nowrap">${service.totalCost.toLocaleString('es-ES')}</p>
                           <div className="flex">
                             <Button variant="ghost" size="icon" onClick={() => handleOpenEditDialog(service)} title="Editar Servicio">
