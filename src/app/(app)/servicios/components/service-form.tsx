@@ -30,7 +30,7 @@ import React, { useEffect, useState, useMemo } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { VehicleDialog } from "../../vehiculos/components/vehicle-dialog";
 import type { VehicleFormValues } from "../../vehiculos/components/vehicle-form";
-import { placeholderVehicles as defaultPlaceholderVehicles, placeholderInventory, placeholderCategories, placeholderSuppliers } from "@/lib/placeholder-data";
+import { placeholderVehicles as defaultPlaceholderVehicles, placeholderInventory, placeholderCategories, placeholderSuppliers, placeholderQuotes, placeholderServiceRecords as defaultServiceRecords } from "@/lib/placeholder-data";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -39,6 +39,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { InventoryItemDialog } from "../../inventario/components/inventory-item-dialog";
 import type { InventoryItemFormValues } from "../../inventario/components/inventory-item-form";
 import { suggestPrice, type SuggestPriceInput } from '@/ai/flows/price-suggestion-flow';
+import { suggestQuote, type QuoteSuggestionInput } from '@/ai/flows/quote-suggestion-flow';
 
 
 const supplySchema = z.object({
@@ -140,6 +141,7 @@ export function ServiceForm({
   const [isNewInventoryItemDialogOpen, setIsNewInventoryItemDialogOpen] = useState(false);
   const [newSupplyInitialData, setNewSupplyInitialData] = useState<Partial<InventoryItemFormValues> | null>(null);
   const [isSuggestingPrice, setIsSuggestingPrice] = useState(false);
+  const [isGeneratingQuote, setIsGeneratingQuote] = useState(false);
 
 
   const form = useForm<ServiceFormValues>({
@@ -227,7 +229,7 @@ export function ServiceForm({
   }, [watchedStatus, form, mode]);
 
 
-  const { fields, append, remove } = useFieldArray({
+  const { fields, append, remove, replace } = useFieldArray({
     control: form.control,
     name: "suppliesUsed",
   });
@@ -440,6 +442,69 @@ export function ServiceForm({
         setIsSuggestingPrice(false);
     }
   };
+
+  const handleGenerateQuoteWithAI = async () => {
+    setIsGeneratingQuote(true);
+    const vehicle = selectedVehicle;
+    const description = form.getValues('description');
+
+    if (!vehicle || !description) {
+        toast({ title: "Faltan Datos", description: "Por favor, seleccione un vehículo y escriba una descripción para generar la cotización.", variant: "destructive" });
+        setIsGeneratingQuote(false);
+        return;
+    }
+
+    try {
+        const history = [...defaultServiceRecords, ...placeholderQuotes].map(h => ({
+            description: h.description,
+            suppliesUsed: ('suppliesUsed' in h ? h.suppliesUsed : h.suppliesProposed)?.map(s => ({
+                supplyName: s.supplyName || currentInventoryItems.find(i => i.id === s.supplyId)?.name || 'Unknown',
+                quantity: s.quantity
+            })) || [],
+            totalCost: ('totalCost' in h ? h.totalCost : h.estimatedTotalCost) || 0
+        }));
+
+        const inventoryForAI = currentInventoryItems.map(i => ({
+            id: i.id,
+            name: i.name,
+            sellingPrice: i.sellingPrice
+        }));
+
+        const result = await suggestQuote({
+            vehicleInfo: { make: vehicle.make, model: vehicle.model, year: vehicle.year },
+            serviceDescription: description,
+            serviceHistory: history,
+            inventory: inventoryForAI,
+        });
+
+        const newSupplies = result.suppliesProposed.map(supply => {
+            const itemDetails = currentInventoryItems.find(i => i.id === supply.supplyId);
+            return {
+                supplyId: supply.supplyId,
+                quantity: supply.quantity,
+                supplyName: itemDetails?.name || 'N/A',
+                unitPrice: itemDetails?.sellingPrice || 0,
+                isService: itemDetails?.isService || false,
+                unitType: itemDetails?.unitType || 'units'
+            };
+        });
+        
+        replace(newSupplies);
+        form.setValue('totalServicePrice', result.estimatedTotalCost, { shouldValidate: true });
+
+        toast({
+            title: "Cotización Generada por IA",
+            description: result.reasoning,
+            duration: 10000,
+        });
+
+    } catch (e) {
+        console.error("Error generating quote with AI:", e);
+        toast({ title: "Error de IA", description: "No se pudo generar la cotización.", variant: "destructive" });
+    } finally {
+        setIsGeneratingQuote(false);
+    }
+};
 
   const cardTitleText = mode === 'quote' ? "Información del Vehículo y Cotización" : "Información del Vehículo y Servicio";
   const dateLabelText = mode === 'quote' ? "Fecha de Cotización" : "Fecha y Hora de Recepción";
@@ -730,14 +795,22 @@ export function ServiceForm({
                     name="description"
                     render={({ field }) => (
                         <FormItem>
-                        <FormLabel>Descripción del {mode === 'quote' ? 'Trabajo a Cotizar' : 'Servicio'}</FormLabel>
-                        <FormControl>
-                            <Textarea placeholder="Ej: Cambio de aceite y filtros, revisión de frenos..." {...field} disabled={isReadOnly} />
-                        </FormControl>
-                        <FormMessage />
+                            <div className="flex justify-between items-center">
+                                <FormLabel>Descripción del {mode === 'quote' ? 'Trabajo a Cotizar' : 'Servicio'}</FormLabel>
+                                {mode === 'quote' && !isReadOnly && (
+                                <Button type="button" size="sm" variant="outline" onClick={handleGenerateQuoteWithAI} disabled={isGeneratingQuote}>
+                                    {isGeneratingQuote ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <BrainCircuit className="mr-2 h-4 w-4" />}
+                                    Generar con IA
+                                </Button>
+                                )}
+                            </div>
+                            <FormControl>
+                                <Textarea placeholder="Ej: Cambio de aceite y filtros, revisión de frenos..." {...field} disabled={isReadOnly} />
+                            </FormControl>
+                            <FormMessage />
                         </FormItem>
                     )}
-                    />
+                />
                 <FormField
                     control={form.control}
                     name="notes"
