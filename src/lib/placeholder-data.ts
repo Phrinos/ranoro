@@ -78,7 +78,7 @@ export let placeholderAppRoles: AppRole[] = [];
 // ===  LÓGICA DE PERSISTENCIA DE DATOS  ===
 // =======================================
 
-const DATA_KEYS = {
+export const DATA_KEYS = {
     categories: 'placeholderCategories',
     suppliers: 'placeholderSuppliers',
     inventory: 'placeholderInventory',
@@ -160,6 +160,36 @@ export function persistToLocalStorage() {
     }
   }
 }
+
+/**
+ * Gathers all data from memory into a single object for backup.
+ */
+export function getAllData() {
+  const allData: { [key: string]: any[] } = {};
+  for (const key in DATA_KEYS) {
+    const storageKey = DATA_KEYS[key as keyof typeof DATA_KEYS];
+    const sourceArray = DATA_ARRAYS[storageKey];
+    allData[storageKey] = sourceArray;
+  }
+  return allData;
+}
+
+/**
+ * Restores all data from a backup object and persists it.
+ */
+export function restoreAllData(backupData: { [key: string]: any[] }) {
+  for (const key in DATA_KEYS) {
+    const storageKey = DATA_KEYS[key as keyof typeof DATA_KEYS];
+    const targetArray = DATA_ARRAYS[storageKey];
+    if (backupData[storageKey] && Array.isArray(backupData[storageKey])) {
+      // Clear the in-memory array and fill it with backup data
+      targetArray.splice(0, targetArray.length, ...backupData[storageKey]);
+    }
+  }
+  // After restoring to memory, persist immediately to localStorage
+  persistToLocalStorage();
+}
+
 
 // =======================================
 // ===          FUNCIONES HELPER         ===

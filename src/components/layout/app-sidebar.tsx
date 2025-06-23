@@ -25,6 +25,7 @@ import {
   Users,
   ShieldQuestion,
   DatabaseZap,
+  Database,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -195,6 +196,10 @@ export function AppSidebar() {
                 <DropdownMenuItem onClick={() => router.push("/admin/migracion-datos")}>
                   <DatabaseZap className="mr-2 h-4 w-4" />
                   <span>Migración de Datos</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => router.push("/admin/respaldos")}>
+                  <Database className="mr-2 h-4 w-4" />
+                  <span>Respaldos</span>
                 </DropdownMenuItem>
               </>
             )}
