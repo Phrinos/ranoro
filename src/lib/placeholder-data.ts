@@ -35,11 +35,11 @@ export const placeholderAdministrativeStaff: AdministrativeStaff[] = [];
 // =======================================
 export const defaultSuperAdmin: User = {
   id: 'user_superadmin_default',
-  name: 'Super Administrador',
-  email: 'superadmin@ranoro.mx',
+  name: 'Arturo Valdelamar',
+  email: 'arturo@ranoro.mx',
   role: 'Superadmin',
   password: 'CA1abaza',
-  phone: '0000000000'
+  phone: '4493930914'
 };
 
 export const USER_LOCALSTORAGE_KEY = 'appUsers';
@@ -103,3 +103,4 @@ export const calculateSaleProfit = (sale: SaleReceipt, inventory: InventoryItem[
       return profit + (sellingPriceSubTotal - costPrice) * saleItem.quantity;
   }, 0);
 };
+
