@@ -17,10 +17,8 @@ import { useToast } from '@/hooks/use-toast';
 import type { User, AppRole } from '@/types';
 import { PlusCircle, Trash2, Edit, Search, ShieldQuestion } from "lucide-react";
 import { useRouter } from 'next/navigation';
+import { defaultSuperAdmin, USER_LOCALSTORAGE_KEY, AUTH_USER_LOCALSTORAGE_KEY, ROLES_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
 
-const USER_LOCALSTORAGE_KEY = 'appUsers';
-const AUTH_USER_LOCALSTORAGE_KEY = 'authUser';
-const ROLES_LOCALSTORAGE_KEY = 'appRoles';
 
 const userFormSchema = z.object({
   name: z.string().min(3, "El nombre debe tener al menos 3 caracteres."),
@@ -50,15 +48,6 @@ const userFormSchema = z.object({
 
 type UserFormValues = z.infer<typeof userFormSchema>;
 
-const defaultSuperAdmin: User = {
-  id: 'user_superadmin_default',
-  name: 'Arturo Ranoro (Superadmin)',
-  email: 'arturo@ranoro.mx',
-  role: 'Superadmin',
-  password: 'CA1abaza',
-  phone: '4491234567' 
-};
-
 export default function UsuariosPage() {
   const { toast } = useToast();
   const router = useRouter();
@@ -80,17 +69,20 @@ export default function UsuariosPage() {
       if (authUserString) setCurrentUser(JSON.parse(authUserString));
 
       const storedUsersString = localStorage.getItem(USER_LOCALSTORAGE_KEY);
-      let loadedUsers: User[] = storedUsersString ? JSON.parse(storedUsersString) : [];
-      
-      let usersUpdated = false;
-      if (!loadedUsers.find(u => u.email === defaultSuperAdmin.email)) {
-        loadedUsers = [defaultSuperAdmin, ...loadedUsers];
-        usersUpdated = true;
+      let loadedUsers: User[] = [];
+      try {
+        loadedUsers = storedUsersString ? JSON.parse(storedUsersString) : [];
+      } catch (error) {
+        console.error("Error parsing users from localStorage:", error);
+        loadedUsers = [];
       }
-
-      if (usersUpdated) {
+      
+      // Fallback: Ensure superadmin exists, though login should handle primary seeding.
+      if (!loadedUsers.some(u => u.id === defaultSuperAdmin.id)) {
+        loadedUsers.unshift(defaultSuperAdmin);
         localStorage.setItem(USER_LOCALSTORAGE_KEY, JSON.stringify(loadedUsers));
       }
+
       setUsers(loadedUsers);
 
       const storedRolesString = localStorage.getItem(ROLES_LOCALSTORAGE_KEY);

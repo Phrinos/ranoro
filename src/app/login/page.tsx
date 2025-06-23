@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from '@/hooks/use-toast';
 import type { User } from '@/types';
+import { defaultSuperAdmin, USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -35,36 +36,40 @@ export default function LoginPage() {
 
     await new Promise(resolve => setTimeout(resolve, 500));
 
-    if (email === 'arturo@ranoro.mx' && password === 'CA1abaza') {
-      const superAdminUser: User = {
-        id: 'user_superadmin',
-        name: 'Arturo Ranoro',
-        email: 'arturo@ranoro.mx',
-        role: 'Superadmin',
-        phone: '4491234567'
-      };
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('authUser', JSON.stringify(superAdminUser));
+    if (typeof window !== 'undefined') {
+      const storedUsersString = localStorage.getItem(USER_LOCALSTORAGE_KEY);
+      let appUsers: User[] = [];
+      try {
+        appUsers = storedUsersString ? JSON.parse(storedUsersString) : [];
+      } catch (err) {
+        console.error("Error parsing users from localStorage:", err);
+        appUsers = [];
       }
-      toast({ title: 'Inicio de Sesión Exitoso', description: `Bienvenido, ${superAdminUser.name}!` });
-      router.push('/dashboard');
-    } else {
-      if (typeof window !== 'undefined') {
-        const storedUsersString = localStorage.getItem('appUsers');
-        const storedUsers: User[] = storedUsersString ? JSON.parse(storedUsersString) : [];
-        const foundUser = storedUsers.find(u => u.email === email && u.password === password);
 
-        if (foundUser) {
-          localStorage.setItem('authUser', JSON.stringify(foundUser));
-          toast({ title: 'Inicio de Sesión Exitoso', description: `Bienvenido, ${foundUser.name}!` });
-          router.push('/dashboard');
-        } else {
-          setError('Correo electrónico o contraseña incorrectos.');
-          toast({ title: 'Error de Inicio de Sesión', description: 'Credenciales inválidas.', variant: 'destructive' });
-        }
+      // Ensure superadmin exists in the list for login purposes. This seeds the app on first login.
+      if (!appUsers.some(u => u.id === defaultSuperAdmin.id)) {
+        appUsers.unshift(defaultSuperAdmin);
+        localStorage.setItem(USER_LOCALSTORAGE_KEY, JSON.stringify(appUsers));
+      }
+
+      const foundUser = appUsers.find(
+        u => u.email.toLowerCase() === email.toLowerCase() && u.password === password
+      );
+
+      if (foundUser) {
+        localStorage.setItem('authUser', JSON.stringify(foundUser));
+        toast({
+          title: 'Inicio de Sesión Exitoso',
+          description: `Bienvenido, ${foundUser.name}!`,
+        });
+        router.push('/dashboard');
       } else {
-         setError('Correo electrónico o contraseña incorrectos.');
-         toast({ title: 'Error de Inicio de Sesión', description: 'Credenciales inválidas.', variant: 'destructive' });
+        setError('Correo electrónico o contraseña incorrectos.');
+        toast({
+          title: 'Error de Inicio de Sesión',
+          description: 'Credenciales inválidas.',
+          variant: 'destructive',
+        });
       }
     }
     setIsLoading(false);
