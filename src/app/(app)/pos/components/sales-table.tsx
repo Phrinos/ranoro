@@ -57,17 +57,17 @@ export function SalesTable({ sales, onReprintTicket }: SalesTableProps) {
   return (
     <div className="rounded-lg border shadow-sm overflow-hidden">
       <Table>
-        <TableHeader>
+        <TableHeader className="bg-white">
           <TableRow>
-            <TableHead>ID Venta</TableHead>
-            <TableHead>Fecha</TableHead>
-            <TableHead>Cliente</TableHead>
-            <TableHead className="text-center"># Artículos</TableHead>
-            <TableHead>Método Pago</TableHead>
-            <TableHead className="text-right">Subtotal</TableHead>
-            <TableHead className="text-right">Impuestos</TableHead>
-            <TableHead className="text-right">Total</TableHead>
-            <TableHead className="text-right">Acciones</TableHead>
+            <TableHead className="font-bold">ID Venta</TableHead>
+            <TableHead className="font-bold">Fecha</TableHead>
+            <TableHead className="font-bold">Cliente</TableHead>
+            <TableHead className="font-bold"># Artículos</TableHead>
+            <TableHead className="font-bold">Método Pago</TableHead>
+            <TableHead className="font-bold">Subtotal</TableHead>
+            <TableHead className="font-bold">Impuestos</TableHead>
+            <TableHead className="font-bold">Total</TableHead>
+            <TableHead className="font-bold">Acciones</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
