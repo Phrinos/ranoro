@@ -1,8 +1,9 @@
+
 "use client";
 
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Edit, Trash2, Clock, Search as SearchIcon } from "lucide-react";
+import { PlusCircle, Edit, Trash2, Clock, Search as SearchIcon, Calendar, CalendarCheck } from "lucide-react";
 import {
   placeholderServiceRecords,
   placeholderVehicles,
@@ -12,7 +13,7 @@ import {
 import type { ServiceRecord, Vehicle, Technician, InventoryItem, QuoteRecord } from "@/types";
 import { useState, useEffect, useMemo } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { format, parseISO, compareAsc, isFuture, isToday, isPast, isValid } from "date-fns";
+import { format, parseISO, compareAsc, isFuture, isToday, isPast, isValid, addDays, isSameDay } from "date-fns";
 import { es } from 'date-fns/locale';
 import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -55,6 +56,27 @@ export default function AgendaServiciosPage() {
     setTechniciansState(placeholderTechnicians);
     setInventoryItemsState(placeholderInventory);
   }, []);
+
+  const appointmentSummary = useMemo(() => {
+    const today = new Date();
+    const tomorrow = addDays(today, 1);
+    
+    let todayCount = 0;
+    let tomorrowCount = 0;
+
+    for (const service of allServices) {
+      if (!service.serviceDate || service.status === 'Completado' || service.status === 'Cancelado') continue;
+      const serviceDate = parseISO(service.serviceDate);
+      if (isValid(serviceDate)) {
+        if (isToday(serviceDate)) {
+          todayCount++;
+        } else if (isSameDay(serviceDate, tomorrow)) {
+          tomorrowCount++;
+        }
+      }
+    }
+    return { todayCount, tomorrowCount };
+  }, [allServices]);
 
   const handleOpenEditDialog = (service: ServiceRecord) => {
     setEditingService(service);
@@ -295,6 +317,37 @@ export default function AgendaServiciosPage() {
 
   return (
     <>
+      <div className="mb-6 grid gap-6 md:grid-cols-2">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Citas para Hoy
+            </CardTitle>
+            <Calendar className="h-5 w-5 text-blue-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold font-headline">{appointmentSummary.todayCount}</div>
+            <p className="text-xs text-muted-foreground">
+              Servicios agendados o en progreso para hoy.
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Citas para Mañana
+            </CardTitle>
+            <CalendarCheck className="h-5 w-5 text-green-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold font-headline">{appointmentSummary.tomorrowCount}</div>
+            <p className="text-xs text-muted-foreground">
+              Servicios agendados para mañana.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+
       <PageHeader
         title="Agenda de Servicios"
         description="Visualiza, busca y gestiona los servicios agendados."
@@ -313,7 +366,7 @@ export default function AgendaServiciosPage() {
           <Input
             type="search"
             placeholder="Buscar por ID, vehículo, cliente, técnico, descripción..."
-            className="w-full rounded-lg bg-background pl-8"
+            className="w-full rounded-lg bg-card pl-8"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
