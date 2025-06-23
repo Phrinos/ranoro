@@ -1,14 +1,12 @@
-
 "use client";
 
 import { useParams, useRouter } from 'next/navigation';
 import { placeholderTechnicians, placeholderTechnicianMonthlyPerformance } from '@/lib/placeholder-data';
 import type { Technician, TechnicianMonthlyPerformance } from '@/types';
-import { PageHeader } from '@/components/page-header';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { Archive, Edit, ShieldAlert, User, Phone, CalendarDays, DollarSign, Percent, StickyNote } from 'lucide-react'; // Added Percent
+import { Archive, Edit, ShieldAlert, User, Phone, CalendarDays, DollarSign, Percent, StickyNote } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
@@ -109,11 +107,6 @@ export default function TechnicianDetailPage() {
 
   return (
     <div className="container mx-auto py-8">
-      <PageHeader
-        title={`${technician.name} - ${technician.area}`}
-        description={`ID Staff: ${technician.id}`}
-      />
-
       <Tabs defaultValue="details" className="w-full">
         <TabsList className="grid w-full grid-cols-2 md:grid-cols-2 lg:w-1/3 mb-6">
           <TabsTrigger value="details" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Detalles</TabsTrigger>
@@ -123,12 +116,9 @@ export default function TechnicianDetailPage() {
         <TabsContent value="details">
           <div className="space-y-6">
             <Card>
-              <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle>Datos del Miembro del Staff Técnico</CardTitle>
-                <Button variant="outline" size="sm" onClick={() => setIsEditDialogOpen(true)}>
-                  <Edit className="mr-2 h-4 w-4" />
-                  Editar
-                </Button>
+              <CardHeader>
+                <CardTitle>{technician.name} - {technician.area}</CardTitle>
+                <CardDescription>ID Staff: {technician.id}</CardDescription>
               </CardHeader>
               <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6 text-sm">
                 <div className="flex flex-col space-y-1">
@@ -188,7 +178,7 @@ export default function TechnicianDetailPage() {
               </CardContent>
             </Card>
           </div>
-          <div className="mt-8 flex justify-start">
+          <div className="mt-8 flex justify-end gap-2">
             <AlertDialog>
               <AlertDialogTrigger asChild>
                 <Button variant="destructive">
@@ -211,6 +201,10 @@ export default function TechnicianDetailPage() {
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>
+            <Button variant="outline" onClick={() => setIsEditDialogOpen(true)}>
+                <Edit className="mr-2 h-4 w-4" />
+                Editar
+            </Button>
           </div>
         </TabsContent>
 

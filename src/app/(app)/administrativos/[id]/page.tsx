@@ -1,13 +1,11 @@
-
 "use client";
 
 import { useParams, useRouter } from 'next/navigation';
 import { placeholderAdministrativeStaff } from '@/lib/placeholder-data';
 import type { AdministrativeStaff } from '@/types';
-import { PageHeader } from '@/components/page-header';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Archive, Edit, ShieldAlert, CalendarDays, Phone, DollarSign, StickyNote, Percent } from 'lucide-react'; // Added Percent
+import { Archive, Edit, ShieldAlert, CalendarDays, Phone, DollarSign, StickyNote, Percent } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { AdministrativeStaffDialog } from '../components/administrative-staff-dialog';
@@ -102,98 +100,94 @@ export default function AdministrativeStaffDetailPage() {
 
   return (
     <div className="container mx-auto py-8">
-      <PageHeader
-        title={`${staffMember.name} - ${staffMember.roleOrArea}`}
-        description={`ID Staff: ${staffMember.id}`}
-      />
+      <Card className="shadow-lg">
+        <CardHeader>
+          <CardTitle>{staffMember.name} - {staffMember.roleOrArea}</CardTitle>
+          <CardDescription>ID Staff: {staffMember.id}</CardDescription>
+        </CardHeader>
+        <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6 text-sm">
+            <div className="flex flex-col space-y-1">
+                <p className="text-sm font-medium text-muted-foreground">ID del Staff</p>
+                <p className="text-base font-semibold">{staffMember.id}</p>
+            </div>
+             <div className="flex flex-col space-y-1">
+                <p className="text-sm font-medium text-muted-foreground">Nombre Completo</p>
+                <p className="text-base font-semibold">{staffMember.name}</p>
+            </div>
+            <div className="flex flex-col space-y-1 md:col-span-2">
+                <p className="text-sm font-medium text-muted-foreground">Rol o Área</p>
+                <p className="text-base font-semibold">{staffMember.roleOrArea}</p>
+            </div>
 
-        <Card className="shadow-lg">
-            <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle>Datos del Miembro del Staff Administrativo</CardTitle>
-            <Button variant="outline" size="sm" onClick={() => setIsEditDialogOpen(true)}>
-                <Edit className="mr-2 h-4 w-4" />
-                Editar
+            <div className="flex items-start gap-3">
+                <Phone className="h-5 w-5 text-muted-foreground mt-1" />
+                <div className="flex flex-col">
+                    <p className="text-sm font-medium text-muted-foreground">Teléfono</p>
+                    <p className="text-base font-semibold">{staffMember.contactInfo || 'N/A'}</p>
+                </div>
+            </div>
+            <div className="flex items-start gap-3">
+                <CalendarDays className="h-5 w-5 text-muted-foreground mt-1" />
+                <div className="flex flex-col">
+                    <p className="text-sm font-medium text-muted-foreground">Fecha de Contratación</p>
+                    <p className="text-base font-semibold">{hireDateFormatted}</p>
+                </div>
+            </div>
+            <div className="flex items-start gap-3">
+                <DollarSign className="h-5 w-5 text-muted-foreground mt-1" />
+                <div className="flex flex-col">
+                    <p className="text-sm font-medium text-muted-foreground">Sueldo Mensual</p>
+                    <p className="text-base font-semibold">${staffMember.monthlySalary ? staffMember.monthlySalary.toLocaleString('es-ES', {minimumFractionDigits: 2}) : 'N/A'}</p>
+                </div>
+            </div>
+            <div className="flex items-start gap-3">
+                <Percent className="h-5 w-5 text-muted-foreground mt-1" />
+                <div className="flex flex-col">
+                    <p className="text-sm font-medium text-muted-foreground">Tasa de Comisión</p>
+                    <p className="text-base font-semibold">{staffMember.commissionRate !== undefined ? `${(staffMember.commissionRate * 100).toFixed(1)}%` : 'N/A'}</p>
+                </div>
+            </div>
+
+            {staffMember.notes && (
+            <div className="md:col-span-2 pt-4 flex items-start gap-3">
+                <StickyNote className="h-5 w-5 text-muted-foreground mt-1 shrink-0"/>
+                <div className="flex flex-col">
+                    <p className="text-sm font-medium text-muted-foreground">Notas Adicionales</p>
+                    <p className="text-base text-foreground whitespace-pre-wrap">{staffMember.notes}</p>
+                </div>
+            </div>
+            )}
+        </CardContent>
+      </Card>
+
+      <div className="mt-8 flex justify-end gap-2">
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button variant="destructive" >
+              <Archive className="mr-2 h-4 w-4" />
+              Archivar Miembro del Staff
             </Button>
-            </CardHeader>
-            <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6 text-sm">
-                <div className="flex flex-col space-y-1">
-                    <p className="text-sm font-medium text-muted-foreground">ID del Staff</p>
-                    <p className="text-base font-semibold">{staffMember.id}</p>
-                </div>
-                 <div className="flex flex-col space-y-1">
-                    <p className="text-sm font-medium text-muted-foreground">Nombre Completo</p>
-                    <p className="text-base font-semibold">{staffMember.name}</p>
-                </div>
-                <div className="flex flex-col space-y-1 md:col-span-2">
-                    <p className="text-sm font-medium text-muted-foreground">Rol o Área</p>
-                    <p className="text-base font-semibold">{staffMember.roleOrArea}</p>
-                </div>
-
-                <div className="flex items-start gap-3">
-                    <Phone className="h-5 w-5 text-muted-foreground mt-1" />
-                    <div className="flex flex-col">
-                        <p className="text-sm font-medium text-muted-foreground">Teléfono</p>
-                        <p className="text-base font-semibold">{staffMember.contactInfo || 'N/A'}</p>
-                    </div>
-                </div>
-                <div className="flex items-start gap-3">
-                    <CalendarDays className="h-5 w-5 text-muted-foreground mt-1" />
-                    <div className="flex flex-col">
-                        <p className="text-sm font-medium text-muted-foreground">Fecha de Contratación</p>
-                        <p className="text-base font-semibold">{hireDateFormatted}</p>
-                    </div>
-                </div>
-                <div className="flex items-start gap-3">
-                    <DollarSign className="h-5 w-5 text-muted-foreground mt-1" />
-                    <div className="flex flex-col">
-                        <p className="text-sm font-medium text-muted-foreground">Sueldo Mensual</p>
-                        <p className="text-base font-semibold">${staffMember.monthlySalary ? staffMember.monthlySalary.toLocaleString('es-ES', {minimumFractionDigits: 2}) : 'N/A'}</p>
-                    </div>
-                </div>
-                <div className="flex items-start gap-3">
-                    <Percent className="h-5 w-5 text-muted-foreground mt-1" />
-                    <div className="flex flex-col">
-                        <p className="text-sm font-medium text-muted-foreground">Tasa de Comisión</p>
-                        <p className="text-base font-semibold">{staffMember.commissionRate !== undefined ? `${(staffMember.commissionRate * 100).toFixed(1)}%` : 'N/A'}</p>
-                    </div>
-                </div>
-
-                {staffMember.notes && (
-                <div className="md:col-span-2 pt-4 flex items-start gap-3">
-                    <StickyNote className="h-5 w-5 text-muted-foreground mt-1 shrink-0"/>
-                    <div className="flex flex-col">
-                        <p className="text-sm font-medium text-muted-foreground">Notas Adicionales</p>
-                        <p className="text-base text-foreground whitespace-pre-wrap">{staffMember.notes}</p>
-                    </div>
-                </div>
-                )}
-            </CardContent>
-        </Card>
-
-        <div className="mt-8 flex justify-start">
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button variant="destructive" >
-                  <Archive className="mr-2 h-4 w-4" />
-                  Archivar Miembro del Staff
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>¿Estás seguro de archivar este registro de staff?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    Esta acción marcará el registro de {staffMember.name} como archivado y lo ocultará de las listas principales. Podrás recuperarlo desde la vista de "Archivados".
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                  <AlertDialogAction onClick={handleArchiveStaff} className="bg-destructive hover:bg-destructive/90">
-                    Sí, Archivar
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-          </div>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>¿Estás seguro de archivar este registro de staff?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Esta acción marcará el registro de {staffMember.name} como archivado y lo ocultará de las listas principales. Podrás recuperarlo desde la vista de "Archivados".
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+              <AlertDialogAction onClick={handleArchiveStaff} className="bg-destructive hover:bg-destructive/90">
+                Sí, Archivar
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+        <Button variant="outline" onClick={() => setIsEditDialogOpen(true)}>
+          <Edit className="mr-2 h-4 w-4" />
+          Editar
+        </Button>
+      </div>
 
       {staffMember && (
          <AdministrativeStaffDialog
