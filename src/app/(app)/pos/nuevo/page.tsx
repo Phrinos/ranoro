@@ -47,13 +47,7 @@ export default function NuevaVentaPage() {
   };
 
   const handlePrintTicket = () => {
-    const printableContent = ticketContentRef.current;
-    if (!printableContent) return;
-    
-    // Temporarily apply a class to the body to scope print styles
-    document.body.classList.add('printing-thermal');
     window.print();
-    document.body.classList.remove('printing-thermal');
   };
 
 
