@@ -202,3 +202,13 @@ export interface MonthlyFixedExpense {
   name: string;
   amount: number;
 }
+
+export interface PurchaseRecommendation {
+  supplier: string;
+  items: {
+    itemName: string;
+    quantity: number;
+    serviceId: string;
+    inventoryId: string;
+  }[];
+}

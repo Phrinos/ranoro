@@ -1,16 +1,22 @@
+
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { format, parseISO, isToday, isFuture, isValid, compareAsc } from "date-fns";
 import { es } from 'date-fns/locale';
 import { PageHeader } from "@/components/page-header";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { placeholderServiceRecords, placeholderVehicles, placeholderTechnicians, placeholderInventory } from "@/lib/placeholder-data";
-import type { ServiceRecord, Vehicle, Technician, InventoryItem, User, QuoteRecord } from "@/types";
+import type { ServiceRecord, Vehicle, Technician, InventoryItem, User, QuoteRecord, PurchaseRecommendation } from "@/types";
 import { Badge } from "@/components/ui/badge";
-import { User as UserIcon, Wrench, CheckCircle, CalendarClock, Clock, AlertTriangle } from "lucide-react"; 
+import { User as UserIcon, Wrench, CheckCircle, CalendarClock, Clock, AlertTriangle, ShoppingCart, BrainCircuit, Loader2, Printer } from "lucide-react"; 
 import { ServiceDialog } from "../servicios/components/service-dialog";
 import { useToast } from "@/hooks/use-toast";
+import { getPurchaseRecommendations, type PurchaseRecommendationOutput } from '@/ai/flows/purchase-recommendation-flow';
+import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
+import { PurchaseOrderContent } from './components/purchase-order-content';
+import { Button } from "@/components/ui/button";
+
 
 interface EnrichedServiceRecord extends ServiceRecord {
   vehicleInfo?: string;
@@ -155,6 +161,15 @@ export default function DashboardPage() {
   const [selectedServiceForDialog, setSelectedServiceForDialog] = useState<ServiceRecord | null>(null);
   const { toast } = useToast();
 
+  const [purchaseRecommendations, setPurchaseRecommendations] = useState<PurchaseRecommendation[] | null>(null);
+  const [isPurchaseLoading, setIsPurchaseLoading] = useState(false);
+  const [purchaseError, setPurchaseError] = useState<string | null>(null);
+  const [isPurchaseOrderDialogOpen, setIsPurchaseOrderDialogOpen] = useState(false);
+  const [workshopName, setWorkshopName] = useState<string>('RANORO');
+
+  const purchaseOrderRef = useRef<HTMLDivElement>(null);
+
+
   const loadAndFilterServices = useCallback(() => {
     setIsLoading(true);
     const clientToday = new Date();
@@ -215,6 +230,15 @@ export default function DashboardPage() {
       } else {
          setUserName(null);
       }
+      const stored = localStorage.getItem('workshopTicketInfo');
+      if (stored) {
+        try {
+          const info = JSON.parse(stored);
+          if (info.name) setWorkshopName(info.name);
+        } catch (e) {
+          console.error("Failed to parse workshop info", e);
+        }
+      }
     }
     loadAndFilterServices();
   }, [loadAndFilterServices]);
@@ -234,8 +258,6 @@ export default function DashboardPage() {
   };
   
   const handleUpdateService = async (data: ServiceRecord | QuoteRecord) => {
-    // In the context of the dashboard, 'data' will always be a ServiceRecord
-    // because the ServiceDialog is instantiated in 'service' mode.
     if (!('status' in data)) {
       toast({title: "Error de Tipo", description: "Se esperaba actualizar un servicio.", variant: "destructive"});
       return;
@@ -266,14 +288,86 @@ export default function DashboardPage() {
     });
     toast({ title: "Vehículo Registrado", description: `El vehículo ${newVehicle.licensePlate} ha sido agregado.` });
   };
+  
+  const handleGeneratePurchaseOrder = async () => {
+    setIsPurchaseLoading(true);
+    setPurchaseError(null);
+    setPurchaseRecommendations(null);
+
+    try {
+      const today = new Date();
+      const servicesForToday = placeholderServiceRecords.filter(s => {
+        const serviceDay = parseISO(s.serviceDate);
+        return isValid(serviceDay) && isToday(serviceDay) && s.status !== 'Completado' && s.status !== 'Cancelado';
+      });
+
+      if (servicesForToday.length === 0) {
+        toast({ title: "No hay servicios", description: "No hay servicios agendados para hoy que requieran compras.", variant: 'default' });
+        setIsPurchaseLoading(false);
+        return;
+      }
+      
+      const input = {
+        scheduledServices: servicesForToday.map(s => ({ id: s.id, description: s.description })),
+        inventoryItems: placeholderInventory.map(i => ({ id: i.id, name: i.name, quantity: i.quantity, supplier: i.supplier })),
+        serviceHistory: placeholderServiceRecords.map(s => ({
+            description: s.description,
+            suppliesUsed: s.suppliesUsed.map(sup => ({ supplyName: sup.supplyName || placeholderInventory.find(i => i.id === sup.supplyId)?.name || 'Unknown' }))
+        }))
+      };
+
+      const result = await getPurchaseRecommendations(input);
+      setPurchaseRecommendations(result.recommendations);
+      toast({ title: "Orden de Compra Generada", description: result.reasoning, duration: 6000 });
+      setIsPurchaseOrderDialogOpen(true);
+
+    } catch (e) {
+      console.error(e);
+      setPurchaseError("La IA no pudo generar la orden de compra. Por favor, inténtelo de nuevo más tarde.");
+      toast({
+        title: "Error de IA",
+        description: "No se pudo generar la orden de compra.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsPurchaseLoading(false);
+    }
+  };
 
 
   return (
     <div className="container mx-auto py-8 flex flex-col">
       <PageHeader
         title={userName ? `¡Bienvenido, ${userName}!` : "Panel Principal de Taller"}
-        description="Vista del estado actual de los servicios."
+        description="Vista del estado actual de los servicios y herramientas de IA."
       />
+      
+      <Card className="mb-6 shadow-lg">
+        <CardHeader className="flex flex-row items-center justify-between gap-4">
+          <div>
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <BrainCircuit className="h-5 w-5 text-purple-500" />
+              Asistente de Compras IA
+            </CardTitle>
+            <CardDescription>
+              Genera una orden de compra consolidada para los servicios de hoy.
+            </CardDescription>
+          </div>
+          <Button onClick={handleGeneratePurchaseOrder} disabled={isPurchaseLoading}>
+            {isPurchaseLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ShoppingCart className="mr-2 h-4 w-4" />}
+            {isPurchaseLoading ? 'Analizando...' : 'Generar Orden de Compra'}
+          </Button>
+        </CardHeader>
+        {purchaseError && (
+          <CardContent>
+            <div className="flex items-center gap-2 text-destructive">
+                <AlertTriangle className="h-5 w-5" />
+                <span className="text-sm">{purchaseError}</span>
+            </div>
+          </CardContent>
+        )}
+      </Card>
+
 
       <div className="flex flex-col gap-6">
         <DashboardServiceSection 
@@ -312,6 +406,27 @@ export default function DashboardPage() {
           onSave={handleUpdateService}
           onVehicleCreated={onVehicleCreated}
         />
+      )}
+
+      {purchaseRecommendations && (
+        <PrintTicketDialog
+            open={isPurchaseOrderDialogOpen}
+            onOpenChange={setIsPurchaseOrderDialogOpen}
+            title="Orden de Compra Sugerida por IA"
+            onDialogClose={() => setPurchaseRecommendations(null)}
+            dialogContentClassName="printable-quote-dialog"
+            footerActions={
+              <Button onClick={() => window.print()}>
+                  <Printer className="mr-2 h-4 w-4" /> Imprimir Orden
+              </Button>
+            }
+          >
+            <PurchaseOrderContent
+              ref={purchaseOrderRef}
+              recommendations={purchaseRecommendations}
+              workshopName={workshopName}
+            />
+        </PrintTicketDialog>
       )}
     </div>
   );
