@@ -212,13 +212,13 @@ export default function AgendaServiciosPage() {
       const dailyProfit = dayServices.reduce((sum, service) => sum + (service.serviceProfit || 0), 0);
       return (
         <div key={date} className="mb-6">
-          <div className="flex justify-between items-end mb-2">
-              <h3 className="text-lg font-semibold text-primary">
+          <div className="flex justify-between items-center mb-3 bg-slate-700 dark:bg-slate-800 text-white p-3 rounded-lg shadow-md">
+              <h3 className="text-lg font-semibold">
                   {format(parseISO(date), "EEEE, dd 'de' MMMM 'de' yyyy", { locale: es })}
               </h3>
               <div className="text-right">
-                  <p className="text-sm font-medium text-muted-foreground">Ganancia Estimada del Día</p>
-                  <p className="text-lg font-bold text-green-600">
+                  <p className="text-sm font-medium text-slate-300">Ganancia Estimada del Día</p>
+                  <p className="text-xl font-bold">
                       {`$${dailyProfit.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
                   </p>
               </div>
