@@ -107,7 +107,7 @@ export default function AdministrativeStaffDetailPage() {
           <CardDescription>ID Staff: {staffMember.id}</CardDescription>
         </CardHeader>
         <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6 text-sm">
-             <div className="flex flex-col space-y-1">
+             <div className="flex flex-col space-y-1 md:col-span-2">
                 <p className="text-sm font-medium text-muted-foreground">Nombre Completo</p>
                 <p className="text-base font-semibold">{staffMember.name}</p>
             </div>
