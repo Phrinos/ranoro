@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useParams, useRouter } from 'next/navigation';
@@ -5,7 +6,7 @@ import { placeholderAdministrativeStaff } from '@/lib/placeholder-data';
 import type { AdministrativeStaff } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Archive, Edit, ShieldAlert, CalendarDays, Phone, DollarSign, StickyNote, Percent } from 'lucide-react';
+import { Archive, Edit, ShieldAlert, CalendarDays, Phone, DollarSign, StickyNote, Percent, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { AdministrativeStaffDialog } from '../components/administrative-staff-dialog';
@@ -106,10 +107,6 @@ export default function AdministrativeStaffDetailPage() {
           <CardDescription>ID Staff: {staffMember.id}</CardDescription>
         </CardHeader>
         <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6 text-sm">
-            <div className="flex flex-col space-y-1">
-                <p className="text-sm font-medium text-muted-foreground">ID del Staff</p>
-                <p className="text-base font-semibold">{staffMember.id}</p>
-            </div>
              <div className="flex flex-col space-y-1">
                 <p className="text-sm font-medium text-muted-foreground">Nombre Completo</p>
                 <p className="text-base font-semibold">{staffMember.name}</p>
@@ -160,33 +157,39 @@ export default function AdministrativeStaffDetailPage() {
         </CardContent>
       </Card>
 
-      <div className="mt-8 flex justify-end gap-2">
-        <AlertDialog>
-          <AlertDialogTrigger asChild>
-            <Button variant="destructive" >
-              <Archive className="mr-2 h-4 w-4" />
-              Archivar Miembro del Staff
-            </Button>
-          </AlertDialogTrigger>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>¿Estás seguro de archivar este registro de staff?</AlertDialogTitle>
-              <AlertDialogDescription>
-                Esta acción marcará el registro de {staffMember.name} como archivado y lo ocultará de las listas principales. Podrás recuperarlo desde la vista de "Archivados".
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Cancelar</AlertDialogCancel>
-              <AlertDialogAction onClick={handleArchiveStaff} className="bg-destructive hover:bg-destructive/90">
-                Sí, Archivar
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-        <Button variant="outline" onClick={() => setIsEditDialogOpen(true)}>
-          <Edit className="mr-2 h-4 w-4" />
-          Editar
+      <div className="mt-8 flex items-center justify-between">
+        <Button variant="outline" onClick={() => router.back()}>
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Volver
         </Button>
+        <div className="flex gap-2">
+            <AlertDialog>
+            <AlertDialogTrigger asChild>
+                <Button variant="destructive" >
+                <Archive className="mr-2 h-4 w-4" />
+                Archivar Miembro del Staff
+                </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                <AlertDialogTitle>¿Estás seguro de archivar este registro de staff?</AlertDialogTitle>
+                <AlertDialogDescription>
+                    Esta acción marcará el registro de {staffMember.name} como archivado y lo ocultará de las listas principales. Podrás recuperarlo desde la vista de "Archivados".
+                </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                <AlertDialogAction onClick={handleArchiveStaff} className="bg-destructive hover:bg-destructive/90">
+                    Sí, Archivar
+                </AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+            </AlertDialog>
+            <Button variant="outline" onClick={() => setIsEditDialogOpen(true)}>
+            <Edit className="mr-2 h-4 w-4" />
+            Editar
+            </Button>
+        </div>
       </div>
 
       {staffMember && (
