@@ -16,7 +16,7 @@ import { auth } from '@root/lib/firebaseClient.js';
 export default function LoginPage() {
   const router = useRouter();
   const { toast } = useToast();
-  const [email, setEmail] = useState('arturo@ranoro.mx');
+  const [email, setEmail] = useState('pandacomputacion@gmail.com');
   const [password, setPassword] = useState('CA1abaza');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -105,7 +105,7 @@ export default function LoginPage() {
       <Card className="w-full max-w-sm shadow-xl">
         <CardHeader className="space-y-1 text-center">
           <CardTitle className="text-2xl font-bold font-headline">Bienvenido a Ranoro</CardTitle>
-          <CardDescription>Para ingresar usa el email: arturo@ranoro.mx y la contraseña: CA1abaza</CardDescription>
+          <CardDescription>Usa tus credenciales para ingresar al sistema.</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">

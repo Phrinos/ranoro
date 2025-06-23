@@ -45,6 +45,14 @@ export const defaultSuperAdmin: User = {
   phone: '4493930914'
 };
 
+export const newUserAdmin: User = {
+  id: 'KTZCiJCsOiTm1RVCTSQ9zdNcdxm2',
+  name: 'Panda Computacion',
+  email: 'pandacomputacion@gmail.com',
+  role: 'Admin',
+  password: 'CA1abaza',
+};
+
 export let placeholderUsers: User[] = []; // This will be hydrated from Firestore
 export const AUTH_USER_LOCALSTORAGE_KEY = 'authUser';
 export const USER_LOCALSTORAGE_KEY = 'appUsers';
@@ -125,18 +133,24 @@ export async function hydrateFromFirestore() {
             }
         }
         
-        // Ensure default superadmin exists after hydration, crucial for first-time login
-        if (!placeholderUsers.some(u => u.email.toLowerCase() === defaultSuperAdmin.email.toLowerCase())) {
+        // Ensure default users exist after hydration
+        if (!placeholderUsers.some(u => u.id === defaultSuperAdmin.id)) {
             placeholderUsers.unshift(defaultSuperAdmin);
+        }
+        if (!placeholderUsers.some(u => u.id === newUserAdmin.id)) {
+            placeholderUsers.push(newUserAdmin);
         }
 
         console.log("Data successfully hydrated from Firestore.");
     } else {
         console.log("No database document found. Seeding with initial data and persisting to Firestore.");
         
-        // Ensure default superadmin is present in the initial data before first persist
-        if (!placeholderUsers.some(u => u.email.toLowerCase() === defaultSuperAdmin.email.toLowerCase())) {
+        // Ensure default users are present in the initial data before first persist
+        if (!placeholderUsers.some(u => u.id === defaultSuperAdmin.id)) {
           placeholderUsers.unshift(defaultSuperAdmin);
+        }
+        if (!placeholderUsers.some(u => u.id === newUserAdmin.id)) {
+          placeholderUsers.push(newUserAdmin);
         }
 
         await persistToFirestore();
