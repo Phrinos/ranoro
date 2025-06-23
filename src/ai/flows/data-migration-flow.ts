@@ -1,8 +1,8 @@
 'use server';
 /**
- * @fileOverview An AI flow to migrate historical vehicle and service data from a CSV file.
+ * @fileOverview An AI flow to migrate historical vehicle and service data from CSV-formatted text.
  *
- * - migrateData: A function that takes CSV content and returns structured vehicle and service data.
+ * - migrateData: A function that takes CSV-formatted text and returns structured vehicle and service data.
  * - MigrateDataInput: The input type for the migrateData function.
  * - MigrateDataOutput: The return type for the migrateData function.
  */
@@ -32,7 +32,7 @@ export type ExtractedService = z.infer<typeof ExtractedServiceSchema>;
 
 // Input schema for the migration flow
 const MigrateDataInputSchema = z.object({
-  csvContent: z.string().describe('The full string content of the CSV file to be processed.'),
+  csvContent: z.string().describe('The full string content of a spreadsheet sheet, formatted as CSV.'),
 });
 export type MigrateDataInput = z.infer<typeof MigrateDataInputSchema>;
 
@@ -44,7 +44,7 @@ const MigrateDataOutputSchema = z.object({
 export type MigrateDataOutput = z.infer<typeof MigrateDataOutputSchema>;
 
 /**
- * An AI-powered function to parse vehicle and service data from a CSV file.
+ * An AI-powered function to parse vehicle and service data from CSV-formatted text.
  * @param input The CSV content as a string.
  * @returns A promise that resolves to structured vehicle and service data.
  */
@@ -56,7 +56,7 @@ const migrateDataPrompt = ai.definePrompt({
   name: 'migrateDataPrompt',
   input: { schema: MigrateDataInputSchema },
   output: { schema: MigrateDataOutputSchema },
-  prompt: `You are an expert data migration specialist for an auto repair shop. Your task is to analyze the provided CSV content and extract vehicle and service information.
+  prompt: `You are an expert data migration specialist for an auto repair shop. Your task is to analyze the provided CSV-formatted text content and extract vehicle and service information.
 
 Key instructions:
 1.  **Identify Unique Vehicles**: Scan the entire document. For each unique license plate, create only ONE vehicle entry in the 'vehicles' array. Use the information from the most complete row for that vehicle.
@@ -64,7 +64,7 @@ Key instructions:
 3.  **Handle Data Variations**: The CSV column headers might vary. Be flexible. Look for headers like 'Marca'/'Make', 'Modelo'/'Model', 'Año'/'Year', 'Placa'/'LicensePlate', 'Cliente'/'OwnerName', 'Fecha'/'Date', 'Descripción'/'Description', 'Costo'/'Total'.
 4.  **Data Cleaning**: Clean up the data. Trim whitespace. Convert years and costs to numbers. Ensure dates are in YYYY-MM-DD format. If a value is missing, omit the field (e.g., 'ownerPhone').
 
-Analyze the following CSV content and return the data in the specified JSON format.
+Analyze the following CSV-formatted content and return the data in the specified JSON format.
 
 CSV Content:
 \`\`\`csv
