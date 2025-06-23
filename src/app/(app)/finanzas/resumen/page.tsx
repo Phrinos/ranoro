@@ -172,16 +172,10 @@ export default function ResumenFinancieroPage() {
       <PageHeader
         title="Resumen Financiero Mensual"
         description="Visualiza los ingresos, gastos y ganancias netas de cada mes."
-        actions={
-            <Button variant="outline" onClick={() => setIsExpensesDialogOpen(true)}>
-                <Pencil className="mr-2 h-4 w-4" />
-                Editar Gastos Fijos
-            </Button>
-        }
       />
 
       <div className="mb-6 flex items-center justify-center gap-4">
-        <Button variant="outline" size="icon" onClick={handlePreviousMonth} aria-label="Mes anterior" disabled={!selectedDate}>
+        <Button variant="outline" size="icon" onClick={handlePreviousMonth} aria-label="Mes anterior" disabled={!selectedDate} className="bg-card">
           <ChevronLeft className="h-4 w-4" />
         </Button>
         <Popover>
@@ -189,7 +183,7 @@ export default function ResumenFinancieroPage() {
             <Button
               variant={"outline"}
               className={cn(
-                "w-auto min-w-[200px] justify-center text-left font-semibold text-lg px-6 py-3", 
+                "w-auto min-w-[200px] justify-center text-left font-semibold text-lg px-6 py-3 bg-card", 
               )}
               disabled={!selectedDate}
             >
@@ -211,7 +205,7 @@ export default function ResumenFinancieroPage() {
             />
           </PopoverContent>
         </Popover>
-        <Button variant="outline" size="icon" onClick={handleNextMonth} aria-label="Mes siguiente" disabled={!selectedDate || endOfMonth(selectedDate) >= endOfMonth(new Date())}>
+        <Button variant="outline" size="icon" onClick={handleNextMonth} aria-label="Mes siguiente" disabled={!selectedDate || endOfMonth(selectedDate) >= endOfMonth(new Date())} className="bg-card">
           <ChevronRight className="h-4 w-4" />
         </Button>
       </div>
@@ -287,10 +281,16 @@ export default function ResumenFinancieroPage() {
 
         <Card className="lg:col-span-1">
           <CardHeader>
-            <CardTitle className="text-xl flex items-center gap-2">
-              <TrendingDown className="h-6 w-6 text-red-500" />
-              Gastos, Sueldos y Comisiones
-            </CardTitle>
+            <div className="flex items-center justify-between">
+                <CardTitle className="text-xl flex items-center gap-2">
+                <TrendingDown className="h-6 w-6 text-red-500" />
+                Gastos, Sueldos y Comisiones
+              </CardTitle>
+              <Button variant="outline" size="sm" onClick={() => setIsExpensesDialogOpen(true)}>
+                <Pencil className="mr-2 h-4 w-4" />
+                Editar
+              </Button>
+            </div>
              <CardDescription>Costos operativos del mes de {financialSummary.monthYearLabel}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3 text-base">
