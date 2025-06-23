@@ -1,21 +1,17 @@
 
 "use client";
 
-import React from "react";
+import React, { useMemo } from "react";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+  Card,
+  CardContent,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import type { QuoteRecord } from "@/types";
 import { format, parseISO, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { Eye, Edit, Wrench } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { Eye, Edit, Wrench, FileText as FileTextIcon, Calendar as CalendarIcon } from "lucide-react";
 
 interface QuotesTableProps {
   quotes: QuoteRecord[];
@@ -33,58 +29,94 @@ export function QuotesTable({ quotes, onViewQuote, onEditQuote, onGenerateServic
     if (amount === undefined) return 'N/A';
     return `$${amount.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   };
+  
+  const getStatusVariant = (serviceId?: string): "success" | "outline" => {
+    return serviceId ? "success" : "outline";
+  };
+  
+  const getStatusText = (serviceId?: string): string => {
+      return serviceId ? "Ingresado" : "Pendiente";
+  }
+  
+  const memoizedQuotes = useMemo(() => quotes.map(quote => {
+    const quoteDate = quote.quoteDate ? parseISO(quote.quoteDate) : new Date();
+
+    return {
+        ...quote,
+        formattedDate: isValid(quoteDate) 
+          ? format(quoteDate, "dd MMM yyyy, HH:mm", { locale: es }) 
+          : 'Fecha Inválida',
+        estimatedCostFormatted: formatCurrency(quote.estimatedTotalCost),
+        estimatedProfitFormatted: formatCurrency(quote.estimatedProfit),
+    }
+  }), [quotes]);
+
 
   return (
-    <div className="rounded-lg border shadow-sm">
-      <Table>
-        <TableHeader className="bg-white">
-          <TableRow>
-            <TableHead className="font-bold">Folio</TableHead>
-            <TableHead className="font-bold">Fecha</TableHead>
-            <TableHead className="font-bold">Vehículo</TableHead>
-            <TableHead className="font-bold">Descripción</TableHead>
-            <TableHead className="text-right font-bold">Costo</TableHead>
-            <TableHead className="font-bold">Estado</TableHead>
-            <TableHead className="text-right font-bold">Acciones</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {quotes.map((quote) => {
-            const quoteDate = quote.quoteDate ? parseISO(quote.quoteDate) : new Date();
-            const formattedDate = isValid(quoteDate) 
-              ? format(quoteDate, "dd MMM yyyy", { locale: es }) 
-              : 'Fecha Inválida';
-            
-            return (
-              <TableRow key={quote.id}>
-                <TableCell className="font-medium">{quote.id}</TableCell>
-                <TableCell>{formattedDate}</TableCell>
-                <TableCell>{quote.vehicleIdentifier || 'N/A'}</TableCell>
-                <TableCell>{quote.description}</TableCell>
-                <TableCell className="text-right font-semibold">{formatCurrency(quote.estimatedTotalCost)}</TableCell>
-                <TableCell>
-                  {quote.serviceId ? (
-                    <Badge variant="success">Ingresado</Badge>
-                  ) : (
-                    <Badge variant="outline">Pendiente</Badge>
-                  )}
-                </TableCell>
-                <TableCell className="text-right space-x-1">
-                  <Button variant="ghost" size="icon" onClick={() => onViewQuote(quote)} title="Ver / Reimprimir Cotización">
-                    <Eye className="h-4 w-4" />
-                  </Button>
-                  <Button variant="ghost" size="icon" onClick={() => onEditQuote(quote)} title="Editar Cotización">
-                    <Edit className="h-4 w-4" />
-                  </Button>
-                   <Button variant="ghost" size="icon" onClick={() => onGenerateService(quote)} title="Generar Servicio" disabled={!!quote.serviceId}>
-                    <Wrench className="h-4 w-4" />
-                  </Button>
-                </TableCell>
-              </TableRow>
-            );
-          })}
-        </TableBody>
-      </Table>
+    <div className="space-y-4">
+      {memoizedQuotes.map((quote) => (
+          <Card key={quote.id} className="shadow-sm">
+            <CardContent className="p-0">
+              <div className="flex items-center">
+                
+                {/* Bloque Izquierdo: Costo y Ganancia */}
+                <div className="w-48 shrink-0 flex flex-col justify-center items-start text-left pl-6 py-4">
+                  <p className="font-bold text-lg text-foreground">{quote.estimatedCostFormatted}</p>
+                  <p className="text-xs text-muted-foreground -mt-1">Costo Estimado</p>
+                  <p className="font-semibold text-lg text-green-600 mt-1">{quote.estimatedProfitFormatted}</p>
+                  <p className="text-xs text-muted-foreground -mt-1">Ganancia Estimada</p>
+                </div>
+
+                {/* Bloque Central: Detalles */}
+                <div className="flex-grow border-l border-r p-4 space-y-3">
+                  <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2 text-sm text-muted-foreground">
+                    <div className="flex items-center gap-1.5" title="ID de Cotización">
+                      <FileTextIcon className="h-4 w-4" />
+                      <span>ID: {quote.id}</span>
+                    </div>
+                    <div className="flex items-center gap-1.5" title="Fecha de Cotización">
+                      <CalendarIcon className="h-4 w-4" />
+                      <span>Fecha: {quote.formattedDate}</span>
+                    </div>
+                    <div className="flex items-center gap-1.5" title="Atendido por">
+                        <Wrench className="h-4 w-4" />
+                        <span>{quote.preparedByTechnicianName || 'N/A'}</span>
+                    </div>
+                  </div>
+                  <div className="mt-4 flex items-center gap-4">
+                    <div className="flex-grow">
+                      <h4 className="font-semibold text-lg" title={quote.vehicleIdentifier}>
+                        {quote.vehicleIdentifier || 'N/A'}
+                      </h4>
+                      <p className="text-sm text-muted-foreground mt-1 truncate" title={quote.description}>
+                        {quote.description}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Bloque Derecho: Estado y Acciones */}
+                <div className="w-48 shrink-0 flex flex-col items-center justify-center p-4 gap-y-2">
+                  <Badge variant={getStatusVariant(quote.serviceId)} className="w-full justify-center text-center text-base">
+                    {getStatusText(quote.serviceId)}
+                  </Badge>
+                  <div className="flex">
+                    <Button variant="ghost" size="icon" onClick={(e) => {e.stopPropagation(); onViewQuote(quotes.find(q => q.id === quote.id)!);}} title="Ver / Reimprimir Cotización">
+                      <Eye className="h-4 w-4" />
+                    </Button>
+                    <Button variant="ghost" size="icon" onClick={(e) => {e.stopPropagation(); onEditQuote(quotes.find(q => q.id === quote.id)!);}} title="Editar Cotización" disabled={!!quote.serviceId}>
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                    <Button variant="ghost" size="icon" onClick={(e) => {e.stopPropagation(); onGenerateService(quotes.find(q => q.id === quote.id)!);}} title="Generar Servicio" disabled={!!quote.serviceId}>
+                      <Wrench className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )
+      )}
     </div>
   );
 }
