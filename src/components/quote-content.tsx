@@ -90,8 +90,8 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
         <div className="text-right">
           <h2 className="text-3xl font-semibold text-primary">COTIZACIÓN</h2>
           <div className="space-y-0 leading-tight mt-2">
-            <div>Folio: <span className="font-medium">{quote.id}</span></div>
-            <div>Fecha: <span className="font-medium">{formattedQuoteDate}</span></div>
+            <div>Folio: <span className="font-semibold">{quote.id}</span></div>
+            <div>Fecha: <span className="font-semibold">{formattedQuoteDate}</span></div>
           </div>
         </div>
       </header>
@@ -100,7 +100,7 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
       <main className="flex-grow">
         <section className="grid grid-cols-2 gap-8 mb-8">
             <div className="bg-gray-50 px-4 pt-2 pb-4 rounded-md border border-gray-200">
-            <h3 className="font-semibold text-base text-gray-700 mb-2 border-b pb-2">Cliente:</h3>
+            <h3 className="font-semibold text-sm text-gray-700 mb-2 border-b pb-2">Cliente:</h3>
             <div className="space-y-1 leading-tight pt-2">
                 <div>{vehicle?.ownerName || 'N/A'}</div>
                 <div>{vehicle?.ownerPhone || 'N/A'}</div>
@@ -108,7 +108,7 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
             </div>
             </div>
             <div className="bg-gray-50 px-4 pt-2 pb-4 rounded-md border border-gray-200">
-            <h3 className="font-semibold text-base text-gray-700 mb-2 border-b pb-2">Vehículo:</h3>
+            <h3 className="font-semibold text-sm text-gray-700 mb-2 border-b pb-2">Vehículo:</h3>
             <div className="space-y-1 leading-tight pt-2">
                 <div>{vehicle ? `${vehicle.make} ${vehicle.model} (${vehicle.year})` : quote.vehicleIdentifier || 'N/A'}</div>
                 <div>Placas: {vehicle?.licensePlate || 'N/A'}</div>
