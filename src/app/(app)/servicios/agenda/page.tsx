@@ -240,97 +240,90 @@ export default function AgendaServiciosPage() {
             {dayServices.map(service => {
               const vehicle = vehicles.find(v => v.id === service.vehicleId);
               const technician = techniciansState.find(t => t.id === service.technicianId);
-              
               const serviceDateObj = service.serviceDate ? parseISO(service.serviceDate) : null;
               const deliveryDateObj = service.deliveryDateTime ? parseISO(service.deliveryDateTime) : null;
               
-              const formattedServiceDate = serviceDateObj && isValid(serviceDateObj) ? format(serviceDateObj, "dd MMM yy, HH:mm", { locale: es }) : 'N/A';
+              const serviceReceptionTime = serviceDateObj && isValid(serviceDateObj) ? format(serviceDateObj, "HH:mm", { locale: es }) : 'N/A';
               const formattedDeliveryDateTime = deliveryDateObj && isValid(deliveryDateObj) ? format(deliveryDateObj, "dd MMM yy, HH:mm", { locale: es }) : 'N/A';
-              const vehicleMakeModelYear = vehicle ? `${vehicle.make} ${vehicle.model} (${vehicle.year})` : 'N/A';
-              const mileageFormatted = service.mileage !== undefined && service.mileage !== null ? `${service.mileage.toLocaleString('es-ES')} km` : 'N/A';
+              const technicianName = technician ? technician.name : service.technicianId;
+              const vehicleMakeModelYear = vehicle ? `${vehicle.make} ${vehicle.model} ${vehicle.year}` : 'N/A';
               const totalCostFormatted = `$${service.totalCost.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-              const totalSuppliesCostFormatted = service.totalSuppliesCost !== undefined ? `$${service.totalSuppliesCost.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : 'N/A';
               const serviceProfitFormatted = service.serviceProfit !== undefined ? `$${service.serviceProfit.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : 'N/A';
-              const technicianName = technician ? technician.name : (service.technicianId || 'N/A');
 
               return (
                 <Card key={service.id} className="shadow-sm">
-                  <CardContent className="p-4 space-y-3">
-                    {/* Linea 1 */}
-                    <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
-                      <div className="flex items-center gap-2">
-                        <Tag className="h-4 w-4 text-muted-foreground" />
-                        <span className="font-bold text-primary">{service.id}</span>
-                      </div>
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <Calendar className="h-4 w-4" />
-                        <span>{formattedServiceDate}</span>
-                      </div>
-                      <div className="flex items-center gap-2 text-sm font-medium text-foreground flex-1 min-w-[200px]">
-                        <Wrench className="h-4 w-4 text-muted-foreground" />
-                        <span className="truncate" title={`${vehicleMakeModelYear} - ${mileageFormatted}`}>
-                          {vehicleMakeModelYear} - {mileageFormatted}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2 font-semibold text-lg text-foreground">
-                        <DollarSign className="h-5 w-5 text-muted-foreground"/>
-                        <span>{totalCostFormatted}</span>
-                      </div>
-                      <div>
-                        <Badge variant={getStatusVariant(service.status)}>{service.status}</Badge>
-                      </div>
-                    </div>
+                  <CardContent className="p-0">
+                    <div className="flex items-center">
+                        <div className="w-48 shrink-0 flex flex-col justify-center items-start text-left pl-6 py-4">
+                            <p className="font-bold text-lg text-foreground">
+                                {totalCostFormatted}
+                            </p>
+                            <p className="text-xs text-muted-foreground -mt-1">Costo</p>
+                            <p className="font-semibold text-lg text-green-600 mt-1">
+                                {serviceProfitFormatted}
+                            </p>
+                            <p className="text-xs text-muted-foreground -mt-1">Ganancia</p>
+                        </div>
+                        
+                        <div className="flex-grow border-l border-r p-4 space-y-3">
+                            <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2 text-sm text-muted-foreground">
+                                <div className="flex items-center gap-1.5" title="Hora de Recepción">
+                                    {(service.status === 'Reparando' || service.status === 'Completado') ? <CheckCircle className="h-4 w-4 text-green-600" /> : <Clock className="h-4 w-4" />}
+                                    <span>Recepción: {serviceReceptionTime}</span>
+                                </div>
+                                <div className="flex items-center gap-1.5" title="Técnico">
+                                    <Wrench className="h-4 w-4" />
+                                    <span>{technicianName}</span>
+                                </div>
+                                <div className="flex items-center gap-1.5" title="Fecha de Entrega">
+                                    {service.status === 'Completado' ? <CheckCircle className="h-4 w-4 text-green-600" /> : <CalendarCheck className="h-4 w-4" />}
+                                    <span>Entrega: {formattedDeliveryDateTime}</span>
+                                </div>
+                                <div className="flex items-center gap-1.5" title="ID de Servicio">
+                                    <span>ID: {service.id}</span>
+                                </div>
+                            </div>
+                            <div className="mt-4 flex items-center gap-4">
+                                <div className="flex-grow">
+                                    <h4 className="font-semibold text-lg" title={vehicleMakeModelYear}>
+                                        {vehicle ? `${vehicle.licensePlate} - ${vehicleMakeModelYear}` : 'N/A'}
+                                    </h4>
+                                    <p className="text-sm text-muted-foreground mt-1 truncate" title={service.description}>
+                                        {service.description}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
 
-                    <div className="border-t border-dashed -mx-4 my-2"></div>
-                    
-                    {/* Linea 2 */}
-                    <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
-                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <DollarSign className="h-4 w-4"/>
-                          <span>Costo: {totalSuppliesCostFormatted}</span>
-                      </div>
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <CalendarCheck className="h-4 w-4" />
-                        <span>Entrega: {formattedDeliveryDateTime}</span>
-                      </div>
-                      <div className="flex items-center justify-between gap-2 text-foreground flex-1 min-w-[300px]">
-                        <div className="flex items-center gap-2">
-                          <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
-                          <p className="truncate text-base" title={`${service.description} (Téc: ${technicianName})`}>
-                            {service.description} <span className="text-sm text-muted-foreground">({technicianName})</span>
-                          </p>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <Button variant="ghost" size="icon" aria-label="Editar Servicio" onClick={() => handleOpenEditDialog(service)}>
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button variant="ghost" size="icon" aria-label="Eliminar Servicio">
-                                <Trash2 className="h-4 w-4 text-destructive" />
+                        <div className="w-48 shrink-0 flex flex-col items-center justify-center p-4 gap-y-2">
+                            <Badge variant={getStatusVariant(service.status)} className="w-full justify-center text-center text-base">{service.status}</Badge>
+                            <div className="flex">
+                              <Button variant="ghost" size="icon" aria-label="Editar Servicio" onClick={() => handleOpenEditDialog(service)}>
+                                <Edit className="h-4 w-4" />
                               </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  Esta acción no se puede deshacer. Esto eliminará permanentemente la orden de servicio.
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                <AlertDialogAction onClick={() => handleDeleteService(service.id)} className="bg-destructive hover:bg-destructive/90">
-                                  Eliminar
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <Button variant="ghost" size="icon" aria-label="Eliminar Servicio">
+                                    <Trash2 className="h-4 w-4 text-destructive" />
+                                  </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                      Esta acción no se puede deshacer. Esto eliminará permanentemente la orden de servicio.
+                                    </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                    <AlertDialogAction onClick={() => handleDeleteService(service.id)} className="bg-destructive hover:bg-destructive/90">
+                                      Eliminar
+                                    </AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
+                            </div>
                         </div>
-                      </div>
-                      <div className="flex items-center gap-2 font-semibold text-green-600">
-                        <TrendingUp className="h-4 w-4" />
-                        <span>Ganancia: {serviceProfitFormatted}</span>
-                      </div>
                     </div>
                   </CardContent>
                 </Card>
