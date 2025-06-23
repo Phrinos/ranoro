@@ -236,19 +236,13 @@ export default function AgendaServiciosPage() {
                   : 'N/A';
 
               return (
-                <div key={service.id} className="flex items-center gap-4 rounded-lg border p-4 shadow-sm hover:bg-muted/50 transition-colors">
-                  {/* ID Column */}
-                  <div className="flex flex-col items-center justify-center border-r pr-4 text-center">
-                    <span className="text-xs font-medium text-muted-foreground">ID</span>
-                    <span className="font-bold text-lg text-primary">{service.id}</span>
-                  </div>
-
+                <div key={service.id} className="flex items-stretch gap-4 rounded-lg border p-4 shadow-sm hover:bg-muted/50 transition-colors">
                   {/* Main Content Area */}
                   <div className="flex-grow space-y-2">
                     {/* First Line */}
                     <div className="flex justify-between items-start gap-4">
                       <div className="flex-1">
-                        <p className="font-semibold text-base">{vehicle ? `${vehicle.make} ${vehicle.model} (${vehicle.licensePlate})` : service.vehicleId}</p>
+                        <p className="font-semibold text-base">{vehicle ? `${vehicle.licensePlate} - ${vehicle.make} ${vehicle.model} ${vehicle.year}` : service.vehicleId}</p>
                         <p className="text-sm text-muted-foreground truncate">{service.description}</p>
                       </div>
                       <p className="font-bold text-lg whitespace-nowrap">${service.totalCost.toLocaleString('es-ES')}</p>
@@ -258,51 +252,57 @@ export default function AgendaServiciosPage() {
                     <div className="border-t border-dashed"></div>
 
                     {/* Second Line */}
-                    <div className="flex flex-wrap justify-between items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                    <div className="flex flex-wrap justify-between items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
                       <span title={`Técnico: ${technician ? technician.name : 'N/A'}`}>
                         Téc: <span className="font-medium text-foreground">{technician ? technician.name : 'N/A'}</span>
                       </span>
                       <div className="flex items-center gap-1" title="Recepción">
-                        <Calendar className="h-3 w-3" />
+                        <Calendar className="h-4 w-4" />
                         <span>{formattedServiceDateTime}</span>
                       </div>
                       <div className="flex items-center gap-1" title="Entrega">
-                        <CalendarCheck className="h-3 w-3" />
+                        <CalendarCheck className="h-4 w-4" />
                         <span>{formattedDelivery}</span>
                       </div>
                       <Badge variant={getStatusVariant(service.status)}>{service.status}</Badge>
                     </div>
                   </div>
 
-                  {/* Actions Column */}
-                  <div className="flex flex-col items-center justify-center border-l pl-4 gap-1">
-                    <Button variant="ghost" size="icon" onClick={() => handleOpenEditDialog(service)} title="Editar Servicio">
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button variant="ghost" size="icon" title="Eliminar Servicio">
-                          <Trash2 className="h-4 w-4 text-destructive" />
+                  {/* Actions & ID Column */}
+                  <div className="flex flex-col items-center justify-between border-l pl-4 gap-2 text-center w-20">
+                    <div>
+                        <span className="text-xs font-medium text-muted-foreground">ID</span>
+                        <span className="block font-bold text-lg text-primary">{service.id}</span>
+                    </div>
+                    <div className="flex flex-col items-center justify-center gap-1">
+                        <Button variant="ghost" size="icon" onClick={() => handleOpenEditDialog(service)} title="Editar Servicio">
+                          <Edit className="h-4 w-4" />
                         </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>¿Eliminar Servicio?</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            Esta acción no se puede deshacer. ¿Seguro que quieres eliminar este servicio?
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                          <AlertDialogAction
-                            onClick={() => handleDeleteService(service.id)}
-                            className="bg-destructive hover:bg-destructive/90"
-                          >
-                            Sí, Eliminar
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="ghost" size="icon" title="Eliminar Servicio">
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>¿Eliminar Servicio?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Esta acción no se puede deshacer. ¿Seguro que quieres eliminar este servicio?
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={() => handleDeleteService(service.id)}
+                                className="bg-destructive hover:bg-destructive/90"
+                              >
+                                Sí, Eliminar
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                    </div>
                   </div>
                 </div>
               );
