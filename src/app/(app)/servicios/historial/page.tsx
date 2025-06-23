@@ -115,7 +115,7 @@ export default function HistorialServiciosPage() {
           if (!a.deliveryDateTime) return 1; if (!b.deliveryDateTime) return -1;
           return compareDesc(parseISO(a.deliveryDateTime), parseISO(b.deliveryDateTime));
         case "plate_asc": return (vehicleA?.licensePlate || '').localeCompare(vehicleB?.licensePlate || '');
-        case "plate_desc": return (vehicleB?.licensePlate || '').localeCompare(vehicleA?.licensePlate || '');
+        case "plate_desc": return (vehicleB?.licensePlate || '').localeCompare(a.licensePlate || '');
         case "price_asc": return a.totalCost - b.totalCost;
         case "price_desc": return b.totalCost - a.totalCost;
         case "status_asc": return a.status.localeCompare(b.status);
@@ -279,7 +279,7 @@ export default function HistorialServiciosPage() {
           <Input
             type="search"
             placeholder="Buscar servicios..."
-            className="w-full rounded-lg bg-background pl-8"
+            className="w-full rounded-lg bg-card pl-8"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
@@ -289,7 +289,7 @@ export default function HistorialServiciosPage() {
             <Button
               variant={"outline"}
               className={cn(
-                "min-w-[240px] justify-start text-left font-normal flex-1 sm:flex-initial",
+                "min-w-[240px] justify-start text-left font-normal flex-1 sm:flex-initial bg-card",
                 !dateRange && "text-muted-foreground"
               )}
             >
@@ -322,7 +322,7 @@ export default function HistorialServiciosPage() {
         </Popover>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="outline" className="min-w-[150px] flex-1 sm:flex-initial">
+            <Button variant="outline" className="min-w-[150px] flex-1 sm:flex-initial bg-card">
               <ListFilter className="mr-2 h-4 w-4" />
               Ordenar
             </Button>

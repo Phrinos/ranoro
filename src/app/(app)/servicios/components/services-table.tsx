@@ -110,21 +110,21 @@ export function ServicesTable({
     <>
       <div className="rounded-lg border shadow-sm overflow-hidden">
         <Table>
-          <TableHeader>
+          <TableHeader className="bg-white">
             {isHistoryView ? (
               <TableRow>
-                <TableHead>ID</TableHead>
-                <TableHead>Fecha Servicio</TableHead>
-                <TableHead>Fecha Entrega</TableHead>
-                <TableHead>Placas</TableHead>
-                <TableHead>Vehículo</TableHead>
-                <TableHead>Kilometraje</TableHead>
-                <TableHead>Descripción</TableHead>
-                <TableHead>Técnico</TableHead>
-                <TableHead className="text-right">Precio Total</TableHead>
-                <TableHead className="text-right">Ganancia</TableHead>
-                <TableHead>Estado</TableHead>
-                <TableHead className="text-right">Acciones</TableHead>
+                <TableHead className="font-bold">ID</TableHead>
+                <TableHead className="font-bold">Fecha Servicio</TableHead>
+                <TableHead className="font-bold">Fecha Entrega</TableHead>
+                <TableHead className="font-bold">Placas</TableHead>
+                <TableHead className="font-bold">Vehículo</TableHead>
+                <TableHead className="font-bold">Kilometraje</TableHead>
+                <TableHead className="font-bold">Descripción</TableHead>
+                <TableHead className="font-bold">Técnico</TableHead>
+                <TableHead className="font-bold">Precio Total</TableHead>
+                <TableHead className="font-bold">Ganancia</TableHead>
+                <TableHead className="font-bold">Estado</TableHead>
+                <TableHead className="font-bold">Acciones</TableHead>
               </TableRow>
             ) : ( // Default for Agenda and Lista de Servicios
               <TableRow>
@@ -148,10 +148,10 @@ export function ServicesTable({
                     <TableCell className="font-medium">{service.id}</TableCell>
                     <TableCell>{service.formattedServiceDate}</TableCell>
                     <TableCell>{service.formattedDeliveryDateTime}</TableCell>
-                    <TableCell>{service.vehiclePlate}</TableCell>
+                    <TableCell className="font-bold">{service.vehiclePlate}</TableCell>
                     <TableCell>{service.vehicleMakeModelYear}</TableCell>
                     <TableCell>{service.mileageFormatted}</TableCell>
-                    <TableCell className="max-w-xs truncate">{service.description}</TableCell>
+                    <TableCell className="font-bold max-w-xs truncate">{service.description}</TableCell>
                     <TableCell>{service.technicianName}</TableCell>
                     <TableCell className="text-right">{service.totalCostFormatted}</TableCell>
                     <TableCell className="text-right">{service.serviceProfitFormatted}</TableCell>
