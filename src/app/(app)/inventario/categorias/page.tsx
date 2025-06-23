@@ -2,7 +2,6 @@
 "use client";
 
 import { useState, useMemo, useEffect } from 'react';
-import { PageHeader } from "@/components/page-header";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -148,13 +147,8 @@ export default function CategoriasInventarioPage() {
 
   return (
     <>
-      <PageHeader
-        title="Categorías de Productos"
-        description="Administra las categorías para tus productos."
-      />
-
       <Card>
-        <CardHeader className="flex flex-col sm:flex-row items-center justify-between gap-4">
+        <CardHeader className="flex flex-col items-start gap-4">
             <div>
                 <CardTitle>Lista de Categorías</CardTitle>
                 <CardDescription>
