@@ -18,10 +18,10 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { PlusCircle, Trash2, Receipt, Search, PackagePlus } from "lucide-react";
+import { PlusCircle, Trash2, Receipt, Search, PackagePlus, Wallet, CreditCard, Send, WalletCards, ArrowRightLeft } from "lucide-react";
 import type { InventoryItem, SaleItem, PaymentMethod, SaleReceipt } from "@/types";
 import { useToast } from "@/hooks/use-toast";
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { placeholderSales, placeholderInventory, placeholderCategories, placeholderSuppliers } from "@/lib/placeholder-data";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
@@ -45,6 +45,14 @@ const paymentMethods: [PaymentMethod, ...PaymentMethod[]] = [
   "Efectivo+Transferencia",
   "Tarjeta+Transferencia"
 ];
+
+const paymentMethodIcons: Record<PaymentMethod, React.ElementType> = {
+  "Efectivo": Wallet,
+  "Tarjeta": CreditCard,
+  "Transferencia": Send,
+  "Efectivo+Transferencia": WalletCards,
+  "Tarjeta+Transferencia": ArrowRightLeft,
+};
 
 const posFormSchema = z.object({
   items: z.array(saleItemSchema).min(1, "Debe agregar al menos un artículo a la venta."),
@@ -413,23 +421,37 @@ export function PosForm({ inventoryItems: parentInventoryItems, onSaleComplete, 
                 <FormField
                   control={form.control}
                   name="paymentMethod"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Método de Pago</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Seleccione método de pago" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {paymentMethods.map(method => (
-                            <SelectItem key={method} value={method}>{method}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </FormItem>
-                  )}
+                  render={({ field }) => {
+                    const SelectedIcon = field.value ? paymentMethodIcons[field.value] : null;
+                    return (
+                        <FormItem>
+                        <FormLabel>Método de Pago</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl>
+                            <SelectTrigger>
+                                <div className="flex items-center gap-2">
+                                {SelectedIcon && <SelectedIcon className="h-4 w-4 text-muted-foreground" />}
+                                <SelectValue placeholder="Seleccione método de pago" />
+                                </div>
+                            </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                            {paymentMethods.map(method => {
+                                const Icon = paymentMethodIcons[method];
+                                return (
+                                <SelectItem key={method} value={method}>
+                                    <div className="flex items-center gap-2">
+                                    <Icon className="h-4 w-4" />
+                                    <span>{method}</span>
+                                    </div>
+                                </SelectItem>
+                                )
+                            })}
+                            </SelectContent>
+                        </Select>
+                        </FormItem>
+                    );
+                  }}
                 />
                 {(selectedPaymentMethod === "Tarjeta" || selectedPaymentMethod === "Tarjeta+Transferencia") && (
                     <FormField
