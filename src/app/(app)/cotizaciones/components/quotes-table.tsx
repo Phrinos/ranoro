@@ -37,15 +37,15 @@ export function QuotesTable({ quotes, onViewQuote, onEditQuote, onGenerateServic
   return (
     <div className="rounded-lg border shadow-sm overflow-hidden">
       <Table>
-        <TableHeader>
+        <TableHeader className="bg-card">
           <TableRow>
-            <TableHead>Folio</TableHead>
-            <TableHead>Fecha</TableHead>
-            <TableHead>Cliente/Vehículo</TableHead>
-            <TableHead>Descripción</TableHead>
-            <TableHead className="text-right">Monto Estimado</TableHead>
-            <TableHead>Estado</TableHead>
-            <TableHead className="text-right">Acciones</TableHead>
+            <TableHead className="font-bold text-center">Folio</TableHead>
+            <TableHead className="font-bold text-center">Fecha</TableHead>
+            <TableHead className="font-bold text-center">Cliente/Vehículo</TableHead>
+            <TableHead className="font-bold text-center">Descripción</TableHead>
+            <TableHead className="text-right font-bold">Monto Estimado</TableHead>
+            <TableHead className="font-bold text-center">Estado</TableHead>
+            <TableHead className="text-right font-bold">Acciones</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
