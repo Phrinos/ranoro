@@ -35,7 +35,7 @@ export function QuotesTable({ quotes, onViewQuote, onEditQuote, onGenerateServic
   };
 
   return (
-    <div className="rounded-lg border shadow-sm overflow-hidden">
+    <div className="rounded-lg border shadow-sm">
       <Table>
         <TableHeader className="bg-white">
           <TableRow>

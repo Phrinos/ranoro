@@ -31,7 +31,7 @@ export function TechniciansTable({ technicians: initialTechnicians }: Technician
   }
 
   return (
-    <div className="rounded-lg border shadow-sm overflow-hidden">
+    <div className="rounded-lg border shadow-sm">
       <Table>
         <TableHeader className="bg-white">
           <TableRow>
