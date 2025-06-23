@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { PageHeader } from "@/components/page-header";
 import { ServiceDialog } from "../components/service-dialog";
 import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
@@ -10,12 +10,15 @@ import { placeholderVehicles, placeholderTechnicians, placeholderInventory, plac
 import type { ServiceRecord, Vehicle, Technician, QuoteRecord, InventoryItem } from "@/types";
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from 'next/navigation';
+import { Button } from '@/components/ui/button';
+import { Printer } from 'lucide-react';
 
 type DialogStep = 'service' | 'print' | 'closed';
 
 export default function NuevoServicioPage() {
   const { toast } = useToast();
   const router = useRouter();
+  const ticketContentRef = useRef<HTMLDivElement>(null);
   
   const [vehicles, setVehicles] = useState<Vehicle[]>(placeholderVehicles);
   const technicians = placeholderTechnicians; 
@@ -78,6 +81,10 @@ export default function NuevoServicioPage() {
     setDialogStep('closed'); 
   };
 
+  const handlePrintTicket = () => {
+    window.print();
+  };
+
   const handleVehicleCreated = (newVehicle: Vehicle) => {
     setVehicles(prev => {
       if (prev.find(v => v.id === newVehicle.id)) return prev; 
@@ -119,8 +126,15 @@ export default function NuevoServicioPage() {
           }} 
           title="Comprobante de Servicio"
           onDialogClose={handlePrintDialogClose}
+          dialogContentClassName="printable-content"
+          footerActions={
+             <Button onClick={handlePrintTicket}>
+                <Printer className="mr-2 h-4 w-4" /> Imprimir Comprobante
+            </Button>
+          }
         >
           <TicketContent 
+            ref={ticketContentRef}
             service={currentServiceForTicket} 
             vehicle={currentVehicleForTicket || undefined}
             technician={currentTechnicianForTicket || undefined}

@@ -70,7 +70,7 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
     <div 
       ref={ref}
       data-format="letter"
-      className="font-sans bg-white text-black shadow-lg printable-quote printable-content mx-auto p-8 text-sm flex flex-col"
+      className="font-sans bg-white text-black shadow-lg mx-auto p-8 text-sm flex flex-col"
     >
       <header className="mb-4 border-b border-gray-300 pb-4">
         {/* Top Row: Logo and Title */}

@@ -8,13 +8,13 @@ import { PageHeader } from '@/components/page-header';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { Archive, ShieldAlert, Edit, Eye } from 'lucide-react';
+import { Archive, ShieldAlert, Edit, Eye, Printer } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { VehicleDialog } from '../components/vehicle-dialog';
 import type { VehicleFormValues } from '../components/vehicle-form';
 import { useToast } from '@/hooks/use-toast';
@@ -27,6 +27,7 @@ export default function VehicleDetailPage() {
   const vehicleId = parseInt(params.id as string, 10);
   const { toast } = useToast();
   const router = useRouter();
+  const ticketContentRef = useRef<HTMLDivElement>(null);
 
   const [vehicle, setVehicle] = useState<Vehicle | null | undefined>(undefined);
   const [services, setServices] = useState<ServiceRecord[]>([]);
@@ -114,6 +115,11 @@ export default function VehicleDetailPage() {
     setSelectedService(service);
     setIsViewServiceDialogOpen(true);
   };
+  
+  const handlePrintTicket = () => {
+    window.print();
+  };
+
 
   if (vehicle === undefined) {
     return <div className="container mx-auto py-8 text-center">Cargando datos del vehículo...</div>;
@@ -267,8 +273,15 @@ export default function VehicleDetailPage() {
           onOpenChange={setShowPrintTicketDialog}
           title="Comprobante de Servicio"
           onDialogClose={() => setCurrentServiceForTicket(null)}
+          dialogContentClassName="printable-content"
+          footerActions={
+             <Button onClick={handlePrintTicket}>
+                <Printer className="mr-2 h-4 w-4" /> Imprimir Comprobante
+            </Button>
+          }
         >
           <TicketContent 
+            ref={ticketContentRef}
             service={currentServiceForTicket} 
             vehicle={vehicle} 
             technician={currentTechnicianForTicket || undefined}

@@ -4,7 +4,7 @@
 
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Edit, Trash2, Clock, Search as SearchIcon, Calendar, CalendarCheck, CheckCircle, Wrench } from "lucide-react";
+import { PlusCircle, Edit, Trash2, Clock, Search as SearchIcon, Calendar, CalendarCheck, CheckCircle, Wrench, Printer } from "lucide-react";
 import {
   placeholderServiceRecords,
   placeholderVehicles,
@@ -12,7 +12,7 @@ import {
   placeholderInventory
 } from "@/lib/placeholder-data";
 import type { ServiceRecord, Vehicle, Technician, InventoryItem, QuoteRecord } from "@/types";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { format, parseISO, compareAsc, isFuture, isToday, isPast, isValid, addDays, isSameDay } from "date-fns";
 import { es } from 'date-fns/locale';
@@ -34,6 +34,7 @@ interface GroupedServices {
 export default function AgendaServiciosPage() {
   const { toast } = useToast();
   const router = useRouter();
+  const ticketContentRef = useRef<HTMLDivElement>(null);
   const [allServices, setAllServices] = useState<ServiceRecord[]>(placeholderServiceRecords);
   const [vehicles, setVehicles] = useState<Vehicle[]>(placeholderVehicles);
   const [techniciansState, setTechniciansState] = useState<Technician[]>(placeholderTechnicians);
@@ -141,6 +142,10 @@ export default function AgendaServiciosPage() {
       }
       return updated;
     });
+  };
+
+  const handlePrintTicket = () => {
+    window.print();
   };
 
 
@@ -419,8 +424,15 @@ export default function AgendaServiciosPage() {
           onOpenChange={setShowPrintTicketDialog}
           title="Comprobante de Servicio"
           onDialogClose={() => setCurrentServiceForTicket(null)}
+          dialogContentClassName="printable-content"
+          footerActions={
+             <Button onClick={handlePrintTicket}>
+                <Printer className="mr-2 h-4 w-4" /> Imprimir Comprobante
+            </Button>
+          }
         >
           <TicketContent 
+            ref={ticketContentRef}
             service={currentServiceForTicket} 
             vehicle={currentVehicleForTicket || undefined}
             technician={currentTechnicianForTicket || undefined}

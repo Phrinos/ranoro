@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { PageHeader } from "@/components/page-header";
 import { PosDialog } from "../components/pos-dialog";
 import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
@@ -10,12 +10,15 @@ import { placeholderInventory, placeholderSales } from "@/lib/placeholder-data";
 import type { SaleReceipt, Vehicle, Technician, InventoryItem } from '@/types'; 
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from 'next/navigation';
+import { Button } from '@/components/ui/button';
+import { Printer } from 'lucide-react';
 
 type DialogStep = 'pos' | 'print_preview' | 'closed';
 
 export default function NuevaVentaPage() {
   const { toast } = useToast(); 
   const router = useRouter();
+  const ticketContentRef = useRef<HTMLDivElement>(null);
   
   const [currentInventoryItems, setCurrentInventoryItems] = useState<InventoryItem[]>(placeholderInventory); 
   const [dialogStep, setDialogStep] = useState<DialogStep>('pos');
@@ -42,6 +45,17 @@ export default function NuevaVentaPage() {
     setCurrentSaleForTicket(null); 
     setDialogStep('closed'); 
   };
+
+  const handlePrintTicket = () => {
+    const printableContent = ticketContentRef.current;
+    if (!printableContent) return;
+    
+    // Temporarily apply a class to the body to scope print styles
+    document.body.classList.add('printing-thermal');
+    window.print();
+    document.body.classList.remove('printing-thermal');
+  };
+
 
   const handleInventoryItemCreated = (newItem: InventoryItem) => {
     // Update the global placeholderInventory if it's not already there
@@ -82,9 +96,14 @@ export default function NuevaVentaPage() {
           }}
           title="Ticket de Venta"
           onDialogClose={handlePrintDialogClose}
-          dialogContentClassName="printable-ticket-dialog"
+          dialogContentClassName="printable-content"
+          footerActions={
+             <Button onClick={handlePrintTicket}>
+                <Printer className="mr-2 h-4 w-4" /> Imprimir Ticket
+            </Button>
+          }
         >
-          <TicketContent sale={currentSaleForTicket} />
+          <TicketContent ref={ticketContentRef} sale={currentSaleForTicket} />
         </PrintTicketDialog>
       )}
       

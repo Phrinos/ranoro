@@ -136,9 +136,20 @@ body {
   .printable-content .print-hidden {
     display: none !important;
   }
-  
+
+  .printable-content [data-format="receipt"] {
+      width: 80mm;
+      padding: 3mm;
+      color: black;
+      background-color: white;
+  }
+
+  .printable-content [data-format="letter"] {
+      padding: 1in;
+  }
+
   @page {
-    size: letter portrait;
-    margin: 1in;
+    size: auto;
+    margin: 0mm;
   }
 }

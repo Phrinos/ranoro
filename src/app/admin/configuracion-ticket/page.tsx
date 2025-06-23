@@ -8,7 +8,7 @@
   ▸ Formulario incluye entrada para URL del logo.
 */
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -31,7 +31,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
-import { Save, Eye } from "lucide-react";
+import { Save, Eye, Printer } from "lucide-react";
 import dynamic from "next/dynamic";
 import type { SaleReceipt } from "@/types";
 import { TicketContent } from "@/components/ticket-content";
@@ -82,6 +82,7 @@ const sampleSale: SaleReceipt = {
 /* ----------------- Componente ----------------- */
 export default function ConfiguracionTicketPage() {
   const { toast } = useToast();
+  const ticketContentRef = useRef<HTMLDivElement>(null);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewInfo, setPreviewInfo] = useState<TicketForm>(defaultWorkshopInfo);
 
@@ -116,6 +117,10 @@ export default function ConfiguracionTicketPage() {
   const handlePreview = () => {
     setPreviewInfo(form.getValues());
     setPreviewOpen(true);
+  };
+  
+  const handlePrint = () => {
+    window.print();
   };
 
   const labels: Record<keyof TicketForm, string> = {
@@ -173,8 +178,19 @@ export default function ConfiguracionTicketPage() {
       </Card>
 
       {previewOpen && (
-        <PrintTicketDialog open={previewOpen} onOpenChange={setPreviewOpen} title="Vista Previa de Ticket">
+        <PrintTicketDialog 
+          open={previewOpen} 
+          onOpenChange={setPreviewOpen} 
+          title="Vista Previa de Ticket"
+          dialogContentClassName="printable-content"
+          footerActions={
+             <Button onClick={handlePrint}>
+                <Printer className="mr-2 h-4 w-4" /> Imprimir
+            </Button>
+          }
+        >
           <TicketContent
+            ref={ticketContentRef}
             sale={sampleSale}
             previewWorkshopInfo={{
               ...previewInfo,

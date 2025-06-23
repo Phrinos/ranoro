@@ -74,19 +74,22 @@ export const TicketContent = React.forwardRef<HTMLDivElement, TicketContentProps
   );
 
   const renderDashedLine = () => (
-    <div className="border-t border-dashed border-neutral-400 my-3"></div>
+    <div className="border-t border-dashed border-neutral-400 my-1"></div>
   );
 
   return (
     <div 
-      id="ticketToExport"
       ref={ref}
       data-format="receipt"
-      className="font-mono bg-white text-black p-2 ticket-preview-content max-w-[300px] mx-auto text-[10px] leading-snug print:max-w-full print:text-[9px] print:p-0"
+      className="font-mono bg-white text-black p-2 max-w-[300px] mx-auto text-[10px] leading-snug print:max-w-full print:text-[9px] print:p-0"
     >
-      <div className="h-10"></div> {/* Spacer for top margin */}
       <div className="text-center mb-1">
         <img src={workshopInfo.logoUrl} alt="Logo" className="w-32 mx-auto mb-1" data-ai-hint="workshop logo"/>
+        <p className="font-semibold">{workshopInfo.name}</p>
+        <p>{workshopInfo.addressLine1}</p>
+        {workshopInfo.addressLine2 && <p>{workshopInfo.addressLine2}</p>}
+        <p>{workshopInfo.cityState}</p>
+        <p>Tel: {workshopInfo.phone}</p>
       </div>
 
       {renderDashedLine()}
@@ -152,7 +155,6 @@ export const TicketContent = React.forwardRef<HTMLDivElement, TicketContentProps
           <div className="font-semibold">¡Gracias por su preferencia!</div>
           <div>Para dudas o aclaraciones, no dude en contactarnos.</div>
       </div>
-      <div className="h-10"></div> {/* Spacer for bottom margin */}
     </div>
   );
 });
