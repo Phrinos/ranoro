@@ -8,7 +8,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Search, ListFilter, CalendarIcon as CalendarDateIcon, FileText, DollarSign, MessageSquare } from "lucide-react";
+import { Search, ListFilter, CalendarIcon as CalendarDateIcon, FileText, DollarSign, MessageSquare, PlusCircle } from "lucide-react";
 import { QuotesTable } from "../components/quotes-table"; 
 import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
 import { QuoteContent } from '@/components/quote-content';
@@ -225,7 +225,10 @@ export default function HistorialCotizacionesPage() {
         description="Consulta, filtra y ordena todas las cotizaciones generadas."
         actions={
           <Button asChild>
-            <Link href="/cotizaciones/nuevo">Nueva Cotización</Link>
+            <Link href="/cotizaciones/nuevo">
+              <PlusCircle className="mr-2 h-4 w-4" />
+              Nueva Cotización
+            </Link>
           </Button>
         }
       />
