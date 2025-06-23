@@ -1,7 +1,8 @@
+
 "use client";
 
 import { useState } from 'react';
-import * as XLSX from 'xlsx'; // Import xlsx library
+// import * as XLSX from 'xlsx'; // Removed static import to prevent build issues
 import { PageHeader } from "@/components/page-header";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -25,7 +26,7 @@ interface MigrationResult {
 }
 
 export default function MigracionDatosPage() {
-  const [workbook, setWorkbook] = useState<XLSX.WorkBook | null>(null);
+  const [workbook, setWorkbook] = useState<any | null>(null); // Use `any` as type is now dynamic
   const [sheetNames, setSheetNames] = useState<string[]>([]);
   const [selectedSheet, setSelectedSheet] = useState<string>('');
   const [fileContent, setFileContent] = useState<string | null>(null);
@@ -49,8 +50,9 @@ export default function MigracionDatosPage() {
       }
       
       const reader = new FileReader();
-      reader.onload = (e) => {
+      reader.onload = async (e) => { // Made async for dynamic import
         try {
+          const XLSX = await import('xlsx'); // Dynamic import
           const data = e.target?.result;
           const wb = XLSX.read(data, { type: 'array' });
           setWorkbook(wb);
@@ -74,8 +76,9 @@ export default function MigracionDatosPage() {
     }
   };
 
-  const handleSheetChange = (sheetName: string) => {
+  const handleSheetChange = async (sheetName: string) => { // Made async for dynamic import
     if (!workbook) return;
+    const XLSX = await import('xlsx'); // Dynamic import
     setSelectedSheet(sheetName);
     const sheetCsv = XLSX.utils.sheet_to_csv(workbook.Sheets[sheetName]);
     setFileContent(sheetCsv);
