@@ -21,11 +21,13 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isDataLoaded, setIsDataLoaded] = useState(false);
+  const [appUsers, setAppUsers] = useState<User[]>([]);
 
   // Hydrate data from Firestore on component mount
   useEffect(() => {
     const loadData = async () => {
         await hydrateFromFirestore();
+        setAppUsers([...placeholderUsers]); // Explicitly copy to local state
         setIsDataLoaded(true);
     };
     loadData();
@@ -46,8 +48,8 @@ export default function LoginPage() {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       
       if (userCredential.user) {
-        // Find user in our application's user list (now from placeholderUsers)
-        const foundAppUser = placeholderUsers.find(
+        // Find user in our component's state copy of the user list
+        const foundAppUser = appUsers.find(
           u => u.email.toLowerCase() === email.toLowerCase()
         );
 
