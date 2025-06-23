@@ -1,4 +1,3 @@
-
 "use client";
 
 import { PageHeader } from "@/components/page-header";
@@ -212,7 +211,7 @@ export default function AgendaServiciosPage() {
       const dailyProfit = dayServices.reduce((sum, service) => sum + (service.serviceProfit || 0), 0);
       return (
         <div key={date} className="mb-6">
-          <div className="flex justify-between items-center mb-3 bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-slate-200 p-3 rounded-lg shadow-md">
+          <div className="flex justify-between items-center mb-3 bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 p-3 rounded-lg shadow-md">
               <h3 className="text-lg font-semibold">
                   {format(parseISO(date), "EEEE, dd 'de' MMMM 'de' yyyy", { locale: es })}
               </h3>
@@ -236,13 +235,13 @@ export default function AgendaServiciosPage() {
                 <Card key={service.id} className="shadow-sm">
                   <CardContent className="p-0">
                     <div className="flex items-center">
-                        <div className="w-32 shrink-0 text-left px-4">
+                        <div className="w-32 shrink-0 flex flex-col justify-center items-start text-left pl-6">
                             <p className="text-xs text-muted-foreground">ID Servicio</p>
-                            <p className="font-bold text-sm text-foreground">
+                            <p className="font-semibold text-lg text-foreground">
                                 {service.id}
                             </p>
                             <p className="text-xs text-muted-foreground mt-2">Costo</p>
-                            <p className="font-bold text-xl text-foreground">
+                            <p className="font-bold text-2xl text-foreground">
                                 ${service.totalCost.toLocaleString('es-ES')}
                             </p>
                         </div>
@@ -381,8 +380,8 @@ export default function AgendaServiciosPage() {
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-2 mb-6">
-          <TabsTrigger value="futuras" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Citas Futuras</TabsTrigger>
-          <TabsTrigger value="pasadas" className="data-[state=active]:bg-secondary data-[state=active]:text-secondary-foreground">Citas Pasadas</TabsTrigger>
+          <TabsTrigger value="futuras" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">Citas Futuras</TabsTrigger>
+          <TabsTrigger value="pasadas" className="data-[state=active]:bg-gray-700 data-[state=active]:text-white">Citas Pasadas</TabsTrigger>
         </TabsList>
         <TabsContent value="futuras">
           {renderServiceGroup(groupedFutureServices)}
