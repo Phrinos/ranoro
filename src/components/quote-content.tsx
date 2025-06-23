@@ -99,7 +99,7 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
       {/* Main content area */}
       <main className="flex-grow">
         <section className="grid grid-cols-2 gap-8 mb-8">
-            <div className="bg-gray-50 p-4 rounded-md border border-gray-200">
+            <div className="bg-gray-50 px-4 pt-2 pb-4 rounded-md border border-gray-200">
             <h3 className="font-semibold text-base text-gray-700 mb-2 border-b pb-2">Cliente:</h3>
             <div className="space-y-1 leading-tight pt-2">
                 <div>{vehicle?.ownerName || 'N/A'}</div>
@@ -107,7 +107,7 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
                 <div>{vehicle?.ownerEmail || 'N/A'}</div>
             </div>
             </div>
-            <div className="bg-gray-50 p-4 rounded-md border border-gray-200">
+            <div className="bg-gray-50 px-4 pt-2 pb-4 rounded-md border border-gray-200">
             <h3 className="font-semibold text-base text-gray-700 mb-2 border-b pb-2">Vehículo:</h3>
             <div className="space-y-1 leading-tight pt-2">
                 <div>{vehicle ? `${vehicle.make} ${vehicle.model} (${vehicle.year})` : quote.vehicleIdentifier || 'N/A'}</div>
@@ -119,7 +119,7 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
         </section>
 
         <section className="mb-8">
-            <h3 className="font-semibold text-base text-gray-700 mb-2 border-b pb-2">Descripción del Trabajo a Realizar:</h3>
+            <h3 className="font-semibold text-base text-gray-700 mb-3 border-b pb-2">Descripción del Trabajo a Realizar:</h3>
             <p className="text-gray-800 whitespace-pre-wrap pt-2">{quote.description}</p>
         </section>
 
