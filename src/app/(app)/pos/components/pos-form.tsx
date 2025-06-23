@@ -309,7 +309,10 @@ export function PosForm({ inventoryItems: parentInventoryItems, onSaleComplete, 
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         <Card>
-          <CardContent className="flex flex-col pt-6">
+          <CardHeader>
+            <CardTitle>Articulos vendidos</CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-col">
             <ScrollArea className="max-h-[300px] pr-4 flex-grow">
               {fields.length > 0 ? (
                 <div className="space-y-4">
@@ -390,9 +393,9 @@ export function PosForm({ inventoryItems: parentInventoryItems, onSaleComplete, 
           </CardContent>
         </Card>
         
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Left Side: Payment Details */}
-          <div className="lg:col-span-2">
+          <div>
             <Card>
               <CardContent className="pt-6 space-y-4">
                 <FormField
@@ -463,7 +466,7 @@ export function PosForm({ inventoryItems: parentInventoryItems, onSaleComplete, 
           </div>
 
           {/* Right Side: Totals and Submit */}
-          <div className="lg:col-span-1">
+          <div>
              <Card>
                 <CardContent className="pt-6 flex flex-col items-end space-y-2">
                     <div className="text-lg w-full flex justify-between"><span>Subtotal:</span> <span className="font-semibold">{formatCurrency(subTotalState)}</span></div>
@@ -568,3 +571,5 @@ export function PosForm({ inventoryItems: parentInventoryItems, onSaleComplete, 
     </>
   );
 }
+
+    
