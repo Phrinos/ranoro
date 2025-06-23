@@ -132,17 +132,6 @@ export default function ServiciosPage() {
 
   return (
     <>
-      <PageHeader
-        title="Lista de Servicios"
-        description="Visualiza, crea y actualiza las órdenes de servicio."
-        actions={
-            <Button onClick={() => handleOpenDialog()}>
-                <PlusCircle className="mr-2 h-4 w-4" />
-                Nuevo Servicio
-            </Button>
-        }
-      />
-      
       <div className="space-y-4">
         {sortedServicesForList.length > 0 ? sortedServicesForList.map(service => {
               const vehicle = vehicles.find(v => v.id === service.vehicleId);
@@ -238,6 +227,19 @@ export default function ServiciosPage() {
             }) : <p className="text-muted-foreground text-center py-8">No hay órdenes de servicio registradas.</p>}
       </div>
 
+      <div className="mt-6">
+        <PageHeader
+          title="Lista de Servicios"
+          description="Visualiza, crea y actualiza las órdenes de servicio."
+          actions={
+              <Button onClick={() => handleOpenDialog()}>
+                  <PlusCircle className="mr-2 h-4 w-4" />
+                  Nuevo Servicio
+              </Button>
+          }
+        />
+      </div>
+      
       {isServiceDialogOpen && (
         <ServiceDialog
           open={isServiceDialogOpen}
