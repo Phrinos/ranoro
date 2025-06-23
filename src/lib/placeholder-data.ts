@@ -156,14 +156,18 @@ export async function hydrateFromFirestore() {
     console.log(`Default user '${newUserAdmin.email}' was missing and has been added to the current session.`);
   }
   
+  (window as any).__APP_HYDRATED__ = true;
+  console.log("Hydration process complete. Checking for necessary persistence...");
+
   // If the document didn't exist or we had to add a missing user, we should try to persist.
   if (!docSnap || !docSnap.exists() || changesMade) {
-    console.log("Attempting to persist updated data to Firestore...");
-    await persistToFirestore();
+    console.log("Attempting to persist updated data to Firestore in the background...");
+    // We don't await this so that the app can continue loading without waiting for the write to finish.
+    // This is a "fire-and-forget" operation for faster startup.
+    persistToFirestore().catch(err => {
+        console.error("Background persistence failed:", err);
+    });
   }
-
-  (window as any).__APP_HYDRATED__ = true;
-  console.log("Hydration process complete.");
 }
 
 
