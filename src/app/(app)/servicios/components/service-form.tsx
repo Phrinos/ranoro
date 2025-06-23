@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -148,7 +149,7 @@ export function ServiceForm({
         serviceDate: undefined,
         mileage: initialData?.mileage || undefined,
         description: initialData?.description || "",
-        totalServicePrice: (initialData as ServiceRecord)?.totalCost ?? (initialData as QuoteRecord)?.estimatedTotalCost ?? undefined,
+        totalServicePrice: undefined,
         notes: initialData?.notes || "",
         technicianId: (initialData as ServiceRecord)?.technicianId || (initialData as QuoteRecord)?.preparedByTechnicianId || "",
         suppliesUsed: [],
@@ -331,7 +332,6 @@ export function ServiceForm({
         technicianName: technicians.find(t => t.id === values.technicianId)?.name,
         status: values.status!,
         mileage: values.mileage,
-        notes: values.notes,
         suppliesUsed: values.suppliesUsed?.map(s => ({
           supplyId: s.supplyId,
           quantity: s.quantity,

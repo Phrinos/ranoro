@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { PageHeader } from "@/components/page-header";
@@ -244,7 +245,7 @@ export default function AgendaServiciosPage() {
                 <Card key={service.id} className="shadow-sm">
                   <CardContent className="p-0">
                     <div className="flex items-center">
-                        <div className="w-32 shrink-0 flex flex-col justify-center items-start text-left pl-6">
+                        <div className="w-48 shrink-0 flex flex-col justify-center items-start text-left pl-6">
                             <p className="text-xs text-muted-foreground">ID Servicio</p>
                             <p className="font-semibold text-lg text-foreground">
                                 {service.id}
