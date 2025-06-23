@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -12,7 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import type { User } from '@/types';
 import { defaultSuperAdmin, USER_LOCALSTORAGE_KEY, AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
 import { getAuth, signInWithEmailAndPassword } from 'firebase/auth'; // Firebase Auth
-import { auth } from '@/lib/firebaseClient'; // Your initialized auth instance
+import { auth } from '../../../lib/firebaseClient'; // Your initialized auth instance
 
 export default function LoginPage() {
   const router = useRouter();
