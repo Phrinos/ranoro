@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -9,8 +8,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from '@/hooks/use-toast';
-import type { User } from '@/types';
-import { placeholderUsers, hydrateFromFirestore, AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '@root/lib/firebaseClient.js';
 
@@ -28,44 +25,26 @@ export default function LoginPage() {
     setError('');
 
     try {
-      // Step 1: Ensure data is loaded from Firestore before proceeding.
-      // The function has an internal guard to prevent multiple executions per session.
-      await hydrateFromFirestore();
+      // Step 1: Authenticate with Firebase. The AppLayout will handle the rest.
+      await signInWithEmailAndPassword(auth, email, password);
+      
+      // On success, the onAuthStateChanged listener in AppLayout will fire.
+      // We can just redirect to the dashboard.
+      toast({
+        title: 'Inicio de Sesión Correcto',
+        description: 'Redirigiendo al panel principal...',
+      });
+      router.push('/dashboard');
 
-      // Step 2: Authenticate with Firebase.
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      const firebaseUser = userCredential.user;
-
-      if (firebaseUser) {
-        // Step 3: Find the corresponding user in the now-hydrated application data.
-        const foundAppUser = placeholderUsers.find(
-          u => u.id === firebaseUser.uid
-        );
-
-        if (foundAppUser) {
-          localStorage.setItem(AUTH_USER_LOCALSTORAGE_KEY, JSON.stringify(foundAppUser));
-          toast({
-            title: 'Inicio de Sesión Exitoso',
-            description: `Bienvenido, ${foundAppUser.name}!`,
-          });
-          router.push('/dashboard');
-        } else {
-          const errorMessage = 'Usuario autenticado en Firebase pero no encontrado en la base de datos de la aplicación. Contacte al administrador.';
-          setError(errorMessage);
-           toast({
-            title: 'Error de Sincronización de Usuario',
-            description: 'Tu cuenta no está registrada en el sistema del taller.',
-            variant: 'destructive',
-          });
-        }
-      }
     } catch (firebaseError: any) {
-      console.error("Firebase Auth Error:", firebaseError.code);
+      console.error("Firebase Auth Error:", firebaseError.code, firebaseError.message);
       let friendlyMessage = 'Correo electrónico o contraseña incorrectos.';
       if (firebaseError.code === 'auth/invalid-credential' || firebaseError.code === 'auth/user-not-found' || firebaseError.code === 'auth/wrong-password') {
         friendlyMessage = 'Correo electrónico o contraseña incorrectos.';
       } else if (firebaseError.code === 'auth/invalid-email') {
          friendlyMessage = 'El formato del correo electrónico no es válido.';
+      } else if (firebaseError.code === 'auth/too-many-requests') {
+          friendlyMessage = 'Acceso bloqueado temporalmente debido a demasiados intentos. Intente más tarde.';
       }
       setError(friendlyMessage);
       toast({
@@ -73,9 +52,8 @@ export default function LoginPage() {
         description: friendlyMessage,
         variant: 'destructive',
       });
+      setIsLoading(false); // Only stop loading on error
     }
-
-    setIsLoading(false);
   };
 
   return (
