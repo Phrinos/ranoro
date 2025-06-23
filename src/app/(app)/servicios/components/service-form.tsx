@@ -21,7 +21,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent, CardHeader, CardTitle} from "@/components/ui/card";
-import { CalendarIcon, PlusCircle, Search, Trash2, AlertCircle, Car as CarIcon, Clock, DollarSign, PackagePlus } from "lucide-react";
+import { CalendarIcon, PlusCircle, Search, Trash2, AlertCircle, Car as CarIcon, Clock, DollarSign, PackagePlus, BrainCircuit, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format, parseISO, setHours, setMinutes, isValid, startOfDay } from "date-fns";
 import { es } from 'date-fns/locale';
@@ -38,6 +38,7 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { InventoryItemDialog } from "../../inventario/components/inventory-item-dialog";
 import type { InventoryItemFormValues } from "../../inventario/components/inventory-item-form";
+import { suggestPrice, type SuggestPriceInput } from '@/ai/flows/price-suggestion-flow';
 
 
 const supplySchema = z.object({
@@ -138,6 +139,7 @@ export function ServiceForm({
 
   const [isNewInventoryItemDialogOpen, setIsNewInventoryItemDialogOpen] = useState(false);
   const [newSupplyInitialData, setNewSupplyInitialData] = useState<Partial<InventoryItemFormValues> | null>(null);
+  const [isSuggestingPrice, setIsSuggestingPrice] = useState(false);
 
 
   const form = useForm<ServiceFormValues>({
@@ -391,6 +393,51 @@ export function ServiceForm({
     if (event.key === 'Enter') {
       event.preventDefault();
       handleSearchVehicle();
+    }
+  };
+
+  const handleSuggestPrice = async () => {
+    setIsSuggestingPrice(true);
+    try {
+        const description = form.getValues('description');
+        if (!description) {
+            toast({ title: "Falta Descripción", description: "Por favor, escribe una descripción del servicio para poder sugerir un precio.", variant: "destructive" });
+            return;
+        }
+
+        const suppliesForAI = form.getValues('suppliesUsed')?.map(supply => {
+            const itemDetails = currentInventoryItems.find(i => i.id === supply.supplyId);
+            return {
+                supplyName: itemDetails?.name || 'N/A',
+                quantity: supply.quantity,
+                unitPrice: itemDetails?.unitPrice || 0 // Cost price for the workshop
+            };
+        }) || [];
+
+        const input: SuggestPriceInput = {
+            description,
+            supplies: suppliesForAI,
+            totalSuppliesCost: totalSuppliesWorkshopCost,
+        };
+
+        const result = await suggestPrice(input);
+
+        form.setValue('totalServicePrice', result.suggestedPrice, { shouldValidate: true });
+        toast({
+            title: "Sugerencia de Precio IA",
+            description: result.reasoning,
+            duration: 8000
+        });
+
+    } catch (e) {
+        console.error("Error suggesting price:", e);
+        toast({
+            title: "Error de IA",
+            description: "No se pudo obtener una sugerencia de precio en este momento.",
+            variant: "destructive"
+        });
+    } finally {
+        setIsSuggestingPrice(false);
     }
   };
 
@@ -737,9 +784,17 @@ export function ServiceForm({
                         name="totalServicePrice"
                         render={({ field }) => (
                             <FormItem className="md:col-span-1">
-                                <FormLabel className="text-lg">{totalCostLabelText}</FormLabel>
+                                <div className="flex justify-between items-center">
+                                    <FormLabel className="text-lg">{totalCostLabelText}</FormLabel>
+                                    {!isReadOnly && (
+                                        <Button type="button" size="sm" variant="outline" onClick={handleSuggestPrice} disabled={isSuggestingPrice}>
+                                            {isSuggestingPrice ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <BrainCircuit className="mr-2 h-4 w-4" />}
+                                            Sugerir con IA
+                                        </Button>
+                                    )}
+                                </div>
                                 <FormControl>
-                                <Input type="number" step="0.01" placeholder="Ej: 1740.00" {...field} disabled={isReadOnly} className="text-lg font-medium" value={field.value ?? ''} />
+                                <Input type="number" step="0.01" placeholder="Ej: 1740.00" {...field} disabled={isReadOnly || isSuggestingPrice} className="text-lg font-medium" value={field.value ?? ''} />
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>

@@ -28,7 +28,8 @@ import {
   FileText, 
   ClipboardList, 
   BarChart3, 
-  Briefcase
+  Briefcase,
+  BarChartHorizontal
 } from 'lucide-react';
 
 export interface NavigationEntry {
@@ -81,6 +82,7 @@ const BASE_NAV_STRUCTURE: ReadonlyArray<Omit<NavigationEntry, 'isActive'>> = [
   
   // Mi Inventario
   { label: 'Productos', path: '/inventario', icon: Package, groupTag: "Mi Inventario" },
+  { label: 'Análisis IA', path: '/inventario/analisis', icon: BarChartHorizontal, groupTag: "Mi Inventario" },
   { label: 'Categorías', path: '/inventario/categorias', icon: Shapes, groupTag: "Mi Inventario" },
   { label: 'Proveedores', path: '/inventario/proveedores', icon: Building, groupTag: "Mi Inventario" },
   
@@ -153,8 +155,9 @@ const useNavigation = (): NavigationEntry[] => {
     if (entry.path === '/inventario' &&
         (pathname.startsWith('/inventario/categorias') ||
          pathname.startsWith('/inventario/proveedores') ||
+         pathname.startsWith('/inventario/analisis') ||
          pathname.match(/^\/inventario\/P[0-9]+$/) || 
-         pathname.match(/^\/inventario\/[a-zA-Z0-9_-]+$/) && !pathname.includes('categorias') && !pathname.includes('proveedores') 
+         pathname.match(/^\/inventario\/[a-zA-Z0-9_-]+$/) && !pathname.includes('categorias') && !pathname.includes('proveedores') && !pathname.includes('analisis') 
        )) {
       isActive = true;
     }
