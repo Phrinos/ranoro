@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { PlusCircle, Printer, ShoppingCartIcon, AlertTriangle, PackageCheck, DollarSign, Search, ListFilter } from "lucide-react";
+import { PlusCircle, Printer, ShoppingCartIcon, AlertTriangle, PackageCheck, DollarSign, Search, ListFilter, Server } from "lucide-react";
 import { InventoryTable } from "./components/inventory-table";
 import { InventoryItemDialog } from "./components/inventory-item-dialog";
 import { placeholderInventory, placeholderCategories, placeholderSuppliers } from "@/lib/placeholder-data";
@@ -144,13 +144,24 @@ export default function InventarioPage() {
     });
   };
   
-  const { totalInventoryCost, totalInventorySellingPrice, lowStockItemsCount } = useMemo(() => {
+  const { 
+    totalInventoryCost, 
+    totalInventorySellingPrice, 
+    lowStockItemsCount,
+    productsCount,
+    servicesCount
+  } = useMemo(() => {
     let cost = 0;
     let sellingPriceValue = 0; 
     let lowStock = 0;
+    let products = 0;
+    let services = 0;
 
     inventoryItems.forEach(item => {
-      if (!item.isService) { // Only count stockable items for these metrics
+      if (item.isService) {
+        services++;
+      } else {
+        products++;
         cost += item.quantity * item.unitPrice;
         sellingPriceValue += item.quantity * item.sellingPrice;
         if (item.quantity <= item.lowStockThreshold) {
@@ -158,7 +169,13 @@ export default function InventarioPage() {
         }
       }
     });
-    return { totalInventoryCost: cost, totalInventorySellingPrice: sellingPriceValue, lowStockItemsCount: lowStock };
+    return { 
+      totalInventoryCost: cost, 
+      totalInventorySellingPrice: sellingPriceValue, 
+      lowStockItemsCount: lowStock,
+      productsCount: products,
+      servicesCount: services
+    };
   }, [inventoryItems]);
 
   const uniqueCategoriesForFilter = useMemo(() => {
@@ -223,18 +240,32 @@ export default function InventarioPage() {
 
   return (
     <>
-      <div className="mb-6 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+      <div className="mb-6 grid gap-6 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
-              Costo Total del Inventario (Productos)
+              Total Productos en Stock
             </CardTitle>
-            <DollarSign className="h-5 w-5 text-green-500" />
+            <PackageCheck className="h-5 w-5 text-blue-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold font-headline">${totalInventoryCost.toLocaleString('es-ES')}</div>
+            <div className="text-2xl font-bold font-headline">{productsCount}</div>
             <p className="text-xs text-muted-foreground">
-              Valor Venta Total (Productos): ${totalInventorySellingPrice.toLocaleString('es-ES')}
+              Ítems únicos que no son servicios.
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Total Servicios Registrados
+            </CardTitle>
+            <Server className="h-5 w-5 text-purple-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold font-headline">{servicesCount}</div>
+            <p className="text-xs text-muted-foreground">
+              Servicios ofrecidos como ítems.
             </p>
           </CardContent>
         </Card>
@@ -252,17 +283,17 @@ export default function InventarioPage() {
             </p>
           </CardContent>
         </Card>
-         <Card>
+        <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
-              Total Ítems Únicos (Prod. y Serv.)
+              Costo Total del Inventario
             </CardTitle>
-            <PackageCheck className="h-5 w-5 text-blue-500" />
+            <DollarSign className="h-5 w-5 text-green-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold font-headline">{inventoryItems.length}</div>
+            <div className="text-2xl font-bold font-headline">${totalInventoryCost.toLocaleString('es-ES')}</div>
             <p className="text-xs text-muted-foreground">
-              Tipos de productos y servicios diferentes.
+              Valor de venta: ${totalInventorySellingPrice.toLocaleString('es-ES')}
             </p>
           </CardContent>
         </Card>
