@@ -85,23 +85,25 @@ export function ServiceDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       {trigger && !isControlled && <DialogTrigger asChild onClick={() => onOpenChange(true)}>{trigger}</DialogTrigger>}
       {open && (
-        <DialogContent className="sm:max-w-[600px] md:max-w-[800px] lg:max-w-[900px] xl:max-w-[1000px] max-h-[90vh] overflow-y-auto print:hidden">
-          <DialogHeader>
+        <DialogContent className="sm:max-w-[600px] md:max-w-[800px] lg:max-w-[900px] xl:max-w-[1000px] flex flex-col max-h-[90vh] print:hidden">
+          <DialogHeader className="flex-shrink-0">
             <DialogTitle>{dialogTitle}</DialogTitle>
             <DialogDescription>{dialogDescription}</DialogDescription>
           </DialogHeader>
-          <ServiceForm
-            initialDataService={mode === 'service' ? service : null}
-            initialDataQuote={quote || (mode === 'quote' ? (service as any) : null)}
-            vehicles={vehicles} 
-            technicians={technicians}
-            inventoryItems={inventoryItems}
-            onSubmit={handleSubmit}
-            onClose={() => { if (onOpenChange) onOpenChange(false); else setUncontrolledOpen(false); }}
-            isReadOnly={isReadOnly}
-            onVehicleCreated={onVehicleCreated} 
-            mode={mode}
-          />
+          <div className="flex-grow overflow-y-auto -mx-6 px-6 print:overflow-visible">
+            <ServiceForm
+              initialDataService={mode === 'service' ? service : null}
+              initialDataQuote={quote || (mode === 'quote' ? (service as any) : null)}
+              vehicles={vehicles} 
+              technicians={technicians}
+              inventoryItems={inventoryItems}
+              onSubmit={handleSubmit}
+              onClose={() => { if (onOpenChange) onOpenChange(false); else setUncontrolledOpen(false); }}
+              isReadOnly={isReadOnly}
+              onVehicleCreated={onVehicleCreated} 
+              mode={mode}
+            />
+          </div>
         </DialogContent>
       )}
     </Dialog>

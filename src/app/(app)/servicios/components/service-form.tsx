@@ -148,7 +148,7 @@ export function ServiceForm({
         serviceDate: undefined,
         mileage: initialData?.mileage || undefined,
         description: initialData?.description || "",
-        totalServicePrice: (initialData as ServiceRecord)?.totalCost || (initialData as QuoteRecord)?.estimatedTotalCost || 0,
+        totalServicePrice: (initialData as ServiceRecord)?.totalCost ?? (initialData as QuoteRecord)?.estimatedTotalCost ?? undefined,
         notes: initialData?.notes || "",
         technicianId: (initialData as ServiceRecord)?.technicianId || (initialData as QuoteRecord)?.preparedByTechnicianId || "",
         suppliesUsed: [],
@@ -202,7 +202,7 @@ export function ServiceForm({
             description: data.description || "",
             notes: data.notes || "",
             technicianId: (data as ServiceRecord)?.technicianId || (data as QuoteRecord)?.preparedByTechnicianId || undefined,
-            totalServicePrice: (data as ServiceRecord)?.totalCost ?? (data as QuoteRecord)?.estimatedTotalCost ?? 0,
+            totalServicePrice: (data as ServiceRecord)?.totalCost ?? (data as QuoteRecord)?.estimatedTotalCost ?? undefined,
             status: mode === 'service' ? ((data as ServiceRecord)?.status || 'Agendado') : undefined,
             suppliesUsed: mappedSupplies,
         });
@@ -732,7 +732,7 @@ export function ServiceForm({
                             <FormItem className="md:col-span-1">
                                 <FormLabel className="text-lg">{totalCostLabelText}</FormLabel>
                                 <FormControl>
-                                <Input type="number" step="0.01" placeholder="Ej: 1740.00" {...field} disabled={isReadOnly} className="text-lg font-medium"/>
+                                <Input type="number" step="0.01" placeholder="Ej: 1740.00" {...field} disabled={isReadOnly} className="text-lg font-medium" value={field.value ?? ''} />
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>

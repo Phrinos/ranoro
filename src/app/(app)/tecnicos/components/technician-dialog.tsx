@@ -56,18 +56,20 @@ export function TechnicianDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       {trigger && !isControlled && <DialogTrigger asChild onClick={() => onOpenChange(true)}>{trigger}</DialogTrigger>}
       {open && (
-        <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
+        <DialogContent className="sm:max-w-md flex flex-col max-h-[90vh]">
+          <DialogHeader className="flex-shrink-0">
             <DialogTitle>{technician ? "Editar Miembro del Staff Técnico" : "Nuevo Miembro del Staff Técnico"}</DialogTitle>
             <DialogDescription>
               {technician ? "Actualiza los detalles del perfil del miembro del staff técnico." : "Completa la información para un nuevo miembro del staff técnico."}
             </DialogDescription>
           </DialogHeader>
-          <TechnicianForm
-            initialData={technician}
-            onSubmit={handleSubmit}
-            onClose={() => onOpenChange(false)}
-          />
+          <div className="flex-grow overflow-y-auto -mx-6 px-6">
+            <TechnicianForm
+              initialData={technician}
+              onSubmit={handleSubmit}
+              onClose={() => onOpenChange(false)}
+            />
+          </div>
         </DialogContent>
       )}
     </Dialog>
