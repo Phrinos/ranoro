@@ -102,11 +102,7 @@ export function ServicesTable({
               <CardContent className="p-0">
                 <div className="flex items-center">
                     <div className="w-48 shrink-0 flex flex-col justify-center items-start text-left pl-6 py-4">
-                        <p className="text-xs text-muted-foreground">ID Servicio</p>
-                        <p className="font-semibold text-lg text-foreground">
-                            {service.id}
-                        </p>
-                        <p className="text-xs text-muted-foreground mt-2">Costo</p>
+                        <p className="text-xs text-muted-foreground">Costo</p>
                         <p className="font-bold text-2xl text-foreground">
                             {service.totalCostFormatted}
                         </p>
@@ -125,6 +121,7 @@ export function ServicesTable({
                         </div>
                         <div className="mt-4 flex items-center gap-4">
                             <div className="flex-grow">
+                                <p className="font-semibold text-lg text-foreground">{service.id}</p>
                                 <h4 className="font-semibold text-base" title={service.vehicleMakeModelYear}>
                                     {vehicle ? `${vehicle.licensePlate} - ${service.vehicleMakeModelYear}` : service.vehicleIdentifier}
                                 </h4>
