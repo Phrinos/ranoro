@@ -6,7 +6,8 @@ import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { PlusCircle, ListFilter, TrendingUp, DollarSign as DollarSignIcon, CalendarIcon as CalendarDateIcon, BadgeCent, Users } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { PlusCircle, ListFilter, TrendingUp, DollarSign as DollarSignIcon, CalendarIcon as CalendarDateIcon, BadgeCent, Users, Search } from "lucide-react";
 import { TechniciansTable } from "./components/technicians-table";
 import { TechnicianDialog } from "./components/technician-dialog";
 import { placeholderTechnicians, placeholderServiceRecords } from "@/lib/placeholder-data";
@@ -36,6 +37,7 @@ interface AggregatedTechnicianPerformance {
 
 export default function TecnicosPage() {
   const [technicians, setTechnicians] = useState<Technician[]>(placeholderTechnicians);
+  const [searchTerm, setSearchTerm] = useState('');
   const [sortOption, setSortOption] = useState<TechnicianSortOption>("name_asc");
   
   const [filterDateRange, setFilterDateRange] = useState<DateRange | undefined>(undefined);
@@ -98,8 +100,18 @@ export default function TecnicosPage() {
   }, [technicians, filterDateRange]);
 
 
-  const sortedTechniciansForTable = useMemo(() => {
+  const filteredAndSortedTechnicians = useMemo(() => {
     let itemsToDisplay = [...technicians];
+
+    if (searchTerm) {
+      const lowerSearchTerm = searchTerm.toLowerCase();
+      itemsToDisplay = itemsToDisplay.filter(tech =>
+        tech.name.toLowerCase().includes(lowerSearchTerm) ||
+        tech.area.toLowerCase().includes(lowerSearchTerm) ||
+        tech.specialty.toLowerCase().includes(lowerSearchTerm) ||
+        (tech.contactInfo && tech.contactInfo.toLowerCase().includes(lowerSearchTerm))
+      );
+    }
     
     itemsToDisplay.sort((a, b) => {
       switch (sortOption) {
@@ -121,7 +133,7 @@ export default function TecnicosPage() {
       }
     });
     return itemsToDisplay;
-  }, [technicians, sortOption]);
+  }, [technicians, searchTerm, sortOption]);
 
   const formatCurrency = (amount: number) => {
     return `$${amount.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -160,7 +172,7 @@ export default function TecnicosPage() {
           <div>
             <CardTitle>Rendimiento Individual</CardTitle>
             <CardDescription>
-              Comisiones potenciales ganadas por el staff técnico, basadas en servicios completados en el rango de fechas seleccionado. La comisión final se calcula y liquida mensualmente si el taller es rentable, como se refleja en el Resumen Financiero.
+              Comisiones potenciales ganadas por el staff técnico, basadas en servicios completados en el rango de fechas. La comisión final se calcula y liquida mensualmente si el taller es rentable (ver Resumen Financiero).
             </CardDescription>
           </div>
           <Popover>
@@ -230,25 +242,33 @@ export default function TecnicosPage() {
           )}
         </CardContent>
       </Card>
-
+      
       <Card>
         <CardHeader>
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div>
-              <CardTitle>Lista de Staff Técnico</CardTitle>
-              <CardDescription>Visualiza y gestiona al personal técnico.</CardDescription>
+          <CardTitle>Lista de Staff Técnico</CardTitle>
+          <CardDescription>Visualiza y gestiona al personal técnico.</CardDescription>
+          <div className="pt-4 flex flex-col sm:flex-row items-center justify-between gap-2 w-full">
+            <div className="relative flex-1 sm:flex-initial w-full sm:w-auto">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                  type="search"
+                  placeholder="Buscar por nombre, área..."
+                  className="pl-8 w-full sm:w-[250px] lg:w-[300px] bg-white"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+              />
             </div>
-            <div className="flex items-center gap-2">
-              <DropdownMenu>
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+                <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="outline" className="bg-white">
+                    <Button variant="outline" className="w-full sm:w-auto bg-white">
                     <ListFilter className="mr-2 h-4 w-4" />
                     Ordenar Tabla
-                  </Button>
+                    </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuLabel>Ordenar tabla por</DropdownMenuLabel>
-                  <DropdownMenuRadioGroup value={sortOption} onValueChange={(value) => setSortOption(value as TechnicianSortOption)}>
+                    <DropdownMenuLabel>Ordenar tabla por</DropdownMenuLabel>
+                    <DropdownMenuRadioGroup value={sortOption} onValueChange={(value) => setSortOption(value as TechnicianSortOption)}>
                     <DropdownMenuRadioItem value="name_asc">Nombre (A-Z)</DropdownMenuRadioItem>
                     <DropdownMenuRadioItem value="name_desc">Nombre (Z-A)</DropdownMenuRadioItem>
                     <DropdownMenuRadioItem value="area_asc">Área (A-Z)</DropdownMenuRadioItem>
@@ -257,23 +277,23 @@ export default function TecnicosPage() {
                     <DropdownMenuRadioItem value="hireDate_desc">Fecha Contratación (Nuevo a Antiguo)</DropdownMenuRadioItem>
                     <DropdownMenuRadioItem value="salary_asc">Sueldo (Menor a Mayor)</DropdownMenuRadioItem>
                     <DropdownMenuRadioItem value="salary_desc">Sueldo (Mayor a Menor)</DropdownMenuRadioItem>
-                  </DropdownMenuRadioGroup>
+                    </DropdownMenuRadioGroup>
                 </DropdownMenuContent>
-              </DropdownMenu>
-              <TechnicianDialog
+                </DropdownMenu>
+                <TechnicianDialog
                 trigger={
-                  <Button>
+                    <Button className="w-full sm:w-auto">
                     <PlusCircle className="mr-2 h-4 w-4" />
                     Nuevo Staff Técnico
-                  </Button>
+                    </Button>
                 }
                 onSave={handleSaveTechnician}
-              />
+                />
             </div>
           </div>
         </CardHeader>
         <CardContent>
-          <TechniciansTable technicians={sortedTechniciansForTable} />
+          <TechniciansTable technicians={filteredAndSortedTechnicians} />
         </CardContent>
       </Card>
     </>
