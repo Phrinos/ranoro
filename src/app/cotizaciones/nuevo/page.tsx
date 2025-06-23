@@ -1,1 +1,2 @@
-export {}; // This file is disabled to resolve a route conflict.
+// This file is disabled to resolve a route conflict.
+export {};
