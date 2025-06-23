@@ -3,7 +3,7 @@
 
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Edit, Trash2, Clock, Search as SearchIcon, Calendar, CalendarCheck } from "lucide-react";
+import { PlusCircle, Edit, Trash2, Clock, Search as SearchIcon, Calendar, CalendarCheck, CheckCircle } from "lucide-react";
 import {
   placeholderServiceRecords,
   placeholderVehicles,
@@ -255,14 +255,18 @@ export default function AgendaServiciosPage() {
                       <div className="border-t border-dashed"></div>
                       <div className="flex flex-wrap justify-start items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
                         <div className="flex items-center gap-1 font-medium text-foreground" title="Hora de Recepción">
-                          <Clock className="h-4 w-4 text-muted-foreground" />
+                          <Clock className="h-4 w-4" />
                           <span>Recepción: {formattedServiceTime}</span>
                         </div>
                         <span title={`Técnico: ${technician ? technician.name : 'N/A'}`}>
                             Téc: <span className="font-medium text-foreground">{technician ? technician.name : 'N/A'}</span>
                         </span>
                         <div className="flex items-center gap-1" title="Fecha de Entrega">
-                            <CalendarCheck className="h-4 w-4" />
+                            {service.status === 'Completado' ? (
+                                <CheckCircle className="h-4 w-4 text-green-600" />
+                            ) : (
+                                <CalendarCheck className="h-4 w-4" />
+                            )}
                             <span>Entrega: {formattedDelivery}</span>
                         </div>
                       </div>
