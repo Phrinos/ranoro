@@ -265,6 +265,19 @@ export default function HistorialServiciosPage() {
         </Card>
       </div>
 
+      <PageHeader
+        title="Servicios"
+        description="Consulta, filtra y ordena todas las órdenes de servicio registradas."
+        actions={
+          <Button asChild>
+            <Link href="/servicios/nuevo">
+              <PlusCircle className="mr-2 h-4 w-4" />
+              Nuevo Servicio
+            </Link>
+          </Button>
+        }
+      />
+
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:flex-wrap">
         <div className="relative flex-1 min-w-[200px] sm:min-w-[300px]">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -347,21 +360,6 @@ export default function HistorialServiciosPage() {
         onVehicleCreated={handleVehicleCreated}
         isHistoryView={true}
       />
-
-      <div className="mt-6">
-        <PageHeader
-          title="Servicios"
-          description="Consulta, filtra y ordena todas las órdenes de servicio registradas."
-          actions={
-            <Button asChild>
-              <Link href="/servicios/nuevo">
-                <PlusCircle className="mr-2 h-4 w-4" />
-                Nuevo Servicio
-              </Link>
-            </Button>
-          }
-        />
-      </div>
       
       {currentServiceForTicket && (
         <PrintTicketDialog
