@@ -135,7 +135,7 @@ export default function HistorialCotizacionesPage() {
   
   const handleGenerateService = (quote: QuoteRecord) => {
     if (quote.serviceId) {
-      toast({ title: "Ya Convertido", description: `Esta cotización ya fue convertida al servicio ID: ${quote.serviceId}.` });
+      toast({ title: "Ya Ingresado", description: `Esta cotización ya fue ingresada al servicio ID: ${quote.serviceId}.` });
       return;
     }
     setQuoteToConvert(quote);
@@ -180,11 +180,11 @@ export default function HistorialCotizacionesPage() {
     const element = quoteContentRef.current;
     const pdfFileName = `Cotizacion-${quoteToPrint.id}.pdf`;
     const opt = {
-      margin: 0.5,
+      margin: 7.5,
       filename: pdfFileName,
       image: { type: 'jpeg', quality: 0.98 },
       html2canvas: { scale: 2, useCORS: true, letterRendering: true },
-      jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
+      jsPDF: { unit: 'mm', format: 'letter', orientation: 'portrait' }
     };
     toast({ title: "Generando PDF...", description: `Se está preparando ${pdfFileName}.` });
     html2pdf().from(element).set(opt).save();
@@ -206,6 +206,7 @@ export default function HistorialCotizacionesPage() {
         toast({
             title: "Mensaje Copiado",
             description: "El mensaje para WhatsApp ha sido copiado a tu portapapeles.",
+            duration: 2000,
         });
     }).catch(err => {
         console.error("Could not copy text: ", err);

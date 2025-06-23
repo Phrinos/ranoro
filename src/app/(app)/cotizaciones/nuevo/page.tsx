@@ -150,6 +150,7 @@ export default function NuevaCotizacionPage() {
         toast({
           title: "Mensaje copiado",
           description: "El mensaje fue copiado al portapapeles.",
+          duration: 2000,
         });
       })
       .catch((err: unknown) => {

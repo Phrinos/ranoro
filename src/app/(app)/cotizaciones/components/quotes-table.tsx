@@ -64,7 +64,7 @@ export function QuotesTable({ quotes, onViewQuote, onEditQuote, onGenerateServic
                 <TableCell className="text-right font-semibold">{formatCurrency(quote.estimatedTotalCost)}</TableCell>
                 <TableCell>
                   {quote.serviceId ? (
-                    <Badge variant="success">Convertido</Badge>
+                    <Badge variant="success">Ingresado</Badge>
                   ) : (
                     <Badge variant="outline">Pendiente</Badge>
                   )}
