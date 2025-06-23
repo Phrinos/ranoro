@@ -17,7 +17,7 @@ import { useToast } from '@/hooks/use-toast';
 import type { User, AppRole } from '@/types';
 import { PlusCircle, Trash2, Edit, Search, ShieldQuestion, ShieldAlert } from "lucide-react";
 import { useRouter } from 'next/navigation';
-import { defaultSuperAdmin, USER_LOCALSTORAGE_KEY, AUTH_USER_LOCALSTORAGE_KEY, ROLES_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
+import { placeholderUsers, defaultSuperAdmin, AUTH_USER_LOCALSTORAGE_KEY, ROLES_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
 
 
 const userFormSchema = z.object({
@@ -61,21 +61,8 @@ export default function UsuariosPage() {
       const authUserString = localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY);
       if (authUserString) setCurrentUser(JSON.parse(authUserString));
 
-      const storedUsersString = localStorage.getItem(USER_LOCALSTORAGE_KEY);
-      let loadedUsers: User[] = [];
-      try {
-        loadedUsers = storedUsersString ? JSON.parse(storedUsersString) : [];
-      } catch (error) {
-        console.error("Error parsing users from localStorage:", error);
-        loadedUsers = [];
-      }
-      
-      if (!loadedUsers.some(u => u.id === defaultSuperAdmin.id)) {
-        loadedUsers.unshift(defaultSuperAdmin);
-        localStorage.setItem(USER_LOCALSTORAGE_KEY, JSON.stringify(loadedUsers));
-      }
-
-      setUsers(loadedUsers);
+      // Set local state from the global, in-memory placeholderUsers array
+      setUsers(placeholderUsers);
 
       const storedRolesString = localStorage.getItem(ROLES_LOCALSTORAGE_KEY);
       const loadedRoles: AppRole[] = storedRolesString ? JSON.parse(storedRolesString) : [];
@@ -122,15 +109,19 @@ export default function UsuariosPage() {
   };
 
   const onSubmit = (data: UserFormValues) => {
-    let updatedUsers: User[];
     if (editingUser) {
       if (!canEditOrDelete(editingUser)) {
         toast({ title: 'Acción no permitida', description: 'No tienes permisos para editar este usuario.', variant: 'destructive' });
         return;
       }
-      // Password is not updated from this form for existing users anymore.
       const updatedUser = { ...editingUser, name: data.name, email: data.email, role: data.role, phone: data.phone || undefined };
-      updatedUsers = users.map(u => u.id === editingUser.id ? updatedUser : u);
+      
+      const userIndex = placeholderUsers.findIndex(u => u.id === editingUser.id);
+      if (userIndex !== -1) {
+        placeholderUsers[userIndex] = updatedUser;
+      }
+      setUsers([...placeholderUsers]);
+      
       toast({ title: 'Usuario Actualizado', description: `El usuario ${data.name} ha sido actualizado.` });
     } else {
       if (!canCreateUsers()) {
@@ -149,12 +140,11 @@ export default function UsuariosPage() {
         role: data.role,
         password: data.password,
       };
-      updatedUsers = [...users, newUser];
+      
+      placeholderUsers.push(newUser);
+      setUsers([...placeholderUsers]);
+      
       toast({ title: 'Usuario Creado (Local)', description: `El usuario ${data.name} ha sido creado en el sistema local. Debe crearlo en Firebase.` });
-    }
-    setUsers(updatedUsers);
-    if (typeof window !== 'undefined') {
-      localStorage.setItem(USER_LOCALSTORAGE_KEY, JSON.stringify(updatedUsers));
     }
     setIsFormOpen(false);
   };
@@ -165,11 +155,13 @@ export default function UsuariosPage() {
          toast({ title: 'Acción no permitida', description: 'No puedes eliminar a este usuario.', variant: 'destructive' });
         return;
     }
-    const updatedUsers = users.filter(u => u.id !== userId);
-    setUsers(updatedUsers);
-    if (typeof window !== 'undefined') {
-      localStorage.setItem(USER_LOCALSTORAGE_KEY, JSON.stringify(updatedUsers));
+
+    const userIndex = placeholderUsers.findIndex(u => u.id === userId);
+    if (userIndex !== -1) {
+      placeholderUsers.splice(userIndex, 1);
     }
+    setUsers([...placeholderUsers]);
+    
     toast({ title: 'Usuario Eliminado (Local)', description: `El usuario ha sido eliminado. Recuerde eliminarlo de Firebase.` });
   };
   

@@ -2,7 +2,7 @@
 import type { Vehicle, ServiceRecord, Technician, InventoryItem, DashboardMetrics, SaleReceipt, ServiceSupply, TechnicianMonthlyPerformance, InventoryCategory, Supplier, SaleItem, PaymentMethod, AppRole, QuoteRecord, MonthlyFixedExpense, AdministrativeStaff, User } from '@/types';
 import { format, subMonths, addDays, getYear, getMonth, setHours, setMinutes, subDays, startOfMonth, endOfMonth, startOfDay, endOfDay } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { db } from '../../lib/firebaseClient';
+import { db } from '@root/lib/firebaseClient.js';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 
 
@@ -45,8 +45,9 @@ export const defaultSuperAdmin: User = {
   phone: '4493930914'
 };
 
-export const USER_LOCALSTORAGE_KEY = 'appUsers';
+export let placeholderUsers: User[] = []; // This will be hydrated from Firestore
 export const AUTH_USER_LOCALSTORAGE_KEY = 'authUser';
+export const USER_LOCALSTORAGE_KEY = 'appUsers';
 export const ROLES_LOCALSTORAGE_KEY = 'appRoles';
 
 // =======================================
@@ -90,6 +91,7 @@ const DATA_ARRAYS = {
     vehicles: placeholderVehicles,
     technicians: placeholderTechnicians,
     administrativeStaff: placeholderAdministrativeStaff,
+    users: placeholderUsers,
     serviceRecords: placeholderServiceRecords,
     quotes: placeholderQuotes,
     sales: placeholderSales,
@@ -122,11 +124,21 @@ export async function hydrateFromFirestore() {
                 targetArray.splice(0, targetArray.length, ...firestoreData[key]);
             }
         }
+        
+        // Ensure default superadmin exists after hydration, crucial for first-time login
+        if (!placeholderUsers.some(u => u.email.toLowerCase() === defaultSuperAdmin.email.toLowerCase())) {
+            placeholderUsers.unshift(defaultSuperAdmin);
+        }
+
         console.log("Data successfully hydrated from Firestore.");
     } else {
         console.log("No database document found. Seeding with initial data and persisting to Firestore.");
-        // If no document exists, this is likely the first run ever.
-        // We persist the initial (potentially empty) placeholder data.
+        
+        // Ensure default superadmin is present in the initial data before first persist
+        if (!placeholderUsers.some(u => u.email.toLowerCase() === defaultSuperAdmin.email.toLowerCase())) {
+          placeholderUsers.unshift(defaultSuperAdmin);
+        }
+
         await persistToFirestore();
     }
   } catch (error) {
