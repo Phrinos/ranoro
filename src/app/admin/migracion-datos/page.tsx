@@ -1,10 +1,12 @@
 "use client";
 
 import { useState } from 'react';
+import * as XLSX from 'xlsx'; // Import xlsx library
 import { PageHeader } from "@/components/page-header";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { UploadCloud, Loader2, CheckCircle, AlertTriangle, Car, Wrench } from "lucide-react";
 import { useToast } from '@/hooks/use-toast';
 import { migrateData, type ExtractedVehicle, type ExtractedService } from '@/ai/flows/data-migration-flow';
@@ -23,6 +25,9 @@ interface MigrationResult {
 }
 
 export default function MigracionDatosPage() {
+  const [workbook, setWorkbook] = useState<XLSX.WorkBook | null>(null);
+  const [sheetNames, setSheetNames] = useState<string[]>([]);
+  const [selectedSheet, setSelectedSheet] = useState<string>('');
   const [fileContent, setFileContent] = useState<string | null>(null);
   const [fileName, setFileName] = useState<string>('');
   const [isUploading, setIsUploading] = useState(false);
@@ -33,34 +38,64 @@ export default function MigracionDatosPage() {
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      if (!file.type.includes('csv')) {
+      if (!file.name.endsWith('.xlsx')) {
         toast({
           title: "Archivo no válido",
-          description: "Por favor, seleccione un archivo con formato .csv",
+          description: "Por favor, seleccione un archivo con formato .xlsx",
           variant: "destructive",
         });
-        setFileContent(null);
-        setFileName('');
+        resetState();
         return;
       }
+      
       const reader = new FileReader();
       reader.onload = (e) => {
-        const text = e.target?.result as string;
-        setFileContent(text);
-        setFileName(file.name);
-        setError(null);
-        setMigrationResult(null);
+        try {
+          const data = e.target?.result;
+          const wb = XLSX.read(data, { type: 'array' });
+          setWorkbook(wb);
+          setSheetNames(wb.SheetNames);
+          setSelectedSheet(wb.SheetNames[0]); // Auto-select the first sheet
+          setFileName(file.name);
+          setError(null);
+          setMigrationResult(null);
+
+          // Automatically set content for the first sheet
+          const firstSheetCsv = XLSX.utils.sheet_to_csv(wb.Sheets[wb.SheetNames[0]]);
+          setFileContent(firstSheetCsv);
+
+        } catch (err) {
+            console.error("Error reading XLSX file:", err);
+            toast({ title: "Error al leer archivo", description: "El archivo podría estar corrupto o en un formato no soportado.", variant: "destructive" });
+            resetState();
+        }
       };
-      reader.readAsText(file);
+      reader.readAsArrayBuffer(file);
     }
   };
+
+  const handleSheetChange = (sheetName: string) => {
+    if (!workbook) return;
+    setSelectedSheet(sheetName);
+    const sheetCsv = XLSX.utils.sheet_to_csv(workbook.Sheets[sheetName]);
+    setFileContent(sheetCsv);
+  };
+
+  const resetState = () => {
+    setFileContent(null);
+    setFileName('');
+    setWorkbook(null);
+    setSheetNames([]);
+    setSelectedSheet('');
+  };
+
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!fileContent) {
       toast({
-        title: "No se seleccionó archivo",
-        description: "Por favor, seleccione un archivo para importar.",
+        title: "No hay datos para importar",
+        description: "Por favor, seleccione un archivo y una hoja.",
         variant: "destructive",
       });
       return;
@@ -145,7 +180,7 @@ export default function MigracionDatosPage() {
     <div className="container mx-auto py-8">
       <PageHeader
         title="Migración de Datos con IA"
-        description="Importa datos históricos desde un archivo CSV."
+        description="Importa datos históricos desde un archivo XLSX."
       />
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-1">
@@ -153,25 +188,44 @@ export default function MigracionDatosPage() {
             <CardHeader>
               <CardTitle>1. Cargar Archivo</CardTitle>
               <CardDescription>
-                Sube un archivo <code>.csv</code> con el historial de vehículos y servicios. La IA lo analizará automáticamente.
+                Sube un archivo <code>.xlsx</code> con el historial de vehículos y servicios.
               </CardDescription>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div>
                   <label htmlFor="file-upload" className="block text-sm font-medium text-foreground mb-1">
-                    Seleccionar archivo CSV
+                    Seleccionar archivo XLSX
                   </label>
                   <Input
                     id="file-upload"
                     type="file"
-                    accept=".csv"
+                    accept=".xlsx, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                     onChange={handleFileChange}
                     className="file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20"
                     disabled={isUploading}
                   />
                   {fileName && <p className="mt-2 text-sm text-muted-foreground">Archivo: {fileName}</p>}
                 </div>
+
+                {sheetNames.length > 0 && (
+                   <div className="space-y-2">
+                    <label htmlFor="sheet-select" className="block text-sm font-medium text-foreground">
+                        Seleccionar hoja de cálculo
+                    </label>
+                    <Select value={selectedSheet} onValueChange={handleSheetChange}>
+                        <SelectTrigger id="sheet-select">
+                            <SelectValue placeholder="Seleccione una hoja" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {sheetNames.map(name => (
+                                <SelectItem key={name} value={name}>{name}</SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                   </div>
+                )}
+
                 <Button type="submit" className="w-full" disabled={!fileContent || isUploading}>
                   {isUploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <UploadCloud className="mr-2 h-4 w-4" />}
                   {isUploading ? "Procesando con IA..." : "Iniciar Importación"}
