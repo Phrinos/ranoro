@@ -118,6 +118,10 @@ export function ServicesTable({
                                 {(service.status === 'Reparando' || service.status === 'Completado') ? <CheckCircle className="h-4 w-4 text-green-600" /> : <Clock className="h-4 w-4" />}
                                 <span>Recepción: {serviceReceptionTime}</span>
                             </div>
+                            <div className="flex items-center gap-1.5" title="Técnico">
+                                <Wrench className="h-4 w-4" />
+                                <span>{service.technicianName}</span>
+                            </div>
                             <div className="flex items-center gap-1.5" title="Fecha de Entrega">
                                 {service.status === 'Completado' ? <CheckCircle className="h-4 w-4 text-green-600" /> : <CalendarCheck className="h-4 w-4" />}
                                 <span>Entrega: {service.formattedDeliveryDateTime}</span>
@@ -139,10 +143,6 @@ export function ServicesTable({
                     </div>
 
                     <div className="w-48 shrink-0 flex flex-col items-center justify-center p-4 gap-y-2">
-                        <div className="text-center">
-                            <p className="font-medium text-sm truncate" title={service.technicianName}>{service.technicianName}</p>
-                            <p className="text-xs text-muted-foreground -mt-1">Técnico</p>
-                        </div>
                         <Badge variant={getStatusVariant(service.status)} className="w-full justify-center text-center">{service.status}</Badge>
                         <div className="flex">
                             <Button variant="ghost" size="icon" onClick={() => handleOpenEditDialog(services.find(s => s.id === service.id)!)} title="Editar Servicio">
