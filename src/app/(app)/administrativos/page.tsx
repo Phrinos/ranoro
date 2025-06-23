@@ -89,7 +89,7 @@ export default function AdministrativosPage() {
           if (!b.hireDate) return -1;
           return compareAsc(parseISO(a.hireDate), parseISO(b.hireDate));
         case 'hireDate_desc':
-          if (!a.hireDate) return 1;
+          if (!a.hireDate) return 1; 
           if (!b.hireDate) return -1;
           return compareDesc(parseISO(a.hireDate), parseISO(b.hireDate));
         case 'salary_asc': return (a.monthlySalary || 0) - (b.monthlySalary || 0);
@@ -245,54 +245,52 @@ export default function AdministrativosPage() {
 
       <Card>
         <CardHeader>
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                <div>
-                    <CardTitle>Lista de Staff Administrativo</CardTitle>
-                    <CardDescription>Visualiza y gestiona al personal administrativo.</CardDescription>
-                </div>
-                <div className="flex items-center gap-2">
-                    <div className="relative flex-1 w-full sm:w-auto">
-                        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                        <Input
-                            type="search"
-                            placeholder="Buscar por nombre, rol..."
-                            className="pl-8 w-full sm:w-[300px] bg-white"
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                        />
-                    </div>
-                    <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                        <Button variant="outline" className="flex-1 sm:flex-initial bg-white">
-                        <ListFilter className="mr-2 h-4 w-4" />
-                        Ordenar Tabla
-                        </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>Ordenar por</DropdownMenuLabel>
-                        <DropdownMenuRadioGroup value={sortOption} onValueChange={(value) => setSortOption(value as StaffSortOption)}>
-                        <DropdownMenuRadioItem value="name_asc">Nombre (A-Z)</DropdownMenuRadioItem>
-                        <DropdownMenuRadioItem value="name_desc">Nombre (Z-A)</DropdownMenuRadioItem>
-                        <DropdownMenuRadioItem value="role_asc">Rol/Área (A-Z)</DropdownMenuRadioItem>
-                        <DropdownMenuRadioItem value="role_desc">Rol/Área (Z-A)</DropdownMenuRadioItem>
-                        <DropdownMenuRadioItem value="hireDate_asc">Fecha Contratación (Antiguo a Nuevo)</DropdownMenuRadioItem>
-                        <DropdownMenuRadioItem value="hireDate_desc">Fecha Contratación (Nuevo a Antiguo)</DropdownMenuRadioItem>
-                        <DropdownMenuRadioItem value="salary_asc">Sueldo (Menor a Mayor)</DropdownMenuRadioItem>
-                        <DropdownMenuRadioItem value="salary_desc">Sueldo (Mayor a Menor)</DropdownMenuRadioItem>
-                        </DropdownMenuRadioGroup>
-                    </DropdownMenuContent>
-                    </DropdownMenu>
-                    <AdministrativeStaffDialog
-                    trigger={
-                        <Button className="flex-1 sm:flex-initial">
-                        <PlusCircle className="mr-2 h-4 w-4" />
-                        Nuevo Staff
-                        </Button>
-                    }
-                    onSave={handleSaveStaff}
-                    />
-                </div>
+          <CardTitle>Lista de Staff Administrativo</CardTitle>
+          <CardDescription>Visualiza y gestiona al personal administrativo.</CardDescription>
+          <div className="pt-4 flex flex-col sm:flex-row items-center justify-between gap-2 w-full">
+            <div className="relative flex-1 sm:flex-initial w-full sm:w-auto">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                  type="search"
+                  placeholder="Buscar por nombre, rol..."
+                  className="pl-8 w-full sm:w-[250px] lg:w-[300px] bg-white"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+              />
             </div>
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+                <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                    <Button variant="outline" className="w-full sm:w-auto bg-white">
+                    <ListFilter className="mr-2 h-4 w-4" />
+                    Ordenar Tabla
+                    </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                    <DropdownMenuLabel>Ordenar por</DropdownMenuLabel>
+                    <DropdownMenuRadioGroup value={sortOption} onValueChange={(value) => setSortOption(value as StaffSortOption)}>
+                    <DropdownMenuRadioItem value="name_asc">Nombre (A-Z)</DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="name_desc">Nombre (Z-A)</DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="role_asc">Rol/Área (A-Z)</DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="role_desc">Rol/Área (Z-A)</DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="hireDate_asc">Fecha Contratación (Antiguo a Nuevo)</DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="hireDate_desc">Fecha Contratación (Nuevo a Antiguo)</DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="salary_asc">Sueldo (Menor a Mayor)</DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="salary_desc">Sueldo (Mayor a Menor)</DropdownMenuRadioItem>
+                    </DropdownMenuRadioGroup>
+                </DropdownMenuContent>
+                </DropdownMenu>
+                <AdministrativeStaffDialog
+                trigger={
+                    <Button className="w-full sm:w-auto">
+                    <PlusCircle className="mr-2 h-4 w-4" />
+                    Nuevo Staff
+                    </Button>
+                }
+                onSave={handleSaveStaff}
+                />
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
             <AdministrativeStaffTable staffList={filteredAndSortedStaff} />
