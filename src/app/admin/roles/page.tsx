@@ -60,21 +60,7 @@ export default function RolesPage() {
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const storedRolesString = localStorage.getItem(ROLES_LOCALSTORAGE_KEY);
-      let loadedRoles: AppRole[] = storedRolesString ? JSON.parse(storedRolesString) : [];
-
-      if (loadedRoles.length === 0) {
-        const adminPermissions = ALL_AVAILABLE_PERMISSIONS
-            .map(p => p.id)
-            .filter(id => !['users:manage', 'roles:manage', 'ticket_config:manage'].includes(id));
-        
-        loadedRoles = [
-            { id: 'role_superadmin_default', name: 'Superadmin', permissions: ALL_AVAILABLE_PERMISSIONS.map(p => p.id) },
-            { id: 'role_admin_default', name: 'Admin', permissions: adminPermissions },
-            { id: 'role_tecnico_default', name: 'Tecnico', permissions: ['dashboard:view', 'services:create', 'services:edit', 'services:view_history', 'inventory:view', 'vehicles:manage', 'pos:view_sales'] },
-            { id: 'role_ventas_default', name: 'Ventas', permissions: ['dashboard:view', 'pos:create_sale', 'pos:view_sales', 'inventory:view', 'vehicles:manage'] }
-        ];
-        localStorage.setItem(ROLES_LOCALSTORAGE_KEY, JSON.stringify(loadedRoles));
-      }
+      const loadedRoles: AppRole[] = storedRolesString ? JSON.parse(storedRolesString) : [];
       setRoles(loadedRoles);
     }
   }, []);
