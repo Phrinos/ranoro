@@ -241,7 +241,7 @@ export default function ResumenFinancieroPage() {
         </CardContent>
       </Card>
 
-      <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-3">
+      <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-2">
         <Card className="lg:col-span-1">
           <CardHeader>
             <CardTitle className="text-xl flex items-center gap-2">
@@ -325,26 +325,6 @@ export default function ResumenFinancieroPage() {
           </CardContent>
         </Card>
         
-        <Card className="lg:col-span-1 bg-primary/5 dark:bg-primary/10 border-primary/30">
-          <CardHeader>
-            <CardTitle className="text-xl flex items-center gap-2">
-              <DollarSign className="h-6 w-6 text-primary" />
-              Resultado Neto del Mes
-            </CardTitle>
-             <CardDescription>Ganancia neta para {financialSummary.monthYearLabel}</CardDescription>
-          </CardHeader>
-          <CardContent className="text-center py-8">
-            <p className={`text-4xl font-bold ${financialSummary.netProfit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-              {formatCurrency(financialSummary.netProfit)}
-            </p>
-            <p className="text-sm text-muted-foreground mt-2">
-              (Ganancia Bruta Operativa - Total de Gastos)
-            </p>
-            {!financialSummary.isProfitableForCommissions && (
-                 <p className="text-xs text-orange-600 mt-2">(Nota: Las comisiones son $0 este mes porque no se cubrieron los gastos fijos con la ganancia operativa.)</p>
-            )}
-          </CardContent>
-        </Card>
       </div>
       
       <Card className="mt-8 bg-blue-50 dark:bg-blue-900/30 border-blue-200 dark:border-blue-700">
