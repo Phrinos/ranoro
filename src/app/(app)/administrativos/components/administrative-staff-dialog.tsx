@@ -56,18 +56,20 @@ export function AdministrativeStaffDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       {trigger && !isControlled && <DialogTrigger asChild onClick={() => onOpenChange(true)}>{trigger}</DialogTrigger>}
       {open && (
-        <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
+        <DialogContent className="sm:max-w-md flex flex-col max-h-[90vh]">
+          <DialogHeader className="flex-shrink-0">
             <DialogTitle>{staffMember ? "Editar Miembro del Staff Administrativo" : "Nuevo Miembro del Staff Administrativo"}</DialogTitle>
             <DialogDescription>
               {staffMember ? "Actualiza los detalles del perfil del staff." : "Completa la información para un nuevo miembro del staff."}
             </DialogDescription>
           </DialogHeader>
-          <AdministrativeStaffForm
-            initialData={staffMember}
-            onSubmit={handleSubmit}
-            onClose={() => onOpenChange(false)}
-          />
+          <div className="flex-grow overflow-y-auto -mx-6 px-6">
+            <AdministrativeStaffForm
+              initialData={staffMember}
+              onSubmit={handleSubmit}
+              onClose={() => onOpenChange(false)}
+            />
+          </div>
         </DialogContent>
       )}
     </Dialog>
