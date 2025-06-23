@@ -1,3 +1,4 @@
+
 "use client";
 
 import { PageHeader } from "@/components/page-header";
@@ -166,12 +167,20 @@ export default function AgendaServiciosPage() {
   const futureServices = useMemo(() => {
     return filteredServices.filter(service => {
       const serviceDate = parseISO(service.serviceDate);
-      return isToday(serviceDate) || isFuture(serviceDate);
+      return isValid(serviceDate) && (isToday(serviceDate) || isFuture(serviceDate));
     });
   }, [filteredServices]);
 
   const pastServices = useMemo(() => {
-    return filteredServices.filter(service => isPast(parseISO(service.serviceDate)) && !isToday(parseISO(service.serviceDate)));
+    return filteredServices.filter(service => {
+      const serviceDate = parseISO(service.serviceDate);
+      if (!isValid(serviceDate)) return false;
+
+      const isServiceInThePast = isPast(serviceDate) && !isToday(serviceDate);
+      const isValidStatusForPast = service.status === 'Agendado' || service.status === 'Cancelado';
+
+      return isServiceInThePast && isValidStatusForPast;
+    });
   }, [filteredServices]);
 
 
