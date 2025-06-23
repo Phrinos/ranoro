@@ -70,7 +70,7 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
     <div 
       ref={ref}
       data-format="letter"
-      className="font-sans bg-white text-black shadow-lg printable-quote printable-content mx-auto w-[794px] p-12 text-sm flex flex-col"
+      className="font-sans bg-white text-black shadow-lg printable-quote printable-content mx-auto p-6 text-sm flex flex-col"
     >
       <header className="flex justify-between items-start mb-8 border-b border-gray-300 pb-4">
         <div>
