@@ -35,11 +35,11 @@ export const placeholderAdministrativeStaff: AdministrativeStaff[] = [];
 // =======================================
 export const defaultSuperAdmin: User = {
   id: 'user_superadmin_default',
-  name: 'Arturo Ranoro (Superadmin)',
-  email: 'arturo@ranoro.mx',
+  name: 'Super Administrador',
+  email: 'superadmin@ranoro.mx',
   role: 'Superadmin',
   password: 'CA1abaza',
-  phone: '4491234567' 
+  phone: '0000000000'
 };
 
 export const USER_LOCALSTORAGE_KEY = 'appUsers';
