@@ -7,7 +7,7 @@ import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/layout/app-sidebar";
 import { hydrateFromFirestore, persistToFirestore } from '@/lib/placeholder-data';
 import { onAuthStateChanged } from 'firebase/auth'; // Firebase
-import { auth } from '@/lib/firebaseClient'; // Firebase
+import { auth } from '../../../lib/firebaseClient'; // Firebase
 
 export default function AppLayout({
   children,
