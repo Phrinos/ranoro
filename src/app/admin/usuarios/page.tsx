@@ -14,24 +14,39 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useToast } from '@/hooks/use-toast';
-import type { User, UserRole } from '@/types';
+import type { User, AppRole } from '@/types';
 import { PlusCircle, Trash2, Edit, Search, ShieldQuestion } from "lucide-react";
 import { useRouter } from 'next/navigation';
 
 const USER_LOCALSTORAGE_KEY = 'appUsers';
 const AUTH_USER_LOCALSTORAGE_KEY = 'authUser';
+const ROLES_LOCALSTORAGE_KEY = 'appRoles';
 
 const userFormSchema = z.object({
   name: z.string().min(3, "El nombre debe tener al menos 3 caracteres."),
   email: z.string().email("Ingrese un correo electrónico válido."),
   phone: z.string().optional(),
-  role: z.enum(['superadmin', 'admin', 'tecnico', 'ventas'], { required_error: "Seleccione un rol." }),
-  password: z.string().min(6, "La contraseña debe tener al menos 6 caracteres."),
-  confirmPassword: z.string().min(6, "Confirme la contraseña."),
-}).refine(data => data.password === data.confirmPassword, {
+  role: z.string({ required_error: "Seleccione un rol." }).min(1, "Debe seleccionar un rol."),
+  password: z.string().min(6, "La contraseña debe tener al menos 6 caracteres.").optional().or(z.literal('')),
+  confirmPassword: z.string().optional().or(z.literal('')),
+}).refine(data => {
+    if (data.password && data.password.length > 0) {
+        return data.password === data.confirmPassword;
+    }
+    return true;
+}, {
   message: "Las contraseñas no coinciden.",
   path: ["confirmPassword"],
+}).refine(data => {
+    if (data.password && data.password.length > 0 && data.password.length < 6) {
+        return false;
+    }
+    return true;
+}, {
+    message: "La contraseña debe tener al menos 6 caracteres.",
+    path: ["password"],
 });
+
 
 type UserFormValues = z.infer<typeof userFormSchema>;
 
@@ -39,7 +54,7 @@ const defaultSuperAdmin: User = {
   id: 'user_superadmin_default',
   name: 'Arturo Ranoro (Superadmin)',
   email: 'arturo@ranoro.mx',
-  role: 'superadmin',
+  role: 'Superadmin',
   password: 'CA1abaza',
   phone: '4491234567' 
 };
@@ -48,15 +63,15 @@ export default function UsuariosPage() {
   const { toast } = useToast();
   const router = useRouter();
   const [users, setUsers] = useState<User[]>([]);
+  const [availableRoles, setAvailableRoles] = useState<AppRole[]>([]);
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [currentUser, setCurrentUser] = useState<User | null>(null);
 
-
   const form = useForm<UserFormValues>({
     resolver: zodResolver(userFormSchema),
-    defaultValues: { name: '', email: '', phone: '', role: 'tecnico', password: '', confirmPassword: '' },
+    defaultValues: { name: '', email: '', phone: '', role: 'Tecnico', password: '', confirmPassword: '' },
   });
 
   useEffect(() => {
@@ -77,19 +92,23 @@ export default function UsuariosPage() {
         localStorage.setItem(USER_LOCALSTORAGE_KEY, JSON.stringify(loadedUsers));
       }
       setUsers(loadedUsers);
+
+      const storedRolesString = localStorage.getItem(ROLES_LOCALSTORAGE_KEY);
+      const loadedRoles: AppRole[] = storedRolesString ? JSON.parse(storedRolesString) : [];
+      setAvailableRoles(loadedRoles);
     }
   }, []);
 
   const canEditOrDelete = (user: User): boolean => {
     if (!currentUser) return false;
-    if (currentUser.role === 'superadmin') return user.email !== currentUser.email;
-    if (currentUser.role === 'admin') return user.role !== 'superadmin' && user.email !== currentUser.email;
+    if (currentUser.role === 'Superadmin') return user.email !== currentUser.email;
+    if (currentUser.role === 'Admin') return user.role !== 'Superadmin' && user.email !== currentUser.email;
     return false; 
   };
   
   const canCreateUsers = (): boolean => {
      if (!currentUser) return false;
-     return currentUser.role === 'superadmin' || currentUser.role === 'admin';
+     return currentUser.role === 'Superadmin' || currentUser.role === 'Admin';
   };
 
 
@@ -108,12 +127,12 @@ export default function UsuariosPage() {
         email: userToEdit.email,
         phone: userToEdit.phone || '',
         role: userToEdit.role,
-        password: userToEdit.password || '', 
-        confirmPassword: userToEdit.password || '',
+        password: '', // Always clear password fields on edit
+        confirmPassword: '',
       });
     } else {
       setEditingUser(null);
-      form.reset({ name: '', email: '', phone: '', role: 'tecnico', password: '', confirmPassword: '' });
+      form.reset({ name: '', email: '', phone: '', role: 'Tecnico', password: '', confirmPassword: '' });
     }
     setIsFormOpen(true);
   };
@@ -125,17 +144,28 @@ export default function UsuariosPage() {
         toast({ title: 'Acción no permitida', description: 'No tienes permisos para editar este usuario.', variant: 'destructive' });
         return;
       }
-      updatedUsers = users.map(u => u.id === editingUser.id ? { ...editingUser, ...data, phone: data.phone || undefined } : u);
+      const updatedUser = { ...editingUser, name: data.name, email: data.email, role: data.role, phone: data.phone || undefined };
+      if (data.password) {
+        updatedUser.password = data.password;
+      }
+      updatedUsers = users.map(u => u.id === editingUser.id ? updatedUser : u);
       toast({ title: 'Usuario Actualizado', description: `El usuario ${data.name} ha sido actualizado.` });
     } else {
       if (!canCreateUsers()) {
         toast({ title: 'Acción no permitida', description: 'No tienes permisos para crear usuarios.', variant: 'destructive' });
         return;
       }
+      if (!data.password) {
+        form.setError("password", {type: "manual", message: "La contraseña es obligatoria para nuevos usuarios."});
+        return;
+      }
       const newUser: User = {
         id: `user_${Date.now()}`,
-        ...data,
+        name: data.name,
+        email: data.email,
         phone: data.phone || undefined,
+        role: data.role,
+        password: data.password,
       };
       updatedUsers = [...users, newUser];
       toast({ title: 'Usuario Creado', description: `El usuario ${data.name} ha sido creado.` });
@@ -160,6 +190,12 @@ export default function UsuariosPage() {
     }
     toast({ title: 'Usuario Eliminado', description: `El usuario ha sido eliminado.` });
   };
+  
+  const assignableRoles = useMemo(() => {
+    if (currentUser?.role === 'Superadmin') return availableRoles;
+    if (currentUser?.role === 'Admin') return availableRoles.filter(r => r.name !== 'Superadmin');
+    return [];
+  }, [currentUser, availableRoles]);
 
   return (
     <div className="container mx-auto py-8">
@@ -173,7 +209,7 @@ export default function UsuariosPage() {
                 <PlusCircle className="mr-2 h-4 w-4" /> Nuevo Usuario
               </Button>
             )}
-            {(currentUser?.role === 'superadmin') && (
+            {(currentUser?.role === 'Superadmin') && (
               <Button variant="outline" onClick={() => router.push('/admin/roles')}>
                 <ShieldQuestion className="mr-2 h-4 w-4" /> Gestionar Roles
               </Button>
@@ -222,11 +258,13 @@ export default function UsuariosPage() {
                     <TableCell>{user.phone || 'N/A'}</TableCell>
                     <TableCell>
                       <span className={`px-2 py-1 text-xs rounded-full font-medium ${
-                        user.role === 'superadmin' ? 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300' :
-                        user.role === 'admin' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300' :
-                        user.role === 'tecnico' ? 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300' :
-                        'bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300'}`}>
-                        {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
+                        user.role === 'Superadmin' ? 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300' :
+                        user.role === 'Admin' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300' :
+                        user.role === 'Tecnico' ? 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300' :
+                        user.role === 'Ventas' ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300' :
+                        'bg-gray-100 text-gray-700 dark:bg-gray-900 dark:text-gray-300'
+                      }`}>
+                        {user.role}
                       </span>
                     </TableCell>
                     <TableCell className="text-right">
@@ -325,7 +363,7 @@ export default function UsuariosPage() {
                       <Select 
                         onValueChange={field.onChange} 
                         defaultValue={field.value}
-                        disabled={editingUser?.email === defaultSuperAdmin.email && currentUser?.email !== defaultSuperAdmin.email}
+                        disabled={editingUser?.role === 'Superadmin' && currentUser?.role !== 'Superadmin'}
                       >
                         <FormControl>
                           <SelectTrigger>
@@ -333,10 +371,11 @@ export default function UsuariosPage() {
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          {currentUser?.role === 'superadmin' && <SelectItem value="superadmin">Superadmin</SelectItem>}
-                          <SelectItem value="admin">Admin</SelectItem>
-                          <SelectItem value="tecnico">Técnico</SelectItem>
-                          <SelectItem value="ventas">Ventas</SelectItem>
+                          {assignableRoles.map(role => (
+                            <SelectItem key={role.id} value={role.name}>
+                              {role.name}
+                            </SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
                       <FormMessage />
@@ -354,17 +393,32 @@ export default function UsuariosPage() {
                     </FormItem>
                   )}
                 />
-                <FormField
-                  control={form.control}
-                  name="confirmPassword"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{editingUser ? 'Confirmar Nueva Contraseña' : 'Confirmar Contraseña'}</FormLabel>
-                      <FormControl><Input type="password" {...field} placeholder="••••••••" /></FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                 {!editingUser && (
+                     <FormField
+                        control={form.control}
+                        name="confirmPassword"
+                        render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Confirmar Contraseña</FormLabel>
+                            <FormControl><Input type="password" {...field} placeholder="••••••••" /></FormControl>
+                            <FormMessage />
+                        </FormItem>
+                        )}
+                    />
+                 )}
+                 {editingUser && form.getValues('password') && (
+                     <FormField
+                        control={form.control}
+                        name="confirmPassword"
+                        render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Confirmar Nueva Contraseña</FormLabel>
+                            <FormControl><Input type="password" {...field} placeholder="••••••••" /></FormControl>
+                            <FormMessage />
+                        </FormItem>
+                        )}
+                    />
+                 )}
                 <div className="flex justify-end gap-2">
                   <Button type="button" variant="outline" onClick={() => setIsFormOpen(false)}>Cancelar</Button>
                   <Button type="submit" disabled={form.formState.isSubmitting}>

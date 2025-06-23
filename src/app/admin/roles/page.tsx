@@ -22,16 +22,11 @@ const ROLES_LOCALSTORAGE_KEY = 'appRoles';
 // Define a more specific schema for the role form
 const roleFormSchema = z.object({
   name: z.string().min(2, "El nombre del rol debe tener al menos 2 caracteres."),
-  // Placeholder for permissions - in a real app, this would be more complex
-  // For now, we'll manage permissions as an array of strings.
-  // Example permissions for a workshop app:
-  // view_dashboard, manage_services, manage_inventory, manage_users, manage_finances, etc.
   permissions: z.array(z.string()).optional(), 
 });
 
 type RoleFormValues = z.infer<typeof roleFormSchema>;
 
-// Example permissions - these would likely come from a config or backend
 const ALL_AVAILABLE_PERMISSIONS = [
     { id: 'dashboard:view', label: 'Ver Panel Principal' },
     { id: 'services:create', label: 'Crear Servicios' },
@@ -65,7 +60,21 @@ export default function RolesPage() {
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const storedRolesString = localStorage.getItem(ROLES_LOCALSTORAGE_KEY);
-      const loadedRoles: AppRole[] = storedRolesString ? JSON.parse(storedRolesString) : [];
+      let loadedRoles: AppRole[] = storedRolesString ? JSON.parse(storedRolesString) : [];
+
+      if (loadedRoles.length === 0) {
+        const adminPermissions = ALL_AVAILABLE_PERMISSIONS
+            .map(p => p.id)
+            .filter(id => !['users:manage', 'roles:manage', 'ticket_config:manage'].includes(id));
+        
+        loadedRoles = [
+            { id: 'role_superadmin_default', name: 'Superadmin', permissions: ALL_AVAILABLE_PERMISSIONS.map(p => p.id) },
+            { id: 'role_admin_default', name: 'Admin', permissions: adminPermissions },
+            { id: 'role_tecnico_default', name: 'Tecnico', permissions: ['dashboard:view', 'services:create', 'services:edit', 'services:view_history', 'inventory:view', 'vehicles:manage', 'pos:view_sales'] },
+            { id: 'role_ventas_default', name: 'Ventas', permissions: ['dashboard:view', 'pos:create_sale', 'pos:view_sales', 'inventory:view', 'vehicles:manage'] }
+        ];
+        localStorage.setItem(ROLES_LOCALSTORAGE_KEY, JSON.stringify(loadedRoles));
+      }
       setRoles(loadedRoles);
     }
   }, []);

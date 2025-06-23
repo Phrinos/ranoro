@@ -179,7 +179,7 @@ export interface FinancialOperation {
   originalObject: SaleReceipt | ServiceRecord; 
 }
 
-export type UserRole = 'superadmin' | 'admin' | 'tecnico' | 'ventas';
+export type UserRole = string;
 
 export interface User {
   id: string;
