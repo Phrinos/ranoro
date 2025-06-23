@@ -227,7 +227,7 @@ export default function AgendaServiciosPage() {
 
               return (
                 <Card key={service.id} className="shadow-sm">
-                  <CardContent className="px-12 py-4 space-y-3">
+                  <CardContent className="px-6 py-4 space-y-3">
                     {/* Top line */}
                     <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2 text-sm text-muted-foreground border-b pb-3">
                         <div className="flex items-center gap-1.5 font-medium">
@@ -253,9 +253,9 @@ export default function AgendaServiciosPage() {
                     {/* Bottom part */}
                     <div className="mt-4 flex items-center gap-4">
                         {/* Cost Column */}
-                        <div className="w-32 shrink-0 text-center">
+                        <div className="w-32 shrink-0 text-left">
                           <p className="text-xs text-muted-foreground">Costo</p>
-                          <p className="font-bold text-lg text-foreground">
+                          <p className="font-bold text-lg text-black">
                             ${service.totalCost.toLocaleString('es-ES')}
                           </p>
                         </div>
