@@ -1,4 +1,3 @@
-
 "use client";
 
 import { PageHeader } from "@/components/page-header";
@@ -8,11 +7,11 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Search, ListFilter, CalendarIcon as CalendarDateIcon, Receipt, ShoppingCart, CreditCard, DollarSign, Filter as FilterIcon, Printer, PlusCircle } from "lucide-react"; // Added PlusCircle
+import { Search, ListFilter, CalendarIcon as CalendarDateIcon, Receipt, ShoppingCart, TrendingUp, DollarSign, Filter as FilterIcon, Printer, PlusCircle } from "lucide-react"; // Added PlusCircle
 import { SalesTable } from "./components/sales-table"; 
 import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
 import { TicketContent } from '@/components/ticket-content';
-import { placeholderSales, placeholderInventory } from "@/lib/placeholder-data";
+import { placeholderSales, placeholderInventory, calculateSaleProfit, IVA_RATE } from "@/lib/placeholder-data";
 import type { SaleReceipt, InventoryItem, SaleItem, PaymentMethod } from "@/types";
 import { useState, useEffect, useMemo } from "react";
 import { format, parseISO, compareAsc, compareDesc, isWithinInterval, isValid, startOfDay, endOfDay, startOfWeek, endOfWeek } from "date-fns";
@@ -94,6 +93,7 @@ export default function POSPage() {
   const summaryData = useMemo(() => {
     const totalSalesCount = filteredAndSortedSales.length;
     const totalRevenue = filteredAndSortedSales.reduce((sum, s) => sum + s.totalAmount, 0);
+    const totalProfit = filteredAndSortedSales.reduce((sum, s) => sum + calculateSaleProfit(s, placeholderInventory, IVA_RATE), 0);
     
     let mostSoldItem: { name: string; quantity: number } | null = null;
     if (totalSalesCount > 0) {
@@ -111,25 +111,8 @@ export default function POSPage() {
         }
       }
     }
-
-    let mostUsedPaymentMethod: string = "N/A";
-    if (totalSalesCount > 0) {
-        const paymentMethodCounts: Record<string, number> = {};
-        filteredAndSortedSales.forEach(sale => {
-            if(sale.paymentMethod) {
-                paymentMethodCounts[sale.paymentMethod] = (paymentMethodCounts[sale.paymentMethod] || 0) + 1;
-            }
-        });
-        let maxCount = 0;
-        for (const method in paymentMethodCounts) {
-            if (paymentMethodCounts[method] > maxCount) {
-                maxCount = paymentMethodCounts[method];
-                mostUsedPaymentMethod = method;
-            }
-        }
-    }
-
-    return { totalSalesCount, totalRevenue, mostSoldItem, mostUsedPaymentMethod };
+    
+    return { totalSalesCount, totalRevenue, mostSoldItem, totalProfit };
   }, [filteredAndSortedSales]);
 
   const paymentMethodsForFilter: (PaymentMethod | "all")[] = ["all", "Efectivo", "Tarjeta", "Transferencia", "Efectivo+Transferencia", "Tarjeta+Transferencia"];
@@ -147,19 +130,6 @@ export default function POSPage() {
 
   return (
     <>
-      <PageHeader
-        title="Punto de Venta"
-        description="Consulta, filtra y ordena todas las ventas de mostrador."
-        actions={
-          <Button asChild>
-            <Link href="/pos/nuevo">
-              <PlusCircle className="mr-2 h-4 w-4" />
-              Nueva Venta
-            </Link>
-          </Button>
-        }
-      />
-
       <div className="mb-6 grid gap-6 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -181,8 +151,17 @@ export default function POSPage() {
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Ganancias Registradas</CardTitle>
+            <TrendingUp className="h-5 w-5 text-purple-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold font-headline">${summaryData.totalProfit.toLocaleString('es-ES')}</div>
+          </CardContent>
+        </Card>
+         <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">Artículo Más Vendido</CardTitle>
-            <ShoppingCart className="h-5 w-5 text-purple-500" />
+            <ShoppingCart className="h-5 w-5 text-orange-500" />
           </CardHeader>
           <CardContent>
             <div className="text-lg font-bold font-headline truncate" title={summaryData.mostSoldItem?.name}>
@@ -190,16 +169,20 @@ export default function POSPage() {
             </div>
           </CardContent>
         </Card>
-         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Pago Más Usado</CardTitle>
-            <CreditCard className="h-5 w-5 text-orange-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-xl font-bold font-headline">{summaryData.mostUsedPaymentMethod}</div>
-          </CardContent>
-        </Card>
       </div>
+
+      <PageHeader
+        title="Punto de Venta"
+        description="Consulta, filtra y ordena todas las ventas de mostrador."
+        actions={
+          <Button asChild>
+            <Link href="/pos/nuevo">
+              <PlusCircle className="mr-2 h-4 w-4" />
+              Nueva Venta
+            </Link>
+          </Button>
+        }
+      />
 
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:flex-wrap">
         <div className="relative flex-1 min-w-[200px] sm:min-w-[300px]">
@@ -287,7 +270,7 @@ export default function POSPage() {
         </DropdownMenu>
       </div>
 
-      <SalesTable sales={filteredAndSortedSales} onReprintTicket={handleReprintSale} />
+      <SalesTable sales={filteredAndSortedSales} onReprintTicket={handleReprintSale} inventoryItems={placeholderInventory} />
 
       {isReprintDialogOpen && selectedSaleForReprint && (
         <PrintTicketDialog
