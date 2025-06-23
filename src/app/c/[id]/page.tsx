@@ -52,7 +52,7 @@ export default function PublicQuoteViewPage() {
     const element = quoteContentRef.current;
     const pdfFileName = `Cotizacion-${quote.id}.pdf`;
     const opt = {
-      margin:       10,
+      margin:       7.5,
       filename:     pdfFileName,
       image:        { type: 'jpeg', quality: 0.98 },
       html2canvas:  { scale: 2, useCORS: true, letterRendering: true },
@@ -63,55 +63,7 @@ export default function PublicQuoteViewPage() {
   };
   
    const handlePrint = () => {
-    if (!quoteContentRef.current || !quote) return;
-    const element = quoteContentRef.current;
-    const pdfFileName = `Cotizacion-${quote.id}.pdf`;
-    const opt = {
-      margin:       10,
-      filename:     pdfFileName,
-      image:        { type: 'jpeg', quality: 0.98 },
-      html2canvas:  { scale: 2, useCORS: true, letterRendering: true },
-      jsPDF:        { unit: 'mm', format: 'letter', orientation: 'portrait' }
-    };
-
-    toast({
-      title: "Preparando impresión...",
-      description: "Generando el documento. Por favor espere.",
-    });
-
-    html2pdf().from(element).set(opt).output('datauristring').then((pdfDataUri: string) => {
-        const iframe = document.createElement('iframe');
-        iframe.style.position = 'fixed';
-        iframe.style.width = '0';
-        iframe.style.height = '0';
-        iframe.style.border = 'none';
-        iframe.src = pdfDataUri;
-
-        iframe.onload = function() {
-          try {
-            iframe.contentWindow?.focus();
-            iframe.contentWindow?.print();
-          } catch(e) {
-            toast({
-              title: "Error de Impresión",
-              description: "No se pudo iniciar la impresión. Intente descargar el PDF y imprimirlo manualmente.",
-              variant: "destructive"
-            });
-            console.error("Print failed:", e);
-          }
-        };
-        
-        document.body.appendChild(iframe);
-
-        setTimeout(() => {
-            if (document.body.contains(iframe)) {
-                document.body.removeChild(iframe);
-            }
-        }, 30000); // Remove after 30 seconds
-    }).catch((err: any) => {
-        toast({ title: "Error al Generar PDF", description: "Ocurrió un problema al crear el archivo de impresión.", variant: "destructive" });
-        console.error("PDF generation for print error:", err);
-    });
+    window.print();
   };
 
 
@@ -145,7 +97,7 @@ export default function PublicQuoteViewPage() {
 
   return (
     <div className="container mx-auto">
-        <Card className="max-w-4xl mx-auto mb-6">
+        <Card className="max-w-4xl mx-auto mb-6 print-hidden">
             <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div>
                     <CardTitle>Vista Pública de Cotización: {quote.id}</CardTitle>
