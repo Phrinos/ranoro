@@ -110,57 +110,62 @@ const DATA_ARRAYS = {
 
 /**
  * Loads all application data from a single Firestore document.
- * Runs only once per session on the client side.
+ * This function is now more resilient to read failures.
  */
 export async function hydrateFromFirestore() {
   if (typeof window === 'undefined' || (window as any).__APP_HYDRATED__) {
     return;
   }
 
-  console.log("Hydrating application data from Firestore...");
-
+  console.log("Attempting to hydrate application data from Firestore...");
   const docRef = doc(db, DB_PATH);
-  
+  let docSnap;
+  let changesMade = false;
+
   try {
-    const docSnap = await getDoc(docRef);
+    docSnap = await getDoc(docRef);
 
     if (docSnap.exists()) {
-        const firestoreData = docSnap.data();
-        for (const key in DATA_ARRAYS) {
-            if (firestoreData[key] && Array.isArray(firestoreData[key])) {
-                const targetArray = DATA_ARRAYS[key as keyof typeof DATA_ARRAYS];
-                targetArray.splice(0, targetArray.length, ...firestoreData[key]);
-            }
+      console.log("Firestore document found. Hydrating from snapshot.");
+      const firestoreData = docSnap.data();
+      for (const key in DATA_ARRAYS) {
+        if (firestoreData[key] && Array.isArray(firestoreData[key])) {
+          const targetArray = DATA_ARRAYS[key as keyof typeof DATA_ARRAYS];
+          targetArray.splice(0, targetArray.length, ...firestoreData[key]);
         }
-        console.log("Data successfully hydrated from Firestore.");
+      }
     } else {
-        console.log("No database document found. Seeding with initial data.");
+      console.warn("No database document found. The application will be seeded with initial data.");
     }
-
-    // --- UNCONDITIONAL CHECK for default users ---
-    // This runs *after* hydrating from DB, ensuring they always exist in memory
-    // for the current session.
-    let changesMade = false;
-    if (!placeholderUsers.some(u => u.id === defaultSuperAdmin.id)) {
-        placeholderUsers.unshift(defaultSuperAdmin);
-        changesMade = true;
-    }
-    if (!placeholderUsers.some(u => u.id === newUserAdmin.id)) {
-        placeholderUsers.push(newUserAdmin);
-        changesMade = true;
-    }
-
-    // If no data existed in Firestore, or if default users were missing, persist the new state.
-    if (!docSnap.exists() || changesMade) {
-        await persistToFirestore();
-    }
-
   } catch (error) {
-    console.error("Error hydrating data from Firestore:", error);
+    console.error("Error reading from Firestore:", error);
+    console.warn("Could not read from Firestore. This might be due to Firestore rules. The app will proceed with in-memory data for this session.");
+  }
+
+  // --- DATA INTEGRITY CHECKS ---
+  // Always ensure default users exist in memory, regardless of what was loaded from the database.
+  // This makes the app resilient to a corrupted or empty 'users' array in the DB.
+  if (!placeholderUsers.some(u => u.id === defaultSuperAdmin.id)) {
+    placeholderUsers.unshift(defaultSuperAdmin);
+    changesMade = true;
+    console.log(`Default user '${defaultSuperAdmin.email}' was missing and has been added to the current session.`);
+  }
+  if (!placeholderUsers.some(u => u.id === newUserAdmin.id)) {
+    placeholderUsers.push(newUserAdmin);
+    changesMade = true;
+    console.log(`Default user '${newUserAdmin.email}' was missing and has been added to the current session.`);
+  }
+  
+  // If the document didn't exist or we had to add a missing user, we should try to persist.
+  if (!docSnap || !docSnap.exists() || changesMade) {
+    console.log("Attempting to persist updated data to Firestore...");
+    await persistToFirestore();
   }
 
   (window as any).__APP_HYDRATED__ = true;
+  console.log("Hydration process complete.");
 }
+
 
 /**
  * Saves the entire application state from memory to a single Firestore document.
