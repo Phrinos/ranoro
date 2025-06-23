@@ -63,7 +63,7 @@ export function SuppliersTable({ suppliers, onEdit, onDelete }: SuppliersTablePr
                   <span>$0.00</span>
                 )}
               </TableCell>
-              <TableCell className="max-w-xs truncate">{supplier.debtNote || 'N/A'}</TableCell>
+              <TableCell>{supplier.debtNote || 'N/A'}</TableCell>
               <TableCell className="text-right">
                 <Button variant="ghost" size="icon" onClick={() => onEdit(supplier)} className="mr-2">
                   <Edit className="h-4 w-4" />

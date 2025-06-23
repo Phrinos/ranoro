@@ -230,7 +230,7 @@ export default function VehicleDetailPage() {
                       <TableRow key={service.id} onClick={() => handleServiceRowClick(service)} className="cursor-pointer hover:bg-muted/50">
                         <TableCell>{format(parseISO(service.serviceDate), "dd MMM yyyy, HH:mm", { locale: es })}</TableCell>
                         <TableCell>{service.mileage ? `${service.mileage.toLocaleString('es-ES')} km` : 'N/A'}</TableCell>
-                        <TableCell className="max-w-xs truncate">{service.description}</TableCell>
+                        <TableCell>{service.description}</TableCell>
                         <TableCell>{technicians.find(t => t.id === service.technicianId)?.name || service.technicianId}</TableCell>
                         <TableCell className="text-right">${service.totalCost.toLocaleString('es-ES', { minimumFractionDigits: 2 })}</TableCell>
                         <TableCell><Badge variant={getStatusVariant(service.status)}>{service.status}</Badge></TableCell>

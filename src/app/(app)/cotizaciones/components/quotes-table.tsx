@@ -60,7 +60,7 @@ export function QuotesTable({ quotes, onViewQuote, onEditQuote, onGenerateServic
                 <TableCell className="font-medium">{quote.id}</TableCell>
                 <TableCell>{formattedDate}</TableCell>
                 <TableCell>{quote.vehicleIdentifier || 'N/A'}</TableCell>
-                <TableCell className="max-w-xs truncate">{quote.description}</TableCell>
+                <TableCell>{quote.description}</TableCell>
                 <TableCell className="text-right font-semibold">{formatCurrency(quote.estimatedTotalCost)}</TableCell>
                 <TableCell>
                   {quote.serviceId ? (
