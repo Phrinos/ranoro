@@ -53,7 +53,7 @@ export const newUserAdmin: User = {
   password: 'CA1abaza',
 };
 
-export let placeholderUsers: User[] = []; // This will be hydrated from Firestore
+export let placeholderUsers: User[] = [defaultSuperAdmin, newUserAdmin]; // This will be hydrated from Firestore
 export const AUTH_USER_LOCALSTORAGE_KEY = 'authUser';
 export const USER_LOCALSTORAGE_KEY = 'appUsers';
 export const ROLES_LOCALSTORAGE_KEY = 'appRoles';
