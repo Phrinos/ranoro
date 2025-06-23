@@ -105,6 +105,14 @@ export default function NuevaCotizacionPage() {
     };
 
     placeholderQuotes.push(newQuote);
+
+    // Save to localStorage so the public link works
+    if (typeof window !== 'undefined') {
+      // We also need to save the vehicles data in case a new one was created
+      localStorage.setItem('placeholderQuotes', JSON.stringify(placeholderQuotes));
+      localStorage.setItem('placeholderVehicles', JSON.stringify(placeholderVehicles));
+    }
+
     setCurrentQuoteForPdf(newQuote);
     setCurrentVehicleForPdf(
       vehicles.find((v) => v.id === newQuote.vehicleId) || null
