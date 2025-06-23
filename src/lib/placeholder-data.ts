@@ -1,6 +1,6 @@
 
 import type { Vehicle, ServiceRecord, Technician, InventoryItem, DashboardMetrics, SaleReceipt, ServiceSupply, TechnicianMonthlyPerformance, InventoryCategory, Supplier, SaleItem, PaymentMethod, AppRole, QuoteRecord, MonthlyFixedExpense, AdministrativeStaff } from '@/types';
-import { format, subMonths, addDays, getYear, getMonth, setHours, setMinutes, subDays, startOfMonth, endOfMonth, startOfToday, endOfToday, startOfYesterday, endOfYesterday } from 'date-fns';
+import { format, subMonths, addDays, getYear, getMonth, setHours, setMinutes, subDays, startOfMonth, endOfMonth, startOfDay, endOfDay } from 'date-fns';
 import { es } from 'date-fns/locale';
 
 const STATIC_NOW = new Date('2024-07-26T12:00:00Z');
@@ -223,11 +223,12 @@ export const getLastMonthRange = () => {
 };
 
 export const getTodayRange = () => {
-    return { from: startOfToday(), to: endOfToday() };
+    return { from: startOfDay(STATIC_NOW), to: endOfDay(STATIC_NOW) };
 };
 
 export const getYesterdayRange = () => {
-    return { from: startOfYesterday(), to: endOfYesterday() };
+    const yesterday = subDays(STATIC_NOW, 1);
+    return { from: startOfDay(yesterday), to: endOfDay(yesterday) };
 };
 
 export const USER_ROLES_LOCALSTORAGE_KEY = 'appRoles';
