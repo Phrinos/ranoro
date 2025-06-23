@@ -151,42 +151,42 @@ export default function CategoriasInventarioPage() {
       <PageHeader
         title="Categorías de Productos"
         description="Administra las categorías para tus productos."
-        actions={
-          <div className="flex items-center gap-2 w-full sm:w-auto">
-            <div className="relative flex-1 sm:flex-initial">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                type="search"
-                placeholder="Buscar categorías..."
-                className="pl-8 sm:w-[300px]"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </div>
-            <Button onClick={handleOpenAddDialog}>
-              <PlusCircle className="mr-2 h-4 w-4" />
-              Nueva Categoría
-            </Button>
-          </div>
-        }
       />
 
       <Card>
-        <CardHeader>
-          <CardTitle>Lista de Categorías</CardTitle>
-          <CardDescription>
-            Visualiza, edita y elimina categorías de productos. La columna 'Productos' muestra cuántos artículos pertenecen a cada categoría.
-          </CardDescription>
+        <CardHeader className="flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div>
+                <CardTitle>Lista de Categorías</CardTitle>
+                <CardDescription>
+                    Visualiza, edita y elimina categorías. La columna 'Productos' muestra cuántos artículos pertenecen a cada categoría.
+                </CardDescription>
+            </div>
+             <div className="flex items-center gap-2 w-full sm:w-auto">
+                <div className="relative flex-1 sm:flex-initial">
+                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input
+                        type="search"
+                        placeholder="Buscar categorías..."
+                        className="pl-8 sm:w-[300px] bg-white"
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                    />
+                </div>
+                <Button onClick={handleOpenAddDialog}>
+                    <PlusCircle className="mr-2 h-4 w-4" />
+                    Nueva Categoría
+                </Button>
+            </div>
         </CardHeader>
         <CardContent>
           {filteredCategories.length > 0 ? (
             <div className="rounded-md border">
               <Table>
-                <TableHeader>
+                <TableHeader className="bg-white">
                   <TableRow>
-                    <TableHead>Nombre de la Categoría</TableHead>
-                    <TableHead className="text-right">Productos</TableHead>
-                    <TableHead className="text-right">Acciones</TableHead>
+                    <TableHead className="font-bold">Nombre de la Categoría</TableHead>
+                    <TableHead className="text-right font-bold">Productos</TableHead>
+                    <TableHead className="text-right font-bold">Acciones</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
