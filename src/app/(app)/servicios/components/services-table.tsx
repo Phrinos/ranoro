@@ -103,7 +103,7 @@ export function ServicesTable({
                 <div className="flex items-center">
                     <div className="w-48 shrink-0 flex flex-col justify-center items-start text-left pl-6 py-4">
                         <p className="text-xs text-muted-foreground">Costo</p>
-                        <p className="font-bold text-2xl text-foreground">
+                        <p className="font-bold text-lg text-foreground">
                             {service.totalCostFormatted}
                         </p>
                         <p className="text-xs text-muted-foreground mt-1">Ganancia</p>
