@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useRef } from "react";
@@ -116,55 +117,6 @@ export default function NuevaCotizacionPage() {
   };
 
   /* --------------------------------------------------
-     2. Generar y descargar PDF
-  -------------------------------------------------- */
-  const generateAndDownloadPdf = () => {
-    if (!quoteContentRef.current || !currentQuoteForPdf) {
-      toast({
-        title: "Error",
-        description: "No se pudo generar el PDF.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    const element = quoteContentRef.current;
-    const pdfFileName = `Cotizacion-${currentQuoteForPdf.id}.pdf`;
-
-    const opt = {
-      margin: 7.5,
-      filename: pdfFileName,
-      image: { type: "jpeg", quality: 0.98 },
-      html2canvas: { scale: 2, useCORS: true, letterRendering: true },
-      jsPDF: { unit: "mm", format: "letter", orientation: "portrait" },
-    } as const;
-
-    toast({
-      title: "Generando PDF…",
-      description: `Se está preparando el archivo ${pdfFileName}.`,
-    });
-
-    html2pdf()
-      .set(opt)
-      .from(element)
-      .save()
-      .then(() => {
-        toast({
-          title: "PDF creado",
-          description: `El archivo ${pdfFileName} se ha guardado exitosamente.`,
-        });
-      })
-      .catch((err: unknown) => {
-        console.error("PDF generation error:", err);
-        toast({
-          title: "Error al generar PDF",
-          description: "Ocurrió un problema al crear el archivo.",
-          variant: "destructive",
-        });
-      });
-  };
-
-  /* --------------------------------------------------
      3. Copiar mensaje de WhatsApp
   -------------------------------------------------- */
   const handleSendWhatsApp = () => {
@@ -239,7 +191,6 @@ export default function NuevaCotizacionPage() {
           open
           onOpenChange={(open) => !open && setDialogStep("closed")}
           title="Vista Previa de Cotización"
-          printButtonText="Imprimir Cotización"
           dialogContentClassName="printable-quote-dialog"
           footerActions={
             <Button variant="outline" onClick={handleSendWhatsApp}>
@@ -247,7 +198,6 @@ export default function NuevaCotizacionPage() {
             </Button>
           }
           onDialogClose={() => setDialogStep("closed")}
-          autoPrint={false}
         >
           <QuoteContent
             ref={quoteContentRef}

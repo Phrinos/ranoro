@@ -397,7 +397,6 @@ export default function FinancialReportPage() {
           open={isCorteDiaDialogOpen}
           onOpenChange={setIsCorteDiaDialogOpen}
           title="Corte del Día"
-          printButtonText="Imprimir Corte"
           dialogContentClassName="printable-ticket-dialog" 
           onDialogClose={() => setCorteDiaData(null)}
         >

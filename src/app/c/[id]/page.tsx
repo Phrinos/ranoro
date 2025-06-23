@@ -7,7 +7,7 @@ import { QuoteContent } from '@/components/quote-content';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import type { QuoteRecord, Vehicle } from '@/types';
-import { ShieldAlert, Download, Printer } from 'lucide-react';
+import { ShieldAlert, Download } from 'lucide-react';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
 import html2pdf from 'html2pdf.js';
@@ -62,10 +62,6 @@ export default function PublicQuoteViewPage() {
     html2pdf().from(element).set(opt).save();
   };
   
-   const handlePrint = () => {
-    window.print();
-  };
-
 
   if (quote === undefined) {
     return (
@@ -104,7 +100,6 @@ export default function PublicQuoteViewPage() {
                     <CardDescription>Esta es una vista previa de la cotización. Puede descargarla o imprimirla.</CardDescription>
                 </div>
                  <div className="flex gap-2">
-                    <Button variant="outline" onClick={handlePrint}><Printer className="mr-2 h-4 w-4"/> Imprimir</Button>
                     <Button onClick={handleDownloadPDF}><Download className="mr-2 h-4 w-4"/> Descargar PDF</Button>
                  </div>
             </CardHeader>
