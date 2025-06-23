@@ -43,7 +43,7 @@ export function ServicesTable({
     switch (status) {
       case "Completado": return "success"; 
       case "Reparando": return "secondary"; 
-      case "Cancelado": return "destructive";
+      case "Cancelado": return "destructive"; 
       case "Agendado": return "default"; 
       default: return "default";
     }
@@ -122,10 +122,12 @@ export function ServicesTable({
                                 {service.status === 'Completado' ? <CheckCircle className="h-4 w-4 text-green-600" /> : <CalendarCheck className="h-4 w-4" />}
                                 <span>Entrega: {service.formattedDeliveryDateTime}</span>
                             </div>
+                            <div className="flex items-center gap-1.5" title="ID de Servicio">
+                                <span>ID: {service.id}</span>
+                            </div>
                         </div>
                         <div className="mt-4 flex items-center gap-4">
                             <div className="flex-grow">
-                                <p className="font-semibold text-lg text-foreground">{service.id}</p>
                                 <h4 className="font-semibold text-base" title={service.vehicleMakeModelYear}>
                                     {vehicle ? `${vehicle.licensePlate} - ${service.vehicleMakeModelYear}` : service.vehicleIdentifier}
                                 </h4>
