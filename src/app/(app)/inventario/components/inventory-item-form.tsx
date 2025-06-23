@@ -23,11 +23,11 @@ import { Checkbox } from "@/components/ui/checkbox";
 
 const inventoryItemFormSchema = z.object({
   name: z.string().min(3, "El nombre del producto debe tener al menos 3 caracteres."),
-  sku: z.string().min(1, "El Código es obligatorio."),
+  sku: z.string().optional(),
   description: z.string().optional(),
   isService: z.boolean().default(false).optional(),
   quantity: z.coerce.number().int().min(0, "La cantidad no puede ser negativa."),
-  unitPrice: z.coerce.number().min(0, "El costo unitario no puede ser negativo."),
+  unitPrice: z.coerce.number().min(0, "El precio de compra no puede ser negativo."),
   sellingPrice: z.coerce.number().min(0, "El precio de venta no puede ser negativo."),
   lowStockThreshold: z.coerce.number().int().min(0, "El umbral de stock bajo no puede ser negativo."),
   category: z.string().min(1, "La categoría es obligatoria."),
@@ -101,6 +101,57 @@ export function InventoryItemForm({ initialData, onSubmit, onClose, categories, 
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="category"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Categoría</FormLabel>
+                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Seleccione una categoría" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {categories.map((category) => (
+                      <SelectItem key={category.id} value={category.name}>
+                        {category.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="supplier"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Proveedor</FormLabel>
+                 <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Seleccione un proveedor" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {suppliers.map((supplier) => (
+                      <SelectItem key={supplier.id} value={supplier.name}>
+                        {supplier.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+        
         <FormField
           control={form.control}
           name="isService"
@@ -143,7 +194,7 @@ export function InventoryItemForm({ initialData, onSubmit, onClose, categories, 
             name="sku"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Código / SKU</FormLabel>
+                <FormLabel>Código / SKU (Opcional)</FormLabel>
                 <FormControl>
                   <Input placeholder="Ej: FA-XYZ-001 / SERV-AFI-01" {...field} />
                 </FormControl>
@@ -201,7 +252,7 @@ export function InventoryItemForm({ initialData, onSubmit, onClose, categories, 
             name="unitPrice"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Costo Unitario (para el Taller)</FormLabel>
+                <FormLabel>Precio de Compra</FormLabel>
                 <FormControl>
                   <Input type="number" step="0.01" placeholder="Ej: 10.50" {...field} />
                 </FormControl>
@@ -218,56 +269,6 @@ export function InventoryItemForm({ initialData, onSubmit, onClose, categories, 
                 <FormControl>
                   <Input type="number" step="0.01" placeholder="Ej: 15.99" {...field} />
                 </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <FormField
-            control={form.control}
-            name="category"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Categoría</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Seleccione una categoría" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {categories.map((category) => (
-                      <SelectItem key={category.id} value={category.name}>
-                        {category.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="supplier"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Proveedor</FormLabel>
-                 <Select onValueChange={field.onChange} defaultValue={field.value}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Seleccione un proveedor" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {suppliers.map((supplier) => (
-                      <SelectItem key={supplier.id} value={supplier.name}>
-                        {supplier.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
                 <FormMessage />
               </FormItem>
             )}
