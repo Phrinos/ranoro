@@ -8,7 +8,6 @@ import { PageHeader } from "@/components/page-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { placeholderServiceRecords, placeholderVehicles, placeholderTechnicians, placeholderInventory } from "@/lib/placeholder-data";
 import type { ServiceRecord, Vehicle, Technician, InventoryItem, User, QuoteRecord } from "@/types";
-// ScrollArea is removed as per request
 import { Badge } from "@/components/ui/badge";
 import { User as UserIcon, Wrench, CheckCircle, CalendarClock, Clock, AlertTriangle } from "lucide-react"; 
 import { ServiceDialog } from "../servicios/components/service-dialog";
@@ -18,6 +17,10 @@ interface EnrichedServiceRecord extends ServiceRecord {
   vehicleInfo?: string;
   technicianName?: string;
 }
+
+const formatCurrency = (amount: number) => {
+    return `$${amount.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+};
 
 const DashboardServiceSection = ({ 
   title, 
@@ -41,8 +44,7 @@ const DashboardServiceSection = ({
         {title} ({services.length})
       </CardTitle>
     </CardHeader>
-    {/* ScrollArea removed, CardContent directly child of Card */}
-    <CardContent className="p-2 space-y-2"> {/* Reduced padding from p-4 to p-2, space-y from 3 to 2 */}
+    <CardContent className="p-2 space-y-2">
       {isLoading && services.length === 0 ? (
           Array.from({ length: 2 }).map((_, index) => (
           <Card key={index} className="p-2.5 animate-pulse w-full"> 
@@ -65,36 +67,67 @@ const DashboardServiceSection = ({
           if (service.status === "Reparando") statusVariant = "secondary";
           else if (service.status === "Completado") statusVariant = "success";
           else if (service.status === "Cancelado") statusVariant = "destructive";
+          
+          const totalCostFormatted = formatCurrency(service.totalCost);
+          const serviceProfitFormatted = formatCurrency(service.serviceProfit || 0);
+          const serviceDateObj = service.serviceDate ? parseISO(service.serviceDate) : null;
+          const deliveryDateObj = service.deliveryDateTime ? parseISO(service.deliveryDateTime) : null;
+          const serviceReceptionTime = serviceDateObj && isValid(serviceDateObj) ? format(serviceDateObj, "HH:mm", { locale: es }) : 'N/A';
+          const formattedDeliveryDateTime = deliveryDateObj && isValid(deliveryDateObj) ? format(deliveryDateObj, "dd MMM yy, HH:mm", { locale: es }) : 'N/A';
+
 
           return (
             <Card 
-              key={service.id} 
-              className="w-full shadow-sm hover:shadow-md transition-shadow duration-150 cursor-pointer hover:bg-muted/50"
-              onClick={() => onServiceClick(service)}
-            >
-              <CardContent className="p-2.5 flex flex-col gap-2"> 
-                <div className="flex-grow space-y-0.5 w-full"> 
-                  <div className="flex flex-row justify-between items-center">
-                    <h4 className="text-sm font-semibold text-foreground truncate" title={service.vehicleInfo}>{service.vehicleInfo}</h4>
-                    <Badge variant={statusVariant} className="text-xs shrink-0">{service.status}</Badge>
-                  </div>
-                  <p className="text-xs text-muted-foreground">ID: {service.id}</p>
-                  <p className="text-xs text-foreground pt-0.5 truncate" title={service.description}>{service.description}</p>
-                  <div className="flex flex-col sm:flex-row justify-between text-xs text-muted-foreground pt-0.5 gap-x-2">
-                    <div className="flex items-center gap-1 truncate" title={service.technicianName || 'N/A'}>
-                      <UserIcon className="h-3 w-3 shrink-0" /> <span className="truncate">{service.technicianName || 'N/A'}</span>
+                key={service.id} 
+                className="w-full shadow-sm hover:shadow-md transition-shadow duration-150 cursor-pointer hover:bg-muted/50"
+                onClick={() => onServiceClick(service)}
+              >
+              <CardContent className="p-0">
+                <div className="flex items-center">
+                    <div className="w-48 shrink-0 flex flex-col justify-center items-start text-left pl-6 py-4">
+                        <p className="font-bold text-lg text-foreground">
+                            {totalCostFormatted}
+                        </p>
+                        <p className="text-xs text-muted-foreground -mt-1">Costo</p>
+                        <p className="font-semibold text-lg text-green-600 mt-1">
+                            {serviceProfitFormatted}
+                        </p>
+                        <p className="text-xs text-muted-foreground -mt-1">Ganancia</p>
                     </div>
-                    <div className="flex items-center gap-1">
-                      <Clock className="h-3 w-3 shrink-0" />
-                      <span className="whitespace-nowrap">
-                      {service.status === "Completado" && service.deliveryDateTime && isValid(parseISO(service.deliveryDateTime))
-                        ? `Entregado: ${format(parseISO(service.deliveryDateTime), "dd MMM, HH:mm", { locale: es })}`
-                        : service.serviceDate && isValid(parseISO(service.serviceDate))
-                          ? `Recepción: ${format(parseISO(service.serviceDate), "dd MMM, HH:mm", { locale: es })}`
-                          : 'N/A'}
-                      </span>
+                    
+                    <div className="flex-grow border-l border-r p-4 space-y-3">
+                        <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2 text-sm text-muted-foreground">
+                            <div className="flex items-center gap-1.5" title="Hora de Recepción">
+                                {(service.status === 'Reparando' || service.status === 'Completado') ? <CheckCircle className="h-4 w-4 text-green-600" /> : <Clock className="h-4 w-4" />}
+                                <span>Recepción: {serviceReceptionTime}</span>
+                            </div>
+                            <div className="flex items-center gap-1.5" title="Técnico">
+                                <Wrench className="h-4 w-4" />
+                                <span>{service.technicianName}</span>
+                            </div>
+                            <div className="flex items-center gap-1.5" title="Fecha de Entrega">
+                                {service.status === 'Completado' ? <CheckCircle className="h-4 w-4 text-green-600" /> : <CalendarClock className="h-4 w-4" />}
+                                <span>Entrega: {formattedDeliveryDateTime}</span>
+                            </div>
+                            <div className="flex items-center gap-1.5" title="ID de Servicio">
+                                <span>ID: {service.id}</span>
+                            </div>
+                        </div>
+                        <div className="mt-4 flex items-center gap-4">
+                            <div className="flex-grow">
+                                <h4 className="font-semibold text-lg" title={service.vehicleInfo}>
+                                    {service.vehicleInfo}
+                                </h4>
+                                <p className="text-sm text-muted-foreground mt-1 truncate" title={service.description}>
+                                    {service.description}
+                                </p>
+                            </div>
+                        </div>
                     </div>
-                  </div>
+
+                    <div className="w-48 shrink-0 flex flex-col items-center justify-center p-4 gap-y-2">
+                        <Badge variant={statusVariant} className="w-full justify-center text-center text-base">{service.status}</Badge>
+                    </div>
                 </div>
               </CardContent>
             </Card>
@@ -132,7 +165,7 @@ export default function DashboardPage() {
       const technician = technicians.find(t => t.id === service.technicianId);
       return {
         ...service,
-        vehicleInfo: vehicle ? `${vehicle.licensePlate} - ${vehicle.make} ${vehicle.model}` : `Vehículo ID: ${service.vehicleId}`,
+        vehicleInfo: vehicle ? `${vehicle.licensePlate} - ${vehicle.make} ${vehicle.model} ${vehicle.year}` : `Vehículo ID: ${service.vehicleId}`,
         technicianName: technician ? technician.name : `Técnico ID: ${service.technicianId}`,
       };
     });
@@ -204,6 +237,10 @@ export default function DashboardPage() {
   const handleUpdateService = async (data: ServiceRecord | QuoteRecord) => {
     // In the context of the dashboard, 'data' will always be a ServiceRecord
     // because the ServiceDialog is instantiated in 'service' mode.
+    if (!('status' in data)) {
+      toast({title: "Error de Tipo", description: "Se esperaba actualizar un servicio.", variant: "destructive"});
+      return;
+    }
     const updatedServiceData = data as ServiceRecord;
 
     const pIndex = placeholderServiceRecords.findIndex(s => s.id === updatedServiceData.id);
@@ -233,13 +270,13 @@ export default function DashboardPage() {
 
 
   return (
-    <div className="container mx-auto py-8 flex flex-col"> {/* Removed h-full to allow natural height */}
+    <div className="container mx-auto py-8 flex flex-col">
       <PageHeader
         title={userName ? `¡Bienvenido, ${userName}!` : "Panel Principal de Taller"}
         description="Vista del estado actual de los servicios."
       />
 
-      <div className="flex flex-col gap-6"> {/* Sections will stack and expand as needed */}
+      <div className="flex flex-col gap-6">
         <DashboardServiceSection 
           title="En Reparación" 
           services={repairingServices} 
@@ -280,4 +317,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-
