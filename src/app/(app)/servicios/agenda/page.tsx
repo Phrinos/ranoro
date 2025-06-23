@@ -3,7 +3,7 @@
 
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Edit, Trash2, Clock, Search as SearchIcon, Calendar, CalendarCheck, CheckCircle, Wrench, Printer, Tag, FileText, TrendingUp, DollarSign } from "lucide-react";
+import { PlusCircle, Edit, Trash2, Clock, Search as SearchIcon, Calendar, CalendarCheck, CheckCircle, Wrench, Printer, Tag, FileText, BrainCircuit, Loader2, AlertTriangle } from "lucide-react";
 import {
   placeholderServiceRecords,
   placeholderVehicles,
@@ -25,6 +25,8 @@ import { Input } from "@/components/ui/input";
 import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
 import { TicketContent } from '@/components/ticket-content';
 import Link from "next/link";
+import { analyzeWorkshopCapacity, type CapacityAnalysisOutput } from '@/ai/flows/capacity-analysis-flow';
+
 
 interface GroupedServices {
   [date: string]: ServiceRecord[];
@@ -49,6 +51,10 @@ export default function AgendaServiciosPage() {
   const [currentVehicleForTicket, setCurrentVehicleForTicket] = useState<Vehicle | null>(null);
   const [currentTechnicianForTicket, setCurrentTechnicianForTicket] = useState<Technician | null>(null);
 
+  const [capacityInfo, setCapacityInfo] = useState<CapacityAnalysisOutput | null>(null);
+  const [isCapacityLoading, setIsCapacityLoading] = useState(true);
+  const [capacityError, setCapacityError] = useState<string | null>(null);
+
 
   useEffect(() => {
     setAllServices(placeholderServiceRecords);
@@ -56,6 +62,77 @@ export default function AgendaServiciosPage() {
     setTechniciansState(placeholderTechnicians);
     setInventoryItemsState(placeholderInventory);
   }, []);
+  
+  const filteredServices = useMemo(() => {
+    if (!searchTerm) return allServices;
+    return allServices.filter(service => {
+      const vehicle = vehicles.find(v => v.id === service.vehicleId);
+      const technician = techniciansState.find(t => t.id === service.technicianId);
+      const searchLower = searchTerm.toLowerCase();
+
+      return (
+        service.id.toLowerCase().includes(searchLower) ||
+        (vehicle && (
+          vehicle.licensePlate.toLowerCase().includes(searchLower) ||
+          vehicle.make.toLowerCase().includes(searchLower) ||
+          vehicle.model.toLowerCase().includes(searchLower) ||
+          vehicle.ownerName.toLowerCase().includes(searchLower)
+        )) ||
+        (technician && technician.name.toLowerCase().includes(searchLower)) ||
+        service.description.toLowerCase().includes(searchLower)
+      );
+    });
+  }, [allServices, vehicles, techniciansState, searchTerm]);
+
+  const todayServices = useMemo(() => {
+      const today = new Date();
+      return filteredServices.filter(service => {
+          if (service.status === 'Completado' || service.status === 'Cancelado') return false;
+          const serviceDate = parseISO(service.serviceDate);
+          return isValid(serviceDate) && isToday(serviceDate);
+      });
+  }, [filteredServices]);
+
+  useEffect(() => {
+      const runAnalysis = async () => {
+          setIsCapacityLoading(true);
+          setCapacityError(null);
+          
+          if (todayServices.length === 0) {
+              const totalAvailable = placeholderTechnicians
+                  .filter(t => !t.isArchived)
+                  .reduce((sum, t) => sum + (t.standardHoursPerDay || 8), 0);
+              
+              setCapacityInfo({
+                  totalRequiredHours: 0,
+                  totalAvailableHours: totalAvailable,
+                  capacityPercentage: 0,
+                  recommendation: "Taller disponible. ¡A agendar!",
+              });
+              setIsCapacityLoading(false);
+              return;
+          }
+
+          try {
+              const result = await analyzeWorkshopCapacity({
+                  servicesForDay: todayServices.map(s => ({ description: s.description })),
+                  technicians: placeholderTechnicians.filter(t => !t.isArchived).map(t => ({ id: t.id, standardHoursPerDay: t.standardHoursPerDay || 8 })),
+                  serviceHistory: placeholderServiceRecords.map(s => ({
+                      description: s.description,
+                      serviceDate: s.serviceDate,
+                      deliveryDateTime: s.deliveryDateTime,
+                  })),
+              });
+              setCapacityInfo(result);
+          } catch (e) {
+              console.error("Capacity analysis failed:", e);
+              setCapacityError("La IA no pudo calcular la capacidad.");
+          } finally {
+              setIsCapacityLoading(false);
+          }
+      };
+      runAnalysis();
+  }, [todayServices]);
 
   const appointmentSummary = useMemo(() => {
     const today = new Date();
@@ -84,10 +161,7 @@ export default function AgendaServiciosPage() {
   };
 
   const handleUpdateService = async (data: ServiceRecord | QuoteRecord) => {
-    // In this context (AgendaServiciosPage), we are always updating ServiceRecords.
-    // The ServiceDialog's onSave prop is (data: ServiceRecord | QuoteRecord).
-    // So, we assert the type here.
-    if (!('status' in data)) { // 'status' is a property unique to ServiceRecord vs QuoteRecord for this check
+    if (!('status' in data)) {
       toast({
         title: "Error de Tipo",
         description: "Se esperaba un registro de servicio para actualizar.",
@@ -147,27 +221,6 @@ export default function AgendaServiciosPage() {
     window.print();
   };
 
-
-  const filteredServices = useMemo(() => {
-    if (!searchTerm) return allServices;
-    return allServices.filter(service => {
-      const vehicle = vehicles.find(v => v.id === service.vehicleId);
-      const technician = techniciansState.find(t => t.id === service.technicianId);
-      const searchLower = searchTerm.toLowerCase();
-
-      return (
-        service.id.toLowerCase().includes(searchLower) ||
-        (vehicle && (
-          vehicle.licensePlate.toLowerCase().includes(searchLower) ||
-          vehicle.make.toLowerCase().includes(searchLower) ||
-          vehicle.model.toLowerCase().includes(searchLower) ||
-          vehicle.ownerName.toLowerCase().includes(searchLower)
-        )) ||
-        (technician && technician.name.toLowerCase().includes(searchLower)) ||
-        service.description.toLowerCase().includes(searchLower)
-      );
-    });
-  }, [allServices, vehicles, techniciansState, searchTerm]);
 
   const futureServices = useMemo(() => {
     return filteredServices.filter(service => {
@@ -338,7 +391,7 @@ export default function AgendaServiciosPage() {
 
   return (
     <>
-      <div className="mb-6 grid gap-6 md:grid-cols-2">
+      <div className="mb-6 grid gap-6 md:grid-cols-3">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
@@ -366,6 +419,34 @@ export default function AgendaServiciosPage() {
               Servicios agendados para mañana.
             </p>
           </CardContent>
+        </Card>
+         <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">
+                    Capacidad del Taller (Hoy)
+                </CardTitle>
+                <BrainCircuit className="h-5 w-5 text-purple-500" />
+            </CardHeader>
+            <CardContent>
+                {isCapacityLoading ? (
+                    <div className="flex items-center gap-2 pt-2">
+                        <Loader2 className="h-5 w-5 animate-spin" />
+                        <span className="text-muted-foreground text-sm">Calculando...</span>
+                    </div>
+                ) : capacityError ? (
+                    <div className="flex items-center gap-2 pt-2 text-destructive">
+                        <AlertTriangle className="h-5 w-5" />
+                        <span className="text-sm">{capacityError}</span>
+                    </div>
+                ) : capacityInfo && (
+                    <>
+                        <div className="text-2xl font-bold font-headline">{capacityInfo.capacityPercentage}%</div>
+                        <p className="text-xs text-muted-foreground" title={`${capacityInfo.totalRequiredHours}h de ${capacityInfo.totalAvailableHours}h`}>
+                            {capacityInfo.recommendation}
+                        </p>
+                    </>
+                )}
+            </CardContent>
         </Card>
       </div>
 
@@ -443,5 +524,3 @@ export default function AgendaServiciosPage() {
     </>
   );
 }
-
-    

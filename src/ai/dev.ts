@@ -3,3 +3,4 @@ import './flows/data-migration-flow';
 import './flows/price-suggestion-flow';
 import './flows/inventory-analysis-flow';
 import './flows/quote-suggestion-flow';
+import './flows/capacity-analysis-flow';
