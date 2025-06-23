@@ -132,29 +132,29 @@ export async function hydrateFromFirestore() {
                 targetArray.splice(0, targetArray.length, ...firestoreData[key]);
             }
         }
-        
-        // Ensure default users exist after hydration
-        if (!placeholderUsers.some(u => u.id === defaultSuperAdmin.id)) {
-            placeholderUsers.unshift(defaultSuperAdmin);
-        }
-        if (!placeholderUsers.some(u => u.id === newUserAdmin.id)) {
-            placeholderUsers.push(newUserAdmin);
-        }
-
         console.log("Data successfully hydrated from Firestore.");
     } else {
-        console.log("No database document found. Seeding with initial data and persisting to Firestore.");
-        
-        // Ensure default users are present in the initial data before first persist
-        if (!placeholderUsers.some(u => u.id === defaultSuperAdmin.id)) {
-          placeholderUsers.unshift(defaultSuperAdmin);
-        }
-        if (!placeholderUsers.some(u => u.id === newUserAdmin.id)) {
-          placeholderUsers.push(newUserAdmin);
-        }
+        console.log("No database document found. Seeding with initial data.");
+    }
 
+    // --- UNCONDITIONAL CHECK for default users ---
+    // This runs *after* hydrating from DB, ensuring they always exist in memory
+    // for the current session.
+    let changesMade = false;
+    if (!placeholderUsers.some(u => u.id === defaultSuperAdmin.id)) {
+        placeholderUsers.unshift(defaultSuperAdmin);
+        changesMade = true;
+    }
+    if (!placeholderUsers.some(u => u.id === newUserAdmin.id)) {
+        placeholderUsers.push(newUserAdmin);
+        changesMade = true;
+    }
+
+    // If no data existed in Firestore, or if default users were missing, persist the new state.
+    if (!docSnap.exists() || changesMade) {
         await persistToFirestore();
     }
+
   } catch (error) {
     console.error("Error hydrating data from Firestore:", error);
   }
@@ -166,8 +166,9 @@ export async function hydrateFromFirestore() {
  * Saves the entire application state from memory to a single Firestore document.
  */
 export async function persistToFirestore() {
+  // Do not persist if hydration hasn't occurred, to avoid overwriting cloud data with empty arrays.
   if (typeof window === 'undefined' || !(window as any).__APP_HYDRATED__) {
-    // Do not persist if hydration hasn't occurred, to avoid overwriting cloud data with empty arrays.
+    console.warn("Persist skipped: App not yet hydrated.");
     return;
   }
   

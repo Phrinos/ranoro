@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/layout/app-sidebar";
-import { hydrateFromFirestore, persistToFirestore, placeholderUsers, AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
+import { hydrateFromFirestore, placeholderUsers, AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
 import { onAuthStateChanged, signOut } from 'firebase/auth'; // Firebase
 import { auth } from '@root/lib/firebaseClient.js'; // Firebase
 
@@ -48,33 +48,6 @@ export default function AppLayout({
 
     return () => unsubscribe(); // Cleanup subscription on unmount
   }, []);
-
-  // This effect handles data persistence, triggered by auth state
-  useEffect(() => {
-    const handlePersist = async () => {
-      if (document.visibilityState === 'hidden' && isAuthenticated) {
-        await persistToFirestore();
-      }
-    };
-    
-    const beforeUnloadHandler = () => {
-        if(isAuthenticated) {
-            persistToFirestore();
-        }
-    };
-
-    document.addEventListener('visibilitychange', handlePersist);
-    window.addEventListener('beforeunload', beforeUnloadHandler);
-
-    return () => {
-      document.removeEventListener('visibilitychange', handlePersist);
-      window.removeEventListener('beforeunload', beforeUnloadHandler);
-      
-      if(isAuthenticated) {
-        persistToFirestore();
-      }
-    };
-  }, [isAuthenticated]);
 
 
   if (isAuthorizing) {
