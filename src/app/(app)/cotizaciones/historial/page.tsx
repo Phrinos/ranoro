@@ -257,7 +257,7 @@ export default function HistorialCotizacionesPage() {
           <Input
             type="search"
             placeholder="Buscar por folio, vehículo, descripción..."
-            className="w-full rounded-lg bg-background pl-8"
+            className="w-full rounded-lg bg-card pl-8"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
@@ -267,7 +267,7 @@ export default function HistorialCotizacionesPage() {
             <Button
               variant={"outline"}
               className={cn(
-                "min-w-[240px] justify-start text-left font-normal flex-1 sm:flex-initial",
+                "min-w-[240px] justify-start text-left font-normal flex-1 sm:flex-initial bg-card",
                 !dateRange && "text-muted-foreground"
               )}
             >
@@ -300,7 +300,7 @@ export default function HistorialCotizacionesPage() {
         </Popover>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="outline" className="min-w-[150px] flex-1 sm:flex-initial">
+            <Button variant="outline" className="min-w-[150px] flex-1 sm:flex-initial bg-card">
               <ListFilter className="mr-2 h-4 w-4" />
               Ordenar
             </Button>
