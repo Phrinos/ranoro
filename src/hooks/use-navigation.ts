@@ -2,6 +2,7 @@
 "use client";
 
 import { usePathname } from 'next/navigation';
+import React from 'react';
 import {
   LayoutDashboard,
   List,
@@ -31,6 +32,7 @@ import {
   Briefcase,
   BarChartHorizontal
 } from 'lucide-react';
+import type { User, AppRole } from '@/types';
 
 export interface NavigationEntry {
   label: string;
@@ -38,8 +40,11 @@ export interface NavigationEntry {
   path: string;
   isActive?: boolean;
   groupTag: string;
-  adminOnly?: boolean; 
+  permissions?: string[]; 
 }
+
+const ROLES_LOCALSTORAGE_KEY = 'appRoles';
+const AUTH_USER_LOCALSTORAGE_KEY = 'authUser';
 
 const BASE_NAV_STRUCTURE: ReadonlyArray<Omit<NavigationEntry, 'isActive'>> = [
   // Mi Taller
@@ -47,76 +52,86 @@ const BASE_NAV_STRUCTURE: ReadonlyArray<Omit<NavigationEntry, 'isActive'>> = [
     label: 'Panel Principal',
     path: '/dashboard',
     icon: LayoutDashboard,
-    groupTag: "Mi Taller"
+    groupTag: "Mi Taller",
+    permissions: ['dashboard:view']
   },
   { 
     label: 'Vehículos', 
     path: '/vehiculos', 
     icon: Car, 
-    groupTag: "Mi Taller" 
+    groupTag: "Mi Taller",
+    permissions: ['vehicles:manage']
   },
   {
     label: 'Cotizaciones', 
     path: '/cotizaciones/historial', 
     icon: FileText, 
-    groupTag: "Mi Taller"
+    groupTag: "Mi Taller",
+    permissions: ['services:create']
   },
   { 
     label: 'Agenda', 
     path: '/servicios/agenda', 
     icon: CalendarClock, 
-    groupTag: "Mi Taller" 
+    groupTag: "Mi Taller",
+    permissions: ['services:view_history']
   },
   { 
     label: 'Servicios', 
     path: '/servicios/historial', 
     icon: Wrench, 
-    groupTag: "Mi Taller" 
+    groupTag: "Mi Taller",
+    permissions: ['services:view_history']
   },
   {
     label: 'Punto de Venta', 
     path: '/pos',
     icon: Receipt, 
-    groupTag: "Mi Taller"
+    groupTag: "Mi Taller",
+    permissions: ['pos:create_sale']
   },
   
   // Mi Inventario
-  { label: 'Productos', path: '/inventario', icon: Package, groupTag: "Mi Inventario" },
-  { label: 'Análisis IA', path: '/inventario/analisis', icon: BarChartHorizontal, groupTag: "Mi Inventario" },
-  { label: 'Categorías', path: '/inventario/categorias', icon: Shapes, groupTag: "Mi Inventario" },
-  { label: 'Proveedores', path: '/inventario/proveedores', icon: Building, groupTag: "Mi Inventario" },
+  { label: 'Productos', path: '/inventario', icon: Package, groupTag: "Mi Inventario", permissions: ['inventory:view'] },
+  { label: 'Análisis IA', path: '/inventario/analisis', icon: BarChartHorizontal, groupTag: "Mi Inventario", permissions: ['inventory:manage'] },
+  { label: 'Categorías', path: '/inventario/categorias', icon: Shapes, groupTag: "Mi Inventario", permissions: ['inventory:manage'] },
+  { label: 'Proveedores', path: '/inventario/proveedores', icon: Building, groupTag: "Mi Inventario", permissions: ['inventory:manage'] },
   
   // Mi Oficina
   {
     label: 'Informe de Ventas', 
     path: '/finanzas/reporte',
     icon: LineChart,
-    groupTag: "Mi Oficina"
+    groupTag: "Mi Oficina",
+    permissions: ['finances:view_report']
   },
   {
     label: 'Resumen Financiero', 
     path: '/finanzas/resumen',
     icon: BarChart3, 
-    groupTag: "Mi Oficina"
+    groupTag: "Mi Oficina",
+    permissions: ['finances:view_report']
   },
   { 
     label: 'Staff Técnico', 
     path: '/tecnicos', 
     icon: UserCog, 
-    groupTag: "Mi Oficina" 
+    groupTag: "Mi Oficina",
+    permissions: ['technicians:manage']
   },
   { 
     label: 'Staff Administrativo', 
     path: '/administrativos', 
     icon: Briefcase, 
     groupTag: "Mi Oficina",
+    permissions: ['technicians:manage'] // Reusing technician permission for all staff
   },
   {
     label: 'Configurar Ticket',
     path: '/admin/configuracion-ticket',
     icon: Settings,
     groupTag: "Mi Oficina",
-    adminOnly: true
+    permissions: ['ticket_config:manage']
   },
 ];
 
@@ -125,8 +140,32 @@ const DESIRED_GROUP_ORDER = ["Mi Taller", "Mi Inventario", "Mi Oficina"];
 
 const useNavigation = (): NavigationEntry[] => {
   const pathname = usePathname();
+  const [currentUser, setCurrentUser] = React.useState<User | null>(null);
+  const [roles, setRoles] = React.useState<AppRole[]>([]);
 
-  const filteredNavStructure = BASE_NAV_STRUCTURE; 
+  React.useEffect(() => {
+    if (typeof window !== "undefined") {
+      const authUserString = localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY);
+      const rolesString = localStorage.getItem(ROLES_LOCALSTORAGE_KEY);
+      if (authUserString) setCurrentUser(JSON.parse(authUserString));
+      if (rolesString) setRoles(JSON.parse(rolesString));
+    }
+  }, []);
+
+  const userPermissions = React.useMemo(() => {
+    if (!currentUser || !roles.length) return new Set<string>();
+    const userRole = roles.find(r => r.name === currentUser.role);
+    return new Set(userRole?.permissions || []);
+  }, [currentUser, roles]);
+
+
+  const filteredNavStructure = React.useMemo(() => {
+    if (!currentUser) return []; // Return empty if no user, prevents flash of all items
+    
+    return BASE_NAV_STRUCTURE.filter(item => 
+      item.permissions?.some(p => userPermissions.has(p))
+    );
+  }, [currentUser, userPermissions]);
 
   const entriesWithActiveState = filteredNavStructure.map(entry => {
     let isActive = pathname === entry.path;
@@ -144,8 +183,7 @@ const useNavigation = (): NavigationEntry[] => {
         isActive = true;
     }
     
-    if (entry.path === '/servicios/historial' && 
-        (pathname.startsWith('/servicios/nuevo'))) {
+    if (entry.path === '/servicios/historial' && (pathname.startsWith('/servicios/nuevo'))) {
       isActive = true;
     }
     if (entry.path === '/servicios/agenda' && pathname.startsWith('/servicios/agenda')) {
@@ -166,15 +204,12 @@ const useNavigation = (): NavigationEntry[] => {
       isActive = true;
     }
     
-    // Ensure "Mi Oficina" items activate the group correctly
     if (entry.groupTag === "Mi Oficina" && pathname.startsWith(entry.path)) {
         isActive = true;
     }
-    // Make "Informe de Ventas" active if on "/finanzas/reporte"
      if (entry.path === '/finanzas/reporte' && pathname === '/finanzas/reporte') {
         isActive = true;
     }
-    // Make "Resumen Financiero" active if on "/finanzas/resumen"
     if (entry.path === '/finanzas/resumen' && pathname === '/finanzas/resumen') {
         isActive = true;
     }

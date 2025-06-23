@@ -212,3 +212,12 @@ export interface PurchaseRecommendation {
     inventoryId: string;
   }[];
 }
+
+export interface NavigationEntry {
+  label: string;
+  icon: React.ElementType;
+  path: string;
+  isActive?: boolean;
+  groupTag: string;
+  permissions?: string[];
+}

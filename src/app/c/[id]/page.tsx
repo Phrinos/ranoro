@@ -93,10 +93,10 @@ export default function PublicQuoteViewPage() {
             <CardTitle className="text-2xl font-bold">Cotización no encontrada</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-muted-foreground">La cotización con ID <span className="font-mono">{quoteId}</span> no se encontró en el almacenamiento de este navegador.</p>
-            <p className="text-muted-foreground mt-2">Los enlaces de cotización solo se pueden abrir en el mismo navegador donde se crearon.</p>
+            <p className="text-muted-foreground">La cotización con ID <span className="font-mono">{quoteId}</span> no se encontró o ha expirado.</p>
+            <p className="text-muted-foreground mt-2">Por favor, contacte al taller para una nueva cotización.</p>
             <Button asChild className="mt-6">
-              <Link href="/dashboard">Volver al Panel Principal</Link>
+              <Link href="/login">Volver al Inicio</Link>
             </Button>
           </CardContent>
         </Card>
