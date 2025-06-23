@@ -73,9 +73,9 @@ export function ServicesTable({
 
     return {
       ...service,
-      vehicleIdentifier: vehicle ? `${vehicle.make} ${vehicle.model} (${vehicle.licensePlate})` : String(service.vehicleId),
+      vehicleIdentifier: vehicle ? `${vehicle.make} ${vehicle.model} ${vehicle.licensePlate}` : String(service.vehicleId),
       vehiclePlate: vehicle ? vehicle.licensePlate : 'N/A',
-      vehicleMakeModelYear: vehicle ? `${vehicle.make} ${vehicle.model} (${vehicle.year})` : 'N/A',
+      vehicleMakeModelYear: vehicle ? `${vehicle.make} ${vehicle.model} ${vehicle.year}` : 'N/A',
       technicianName: technician ? technician.name : service.technicianId,
       formattedServiceDate: serviceDateObj && isValid(serviceDateObj) ? format(serviceDateObj, "dd MMM yy, HH:mm", { locale: es }) : 'N/A',
       formattedDeliveryDateTime: deliveryDateObj && isValid(deliveryDateObj) ? format(deliveryDateObj, "dd MMM yy, HH:mm", { locale: es }) : 'N/A',
@@ -102,14 +102,14 @@ export function ServicesTable({
               <CardContent className="p-0">
                 <div className="flex items-center">
                     <div className="w-48 shrink-0 flex flex-col justify-center items-start text-left pl-6 py-4">
-                        <p className="text-xs text-muted-foreground">Costo</p>
                         <p className="font-bold text-lg text-foreground">
                             {service.totalCostFormatted}
                         </p>
-                        <p className="text-xs text-muted-foreground mt-1">Ganancia</p>
-                        <p className="font-semibold text-lg text-green-600">
+                         <p className="text-xs text-muted-foreground -mt-1">Costo</p>
+                        <p className="font-semibold text-lg text-green-600 mt-1">
                             {service.serviceProfitFormatted}
                         </p>
+                         <p className="text-xs text-muted-foreground -mt-1">Ganancia</p>
                     </div>
                     
                     <div className="flex-grow border-l border-r p-4 space-y-3">
@@ -128,7 +128,7 @@ export function ServicesTable({
                         </div>
                         <div className="mt-4 flex items-center gap-4">
                             <div className="flex-grow">
-                                <h4 className="font-semibold text-base" title={service.vehicleMakeModelYear}>
+                                <h4 className="font-semibold text-lg" title={service.vehicleMakeModelYear}>
                                     {vehicle ? `${vehicle.licensePlate} - ${service.vehicleMakeModelYear}` : service.vehicleIdentifier}
                                 </h4>
                                 <p className="text-sm text-muted-foreground mt-1 truncate" title={service.description}>
@@ -140,8 +140,8 @@ export function ServicesTable({
 
                     <div className="w-48 shrink-0 flex flex-col items-center justify-center p-4 gap-y-2">
                         <div className="text-center">
-                            <p className="text-xs text-muted-foreground">Técnico</p>
                             <p className="font-medium text-sm truncate" title={service.technicianName}>{service.technicianName}</p>
+                            <p className="text-xs text-muted-foreground -mt-1">Técnico</p>
                         </div>
                         <Badge variant={getStatusVariant(service.status)} className="w-full justify-center text-center">{service.status}</Badge>
                         <div className="flex">
