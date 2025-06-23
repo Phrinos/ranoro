@@ -178,6 +178,17 @@ const saleItems1: SaleItem[] = [
 ];
 const totalSale1 = saleItems1.reduce((sum, item) => sum + item.totalPrice, 0);
 
+const saleItems2: SaleItem[] = [
+  { inventoryItemId: 'P003', itemName: 'Filtro de Aceite para Nissan Versa', quantity: 2, unitPrice: 180, totalPrice: 360 },
+  { inventoryItemId: 'S002', itemName: 'Diagnóstico con Escáner', quantity: 1, unitPrice: 500, totalPrice: 500 },
+];
+const totalSale2 = saleItems2.reduce((sum, item) => sum + item.totalPrice, 0);
+
+const saleItems3: SaleItem[] = [
+  { inventoryItemId: 'P005', itemName: 'Balatas Delanteras Cerámicas', quantity: 1, unitPrice: 1200, totalPrice: 1200 },
+];
+const totalSale3 = saleItems3.reduce((sum, item) => sum + item.totalPrice, 0);
+
 export let placeholderSales: SaleReceipt[] = [
   {
     id: 'SALE001',
@@ -189,8 +200,30 @@ export let placeholderSales: SaleReceipt[] = [
     paymentMethod: 'Tarjeta',
     customerName: 'Cliente Mostrador',
     cardFolio: 'AUTH12345'
-  }
+  },
+  {
+    id: 'SALE002',
+    saleDate: subDays(STATIC_NOW, 3).toISOString(),
+    items: saleItems2,
+    subTotal: totalSale2 / (1 + IVA_RATE),
+    tax: totalSale2 - (totalSale2 / (1 + IVA_RATE)),
+    totalAmount: totalSale2,
+    paymentMethod: 'Efectivo',
+    customerName: 'Sofia Hernandez',
+  },
+  {
+    id: 'SALE003',
+    saleDate: STATIC_NOW.toISOString(),
+    items: saleItems3,
+    subTotal: totalSale3 / (1 + IVA_RATE),
+    tax: totalSale3 - (totalSale3 / (1 + IVA_RATE)),
+    totalAmount: totalSale3,
+    paymentMethod: 'Transferencia',
+    customerName: 'Luis Martinez',
+    transferFolio: 'TRF98765'
+  },
 ];
+
 
 // --- GASTOS FIJOS ---
 export let placeholderFixedMonthlyExpenses: MonthlyFixedExpense[] = [
