@@ -70,26 +70,30 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
     <div 
       ref={ref}
       data-format="letter"
-      className="font-sans bg-white text-black shadow-lg printable-quote printable-content mx-auto p-4 text-sm flex flex-col"
+      className="font-sans bg-white text-black shadow-lg printable-quote printable-content mx-auto p-8 text-sm flex flex-col"
     >
-      <header className="flex justify-between items-start mb-4 border-b border-gray-300 pb-4">
-        <div>
+      <header className="mb-4 border-b border-gray-300 pb-4">
+        {/* Top Row: Logo and Title */}
+        <div className="flex justify-between items-center">
           <img 
             src={workshopInfo.logoUrl} 
             alt={`${workshopInfo.name} Logo`} 
-            style={{ width: '180px', height: 'auto', marginBottom: '0.75rem' }} 
+            style={{ width: '180px', height: 'auto' }} 
             data-ai-hint="workshop logo"
           />
+          <h2 className="text-3xl font-semibold text-primary text-right">COTIZACIÓN</h2>
+        </div>
+
+        {/* Bottom Row: Address and Details */}
+        <div className="flex justify-between items-start mt-4 text-xs">
           <div className="space-y-0 leading-tight">
+            <div className="font-bold text-sm mb-1">{workshopInfo.name}</div>
             <div>{workshopInfo.addressLine1}</div>
             {workshopInfo.addressLine2 && <div>{workshopInfo.addressLine2}</div>}
             <div>{workshopInfo.cityState}</div>
             <div>Tel: {workshopInfo.phone}</div>
           </div>
-        </div>
-        <div className="text-right">
-          <h2 className="text-3xl font-semibold text-primary">COTIZACIÓN</h2>
-          <div className="space-y-0 leading-tight mt-2">
+          <div className="text-right space-y-0 leading-tight">
             <div>Folio: <span className="font-semibold">{quote.id}</span></div>
             <div>Fecha: <span className="font-semibold">{formattedQuoteDate}</span></div>
           </div>
@@ -98,10 +102,10 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
 
       {/* Main content area */}
       <main className="flex-grow">
-        <section className="grid grid-cols-2 gap-8 mb-4">
+        <section className="grid grid-cols-2 gap-8 mb-2">
             <div className="bg-gray-50 p-3 rounded-md border border-gray-200">
             <h3 className="font-semibold text-sm text-gray-700 mb-1 border-b pb-1">Cliente:</h3>
-            <div className="space-y-1 leading-tight pt-2">
+            <div className="space-y-1 leading-tight pt-1">
                 <div>{vehicle?.ownerName || 'N/A'}</div>
                 <div>{vehicle?.ownerPhone || 'N/A'}</div>
                 <div>{vehicle?.ownerEmail || 'N/A'}</div>
@@ -109,7 +113,7 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
             </div>
             <div className="bg-gray-50 p-3 rounded-md border border-gray-200">
             <h3 className="font-semibold text-sm text-gray-700 mb-1 border-b pb-1">Vehículo:</h3>
-            <div className="space-y-1 leading-tight pt-2">
+            <div className="space-y-1 leading-tight pt-1">
                 <div>{vehicle ? `${vehicle.make} ${vehicle.model} (${vehicle.year})` : quote.vehicleIdentifier || 'N/A'}</div>
                 <div>Placas: {vehicle?.licensePlate || 'N/A'}</div>
                 <div>VIN: {vehicle?.vin || 'N/A'}</div>
@@ -118,9 +122,9 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
             </div>
         </section>
 
-        <section className="mb-8">
-            <h3 className="font-semibold text-base text-gray-700 mb-3 border-b pb-2">Descripción del Trabajo a Realizar:</h3>
-            <p className="text-gray-800 whitespace-pre-wrap pt-2">{quote.description}</p>
+        <section className="mt-4 mb-4">
+            <h3 className="font-semibold text-base text-gray-700 mb-2 border-b pb-1">Descripción del Trabajo a Realizar:</h3>
+            <p className="text-gray-800 whitespace-pre-wrap pt-1">{quote.description}</p>
         </section>
 
         {quote.suppliesProposed && quote.suppliesProposed.length > 0 && (
