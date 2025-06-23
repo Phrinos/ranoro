@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview An AI flow to analyze inventory and suggest reordering actions.
@@ -21,13 +22,13 @@ const ServiceRecordInputSchema = z.object({
     })),
 });
 
-export const AnalyzeInventoryInputSchema = z.object({
+const AnalyzeInventoryInputSchema = z.object({
   inventoryItems: z.array(InventoryItemInputSchema).describe("The current list of all inventory items."),
   serviceRecords: z.array(ServiceRecordInputSchema).describe("A history of all completed service records showing parts usage."),
 });
 export type AnalyzeInventoryInput = z.infer<typeof AnalyzeInventoryInputSchema>;
 
-export const InventoryRecommendationSchema = z.object({
+const InventoryRecommendationSchema = z.object({
     itemId: z.string().describe("The ID of the inventory item."),
     itemName: z.string().describe("The name of the inventory item."),
     recommendation: z.string().describe("A clear recommendation, e.g., 'Reordenar ahora', 'Stock saludable', 'Nivel de stock crítico'."),

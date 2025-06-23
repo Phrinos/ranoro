@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview An AI flow to suggest a price for a vehicle service.
@@ -12,14 +13,14 @@ const SupplyInputSchema = z.object({
   unitPrice: z.number().describe("The cost of a single unit of this supply to the workshop."),
 });
 
-export const SuggestPriceInputSchema = z.object({
+const SuggestPriceInputSchema = z.object({
   description: z.string().describe("The description of the service to be performed."),
   supplies: z.array(SupplyInputSchema).describe("A list of supplies and parts to be used in the service."),
   totalSuppliesCost: z.number().describe("The total cost of all supplies for the workshop."),
 });
 export type SuggestPriceInput = z.infer<typeof SuggestPriceInputSchema>;
 
-export const SuggestPriceOutputSchema = z.object({
+const SuggestPriceOutputSchema = z.object({
   suggestedPrice: z.number().describe("The final suggested price for the customer, inclusive of labor, profit, and 16% IVA tax."),
   reasoning: z.string().describe("A brief explanation of how the price was determined, mentioning labor, complexity, and parts cost."),
 });
