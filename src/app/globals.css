@@ -108,39 +108,37 @@ body {
 }
 
 @media print {
-  /* Hide everything on the page by default */
   body * {
     visibility: hidden;
   }
 
-  /* Make the printable content area and everything inside it visible */
   .printable-content, .printable-content * {
     visibility: visible;
   }
 
-  /* Position the printable content area to take up the entire page */
+  /* Reset the dialog's fixed positioning and transforms for printing */
   .printable-content {
-    position: absolute;
-    display: block !important; /* Override shadcn's 'grid' display */
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: auto;
-    margin: 0;
-    padding: 0;
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important; /* Override max-w-lg etc. */
+    height: auto !important;
     border: none !important;
     box-shadow: none !important;
+    transform: none !important; /* This is the key */
+    display: block !important; /* And this to override grid */
     background: white !important;
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
   }
-
-  /* Hide elements marked with .print-hidden even if they are inside the printable area */
+  
   .printable-content .print-hidden {
     display: none !important;
   }
-
-  /* Specific styling for thermal receipt format */
+  
   .printable-content [data-format="receipt"] {
       width: 80mm;
       padding: 3mm;
@@ -148,12 +146,10 @@ body {
       background-color: white;
   }
   
-  /* Specific styling for letter format */
   .printable-content [data-format="letter"] {
       padding: 1in;
   }
 
-  /* Ensure the page itself has no margins from the browser */
   @page {
     size: auto;
     margin: 0mm;
