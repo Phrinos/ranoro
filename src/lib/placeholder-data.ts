@@ -37,7 +37,7 @@ export let placeholderAdministrativeStaff: AdministrativeStaff[] = [];
 // ===          USUARIOS Y ROLES         ===
 // =======================================
 export const defaultSuperAdmin: User = {
-  id: 'user_superadmin_default',
+  id: 'RaMVBO4UZeTeNW1BZlmwWMg9Na32',
   name: 'Arturo Valdelamar',
   email: 'arturo@ranoro.mx',
   role: 'Superadmin',
