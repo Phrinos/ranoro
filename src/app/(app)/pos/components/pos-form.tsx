@@ -316,95 +316,95 @@ export function PosForm({ inventoryItems: parentInventoryItems, onSaleComplete, 
     <>
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Articulos vendidos</CardTitle>
-          </CardHeader>
-          <CardContent className="flex flex-col">
-            <ScrollArea className="max-h-[300px] pr-4 flex-grow">
-              {fields.length > 0 ? (
-                <div className="space-y-4">
-                  {fields.map((field, index) => (
-                    <div key={field.id} className="flex items-end gap-2 p-3 border rounded-md bg-muted/20 dark:bg-muted/50">
-                        <div className="flex-1">
-                            <FormLabel className="text-xs">Artículo</FormLabel>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Item List */}
+          <Card className="lg:col-span-2">
+            <CardHeader>
+                <CardTitle>Articulos vendidos</CardTitle>
+            </CardHeader>
+            <CardContent>
+                <ScrollArea className="max-h-[300px] pr-4 flex-grow">
+                {fields.length > 0 ? (
+                    <div className="space-y-4">
+                    {fields.map((field, index) => (
+                        <div key={field.id} className="flex items-end gap-2 p-3 border rounded-md bg-muted/20 dark:bg-muted/50">
+                            <div className="flex-1">
+                                <FormLabel className="text-xs">Artículo</FormLabel>
+                                <Input
+                                    type="text"
+                                    readOnly
+                                    value={`${field.itemName} (${formatCurrency(field.unitPrice)} c/u)`}
+                                    className="bg-muted/30 dark:bg-muted/60 border-none text-sm font-medium w-full"
+                                />
+                            </div>
+                        <FormField
+                            control={form.control}
+                            name={`items.${index}.quantity`}
+                            render={({ field: controllerField }) => (
+                            <FormItem>
+                                <FormLabel className="text-xs">Cantidad</FormLabel>
+                                <Input
+                                type="number"
+                                min="1"
+                                placeholder="Cant."
+                                {...controllerField}
+                                onChange={(e) => {
+                                    const val = parseInt(e.target.value, 10);
+                                    const newQuantity = val >= 1 ? val : 1;
+                                    controllerField.onChange(newQuantity);
+                                    const unitPrice = form.getValues(`items.${index}.unitPrice`) || 0;
+                                    const itemDetails = currentInventoryItems.find(invItem => invItem.id === form.getValues(`items.${index}.inventoryItemId`));
+                                    if (itemDetails && !itemDetails.isService && newQuantity > itemDetails.quantity) {
+                                        toast({ title: "Stock Insuficiente", description: `Solo hay ${itemDetails.quantity} unidades de ${itemDetails.name}.`, variant: "destructive", duration: 3000});
+                                    }
+                                    update(index, {
+                                    ...form.getValues(`items.${index}`),
+                                    quantity: newQuantity,
+                                    totalPrice: unitPrice * newQuantity,
+                                    });
+                                }}
+                                className="w-24"
+                                />
+                                <FormMessage />
+                            </FormItem>
+                            )}
+                        />
+                        <div className="w-28">
+                            <FormLabel className="text-xs">Precio Total (IVA Inc.)</FormLabel>
                             <Input
                                 type="text"
                                 readOnly
-                                value={`${field.itemName} (${formatCurrency(field.unitPrice)} c/u)`}
-                                className="bg-muted/30 dark:bg-muted/60 border-none text-sm font-medium w-full"
+                                value={formatCurrency(form.getValues(`items.${index}.totalPrice`))}
+                                className="bg-muted/50 dark:bg-muted/80 border-none text-sm font-medium"
                             />
+                            </div>
+                        <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)} aria-label="Eliminar artículo">
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
                         </div>
-                       <FormField
-                        control={form.control}
-                        name={`items.${index}.quantity`}
-                        render={({ field: controllerField }) => (
-                          <FormItem>
-                            <FormLabel className="text-xs">Cantidad</FormLabel>
-                            <Input
-                              type="number"
-                              min="1"
-                              placeholder="Cant."
-                              {...controllerField}
-                              onChange={(e) => {
-                                const val = parseInt(e.target.value, 10);
-                                const newQuantity = val >= 1 ? val : 1;
-                                controllerField.onChange(newQuantity);
-                                const unitPrice = form.getValues(`items.${index}.unitPrice`) || 0;
-                                const itemDetails = currentInventoryItems.find(invItem => invItem.id === form.getValues(`items.${index}.inventoryItemId`));
-                                if (itemDetails && !itemDetails.isService && newQuantity > itemDetails.quantity) {
-                                    toast({ title: "Stock Insuficiente", description: `Solo hay ${itemDetails.quantity} unidades de ${itemDetails.name}.`, variant: "destructive", duration: 3000});
-                                }
-                                update(index, {
-                                  ...form.getValues(`items.${index}`),
-                                  quantity: newQuantity,
-                                  totalPrice: unitPrice * newQuantity,
-                                });
-                              }}
-                              className="w-24"
-                            />
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                       <div className="w-28">
-                          <FormLabel className="text-xs">Precio Total (IVA Inc.)</FormLabel>
-                          <Input
-                            type="text"
-                            readOnly
-                            value={formatCurrency(form.getValues(`items.${index}.totalPrice`))}
-                            className="bg-muted/50 dark:bg-muted/80 border-none text-sm font-medium"
-                          />
-                        </div>
-                      <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)} aria-label="Eliminar artículo">
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
+                    ))}
                     </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="flex items-center justify-center h-24 text-muted-foreground">
-                  ningun articulo añadido
-                </div>
-              )}
-            </ScrollArea>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={handleOpenAddItemDialog}
-              className="mt-4"
-            >
-              <PlusCircle className="mr-2 h-4 w-4" />
-              Añadir Artículo/Servicio
-            </Button>
-          </CardContent>
-        </Card>
-        
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Left Side: Payment Details */}
-          <div>
-            <Card>
+                ) : (
+                    <div className="flex items-center justify-center h-24 text-muted-foreground">
+                    ningun articulo añadido
+                    </div>
+                )}
+                </ScrollArea>
+                <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleOpenAddItemDialog}
+                className="mt-4"
+                >
+                <PlusCircle className="mr-2 h-4 w-4" />
+                Añadir Artículo/Servicio
+                </Button>
+            </CardContent>
+          </Card>
+
+          {/* Customer and Payment */}
+          <Card>
               <CardContent className="pt-6 space-y-4">
                 <FormField
                   control={form.control}
@@ -422,17 +422,13 @@ export function PosForm({ inventoryItems: parentInventoryItems, onSaleComplete, 
                   control={form.control}
                   name="paymentMethod"
                   render={({ field }) => {
-                    const SelectedIcon = field.value ? paymentMethodIcons[field.value] : null;
                     return (
                         <FormItem>
                         <FormLabel>Método de Pago</FormLabel>
                         <Select onValueChange={field.onChange} defaultValue={field.value}>
                             <FormControl>
                             <SelectTrigger>
-                                <div className="flex items-center gap-2">
-                                {SelectedIcon && <SelectedIcon className="h-4 w-4 text-muted-foreground" />}
                                 <SelectValue placeholder="Seleccione método de pago" />
-                                </div>
                             </SelectTrigger>
                             </FormControl>
                             <SelectContent>
@@ -485,22 +481,21 @@ export function PosForm({ inventoryItems: parentInventoryItems, onSaleComplete, 
                 )}
               </CardContent>
             </Card>
-          </div>
 
-          {/* Right Side: Totals and Submit */}
-          <div>
-             <Card>
-                <CardContent className="pt-6 flex flex-col items-end space-y-2">
+          {/* Totals and Submit */}
+          <Card>
+            <CardContent className="pt-6 flex flex-col items-end space-y-2 h-full justify-between">
+                <div>
                     <div className="text-lg w-full flex justify-between"><span>Subtotal:</span> <span className="font-semibold">{formatCurrency(subTotalState)}</span></div>
                     <div className="text-sm text-muted-foreground w-full flex justify-between"><span>IVA ({(IVA_RATE*100).toFixed(0)}%):</span> <span className="font-semibold">{formatCurrency(taxState)}</span></div>
                     <div className="text-2xl font-bold w-full flex justify-between"><span>Total:</span> <span className="text-primary">{formatCurrency(totalState)}</span></div>
-                    <Button type="submit" size="lg" className="mt-4 w-full" disabled={form.formState.isSubmitting || fields.length === 0}>
-                    <Receipt className="mr-2 h-5 w-5" />
-                    {form.formState.isSubmitting ? "Procesando..." : "Completar Venta"}
-                    </Button>
-                </CardContent>
-             </Card>
-          </div>
+                </div>
+                <Button type="submit" size="lg" className="w-full" disabled={form.formState.isSubmitting || fields.length === 0}>
+                <Receipt className="mr-2 h-5 w-5" />
+                {form.formState.isSubmitting ? "Procesando..." : "Completar Venta"}
+                </Button>
+            </CardContent>
+          </Card>
         </div>
       </form>
     </Form>
@@ -593,5 +588,3 @@ export function PosForm({ inventoryItems: parentInventoryItems, onSaleComplete, 
     </>
   );
 }
-
-    
