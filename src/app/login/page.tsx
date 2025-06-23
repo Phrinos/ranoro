@@ -40,7 +40,7 @@ export default function LoginPage() {
         id: 'user_superadmin',
         name: 'Arturo Ranoro',
         email: 'arturo@ranoro.mx',
-        role: 'superadmin',
+        role: 'Superadmin',
         phone: '4491234567'
       };
       if (typeof window !== 'undefined') {
