@@ -52,7 +52,7 @@ export default function PublicQuoteViewPage() {
     const element = quoteContentRef.current;
     const pdfFileName = `Cotizacion-${quote.id}.pdf`;
     const opt = {
-      margin:       7.5,
+      margin:       5,
       filename:     pdfFileName,
       image:        { type: 'jpeg', quality: 0.98 },
       html2canvas:  { scale: 2, useCORS: true, letterRendering: true },
@@ -97,7 +97,7 @@ export default function PublicQuoteViewPage() {
             <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div>
                     <CardTitle>Vista Pública de Cotización: {quote.id}</CardTitle>
-                    <CardDescription>Esta es una vista previa de la cotización. Puede descargarla o imprimirla.</CardDescription>
+                    <CardDescription>Esta es una vista previa de la cotización. Puede descargarla.</CardDescription>
                 </div>
                  <div className="flex gap-2">
                     <Button onClick={handleDownloadPDF}><Download className="mr-2 h-4 w-4"/> Descargar PDF</Button>
