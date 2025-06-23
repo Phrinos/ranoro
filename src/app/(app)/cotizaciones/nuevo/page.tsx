@@ -110,7 +110,7 @@ export default function NuevaCotizacionPage() {
     if (typeof window !== 'undefined') {
       // We also need to save the vehicles data in case a new one was created
       localStorage.setItem('placeholderQuotes', JSON.stringify(placeholderQuotes));
-      localStorage.setItem('placeholderVehicles', JSON.stringify(placeholderVehicles));
+      localStorage.setItem('placeholderVehicles', JSON.stringify(vehicles));
     }
 
     setCurrentQuoteForPdf(newQuote);

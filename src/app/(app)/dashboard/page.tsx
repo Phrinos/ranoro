@@ -2,14 +2,14 @@
 "use client";
 
 import { useEffect, useState, useCallback, useRef } from "react";
-import { format, parseISO, isToday, isFuture, isValid, compareAsc } from "date-fns";
+import { format, parseISO, isToday, isFuture, isValid, compareAsc, isSameDay } from "date-fns";
 import { es } from 'date-fns/locale';
 import { PageHeader } from "@/components/page-header";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { placeholderServiceRecords, placeholderVehicles, placeholderTechnicians, placeholderInventory } from "@/lib/placeholder-data";
-import type { ServiceRecord, Vehicle, Technician, InventoryItem, User, QuoteRecord, PurchaseRecommendation } from "@/types";
+import { placeholderServiceRecords, placeholderVehicles, placeholderTechnicians, placeholderInventory, placeholderSales, calculateSaleProfit, IVA_RATE } from "@/lib/placeholder-data";
+import type { ServiceRecord, Vehicle, Technician, InventoryItem, User, QuoteRecord, PurchaseRecommendation, SaleReceipt } from "@/types";
 import { Badge } from "@/components/ui/badge";
-import { User as UserIcon, Wrench, CheckCircle, CalendarClock, Clock, AlertTriangle, ShoppingCart, BrainCircuit, Loader2, Printer } from "lucide-react"; 
+import { User as UserIcon, Wrench, CheckCircle, CalendarClock, Clock, AlertTriangle, ShoppingCart, BrainCircuit, Loader2, Printer, DollarSign, TrendingUp } from "lucide-react"; 
 import { ServiceDialog } from "../servicios/components/service-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { getPurchaseRecommendations, type PurchaseRecommendationOutput } from '@/ai/flows/purchase-recommendation-flow';
@@ -169,6 +169,12 @@ export default function DashboardPage() {
 
   const purchaseOrderRef = useRef<HTMLDivElement>(null);
 
+  const [kpiData, setKpiData] = useState({
+    dailyRevenue: 0,
+    dailyProfit: 0,
+    activeServices: 0,
+    lowStockAlerts: 0,
+  });
 
   const loadAndFilterServices = useCallback(() => {
     setIsLoading(true);
@@ -179,7 +185,7 @@ export default function DashboardPage() {
       const technician = technicians.find(t => t.id === service.technicianId);
       return {
         ...service,
-        vehicleInfo: vehicle ? `${vehicle.licensePlate} - ${vehicle.make} ${vehicle.model} ${vehicle.year}` : `Vehículo ID: ${service.vehicleId}`,
+        vehicleInfo: vehicle ? `${vehicle.make} ${vehicle.model} (${vehicle.licensePlate})` : `Vehículo ID: ${service.vehicleId}`,
         technicianName: technician ? technician.name : `Técnico ID: ${service.technicianId}`,
       };
     });
@@ -212,6 +218,24 @@ export default function DashboardPage() {
     setRepairingServices(repairing);
     setScheduledServices(scheduled);
     setCompletedTodayServices(completedToday);
+    
+    // --- KPI Calculations ---
+    const salesToday = placeholderSales.filter(s => isSameDay(parseISO(s.saleDate), clientToday));
+    const servicesCompletedToday = placeholderServiceRecords.filter(s => s.status === 'Completado' && s.deliveryDateTime && isSameDay(parseISO(s.deliveryDateTime), clientToday));
+    
+    const revenueFromSales = salesToday.reduce((sum, s) => sum + s.totalAmount, 0);
+    const revenueFromServices = servicesCompletedToday.reduce((sum, s) => sum + s.totalCost, 0);
+    
+    const profitFromSales = salesToday.reduce((sum, s) => sum + calculateSaleProfit(s, placeholderInventory, IVA_RATE), 0);
+    const profitFromServices = servicesCompletedToday.reduce((sum, s) => sum + (s.serviceProfit || 0), 0);
+
+    setKpiData({
+        dailyRevenue: revenueFromSales + revenueFromServices,
+        dailyProfit: profitFromSales + profitFromServices,
+        activeServices: repairing.length + scheduled.filter(s => isToday(parseISO(s.serviceDate))).length,
+        lowStockAlerts: placeholderInventory.filter(item => !item.isService && item.quantity <= item.lowStockThreshold).length
+    });
+    
     setIsLoading(false);
   }, [vehicles, technicians]);
 
@@ -341,6 +365,49 @@ export default function DashboardPage() {
         title={userName ? `¡Bienvenido, ${userName}!` : "Panel Principal de Taller"}
         description="Vista del estado actual de los servicios y herramientas de IA."
       />
+
+       <div className="mb-6 grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Ingresos del Día</CardTitle>
+            <DollarSign className="h-5 w-5 text-green-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold font-headline">{formatCurrency(kpiData.dailyRevenue)}</div>
+            <p className="text-xs text-muted-foreground">Ganancia del día: {formatCurrency(kpiData.dailyProfit)}</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Servicios Activos (Hoy)</CardTitle>
+            <Wrench className="h-5 w-5 text-blue-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold font-headline">{kpiData.activeServices}</div>
+            <p className="text-xs text-muted-foreground">Reparando y agendados para hoy</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Alertas de Stock Bajo</CardTitle>
+            <AlertTriangle className="h-5 w-5 text-orange-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold font-headline">{kpiData.lowStockAlerts}</div>
+            <p className="text-xs text-muted-foreground">Ítems que necesitan reposición</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Ganancia del día (Beta)</CardTitle>
+            <TrendingUp className="h-5 w-5 text-purple-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold font-headline">{formatCurrency(kpiData.dailyProfit)}</div>
+            <p className="text-xs text-muted-foreground">Estimación basada en ventas y servicios</p>
+          </CardContent>
+        </Card>
+      </div>
       
       <Card className="mb-6 shadow-lg">
         <CardHeader className="flex flex-row items-center justify-between gap-4">
