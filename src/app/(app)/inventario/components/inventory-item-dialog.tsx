@@ -76,6 +76,7 @@ export function InventoryItemDialog({
     unitPrice: 'unitPrice' in item ? item.unitPrice || 0 : 0,
     sellingPrice: 'sellingPrice' in item ? item.sellingPrice || 0 : 0,
     lowStockThreshold: 'lowStockThreshold' in item ? item.lowStockThreshold || 5 : 5,
+    unitType: 'unitType' in item ? item.unitType || 'units' : 'units',
     category: 'category' in item ? item.category || (categoriesToUse.length > 0 ? categoriesToUse[0].name : '') : (categoriesToUse.length > 0 ? categoriesToUse[0].name : ''),
     supplier: 'supplier' in item ? item.supplier || (suppliersToUse.length > 0 ? suppliersToUse[0].name : '') : (suppliersToUse.length > 0 ? suppliersToUse[0].name : ''),
     // Include id if it's an existing item for editing

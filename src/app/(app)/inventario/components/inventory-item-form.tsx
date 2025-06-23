@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useEffect } from 'react'; // Changed from import React, { useEffect }
+import { useEffect } from 'react';
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
@@ -30,6 +30,7 @@ const inventoryItemFormSchema = z.object({
   unitPrice: z.coerce.number().min(0, "El precio de compra no puede ser negativo."),
   sellingPrice: z.coerce.number().min(0, "El precio de venta no puede ser negativo."),
   lowStockThreshold: z.coerce.number().int().min(0, "El umbral de stock bajo no puede ser negativo."),
+  unitType: z.enum(['units', 'ml']).default('units').optional(),
   category: z.string().min(1, "La categoría es obligatoria."),
   supplier: z.string().min(1, "El proveedor es obligatorio."),
 }).superRefine((data, ctx) => {
@@ -72,12 +73,20 @@ export function InventoryItemForm({ initialData, onSubmit, onClose, categories, 
       unitPrice: 0,
       sellingPrice: 0,
       lowStockThreshold: 5,
+      unitType: 'units',
       category: categories.length > 0 ? categories[0].name : "", 
       supplier: suppliers.length > 0 ? suppliers[0].name : "", 
     },
   });
 
   const isServiceWatch = form.watch("isService");
+  const unitTypeWatch = form.watch("unitType");
+  
+  useEffect(() => {
+    if (isServiceWatch) {
+      form.setValue('unitType', 'units');
+    }
+  }, [isServiceWatch, form]);
 
   const handleFormSubmit = async (values: InventoryItemFormValues) => {
     const submissionValues = {
@@ -152,29 +161,62 @@ export function InventoryItemForm({ initialData, onSubmit, onClose, categories, 
           />
         </div>
         
-        <FormField
-          control={form.control}
-          name="isService"
-          render={({ field }) => (
-            <FormItem className="flex flex-row items-center space-x-3 space-y-0 rounded-md border p-3 shadow-sm bg-muted/30 dark:bg-muted/50">
-              <FormControl>
-                <Checkbox
-                  checked={field.value}
-                  onCheckedChange={field.onChange}
-                  id="isServiceCheckbox"
-                />
-              </FormControl>
-              <div className="space-y-1 leading-none">
-                <FormLabel htmlFor="isServiceCheckbox" className="cursor-pointer">
-                  Es un servicio (no se rastrea stock)
-                </FormLabel>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+           <FormField
+            control={form.control}
+            name="isService"
+            render={({ field }) => (
+              <FormItem className="flex flex-row items-center space-x-3 space-y-0 rounded-md border p-3 shadow-sm bg-muted/30 dark:bg-muted/50 h-full">
+                <FormControl>
+                  <Checkbox
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                    id="isServiceCheckbox"
+                  />
+                </FormControl>
+                <div className="space-y-1 leading-none">
+                  <FormLabel htmlFor="isServiceCheckbox" className="cursor-pointer">
+                    Es un servicio (no se rastrea stock)
+                  </FormLabel>
+                  <FormDescription>
+                    Marque esta casilla si el artículo es un servicio.
+                  </FormDescription>
+                </div>
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="unitType"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Unidad de Medida</FormLabel>
+                <Select 
+                  onValueChange={field.onChange} 
+                  value={field.value}
+                  disabled={isServiceWatch}
+                >
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Seleccione una unidad" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="units">Unidades (piezas, botellas)</SelectItem>
+                    <SelectItem value="ml">Mililitros (líquidos)</SelectItem>
+                  </SelectContent>
+                </Select>
                 <FormDescription>
-                  Marque esta casilla si el artículo es un servicio o no requiere seguimiento de inventario.
+                    {unitTypeWatch === 'ml' 
+                        ? 'Para líquidos. Los precios y cantidades serán por mililitro.' 
+                        : 'Para productos que se venden como una sola pieza.'}
                 </FormDescription>
-              </div>
-            </FormItem>
-          )}
-        />
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <FormField
             control={form.control}
@@ -183,7 +225,7 @@ export function InventoryItemForm({ initialData, onSubmit, onClose, categories, 
               <FormItem>
                 <FormLabel>Nombre del Producto/Servicio</FormLabel>
                 <FormControl>
-                  <Input placeholder="Ej: Filtro de Aceite XYZ / Servicio de Afinación" {...field} />
+                  <Input placeholder="Ej: Filtro de Aceite XYZ" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -196,7 +238,7 @@ export function InventoryItemForm({ initialData, onSubmit, onClose, categories, 
               <FormItem>
                 <FormLabel>Código / SKU (Opcional)</FormLabel>
                 <FormControl>
-                  <Input placeholder="Ej: FA-XYZ-001 / SERV-AFI-01" {...field} />
+                  <Input placeholder="Ej: FA-XYZ-001" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -210,7 +252,7 @@ export function InventoryItemForm({ initialData, onSubmit, onClose, categories, 
             <FormItem>
               <FormLabel>Descripción (Opcional)</FormLabel>
               <FormControl>
-                <Textarea placeholder="Detalles adicionales sobre el producto/servicio..." {...field} />
+                <Textarea placeholder="Detalles adicionales..." {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -223,7 +265,9 @@ export function InventoryItemForm({ initialData, onSubmit, onClose, categories, 
               name="quantity"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Cantidad en Stock</FormLabel>
+                   <FormLabel>
+                    {unitTypeWatch === 'ml' ? 'Cantidad Total en Stock (ml)' : 'Cantidad en Stock'}
+                  </FormLabel>
                   <FormControl>
                     <Input type="number" placeholder="Ej: 50" {...field} />
                   </FormControl>
@@ -236,7 +280,9 @@ export function InventoryItemForm({ initialData, onSubmit, onClose, categories, 
               name="lowStockThreshold"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Umbral de Stock Bajo</FormLabel>
+                  <FormLabel>
+                    {unitTypeWatch === 'ml' ? 'Umbral de Stock Bajo (ml)' : 'Umbral de Stock Bajo'}
+                  </FormLabel>
                   <FormControl>
                     <Input type="number" placeholder="Ej: 5" {...field} />
                   </FormControl>
@@ -252,7 +298,9 @@ export function InventoryItemForm({ initialData, onSubmit, onClose, categories, 
             name="unitPrice"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Precio de Compra</FormLabel>
+                 <FormLabel>
+                  {unitTypeWatch === 'ml' ? 'Precio de Compra (por ml)' : 'Precio de Compra (por unidad)'}
+                </FormLabel>
                 <FormControl>
                   <Input type="number" step="0.01" placeholder="Ej: 10.50" {...field} />
                 </FormControl>
@@ -265,7 +313,9 @@ export function InventoryItemForm({ initialData, onSubmit, onClose, categories, 
             name="sellingPrice"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Precio de Venta (al Cliente, IVA Inc.)</FormLabel>
+                 <FormLabel>
+                  {unitTypeWatch === 'ml' ? 'Precio de Venta (por ml, IVA Inc.)' : 'Precio de Venta (por unidad, IVA Inc.)'}
+                </FormLabel>
                 <FormControl>
                   <Input type="number" step="0.01" placeholder="Ej: 15.99" {...field} />
                 </FormControl>

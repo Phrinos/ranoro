@@ -20,7 +20,8 @@ export interface ServiceSupply {
   supplyId: string; 
   supplyName?: string; 
   quantity: number;
-  unitPrice?: number; 
+  unitPrice?: number;
+  unitType?: 'units' | 'ml';
 }
 
 export interface ServiceRecord {
@@ -89,7 +90,8 @@ export interface InventoryItem {
   supplier: string; 
   lowStockThreshold: number;
   category: string;
-  isService?: boolean; // Added to mark item as a service or non-stock-tracked
+  isService?: boolean;
+  unitType?: 'units' | 'ml';
 }
 
 export interface InventoryCategory {
