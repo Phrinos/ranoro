@@ -251,10 +251,11 @@ export default function AgendaServiciosPage() {
                     </div>
 
                     {/* Bottom part */}
-                    <div className="mt-4 flex items-start gap-4">
+                    <div className="mt-4 flex items-center gap-4">
                         {/* Cost Column */}
-                        <div className="w-24 shrink-0">
-                          <p className="font-bold text-lg text-primary">
+                        <div className="w-24 shrink-0 text-center">
+                          <p className="text-xs text-muted-foreground">Costo</p>
+                          <p className="font-bold text-lg text-foreground">
                             ${service.totalCost.toLocaleString('es-ES')}
                           </p>
                         </div>
