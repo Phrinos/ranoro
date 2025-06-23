@@ -70,7 +70,7 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
     <div 
       ref={ref}
       data-format="letter"
-      className="font-sans bg-white text-black shadow-lg printable-quote printable-content mx-auto w-[794px] h-[980px] p-12 text-sm flex flex-col"
+      className="font-sans bg-white text-black shadow-lg printable-quote printable-content mx-auto w-[794px] min-h-[1020px] p-12 text-sm flex flex-col"
     >
       <header className="flex justify-between items-start mb-8 border-b border-gray-300 pb-4">
         <div>
@@ -100,16 +100,16 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
       <main className="flex-grow">
         <section className="grid grid-cols-2 gap-8 mb-8">
             <div className="bg-gray-50 p-4 rounded-md border border-gray-200">
-            <h3 className="font-semibold text-gray-700 mb-2 border-b pb-1">Cliente:</h3>
-            <div className="space-y-1 leading-tight pt-1">
+            <h3 className="font-semibold text-base text-gray-700 mb-2 border-b pb-2">Cliente:</h3>
+            <div className="space-y-1 leading-tight pt-2">
                 <div>{vehicle?.ownerName || 'N/A'}</div>
                 <div>{vehicle?.ownerPhone || 'N/A'}</div>
                 <div>{vehicle?.ownerEmail || 'N/A'}</div>
             </div>
             </div>
             <div className="bg-gray-50 p-4 rounded-md border border-gray-200">
-            <h3 className="font-semibold text-gray-700 mb-2 border-b pb-1">Vehículo:</h3>
-            <div className="space-y-1 leading-tight pt-1">
+            <h3 className="font-semibold text-base text-gray-700 mb-2 border-b pb-2">Vehículo:</h3>
+            <div className="space-y-1 leading-tight pt-2">
                 <div>{vehicle ? `${vehicle.make} ${vehicle.model} (${vehicle.year})` : quote.vehicleIdentifier || 'N/A'}</div>
                 <div>Placas: {vehicle?.licensePlate || 'N/A'}</div>
                 <div>VIN: {vehicle?.vin || 'N/A'}</div>
