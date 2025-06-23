@@ -106,6 +106,10 @@ export function ServicesTable({
                         <p className="font-bold text-2xl text-foreground">
                             {service.totalCostFormatted}
                         </p>
+                        <p className="text-xs text-muted-foreground mt-1">Ganancia</p>
+                        <p className="font-semibold text-lg text-green-600">
+                            {service.serviceProfitFormatted}
+                        </p>
                     </div>
                     
                     <div className="flex-grow border-l border-r p-4 space-y-3">
