@@ -80,7 +80,6 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
             style={{ width: '180px', height: 'auto', marginBottom: '0.75rem' }} 
             data-ai-hint="workshop logo"
           />
-          <h1 className="text-2xl font-bold text-gray-800">{workshopInfo.name}</h1>
           <div className="space-y-0 leading-tight">
             <div>{workshopInfo.addressLine1}</div>
             {workshopInfo.addressLine2 && <div>{workshopInfo.addressLine2}</div>}
@@ -98,7 +97,7 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
       </header>
 
       {/* Main content area */}
-      <main>
+      <main className="flex-grow">
         <section className="grid grid-cols-2 gap-8 mb-8">
             <div className="bg-gray-50 p-4 rounded-md border border-gray-200">
             <h3 className="font-semibold text-gray-700 mb-2 border-b pb-1">Cliente:</h3>
