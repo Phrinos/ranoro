@@ -103,7 +103,7 @@ export function PosForm({ inventoryItems: parentInventoryItems, onSaleComplete, 
     resolver: zodResolver(posFormSchema),
     defaultValues: {
       items: [],
-      customerName: "",
+      customerName: "Cliente Mostrador",
       paymentMethod: "Efectivo",
       cardFolio: "",
       transferFolio: "",
@@ -309,10 +309,7 @@ export function PosForm({ inventoryItems: parentInventoryItems, onSaleComplete, 
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         <Card>
-          <CardHeader>
-            <CardTitle>Artículos de Venta</CardTitle>
-          </CardHeader>
-          <CardContent className="flex flex-col">
+          <CardContent className="flex flex-col pt-6">
             <ScrollArea className="max-h-[300px] pr-4 flex-grow">
               {fields.length > 0 ? (
                 <div className="space-y-4">
@@ -376,7 +373,7 @@ export function PosForm({ inventoryItems: parentInventoryItems, onSaleComplete, 
                 </div>
               ) : (
                 <div className="flex items-center justify-center h-24 text-muted-foreground">
-                  Aún no hay artículos en la venta.
+                  ningun articulo añadido
                 </div>
               )}
             </ScrollArea>
@@ -392,88 +389,94 @@ export function PosForm({ inventoryItems: parentInventoryItems, onSaleComplete, 
             </Button>
           </CardContent>
         </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Detalles Adicionales y Pago</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="customerName"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Nombre del Cliente (Opcional)</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Ej: Cliente Mostrador" {...field} />
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="paymentMethod"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Método de Pago</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Seleccione método de pago" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {paymentMethods.map(method => (
-                          <SelectItem key={method} value={method}>{method}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </FormItem>
-                )}
-              />
-            </div>
-            {(selectedPaymentMethod === "Tarjeta" || selectedPaymentMethod === "Tarjeta+Transferencia") && (
-                 <FormField
-                    control={form.control}
-                    name="cardFolio"
-                    render={({ field }) => (
-                        <FormItem>
-                        <FormLabel>Folio Terminal (Tarjeta)</FormLabel>
-                        <FormControl>
-                            <Input placeholder="Ingrese folio de la transacción con tarjeta" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                        </FormItem>
-                    )}
-                 />
-            )}
-            {(selectedPaymentMethod === "Transferencia" || selectedPaymentMethod === "Efectivo+Transferencia" || selectedPaymentMethod === "Tarjeta+Transferencia") && (
+        
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Left Side: Payment Details */}
+          <div className="lg:col-span-2">
+            <Card>
+              <CardContent className="pt-6 space-y-4">
                 <FormField
-                    control={form.control}
-                    name="transferFolio"
-                    render={({ field }) => (
-                        <FormItem>
-                        <FormLabel>Folio Transferencia</FormLabel>
-                        <FormControl>
-                            <Input placeholder="Ingrese folio/referencia de la transferencia" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                        </FormItem>
-                    )}
+                  control={form.control}
+                  name="customerName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Nombre del Cliente</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Ej: Cliente Mostrador" {...field} />
+                      </FormControl>
+                    </FormItem>
+                  )}
                 />
-            )}
-          </CardContent>
-          <CardFooter className="flex flex-col items-end space-y-2 pt-6">
-            <div className="text-lg">Subtotal: <span className="font-semibold">{formatCurrency(subTotalState)}</span></div>
-            <div className="text-sm text-muted-foreground">IVA ({(IVA_RATE*100).toFixed(0)}%): <span className="font-semibold">{formatCurrency(taxState)}</span></div>
-            <div className="text-2xl font-bold">Total: <span className="text-primary">{formatCurrency(totalState)}</span></div>
-            <Button type="submit" size="lg" className="mt-4 w-full md:w-auto" disabled={form.formState.isSubmitting || fields.length === 0}>
-              <Receipt className="mr-2 h-5 w-5" />
-              {form.formState.isSubmitting ? "Procesando..." : "Completar Venta"}
-            </Button>
-          </CardFooter>
-        </Card>
+                <FormField
+                  control={form.control}
+                  name="paymentMethod"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Método de Pago</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Seleccione método de pago" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {paymentMethods.map(method => (
+                            <SelectItem key={method} value={method}>{method}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </FormItem>
+                  )}
+                />
+                {(selectedPaymentMethod === "Tarjeta" || selectedPaymentMethod === "Tarjeta+Transferencia") && (
+                    <FormField
+                      control={form.control}
+                      name="cardFolio"
+                      render={({ field }) => (
+                          <FormItem>
+                          <FormLabel>Folio Terminal (Tarjeta)</FormLabel>
+                          <FormControl>
+                              <Input placeholder="Ingrese folio de la transacción con tarjeta" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                          </FormItem>
+                      )}
+                    />
+                )}
+                {(selectedPaymentMethod === "Transferencia" || selectedPaymentMethod === "Efectivo+Transferencia" || selectedPaymentMethod === "Tarjeta+Transferencia") && (
+                    <FormField
+                      control={form.control}
+                      name="transferFolio"
+                      render={({ field }) => (
+                          <FormItem>
+                          <FormLabel>Folio Transferencia</FormLabel>
+                          <FormControl>
+                              <Input placeholder="Ingrese folio/referencia de la transferencia" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                          </FormItem>
+                      )}
+                    />
+                )}
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Right Side: Totals and Submit */}
+          <div className="lg:col-span-1">
+             <Card>
+                <CardContent className="pt-6 flex flex-col items-end space-y-2">
+                    <div className="text-lg w-full flex justify-between"><span>Subtotal:</span> <span className="font-semibold">{formatCurrency(subTotalState)}</span></div>
+                    <div className="text-sm text-muted-foreground w-full flex justify-between"><span>IVA ({(IVA_RATE*100).toFixed(0)}%):</span> <span className="font-semibold">{formatCurrency(taxState)}</span></div>
+                    <div className="text-2xl font-bold w-full flex justify-between"><span>Total:</span> <span className="text-primary">{formatCurrency(totalState)}</span></div>
+                    <Button type="submit" size="lg" className="mt-4 w-full" disabled={form.formState.isSubmitting || fields.length === 0}>
+                    <Receipt className="mr-2 h-5 w-5" />
+                    {form.formState.isSubmitting ? "Procesando..." : "Completar Venta"}
+                    </Button>
+                </CardContent>
+             </Card>
+          </div>
+        </div>
       </form>
     </Form>
 
