@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from "next/link";
@@ -38,6 +39,8 @@ import {
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import type { User } from "@/types";
+import { signOut } from "firebase/auth"; // Firebase
+import { auth } from "@/lib/firebaseClient"; // Firebase
 
 export function AppSidebar() {
   const navItems = useNavigation();
@@ -60,15 +63,20 @@ export function AppSidebar() {
   }, []);
 
   const handleLogout = () => {
-    if (typeof window !== "undefined") {
-      localStorage.removeItem("authUser");
-    }
-    toast({
-      title: "Sesión Cerrada",
-      description: "Has cerrado sesión exitosamente.",
+    signOut(auth).then(() => {
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("authUser");
+      }
+      toast({
+        title: "Sesión Cerrada",
+        description: "Has cerrado sesión exitosamente.",
+      });
+      setCurrentUser(null);
+      router.push("/login");
+    }).catch((error) => {
+       console.error("Logout Error:", error);
+       toast({ title: "Error al cerrar sesión", variant: "destructive" });
     });
-    setCurrentUser(null);
-    router.push("/login");
   };
 
   const groupedByTag = React.useMemo(() => {
@@ -196,10 +204,6 @@ export function AppSidebar() {
                 <DropdownMenuItem onClick={() => router.push("/admin/migracion-datos")}>
                   <DatabaseZap className="mr-2 h-4 w-4" />
                   <span>Migración de Datos</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => router.push("/admin/respaldos")}>
-                  <Database className="mr-2 h-4 w-4" />
-                  <span>Respaldos</span>
                 </DropdownMenuItem>
               </>
             )}

@@ -15,7 +15,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useToast } from '@/hooks/use-toast';
 import type { User, AppRole } from '@/types';
-import { PlusCircle, Trash2, Edit, Search, ShieldQuestion } from "lucide-react";
+import { PlusCircle, Trash2, Edit, Search, ShieldQuestion, ShieldAlert } from "lucide-react";
 import { useRouter } from 'next/navigation';
 import { defaultSuperAdmin, USER_LOCALSTORAGE_KEY, AUTH_USER_LOCALSTORAGE_KEY, ROLES_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
 
@@ -25,24 +25,17 @@ const userFormSchema = z.object({
   email: z.string().email("Ingrese un correo electrónico válido."),
   phone: z.string().optional(),
   role: z.string({ required_error: "Seleccione un rol." }).min(1, "Debe seleccionar un rol."),
-  password: z.string().min(6, "La contraseña debe tener al menos 6 caracteres.").optional().or(z.literal('')),
+  password: z.string().optional().or(z.literal('')),
   confirmPassword: z.string().optional().or(z.literal('')),
 }).refine(data => {
     if (data.password && data.password.length > 0) {
+        if (data.password.length < 6) return false;
         return data.password === data.confirmPassword;
     }
     return true;
 }, {
-  message: "Las contraseñas no coinciden.",
+  message: "Las contraseñas no coinciden o tienen menos de 6 caracteres.",
   path: ["confirmPassword"],
-}).refine(data => {
-    if (data.password && data.password.length > 0 && data.password.length < 6) {
-        return false;
-    }
-    return true;
-}, {
-    message: "La contraseña debe tener al menos 6 caracteres.",
-    path: ["password"],
 });
 
 
@@ -77,7 +70,6 @@ export default function UsuariosPage() {
         loadedUsers = [];
       }
       
-      // Fallback: Ensure superadmin exists, though login should handle primary seeding.
       if (!loadedUsers.some(u => u.id === defaultSuperAdmin.id)) {
         loadedUsers.unshift(defaultSuperAdmin);
         localStorage.setItem(USER_LOCALSTORAGE_KEY, JSON.stringify(loadedUsers));
@@ -119,7 +111,7 @@ export default function UsuariosPage() {
         email: userToEdit.email,
         phone: userToEdit.phone || '',
         role: userToEdit.role,
-        password: '', // Always clear password fields on edit
+        password: '',
         confirmPassword: '',
       });
     } else {
@@ -136,10 +128,8 @@ export default function UsuariosPage() {
         toast({ title: 'Acción no permitida', description: 'No tienes permisos para editar este usuario.', variant: 'destructive' });
         return;
       }
+      // Password is not updated from this form for existing users anymore.
       const updatedUser = { ...editingUser, name: data.name, email: data.email, role: data.role, phone: data.phone || undefined };
-      if (data.password) {
-        updatedUser.password = data.password;
-      }
       updatedUsers = users.map(u => u.id === editingUser.id ? updatedUser : u);
       toast({ title: 'Usuario Actualizado', description: `El usuario ${data.name} ha sido actualizado.` });
     } else {
@@ -160,7 +150,7 @@ export default function UsuariosPage() {
         password: data.password,
       };
       updatedUsers = [...users, newUser];
-      toast({ title: 'Usuario Creado', description: `El usuario ${data.name} ha sido creado.` });
+      toast({ title: 'Usuario Creado (Local)', description: `El usuario ${data.name} ha sido creado en el sistema local. Debe crearlo en Firebase.` });
     }
     setUsers(updatedUsers);
     if (typeof window !== 'undefined') {
@@ -180,7 +170,7 @@ export default function UsuariosPage() {
     if (typeof window !== 'undefined') {
       localStorage.setItem(USER_LOCALSTORAGE_KEY, JSON.stringify(updatedUsers));
     }
-    toast({ title: 'Usuario Eliminado', description: `El usuario ha sido eliminado.` });
+    toast({ title: 'Usuario Eliminado (Local)', description: `El usuario ha sido eliminado. Recuerde eliminarlo de Firebase.` });
   };
   
   const assignableRoles = useMemo(() => {
@@ -193,7 +183,7 @@ export default function UsuariosPage() {
     <div className="container mx-auto py-8">
       <PageHeader
         title="Gestión de Usuarios"
-        description="Crea, edita y elimina usuarios del sistema."
+        description="Administra los roles y datos de los usuarios del sistema."
         actions={
           <div className="flex flex-col sm:flex-row gap-2">
             {canCreateUsers() && (
@@ -209,6 +199,19 @@ export default function UsuariosPage() {
           </div>
         }
       />
+      
+      <Card className="mb-6 border-blue-500/50 bg-blue-50 dark:bg-blue-900/20">
+        <CardHeader className="flex flex-row items-start gap-4">
+          <ShieldAlert className="h-6 w-6 text-blue-600 dark:text-blue-400 mt-1" />
+          <div>
+            <CardTitle className="text-blue-800 dark:text-blue-300">¡Importante! Nuevo Proceso de Usuarios</CardTitle>
+            <CardDescription className="text-blue-700/90 dark:text-blue-400/90">
+              Con la integración de Firebase Authentication, la gestión de contraseñas y la creación inicial de usuarios ahora se realiza en la Consola de Firebase. Esta sección es para asignar roles y gestionar datos adicionales.
+            </CardDescription>
+          </div>
+        </CardHeader>
+      </Card>
+
 
        <div className="mb-4">
           <div className="relative">
@@ -262,7 +265,7 @@ export default function UsuariosPage() {
                     <TableCell className="text-right">
                       {canEditOrDelete(user) && (
                         <>
-                          <Button variant="ghost" size="icon" onClick={() => handleOpenForm(user)} className="mr-2" disabled={!canCreateUsers() && currentUser?.id !== user.id /* Allow self-edit for some fields later */}>
+                          <Button variant="ghost" size="icon" onClick={() => handleOpenForm(user)} className="mr-2" disabled={!canCreateUsers() && currentUser?.id !== user.id}>
                             <Edit className="h-4 w-4" />
                           </Button>
                           <AlertDialog>
@@ -275,7 +278,7 @@ export default function UsuariosPage() {
                               <AlertDialogHeader>
                                 <AlertDialogTitle>¿Eliminar Usuario?</AlertDialogTitle>
                                 <AlertDialogDescription>
-                                  ¿Estás seguro de que quieres eliminar al usuario "{user.name}"? Esta acción no se puede deshacer.
+                                  ¿Estás seguro de que quieres eliminar al usuario "{user.name}"? Esto solo lo elimina del sistema local, no de Firebase.
                                 </AlertDialogDescription>
                               </AlertDialogHeader>
                               <AlertDialogFooter>
@@ -329,8 +332,8 @@ export default function UsuariosPage() {
                   name="email"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Correo Electrónico</FormLabel>
-                      <FormControl><Input type="email" {...field} placeholder="usuario@ejemplo.com" /></FormControl>
+                      <FormLabel>Correo Electrónico (Debe coincidir con Firebase)</FormLabel>
+                      <FormControl><Input type="email" {...field} placeholder="usuario@ejemplo.com" disabled={!!editingUser} /></FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -374,43 +377,32 @@ export default function UsuariosPage() {
                     </FormItem>
                   )}
                 />
-                <FormField
-                  control={form.control}
-                  name="password"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{editingUser ? 'Nueva Contraseña (Dejar en blanco para no cambiar)' : 'Contraseña'}</FormLabel>
-                      <FormControl><Input type="password" {...field} placeholder="••••••••" /></FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                 {!editingUser && (
-                     <FormField
-                        control={form.control}
-                        name="confirmPassword"
-                        render={({ field }) => (
+                {!editingUser && (
+                  <>
+                    <FormField
+                      control={form.control}
+                      name="password"
+                      render={({ field }) => (
                         <FormItem>
-                            <FormLabel>Confirmar Contraseña</FormLabel>
-                            <FormControl><Input type="password" {...field} placeholder="••••••••" /></FormControl>
-                            <FormMessage />
+                          <FormLabel>Contraseña (temporal, para el registro local)</FormLabel>
+                          <FormControl><Input type="password" {...field} placeholder="••••••••" /></FormControl>
+                          <FormMessage />
                         </FormItem>
-                        )}
+                      )}
                     />
-                 )}
-                 {editingUser && form.getValues('password') && (
-                     <FormField
-                        control={form.control}
-                        name="confirmPassword"
-                        render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Confirmar Nueva Contraseña</FormLabel>
-                            <FormControl><Input type="password" {...field} placeholder="••••••••" /></FormControl>
-                            <FormMessage />
-                        </FormItem>
-                        )}
+                    <FormField
+                      control={form.control}
+                      name="confirmPassword"
+                      render={({ field }) => (
+                      <FormItem>
+                          <FormLabel>Confirmar Contraseña</FormLabel>
+                          <FormControl><Input type="password" {...field} placeholder="••••••••" /></FormControl>
+                          <FormMessage />
+                      </FormItem>
+                      )}
                     />
-                 )}
+                  </>
+                )}
                 <div className="flex justify-end gap-2">
                   <Button type="button" variant="outline" onClick={() => setIsFormOpen(false)}>Cancelar</Button>
                   <Button type="submit" disabled={form.formState.isSubmitting}>

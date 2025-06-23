@@ -14,27 +14,26 @@ import { useToast } from '@/hooks/use-toast';
 import type { User } from '@/types';
 import { Save } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { getAuth, onAuthStateChanged, updatePassword, reauthenticateWithCredential, EmailAuthProvider } from 'firebase/auth';
+import { auth } from '@/lib/firebaseClient';
+import { USER_LOCALSTORAGE_KEY, AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
 
-const USER_LOCALSTORAGE_KEY = 'appUsers';
-const AUTH_USER_LOCALSTORAGE_KEY = 'authUser';
 
 const profileSchema = z.object({
   name: z.string().min(3, "El nombre debe tener al menos 3 caracteres."),
   email: z.string().email("Ingrese un correo electrónico válido."),
   phone: z.string().optional(),
-  currentPassword: z.string().optional(), // Not used for validation here, for potential future use
-  newPassword: z.string().min(6, "La nueva contraseña debe tener al menos 6 caracteres.").optional().or(z.literal('')),
+  currentPassword: z.string().optional().or(z.literal('')),
+  newPassword: z.string().optional().or(z.literal('')),
   confirmNewPassword: z.string().optional().or(z.literal('')),
 }).refine(data => {
-  if (data.newPassword && !data.confirmNewPassword) {
-    return false; // Confirm password is required if new password is set
-  }
-  if (data.newPassword && data.confirmNewPassword && data.newPassword !== data.confirmNewPassword) {
-    return false; // Passwords must match
+  if (data.newPassword || data.currentPassword) {
+      if(!data.newPassword || data.newPassword.length < 6) return false;
+      if(data.newPassword !== data.confirmNewPassword) return false;
   }
   return true;
 }, {
-  message: "Las contraseñas nuevas no coinciden o falta la confirmación.",
+  message: "Las contraseñas no coinciden o la nueva contraseña tiene menos de 6 caracteres.",
   path: ["confirmNewPassword"],
 });
 
@@ -59,51 +58,75 @@ export default function PerfilPage() {
   });
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const authUserString = localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY);
-      if (authUserString) {
-        const user: User = JSON.parse(authUserString);
-        setCurrentUser(user);
-        form.reset({
-          name: user.name,
-          email: user.email,
-          phone: user.phone || '',
-          newPassword: '',
-          confirmNewPassword: '',
-        });
-      } else {
-        router.push('/login'); // Redirect if not authenticated
-      }
-      setIsLoading(false);
-    }
+    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+        if (firebaseUser) {
+            const authUserString = localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY);
+            if (authUserString) {
+                const user: User = JSON.parse(authUserString);
+                setCurrentUser(user);
+                form.reset({
+                  name: user.name,
+                  email: user.email,
+                  phone: user.phone || '',
+                  newPassword: '',
+                  confirmNewPassword: '',
+                });
+            } else {
+                // AuthUser not in local storage, might need to fetch from DB
+                // For now, redirecting to login to re-establish session
+                router.push('/login');
+            }
+        } else {
+            router.push('/login');
+        }
+        setIsLoading(false);
+    });
+    return () => unsubscribe();
   }, [form, router]);
 
-  const onSubmit = (data: ProfileFormValues) => {
-    if (!currentUser) return;
+  const onSubmit = async (data: ProfileFormValues) => {
+    if (!currentUser || !auth.currentUser) return;
 
+    // --- Update Password in Firebase ---
+    if (data.newPassword && data.currentPassword) {
+      try {
+        const user = auth.currentUser;
+        // Re-authenticate user before sensitive operations
+        const credential = EmailAuthProvider.credential(user.email!, data.currentPassword);
+        await reauthenticateWithCredential(user, credential);
+        // If re-authentication is successful, update the password
+        await updatePassword(user, data.newPassword);
+        toast({ title: "Contraseña Actualizada", description: "Tu contraseña ha sido cambiada exitosamente." });
+      } catch (error: any) {
+        console.error("Password update error:", error);
+        let message = "Ocurrió un error al cambiar la contraseña.";
+        if (error.code === 'auth/wrong-password') {
+            message = "La contraseña actual es incorrecta.";
+        }
+        toast({ title: "Error de Contraseña", description: message, variant: "destructive" });
+        return; // Stop execution if password change fails
+      }
+    }
+
+    // --- Update User Info in Local Storage ---
     const updatedUser: User = {
       ...currentUser,
       name: data.name,
-      email: data.email,
+      // email updates require verification and are more complex, so we disable it for now
+      // email: data.email, 
       phone: data.phone || undefined,
     };
+    
+    // In a real app, you might want to call updateProfile(auth.currentUser, { displayName: data.name }) here
+    // For this app, we manage user data in our own list.
 
-    if (data.newPassword) {
-      updatedUser.password = data.newPassword; // In a real app, hash this
-    }
-
-    // Update authUser in localStorage
     localStorage.setItem(AUTH_USER_LOCALSTORAGE_KEY, JSON.stringify(updatedUser));
 
-    // Update user in appUsers list in localStorage
     const storedUsersString = localStorage.getItem(USER_LOCALSTORAGE_KEY);
     let appUsers: User[] = storedUsersString ? JSON.parse(storedUsersString) : [];
     const userIndex = appUsers.findIndex(u => u.id === currentUser.id);
     if (userIndex !== -1) {
-      appUsers[userIndex] = updatedUser;
-    } else {
-      // This case should ideally not happen if user is authenticated
-      appUsers.push(updatedUser);
+      appUsers[userIndex] = { ...appUsers[userIndex], ...updatedUser };
     }
     localStorage.setItem(USER_LOCALSTORAGE_KEY, JSON.stringify(appUsers));
 
@@ -111,8 +134,11 @@ export default function PerfilPage() {
       title: "Perfil Actualizado",
       description: "Tu información ha sido actualizada exitosamente.",
     });
-    form.reset({ // Reset password fields after successful submission
+
+    form.reset({ 
         ...form.getValues(),
+        name: data.name,
+        phone: data.phone,
         newPassword: '',
         confirmNewPassword: '',
         currentPassword: ''
@@ -124,7 +150,6 @@ export default function PerfilPage() {
   }
 
   if (!currentUser) {
-     // Should be redirected by useEffect, but as a fallback
     return <div className="container mx-auto py-8 text-center">Usuario no autenticado.</div>;
   }
 
@@ -158,7 +183,8 @@ export default function PerfilPage() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Correo Electrónico</FormLabel>
-                    <FormControl><Input type="email" {...field} /></FormControl>
+                    <FormControl><Input type="email" {...field} disabled /></FormControl>
+                    <FormDescription>El correo electrónico no se puede cambiar.</FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -175,6 +201,17 @@ export default function PerfilPage() {
                 )}
               />
               <CardDescription>Cambiar contraseña (dejar en blanco para no modificar)</CardDescription>
+               <FormField
+                control={form.control}
+                name="currentPassword"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Contraseña Actual (requerida para cambiarla)</FormLabel>
+                    <FormControl><Input type="password" {...field} placeholder="••••••••" /></FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
               <FormField
                 control={form.control}
                 name="newPassword"

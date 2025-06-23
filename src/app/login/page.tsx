@@ -10,7 +10,9 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from '@/hooks/use-toast';
 import type { User } from '@/types';
-import { defaultSuperAdmin, USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
+import { defaultSuperAdmin, USER_LOCALSTORAGE_KEY, AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
+import { getAuth, signInWithEmailAndPassword } from 'firebase/auth'; // Firebase Auth
+import { auth } from '@/lib/firebaseClient'; // Your initialized auth instance
 
 export default function LoginPage() {
   const router = useRouter();
@@ -20,58 +22,71 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const authUser = localStorage.getItem('authUser');
-      if (authUser) {
-        router.replace('/dashboard');
-      }
-    }
-  }, [router]);
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setError('');
 
-    await new Promise(resolve => setTimeout(resolve, 500));
+    try {
+      // 1. Authenticate with Firebase
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      
+      // 2. If Firebase login is successful, find the user in our local user list to get roles etc.
+      if (userCredential.user && typeof window !== 'undefined') {
+        const storedUsersString = localStorage.getItem(USER_LOCALSTORAGE_KEY);
+        let appUsers: User[] = [];
+        try {
+          appUsers = storedUsersString ? JSON.parse(storedUsersString) : [];
+        } catch (err) {
+          console.error("Error parsing users from localStorage:", err);
+          appUsers = [];
+        }
+        
+        // Ensure superadmin exists in the list for login purposes.
+        if (!appUsers.some(u => u.email.toLowerCase() === defaultSuperAdmin.email.toLowerCase())) {
+          appUsers.unshift(defaultSuperAdmin);
+          localStorage.setItem(USER_LOCALSTORAGE_KEY, JSON.stringify(appUsers));
+        }
 
-    if (typeof window !== 'undefined') {
-      const storedUsersString = localStorage.getItem(USER_LOCALSTORAGE_KEY);
-      let appUsers: User[] = [];
-      try {
-        appUsers = storedUsersString ? JSON.parse(storedUsersString) : [];
-      } catch (err) {
-        console.error("Error parsing users from localStorage:", err);
-        appUsers = [];
+        const foundAppUser = appUsers.find(
+          u => u.email.toLowerCase() === email.toLowerCase()
+        );
+
+        if (foundAppUser) {
+          // 3. Store our app-specific user object for the session
+          localStorage.setItem(AUTH_USER_LOCALSTORAGE_KEY, JSON.stringify(foundAppUser));
+          toast({
+            title: 'Inicio de Sesión Exitoso',
+            description: `Bienvenido, ${foundAppUser.name}!`,
+          });
+          router.push('/dashboard');
+        } else {
+          // This case is unlikely if user exists in Firebase Auth but not in our list,
+          // but it's good to handle it.
+          setError('Usuario autenticado pero no encontrado en el sistema. Contacte al administrador.');
+           toast({
+            title: 'Error de Sincronización de Usuario',
+            description: 'Tu cuenta de Firebase no está registrada en la aplicación.',
+            variant: 'destructive',
+          });
+        }
       }
-
-      // Ensure superadmin exists in the list for login purposes. This seeds the app on first login.
-      if (!appUsers.some(u => u.id === defaultSuperAdmin.id)) {
-        appUsers.unshift(defaultSuperAdmin);
-        localStorage.setItem(USER_LOCALSTORAGE_KEY, JSON.stringify(appUsers));
+    } catch (firebaseError: any) {
+      console.error("Firebase Auth Error:", firebaseError.code);
+      let friendlyMessage = 'Correo electrónico o contraseña incorrectos.';
+      if (firebaseError.code === 'auth/invalid-credential' || firebaseError.code === 'auth/user-not-found' || firebaseError.code === 'auth/wrong-password') {
+        friendlyMessage = 'Correo electrónico o contraseña incorrectos.';
+      } else if (firebaseError.code === 'auth/invalid-email') {
+         friendlyMessage = 'El formato del correo electrónico no es válido.';
       }
-
-      const foundUser = appUsers.find(
-        u => u.email.toLowerCase() === email.toLowerCase() && u.password === password
-      );
-
-      if (foundUser) {
-        localStorage.setItem('authUser', JSON.stringify(foundUser));
-        toast({
-          title: 'Inicio de Sesión Exitoso',
-          description: `Bienvenido, ${foundUser.name}!`,
-        });
-        router.push('/dashboard');
-      } else {
-        setError('Correo electrónico o contraseña incorrectos.');
-        toast({
-          title: 'Error de Inicio de Sesión',
-          description: 'Credenciales inválidas.',
-          variant: 'destructive',
-        });
-      }
+      setError(friendlyMessage);
+      toast({
+        title: 'Error de Inicio de Sesión',
+        description: friendlyMessage,
+        variant: 'destructive',
+      });
     }
+
     setIsLoading(false);
   };
 
@@ -94,6 +109,7 @@ export default function LoginPage() {
       <Card className="w-full max-w-sm shadow-xl">
         <CardHeader className="space-y-1 text-center">
           <CardTitle className="text-2xl font-bold font-headline">Bienvenido a Ranoro</CardTitle>
+          <CardDescription>Para ingresar usa el email: arturo@ranoro.mx y la contraseña: CA1abaza</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
