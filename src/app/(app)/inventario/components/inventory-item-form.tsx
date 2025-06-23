@@ -30,7 +30,7 @@ const inventoryItemFormSchema = z.object({
   unitPrice: z.coerce.number().min(0, "El precio de compra no puede ser negativo."),
   sellingPrice: z.coerce.number().min(0, "El precio de venta no puede ser negativo."),
   lowStockThreshold: z.coerce.number().int().min(0, "El umbral de stock bajo no puede ser negativo."),
-  unitType: z.enum(['units', 'ml']).default('units').optional(),
+  unitType: z.enum(['units', 'ml', 'liters']).default('units').optional(),
   category: z.string().min(1, "La categoría es obligatoria."),
   supplier: z.string().min(1, "El proveedor es obligatorio."),
 }).superRefine((data, ctx) => {
@@ -204,11 +204,14 @@ export function InventoryItemForm({ initialData, onSubmit, onClose, categories, 
                   <SelectContent>
                     <SelectItem value="units">Unidades (piezas, botellas)</SelectItem>
                     <SelectItem value="ml">Mililitros (líquidos)</SelectItem>
+                    <SelectItem value="liters">Litros (líquidos a granel)</SelectItem>
                   </SelectContent>
                 </Select>
                 <FormDescription>
                     {unitTypeWatch === 'ml' 
-                        ? 'Para líquidos. Los precios y cantidades serán por mililitro.' 
+                        ? 'Para líquidos. Los precios y cantidades serán por mililitro.'
+                        : unitTypeWatch === 'liters'
+                        ? 'Para líquidos a granel. Los precios y cantidades serán por litro.'
                         : 'Para productos que se venden como una sola pieza.'}
                 </FormDescription>
                 <FormMessage />
@@ -266,7 +269,7 @@ export function InventoryItemForm({ initialData, onSubmit, onClose, categories, 
               render={({ field }) => (
                 <FormItem>
                    <FormLabel>
-                    {unitTypeWatch === 'ml' ? 'Cantidad Total en Stock (ml)' : 'Cantidad en Stock'}
+                    {unitTypeWatch === 'ml' ? 'Cantidad Total en Stock (ml)' : unitTypeWatch === 'liters' ? 'Cantidad Total en Stock (L)' : 'Cantidad en Stock'}
                   </FormLabel>
                   <FormControl>
                     <Input type="number" placeholder="Ej: 50" {...field} />
@@ -281,7 +284,7 @@ export function InventoryItemForm({ initialData, onSubmit, onClose, categories, 
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>
-                    {unitTypeWatch === 'ml' ? 'Umbral de Stock Bajo (ml)' : 'Umbral de Stock Bajo'}
+                    {unitTypeWatch === 'ml' ? 'Umbral de Stock Bajo (ml)' : unitTypeWatch === 'liters' ? 'Umbral de Stock Bajo (L)' : 'Umbral de Stock Bajo'}
                   </FormLabel>
                   <FormControl>
                     <Input type="number" placeholder="Ej: 5" {...field} />
@@ -299,7 +302,7 @@ export function InventoryItemForm({ initialData, onSubmit, onClose, categories, 
             render={({ field }) => (
               <FormItem>
                  <FormLabel>
-                  {unitTypeWatch === 'ml' ? 'Precio de Compra (por ml)' : 'Precio de Compra (por unidad)'}
+                  {unitTypeWatch === 'ml' ? 'Precio de Compra (por ml)' : unitTypeWatch === 'liters' ? 'Precio de Compra (por L)' : 'Precio de Compra (por unidad)'}
                 </FormLabel>
                 <FormControl>
                   <Input type="number" step="0.01" placeholder="Ej: 10.50" {...field} />
@@ -314,7 +317,7 @@ export function InventoryItemForm({ initialData, onSubmit, onClose, categories, 
             render={({ field }) => (
               <FormItem>
                  <FormLabel>
-                  {unitTypeWatch === 'ml' ? 'Precio de Venta (por ml, IVA Inc.)' : 'Precio de Venta (por unidad, IVA Inc.)'}
+                  {unitTypeWatch === 'ml' ? 'Precio de Venta (por ml, IVA Inc.)' : unitTypeWatch === 'liters' ? 'Precio de Venta (por L, IVA Inc.)' : 'Precio de Venta (por unidad, IVA Inc.)'}
                 </FormLabel>
                 <FormControl>
                   <Input type="number" step="0.01" placeholder="Ej: 15.99" {...field} />

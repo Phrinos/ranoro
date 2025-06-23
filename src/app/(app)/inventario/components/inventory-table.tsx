@@ -57,16 +57,18 @@ export function InventoryTable({ items }: InventoryTableProps) {
                 {item.isService ? (
                   <Badge variant="outline">Servicio</Badge>
                 ) : (
-                  `${item.quantity.toLocaleString('es-ES')}${item.unitType === 'ml' ? ' ml' : ''}`
+                  `${item.quantity.toLocaleString('es-ES')}${item.unitType === 'ml' ? ' ml' : item.unitType === 'liters' ? ' L' : ''}`
                 )}
               </TableCell>
               <TableCell className="text-right">
                 ${item.unitPrice.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 {item.unitType === 'ml' && <span className="text-xs text-muted-foreground"> /ml</span>}
+                {item.unitType === 'liters' && <span className="text-xs text-muted-foreground"> /L</span>}
               </TableCell>
               <TableCell className="text-right">
                 ${item.sellingPrice.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 {item.unitType === 'ml' && <span className="text-xs text-muted-foreground"> /ml</span>}
+                {item.unitType === 'liters' && <span className="text-xs text-muted-foreground"> /L</span>}
                 </TableCell>
               <TableCell>
                 {!item.isService && item.quantity <= item.lowStockThreshold && (

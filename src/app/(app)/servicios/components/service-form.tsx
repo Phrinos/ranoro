@@ -46,7 +46,7 @@ const supplySchema = z.object({
   unitPrice: z.coerce.number().optional(),
   supplyName: z.string().optional(),
   isService: z.boolean().optional(),
-  unitType: z.enum(['units', 'ml']).optional(),
+  unitType: z.enum(['units', 'ml', 'liters']).optional(),
 });
 
 const serviceFormSchemaBase = z.object({
@@ -427,7 +427,7 @@ export function ServiceForm({
           return;
       }
       if (!selectedInventoryItemForDialog.isService && selectedInventoryItemForDialog.quantity < addSupplyQuantity) {
-          toast({ title: "Stock Insuficiente", description: `Solo hay ${selectedInventoryItemForDialog.quantity.toLocaleString()} ${selectedInventoryItemForDialog.unitType === 'ml' ? 'ml' : 'unidades'} de ${selectedInventoryItemForDialog.name}.`, variant: "destructive" });
+          toast({ title: "Stock Insuficiente", description: `Solo hay ${selectedInventoryItemForDialog.quantity.toLocaleString()} ${selectedInventoryItemForDialog.unitType === 'ml' ? 'ml' : selectedInventoryItemForDialog.unitType === 'liters' ? 'L' : 'unidades'} de ${selectedInventoryItemForDialog.name}.`, variant: "destructive" });
           return;
       }
       append({
@@ -840,10 +840,10 @@ export function ServiceForm({
                                     return (
                                         <TableRow key={item.id}>
                                             <TableCell className="font-medium">{item.supplyName || currentItemDetails?.name || 'N/A'}</TableCell>
-                                            <TableCell className="text-center">{item.quantity}{item.unitType === 'ml' ? ' ml' : ''}</TableCell>
+                                            <TableCell className="text-center">{item.quantity}{item.unitType === 'ml' ? ' ml' : item.unitType === 'liters' ? ' L' : ''}</TableCell>
                                             <TableCell className="text-right">
                                                 {formatCurrency(unitPriceForCalc)}
-                                                {item.unitType === 'ml' ? <span className="text-xs text-muted-foreground">/ml</span> : ''}
+                                                {item.unitType === 'ml' ? <span className="text-xs text-muted-foreground">/ml</span> : item.unitType === 'liters' ? <span className="text-xs text-muted-foreground">/L</span> : ''}
                                             </TableCell>
                                             <TableCell className="text-right">{formatCurrency(totalItemPrice)}</TableCell>
                                             {!isReadOnly && (
@@ -975,7 +975,7 @@ export function ServiceForm({
                                     <div>
                                         <p className="font-medium">{item.name} <span className="text-xs text-muted-foreground">({item.sku})</span></p>
                                         <p className="text-xs text-muted-foreground">
-                                            {item.isService ? 'Servicio' : `Stock: ${item.quantity.toLocaleString()}${item.unitType === 'ml' ? ' ml' : ''}`} | {mode === 'quote' ? `Venta: ${formatCurrency(item.sellingPrice)}` : `Costo: ${formatCurrency(item.unitPrice)}`}{item.unitType === 'ml' ? '/ml' : ''}
+                                            {item.isService ? 'Servicio' : `Stock: ${item.quantity.toLocaleString()}${item.unitType === 'ml' ? ' ml' : item.unitType === 'liters' ? ' L' : ''}`} | {mode === 'quote' ? `Venta: ${formatCurrency(item.sellingPrice)}` : `Costo: ${formatCurrency(item.unitPrice)}`}{item.unitType === 'ml' ? '/ml' : item.unitType === 'liters' ? '/L' : ''}
                                         </p>
                                     </div>
                                 </Button>
@@ -988,7 +988,7 @@ export function ServiceForm({
                         <p className="font-medium text-sm">Seleccionado: {selectedInventoryItemForDialog.name}</p>
                         <p className="text-xs text-muted-foreground">
                             {mode === 'quote' ? `Precio Venta: ${formatCurrency(selectedInventoryItemForDialog.sellingPrice)}` : `Costo Taller: ${formatCurrency(selectedInventoryItemForDialog.unitPrice)}`}
-                            {selectedInventoryItemForDialog.unitType === 'ml' && '/ml'}
+                            {selectedInventoryItemForDialog.unitType === 'ml' ? '/ml' : selectedInventoryItemForDialog.unitType === 'liters' ? '/L' : ''}
                         </p>
                     </div>
                 )}
@@ -1002,7 +1002,7 @@ export function ServiceForm({
                 )}
                 <div className="space-y-2">
                     <Label htmlFor="supply-quantity">
-                        Cantidad ({selectedInventoryItemForDialog?.unitType === 'ml' ? 'ml' : 'unidades'})
+                        Cantidad ({selectedInventoryItemForDialog?.unitType === 'ml' ? 'ml' : selectedInventoryItemForDialog?.unitType === 'liters' ? 'L' : 'unidades'})
                     </Label>
                     <Input
                         id="supply-quantity"

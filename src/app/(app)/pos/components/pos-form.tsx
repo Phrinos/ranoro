@@ -137,7 +137,7 @@ export function PosForm({ inventoryItems: parentInventoryItems, onSaleComplete, 
     setSelectedInventoryItemForDialog(null);
     setAddItemSearchTerm('');
     setAddItemQuantity(1);
-    setFilteredInventoryForDialog(currentInventoryItems.filter(item => (item.isService || item.quantity > 0) && item.unitType !== 'ml').slice(0,10));
+    setFilteredInventoryForDialog(currentInventoryItems.filter(item => item.isService || (item.unitType === 'units' && item.quantity > 0)).slice(0,10));
     setIsAddItemDialogOpen(true);
   };
 
@@ -196,14 +196,14 @@ export function PosForm({ inventoryItems: parentInventoryItems, onSaleComplete, 
   // --- Add Item Dialog Logic ---
   useEffect(() => {
     if (addItemSearchTerm.trim() === '') {
-        setFilteredInventoryForDialog(currentInventoryItems.filter(item => (item.isService || item.quantity > 0) && item.unitType !== 'ml').slice(0,10));
+        setFilteredInventoryForDialog(currentInventoryItems.filter(item => item.isService || (item.unitType === 'units' && item.quantity > 0)).slice(0,10));
         return;
     }
     const lowerSearchTerm = addItemSearchTerm.toLowerCase();
     setFilteredInventoryForDialog(
         currentInventoryItems.filter(item =>
             (item.name.toLowerCase().includes(lowerSearchTerm) ||
-            item.sku.toLowerCase().includes(lowerSearchTerm)) && (item.isService || item.quantity > 0) && item.unitType !== 'ml'
+            item.sku.toLowerCase().includes(lowerSearchTerm)) && (item.isService || (item.unitType === 'units' && item.quantity > 0))
         ).slice(0, 10)
     );
   }, [addItemSearchTerm, currentInventoryItems]);
@@ -263,7 +263,7 @@ export function PosForm({ inventoryItems: parentInventoryItems, onSaleComplete, 
           lowStockThreshold: newItemFormValues.isService ? 0 : Number(newItemFormValues.lowStockThreshold),
           unitPrice: Number(newItemFormValues.unitPrice),
           sellingPrice: Number(newItemFormValues.sellingPrice),
-          unitType: 'units' // Items created from POS are always units
+          unitType: newItemFormValues.unitType || 'units'
       };
       placeholderInventory.push(newInventoryItem);
       setCurrentInventoryItems(prev => [...prev, newInventoryItem]);
@@ -272,19 +272,29 @@ export function PosForm({ inventoryItems: parentInventoryItems, onSaleComplete, 
           onInventoryItemCreated(newInventoryItem);
       }
 
-      toast({
-          title: "Nuevo Ítem Creado",
-          description: `${newInventoryItem.name} ha sido agregado al inventario y añadido a la venta.`,
-      });
+      // Check if the new item can be added to POS
+      if (!newInventoryItem.isService && newInventoryItem.unitType !== 'units') {
+          toast({
+              title: "Ítem Creado con Advertencia",
+              description: `${newInventoryItem.name} fue creado pero no puede ser añadido a una venta directa porque se mide por ${newInventoryItem.unitType}. Úselo desde una Orden de Servicio.`,
+              variant: 'default',
+              duration: 8000,
+          });
+      } else {
+          toast({
+              title: "Nuevo Ítem Creado",
+              description: `${newInventoryItem.name} ha sido agregado al inventario y añadido a la venta.`,
+          });
 
-      append({
-          inventoryItemId: newInventoryItem.id,
-          itemName: newInventoryItem.name,
-          quantity: addItemQuantity, // Use addItemQuantity from the dialog state
-          unitPrice: newInventoryItem.sellingPrice,
-          totalPrice: newInventoryItem.sellingPrice * addItemQuantity, // Use addItemQuantity
-          isService: newInventoryItem.isService,
-      });
+          append({
+              inventoryItemId: newInventoryItem.id,
+              itemName: newInventoryItem.name,
+              quantity: addItemQuantity,
+              unitPrice: newInventoryItem.sellingPrice,
+              totalPrice: newInventoryItem.sellingPrice * addItemQuantity,
+              isService: newInventoryItem.isService,
+          });
+      }
 
       setIsNewInventoryItemDialogOpen(false);
       setNewItemInitialData(null);
@@ -472,7 +482,7 @@ export function PosForm({ inventoryItems: parentInventoryItems, onSaleComplete, 
             <DialogHeader>
                 <DialogTitle>Añadir Artículo/Servicio a la Venta</DialogTitle>
                 <DialogDescription>
-                    Busque por nombre o SKU. Los artículos vendidos por mililitro solo pueden agregarse en la pantalla de Servicios.
+                    Busque por nombre o SKU. Los artículos vendidos por mililitro o litro solo pueden agregarse en la pantalla de Servicios.
                 </DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-4">
