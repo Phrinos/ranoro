@@ -127,11 +127,6 @@ export default function TecnicosPage() {
 
   return (
     <>
-      <PageHeader
-        title="Staff Técnico"
-        description="Administra los perfiles y el rendimiento del staff técnico."
-      />
-
       <Card className="mb-6">
         <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
@@ -209,40 +204,51 @@ export default function TecnicosPage() {
         </CardContent>
       </Card>
 
-      <div className="mb-4 flex items-center justify-end gap-2">
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline">
-              <ListFilter className="mr-2 h-4 w-4" />
-              Ordenar Tabla
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuLabel>Ordenar tabla por</DropdownMenuLabel>
-            <DropdownMenuRadioGroup value={sortOption} onValueChange={(value) => setSortOption(value as TechnicianSortOption)}>
-              <DropdownMenuRadioItem value="name_asc">Nombre (A-Z)</DropdownMenuRadioItem>
-              <DropdownMenuRadioItem value="name_desc">Nombre (Z-A)</DropdownMenuRadioItem>
-              <DropdownMenuRadioItem value="area_asc">Área (A-Z)</DropdownMenuRadioItem>
-              <DropdownMenuRadioItem value="area_desc">Área (Z-A)</DropdownMenuRadioItem>
-              <DropdownMenuRadioItem value="hireDate_asc">Fecha Contratación (Antiguo a Nuevo)</DropdownMenuRadioItem>
-              <DropdownMenuRadioItem value="hireDate_desc">Fecha Contratación (Nuevo a Antiguo)</DropdownMenuRadioItem>
-              <DropdownMenuRadioItem value="salary_asc">Sueldo (Menor a Mayor)</DropdownMenuRadioItem>
-              <DropdownMenuRadioItem value="salary_desc">Sueldo (Mayor a Menor)</DropdownMenuRadioItem>
-            </DropdownMenuRadioGroup>
-          </DropdownMenuContent>
-        </DropdownMenu>
-        <TechnicianDialog
-          trigger={
-            <Button>
-              <PlusCircle className="mr-2 h-4 w-4" />
-              Nuevo Staff Técnico
-            </Button>
-          }
-          onSave={handleSaveTechnician}
-        />
-      </div>
-
-      <TechniciansTable technicians={sortedTechniciansForTable} />
+      <Card>
+        <CardHeader>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <CardTitle>Lista de Staff Técnico</CardTitle>
+              <CardDescription>Visualiza y gestiona al personal técnico.</CardDescription>
+            </div>
+            <div className="flex items-center gap-2">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" className="bg-white">
+                    <ListFilter className="mr-2 h-4 w-4" />
+                    Ordenar Tabla
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuLabel>Ordenar tabla por</DropdownMenuLabel>
+                  <DropdownMenuRadioGroup value={sortOption} onValueChange={(value) => setSortOption(value as TechnicianSortOption)}>
+                    <DropdownMenuRadioItem value="name_asc">Nombre (A-Z)</DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="name_desc">Nombre (Z-A)</DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="area_asc">Área (A-Z)</DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="area_desc">Área (Z-A)</DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="hireDate_asc">Fecha Contratación (Antiguo a Nuevo)</DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="hireDate_desc">Fecha Contratación (Nuevo a Antiguo)</DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="salary_asc">Sueldo (Menor a Mayor)</DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="salary_desc">Sueldo (Mayor a Menor)</DropdownMenuRadioItem>
+                  </DropdownMenuRadioGroup>
+                </DropdownMenuContent>
+              </DropdownMenu>
+              <TechnicianDialog
+                trigger={
+                  <Button>
+                    <PlusCircle className="mr-2 h-4 w-4" />
+                    Nuevo Staff Técnico
+                  </Button>
+                }
+                onSave={handleSaveTechnician}
+              />
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <TechniciansTable technicians={sortedTechniciansForTable} />
+        </CardContent>
+      </Card>
     </>
   );
 }
