@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { PageHeader } from "@/components/page-header";
@@ -294,41 +293,43 @@ export default function AgendaServiciosPage() {
                         <CalendarCheck className="h-4 w-4" />
                         <span>Entrega: {formattedDeliveryDateTime}</span>
                       </div>
-                      <div className="flex items-center gap-2 text-sm text-foreground flex-1 min-w-[300px]">
-                        <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
-                        <p className="truncate" title={`${service.description} (Téc: ${technicianName})`}>
-                          {service.description} <span className="text-muted-foreground">({technicianName})</span>
-                        </p>
+                      <div className="flex items-center justify-between gap-2 text-foreground flex-1 min-w-[300px]">
+                        <div className="flex items-center gap-2">
+                          <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
+                          <p className="truncate text-base" title={`${service.description} (Téc: ${technicianName})`}>
+                            {service.description} <span className="text-sm text-muted-foreground">({technicianName})</span>
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Button variant="ghost" size="icon" aria-label="Editar Servicio" onClick={() => handleOpenEditDialog(service)}>
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button variant="ghost" size="icon" aria-label="Eliminar Servicio">
+                                <Trash2 className="h-4 w-4 text-destructive" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Esta acción no se puede deshacer. Esto eliminará permanentemente la orden de servicio.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                <AlertDialogAction onClick={() => handleDeleteService(service.id)} className="bg-destructive hover:bg-destructive/90">
+                                  Eliminar
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </div>
                       </div>
                       <div className="flex items-center gap-2 font-semibold text-green-600">
                         <TrendingUp className="h-4 w-4" />
                         <span>Ganancia: {serviceProfitFormatted}</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Button variant="ghost" size="icon" aria-label="Editar Servicio" onClick={() => handleOpenEditDialog(service)}>
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button variant="ghost" size="icon" aria-label="Eliminar Servicio">
-                              <Trash2 className="h-4 w-4 text-destructive" />
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                Esta acción no se puede deshacer. Esto eliminará permanentemente la orden de servicio.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                              <AlertDialogAction onClick={() => handleDeleteService(service.id)} className="bg-destructive hover:bg-destructive/90">
-                                Eliminar
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
                       </div>
                     </div>
                   </CardContent>
@@ -449,3 +450,5 @@ export default function AgendaServiciosPage() {
     </>
   );
 }
+
+    
