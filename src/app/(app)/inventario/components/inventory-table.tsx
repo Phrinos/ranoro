@@ -32,15 +32,15 @@ export function InventoryTable({ items }: InventoryTableProps) {
   return (
     <div className="rounded-lg border shadow-sm overflow-hidden">
       <Table>
-        <TableHeader>
+        <TableHeader className="bg-white">
           <TableRow>
-            <TableHead>Código</TableHead>
-            <TableHead>Categoría</TableHead>
-            <TableHead>Nombre</TableHead>
-            <TableHead className="text-right">Cantidad</TableHead>
-            <TableHead className="text-right">Costo</TableHead>
-            <TableHead className="text-right">Precio Venta</TableHead>
-            <TableHead>Stock Bajo</TableHead>
+            <TableHead className="font-bold">Código</TableHead>
+            <TableHead className="font-bold">Categoría</TableHead>
+            <TableHead className="font-bold">Nombre</TableHead>
+            <TableHead className="text-right font-bold">Cantidad</TableHead>
+            <TableHead className="text-right font-bold">Costo</TableHead>
+            <TableHead className="text-right font-bold">Precio Venta</TableHead>
+            <TableHead className="font-bold">Stock Bajo</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>

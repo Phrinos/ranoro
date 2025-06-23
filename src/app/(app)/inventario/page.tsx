@@ -273,13 +273,13 @@ export default function InventarioPage() {
         description="Administra productos, servicios, niveles de stock y registra compras."
         actions={
           <div className="flex flex-wrap gap-2">
-            <Button variant="outline" onClick={handlePrintInventory}>
+            <Button onClick={handlePrintInventory} className="bg-blue-200 text-blue-800 hover:bg-blue-300 dark:bg-blue-800 dark:text-blue-200 dark:hover:bg-blue-700">
               <Printer className="mr-2 h-4 w-4" />
               Imprimir Lista
             </Button>
-            <Button variant="outline" onClick={handleOpenPurchaseItemSelection}>
+            <Button onClick={handleOpenPurchaseItemSelection} className="bg-green-200 text-green-800 hover:bg-green-300 dark:bg-green-800 dark:text-green-200 dark:hover:bg-green-700">
               <ShoppingCartIcon className="mr-2 h-4 w-4" />
-              Ingresar Compra de Producto
+              Ingresar Compra
             </Button>
             <Button onClick={() => { setIsCreatingItemForPurchaseFlow(false); setIsNewItemDialogOpen(true); }}>
               <PlusCircle className="mr-2 h-4 w-4" />
@@ -295,14 +295,14 @@ export default function InventarioPage() {
           <Input
             type="search"
             placeholder="Buscar por código o nombre..."
-            className="w-full rounded-lg bg-background pl-8"
+            className="w-full rounded-lg bg-white pl-8"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="outline" className="min-w-[150px] flex-1 sm:flex-initial sm:ml-2">
+            <Button variant="outline" className="min-w-[150px] flex-1 sm:flex-initial sm:ml-2 bg-white">
               <ListFilter className="mr-2 h-4 w-4" />
               Ordenar
             </Button>
@@ -324,7 +324,7 @@ export default function InventarioPage() {
           </DropdownMenuContent>
         </DropdownMenu>
         <Select value={selectedCategoryFilter} onValueChange={setSelectedCategoryFilter}>
-          <SelectTrigger className="w-full sm:w-auto min-w-[200px] flex-1 sm:flex-initial">
+          <SelectTrigger className="w-full sm:w-auto min-w-[200px] flex-1 sm:flex-initial bg-white">
             <SelectValue placeholder="Filtrar por categoría" />
           </SelectTrigger>
           <SelectContent>
@@ -371,5 +371,3 @@ export default function InventarioPage() {
     </>
   );
 }
-
-    
