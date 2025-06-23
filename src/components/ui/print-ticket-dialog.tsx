@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useRef } from 'react';
@@ -43,7 +42,7 @@ export function PrintTicketDialog({
 
     if (format === 'receipt') {
         return {
-            margin: [2, 2, 2, 2], // Margin in mm [top, right, bottom, left]
+            margin: 7.5,
             filename: pdfFileName,
             image: { type: 'jpeg', quality: 0.98 },
             html2canvas: { scale: 3, useCORS: true, letterRendering: true },
@@ -53,7 +52,7 @@ export function PrintTicketDialog({
     
     // Default to letter format for quotes etc.
     return {
-        margin: 5,
+        margin: 7.5,
         filename: pdfFileName,
         image: { type: 'jpeg', quality: 0.98 },
         html2canvas: { scale: 2, useCORS: true, letterRendering: true },
@@ -75,6 +74,7 @@ export function PrintTicketDialog({
         toast({
           title: "PDF Descargado",
           description: "El archivo se ha guardado exitosamente.",
+          duration: 2000,
         });
       }).catch((err: any) => {
         toast({

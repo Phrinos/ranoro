@@ -52,14 +52,27 @@ export default function PublicQuoteViewPage() {
     const element = quoteContentRef.current;
     const pdfFileName = `Cotizacion-${quote.id}.pdf`;
     const opt = {
-      margin:       5,
-      filename:     pdfFileName,
-      image:        { type: 'jpeg', quality: 0.98 },
+      margin: 7.5,
+      filename: pdfFileName,
+      image: { type: 'jpeg', quality: 0.98 },
       html2canvas:  { scale: 2, useCORS: true, letterRendering: true },
       jsPDF:        { unit: 'mm', format: 'letter', orientation: 'portrait' }
     };
     toast({ title: "Generando PDF...", description: `Se está preparando ${pdfFileName}.` });
-    html2pdf().from(element).set(opt).save();
+    html2pdf().from(element).set(opt).save().then(() => {
+        toast({
+          title: "PDF Descargado",
+          description: "El archivo se ha guardado exitosamente.",
+          duration: 2000,
+        });
+      }).catch((err: any) => {
+        toast({
+          title: "Error al generar PDF",
+          description: "Ocurrió un problema al crear el archivo.",
+          variant: "destructive",
+        });
+        console.error("PDF generation error:", err);
+      });
   };
   
 
