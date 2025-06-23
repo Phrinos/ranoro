@@ -115,32 +115,55 @@ export default function AdministrativeStaffDetailPage() {
                 Editar
             </Button>
             </CardHeader>
-            <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 text-sm">
-                <div><strong className="text-muted-foreground">ID:</strong> {staffMember.id}</div>
-                <div><strong className="text-muted-foreground">Nombre:</strong> {staffMember.name}</div>
-                <div><strong className="text-muted-foreground">Rol/Área:</strong> {staffMember.roleOrArea}</div>
-                <div className="flex items-center gap-2">
-                    <Phone className="h-4 w-4 text-muted-foreground"/>
-                    <strong className="text-muted-foreground">Teléfono:</strong> {staffMember.contactInfo || 'N/A'}
+            <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6 text-sm">
+                <div className="flex flex-col space-y-1">
+                    <p className="text-sm font-medium text-muted-foreground">ID del Staff</p>
+                    <p className="text-base font-semibold">{staffMember.id}</p>
                 </div>
-                <div className="flex items-center gap-2">
-                    <CalendarDays className="h-4 w-4 text-muted-foreground"/>
-                    <strong className="text-muted-foreground">Fecha de Contratación:</strong> {hireDateFormatted}
+                 <div className="flex flex-col space-y-1">
+                    <p className="text-sm font-medium text-muted-foreground">Nombre Completo</p>
+                    <p className="text-base font-semibold">{staffMember.name}</p>
                 </div>
-                <div className="flex items-center gap-2">
-                    <DollarSign className="h-4 w-4 text-muted-foreground"/>
-                    <strong className="text-muted-foreground">Sueldo Mensual:</strong> ${staffMember.monthlySalary ? staffMember.monthlySalary.toLocaleString('es-ES', {minimumFractionDigits: 2}) : 'N/A'}
+                <div className="flex flex-col space-y-1 md:col-span-2">
+                    <p className="text-sm font-medium text-muted-foreground">Rol o Área</p>
+                    <p className="text-base font-semibold">{staffMember.roleOrArea}</p>
                 </div>
-                <div className="flex items-center gap-2">
-                    <Percent className="h-4 w-4 text-muted-foreground"/>
-                    <strong className="text-muted-foreground">Comisión:</strong> {staffMember.commissionRate !== undefined ? `${(staffMember.commissionRate * 100).toFixed(1)}%` : 'N/A'}
+
+                <div className="flex items-start gap-3">
+                    <Phone className="h-5 w-5 text-muted-foreground mt-1" />
+                    <div className="flex flex-col">
+                        <p className="text-sm font-medium text-muted-foreground">Teléfono</p>
+                        <p className="text-base font-semibold">{staffMember.contactInfo || 'N/A'}</p>
+                    </div>
                 </div>
+                <div className="flex items-start gap-3">
+                    <CalendarDays className="h-5 w-5 text-muted-foreground mt-1" />
+                    <div className="flex flex-col">
+                        <p className="text-sm font-medium text-muted-foreground">Fecha de Contratación</p>
+                        <p className="text-base font-semibold">{hireDateFormatted}</p>
+                    </div>
+                </div>
+                <div className="flex items-start gap-3">
+                    <DollarSign className="h-5 w-5 text-muted-foreground mt-1" />
+                    <div className="flex flex-col">
+                        <p className="text-sm font-medium text-muted-foreground">Sueldo Mensual</p>
+                        <p className="text-base font-semibold">${staffMember.monthlySalary ? staffMember.monthlySalary.toLocaleString('es-ES', {minimumFractionDigits: 2}) : 'N/A'}</p>
+                    </div>
+                </div>
+                <div className="flex items-start gap-3">
+                    <Percent className="h-5 w-5 text-muted-foreground mt-1" />
+                    <div className="flex flex-col">
+                        <p className="text-sm font-medium text-muted-foreground">Tasa de Comisión</p>
+                        <p className="text-base font-semibold">{staffMember.commissionRate !== undefined ? `${(staffMember.commissionRate * 100).toFixed(1)}%` : 'N/A'}</p>
+                    </div>
+                </div>
+
                 {staffMember.notes && (
-                <div className="md:col-span-2 pt-2 flex items-start gap-2">
-                    <StickyNote className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0"/>
-                    <div>
-                        <p className="font-semibold text-muted-foreground">Notas:</p>
-                        <p className="text-sm text-foreground whitespace-pre-wrap">{staffMember.notes}</p>
+                <div className="md:col-span-2 pt-4 flex items-start gap-3">
+                    <StickyNote className="h-5 w-5 text-muted-foreground mt-1 shrink-0"/>
+                    <div className="flex flex-col">
+                        <p className="text-sm font-medium text-muted-foreground">Notas Adicionales</p>
+                        <p className="text-base text-foreground whitespace-pre-wrap">{staffMember.notes}</p>
                     </div>
                 </div>
                 )}
@@ -183,4 +206,3 @@ export default function AdministrativeStaffDetailPage() {
     </div>
   );
 }
-
