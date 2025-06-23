@@ -49,11 +49,12 @@ export default function LoginPage() {
 
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      
-      if (userCredential.user) {
-        // Find user directly in the global placeholder array after hydration
+      const firebaseUser = userCredential.user;
+
+      if (firebaseUser) {
+        // Find the application user by matching the Firebase UID with the user's ID
         const foundAppUser = placeholderUsers.find(
-          u => u.email.toLowerCase() === email.toLowerCase()
+          u => u.id === firebaseUser.uid
         );
 
         if (foundAppUser) {
