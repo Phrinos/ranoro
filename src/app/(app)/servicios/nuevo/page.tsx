@@ -28,7 +28,7 @@ export default function NuevoServicioPage() {
 
   useEffect(() => {
     if (dialogStep === 'closed') {
-      router.push('/servicios/agenda');
+      router.push('/servicios/historial');
     }
   }, [dialogStep, router]);
 
