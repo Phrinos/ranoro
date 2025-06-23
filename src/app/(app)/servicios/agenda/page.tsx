@@ -4,7 +4,7 @@
 
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Edit, Trash2, Clock, Search as SearchIcon, Calendar, CalendarCheck, CheckCircle, Wrench, Printer } from "lucide-react";
+import { PlusCircle, Edit, Trash2, Clock, Search as SearchIcon, Calendar, CalendarCheck, CheckCircle, Wrench, Printer, Tag, FileText, TrendingUp, DollarSign } from "lucide-react";
 import {
   placeholderServiceRecords,
   placeholderVehicles,
@@ -242,87 +242,94 @@ export default function AgendaServiciosPage() {
               const vehicle = vehicles.find(v => v.id === service.vehicleId);
               const technician = techniciansState.find(t => t.id === service.technicianId);
               
-              const formattedDelivery = service.deliveryDateTime && isValid(parseISO(service.deliveryDateTime))
-                  ? format(parseISO(service.deliveryDateTime), "dd MMM, HH:mm", { locale: es })
-                  : 'N/A';
+              const serviceDateObj = service.serviceDate ? parseISO(service.serviceDate) : null;
+              const deliveryDateObj = service.deliveryDateTime ? parseISO(service.deliveryDateTime) : null;
+              
+              const formattedServiceDate = serviceDateObj && isValid(serviceDateObj) ? format(serviceDateObj, "dd MMM yy, HH:mm", { locale: es }) : 'N/A';
+              const formattedDeliveryDateTime = deliveryDateObj && isValid(deliveryDateObj) ? format(deliveryDateObj, "dd MMM yy, HH:mm", { locale: es }) : 'N/A';
+              const vehicleMakeModelYear = vehicle ? `${vehicle.make} ${vehicle.model} (${vehicle.year})` : 'N/A';
+              const mileageFormatted = service.mileage !== undefined && service.mileage !== null ? `${service.mileage.toLocaleString('es-ES')} km` : 'N/A';
+              const totalCostFormatted = `$${service.totalCost.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+              const totalSuppliesCostFormatted = service.totalSuppliesCost !== undefined ? `$${service.totalSuppliesCost.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : 'N/A';
+              const serviceProfitFormatted = service.serviceProfit !== undefined ? `$${service.serviceProfit.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : 'N/A';
+              const technicianName = technician ? technician.name : (service.technicianId || 'N/A');
 
               return (
                 <Card key={service.id} className="shadow-sm">
-                  <CardContent className="p-0">
-                    <div className="flex items-center">
-                        <div className="w-48 shrink-0 flex flex-col justify-center items-start text-left pl-6">
-                            <p className="text-xs text-muted-foreground">ID Servicio</p>
-                            <p className="font-semibold text-lg text-foreground">
-                                {service.id}
-                            </p>
-                            <p className="text-xs text-muted-foreground mt-2">Costo</p>
-                            <p className="font-bold text-2xl text-foreground">
-                                ${service.totalCost.toLocaleString('es-ES')}
-                            </p>
-                        </div>
-                        
-                        <div className="flex-grow border-l border-r p-4 space-y-3">
-                            {/* Top line */}
-                            <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2 text-sm text-muted-foreground">
-                                <div className="flex items-center gap-1.5" title="Hora de Recepción">
-                                    {(service.status === 'Reparando' || service.status === 'Completado') ? <CheckCircle className="h-4 w-4 text-green-600" /> : <Clock className="h-4 w-4" />}
-                                    <span>Recepción: {service.serviceDate && isValid(parseISO(service.serviceDate)) ? format(parseISO(service.serviceDate), "HH:mm", { locale: es }) : 'Hora Inválida'}</span>
-                                </div>
-                                <div className="flex items-center gap-1.5">
-                                    <Wrench className="h-4 w-4" />
-                                    <span>{technician ? technician.name : 'N/A'}</span>
-                                </div>
-                                <div className="flex items-center gap-1.5" title="Fecha de Entrega">
-                                    {service.status === 'Completado' ? <CheckCircle className="h-4 w-4 text-green-600" /> : <CalendarCheck className="h-4 w-4" />}
-                                    <span>Entrega: {formattedDelivery}</span>
-                                </div>
-                            </div>
-                             {/* Bottom part */}
-                            <div className="mt-4 flex items-center gap-4">
-                                <div className="flex-grow">
-                                    <h4 className="font-semibold text-base">
-                                        {vehicle ? `${vehicle.licensePlate} - ${vehicle.make} ${vehicle.model} ${vehicle.year}` : service.vehicleId}
-                                    </h4>
-                                    <p className="text-sm text-muted-foreground mt-1">
-                                        {service.description}
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
+                  <CardContent className="p-4 space-y-3">
+                    {/* Linea 1 */}
+                    <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+                      <div className="flex items-center gap-2">
+                        <Tag className="h-4 w-4 text-muted-foreground" />
+                        <span className="font-bold text-primary">{service.id}</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <Calendar className="h-4 w-4" />
+                        <span>{formattedServiceDate}</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm font-medium text-foreground flex-1 min-w-[200px]">
+                        <Wrench className="h-4 w-4 text-muted-foreground" />
+                        <span className="truncate" title={`${vehicleMakeModelYear} - ${mileageFormatted}`}>
+                          {vehicleMakeModelYear} - {mileageFormatted}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2 font-semibold text-lg text-foreground">
+                        <DollarSign className="h-5 w-5 text-muted-foreground"/>
+                        <span>{totalCostFormatted}</span>
+                      </div>
+                      <div>
+                        <Badge variant={getStatusVariant(service.status)}>{service.status}</Badge>
+                      </div>
+                    </div>
 
-                        {/* Actions Column */}
-                        <div className="w-48 shrink-0 flex flex-col items-center justify-center p-4 gap-y-2">
-                             <Badge variant={getStatusVariant(service.status)} className="w-full justify-center text-center">{service.status}</Badge>
-                            <div className="flex">
-                                <Button variant="ghost" size="icon" onClick={() => handleOpenEditDialog(service)} title="Editar Servicio">
-                                    <Edit className="h-4 w-4" />
-                                </Button>
-                                <AlertDialog>
-                                    <AlertDialogTrigger asChild>
-                                    <Button variant="ghost" size="icon" title="Eliminar Servicio">
-                                        <Trash2 className="h-4 w-4 text-destructive" />
-                                    </Button>
-                                    </AlertDialogTrigger>
-                                    <AlertDialogContent>
-                                    <AlertDialogHeader>
-                                        <AlertDialogTitle>¿Eliminar Servicio?</AlertDialogTitle>
-                                        <AlertDialogDescription>
-                                        Esta acción no se puede deshacer. ¿Seguro que quieres eliminar este servicio?
-                                        </AlertDialogDescription>
-                                    </AlertDialogHeader>
-                                    <AlertDialogFooter>
-                                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                        <AlertDialogAction
-                                        onClick={() => handleDeleteService(service.id)}
-                                        className="bg-destructive hover:bg-destructive/90"
-                                        >
-                                        Sí, Eliminar
-                                        </AlertDialogAction>
-                                    </AlertDialogFooter>
-                                    </AlertDialogContent>
-                                </AlertDialog>
-                            </div>
-                        </div>
+                    <div className="border-t border-dashed -mx-4 my-2"></div>
+                    
+                    {/* Linea 2 */}
+                    <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <DollarSign className="h-4 w-4"/>
+                          <span>Costo: {totalSuppliesCostFormatted}</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <CalendarCheck className="h-4 w-4" />
+                        <span>Entrega: {formattedDeliveryDateTime}</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm text-foreground flex-1 min-w-[300px]">
+                        <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
+                        <p className="truncate" title={`${service.description} (Téc: ${technicianName})`}>
+                          {service.description} <span className="text-muted-foreground">({technicianName})</span>
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2 font-semibold text-green-600">
+                        <TrendingUp className="h-4 w-4" />
+                        <span>Ganancia: {serviceProfitFormatted}</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Button variant="ghost" size="icon" aria-label="Editar Servicio" onClick={() => handleOpenEditDialog(service)}>
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="ghost" size="icon" aria-label="Eliminar Servicio">
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Esta acción no se puede deshacer. Esto eliminará permanentemente la orden de servicio.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                              <AlertDialogAction onClick={() => handleDeleteService(service.id)} className="bg-destructive hover:bg-destructive/90">
+                                Eliminar
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
