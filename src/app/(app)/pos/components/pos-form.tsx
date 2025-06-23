@@ -137,7 +137,7 @@ export function PosForm({ inventoryItems: parentInventoryItems, onSaleComplete, 
     setSelectedInventoryItemForDialog(null);
     setAddItemSearchTerm('');
     setAddItemQuantity(1);
-    setFilteredInventoryForDialog(currentInventoryItems.filter(item => item.isService || item.quantity > 0).slice(0,10));
+    setFilteredInventoryForDialog(currentInventoryItems.filter(item => (item.isService || item.quantity > 0) && item.unitType !== 'ml').slice(0,10));
     setIsAddItemDialogOpen(true);
   };
 
@@ -196,14 +196,14 @@ export function PosForm({ inventoryItems: parentInventoryItems, onSaleComplete, 
   // --- Add Item Dialog Logic ---
   useEffect(() => {
     if (addItemSearchTerm.trim() === '') {
-        setFilteredInventoryForDialog(currentInventoryItems.filter(item => item.isService || item.quantity > 0).slice(0,10));
+        setFilteredInventoryForDialog(currentInventoryItems.filter(item => (item.isService || item.quantity > 0) && item.unitType !== 'ml').slice(0,10));
         return;
     }
     const lowerSearchTerm = addItemSearchTerm.toLowerCase();
     setFilteredInventoryForDialog(
         currentInventoryItems.filter(item =>
             (item.name.toLowerCase().includes(lowerSearchTerm) ||
-            item.sku.toLowerCase().includes(lowerSearchTerm)) && (item.isService || item.quantity > 0)
+            item.sku.toLowerCase().includes(lowerSearchTerm)) && (item.isService || item.quantity > 0) && item.unitType !== 'ml'
         ).slice(0, 10)
     );
   }, [addItemSearchTerm, currentInventoryItems]);
@@ -246,6 +246,7 @@ export function PosForm({ inventoryItems: parentInventoryItems, onSaleComplete, 
           sellingPrice: 0,
           lowStockThreshold: 5,
           isService: false, // Default to product, can be changed in the dialog
+          unitType: 'units',
           category: placeholderCategories.length > 0 ? placeholderCategories[0].name : "",
           supplier: placeholderSuppliers.length > 0 ? placeholderSuppliers[0].name : "",
       });
@@ -262,6 +263,7 @@ export function PosForm({ inventoryItems: parentInventoryItems, onSaleComplete, 
           lowStockThreshold: newItemFormValues.isService ? 0 : Number(newItemFormValues.lowStockThreshold),
           unitPrice: Number(newItemFormValues.unitPrice),
           sellingPrice: Number(newItemFormValues.sellingPrice),
+          unitType: 'units' // Items created from POS are always units
       };
       placeholderInventory.push(newInventoryItem);
       setCurrentInventoryItems(prev => [...prev, newInventoryItem]);
@@ -300,8 +302,8 @@ export function PosForm({ inventoryItems: parentInventoryItems, onSaleComplete, 
           <CardHeader>
             <CardTitle>Artículos de Venta</CardTitle>
           </CardHeader>
-          <CardContent>
-            <ScrollArea className="max-h-[300px] pr-4">
+          <CardContent className="flex flex-col">
+            <ScrollArea className="max-h-[300px] pr-4 flex-grow">
               {fields.length > 0 ? (
                 <div className="space-y-4">
                   {fields.map((field, index) => (
@@ -469,7 +471,9 @@ export function PosForm({ inventoryItems: parentInventoryItems, onSaleComplete, 
         <DialogContent className="sm:max-w-lg">
             <DialogHeader>
                 <DialogTitle>Añadir Artículo/Servicio a la Venta</DialogTitle>
-                <DialogDescription>Busque por nombre o SKU. Si no existe, puede crearlo.</DialogDescription>
+                <DialogDescription>
+                    Busque por nombre o SKU. Los artículos vendidos por mililitro solo pueden agregarse en la pantalla de Servicios.
+                </DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-4">
                 <div className="relative">

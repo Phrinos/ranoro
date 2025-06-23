@@ -45,7 +45,8 @@ const supplySchema = z.object({
   quantity: z.coerce.number().min(1, "La cantidad debe ser al menos 1."),
   unitPrice: z.coerce.number().optional(),
   supplyName: z.string().optional(),
-  isService: z.boolean().optional(), // To know if it's a service
+  isService: z.boolean().optional(),
+  unitType: z.enum(['units', 'ml']).optional(),
 });
 
 const serviceFormSchemaBase = z.object({
@@ -190,6 +191,7 @@ export function ServiceForm({
                 quantity: s.quantity,
                 unitPrice: unitPrice,
                 isService: itemDetails?.isService || false,
+                unitType: itemDetails?.unitType || 'units',
             };
         }) || [];
 
@@ -235,7 +237,8 @@ export function ServiceForm({
   const totalSuppliesWorkshopCost = React.useMemo(() => {
     return watchedSupplies?.reduce((sum, supply) => {
       const item = currentInventoryItems.find(i => i.id === supply.supplyId);
-      return sum + (item?.unitPrice || 0) * supply.quantity;
+      const costPerUnitOrMl = item?.unitPrice || 0;
+      return sum + costPerUnitOrMl * supply.quantity;
     }, 0) || 0;
   }, [watchedSupplies, currentInventoryItems]);
 
@@ -244,10 +247,10 @@ export function ServiceForm({
       return watchedSupplies?.reduce((sum, supply) => {
           const item = currentInventoryItems.find(i => i.id === supply.supplyId);
           // For quotes/conversion, the form's unitPrice *is* the selling price. For existing services, we need to look it up.
-          const sellingPrice = (mode === 'quote' || isConvertingQuote) 
+          const sellingPricePerUnitOrMl = (mode === 'quote' || isConvertingQuote) 
             ? (supply.unitPrice || 0) 
             : (item?.sellingPrice || 0);
-          return sum + sellingPrice * supply.quantity;
+          return sum + sellingPricePerUnitOrMl * supply.quantity;
       }, 0) || 0;
   }, [watchedSupplies, currentInventoryItems, mode, isConvertingQuote]);
 
@@ -424,7 +427,7 @@ export function ServiceForm({
           return;
       }
       if (!selectedInventoryItemForDialog.isService && selectedInventoryItemForDialog.quantity < addSupplyQuantity) {
-          toast({ title: "Stock Insuficiente", description: `Solo hay ${selectedInventoryItemForDialog.quantity} unidades de ${selectedInventoryItemForDialog.name}.`, variant: "destructive" });
+          toast({ title: "Stock Insuficiente", description: `Solo hay ${selectedInventoryItemForDialog.quantity.toLocaleString()} ${selectedInventoryItemForDialog.unitType === 'ml' ? 'ml' : 'unidades'} de ${selectedInventoryItemForDialog.name}.`, variant: "destructive" });
           return;
       }
       append({
@@ -433,6 +436,7 @@ export function ServiceForm({
           quantity: addSupplyQuantity,
           unitPrice: mode === 'quote' ? selectedInventoryItemForDialog.sellingPrice : selectedInventoryItemForDialog.unitPrice,
           isService: selectedInventoryItemForDialog.isService || false,
+          unitType: selectedInventoryItemForDialog.unitType || 'units'
       });
       setIsAddSupplyDialogOpen(false);
       setAddSupplySearchTerm('');
@@ -449,6 +453,7 @@ export function ServiceForm({
           sellingPrice: 0,
           lowStockThreshold: 5,
           isService: false, // Default to product, can be changed in dialog
+          unitType: 'units',
           category: placeholderCategories.length > 0 ? placeholderCategories[0].name : "",
           supplier: placeholderSuppliers.length > 0 ? placeholderSuppliers[0].name : "",
       });
@@ -465,6 +470,7 @@ export function ServiceForm({
           lowStockThreshold: newItemFormValues.isService ? 0 : Number(newItemFormValues.lowStockThreshold),
           unitPrice: Number(newItemFormValues.unitPrice),
           sellingPrice: Number(newItemFormValues.sellingPrice),
+          unitType: newItemFormValues.unitType || 'units',
       };
       placeholderInventory.push(newInventoryItem);
       setCurrentInventoryItems(prev => [...prev, newInventoryItem]);
@@ -481,6 +487,7 @@ export function ServiceForm({
           quantity: addSupplyQuantity, // Use addSupplyQuantity from the dialog state
           unitPrice: mode === 'quote' ? newInventoryItem.sellingPrice : newInventoryItem.unitPrice,
           isService: newInventoryItem.isService,
+          unitType: newInventoryItem.unitType,
       });
       setIsNewInventoryItemDialogOpen(false);
       setNewSupplyInitialData(null);
@@ -833,8 +840,11 @@ export function ServiceForm({
                                     return (
                                         <TableRow key={item.id}>
                                             <TableCell className="font-medium">{item.supplyName || currentItemDetails?.name || 'N/A'}</TableCell>
-                                            <TableCell className="text-center">{item.quantity}</TableCell>
-                                            <TableCell className="text-right">{formatCurrency(unitPriceForCalc)}</TableCell>
+                                            <TableCell className="text-center">{item.quantity}{item.unitType === 'ml' ? ' ml' : ''}</TableCell>
+                                            <TableCell className="text-right">
+                                                {formatCurrency(unitPriceForCalc)}
+                                                {item.unitType === 'ml' ? <span className="text-xs text-muted-foreground">/ml</span> : ''}
+                                            </TableCell>
                                             <TableCell className="text-right">{formatCurrency(totalItemPrice)}</TableCell>
                                             {!isReadOnly && (
                                                 <TableCell className="text-right">
@@ -965,7 +975,7 @@ export function ServiceForm({
                                     <div>
                                         <p className="font-medium">{item.name} <span className="text-xs text-muted-foreground">({item.sku})</span></p>
                                         <p className="text-xs text-muted-foreground">
-                                            {item.isService ? 'Servicio' : `Stock: ${item.quantity}`} | {mode === 'quote' ? `Venta: ${formatCurrency(item.sellingPrice)}` : `Costo: ${formatCurrency(item.unitPrice)}`}
+                                            {item.isService ? 'Servicio' : `Stock: ${item.quantity.toLocaleString()}${item.unitType === 'ml' ? ' ml' : ''}`} | {mode === 'quote' ? `Venta: ${formatCurrency(item.sellingPrice)}` : `Costo: ${formatCurrency(item.unitPrice)}`}{item.unitType === 'ml' ? '/ml' : ''}
                                         </p>
                                     </div>
                                 </Button>
@@ -978,6 +988,7 @@ export function ServiceForm({
                         <p className="font-medium text-sm">Seleccionado: {selectedInventoryItemForDialog.name}</p>
                         <p className="text-xs text-muted-foreground">
                             {mode === 'quote' ? `Precio Venta: ${formatCurrency(selectedInventoryItemForDialog.sellingPrice)}` : `Costo Taller: ${formatCurrency(selectedInventoryItemForDialog.unitPrice)}`}
+                            {selectedInventoryItemForDialog.unitType === 'ml' && '/ml'}
                         </p>
                     </div>
                 )}
@@ -990,7 +1001,9 @@ export function ServiceForm({
                     </div>
                 )}
                 <div className="space-y-2">
-                    <Label htmlFor="supply-quantity">Cantidad</Label>
+                    <Label htmlFor="supply-quantity">
+                        Cantidad ({selectedInventoryItemForDialog?.unitType === 'ml' ? 'ml' : 'unidades'})
+                    </Label>
                     <Input
                         id="supply-quantity"
                         type="number"

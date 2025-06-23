@@ -29,19 +29,23 @@ export const placeholderSuppliers: Supplier[] = [
 // =======================================
 export let placeholderInventory: InventoryItem[] = [
   // Aceites y Lubricantes
-  { id: 'P001', name: 'Aceite Sintético 5W-30 (Litro)', sku: 'OIL-SYN-5W30', description: 'Aceite sintético para motor a gasolina', quantity: 50, unitPrice: 150, sellingPrice: 280, supplier: 'Lubricantes Premium', lowStockThreshold: 10, category: 'Aceites y Lubricantes' },
-  { id: 'P002', name: 'Líquido de Frenos DOT 4 (500ml)', sku: 'BRK-FL-DOT4', description: 'Líquido de frenos sintético', quantity: 30, unitPrice: 80, sellingPrice: 150, supplier: 'Refaccionaria del Centro', lowStockThreshold: 5, category: 'Frenos' },
+  { id: 'P001', name: 'Aceite Sintético 5W-30 (Litro)', sku: 'OIL-SYN-5W30', description: 'Aceite sintético para motor a gasolina', quantity: 50, unitPrice: 150, sellingPrice: 280, supplier: 'Lubricantes Premium', lowStockThreshold: 10, category: 'Aceites y Lubricantes', unitType: 'units' },
+  { id: 'P002', name: 'Líquido de Frenos DOT 4 (500ml)', sku: 'BRK-FL-DOT4', description: 'Líquido de frenos sintético', quantity: 30, unitPrice: 80, sellingPrice: 150, supplier: 'Refaccionaria del Centro', lowStockThreshold: 5, category: 'Frenos', unitType: 'units' },
   
   // Filtros
-  { id: 'P003', name: 'Filtro de Aceite para Nissan Versa', sku: 'FIL-OIL-NISSN', quantity: 25, unitPrice: 90, sellingPrice: 180, supplier: 'Autopartes Express', lowStockThreshold: 5, category: 'Filtros' },
-  { id: 'P004', name: 'Filtro de Aire para VW Jetta', sku: 'FIL-AIR-VWJET', quantity: 40, unitPrice: 120, sellingPrice: 250, supplier: 'Autopartes Express', lowStockThreshold: 10, category: 'Filtros' },
+  { id: 'P003', name: 'Filtro de Aceite para Nissan Versa', sku: 'FIL-OIL-NISSN', quantity: 25, unitPrice: 90, sellingPrice: 180, supplier: 'Autopartes Express', lowStockThreshold: 5, category: 'Filtros', unitType: 'units' },
+  { id: 'P004', name: 'Filtro de Aire para VW Jetta', sku: 'FIL-AIR-VWJET', quantity: 40, unitPrice: 120, sellingPrice: 250, supplier: 'Autopartes Express', lowStockThreshold: 10, category: 'Filtros', unitType: 'units' },
   
   // Frenos
-  { id: 'P005', name: 'Balatas Delanteras Cerámicas', sku: 'BRK-PAD-CER-F', description: 'Juego de balatas delanteras de cerámica', quantity: 15, unitPrice: 650, sellingPrice: 1200, supplier: 'Refaccionaria del Centro', lowStockThreshold: 3, category: 'Frenos' },
+  { id: 'P005', name: 'Balatas Delanteras Cerámicas', sku: 'BRK-PAD-CER-F', description: 'Juego de balatas delanteras de cerámica', quantity: 15, unitPrice: 650, sellingPrice: 1200, supplier: 'Refaccionaria del Centro', lowStockThreshold: 3, category: 'Frenos', unitType: 'units' },
   
+  // Líquidos por ml
+  { id: 'P006', name: 'Limpiador de Inyectores', sku: 'CHEM-INJ-CLN', description: 'Aditivo limpiador de inyectores para gasolina', quantity: 2000, unitPrice: 0.25, sellingPrice: 0.60, supplier: 'Refaccionaria del Centro', lowStockThreshold: 500, category: 'Aceites y Lubricantes', unitType: 'ml' },
+  { id: 'P007', name: 'Shampoo para Auto con Cera', sku: 'CHEM-SHMP-WAX', description: 'Shampoo concentrado para lavado de carrocería', quantity: 5000, unitPrice: 0.08, sellingPrice: 0.25, supplier: 'Lubricantes Premium', lowStockThreshold: 1000, category: 'Servicios de Mantenimiento', unitType: 'ml' },
+
   // Servicios (no tienen stock)
-  { id: 'S001', name: 'Servicio de Afinación Menor', sku: 'SERV-AFIN-MEN', description: 'Incluye cambio de aceite, filtro de aceite y revisión de puntos de seguridad.', quantity: 0, unitPrice: 500, sellingPrice: 1500, supplier: 'N/A', lowStockThreshold: 0, category: 'Servicios de Mantenimiento', isService: true },
-  { id: 'S002', name: 'Diagnóstico con Escáner', sku: 'SERV-DIAG-SCAN', description: 'Revisión de códigos de falla con escáner OBD-II.', quantity: 0, unitPrice: 250, sellingPrice: 500, supplier: 'N/A', lowStockThreshold: 0, category: 'Servicios de Mantenimiento', isService: true }
+  { id: 'S001', name: 'Servicio de Afinación Menor', sku: 'SERV-AFIN-MEN', description: 'Incluye cambio de aceite, filtro de aceite y revisión de puntos de seguridad.', quantity: 0, unitPrice: 500, sellingPrice: 1500, supplier: 'N/A', lowStockThreshold: 0, category: 'Servicios de Mantenimiento', isService: true, unitType: 'units' },
+  { id: 'S002', name: 'Diagnóstico con Escáner', sku: 'SERV-DIAG-SCAN', description: 'Revisión de códigos de falla con escáner OBD-II.', quantity: 0, unitPrice: 250, sellingPrice: 500, supplier: 'N/A', lowStockThreshold: 0, category: 'Servicios de Mantenimiento', isService: true, unitType: 'units' }
 ];
 
 // =======================================

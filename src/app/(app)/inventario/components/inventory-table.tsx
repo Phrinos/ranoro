@@ -40,7 +40,7 @@ export function InventoryTable({ items }: InventoryTableProps) {
             <TableHead className="text-right font-bold">Cantidad</TableHead>
             <TableHead className="text-right font-bold">Costo</TableHead>
             <TableHead className="text-right font-bold">Precio Venta</TableHead>
-            <TableHead className="font-bold">Stock Bajo</TableHead>
+            <TableHead className="font-bold">Stock</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -54,10 +54,20 @@ export function InventoryTable({ items }: InventoryTableProps) {
               <TableCell>{item.category}</TableCell>
               <TableCell>{item.name}</TableCell>
               <TableCell className="text-right">
-                {item.isService ? <Badge variant="outline">Servicio</Badge> : item.quantity}
+                {item.isService ? (
+                  <Badge variant="outline">Servicio</Badge>
+                ) : (
+                  `${item.quantity.toLocaleString('es-ES')}${item.unitType === 'ml' ? ' ml' : ''}`
+                )}
               </TableCell>
-              <TableCell className="text-right">${item.unitPrice.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
-              <TableCell className="text-right">${item.sellingPrice.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
+              <TableCell className="text-right">
+                ${item.unitPrice.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                {item.unitType === 'ml' && <span className="text-xs text-muted-foreground"> /ml</span>}
+              </TableCell>
+              <TableCell className="text-right">
+                ${item.sellingPrice.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                {item.unitType === 'ml' && <span className="text-xs text-muted-foreground"> /ml</span>}
+                </TableCell>
               <TableCell>
                 {!item.isService && item.quantity <= item.lowStockThreshold && (
                   <Badge variant="destructive">Bajo</Badge>
