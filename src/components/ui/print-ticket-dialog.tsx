@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useEffect, useRef } from 'react';
+import React, { useRef } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -10,7 +10,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Printer, Download } from 'lucide-react';
+import { Download } from 'lucide-react';
 import { cn } from "@/lib/utils";
 import html2pdf from 'html2pdf.js';
 import { useToast } from '@/hooks/use-toast';
@@ -21,8 +21,6 @@ interface PrintTicketDialogProps {
   title: string;
   children: React.ReactNode; 
   onDialogClose?: () => void; 
-  autoPrint?: boolean; 
-  printButtonText?: string;
   dialogContentClassName?: string;
   footerActions?: React.ReactNode;
 }
@@ -33,8 +31,6 @@ export function PrintTicketDialog({
   title,
   children,
   onDialogClose,
-  autoPrint = false,
-  printButtonText = "Imprimir",
   dialogContentClassName = "",
   footerActions
 }: PrintTicketDialogProps) {
@@ -63,10 +59,6 @@ export function PrintTicketDialog({
         html2canvas: { scale: 2, useCORS: true, letterRendering: true },
         jsPDF: { unit: 'mm', format: 'letter', orientation: 'portrait' }
     };
-  };
-
-  const handlePrint = () => {
-    window.print();
   };
 
   const handleDownloadPDF = () => {
@@ -101,16 +93,6 @@ export function PrintTicketDialog({
       onDialogClose();
     }
   };
-  
-  useEffect(() => {
-    if (autoPrint && open) {
-      const timer = setTimeout(() => {
-        handlePrint();
-      }, 500); 
-      return () => clearTimeout(timer);
-    }
-  }, [autoPrint, open]);
-
 
   return (
     <Dialog open={open} onOpenChange={(isOpen) => {
@@ -133,13 +115,10 @@ export function PrintTicketDialog({
         <DialogFooter className="print-hidden sm:justify-between">
           <div className="flex flex-col sm:flex-row gap-2">
             {footerActions}
-            <Button type="button" variant="outline" onClick={handleDownloadPDF}>
-              <Download className="mr-2 h-4 w-4" />
-              Descargar PDF
-            </Button>
           </div>
-          <Button type="button" onClick={handlePrint}>
-            <Printer className="mr-2 h-4 w-4" /> {printButtonText}
+          <Button type="button" onClick={handleDownloadPDF}>
+            <Download className="mr-2 h-4 w-4" />
+            Descargar PDF
           </Button>
         </DialogFooter>
       </DialogContent>

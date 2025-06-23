@@ -82,8 +82,6 @@ export default function NuevaVentaPage() {
           }}
           title="Ticket de Venta"
           onDialogClose={handlePrintDialogClose}
-          autoPrint={false} // Show preview first, user clicks print
-          printButtonText="Imprimir Ticket"
           dialogContentClassName="printable-ticket-dialog"
         >
           <TicketContent sale={currentSaleForTicket} />
@@ -98,4 +96,3 @@ export default function NuevaVentaPage() {
     </>
   );
 }
-
