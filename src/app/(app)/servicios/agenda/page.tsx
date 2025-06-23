@@ -209,96 +209,105 @@ export default function AgendaServiciosPage() {
     }
 
     return Object.entries(groupedServicesData).map(([date, dayServices]) => {
+      const dailyProfit = dayServices.reduce((sum, service) => sum + (service.serviceProfit || 0), 0);
       return (
         <div key={date} className="mb-6">
-          <h3 className="text-lg font-semibold text-primary mb-2">
-            {format(parseISO(date), "EEEE, dd 'de' MMMM 'de' yyyy", { locale: es })}
-          </h3>
+          <div className="flex justify-between items-end mb-2">
+              <h3 className="text-lg font-semibold text-primary">
+                  {format(parseISO(date), "EEEE, dd 'de' MMMM 'de' yyyy", { locale: es })}
+              </h3>
+              <div className="text-right">
+                  <p className="text-sm font-medium text-muted-foreground">Ganancia Estimada del Día</p>
+                  <p className="text-lg font-bold text-green-600">
+                      {`$${dailyProfit.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+                  </p>
+              </div>
+          </div>
           <div className="space-y-4">
             {dayServices.map(service => {
               const vehicle = vehicles.find(v => v.id === service.vehicleId);
               const technician = techniciansState.find(t => t.id === service.technicianId);
-              const formattedServiceTime = service.serviceDate && isValid(parseISO(service.serviceDate))
-                  ? format(parseISO(service.serviceDate), "HH:mm", { locale: es })
-                  : 'Hora Inválida';
+              
               const formattedDelivery = service.deliveryDateTime && isValid(parseISO(service.deliveryDateTime))
                   ? format(parseISO(service.deliveryDateTime), "dd MMM, HH:mm", { locale: es })
                   : 'N/A';
 
               return (
                 <Card key={service.id} className="shadow-sm">
-                  <CardContent className="px-6 py-4 space-y-3">
-                    {/* Top line */}
-                    <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2 text-sm text-muted-foreground border-b pb-3">
-                        <div className="flex items-center gap-1.5 font-medium">
-                            <span className="text-primary">{service.id}</span>
-                        </div>
-                        <div className="flex items-center gap-1.5" title="Hora de Recepción">
-                            {(service.status === 'Reparando' || service.status === 'Completado') ? <CheckCircle className="h-4 w-4 text-green-600" /> : <Clock className="h-4 w-4" />}
-                            <span>Recepción: {formattedServiceTime}</span>
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                            <Wrench className="h-4 w-4" />
-                            <span>{technician ? technician.name : 'N/A'}</span>
-                        </div>
-                        <div className="flex items-center gap-1.5" title="Fecha de Entrega">
-                            {service.status === 'Completado' ? <CheckCircle className="h-4 w-4 text-green-600" /> : <CalendarCheck className="h-4 w-4" />}
-                            <span>Entrega: {formattedDelivery}</span>
-                        </div>
-                        <div>
-                            <Badge variant={getStatusVariant(service.status)}>{service.status}</Badge>
-                        </div>
-                    </div>
-
-                    {/* Bottom part */}
-                    <div className="mt-4 flex items-center gap-4">
-                        {/* Cost Column */}
-                        <div className="w-32 shrink-0 text-left">
-                          <p className="text-xs text-muted-foreground">Costo</p>
-                          <p className="font-bold text-lg text-black">
-                            ${service.totalCost.toLocaleString('es-ES')}
-                          </p>
-                        </div>
-
-                        {/* Info Column */}
-                        <div className="flex-grow">
-                            <h4 className="font-semibold text-base">
-                                {vehicle ? `${vehicle.licensePlate} - ${vehicle.make} ${vehicle.model} ${vehicle.year}` : service.vehicleId}
-                            </h4>
-                            <p className="text-sm text-muted-foreground mt-1">
-                                {service.description}
+                  <CardContent className="p-0">
+                    <div className="flex items-center">
+                        <div className="w-32 shrink-0 text-left px-4">
+                            <p className="text-xs text-muted-foreground">ID Servicio</p>
+                            <p className="font-bold text-base text-black">
+                                {service.id}
                             </p>
+                            <p className="text-xs text-muted-foreground mt-2">Costo</p>
+                            <p className="font-bold text-lg text-black">
+                                ${service.totalCost.toLocaleString('es-ES')}
+                            </p>
+                        </div>
+                        
+                        <div className="flex-grow border-l border-r p-4 space-y-3">
+                            {/* Top line */}
+                            <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2 text-sm text-muted-foreground">
+                                <div className="flex items-center gap-1.5" title="Hora de Recepción">
+                                    {(service.status === 'Reparando' || service.status === 'Completado') ? <CheckCircle className="h-4 w-4 text-green-600" /> : <Clock className="h-4 w-4" />}
+                                    <span>Recepción: {service.serviceDate && isValid(parseISO(service.serviceDate)) ? format(parseISO(service.serviceDate), "HH:mm", { locale: es }) : 'Hora Inválida'}</span>
+                                </div>
+                                <div className="flex items-center gap-1.5">
+                                    <Wrench className="h-4 w-4" />
+                                    <span>{technician ? technician.name : 'N/A'}</span>
+                                </div>
+                                <div className="flex items-center gap-1.5" title="Fecha de Entrega">
+                                    {service.status === 'Completado' ? <CheckCircle className="h-4 w-4 text-green-600" /> : <CalendarCheck className="h-4 w-4" />}
+                                    <span>Entrega: {formattedDelivery}</span>
+                                </div>
+                            </div>
+                             {/* Bottom part */}
+                            <div className="mt-4 flex items-center gap-4">
+                                <div className="flex-grow">
+                                    <h4 className="font-semibold text-base">
+                                        {vehicle ? `${vehicle.licensePlate} - ${vehicle.make} ${vehicle.model} ${vehicle.year}` : service.vehicleId}
+                                    </h4>
+                                    <p className="text-sm text-muted-foreground mt-1">
+                                        {service.description}
+                                    </p>
+                                </div>
+                            </div>
                         </div>
 
                         {/* Actions Column */}
-                        <div className="flex shrink-0">
-                            <Button variant="ghost" size="icon" onClick={() => handleOpenEditDialog(service)} title="Editar Servicio">
-                                <Edit className="h-4 w-4" />
-                            </Button>
-                            <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                <Button variant="ghost" size="icon" title="Eliminar Servicio">
-                                    <Trash2 className="h-4 w-4 text-destructive" />
+                        <div className="w-48 shrink-0 flex flex-col items-center justify-center p-4 gap-y-2">
+                             <Badge variant={getStatusVariant(service.status)} className="w-full justify-center text-center">{service.status}</Badge>
+                            <div className="flex">
+                                <Button variant="ghost" size="icon" onClick={() => handleOpenEditDialog(service)} title="Editar Servicio">
+                                    <Edit className="h-4 w-4" />
                                 </Button>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent>
-                                <AlertDialogHeader>
-                                    <AlertDialogTitle>¿Eliminar Servicio?</AlertDialogTitle>
-                                    <AlertDialogDescription>
-                                    Esta acción no se puede deshacer. ¿Seguro que quieres eliminar este servicio?
-                                    </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                    <AlertDialogAction
-                                    onClick={() => handleDeleteService(service.id)}
-                                    className="bg-destructive hover:bg-destructive/90"
-                                    >
-                                    Sí, Eliminar
-                                    </AlertDialogAction>
-                                </AlertDialogFooter>
-                                </AlertDialogContent>
-                            </AlertDialog>
+                                <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                    <Button variant="ghost" size="icon" title="Eliminar Servicio">
+                                        <Trash2 className="h-4 w-4 text-destructive" />
+                                    </Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                        <AlertDialogTitle>¿Eliminar Servicio?</AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                        Esta acción no se puede deshacer. ¿Seguro que quieres eliminar este servicio?
+                                        </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                        <AlertDialogAction
+                                        onClick={() => handleDeleteService(service.id)}
+                                        className="bg-destructive hover:bg-destructive/90"
+                                        >
+                                        Sí, Eliminar
+                                        </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                </AlertDialog>
+                            </div>
                         </div>
                     </div>
                   </CardContent>
