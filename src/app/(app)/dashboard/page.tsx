@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
@@ -40,8 +39,8 @@ const DashboardServiceSection = ({
   <Card className="flex flex-col shadow-lg">
     <CardHeader className="pb-3 sticky top-0 bg-card z-10 border-b">
       <CardTitle className="text-lg font-semibold flex items-center gap-2">
-        <IconCmp className="h-5 w-5 text-primary" />
-        {title} ({services.length})
+        <IconCmp className="h-5 w-5 text-primary shrink-0" />
+        <span>{title} ({services.length})</span>
       </CardTitle>
     </CardHeader>
     <CardContent className="p-2 space-y-2">
