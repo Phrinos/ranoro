@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useState } from 'react';
@@ -46,7 +47,7 @@ export default function AppLayout({
     });
 
     return () => unsubscribe(); // Cleanup subscription on unmount
-  }, [router]);
+  }, []);
 
   // This effect handles data persistence, triggered by auth state
   useEffect(() => {
