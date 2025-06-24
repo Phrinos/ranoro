@@ -3,7 +3,7 @@
 
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Edit, Trash2, Clock, Search as SearchIcon, Calendar as CalendarIcon, CalendarCheck, CheckCircle, Wrench, Printer, Tag, FileText, BrainCircuit, Loader2, AlertTriangle, List, CalendarDays } from "lucide-react";
+import { PlusCircle, Edit, Trash2, Clock, Search as SearchIcon, Calendar as CalendarIcon, CalendarCheck, CheckCircle, Wrench, Printer, Tag, FileText, BrainCircuit, Loader2, AlertTriangle, List, CalendarDays, MessageSquare } from "lucide-react";
 import {
   placeholderServiceRecords,
   placeholderVehicles,
@@ -30,6 +30,8 @@ import Link from "next/link";
 import { analyzeWorkshopCapacity, type CapacityAnalysisOutput } from '@/ai/flows/capacity-analysis-flow';
 import { ServiceSheetContent } from '../components/service-sheet-content';
 import { ServiceCalendar } from '../components/service-calendar';
+import { db } from '@root/lib/firebaseClient.js';
+import { doc, setDoc } from 'firebase/firestore';
 
 
 interface GroupedServices {
@@ -71,7 +73,7 @@ export default function AgendaServiciosPage() {
     if (pIndex !== -1) {
         placeholderServiceRecords[pIndex] = data;
     }
-    await persistToFirestore();
+    await persistToFirestore(['serviceRecords']);
     
     toast({
       title: "Servicio Actualizado",
@@ -212,7 +214,7 @@ export default function AgendaServiciosPage() {
     if (pIndex !== -1) {
       placeholderServiceRecords.splice(pIndex, 1);
     }
-    await persistToFirestore();
+    await persistToFirestore(['serviceRecords']);
     toast({
       title: "Servicio Eliminado",
       description: `El servicio con ID ${serviceId} (${serviceToDelete?.description}) ha sido eliminado.`,
@@ -241,12 +243,59 @@ export default function AgendaServiciosPage() {
       }
       return updated;
     });
-    await persistToFirestore();
+    await persistToFirestore(['vehicles']);
   }, []);
 
   const handlePrintTicket = useCallback(() => {
     window.print();
   }, []);
+
+  const handleShareService = useCallback(async (service: ServiceRecord | null) => {
+    if (!service) return;
+    const vehicleForAction = vehicles.find(v => v.id === service.vehicleId);
+    if (!vehicleForAction) {
+        toast({ title: "Faltan Datos", description: "No se encontró el vehículo asociado.", variant: "destructive" });
+        return;
+    }
+    
+    let currentService = service;
+
+    if (!currentService.publicId) {
+        currentService.publicId = `srv_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 9)}`;
+    }
+
+    const serviceIndex = placeholderServiceRecords.findIndex(s => s.id === currentService.id);
+    if (serviceIndex !== -1) {
+        placeholderServiceRecords[serviceIndex] = currentService;
+        
+        if (db) {
+            const publicServiceData = {
+                ...currentService,
+                vehicle: { ...vehicleForAction },
+            };
+            try {
+                await setDoc(doc(db, "publicServices", currentService.publicId), publicServiceData, { merge: true });
+            } catch (e) {
+                console.error("Failed to update public service:", e);
+            }
+        }
+        await persistToFirestore(['serviceRecords']);
+    }
+
+    const shareUrl = `${window.location.origin}/s/${currentService.publicId}`;
+    const workshopName = (currentService.workshopInfo?.name) || 'RANORO';
+    const message = `Hola ${vehicleForAction.ownerName || 'Cliente'}, aquí está la hoja de servicio ${currentService.id} de nuestro taller para su vehículo ${vehicleForAction.make} ${vehicleForAction.model} ${vehicleForAction.year}. Puede consultarla aquí: ${shareUrl}`;
+
+    navigator.clipboard.writeText(message).then(() => {
+        toast({
+            title: "Mensaje Copiado",
+            description: "El mensaje para WhatsApp ha sido copiado a tu portapapeles.",
+        });
+    }).catch(err => {
+        console.error("Could not copy text: ", err);
+        toast({ title: "Error al Copiar", variant: "destructive" });
+    });
+}, [vehicles, toast]);
 
 
   const futureServices = useMemo(() => {
@@ -606,12 +655,17 @@ export default function AgendaServiciosPage() {
           onDialogClose={() => setServiceForSheet(null)}
           dialogContentClassName="printable-quote-dialog"
           footerActions={
+            <>
+              <Button variant="outline" onClick={() => handleShareService(serviceForSheet)}>
+                  <MessageSquare className="mr-2 h-4 w-4" /> Copiar para WhatsApp
+              </Button>
               <Button onClick={() => window.print()}>
                   <Printer className="mr-2 h-4 w-4" /> Imprimir Hoja
               </Button>
+            </>
           }
       >
-          {serviceForSheet && <ServiceSheetContent service={serviceForSheet} vehicle={vehicles.find(v => v.id === serviceForSheet.id)} />}
+          {serviceForSheet && <ServiceSheetContent service={serviceForSheet} vehicle={vehicles.find(v => v.id === serviceForSheet.vehicleId)} />}
       </PrintTicketDialog>
     </>
   );
