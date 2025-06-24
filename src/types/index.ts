@@ -37,7 +37,7 @@ export interface ServiceRecord {
   taxAmount?: number; // IVA amount
   totalCost: number; // Final, tax-inclusive price. For services, this is the "Costo del Servicio (IVA incluido)"
   totalSuppliesCost?: number; // Cost of supplies to the workshop (pre-tax)
-  serviceProfit?: number; // Profit: (totalCost IVA Incluido) - totalSuppliesCost
+  serviceProfit?: number; // Profit: (totalCost / (1+IVA)) - totalSuppliesCost
   status: 'Agendado' | 'Reparando' | 'Completado' | 'Cancelado';
   notes?: string;
   mileage?: number;

@@ -116,7 +116,6 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
             <div className="space-y-1 leading-tight pt-1">
                 <div>{vehicle ? `${vehicle.make} ${vehicle.model} ${vehicle.year}` : quote.vehicleIdentifier || 'N/A'}</div>
                 <div>Placas: {vehicle?.licensePlate || 'N/A'}</div>
-                <div>VIN: {vehicle?.vin || 'N/A'}</div>
                 {quote.mileage !== undefined && <div>Kilometraje: {quote.mileage.toLocaleString('es-ES')} km</div>}
             </div>
             </div>
