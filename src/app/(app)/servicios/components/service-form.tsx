@@ -465,7 +465,7 @@ export function ServiceForm({
         technicianName: technicians.find(t => t.id === values.technicianId)?.name || 'N/A',
         status: values.status || 'Agendado',
         serviceType: values.serviceType || 'Servicio General',
-        mileage: values.mileage,
+        mileage: values.mileage || 0,
         suppliesUsed: values.suppliesUsed?.map(s => ({
           supplyId: s.supplyId,
           quantity: s.quantity,
@@ -477,10 +477,10 @@ export function ServiceForm({
         taxAmount: finalTaxAmount,
         totalSuppliesCost: totalSuppliesWorkshopCost,
         serviceProfit: finalTotalCost - totalSuppliesWorkshopCost,
-        notes: values.notes,
+        notes: values.notes || '',
         vehicleConditions: values.vehicleConditions,
         fuelLevel: values.fuelLevel,
-        customerItems: values.customerItems,
+        customerItems: values.customerItems || '',
         serviceAdvisorId: currentUser?.id || '',
         serviceAdvisorName: currentUser?.name || 'N/A',
         customerSignatureReception: values.customerSignatureReception,
@@ -512,8 +512,8 @@ export function ServiceForm({
         estimatedTaxAmount: finalTaxAmount,
         estimatedTotalSuppliesCost: totalSuppliesWorkshopCost,
         estimatedProfit: finalTotalCost - totalSuppliesWorkshopCost,
-        notes: values.notes,
-        mileage: values.mileage,
+        notes: values.notes || '',
+        mileage: values.mileage || 0,
         workshopInfo: workshopInfo as WorkshopInfo,
       };
       await savePublicDocument('quote', quoteData, selectedVehicle);
