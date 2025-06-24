@@ -1,14 +1,13 @@
-
 "use client";
 
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { PlusCircle, Search, CalendarX, AlertTriangle, Archive, ListFilter, Filter } from "lucide-react"; // Added Filter icon
+import { PlusCircle, Search, CalendarX, AlertTriangle, Archive, ListFilter, Filter } from "lucide-react";
 import { VehiclesTable } from "./components/vehicles-table";
 import { VehicleDialog } from "./components/vehicle-dialog";
-import { placeholderVehicles as allVehicles, placeholderServiceRecords, persistToFirestore } from "@/lib/placeholder-data";
+import { placeholderVehicles, placeholderServiceRecords, persistToFirestore } from "@/lib/placeholder-data";
 import type { Vehicle } from "@/types";
 import type { VehicleFormValues } from "./components/vehicle-form";
 import { useToast } from "@/hooks/use-toast";
@@ -17,32 +16,35 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { subMonths, parseISO, isBefore, compareAsc, compareDesc } from 'date-fns';
 
 export default function VehiculosPage() {
-  const [vehicles, setVehicles] = useState<Vehicle[]>(allVehicles);
   const { toast } = useToast();
+  // Using a dummy state `version` to force re-renders when the underlying data source is mutated.
+  const [version, setVersion] = useState(0);
   const [isNewVehicleDialogOpen, setIsNewVehicleDialogOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
-  const [activityFilter, setActivityFilter] = useState("all"); 
-  const [sortOption, setSortOption] = useState<string>("date_asc"); 
+  const [activityFilter, setActivityFilter] = useState("all");
+  const [sortOption, setSortOption] = useState<string>("date_asc");
   const [activityCounts, setActivityCounts] = useState({ inactive6MonthsCount: 0, inactive12MonthsCount: 0 });
 
+  // This useMemo now reads directly from the imported placeholder data.
+  // It re-runs whenever `version` changes, ensuring the UI is always in sync.
   const vehiclesWithLastService = useMemo(() => {
-    return vehicles.map(v => {
+    return placeholderVehicles.map(v => {
       const history = placeholderServiceRecords.filter(s => s.vehicleId === v.id);
       let lastServiceDate: string | undefined = undefined;
       if (history.length > 0) {
         const sortedHistory = [...history].sort((a, b) => 
           new Date(b.serviceDate).getTime() - new Date(a.serviceDate).getTime()
         );
-        lastServiceDate = sortedHistory[0].serviceDate; 
+        lastServiceDate = sortedHistory[0].serviceDate;
       }
       return {
         ...v,
-        serviceHistory: history, 
+        serviceHistory: history,
         lastServiceDate: lastServiceDate,
       };
     });
-  }, [vehicles]);
-  
+  }, [version]);
+
   useEffect(() => {
     const now = new Date();
     const sixMonthsAgo = subMonths(now, 6);
@@ -52,7 +54,7 @@ export default function VehiculosPage() {
     let count12 = 0;
 
     vehiclesWithLastService.forEach(v => {
-      if (!v.lastServiceDate) { 
+      if (!v.lastServiceDate) {
         count6++;
         count12++;
       } else {
@@ -76,15 +78,15 @@ export default function VehiculosPage() {
     };
 
     const newVehicle: Vehicle = {
-      id: `VEH${allVehicles.length + 1}`,
+      id: `VEH${placeholderVehicles.length + 1}`,
       ...newVehicleData,
-      serviceHistory: [], 
+      serviceHistory: [],
     };
 
-    allVehicles.push(newVehicle); 
-    setVehicles([...allVehicles]);
-    
+    placeholderVehicles.push(newVehicle); // Mutate the source
     await persistToFirestore();
+    
+    setVersion(v => v + 1); // Force a re-render
 
     toast({
       title: "Vehículo Creado",
@@ -111,7 +113,7 @@ export default function VehiculosPage() {
       const thresholdDate = subMonths(now, monthsToCompare);
 
       itemsToDisplay = itemsToDisplay.filter(v => {
-        if (!v.lastServiceDate) return true; 
+        if (!v.lastServiceDate) return true;
         return isBefore(parseISO(v.lastServiceDate), thresholdDate);
       });
     }
