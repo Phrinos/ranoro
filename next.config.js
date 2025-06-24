@@ -1,9 +1,6 @@
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  allowedDevOrigins: [
-    'https://3000-firebase-studio-1750318222114.cluster-hf4yr35cmnbd4vhbxvfvc6cp5q.cloudworkstations.dev'
-  ],
   typescript: {
     ignoreBuildErrors: true, 
   },
