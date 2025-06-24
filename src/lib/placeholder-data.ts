@@ -1,5 +1,4 @@
 
-
 import type { Vehicle, ServiceRecord, Technician, InventoryItem, DashboardMetrics, SaleReceipt, ServiceSupply, TechnicianMonthlyPerformance, InventoryCategory, Supplier, SaleItem, PaymentMethod, AppRole, QuoteRecord, MonthlyFixedExpense, AdministrativeStaff, User } from '@/types';
 import { format, subMonths, addDays, getYear, getMonth, setHours, setMinutes, subDays, startOfMonth, endOfMonth, startOfDay, endOfDay } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -290,43 +289,47 @@ export const getYesterdayRange = () => {
  * @returns The total calculated profit for the sale.
  */
 export const calculateSaleProfit = (sale: SaleReceipt, inventory: InventoryItem[], ivaRate: number): number => {
-  if (!sale || !sale.items || !Array.isArray(sale.items) || sale.items.length === 0) {
+  if (!sale?.items?.length) {
     return 0;
   }
 
-  // Use reduce to sum up the profit from each item in the sale.
-  return sale.items.reduce((totalProfit, saleItem) => {
-    // 1. Find the corresponding inventory item to get its cost price.
-    const inventoryItem = inventory.find(inv => inv && inv.id === saleItem.inventoryItemId);
+  const totalProfit = sale.items.reduce((profitAccumulator, saleItem) => {
+    // 1. Find the inventory item.
+    const inventoryItem = inventory.find(inv => inv?.id === saleItem.inventoryItemId);
 
-    // 2. Safely get all necessary values as strings, defaulting to '0' if invalid/missing.
-    //    Cost price is 0 for services or if the item is not found in inventory.
-    const costPriceStr = (inventoryItem && !inventoryItem.isService) ? String(inventoryItem.unitPrice || 0) : '0';
-    //    Selling price and quantity come from the sale record itself.
-    const sellingPriceWithTaxStr = String(saleItem.unitPrice || 0);
-    const quantityStr = String(saleItem.quantity || 0);
-
-    // 3. Sanitize and parse all values to numbers. This handles both '.' and ',' as decimal separators.
-    const costPrice = parseFloat(costPriceStr.replace(',', '.'));
-    const sellingPriceWithTax = parseFloat(sellingPriceWithTaxStr.replace(',', '.'));
-    const quantity = parseFloat(quantityStr.replace(',', '.'));
-
-    // 4. If any value is not a valid number (NaN) after parsing, or quantity is zero/negative,
-    //    skip this item by returning the accumulated profit so far.
-    if (isNaN(costPrice) || isNaN(sellingPriceWithTax) || isNaN(quantity) || quantity <= 0) {
-      console.warn(`Profit calculation skipped for item '${saleItem.itemName || saleItem.inventoryItemId}' in sale ${sale.id} due to invalid data.`);
-      return totalProfit;
-    }
-
-    // 5. Calculate the profit for the current line item.
-    //    First, get the pre-tax selling price.
-    const sellingPriceWithoutTax = sellingPriceWithTax / (1 + ivaRate);
-    //    Then, calculate the profit for this single item.
-    const itemProfit = (sellingPriceWithoutTax - costPrice) * quantity;
+    // 2. Get the cost price. It's 0 if it's a service or the item is not found.
+    // Use a default of 0 if unitPrice is missing or not a number.
+    const costPrice = (inventoryItem && !inventoryItem.isService) ? (inventoryItem.unitPrice || 0) : 0;
     
-    // 6. Add the item's profit to the running total, ensuring we don't add NaN.
-    return totalProfit + (isNaN(itemProfit) ? 0 : itemProfit);
-  }, 0); // Start the accumulator at 0.
+    // 3. Get values from the sale item, also defaulting to 0.
+    const sellingPriceWithTax = saleItem.unitPrice || 0;
+    const quantity = saleItem.quantity || 0;
+    
+    // 4. Rigorous validation for all values.
+    if (
+      typeof costPrice !== 'number' || isNaN(costPrice) ||
+      typeof sellingPriceWithTax !== 'number' || isNaN(sellingPriceWithTax) ||
+      typeof quantity !== 'number' || isNaN(quantity) || quantity <= 0
+    ) {
+      console.warn(`Profit calculation skipped for item '${saleItem.itemName}' due to invalid numeric data.`, {
+        costPrice,
+        sellingPriceWithTax,
+        quantity,
+      });
+      return profitAccumulator; // Skip this item.
+    }
+    
+    // 5. Calculate profit for this item.
+    const sellingPriceWithoutTax = sellingPriceWithTax / (1 + ivaRate);
+    const profitPerUnit = sellingPriceWithoutTax - costPrice;
+    const totalItemProfit = profitPerUnit * quantity;
+
+    // 6. Add to accumulator, ensuring we don't add NaN.
+    return profitAccumulator + (isNaN(totalItemProfit) ? 0 : totalItemProfit);
+    
+  }, 0);
+
+  return isNaN(totalProfit) ? 0 : totalProfit;
 };
 
 
@@ -361,3 +364,5 @@ export const enrichServiceForPrinting = (service: ServiceRecord, inventory: Inve
 if (typeof window !== 'undefined') {
   hydrateFromFirestore();
 }
+
+    
