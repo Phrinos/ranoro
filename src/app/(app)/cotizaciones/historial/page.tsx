@@ -8,7 +8,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Search, ListFilter, CalendarIcon as CalendarDateIcon, FileText, DollarSign, MessageSquare, PlusCircle, Download } from "lucide-react";
+import { Search, ListFilter, CalendarIcon as CalendarDateIcon, FileText, DollarSign, MessageSquare, PlusCircle, Download, Wrench } from "lucide-react";
 import { QuotesTable } from "../components/quotes-table"; 
 import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
 import { QuoteContent } from '@/components/quote-content';
@@ -114,8 +114,9 @@ export default function HistorialCotizacionesPage() {
   const summaryData = useMemo(() => {
     const totalQuotesCount = filteredAndSortedQuotes.length;
     const totalEstimatedValue = filteredAndSortedQuotes.reduce((sum, q) => sum + (q.estimatedTotalCost || 0), 0);
+    const completedQuotesCount = filteredAndSortedQuotes.filter(q => !!q.serviceId).length;
     
-    return { totalQuotesCount, totalEstimatedValue };
+    return { totalQuotesCount, totalEstimatedValue, completedQuotesCount };
   }, [filteredAndSortedQuotes]);
 
 
@@ -279,7 +280,7 @@ export default function HistorialCotizacionesPage() {
 
   return (
     <>
-      <div className="mb-6 grid gap-6 md:grid-cols-2">
+      <div className="mb-6 grid gap-6 md:grid-cols-3">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">Total de Cotizaciones</CardTitle>
@@ -287,15 +288,27 @@ export default function HistorialCotizacionesPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold font-headline">{summaryData.totalQuotesCount}</div>
+            <p className="text-xs text-muted-foreground">En el rango de fechas seleccionado</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Cotizaciones Concretadas</CardTitle>
+            <Wrench className="h-5 w-5 text-green-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold font-headline">{summaryData.completedQuotesCount}</div>
+            <p className="text-xs text-muted-foreground">Convertidas en órdenes de servicio</p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">Valor Estimado Total</CardTitle>
-            <DollarSign className="h-5 w-5 text-green-500" />
+            <DollarSign className="h-5 w-5 text-purple-500" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold font-headline">${(summaryData.totalEstimatedValue || 0).toLocaleString('es-ES')}</div>
+            <p className="text-xs text-muted-foreground">De las cotizaciones filtradas</p>
           </CardContent>
         </Card>
       </div>
