@@ -27,7 +27,7 @@ export default function PublicQuoteViewPage() {
 
   useEffect(() => {
     if (!quoteId) {
-      setError("No se proporcionó un ID de cotización.");
+      setError("No se proporcionó un ID de cotización en el enlace.");
       setQuote(null);
       return;
     }
@@ -52,12 +52,12 @@ export default function PublicQuoteViewPage() {
           setWorkshopInfo(quoteData.workshopInfo || null);
         } else {
           console.log("No such public quote document!");
-          setError(`La cotización con ID ${quoteId} no se encontró o ha expirado.`);
+          setError(`La cotización con ID "${quoteId}" no se encontró. Pudo haber sido eliminada o el enlace es incorrecto.`);
           setQuote(null);
         }
       } catch (err) {
         console.error("Error fetching public quote:", err);
-        setError("Ocurrió un error al intentar cargar la cotización. Por favor, intente más tarde.");
+        setError("Ocurrió un error al intentar cargar la cotización desde la base de datos. Por favor, intente más tarde.");
         setQuote(null);
       }
     };
@@ -110,14 +110,26 @@ export default function PublicQuoteViewPage() {
         <Card className="max-w-4xl mx-auto text-center">
           <CardHeader>
             <ShieldAlert className="mx-auto h-16 w-16 text-destructive mb-4" />
-            <CardTitle className="text-2xl font-bold">Cotización no Válida</CardTitle>
+            <CardTitle className="text-2xl font-bold">Error al Cargar la Cotización</CardTitle>
           </CardHeader>
-          <CardContent>
-            <p className="text-muted-foreground">{error}</p>
-            <p className="text-muted-foreground mt-2">Por favor, contacte al taller para una nueva cotización.</p>
-            <Button asChild className="mt-6">
-              <Link href="/login">Volver al Inicio</Link>
-            </Button>
+          <CardContent className="space-y-4 text-left">
+            <div>
+              <p className="font-semibold text-foreground">Motivo del Error:</p>
+              <p className="text-muted-foreground bg-muted p-3 rounded-md mt-1 text-sm">{error}</p>
+            </div>
+            <div>
+              <p className="font-semibold text-foreground">¿Qué puede hacer?</p>
+              <ul className="list-disc pl-5 text-muted-foreground text-sm space-y-1 mt-1">
+                <li>Verifique que el enlace (URL) sea correcto y no le falten caracteres.</li>
+                <li>Si el problema persiste, es posible que el documento haya sido eliminado o el enlace haya expirado.</li>
+                <li>Por favor, contacte al taller para solicitar una nueva cotización.</li>
+              </ul>
+            </div>
+            <div className="text-center">
+                <Button asChild className="mt-6">
+                  <Link href="/login">Volver al Inicio</Link>
+                </Button>
+            </div>
           </CardContent>
         </Card>
       </div>

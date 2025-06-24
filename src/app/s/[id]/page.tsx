@@ -32,7 +32,7 @@ export default function PublicServiceSheetPage() {
 
   useEffect(() => {
     if (!publicId) {
-      setError("No se proporcionó un ID de servicio.");
+      setError("No se proporcionó un ID de servicio en el enlace.");
       setService(null);
       return;
     }
@@ -57,12 +57,12 @@ export default function PublicServiceSheetPage() {
           setWorkshopInfo(serviceData.workshopInfo || null);
         } else {
           console.log("No such public service document!");
-          setError(`La hoja de servicio con ID ${publicId} no se encontró o ha expirado.`);
+          setError(`La hoja de servicio con ID "${publicId}" no se encontró. Pudo haber sido eliminada o el enlace es incorrecto.`);
           setService(null);
         }
       } catch (err) {
         console.error("Error fetching public service sheet:", err);
-        setError("Ocurrió un error al intentar cargar la hoja de servicio. Por favor, intente más tarde.");
+        setError("Ocurrió un error al intentar cargar la hoja de servicio desde la base de datos. Por favor, intente más tarde.");
         setService(null);
       }
     };
@@ -129,14 +129,26 @@ export default function PublicServiceSheetPage() {
         <Card className="max-w-4xl mx-auto text-center">
           <CardHeader>
             <ShieldAlert className="mx-auto h-16 w-16 text-destructive mb-4" />
-            <CardTitle className="text-2xl font-bold">Hoja de Servicio no Válida</CardTitle>
+            <CardTitle className="text-2xl font-bold">Error al Cargar la Hoja de Servicio</CardTitle>
           </CardHeader>
-          <CardContent>
-            <p className="text-muted-foreground">{error}</p>
-            <p className="text-muted-foreground mt-2">Por favor, contacte al taller para un nuevo enlace.</p>
-            <Button asChild className="mt-6">
-              <Link href="/login">Volver al Inicio</Link>
-            </Button>
+           <CardContent className="space-y-4 text-left">
+            <div>
+              <p className="font-semibold text-foreground">Motivo del Error:</p>
+              <p className="text-muted-foreground bg-muted p-3 rounded-md mt-1 text-sm">{error}</p>
+            </div>
+            <div>
+              <p className="font-semibold text-foreground">¿Qué puede hacer?</p>
+              <ul className="list-disc pl-5 text-muted-foreground text-sm space-y-1 mt-1">
+                <li>Verifique que el enlace (URL) sea correcto y no le falten caracteres.</li>
+                <li>Si el problema persiste, es posible que el documento haya sido eliminado o el enlace haya expirado.</li>
+                <li>Por favor, contacte al taller para solicitar un nuevo enlace a la hoja de servicio.</li>
+              </ul>
+            </div>
+             <div className="text-center">
+                <Button asChild className="mt-6">
+                  <Link href="/login">Volver al Inicio</Link>
+                </Button>
+            </div>
           </CardContent>
         </Card>
       </div>
