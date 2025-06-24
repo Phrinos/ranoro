@@ -2,34 +2,24 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    
-    // Regla 1: Denegar todo por defecto.
-    // Nadie puede leer o escribir nada a menos que una regla posterior lo permita explícitamente.
-    match /{document=**} {
-      allow read, write: if false;
+
+    // Main workshop database. Requires authentication to read or write.
+    match /database/{document=**} {
+      allow read, write: if request.auth != null;
     }
 
-    // Regla 2: Permitir la lectura pública de cotizaciones individuales.
-    // Cualquiera (autenticado o no) puede leer un documento si conoce su ID.
-    // La escritura sigue protegida y solo para usuarios autenticados.
+    // Publicly readable collection for shared quotes.
+    // Anyone with the link can read. Only authenticated users can create/update.
     match /publicQuotes/{quoteId} {
       allow read: if true;
       allow write: if request.auth != null;
     }
 
-    // Regla 3: Permitir la lectura pública de hojas de servicio individuales.
-    // Cualquiera (autenticado o no) puede leer un documento si conoce su ID.
-    // La escritura sigue protegida y solo para usuarios autenticados.
+    // Publicly readable collection for shared service sheets.
+    // Anyone with the link can read. Only authenticated users can create/update.
     match /publicServices/{serviceId} {
       allow read: if true;
       allow write: if request.auth != null;
-    }
-
-    // Regla 4: Proteger el documento principal de la base de datos.
-    // Solo los usuarios autenticados pueden leer o escribir en el documento
-    // que contiene todos los datos privados del taller.
-    match /database/{docId} {
-      allow read, write: if request.auth != null;
     }
   }
 }
