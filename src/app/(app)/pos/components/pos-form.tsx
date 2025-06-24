@@ -342,6 +342,7 @@ export function PosForm({ inventoryItems: parentInventoryItems, onSaleComplete, 
                                 min="1"
                                 placeholder="Cant."
                                 {...controllerField}
+                                value={controllerField.value ?? ''}
                                 onChange={(e) => {
                                     const val = parseFloat(e.target.value);
                                     const newQuantity = val > 0 ? val : 1;

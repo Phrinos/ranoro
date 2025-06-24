@@ -79,7 +79,7 @@ export function PurchaseDetailsEntryDialog({
                 <FormItem>
                   <FormLabel>Cantidad Comprada</FormLabel>
                   <FormControl>
-                    <Input type="number" {...field} />
+                    <Input type="number" {...field} value={field.value ?? ''} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -92,7 +92,7 @@ export function PurchaseDetailsEntryDialog({
                 <FormItem>
                   <FormLabel>Nuevo Precio de Costo Unitario</FormLabel>
                   <FormControl>
-                    <Input type="number" step="0.01" {...field} />
+                    <Input type="number" step="0.01" {...field} value={field.value ?? ''} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -105,7 +105,7 @@ export function PurchaseDetailsEntryDialog({
                 <FormItem>
                   <FormLabel>Nuevo Precio de Venta Unitario (IVA Inc.)</FormLabel>
                   <FormControl>
-                    <Input type="number" step="0.01" {...field} />
+                    <Input type="number" step="0.01" {...field} value={field.value ?? ''} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
