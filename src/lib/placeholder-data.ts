@@ -289,46 +289,44 @@ export const getYesterdayRange = () => {
  * @returns The total calculated profit for the sale.
  */
 export const calculateSaleProfit = (sale: SaleReceipt, inventory: InventoryItem[], ivaRate: number): number => {
-  if (!sale?.items?.length) {
+  if (!sale || !Array.isArray(sale.items) || sale.items.length === 0) {
     return 0;
   }
 
   const totalProfit = sale.items.reduce((profitAccumulator, saleItem) => {
-    // 1. Find the inventory item.
-    const inventoryItem = inventory.find(inv => inv?.id === saleItem.inventoryItemId);
-
-    // 2. Get the cost price. It's 0 if it's a service or the item is not found.
-    // Use a default of 0 if unitPrice is missing or not a number.
-    const costPrice = (inventoryItem && !inventoryItem.isService) ? (inventoryItem.unitPrice || 0) : 0;
-    
-    // 3. Get values from the sale item, also defaulting to 0.
-    const sellingPriceWithTax = saleItem.unitPrice || 0;
-    const quantity = saleItem.quantity || 0;
-    
-    // 4. Rigorous validation for all values.
-    if (
-      typeof costPrice !== 'number' || isNaN(costPrice) ||
-      typeof sellingPriceWithTax !== 'number' || isNaN(sellingPriceWithTax) ||
-      typeof quantity !== 'number' || isNaN(quantity) || quantity <= 0
-    ) {
-      console.warn(`Profit calculation skipped for item '${saleItem.itemName}' due to invalid numeric data.`, {
-        costPrice,
-        sellingPriceWithTax,
-        quantity,
-      });
-      return profitAccumulator; // Skip this item.
+    if (!saleItem) {
+        return profitAccumulator;
     }
-    
-    // 5. Calculate profit for this item.
-    const sellingPriceWithoutTax = sellingPriceWithTax / (1 + ivaRate);
-    const profitPerUnit = sellingPriceWithoutTax - costPrice;
-    const totalItemProfit = profitPerUnit * quantity;
 
-    // 6. Add to accumulator, ensuring we don't add NaN.
-    return profitAccumulator + (isNaN(totalItemProfit) ? 0 : totalItemProfit);
+    const inventoryItem = inventory.find(inv => inv && inv.id === saleItem.inventoryItemId);
     
+    // --- Get and validate numbers ---
+    // Selling price from the sale record. It's named unitPrice in the SaleItem schema.
+    const sellingPriceWithTax = Number(saleItem.unitPrice) || 0;
+    
+    // Quantity from the sale record
+    const quantity = Number(saleItem.quantity) || 0;
+    
+    // Cost price from the inventory. It's named unitPrice in the InventoryItem schema.
+    const costPrice = (inventoryItem && !inventoryItem.isService) ? (Number(inventoryItem.unitPrice) || 0) : 0;
+    
+    // If any essential value is zero or less, we can't calculate profit for this item
+    if (sellingPriceWithTax <= 0 || quantity <= 0) {
+        return profitAccumulator;
+    }
+
+    const sellingPriceWithoutTax = sellingPriceWithTax / (1 + ivaRate);
+    
+    // The profit per unit can be negative if cost > selling price, which is valid.
+    const profitPerUnit = sellingPriceWithoutTax - costPrice;
+    
+    const itemTotalProfit = profitPerUnit * quantity;
+
+    // Add to accumulator, guarding against potential NaN if something unexpected happened.
+    return profitAccumulator + (isNaN(itemTotalProfit) ? 0 : itemTotalProfit);
   }, 0);
 
+  // Final sanity check
   return isNaN(totalProfit) ? 0 : totalProfit;
 };
 

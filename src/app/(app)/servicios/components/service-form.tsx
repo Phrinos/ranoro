@@ -232,14 +232,21 @@ export function ServiceForm({
         const supplies = (isConverting || mode === 'quote') ? (data as QuoteRecord).suppliesProposed : (data as ServiceRecord).suppliesUsed;
         const mappedSupplies = supplies?.map(s => {
             const itemDetails = currentInventoryItems.find(i => i.id === s.supplyId);
-            const unitPrice = (isConverting || mode === 'quote') 
-                ? (itemDetails?.sellingPrice ?? s.unitPrice ?? 0) // Use selling price for quotes/conversion
-                : (itemDetails?.unitPrice ?? s.unitPrice ?? 0); // Use cost price for existing services
+            
+            let unitPriceForForm = 0;
+            if (mode === 'quote') {
+                // For quotes, the form's unit price *is* the selling price to the customer.
+                unitPriceForForm = itemDetails?.sellingPrice ?? s.unitPrice ?? 0;
+            } else { // mode === 'service' (this includes when converting from a quote)
+                // For services, the form's unit price should always be the workshop's cost price for internal calculations.
+                unitPriceForForm = itemDetails?.unitPrice ?? s.unitPrice ?? 0;
+            }
+
             return {
                 supplyId: s.supplyId,
                 supplyName: itemDetails?.name || s.supplyName || '',
                 quantity: s.quantity,
-                unitPrice: unitPrice,
+                unitPrice: unitPriceForForm,
                 isService: itemDetails?.isService || false,
                 unitType: itemDetails?.unitType || 'units',
             };
