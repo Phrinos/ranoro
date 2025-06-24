@@ -289,50 +289,48 @@ export const getYesterdayRange = () => {
  * @returns The total calculated profit for the sale.
  */
 export const calculateSaleProfit = (sale: SaleReceipt, inventory: InventoryItem[], ivaRate: number): number => {
-  if (!sale?.items?.length) {
+  // Guard clause for invalid inputs
+  if (!sale || !Array.isArray(sale.items) || sale.items.length === 0 || !Array.isArray(inventory)) {
     return 0;
   }
 
   let totalProfit = 0;
 
   for (const saleItem of sale.items) {
-    if (!saleItem?.inventoryItemId) {
-      console.warn("Skipping invalid sale item (no ID) in profit calculation:", saleItem);
+    // Ensure saleItem is a valid object with necessary properties
+    if (!saleItem || typeof saleItem.inventoryItemId !== 'string') {
+      console.warn("Skipping item in profit calc: Invalid sale item object.", saleItem);
       continue;
     }
 
-    const inventoryItem = inventory.find(inv => inv?.id === saleItem.inventoryItemId);
+    const inventoryItem = inventory.find(inv => inv && inv.id === saleItem.inventoryItemId);
 
-    // Explicitly parse all values to numbers, handling commas and providing defaults.
-    const sellingPricePerUnitWithTax = parseFloat(String(saleItem.unitPrice || '0').replace(',', '.'));
-    const quantitySold = parseFloat(String(saleItem.quantity || '0').replace(',', '.'));
-    
     // Cost is 0 for services or if the inventory item is not found or has no defined cost.
-    const costPricePerUnit = (inventoryItem && !inventoryItem.isService) 
-        ? parseFloat(String(inventoryItem.unitPrice || '0').replace(',', '.')) 
-        : 0;
+    const costPricePerUnit = (inventoryItem && !inventoryItem.isService) ? inventoryItem.unitPrice : 0;
+    
+    // Safely parse all numeric values, converting comma to dot for decimals.
+    // Provide a default of '0' if the value is null or undefined.
+    const sellingPriceWithTax = Number(String(saleItem.unitPrice || '0').replace(',', '.'));
+    const quantitySold = Number(String(saleItem.quantity || '0').replace(',', '.'));
+    const validatedCostPrice = Number(String(costPricePerUnit || '0').replace(',', '.'));
 
-    // Rigorous check for valid numbers before calculation.
-    if (isNaN(sellingPricePerUnitWithTax) || isNaN(quantitySold) || isNaN(costPricePerUnit) || quantitySold <= 0) {
-      console.warn(`Skipping profit calculation for item '${saleItem.itemName}' due to invalid data.`, {
-          sellPrice: saleItem.unitPrice,
-          qty: saleItem.quantity,
-          cost: inventoryItem?.unitPrice
-      });
+    // Skip if any number is invalid or quantity is zero/negative
+    if (isNaN(sellingPriceWithTax) || isNaN(quantitySold) || isNaN(validatedCostPrice) || quantitySold <= 0) {
+      console.warn(`Skipping item '${saleItem.itemName}': Invalid numeric data.`, { sellingPriceWithTax, quantitySold, validatedCostPrice });
       continue;
     }
 
-    const sellingPricePerUnit_preTax = sellingPricePerUnitWithTax / (1 + ivaRate);
-    const profitPerUnit = sellingPricePerUnit_preTax - costPricePerUnit;
-    const itemProfit = profitPerUnit * quantitySold;
+    const sellingPriceBeforeTax = sellingPriceWithTax / (1 + ivaRate);
+    const profitPerUnit = sellingPriceBeforeTax - validatedCostPrice;
+    const profitForItem = profitPerUnit * quantitySold;
 
     // Add to total profit only if the result is a valid number.
-    if (!isNaN(itemProfit)) {
-        totalProfit += itemProfit;
+    if (!isNaN(profitForItem)) {
+      totalProfit += profitForItem;
     }
   }
 
-  // Final sanity check to ensure we always return a valid number.
+  // Final sanity check to ensure a valid number is returned.
   return isNaN(totalProfit) ? 0 : totalProfit;
 };
 
@@ -369,4 +367,5 @@ if (typeof window !== 'undefined') {
   hydrateFromFirestore();
 }
 
+    
     
