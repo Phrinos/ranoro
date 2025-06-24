@@ -20,6 +20,7 @@ import type {
   ServiceRecord,
   User,
   InventoryItem,
+  WorkshopInfo,
 } from "@/types";
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
@@ -57,7 +58,7 @@ export default function NuevaCotizacionPage() {
   const quoteContentRef = useRef<HTMLDivElement>(null);
 
   /* ---------- Info del taller (localStorage) ---------- */
-  const [workshopInfo, setWorkshopInfo] = useState<{ name?: string }>({});
+  const [workshopInfo, setWorkshopInfo] = useState<WorkshopInfo | {}>({});
   useEffect(() => {
     if (typeof window !== "undefined") {
       const stored = localStorage.getItem("workshopTicketInfo");
@@ -109,6 +110,7 @@ export default function NuevaCotizacionPage() {
       publicId: publicId,
       preparedByTechnicianId: authUserId,
       preparedByTechnicianName: authUserName,
+      workshopInfo: workshopInfo as WorkshopInfo,
     };
 
     placeholderQuotes.unshift(newQuote);
@@ -182,9 +184,8 @@ export default function NuevaCotizacionPage() {
     const shareUrl = `${window.location.origin}/c/${currentQuoteForPdf.publicId}`;
     const { ownerName = "Cliente", make, model, year } = currentVehicleForPdf;
 
-    const message = `Hola ${ownerName}, gracias por confiar en ${
-      workshopInfo?.name ?? "RANORO"
-    }. Le enviamos su cotización ${currentQuoteForPdf.id} para su ${make} ${model} ${year}. Puede consultarla aquí: ${shareUrl}`;
+    const workshopName = (workshopInfo as WorkshopInfo)?.name || 'RANORO';
+    const message = `Hola ${ownerName}, gracias por confiar en ${workshopName}. Le enviamos su cotización ${currentQuoteForPdf.id} para su ${make} ${model} ${year}. Puede consultarla aquí: ${shareUrl}`;
 
     navigator.clipboard
       .writeText(message)
@@ -259,6 +260,7 @@ export default function NuevaCotizacionPage() {
             ref={quoteContentRef}
             quote={currentQuoteForPdf}
             vehicle={currentVehicleForPdf ?? undefined}
+            workshopInfo={currentQuoteForPdf.workshopInfo}
           />
         </PrintTicketDialog>
       )}

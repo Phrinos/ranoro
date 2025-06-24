@@ -13,7 +13,7 @@ import { QuotesTable } from "../components/quotes-table";
 import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
 import { QuoteContent } from '@/components/quote-content';
 import { placeholderQuotes, placeholderVehicles, placeholderTechnicians, placeholderServiceRecords, placeholderInventory, persistToFirestore } from "@/lib/placeholder-data"; 
-import type { QuoteRecord, Vehicle, User, ServiceRecord, Technician, InventoryItem } from "@/types"; 
+import type { QuoteRecord, Vehicle, User, ServiceRecord, Technician, InventoryItem, WorkshopInfo } from "@/types"; 
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { format, parseISO, compareAsc, compareDesc, isWithinInterval, isValid, startOfDay, endOfDay } from "date-fns";
@@ -55,7 +55,7 @@ export default function HistorialCotizacionesPage() {
 
   const [vehicleForSelectedQuote, setVehicleForSelectedQuote] = useState<Vehicle | null>(null);
   
-  const [workshopInfo, setWorkshopInfo] = useState<{name?: string}>({});
+  const [workshopInfo, setWorkshopInfo] = useState<WorkshopInfo | {}>({});
   const quoteContentRef = useRef<HTMLDivElement>(null);
 
 
@@ -146,13 +146,13 @@ export default function HistorialCotizacionesPage() {
       }
     }
 
-    setAllQuotes(prev => prev.filter(q => q.id !== quoteId));
     const pIndex = placeholderQuotes.findIndex(q => q.id === quoteId);
     if (pIndex > -1) {
       placeholderQuotes.splice(pIndex, 1);
     }
+    setAllQuotes([...placeholderQuotes]);
     
-    await persistToFirestore();
+    await persistToFirestore(['quotes']);
 
     toast({ title: "Cotización Eliminada", description: `La cotización ${quoteId} ha sido eliminada.` });
     setIsEditQuoteDialogOpen(false);
@@ -172,11 +172,15 @@ export default function HistorialCotizacionesPage() {
       const quoteIndex = placeholderQuotes.findIndex(q => q.id === editedQuote.id);
       if (quoteIndex !== -1) {
           if (!editedQuote.publicId) {
-            editedQuote.publicId = `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 9)}`;
+            editedQuote.publicId = `cot_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 9)}`;
           }
+
+          // Ensure workshopInfo is embedded
+          editedQuote.workshopInfo = workshopInfo as WorkshopInfo;
+          
           placeholderQuotes[quoteIndex] = editedQuote;
           setAllQuotes([...placeholderQuotes]);
-          await persistToFirestore();
+          await persistToFirestore(['quotes']);
 
           const vehicleForPublicQuote = vehicles.find(v => v.id === editedQuote.vehicleId);
           if (vehicleForPublicQuote && db) { // Add check for db
@@ -194,7 +198,7 @@ export default function HistorialCotizacionesPage() {
           toast({ title: "Cotización Actualizada", description: `La cotización ${editedQuote.id} se actualizó correctamente.` });
       }
       setIsEditQuoteDialogOpen(false);
-  }, [toast, vehicles]);
+  }, [toast, vehicles, workshopInfo]);
   
   const handleSaveServiceFromQuote = useCallback(async (data: ServiceRecord | QuoteRecord) => {
       const newService = data as ServiceRecord;
@@ -210,7 +214,7 @@ export default function HistorialCotizacionesPage() {
           setAllQuotes([...placeholderQuotes]);
       }
       
-      await persistToFirestore();
+      await persistToFirestore(['serviceRecords', 'quotes']);
       
       toast({ title: "Servicio Generado", description: `Se creó el servicio ${newServiceId} desde la cotización.` });
       setIsGenerateServiceDialogOpen(false);
@@ -243,24 +247,40 @@ export default function HistorialCotizacionesPage() {
         return;
     }
 
+    // Ensure public ID exists and public document is created/updated
     if (!quoteForAction.publicId) {
-      quoteForAction.publicId = `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 9)}`;
-      const quoteIndex = placeholderQuotes.findIndex(q => q.id === quoteForAction.id);
-      if (quoteIndex !== -1) {
-          placeholderQuotes[quoteIndex] = quoteForAction;
-          await persistToFirestore();
-          setAllQuotes([...placeholderQuotes]);
-          toast({
-              title: "Enlace Público Creado",
-              description: "Se ha generado un nuevo enlace aleatorio para esta cotización antigua.",
-              duration: 4000,
-          });
-      }
+      quoteForAction.publicId = `cot_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 9)}`;
+    }
+    
+    quoteForAction.workshopInfo = workshopInfo as WorkshopInfo;
+
+    const quoteIndex = placeholderQuotes.findIndex(q => q.id === quoteForAction.id);
+    if (quoteIndex !== -1) {
+        placeholderQuotes[quoteIndex] = quoteForAction;
+        setAllQuotes([...placeholderQuotes]);
+
+        if (db) {
+            const publicQuoteData = {
+                ...quoteForAction,
+                vehicle: { ...vehicleForAction },
+            };
+            try {
+                await setDoc(doc(db, "publicQuotes", quoteForAction.publicId), publicQuoteData);
+                 toast({
+                    title: "Enlace Público Creado/Actualizado",
+                    description: "El enlace para esta cotización ya está activo.",
+                    duration: 4000,
+                });
+            } catch (e) {
+                console.error("Failed to create/update public quote on-the-fly:", e);
+            }
+        }
+        await persistToFirestore(['quotes']);
     }
     
     const shareUrl = `${window.location.origin}/c/${quoteForAction.publicId}`;
-    
-    const message = `Hola ${vehicleForAction.ownerName || 'Cliente'}, Gracias por confiar en ${workshopInfo?.name || 'RANORO'}. Le enviamos su cotización de servicio ${quoteForAction.id} de nuestro taller para su vehículo ${vehicleForAction.make} ${vehicleForAction.model} ${vehicleForAction.year}. En este link encontrara el PDF de la cotizacion: ${shareUrl}`;
+    const workshopName = (workshopInfo as WorkshopInfo)?.name || 'RANORO';
+    const message = `Hola ${vehicleForAction.ownerName || 'Cliente'}, Gracias por confiar en ${workshopName}. Le enviamos su cotización de servicio ${quoteForAction.id} de nuestro taller para su vehículo ${vehicleForAction.make} ${vehicleForAction.model} ${vehicleForAction.year}. En este link encontrara el PDF de la cotizacion: ${shareUrl}`;
 
     navigator.clipboard.writeText(message).then(() => {
         toast({
@@ -424,6 +444,7 @@ export default function HistorialCotizacionesPage() {
             ref={quoteContentRef}
             quote={selectedQuoteForView} 
             vehicle={vehicles.find(v => v.id === selectedQuoteForView.vehicleId) || undefined}
+            workshopInfo={selectedQuoteForView.workshopInfo}
           />
         </PrintTicketDialog>
       )}

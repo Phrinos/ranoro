@@ -1,5 +1,14 @@
 
 
+export interface WorkshopInfo {
+  name: string;
+  phone: string;
+  addressLine1: string;
+  addressLine2?: string;
+  cityState: string;
+  logoUrl: string;
+}
+
 export interface Vehicle {
   id: string; 
   make: string;
@@ -54,6 +63,7 @@ export interface ServiceRecord {
   customerSignatureDelivery?: string;
   receptionSignatureViewed?: boolean;
   deliverySignatureViewed?: boolean;
+  workshopInfo?: WorkshopInfo;
 }
 
 export interface Technician {
@@ -172,6 +182,7 @@ export interface QuoteRecord {
   notes?: string; // For validity, terms, etc.
   mileage?: number; // Current mileage at time of quote
   serviceId?: string; // ID of the service record if this quote was converted
+  workshopInfo?: WorkshopInfo;
 }
 
 

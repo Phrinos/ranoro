@@ -6,7 +6,7 @@ import { useParams } from 'next/navigation';
 import { QuoteContent } from '@/components/quote-content';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import type { QuoteRecord, Vehicle } from '@/types';
+import type { QuoteRecord, Vehicle, WorkshopInfo } from '@/types';
 import { ShieldAlert, Download, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
@@ -23,6 +23,7 @@ export default function PublicQuoteViewPage() {
 
   const [quote, setQuote] = useState<QuoteRecord | null | undefined>(undefined);
   const [vehicle, setVehicle] = useState<Vehicle | null | undefined>(undefined);
+  const [workshopInfo, setWorkshopInfo] = useState<WorkshopInfo | null | undefined>(undefined);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -45,14 +46,15 @@ export default function PublicQuoteViewPage() {
 
         if (docSnap.exists()) {
           const data = docSnap.data();
-          // The vehicle data is now nested inside the quote document
           const quoteData = data as QuoteRecord & { vehicle?: Vehicle };
           setQuote(quoteData);
           setVehicle(quoteData.vehicle || null);
+          setWorkshopInfo(quoteData.workshopInfo || null);
         } else {
           console.log("No such public quote document!");
           setQuote(null);
           setVehicle(null);
+          setWorkshopInfo(null);
         }
       } catch (error) {
         console.error("Error fetching public quote:", error);
@@ -63,6 +65,7 @@ export default function PublicQuoteViewPage() {
         });
         setQuote(null);
         setVehicle(null);
+        setWorkshopInfo(null);
       }
     };
 
@@ -145,7 +148,12 @@ export default function PublicQuoteViewPage() {
             </CardHeader>
         </Card>
       <div className="bg-white mx-auto shadow-2xl printable-content">
-         <QuoteContent ref={quoteContentRef} quote={quote} vehicle={vehicle || undefined} />
+         <QuoteContent 
+            ref={quoteContentRef} 
+            quote={quote} 
+            vehicle={vehicle || undefined} 
+            workshopInfo={workshopInfo || undefined} 
+        />
       </div>
     </div>
   );
