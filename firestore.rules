@@ -1,22 +1,27 @@
+
 rules_version = '2';
+
 service cloud.firestore {
   match /databases/{database}/documents {
-    
-    // Public collections are readable by anyone, but only writable by authenticated users.
-    // This prevents anonymous users from creating spam.
+
+    // Allow public, unauthenticated reads on shared quotes and services.
+    // This allows anyone with the link to view the document.
     match /publicQuotes/{quoteId} {
       allow read: if true;
-      allow write: if request.auth != null;
+      allow write: if false; // Explicitly deny writes to prevent tampering.
     }
 
     match /publicServices/{serviceId} {
       allow read: if true;
-      allow write: if request.auth != null;
+      allow write: if false; // Explicitly deny writes to prevent tampering.
     }
 
-    // Main database document is only accessible by authenticated users.
-    match /database/{docId} {
+    // Secure the main database document.
+    // Only authenticated users can read or write to the main data store.
+    match /database/main {
       allow read, write: if request.auth != null;
     }
+
+    // Default deny all other paths.
   }
 }
