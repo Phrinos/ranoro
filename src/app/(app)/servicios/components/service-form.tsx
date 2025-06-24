@@ -71,7 +71,7 @@ const serviceFormSchemaBase = z.object({
   deliveryDateTime: z.date().optional(),
   vehicleConditions: z.string().optional(),
   fuelLevel: z.string().optional(),
-  customerItems: z.array(z.string()).optional(),
+  customerItems: z.string().optional(),
 });
 
 
@@ -111,13 +111,6 @@ const generateTimeSlots = () => {
     return slots;
 };
 const timeSlots = generateTimeSlots();
-
-const customerItemsChecklist = [
-  { id: 'keys', label: 'Llaves' },
-  { id: 'stereo', label: 'Estéreo' },
-  { id: 'spareTire', label: 'Llanta de refacción' },
-  { id: 'tools', label: 'Herramientas (gato, etc.)' },
-];
 
 
 export function ServiceForm({
@@ -186,7 +179,7 @@ export function ServiceForm({
         deliveryDateTime: undefined,
         vehicleConditions: (initialData as ServiceRecord)?.vehicleConditions || "",
         fuelLevel: (initialData as ServiceRecord)?.fuelLevel || undefined,
-        customerItems: (initialData as ServiceRecord)?.customerItems || [],
+        customerItems: (initialData as ServiceRecord)?.customerItems || "",
     }
   });
 
@@ -261,7 +254,7 @@ export function ServiceForm({
             serviceType: mode === 'service' ? ((data as ServiceRecord)?.serviceType || 'Servicio General') : undefined,
             vehicleConditions: (data as ServiceRecord)?.vehicleConditions || "",
             fuelLevel: (data as ServiceRecord)?.fuelLevel || undefined,
-            customerItems: (data as ServiceRecord)?.customerItems || [],
+            customerItems: (data as ServiceRecord)?.customerItems || '',
         };
 
         // Reset all form fields except the array
@@ -461,7 +454,7 @@ export function ServiceForm({
   
   const handlePrintSheet = useCallback(() => {
     const formValues = form.getValues();
-    const vehicleForSheet = selectedVehicle || localVehicles.find(v => v.id === formValues.vehicleId);
+    const vehicleForSheet = localVehicles.find(v => v.id === formValues.vehicleId);
 
     if (!vehicleForSheet) {
       toast({ title: "Error", description: "No se puede imprimir la hoja sin un vehículo seleccionado.", variant: "destructive" });
@@ -486,7 +479,7 @@ export function ServiceForm({
     
     setServiceForSheet({ ...serviceDataForSheet, vehicleIdentifier: vehicleForSheet.licensePlate });
     setIsSheetOpen(true);
-  }, [form, currentUser, localVehicles, selectedVehicle, toast]);
+  }, [form, currentUser, localVehicles, toast]);
 
 
   const handleTimeChange = (timeString: string, dateField: "serviceDate" | "deliveryDateTime") => {
@@ -1130,9 +1123,13 @@ export function ServiceForm({
                                     </FormControl>
                                     <SelectContent>
                                         <SelectItem value="Vacío">Vacío</SelectItem>
+                                        <SelectItem value="1/8">1/8</SelectItem>
                                         <SelectItem value="1/4">1/4</SelectItem>
+                                        <SelectItem value="3/8">3/8</SelectItem>
                                         <SelectItem value="1/2">1/2</SelectItem>
+                                        <SelectItem value="5/8">5/8</SelectItem>
                                         <SelectItem value="3/4">3/4</SelectItem>
+                                        <SelectItem value="7/8">7/8</SelectItem>
                                         <SelectItem value="Lleno">Lleno</SelectItem>
                                     </SelectContent>
                                 </Select>
@@ -1141,41 +1138,17 @@ export function ServiceForm({
                         )}
                     />
                     <FormField
-                        control={form.control}
-                        name="customerItems"
-                        render={() => (
-                            <FormItem>
-                                <FormLabel>Inventario de Pertenencias</FormLabel>
-                                <div className="flex flex-wrap gap-x-4 gap-y-2 items-center">
-                                {customerItemsChecklist.map((item) => (
-                                    <FormField
-                                        key={item.id}
-                                        control={form.control}
-                                        name="customerItems"
-                                        render={({ field }) => (
-                                            <FormItem className="flex flex-row items-start space-x-2 space-y-0">
-                                                <FormControl>
-                                                    <Checkbox
-                                                        checked={field.value?.includes(item.id)}
-                                                        onCheckedChange={(checked) => {
-                                                            return checked
-                                                            ? field.onChange([...(field.value || []), item.id])
-                                                            : field.onChange(field.value?.filter((value) => value !== item.id));
-                                                        }}
-                                                        disabled={isReadOnly}
-                                                    />
-                                                </FormControl>
-                                                <FormLabel className="text-sm font-normal">
-                                                    {item.label}
-                                                </FormLabel>
-                                            </FormItem>
-                                        )}
-                                    />
-                                ))}
-                                </div>
-                                <FormMessage />
-                            </FormItem>
-                        )}
+                      control={form.control}
+                      name="customerItems"
+                      render={({ field }) => (
+                          <FormItem>
+                              <FormLabel>Pertenencias del Cliente (Opcional)</FormLabel>
+                              <FormControl>
+                                  <Textarea placeholder="Ej: Gato, llanta de refacción, cargador de celular en la guantera, etc." {...field} disabled={isReadOnly} />
+                              </FormControl>
+                              <FormMessage />
+                          </FormItem>
+                      )}
                     />
                 </div>
             </CardContent>
