@@ -2,164 +2,27 @@
 "use client";
 
 import React, { useEffect, useState, useCallback, useRef } from "react";
-import { format, parseISO, isToday, isFuture, isValid, compareAsc, isSameDay } from "date-fns";
-import { es } from 'date-fns/locale';
+import { format, parseISO, isToday, isValid, isSameDay } from "date-fns";
 import { PageHeader } from "@/components/page-header";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { placeholderServiceRecords, placeholderVehicles, placeholderTechnicians, placeholderInventory, placeholderSales, calculateSaleProfit, IVA_RATE } from "@/lib/placeholder-data";
-import type { ServiceRecord, Vehicle, Technician, InventoryItem, User, QuoteRecord, PurchaseRecommendation, SaleReceipt, CapacityAnalysisOutput } from "@/types";
-import { Badge } from "@/components/ui/badge";
-import { User as UserIcon, Wrench, CheckCircle, CalendarClock, Clock, AlertTriangle, ShoppingCart, BrainCircuit, Loader2, Printer, DollarSign } from "lucide-react"; 
-import { ServiceDialog } from "../servicios/components/service-dialog";
+import { placeholderServiceRecords, placeholderInventory, placeholderSales, calculateSaleProfit, IVA_RATE, placeholderTechnicians, persistToFirestore, placeholderVehicles } from "@/lib/placeholder-data";
+import type { User, CapacityAnalysisOutput, PurchaseRecommendation } from "@/types";
+import { BrainCircuit, Loader2, ShoppingCart, AlertTriangle, Printer, Wrench, DollarSign } from "lucide-react"; 
 import { useToast } from "@/hooks/use-toast";
-import { getPurchaseRecommendations, type PurchaseRecommendationOutput } from '@/ai/flows/purchase-recommendation-flow';
+import { getPurchaseRecommendations } from '@/ai/flows/purchase-recommendation-flow';
 import { analyzeWorkshopCapacity } from '@/ai/flows/capacity-analysis-flow';
 import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
 import { PurchaseOrderContent } from './components/purchase-order-content';
 import { Button } from "@/components/ui/button";
+import { DashboardCharts } from "./components/dashboard-charts";
 
-
-interface EnrichedServiceRecord extends ServiceRecord {
-  vehicleInfo?: string;
-  technicianName?: string;
-}
 
 const formatCurrency = (amount: number) => {
     return `$${amount.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 };
 
-const DashboardServiceSection = React.memo(({ 
-  title, 
-  services, 
-  icon: IconCmp, 
-  emptyMessage,
-  isLoading,
-  onServiceClick 
-}: { 
-  title: string, 
-  services: EnrichedServiceRecord[], 
-  icon: React.ElementType, 
-  emptyMessage: string,
-  isLoading: boolean,
-  onServiceClick: (service: EnrichedServiceRecord) => void; 
-}) => (
-  <Card className="flex flex-col shadow-lg">
-    <CardHeader className="pb-3 sticky top-0 bg-card z-10 border-b">
-      <CardTitle className="text-lg font-semibold flex items-center gap-2">
-        <IconCmp className="h-5 w-5 text-primary shrink-0" />
-        <span>{title} ({services.length})</span>
-      </CardTitle>
-    </CardHeader>
-    <CardContent className="p-2 space-y-2">
-      {isLoading && services.length === 0 ? (
-          Array.from({ length: 2 }).map((_, index) => (
-          <Card key={index} className="p-2.5 animate-pulse w-full"> 
-            <div className="flex gap-3"> 
-              <div className="flex-grow space-y-1.5"> 
-                <div className="h-4 bg-muted rounded w-3/4"></div>
-                <div className="h-3 bg-muted rounded w-1/2"></div>
-                <div className="h-3 bg-muted rounded w-full"></div>
-                <div className="flex justify-between">
-                  <div className="h-3 bg-muted rounded w-1/3"></div>
-                  <div className="h-3 bg-muted rounded w-1/3"></div>
-                </div>
-              </div>
-            </div>
-          </Card>
-        ))
-      ) : services.length > 0 ? (
-        services.map((service) => {
-          let statusVariant: "default" | "secondary" | "outline" | "destructive" | "success" = "default";
-          if (service.status === "Reparando") statusVariant = "secondary";
-          else if (service.status === "Completado") statusVariant = "success";
-          else if (service.status === "Cancelado") statusVariant = "destructive";
-          
-          const totalCostFormatted = formatCurrency(service.totalCost);
-          const serviceProfitFormatted = formatCurrency(service.serviceProfit || 0);
-          const serviceDateObj = service.serviceDate ? parseISO(service.serviceDate) : null;
-          const deliveryDateObj = service.deliveryDateTime ? parseISO(service.deliveryDateTime) : null;
-          const serviceReceptionTime = serviceDateObj && isValid(serviceDateObj) ? format(serviceDateObj, "HH:mm", { locale: es }) : 'N/A';
-          const formattedDeliveryDateTime = deliveryDateObj && isValid(deliveryDateObj) ? format(deliveryDateObj, "dd MMM yy, HH:mm", { locale: es }) : 'N/A';
-
-
-          return (
-            <Card 
-                key={service.id} 
-                className="w-full shadow-sm hover:shadow-md transition-shadow duration-150 cursor-pointer hover:bg-muted/50"
-                onClick={() => onServiceClick(service)}
-              >
-              <CardContent className="p-0">
-                <div className="flex items-center">
-                    <div className="w-48 shrink-0 flex flex-col justify-center items-start text-left pl-6 py-4">
-                        <p className="font-bold text-lg text-foreground">
-                            {totalCostFormatted}
-                        </p>
-                        <p className="text-xs text-muted-foreground -mt-1">Costo</p>
-                        <p className="font-semibold text-lg text-green-600 mt-1">
-                            {serviceProfitFormatted}
-                        </p>
-                        <p className="text-xs text-muted-foreground -mt-1">Ganancia</p>
-                    </div>
-                    
-                    <div className="flex-grow border-l border-r p-4 space-y-3">
-                        <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2 text-sm text-muted-foreground">
-                            <div className="flex items-center gap-1.5" title="Hora de Recepción">
-                                {(service.status === 'Reparando' || service.status === 'Completado') ? <CheckCircle className="h-4 w-4 text-green-600" /> : <Clock className="h-4 w-4" />}
-                                <span>Recepción: {serviceReceptionTime}</span>
-                            </div>
-                            <div className="flex items-center gap-1.5" title="Técnico">
-                                <Wrench className="h-4 w-4" />
-                                <span>{service.technicianName}</span>
-                            </div>
-                            <div className="flex items-center gap-1.5" title="Fecha de Entrega">
-                                {service.status === 'Completado' ? <CheckCircle className="h-4 w-4 text-green-600" /> : <CalendarClock className="h-4 w-4" />}
-                                <span>Entrega: {formattedDeliveryDateTime}</span>
-                            </div>
-                            <div className="flex items-center gap-1.5" title="ID de Servicio">
-                                <span>ID: {service.id}</span>
-                            </div>
-                        </div>
-                        <div className="mt-4 flex items-center gap-4">
-                            <div className="flex-grow">
-                                <h4 className="font-semibold text-lg" title={service.vehicleInfo}>
-                                    {service.vehicleInfo}
-                                </h4>
-                                <p className="text-sm text-muted-foreground mt-1 truncate" title={service.description}>
-                                    {service.description}
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="w-48 shrink-0 flex flex-col items-center justify-center p-4 gap-y-2">
-                        <Badge variant={statusVariant} className="w-full justify-center text-center text-base">{service.status}</Badge>
-                    </div>
-                </div>
-              </CardContent>
-            </Card>
-          );
-        })
-      ) : (
-        <p className="text-muted-foreground text-center py-10">{emptyMessage}</p>
-      )}
-    </CardContent>
-  </Card>
-));
-DashboardServiceSection.displayName = "DashboardServiceSection";
-
 export default function DashboardPage() {
   const [userName, setUserName] = useState<string | null>(null);
-  const [repairingServices, setRepairingServices] = useState<EnrichedServiceRecord[]>([]);
-  const [scheduledServices, setScheduledServices] = useState<EnrichedServiceRecord[]>([]);
-  const [completedTodayServices, setCompletedTodayServices] = useState<EnrichedServiceRecord[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-
-  const [vehicles, setVehiclesState] = useState<Vehicle[]>(placeholderVehicles);
-  const [technicians, setTechniciansState] = useState<Technician[]>(placeholderTechnicians);
-  const [inventoryItems, setInventoryItemsState] = useState<InventoryItem[]>(placeholderInventory);
-  
-  const [isServiceDialogOpen, setIsServiceDialogOpen] = useState(false);
-  const [selectedServiceForDialog, setSelectedServiceForDialog] = useState<ServiceRecord | null>(null);
   const { toast } = useToast();
 
   const [purchaseRecommendations, setPurchaseRecommendations] = useState<PurchaseRecommendation[] | null>(null);
@@ -180,51 +43,17 @@ export default function DashboardPage() {
   const [capacityInfo, setCapacityInfo] = useState<CapacityAnalysisOutput | null>(null);
   const [isCapacityLoading, setIsCapacityLoading] = useState(true);
   const [capacityError, setCapacityError] = useState<string | null>(null);
-
-  const loadAndFilterServices = useCallback(() => {
-    setIsLoading(true);
+  
+  const calculateKpiData = useCallback(() => {
     const clientToday = new Date();
-
-    const enrichedServices = placeholderServiceRecords.map(service => {
-      const vehicle = vehicles.find(v => v.id === service.vehicleId);
-      const technician = technicians.find(t => t.id === service.technicianId);
-      return {
-        ...service,
-        vehicleInfo: vehicle ? `${vehicle.make} ${vehicle.model} (${vehicle.licensePlate})` : `Vehículo ID: ${service.vehicleId}`,
-        technicianName: technician ? technician.name : `Técnico ID: ${service.technicianId}`,
-      };
-    });
-
-    const repairing = enrichedServices.filter(s => s.status === 'Reparando');
     
-    const scheduled = enrichedServices.filter(s => {
+    const repairingServices = placeholderServiceRecords.filter(s => s.status === 'Reparando');
+    const scheduledTodayServices = placeholderServiceRecords.filter(s => {
       if (s.status !== 'Agendado') return false;
-      try {
-        const serviceDay = parseISO(s.serviceDate);
-        return isValid(serviceDay) && (isToday(serviceDay) || isFuture(serviceDay));
-      } catch (e) {
-        console.error("Error parsing service date for scheduled services:", s.serviceDate, e);
-        return false; 
-      }
-    }).sort((a,b) => compareAsc(parseISO(a.serviceDate), parseISO(b.serviceDate)));
-    
-    const completedToday = enrichedServices.filter(s => {
-      if (s.status !== 'Completado') return false;
-      try {
-        const completionOrServiceDate = s.deliveryDateTime || s.serviceDate;
-        const serviceDay = parseISO(completionOrServiceDate); 
-        return isValid(serviceDay) && isToday(serviceDay);
-      } catch (e) {
-        console.error("Error parsing service date for completed today:", s.serviceDate, e);
-        return (s.deliveryDateTime || s.serviceDate).startsWith(format(clientToday, 'yyyy-MM-dd'));
-      }
+      const serviceDay = parseISO(s.serviceDate);
+      return isValid(serviceDay) && isToday(serviceDay);
     });
 
-    setRepairingServices(repairing);
-    setScheduledServices(scheduled);
-    setCompletedTodayServices(completedToday);
-    
-    // --- KPI Calculations ---
     const salesToday = placeholderSales.filter(s => isSameDay(parseISO(s.saleDate), clientToday));
     const servicesCompletedToday = placeholderServiceRecords.filter(s => s.status === 'Completado' && s.deliveryDateTime && isSameDay(parseISO(s.deliveryDateTime), clientToday));
     
@@ -237,12 +66,10 @@ export default function DashboardPage() {
     setKpiData({
         dailyRevenue: revenueFromSales + revenueFromServices,
         dailyProfit: profitFromSales + profitFromServices,
-        activeServices: repairing.length + scheduled.filter(s => isToday(parseISO(s.serviceDate))).length,
+        activeServices: repairingServices.length + scheduledTodayServices.length,
         lowStockAlerts: placeholderInventory.filter(item => !item.isService && item.quantity <= item.lowStockThreshold).length
     });
-    
-    setIsLoading(false);
-  }, [vehicles, technicians]);
+  }, []);
 
 
   useEffect(() => {
@@ -269,15 +96,14 @@ export default function DashboardPage() {
         }
       }
     }
-    loadAndFilterServices();
-  }, [loadAndFilterServices]);
+    calculateKpiData();
+  }, [calculateKpiData]);
   
   useEffect(() => {
     const runCapacityAnalysis = async () => {
       setIsCapacityLoading(true);
       setCapacityError(null);
       try {
-        const today = new Date();
         const servicesForToday = placeholderServiceRecords.filter(s => {
           const serviceDay = parseISO(s.serviceDate);
           return isValid(serviceDay) && isToday(serviceDay) && s.status !== 'Completado' && s.status !== 'Cancelado';
@@ -292,7 +118,7 @@ export default function DashboardPage() {
                 totalRequiredHours: 0,
                 totalAvailableHours: totalAvailable,
                 capacityPercentage: 0,
-                recommendation: "Taller disponible. ¡A agendar!",
+                recommendation: "Taller disponible",
             });
             setIsCapacityLoading(false);
             return;
@@ -316,53 +142,7 @@ export default function DashboardPage() {
       }
     };
     runCapacityAnalysis();
-  }, []); // Run once on mount
-
-  const handleOpenServiceDialog = (service: EnrichedServiceRecord) => {
-    const originalService = placeholderServiceRecords.find(s => s.id === service.id);
-    if (originalService) {
-        setSelectedServiceForDialog(originalService);
-        setIsServiceDialogOpen(true);
-    } else {
-        toast({
-            title: "Error",
-            description: "No se pudo encontrar el servicio original para mostrar detalles.",
-            variant: "destructive"
-        });
-    }
-  };
-  
-  const handleUpdateService = useCallback(async (data: ServiceRecord | QuoteRecord) => {
-    if (!('status' in data)) {
-      toast({title: "Error de Tipo", description: "Se esperaba actualizar un servicio.", variant: "destructive"});
-      return;
-    }
-    const updatedServiceData = data as ServiceRecord;
-
-    const pIndex = placeholderServiceRecords.findIndex(s => s.id === updatedServiceData.id);
-    if (pIndex !== -1) {
-      placeholderServiceRecords[pIndex] = updatedServiceData;
-    }
-    loadAndFilterServices(); 
-    toast({
-      title: "Servicio Actualizado",
-      description: `El servicio ${updatedServiceData.id} ha sido actualizado.`,
-    });
-    setIsServiceDialogOpen(false);
-    setSelectedServiceForDialog(null);
-  }, [loadAndFilterServices, toast]);
-
-  const onVehicleCreated = useCallback((newVehicle: Vehicle) => {
-    setVehiclesState(currentVehicles => {
-      if (currentVehicles.find(v => v.id === newVehicle.id)) return currentVehicles;
-      const updated = [...currentVehicles, newVehicle];
-      if (!placeholderVehicles.find(v => v.id === newVehicle.id)) {
-         placeholderVehicles.push(newVehicle);
-      }
-      return updated;
-    });
-    toast({ title: "Vehículo Registrado", description: `El vehículo ${newVehicle.licensePlate} ha sido agregado.` });
-  }, [toast]);
+  }, []);
   
   const handleGeneratePurchaseOrder = async () => {
     setIsPurchaseLoading(true);
@@ -505,46 +285,8 @@ export default function DashboardPage() {
           </CardContent>
         )}
       </Card>
-
-
-      <div className="flex flex-col gap-6">
-        <DashboardServiceSection 
-          title="En Reparación" 
-          services={repairingServices} 
-          icon={Wrench}
-          emptyMessage="No hay servicios en reparación actualmente."
-          isLoading={isLoading}
-          onServiceClick={handleOpenServiceDialog}
-        />
-        <DashboardServiceSection 
-          title="Agendados (Hoy/Futuro)" 
-          services={scheduledServices} 
-          icon={CalendarClock}
-          emptyMessage="No hay servicios agendados."
-          isLoading={isLoading}
-          onServiceClick={handleOpenServiceDialog}
-        />
-        <DashboardServiceSection 
-          title="Completados Hoy" 
-          services={completedTodayServices} 
-          icon={CheckCircle}
-          emptyMessage="No se han completado servicios hoy."
-          isLoading={isLoading}
-          onServiceClick={handleOpenServiceDialog}
-        />
-      </div>
-      {isServiceDialogOpen && selectedServiceForDialog && (
-        <ServiceDialog
-          open={isServiceDialogOpen}
-          onOpenChange={setIsServiceDialogOpen}
-          service={selectedServiceForDialog}
-          vehicles={vehicles}
-          technicians={technicians}
-          inventoryItems={inventoryItems}
-          onSave={handleUpdateService}
-          onVehicleCreated={onVehicleCreated}
-        />
-      )}
+      
+      <DashboardCharts />
 
       {purchaseRecommendations && (
         <PrintTicketDialog
