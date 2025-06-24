@@ -49,7 +49,10 @@ export interface ServiceRecord {
   fuelLevel?: string;
   customerItems?: string;
   serviceAdvisorName?: string;
-  customerSignature?: string; // Added for digital signature
+  customerSignatureReception?: string;
+  customerSignatureDelivery?: string;
+  receptionSignatureViewed?: boolean;
+  deliverySignatureViewed?: boolean;
 }
 
 export interface Technician {

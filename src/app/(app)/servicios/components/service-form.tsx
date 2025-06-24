@@ -43,7 +43,6 @@ import { suggestQuote, type QuoteSuggestionInput } from '@/ai/flows/quote-sugges
 import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
 import { ServiceSheetContent } from './service-sheet-content';
 import { Checkbox } from "@/components/ui/checkbox";
-import { SignatureDialog } from "./signature-dialog";
 import Image from "next/image";
 import { doc, setDoc } from 'firebase/firestore';
 import { db } from '@root/lib/firebaseClient.js';
@@ -77,7 +76,8 @@ const serviceFormSchemaBase = z.object({
   vehicleConditions: z.string().optional(),
   fuelLevel: z.string().optional(),
   customerItems: z.string().optional(),
-  customerSignature: z.string().optional(),
+  customerSignatureReception: z.string().optional(),
+  customerSignatureDelivery: z.string().optional(),
 });
 
 
@@ -165,9 +165,6 @@ export function ServiceForm({
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [serviceForSheet, setServiceForSheet] = useState<ServiceRecord | null>(null);
 
-  const [isSignatureDialogOpen, setIsSignatureDialogOpen] = useState(false);
-
-
   const form = useForm<ServiceFormValues>({
     resolver: zodResolver(serviceFormSchemaBase),
     // This defaultValues block will be overridden by useEffect, but it's good practice.
@@ -188,7 +185,8 @@ export function ServiceForm({
         vehicleConditions: (initialData as ServiceRecord)?.vehicleConditions || "",
         fuelLevel: (initialData as ServiceRecord)?.fuelLevel || undefined,
         customerItems: (initialData as ServiceRecord)?.customerItems || "",
-        customerSignature: (initialData as ServiceRecord)?.customerSignature || undefined,
+        customerSignatureReception: (initialData as ServiceRecord)?.customerSignatureReception || undefined,
+        customerSignatureDelivery: (initialData as ServiceRecord)?.customerSignatureDelivery || undefined,
     }
   });
 
@@ -265,7 +263,8 @@ export function ServiceForm({
             vehicleConditions: (data as ServiceRecord)?.vehicleConditions || "",
             fuelLevel: (data as ServiceRecord)?.fuelLevel || undefined,
             customerItems: (data as ServiceRecord)?.customerItems || '',
-            customerSignature: (data as ServiceRecord)?.customerSignature || undefined,
+            customerSignatureReception: (data as ServiceRecord)?.customerSignatureReception || undefined,
+            customerSignatureDelivery: (data as ServiceRecord)?.customerSignatureDelivery || undefined,
         };
 
         // Reset all form fields except the array
@@ -294,7 +293,9 @@ export function ServiceForm({
   }, [inventoryItemsProp]);
 
   const watchedStatus = form.watch("status");
-  const customerSignature = form.watch("customerSignature");
+  const customerSignatureReception = form.watch("customerSignatureReception");
+  const customerSignatureDelivery = form.watch("customerSignatureDelivery");
+
 
   useEffect(() => {
     if (mode === 'service' && watchedStatus === "Completado" && !form.getValues("deliveryDateTime")) {
@@ -455,7 +456,10 @@ export function ServiceForm({
         fuelLevel: values.fuelLevel,
         customerItems: values.customerItems,
         serviceAdvisorName: currentUser?.name || 'N/A',
-        customerSignature: values.customerSignature,
+        customerSignatureReception: values.customerSignatureReception,
+        customerSignatureDelivery: values.customerSignatureDelivery,
+        receptionSignatureViewed: (initialDataService as ServiceRecord)?.receptionSignatureViewed,
+        deliverySignatureViewed: (initialDataService as ServiceRecord)?.deliverySignatureViewed,
       };
       await savePublicService(serviceData, selectedVehicle);
       await onSubmit(serviceData);
@@ -511,7 +515,8 @@ export function ServiceForm({
       fuelLevel: formValues.fuelLevel,
       customerItems: formValues.customerItems,
       serviceAdvisorName: currentUser?.name || 'N/A',
-      customerSignature: formValues.customerSignature,
+      customerSignatureReception: formValues.customerSignatureReception,
+      customerSignatureDelivery: formValues.customerSignatureDelivery,
     };
     
     setServiceForSheet({ ...serviceDataForSheet, vehicleIdentifier: vehicleForSheet.licensePlate });
@@ -1216,6 +1221,30 @@ export function ServiceForm({
                       )}
                     />
                 </div>
+                 {mode === 'service' && (
+                    <div className="pt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <Label>Firma de Recepción</Label>
+                            <div className="mt-2 p-2 h-24 border rounded-md bg-muted/50 flex items-center justify-center">
+                                {customerSignatureReception ? (
+                                    <Image src={customerSignatureReception} alt="Firma de recepción" width={150} height={75} style={{objectFit: 'contain'}}/>
+                                ) : (
+                                    <span className="text-sm text-muted-foreground">Pendiente de firma del cliente</span>
+                                )}
+                            </div>
+                        </div>
+                        <div>
+                            <Label>Firma de Entrega</Label>
+                            <div className="mt-2 p-2 h-24 border rounded-md bg-muted/50 flex items-center justify-center">
+                                {customerSignatureDelivery ? (
+                                    <Image src={customerSignatureDelivery} alt="Firma de entrega" width={150} height={75} style={{objectFit: 'contain'}}/>
+                                ) : (
+                                    <span className="text-sm text-muted-foreground">Pendiente de firma del cliente</span>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                )}
             </CardContent>
         </Card>
         
@@ -1405,24 +1434,6 @@ export function ServiceForm({
                         )}
                     />
                 </div>
-                {mode === 'service' && !isReadOnly && (
-                    <div className="pt-4">
-                        <Label>Firma del Cliente</Label>
-                        {customerSignature ? (
-                            <div className="mt-2 p-2 border rounded-md bg-muted/50 flex items-center justify-between">
-                                <Image src={customerSignature} alt="Firma del cliente" width={150} height={75} style={{objectFit: 'contain'}}/>
-                                <Button type="button" variant="ghost" size="sm" onClick={() => form.setValue('customerSignature', undefined)}>
-                                    Borrar Firma
-                                </Button>
-                            </div>
-                        ) : (
-                            <Button type="button" variant="outline" className="w-full mt-2" onClick={() => setIsSignatureDialogOpen(true)}>
-                                <Signature className="mr-2 h-4 w-4" />
-                                Capturar Firma del Cliente
-                            </Button>
-                        )}
-                    </div>
-                )}
             </CardContent>
         </Card>
 
@@ -1620,18 +1631,6 @@ export function ServiceForm({
             <ServiceSheetContent service={serviceForSheet} vehicle={localVehicles.find(v => v.id === serviceForSheet.vehicleId)} />
         )}
     </PrintTicketDialog>
-
-    {isSignatureDialogOpen && (
-        <SignatureDialog
-            open={isSignatureDialogOpen}
-            onOpenChange={setIsSignatureDialogOpen}
-            onSave={(signatureData) => {
-                form.setValue('customerSignature', signatureData, { shouldValidate: true, shouldDirty: true });
-                setIsSignatureDialogOpen(false);
-                toast({title: "Firma Capturada", description: "La firma del cliente ha sido guardada."})
-            }}
-        />
-    )}
     </>
   );
 }

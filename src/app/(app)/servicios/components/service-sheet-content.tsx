@@ -152,9 +152,9 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
             </div>
             <div className="border-2 border-black p-2 rounded-md flex flex-col justify-between items-center min-h-[130px]">
                 <h3 className="font-bold uppercase text-center text-sm">AUTORIZO QUE SE REALICEN ESTOS SERVICIOS</h3>
-                {service.customerSignature ? (
+                {service.customerSignatureReception ? (
                     <div className="w-full h-full flex items-center justify-center">
-                        <Image src={service.customerSignature} alt="Firma del cliente" width={200} height={100} style={{objectFit: 'contain'}} />
+                        <Image src={service.customerSignatureReception} alt="Firma del cliente" width={200} height={100} style={{objectFit: 'contain'}} />
                     </div>
                 ) : (
                     <div className="border-t-2 border-black mt-auto pt-1 text-center w-full">
@@ -173,7 +173,12 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
                    </div>
                </div>
                 <div className="pt-12 min-h-[80px] flex flex-col justify-end">
-                   <div className="border-t-2 border-black pt-1 w-full">
+                   <div className="border-t-2 border-black pt-1 w-full flex flex-col items-center">
+                       {service.customerSignatureDelivery ? (
+                         <div className="w-full h-full flex items-center justify-center mb-1">
+                           <Image src={service.customerSignatureDelivery} alt="Firma de conformidad" width={200} height={70} style={{objectFit: 'contain'}} />
+                         </div>
+                       ) : null}
                        <p className="font-bold">RECIBO DE CONFORMIDAD: {vehicle?.ownerName?.toUpperCase() || '________________________________'}</p>
                    </div>
                </div>
