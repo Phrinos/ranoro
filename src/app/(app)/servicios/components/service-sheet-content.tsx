@@ -7,7 +7,6 @@ import { es } from 'date-fns/locale';
 import React, { useEffect, useState } from 'react';
 import { cn } from "@/lib/utils";
 import Image from 'next/image';
-import { placeholderUsers } from '@/lib/placeholder-data';
 
 const initialWorkshopInfo = {
   name: "RANORO",
@@ -29,7 +28,6 @@ interface ServiceSheetContentProps {
 export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheetContentProps>(
   ({ service, vehicle, previewWorkshopInfo }, ref) => {
     const [workshopInfo, setWorkshopInfo] = useState<WorkshopInfoType>(initialWorkshopInfo);
-    const serviceAdvisor = placeholderUsers.find(u => u.id === service.serviceAdvisorId);
 
     useEffect(() => {
         if (previewWorkshopInfo) {
@@ -171,8 +169,8 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
            <div className="grid grid-cols-2 gap-8 text-center mb-4">
                <div className="pt-2 min-h-[80px] flex flex-col justify-between">
                     <div className="h-14 flex items-center justify-center">
-                        {serviceAdvisor?.signatureDataUrl && (
-                            <Image src={serviceAdvisor.signatureDataUrl} alt="Firma del asesor" width={150} height={56} style={{objectFit: 'contain'}} />
+                        {service.serviceAdvisorSignatureDataUrl && (
+                            <Image src={service.serviceAdvisorSignatureDataUrl} alt="Firma del asesor" width={150} height={56} style={{objectFit: 'contain'}} />
                         )}
                     </div>
                     <div className="border-t-2 border-black pt-1 w-full text-center">
