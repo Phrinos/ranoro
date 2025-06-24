@@ -169,7 +169,8 @@ const useNavigation = (): NavigationEntry[] => {
 
   const userPermissions = React.useMemo(() => {
     if (!currentUser || !roles.length) return new Set<string>();
-    const userRole = roles.find(r => r.name === currentUser.role);
+    // Defensively check if 'r' is truthy before accessing properties.
+    const userRole = roles.find(r => r && r.name === currentUser.role);
     return new Set(userRole?.permissions || []);
   }, [currentUser, roles]);
 
