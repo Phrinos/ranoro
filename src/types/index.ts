@@ -46,7 +46,7 @@ export interface ServiceRecord {
   quoteDate?: string;
   vehicleConditions?: string;
   fuelLevel?: string;
-  customerItems?: string[];
+  customerItems?: string;
   serviceAdvisorName?: string;
 }
 
