@@ -1347,7 +1347,7 @@ export function ServiceForm({
         <div className="flex justify-between items-center pt-4">
             <div>
               {mode === 'service' && !isReadOnly && (
-                <Button type="button" onClick={handlePrintSheet} className="bg-blue-200 text-blue-800 hover:bg-blue-300 dark:bg-blue-800 dark:text-blue-200 dark:hover:bg-blue-700">
+                <Button type="button" onClick={handlePrintSheet} variant="outline" className="bg-card">
                     <Printer className="mr-2 h-4 w-4" />
                     Hoja de Servicio
                 </Button>
