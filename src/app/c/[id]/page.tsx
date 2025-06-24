@@ -30,6 +30,12 @@ export default function PublicQuoteViewPage() {
       return;
     }
 
+    if (!db) {
+        console.error("Firebase (db) no está configurado. No se puede cargar la cotización pública.");
+        setQuote(null); // Marcar como no encontrado si DB no está disponible
+        return;
+    }
+
     const fetchPublicQuote = async () => {
       try {
         const quoteRef = doc(db, 'publicQuotes', quoteId);

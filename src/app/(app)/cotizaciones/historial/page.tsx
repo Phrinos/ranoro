@@ -137,7 +137,7 @@ export default function HistorialCotizacionesPage() {
       return;
     }
 
-    if (quoteToDelete.publicId) {
+    if (quoteToDelete.publicId && db) {
       try {
         await deleteDoc(doc(db, "publicQuotes", quoteToDelete.publicId));
       } catch (e) {
@@ -178,7 +178,7 @@ export default function HistorialCotizacionesPage() {
           await persistToFirestore();
 
           const vehicleForPublicQuote = vehicles.find(v => v.id === editedQuote.vehicleId);
-          if (vehicleForPublicQuote) {
+          if (vehicleForPublicQuote && db) { // Add check for db
               const publicQuoteData = {
                   ...editedQuote,
                   vehicle: { ...vehicleForPublicQuote },

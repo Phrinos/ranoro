@@ -25,31 +25,36 @@ const firebaseConfig = {
   appId:              "TU_APP_ID_AQUI", // Ejemplo: "1:1234567890:web:abcdef123456"
 };
 
-// Chequeo de seguridad para asegurar que las credenciales fueron cambiadas.
-if (firebaseConfig.apiKey.startsWith("TU_") || firebaseConfig.projectId.startsWith("TU_")) {
-    console.warn(`
-        *******************************************************************************
-        * ADVERTENCIA: La configuración de Firebase no ha sido establecida.           *
-        *                                                                             *
-        * Por favor, edita el archivo 'lib/firebaseClient.js' y reemplaza los valores *
-        * de marcador de posición con las credenciales reales de tu proyecto.         *
-        *******************************************************************************
-    `);
-}
 
+// --- Variables para exportar ---
+let auth = null;
+let storage = null;
+let db = null;
 
 //-------------------------------------------
 // 2. Crear/obtener la app de Firebase
 //-------------------------------------------
-// Next.js recarga módulos en desarrollo; getApps()
-// evita el error “Firebase App named '[DEFAULT]' already exists”.
-const app = !getApps().length ? initializeApp(firebaseConfig)
-                              : getApps()[0];
+// Solo inicializa Firebase si las credenciales NO son los placeholders.
+if (firebaseConfig.apiKey && !firebaseConfig.apiKey.startsWith("TU_")) {
+  const app = !getApps().length ? initializeApp(firebaseConfig) : getApps()[0];
+  auth = getAuth(app);
+  storage = getStorage(app);
+  db = getFirestore(app);
+} else {
+    // Muestra una advertencia clara en la consola del navegador si las credenciales no están configuradas.
+    if (typeof window !== 'undefined') {
+        console.warn(`
+            *******************************************************************************
+            * ADVERTENCIA: La configuración de Firebase no ha sido establecida.           *
+            *                                                                             *
+            * Por favor, edita el archivo 'lib/firebaseClient.js' con tus credenciales.   *
+            * La aplicación se ejecutará en modo local sin conexión a Firebase.           *
+            *******************************************************************************
+        `);
+    }
+}
 
 //-------------------------------------------
-// 3. Exportar instancias listas para usar
+// 3. Exportar instancias (que podrían ser null si no hay configuración)
 //-------------------------------------------
-// Las podrás importar donde las necesites:
-export const auth    = getAuth(app);     // Para login/signup
-export const storage = getStorage(app);  // Para subir/descargar archivos
-export const db      = getFirestore(app); // Para la base de datos de la app
+export { auth, storage, db };

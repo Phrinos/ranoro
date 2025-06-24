@@ -116,7 +116,7 @@ export default function NuevaCotizacionPage() {
 
     // Save to public collection for sharing
     const vehicleForPublicQuote = vehicles.find((v) => v.id === newQuote.vehicleId);
-    if (vehicleForPublicQuote) {
+    if (vehicleForPublicQuote && db) { // Add check for db
         const publicQuoteData = {
             ...newQuote,
             vehicle: { ...vehicleForPublicQuote },
