@@ -105,7 +105,7 @@ export default function NuevaCotizacionPage() {
 
     const newQuote: QuoteRecord = {
       ...(data as QuoteRecord),
-      id: `COT${String(Date.now()).slice(-6)}`,
+      id: `COT_${Date.now().toString(36)}`,
       publicId: publicId,
       preparedByTechnicianId: authUserId,
       preparedByTechnicianName: authUserName,

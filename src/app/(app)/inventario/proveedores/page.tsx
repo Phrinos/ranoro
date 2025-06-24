@@ -109,7 +109,7 @@ export default function ProveedoresPage() {
       });
     } else {
       const newSupplier: Supplier = {
-        id: `SUP${String(suppliers.length + 1).padStart(3, '0')}${Date.now().toString().slice(-3)}`,
+        id: `SUP_${Date.now().toString(36)}`,
         ...formData,
         debtAmount: Number(formData.debtAmount) || 0,
       };

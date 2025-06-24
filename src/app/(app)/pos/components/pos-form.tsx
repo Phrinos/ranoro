@@ -150,7 +150,7 @@ export function PosForm({ inventoryItems: parentInventoryItems, onSaleComplete, 
   };
 
   const onSubmit = async (values: POSFormValues) => {
-    const newSaleId = `SALE${String(placeholderSales.length + 1).padStart(3, '0')}${Date.now().toString().slice(-3)}`;
+    const newSaleId = `SALE_${Date.now().toString(36)}`;
 
     const newSaleTotalAmount = values.items.reduce((sum, item) => sum + item.totalPrice, 0);
     const newSaleSubTotal = newSaleTotalAmount / (1 + IVA_RATE);
@@ -266,7 +266,7 @@ export function PosForm({ inventoryItems: parentInventoryItems, onSaleComplete, 
 
   const handleNewItemCreated = async (newItemFormValues: InventoryItemFormValues) => {
       const newInventoryItem: InventoryItem = {
-          id: `P_POS_${Date.now()}`,
+          id: `PROD_${Date.now().toString(36)}`,
           ...newItemFormValues,
           isService: newItemFormValues.isService || false,
           quantity: newItemFormValues.isService ? 0 : Number(newItemFormValues.quantity),
