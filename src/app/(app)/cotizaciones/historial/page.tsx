@@ -23,6 +23,8 @@ import Link from "next/link";
 import { cn } from "@/lib/utils";
 import html2pdf from 'html2pdf.js';
 import { ServiceDialog } from "../../servicios/components/service-dialog";
+import { doc, setDoc } from 'firebase/firestore';
+import { db } from '@root/lib/firebaseClient.js';
 
 
 type QuoteSortOption = 
@@ -149,6 +151,22 @@ export default function HistorialCotizacionesPage() {
           placeholderQuotes[quoteIndex] = editedQuote;
           setAllQuotes([...placeholderQuotes]);
           await persistToFirestore();
+
+          // Also update the public quote document
+          const vehicleForPublicQuote = vehicles.find(v => v.id === editedQuote.vehicleId);
+          if (vehicleForPublicQuote) {
+              const publicQuoteData = {
+                  ...editedQuote,
+                  vehicle: vehicleForPublicQuote,
+              };
+              try {
+                  await setDoc(doc(db, "publicQuotes", editedQuote.id), publicQuoteData);
+              } catch (e) {
+                  console.error("Failed to update public quote:", e);
+                  // Non-blocking error, toast is optional
+              }
+          }
+
           toast({ title: "Cotización Actualizada", description: `La cotización ${editedQuote.id} se actualizó correctamente.` });
       }
       setIsEditQuoteDialogOpen(false);
@@ -203,7 +221,7 @@ export default function HistorialCotizacionesPage() {
 
     const shareUrl = `${window.location.origin}/c/${quoteForAction.id}`;
     
-    const message = `Hola ${vehicleForAction.ownerName || 'Cliente'}, Gracias por confiar en ${workshopInfo?.name || 'RANORO'}. Le enviamos su cotización de servicio ${quoteForAction.id} de nuestro taller para su vehículo ${vehicleForAction.make} ${vehicleForAction.model} ${vehicleForAction.year}. En este link encontrara el PDF de la cotizacion: ${shareUrl}`;
+    const message = `Hola ${vehicleForAction.ownerName || 'Cliente'}, Gracias por confiar en ${workshopInfo?.name || 'RANORO'}. Le enviamos su cotización de servicio ${quoteForAction.id} de nuestro taller para su vehículo ${vehicleForAction.make} ${vehicle.model} ${vehicle.year}. En este link encontrara el PDF de la cotizacion: ${shareUrl}`;
 
     navigator.clipboard.writeText(message).then(() => {
         toast({

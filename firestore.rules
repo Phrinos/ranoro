@@ -1,11 +1,15 @@
 rules_version = '2';
-
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Allow read/write access to the database for any user that is signed
-    // in to the application.
-    match /{document=**} {
+    // Main app data, requires authenticated user.
+    match /database/{document=**} {
       allow read, write: if request.auth != null;
+    }
+
+    // Public quotes are world-readable, but only writable by authenticated users.
+    match /publicQuotes/{quoteId} {
+        allow read: if true;
+        allow write: if request.auth != null;
     }
   }
 }

@@ -7,10 +7,12 @@ import { QuoteContent } from '@/components/quote-content';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import type { QuoteRecord, Vehicle } from '@/types';
-import { ShieldAlert, Download } from 'lucide-react';
+import { ShieldAlert, Download, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
 import html2pdf from 'html2pdf.js';
+import { getDoc, doc } from 'firebase/firestore';
+import { db } from '@root/lib/firebaseClient.js';
 
 
 export default function PublicQuoteViewPage() {
@@ -23,29 +25,41 @@ export default function PublicQuoteViewPage() {
   const [vehicle, setVehicle] = useState<Vehicle | null | undefined>(undefined);
 
   useEffect(() => {
-    if (typeof window !== 'undefined' && quoteId) {
+    if (!quoteId) {
+      setQuote(null); // No ID, so no quote
+      return;
+    }
+
+    const fetchPublicQuote = async () => {
       try {
-        const storedQuotesString = localStorage.getItem('placeholderQuotes');
-        const storedVehiclesString = localStorage.getItem('placeholderVehicles');
-        
-        const allQuotes: QuoteRecord[] = storedQuotesString ? JSON.parse(storedQuotesString) : [];
-        const allVehicles: Vehicle[] = storedVehiclesString ? JSON.parse(storedVehiclesString) : [];
+        const quoteRef = doc(db, 'publicQuotes', quoteId);
+        const docSnap = await getDoc(quoteRef);
 
-        const foundQuote = allQuotes.find(q => q.id === quoteId);
-        setQuote(foundQuote || null);
-
-        if (foundQuote) {
-          const foundVehicle = allVehicles.find(v => v.id === foundQuote.vehicleId);
-          setVehicle(foundVehicle || null);
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          // The vehicle data is now nested inside the quote document
+          const quoteData = data as QuoteRecord & { vehicle?: Vehicle };
+          setQuote(quoteData);
+          setVehicle(quoteData.vehicle || null);
+        } else {
+          console.log("No such public quote document!");
+          setQuote(null);
+          setVehicle(null);
         }
-
       } catch (error) {
-        console.error("Error reading data from localStorage:", error);
+        console.error("Error fetching public quote:", error);
+        toast({
+          title: "Error de Carga",
+          description: "No se pudo cargar la cotización. Intente más tarde.",
+          variant: "destructive"
+        });
         setQuote(null);
         setVehicle(null);
       }
-    }
-  }, [quoteId]);
+    };
+
+    fetchPublicQuote();
+  }, [quoteId, toast]);
 
   const handleDownloadPDF = () => {
     if (!quoteContentRef.current || !quote) return;
@@ -78,8 +92,9 @@ export default function PublicQuoteViewPage() {
 
   if (quote === undefined) {
     return (
-      <div className="container mx-auto py-8 text-center">
-        <p>Cargando cotización...</p>
+      <div className="container mx-auto py-8 text-center flex flex-col items-center justify-center min-h-[50vh]">
+        <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
+        <p className="text-lg text-muted-foreground">Cargando cotización...</p>
       </div>
     );
   }
