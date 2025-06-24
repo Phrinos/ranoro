@@ -127,9 +127,9 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
             <div className="bg-gray-50 p-3 rounded-md border border-gray-200">
             <h3 className="font-semibold text-sm text-gray-700 mb-1 border-b pb-1">Cliente:</h3>
             <div className="space-y-1 leading-tight pt-1">
-                <div>{vehicle?.ownerName || 'N/A'}</div>
-                <div>{vehicle?.ownerPhone || 'N/A'}</div>
-                <div>{vehicle?.ownerEmail || 'N/A'}</div>
+                <div className="font-bold">{vehicle?.ownerName || 'N/A'}</div>
+                {vehicle?.ownerPhone && <div>{vehicle.ownerPhone}</div>}
+                {vehicle?.ownerEmail && <div>{vehicle.ownerEmail}</div>}
             </div>
             </div>
             <div className="bg-gray-50 p-3 rounded-md border border-gray-200">
@@ -213,7 +213,8 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
             <h4 className="font-semibold text-gray-700 mb-1">Notas y Condiciones:</h4>
             <p className="leading-snug">
                 {`Cotización realizada por: ${quote.preparedByTechnicianName || 'N/A'}. `}
-                Precios en MXN. Esta cotización es válida hasta el {validityDate}. Esta cotización no incluye trabajos no especificados.
+                {`Precios en MXN. Esta cotización es válida hasta el ${validityDate}. `}
+                No incluye trabajos o materiales que no estén especificados explícitamente en la presente cotización. Los precios aquí detallados están sujetos a cambios sin previo aviso en caso de variaciones en los costos de los insumos proporcionados por nuestros proveedores, los cuales están fuera de nuestro control.
             </p>
             {quote.notes && <p className="leading-snug mt-1">Notas adicionales: {quote.notes}</p>}
             </div>
