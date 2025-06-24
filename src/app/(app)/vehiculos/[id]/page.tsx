@@ -2,7 +2,7 @@
 "use client";
 
 import { useParams, useRouter } from 'next/navigation';
-import { placeholderVehicles, placeholderServiceRecords, placeholderTechnicians, placeholderInventory } from '@/lib/placeholder-data';
+import { placeholderVehicles, placeholderServiceRecords, placeholderTechnicians, placeholderInventory, persistToFirestore } from '@/lib/placeholder-data';
 import type { Vehicle, ServiceRecord, Technician, QuoteRecord, InventoryItem } from '@/types';
 import { PageHeader } from '@/components/page-header';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -71,6 +71,8 @@ export default function VehicleDetailPage() {
     if (pIndex !== -1) {
       placeholderVehicles[pIndex] = updatedVehicle;
     }
+    
+    await persistToFirestore();
 
     setIsEditDialogOpen(false);
     toast({
@@ -97,6 +99,9 @@ export default function VehicleDetailPage() {
     if (pIndex !== -1) {
       placeholderServiceRecords[pIndex] = updatedService;
     }
+    
+    await persistToFirestore();
+    
     setIsViewServiceDialogOpen(false); 
     toast({
       title: "Servicio Actualizado",

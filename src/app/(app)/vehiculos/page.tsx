@@ -8,7 +8,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuLabel, DropdownMenuRadio
 import { PlusCircle, Search, CalendarX, AlertTriangle, Archive, ListFilter, Filter } from "lucide-react"; // Added Filter icon
 import { VehiclesTable } from "./components/vehicles-table";
 import { VehicleDialog } from "./components/vehicle-dialog";
-import { placeholderVehicles as allVehicles, placeholderServiceRecords } from "@/lib/placeholder-data";
+import { placeholderVehicles as allVehicles, placeholderServiceRecords, persistToFirestore } from "@/lib/placeholder-data";
 import type { Vehicle } from "@/types";
 import type { VehicleFormValues } from "./components/vehicle-form";
 import { useToast } from "@/hooks/use-toast";
@@ -86,6 +86,8 @@ export default function VehiculosPage() {
     const updatedVehicles = [...vehicles, newVehicle];
     setVehicles(updatedVehicles);
     allVehicles.push(newVehicle); 
+    
+    await persistToFirestore();
 
     toast({
       title: "Vehículo Creado",

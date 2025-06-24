@@ -2,7 +2,7 @@
 "use client";
 
 import { useParams, useRouter } from 'next/navigation';
-import { placeholderInventory, placeholderCategories, placeholderSuppliers } from '@/lib/placeholder-data';
+import { placeholderInventory, placeholderCategories, placeholderSuppliers, persistToFirestore } from '@/lib/placeholder-data';
 import type { InventoryItem } from '@/types';
 import { PageHeader } from '@/components/page-header';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -59,6 +59,8 @@ export default function InventoryItemDetailPage() {
     if (pIndex !== -1) {
       placeholderInventory[pIndex] = updatedItem;
     }
+    
+    await persistToFirestore();
 
     setIsEditDialogOpen(false);
     toast({
@@ -67,12 +69,15 @@ export default function InventoryItemDetailPage() {
     });
   };
   
-  const handleDeleteItem = () => {
+  const handleDeleteItem = async () => {
     if (!item) return;
     const itemIndex = placeholderInventory.findIndex(i => i.id === item.id);
     if (itemIndex > -1) {
       placeholderInventory.splice(itemIndex, 1);
     }
+    
+    await persistToFirestore();
+    
     toast({
       title: "Ítem Eliminado",
       description: `${item.name} ha sido eliminado.`,

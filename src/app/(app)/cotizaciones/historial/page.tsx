@@ -12,7 +12,7 @@ import { Search, ListFilter, CalendarIcon as CalendarDateIcon, FileText, DollarS
 import { QuotesTable } from "../components/quotes-table"; 
 import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
 import { QuoteContent } from '@/components/quote-content';
-import { placeholderQuotes, placeholderVehicles, placeholderTechnicians, placeholderServiceRecords, placeholderInventory } from "@/lib/placeholder-data"; 
+import { placeholderQuotes, placeholderVehicles, placeholderTechnicians, placeholderServiceRecords, placeholderInventory, persistToFirestore } from "@/lib/placeholder-data"; 
 import type { QuoteRecord, Vehicle, User, ServiceRecord, Technician, InventoryItem } from "@/types"; 
 import { useState, useEffect, useMemo, useRef } from "react";
 import { useToast } from "@/hooks/use-toast";
@@ -148,6 +148,7 @@ export default function HistorialCotizacionesPage() {
       if (quoteIndex !== -1) {
           placeholderQuotes[quoteIndex] = editedQuote;
           setAllQuotes([...placeholderQuotes]);
+          await persistToFirestore();
           toast({ title: "Cotización Actualizada", description: `La cotización ${editedQuote.id} se actualizó correctamente.` });
       }
       setIsEditQuoteDialogOpen(false);
@@ -166,6 +167,8 @@ export default function HistorialCotizacionesPage() {
           placeholderQuotes[quoteIndex].serviceId = newServiceId;
           setAllQuotes([...placeholderQuotes]);
       }
+      
+      await persistToFirestore();
       
       toast({ title: "Servicio Generado", description: `Se creó el servicio ${newServiceId} desde la cotización.` });
       setIsGenerateServiceDialogOpen(false);

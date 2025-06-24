@@ -22,7 +22,7 @@ import { PlusCircle, Trash2, Receipt, Search, PackagePlus, Wallet, CreditCard, S
 import type { InventoryItem, SaleItem, PaymentMethod, SaleReceipt } from "@/types";
 import { useToast } from "@/hooks/use-toast";
 import React, { useState, useEffect } from "react";
-import { placeholderSales, placeholderInventory, placeholderCategories, placeholderSuppliers } from "@/lib/placeholder-data";
+import { placeholderSales, placeholderInventory, placeholderCategories, placeholderSuppliers, persistToFirestore } from "@/lib/placeholder-data";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { InventoryItemDialog } from "../../inventario/components/inventory-item-dialog";
@@ -192,6 +192,8 @@ export function PosForm({ inventoryItems: parentInventoryItems, onSaleComplete, 
         placeholderInventory[inventoryItemIndex].quantity -= soldItem.quantity;
       }
     });
+    
+    await persistToFirestore();
 
     onSaleComplete(newSale);
   };
@@ -274,6 +276,8 @@ export function PosForm({ inventoryItems: parentInventoryItems, onSaleComplete, 
           unitType: newItemFormValues.unitType || 'units'
       };
       placeholderInventory.push(newInventoryItem);
+      await persistToFirestore();
+      
       setCurrentInventoryItems(prev => [...prev, newInventoryItem]);
 
       if (onInventoryItemCreated) {

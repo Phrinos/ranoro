@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -30,7 +29,7 @@ import React, { useEffect, useState, useMemo } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { VehicleDialog } from "../../vehiculos/components/vehicle-dialog";
 import type { VehicleFormValues } from "../../vehiculos/components/vehicle-form";
-import { placeholderVehicles as defaultPlaceholderVehicles, placeholderInventory, placeholderCategories, placeholderSuppliers, placeholderQuotes, placeholderServiceRecords as defaultServiceRecords } from "@/lib/placeholder-data";
+import { placeholderVehicles as defaultPlaceholderVehicles, placeholderInventory, placeholderCategories, placeholderSuppliers, placeholderQuotes, placeholderServiceRecords as defaultServiceRecords, persistToFirestore } from "@/lib/placeholder-data";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -291,6 +290,8 @@ export function ServiceForm({
     };
 
     defaultPlaceholderVehicles.push(newVehicle);
+    await persistToFirestore();
+    
     setLocalVehicles(prev => [...prev, newVehicle]);
 
     setSelectedVehicle(newVehicle);
@@ -585,6 +586,8 @@ export function ServiceForm({
           unitType: newItemFormValues.unitType || 'units',
       };
       placeholderInventory.push(newInventoryItem);
+      await persistToFirestore();
+      
       setCurrentInventoryItems(prev => [...prev, newInventoryItem]);
       if (onInventoryItemCreatedFromService) {
           onInventoryItemCreatedFromService(newInventoryItem);

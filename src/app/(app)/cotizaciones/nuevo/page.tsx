@@ -11,6 +11,7 @@ import {
   placeholderTechnicians,
   placeholderInventory,
   placeholderQuotes,
+  persistToFirestore
 } from "@/lib/placeholder-data";
 import type {
   QuoteRecord,
@@ -105,6 +106,7 @@ export default function NuevaCotizacionPage() {
     };
 
     placeholderQuotes.push(newQuote);
+    await persistToFirestore();
 
     // Save to localStorage so the public link works
     if (typeof window !== 'undefined') {
