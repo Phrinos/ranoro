@@ -10,7 +10,6 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuLabel, DropdownMenuRadio
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Search, ListFilter, CalendarIcon as CalendarDateIcon, DollarSign, TrendingUp, Car as CarIcon, Wrench as WrenchIcon, PlusCircle, Printer } from "lucide-react";
 import { ServicesTable } from "../components/services-table"; 
-import { ServiceDialog } from "../components/service-dialog"; 
 import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
 import { TicketContent } from '@/components/ticket-content';
 import { placeholderServiceRecords, placeholderVehicles, placeholderTechnicians, placeholderInventory, persistToFirestore, enrichServiceForPrinting } from "@/lib/placeholder-data";
@@ -23,6 +22,7 @@ import type { DateRange } from "react-day-picker";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import { ServiceSheetContent } from '../components/service-sheet-content';
 
 type ServiceSortOption = 
   | "serviceDate_desc" | "serviceDate_asc"
@@ -49,6 +49,9 @@ export default function HistorialServiciosPage() {
   const [currentServiceForTicket, setCurrentServiceForTicket] = useState<ServiceRecord | null>(null);
   const [currentVehicleForTicket, setCurrentVehicleForTicket] = useState<Vehicle | null>(null);
   const [currentTechnicianForTicket, setCurrentTechnicianForTicket] = useState<Technician | null>(null);
+  
+  const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const [serviceForSheet, setServiceForSheet] = useState<ServiceRecord | null>(null);
 
 
   useEffect(() => {
@@ -217,6 +220,11 @@ export default function HistorialServiciosPage() {
   const handlePrintTicket = () => {
     window.print();
   };
+  
+  const handleShowSheet = useCallback((service: ServiceRecord) => {
+    setServiceForSheet(service);
+    setIsSheetOpen(true);
+  }, []);
 
 
   return (
@@ -353,6 +361,7 @@ export default function HistorialServiciosPage() {
         onServiceUpdated={handleUpdateService}
         onServiceDeleted={handleDeleteService}
         onVehicleCreated={handleVehicleCreated}
+        onShowSheet={handleShowSheet}
         isHistoryView={true}
       />
       
@@ -377,6 +386,21 @@ export default function HistorialServiciosPage() {
           />
         </PrintTicketDialog>
       )}
+
+      <PrintTicketDialog
+          open={isSheetOpen}
+          onOpenChange={setIsSheetOpen}
+          title="Hoja de Servicio"
+          onDialogClose={() => setServiceForSheet(null)}
+          dialogContentClassName="printable-quote-dialog"
+          footerActions={
+              <Button onClick={() => window.print()}>
+                  <Printer className="mr-2 h-4 w-4" /> Imprimir Hoja
+              </Button>
+          }
+      >
+          {serviceForSheet && <ServiceSheetContent service={serviceForSheet} vehicle={vehicles.find(v => v.id === serviceForSheet.vehicleId)} />}
+      </PrintTicketDialog>
     </>
   );
 }
