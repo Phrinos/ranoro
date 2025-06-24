@@ -1,12 +1,13 @@
 
 "use client";
 
-import type { ServiceRecord, Vehicle } from '@/types';
+import type { ServiceRecord, Vehicle, User } from '@/types';
 import { format, parseISO, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
 import React, { useEffect, useState } from 'react';
 import { cn } from "@/lib/utils";
 import Image from 'next/image';
+import { placeholderUsers } from '@/lib/placeholder-data';
 
 const initialWorkshopInfo = {
   name: "RANORO",
@@ -28,6 +29,7 @@ interface ServiceSheetContentProps {
 export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheetContentProps>(
   ({ service, vehicle, previewWorkshopInfo }, ref) => {
     const [workshopInfo, setWorkshopInfo] = useState<WorkshopInfoType>(initialWorkshopInfo);
+    const serviceAdvisor = placeholderUsers.find(u => u.id === service.serviceAdvisorId);
 
     useEffect(() => {
         if (previewWorkshopInfo) {
@@ -167,11 +169,16 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
         
         <footer className="mt-auto pt-4 text-xs">
            <div className="grid grid-cols-2 gap-8 text-center mb-4">
-               <div className="pt-12 min-h-[80px] flex flex-col justify-end">
-                   <div className="border-t-2 border-black pt-1 w-full">
-                       <p className="font-bold">ASESOR DE SERVICIO: {service.serviceAdvisorName?.toUpperCase() || '________________________________'}</p>
-                   </div>
-               </div>
+               <div className="pt-2 min-h-[80px] flex flex-col justify-between">
+                    <div className="h-14 flex items-center justify-center">
+                        {serviceAdvisor?.signatureDataUrl && (
+                            <Image src={serviceAdvisor.signatureDataUrl} alt="Firma del asesor" width={150} height={56} style={{objectFit: 'contain'}} />
+                        )}
+                    </div>
+                    <div className="border-t-2 border-black pt-1 w-full text-center">
+                        <p className="font-bold">ASESOR DE SERVICIO: {service.serviceAdvisorName?.toUpperCase() || '________________________________'}</p>
+                    </div>
+                </div>
                 <div className="pt-12 min-h-[80px] flex flex-col justify-end">
                    <div className="border-t-2 border-black pt-1 w-full flex flex-col items-center">
                        {service.customerSignatureDelivery ? (

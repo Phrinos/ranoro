@@ -42,7 +42,8 @@ export const defaultSuperAdmin: User = {
   email: 'arturo@ranoro.mx',
   role: 'Superadmin',
   password: 'CA1abaza',
-  phone: '4493930914'
+  phone: '4493930914',
+  signatureDataUrl: undefined,
 };
 
 export let placeholderUsers: User[] = []; // This will be hydrated from Firestore

@@ -12,17 +12,20 @@ import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from '@/hooks/use-toast';
 import type { User } from '@/types';
-import { Save } from 'lucide-react';
+import { Save, Signature } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { getAuth, onAuthStateChanged, updatePassword, reauthenticateWithCredential, EmailAuthProvider } from 'firebase/auth';
 import { auth } from '@root/lib/firebaseClient.js';
 import { placeholderUsers, persistToFirestore, AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
+import { SignatureDialog } from '@/app/(app)/servicios/components/signature-dialog';
+import Image from 'next/image';
 
 
 const profileSchema = z.object({
   name: z.string().min(3, "El nombre debe tener al menos 3 caracteres."),
   email: z.string().email("Ingrese un correo electrónico válido."),
   phone: z.string().optional(),
+  signatureDataUrl: z.string().optional(),
   currentPassword: z.string().optional().or(z.literal('')),
   newPassword: z.string().optional().or(z.literal('')),
   confirmNewPassword: z.string().optional().or(z.literal('')),
@@ -44,6 +47,7 @@ export default function PerfilPage() {
   const router = useRouter();
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isSignatureDialogOpen, setIsSignatureDialogOpen] = useState(false);
 
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema),
@@ -51,6 +55,7 @@ export default function PerfilPage() {
       name: '',
       email: '',
       phone: '',
+      signatureDataUrl: '',
       currentPassword: '',
       newPassword: '',
       confirmNewPassword: '',
@@ -68,12 +73,11 @@ export default function PerfilPage() {
                   name: user.name,
                   email: user.email,
                   phone: user.phone || '',
+                  signatureDataUrl: user.signatureDataUrl || '',
                   newPassword: '',
                   confirmNewPassword: '',
                 });
             } else {
-                // AuthUser not in local storage, might need to fetch from DB
-                // For now, redirecting to login to re-establish session
                 router.push('/login');
             }
         } else {
@@ -94,10 +98,8 @@ export default function PerfilPage() {
     if (data.newPassword && data.currentPassword) {
       try {
         const user = auth.currentUser;
-        // Re-authenticate user before sensitive operations
         const credential = EmailAuthProvider.credential(user.email!, data.currentPassword);
         await reauthenticateWithCredential(user, credential);
-        // If re-authentication is successful, update the password
         await updatePassword(user, data.newPassword);
         toast({ title: "Contraseña Actualizada", description: "Tu contraseña ha sido cambiada exitosamente." });
       } catch (error: any) {
@@ -109,11 +111,10 @@ export default function PerfilPage() {
             message = 'Demasiados intentos fallidos. Inténtalo más tarde.';
         }
         toast({ title: "Error de Contraseña", description: message, variant: "destructive" });
-        return; // Stop execution if password change fails
+        return;
       }
     }
 
-    // --- Update User Info in the main data array ---
     const userIndex = placeholderUsers.findIndex(u => u.id === currentUser.id);
     if (userIndex === -1) {
       toast({ title: "Error", description: "No se pudo encontrar tu perfil en la base de datos local para actualizarlo.", variant: "destructive" });
@@ -124,16 +125,15 @@ export default function PerfilPage() {
       ...placeholderUsers[userIndex],
       name: data.name,
       phone: data.phone || undefined,
+      signatureDataUrl: data.signatureDataUrl || undefined,
     };
     
-    placeholderUsers[userIndex] = updatedUser; // Update the in-memory master list
+    placeholderUsers[userIndex] = updatedUser; 
 
-    // --- Persist all data to Firestore ---
     try {
         await persistToFirestore();
-        // Also update the local storage for immediate UI feedback in the current session
         localStorage.setItem(AUTH_USER_LOCALSTORAGE_KEY, JSON.stringify(updatedUser));
-        setCurrentUser(updatedUser); // Update local state
+        setCurrentUser(updatedUser); 
         
         toast({
             title: "Perfil Actualizado",
@@ -144,6 +144,7 @@ export default function PerfilPage() {
             ...form.getValues(),
             name: data.name,
             phone: data.phone,
+            signatureDataUrl: data.signatureDataUrl,
             newPassword: '',
             confirmNewPassword: '',
             currentPassword: ''
@@ -210,7 +211,34 @@ export default function PerfilPage() {
                   </FormItem>
                 )}
               />
-              <CardDescription>Cambiar contraseña (dejar en blanco para no modificar)</CardDescription>
+              
+              <Card className="pt-4 mt-4 border-dashed">
+                <CardContent className="space-y-2">
+                  <FormLabel>Firma del Asesor</FormLabel>
+                  <FormDescription>
+                    Esta firma se usará en los documentos generados por ti, como las hojas de servicio.
+                  </FormDescription>
+                  <div className="mt-2 p-2 min-h-[100px] border rounded-md bg-muted/50 flex items-center justify-center">
+                    {form.watch('signatureDataUrl') ? (
+                      <Image
+                        src={form.watch('signatureDataUrl')!}
+                        alt="Firma guardada"
+                        width={250}
+                        height={125}
+                        style={{ objectFit: 'contain' }}
+                      />
+                    ) : (
+                      <span className="text-sm text-muted-foreground">No hay firma guardada.</span>
+                    )}
+                  </div>
+                  <Button type="button" variant="outline" onClick={() => setIsSignatureDialogOpen(true)} className="w-full">
+                    <Signature className="mr-2 h-4 w-4" />
+                    {form.watch('signatureDataUrl') ? 'Cambiar Firma' : 'Capturar Firma'}
+                  </Button>
+                </CardContent>
+              </Card>
+
+              <CardDescription className="pt-6">Cambiar contraseña (dejar en blanco para no modificar)</CardDescription>
                <FormField
                 control={form.control}
                 name="currentPassword"
@@ -252,6 +280,16 @@ export default function PerfilPage() {
           </Form>
         </CardContent>
       </Card>
+      
+      <SignatureDialog
+        open={isSignatureDialogOpen}
+        onOpenChange={setIsSignatureDialogOpen}
+        onSave={(signature) => {
+          form.setValue('signatureDataUrl', signature, { shouldDirty: true });
+          setIsSignatureDialogOpen(false);
+          toast({ title: 'Firma Capturada', description: 'La nueva firma se guardará cuando actualices tu perfil.' });
+        }}
+      />
     </div>
   );
 }
