@@ -108,15 +108,23 @@ body {
 }
 
 @media print {
-  body * {
-    visibility: hidden;
+  /* Hide all elements by default */
+  body > * {
+    display: none !important;
+  }
+  
+  /* Show only the context for printing inventory */
+  .inventory-page-print-context {
+    display: block !important;
+  }
+  .inventory-page-print-context * {
+    display: revert !important; /* Revert children to their original display property */
   }
 
   .printable-content, .printable-content * {
     visibility: visible;
   }
 
-  /* Reset the dialog's fixed positioning and transforms for printing */
   .printable-content {
     position: absolute !important;
     left: 0 !important;
@@ -124,18 +132,18 @@ body {
     margin: 0 !important;
     padding: 0 !important;
     width: 100% !important;
-    max-width: 100% !important; /* Override max-w-lg etc. */
+    max-width: 100% !important;
     height: auto !important;
     border: none !important;
     box-shadow: none !important;
-    transform: none !important; /* This is the key */
-    display: block !important; /* And this to override grid */
+    transform: none !important;
+    display: block !important;
     background: white !important;
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
   }
   
-  .printable-content .print-hidden {
+  .print-hidden {
     display: none !important;
   }
   
@@ -152,9 +160,10 @@ body {
 
   @page {
     size: auto;
-    margin: 0mm;
+    margin: 1cm;
   }
 }
+
 
 /* Hide number input arrows */
 input::-webkit-outer-spin-button,

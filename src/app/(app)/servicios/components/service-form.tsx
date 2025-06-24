@@ -134,6 +134,7 @@ export function ServiceForm({
   const [isVehicleDialogOpen, setIsVehicleDialogOpen] = useState(false);
   const [localVehicles, setLocalVehicles] = useState<Vehicle[]>(parentVehicles);
   const [newVehicleInitialData, setNewVehicleInitialData] = useState<Partial<VehicleFormValues> | null>(null);
+  const [vehicleSearchResults, setVehicleSearchResults] = useState<Vehicle[]>([]);
 
 
   const [currentInventoryItems, setCurrentInventoryItems] = useState<InventoryItem[]>(inventoryItemsProp);
@@ -311,19 +312,8 @@ export function ServiceForm({
     }
     const found = localVehicles.find(v => v.licensePlate.toLowerCase() === vehicleLicensePlateSearch.trim().toLowerCase());
     if (found) {
-      setSelectedVehicle(found);
-      form.setValue('vehicleId', found.id, { shouldValidate: true });
-      setVehicleNotFound(false);
-      
-      const vehicleServices = defaultServiceRecords.filter(s => s.vehicleId === found.id).sort((a, b) => new Date(b.serviceDate).getTime() - new Date(a.serviceDate).getTime());
-      if (vehicleServices.length > 0) {
-          const lastService = vehicleServices[0];
-          setLastServiceInfo(`Últ. Servicio: ${format(parseISO(lastService.serviceDate), "dd MMM yyyy", { locale: es })} - ${lastService.description}`);
-      } else {
-          setLastServiceInfo("No tiene historial de servicios.");
-      }
-
-      toast({ title: "Vehículo Encontrado", description: `${found.make} ${found.model} ${found.year}`});
+        handleSelectVehicleFromSearch(found);
+        toast({ title: "Vehículo Encontrado", description: `${found.make} ${found.model} ${found.year}`});
     } else {
       setSelectedVehicle(null);
       form.setValue('vehicleId', undefined, { shouldValidate: true });
@@ -452,6 +442,41 @@ export function ServiceForm({
       handleSearchVehicle();
     }
   };
+
+    const handleSelectVehicleFromSearch = (vehicle: Vehicle) => {
+        setSelectedVehicle(vehicle);
+        setVehicleLicensePlateSearch(vehicle.licensePlate);
+        form.setValue('vehicleId', vehicle.id, { shouldValidate: true });
+        setVehicleNotFound(false);
+        setVehicleSearchResults([]);
+        const vehicleServices = defaultServiceRecords.filter(s => s.vehicleId === vehicle.id).sort((a, b) => new Date(b.serviceDate).getTime() - new Date(a.serviceDate).getTime());
+        if (vehicleServices.length > 0) {
+            const lastService = vehicleServices[0];
+            setLastServiceInfo(`Últ. Servicio: ${format(parseISO(lastService.serviceDate), "dd MMM yyyy", { locale: es })} - ${lastService.description}`);
+        } else {
+            setLastServiceInfo("No tiene historial de servicios.");
+        }
+    };
+    
+    useEffect(() => {
+        if (!vehicleLicensePlateSearch || vehicleLicensePlateSearch.length < 2) {
+            setVehicleSearchResults([]);
+            return;
+        }
+        if (selectedVehicle && selectedVehicle.licensePlate === vehicleLicensePlateSearch) {
+             setVehicleSearchResults([]);
+             return;
+        }
+
+        const lowerSearch = vehicleLicensePlateSearch.toLowerCase();
+        const results = localVehicles.filter(v => 
+            v.licensePlate.toLowerCase().includes(lowerSearch) ||
+            v.make.toLowerCase().includes(lowerSearch) ||
+            v.model.toLowerCase().includes(lowerSearch) ||
+            v.ownerName.toLowerCase().includes(lowerSearch)
+        ).slice(0, 5);
+        setVehicleSearchResults(results);
+    }, [vehicleLicensePlateSearch, localVehicles, selectedVehicle]);
 
   const handleSuggestPrice = async () => {
     setIsSuggestingPrice(true);
@@ -771,37 +796,29 @@ export function ServiceForm({
                  </div>
 
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
-                    <div className="flex flex-col sm:flex-row items-end gap-2 w-full">
-                        <FormField
-                            control={form.control}
-                            name="vehicleLicensePlateSearch"
-                            render={({ field }) => (
-                            <FormItem className="flex-1 w-full sm:w-auto">
-                                <FormLabel>Placa del Vehículo</FormLabel>
-                                <FormControl>
-                                <Input
-                                    placeholder="Buscar/Ingresar Placas"
-                                    {...field}
-                                    value={vehicleLicensePlateSearch}
-                                    onChange={(e) => {
-                                        setVehicleLicensePlateSearch(e.target.value.toUpperCase());
-                                        field.onChange(e.target.value.toUpperCase());
-                                    }}
-                                    disabled={isReadOnly}
-                                    className="uppercase"
-                                    onKeyDown={handleVehiclePlateKeyDown}
-                                />
-                                </FormControl>
-                            </FormItem>
-                            )}
-                        />
-                        {!isReadOnly && (
-                            <Button type="button" onClick={handleSearchVehicle} variant="outline" size="icon" className="w-10 h-10 sm:w-10 sm:h-10 mt-2 sm:mt-0 shrink-0">
-                                <Search className="h-4 w-4" />
-                                <span className="sr-only">Buscar Placa</span>
-                            </Button>
+                    <FormField
+                        control={form.control}
+                        name="vehicleLicensePlateSearch"
+                        render={({ field }) => (
+                        <FormItem className="w-full">
+                            <FormLabel>Placa del Vehículo</FormLabel>
+                            <FormControl>
+                            <Input
+                                placeholder="Buscar/Ingresar Placas"
+                                {...field}
+                                value={vehicleLicensePlateSearch}
+                                onChange={(e) => {
+                                    setVehicleLicensePlateSearch(e.target.value.toUpperCase());
+                                    field.onChange(e.target.value.toUpperCase());
+                                }}
+                                disabled={isReadOnly}
+                                className="uppercase"
+                                onKeyDown={handleVehiclePlateKeyDown}
+                            />
+                            </FormControl>
+                        </FormItem>
                         )}
-                    </div>
+                    />
                      <FormField
                         control={form.control}
                         name="mileage"
@@ -821,10 +838,26 @@ export function ServiceForm({
                     name="vehicleId"
                     render={() => ( <FormMessage /> )}
                   />
+                  {vehicleSearchResults.length > 0 && (
+                      <ScrollArea className="h-auto max-h-[150px] w-full rounded-md border">
+                          <div className="p-2">
+                              {vehicleSearchResults.map(v => (
+                                  <button
+                                      type="button"
+                                      key={v.id}
+                                      onClick={() => handleSelectVehicleFromSearch(v)}
+                                      className="w-full text-left p-2 rounded-md hover:bg-muted"
+                                  >
+                                      <p className="font-semibold">{v.licensePlate}</p>
+                                      <p className="text-sm text-muted-foreground">{v.make} {v.model} - {v.ownerName}</p>
+                                  </button>
+                              ))}
+                          </div>
+                      </ScrollArea>
+                  )}
                 {selectedVehicle && (
                     <div className="p-3 border rounded-md bg-muted text-sm space-y-1">
-                        <p><strong>Placa:</strong> {selectedVehicle.licensePlate}</p>
-                        <p><strong>Vehículo Seleccionado:</strong> {selectedVehicle.make} {selectedVehicle.model} {selectedVehicle.year}</p>
+                        <p><strong>Vehículo Seleccionado:</strong> {selectedVehicle.make} {selectedVehicle.model} {selectedVehicle.year} ({selectedVehicle.licensePlate})</p>
                         <p><strong>Propietario:</strong> {selectedVehicle.ownerName}</p>
                         {lastServiceInfo && (
                             <p className="text-xs font-medium text-blue-600 dark:text-blue-400 mt-1">{lastServiceInfo}</p>

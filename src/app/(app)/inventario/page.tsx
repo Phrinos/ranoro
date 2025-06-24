@@ -14,7 +14,7 @@ import type { InventoryItem } from "@/types";
 import { useState, useMemo, useEffect } from "react";
 import type { InventoryItemFormValues } from "./components/inventory-item-form";
 import { PurchaseItemSelectionDialog } from "./components/purchase-item-selection-dialog";
-import { PurchaseDetailsEntryDialog, type PurchaseDetailsFormValues } from "./components/purchase-details-entry-dialog";
+import { PurchaseDetailsEntryDialog, type PurchaseDetailsFormValues } from "@/components/purchase-details-entry-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -142,10 +142,7 @@ export default function InventarioPage() {
 
 
   const handlePrintInventory = () => {
-    toast({
-        title: "Imprimir Productos",
-        description: "La funcionalidad de impresión detallada se implementará próximamente. Actualmente, esto imprimiría la vista actual.",
-    });
+    window.print();
   };
   
   const { 
@@ -201,7 +198,7 @@ export default function InventarioPage() {
       itemsToDisplay = itemsToDisplay.filter(item => item.category === selectedCategoryFilter);
     }
     
-    return itemsToDisplay.sort((a, b) => {
+    itemsToDisplay.sort((a, b) => {
       const isALowStock = !a.isService && a.quantity <= a.lowStockThreshold;
       const isBLowStock = !b.isService && b.quantity <= b.lowStockThreshold;
 
@@ -240,169 +237,177 @@ export default function InventarioPage() {
         default: return a.name.localeCompare(b.name); 
       }
     });
+
+    return itemsToDisplay;
   }, [inventoryItems, searchTerm, selectedCategoryFilter, sortOption]);
 
   return (
     <>
-      <div className="mb-6 grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Total Productos en Stock
-            </CardTitle>
-            <PackageCheck className="h-5 w-5 text-blue-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold font-headline">{productsCount}</div>
-            <p className="text-xs text-muted-foreground">
-              Ítems únicos que no son servicios.
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Total Servicios Registrados
-            </CardTitle>
-            <Server className="h-5 w-5 text-purple-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold font-headline">{servicesCount}</div>
-            <p className="text-xs text-muted-foreground">
-              Servicios ofrecidos como ítems.
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Productos con Stock Bajo
-            </CardTitle>
-            <AlertTriangle className="h-5 w-5 text-orange-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold font-headline">{lowStockItemsCount}</div>
-            <p className="text-xs text-muted-foreground">
-              Requieren atención o reposición.
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Costo Total del Inventario
-            </CardTitle>
-            <DollarSign className="h-5 w-5 text-green-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold font-headline">${totalInventoryCost.toLocaleString('es-ES')}</div>
-            <p className="text-xs text-muted-foreground">
-              Valor de venta: ${totalInventorySellingPrice.toLocaleString('es-ES')}
-            </p>
-          </CardContent>
-        </Card>
-      </div>
+      <div className="inventory-page-print-context">
+        <div className="mb-6 grid gap-6 md:grid-cols-2 lg:grid-cols-4 print:hidden">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                Total Productos en Stock
+              </CardTitle>
+              <PackageCheck className="h-5 w-5 text-blue-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold font-headline">{productsCount}</div>
+              <p className="text-xs text-muted-foreground">
+                Ítems únicos que no son servicios.
+              </p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                Total Servicios Registrados
+              </CardTitle>
+              <Server className="h-5 w-5 text-purple-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold font-headline">{servicesCount}</div>
+              <p className="text-xs text-muted-foreground">
+                Servicios ofrecidos como ítems.
+              </p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                Productos con Stock Bajo
+              </CardTitle>
+              <AlertTriangle className="h-5 w-5 text-orange-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold font-headline">{lowStockItemsCount}</div>
+              <p className="text-xs text-muted-foreground">
+                Requieren atención o reposición.
+              </p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                Costo Total del Inventario
+              </CardTitle>
+              <DollarSign className="h-5 w-5 text-green-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold font-headline">${totalInventoryCost.toLocaleString('es-ES')}</div>
+              <p className="text-xs text-muted-foreground">
+                Valor de venta: ${totalInventorySellingPrice.toLocaleString('es-ES')}
+              </p>
+            </CardContent>
+          </Card>
+        </div>
 
-      <PageHeader
-        title="Productos y Servicios"
-        description="Administra productos, servicios, niveles de stock y registra compras."
-        actions={
-          <div className="flex flex-wrap gap-2">
-            <Button onClick={handlePrintInventory} className="bg-blue-200 text-blue-800 hover:bg-blue-300 dark:bg-blue-800 dark:text-blue-200 dark:hover:bg-blue-700">
-              <Printer className="mr-2 h-4 w-4" />
-              Imprimir Lista
-            </Button>
-            <Button onClick={handleOpenPurchaseItemSelection} className="bg-green-200 text-green-800 hover:bg-green-300 dark:bg-green-800 dark:text-green-200 dark:hover:bg-green-700">
-              <ShoppingCartIcon className="mr-2 h-4 w-4" />
-              Ingresar Compra
-            </Button>
-            <Button onClick={() => { setIsCreatingItemForPurchaseFlow(false); setIsNewItemDialogOpen(true); }}>
-              <PlusCircle className="mr-2 h-4 w-4" />
-              Nuevo Producto/Servicio
-            </Button>
-          </div>
-        }
-      />
-
-      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:flex-wrap">
-        <div className="relative flex-1 min-w-[200px] sm:min-w-[300px]">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            type="search"
-            placeholder="Buscar por código o nombre..."
-            className="w-full rounded-lg bg-white pl-8"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+        <div className="print:hidden">
+          <PageHeader
+            title="Productos y Servicios"
+            description="Administra productos, servicios, niveles de stock y registra compras."
+            actions={
+              <div className="flex flex-wrap gap-2">
+                <Button onClick={handlePrintInventory} className="bg-blue-200 text-blue-800 hover:bg-blue-300 dark:bg-blue-800 dark:text-blue-200 dark:hover:bg-blue-700">
+                  <Printer className="mr-2 h-4 w-4" />
+                  Imprimir Lista
+                </Button>
+                <Button onClick={handleOpenPurchaseItemSelection} className="bg-green-200 text-green-800 hover:bg-green-300 dark:bg-green-800 dark:text-green-200 dark:hover:bg-green-700">
+                  <ShoppingCartIcon className="mr-2 h-4 w-4" />
+                  Ingresar Compra
+                </Button>
+                <Button onClick={() => { setIsCreatingItemForPurchaseFlow(false); setIsNewItemDialogOpen(true); }}>
+                  <PlusCircle className="mr-2 h-4 w-4" />
+                  Nuevo Producto/Servicio
+                </Button>
+              </div>
+            }
           />
         </div>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" className="min-w-[150px] flex-1 sm:flex-initial sm:ml-2 bg-white">
-              <ListFilter className="mr-2 h-4 w-4" />
-              Ordenar
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuLabel>Ordenar por</DropdownMenuLabel>
-            <DropdownMenuRadioGroup value={sortOption} onValueChange={(value) => setSortOption(value as InventorySortOption)}>
-              <DropdownMenuRadioItem value="stock_status_name_asc">Stock Bajo (luego Nombre A-Z)</DropdownMenuRadioItem>
-              <DropdownMenuRadioItem value="type_asc">Tipo (Producto, luego Servicio)</DropdownMenuRadioItem>
-              <DropdownMenuRadioItem value="name_asc">Nombre (A-Z)</DropdownMenuRadioItem>
-              <DropdownMenuRadioItem value="name_desc">Nombre (Z-A)</DropdownMenuRadioItem>
-              <DropdownMenuRadioItem value="sku_asc">Código (A-Z)</DropdownMenuRadioItem>
-              <DropdownMenuRadioItem value="sku_desc">Código (Z-A)</DropdownMenuRadioItem>
-              <DropdownMenuRadioItem value="quantity_asc">Cantidad (Menor a Mayor, solo productos)</DropdownMenuRadioItem>
-              <DropdownMenuRadioItem value="quantity_desc">Cantidad (Mayor a Menor, solo productos)</DropdownMenuRadioItem>
-              <DropdownMenuRadioItem value="price_asc">Precio Venta (Menor a Mayor)</DropdownMenuRadioItem>
-              <DropdownMenuRadioItem value="price_desc">Precio Venta (Mayor a Menor)</DropdownMenuRadioItem>
-            </DropdownMenuRadioGroup>
-          </DropdownMenuContent>
-        </DropdownMenu>
-        <Select value={selectedCategoryFilter} onValueChange={setSelectedCategoryFilter}>
-          <SelectTrigger className="w-full sm:w-auto min-w-[200px] flex-1 sm:flex-initial bg-white">
-            <SelectValue placeholder="Filtrar por categoría" />
-          </SelectTrigger>
-          <SelectContent>
-            {uniqueCategoriesForFilter.map(category => (
-              <SelectItem key={category} value={category}>
-                {category === "all" ? "Todas las categorías" : category}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+
+        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:flex-wrap print:hidden">
+          <div className="relative flex-1 min-w-[200px] sm:min-w-[300px]">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              type="search"
+              placeholder="Buscar por código o nombre..."
+              className="w-full rounded-lg bg-white pl-8"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="min-w-[150px] flex-1 sm:flex-initial sm:ml-2 bg-white">
+                <ListFilter className="mr-2 h-4 w-4" />
+                Ordenar
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuLabel>Ordenar por</DropdownMenuLabel>
+              <DropdownMenuRadioGroup value={sortOption} onValueChange={(value) => setSortOption(value as InventorySortOption)}>
+                <DropdownMenuRadioItem value="stock_status_name_asc">Stock Bajo (luego Nombre A-Z)</DropdownMenuRadioItem>
+                <DropdownMenuRadioItem value="type_asc">Tipo (Producto, luego Servicio)</DropdownMenuRadioItem>
+                <DropdownMenuRadioItem value="name_asc">Nombre (A-Z)</DropdownMenuRadioItem>
+                <DropdownMenuRadioItem value="name_desc">Nombre (Z-A)</DropdownMenuRadioItem>
+                <DropdownMenuRadioItem value="sku_asc">Código (A-Z)</DropdownMenuRadioItem>
+                <DropdownMenuRadioItem value="sku_desc">Código (Z-A)</DropdownMenuRadioItem>
+                <DropdownMenuRadioItem value="quantity_asc">Cantidad (Menor a Mayor, solo productos)</DropdownMenuRadioItem>
+                <DropdownMenuRadioItem value="quantity_desc">Cantidad (Mayor a Menor, solo productos)</DropdownMenuRadioItem>
+                <DropdownMenuRadioItem value="price_asc">Precio Venta (Menor a Mayor)</DropdownMenuRadioItem>
+                <DropdownMenuRadioItem value="price_desc">Precio Venta (Mayor a Menor)</DropdownMenuRadioItem>
+              </DropdownMenuRadioGroup>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <Select value={selectedCategoryFilter} onValueChange={setSelectedCategoryFilter}>
+            <SelectTrigger className="w-full sm:w-auto min-w-[200px] flex-1 sm:flex-initial bg-white">
+              <SelectValue placeholder="Filtrar por categoría" />
+            </SelectTrigger>
+            <SelectContent>
+              {uniqueCategoriesForFilter.map(category => (
+                <SelectItem key={category} value={category}>
+                  {category === "all" ? "Todas las categorías" : category}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <InventoryTable items={filteredAndSortedInventoryItems} />
+
+        <div className="print:hidden">
+          <InventoryItemDialog
+            open={isNewItemDialogOpen}
+            onOpenChange={setIsNewItemDialogOpen}
+            item={isCreatingItemForPurchaseFlow ? { sku: searchTermForNewItemPurchase, name: searchTermForNewItemPurchase, isService: false } : null}
+            onSave={handleSaveNewItem}
+            categories={placeholderCategories} 
+            suppliers={placeholderSuppliers}
+          />
+
+          <PurchaseItemSelectionDialog
+            open={isPurchaseItemSelectionDialogOpen}
+            onOpenChange={setIsPurchaseItemSelectionDialogOpen}
+            inventoryItems={inventoryItems}
+            onItemSelected={handleItemSelectedForPurchase}
+            onCreateNew={handleCreateNewItemForPurchase}
+          />
+
+          {selectedItemForPurchase && !selectedItemForPurchase.isService && (
+            <PurchaseDetailsEntryDialog
+              open={isPurchaseDetailsEntryDialogOpen}
+              onOpenChange={setIsPurchaseDetailsEntryDialogOpen}
+              item={selectedItemForPurchase}
+              onSave={handleSavePurchaseDetails}
+              onClose={() => {
+                setIsPurchaseDetailsEntryDialogOpen(false);
+                setSelectedItemForPurchase(null);
+              }}
+            />
+          )}
+        </div>
       </div>
-
-      <InventoryTable items={filteredAndSortedInventoryItems} />
-
-      <InventoryItemDialog
-        open={isNewItemDialogOpen}
-        onOpenChange={setIsNewItemDialogOpen}
-        item={isCreatingItemForPurchaseFlow ? { sku: searchTermForNewItemPurchase, name: searchTermForNewItemPurchase, isService: false } : null}
-        onSave={handleSaveNewItem}
-        categories={placeholderCategories} 
-        suppliers={placeholderSuppliers}
-      />
-
-      <PurchaseItemSelectionDialog
-        open={isPurchaseItemSelectionDialogOpen}
-        onOpenChange={setIsPurchaseItemSelectionDialogOpen}
-        inventoryItems={inventoryItems}
-        onItemSelected={handleItemSelectedForPurchase}
-        onCreateNew={handleCreateNewItemForPurchase}
-      />
-
-      {selectedItemForPurchase && !selectedItemForPurchase.isService && (
-        <PurchaseDetailsEntryDialog
-          open={isPurchaseDetailsEntryDialogOpen}
-          onOpenChange={setIsPurchaseDetailsEntryDialogOpen}
-          item={selectedItemForPurchase}
-          onSave={handleSavePurchaseDetails}
-          onClose={() => {
-            setIsPurchaseDetailsEntryDialogOpen(false);
-            setSelectedItemForPurchase(null);
-          }}
-        />
-      )}
     </>
   );
 }
