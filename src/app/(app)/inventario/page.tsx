@@ -333,11 +333,11 @@ export default function InventarioPage() {
             description="Administra productos, servicios, niveles de stock y registra compras."
             actions={
               <div className="flex flex-wrap gap-2">
-                <Button onClick={handlePrintInventory} variant="outline">
+                <Button onClick={handlePrintInventory} variant="outline" className="bg-card">
                   <Printer className="mr-2 h-4 w-4" />
                   Imprimir Lista
                 </Button>
-                <Button onClick={handleOpenPurchaseItemSelection} variant="secondary">
+                <Button onClick={handleOpenPurchaseItemSelection} variant="outline" className="bg-input text-foreground">
                   <ShoppingCartIcon className="mr-2 h-4 w-4" />
                   Ingresar Compra
                 </Button>
