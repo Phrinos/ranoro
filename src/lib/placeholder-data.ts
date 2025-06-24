@@ -340,7 +340,6 @@ export const calculateSaleProfit = (
 ): number => {
   if (!sale?.items?.length) return 0;
 
-  // Mapa de inventario para búsqueda O(1)
   const inventoryMap = new Map<string, InventoryItem>(
     inventory.map((i) => [i.id, i]),
   );
@@ -351,29 +350,24 @@ export const calculateSaleProfit = (
     const inventoryItem = inventoryMap.get(saleItem.inventoryItemId);
 
     if (!inventoryItem) {
-      console.warn(`[calculateSaleProfit] Inventory item with ID ${saleItem.inventoryItemId} not found for sale ${sale.id}. Skipping.`);
+      console.warn(`[ProfitCalc] Inventory item ID ${saleItem.inventoryItemId} not found for sale ${sale.id}.`);
       continue;
     }
 
+    // Explicitly convert and validate numbers
     const quantitySold = Number(String(saleItem.quantity ?? '0').replace(',', '.'));
-    const sellingPriceWithTax = Number(
-      String(saleItem.unitPrice ?? 0).replace(',', '.'),
-    );
-    const costPricePerUnit = Number(
-      String(inventoryItem.unitPrice ?? 0).replace(',', '.'),
-    );
-    
-    if (
-      !isFinite(quantitySold) || quantitySold <= 0 ||
-      !isFinite(sellingPriceWithTax) ||
-      !isFinite(costPricePerUnit)
-    ) {
-      console.warn(`[calculateSaleProfit] Invalid numeric data for sale item ${saleItem.itemName} in sale ${sale.id}. Skipping.`);
+    const sellingPriceWithTax = Number(String(saleItem.unitPrice ?? '0').replace(',', '.'));
+    const costPricePerUnit = Number(String(inventoryItem.unitPrice ?? '0').replace(',', '.'));
+
+    if (!isFinite(quantitySold) || quantitySold <= 0 || !isFinite(sellingPriceWithTax)) {
+      console.warn(`[ProfitCalc] Invalid numeric data for sale item ${saleItem.itemName} in sale ${sale.id}. Skipping.`);
       continue;
     }
 
+    // If cost is not defined or invalid, treat it as 0 but don't stop the whole calculation.
+    const effectiveCostPrice = (inventoryItem.isService || !isFinite(costPricePerUnit)) ? 0 : costPricePerUnit;
+    
     const sellingPriceBeforeTax = sellingPriceWithTax / (1 + ivaRate);
-    const effectiveCostPrice = inventoryItem.isService ? 0 : costPricePerUnit;
     const profitPerUnit = sellingPriceBeforeTax - effectiveCostPrice;
     const profitForItem = profitPerUnit * quantitySold;
     
@@ -384,6 +378,7 @@ export const calculateSaleProfit = (
   
   return isFinite(totalProfit) ? totalProfit : 0;
 };
+
 
 /**
  * Crea un ServiceRecord listo para imprimir sustituyendo el unitPrice de supplies

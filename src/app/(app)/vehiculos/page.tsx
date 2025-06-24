@@ -5,10 +5,10 @@ import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { PlusCircle, Search, CalendarX, AlertTriangle, Archive, ListFilter, Filter, Car } from "lucide-react";
+import { PlusCircle, Search, CalendarX, AlertTriangle, Archive, ListFilter, Filter, Car, Loader2 } from "lucide-react";
 import { VehiclesTable } from "./components/vehicles-table";
 import { VehicleDialog } from "./components/vehicle-dialog";
-import { placeholderVehicles, placeholderServiceRecords, persistToFirestore } from "@/lib/placeholder-data";
+import { placeholderVehicles, placeholderServiceRecords, persistToFirestore, hydrateReady } from "@/lib/placeholder-data";
 import type { Vehicle } from "@/types";
 import type { VehicleFormValues } from "./components/vehicle-form";
 import { useToast } from "@/hooks/use-toast";
@@ -20,15 +20,21 @@ export default function VehiculosPage() {
   const { toast } = useToast();
   // Using a dummy state `version` to force re-renders when the underlying data source is mutated.
   const [version, setVersion] = useState(0);
+  const [hydrated, setHydrated] = useState(false);
   const [isNewVehicleDialogOpen, setIsNewVehicleDialogOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [activityFilter, setActivityFilter] = useState("all");
   const [sortOption, setSortOption] = useState<string>("date_asc");
   const [activityCounts, setActivityCounts] = useState({ inactive6MonthsCount: 0, inactive12MonthsCount: 0 });
 
+  useEffect(() => {
+    hydrateReady.then(() => setHydrated(true));
+  }, []);
+
   // This useMemo now reads directly from the imported placeholder data.
   // It re-runs whenever `version` changes, ensuring the UI is always in sync.
   const vehiclesWithLastService = useMemo(() => {
+    if (!hydrated) return [];
     return placeholderVehicles.map(v => {
       const history = placeholderServiceRecords.filter(s => s.vehicleId === v.id);
       let lastServiceDate: string | undefined = undefined;
@@ -44,11 +50,12 @@ export default function VehiculosPage() {
         lastServiceDate: lastServiceDate,
       };
     });
-  }, [version]);
+  }, [version, hydrated]);
 
   const totalVehiclesCount = useMemo(() => vehiclesWithLastService.length, [vehiclesWithLastService]);
 
   useEffect(() => {
+    if (!hydrated) return;
     const now = new Date();
     const sixMonthsAgo = subMonths(now, 6);
     const twelveMonthsAgo = subMonths(now, 12);
@@ -71,7 +78,7 @@ export default function VehiculosPage() {
       }
     });
     setActivityCounts({ inactive6MonthsCount: count6, inactive12MonthsCount: count12 });
-  }, [vehiclesWithLastService]);
+  }, [vehiclesWithLastService, hydrated]);
 
 
   const handleSaveVehicle = async (data: VehicleFormValues) => {
@@ -165,6 +172,14 @@ export default function VehiculosPage() {
     });
   };
 
+  if (!hydrated) {
+    return (
+      <div className="flex h-[50vh] w-full items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin" />
+        <p className="text-lg ml-4">Cargando vehículos...</p>
+      </div>
+    );
+  }
 
   return (
     <>
