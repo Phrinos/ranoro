@@ -25,7 +25,7 @@ import { cn } from "@/lib/utils";
 import { format, parseISO, setHours, setMinutes, isValid, startOfDay } from "date-fns";
 import { es } from 'date-fns/locale';
 import type { ServiceRecord, Vehicle, Technician, InventoryItem, ServiceSupply, QuoteRecord, InventoryCategory, Supplier, User } from "@/types";
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo, useCallback } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { VehicleDialog } from "../../vehiculos/components/vehicle-dialog";
 import type { VehicleFormValues } from "../../vehiculos/components/vehicle-form";
@@ -373,20 +373,25 @@ export function ServiceForm({
 
   const handleFormSubmit = async (values: ServiceFormValues) => {
     if (isReadOnly) {
-      onClose();
-      return;
+        onClose();
+        return;
+    }
+
+    // This is the most important validation. A vehicle MUST be selected.
+    if (!values.vehicleId) {
+        form.setError("vehicleLicensePlateSearch", { type: "manual", message: "Debe buscar y seleccionar un vehículo, o registrar uno nuevo." });
+        toast({
+            title: "Vehículo no seleccionado",
+            description: "Por favor, busque un vehículo por su placa y selecciónelo de la lista.",
+            variant: "destructive"
+        });
+        return;
     }
 
     const isValidForm = await form.trigger();
-    if (!isValidForm || !values.vehicleId || !values.serviceDate ) {
-        if (!values.vehicleId) {
-            form.setError("vehicleId", { type: "manual", message: "Debe seleccionar o registrar un vehículo." });
-        }
-        if (!values.serviceDate) {
-            form.setError("serviceDate", { type: "manual", message: "La fecha es obligatoria." });
-        }
-      toast({ title: "Formulario Incompleto", description: "Por favor, revise los campos marcados.", variant: "destructive"});
-      return;
+    if (!isValidForm) {
+        toast({ title: "Formulario Incompleto", description: "Por favor, revise los campos marcados en rojo.", variant: "destructive"});
+        return;
     }
 
     const finalTotalCost = values.totalServicePrice || 0;
@@ -398,7 +403,7 @@ export function ServiceForm({
         id: initialDataService?.id || `SER${defaultServiceRecords.length + 1}`,
         vehicleId: values.vehicleId!,
         vehicleIdentifier: selectedVehicle?.licensePlate || values.vehicleLicensePlateSearch,
-        serviceDate: values.serviceDate.toISOString(),
+        serviceDate: values.serviceDate!.toISOString(),
         deliveryDateTime: values.deliveryDateTime ? values.deliveryDateTime.toISOString() : undefined,
         description: values.description,
         technicianId: values.technicianId!,
@@ -428,7 +433,7 @@ export function ServiceForm({
       const quoteData: QuoteRecord = {
         id: (initialDataQuote as QuoteRecord)?.id || `COT${placeholderQuotes.length + 1}`,
         publicId: (initialDataQuote as QuoteRecord)?.publicId || `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 9)}`,
-        quoteDate: values.serviceDate.toISOString(),
+        quoteDate: values.serviceDate!.toISOString(),
         vehicleId: values.vehicleId,
         vehicleIdentifier: selectedVehicle?.licensePlate || values.vehicleLicensePlateSearch,
         description: values.description,
@@ -452,7 +457,7 @@ export function ServiceForm({
     }
   };
   
-  const handlePrintSheet = () => {
+  const handlePrintSheet = useCallback(() => {
     const formValues = form.getValues();
     const serviceDataForSheet: ServiceRecord = {
       id: formValues.id || 'N/A',
@@ -469,9 +474,10 @@ export function ServiceForm({
       customerItems: formValues.customerItems,
       serviceAdvisorName: currentUser?.name || 'N/A',
     };
-    setServiceForSheet(serviceDataForSheet);
+    const vehicleForSheet = localVehicles.find(v => v.id === formValues.vehicleId);
+    setServiceForSheet({ ...serviceDataForSheet, vehicleIdentifier: vehicleForSheet?.licensePlate });
     setIsSheetOpen(true);
-  };
+  }, [form, currentUser, localVehicles]);
 
 
   const handleTimeChange = (timeString: string, dateField: "serviceDate" | "deliveryDateTime") => {
@@ -1397,7 +1403,7 @@ export function ServiceForm({
               <Button type="button" variant="outline" onClick={onClose}>
                 Cancelar
               </Button>
-              <Button type="submit" disabled={form.formState.isSubmitting || (!form.getValues('vehicleId') && !initialDataService) }>
+              <Button type="submit" disabled={form.formState.isSubmitting || (!form.getValues('vehicleId') && !initialData?.id)}>
                 {form.formState.isSubmitting ? "Guardando..." : submitButtonText}
               </Button>
             </>
