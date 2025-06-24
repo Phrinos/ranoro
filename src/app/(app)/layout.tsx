@@ -60,12 +60,28 @@ export default function AppLayout({
           }
 
           if (appUser) {
-            // User exists in our DB, proceed.
-            localStorage.setItem(AUTH_USER_LOCALSTORAGE_KEY, JSON.stringify(appUser));
-            if (needsPersistence) {
-                // Persist the ID update in the background
-                persistToFirestore().catch(err => console.error("Failed to persist user ID update:", err));
+            // User exists in our DB. `appUser` is a reference to the object in `placeholderUsers`.
+            
+            // Sync some info from Firebase Auth if it exists and differs
+            if (user.displayName && appUser.name !== user.displayName) {
+                console.log(`Syncing user name for ${appUser.email} from Firebase Auth.`);
+                appUser.name = user.displayName;
+                needsPersistence = true;
             }
+            if (user.phoneNumber && appUser.phone !== user.phoneNumber) {
+                console.log(`Syncing user phone for ${appUser.email} from Firebase Auth.`);
+                appUser.phone = user.phoneNumber;
+                needsPersistence = true;
+            }
+            
+            // Save the potentially updated user object to local storage for the current session
+            localStorage.setItem(AUTH_USER_LOCALSTORAGE_KEY, JSON.stringify(appUser));
+            
+            if (needsPersistence) {
+                // Persist the changes to the global placeholderUsers array back to Firestore
+                persistToFirestore().catch(err => console.error("Failed to persist user data update:", err));
+            }
+
             setIsHydrating(false); 
           } else {
             // User exists in Firebase Auth, but not in our app's database.
