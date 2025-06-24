@@ -33,6 +33,7 @@ export default function PublicServiceSheetPage() {
 
   useEffect(() => {
     if (!publicId) {
+      setError("No se proporcionó un ID de servicio.");
       setService(null);
       return;
     }
@@ -57,25 +58,18 @@ export default function PublicServiceSheetPage() {
           setWorkshopInfo(serviceData.workshopInfo || null);
         } else {
           console.log("No such public service document!");
+          setError(`La hoja de servicio con ID ${publicId} no se encontró o ha expirado.`);
           setService(null);
-          setVehicle(null);
-          setWorkshopInfo(null);
         }
-      } catch (error) {
-        console.error("Error fetching public service sheet:", error);
-        toast({
-          title: "Error de Carga",
-          description: "No se pudo cargar la hoja de servicio.",
-          variant: "destructive"
-        });
+      } catch (err) {
+        console.error("Error fetching public service sheet:", err);
+        setError("Ocurrió un error al intentar cargar la hoja de servicio. Por favor, intente más tarde.");
         setService(null);
-        setVehicle(null);
-        setWorkshopInfo(null);
       }
     };
 
     fetchPublicService();
-  }, [publicId, toast]);
+  }, [publicId]);
 
   const handleDownloadPDF = () => {
     if (!serviceSheetRef.current || !service) return;
@@ -138,11 +132,7 @@ export default function PublicServiceSheetPage() {
             <CardTitle className="text-2xl font-bold">Hoja de Servicio no Válida</CardTitle>
           </CardHeader>
           <CardContent>
-             {error ? (
-              <p className="text-muted-foreground">{error}</p>
-            ) : (
-              <p className="text-muted-foreground">La hoja de servicio que busca no se encontró o ha expirado.</p>
-            )}
+            <p className="text-muted-foreground">{error}</p>
             <p className="text-muted-foreground mt-2">Por favor, contacte al taller para un nuevo enlace.</p>
             <Button asChild className="mt-6">
               <Link href="/login">Volver al Inicio</Link>

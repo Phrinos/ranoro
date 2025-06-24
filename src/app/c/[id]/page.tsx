@@ -28,14 +28,15 @@ export default function PublicQuoteViewPage() {
 
   useEffect(() => {
     if (!quoteId) {
-      setQuote(null); // No ID, so no quote
+      setError("No se proporcionó un ID de cotización.");
+      setQuote(null);
       return;
     }
 
     if (!db) {
         console.error("Firebase (db) no está configurado. No se puede cargar la cotización pública.");
         setError("La conexión con la base de datos no está configurada. Este enlace no funcionará.");
-        setQuote(null); // Marcar como no encontrado si DB no está disponible
+        setQuote(null);
         return;
     }
 
@@ -52,25 +53,18 @@ export default function PublicQuoteViewPage() {
           setWorkshopInfo(quoteData.workshopInfo || null);
         } else {
           console.log("No such public quote document!");
+          setError(`La cotización con ID ${quoteId} no se encontró o ha expirado.`);
           setQuote(null);
-          setVehicle(null);
-          setWorkshopInfo(null);
         }
-      } catch (error) {
-        console.error("Error fetching public quote:", error);
-        toast({
-          title: "Error de Carga",
-          description: "No se pudo cargar la cotización. Intente más tarde.",
-          variant: "destructive"
-        });
+      } catch (err) {
+        console.error("Error fetching public quote:", err);
+        setError("Ocurrió un error al intentar cargar la cotización. Por favor, intente más tarde.");
         setQuote(null);
-        setVehicle(null);
-        setWorkshopInfo(null);
       }
     };
 
     fetchPublicQuote();
-  }, [quoteId, toast]);
+  }, [quoteId]);
 
   const handleDownloadPDF = () => {
     if (!quoteContentRef.current || !quote) return;
@@ -119,11 +113,7 @@ export default function PublicQuoteViewPage() {
             <CardTitle className="text-2xl font-bold">Cotización no Válida</CardTitle>
           </CardHeader>
           <CardContent>
-            {error ? (
-              <p className="text-muted-foreground">{error}</p>
-            ) : (
-              <p className="text-muted-foreground">La cotización con ID <span className="font-mono">{quoteId}</span> no se encontró o ha expirado.</p>
-            )}
+            <p className="text-muted-foreground">{error}</p>
             <p className="text-muted-foreground mt-2">Por favor, contacte al taller para una nueva cotización.</p>
             <Button asChild className="mt-6">
               <Link href="/login">Volver al Inicio</Link>
