@@ -128,6 +128,7 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
               <div>
                   <div className="border-t border-black mt-8 pt-1">
                       <p className="font-bold">FIRMA DE AUTORIZACIÓN CLIENTE</p>
+                      <p className="text-xs pt-2 font-semibold">{vehicle?.ownerName || '________________________________'}</p>
                   </div>
               </div>
                <div>
@@ -141,6 +142,7 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
                <div className="border-t border-black inline-block px-12 pt-1 font-bold text-base">
                     ACEPTO CONFORME EL VEHÍCULO
                </div>
+               <p className="text-xs pt-2 font-semibold">{vehicle?.ownerName || '________________________________'}</p>
            </div>
         </footer>
       </div>
