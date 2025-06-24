@@ -1,3 +1,4 @@
+
 "use client";
 
 import { PageHeader } from "@/components/page-header";
@@ -7,12 +8,12 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Search, ListFilter, CalendarIcon as CalendarDateIcon, DollarSign, TrendingUp, Car as CarIcon, Wrench as WrenchIcon, PlusCircle, Printer } from "lucide-react";
+import { Search, ListFilter, CalendarIcon as CalendarDateIcon, DollarSign, TrendingUp, Car as CarIcon, Wrench as WrenchIcon, PlusCircle, Printer, MessageSquare } from "lucide-react";
 import { ServicesTable } from "../components/services-table"; 
 import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
 import { TicketContent } from '@/components/ticket-content';
 import { placeholderServiceRecords, placeholderVehicles, placeholderTechnicians, placeholderInventory, persistToFirestore, enrichServiceForPrinting } from "@/lib/placeholder-data";
-import type { ServiceRecord, Vehicle, Technician, InventoryItem, QuoteRecord } from "@/types";
+import type { ServiceRecord, Vehicle, Technician, InventoryItem, QuoteRecord, WorkshopInfo } from "@/types";
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { format, parseISO, compareAsc, compareDesc, isWithinInterval, isValid, startOfDay, endOfDay } from "date-fns";
@@ -22,6 +23,8 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { ServiceSheetContent } from '../components/service-sheet-content';
+import { db } from '@root/lib/firebaseClient.js';
+import { doc, setDoc } from 'firebase/firestore';
 
 type ServiceSortOption = 
   | "serviceDate_desc" | "serviceDate_asc"
@@ -174,7 +177,7 @@ export default function HistorialServiciosPage() {
     if (pIndex !== -1) {
         placeholderServiceRecords[pIndex] = data;
     }
-    await persistToFirestore();
+    await persistToFirestore(['serviceRecords']);
     
     toast({
       title: "Servicio Actualizado",
@@ -197,7 +200,7 @@ export default function HistorialServiciosPage() {
     if (pIndex !== -1) {
         placeholderServiceRecords.splice(pIndex, 1);
     }
-    await persistToFirestore();
+    await persistToFirestore(['serviceRecords']);
 
     toast({
       title: "Servicio Eliminado",
@@ -224,6 +227,53 @@ export default function HistorialServiciosPage() {
     setServiceForSheet(service);
     setIsSheetOpen(true);
   }, []);
+
+  const handleShareService = useCallback(async (service: ServiceRecord | null) => {
+    if (!service) return;
+    const vehicleForAction = vehicles.find(v => v.id === service.vehicleId);
+    if (!vehicleForAction) {
+        toast({ title: "Faltan Datos", description: "No se encontró el vehículo asociado.", variant: "destructive" });
+        return;
+    }
+    
+    let currentService = service;
+
+    if (!currentService.publicId) {
+        currentService.publicId = `srv_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 9)}`;
+    }
+
+    const serviceIndex = placeholderServiceRecords.findIndex(s => s.id === currentService.id);
+    if (serviceIndex !== -1) {
+        placeholderServiceRecords[serviceIndex] = currentService;
+        
+        if (db) {
+            const publicServiceData = {
+                ...currentService,
+                vehicle: { ...vehicleForAction },
+            };
+            try {
+                await setDoc(doc(db, "publicServices", currentService.publicId), publicServiceData, { merge: true });
+            } catch (e) {
+                console.error("Failed to update public service:", e);
+            }
+        }
+        await persistToFirestore(['serviceRecords']);
+    }
+
+    const shareUrl = `${window.location.origin}/s/${currentService.publicId}`;
+    const workshopName = (currentService.workshopInfo?.name) || 'RANORO';
+    const message = `Hola ${vehicleForAction.ownerName || 'Cliente'}, aquí está la hoja de servicio ${currentService.id} de nuestro taller para su vehículo ${vehicleForAction.make} ${vehicleForAction.model} ${vehicleForAction.year}. Puede consultarla aquí: ${shareUrl}`;
+
+    navigator.clipboard.writeText(message).then(() => {
+        toast({
+            title: "Mensaje Copiado",
+            description: "El mensaje para WhatsApp ha sido copiado a tu portapapeles.",
+        });
+    }).catch(err => {
+        console.error("Could not copy text: ", err);
+        toast({ title: "Error al Copiar", variant: "destructive" });
+    });
+  }, [vehicles, toast]);
 
 
   return (
@@ -389,9 +439,14 @@ export default function HistorialServiciosPage() {
           onDialogClose={() => setServiceForSheet(null)}
           dialogContentClassName="printable-quote-dialog"
           footerActions={
+            <>
+              <Button variant="outline" onClick={() => handleShareService(serviceForSheet)}>
+                  <MessageSquare className="mr-2 h-4 w-4" /> Copiar para WhatsApp
+              </Button>
               <Button onClick={() => window.print()}>
                   <Printer className="mr-2 h-4 w-4" /> Imprimir Hoja
               </Button>
+            </>
           }
       >
           {serviceForSheet && <ServiceSheetContent service={serviceForSheet} vehicle={vehicles.find(v => v.id === serviceForSheet.vehicleId)} />}

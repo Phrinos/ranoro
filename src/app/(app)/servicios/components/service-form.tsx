@@ -474,7 +474,7 @@ export function ServiceForm({
     } else { // mode === 'quote'
       const quoteData: QuoteRecord = {
         id: (initialDataQuote as QuoteRecord)?.id || `COT_${Date.now().toString(36)}`,
-        publicId: (initialDataQuote as QuoteRecord)?.publicId || `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 9)}`,
+        publicId: (initialDataQuote as QuoteRecord)?.publicId || `cot_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 9)}`,
         quoteDate: values.serviceDate!.toISOString(),
         vehicleId: vehicleIdToSave,
         vehicleIdentifier: selectedVehicle?.licensePlate || values.vehicleLicensePlateSearch,
@@ -1453,11 +1453,7 @@ export function ServiceForm({
                 <div className="flex gap-2">
                     <Button type="button" onClick={handlePrintSheet} variant="outline" className="bg-card">
                         <Printer className="mr-2 h-4 w-4" />
-                        Hoja de Servicio
-                    </Button>
-                    <Button type="button" onClick={handleShareServiceSheet} variant="outline" className="bg-card">
-                        <MessageSquare className="mr-2 h-4 w-4" />
-                        Compartir
+                        Ver / Imprimir Hoja de Servicio
                     </Button>
                 </div>
               )}
@@ -1632,9 +1628,14 @@ export function ServiceForm({
         onDialogClose={() => setServiceForSheet(null)}
         dialogContentClassName="printable-quote-dialog"
         footerActions={
+          <>
+            <Button type="button" onClick={handleShareServiceSheet} variant="outline">
+              <MessageSquare className="mr-2 h-4 w-4" /> Copiar para WhatsApp
+            </Button>
             <Button onClick={() => window.print()}>
                 <Printer className="mr-2 h-4 w-4" /> Imprimir Hoja
             </Button>
+          </>
         }
     >
         {serviceForSheet && (
