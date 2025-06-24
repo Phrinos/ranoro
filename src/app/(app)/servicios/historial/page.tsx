@@ -13,7 +13,7 @@ import { ServicesTable } from "../components/services-table";
 import { ServiceDialog } from "../components/service-dialog"; 
 import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
 import { TicketContent } from '@/components/ticket-content';
-import { placeholderServiceRecords, placeholderVehicles, placeholderTechnicians, placeholderInventory, persistToFirestore } from "@/lib/placeholder-data";
+import { placeholderServiceRecords, placeholderVehicles, placeholderTechnicians, placeholderInventory, persistToFirestore, enrichServiceForPrinting } from "@/lib/placeholder-data";
 import type { ServiceRecord, Vehicle, Technician, InventoryItem, QuoteRecord } from "@/types";
 import { useState, useEffect, useMemo, useRef } from "react";
 import { useToast } from "@/hooks/use-toast";
@@ -190,7 +190,8 @@ export default function HistorialServiciosPage() {
     });
 
     if (updatedService.status === 'Completado') {
-      setCurrentServiceForTicket(updatedService);
+      const serviceForTicket = enrichServiceForPrinting(updatedService, inventoryItems);
+      setCurrentServiceForTicket(serviceForTicket);
       setCurrentVehicleForTicket(vehicles.find(v => v.id === updatedService.vehicleId) || null);
       setCurrentTechnicianForTicket(technicians.find(t => t.id === updatedService.technicianId) || null);
       setShowPrintTicketDialog(true);

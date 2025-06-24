@@ -2,7 +2,7 @@
 "use client";
 
 import { useParams, useRouter } from 'next/navigation';
-import { placeholderVehicles, placeholderServiceRecords, placeholderTechnicians, placeholderInventory, persistToFirestore } from '@/lib/placeholder-data';
+import { placeholderVehicles, placeholderServiceRecords, placeholderTechnicians, placeholderInventory, persistToFirestore, enrichServiceForPrinting } from '@/lib/placeholder-data';
 import type { Vehicle, ServiceRecord, Technician, QuoteRecord, InventoryItem } from '@/types';
 import { PageHeader } from '@/components/page-header';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -109,7 +109,8 @@ export default function VehicleDetailPage() {
     });
 
     if (updatedService.status === 'Completado') {
-      setCurrentServiceForTicket(updatedService);
+      const serviceForTicket = enrichServiceForPrinting(updatedService, placeholderInventory);
+      setCurrentServiceForTicket(serviceForTicket);
       setCurrentTechnicianForTicket(technicians.find(t => t.id === updatedService.technicianId) || null);
       setShowPrintTicketDialog(true);
     }

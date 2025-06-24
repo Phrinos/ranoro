@@ -390,6 +390,7 @@ export default function HistorialCotizacionesPage() {
 
       <QuotesTable 
         quotes={filteredAndSortedQuotes} 
+        vehicles={vehicles}
         onViewQuote={handleViewQuote} 
         onEditQuote={handleEditQuote}
         onGenerateService={handleGenerateService}

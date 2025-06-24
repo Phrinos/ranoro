@@ -8,19 +8,20 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import type { QuoteRecord } from "@/types";
+import type { QuoteRecord, Vehicle } from "@/types";
 import { format, parseISO, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Eye, Edit, Wrench, FileText as FileTextIcon, Calendar as CalendarIcon } from "lucide-react";
 
 interface QuotesTableProps {
   quotes: QuoteRecord[];
+  vehicles: Vehicle[];
   onViewQuote: (quote: QuoteRecord) => void;
   onEditQuote: (quote: QuoteRecord) => void;
   onGenerateService: (quote: QuoteRecord) => void;
 }
 
-export function QuotesTable({ quotes, onViewQuote, onEditQuote, onGenerateService }: QuotesTableProps) {
+export function QuotesTable({ quotes, vehicles, onViewQuote, onEditQuote, onGenerateService }: QuotesTableProps) {
   if (!quotes.length) {
     return <p className="text-muted-foreground text-center py-8">No hay cotizaciones registradas que coincidan con los filtros.</p>;
   }
@@ -40,6 +41,10 @@ export function QuotesTable({ quotes, onViewQuote, onEditQuote, onGenerateServic
   
   const memoizedQuotes = useMemo(() => quotes.map(quote => {
     const quoteDate = quote.quoteDate ? parseISO(quote.quoteDate) : new Date();
+    const vehicle = vehicles.find(v => v.id === quote.vehicleId);
+    const vehicleDisplay = vehicle 
+      ? `${vehicle.licensePlate} - ${vehicle.make} ${vehicle.model} (${vehicle.year})`
+      : quote.vehicleIdentifier || 'N/A';
 
     return {
         ...quote,
@@ -48,8 +53,9 @@ export function QuotesTable({ quotes, onViewQuote, onEditQuote, onGenerateServic
           : 'Fecha Inválida',
         estimatedCostFormatted: formatCurrency(quote.estimatedTotalCost),
         estimatedProfitFormatted: formatCurrency(quote.estimatedProfit),
+        vehicleDisplay,
     }
-  }), [quotes]);
+  }), [quotes, vehicles]);
 
 
   return (
@@ -85,8 +91,8 @@ export function QuotesTable({ quotes, onViewQuote, onEditQuote, onGenerateServic
                   </div>
                   <div className="mt-4 flex items-center gap-4">
                     <div className="flex-grow">
-                      <h4 className="font-semibold text-lg" title={quote.vehicleIdentifier}>
-                        {quote.vehicleIdentifier || 'N/A'}
+                      <h4 className="font-semibold text-lg" title={quote.vehicleDisplay}>
+                        {quote.vehicleDisplay || 'N/A'}
                       </h4>
                       <p className="text-sm text-muted-foreground mt-1 truncate" title={quote.description}>
                         {quote.description}

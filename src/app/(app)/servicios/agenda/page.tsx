@@ -9,7 +9,8 @@ import {
   placeholderVehicles,
   placeholderTechnicians,
   placeholderInventory,
-  persistToFirestore
+  persistToFirestore,
+  enrichServiceForPrinting,
 } from "@/lib/placeholder-data";
 import type { ServiceRecord, Vehicle, Technician, InventoryItem, QuoteRecord } from "@/types";
 import { useState, useEffect, useMemo, useRef } from "react";
@@ -208,7 +209,8 @@ export default function AgendaServiciosPage() {
   };
   
   const handleReprintService = (service: ServiceRecord) => {
-    setCurrentServiceForTicket(service);
+    const serviceForTicket = enrichServiceForPrinting(service, inventoryItemsState);
+    setCurrentServiceForTicket(serviceForTicket);
     setCurrentVehicleForTicket(vehicles.find(v => v.id === service.vehicleId) || null);
     setCurrentTechnicianForTicket(techniciansState.find(t => t.id === service.technicianId) || null);
     setShowPrintTicketDialog(true);

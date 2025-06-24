@@ -277,3 +277,29 @@ export const calculateSaleProfit = (sale: SaleReceipt, inventory: InventoryItem[
       return profit + (sellingPriceSubTotal - costPrice) * saleItem.quantity;
   }, 0);
 };
+
+/**
+ * Creates a new ServiceRecord object with the unitPrice of supplies
+ * replaced by their sellingPrice for printing.
+ * @param service The original service record.
+ * @param inventory The full inventory list to look up selling prices.
+ * @returns A new service record object suitable for printing.
+ */
+export const enrichServiceForPrinting = (service: ServiceRecord, inventory: InventoryItem[]): ServiceRecord => {
+  if (!service || !service.suppliesUsed) return service;
+
+  const enrichedSupplies = service.suppliesUsed.map(supply => {
+    const inventoryItem = inventory.find(item => item.id === supply.supplyId);
+    // The unitPrice for a ticket should be the selling price.
+    // Fallback to the stored unitPrice (cost) if not found, though it should always be found.
+    return {
+      ...supply,
+      unitPrice: inventoryItem?.sellingPrice || supply.unitPrice || 0,
+    };
+  });
+
+  return {
+    ...service,
+    suppliesUsed: enrichedSupplies,
+  };
+};
