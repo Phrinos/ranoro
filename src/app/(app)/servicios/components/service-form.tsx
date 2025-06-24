@@ -453,14 +453,13 @@ export function ServiceForm({
     const finalTaxAmount = finalTotalCost - finalSubTotal;
     
     if (mode === 'service') {
-      let serviceData: ServiceRecord = {
+      const serviceData: Partial<ServiceRecord> = {
         id: initialDataService?.id || `SER_${Date.now().toString(36)}`,
         publicId: values.publicId || `srv_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 9)}`,
         vehicleId: vehicleIdToSave,
         vehicleIdentifier: selectedVehicle?.licensePlate || values.vehicleLicensePlateSearch || 'N/A',
         serviceDate: values.serviceDate!.toISOString(),
-        deliveryDateTime: values.deliveryDateTime ? values.deliveryDateTime.toISOString() : undefined,
-        description: values.description,
+        description: values.description || '',
         technicianId: values.technicianId || '',
         technicianName: technicians.find(t => t.id === values.technicianId)?.name || 'N/A',
         status: values.status || 'Agendado',
@@ -490,8 +489,13 @@ export function ServiceForm({
         deliverySignatureViewed: (initialDataService as ServiceRecord)?.deliverySignatureViewed,
         workshopInfo: workshopInfo as WorkshopInfo,
       };
-      await savePublicDocument('service', serviceData, selectedVehicle);
-      await onSubmit(serviceData);
+
+      if (values.deliveryDateTime) {
+        serviceData.deliveryDateTime = values.deliveryDateTime.toISOString();
+      }
+
+      await savePublicDocument('service', serviceData as ServiceRecord, selectedVehicle);
+      await onSubmit(serviceData as ServiceRecord);
     } else { // mode === 'quote'
       let quoteData: QuoteRecord = {
         id: (initialDataQuote as QuoteRecord)?.id || `COT_${Date.now().toString(36)}`,
@@ -499,7 +503,7 @@ export function ServiceForm({
         quoteDate: values.serviceDate!.toISOString(),
         vehicleId: vehicleIdToSave,
         vehicleIdentifier: selectedVehicle?.licensePlate || values.vehicleLicensePlateSearch || 'N/A',
-        description: values.description,
+        description: values.description || '',
         preparedByTechnicianId: values.technicianId || '',
         preparedByTechnicianName: technicians.find(t => t.id === values.technicianId)?.name || 'N/A',
         suppliesProposed: values.suppliesUsed?.map(s => ({
