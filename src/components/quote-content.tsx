@@ -5,7 +5,6 @@ import type { QuoteRecord, Vehicle, Technician, WorkshopInfo } from '@/types';
 import { format, parseISO, isValid, addDays } from 'date-fns';
 import { es } from 'date-fns/locale';
 import React, { useEffect, useState } from 'react';
-import { placeholderServiceRecords } from '@/lib/placeholder-data';
 
 const initialWorkshopInfo: WorkshopInfo = {
   name: "RANORO",
@@ -30,49 +29,26 @@ const LOCALSTORAGE_KEY = 'workshopTicketInfo';
 export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
   ({ quote, vehicle, preparedByTechnician, workshopInfo: workshopInfoProp }, ref) => {
   const [workshopInfo, setWorkshopInfo] = useState<WorkshopInfo>(initialWorkshopInfo);
-  const [lastServiceDisplay, setLastServiceDisplay] = useState<string | null>(null);
 
   useEffect(() => {
-    // Prioritize the prop if it exists (from public page or explicit pass)
     if (workshopInfoProp) {
       setWorkshopInfo({ ...initialWorkshopInfo, ...workshopInfoProp });
-    } else { // Fallback for internal app previews where prop is not passed
-      if (typeof window !== 'undefined') {
-        const storedInfo = localStorage.getItem(LOCALSTORAGE_KEY);
-        if (storedInfo) {
-          try {
-            setWorkshopInfo({...initialWorkshopInfo, ...JSON.parse(storedInfo)});
-          } catch (e) {
-            console.error("Failed to parse workshop info from localStorage", e);
-            setWorkshopInfo(initialWorkshopInfo);
-          }
-        } else {
+    } else if (typeof window !== 'undefined') {
+      const storedInfo = localStorage.getItem(LOCALSTORAGE_KEY);
+      if (storedInfo) {
+        try {
+          setWorkshopInfo({...initialWorkshopInfo, ...JSON.parse(storedInfo)});
+        } catch (e) {
+          console.error("Failed to parse workshop info from localStorage", e);
           setWorkshopInfo(initialWorkshopInfo);
         }
       } else {
         setWorkshopInfo(initialWorkshopInfo);
       }
+    } else {
+      setWorkshopInfo(initialWorkshopInfo);
     }
   }, [workshopInfoProp]);
-  
-  useEffect(() => {
-    if (vehicle) {
-        const vehicleServices = placeholderServiceRecords
-            .filter(s => s.vehicleId === vehicle.id)
-            .sort((a, b) => new Date(b.serviceDate).getTime() - new Date(a.serviceDate).getTime());
-        
-        if (vehicleServices.length > 0) {
-            const lastService = vehicleServices[0];
-            const formattedDate = format(parseISO(lastService.serviceDate), "dd/MM/yyyy", { locale: es });
-            const km = lastService.mileage ? ` - ${lastService.mileage.toLocaleString('es-ES')}km` : '';
-            setLastServiceDisplay(`${lastService.description} - ${formattedDate}${km}`);
-        } else {
-            setLastServiceDisplay("Sin historial de servicios.");
-        }
-    } else {
-        setLastServiceDisplay(null);
-    }
-  }, [vehicle]);
 
   const now = new Date();
   const formattedPrintDate = format(now, "dd 'de' MMMM 'de' yyyy, HH:mm:ss", { locale: es });
@@ -142,11 +118,6 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
                   {quote.mileage !== undefined && (
                       <div>
                           Kilometraje: <span className="font-bold">{quote.mileage.toLocaleString('es-ES')} km</span>
-                      </div>
-                  )}
-                  {lastServiceDisplay && (
-                       <div>
-                          Último servicio: <span className="font-bold">{lastServiceDisplay}</span>
                       </div>
                   )}
               </div>
