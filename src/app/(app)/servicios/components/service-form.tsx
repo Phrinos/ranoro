@@ -24,7 +24,7 @@ import { CalendarIcon, PlusCircle, Search, Trash2, AlertCircle, Car as CarIcon, 
 import { cn } from "@/lib/utils";
 import { format, parseISO, setHours, setMinutes, isValid, startOfDay } from "date-fns";
 import { es } from 'date-fns/locale';
-import type { ServiceRecord, Vehicle, Technician, InventoryItem, ServiceSupply, QuoteRecord, InventoryCategory, Supplier, User } from "@/types";
+import type { ServiceRecord, Vehicle, Technician, InventoryItem, ServiceSupply, QuoteRecord, InventoryCategory, Supplier, User, WorkshopInfo } from "@/types";
 import React, { useEffect, useState, useMemo, useCallback } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { VehicleDialog } from "../../vehiculos/components/vehicle-dialog";
@@ -150,6 +150,7 @@ export function ServiceForm({
 
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [currentInventoryItems, setCurrentInventoryItems] = useState<InventoryItem[]>(inventoryItemsProp);
+  const [workshopInfo, setWorkshopInfo] = useState<WorkshopInfo | {}>({});
 
   const [isAddSupplyDialogOpen, setIsAddSupplyDialogOpen] = useState(false);
   const [addSupplySearchTerm, setAddSupplySearchTerm] = useState('');
@@ -184,7 +185,7 @@ export function ServiceForm({
         deliveryDateTime: undefined,
         vehicleConditions: (initialData as ServiceRecord)?.vehicleConditions || "",
         fuelLevel: (initialData as ServiceRecord)?.fuelLevel || undefined,
-        customerItems: (initialData as ServiceRecord)?.customerItems || "",
+        customerItems: (initialData as ServiceRecord)?.customerItems || '',
         customerSignatureReception: (initialData as ServiceRecord)?.customerSignatureReception || undefined,
         customerSignatureDelivery: (initialData as ServiceRecord)?.customerSignatureDelivery || undefined,
     }
@@ -200,6 +201,10 @@ export function ServiceForm({
         const authUserString = localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY);
         if (authUserString) {
             setCurrentUser(JSON.parse(authUserString));
+        }
+        const storedWorkshopInfo = localStorage.getItem("workshopTicketInfo");
+        if (storedWorkshopInfo) {
+          setWorkshopInfo(JSON.parse(storedWorkshopInfo));
         }
     }
   }, []);
@@ -354,13 +359,13 @@ export function ServiceForm({
 
   const handleSaveNewVehicle = async (vehicleData: VehicleFormValues) => {
     const newVehicle: Vehicle = {
-      id: `VEH${defaultPlaceholderVehicles.length + 1}`,
+      id: `VEH_${Date.now().toString(36)}`,
       ...vehicleData,
       year: Number(vehicleData.year),
     };
 
     defaultPlaceholderVehicles.push(newVehicle);
-    await persistToFirestore();
+    await persistToFirestore(['vehicles']);
     
     setLocalVehicles(prev => [...prev, newVehicle]);
 
@@ -385,6 +390,7 @@ export function ServiceForm({
         const publicServiceData = {
             ...serviceData,
             vehicle: { ...vehicleData }, // Embed vehicle data for public access
+            workshopInfo: workshopInfo as WorkshopInfo,
         };
         await setDoc(doc(db, "publicServices", serviceData.publicId), publicServiceData);
     } catch (e) {
@@ -428,7 +434,7 @@ export function ServiceForm({
     
     if (mode === 'service') {
       const serviceData: ServiceRecord = {
-        id: initialDataService?.id || `SER${defaultServiceRecords.length + 1}`,
+        id: initialDataService?.id || `SER_${Date.now().toString(36)}`,
         publicId: values.publicId || `srv_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 9)}`,
         vehicleId: vehicleIdToSave,
         vehicleIdentifier: selectedVehicle?.licensePlate || values.vehicleLicensePlateSearch,
@@ -461,12 +467,13 @@ export function ServiceForm({
         customerSignatureDelivery: values.customerSignatureDelivery,
         receptionSignatureViewed: (initialDataService as ServiceRecord)?.receptionSignatureViewed,
         deliverySignatureViewed: (initialDataService as ServiceRecord)?.deliverySignatureViewed,
+        workshopInfo: workshopInfo as WorkshopInfo,
       };
       await savePublicService(serviceData, selectedVehicle);
       await onSubmit(serviceData);
     } else { // mode === 'quote'
       const quoteData: QuoteRecord = {
-        id: (initialDataQuote as QuoteRecord)?.id || `COT${placeholderQuotes.length + 1}`,
+        id: (initialDataQuote as QuoteRecord)?.id || `COT_${Date.now().toString(36)}`,
         publicId: (initialDataQuote as QuoteRecord)?.publicId || `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 9)}`,
         quoteDate: values.serviceDate!.toISOString(),
         vehicleId: vehicleIdToSave,
@@ -487,6 +494,7 @@ export function ServiceForm({
         estimatedProfit: finalTotalCost - totalSuppliesWorkshopCost,
         notes: values.notes,
         mileage: values.mileage,
+        workshopInfo: workshopInfo as WorkshopInfo,
       };
       await onSubmit(quoteData);
     }
@@ -821,7 +829,7 @@ export function ServiceForm({
           unitType: newItemFormValues.unitType || 'units'
       };
       placeholderInventory.push(newInventoryItem);
-      await persistToFirestore();
+      await persistToFirestore(['inventory']);
       
       setCurrentInventoryItems(prev => [...prev, newInventoryItem]);
       if (onInventoryItemCreatedFromService) {
@@ -1630,7 +1638,7 @@ export function ServiceForm({
         }
     >
         {serviceForSheet && (
-            <ServiceSheetContent service={serviceForSheet} vehicle={localVehicles.find(v => v.id === serviceForSheet.vehicleId)} />
+            <ServiceSheetContent service={serviceForSheet} vehicle={localVehicles.find(v => v.id === serviceForSheet.vehicleId)} workshopInfo={workshopInfo as WorkshopInfo} />
         )}
     </PrintTicketDialog>
     </>

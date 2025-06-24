@@ -1,13 +1,13 @@
 
 "use client";
 
-import type { QuoteRecord, Vehicle, Technician } from '@/types';
+import type { QuoteRecord, Vehicle, Technician, WorkshopInfo } from '@/types';
 import { format, parseISO, isValid, addDays } from 'date-fns';
 import { es } from 'date-fns/locale';
 import React, { useEffect, useState } from 'react';
 import { placeholderServiceRecords } from '@/lib/placeholder-data';
 
-const initialWorkshopInfo = {
+const initialWorkshopInfo: WorkshopInfo = {
   name: "RANORO",
   phone: "4491425323",
   addressLine1: "Av. de la Convencion de 1914 No. 1421",
@@ -16,27 +16,27 @@ const initialWorkshopInfo = {
   logoUrl: "/ranoro-logo.png" 
 };
 
-type WorkshopInfoType = typeof initialWorkshopInfo;
 
 interface QuoteContentProps {
   quote: QuoteRecord;
   vehicle?: Vehicle; 
   preparedByTechnician?: Technician; 
-  previewWorkshopInfo?: WorkshopInfoType; 
+  workshopInfo?: WorkshopInfo; 
 }
 
 const IVA_RATE = 0.16; 
 const LOCALSTORAGE_KEY = 'workshopTicketInfo';
 
 export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
-  ({ quote, vehicle, preparedByTechnician, previewWorkshopInfo }, ref) => {
-  const [workshopInfo, setWorkshopInfo] = useState<WorkshopInfoType>(initialWorkshopInfo);
+  ({ quote, vehicle, preparedByTechnician, workshopInfo: workshopInfoProp }, ref) => {
+  const [workshopInfo, setWorkshopInfo] = useState<WorkshopInfo>(initialWorkshopInfo);
   const [lastServiceDisplay, setLastServiceDisplay] = useState<string | null>(null);
 
   useEffect(() => {
-    if (previewWorkshopInfo) {
-      setWorkshopInfo({...initialWorkshopInfo, ...previewWorkshopInfo});
-    } else {
+    // Prioritize the prop if it exists (from public page or explicit pass)
+    if (workshopInfoProp) {
+      setWorkshopInfo({ ...initialWorkshopInfo, ...workshopInfoProp });
+    } else { // Fallback for internal app previews where prop is not passed
       if (typeof window !== 'undefined') {
         const storedInfo = localStorage.getItem(LOCALSTORAGE_KEY);
         if (storedInfo) {
@@ -53,7 +53,7 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
         setWorkshopInfo(initialWorkshopInfo);
       }
     }
-  }, [previewWorkshopInfo]);
+  }, [workshopInfoProp]);
   
   useEffect(() => {
     if (vehicle) {

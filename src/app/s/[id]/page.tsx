@@ -6,7 +6,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { ServiceSheetContent } from '@/app/(app)/servicios/components/service-sheet-content';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import type { ServiceRecord, Vehicle } from '@/types';
+import type { ServiceRecord, Vehicle, WorkshopInfo } from '@/types';
 import { ShieldAlert, Download, Loader2, Signature } from 'lucide-react';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
@@ -26,6 +26,7 @@ export default function PublicServiceSheetPage() {
 
   const [service, setService] = useState<ServiceRecord | null | undefined>(undefined);
   const [vehicle, setVehicle] = useState<Vehicle | null | undefined>(undefined);
+  const [workshopInfo, setWorkshopInfo] = useState<WorkshopInfo | null | undefined>(undefined);
   const [isSigning, setIsSigning] = useState(false);
   const [signatureType, setSignatureType] = useState<'reception' | 'delivery' | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -53,10 +54,12 @@ export default function PublicServiceSheetPage() {
           const serviceData = data as ServiceRecord & { vehicle?: Vehicle };
           setService(serviceData);
           setVehicle(serviceData.vehicle || null);
+          setWorkshopInfo(serviceData.workshopInfo || null);
         } else {
           console.log("No such public service document!");
           setService(null);
           setVehicle(null);
+          setWorkshopInfo(null);
         }
       } catch (error) {
         console.error("Error fetching public service sheet:", error);
@@ -67,6 +70,7 @@ export default function PublicServiceSheetPage() {
         });
         setService(null);
         setVehicle(null);
+        setWorkshopInfo(null);
       }
     };
 
@@ -173,7 +177,12 @@ export default function PublicServiceSheetPage() {
             </CardHeader>
         </Card>
       <div className="bg-white mx-auto shadow-2xl printable-content">
-         <ServiceSheetContent ref={serviceSheetRef} service={service} vehicle={vehicle} />
+         <ServiceSheetContent 
+            ref={serviceSheetRef} 
+            service={service} 
+            vehicle={vehicle} 
+            workshopInfo={workshopInfo || undefined} 
+         />
       </div>
 
        <SignatureDialog
