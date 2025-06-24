@@ -1,5 +1,4 @@
 
-
 import type { Vehicle, ServiceRecord, Technician, InventoryItem, DashboardMetrics, SaleReceipt, ServiceSupply, TechnicianMonthlyPerformance, InventoryCategory, Supplier, SaleItem, PaymentMethod, AppRole, QuoteRecord, MonthlyFixedExpense, AdministrativeStaff, User } from '@/types';
 import { format, subMonths, addDays, getYear, getMonth, setHours, setMinutes, subDays, startOfMonth, endOfMonth, startOfDay, endOfDay } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -287,19 +286,32 @@ export const getYesterdayRange = () => {
 export const calculateSaleProfit = (sale: SaleReceipt, inventory: InventoryItem[], ivaRate: number): number => {
   if (!sale || !sale.items) return 0;
 
-  return sale.items.reduce((profit, saleItem) => {
+  return sale.items.reduce((totalProfit, saleItem) => {
     const inventoryItem = inventory.find(inv => inv.id === saleItem.inventoryItemId);
     
-    // For services sold via POS, cost is 0. For products, it's their stored unitPrice.
-    const costPrice = (inventoryItem && !inventoryItem.isService) ? (inventoryItem.unitPrice ?? 0) : 0;
+    // Explicitly handle the case where the item might not be found or is a service
+    const costPrice = (inventoryItem && !inventoryItem.isService) 
+      ? Number(inventoryItem.unitPrice || 0) 
+      : 0;
 
-    const sellingPriceWithTax = saleItem.unitPrice ?? 0;
+    const sellingPriceWithTax = Number(saleItem.unitPrice || 0);
+    const quantitySold = Number(saleItem.quantity || 0);
+
+    // If selling price is 0, profit is negative cost (a loss)
+    if (sellingPriceWithTax === 0) {
+        return totalProfit - (costPrice * quantitySold);
+    }
+    
     const sellingPriceSubTotal = sellingPriceWithTax / (1 + ivaRate);
-    const quantitySold = saleItem.quantity ?? 0;
+    
+    // Ensure all components are valid numbers before calculation
+    if (isNaN(sellingPriceSubTotal) || isNaN(costPrice) || isNaN(quantitySold)) {
+      return totalProfit; // Don't add NaN to the total, just continue with the accumulated profit
+    }
     
     const itemProfit = (sellingPriceSubTotal - costPrice) * quantitySold;
     
-    return profit + (Number.isNaN(itemProfit) ? 0 : itemProfit);
+    return totalProfit + itemProfit;
   }, 0);
 };
 
