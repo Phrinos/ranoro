@@ -372,7 +372,7 @@ export function ServiceForm({
     
     if (mode === 'service') {
       const serviceData: ServiceRecord = {
-        id: initialDataService?.id || `SER${placeholderServiceRecords.length + 1}`,
+        id: initialDataService?.id || `SER${defaultServiceRecords.length + 1}`,
         vehicleId: values.vehicleId!,
         vehicleIdentifier: selectedVehicle?.licensePlate || values.vehicleLicensePlateSearch,
         serviceDate: values.serviceDate.toISOString(),
@@ -644,21 +644,23 @@ export function ServiceForm({
   };
   
   const handleQuantityChange = (index: number, delta: number) => {
-    const currentItem = form.getValues(`suppliesUsed.${index}`);
-    if (!currentItem) return;
+    const itemInFields = fields[index];
+    if (!itemInFields) return;
 
-    const newQuantity = (currentItem.quantity || 0) + delta;
-    if (newQuantity < 1) return; // Prevent going below 1
+    const newQuantity = (itemInFields.quantity || 0) + delta;
+    if (newQuantity < 1) return;
 
-    const itemDetails = currentInventoryItems.find(invItem => invItem.id === currentItem.supplyId);
+    const itemDetails = currentInventoryItems.find(invItem => invItem.id === itemInFields.supplyId);
     if (itemDetails && !itemDetails.isService && newQuantity > itemDetails.quantity) {
         toast({ title: "Stock Insuficiente", description: `Solo hay ${itemDetails.quantity} unidades de ${itemDetails.name}.`, variant: "destructive", duration: 3000});
-        return; // Don't allow quantity to exceed stock
+        return;
     }
-
+    
+    const { id, ...restOfItem } = itemInFields;
+    
     update(index, {
-        ...currentItem,
-        quantity: newQuantity,
+      ...restOfItem,
+      quantity: newQuantity,
     });
   };
 
