@@ -64,7 +64,7 @@ export function ServiceCalendar({ services, vehicles, technicians, onServiceClic
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
       <div className="lg:col-span-1">
-        <Card className="sticky top-4 flex justify-center py-4">
+        <Card className="sticky top-4 flex justify-center py-8">
             <Calendar
               mode="single"
               selected={selectedDate}
