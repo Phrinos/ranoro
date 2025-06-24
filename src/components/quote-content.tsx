@@ -114,8 +114,7 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
             <div className="bg-gray-50 p-3 rounded-md border border-gray-200">
             <h3 className="font-semibold text-sm text-gray-700 mb-1 border-b pb-1">Vehículo:</h3>
             <div className="space-y-1 leading-tight pt-1">
-                <div>{vehicle ? `${vehicle.make} ${vehicle.model} ${vehicle.year}` : quote.vehicleIdentifier || 'N/A'}</div>
-                <div>Placas: {vehicle?.licensePlate || 'N/A'}</div>
+                <div>{vehicle ? `${vehicle.make} ${vehicle.model} ${vehicle.year} ${vehicle.licensePlate}` : quote.vehicleIdentifier || 'N/A'}</div>
                 {quote.mileage !== undefined && <div>Kilometraje: {quote.mileage.toLocaleString('es-ES')} km</div>}
             </div>
             </div>
