@@ -534,36 +534,36 @@ export default function AgendaServiciosPage() {
           </Button>
         }
       />
-       <div className="mb-6 flex flex-col sm:flex-row gap-4">
-        <div className="relative flex-grow">
-          <SearchIcon className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            type="search"
-            placeholder="Buscar por ID, vehículo, cliente, técnico, descripción..."
-            className="w-full rounded-lg bg-card pl-8"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </div>
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full sm:w-auto">
-          <TabsList className="grid w-full grid-cols-2">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <div className="mb-6 flex flex-col sm:flex-row gap-4">
+          <div className="relative flex-grow">
+            <SearchIcon className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              type="search"
+              placeholder="Buscar por ID, vehículo, cliente, técnico, descripción..."
+              className="w-full rounded-lg bg-card pl-8"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+          <TabsList className="grid w-full grid-cols-2 sm:w-auto">
             <TabsTrigger value="list"><List className="mr-2 h-4 w-4"/>Lista</TabsTrigger>
             <TabsTrigger value="calendar"><CalendarDays className="mr-2 h-4 w-4"/>Calendario</TabsTrigger>
           </TabsList>
-        </Tabs>
-      </div>
+        </div>
 
-      <TabsContent value="list" className="mt-0">
-        {serviceListSection}
-      </TabsContent>
-      <TabsContent value="calendar" className="mt-0">
-        <ServiceCalendar
-            services={futureServices}
-            vehicles={vehicles}
-            technicians={techniciansState}
-            onServiceClick={handleOpenEditDialog}
-        />
-      </TabsContent>
+        <TabsContent value="list" className="mt-0">
+          {serviceListSection}
+        </TabsContent>
+        <TabsContent value="calendar" className="mt-0">
+          <ServiceCalendar
+              services={futureServices}
+              vehicles={vehicles}
+              technicians={techniciansState}
+              onServiceClick={handleOpenEditDialog}
+          />
+        </TabsContent>
+      </Tabs>
 
       {isEditDialogOpen && editingService && (
         <ServiceDialog
