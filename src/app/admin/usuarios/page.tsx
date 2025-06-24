@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useMemo } from 'react';
@@ -261,7 +262,7 @@ export default function UsuariosPage() {
                     <TableCell className="text-right">
                       {canEditOrDelete(user) && (
                         <>
-                          <Button variant="ghost" size="icon" onClick={() => handleOpenForm(user)} className="mr-2" disabled={!canCreateUsers() && currentUser?.id !== user.id}>
+                          <Button variant="ghost" size="icon" onClick={() => handleOpenForm(user)} className="mr-2">
                             <Edit className="h-4 w-4" />
                           </Button>
                           <AlertDialog>

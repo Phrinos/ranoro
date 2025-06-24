@@ -43,11 +43,29 @@ export default function AppLayout({
         setIsHydrating(true);
         try {
           await hydrateFromFirestore();
+          // Try to find user by UID first (the primary, correct way)
           let appUser = placeholderUsers.find(u => u.id === user.uid);
+          let needsPersistence = false;
+    
+          // If not found by UID, try to find by email for pre-seeded users
+          if (!appUser && user.email) {
+            const preSeededUserIndex = placeholderUsers.findIndex(u => u.email && u.email.toLowerCase() === user.email!.toLowerCase());
+            if (preSeededUserIndex !== -1) {
+              // Found a pre-seeded user by email. Update their ID to match the Firebase UID.
+              console.log(`Found pre-seeded user ${user.email} by email. Updating ID to Firebase UID ${user.uid}.`);
+              placeholderUsers[preSeededUserIndex].id = user.uid;
+              appUser = placeholderUsers[preSeededUserIndex];
+              needsPersistence = true; // Mark that we need to save this change
+            }
+          }
 
           if (appUser) {
             // User exists in our DB, proceed.
             localStorage.setItem(AUTH_USER_LOCALSTORAGE_KEY, JSON.stringify(appUser));
+            if (needsPersistence) {
+                // Persist the ID update in the background
+                persistToFirestore().catch(err => console.error("Failed to persist user ID update:", err));
+            }
             setIsHydrating(false); 
           } else {
             // User exists in Firebase Auth, but not in our app's database.
