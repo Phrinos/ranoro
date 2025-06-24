@@ -133,7 +133,7 @@ export function VehicleForm({ initialData, onSubmit, onClose }: VehicleFormProps
               <FormItem>
                 <FormLabel>Año</FormLabel>
                 <FormControl>
-                  <Input type="number" placeholder="Ej: 2020" {...field} />
+                  <Input type="number" placeholder="Ej: 2020" {...field} value={field.value ?? ''} />
                 </FormControl>
                 <FormMessage />
               </FormItem>

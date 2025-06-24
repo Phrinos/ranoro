@@ -298,7 +298,7 @@ export function InventoryItemForm({ initialData, onSubmit, onClose, categories, 
                         {unitTypeWatch === 'ml' ? 'Cantidad Total en Stock (ml)' : unitTypeWatch === 'liters' ? 'Cantidad Total en Stock (L)' : 'Cantidad en Stock'}
                       </FormLabel>
                       <FormControl>
-                        <Input type="number" placeholder="Ej: 50" {...field} />
+                        <Input type="number" placeholder="Ej: 50" {...field} value={field.value ?? ''} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -313,7 +313,7 @@ export function InventoryItemForm({ initialData, onSubmit, onClose, categories, 
                         {unitTypeWatch === 'ml' ? 'Umbral de Stock Bajo (ml)' : unitTypeWatch === 'liters' ? 'Umbral de Stock Bajo (L)' : 'Umbral de Stock Bajo'}
                       </FormLabel>
                       <FormControl>
-                        <Input type="number" placeholder="Ej: 5" {...field} />
+                        <Input type="number" placeholder="Ej: 5" {...field} value={field.value ?? ''} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
