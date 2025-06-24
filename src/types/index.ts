@@ -161,6 +161,7 @@ export interface SaleReceipt {
   customerName?: string;
   cardFolio?: string;
   transferFolio?: string;
+  status?: 'Completado' | 'Cancelado';
 }
 
 export interface QuoteRecord {

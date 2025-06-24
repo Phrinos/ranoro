@@ -15,13 +15,15 @@ import { Badge } from "@/components/ui/badge";
 import type { SaleReceipt, InventoryItem } from "@/types";
 import { format, parseISO, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { Printer } from "lucide-react";
+import { Printer, Edit, Ban } from "lucide-react";
 import { calculateSaleProfit, IVA_RATE } from "@/lib/placeholder-data";
+import { cn } from "@/lib/utils";
 
 interface SalesTableProps {
   sales: SaleReceipt[];
   onReprintTicket: (sale: SaleReceipt) => void;
   inventoryItems: InventoryItem[];
+  onEditSale: (sale: SaleReceipt) => void;
 }
 
 type BadgeVariantType =
@@ -35,7 +37,7 @@ type BadgeVariantType =
   | "lightGreen"
   | "lightPurple";
 
-export const SalesTable = React.memo(({ sales, onReprintTicket, inventoryItems }: SalesTableProps) => {
+export const SalesTable = React.memo(({ sales, onReprintTicket, inventoryItems, onEditSale }: SalesTableProps) => {
   if (!sales.length) {
     return <p className="text-muted-foreground text-center py-8">No hay ventas registradas que coincidan con los filtros.</p>;
   }
@@ -78,22 +80,34 @@ export const SalesTable = React.memo(({ sales, onReprintTicket, inventoryItems }
               : 'Fecha Inválida';
             
             const profit = calculateSaleProfit(sale, inventoryItems, IVA_RATE);
+            const isCancelled = sale.status === 'Cancelado';
 
             return (
-              <TableRow key={sale.id}>
-                <TableCell className="font-medium">{sale.id}</TableCell>
+              <TableRow 
+                key={sale.id}
+                className={cn(isCancelled && "bg-muted/50 text-muted-foreground opacity-70")}
+              >
+                <TableCell className="font-medium">
+                  {isCancelled && <Ban className="inline h-3 w-3 mr-1 text-destructive"/>}
+                  {sale.id}
+                </TableCell>
                 <TableCell>{formattedDate}</TableCell>
                 <TableCell>{sale.customerName || 'N/A'}</TableCell>
                 <TableCell className="text-center">{sale.items.length}</TableCell>
                 <TableCell>
                   <Badge variant={getPaymentMethodVariant(sale.paymentMethod)}>
-                    {sale.paymentMethod}
+                    {isCancelled ? `Cancelado (${sale.paymentMethod})` : sale.paymentMethod}
                   </Badge>
                 </TableCell>
                 <TableCell className="text-right font-semibold">{formatCurrency(sale.totalAmount)}</TableCell>
-                <TableCell className="text-right font-semibold text-green-600">{formatCurrency(profit)}</TableCell>
+                <TableCell className={cn("text-right font-semibold", !isCancelled && "text-green-600")}>
+                  {formatCurrency(profit)}
+                </TableCell>
                 <TableCell className="text-right">
-                  <Button variant="ghost" size="icon" onClick={() => onReprintTicket(sale)} title="Reimprimir Ticket">
+                  <Button variant="ghost" size="icon" onClick={() => onEditSale(sale)} title="Ver / Cancelar Venta">
+                    <Edit className="h-4 w-4" />
+                  </Button>
+                  <Button variant="ghost" size="icon" onClick={() => onReprintTicket(sale)} title="Reimprimir Ticket" disabled={isCancelled}>
                     <Printer className="h-4 w-4" />
                   </Button>
                 </TableCell>

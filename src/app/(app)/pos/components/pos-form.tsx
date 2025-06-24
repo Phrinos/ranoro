@@ -173,6 +173,7 @@ export function PosForm({ inventoryItems: parentInventoryItems, onSaleComplete, 
       customerName: values.customerName,
       cardFolio: values.cardFolio,
       transferFolio: values.transferFolio,
+      status: 'Completado',
     };
 
     placeholderSales.push(newSale);
@@ -607,7 +608,7 @@ export function PosForm({ inventoryItems: parentInventoryItems, onSaleComplete, 
       <InventoryItemDialog
         open={isNewInventoryItemDialogOpen}
         onOpenChange={setIsNewInventoryItemDialogOpen}
-        item={newItemInitialData}
+        item={newSupplyInitialData}
         onSave={handleNewItemCreated}
         categories={placeholderCategories}
         suppliers={placeholderSuppliers}
