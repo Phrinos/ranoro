@@ -175,3 +175,32 @@ input::-webkit-inner-spin-button {
 input[type=number] {
   -moz-appearance: textfield;
 }
+
+/* For calendar event dots */
+.rdp-day_has-event {
+  position: relative;
+}
+.rdp-day_has-event:not([aria-selected="true"]):not(.rdp-day_today):not(:hover) > button::after {
+  content: '';
+  position: absolute;
+  bottom: 6px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background-color: hsl(var(--primary));
+}
+.rdp-day_has-event[aria-selected="true"] > button::after,
+.rdp-day_has-event.rdp-day_today > button::after,
+.rdp-day_has-event:hover > button::after {
+  content: '';
+  position: absolute;
+  bottom: 6px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background-color: hsl(var(--primary-foreground));
+}

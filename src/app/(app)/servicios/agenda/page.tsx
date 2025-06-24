@@ -3,7 +3,7 @@
 
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Edit, Trash2, Clock, Search as SearchIcon, Calendar, CalendarCheck, CheckCircle, Wrench, Printer, Tag, FileText, BrainCircuit, Loader2, AlertTriangle } from "lucide-react";
+import { PlusCircle, Edit, Trash2, Clock, Search as SearchIcon, Calendar as CalendarIcon, CalendarCheck, CheckCircle, Wrench, Printer, Tag, FileText, BrainCircuit, Loader2, AlertTriangle, List, CalendarDays } from "lucide-react";
 import {
   placeholderServiceRecords,
   placeholderVehicles,
@@ -29,6 +29,7 @@ import { TicketContent } from '@/components/ticket-content';
 import Link from "next/link";
 import { analyzeWorkshopCapacity, type CapacityAnalysisOutput } from '@/ai/flows/capacity-analysis-flow';
 import { ServiceSheetContent } from '../components/service-sheet-content';
+import { ServiceCalendar } from '../components/service-calendar';
 
 
 interface GroupedServices {
@@ -47,7 +48,7 @@ export default function AgendaServiciosPage() {
   const [editingService, setEditingService] = useState<ServiceRecord | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [activeTab, setActiveTab] = useState("futuras");
+  const [activeTab, setActiveTab] = useState("list");
 
   const [showPrintTicketDialog, setShowPrintTicketDialog] = useState(false);
   const [currentServiceForTicket, setCurrentServiceForTicket] = useState<ServiceRecord | null>(null);
@@ -445,6 +446,20 @@ export default function AgendaServiciosPage() {
     });
   };
 
+  const serviceListSection = (
+    <Tabs defaultValue="futuras" className="w-full">
+      <TabsList className="grid w-full grid-cols-2 mb-6">
+        <TabsTrigger value="futuras" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">Citas Futuras</TabsTrigger>
+        <TabsTrigger value="pasadas" className="data-[state=active]:bg-gray-700 data-[state=active]:text-white">Citas Pasadas</TabsTrigger>
+      </TabsList>
+      <TabsContent value="futuras">
+        {renderServiceGroup(groupedFutureServices)}
+      </TabsContent>
+      <TabsContent value="pasadas">
+        {renderServiceGroup(groupedPastServices)}
+      </TabsContent>
+    </Tabs>
+  );
 
   return (
     <>
@@ -454,7 +469,7 @@ export default function AgendaServiciosPage() {
             <CardTitle className="text-sm font-medium text-muted-foreground">
               Citas para Hoy
             </CardTitle>
-            <Calendar className="h-5 w-5 text-blue-500" />
+            <CalendarIcon className="h-5 w-5 text-blue-500" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold font-headline">{appointmentSummary.todayCount}</div>
@@ -519,8 +534,8 @@ export default function AgendaServiciosPage() {
           </Button>
         }
       />
-       <div className="mb-6">
-        <div className="relative">
+       <div className="mb-6 flex flex-col sm:flex-row gap-4">
+        <div className="relative flex-grow">
           <SearchIcon className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
             type="search"
@@ -530,20 +545,25 @@ export default function AgendaServiciosPage() {
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full sm:w-auto">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="list"><List className="mr-2 h-4 w-4"/>Lista</TabsTrigger>
+            <TabsTrigger value="calendar"><CalendarDays className="mr-2 h-4 w-4"/>Calendario</TabsTrigger>
+          </TabsList>
+        </Tabs>
       </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-2 mb-6">
-          <TabsTrigger value="futuras" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">Citas Futuras</TabsTrigger>
-          <TabsTrigger value="pasadas" className="data-[state=active]:bg-gray-700 data-[state=active]:text-white">Citas Pasadas</TabsTrigger>
-        </TabsList>
-        <TabsContent value="futuras">
-          {renderServiceGroup(groupedFutureServices)}
-        </TabsContent>
-        <TabsContent value="pasadas">
-          {renderServiceGroup(groupedPastServices)}
-        </TabsContent>
-      </Tabs>
+      <TabsContent value="list" className="mt-0">
+        {serviceListSection}
+      </TabsContent>
+      <TabsContent value="calendar" className="mt-0">
+        <ServiceCalendar
+            services={futureServices}
+            vehicles={vehicles}
+            technicians={techniciansState}
+            onServiceClick={handleOpenEditDialog}
+        />
+      </TabsContent>
 
       {isEditDialogOpen && editingService && (
         <ServiceDialog
@@ -591,7 +611,7 @@ export default function AgendaServiciosPage() {
               </Button>
           }
       >
-          {serviceForSheet && <ServiceSheetContent service={serviceForSheet} vehicle={vehicles.find(v => v.id === serviceForSheet.vehicleId)} />}
+          {serviceForSheet && <ServiceSheetContent service={serviceForSheet} vehicle={vehicles.find(v => v.id === serviceForSheet.id)} />}
       </PrintTicketDialog>
     </>
   );
