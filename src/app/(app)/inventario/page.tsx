@@ -374,9 +374,15 @@ export default function InventarioPage() {
           </Select>
         </div>
 
-        <h1 className="hidden print:block text-2xl font-bold mb-4 text-center">
-          Lista de Inventario - {new Date().toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' })}
-        </h1>
+        <div className="hidden print:block mb-6">
+          <div className="flex justify-between items-center mb-4">
+            <img src="/ranoro-logo.png" alt="Ranoro Logo" className="h-12" data-ai-hint="ranoro logo" />
+            <div className="text-right">
+              <h1 className="text-xl font-bold">Lista de Inventario</h1>
+              <p>{new Date().toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+            </div>
+          </div>
+        </div>
         <InventoryTable items={filteredAndSortedInventoryItems} />
 
         <div className="print:hidden">
