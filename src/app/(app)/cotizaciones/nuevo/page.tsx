@@ -26,6 +26,9 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { MessageSquare, Download } from "lucide-react";
 import html2pdf from "html2pdf.js";
+import { doc, setDoc } from 'firebase/firestore';
+import { db } from '@root/lib/firebaseClient.js';
+
 
 /* --------------------------------------------------
    TIPOS Y CONSTANTES
@@ -108,11 +111,23 @@ export default function NuevaCotizacionPage() {
     placeholderQuotes.push(newQuote);
     await persistToFirestore();
 
-    // Save to localStorage so the public link works
-    if (typeof window !== 'undefined') {
-      // We also need to save the vehicles data in case a new one was created
-      localStorage.setItem('placeholderQuotes', JSON.stringify(placeholderQuotes));
-      localStorage.setItem('placeholderVehicles', JSON.stringify(vehicles));
+    // Save to public collection for sharing
+    const vehicleForPublicQuote = vehicles.find((v) => v.id === newQuote.vehicleId);
+    if (vehicleForPublicQuote) {
+        const publicQuoteData = {
+            ...newQuote,
+            vehicle: vehicleForPublicQuote,
+        };
+        try {
+            await setDoc(doc(db, "publicQuotes", newQuote.id), publicQuoteData);
+        } catch (e) {
+            console.error("Failed to save public quote:", e);
+            toast({
+                title: "Error de Sincronización Pública",
+                description: "La cotización se guardó, pero el enlace público podría no funcionar.",
+                variant: "destructive",
+            });
+        }
     }
 
     setCurrentQuoteForPdf(newQuote);
