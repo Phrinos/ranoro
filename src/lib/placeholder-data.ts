@@ -232,7 +232,17 @@ export async function persistToFirestore() {
 
   const allData: { [key: string]: any[] } = {};
   for (const key in DATA_ARRAYS) {
-      allData[key] = DATA_ARRAYS[key as keyof typeof DATA_ARRAYS];
+      const originalArray = DATA_ARRAYS[key as keyof typeof DATA_ARRAYS];
+      // Sanitize each object in the array to remove 'undefined' fields, which are invalid in Firestore.
+      allData[key] = originalArray.map(item => {
+          const cleanItem = { ...item };
+          Object.keys(cleanItem).forEach(prop => {
+              if (cleanItem[prop] === undefined) {
+                  delete (cleanItem as any)[prop];
+              }
+          });
+          return cleanItem;
+      });
   }
 
   try {
