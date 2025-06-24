@@ -4,7 +4,7 @@ import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { PlusCircle, Search, CalendarX, AlertTriangle, Archive, ListFilter, Filter } from "lucide-react";
+import { PlusCircle, Search, CalendarX, AlertTriangle, Archive, ListFilter, Filter, Car } from "lucide-react";
 import { VehiclesTable } from "./components/vehicles-table";
 import { VehicleDialog } from "./components/vehicle-dialog";
 import { placeholderVehicles, placeholderServiceRecords, persistToFirestore } from "@/lib/placeholder-data";
@@ -44,6 +44,8 @@ export default function VehiculosPage() {
       };
     });
   }, [version]);
+
+  const totalVehiclesCount = useMemo(() => vehiclesWithLastService.length, [vehiclesWithLastService]);
 
   useEffect(() => {
     const now = new Date();
@@ -165,7 +167,21 @@ export default function VehiculosPage() {
 
   return (
     <>
-      <div className="mb-6 grid gap-6 md:grid-cols-2">
+      <div className="mb-6 grid gap-6 md:grid-cols-3">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Total de Vehículos Registrados
+            </CardTitle>
+            <Car className="h-5 w-5 text-blue-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold font-headline">{totalVehiclesCount}</div>
+            <p className="text-xs text-muted-foreground">
+              Total de vehículos en el sistema.
+            </p>
+          </CardContent>
+        </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
