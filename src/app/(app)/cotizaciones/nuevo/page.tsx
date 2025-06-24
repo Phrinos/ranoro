@@ -111,7 +111,7 @@ export default function NuevaCotizacionPage() {
       preparedByTechnicianName: authUserName,
     };
 
-    placeholderQuotes.push(newQuote);
+    placeholderQuotes.unshift(newQuote);
     await persistToFirestore();
 
     // Save to public collection for sharing
@@ -119,7 +119,7 @@ export default function NuevaCotizacionPage() {
     if (vehicleForPublicQuote) {
         const publicQuoteData = {
             ...newQuote,
-            vehicle: vehicleForPublicQuote,
+            vehicle: { ...vehicleForPublicQuote },
         };
         try {
             await setDoc(doc(db, "publicQuotes", newQuote.publicId!), publicQuoteData);

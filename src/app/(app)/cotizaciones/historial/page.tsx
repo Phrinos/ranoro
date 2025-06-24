@@ -33,10 +33,10 @@ type QuoteSortOption =
   | "vehicle_asc" | "vehicle_desc";
 
 export default function HistorialCotizacionesPage() {
-  const [allQuotes, setAllQuotes] = useState<QuoteRecord[]>(placeholderQuotes);
-  const [vehicles, setVehicles] = useState<Vehicle[]>(placeholderVehicles);
-  const [technicians, setTechnicians] = useState<Technician[]>(placeholderTechnicians);
-  const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>(placeholderInventory);
+  const [allQuotes, setAllQuotes] = useState<QuoteRecord[]>([]);
+  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
+  const [technicians, setTechnicians] = useState<Technician[]>([]);
+  const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
 
   const { toast } = useToast();
   
@@ -67,12 +67,7 @@ export default function HistorialCotizacionesPage() {
   }, []);
 
   useEffect(() => {
-    // Initial data load can be done here if needed.
-    // For this example, we use the directly imported placeholder data.
-    const sortedInitialQuotes = [...placeholderQuotes].sort((a, b) => 
-        compareDesc(parseISO(a.quoteDate ?? ""), parseISO(b.quoteDate ?? ""))      
-    );
-    setAllQuotes(sortedInitialQuotes);
+    setAllQuotes(placeholderQuotes);
     setVehicles(placeholderVehicles);
     setTechnicians(placeholderTechnicians);
     setInventoryItems(placeholderInventory);
@@ -191,7 +186,7 @@ export default function HistorialCotizacionesPage() {
           if (vehicleForPublicQuote) {
               const publicQuoteData = {
                   ...editedQuote,
-                  vehicle: vehicleForPublicQuote,
+                  vehicle: { ...vehicleForPublicQuote },
               };
               try {
                   await setDoc(doc(db, "publicQuotes", editedQuote.publicId!), publicQuoteData);
@@ -271,7 +266,7 @@ export default function HistorialCotizacionesPage() {
     
     const shareUrl = `${window.location.origin}/c/${quoteForAction.publicId}`;
     
-    const message = `Hola ${vehicleForAction.ownerName || 'Cliente'}, Gracias por confiar en ${workshopInfo?.name || 'RANORO'}. Le enviamos su cotización de servicio ${quoteForAction.id} de nuestro taller para su vehículo ${vehicleForAction.make} ${vehicle.model} ${vehicle.year}. En este link encontrara el PDF de la cotizacion: ${shareUrl}`;
+    const message = `Hola ${vehicleForAction.ownerName || 'Cliente'}, Gracias por confiar en ${workshopInfo?.name || 'RANORO'}. Le enviamos su cotización de servicio ${quoteForAction.id} de nuestro taller para su vehículo ${vehicleForAction.make} ${vehicleForAction.model} ${vehicleForAction.year}. En este link encontrara el PDF de la cotizacion: ${shareUrl}`;
 
     navigator.clipboard.writeText(message).then(() => {
         toast({

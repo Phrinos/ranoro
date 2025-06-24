@@ -6,8 +6,7 @@ import { db } from '@root/lib/firebaseClient.js';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 
 
-const STATIC_NOW = new Date(); // Use real time for production
-export const IVA_RATE = 0.16;
+const IVA_RATE = 0.16;
 
 // =======================================
 // ===          CATEGORÍAS Y PROVEEDORES          ===
@@ -249,20 +248,24 @@ export async function persistToFirestore() {
 // ===          FUNCIONES HELPER         ===
 // =======================================
 export const getCurrentMonthRange = () => {
-    return { from: startOfMonth(STATIC_NOW), to: endOfMonth(STATIC_NOW) };
+    const now = new Date();
+    return { from: startOfMonth(now), to: endOfMonth(now) };
 };
 
 export const getLastMonthRange = () => {
-    const lastMonthDate = subMonths(STATIC_NOW, 1);
+    const now = new Date();
+    const lastMonthDate = subMonths(now, 1);
     return { from: startOfMonth(lastMonthDate), to: endOfMonth(lastMonthDate) };
 };
 
 export const getTodayRange = () => {
-    return { from: startOfDay(STATIC_NOW), to: endOfDay(STATIC_NOW) };
+    const now = new Date();
+    return { from: startOfDay(now), to: endOfDay(now) };
 };
 
 export const getYesterdayRange = () => {
-    const yesterday = subDays(STATIC_NOW, 1);
+    const now = new Date();
+    const yesterday = subDays(now, 1);
     return { from: startOfDay(yesterday), to: endOfDay(yesterday) };
 };
 
