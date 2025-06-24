@@ -22,22 +22,32 @@ const LOCALSTORAGE_KEY = 'workshopTicketInfo';
 interface ServiceSheetContentProps {
   service: ServiceRecord;
   vehicle?: Vehicle;
+  previewWorkshopInfo?: WorkshopInfoType;
 }
 
 export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheetContentProps>(
-  ({ service, vehicle }, ref) => {
+  ({ service, vehicle, previewWorkshopInfo }, ref) => {
     const [workshopInfo, setWorkshopInfo] = useState<WorkshopInfoType>(initialWorkshopInfo);
 
     useEffect(() => {
-        const storedInfo = localStorage.getItem(LOCALSTORAGE_KEY);
-        if (storedInfo) {
+        if (previewWorkshopInfo) {
+          setWorkshopInfo({ ...initialWorkshopInfo, ...previewWorkshopInfo });
+        } else if (typeof window !== 'undefined') {
+          const storedInfo = localStorage.getItem(LOCALSTORAGE_KEY);
+          if (storedInfo) {
             try {
-                setWorkshopInfo(JSON.parse(storedInfo));
+              setWorkshopInfo({ ...initialWorkshopInfo, ...JSON.parse(storedInfo) });
             } catch (e) {
-                console.error("Failed to parse workshop info from localStorage", e);
+              console.error("Failed to parse workshop info from localStorage", e);
+              setWorkshopInfo(initialWorkshopInfo);
             }
+          } else {
+            setWorkshopInfo(initialWorkshopInfo);
+          }
+        } else {
+            setWorkshopInfo(initialWorkshopInfo);
         }
-    }, []);
+    }, [previewWorkshopInfo]);
 
     const serviceDate = parseISO(service.serviceDate ?? "");
     const formattedServiceDate = isValid(serviceDate) ? format(serviceDate, "dd 'de' MMMM 'de' yyyy, HH:mm 'hrs'", { locale: es }) : 'N/A';
