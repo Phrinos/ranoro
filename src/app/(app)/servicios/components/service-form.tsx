@@ -31,7 +31,7 @@ import { VehicleDialog } from "../../vehiculos/components/vehicle-dialog";
 import type { VehicleFormValues } from "../../vehiculos/components/vehicle-form";
 import { placeholderVehicles as defaultPlaceholderVehicles, placeholderInventory, placeholderCategories, placeholderSuppliers, placeholderQuotes, placeholderServiceRecords as defaultServiceRecords, persistToFirestore, AUTH_USER_LOCALSTORAGE_KEY } from "@/lib/placeholder-data";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -683,7 +683,6 @@ export function ServiceForm({
                 <CardTitle className="text-lg">{cardTitleText}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-                 {/* Row 1: Status and Type */}
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {mode === 'service' && (
                         <FormField
@@ -691,7 +690,7 @@ export function ServiceForm({
                             name="status"
                             render={({ field }) => (
                             <FormItem>
-                                <FormLabel>Estado del Servicio</FormLabel>
+                                <FormLabel className="font-bold">Estado del Servicio</FormLabel>
                                 <Select
                                     onValueChange={(value) => {
                                         field.onChange(value);
@@ -726,7 +725,7 @@ export function ServiceForm({
                             name="serviceType"
                             render={({ field }) => (
                             <FormItem>
-                                <FormLabel>Tipo de Servicio</FormLabel>
+                                <FormLabel className="font-bold">Tipo de Servicio</FormLabel>
                                 <Select
                                     onValueChange={field.onChange}
                                     defaultValue={field.value || 'Servicio General'}
@@ -752,7 +751,6 @@ export function ServiceForm({
                     )}
                  </div>
 
-                 {/* Row 2: Plate and Mileage */}
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
                     <div className="flex flex-col sm:flex-row items-end gap-2 w-full">
                         <FormField
@@ -763,7 +761,7 @@ export function ServiceForm({
                                 <FormLabel>Placa del Vehículo</FormLabel>
                                 <FormControl>
                                 <Input
-                                    placeholder="Buscar o ingresar placa..."
+                                    placeholder="Buscar/Ingresar Placas"
                                     {...field}
                                     value={vehicleLicensePlateSearch}
                                     onChange={(e) => {
@@ -792,7 +790,7 @@ export function ServiceForm({
                         <FormItem>
                             <FormLabel>Kilometraje (Opcional)</FormLabel>
                             <FormControl>
-                            <Input type="number" placeholder="Ej: 55000" {...field} disabled={isReadOnly} value={field.value ?? ''} />
+                            <Input type="number" placeholder="Ej: 55000 km" {...field} disabled={isReadOnly} value={field.value ?? ''} />
                             </FormControl>
                             <FormMessage />
                         </FormItem>
@@ -829,8 +827,7 @@ export function ServiceForm({
                     </div>
                 )}
                 
-                 {/* Row 3: Dates */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 items-end">
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 items-end">
                     <FormField
                     control={form.control}
                     name="serviceDate"
