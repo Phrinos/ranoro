@@ -1344,53 +1344,57 @@ export function ServiceForm({
             </CardContent>
         </Card>
 
-        <div className="flex justify-end gap-2 pt-4">
-          {isReadOnly ? (
-            <Button type="button" variant="outline" onClick={onClose}>
-              Cerrar
-            </Button>
-          ) : (
-            <>
-              {mode === 'service' && (
-                <Button type="button" variant="secondary" onClick={handlePrintSheet}>
-                    <FileText className="mr-2 h-4 w-4" />
+        <div className="flex justify-between items-center pt-4">
+            <div>
+              {mode === 'service' && !isReadOnly && (
+                <Button type="button" onClick={handlePrintSheet} className="bg-blue-200 text-blue-800 hover:bg-blue-300 dark:bg-blue-800 dark:text-blue-200 dark:hover:bg-blue-700">
+                    <Printer className="mr-2 h-4 w-4" />
                     Hoja de Servicio
                 </Button>
               )}
-              {onDelete && mode === 'quote' && initialDataQuote?.id && (
-                <div className="mr-auto">
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button type="button" variant="destructive">
-                        <Trash2 className="mr-2 h-4 w-4" />
-                        Eliminar Cotización
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>¿Estás seguro de eliminar esta cotización?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          Esta acción no se puede deshacer. Se eliminará permanentemente la cotización {initialDataQuote.id}.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                        <AlertDialogAction onClick={handleConfirmDelete} className="bg-destructive hover:bg-destructive/90">
-                          Sí, Eliminar
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                </div>
-              )}
-              <Button type="button" variant="outline" onClick={onClose}>
-                Cancelar
-              </Button>
-              <Button type="submit" disabled={form.formState.isSubmitting || !selectedVehicle}>
-                {form.formState.isSubmitting ? "Guardando..." : submitButtonText}
-              </Button>
-            </>
-          )}
+            </div>
+            <div className="flex justify-end gap-2">
+            {isReadOnly ? (
+                <Button type="button" variant="outline" onClick={onClose}>
+                Cerrar
+                </Button>
+            ) : (
+                <>
+                {onDelete && mode === 'quote' && initialDataQuote?.id && (
+                    <div className="mr-auto">
+                    <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                        <Button type="button" variant="destructive">
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            Eliminar Cotización
+                        </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                        <AlertDialogHeader>
+                            <AlertDialogTitle>¿Estás seguro de eliminar esta cotización?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                            Esta acción no se puede deshacer. Se eliminará permanentemente la cotización {initialDataQuote.id}.
+                            </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                            <AlertDialogAction onClick={handleConfirmDelete} className="bg-destructive hover:bg-destructive/90">
+                            Sí, Eliminar
+                            </AlertDialogAction>
+                        </AlertDialogFooter>
+                        </AlertDialogContent>
+                    </AlertDialog>
+                    </div>
+                )}
+                <Button type="button" variant="outline" onClick={onClose}>
+                    Cancelar
+                </Button>
+                <Button type="submit" disabled={form.formState.isSubmitting || !selectedVehicle}>
+                    {form.formState.isSubmitting ? "Guardando..." : submitButtonText}
+                </Button>
+                </>
+            )}
+            </div>
         </div>
       </form>
     </Form>
