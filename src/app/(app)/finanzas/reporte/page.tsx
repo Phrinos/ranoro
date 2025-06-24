@@ -26,7 +26,7 @@ type OperationSortOption =
   | "amount_desc" | "amount_asc"
   | "profit_desc" | "profit_asc";
 
-type OperationTypeFilter = "all" | "Venta" | "Servicio" | "C. Aceite";
+type OperationTypeFilter = "all" | "Venta" | "Servicio" | "C. Aceite" | "Pintura";
 
 interface CorteDiaData {
   date: string;
@@ -63,6 +63,15 @@ export default function FinancialReportPage() {
   const [isCorteDiaDialogOpen, setIsCorteDiaDialogOpen] = useState(false);
   const [corteDiaData, setCorteDiaData] = useState<CorteDiaData | null>(null);
 
+  const getServiceTypeForReport = (service: ServiceRecord): 'Servicio' | 'C. Aceite' | 'Pintura' => {
+      if (service.serviceType === 'Cambio de Aceite') return 'C. Aceite';
+      if (service.serviceType === 'Pintura') return 'Pintura';
+      // Fallback for older data without the serviceType field
+      if (service.description.toLowerCase().includes('cambio de aceite')) return 'C. Aceite';
+      if (service.description.toLowerCase().includes('pintura')) return 'Pintura';
+      return 'Servicio';
+  };
+
   const combinedOperations = useMemo((): FinancialOperation[] => {
     const salesOperations: FinancialOperation[] = allSales.map(sale => ({
       id: sale.id,
@@ -77,7 +86,7 @@ export default function FinancialReportPage() {
     const serviceOperations: FinancialOperation[] = allServices.map(service => ({
       id: service.id,
       date: service.serviceDate,
-      type: service.description.toLowerCase().includes('cambio de aceite') ? 'C. Aceite' : 'Servicio',
+      type: getServiceTypeForReport(service),
       description: service.description,
       totalAmount: service.totalCost, 
       profit: service.serviceProfit || 0, 
@@ -107,7 +116,7 @@ export default function FinancialReportPage() {
         op.id.toLowerCase().includes(lowerSearchTerm) ||
         op.description.toLowerCase().includes(lowerSearchTerm) ||
         (op.type === 'Venta' && (op.originalObject as SaleReceipt).customerName?.toLowerCase().includes(lowerSearchTerm)) ||
-        (op.type === 'Servicio' && (op.originalObject as ServiceRecord).vehicleIdentifier?.toLowerCase().includes(lowerSearchTerm))
+        ((op.type === 'Servicio' || op.type === 'C. Aceite' || op.type === 'Pintura') && (op.originalObject as ServiceRecord).vehicleIdentifier?.toLowerCase().includes(lowerSearchTerm))
       );
     }
 
@@ -151,7 +160,7 @@ export default function FinancialReportPage() {
     });
 
     const salesTodayCount = opsToday.filter(op => op.type === 'Venta').length;
-    const servicesTodayCount = opsToday.filter(op => op.type === 'Servicio').length;
+    const servicesTodayCount = opsToday.filter(op => op.type !== 'Venta').length;
     const totalGeneratedToday = opsToday.reduce((sum, op) => sum + op.totalAmount, 0);
     const totalProfitToday = opsToday.reduce((sum, op) => sum + op.profit, 0);
 
@@ -326,6 +335,7 @@ export default function FinancialReportPage() {
                             <SelectItem value="Venta">Solo Ventas</SelectItem>
                             <SelectItem value="Servicio">Solo Servicios</SelectItem>
                             <SelectItem value="C. Aceite">Solo Cambios de Aceite</SelectItem>
+                            <SelectItem value="Pintura">Solo Pintura</SelectItem>
                         </SelectContent>
                     </Select>
                     <DropdownMenu>
@@ -372,6 +382,7 @@ export default function FinancialReportPage() {
                                 <span className={`px-2 py-1 text-xs rounded-full font-medium ${
                                     op.type === 'Venta' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300' : 
                                     op.type === 'Servicio' ? 'bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300' :
+                                    op.type === 'Pintura' ? 'bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300' :
                                     'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300'
                                 }`}>
                                     {op.type}
