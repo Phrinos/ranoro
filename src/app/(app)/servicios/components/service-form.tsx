@@ -702,7 +702,7 @@ export function ServiceForm({
                                     disabled={isReadOnly}
                                 >
                                 <FormControl>
-                                    <SelectTrigger>
+                                    <SelectTrigger className="font-bold">
                                     <SelectValue placeholder="Seleccione un estado" />
                                     </SelectTrigger>
                                 </FormControl>
@@ -732,7 +732,7 @@ export function ServiceForm({
                                     disabled={isReadOnly}
                                 >
                                 <FormControl>
-                                    <SelectTrigger>
+                                    <SelectTrigger className="font-bold">
                                     <SelectValue placeholder="Seleccione un tipo" />
                                     </SelectTrigger>
                                 </FormControl>
