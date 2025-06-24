@@ -200,7 +200,7 @@ export default function UsuariosPage() {
       <Card className="mb-6 border-blue-500/50 bg-blue-50 dark:bg-blue-900/20">
         <CardHeader className="flex flex-row items-start gap-4">
           <ShieldAlert className="h-6 w-6 text-blue-600 dark:text-blue-400 mt-1" />
-          <div>
+          <div className="space-y-1">
             <CardTitle className="text-blue-800 dark:text-blue-300">¡Importante! Nuevo Proceso de Usuarios</CardTitle>
             <CardDescription className="text-blue-700/90 dark:text-blue-400/90">
               Con la integración de Firebase Authentication, la gestión de contraseñas y la creación inicial de usuarios ahora se realiza en la Consola de Firebase. Esta sección es para asignar roles y gestionar datos adicionales.
