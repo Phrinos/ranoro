@@ -14,7 +14,7 @@ import type { InventoryItem } from "@/types";
 import { useState, useMemo, useEffect } from "react";
 import type { InventoryItemFormValues } from "./components/inventory-item-form";
 import { PurchaseItemSelectionDialog } from "./components/purchase-item-selection-dialog";
-import { PurchaseDetailsEntryDialog, type PurchaseDetailsFormValues } from "@/components/purchase-details-entry-dialog";
+import { PurchaseDetailsEntryDialog, type PurchaseDetailsFormValues } from "./components/purchase-details-entry-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
