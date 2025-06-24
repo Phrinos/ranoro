@@ -370,13 +370,13 @@ export function ServiceForm({
         return;
     }
 
-    const vehicleIdToSave = selectedVehicle?.id || values.vehicleId;
+    const vehicleIdToSave = selectedVehicle?.id;
 
     if (!vehicleIdToSave) {
-        form.setError("vehicleLicensePlateSearch", { type: "manual", message: "Debe buscar y seleccionar un vehículo, o registrar uno nuevo." });
+        form.setError("vehicleLicensePlateSearch", { type: "manual", message: "Debe buscar y seleccionar un vehículo válido." });
         toast({
             title: "Vehículo no seleccionado",
-            description: "Por favor, busque un vehículo por su placa y selecciónelo de la lista. El vehículo debe estar cargado y visible.",
+            description: "Por favor, busque un vehículo por su placa y selecciónelo de la lista. El vehículo debe estar cargado y visible antes de guardar.",
             variant: "destructive"
         });
         return;
@@ -453,13 +453,14 @@ export function ServiceForm({
   };
   
   const handlePrintSheet = useCallback(() => {
-    const formValues = form.getValues();
-    const vehicleForSheet = localVehicles.find(v => v.id === formValues.vehicleId);
+    const vehicleForSheet = selectedVehicle;
 
     if (!vehicleForSheet) {
       toast({ title: "Error", description: "No se puede imprimir la hoja sin un vehículo seleccionado.", variant: "destructive" });
       return;
     }
+    
+    const formValues = form.getValues();
 
     const serviceDataForSheet: ServiceRecord = {
       id: formValues.id || 'N/A',
@@ -479,7 +480,7 @@ export function ServiceForm({
     
     setServiceForSheet({ ...serviceDataForSheet, vehicleIdentifier: vehicleForSheet.licensePlate });
     setIsSheetOpen(true);
-  }, [form, currentUser, localVehicles, toast]);
+  }, [form, currentUser, selectedVehicle, toast]);
 
 
   const handleTimeChange = (timeString: string, dateField: "serviceDate" | "deliveryDateTime") => {
