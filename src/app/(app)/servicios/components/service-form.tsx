@@ -220,7 +220,7 @@ export function ServiceForm({
 
         const dataToReset: Partial<ServiceFormValues> = {
             id: data.id,
-            vehicleId: data.vehicleId,
+            vehicleId: data.vehicleId ? String(data.vehicleId) : undefined,
             vehicleLicensePlateSearch: vehicle?.licensePlate || data.vehicleIdentifier || "",
             serviceDate: parsedServiceDate && isValid(parsedServiceDate) ? parsedServiceDate : undefined,
             deliveryDateTime: parsedDeliveryDate && isValid(parsedDeliveryDate) ? parsedDeliveryDate : undefined,
@@ -336,7 +336,7 @@ export function ServiceForm({
     setLocalVehicles(prev => [...prev, newVehicle]);
 
     setSelectedVehicle(newVehicle);
-    form.setValue('vehicleId', newVehicle.id, { shouldValidate: true });
+    form.setValue('vehicleId', String(newVehicle.id), { shouldValidate: true });
     setVehicleLicensePlateSearch(newVehicle.licensePlate);
     setVehicleNotFound(false);
     setIsVehicleDialogOpen(false);
@@ -446,7 +446,7 @@ export function ServiceForm({
     const handleSelectVehicleFromSearch = (vehicle: Vehicle) => {
         setSelectedVehicle(vehicle);
         setVehicleLicensePlateSearch(vehicle.licensePlate);
-        form.setValue('vehicleId', vehicle.id, { shouldValidate: true });
+        form.setValue('vehicleId', String(vehicle.id), { shouldValidate: true });
         setVehicleNotFound(false);
         setVehicleSearchResults([]);
         const vehicleServices = defaultServiceRecords.filter(s => s.vehicleId === vehicle.id).sort((a, b) => new Date(b.serviceDate).getTime() - new Date(a.serviceDate).getTime());
@@ -658,7 +658,7 @@ export function ServiceForm({
         return;
     }
     
-    form.setValue(`suppliesUsed.${index}.quantity`, newQuantity);
+    form.setValue(`suppliesUsed.${index}.quantity`, newQuantity, { shouldDirty: true, shouldValidate: true });
     update(index, { ...form.getValues(`suppliesUsed.${index}`), quantity: newQuantity });
   };
 
@@ -856,8 +856,8 @@ export function ServiceForm({
                       </ScrollArea>
                   )}
                 {selectedVehicle && (
-                    <div className="p-3 border rounded-md bg-muted text-sm space-y-1">
-                        <p><strong>Vehículo Seleccionado:</strong> {selectedVehicle.make} {selectedVehicle.model} {selectedVehicle.year} ({selectedVehicle.licensePlate})</p>
+                    <div className="p-3 border rounded-md bg-amber-50 dark:bg-amber-950/50 text-sm space-y-1">
+                        <p><strong>Vehículo Seleccionado:</strong> {selectedVehicle.make} {selectedVehicle.model} {selectedVehicle.year} (<span className="font-bold">{selectedVehicle.licensePlate}</span>)</p>
                         <p><strong>Propietario:</strong> {selectedVehicle.ownerName}</p>
                         {lastServiceInfo && (
                             <p className="text-xs font-medium text-blue-600 dark:text-blue-400 mt-1">{lastServiceInfo}</p>

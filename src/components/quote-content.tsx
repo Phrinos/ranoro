@@ -137,7 +137,7 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
               <div className="space-y-1 leading-tight pt-1">
                   <div>
                       <span className="font-bold">{vehicle ? `${vehicle.make} ${vehicle.model} ${vehicle.year}` : (quote.vehicleIdentifier || '').replace(vehicle?.licensePlate || '', '')} </span>
-                      <span>{vehicle?.licensePlate || 'N/A'}</span>
+                      <span className="font-bold">{vehicle?.licensePlate || 'N/A'}</span>
                   </div>
                   {quote.mileage !== undefined && (
                       <div>
