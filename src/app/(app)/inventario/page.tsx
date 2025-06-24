@@ -374,6 +374,9 @@ export default function InventarioPage() {
           </Select>
         </div>
 
+        <h1 className="hidden print:block text-2xl font-bold mb-4 text-center">
+          Lista de Inventario - {new Date().toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' })}
+        </h1>
         <InventoryTable items={filteredAndSortedInventoryItems} />
 
         <div className="print:hidden">
