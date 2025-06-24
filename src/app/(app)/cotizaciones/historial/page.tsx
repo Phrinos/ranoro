@@ -21,7 +21,6 @@ import { es } from 'date-fns/locale';
 import type { DateRange } from "react-day-picker";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
-import html2pdf from 'html2pdf.js';
 import { ServiceDialog } from "../../servicios/components/service-dialog";
 import { doc, setDoc, deleteDoc } from 'firebase/firestore';
 import { db } from '@root/lib/firebaseClient.js';
@@ -201,11 +200,12 @@ export default function HistorialCotizacionesPage() {
   }, [toast, quoteToConvert]);
 
 
-  const generateAndDownloadPdf = useCallback((quoteToPrint: QuoteRecord | null) => {
+  const generateAndDownloadPdf = useCallback(async (quoteToPrint: QuoteRecord | null) => {
     if (!quoteContentRef.current || !quoteToPrint) {
       toast({ title: "Error", description: "No se pudo generar el PDF.", variant: "destructive" });
       return;
     }
+    const html2pdf = (await import('html2pdf.js')).default;
     const element = quoteContentRef.current;
     const pdfFileName = `Cotizacion-${quoteToPrint.id}.pdf`;
     const opt = {
