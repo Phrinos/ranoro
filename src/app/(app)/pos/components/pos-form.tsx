@@ -295,8 +295,8 @@ export function PosForm({ inventoryItems: parentInventoryItems, onSaleComplete, 
           isService: newItemFormValues.isService || false,
           quantity: newItemFormValues.isService ? 0 : Number(newItemFormValues.quantity),
           lowStockThreshold: newItemFormValues.isService ? 0 : Number(newItemFormValues.lowStockThreshold),
-          unitPrice: Number(newItemFormValues.unitPrice),
-          sellingPrice: Number(newItemFormValues.sellingPrice),
+          unitPrice: Number(newItemFormValues.unitPrice) || 0,
+          sellingPrice: Number(newItemFormValues.sellingPrice) || 0,
           unitType: newItemFormValues.unitType || 'units'
       };
       placeholderInventory.push(newInventoryItem);
@@ -608,7 +608,7 @@ export function PosForm({ inventoryItems: parentInventoryItems, onSaleComplete, 
       <InventoryItemDialog
         open={isNewInventoryItemDialogOpen}
         onOpenChange={setIsNewInventoryItemDialogOpen}
-        item={newSupplyInitialData}
+        item={newItemInitialData}
         onSave={handleNewItemCreated}
         categories={placeholderCategories}
         suppliers={placeholderSuppliers}

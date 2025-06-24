@@ -50,15 +50,15 @@ export default function InventarioPage() {
       isService: data.isService || false,
       quantity: data.isService ? 0 : Number(data.quantity),
       lowStockThreshold: data.isService ? 0 : Number(data.lowStockThreshold),
-      unitPrice: Number(data.unitPrice),
-      sellingPrice: Number(data.sellingPrice),
+      unitPrice: Number(data.unitPrice) || 0,
+      sellingPrice: Number(data.sellingPrice) || 0,
     };
     
     const updatedInventory = [...inventoryItems, newItem];
     setInventoryItems(updatedInventory);
     placeholderInventory.push(newItem); 
     
-    await persistToFirestore();
+    await persistToFirestore(['inventory']);
     
     toast({
       title: "Producto/Servicio Creado",
@@ -129,7 +129,7 @@ export default function InventarioPage() {
     placeholderInventory[itemIndex] = updatedItem;
     setInventoryItems([...placeholderInventory]); 
     
-    await persistToFirestore();
+    await persistToFirestore(['inventory']);
 
     toast({
       title: "Compra Registrada",
