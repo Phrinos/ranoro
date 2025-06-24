@@ -6,7 +6,7 @@ import { PageHeader } from "@/components/page-header";
 import { ServiceDialog } from "../components/service-dialog";
 import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
 import { TicketContent } from '@/components/ticket-content';
-import { placeholderVehicles, placeholderTechnicians, placeholderInventory, placeholderServiceRecords, persistToFirestore } from "@/lib/placeholder-data";
+import { placeholderVehicles, placeholderTechnicians, placeholderInventory, placeholderServiceRecords, persistToFirestore, enrichServiceForPrinting } from "@/lib/placeholder-data";
 import type { ServiceRecord, Vehicle, Technician, QuoteRecord, InventoryItem } from "@/types";
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from 'next/navigation';
@@ -60,7 +60,8 @@ export default function NuevoServicioPage() {
     });
     
     if (newService.status === 'Completado') {
-      setCurrentServiceForTicket(newService);
+      const serviceForTicket = enrichServiceForPrinting(newService, inventoryItems);
+      setCurrentServiceForTicket(serviceForTicket);
       setCurrentVehicleForTicket(vehicles.find(v => v.id === newService.vehicleId) || null);
       setCurrentTechnicianForTicket(technicians.find(t => t.id === newService.technicianId) || null);
       setDialogStep('print');
