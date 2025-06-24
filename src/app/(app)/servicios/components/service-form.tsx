@@ -20,7 +20,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription} from "@/components/ui/card";
-import { CalendarIcon, PlusCircle, Search, Trash2, AlertCircle, Car as CarIcon, Clock, DollarSign, PackagePlus, BrainCircuit, Loader2, Printer, Plus, Minus, FileText, Signature } from "lucide-react";
+import { CalendarIcon, PlusCircle, Search, Trash2, AlertCircle, Car as CarIcon, Clock, DollarSign, PackagePlus, BrainCircuit, Loader2, Printer, Plus, Minus, FileText, Signature, MessageSquare } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format, parseISO, setHours, setMinutes, isValid, startOfDay } from "date-fns";
 import { es } from 'date-fns/locale';
@@ -45,6 +45,8 @@ import { ServiceSheetContent } from './service-sheet-content';
 import { Checkbox } from "@/components/ui/checkbox";
 import { SignatureDialog } from "./signature-dialog";
 import Image from "next/image";
+import { doc, setDoc } from 'firebase/firestore';
+import { db } from '@root/lib/firebaseClient.js';
 
 
 const supplySchema = z.object({
@@ -58,6 +60,7 @@ const supplySchema = z.object({
 
 const serviceFormSchemaBase = z.object({
   id: z.string().optional(), // For identifying existing records
+  publicId: z.string().optional(),
   vehicleId: z.string({required_error: "Debe seleccionar o registrar un vehículo."}).min(1, "Debe seleccionar o registrar un vehículo.").optional(),
   vehicleLicensePlateSearch: z.string().optional(),
   serviceDate: z.date({ required_error: "La fecha es obligatoria." }).optional(),
@@ -247,6 +250,7 @@ export function ServiceForm({
 
         const dataToReset: Partial<ServiceFormValues> = {
             id: data.id,
+            publicId: (data as ServiceRecord)?.publicId,
             vehicleId: data.vehicleId ? String(data.vehicleId) : undefined,
             vehicleLicensePlateSearch: vehicle?.licensePlate || data.vehicleIdentifier || "",
             serviceDate: parsedServiceDate && isValid(parsedServiceDate) ? parsedServiceDate : undefined,
@@ -371,6 +375,26 @@ export function ServiceForm({
     }
   };
 
+  const savePublicService = async (serviceData: ServiceRecord, vehicleData: Vehicle | null) => {
+    if (!db || !serviceData.publicId || !vehicleData) {
+        console.warn("Public service save skipped: Missing db, publicId, or vehicle data.");
+        return;
+    }
+    try {
+        const publicServiceData = {
+            ...serviceData,
+            vehicle: { ...vehicleData }, // Embed vehicle data for public access
+        };
+        await setDoc(doc(db, "publicServices", serviceData.publicId), publicServiceData);
+    } catch (e) {
+        console.error("Failed to save public service document:", e);
+        toast({
+            title: "Error de Sincronización",
+            description: "No se pudo guardar la hoja de servicio pública.",
+            variant: "destructive",
+        });
+    }
+  };
 
   const handleFormSubmit = async (values: ServiceFormValues) => {
     if (isReadOnly) {
@@ -404,6 +428,7 @@ export function ServiceForm({
     if (mode === 'service') {
       const serviceData: ServiceRecord = {
         id: initialDataService?.id || `SER${defaultServiceRecords.length + 1}`,
+        publicId: initialDataService?.publicId || `srv_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 9)}`,
         vehicleId: vehicleIdToSave,
         vehicleIdentifier: selectedVehicle?.licensePlate || values.vehicleLicensePlateSearch,
         serviceDate: values.serviceDate!.toISOString(),
@@ -432,6 +457,7 @@ export function ServiceForm({
         serviceAdvisorName: currentUser?.name || 'N/A',
         customerSignature: values.customerSignature,
       };
+      await savePublicService(serviceData, selectedVehicle);
       await onSubmit(serviceData);
     } else { // mode === 'quote'
       const quoteData: QuoteRecord = {
@@ -491,6 +517,31 @@ export function ServiceForm({
     setServiceForSheet({ ...serviceDataForSheet, vehicleIdentifier: vehicleForSheet.licensePlate });
     setIsSheetOpen(true);
   }, [form, currentUser, selectedVehicle, toast]);
+
+  const handleShareServiceSheet = async () => {
+    const serviceId = form.getValues('id');
+    const publicId = initialDataService?.publicId || (serviceId ? placeholderServiceRecords.find(s => s.id === serviceId)?.publicId : null);
+
+    if (!serviceId || !publicId) {
+        toast({ title: "Guardar primero", description: "Guarda el servicio para generar o actualizar el enlace para compartir.", variant: "default" });
+        return;
+    }
+
+    if (!selectedVehicle) {
+        toast({ title: "Vehículo no seleccionado", description: "Selecciona un vehículo antes de compartir.", variant: "destructive" });
+        return;
+    }
+
+    const shareUrl = `${window.location.origin}/s/${publicId}`;
+    const message = `Hola ${selectedVehicle.ownerName || 'Cliente'}, aquí está la hoja de servicio actualizada para su vehículo ${selectedVehicle.make || ''} ${selectedVehicle.model || ''}. Puede consultarla aquí: ${shareUrl}`;
+
+    navigator.clipboard.writeText(message).then(() => {
+        toast({ title: "Mensaje copiado", description: "El mensaje de WhatsApp ha sido copiado al portapapeles." });
+    }).catch(err => {
+        console.error("Failed to copy share message:", err);
+        toast({ title: "Error al copiar", description: "No se pudo copiar el mensaje.", variant: "destructive" });
+    });
+};
 
 
   const handleTimeChange = (timeString: string, dateField: "serviceDate" | "deliveryDateTime") => {
@@ -1375,10 +1426,16 @@ export function ServiceForm({
         <div className="flex justify-between items-center pt-4">
             <div>
               {mode === 'service' && !isReadOnly && (
-                <Button type="button" onClick={handlePrintSheet} variant="outline" className="bg-card">
-                    <Printer className="mr-2 h-4 w-4" />
-                    Hoja de Servicio
-                </Button>
+                <div className="flex gap-2">
+                    <Button type="button" onClick={handlePrintSheet} variant="outline" className="bg-card">
+                        <Printer className="mr-2 h-4 w-4" />
+                        Hoja de Servicio
+                    </Button>
+                    <Button type="button" onClick={handleShareServiceSheet} variant="outline" className="bg-card">
+                        <MessageSquare className="mr-2 h-4 w-4" />
+                        Compartir
+                    </Button>
+                </div>
               )}
             </div>
             <div className="flex justify-end gap-2">

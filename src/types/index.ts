@@ -26,6 +26,7 @@ export interface ServiceSupply {
 
 export interface ServiceRecord {
   id: string;
+  publicId?: string; // Unique, random ID for public sharing
   vehicleId: string;
   vehicleIdentifier?: string;
   serviceDate: string; 
