@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useMemo } from 'react';
@@ -6,7 +5,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import type { ServiceRecord, Vehicle, Technician } from '@/types';
-import { isSameDay, parseISO, format, isValid } from 'date-fns';
+import { isSameDay, parseISO, format, isValid, compareAsc } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Wrench, Clock, CheckCircle, CalendarCheck } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -64,7 +63,7 @@ export function ServiceCalendar({ services, vehicles, technicians, onServiceClic
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
       <div className="lg:col-span-1">
-        <Card className="sticky top-4">
+        <Card className="sticky top-4 flex justify-center">
             <Calendar
               mode="single"
               selected={selectedDate}
