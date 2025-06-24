@@ -11,6 +11,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { useToast } from '@/hooks/use-toast';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '@root/lib/firebaseClient.js';
+import { AlertCircle } from 'lucide-react';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -19,9 +20,18 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isFirebaseConfigured, setIsFirebaseConfigured] = useState(true);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && !auth) {
+      setIsFirebaseConfigured(false);
+    }
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!isFirebaseConfigured) return;
+
     setIsLoading(true);
     setError('');
 
@@ -79,36 +89,44 @@ export default function LoginPage() {
           <CardDescription>Usa tus credenciales para ingresar al sistema.</CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="email">Correo Electrónico</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="usuario@ejemplo.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                disabled={isLoading}
-              />
+          {!isFirebaseConfigured ? (
+            <div className="text-center text-destructive bg-destructive/10 p-4 rounded-md flex flex-col items-center gap-2">
+              <AlertCircle className="h-6 w-6" />
+              <p className="font-bold">Firebase no configurado</p>
+              <p className="text-sm mt-1">Por favor, añade tus credenciales en `src/lib/firebaseClient.js` para habilitar el inicio de sesión.</p>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">Contraseña</Label>
-              <Input
-                id="password"
-                type="password"
-                value={password}
-                placeholder="••••••••"
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                disabled={isLoading}
-              />
-            </div>
-            {error && <p className="text-sm text-destructive">{error}</p>}
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? 'Ingresando...' : 'Ingresar'}
-            </Button>
-          </form>
+          ) : (
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="email">Correo Electrónico</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="usuario@ejemplo.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  disabled={isLoading}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="password">Contraseña</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  value={password}
+                  placeholder="••••••••"
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  disabled={isLoading}
+                />
+              </div>
+              {error && <p className="text-sm text-destructive">{error}</p>}
+              <Button type="submit" className="w-full" disabled={isLoading}>
+                {isLoading ? 'Ingresando...' : 'Ingresar'}
+              </Button>
+            </form>
+          )}
         </CardContent>
         <CardFooter className="flex flex-col items-center justify-center text-center text-xs text-muted-foreground">
           <p>Sistema de Administración de Taller</p>

@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/layout/app-sidebar";
-import { hydrateFromFirestore, placeholderUsers, AUTH_USER_LOCALSTORAGE_KEY, persistToFirestore } from '@/lib/placeholder-data';
+import { hydrateFromFirestore, placeholderUsers, AUTH_USER_LOCALSTORAGE_KEY, persistToFirestore, defaultSuperAdmin } from '@/lib/placeholder-data';
 import { onAuthStateChanged, signOut } from 'firebase/auth'; 
 import { auth } from '@root/lib/firebaseClient.js';
 import { Loader2 } from 'lucide-react';
@@ -23,6 +23,17 @@ export default function AppLayout({
   const [isHydrating, setIsHydrating] = useState(true);
 
   useEffect(() => {
+    // If Firebase is not configured, run in a mock authenticated mode for local dev
+    if (!auth) {
+      console.warn("Firebase no está configurado. Ejecutando en modo de desarrollo sin autenticación real.");
+      setAuthStatus('authenticated');
+      setIsHydrating(false); // Skip hydration from firestore as it would fail
+      const mockUser = placeholderUsers.find(u => u.role === 'Superadmin') || defaultSuperAdmin;
+      localStorage.setItem(AUTH_USER_LOCALSTORAGE_KEY, JSON.stringify(mockUser));
+      (window as any).__APP_HYDRATED__ = true; // Manually set hydration flag
+      return; // Exit the effect
+    }
+
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
         // User is signed in with Firebase. Immediately show the app shell.
