@@ -1,4 +1,5 @@
 
+
 import type { Vehicle, ServiceRecord, Technician, InventoryItem, DashboardMetrics, SaleReceipt, ServiceSupply, TechnicianMonthlyPerformance, InventoryCategory, Supplier, SaleItem, PaymentMethod, AppRole, QuoteRecord, MonthlyFixedExpense, AdministrativeStaff, User } from '@/types';
 import { format, subMonths, addDays, getYear, getMonth, setHours, setMinutes, subDays, startOfMonth, endOfMonth, startOfDay, endOfDay } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -213,7 +214,7 @@ export async function hydrateFromFirestore() {
  * Saves specific parts of the application state from memory to a single Firestore document.
  * @param keysToUpdate An array of keys corresponding to the data arrays to be updated.
  */
-export async function persistToFirestore(keysToUpdate: DataKey[]) {
+export async function persistToFirestore(keysToUpdate?: DataKey[]) {
   if (!db) {
     console.warn("Persist skipped: Firebase not configured.");
     return;
@@ -223,26 +224,23 @@ export async function persistToFirestore(keysToUpdate: DataKey[]) {
     return;
   }
   
-  if (!keysToUpdate || keysToUpdate.length === 0) {
-      console.warn("Persist skipped: No keys provided for update.");
-      return;
-  }
+  const keys = keysToUpdate && keysToUpdate.length > 0 ? keysToUpdate : Object.keys(DATA_ARRAYS) as DataKey[];
 
-  console.log(`Persisting granular data to Firestore for keys: ${keysToUpdate.join(', ')}`);
+  console.log(`Persisting granular data to Firestore for keys: ${keys.join(', ')}`);
 
   const dataToPersist: { [key in DataKey]?: any[] } = {};
   
-  for (const key of keysToUpdate) {
+  for (const key of keys) {
       if (DATA_ARRAYS[key]) {
           const originalArray = DATA_ARRAYS[key];
           // Sanitize each object in the array to remove 'undefined' fields
           dataToPersist[key] = originalArray.map(item => {
-              const cleanItem = { ...item };
-              Object.keys(cleanItem).forEach(prop => {
-                  if (cleanItem[prop] === undefined) {
-                      delete (cleanItem as any)[prop];
-                  }
-              });
+              const cleanItem: any = {};
+              for (const prop in item) {
+                if (item[prop] !== undefined) {
+                  cleanItem[prop] = item[prop];
+                }
+              }
               return cleanItem;
           });
       }
@@ -283,36 +281,52 @@ export const getYesterdayRange = () => {
     return { from: startOfDay(yesterday), to: endOfDay(yesterday) };
 };
 
+/**
+ * Robustly calculates the profit for a given sale receipt.
+ * It handles various data edge cases to prevent incorrect calculations.
+ * @param sale The sale receipt object.
+ * @param inventory The complete list of inventory items.
+ * @param ivaRate The current IVA rate (e.g., 0.16).
+ * @returns The total calculated profit for the sale.
+ */
 export const calculateSaleProfit = (sale: SaleReceipt, inventory: InventoryItem[], ivaRate: number): number => {
-  if (!sale?.items?.length) {
+  if (!sale || !sale.items || !Array.isArray(sale.items) || sale.items.length === 0) {
     return 0;
   }
 
-  let totalProfit = 0;
-
-  for (const saleItem of sale.items) {
+  // Use reduce to sum up the profit from each item in the sale.
+  return sale.items.reduce((totalProfit, saleItem) => {
+    // 1. Find the corresponding inventory item to get its cost price.
     const inventoryItem = inventory.find(inv => inv && inv.id === saleItem.inventoryItemId);
 
-    const costPrice = (inventoryItem && !inventoryItem.isService) ? Number(inventoryItem.unitPrice || 0) : 0;
-    const sellingPriceWithTax = Number(saleItem.unitPrice || 0);
-    
-    const quantitySoldStr = (saleItem.quantity || '0').toString().replace(',', '.');
-    const quantitySold = parseFloat(quantitySoldStr);
+    // 2. Safely get all necessary values as strings, defaulting to '0' if invalid/missing.
+    //    Cost price is 0 for services or if the item is not found in inventory.
+    const costPriceStr = (inventoryItem && !inventoryItem.isService) ? String(inventoryItem.unitPrice || 0) : '0';
+    //    Selling price and quantity come from the sale record itself.
+    const sellingPriceWithTaxStr = String(saleItem.unitPrice || 0);
+    const quantityStr = String(saleItem.quantity || 0);
 
-    if (isNaN(costPrice) || isNaN(sellingPriceWithTax) || isNaN(quantitySold) || quantitySold <= 0) {
-      console.warn(`Skipping item in profit calculation due to invalid data. Sale ID: ${sale.id}, Item: ${saleItem.itemName || saleItem.inventoryItemId}`);
-      continue;
-    }
-    
-    const sellingPriceSubTotal = sellingPriceWithTax / (1 + ivaRate);
-    const itemProfit = (sellingPriceSubTotal - costPrice) * quantitySold;
-    
-    if (!isNaN(itemProfit)) {
-        totalProfit += itemProfit;
-    }
-  }
+    // 3. Sanitize and parse all values to numbers. This handles both '.' and ',' as decimal separators.
+    const costPrice = parseFloat(costPriceStr.replace(',', '.'));
+    const sellingPriceWithTax = parseFloat(sellingPriceWithTaxStr.replace(',', '.'));
+    const quantity = parseFloat(quantityStr.replace(',', '.'));
 
-  return totalProfit;
+    // 4. If any value is not a valid number (NaN) after parsing, or quantity is zero/negative,
+    //    skip this item by returning the accumulated profit so far.
+    if (isNaN(costPrice) || isNaN(sellingPriceWithTax) || isNaN(quantity) || quantity <= 0) {
+      console.warn(`Profit calculation skipped for item '${saleItem.itemName || saleItem.inventoryItemId}' in sale ${sale.id} due to invalid data.`);
+      return totalProfit;
+    }
+
+    // 5. Calculate the profit for the current line item.
+    //    First, get the pre-tax selling price.
+    const sellingPriceWithoutTax = sellingPriceWithTax / (1 + ivaRate);
+    //    Then, calculate the profit for this single item.
+    const itemProfit = (sellingPriceWithoutTax - costPrice) * quantity;
+    
+    // 6. Add the item's profit to the running total, ensuring we don't add NaN.
+    return totalProfit + (isNaN(itemProfit) ? 0 : itemProfit);
+  }, 0); // Start the accumulator at 0.
 };
 
 
@@ -342,3 +356,8 @@ export const enrichServiceForPrinting = (service: ServiceRecord, inventory: Inve
     suppliesUsed: enrichedSupplies,
   };
 };
+
+// Initialize the data hydration process as soon as this module is loaded on the client.
+if (typeof window !== 'undefined') {
+  hydrateFromFirestore();
+}
