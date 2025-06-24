@@ -35,7 +35,7 @@ export function FixedExpenseForm({ initialData, onSubmit, onClose }: FixedExpens
     resolver: zodResolver(fixedExpenseFormSchema),
     defaultValues: initialData || {
       name: "",
-      amount: 0,
+      amount: undefined,
     },
   });
 
@@ -68,7 +68,7 @@ export function FixedExpenseForm({ initialData, onSubmit, onClose }: FixedExpens
               <FormControl>
                 <div className="relative">
                   <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input type="number" step="0.01" placeholder="15000.00" {...field} className="pl-8" />
+                  <Input type="number" step="0.01" placeholder="15000.00" {...field} value={field.value ?? ''} className="pl-8" />
                 </div>
               </FormControl>
               <FormMessage />
