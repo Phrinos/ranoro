@@ -2,6 +2,7 @@
 "use client";
 
 import React, { useEffect, useState, useCallback, useRef } from "react";
+import dynamic from "next/dynamic";
 import { format, parseISO, isToday, isValid, isSameDay } from "date-fns";
 import { PageHeader } from "@/components/page-header";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -14,7 +15,49 @@ import { analyzeWorkshopCapacity } from '@/ai/flows/capacity-analysis-flow';
 import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
 import { PurchaseOrderContent } from './components/purchase-order-content';
 import { Button } from "@/components/ui/button";
-import { DashboardCharts } from "./components/dashboard-charts";
+import { Skeleton } from "@/components/ui/skeleton";
+
+const ChartLoadingSkeleton = () => (
+    <div className="grid gap-6 sm:grid-cols-1 lg:grid-cols-2 mt-6">
+        <Card>
+            <CardHeader>
+                <Skeleton className="h-6 w-3/4" />
+                <Skeleton className="h-4 w-1/2 mt-2" />
+            </CardHeader>
+            <CardContent className="flex items-center justify-center h-[250px] text-muted-foreground">
+                <Loader2 className="h-8 w-8 animate-spin" />
+            </CardContent>
+        </Card>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <Card>
+                <CardHeader>
+                    <Skeleton className="h-6 w-3/4" />
+                    <Skeleton className="h-4 w-1/2 mt-2" />
+                </CardHeader>
+                <CardContent className="flex items-center justify-center h-[250px] text-muted-foreground">
+                    <Loader2 className="h-8 w-8 animate-spin" />
+                </CardContent>
+            </Card>
+            <Card>
+                <CardHeader>
+                    <Skeleton className="h-6 w-3/4" />
+                    <Skeleton className="h-4 w-1/2 mt-2" />
+                </CardHeader>
+                <CardContent className="flex items-center justify-center h-[250px] text-muted-foreground">
+                    <Loader2 className="h-8 w-8 animate-spin" />
+                </CardContent>
+            </Card>
+        </div>
+    </div>
+);
+
+const DashboardCharts = dynamic(
+  () => import('./components/dashboard-charts').then((mod) => mod.DashboardCharts),
+  { 
+    ssr: false,
+    loading: () => <ChartLoadingSkeleton />,
+  }
+);
 
 
 const formatCurrency = (amount: number) => {
