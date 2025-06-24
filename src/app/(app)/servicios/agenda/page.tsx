@@ -28,7 +28,7 @@ import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
 import { TicketContent } from '@/components/ticket-content';
 import Link from "next/link";
 import { analyzeWorkshopCapacity, type CapacityAnalysisOutput } from '@/ai/flows/capacity-analysis-flow';
-import { ServiceSheetContent } from '../components/service-sheet-content';
+import { ServiceSheetContent } from '@/components/service-sheet-content';
 import { ServiceCalendar } from '../components/service-calendar';
 
 

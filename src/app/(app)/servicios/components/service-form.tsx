@@ -41,7 +41,7 @@ import type { InventoryItemFormValues } from "../../inventario/components/invent
 import { suggestPrice, type SuggestPriceInput } from '@/ai/flows/price-suggestion-flow';
 import { suggestQuote, type QuoteSuggestionInput } from '@/ai/flows/quote-suggestion-flow';
 import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
-import { ServiceSheetContent } from './service-sheet-content';
+import { ServiceSheetContent } from '@/components/service-sheet-content';
 import { Checkbox } from "@/components/ui/checkbox";
 import Image from "next/image";
 import { doc, setDoc } from 'firebase/firestore';
@@ -1290,7 +1290,8 @@ export function ServiceForm({
                                                         {item.quantity}{item.unitType === 'ml' ? 'ml' : item.unitType === 'liters' ? 'L' : ''}
                                                     </span>
                                                     <Button
-                                                        type="button" variant="outline" size="icon"
+                                                        type="button"
+                                                        variant="outline" size="icon"
                                                         className="h-6 w-6"
                                                         onClick={() => handleQuantityChange(index, 1)}
                                                         disabled={isReadOnly}
