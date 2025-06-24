@@ -30,8 +30,6 @@ import Link from "next/link";
 import { analyzeWorkshopCapacity, type CapacityAnalysisOutput } from '@/ai/flows/capacity-analysis-flow';
 import { ServiceSheetContent } from '../components/service-sheet-content';
 import { ServiceCalendar } from '../components/service-calendar';
-import { db } from '@root/lib/firebaseClient.js';
-import { doc, setDoc } from 'firebase/firestore';
 
 
 interface GroupedServices {
@@ -66,6 +64,7 @@ export default function AgendaServiciosPage() {
 
 
   const handleServiceUpdated = useCallback(async (data: ServiceRecord) => {
+    // The form now handles public doc saving. We just update local state.
     setAllServices(prevServices => 
         prevServices.map(s => s.id === data.id ? data : s)
     );
@@ -252,39 +251,21 @@ export default function AgendaServiciosPage() {
 
   const handleShareService = useCallback(async (service: ServiceRecord | null) => {
     if (!service) return;
+    
+    if (!service.publicId) {
+        toast({ title: "Enlace no disponible", description: "Guarde el servicio primero para generar un enlace.", variant: "default" });
+        return;
+    }
+
     const vehicleForAction = vehicles.find(v => v.id === service.vehicleId);
     if (!vehicleForAction) {
         toast({ title: "Faltan Datos", description: "No se encontró el vehículo asociado.", variant: "destructive" });
         return;
     }
     
-    let currentService = service;
-
-    if (!currentService.publicId) {
-        currentService.publicId = `srv_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 9)}`;
-    }
-
-    const serviceIndex = placeholderServiceRecords.findIndex(s => s.id === currentService.id);
-    if (serviceIndex !== -1) {
-        placeholderServiceRecords[serviceIndex] = currentService;
-        
-        if (db) {
-            const publicServiceData = {
-                ...currentService,
-                vehicle: { ...vehicleForAction },
-            };
-            try {
-                await setDoc(doc(db, "publicServices", currentService.publicId), publicServiceData, { merge: true });
-            } catch (e) {
-                console.error("Failed to update public service:", e);
-            }
-        }
-        await persistToFirestore(['serviceRecords']);
-    }
-
-    const shareUrl = `${window.location.origin}/s/${currentService.publicId}`;
-    const workshopName = (currentService.workshopInfo?.name) || 'RANORO';
-    const message = `Hola ${vehicleForAction.ownerName || 'Cliente'}, aquí está la hoja de servicio ${currentService.id} de nuestro taller para su vehículo ${vehicleForAction.make} ${vehicleForAction.model} ${vehicleForAction.year}. Puede consultarla aquí: ${shareUrl}`;
+    const shareUrl = `${window.location.origin}/s/${service.publicId}`;
+    const workshopName = (service.workshopInfo?.name) || 'RANORO';
+    const message = `Hola ${vehicleForAction.ownerName || 'Cliente'}, aquí está la hoja de servicio ${service.id} de nuestro taller para su vehículo ${vehicleForAction.make} ${vehicleForAction.model} ${vehicleForAction.year}. Puede consultarla aquí: ${shareUrl}`;
 
     navigator.clipboard.writeText(message).then(() => {
         toast({
@@ -295,7 +276,7 @@ export default function AgendaServiciosPage() {
         console.error("Could not copy text: ", err);
         toast({ title: "Error al Copiar", variant: "destructive" });
     });
-}, [vehicles, toast]);
+  }, [vehicles, toast]);
 
 
   const futureServices = useMemo(() => {

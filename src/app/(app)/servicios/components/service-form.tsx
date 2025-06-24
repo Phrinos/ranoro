@@ -388,34 +388,38 @@ export function ServiceForm({
     }
   };
 
-  const savePublicService = async (serviceData: ServiceRecord, vehicleData: Vehicle | null) => {
+  const savePublicDocument = async (
+    type: 'quote' | 'service',
+    data: QuoteRecord | ServiceRecord,
+    vehicle: Vehicle | null
+  ) => {
     if (!db) {
-        console.warn("Public service save skipped: Database not configured.");
-        toast({
-            title: "Modo Demo: Hoja de servicio no compartible",
-            description: "El servicio se guardó, pero el enlace público no funcionará sin conexión a la base de datos.",
-            variant: "default",
-        });
-        return;
+      console.warn(`Public ${type} save skipped: Database not configured.`);
+      return; // Do not show toast for demo mode, just log it.
     }
-    if (!serviceData.publicId || !vehicleData) {
-        console.warn("Public service save skipped: Missing publicId or vehicle data.");
-        return;
+    if (!data.publicId || !vehicle) {
+      console.warn(`Public ${type} save skipped: Missing publicId or vehicle data.`);
+      return;
     }
+
+    const collectionName = type === 'quote' ? 'publicQuotes' : 'publicServices';
+    const publicDocRef = doc(db, collectionName, data.publicId);
+
     try {
-        const publicServiceData = {
-            ...serviceData,
-            vehicle: { ...vehicleData }, // Embed vehicle data for public access
-            workshopInfo: workshopInfo as WorkshopInfo,
-        };
-        await setDoc(doc(db, "publicServices", serviceData.publicId), publicServiceData);
+      const publicData = {
+        ...data,
+        vehicle: { ...vehicle },
+        workshopInfo: workshopInfo as WorkshopInfo,
+      };
+      await setDoc(publicDocRef, publicData, { merge: true });
+      console.log(`Public ${type} document ${data.publicId} saved successfully.`);
     } catch (e) {
-        console.error("Failed to save public service document:", e);
-        toast({
-            title: "Error de Sincronización",
-            description: "No se pudo guardar la hoja de servicio pública.",
-            variant: "destructive",
-        });
+      console.error(`Failed to save public ${type} document:`, e);
+      toast({
+        title: "Error de Sincronización",
+        description: `No se pudo guardar el documento público. El enlace compartido podría no funcionar.`,
+        variant: "destructive",
+      });
     }
   };
 
@@ -449,7 +453,7 @@ export function ServiceForm({
     const finalTaxAmount = finalTotalCost - finalSubTotal;
     
     if (mode === 'service') {
-      const serviceData: ServiceRecord = {
+      let serviceData: ServiceRecord = {
         id: initialDataService?.id || `SER_${Date.now().toString(36)}`,
         publicId: values.publicId || `srv_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 9)}`,
         vehicleId: vehicleIdToSave,
@@ -465,7 +469,7 @@ export function ServiceForm({
         suppliesUsed: values.suppliesUsed?.map(s => ({
           supplyId: s.supplyId,
           quantity: s.quantity,
-          unitPrice: currentInventoryItems.find(i => i.id === s.supplyId)?.unitPrice || 0, // Ensure cost price
+          unitPrice: currentInventoryItems.find(i => i.id === s.supplyId)?.unitPrice || 0,
           supplyName: s.supplyName,
         })) || [],
         totalCost: finalTotalCost,
@@ -485,10 +489,10 @@ export function ServiceForm({
         deliverySignatureViewed: (initialDataService as ServiceRecord)?.deliverySignatureViewed,
         workshopInfo: workshopInfo as WorkshopInfo,
       };
-      await savePublicService(serviceData, selectedVehicle);
+      await savePublicDocument('service', serviceData, selectedVehicle);
       await onSubmit(serviceData);
     } else { // mode === 'quote'
-      const quoteData: QuoteRecord = {
+      let quoteData: QuoteRecord = {
         id: (initialDataQuote as QuoteRecord)?.id || `COT_${Date.now().toString(36)}`,
         publicId: (initialDataQuote as QuoteRecord)?.publicId || `cot_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 9)}`,
         quoteDate: values.serviceDate!.toISOString(),
@@ -512,6 +516,7 @@ export function ServiceForm({
         mileage: values.mileage,
         workshopInfo: workshopInfo as WorkshopInfo,
       };
+      await savePublicDocument('quote', quoteData, selectedVehicle);
       await onSubmit(quoteData);
     }
   };
@@ -548,35 +553,6 @@ export function ServiceForm({
     setServiceForSheet({ ...serviceDataForSheet, vehicleIdentifier: vehicleForSheet.licensePlate });
     setIsSheetOpen(true);
   }, [form, currentUser, selectedVehicle, toast]);
-
-  const handleShareServiceSheet = async () => {
-    if (!db) {
-        toast({ title: "Firebase no configurado", description: "La función de compartir requiere una conexión a la base de datos.", variant: "destructive" });
-        return;
-    }
-    const publicId = form.getValues('publicId');
-
-    if (!publicId) {
-        toast({ title: "Guardar primero", description: "Guarda el servicio para generar o actualizar el enlace para compartir.", variant: "default" });
-        return;
-    }
-
-    if (!selectedVehicle) {
-        toast({ title: "Vehículo no seleccionado", description: "Selecciona un vehículo antes de compartir.", variant: "destructive" });
-        return;
-    }
-
-    const shareUrl = `${window.location.origin}/s/${publicId}`;
-    const message = `Hola ${selectedVehicle.ownerName || 'Cliente'}, aquí está la hoja de servicio actualizada para su vehículo ${selectedVehicle.make || ''} ${selectedVehicle.model || ''}. Puede consultarla aquí: ${shareUrl}`;
-
-    navigator.clipboard.writeText(message).then(() => {
-        toast({ title: "Mensaje copiado", description: "El mensaje de WhatsApp ha sido copiado al portapapeles." });
-    }).catch(err => {
-        console.error("Failed to copy share message:", err);
-        toast({ title: "Error al copiar", description: "No se pudo copiar el mensaje.", variant: "destructive" });
-    });
-};
-
 
   const handleTimeChange = (timeString: string, dateField: "serviceDate" | "deliveryDateTime") => {
     const [hours, minutes] = timeString.split(':').map(Number);
@@ -1645,8 +1621,17 @@ export function ServiceForm({
         dialogContentClassName="printable-quote-dialog"
         footerActions={
           <>
-            <Button type="button" onClick={handleShareServiceSheet} variant="outline">
-              <MessageSquare className="mr-2 h-4 w-4" /> Copiar para WhatsApp
+            <Button type="button" onClick={() => {
+                if (serviceForSheet?.publicId) {
+                    const shareUrl = `${window.location.origin}/s/${serviceForSheet.publicId}`;
+                    navigator.clipboard.writeText(shareUrl).then(() => {
+                        toast({ title: 'Enlace copiado', description: 'El enlace a la hoja de servicio ha sido copiado.' });
+                    });
+                } else {
+                    toast({ title: 'Error', description: 'Guarde el servicio para generar un enlace.', variant: 'destructive' });
+                }
+            }} variant="outline">
+              <MessageSquare className="mr-2 h-4 w-4" /> Copiar Enlace
             </Button>
             <Button onClick={() => window.print()}>
                 <Printer className="mr-2 h-4 w-4" /> Imprimir Hoja
