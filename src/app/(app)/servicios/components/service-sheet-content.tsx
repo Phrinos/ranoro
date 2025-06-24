@@ -5,7 +5,7 @@ import type { ServiceRecord, Vehicle } from '@/types';
 import { format, parseISO, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
 import React, { useEffect, useState } from 'react';
-import { Progress } from '@/components/ui/progress';
+import { cn } from "@/lib/utils";
 
 const initialWorkshopInfo = {
   name: "RANORO",
@@ -54,69 +54,80 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
     };
 
     const fuelPercentage = service.fuelLevel ? fuelLevelMap[service.fuelLevel] ?? 0 : 0;
+    
+    const getFuelColorClass = (percentage: number) => {
+        if (percentage <= 25) return "bg-red-500";
+        if (percentage <= 50) return "bg-orange-400";
+        if (percentage <= 87.5) return "bg-yellow-400";
+        return "bg-green-500";
+    };
+    
+    const fuelColor = getFuelColorClass(fuelPercentage);
 
     return (
-      <div ref={ref} data-format="letter" className="font-sans bg-white text-black shadow-lg mx-auto p-8 text-xs flex flex-col min-h-[10in]">
+      <div ref={ref} data-format="letter" className="font-sans bg-white text-black shadow-lg mx-auto p-8 text-[10px] flex flex-col min-h-[10in]">
         <header className="mb-4 pb-2 border-b-2 border-black">
           <div className="flex justify-between items-center">
             <img src={workshopInfo.logoUrl} alt={`${workshopInfo.name} Logo`} className="h-16" data-ai-hint="workshop logo"/>
             <div className="text-right">
-              <h1 className="text-2xl font-bold">ORDEN DE SERVICIO</h1>
-              <p className="font-mono text-lg">Folio: <span className="font-bold">{service.id}</span></p>
+              <h1 className="text-xl font-bold">ORDEN DE SERVICIO</h1>
+              <p className="font-mono text-base">Folio: <span className="font-bold">{service.id}</span></p>
             </div>
           </div>
-          <div className="flex justify-between items-end mt-2 text-sm">
+          <div className="flex justify-between items-end mt-2 text-xs">
              <div>
-                <p className="font-bold text-base">{workshopInfo.name}</p>
+                <p className="font-bold text-sm">{workshopInfo.name}</p>
                 <p>{workshopInfo.addressLine1}</p>
                 {workshopInfo.addressLine2 && <p>{workshopInfo.addressLine2}</p>}
                 <p>{workshopInfo.cityState}</p>
                 <p>Tel: {workshopInfo.phone}</p>
              </div>
-             <div className="text-base">
+             <div className="text-sm">
                 <p><span className="font-bold">Fecha de Recepción:</span> {formattedServiceDate}</p>
              </div>
           </div>
         </header>
 
         <main className="flex-grow">
-          <section className="grid grid-cols-2 gap-4 mb-4 text-xs">
-            <div className="border-2 border-black p-3 rounded">
-              <h3 className="font-bold text-sm mb-2 border-b-2 border-black pb-1">DATOS DEL CLIENTE</h3>
-              <div className="space-y-1">
-                <p><span className="font-semibold">Nombre:</span> <span className="text-base font-bold">{vehicle?.ownerName}</span></p>
-                <p><span className="font-semibold">Teléfono:</span> <span className="text-base font-bold">{vehicle?.ownerPhone}</span></p>
-                <p><span className="font-semibold">Email:</span> <span className="text-base font-bold">{vehicle?.ownerEmail || 'N/A'}</span></p>
+          <section className="grid grid-cols-2 gap-4 mb-4 text-[10px]">
+            <div className="border-2 border-black p-2 rounded">
+              <h3 className="font-bold text-xs mb-1 border-b-2 border-black pb-1">DATOS DEL CLIENTE</h3>
+              <div className="space-y-0.5 pt-1">
+                <p><span className="font-semibold">Nombre:</span> <span className="text-sm font-bold">{vehicle?.ownerName}</span></p>
+                <p><span className="font-semibold">Teléfono:</span> <span className="text-sm font-bold">{vehicle?.ownerPhone}</span></p>
+                <p><span className="font-semibold">Email:</span> <span className="text-sm font-bold">{vehicle?.ownerEmail || 'N/A'}</span></p>
               </div>
             </div>
-            <div className="border-2 border-black p-3 rounded">
-              <h3 className="font-bold text-sm mb-2 border-b-2 border-black pb-1">DATOS DEL VEHÍCULO</h3>
-              <div className="space-y-1">
-                <p><span className="font-semibold">Marca/Modelo:</span> <span className="text-base font-bold">{vehicle?.make} {vehicle?.model}</span></p>
-                <p><span className="font-semibold">Año:</span> <span className="text-base font-bold">{vehicle?.year}</span></p>
-                <p><span className="font-semibold">Placas:</span> <span className="text-base font-bold">{vehicle?.licensePlate}</span></p>
-                <p><span className="font-semibold">Color:</span> <span className="text-base font-bold">{vehicle?.color || 'N/A'}</span></p>
-                <p><span className="font-semibold">Kilometraje:</span> <span className="text-base font-bold">{service.mileage?.toLocaleString('es-MX') || 'N/A'} km</span></p>
+            <div className="border-2 border-black p-2 rounded">
+              <h3 className="font-bold text-xs mb-1 border-b-2 border-black pb-1">DATOS DEL VEHÍCULO</h3>
+              <div className="space-y-0.5 pt-1">
+                <p><span className="font-semibold">Marca/Modelo:</span> <span className="text-sm font-bold">{vehicle?.make} {vehicle?.model}</span></p>
+                <p><span className="font-semibold">Año:</span> <span className="text-sm font-bold">{vehicle?.year}</span></p>
+                <p><span className="font-semibold">Placas:</span> <span className="text-sm font-bold">{vehicle?.licensePlate}</span></p>
+                <p><span className="font-semibold">Color:</span> <span className="text-sm font-bold">{vehicle?.color || 'N/A'}</span></p>
+                <p><span className="font-semibold">Kilometraje:</span> <span className="text-sm font-bold">{service.mileage?.toLocaleString('es-MX') || 'N/A'} km</span></p>
               </div>
             </div>
           </section>
 
-          <section className="border-2 border-black p-3 rounded mb-4">
-              <h3 className="font-bold text-sm mb-2 border-b-2 border-black pb-1">SERVICIO SOLICITADO</h3>
-              <p className="whitespace-pre-wrap min-h-[60px] text-lg font-bold">{service.description}</p>
+          <section className="border-2 border-black p-2 rounded mb-4">
+              <h3 className="font-bold text-xs mb-1 border-b-2 border-black pb-1">SERVICIO SOLICITADO</h3>
+              <p className="whitespace-pre-wrap min-h-[40px] text-base font-bold pt-1">{service.description}</p>
           </section>
           
-          <section className="grid grid-cols-3 gap-4 mb-4 text-xs">
-              <div className="border-2 border-black p-3 rounded col-span-2">
-                 <h3 className="font-bold text-sm mb-2 border-b-2 border-black pb-1">CONDICIONES DEL VEHÍCULO (AL RECIBIR)</h3>
-                 <p className="whitespace-pre-wrap min-h-[60px]">{service.vehicleConditions || 'No especificado.'}</p>
+          <section className="grid grid-cols-3 gap-4 mb-4 text-[10px]">
+              <div className="border-2 border-black p-2 rounded col-span-2">
+                 <h3 className="font-bold text-xs mb-1 border-b-2 border-black pb-1">CONDICIONES DEL VEHÍCULO (AL INGRESAR AL TALLER)</h3>
+                 <p className="whitespace-pre-wrap min-h-[40px] pt-1">{service.vehicleConditions || 'No especificado.'}</p>
               </div>
-              <div className="border-2 border-black p-3 rounded col-span-1 flex flex-col justify-center">
-                  <h3 className="font-bold text-sm mb-2 border-b-2 border-black pb-1 text-center">NIVEL DE COMBUSTIBLE</h3>
-                  <div className="flex-grow flex flex-col items-center justify-center pt-2">
-                    <span className="font-semibold text-lg mb-2">{service.fuelLevel || 'N/A'}</span>
-                    <Progress value={fuelPercentage} className="h-4 w-full" />
-                    <div className="w-full flex justify-between text-[10px] mt-1 px-1">
+              <div className="border-2 border-black p-2 rounded col-span-1 flex flex-col justify-center">
+                  <h3 className="font-bold text-xs mb-1 border-b-2 border-black pb-1 text-center">NIVEL DE COMBUSTIBLE</h3>
+                  <div className="flex-grow flex flex-col items-center justify-center pt-1">
+                    <span className="font-semibold text-base mb-1">{service.fuelLevel || 'N/A'}</span>
+                    <div className="h-3 w-full bg-gray-200 rounded-full overflow-hidden border border-gray-300">
+                        <div className={cn("h-full transition-all", fuelColor)} style={{ width: `${fuelPercentage}%` }} />
+                    </div>
+                    <div className="w-full flex justify-between text-[8px] mt-0.5 px-0.5">
                         <span>E</span>
                         <span>F</span>
                     </div>
@@ -124,38 +135,38 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
               </div>
           </section>
 
-          <section className="grid grid-cols-2 gap-4 mb-4 text-xs">
-            <div className="border-2 border-black p-3 rounded">
-                <h3 className="font-bold text-sm mb-2 border-b-2 border-black pb-1">INVENTARIO DE PERTENENCIAS</h3>
-                <p className="whitespace-pre-wrap min-h-[60px]">{service.customerItems || 'No especificado.'}</p>
+          <section className="grid grid-cols-2 gap-4 mb-4 text-[10px]">
+            <div className="border-2 border-black p-2 rounded">
+                <h3 className="font-bold text-xs mb-1 border-b-2 border-black pb-1">INVENTARIO DE PERTENENCIAS</h3>
+                <p className="whitespace-pre-wrap min-h-[60px] pt-1">{service.customerItems || 'No especificado.'}</p>
             </div>
-            <div className="border-2 border-black p-3 rounded flex flex-col justify-between">
-                <h3 className="font-bold text-sm mb-2 border-b-2 border-black pb-1">FIRMA DE AUTORIZACIÓN (AL ENTREGAR)</h3>
+            <div className="border-2 border-black p-2 rounded flex flex-col justify-between">
+                <h3 className="font-bold text-xs mb-1 border-b-2 border-black pb-1">Autorizo que se realicen los servicios arriba descritos</h3>
                 <div className="border-t border-black mt-auto pt-1 text-center">
-                    <p className="text-sm font-semibold">{vehicle?.ownerName || '________________________________'}</p>
+                    <p className="text-xs font-semibold">{vehicle?.ownerName || '________________________________'}</p>
                 </div>
             </div>
           </section>
         </main>
         
         <footer className="mt-auto pt-4 text-xs">
-           <div className="grid grid-cols-2 gap-8 text-center mb-8">
+           <div className="grid grid-cols-2 gap-8 text-center mb-4">
                <div className="pt-12">
                    <div className="border-t border-black pt-1">
                        <p className="font-bold">FIRMA ASESOR DE SERVICIO</p>
-                       <p className="text-sm">{service.serviceAdvisorName || '________________________________'}</p>
+                       <p className="text-xs">{service.serviceAdvisorName || '________________________________'}</p>
                    </div>
                </div>
                 <div className="pt-12">
                    <div className="border-t border-black pt-1">
                        <p className="font-bold">FIRMA DE CONFORMIDAD (AL RECIBIR)</p>
-                       <p className="text-sm font-semibold">{vehicle?.ownerName || '________________________________'}</p>
+                       <p className="text-xs font-semibold">{vehicle?.ownerName || '________________________________'}</p>
                    </div>
                </div>
            </div>
            <section>
-                <p className="text-[8px] text-justify leading-tight">
-                    <span className="font-bold">TÉRMINOS Y CONDICIONES:</span> 1. En virtud de este contrato, Servicio Ranoro presta el servicio de reparación y/o mantenimiento al Cliente (Consumidor), del vehículo cuyas características se detallan en este contrato. 2. El Cliente expresa ser el dueño del vehículo y/o estar facultado para autorizar la reparación y/o mantenimiento del vehículo descrito en el presente contrato, por lo que acepta las condiciones y términos bajo los cuales se realizará la prestación del servicio descrita en dicho contrato. Asimismo, es sabedor de las posibles consecuencias que puede sufrir el vehículo con motivo de su reparación y/o mantenimiento y se responsabiliza de las mismas. 3. El consumidor acepta haber tenido a la vista los precios por mano de obra, partes y/o refacciones a emplear en las operaciones a efectuar por parte de Ranoro, y cuyas refacciones son nuevas y apropiadas para el funcionamiento del vehiculo. 4. Las condiciones generales del vehículo materia de reparación y/o mantenimiento, son señalados en el carátula del presente contrato. 5. Se otorga con garantía por un plazo de 90 días en mano de obra contados a partir de la entrega del vehículo. Para la garantía en partes, piezas, refacciones y accesorios, Ranoro transmitirá la otorgada por el fabricante y/o proveedor. la garantía deberá hacerse válida en las instalaciones de RANORO siempre y cuando no se haya efectuado una reparación por un tercero. El tiempo que dure la reparación y/o mantenimiento del vehículo, bajo la protección de la garantía, no es computable dentro del plazo de la misma. De igual forma, los gastos en que incurra el Cliente para hacer válida la garantía en un domicilio diverso al de Ranoro, deberán ser cubiertos por éste. 6. Ranoro será el responsable por las descomposturas, daños o pérdidas parciales o totales imputables a él mientras el vehículo se encuentre bajo su resguardo para llevar a cabo la prestación del servicio de reparación y/o mantenimiento, o como consecuencia de la prestación del servicio, o bien, en el cumplimiento de la garantía, de acuerdo a lo establecido en el presente contrato. Asimismo, el Cliente autoriza a Ranoro a usar el vehículo para efectos de prueba o verificación de las operaciones a realizar o realizadas. El Cliente libera a Ranoro de cualquier responsabilidad que hubiere surgido o pudiera surgir con relación al origen, propiedad o posesión del vehículo. 7. En caso de que el consumidor cancele la operación, está obligado a pagar de manera inmediata y previa a la entrega del vehículo, el importe de las operaciones efectuadas y partes y/o refacciones colocadas o adquiridas hasta el retiro del mismo. 8. El Consumidor deberá recoger el vehículo, no mas de 24 horas posteriores de haberse notificado, ya sea por teléfono, mensaje o aplicación móvil que el vehículo se encuentra listo, en caso contrario, se obliga a pagar a Ranoro, la cantidad de $300.00 (Trescientos pesos 00/100 M.N.) por concepto de almacenaje del vehículo por cada día que transcurra. Transcurrido un plazo de 15 días naturales a partir de la fecha señalada para la entrega del vehículo, y el Cliente no acuda a recoger el mismo, Ranoro sin responsabilidad alguna, pondrá a disposición de la autoridad correspondiente dicho vehículo. Sin perjuicio de lo anterior, Ranoro podrá realizar el cobro correspondiente por concepto de almacenaje. 9. Ranoro se obliga a expedir la factura o comprobante de pago por las operacionès efectuadas, en la cual se especificarán los precios por mano de obra, refacciones, materiales y accesorios empleados, asi como la garantía que en su caso se otorgue, conforme al artículo 62 de la Ley Federal de Protección al Consumidor.10. Ranoro se obliga a no ceder o transmitir a terceros, con fines mercadotécnicos o publicitarios, los datos e información proporcionada por el consumidor con motivo del presente contrato. 11. Las partes están de acuerdo en someterse a la competencia de la Procuraduría Federal del Consumidor en la vía administrativa para resolver cualquier controversia que se suscite sobre la interpretación o cumplimiento de los términos y condiciones del presente contrato y de las disposiciones de la Ley Federal de Protección al Consumidor, la Norma Oficial Mexicana NOM-17li-SCFI-2007, Prácticas comerciales-Elementos de información para la prestación de servicios en general y cualquier otra disposición aplicable, sin perjuicio del derecho que tienen las partes de someterse a la jurisdicción de los Tribunales competentes del estado de Aguascalientes, renunciando las partes expresamente a cualquier otra jurisdicción que pudiera corresponderles por razón de sus domicilios futuros. 12. El Cliente y Ranoro aceptan la realización de la prestación del servicio de reparación y/o mantenimiento, en los términos establecidos en este contrato, y sabedores de su alcance legal lo firman por duplicado.13. El Cliente y Ranoro aceptan la utilización de aplicaciones móviles (iOS-ANDROID) para enviar, recibir y en su caso aceptar información de trabajos adicionales que se han de realizar a los originalmente contratados por el Consumidor, así como autorizar los mismos por los medios tecnológicos con que se cuente.
+                <p className="text-[7px] text-justify leading-tight">
+                    <span className="font-bold">TERMINOS Y CONDICIONES:</span> 1. En virtud de este contrato, Servicio Ranoro presta el servicio de reparación y/o mantenimiento al Cliente (Consumidor), del vehículo cuyas características se detallan en este contrato. 2. El Cliente expresa ser el dueño del vehículo y/o estar facultado para autorizar la reparación y/o mantenimiento del vehículo descrito en el presente contrato, por lo que acepta las condiciones y términos bajo los cuales se realizará la prestación del servicio descrita en dicho contrato. Asimismo, es sabedor de las posibles consecuencias que puede sufrir el vehículo con motivo de su reparación y/o mantenimiento y se responsabiliza de las mismas. 3. El consumidor acepta haber tenido a la vista los precios por mano de obra, partes y/o refacciones a emplear en las operaciones a efectuar por parte de Ranoro, y cuyas refacciones son nuevas y apropiadas para el funcionamiento del vehiculo. 4. Las condiciones generales del vehículo materia de reparación y/o mantenimiento, son señalados en el carátula del presente contrato. 5. Se otorga con garantía por un plazo de 90 días en mano de obra contados a partir de la entrega del vehículo. Para la garantía en partes, piezas, refacciones y accesorios, Ranoro transmitirá la otorgada por el fabricante y/o proveedor. la garantía deberá hacerse válida en las instalaciones de RANORO siempre y cuando no se haya efectuado una reparación por un tercero. El tiempo que dure la reparación y/o mantenimiento del vehículo, bajo la protección de la garantía, no es computable dentro del plazo de la misma. De igual forma, los gastos en que incurra el Cliente para hacer válida la garantía en un domicilio diverso al de Ranoro, deberán ser cubiertos por éste. 6. Ranoro será el responsable por las descomposturas, daños o pérdidas parciales o totales imputables a él mientras el vehículo se encuentre bajo su resguardo para llevar a cabo la prestación del servicio de reparación y/o mantenimiento, o como consecuencia de la prestación del servicio, o bien, en el cumplimiento de la garantía, de acuerdo a lo establecido en el presente contrato. Asimismo, el Cliente autoriza a Ranoro a usar el vehículo para efectos de prueba o verificación de las operaciones a realizar o realizadas. El Cliente libera a Ranoro de cualquier responsabilidad que hubiere surgido o pudiera surgir con relación al origen, propiedad o posesión del vehículo. 7. En caso de que el consumidor cancele la operación, está obligado a pagar de manera inmediata y previa a la entrega del vehículo, el importe de las operaciones efectuadas y partes y/o refacciones colocadas o adquiridas hasta el retiro del mismo. 8. El Consumidor deberá recoger el vehículo, no mas de 24 horas posteriores de haberse notificado, ya sea por teléfono, mensaje o aplicación móvil que el vehículo se encuentra listo, en caso contrario, se obliga a pagar a Ranoro, la cantidad de $300.00 (Trescientos pesos 00/100 M.N.) por concepto de almacenaje del vehículo por cada día que transcurra. Transcurrido un plazo de 15 días naturales a partir de la fecha señalada para la entrega del vehículo, y el Cliente no acuda a recoger el mismo, Ranoro sin responsabilidad alguna, pondrá a disposición de la autoridad correspondiente dicho vehículo. Sin perjuicio de lo anterior, Ranoro podrá realizar el cobro correspondiente por concepto de almacenaje. 9. Ranoro se obliga a expedir la factura o comprobante de pago por las operacionès efectuadas, en la cual se especificarán los precios por mano de obra, refacciones, materiales y accesorios empleados, asi como la garantía que en su caso se otorgue, conforme al artículo 62 de la Ley Federal de Protección al Consumidor.10. Ranoro se obliga a no ceder o transmitir a terceros, con fines mercadotécnicos o publicitarios, los datos e información proporcionada por el consumidor con motivo del presente contrato. 11. Las partes están de acuerdo en someterse a la competencia de la Procuraduría Federal del Consumidor en la vía administrativa para resolver cualquier controversia que se suscite sobre la interpretación o cumplimiento de los términos y condiciones del presente contrato y de las disposiciones de la Ley Federal de Protección al Consumidor, la Norma Oficial Mexicana NOM-17li-SCFI-2007, Prácticas comerciales-Elementos de información para la prestación de servicios en general y cualquier otra disposición aplicable, sin perjuicio del derecho que tienen las partes de someterse a la jurisdicción de los Tribunales competentes del estado de Aguascalientes, renunciando las partes expresamente a cualquier otra jurisdicción que pudiera corresponderles por razón de sus domicilios futuros. 12. El Cliente y Ranoro aceptan la realización de la prestación del servicio de reparación y/o mantenimiento, en los términos establecidos en este contrato, y sabedores de su alcance legal lo firman por duplicado.13. El Cliente y Ranoro aceptan la utilización de aplicaciones móviles (iOS-ANDROID) para enviar, recibir y en su caso aceptar información de trabajos adicionales que se han de realizar a los originalmente contratados por el Consumidor, así como autorizar los mismos por los medios tecnológicos con que se cuente.
                 </p>
            </section>
         </footer>
