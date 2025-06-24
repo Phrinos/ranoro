@@ -1,3 +1,4 @@
+
 "use client";
 
 import { PageHeader } from "@/components/page-header";
@@ -11,7 +12,7 @@ import { Search, ListFilter, CalendarIcon as CalendarDateIcon, Receipt, Shopping
 import { SalesTable } from "./components/sales-table"; 
 import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
 import { TicketContent } from '@/components/ticket-content';
-import { placeholderSales, placeholderInventory, calculateSaleProfit, IVA_RATE } from "@/lib/placeholder-data";
+import { placeholderSales, placeholderInventory, calculateSaleProfit, IVA_RATE, persistToFirestore } from "@/lib/placeholder-data";
 import type { SaleReceipt, InventoryItem, SaleItem, PaymentMethod } from "@/types";
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { format, parseISO, compareAsc, compareDesc, isWithinInterval, isValid, startOfDay, endOfDay, startOfWeek, endOfWeek } from "date-fns";
@@ -20,6 +21,8 @@ import type { DateRange } from "react-day-picker";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import { useToast } from "@/hooks/use-toast";
+import { ViewSaleDialog } from "./components/view-sale-dialog";
 
 type SaleSortOption = 
   | "date_desc" | "date_asc"
@@ -28,7 +31,9 @@ type SaleSortOption =
 
 export default function POSPage() {
   const router = useRouter();
+  const { toast } = useToast();
   const [allSales, setAllSales] = useState<SaleReceipt[]>(placeholderSales);
+  const [inventory, setInventory] = useState<InventoryItem[]>(placeholderInventory);
   const ticketContentRef = useRef<HTMLDivElement>(null);
   
   const [searchTerm, setSearchTerm] = useState("");
@@ -39,15 +44,15 @@ export default function POSPage() {
   const [isReprintDialogOpen, setIsReprintDialogOpen] = useState(false);
   const [selectedSaleForReprint, setSelectedSaleForReprint] = useState<SaleReceipt | null>(null);
 
+  const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
+  const [selectedSale, setSelectedSale] = useState<SaleReceipt | null>(null);
+
 
   useEffect(() => {
-    // Default the date range to the current week (Monday-Sunday) on component mount
-    const today = new Date();
-    const start = startOfWeek(today, { weekStartsOn: 1 }); // 1 = Monday
-    const end = endOfWeek(today, { weekStartsOn: 1 }); // 1 = Monday
-    setDateRange({ from: start, to: end });
-
+    // This effect ensures the local state is updated if the global placeholder data changes.
+    // This is useful for reactivity across components if one component mutates the global store.
     setAllSales(placeholderSales);
+    setInventory(placeholderInventory);
   }, []);
 
   const filteredAndSortedSales = useMemo(() => {
@@ -76,7 +81,6 @@ export default function POSPage() {
         filtered = filtered.filter(sale => sale.paymentMethod === paymentMethodFilter);
     }
 
-
     filtered.sort((a, b) => {
       switch (sortOption) {
         case "date_asc": return compareAsc(parseISO(a.saleDate), parseISO(b.saleDate));
@@ -92,14 +96,15 @@ export default function POSPage() {
   }, [allSales, searchTerm, dateRange, sortOption, paymentMethodFilter]);
 
   const summaryData = useMemo(() => {
-    const totalSalesCount = filteredAndSortedSales.length;
-    const totalRevenue = filteredAndSortedSales.reduce((sum, s) => sum + s.totalAmount, 0);
-    const totalProfit = filteredAndSortedSales.reduce((sum, s) => sum + calculateSaleProfit(s, placeholderInventory, IVA_RATE), 0);
+    const activeSales = filteredAndSortedSales.filter(s => s.status !== 'Cancelado');
+    const totalSalesCount = activeSales.length;
+    const totalRevenue = activeSales.reduce((sum, s) => sum + s.totalAmount, 0);
+    const totalProfit = activeSales.reduce((sum, s) => sum + calculateSaleProfit(s, inventory, IVA_RATE), 0);
     
     let mostSoldItem: { name: string; quantity: number } | null = null;
     if (totalSalesCount > 0) {
       const itemCounts: Record<string, number> = {};
-      filteredAndSortedSales.forEach(sale => {
+      activeSales.forEach(sale => {
         sale.items.forEach(item => {
           itemCounts[item.itemName] = (itemCounts[item.itemName] || 0) + item.quantity;
         });
@@ -114,7 +119,7 @@ export default function POSPage() {
     }
     
     return { totalSalesCount, totalRevenue, mostSoldItem, totalProfit };
-  }, [filteredAndSortedSales]);
+  }, [filteredAndSortedSales, inventory]);
 
   const paymentMethodsForFilter: (PaymentMethod | "all")[] = ["all", "Efectivo", "Tarjeta", "Transferencia", "Efectivo+Transferencia", "Tarjeta+Transferencia"];
 
@@ -132,6 +137,46 @@ export default function POSPage() {
     window.print();
   };
 
+  const handleEditSale = useCallback((sale: SaleReceipt) => {
+    setSelectedSale(sale);
+    setIsViewDialogOpen(true);
+  }, []);
+  
+  const handleCancelSale = useCallback(async (saleId: string) => {
+    const saleIndex = placeholderSales.findIndex(s => s.id === saleId);
+    if (saleIndex === -1) {
+      toast({ title: "Error", description: "Venta no encontrada para cancelar.", variant: "destructive" });
+      return;
+    }
+
+    const saleToCancel = placeholderSales[saleIndex];
+    if (saleToCancel.status === 'Cancelado') {
+      toast({ title: "Acción no válida", description: "Esta venta ya ha sido cancelada.", variant: "default" });
+      return;
+    }
+
+    // 1. Mark sale as cancelled in the main placeholder array
+    saleToCancel.status = 'Cancelado';
+
+    // 2. Restore stock
+    saleToCancel.items.forEach(soldItem => {
+      const inventoryItemIndex = placeholderInventory.findIndex(invItem => invItem.id === soldItem.inventoryItemId);
+      if (inventoryItemIndex !== -1 && !placeholderInventory[inventoryItemIndex].isService) {
+        placeholderInventory[inventoryItemIndex].quantity += soldItem.quantity;
+      }
+    });
+
+    // 3. Update local state to trigger re-render
+    setAllSales([...placeholderSales]);
+    setInventory([...placeholderInventory]);
+
+    // 4. Persist changes to Firestore
+    await persistToFirestore(['sales', 'inventory']);
+
+    toast({ title: "Venta Cancelada", description: `La venta ${saleId} ha sido cancelada y el stock ha sido restaurado.` });
+    setIsViewDialogOpen(false);
+  }, [toast]);
+
 
   return (
     <>
@@ -143,6 +188,7 @@ export default function POSPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold font-headline">{summaryData.totalSalesCount}</div>
+            <p className="text-xs text-muted-foreground">Ventas completadas en el rango</p>
           </CardContent>
         </Card>
         <Card>
@@ -151,9 +197,9 @@ export default function POSPage() {
             <DollarSign className="h-5 w-5 text-green-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold font-headline">${summaryData.totalRevenue.toLocaleString('es-ES')}</div>
+            <div className="text-2xl font-bold font-headline">${summaryData.totalRevenue.toLocaleString('es-MX')}</div>
             <p className="text-xs text-muted-foreground">
-              Ganancia: ${summaryData.totalProfit.toLocaleString('es-ES')}
+              Ganancia: ${summaryData.totalProfit.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </p>
           </CardContent>
         </Card>
@@ -166,6 +212,7 @@ export default function POSPage() {
             <div className="text-lg font-bold font-headline truncate" title={summaryData.mostSoldItem?.name}>
                 {summaryData.mostSoldItem ? `${summaryData.mostSoldItem.name} (${summaryData.mostSoldItem.quantity} uds.)` : "N/A"}
             </div>
+             <p className="text-xs text-muted-foreground">En el rango seleccionado</p>
           </CardContent>
         </Card>
       </div>
@@ -269,7 +316,12 @@ export default function POSPage() {
         </DropdownMenu>
       </div>
 
-      <SalesTable sales={filteredAndSortedSales} onReprintTicket={handleReprintSale} inventoryItems={placeholderInventory} />
+      <SalesTable 
+        sales={filteredAndSortedSales} 
+        onReprintTicket={handleReprintSale} 
+        inventoryItems={inventory} 
+        onEditSale={handleEditSale}
+      />
 
       {isReprintDialogOpen && selectedSaleForReprint && (
         <PrintTicketDialog
@@ -286,6 +338,15 @@ export default function POSPage() {
         >
           <TicketContent ref={ticketContentRef} sale={selectedSaleForReprint} />
         </PrintTicketDialog>
+      )}
+
+      {isViewDialogOpen && selectedSale && (
+        <ViewSaleDialog
+          open={isViewDialogOpen}
+          onOpenChange={setIsViewDialogOpen}
+          sale={selectedSale}
+          onCancelSale={handleCancelSale}
+        />
       )}
     </>
   );
