@@ -1,22 +1,69 @@
-
 "use client";
 
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Search, ListFilter, CalendarIcon as CalendarDateIcon, Receipt, ShoppingCart, TrendingUp, DollarSign, Filter as FilterIcon, Printer, PlusCircle } from "lucide-react"; // Added PlusCircle
-import { SalesTable } from "./components/sales-table"; 
-import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
-import { TicketContent } from '@/components/ticket-content';
-import { placeholderSales, placeholderInventory, calculateSaleProfit, IVA_RATE, persistToFirestore } from "@/lib/placeholder-data";
-import type { SaleReceipt, InventoryItem, SaleItem, PaymentMethod } from "@/types";
-import { useState, useEffect, useMemo, useRef, useCallback } from "react";
-import { format, parseISO, compareAsc, compareDesc, isWithinInterval, isValid, startOfDay, endOfDay, startOfWeek, endOfWeek } from "date-fns";
-import { es } from 'date-fns/locale';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Search,
+  ListFilter,
+  CalendarIcon as CalendarDateIcon,
+  Receipt,
+  ShoppingCart,
+  DollarSign,
+  Filter as FilterIcon,
+  Printer,
+  PlusCircle,
+} from "lucide-react";
+import { SalesTable } from "./components/sales-table";
+import { PrintTicketDialog } from "@/components/ui/print-ticket-dialog";
+import { TicketContent } from "@/components/ticket-content";
+import {
+  placeholderSales,
+  placeholderInventory,
+  calculateSaleProfit,
+  IVA_RATE,
+  persistToFirestore,
+  hydrateReady, // <- NUEVO
+} from "@/lib/placeholder-data";
+import type { SaleReceipt, PaymentMethod } from "@/types";
+import {
+  useState,
+  useEffect,
+  useMemo,
+  useRef,
+  useCallback,
+} from "react";
+import {
+  format,
+  parseISO,
+  compareAsc,
+  compareDesc,
+  isWithinInterval,
+  isValid,
+  startOfDay,
+  endOfDay,
+} from "date-fns";
+import { es } from "date-fns/locale";
 import type { DateRange } from "react-day-picker";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -24,187 +71,265 @@ import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { ViewSaleDialog } from "./components/view-sale-dialog";
 
-type SaleSortOption = 
-  | "date_desc" | "date_asc"
-  | "total_desc" | "total_asc"
-  | "customer_asc" | "customer_desc";
+// -------------------- Tipos --------------------
+
+type SaleSortOption =
+  | "date_desc"
+  | "date_asc"
+  | "total_desc"
+  | "total_asc"
+  | "customer_asc"
+  | "customer_desc";
+
+// ==================== Componente ====================
 
 export default function POSPage() {
   const router = useRouter();
   const { toast } = useToast();
-  // We use a version state to force re-renders when the global placeholder data is mutated.
-  const [version, setVersion] = useState(0); 
+
+  // Forzar re–renderes cuando las colecciones placeholder cambian
+  const [version, setVersion] = useState(0);
+
+  // --------  Esperar a que Firestore hidrate datos --------
+  const [hydrated, setHydrated] = useState(false);
+  useEffect(() => {
+    hydrateReady.then(() => setHydrated(true));
+  }, []);
+
+  // -------------------- Refs y estados UI --------------------
   const ticketContentRef = useRef<HTMLDivElement>(null);
-  
+
   const [searchTerm, setSearchTerm] = useState("");
   const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
   const [sortOption, setSortOption] = useState<SaleSortOption>("date_desc");
-  const [paymentMethodFilter, setPaymentMethodFilter] = useState<PaymentMethod | "all">("all");
+  const [paymentMethodFilter, setPaymentMethodFilter] = useState<
+    PaymentMethod | "all"
+  >("all");
 
   const [isReprintDialogOpen, setIsReprintDialogOpen] = useState(false);
-  const [selectedSaleForReprint, setSelectedSaleForReprint] = useState<SaleReceipt | null>(null);
+  const [selectedSaleForReprint, setSelectedSaleForReprint] =
+    useState<SaleReceipt | null>(null);
 
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [selectedSale, setSelectedSale] = useState<SaleReceipt | null>(null);
 
-  const filteredAndSortedSales = useMemo(() => {
-    // Use placeholderSales directly as the source of truth.
-    let filtered = [...placeholderSales];
+  // -------------------- Ventas filtradas y ordenadas --------------------
 
+  const filteredAndSortedSales = useMemo(() => {
+    if (!hydrated) return [] as SaleReceipt[];
+
+    let list = [...placeholderSales];
+
+    // 1. Rango de fechas
     if (dateRange?.from) {
-      filtered = filtered.filter(sale => {
-        const saleDate = parseISO(sale.saleDate);
-        if (!isValid(saleDate)) return false;
+      list = list.filter((sale) => {
+        const date = parseISO(sale.saleDate);
+        if (!isValid(date)) return false;
         const from = startOfDay(dateRange.from!);
-        const to = dateRange.to ? endOfDay(dateRange.to) : endOfDay(dateRange.from!);
-        return isWithinInterval(saleDate, { start: from, end: to });
+        const to = dateRange.to
+          ? endOfDay(dateRange.to)
+          : endOfDay(dateRange.from!);
+        return isWithinInterval(date, { start: from, end: to });
       });
     }
 
+    // 2. Búsqueda de texto
     if (searchTerm) {
-      const lowerSearchTerm = searchTerm.toLowerCase();
-      filtered = filtered.filter(sale => 
-        sale.id.toLowerCase().includes(lowerSearchTerm) ||
-        (sale.customerName && sale.customerName.toLowerCase().includes(lowerSearchTerm)) ||
-        sale.items.some(item => item.itemName.toLowerCase().includes(lowerSearchTerm))
+      const q = searchTerm.toLowerCase();
+      list = list.filter(
+        (s) =>
+          s.id.toLowerCase().includes(q) ||
+          (s.customerName && s.customerName.toLowerCase().includes(q)) ||
+          s.items.some((i) => i.itemName.toLowerCase().includes(q))
       );
     }
-    
+
+    // 3. Filtro por método de pago
     if (paymentMethodFilter !== "all") {
-        filtered = filtered.filter(sale => sale.paymentMethod === paymentMethodFilter);
+      list = list.filter((s) => s.paymentMethod === paymentMethodFilter);
     }
 
-    filtered.sort((a, b) => {
+    // 4. Ordenamiento
+    list.sort((a, b) => {
       switch (sortOption) {
-        case "date_asc": return compareAsc(parseISO(a.saleDate), parseISO(b.saleDate));
-        case "date_desc": return compareDesc(parseISO(a.saleDate), parseISO(b.saleDate));
-        case "total_asc": return a.totalAmount - b.totalAmount;
-        case "total_desc": return b.totalAmount - a.totalAmount;
-        case "customer_asc": return (a.customerName || '').localeCompare(b.customerName || '');
-        case "customer_desc": return (b.customerName || '').localeCompare(a.customerName || '');
-        default: return compareDesc(parseISO(a.saleDate), parseISO(b.saleDate));
+        case "date_asc":
+          return compareAsc(parseISO(a.saleDate), parseISO(b.saleDate));
+        case "date_desc":
+          return compareDesc(parseISO(a.saleDate), parseISO(b.saleDate));
+        case "total_asc":
+          return a.totalAmount - b.totalAmount;
+        case "total_desc":
+          return b.totalAmount - a.totalAmount;
+        case "customer_asc":
+          return (a.customerName || "").localeCompare(b.customerName || "");
+        case "customer_desc":
+          return (b.customerName || "").localeCompare(a.customerName || "");
+        default:
+          return 0;
       }
     });
-    return filtered;
-  }, [searchTerm, dateRange, sortOption, paymentMethodFilter, version]); // Depend on version to re-calculate
+
+    return list;
+  }, [searchTerm, dateRange, sortOption, paymentMethodFilter, version, hydrated]);
+
+  // -------------------- Datos resumidos --------------------
 
   const summaryData = useMemo(() => {
-    const activeSales = filteredAndSortedSales.filter(s => s.status !== 'Cancelado');
-    const totalSalesCount = activeSales.length;
-    const totalRevenue = activeSales.reduce((sum, s) => sum + s.totalAmount, 0);
-    // Use placeholderInventory directly for fresh data
-    const totalProfit = activeSales.reduce((sum, s) => sum + calculateSaleProfit(s, placeholderInventory, IVA_RATE), 0);
-    
+    if (!hydrated) {
+      return {
+        totalSalesCount: 0,
+        totalRevenue: 0,
+        mostSoldItem: null as { name: string; quantity: number } | null,
+        totalProfit: 0,
+      };
+    }
+
+    const active = filteredAndSortedSales.filter((s) => s.status !== "Cancelado");
+    const totalSalesCount = active.length;
+    const totalRevenue = active.reduce((sum, s) => sum + s.totalAmount, 0);
+    const totalProfit = active.reduce(
+      (sum, s) => sum + calculateSaleProfit(s, placeholderInventory, IVA_RATE),
+      0
+    );
+
+    // Artículo más vendido
     let mostSoldItem: { name: string; quantity: number } | null = null;
     if (totalSalesCount > 0) {
-      const itemCounts: Record<string, number> = {};
-      activeSales.forEach(sale => {
-        sale.items.forEach(item => {
-          itemCounts[item.itemName] = (itemCounts[item.itemName] || 0) + item.quantity;
+      const counter: Record<string, number> = {};
+      active.forEach((sale) => {
+        sale.items.forEach((it) => {
+          counter[it.itemName] = (counter[it.itemName] || 0) + it.quantity;
         });
       });
-      let maxQty = 0;
-      for (const itemName in itemCounts) {
-        if (itemCounts[itemName] > maxQty) {
-          maxQty = itemCounts[itemName];
-          mostSoldItem = { name: itemName, quantity: maxQty };
+      let max = 0;
+      for (const name in counter) {
+        if (counter[name] > max) {
+          max = counter[name];
+          mostSoldItem = { name, quantity: max };
         }
       }
     }
-    
-    return { totalSalesCount, totalRevenue, mostSoldItem, totalProfit };
-  }, [filteredAndSortedSales]); // Doesn't need inventory in dep array as it reads the global one
 
-  const paymentMethodsForFilter: (PaymentMethod | "all")[] = ["all", "Efectivo", "Tarjeta", "Transferencia", "Efectivo+Transferencia", "Tarjeta+Transferencia"];
+    return { totalSalesCount, totalRevenue, mostSoldItem, totalProfit };
+  }, [filteredAndSortedSales, hydrated]);
+
+  // -------------------- Handlers --------------------
+
+  const paymentMethodsForFilter: (PaymentMethod | "all")[] = [
+    "all",
+    "Efectivo",
+    "Tarjeta",
+    "Transferencia",
+    "Efectivo+Transferencia",
+    "Tarjeta+Transferencia",
+  ];
 
   const handleReprintSale = useCallback((sale: SaleReceipt) => {
     setSelectedSaleForReprint(sale);
     setIsReprintDialogOpen(true);
   }, []);
 
-  const handleReprintDialogClose = () => {
-    setIsReprintDialogOpen(false);
-    setSelectedSaleForReprint(null);
-  };
-
-  const handlePrintTicket = () => {
-    window.print();
-  };
-
-  const handleEditSale = useCallback((sale: SaleReceipt) => {
-    setSelectedSale(sale);
-    setIsViewDialogOpen(true);
-  }, []);
-  
-  const handleCancelSale = useCallback(async (saleId: string) => {
-    const saleIndex = placeholderSales.findIndex(s => s.id === saleId);
-    if (saleIndex === -1) {
-      toast({ title: "Error", description: "Venta no encontrada para cancelar.", variant: "destructive" });
-      return;
-    }
-
-    const saleToCancel = placeholderSales[saleIndex];
-    if (saleToCancel.status === 'Cancelado') {
-      toast({ title: "Acción no válida", description: "Esta venta ya ha sido cancelada.", variant: "default" });
-      return;
-    }
-
-    // Mark sale as cancelled
-    saleToCancel.status = 'Cancelado';
-
-    // Restore stock
-    saleToCancel.items.forEach(soldItem => {
-      const inventoryItemIndex = placeholderInventory.findIndex(invItem => invItem.id === soldItem.inventoryItemId);
-      if (inventoryItemIndex !== -1 && !placeholderInventory[inventoryItemIndex].isService) {
-        placeholderInventory[inventoryItemIndex].quantity += soldItem.quantity;
+  const handleCancelSale = useCallback(
+    async (saleId: string) => {
+      const idx = placeholderSales.findIndex((s) => s.id === saleId);
+      if (idx === -1) {
+        toast({
+          title: "Error",
+          description: "Venta no encontrada para cancelar.",
+          variant: "destructive",
+        });
+        return;
       }
-    });
+      const sale = placeholderSales[idx];
+      if (sale.status === "Cancelado") {
+        toast({
+          title: "Acción no válida",
+          description: "Esta venta ya ha sido cancelada.",
+          variant: "default",
+        });
+        return;
+      }
+      sale.status = "Cancelado";
+      sale.items.forEach((it) => {
+        const invIdx = placeholderInventory.findIndex((inv) => inv.id === it.inventoryItemId);
+        if (invIdx !== -1 && !placeholderInventory[invIdx].isService) {
+          placeholderInventory[invIdx].quantity += it.quantity;
+        }
+      });
+      await persistToFirestore(["sales", "inventory"]);
+      setVersion((v) => v + 1);
+      toast({
+        title: "Venta Cancelada",
+        description: `La venta ${saleId} ha sido cancelada y el stock restaurado.`,
+      });
+      setIsViewDialogOpen(false);
+    },
+    [toast]
+  );
 
-    await persistToFirestore(['sales', 'inventory']);
+  // -------------------- Render --------------------
 
-    // Trigger a re-render by updating the version
-    setVersion(v => v + 1);
-
-    toast({ title: "Venta Cancelada", description: `La venta ${saleId} ha sido cancelada y el stock ha sido restaurado.` });
-    setIsViewDialogOpen(false);
-  }, [toast]);
-
+  if (!hydrated) {
+    return <p className="p-6 text-sm text-muted-foreground">Cargando datos…</p>;
+  }
 
   return (
     <>
+      {/* ---- Tarjetas resumen ---- */}
       <div className="mb-6 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Total de Ventas</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Total de Ventas
+            </CardTitle>
             <Receipt className="h-5 w-5 text-blue-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold font-headline">{summaryData.totalSalesCount}</div>
-            <p className="text-xs text-muted-foreground">Ventas completadas en el rango</p>
+            <div className="text-2xl font-bold font-headline">
+              {summaryData.totalSalesCount}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Ventas completadas en el rango
+            </p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Ingresos y Ganancias</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Ingresos y Ganancias
+            </CardTitle>
             <DollarSign className="h-5 w-5 text-green-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold font-headline">${summaryData.totalRevenue.toLocaleString('es-MX')}</div>
+            <div className="text-2xl font-bold font-headline">
+              ${summaryData.totalRevenue.toLocaleString("es-MX")}
+            </div>
             <p className="text-xs text-muted-foreground">
-              Ganancia: ${summaryData.totalProfit.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              Ganancia: $
+              {summaryData.totalProfit.toLocaleString("es-MX", {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              })}
             </p>
           </CardContent>
         </Card>
-         <Card>
+        <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Artículo Más Vendido</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Artículo Más Vendido
+            </CardTitle>
             <ShoppingCart className="h-5 w-5 text-orange-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-lg font-bold font-headline truncate" title={summaryData.mostSoldItem?.name}>
-                {summaryData.mostSoldItem ? `${summaryData.mostSoldItem.name} (${summaryData.mostSoldItem.quantity} uds.)` : "N/A"}
+            <div
+              className="text-lg font-bold font-headline truncate"
+              title={summaryData.mostSoldItem?.name}
+            >
+              {summaryData.mostSoldItem
+                ? `${summaryData.mostSoldItem.name} (${summaryData.mostSoldItem.quantity} uds.)`
+                : "N/A"}
             </div>
-             <p className="text-xs text-muted-foreground">En el rango seleccionado</p>
+            <p className="text-xs text-muted-foreground">En el rango seleccionado</p>
           </CardContent>
         </Card>
       </div>
@@ -222,7 +347,9 @@ export default function POSPage() {
         }
       />
 
+      {/* ---- Filtros ---- */}
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:flex-wrap">
+        {/* Búsqueda */}
         <div className="relative flex-1 min-w-[200px] sm:min-w-[300px]">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
@@ -233,10 +360,12 @@ export default function POSPage() {
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
+
+        {/* Rango de fechas */}
         <Popover>
           <PopoverTrigger asChild>
             <Button
-              variant={"outline"}
+              variant="outline"
               className={cn(
                 "min-w-[240px] justify-start text-left font-normal flex-1 sm:flex-initial bg-white",
                 !dateRange && "text-muted-foreground"
@@ -246,7 +375,7 @@ export default function POSPage() {
               {dateRange?.from ? (
                 dateRange.to ? (
                   <>
-                    {format(dateRange.from, "LLL dd, y", { locale: es })} -{" "}
+                    {format(dateRange.from, "LLL dd, y", { locale: es })} - {" "}
                     {format(dateRange.to, "LLL dd, y", { locale: es })}
                   </>
                 ) : (
@@ -269,6 +398,8 @@ export default function POSPage() {
             />
           </PopoverContent>
         </Popover>
+
+        {/* Ordenar */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" className="min-w-[150px] flex-1 sm:flex-initial bg-white">
@@ -278,7 +409,10 @@ export default function POSPage() {
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>Ordenar por</DropdownMenuLabel>
-            <DropdownMenuRadioGroup value={sortOption} onValueChange={(value) => setSortOption(value as SaleSortOption)}>
+            <DropdownMenuRadioGroup
+              value={sortOption}
+              onValueChange={(v) => setSortOption(v as SaleSortOption)}
+            >
               <DropdownMenuRadioItem value="date_desc">Fecha (Más Reciente)</DropdownMenuRadioItem>
               <DropdownMenuRadioItem value="date_asc">Fecha (Más Antiguo)</DropdownMenuRadioItem>
               <DropdownMenuRadioItem value="total_desc">Monto Total (Mayor a Menor)</DropdownMenuRadioItem>
@@ -288,6 +422,8 @@ export default function POSPage() {
             </DropdownMenuRadioGroup>
           </DropdownMenuContent>
         </DropdownMenu>
+
+        {/* Método de pago */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" className="min-w-[180px] flex-1 sm:flex-initial bg-white">
@@ -297,10 +433,13 @@ export default function POSPage() {
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>Método de Pago</DropdownMenuLabel>
-            <DropdownMenuRadioGroup value={paymentMethodFilter} onValueChange={(value) => setPaymentMethodFilter(value as PaymentMethod | "all")}>
-              {paymentMethodsForFilter.map(method => (
-                <DropdownMenuRadioItem key={method} value={method}>
-                  {method === "all" ? "Todos" : method}
+            <DropdownMenuRadioGroup
+              value={paymentMethodFilter}
+              onValueChange={(v) => setPaymentMethodFilter(v as PaymentMethod | "all")}
+            >
+              {paymentMethodsForFilter.map((m) => (
+                <DropdownMenuRadioItem key={m} value={m}>
+                  {m === "all" ? "Todos" : m}
                 </DropdownMenuRadioItem>
               ))}
             </DropdownMenuRadioGroup>
@@ -308,23 +447,28 @@ export default function POSPage() {
         </DropdownMenu>
       </div>
 
-      <SalesTable 
-        sales={filteredAndSortedSales} 
-        onReprintTicket={handleReprintSale} 
-        inventoryItems={placeholderInventory} // Pass global inventory
-        onEditSale={handleEditSale}
+      {/* ---- Tabla ---- */}
+      <SalesTable
+        sales={filteredAndSortedSales}
+        onReprintTicket={handleReprintSale}
+        inventoryItems={placeholderInventory}
+        onEditSale={(sale) => {
+          setSelectedSale(sale);
+          setIsViewDialogOpen(true);
+        }}
       />
 
+      {/* ---- Diálogo imprimir ---- */}
       {isReprintDialogOpen && selectedSaleForReprint && (
         <PrintTicketDialog
           open={isReprintDialogOpen}
           onOpenChange={setIsReprintDialogOpen}
           title="Reimprimir Ticket de Venta"
-          onDialogClose={handleReprintDialogClose}
+          onDialogClose={() => setIsReprintDialogOpen(false)}
           dialogContentClassName="printable-content"
           footerActions={
-             <Button onClick={handlePrintTicket}>
-                <Printer className="mr-2 h-4 w-4" /> Imprimir Ticket
+            <Button onClick={() => window.print()}>
+              <Printer className="mr-2 h-4 w-4" /> Imprimir Ticket
             </Button>
           }
         >
@@ -332,6 +476,7 @@ export default function POSPage() {
         </PrintTicketDialog>
       )}
 
+      {/* ---- Diálogo ver / cancelar ---- */}
       {isViewDialogOpen && selectedSale && (
         <ViewSaleDialog
           open={isViewDialogOpen}
