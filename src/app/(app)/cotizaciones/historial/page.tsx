@@ -14,7 +14,7 @@ import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
 import { QuoteContent } from '@/components/quote-content';
 import { placeholderQuotes, placeholderVehicles, placeholderTechnicians, placeholderServiceRecords, placeholderInventory, persistToFirestore } from "@/lib/placeholder-data"; 
 import type { QuoteRecord, Vehicle, User, ServiceRecord, Technician, InventoryItem } from "@/types"; 
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { format, parseISO, compareAsc, compareDesc, isWithinInterval, isValid, startOfDay, endOfDay } from "date-fns";
 import { es } from 'date-fns/locale';
@@ -119,35 +119,32 @@ export default function HistorialCotizacionesPage() {
   }, [filteredAndSortedQuotes]);
 
 
-  const handleViewQuote = (quote: QuoteRecord) => {
+  const handleViewQuote = useCallback((quote: QuoteRecord) => {
     setSelectedQuoteForView(quote);
     setVehicleForSelectedQuote(vehicles.find(v => v.id === quote.vehicleId) || null);
     setIsViewQuoteDialogOpen(true);
-  };
+  }, [vehicles]);
   
-  const handleEditQuote = (quote: QuoteRecord) => {
+  const handleEditQuote = useCallback((quote: QuoteRecord) => {
     setSelectedQuoteForEdit(quote);
     setIsEditQuoteDialogOpen(true);
-  };
+  }, []);
 
-  const handleDeleteQuote = async (quoteId: string) => {
+  const handleDeleteQuote = useCallback(async (quoteId: string) => {
     const quoteToDelete = allQuotes.find(q => q.id === quoteId);
     if (!quoteToDelete) {
       toast({ title: "Error", description: "No se pudo encontrar la cotización para eliminar.", variant: "destructive" });
       return;
     }
 
-    // Delete public quote from Firestore first
     if (quoteToDelete.publicId) {
       try {
         await deleteDoc(doc(db, "publicQuotes", quoteToDelete.publicId));
       } catch (e) {
         console.error("Failed to delete public quote:", e);
-        // Do not block main deletion if this fails, but log it.
       }
     }
 
-    // Update local state and placeholder data
     setAllQuotes(prev => prev.filter(q => q.id !== quoteId));
     const pIndex = placeholderQuotes.findIndex(q => q.id === quoteId);
     if (pIndex > -1) {
@@ -157,23 +154,22 @@ export default function HistorialCotizacionesPage() {
     await persistToFirestore();
 
     toast({ title: "Cotización Eliminada", description: `La cotización ${quoteId} ha sido eliminada.` });
-    setIsEditQuoteDialogOpen(false); // Close the dialog after deletion
-  };
+    setIsEditQuoteDialogOpen(false);
+  }, [allQuotes, toast]);
   
-  const handleGenerateService = (quote: QuoteRecord) => {
+  const handleGenerateService = useCallback((quote: QuoteRecord) => {
     if (quote.serviceId) {
       toast({ title: "Ya Ingresado", description: `Esta cotización ya fue ingresada al servicio ID: ${quote.serviceId}.` });
       return;
     }
     setQuoteToConvert(quote);
     setIsGenerateServiceDialogOpen(true);
-  };
+  }, [toast]);
 
-  const handleSaveEditedQuote = async (data: ServiceRecord | QuoteRecord) => {
+  const handleSaveEditedQuote = useCallback(async (data: ServiceRecord | QuoteRecord) => {
       const editedQuote = data as QuoteRecord;
       const quoteIndex = placeholderQuotes.findIndex(q => q.id === editedQuote.id);
       if (quoteIndex !== -1) {
-          // Ensure a publicId exists, create one if not (for legacy quotes)
           if (!editedQuote.publicId) {
             editedQuote.publicId = `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 9)}`;
           }
@@ -181,7 +177,6 @@ export default function HistorialCotizacionesPage() {
           setAllQuotes([...placeholderQuotes]);
           await persistToFirestore();
 
-          // Also update the public quote document
           const vehicleForPublicQuote = vehicles.find(v => v.id === editedQuote.vehicleId);
           if (vehicleForPublicQuote) {
               const publicQuoteData = {
@@ -192,16 +187,15 @@ export default function HistorialCotizacionesPage() {
                   await setDoc(doc(db, "publicQuotes", editedQuote.publicId!), publicQuoteData);
               } catch (e) {
                   console.error("Failed to update public quote:", e);
-                  // Non-blocking error, toast is optional
               }
           }
 
           toast({ title: "Cotización Actualizada", description: `La cotización ${editedQuote.id} se actualizó correctamente.` });
       }
       setIsEditQuoteDialogOpen(false);
-  };
+  }, [toast, vehicles]);
   
-  const handleSaveServiceFromQuote = async (data: ServiceRecord | QuoteRecord) => {
+  const handleSaveServiceFromQuote = useCallback(async (data: ServiceRecord | QuoteRecord) => {
       const newService = data as ServiceRecord;
       if (!quoteToConvert) return;
 
@@ -219,10 +213,10 @@ export default function HistorialCotizacionesPage() {
       
       toast({ title: "Servicio Generado", description: `Se creó el servicio ${newServiceId} desde la cotización.` });
       setIsGenerateServiceDialogOpen(false);
-  };
+  }, [toast, quoteToConvert]);
 
 
-  const generateAndDownloadPdf = (quoteToPrint: QuoteRecord | null) => {
+  const generateAndDownloadPdf = useCallback((quoteToPrint: QuoteRecord | null) => {
     if (!quoteContentRef.current || !quoteToPrint) {
       toast({ title: "Error", description: "No se pudo generar el PDF.", variant: "destructive" });
       return;
@@ -238,9 +232,9 @@ export default function HistorialCotizacionesPage() {
     };
     toast({ title: "Generando PDF...", description: `Se está preparando ${pdfFileName}.` });
     html2pdf().from(element).set(opt).save();
-  };
+  }, [toast]);
 
-  const handleSendWhatsApp = async (quoteForAction: QuoteRecord | null) => {
+  const handleSendWhatsApp = useCallback(async (quoteForAction: QuoteRecord | null) => {
     if (!quoteForAction) return;
     const vehicleForAction = vehicles.find(v => v.id === quoteForAction.vehicleId);
     if (!vehicleForAction) {
@@ -248,14 +242,13 @@ export default function HistorialCotizacionesPage() {
         return;
     }
 
-    // Ensure publicId exists, create if not (for older quotes)
     if (!quoteForAction.publicId) {
       quoteForAction.publicId = `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 9)}`;
       const quoteIndex = placeholderQuotes.findIndex(q => q.id === quoteForAction.id);
       if (quoteIndex !== -1) {
-          placeholderQuotes[quoteIndex] = quoteForAction; // Update the main array
-          await persistToFirestore(); // Persist this change
-          setAllQuotes([...placeholderQuotes]); // Update local state
+          placeholderQuotes[quoteIndex] = quoteForAction;
+          await persistToFirestore();
+          setAllQuotes([...placeholderQuotes]);
           toast({
               title: "Enlace Público Creado",
               description: "Se ha generado un nuevo enlace aleatorio para esta cotización antigua.",
@@ -282,7 +275,7 @@ export default function HistorialCotizacionesPage() {
             variant: "destructive",
         });
     });
-  };
+  }, [toast, vehicles, workshopInfo]);
 
   return (
     <>

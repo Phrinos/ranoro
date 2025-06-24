@@ -18,7 +18,7 @@ interface InventoryTableProps {
   items: InventoryItem[];
 }
 
-export function InventoryTable({ items }: InventoryTableProps) {
+export const InventoryTable = React.memo(({ items }: InventoryTableProps) => {
   const router = useRouter();
 
   const handleRowClick = (itemId: string) => {
@@ -81,4 +81,6 @@ export function InventoryTable({ items }: InventoryTableProps) {
       </Table>
     </div>
   );
-}
+});
+
+InventoryTable.displayName = 'InventoryTable';

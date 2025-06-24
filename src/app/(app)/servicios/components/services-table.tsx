@@ -25,7 +25,7 @@ interface ServicesTableProps {
   isHistoryView?: boolean;
 }
 
-export function ServicesTable({ 
+export const ServicesTable = React.memo(({ 
   services, 
   vehicles, 
   technicians, 
@@ -34,7 +34,7 @@ export function ServicesTable({
   onServiceDeleted,
   onVehicleCreated,
   isHistoryView = false,
-}: ServicesTableProps) {
+}: ServicesTableProps) => {
   const { toast } = useToast();
   const [editingService, setEditingService] = useState<ServiceRecord | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -195,4 +195,6 @@ export function ServicesTable({
       )}
     </>
   );
-}
+});
+
+ServicesTable.displayName = 'ServicesTable';

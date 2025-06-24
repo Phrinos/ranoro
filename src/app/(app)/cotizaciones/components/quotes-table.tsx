@@ -21,7 +21,7 @@ interface QuotesTableProps {
   onGenerateService: (quote: QuoteRecord) => void;
 }
 
-export function QuotesTable({ quotes, vehicles, onViewQuote, onEditQuote, onGenerateService }: QuotesTableProps) {
+export const QuotesTable = React.memo(({ quotes, vehicles, onViewQuote, onEditQuote, onGenerateService }: QuotesTableProps) => {
   if (!quotes.length) {
     return <p className="text-muted-foreground text-center py-8">No hay cotizaciones registradas que coincidan con los filtros.</p>;
   }
@@ -125,4 +125,6 @@ export function QuotesTable({ quotes, vehicles, onViewQuote, onEditQuote, onGene
       )}
     </div>
   );
-}
+});
+
+QuotesTable.displayName = 'QuotesTable';

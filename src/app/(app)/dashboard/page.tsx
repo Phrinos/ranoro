@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useEffect, useState, useCallback, useRef } from "react";
+import React, { useEffect, useState, useCallback, useRef } from "react";
 import { format, parseISO, isToday, isFuture, isValid, compareAsc, isSameDay } from "date-fns";
 import { es } from 'date-fns/locale';
 import { PageHeader } from "@/components/page-header";
@@ -27,7 +27,7 @@ const formatCurrency = (amount: number) => {
     return `$${amount.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 };
 
-const DashboardServiceSection = ({ 
+const DashboardServiceSection = React.memo(({ 
   title, 
   services, 
   icon: IconCmp, 
@@ -143,8 +143,8 @@ const DashboardServiceSection = ({
       )}
     </CardContent>
   </Card>
-);
-
+));
+DashboardServiceSection.displayName = "DashboardServiceSection";
 
 export default function DashboardPage() {
   const [userName, setUserName] = useState<string | null>(null);
@@ -281,7 +281,7 @@ export default function DashboardPage() {
     }
   };
   
-  const handleUpdateService = async (data: ServiceRecord | QuoteRecord) => {
+  const handleUpdateService = useCallback(async (data: ServiceRecord | QuoteRecord) => {
     if (!('status' in data)) {
       toast({title: "Error de Tipo", description: "Se esperaba actualizar un servicio.", variant: "destructive"});
       return;
@@ -299,9 +299,9 @@ export default function DashboardPage() {
     });
     setIsServiceDialogOpen(false);
     setSelectedServiceForDialog(null);
-  };
+  }, [loadAndFilterServices, toast]);
 
-  const onVehicleCreated = (newVehicle: Vehicle) => {
+  const onVehicleCreated = useCallback((newVehicle: Vehicle) => {
     setVehiclesState(currentVehicles => {
       if (currentVehicles.find(v => v.id === newVehicle.id)) return currentVehicles;
       const updated = [...currentVehicles, newVehicle];
@@ -311,7 +311,7 @@ export default function DashboardPage() {
       return updated;
     });
     toast({ title: "Vehículo Registrado", description: `El vehículo ${newVehicle.licensePlate} ha sido agregado.` });
-  };
+  }, [toast]);
   
   const handleGeneratePurchaseOrder = async () => {
     setIsPurchaseLoading(true);

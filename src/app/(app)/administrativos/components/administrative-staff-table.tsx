@@ -19,7 +19,7 @@ interface AdministrativeStaffTableProps {
   staffList: AdministrativeStaff[];
 }
 
-export function AdministrativeStaffTable({ staffList }: AdministrativeStaffTableProps) {
+export const AdministrativeStaffTable = React.memo(({ staffList }: AdministrativeStaffTableProps) => {
   const router = useRouter();
 
   const handleRowClick = (staffId: string) => {
@@ -64,4 +64,6 @@ export function AdministrativeStaffTable({ staffList }: AdministrativeStaffTable
       </Table>
     </div>
   );
-}
+});
+
+AdministrativeStaffTable.displayName = 'AdministrativeStaffTable';

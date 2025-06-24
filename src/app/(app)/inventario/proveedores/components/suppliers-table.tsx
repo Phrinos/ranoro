@@ -32,7 +32,7 @@ interface SuppliersTableProps {
   onDelete: (supplierId: string) => void;
 }
 
-export function SuppliersTable({ suppliers, onEdit, onDelete }: SuppliersTableProps) {
+export const SuppliersTable = React.memo(({ suppliers, onEdit, onDelete }: SuppliersTableProps) => {
   if (!suppliers.length) {
     return <p className="text-muted-foreground text-center py-8">No hay proveedores registrados.</p>;
   }
@@ -99,4 +99,6 @@ export function SuppliersTable({ suppliers, onEdit, onDelete }: SuppliersTablePr
       </Table>
     </div>
   );
-}
+});
+
+SuppliersTable.displayName = 'SuppliersTable';

@@ -14,7 +14,7 @@ import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
 import { TicketContent } from '@/components/ticket-content';
 import { placeholderSales, placeholderInventory, calculateSaleProfit, IVA_RATE } from "@/lib/placeholder-data";
 import type { SaleReceipt, InventoryItem, SaleItem, PaymentMethod } from "@/types";
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { format, parseISO, compareAsc, compareDesc, isWithinInterval, isValid, startOfDay, endOfDay, startOfWeek, endOfWeek } from "date-fns";
 import { es } from 'date-fns/locale';
 import type { DateRange } from "react-day-picker";
@@ -119,10 +119,10 @@ export default function POSPage() {
 
   const paymentMethodsForFilter: (PaymentMethod | "all")[] = ["all", "Efectivo", "Tarjeta", "Transferencia", "Efectivo+Transferencia", "Tarjeta+Transferencia"];
 
-  const handleReprintSale = (sale: SaleReceipt) => {
+  const handleReprintSale = useCallback((sale: SaleReceipt) => {
     setSelectedSaleForReprint(sale);
     setIsReprintDialogOpen(true);
-  };
+  }, []);
 
   const handleReprintDialogClose = () => {
     setIsReprintDialogOpen(false);

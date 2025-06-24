@@ -24,7 +24,6 @@ interface SalesTableProps {
   inventoryItems: InventoryItem[];
 }
 
-// Explicitly define the allowed badge variants as a string literal union type
 type BadgeVariantType =
   | "default"
   | "secondary"
@@ -36,7 +35,7 @@ type BadgeVariantType =
   | "lightGreen"
   | "lightPurple";
 
-export function SalesTable({ sales, onReprintTicket, inventoryItems }: SalesTableProps) {
+export const SalesTable = React.memo(({ sales, onReprintTicket, inventoryItems }: SalesTableProps) => {
   if (!sales.length) {
     return <p className="text-muted-foreground text-center py-8">No hay ventas registradas que coincidan con los filtros.</p>;
   }
@@ -105,4 +104,6 @@ export function SalesTable({ sales, onReprintTicket, inventoryItems }: SalesTabl
       </Table>
     </div>
   );
-}
+});
+
+SalesTable.displayName = 'SalesTable';

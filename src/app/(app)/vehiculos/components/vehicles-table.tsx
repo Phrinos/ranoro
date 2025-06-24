@@ -19,10 +19,10 @@ interface VehiclesTableProps {
   vehicles: Vehicle[];
 }
 
-export function VehiclesTable({ vehicles: initialVehicles }: VehiclesTableProps) {
+export const VehiclesTable = React.memo(({ vehicles: initialVehicles }: VehiclesTableProps) => {
   const router = useRouter();
 
-  const handleRowClick = (vehicleId: number) => {
+  const handleRowClick = (vehicleId: string) => { // Changed id to string to match type
     router.push(`/vehiculos/${vehicleId}`);
   };
 
@@ -68,4 +68,6 @@ export function VehiclesTable({ vehicles: initialVehicles }: VehiclesTableProps)
       </Table>
     </div>
   );
-}
+});
+
+VehiclesTable.displayName = 'VehiclesTable';

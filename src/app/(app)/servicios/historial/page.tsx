@@ -15,7 +15,7 @@ import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
 import { TicketContent } from '@/components/ticket-content';
 import { placeholderServiceRecords, placeholderVehicles, placeholderTechnicians, placeholderInventory, persistToFirestore, enrichServiceForPrinting } from "@/lib/placeholder-data";
 import type { ServiceRecord, Vehicle, Technician, InventoryItem, QuoteRecord } from "@/types";
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { format, parseISO, compareAsc, compareDesc, isWithinInterval, isValid, startOfDay, endOfDay } from "date-fns";
 import { es } from 'date-fns/locale';
@@ -164,41 +164,31 @@ export default function HistorialServiciosPage() {
     return { totalServices, totalRevenue, totalProfit, mostCommonVehicle };
   }, [filteredAndSortedServices, vehicles]);
 
-  const handleUpdateService = async (data: ServiceRecord | QuoteRecord) => {
-    if (!('status' in data)) { 
-      toast({
-        title: "Error de Tipo",
-        description: "Se esperaba un registro de servicio para actualizar.",
-        variant: "destructive",
-      });
-      return;
-    }
-    const updatedService = data as ServiceRecord;
-
+  const handleUpdateService = useCallback(async (data: ServiceRecord) => {
     setAllServices(prevServices => 
-        prevServices.map(s => s.id === updatedService.id ? updatedService : s)
+        prevServices.map(s => s.id === data.id ? data : s)
     );
-    const pIndex = placeholderServiceRecords.findIndex(s => s.id === updatedService.id);
+    const pIndex = placeholderServiceRecords.findIndex(s => s.id === data.id);
     if (pIndex !== -1) {
-        placeholderServiceRecords[pIndex] = updatedService;
+        placeholderServiceRecords[pIndex] = data;
     }
     await persistToFirestore();
     
     toast({
       title: "Servicio Actualizado",
-      description: `El servicio ${updatedService.id} ha sido actualizado.`,
+      description: `El servicio ${data.id} ha sido actualizado.`,
     });
 
-    if (updatedService.status === 'Completado') {
-      const serviceForTicket = enrichServiceForPrinting(updatedService, inventoryItems);
+    if (data.status === 'Completado') {
+      const serviceForTicket = enrichServiceForPrinting(data, inventoryItems);
       setCurrentServiceForTicket(serviceForTicket);
-      setCurrentVehicleForTicket(vehicles.find(v => v.id === updatedService.vehicleId) || null);
-      setCurrentTechnicianForTicket(technicians.find(t => t.id === updatedService.technicianId) || null);
+      setCurrentVehicleForTicket(vehicles.find(v => v.id === data.vehicleId) || null);
+      setCurrentTechnicianForTicket(technicians.find(t => t.id === data.technicianId) || null);
       setShowPrintTicketDialog(true);
     }
-  };
+  }, [inventoryItems, technicians, vehicles, toast]);
 
-  const handleDeleteService = async (serviceId: string) => {
+  const handleDeleteService = useCallback(async (serviceId: string) => {
     const serviceToDelete = allServices.find(s => s.id === serviceId);
     setAllServices(prevServices => prevServices.filter(s => s.id !== serviceId));
     const pIndex = placeholderServiceRecords.findIndex(s => s.id === serviceId);
@@ -211,9 +201,9 @@ export default function HistorialServiciosPage() {
       title: "Servicio Eliminado",
       description: `El servicio con ID ${serviceId} (${serviceToDelete?.description}) ha sido eliminado.`,
     });
-  };
+  }, [allServices, toast]);
   
-  const handleVehicleCreated = (newVehicle: Vehicle) => {
+  const handleVehicleCreated = useCallback((newVehicle: Vehicle) => {
     setVehicles(prev => {
       if(prev.find(v=> v.id === newVehicle.id)) return prev;
       const updatedVehicles = [...prev, newVehicle];
@@ -222,7 +212,7 @@ export default function HistorialServiciosPage() {
        }
       return updatedVehicles;
     });
-  };
+  }, []);
   
   const handlePrintTicket = () => {
     window.print();
