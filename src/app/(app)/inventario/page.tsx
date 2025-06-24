@@ -303,29 +303,6 @@ export default function InventarioPage() {
           </Card>
         </div>
 
-        <div className="print:hidden">
-          <PageHeader
-            title="Productos y Servicios"
-            description="Administra productos, servicios, niveles de stock y registra compras."
-            actions={
-              <div className="flex flex-wrap gap-2">
-                <Button onClick={handlePrintInventory} className="bg-blue-200 text-blue-800 hover:bg-blue-300 dark:bg-blue-800 dark:text-blue-200 dark:hover:bg-blue-700">
-                  <Printer className="mr-2 h-4 w-4" />
-                  Imprimir Lista
-                </Button>
-                <Button onClick={handleOpenPurchaseItemSelection} className="bg-green-200 text-green-800 hover:bg-green-300 dark:bg-green-800 dark:text-green-200 dark:hover:bg-green-700">
-                  <ShoppingCartIcon className="mr-2 h-4 w-4" />
-                  Ingresar Compra
-                </Button>
-                <Button onClick={() => { setIsCreatingItemForPurchaseFlow(false); setIsNewItemDialogOpen(true); }}>
-                  <PlusCircle className="mr-2 h-4 w-4" />
-                  Nuevo Producto/Servicio
-                </Button>
-              </div>
-            }
-          />
-        </div>
-        
         <div className="hidden print:block mb-6">
           <div className="flex justify-between items-center mb-4">
             <img src="/ranoro-logo.png" alt="Ranoro Logo" className="h-12" data-ai-hint="ranoro logo" />
@@ -350,54 +327,28 @@ export default function InventarioPage() {
           </div>
         </div>
 
-        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:flex-wrap print:hidden">
-          <div className="relative flex-1 min-w-[200px] sm:min-w-[300px]">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              type="search"
-              placeholder="Buscar por código o nombre..."
-              className="w-full rounded-lg bg-white pl-8"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="min-w-[150px] flex-1 sm:flex-initial sm:ml-2 bg-white">
-                <ListFilter className="mr-2 h-4 w-4" />
-                Ordenar
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuLabel>Ordenar por</DropdownMenuLabel>
-              <DropdownMenuRadioGroup value={sortOption} onValueChange={(value) => setSortOption(value as InventorySortOption)}>
-                <DropdownMenuRadioItem value="stock_status_name_asc">Stock Bajo (luego Nombre A-Z)</DropdownMenuRadioItem>
-                <DropdownMenuRadioItem value="type_asc">Tipo (Producto, luego Servicio)</DropdownMenuRadioItem>
-                <DropdownMenuRadioItem value="name_asc">Nombre (A-Z)</DropdownMenuRadioItem>
-                <DropdownMenuRadioItem value="name_desc">Nombre (Z-A)</DropdownMenuRadioItem>
-                <DropdownMenuRadioItem value="sku_asc">Código (A-Z)</DropdownMenuRadioItem>
-                <DropdownMenuRadioItem value="sku_desc">Código (Z-A)</DropdownMenuRadioItem>
-                <DropdownMenuRadioItem value="quantity_asc">Cantidad (Menor a Mayor, solo productos)</DropdownMenuRadioItem>
-                <DropdownMenuRadioItem value="quantity_desc">Cantidad (Mayor a Menor, solo productos)</DropdownMenuRadioItem>
-                <DropdownMenuRadioItem value="price_asc">Precio Venta (Menor a Mayor)</DropdownMenuRadioItem>
-                <DropdownMenuRadioItem value="price_desc">Precio Venta (Mayor a Menor)</DropdownMenuRadioItem>
-              </DropdownMenuRadioGroup>
-            </DropdownMenuContent>
-          </DropdownMenu>
-          <Select value={selectedCategoryFilter} onValueChange={setSelectedCategoryFilter}>
-            <SelectTrigger className="w-full sm:w-auto min-w-[200px] flex-1 sm:flex-initial bg-white">
-              <SelectValue placeholder="Filtrar por categoría" />
-            </SelectTrigger>
-            <SelectContent>
-              {uniqueCategoriesForFilter.map(category => (
-                <SelectItem key={category} value={category}>
-                  {category === "all" ? "Todas las categorías" : category}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+        <div className="print:hidden">
+          <PageHeader
+            title="Productos y Servicios"
+            description="Administra productos, servicios, niveles de stock y registra compras."
+            actions={
+              <div className="flex flex-wrap gap-2">
+                <Button onClick={handlePrintInventory} variant="outline">
+                  <Printer className="mr-2 h-4 w-4" />
+                  Imprimir Lista
+                </Button>
+                <Button onClick={handleOpenPurchaseItemSelection} variant="secondary">
+                  <ShoppingCartIcon className="mr-2 h-4 w-4" />
+                  Ingresar Compra
+                </Button>
+                <Button onClick={() => { setIsCreatingItemForPurchaseFlow(false); setIsNewItemDialogOpen(true); }}>
+                  <PlusCircle className="mr-2 h-4 w-4" />
+                  Nuevo Producto/Servicio
+                </Button>
+              </div>
+            }
+          />
         </div>
-
         
         <InventoryTable items={filteredAndSortedInventoryItems} />
 
