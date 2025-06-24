@@ -82,7 +82,7 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
                 <p>{workshopInfo.cityState}</p>
                 <p>Tel: {workshopInfo.phone}</p>
              </div>
-             <div className="text-base text-right">
+             <div className="text-base text-right text-[10px]">
                 <p><span className="font-bold">Fecha de Recepción:</span> {formattedServiceDate}</p>
              </div>
           </div>
@@ -91,7 +91,7 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
         <main className="flex-grow">
           <section className="grid grid-cols-2 gap-4 mb-4 text-xs">
             <div className="border-2 border-black rounded-md overflow-hidden">
-              <h3 className="font-bold p-1 bg-gray-700 text-white text-xs">DATOS DEL CLIENTE</h3>
+              <h3 className="font-bold p-1 bg-gray-700 text-white text-xs text-center">DATOS DEL CLIENTE</h3>
               <div className="space-y-0.5 p-2">
                 <p><span className="font-semibold">Nombre:</span> <span className="font-bold">{vehicle?.ownerName?.toUpperCase()}</span></p>
                 <p><span className="font-semibold">Teléfono:</span> <span className="font-bold">{vehicle?.ownerPhone}</span></p>
@@ -99,9 +99,9 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
               </div>
             </div>
             <div className="border-2 border-black rounded-md overflow-hidden">
-              <h3 className="font-bold p-1 bg-gray-700 text-white text-xs">DATOS DEL VEHÍCULO</h3>
+              <h3 className="font-bold p-1 bg-gray-700 text-white text-xs text-center">DATOS DEL VEHÍCULO</h3>
               <div className="space-y-0.5 p-2">
-                <p><span className="font-semibold">Vehículo:</span> <span className="font-bold">{vehicle?.make} {vehicle?.model} {vehicle?.year}</span></p>
+                <p><span className="font-semibold">Vehículo:</span> <span className="font-bold">{vehicle?.make} {vehicle?.model} ({vehicle?.year})</span></p>
                 <p><span className="font-semibold">Placas:</span> <span className="font-bold">{vehicle?.licensePlate}</span></p>
                 <p><span className="font-semibold">Color:</span> <span className="font-bold">{vehicle?.color || 'N/A'}</span></p>
                 <p><span className="font-semibold">Kilometraje:</span> <span className="font-bold">{service.mileage?.toLocaleString('es-MX') || 'N/A'} km</span></p>
@@ -110,16 +110,16 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
           </section>
 
           <section className="border-2 border-black rounded-md overflow-hidden mb-4">
-              <h3 className="font-bold p-1 bg-gray-700 text-white text-xs">SERVICIO SOLICITADO</h3>
+              <h3 className="font-bold p-1 bg-gray-700 text-white text-xs text-center">SERVICIO SOLICITADO</h3>
               <p className="whitespace-pre-wrap p-2 min-h-[40px] text-lg font-bold">{service.description}</p>
           </section>
           
           <section className="grid grid-cols-3 gap-4 mb-4 text-xs">
               <div className="border-2 border-black rounded-md overflow-hidden col-span-2">
-                 <h3 className="font-bold p-1 bg-gray-700 text-white text-xs">CONDICIONES DEL VEHÍCULO (AL INGRESAR AL TALLER)</h3>
+                 <h3 className="font-bold p-1 bg-gray-700 text-white text-xs text-center">CONDICIONES DEL VEHÍCULO (AL INGRESAR AL TALLER)</h3>
                  <p className="whitespace-pre-wrap p-2 min-h-[20px] text-base">{service.vehicleConditions || 'No especificado.'}</p>
               </div>
-              <div className="border-2 border-black rounded-md overflow-hidden col-span-1 flex flex-col justify-center min-h-[80px]">
+              <div className="border-2 border-black rounded-md overflow-hidden col-span-1 flex flex-col justify-center min-h-[60px]">
                   <h3 className="font-bold p-1 bg-gray-700 text-white text-center text-xs">NIVEL DE COMBUSTIBLE</h3>
                   <div className="flex-grow flex flex-col items-center justify-center p-2">
                     <div className="h-2 w-full bg-gray-200 rounded-full overflow-hidden border border-gray-300">
@@ -136,11 +136,11 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
 
           <section className="grid grid-cols-2 gap-4 mb-4 text-xs">
             <div className="border-2 border-black rounded-md overflow-hidden">
-                <h3 className="font-bold p-1 bg-gray-700 text-white text-xs">INVENTARIO DE PERTENENCIAS</h3>
+                <h3 className="font-bold p-1 bg-gray-700 text-white text-xs text-center">INVENTARIO DE PERTENENCIAS</h3>
                 <p className="whitespace-pre-wrap p-2 min-h-[104px] text-base">{service.customerItems || 'No especificado.'}</p>
             </div>
             <div className="border-2 border-black p-2 rounded-md flex flex-col justify-between items-center min-h-[130px]">
-                <h3 className="font-bold uppercase text-center">AUTORIZO QUE SE REALICEN ESTOS SERVICIOS</h3>
+                <h3 className="font-bold uppercase text-center text-sm">AUTORIZO QUE SE REALICEN ESTOS SERVICIOS</h3>
                 <div className="border-t-2 border-black mt-auto pt-1 text-center w-full">
                     <p className="text-xs font-semibold">{vehicle?.ownerName?.toUpperCase() || '________________________________'}</p>
                 </div>
