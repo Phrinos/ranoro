@@ -130,6 +130,12 @@ export async function hydrateFromFirestore() {
     return;
   }
 
+  if (!db) {
+    console.warn("Hydration skipped: Firebase not configured. App running in demo mode.");
+    (window as any).__APP_HYDRATED__ = true;
+    return;
+  }
+
   console.log("Attempting to hydrate application data from Firestore...");
   const docRef = doc(db, DB_PATH);
   let docSnap;
@@ -148,29 +154,35 @@ export async function hydrateFromFirestore() {
         }
       }
     } else {
-      console.warn("No database document found. Seeding the app with initial default data.");
+      // Document doesn't exist. Check if any local arrays have data from a previous session.
+      const hasLocalData = Object.values(DATA_ARRAYS).some(arr => arr.length > 0);
       
-      // If the DB is completely empty, seed it with some starter data.
-      placeholderFixedMonthlyExpenses.splice(0, placeholderFixedMonthlyExpenses.length, ...[
-          { id: 'exp_1', name: 'Renta del Local', amount: 12000 },
-          { id: 'exp_2', name: 'Servicio de Internet', amount: 800 },
-          { id: 'exp_3', name: 'Servicio de Luz', amount: 2500 },
-          { id: 'exp_4', name: 'Servicio de Agua', amount: 600 },
-      ]);
+      if (hasLocalData) {
+        console.warn("No database document found, but local data exists. Persisting local data to new document to prevent loss.");
+        changesMade = true; // Mark to trigger persistence of all data
+      } else {
+        console.warn("No database document found. Seeding the app with initial default data.");
+        // Seed with default data only if there's no local data either
+        placeholderFixedMonthlyExpenses.splice(0, placeholderFixedMonthlyExpenses.length, ...[
+            { id: 'exp_1', name: 'Renta del Local', amount: 12000 },
+            { id: 'exp_2', name: 'Servicio de Internet', amount: 800 },
+            { id: 'exp_3', name: 'Servicio de Luz', amount: 2500 },
+            { id: 'exp_4', name: 'Servicio de Agua', amount: 600 },
+        ]);
 
-      const adminPermissions = ALL_AVAILABLE_PERMISSIONS
-          .filter(p => !['users:manage', 'roles:manage'].includes(p.id))
-          .map(p => p.id);
-      
-      const defaultRoles: AppRole[] = [
-          { id: 'role_superadmin_default', name: 'Superadmin', permissions: ALL_AVAILABLE_PERMISSIONS.map(p => p.id) },
-          { id: 'role_admin_default', name: 'Admin', permissions: adminPermissions },
-          { id: 'role_tecnico_default', name: 'Tecnico', permissions: ['dashboard:view', 'services:create', 'services:edit', 'services:view_history', 'inventory:view', 'vehicles:manage', 'pos:view_sales'] },
-          { id: 'role_ventas_default', name: 'Ventas', permissions: ['dashboard:view', 'pos:create_sale', 'pos:view_sales', 'inventory:view', 'vehicles:manage'] }
-      ];
-      placeholderAppRoles.splice(0, placeholderAppRoles.length, ...defaultRoles);
-      
-      changesMade = true;
+        const adminPermissions = ALL_AVAILABLE_PERMISSIONS
+            .filter(p => !['users:manage', 'roles:manage'].includes(p.id))
+            .map(p => p.id);
+        
+        const defaultRoles: AppRole[] = [
+            { id: 'role_superadmin_default', name: 'Superadmin', permissions: ALL_AVAILABLE_PERMISSIONS.map(p => p.id) },
+            { id: 'role_admin_default', name: 'Admin', permissions: adminPermissions },
+            { id: 'role_tecnico_default', name: 'Tecnico', permissions: ['dashboard:view', 'services:create', 'services:edit', 'services:view_history', 'inventory:view', 'vehicles:manage', 'pos:view_sales'] },
+            { id: 'role_ventas_default', name: 'Ventas', permissions: ['dashboard:view', 'pos:create_sale', 'pos:view_sales', 'inventory:view', 'vehicles:manage'] }
+        ];
+        placeholderAppRoles.splice(0, placeholderAppRoles.length, ...defaultRoles);
+        changesMade = true;
+      }
     }
   } catch (error) {
     console.error("Error reading from Firestore:", error);
@@ -188,7 +200,7 @@ export async function hydrateFromFirestore() {
   console.log("Hydration process complete.");
 
   // If the document didn't exist or we had to make integrity changes, persist back to Firestore.
-  if ((!docSnap || !docSnap.exists() || changesMade) && db) {
+  if (changesMade && db) {
     console.log("Attempting to persist initial/updated data to Firestore in the background...");
     const keysToPersist = Object.keys(DATA_ARRAYS) as DataKey[];
     persistToFirestore(keysToPersist).catch(err => {

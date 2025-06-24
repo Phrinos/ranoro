@@ -241,6 +241,16 @@ export default function HistorialCotizacionesPage() {
 
   const handleSendWhatsApp = useCallback(async (quoteForAction: QuoteRecord | null) => {
     if (!quoteForAction) return;
+
+    if (!db) {
+      toast({
+        title: 'Modo Demo',
+        description: 'La función de compartir no está disponible sin conexión a la base de datos.',
+        variant: 'default',
+      });
+      return;
+    }
+
     const vehicleForAction = vehicles.find(v => v.id === quoteForAction.vehicleId);
     if (!vehicleForAction) {
         toast({ title: "Faltan Datos", description: "No se encontró el vehículo asociado.", variant: "destructive" });

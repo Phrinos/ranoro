@@ -116,8 +116,14 @@ export default function NuevaCotizacionPage() {
     placeholderQuotes.unshift(newQuote);
     await persistToFirestore(['quotes']);
 
-    // Save to public collection for sharing
-    if (db) {
+    if (!db) {
+        toast({
+            title: "Modo Demo: Enlace no disponible",
+            description: "La cotización se guardó localmente, pero el enlace público no funcionará sin conexión a la base de datos.",
+            variant: "default",
+        });
+    } else {
+        // Save to public collection for sharing
         const vehicleForPublicQuote = vehicles.find((v) => v.id === newQuote.vehicleId);
         if (vehicleForPublicQuote) {
             const publicQuoteData = {

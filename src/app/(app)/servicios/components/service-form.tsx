@@ -382,8 +382,17 @@ export function ServiceForm({
   };
 
   const savePublicService = async (serviceData: ServiceRecord, vehicleData: Vehicle | null) => {
-    if (!db || !serviceData.publicId || !vehicleData) {
-        console.warn("Public service save skipped: Missing db, publicId, or vehicle data.");
+    if (!db) {
+        console.warn("Public service save skipped: Database not configured.");
+        toast({
+            title: "Modo Demo: Hoja de servicio no compartible",
+            description: "El servicio se guardó, pero el enlace público no funcionará sin conexión a la base de datos.",
+            variant: "default",
+        });
+        return;
+    }
+    if (!serviceData.publicId || !vehicleData) {
+        console.warn("Public service save skipped: Missing publicId or vehicle data.");
         return;
     }
     try {
