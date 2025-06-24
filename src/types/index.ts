@@ -48,6 +48,7 @@ export interface ServiceRecord {
   vehicleConditions?: string;
   fuelLevel?: string;
   customerItems?: string;
+  serviceAdvisorId?: string;
   serviceAdvisorName?: string;
   customerSignatureReception?: string;
   customerSignatureDelivery?: string;
@@ -199,7 +200,8 @@ export interface User {
   email: string;
   role: UserRole;
   password?: string; // Only for creation/update, not stored in localStorage directly
-  phone?: string; // Added phone field
+  phone?: string;
+  signatureDataUrl?: string;
 }
 
 export interface AppRole {
