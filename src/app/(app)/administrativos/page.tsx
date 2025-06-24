@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { PlusCircle, ListFilter, Search, Users, DollarSign, CalendarIcon as CalendarDateIcon, BadgeCent, Archive } from "lucide-react";
 import { AdministrativeStaffTable } from "./components/administrative-staff-table";
 import { AdministrativeStaffDialog } from "./components/administrative-staff-dialog";
-import { placeholderAdministrativeStaff, placeholderServiceRecords } from "@/lib/placeholder-data";
+import { placeholderAdministrativeStaff, placeholderServiceRecords, persistToFirestore } from "@/lib/placeholder-data";
 import type { AdministrativeStaff, ServiceRecord } from "@/types";
 import type { AdministrativeStaffFormValues } from "./components/administrative-staff-form";
 import { useToast } from "@/hooks/use-toast";
@@ -63,6 +63,9 @@ export default function AdministrativosPage() {
     const updatedStaffList = [...staffList, newStaffMember];
     setStaffList(updatedStaffList);
     placeholderAdministrativeStaff.push(newStaffMember);
+
+    await persistToFirestore();
+
     toast({
         title: "Staff Creado",
         description: `${newStaffMember.name} ha sido agregado al staff administrativo.`,

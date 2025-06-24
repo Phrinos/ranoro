@@ -2,7 +2,7 @@
 "use client";
 
 import { useParams, useRouter } from 'next/navigation';
-import { placeholderTechnicians, placeholderTechnicianMonthlyPerformance } from '@/lib/placeholder-data';
+import { placeholderTechnicians, placeholderTechnicianMonthlyPerformance, persistToFirestore } from '@/lib/placeholder-data';
 import type { Technician, TechnicianMonthlyPerformance } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -67,6 +67,8 @@ export default function TechnicianDetailPage() {
     if (pIndex !== -1) {
       placeholderTechnicians[pIndex] = updatedTechnician;
     }
+    
+    await persistToFirestore();
 
     setIsEditDialogOpen(false);
     toast({
@@ -75,12 +77,15 @@ export default function TechnicianDetailPage() {
     });
   };
 
-  const handleArchiveTechnician = () => {
+  const handleArchiveTechnician = async () => {
     if (!technician) return;
     const techIndex = placeholderTechnicians.findIndex(t => t.id === technician.id);
     if (techIndex > -1) {
       placeholderTechnicians[techIndex].isArchived = true;
     }
+
+    await persistToFirestore();
+
     toast({
       title: "Staff Archivado",
       description: `El registro de ${technician.name} ha sido archivado.`,

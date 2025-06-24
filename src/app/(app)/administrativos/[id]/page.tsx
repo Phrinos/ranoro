@@ -2,7 +2,7 @@
 "use client";
 
 import { useParams, useRouter } from 'next/navigation';
-import { placeholderAdministrativeStaff } from '@/lib/placeholder-data';
+import { placeholderAdministrativeStaff, persistToFirestore } from '@/lib/placeholder-data';
 import type { AdministrativeStaff } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -58,6 +58,8 @@ export default function AdministrativeStaffDetailPage() {
     if (pIndex !== -1) {
       placeholderAdministrativeStaff[pIndex] = updatedStaffMember;
     }
+    
+    await persistToFirestore();
 
     setIsEditDialogOpen(false);
     toast({
@@ -66,12 +68,15 @@ export default function AdministrativeStaffDetailPage() {
     });
   };
 
-  const handleArchiveStaff = () => {
+  const handleArchiveStaff = async () => {
     if (!staffMember) return;
     const staffIndex = placeholderAdministrativeStaff.findIndex(s => s.id === staffMember.id);
     if (staffIndex > -1) {
       placeholderAdministrativeStaff[staffIndex].isArchived = true;
     }
+    
+    await persistToFirestore();
+
     toast({
       title: "Staff Archivado",
       description: `El registro de ${staffMember.name} ha sido archivado.`,

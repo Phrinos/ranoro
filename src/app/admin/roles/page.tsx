@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect, useMemo } from 'react';
@@ -16,6 +15,8 @@ import { useToast } from '@/hooks/use-toast';
 import type { AppRole } from '@/types'; // Assuming AppRole is defined in types
 import { PlusCircle, Trash2, Edit, Search, CheckSquare, Square } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox"; // Import Checkbox
+import { persistToFirestore, placeholderAppRoles } from '@/lib/placeholder-data';
+
 
 const ROLES_LOCALSTORAGE_KEY = 'appRoles';
 
@@ -58,11 +59,8 @@ export default function RolesPage() {
   });
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const storedRolesString = localStorage.getItem(ROLES_LOCALSTORAGE_KEY);
-      const loadedRoles: AppRole[] = storedRolesString ? JSON.parse(storedRolesString) : [];
-      setRoles(loadedRoles);
-    }
+    // This now reads from the global placeholder data, which is hydrated from Firestore
+    setRoles(placeholderAppRoles);
   }, []);
 
   const filteredRoles = useMemo(() => {
@@ -85,7 +83,7 @@ export default function RolesPage() {
     setIsFormOpen(true);
   };
 
-  const onSubmit = (data: RoleFormValues) => {
+  const onSubmit = async (data: RoleFormValues) => {
     let updatedRoles: AppRole[];
     if (editingRole) {
       updatedRoles = roles.map(r => r.id === editingRole.id ? { ...editingRole, ...data } : r);
@@ -100,20 +98,21 @@ export default function RolesPage() {
       toast({ title: 'Rol Creado', description: `El rol ${data.name} ha sido creado.` });
     }
     setRoles(updatedRoles);
-    if (typeof window !== 'undefined') {
-      localStorage.setItem(ROLES_LOCALSTORAGE_KEY, JSON.stringify(updatedRoles));
-    }
+    placeholderAppRoles.splice(0, placeholderAppRoles.length, ...updatedRoles);
+    
+    await persistToFirestore();
+
     setIsFormOpen(false);
   };
 
-  const handleDeleteRole = (roleId: string) => {
+  const handleDeleteRole = async (roleId: string) => {
     const roleToDelete = roles.find(r => r.id === roleId);
-    // Add check: prevent deletion if role is in use by users (more complex, skip for now)
     const updatedRoles = roles.filter(r => r.id !== roleId);
     setRoles(updatedRoles);
-    if (typeof window !== 'undefined') {
-      localStorage.setItem(ROLES_LOCALSTORAGE_KEY, JSON.stringify(updatedRoles));
-    }
+    placeholderAppRoles.splice(0, placeholderAppRoles.length, ...updatedRoles);
+    
+    await persistToFirestore();
+
     toast({ title: 'Rol Eliminado', description: `El rol "${roleToDelete?.name}" ha sido eliminado.` });
   };
 

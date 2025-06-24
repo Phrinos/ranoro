@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { PlusCircle, Search, DollarSign, ShoppingCart, ListFilter } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useToast } from '@/hooks/use-toast';
-import { placeholderSuppliers, placeholderServiceRecords, placeholderInventory } from '@/lib/placeholder-data';
+import { placeholderSuppliers, placeholderServiceRecords, placeholderInventory, persistToFirestore } from '@/lib/placeholder-data';
 import type { Supplier, InventoryItem } from '@/types';
 import { SupplierDialog } from './components/supplier-dialog';
 import { SuppliersTable } from './components/suppliers-table';
@@ -101,6 +101,8 @@ export default function ProveedoresPage() {
       const pIndex = placeholderSuppliers.findIndex(sup => sup.id === editingSupplier.id);
       if (pIndex !== -1) placeholderSuppliers[pIndex] = { ...placeholderSuppliers[pIndex], ...formData, debtAmount: Number(formData.debtAmount) || 0 };
       
+      await persistToFirestore();
+
       toast({
         title: "Proveedor Actualizado",
         description: `El proveedor "${formData.name}" ha sido actualizado.`,
@@ -113,6 +115,9 @@ export default function ProveedoresPage() {
       };
       setSuppliers(prev => [...prev, newSupplier]);
       placeholderSuppliers.push(newSupplier);
+      
+      await persistToFirestore();
+
       toast({
         title: "Proveedor Agregado",
         description: `El proveedor "${newSupplier.name}" ha sido creado.`,
@@ -122,7 +127,7 @@ export default function ProveedoresPage() {
     setEditingSupplier(null);
   };
 
-  const handleDeleteSupplier = (supplierId: string) => {
+  const handleDeleteSupplier = async (supplierId: string) => {
     const supplierToDelete = suppliers.find(s => s.id === supplierId);
     if (!supplierToDelete) return;
 
@@ -132,6 +137,8 @@ export default function ProveedoresPage() {
       placeholderSuppliers.splice(pIndex, 1);
     }
     
+    await persistToFirestore();
+
     toast({
       title: "Proveedor Eliminado",
       description: `El proveedor "${supplierToDelete.name}" ha sido eliminado.`,

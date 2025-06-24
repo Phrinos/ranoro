@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState } from 'react';
@@ -11,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { UploadCloud, Loader2, CheckCircle, AlertTriangle, Car, Wrench } from "lucide-react";
 import { useToast } from '@/hooks/use-toast';
 import { migrateData, type ExtractedVehicle, type ExtractedService } from '@/ai/flows/data-migration-flow';
-import { placeholderVehicles, placeholderServiceRecords, placeholderTechnicians } from '@/lib/placeholder-data';
+import { placeholderVehicles, placeholderServiceRecords, placeholderTechnicians, persistToFirestore } from '@/lib/placeholder-data';
 import type { Vehicle, ServiceRecord } from '@/types';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -157,6 +156,8 @@ export default function MigracionDatosPage() {
         }
       });
       
+      await persistToFirestore();
+
       setMigrationResult({ ...result, vehiclesAdded: vehiclesAddedCount, servicesAdded: servicesAddedCount });
       toast({
         title: "Migración Completada",
