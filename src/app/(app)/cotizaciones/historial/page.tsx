@@ -312,7 +312,7 @@ export default function HistorialCotizacionesPage() {
         description="Consulta, filtra y ordena todas las cotizaciones generadas."
         actions={
           <Button asChild>
-            <Link href="/cotizaciones/nuevo">
+            <Link href="/cotizaciones/crear">
               <PlusCircle className="mr-2 h-4 w-4" />
               Nueva Cotización
             </Link>
