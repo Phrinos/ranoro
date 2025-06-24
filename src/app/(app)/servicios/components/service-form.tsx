@@ -377,16 +377,18 @@ export function ServiceForm({
         return;
     }
 
-    // This is the most important validation. A vehicle MUST be selected.
-    if (!values.vehicleId) {
+    const vehicleIdToSave = selectedVehicle?.id || values.vehicleId;
+
+    if (!vehicleIdToSave) {
         form.setError("vehicleLicensePlateSearch", { type: "manual", message: "Debe buscar y seleccionar un vehículo, o registrar uno nuevo." });
         toast({
             title: "Vehículo no seleccionado",
-            description: "Por favor, busque un vehículo por su placa y selecciónelo de la lista.",
+            description: "Por favor, busque un vehículo por su placa y selecciónelo de la lista. El vehículo debe estar cargado y visible.",
             variant: "destructive"
         });
         return;
     }
+
 
     const isValidForm = await form.trigger();
     if (!isValidForm) {
@@ -401,7 +403,7 @@ export function ServiceForm({
     if (mode === 'service') {
       const serviceData: ServiceRecord = {
         id: initialDataService?.id || `SER${defaultServiceRecords.length + 1}`,
-        vehicleId: values.vehicleId!,
+        vehicleId: vehicleIdToSave,
         vehicleIdentifier: selectedVehicle?.licensePlate || values.vehicleLicensePlateSearch,
         serviceDate: values.serviceDate!.toISOString(),
         deliveryDateTime: values.deliveryDateTime ? values.deliveryDateTime.toISOString() : undefined,
@@ -434,7 +436,7 @@ export function ServiceForm({
         id: (initialDataQuote as QuoteRecord)?.id || `COT${placeholderQuotes.length + 1}`,
         publicId: (initialDataQuote as QuoteRecord)?.publicId || `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 9)}`,
         quoteDate: values.serviceDate!.toISOString(),
-        vehicleId: values.vehicleId,
+        vehicleId: vehicleIdToSave,
         vehicleIdentifier: selectedVehicle?.licensePlate || values.vehicleLicensePlateSearch,
         description: values.description,
         preparedByTechnicianId: values.technicianId,
@@ -459,9 +461,16 @@ export function ServiceForm({
   
   const handlePrintSheet = useCallback(() => {
     const formValues = form.getValues();
+    const vehicleForSheet = selectedVehicle || localVehicles.find(v => v.id === formValues.vehicleId);
+
+    if (!vehicleForSheet) {
+      toast({ title: "Error", description: "No se puede imprimir la hoja sin un vehículo seleccionado.", variant: "destructive" });
+      return;
+    }
+
     const serviceDataForSheet: ServiceRecord = {
       id: formValues.id || 'N/A',
-      vehicleId: formValues.vehicleId || 'N/A',
+      vehicleId: vehicleForSheet.id,
       serviceDate: formValues.serviceDate ? formValues.serviceDate.toISOString() : new Date().toISOString(),
       description: formValues.description,
       technicianId: formValues.technicianId || 'N/A',
@@ -474,10 +483,10 @@ export function ServiceForm({
       customerItems: formValues.customerItems,
       serviceAdvisorName: currentUser?.name || 'N/A',
     };
-    const vehicleForSheet = localVehicles.find(v => v.id === formValues.vehicleId);
-    setServiceForSheet({ ...serviceDataForSheet, vehicleIdentifier: vehicleForSheet?.licensePlate });
+    
+    setServiceForSheet({ ...serviceDataForSheet, vehicleIdentifier: vehicleForSheet.licensePlate });
     setIsSheetOpen(true);
-  }, [form, currentUser, localVehicles]);
+  }, [form, currentUser, localVehicles, selectedVehicle, toast]);
 
 
   const handleTimeChange = (timeString: string, dateField: "serviceDate" | "deliveryDateTime") => {
@@ -1403,7 +1412,7 @@ export function ServiceForm({
               <Button type="button" variant="outline" onClick={onClose}>
                 Cancelar
               </Button>
-              <Button type="submit" disabled={form.formState.isSubmitting || (!form.getValues('vehicleId') && !initialData?.id)}>
+              <Button type="submit" disabled={form.formState.isSubmitting || !selectedVehicle}>
                 {form.formState.isSubmitting ? "Guardando..." : submitButtonText}
               </Button>
             </>
