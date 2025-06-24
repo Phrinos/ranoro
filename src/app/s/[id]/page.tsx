@@ -28,6 +28,7 @@ export default function PublicServiceSheetPage() {
   const [vehicle, setVehicle] = useState<Vehicle | null | undefined>(undefined);
   const [isSigning, setIsSigning] = useState(false);
   const [signatureType, setSignatureType] = useState<'reception' | 'delivery' | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!publicId) {
@@ -37,6 +38,7 @@ export default function PublicServiceSheetPage() {
 
     if (!db) {
         console.error("Firebase (db) no está configurado. No se puede cargar la hoja de servicio pública.");
+        setError("La conexión con la base de datos no está configurada. Este enlace no funcionará.");
         setService(null);
         return;
     }
@@ -123,16 +125,20 @@ export default function PublicServiceSheetPage() {
     );
   }
 
-  if (!service || !vehicle) {
+  if (error || !service || !vehicle) {
     return (
       <div className="container mx-auto py-8">
         <Card className="max-w-4xl mx-auto text-center">
           <CardHeader>
             <ShieldAlert className="mx-auto h-16 w-16 text-destructive mb-4" />
-            <CardTitle className="text-2xl font-bold">Hoja de Servicio no encontrada</CardTitle>
+            <CardTitle className="text-2xl font-bold">Hoja de Servicio no Válida</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-muted-foreground">La hoja de servicio que busca no se encontró o ha expirado.</p>
+             {error ? (
+              <p className="text-muted-foreground">{error}</p>
+            ) : (
+              <p className="text-muted-foreground">La hoja de servicio que busca no se encontró o ha expirado.</p>
+            )}
             <p className="text-muted-foreground mt-2">Por favor, contacte al taller para un nuevo enlace.</p>
             <Button asChild className="mt-6">
               <Link href="/login">Volver al Inicio</Link>
