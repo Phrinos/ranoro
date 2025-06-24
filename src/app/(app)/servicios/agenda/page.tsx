@@ -185,10 +185,10 @@ export default function AgendaServiciosPage() {
     return { todayCount, tomorrowCount };
   }, [allServices]);
 
-  const handleOpenEditDialog = useCallback((service: ServiceRecord) => {
+  const handleOpenEditDialog = (service: ServiceRecord) => {
     setEditingService(service);
     setIsEditDialogOpen(true);
-  }, []);
+  };
 
   const handleUpdateService = useCallback(async (data: ServiceRecord | QuoteRecord) => {
     if (!('status' in data)) {
@@ -226,10 +226,10 @@ export default function AgendaServiciosPage() {
     setShowPrintTicketDialog(true);
   }, [inventoryItemsState, techniciansState, vehicles]);
 
-  const handleShowSheet = useCallback((service: ServiceRecord) => {
+  const handleShowSheet = (service: ServiceRecord) => {
     setServiceForSheet(service);
     setIsSheetOpen(true);
-  }, []);
+  };
 
   const onVehicleCreated = useCallback(async (newVehicle: Vehicle) => {
     setVehicles(currentVehicles => {
