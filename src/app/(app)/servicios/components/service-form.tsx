@@ -20,7 +20,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent, CardHeader, CardTitle} from "@/components/ui/card";
-import { CalendarIcon, PlusCircle, Search, Trash2, AlertCircle, Car as CarIcon, Clock, DollarSign, PackagePlus, BrainCircuit, Loader2 } from "lucide-react";
+import { CalendarIcon, PlusCircle, Search, Trash2, AlertCircle, Car as CarIcon, Clock, DollarSign, PackagePlus, BrainCircuit, Loader2, Printer } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format, parseISO, setHours, setMinutes, isValid, startOfDay } from "date-fns";
 import { es } from 'date-fns/locale';
@@ -199,12 +199,18 @@ export function ServiceForm({
             };
         }) || [];
         
+        const rawServiceDate = data.serviceDate || data.quoteDate;
+        const parsedServiceDate = rawServiceDate ? parseISO(rawServiceDate) : undefined;
+        
+        const rawDeliveryDate = (data as ServiceRecord)?.deliveryDateTime;
+        const parsedDeliveryDate = rawDeliveryDate ? parseISO(rawDeliveryDate) : undefined;
+
         const dataToReset: Partial<ServiceFormValues> = {
             id: data.id,
             vehicleId: data.vehicleId,
             vehicleLicensePlateSearch: vehicle?.licensePlate || data.vehicleIdentifier || "",
-            serviceDate: data.serviceDate || data.quoteDate ? parseISO(data.serviceDate || data.quoteDate!) : undefined,
-            deliveryDateTime: (data as ServiceRecord)?.deliveryDateTime ? parseISO((data as ServiceRecord).deliveryDateTime!) : undefined,
+            serviceDate: parsedServiceDate && isValid(parsedServiceDate) ? parsedServiceDate : undefined,
+            deliveryDateTime: parsedDeliveryDate && isValid(parsedDeliveryDate) ? parsedDeliveryDate : undefined,
             mileage: data.mileage || undefined,
             description: data.description || "",
             notes: data.notes || "",
