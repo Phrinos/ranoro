@@ -9,7 +9,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuLabel, DropdownMenuRadio
 import { PlusCircle, Printer, ShoppingCartIcon, AlertTriangle, PackageCheck, DollarSign, Search, ListFilter, Server } from "lucide-react";
 import { InventoryTable } from "./components/inventory-table";
 import { InventoryItemDialog } from "./components/inventory-item-dialog";
-import { placeholderInventory, placeholderCategories, placeholderSuppliers } from "@/lib/placeholder-data";
+import { placeholderInventory, placeholderCategories, placeholderSuppliers, persistToFirestore } from "@/lib/placeholder-data";
 import type { InventoryItem } from "@/types";
 import { useState, useMemo, useEffect } from "react";
 import type { InventoryItemFormValues } from "./components/inventory-item-form";
@@ -57,6 +57,8 @@ export default function InventarioPage() {
     const updatedInventory = [...inventoryItems, newItem];
     setInventoryItems(updatedInventory);
     placeholderInventory.push(newItem); 
+    
+    await persistToFirestore();
     
     toast({
       title: "Producto/Servicio Creado",
@@ -106,7 +108,7 @@ export default function InventarioPage() {
     setIsNewItemDialogOpen(true); 
   };
 
-  const handleSavePurchaseDetails = (details: PurchaseDetailsFormValues) => {
+  const handleSavePurchaseDetails = async (details: PurchaseDetailsFormValues) => {
     if (!selectedItemForPurchase || selectedItemForPurchase.isService) {
       toast({ title: "Error", description: "No hay un artículo de stock seleccionado para la compra o es un servicio.", variant: "destructive" });
       return;
@@ -126,6 +128,8 @@ export default function InventarioPage() {
     };
     placeholderInventory[itemIndex] = updatedItem;
     setInventoryItems([...placeholderInventory]); 
+    
+    await persistToFirestore();
 
     toast({
       title: "Compra Registrada",

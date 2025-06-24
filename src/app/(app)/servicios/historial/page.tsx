@@ -13,7 +13,7 @@ import { ServicesTable } from "../components/services-table";
 import { ServiceDialog } from "../components/service-dialog"; 
 import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
 import { TicketContent } from '@/components/ticket-content';
-import { placeholderServiceRecords, placeholderVehicles, placeholderTechnicians, placeholderInventory } from "@/lib/placeholder-data";
+import { placeholderServiceRecords, placeholderVehicles, placeholderTechnicians, placeholderInventory, persistToFirestore } from "@/lib/placeholder-data";
 import type { ServiceRecord, Vehicle, Technician, InventoryItem, QuoteRecord } from "@/types";
 import { useState, useEffect, useMemo, useRef } from "react";
 import { useToast } from "@/hooks/use-toast";
@@ -164,7 +164,7 @@ export default function HistorialServiciosPage() {
     return { totalServices, totalRevenue, totalProfit, mostCommonVehicle };
   }, [filteredAndSortedServices, vehicles]);
 
-  const handleUpdateService = (data: ServiceRecord | QuoteRecord) => {
+  const handleUpdateService = async (data: ServiceRecord | QuoteRecord) => {
     if (!('status' in data)) { 
       toast({
         title: "Error de Tipo",
@@ -182,6 +182,8 @@ export default function HistorialServiciosPage() {
     if (pIndex !== -1) {
         placeholderServiceRecords[pIndex] = updatedService;
     }
+    await persistToFirestore();
+    
     toast({
       title: "Servicio Actualizado",
       description: `El servicio ${updatedService.id} ha sido actualizado.`,
@@ -195,13 +197,15 @@ export default function HistorialServiciosPage() {
     }
   };
 
-  const handleDeleteService = (serviceId: string) => {
+  const handleDeleteService = async (serviceId: string) => {
     const serviceToDelete = allServices.find(s => s.id === serviceId);
     setAllServices(prevServices => prevServices.filter(s => s.id !== serviceId));
     const pIndex = placeholderServiceRecords.findIndex(s => s.id === serviceId);
     if (pIndex !== -1) {
         placeholderServiceRecords.splice(pIndex, 1);
     }
+    await persistToFirestore();
+
     toast({
       title: "Servicio Eliminado",
       description: `El servicio con ID ${serviceId} (${serviceToDelete?.description}) ha sido eliminado.`,

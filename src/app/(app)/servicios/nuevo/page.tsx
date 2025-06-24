@@ -6,7 +6,7 @@ import { PageHeader } from "@/components/page-header";
 import { ServiceDialog } from "../components/service-dialog";
 import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
 import { TicketContent } from '@/components/ticket-content';
-import { placeholderVehicles, placeholderTechnicians, placeholderInventory, placeholderServiceRecords } from "@/lib/placeholder-data";
+import { placeholderVehicles, placeholderTechnicians, placeholderInventory, placeholderServiceRecords, persistToFirestore } from "@/lib/placeholder-data";
 import type { ServiceRecord, Vehicle, Technician, QuoteRecord, InventoryItem } from "@/types";
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from 'next/navigation';
@@ -52,6 +52,7 @@ export default function NuevoServicioPage() {
       id: `S${String(placeholderServiceRecords.length + 1).padStart(3, '0')}${Date.now().toString().slice(-3)}`,
     };
     placeholderServiceRecords.push(newService); 
+    await persistToFirestore();
     
     toast({
       title: "Servicio Creado",
