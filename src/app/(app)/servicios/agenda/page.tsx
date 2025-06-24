@@ -380,7 +380,7 @@ export default function AgendaServiciosPage() {
                               <Button variant="ghost" size="icon" aria-label="Editar Servicio" onClick={(e) => {e.stopPropagation(); handleOpenEditDialog(service);}}>
                                 <Edit className="h-4 w-4" />
                               </Button>
-                              <Button variant="ghost" size="icon" aria-label="Ver Hoja de Servicio" onClick={(e) => { e.stopPropagation(); handleShowSheet(service); }}>
+                              <Button variant="ghost" size="icon" aria-label="Ver Hoja de Servicio" onClick={() => handleShowSheet(service)}>
                                   <FileText className="h-4 w-4" />
                               </Button>
                               {service.status === 'Completado' && (
@@ -556,22 +556,20 @@ export default function AgendaServiciosPage() {
         </PrintTicketDialog>
       )}
 
-      {serviceForSheet && (
-        <PrintTicketDialog
-            open={isSheetOpen}
-            onOpenChange={setIsSheetOpen}
-            title="Hoja de Servicio"
-            onDialogClose={() => setServiceForSheet(null)}
-            dialogContentClassName="printable-quote-dialog"
-            footerActions={
-                <Button onClick={() => window.print()}>
-                    <Printer className="mr-2 h-4 w-4" /> Imprimir Hoja
-                </Button>
-            }
-        >
-            <ServiceSheetContent service={serviceForSheet} vehicle={vehicles.find(v => v.id === serviceForSheet.vehicleId)} />
-        </PrintTicketDialog>
-      )}
+      <PrintTicketDialog
+          open={isSheetOpen}
+          onOpenChange={setIsSheetOpen}
+          title="Hoja de Servicio"
+          onDialogClose={() => setServiceForSheet(null)}
+          dialogContentClassName="printable-quote-dialog"
+          footerActions={
+              <Button onClick={() => window.print()}>
+                  <Printer className="mr-2 h-4 w-4" /> Imprimir Hoja
+              </Button>
+          }
+      >
+          {serviceForSheet && <ServiceSheetContent service={serviceForSheet} vehicle={vehicles.find(v => v.id === serviceForSheet.vehicleId)} />}
+      </PrintTicketDialog>
     </>
   );
 }
