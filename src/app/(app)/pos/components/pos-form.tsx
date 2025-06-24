@@ -205,29 +205,31 @@ export function PosForm({ inventoryItems: parentInventoryItems, onSaleComplete, 
   };
   
   const handleQuantityChange = (index: number, newQuantityStr: string) => {
-    const newQuantity = parseFloat(newQuantityStr);
-
-    if (isNaN(newQuantity) || newQuantity <= 0) {
-      // Don't update if input is invalid or not positive, just let the validation handle it on submit
-      // but update the form field so the user sees their input
+    const sanitizedQuantityStr = newQuantityStr.replace(',', '.');
+    const newQuantity = parseFloat(sanitizedQuantityStr);
+  
+    if (isNaN(newQuantity) || newQuantity < 0) {
       form.setValue(`items.${index}.quantity`, newQuantityStr as any);
       return;
     }
-    
+  
     const itemInSale = form.getValues(`items.${index}`);
-    const itemDetailsFromInv = currentInventoryItems.find(invItem => invItem.id === itemInSale.inventoryItemId);
-
+    const itemDetailsFromInv = currentInventoryItems.find(
+      (invItem) => invItem.id === itemInSale.inventoryItemId
+    );
+  
     if (itemDetailsFromInv && !itemDetailsFromInv.isService && newQuantity > itemDetailsFromInv.quantity) {
-      toast({ 
-        title: "Stock Insuficiente", 
-        description: `Solo hay ${itemDetailsFromInv.quantity} ${itemDetailsFromInv.unitType || 'unidades'} de ${itemDetailsFromInv.name}.`, 
-        variant: "destructive", 
-        duration: 3000
+      toast({
+        title: 'Stock Insuficiente',
+        description: `Solo hay ${itemDetailsFromInv.quantity} ${
+          itemDetailsFromInv.unitType || 'unidades'
+        } de ${itemDetailsFromInv.name}.`,
+        variant: 'destructive',
+        duration: 3000,
       });
-      // Do not update the quantity in the form array if it exceeds stock
       return;
     }
-
+  
     const unitPrice = itemInSale.unitPrice || 0;
     update(index, {
       ...itemInSale,
@@ -582,8 +584,11 @@ export function PosForm({ inventoryItems: parentInventoryItems, onSaleComplete, 
                         step="any"
                         min="0.001"
                         value={addItemQuantity}
-                        onChange={(e) => setAddItemQuantity(parseFloat(e.target.value) || 0)}
-                        className="w-full text-center"
+                        onChange={(e) => {
+                            const val = e.target.value.replace(',', '.');
+                            setAddItemQuantity(parseFloat(val) || 0)
+                        }}
+                        className="w-full"
                     />
                 </div>
             </div>
