@@ -63,12 +63,10 @@ const suggestPriceFlow = ai.defineFlow(
     outputSchema: SuggestPriceOutputSchema,
   },
   async (input) => {
-    const llmResponse = await suggestPricePrompt.generate({
-        input,
+    const { output } = await suggestPricePrompt(input, {
         config: { temperature: 0.3 }
     });
     
-    const output = llmResponse.output();
     if (!output) {
       throw new Error("Failed to get a valid structured response from the model.");
     }

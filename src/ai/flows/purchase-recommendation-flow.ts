@@ -93,8 +93,7 @@ const purchaseRecommendationFlow = ai.defineFlow(
     outputSchema: PurchaseRecommendationOutputSchema,
   },
   async (input) => {
-    const { output } = await purchaseRecommendationPrompt.generate({
-        input,
+    const { output } = await purchaseRecommendationPrompt(input, {
         config: { temperature: 0.1 }
     });
     

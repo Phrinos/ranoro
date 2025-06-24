@@ -72,9 +72,8 @@ const capacityAnalysisFlow = ai.defineFlow(
     outputSchema: CapacityAnalysisOutputSchema,
   },
   async (input) => {
-    const { output } = await capacityAnalysisPrompt.generate({
-        input,
-        config: { temperature: 0.2 },
+    const { output } = await capacityAnalysisPrompt(input, {
+      config: { temperature: 0.2 },
     });
 
     if (!output || !output.serviceDurations) {
