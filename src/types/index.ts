@@ -144,6 +144,7 @@ export interface SaleReceipt {
 
 export interface QuoteRecord {
   id: string;
+  publicId?: string; // Unique, random ID for public sharing
   serviceDate?: string; 
   quoteDate?: string;
   vehicleId?: number; // Optional if quote is generic initially
