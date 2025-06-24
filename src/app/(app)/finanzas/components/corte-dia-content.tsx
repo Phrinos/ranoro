@@ -11,7 +11,6 @@ const initialWorkshopInfo = {
   phone: "4491425323",
   addressLine1: "Av. de la Convencion de 1914 No. 1421",
   addressLine2: "Jardines de la Concepcion, C.P. 20267",
-  cityState: "Aguascalientes, Ags.",
 };
 
 type WorkshopInfoType = typeof initialWorkshopInfo;
@@ -93,9 +92,12 @@ export function CorteDiaContent({ reportData, previewWorkshopInfo }: CorteDiaCon
       
       {renderDashedLine()}
       <div className="font-semibold my-1">RESUMEN DE VENTAS (POS)</div>
-      {Object.entries(reportData.salesByPaymentMethod).map(([method, total]) => 
-        renderLine(`${method}:`, formatCurrency(total))
-      )}
+      {Object.entries(reportData.salesByPaymentMethod).map(([method, total]) => (
+        <div key={method} className="flex justify-between text-xs py-0.5">
+          <span>{`${method}:`}</span>
+          <span>{formatCurrency(total)}</span>
+        </div>
+      ))}
       {renderLine("Total Ventas (POS):", formatCurrency(reportData.totalSales), true)}
       
       {renderDashedLine()}
