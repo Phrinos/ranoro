@@ -1,4 +1,3 @@
-
 "use client";
 
 import { PageHeader } from "@/components/page-header";
@@ -136,7 +135,7 @@ export default function POSPage() {
 
   return (
     <>
-      <div className="mb-6 grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+      <div className="mb-6 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">Total de Ventas</CardTitle>
@@ -148,20 +147,14 @@ export default function POSPage() {
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Ingresos Totales</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Ingresos y Ganancias</CardTitle>
             <DollarSign className="h-5 w-5 text-green-500" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold font-headline">${summaryData.totalRevenue.toLocaleString('es-ES')}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Ganancias Registradas</CardTitle>
-            <TrendingUp className="h-5 w-5 text-purple-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold font-headline">${summaryData.totalProfit.toLocaleString('es-ES')}</div>
+            <p className="text-xs text-muted-foreground">
+              Ganancia: ${summaryData.totalProfit.toLocaleString('es-ES')}
+            </p>
           </CardContent>
         </Card>
          <Card>
