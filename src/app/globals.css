@@ -113,20 +113,22 @@ body {
     print-color-adjust: exact !important;
   }
 
-  /* Hide all elements by default */
-  body > * {
+  /* Hide the sidebar and other non-printable elements */
+  .peer, .print-hidden {
     display: none !important;
   }
   
-  /* Show only the context for printing inventory */
-  .inventory-page-print-context {
-    display: block !important;
+  /* Ensure the main content area takes up the full page */
+  .group\/sidebar-wrapper {
+      display: block !important;
   }
-  .inventory-page-print-context * {
-    visibility: visible;
-    display: revert !important; /* Revert children to their original display property */
+  main {
+      padding: 0 !important;
+      margin: 0 !important;
+      overflow: visible !important;
   }
 
+  /* Styles for other printable dialogs (tickets, quotes) */
   .printable-content, .printable-content * {
     visibility: visible;
   }
@@ -144,11 +146,6 @@ body {
     box-shadow: none !important;
     transform: none !important;
     display: block !important;
-    background: white !important;
-  }
-  
-  .print-hidden {
-    display: none !important;
   }
   
   .printable-content [data-format="receipt"] {
