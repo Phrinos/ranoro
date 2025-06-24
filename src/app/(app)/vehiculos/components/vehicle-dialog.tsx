@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect } from 'react';
@@ -16,7 +17,7 @@ import type { VehicleFormValues } from "./vehicle-form"; // Import VehicleFormVa
 
 interface VehicleDialogProps {
   trigger?: React.ReactNode; // Make trigger optional for programmatic control
-  vehicle?: Vehicle | null;
+  vehicle?: Partial<Vehicle> | null;
   onSave?: (data: VehicleFormValues) => Promise<void>; // Use specific form values type
   open?: boolean; // To control dialog externally
   onOpenChange?: (isOpen: boolean) => void; // To control dialog externally
@@ -73,9 +74,9 @@ export function VehicleDialog({
       {open && (
         <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>{vehicle ? "Editar Vehículo" : "Nuevo Vehículo"}</DialogTitle>
+            <DialogTitle>{vehicle && 'id' in vehicle ? "Editar Vehículo" : "Nuevo Vehículo"}</DialogTitle>
             <DialogDescription>
-              {vehicle ? "Actualiza los detalles del vehículo." : "Completa la información para un nuevo vehículo."}
+              {vehicle && 'id' in vehicle ? "Actualiza los detalles del vehículo." : "Completa la información para un nuevo vehículo."}
             </DialogDescription>
           </DialogHeader>
           <VehicleForm

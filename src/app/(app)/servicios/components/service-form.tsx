@@ -128,6 +128,8 @@ export function ServiceForm({
   const [vehicleNotFound, setVehicleNotFound] = useState(false);
   const [isVehicleDialogOpen, setIsVehicleDialogOpen] = useState(false);
   const [localVehicles, setLocalVehicles] = useState<Vehicle[]>(parentVehicles);
+  const [newVehicleInitialData, setNewVehicleInitialData] = useState<Partial<VehicleFormValues> | null>(null);
+
 
   const [currentInventoryItems, setCurrentInventoryItems] = useState<InventoryItem[]>(inventoryItemsProp);
 
@@ -162,13 +164,10 @@ export function ServiceForm({
     }
   });
 
-  useEffect(() => {
-    setLocalVehicles(parentVehicles);
-  }, [parentVehicles]);
-
-  useEffect(() => {
-    setCurrentInventoryItems(inventoryItemsProp);
-  }, [inventoryItemsProp]);
+  const { fields, append, remove, replace } = useFieldArray({
+    control: form.control,
+    name: "suppliesUsed",
+  });
 
   // Main effect to set form values from initialData
   useEffect(() => {
@@ -197,8 +196,8 @@ export function ServiceForm({
                 unitType: itemDetails?.unitType || 'units',
             };
         }) || [];
-
-        form.reset({
+        
+        const dataToReset: Partial<ServiceFormValues> = {
             id: data.id,
             vehicleId: data.vehicleId,
             vehicleLicensePlateSearch: vehicle?.licensePlate || data.vehicleIdentifier || "",
@@ -210,14 +209,27 @@ export function ServiceForm({
             technicianId: (data as ServiceRecord)?.technicianId || (data as QuoteRecord)?.preparedByTechnicianId || undefined,
             totalServicePrice: (data as ServiceRecord)?.totalCost ?? (data as QuoteRecord)?.estimatedTotalCost ?? undefined,
             status: mode === 'service' ? ((data as ServiceRecord)?.status || 'Agendado') : undefined,
-            suppliesUsed: mappedSupplies,
-        });
+        };
+
+        // Reset all form fields except the array
+        form.reset(dataToReset);
+        // Explicitly replace the array content
+        replace(mappedSupplies);
+
     } else {
       // Set default for new forms
       form.setValue('serviceDate', setHours(setMinutes(new Date(), 30), 8));
     }
-  }, [initialDataService, initialDataQuote, mode, localVehicles, currentInventoryItems, form]);
+  }, [initialDataService, initialDataQuote, mode, localVehicles, currentInventoryItems, form, replace]);
 
+
+  useEffect(() => {
+    setLocalVehicles(parentVehicles);
+  }, [parentVehicles]);
+
+  useEffect(() => {
+    setCurrentInventoryItems(inventoryItemsProp);
+  }, [inventoryItemsProp]);
 
   const watchedStatus = form.watch("status");
 
@@ -227,11 +239,6 @@ export function ServiceForm({
     }
   }, [watchedStatus, form, mode]);
 
-
-  const { fields, append, remove, replace } = useFieldArray({
-    control: form.control,
-    name: "suppliesUsed",
-  });
 
   const watchedSupplies = form.watch("suppliesUsed");
   const watchedTotalServicePrice = form.watch("totalServicePrice") || 0;
@@ -708,7 +715,10 @@ export function ServiceForm({
                             <AlertCircle className="h-5 w-5 shrink-0"/>
                             <p>Vehículo con placa "{vehicleLicensePlateSearch}" no encontrado.</p>
                         </div>
-                        <Button type="button" size="sm" variant="outline" onClick={() => setIsVehicleDialogOpen(true)} className="w-full sm:w-auto">
+                        <Button type="button" size="sm" variant="outline" onClick={() => {
+                            setNewVehicleInitialData({ licensePlate: vehicleLicensePlateSearch });
+                            setIsVehicleDialogOpen(true);
+                        }} className="w-full sm:w-auto">
                             <CarIcon className="mr-2 h-4 w-4"/> Registrar Nuevo Vehículo
                         </Button>
                     </div>
@@ -1070,7 +1080,7 @@ export function ServiceForm({
         open={isVehicleDialogOpen}
         onOpenChange={setIsVehicleDialogOpen}
         onSave={handleSaveNewVehicle}
-        vehicle={null}
+        vehicle={newVehicleInitialData}
     />
 
     <Dialog open={isAddSupplyDialogOpen} onOpenChange={setIsAddSupplyDialogOpen}>

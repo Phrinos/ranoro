@@ -8,7 +8,8 @@ import {
   placeholderServiceRecords,
   placeholderVehicles,
   placeholderTechnicians,
-  placeholderInventory
+  placeholderInventory,
+  persistToFirestore
 } from "@/lib/placeholder-data";
 import type { ServiceRecord, Vehicle, Technician, InventoryItem, QuoteRecord } from "@/types";
 import { useState, useEffect, useMemo, useRef } from "react";
@@ -178,6 +179,8 @@ export default function AgendaServiciosPage() {
     if (pIndex !== -1) {
       placeholderServiceRecords[pIndex] = updatedServiceData;
     }
+    await persistToFirestore();
+
      toast({
       title: "Servicio Actualizado",
       description: `El servicio para ${vehicles.find(v => v.id === updatedServiceData.vehicleId)?.licensePlate} ha sido actualizado.`,
@@ -186,27 +189,33 @@ export default function AgendaServiciosPage() {
     setEditingService(null);
 
     if (updatedServiceData.status === 'Completado') {
-      setCurrentServiceForTicket(updatedServiceData);
-      setCurrentVehicleForTicket(vehicles.find(v => v.id === updatedServiceData.vehicleId) || null);
-      setCurrentTechnicianForTicket(techniciansState.find(t => t.id === updatedServiceData.technicianId) || null);
-      setShowPrintTicketDialog(true);
+      handleReprintService(updatedServiceData);
     }
   };
 
-  const handleDeleteService = (serviceId: string) => {
+  const handleDeleteService = async (serviceId: string) => {
     const serviceToDelete = allServices.find(s => s.id === serviceId);
     setAllServices(prevServices => prevServices.filter(s => s.id !== serviceId));
     const pIndex = placeholderServiceRecords.findIndex(s => s.id === serviceId);
     if (pIndex !== -1) {
       placeholderServiceRecords.splice(pIndex, 1);
     }
+    await persistToFirestore();
     toast({
       title: "Servicio Eliminado",
       description: `El servicio con ID ${serviceId} (${serviceToDelete?.description}) ha sido eliminado.`,
     });
   };
+  
+  const handleReprintService = (service: ServiceRecord) => {
+    setCurrentServiceForTicket(service);
+    setCurrentVehicleForTicket(vehicles.find(v => v.id === service.vehicleId) || null);
+    setCurrentTechnicianForTicket(techniciansState.find(t => t.id === service.technicianId) || null);
+    setShowPrintTicketDialog(true);
+  };
 
-  const onVehicleCreated = (newVehicle: Vehicle) => {
+
+  const onVehicleCreated = async (newVehicle: Vehicle) => {
     setVehicles(currentVehicles => {
       if (currentVehicles.find(v => v.id === newVehicle.id)) return currentVehicles;
       const updated = [...currentVehicles, newVehicle];
@@ -215,6 +224,7 @@ export default function AgendaServiciosPage() {
       }
       return updated;
     });
+    await persistToFirestore();
   };
 
   const handlePrintTicket = () => {
@@ -351,12 +361,17 @@ export default function AgendaServiciosPage() {
                         <div className="w-48 shrink-0 flex flex-col items-center justify-center p-4 gap-y-2">
                             <Badge variant={getStatusVariant(service.status)} className="w-full justify-center text-center text-base">{service.status}</Badge>
                             <div className="flex">
-                              <Button variant="ghost" size="icon" aria-label="Editar Servicio" onClick={() => handleOpenEditDialog(service)}>
+                              <Button variant="ghost" size="icon" aria-label="Editar Servicio" onClick={(e) => {e.stopPropagation(); handleOpenEditDialog(service);}}>
                                 <Edit className="h-4 w-4" />
                               </Button>
+                              {service.status === 'Completado' && (
+                                <Button variant="ghost" size="icon" aria-label="Reimprimir Comprobante" onClick={(e) => { e.stopPropagation(); handleReprintService(service); }}>
+                                    <Printer className="h-4 w-4" />
+                                </Button>
+                              )}
                               <AlertDialog>
                                 <AlertDialogTrigger asChild>
-                                  <Button variant="ghost" size="icon" aria-label="Eliminar Servicio">
+                                  <Button variant="ghost" size="icon" aria-label="Eliminar Servicio" onClick={(e) => e.stopPropagation()}>
                                     <Trash2 className="h-4 w-4 text-destructive" />
                                   </Button>
                                 </AlertDialogTrigger>
