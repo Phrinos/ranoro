@@ -99,7 +99,7 @@ export function PosForm({ inventoryItems: parentInventoryItems, onSaleComplete, 
 
   const [isAddItemDialogOpen, setIsAddItemDialogOpen] = useState(false);
   const [addItemSearchTerm, setAddItemSearchTerm] = useState('');
-  const [addItemQuantity, setAddItemQuantity] = useState(1);
+  const [addItemQuantity, setAddItemQuantity] = useState<number>(1);
   const [filteredInventoryForDialog, setFilteredInventoryForDialog] = useState<InventoryItem[]>([]);
   const [selectedInventoryItemForDialog, setSelectedInventoryItemForDialog] = useState<InventoryItem | null>(null);
 
@@ -204,24 +204,33 @@ export function PosForm({ inventoryItems: parentInventoryItems, onSaleComplete, 
     return `$${amount.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   };
   
-  const handleQuantityChange = (index: number, delta: number) => {
-    const itemInFields = fields[index];
-    if (!itemInFields) return;
+  const handleQuantityChange = (index: number, newQuantityStr: string) => {
+    const newQuantity = parseFloat(newQuantityStr);
 
-    const currentQuantity = form.getValues(`items.${index}.quantity`);
-    const newQuantity = currentQuantity + delta;
-    
-    if (newQuantity < 1) return;
-
-    const itemDetails = currentInventoryItems.find(invItem => invItem.id === itemInFields.inventoryItemId);
-    if (itemDetails && !itemDetails.isService && newQuantity > itemDetails.quantity) {
-        toast({ title: "Stock Insuficiente", description: `Solo hay ${itemDetails.quantity} unidades de ${itemDetails.name}.`, variant: "destructive", duration: 3000});
-        return;
+    if (isNaN(newQuantity) || newQuantity <= 0) {
+      // Don't update if input is invalid or not positive, just let the validation handle it on submit
+      // but update the form field so the user sees their input
+      form.setValue(`items.${index}.quantity`, newQuantityStr as any);
+      return;
     }
     
-    const unitPrice = form.getValues(`items.${index}.unitPrice`) || 0;
+    const itemInSale = form.getValues(`items.${index}`);
+    const itemDetailsFromInv = currentInventoryItems.find(invItem => invItem.id === itemInSale.inventoryItemId);
+
+    if (itemDetailsFromInv && !itemDetailsFromInv.isService && newQuantity > itemDetailsFromInv.quantity) {
+      toast({ 
+        title: "Stock Insuficiente", 
+        description: `Solo hay ${itemDetailsFromInv.quantity} ${itemDetailsFromInv.unitType || 'unidades'} de ${itemDetailsFromInv.name}.`, 
+        variant: "destructive", 
+        duration: 3000
+      });
+      // Do not update the quantity in the form array if it exceeds stock
+      return;
+    }
+
+    const unitPrice = itemInSale.unitPrice || 0;
     update(index, {
-      ...form.getValues(`items.${index}`),
+      ...itemInSale,
       quantity: newQuantity,
       totalPrice: unitPrice * newQuantity,
     });
@@ -357,25 +366,23 @@ export function PosForm({ inventoryItems: parentInventoryItems, onSaleComplete, 
                             </div>
                             <div className="w-36">
                                 <FormLabel className="text-xs">Cantidad</FormLabel>
-                                <div className="flex items-center justify-center gap-2 mt-2">
-                                    <Button
-                                        type="button" variant="outline" size="icon"
-                                        className="h-6 w-6"
-                                        onClick={() => handleQuantityChange(index, -1)}
-                                    >
-                                        <Minus className="h-4 w-4" />
-                                    </Button>
-                                    <span className="w-12 text-center font-medium">
-                                        {field.quantity}
-                                    </span>
-                                    <Button
-                                        type="button" variant="outline" size="icon"
-                                        className="h-6 w-6"
-                                        onClick={() => handleQuantityChange(index, 1)}
-                                    >
-                                        <Plus className="h-4 w-4" />
-                                    </Button>
-                                </div>
+                                <FormField
+                                    control={form.control}
+                                    name={`items.${index}.quantity`}
+                                    render={({ field: quantityField }) => (
+                                        <Input
+                                            type="number"
+                                            step="any"
+                                            min="0.001"
+                                            {...quantityField}
+                                            onChange={(e) => {
+                                                quantityField.onChange(e);
+                                                handleQuantityChange(index, e.target.value);
+                                            }}
+                                            className="w-full text-center font-medium mt-1 h-8"
+                                        />
+                                    )}
+                                />
                             </div>
                         <div className="w-28 self-end">
                             <FormLabel className="text-xs">Precio Total (IVA Inc.)</FormLabel>
@@ -566,35 +573,18 @@ export function PosForm({ inventoryItems: parentInventoryItems, onSaleComplete, 
                     </div>
                 )}
                 <div className="space-y-2">
-                    <Label htmlFor="item-quantity">Cantidad ({selectedInventoryItemForDialog?.unitType || 'unidades'})</Label>
-                    <div className="flex items-center gap-2">
-                        <Button
-                            type="button"
-                            variant="outline"
-                            size="icon"
-                            className="h-8 w-8"
-                            onClick={() => setAddItemQuantity(q => Math.max(1, q - 1))}
-                        >
-                            <Minus className="h-4 w-4" />
-                        </Button>
-                        <Input
-                            id="item-quantity"
-                            type="number"
-                            min="1"
-                            value={addItemQuantity}
-                            onChange={(e) => setAddItemQuantity(parseInt(e.target.value, 10) || 1)}
-                            className="w-20 text-center"
-                        />
-                        <Button
-                            type="button"
-                            variant="outline"
-                            size="icon"
-                            className="h-8 w-8"
-                            onClick={() => setAddItemQuantity(q => q + 1)}
-                        >
-                            <Plus className="h-4 w-4" />
-                        </Button>
-                    </div>
+                    <Label htmlFor="item-quantity">
+                        Cantidad ({selectedInventoryItemForDialog?.unitType || 'unidades'})
+                    </Label>
+                    <Input
+                        id="item-quantity"
+                        type="number"
+                        step="any"
+                        min="0.001"
+                        value={addItemQuantity}
+                        onChange={(e) => setAddItemQuantity(parseFloat(e.target.value) || 0)}
+                        className="w-full text-center"
+                    />
                 </div>
             </div>
             <DialogFooter>
