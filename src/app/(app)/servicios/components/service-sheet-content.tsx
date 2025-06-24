@@ -1,4 +1,3 @@
-
 "use client";
 
 import type { ServiceRecord, Vehicle } from '@/types';
@@ -140,7 +139,7 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
                 <p className="whitespace-pre-wrap p-2 min-h-[80px] text-lg">{service.customerItems || 'No especificado.'}</p>
             </div>
             <div className="border-2 border-black p-2 rounded-md flex flex-col justify-between min-h-[100px]">
-                <h3 className="font-bold uppercase">AUTORIZO QUE SE REALICEN LOS SERVICIOS ARRIBA DESCRITOS</h3>
+                <h3 className="font-bold uppercase">AUTORIZO QUE SE REALICEN ESTOS SERVICIOS</h3>
                 <div className="border-t border-black mt-auto pt-1 text-center">
                     <p className="text-xs font-semibold">{vehicle?.ownerName?.toUpperCase() || '________________________________'}</p>
                 </div>
