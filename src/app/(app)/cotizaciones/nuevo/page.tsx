@@ -100,10 +100,13 @@ export default function NuevaCotizacionPage() {
         }
       }
     }
+    
+    const publicId = `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 9)}`;
 
     const newQuote: QuoteRecord = {
       ...(data as QuoteRecord),
       id: `COT${String(Date.now()).slice(-6)}`,
+      publicId: publicId,
       preparedByTechnicianId: authUserId,
       preparedByTechnicianName: authUserName,
     };
@@ -119,7 +122,7 @@ export default function NuevaCotizacionPage() {
             vehicle: vehicleForPublicQuote,
         };
         try {
-            await setDoc(doc(db, "publicQuotes", newQuote.id), publicQuoteData);
+            await setDoc(doc(db, "publicQuotes", newQuote.publicId!), publicQuoteData);
         } catch (e) {
             console.error("Failed to save public quote:", e);
             toast({
@@ -173,7 +176,7 @@ export default function NuevaCotizacionPage() {
       return;
     }
 
-    const shareUrl = `${window.location.origin}/c/${currentQuoteForPdf.id}`;
+    const shareUrl = `${window.location.origin}/c/${currentQuoteForPdf.publicId}`;
     const { ownerName = "Cliente", make, model, year } = currentVehicleForPdf;
 
     const message = `Hola ${ownerName}, gracias por confiar en ${

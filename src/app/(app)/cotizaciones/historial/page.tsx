@@ -148,6 +148,10 @@ export default function HistorialCotizacionesPage() {
       const editedQuote = data as QuoteRecord;
       const quoteIndex = placeholderQuotes.findIndex(q => q.id === editedQuote.id);
       if (quoteIndex !== -1) {
+          // Ensure a publicId exists, create one if not (for legacy quotes)
+          if (!editedQuote.publicId) {
+            editedQuote.publicId = `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 9)}`;
+          }
           placeholderQuotes[quoteIndex] = editedQuote;
           setAllQuotes([...placeholderQuotes]);
           await persistToFirestore();
@@ -160,7 +164,7 @@ export default function HistorialCotizacionesPage() {
                   vehicle: vehicleForPublicQuote,
               };
               try {
-                  await setDoc(doc(db, "publicQuotes", editedQuote.id), publicQuoteData);
+                  await setDoc(doc(db, "publicQuotes", editedQuote.publicId!), publicQuoteData);
               } catch (e) {
                   console.error("Failed to update public quote:", e);
                   // Non-blocking error, toast is optional
@@ -211,7 +215,7 @@ export default function HistorialCotizacionesPage() {
     html2pdf().from(element).set(opt).save();
   };
 
-  const handleSendWhatsApp = (quoteForAction: QuoteRecord | null) => {
+  const handleSendWhatsApp = async (quoteForAction: QuoteRecord | null) => {
     if (!quoteForAction) return;
     const vehicleForAction = vehicles.find(v => v.id === quoteForAction.vehicleId);
     if (!vehicleForAction) {
@@ -219,7 +223,23 @@ export default function HistorialCotizacionesPage() {
         return;
     }
 
-    const shareUrl = `${window.location.origin}/c/${quoteForAction.id}`;
+    // Ensure publicId exists, create if not (for older quotes)
+    if (!quoteForAction.publicId) {
+      quoteForAction.publicId = `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 9)}`;
+      const quoteIndex = placeholderQuotes.findIndex(q => q.id === quoteForAction.id);
+      if (quoteIndex !== -1) {
+          placeholderQuotes[quoteIndex] = quoteForAction; // Update the main array
+          await persistToFirestore(); // Persist this change
+          setAllQuotes([...placeholderQuotes]); // Update local state
+          toast({
+              title: "Enlace Público Creado",
+              description: "Se ha generado un nuevo enlace aleatorio para esta cotización antigua.",
+              duration: 4000,
+          });
+      }
+    }
+    
+    const shareUrl = `${window.location.origin}/c/${quoteForAction.publicId}`;
     
     const message = `Hola ${vehicleForAction.ownerName || 'Cliente'}, Gracias por confiar en ${workshopInfo?.name || 'RANORO'}. Le enviamos su cotización de servicio ${quoteForAction.id} de nuestro taller para su vehículo ${vehicleForAction.make} ${vehicle.model} ${vehicle.year}. En este link encontrara el PDF de la cotizacion: ${shareUrl}`;
 
