@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -50,6 +50,7 @@ export default function UsuariosPage() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const formCardRef = useRef<HTMLDivElement>(null);
 
   const form = useForm<UserFormValues>({
     resolver: zodResolver(userFormSchema),
@@ -66,6 +67,14 @@ export default function UsuariosPage() {
       setAvailableRoles(placeholderAppRoles);
     }
   }, []);
+  
+  useEffect(() => {
+    if (isFormOpen && formCardRef.current) {
+        setTimeout(() => {
+            formCardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 100);
+    }
+  }, [isFormOpen]);
 
   const canEditOrDelete = (user: User): boolean => {
     if (!currentUser) return false;
@@ -308,7 +317,7 @@ export default function UsuariosPage() {
       </Card>
 
       {isFormOpen && (canCreateUsers() || editingUser) && (
-        <Card className="mt-8 shadow-lg">
+        <Card className="mt-8 shadow-lg" ref={formCardRef}>
           <CardHeader>
             <CardTitle>{editingUser ? 'Editar Usuario' : 'Crear Nuevo Usuario'}</CardTitle>
           </CardHeader>

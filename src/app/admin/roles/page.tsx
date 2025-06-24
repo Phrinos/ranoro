@@ -1,6 +1,7 @@
+
 "use client";
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -52,6 +53,7 @@ export default function RolesPage() {
   const [editingRole, setEditingRole] = useState<AppRole | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const formCardRef = useRef<HTMLDivElement>(null);
 
   const form = useForm<RoleFormValues>({
     resolver: zodResolver(roleFormSchema),
@@ -62,6 +64,14 @@ export default function RolesPage() {
     // This now reads from the global placeholder data, which is hydrated from Firestore
     setRoles(placeholderAppRoles);
   }, []);
+  
+  useEffect(() => {
+    if (isFormOpen && formCardRef.current) {
+      setTimeout(() => { // Timeout ensures the element is rendered before scrolling
+        formCardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 100);
+    }
+  }, [isFormOpen]);
 
   const filteredRoles = useMemo(() => {
     return roles.filter(role => 
@@ -209,7 +219,7 @@ export default function RolesPage() {
       </Card>
 
       {isFormOpen && (
-        <Card className="mt-8 shadow-lg">
+        <Card className="mt-8 shadow-lg" ref={formCardRef}>
           <CardHeader>
             <CardTitle>{editingRole ? 'Editar Rol' : 'Crear Nuevo Rol'}</CardTitle>
           </CardHeader>
