@@ -32,8 +32,8 @@ type SaleSortOption =
 export default function POSPage() {
   const router = useRouter();
   const { toast } = useToast();
-  const [allSales, setAllSales] = useState<SaleReceipt[]>(placeholderSales);
-  const [inventory, setInventory] = useState<InventoryItem[]>(placeholderInventory);
+  // We use a version state to force re-renders when the global placeholder data is mutated.
+  const [version, setVersion] = useState(0); 
   const ticketContentRef = useRef<HTMLDivElement>(null);
   
   const [searchTerm, setSearchTerm] = useState("");
@@ -47,16 +47,9 @@ export default function POSPage() {
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [selectedSale, setSelectedSale] = useState<SaleReceipt | null>(null);
 
-
-  useEffect(() => {
-    // This effect ensures the local state is updated if the global placeholder data changes.
-    // This is useful for reactivity across components if one component mutates the global store.
-    setAllSales(placeholderSales);
-    setInventory(placeholderInventory);
-  }, []);
-
   const filteredAndSortedSales = useMemo(() => {
-    let filtered = [...allSales];
+    // Use placeholderSales directly as the source of truth.
+    let filtered = [...placeholderSales];
 
     if (dateRange?.from) {
       filtered = filtered.filter(sale => {
@@ -93,13 +86,14 @@ export default function POSPage() {
       }
     });
     return filtered;
-  }, [allSales, searchTerm, dateRange, sortOption, paymentMethodFilter]);
+  }, [searchTerm, dateRange, sortOption, paymentMethodFilter, version]); // Depend on version to re-calculate
 
   const summaryData = useMemo(() => {
     const activeSales = filteredAndSortedSales.filter(s => s.status !== 'Cancelado');
     const totalSalesCount = activeSales.length;
     const totalRevenue = activeSales.reduce((sum, s) => sum + s.totalAmount, 0);
-    const totalProfit = activeSales.reduce((sum, s) => sum + calculateSaleProfit(s, inventory, IVA_RATE), 0);
+    // Use placeholderInventory directly for fresh data
+    const totalProfit = activeSales.reduce((sum, s) => sum + calculateSaleProfit(s, placeholderInventory, IVA_RATE), 0);
     
     let mostSoldItem: { name: string; quantity: number } | null = null;
     if (totalSalesCount > 0) {
@@ -119,7 +113,7 @@ export default function POSPage() {
     }
     
     return { totalSalesCount, totalRevenue, mostSoldItem, totalProfit };
-  }, [filteredAndSortedSales, inventory]);
+  }, [filteredAndSortedSales]); // Doesn't need inventory in dep array as it reads the global one
 
   const paymentMethodsForFilter: (PaymentMethod | "all")[] = ["all", "Efectivo", "Tarjeta", "Transferencia", "Efectivo+Transferencia", "Tarjeta+Transferencia"];
 
@@ -155,10 +149,10 @@ export default function POSPage() {
       return;
     }
 
-    // 1. Mark sale as cancelled in the main placeholder array
+    // Mark sale as cancelled
     saleToCancel.status = 'Cancelado';
 
-    // 2. Restore stock
+    // Restore stock
     saleToCancel.items.forEach(soldItem => {
       const inventoryItemIndex = placeholderInventory.findIndex(invItem => invItem.id === soldItem.inventoryItemId);
       if (inventoryItemIndex !== -1 && !placeholderInventory[inventoryItemIndex].isService) {
@@ -166,12 +160,10 @@ export default function POSPage() {
       }
     });
 
-    // 3. Update local state to trigger re-render
-    setAllSales([...placeholderSales]);
-    setInventory([...placeholderInventory]);
-
-    // 4. Persist changes to Firestore
     await persistToFirestore(['sales', 'inventory']);
+
+    // Trigger a re-render by updating the version
+    setVersion(v => v + 1);
 
     toast({ title: "Venta Cancelada", description: `La venta ${saleId} ha sido cancelada y el stock ha sido restaurado.` });
     setIsViewDialogOpen(false);
@@ -319,7 +311,7 @@ export default function POSPage() {
       <SalesTable 
         sales={filteredAndSortedSales} 
         onReprintTicket={handleReprintSale} 
-        inventoryItems={inventory} 
+        inventoryItems={placeholderInventory} // Pass global inventory
         onEditSale={handleEditSale}
       />
 
