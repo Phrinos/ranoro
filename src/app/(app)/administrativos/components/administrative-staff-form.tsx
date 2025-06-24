@@ -18,6 +18,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import type { AdministrativeStaff } from "@/types";
+import { DollarSign } from "lucide-react";
 
 const administrativeStaffFormSchema = z.object({
   name: z.string().min(3, "El nombre debe tener al menos 3 caracteres."),
@@ -137,7 +138,10 @@ export function AdministrativeStaffForm({ initialData, onSubmit, onClose }: Admi
                 <FormItem>
                     <FormLabel>Sueldo Mensual (Opcional)</FormLabel>
                     <FormControl>
-                    <Input type="number" step="0.01" placeholder="Ej: 15000" {...field} value={field.value ?? ''} />
+                      <div className="relative">
+                        <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input type="number" step="0.01" placeholder="15000.00" {...field} value={field.value ?? ''} className="pl-8" />
+                      </div>
                     </FormControl>
                     <FormMessage />
                 </FormItem>
@@ -150,7 +154,7 @@ export function AdministrativeStaffForm({ initialData, onSubmit, onClose }: Admi
                 <FormItem>
                     <FormLabel>Porcentaje de Comisión (Opcional)</FormLabel>
                     <FormControl>
-                    <Input type="number" step="0.001" min="0" max="1" placeholder="Ej: 0.01 (para 1%)" {...field} value={field.value ?? ''} />
+                    <Input type="number" step="0.001" min="0" max="1" placeholder="0.01 (para 1%)" {...field} value={field.value ?? ''} />
                     </FormControl>
                     <FormDescription>Ingrese como decimal (ej: 0.01 para 1%).</FormDescription>
                     <FormMessage />

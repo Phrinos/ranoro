@@ -20,6 +20,7 @@ import { Textarea } from "@/components/ui/textarea";
 import type { InventoryItem, InventoryCategory, Supplier } from "@/types";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
+import { DollarSign } from "lucide-react";
 
 const inventoryItemFormSchema = z.object({
   name: z.string().min(3, "El nombre del producto debe tener al menos 3 caracteres."),
@@ -307,7 +308,10 @@ export function InventoryItemForm({ initialData, onSubmit, onClose, categories, 
                   {unitTypeWatch === 'ml' ? 'Precio de Compra (por ml)' : unitTypeWatch === 'liters' ? 'Precio de Compra (por L)' : 'Precio de Compra (por unidad)'}
                 </FormLabel>
                 <FormControl>
-                  <Input type="number" step="0.01" placeholder="Ej: 10.50" {...field} value={field.value ?? ''} />
+                  <div className="relative">
+                    <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input type="number" step="0.01" placeholder="10.50" {...field} value={field.value ?? ''} className="pl-8" />
+                  </div>
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -322,7 +326,10 @@ export function InventoryItemForm({ initialData, onSubmit, onClose, categories, 
                   {unitTypeWatch === 'ml' ? 'Precio de Venta (por ml, IVA Inc.)' : unitTypeWatch === 'liters' ? 'Precio de Venta (por L, IVA Inc.)' : 'Precio de Venta (por unidad, IVA Inc.)'}
                 </FormLabel>
                 <FormControl>
-                  <Input type="number" step="0.01" placeholder="Ej: 15.99" {...field} value={field.value ?? ''} />
+                   <div className="relative">
+                    <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input type="number" step="0.01" placeholder="15.99" {...field} value={field.value ?? ''} className="pl-8" />
+                  </div>
                 </FormControl>
                 <FormMessage />
               </FormItem>

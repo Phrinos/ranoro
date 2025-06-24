@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import type { MonthlyFixedExpense } from "@/types";
+import { DollarSign } from "lucide-react";
 
 const fixedExpenseFormSchema = z.object({
   name: z.string().min(2, "El nombre del gasto debe tener al menos 2 caracteres."),
@@ -65,7 +66,10 @@ export function FixedExpenseForm({ initialData, onSubmit, onClose }: FixedExpens
             <FormItem>
               <FormLabel>Monto Mensual</FormLabel>
               <FormControl>
-                <Input type="number" step="0.01" placeholder="Ej: 15000.00" {...field} />
+                <div className="relative">
+                  <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input type="number" step="0.01" placeholder="15000.00" {...field} className="pl-8" />
+                </div>
               </FormControl>
               <FormMessage />
             </FormItem>

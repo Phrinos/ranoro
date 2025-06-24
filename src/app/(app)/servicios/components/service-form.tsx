@@ -24,12 +24,12 @@ import { CalendarIcon, PlusCircle, Search, Trash2, AlertCircle, Car as CarIcon, 
 import { cn } from "@/lib/utils";
 import { format, parseISO, setHours, setMinutes, isValid, startOfDay } from "date-fns";
 import { es } from 'date-fns/locale';
-import type { ServiceRecord, Vehicle, Technician, InventoryItem, ServiceSupply, QuoteRecord, InventoryCategory, Supplier } from "@/types";
+import type { ServiceRecord, Vehicle, Technician, InventoryItem, ServiceSupply, QuoteRecord, InventoryCategory, Supplier, User } from "@/types";
 import React, { useEffect, useState, useMemo } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { VehicleDialog } from "../../vehiculos/components/vehicle-dialog";
 import type { VehicleFormValues } from "../../vehiculos/components/vehicle-form";
-import { placeholderVehicles as defaultPlaceholderVehicles, placeholderInventory, placeholderCategories, placeholderSuppliers, placeholderQuotes, placeholderServiceRecords as defaultServiceRecords, persistToFirestore } from "@/lib/placeholder-data";
+import { placeholderVehicles as defaultPlaceholderVehicles, placeholderInventory, placeholderCategories, placeholderSuppliers, placeholderQuotes, placeholderServiceRecords as defaultServiceRecords, persistToFirestore, AUTH_USER_LOCALSTORAGE_KEY } from "@/lib/placeholder-data";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/label";
@@ -128,6 +128,7 @@ export function ServiceForm({
 
   const [vehicleLicensePlateSearch, setVehicleLicensePlateSearch] = useState(initialVehicleIdentifier || "");
   const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
+  const [lastServiceInfo, setLastServiceInfo] = useState<string | null>(null);
   const [vehicleNotFound, setVehicleNotFound] = useState(false);
   const [isVehicleDialogOpen, setIsVehicleDialogOpen] = useState(false);
   const [localVehicles, setLocalVehicles] = useState<Vehicle[]>(parentVehicles);
@@ -182,6 +183,14 @@ export function ServiceForm({
         if (vehicle) {
             setSelectedVehicle(vehicle);
             setVehicleLicensePlateSearch(vehicle.licensePlate);
+            // Also fetch last service info for existing data
+            const vehicleServices = defaultServiceRecords.filter(s => s.vehicleId === vehicle.id).sort((a, b) => new Date(b.serviceDate).getTime() - new Date(a.serviceDate).getTime());
+            if (vehicleServices.length > 0) {
+                const lastService = vehicleServices[0];
+                setLastServiceInfo(`Últ. Servicio: ${format(parseISO(lastService.serviceDate), "dd MMM yyyy", { locale: es })} - ${lastService.description}`);
+            } else {
+                setLastServiceInfo("No tiene historial de servicios.");
+            }
         }
 
         const supplies = (isConverting || mode === 'quote') ? (data as QuoteRecord).suppliesProposed : (data as ServiceRecord).suppliesUsed;
@@ -228,6 +237,19 @@ export function ServiceForm({
     } else {
       // Set default for new forms
       form.setValue('serviceDate', setHours(setMinutes(new Date(), 30), 8));
+      if (mode === 'quote') {
+          if (typeof window !== "undefined") {
+              const authUserString = localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY);
+              if (authUserString) {
+                  try {
+                      const authUser: User = JSON.parse(authUserString);
+                      form.setValue('technicianId', authUser.id);
+                  } catch (e) {
+                      console.error("Failed to parse authUser for defaulting technician:", e);
+                  }
+              }
+          }
+      }
     }
   }, [initialDataService, initialDataQuote, mode, localVehicles, currentInventoryItems, form, replace]);
 
@@ -289,11 +311,21 @@ export function ServiceForm({
       setSelectedVehicle(found);
       form.setValue('vehicleId', found.id, { shouldValidate: true });
       setVehicleNotFound(false);
-      toast({ title: "Vehículo Encontrado", description: `${found.make} ${found.model} (${found.year})`});
+      
+      const vehicleServices = defaultServiceRecords.filter(s => s.vehicleId === found.id).sort((a, b) => new Date(b.serviceDate).getTime() - new Date(a.serviceDate).getTime());
+      if (vehicleServices.length > 0) {
+          const lastService = vehicleServices[0];
+          setLastServiceInfo(`Últ. Servicio: ${format(parseISO(lastService.serviceDate), "dd MMM yyyy", { locale: es })} - ${lastService.description}`);
+      } else {
+          setLastServiceInfo("No tiene historial de servicios.");
+      }
+
+      toast({ title: "Vehículo Encontrado", description: `${found.make} ${found.model} ${found.year}`});
     } else {
       setSelectedVehicle(null);
       form.setValue('vehicleId', undefined, { shouldValidate: true });
       setVehicleNotFound(true);
+      setLastServiceInfo(null);
       toast({ title: "Vehículo No Encontrado", description: "Puede registrarlo si es nuevo.", variant: "default"});
     }
   };
@@ -315,6 +347,7 @@ export function ServiceForm({
     setVehicleLicensePlateSearch(newVehicle.licensePlate);
     setVehicleNotFound(false);
     setIsVehicleDialogOpen(false);
+    setLastServiceInfo("Vehículo nuevo, sin historial de servicios.");
     toast({ title: "Vehículo Registrado", description: `Se registró ${newVehicle.make} ${newVehicle.model} (${newVehicle.licensePlate}).`});
     if (onVehicleCreated) {
         onVehicleCreated(newVehicle);
@@ -724,6 +757,9 @@ export function ServiceForm({
                         <p><strong>Placa:</strong> {selectedVehicle.licensePlate}</p>
                         <p><strong>Vehículo Seleccionado:</strong> {selectedVehicle.make} {selectedVehicle.model} {selectedVehicle.year}</p>
                         <p><strong>Propietario:</strong> {selectedVehicle.ownerName}</p>
+                        {lastServiceInfo && (
+                            <p className="text-xs font-medium text-blue-600 dark:text-blue-400 mt-1">{lastServiceInfo}</p>
+                        )}
                     </div>
                 )}
                 {vehicleNotFound && !selectedVehicle && !isReadOnly && (
@@ -897,7 +933,10 @@ export function ServiceForm({
                                     )}
                                 </div>
                                 <FormControl>
-                                <Input type="number" step="0.01" placeholder="Ej: 1740.00" {...field} disabled={isReadOnly || isSuggestingPrice} className="text-lg font-medium" value={field.value ?? ''} />
+                                  <div className="relative">
+                                    <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                    <Input type="number" step="0.01" placeholder="1740.00" {...field} disabled={isReadOnly || isSuggestingPrice} className="text-lg font-medium pl-8" value={field.value ?? ''} />
+                                  </div>
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>
