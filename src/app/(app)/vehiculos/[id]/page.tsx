@@ -157,7 +157,7 @@ export default function VehicleDetailPage() {
   return (
     <div className="container mx-auto py-8">
       <PageHeader
-        title={`${vehicle.licensePlate} - ${vehicle.make} ${vehicle.model} (${vehicle.year})`}
+        title={`${vehicle.licensePlate} - ${vehicle.make} ${vehicle.model} ${vehicle.year}`}
         description={`ID Vehículo: ${vehicle.id}`}
       />
 
