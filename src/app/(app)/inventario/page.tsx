@@ -325,6 +325,30 @@ export default function InventarioPage() {
             }
           />
         </div>
+        
+        <div className="hidden print:block mb-6">
+          <div className="flex justify-between items-center mb-4">
+            <img src="/ranoro-logo.png" alt="Ranoro Logo" className="h-12" data-ai-hint="ranoro logo" />
+            <div className="text-right">
+              <h1 className="text-xl font-bold">Lista de Inventario</h1>
+              <p>{new Date().toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+            </div>
+          </div>
+          <div className="grid grid-cols-3 gap-4 mb-4 text-center">
+            <div className="border p-2 rounded-md bg-slate-50">
+                <h3 className="font-semibold text-gray-700 text-xs">Total Productos</h3>
+                <p className="text-lg font-bold font-mono">{productsCount}</p>
+            </div>
+            <div className="border p-2 rounded-md bg-slate-50">
+                <h3 className="font-semibold text-gray-700 text-xs">Costo Total Inventario</h3>
+                <p className="text-lg font-bold font-mono">${totalInventoryCost.toLocaleString('es-ES')}</p>
+            </div>
+            <div className="border p-2 rounded-md bg-slate-50">
+                <h3 className="font-semibold text-gray-700 text-xs">Valor Venta Inventario</h3>
+                <p className="text-lg font-bold font-mono">${totalInventorySellingPrice.toLocaleString('es-ES')}</p>
+            </div>
+          </div>
+        </div>
 
         <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:flex-wrap print:hidden">
           <div className="relative flex-1 min-w-[200px] sm:min-w-[300px]">
@@ -374,15 +398,7 @@ export default function InventarioPage() {
           </Select>
         </div>
 
-        <div className="hidden print:block mb-6">
-          <div className="flex justify-between items-center mb-4">
-            <img src="/ranoro-logo.png" alt="Ranoro Logo" className="h-12" data-ai-hint="ranoro logo" />
-            <div className="text-right">
-              <h1 className="text-xl font-bold">Lista de Inventario</h1>
-              <p>{new Date().toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
-            </div>
-          </div>
-        </div>
+        
         <InventoryTable items={filteredAndSortedInventoryItems} />
 
         <div className="print:hidden">
