@@ -45,23 +45,7 @@ export const defaultSuperAdmin: User = {
   phone: '4493930914'
 };
 
-export const newUserAdmin: User = {
-  id: 'KTZCiJCsOiTm1RVCTSQ9zdNcdxm2',
-  name: 'Panda Computacion',
-  email: 'pandacomputacion@gmail.com',
-  role: 'Admin',
-  password: 'CA1abaza',
-};
-
-export const dianaArriagaUser: User = {
-  id: 'd1AnAArr1agaAdm1nRan0r0MX2025',
-  name: 'Diana Arriaga',
-  email: 'diana.arriaga@ranoro.mx',
-  role: 'Admin',
-  password: 'Ranoro2025',
-};
-
-export let placeholderUsers: User[] = [defaultSuperAdmin, newUserAdmin, dianaArriagaUser]; // This will be hydrated from Firestore
+export let placeholderUsers: User[] = [defaultSuperAdmin]; // This will be hydrated from Firestore
 export const AUTH_USER_LOCALSTORAGE_KEY = 'authUser';
 export const USER_LOCALSTORAGE_KEY = 'appUsers';
 export const ROLES_LOCALSTORAGE_KEY = 'appRoles';
@@ -205,16 +189,6 @@ export async function hydrateFromFirestore() {
     changesMade = true;
     console.log(`Default user '${defaultSuperAdmin.email}' was missing and has been added to the current session.`);
   }
-  if (!placeholderUsers.some(u => u.id === newUserAdmin.id)) {
-    placeholderUsers.push(newUserAdmin);
-    changesMade = true;
-    console.log(`Default user '${newUserAdmin.email}' was missing and has been added to the current session.`);
-  }
-  if (!placeholderUsers.some(u => u.id === dianaArriagaUser.id)) {
-    placeholderUsers.push(dianaArriagaUser);
-    changesMade = true;
-    console.log(`Default user '${dianaArriagaUser.email}' was missing and has been added to the current session.`);
-  }
 
   // Check for AppRoles
   if (!docSnap?.exists() || !docSnap.data()?.appRoles || docSnap.data()?.appRoles.length === 0) {
@@ -343,4 +317,5 @@ export const enrichServiceForPrinting = (service: ServiceRecord, inventory: Inve
     suppliesUsed: enrichedSupplies,
   };
 };
+
 
