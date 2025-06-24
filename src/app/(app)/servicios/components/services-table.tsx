@@ -4,7 +4,7 @@
 import React, { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Edit, Trash2, Clock, CheckCircle, Wrench, CalendarCheck } from "lucide-react";
+import { Edit, Trash2, Clock, CheckCircle, Wrench, CalendarCheck, FileText } from "lucide-react";
 import type { ServiceRecord, Vehicle, Technician, InventoryItem, QuoteRecord } from "@/types";
 import { format, parseISO, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -22,6 +22,7 @@ interface ServicesTableProps {
   onServiceUpdated: (updatedService: ServiceRecord) => void;
   onServiceDeleted: (serviceId: string) => void;
   onVehicleCreated?: (newVehicle: Vehicle) => void; 
+  onShowSheet?: (service: ServiceRecord) => void;
   isHistoryView?: boolean;
 }
 
@@ -33,6 +34,7 @@ export const ServicesTable = React.memo(({
   onServiceUpdated, 
   onServiceDeleted,
   onVehicleCreated,
+  onShowSheet,
   isHistoryView = false,
 }: ServicesTableProps) => {
   const { toast } = useToast();
@@ -145,6 +147,11 @@ export const ServicesTable = React.memo(({
                     <div className="w-48 shrink-0 flex flex-col items-center justify-center p-4 gap-y-2">
                         <Badge variant={getStatusVariant(service.status)} className="w-full justify-center text-center text-base">{service.status}</Badge>
                         <div className="flex">
+                            {onShowSheet && (
+                                <Button variant="ghost" size="icon" onClick={() => onShowSheet(services.find(s => s.id === service.id)!)} title="Ver Hoja de Servicio">
+                                    <FileText className="h-4 w-4" />
+                                </Button>
+                            )}
                             <Button variant="ghost" size="icon" onClick={() => handleOpenEditDialog(services.find(s => s.id === service.id)!)} title="Editar Servicio">
                                 <Edit className="h-4 w-4" />
                             </Button>
