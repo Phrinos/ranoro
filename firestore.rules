@@ -1,25 +1,30 @@
+
 rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    // Main workshop database. Requires authentication to read or write.
-    match /database/{document=**} {
+    // The main database document requires authentication to read or write.
+    match /database/main {
       allow read, write: if request.auth != null;
     }
-
-    // Publicly readable collection for shared quotes.
-    // Anyone with the link can read. Only authenticated users can create/update.
+    
+    // The publicQuotes collection is world-readable but only writable by authenticated users.
+    // This allows anyone with the link to view a quote.
     match /publicQuotes/{quoteId} {
       allow read: if true;
       allow write: if request.auth != null;
     }
-
-    // Publicly readable collection for shared service sheets.
-    // Anyone with the link can read. Only authenticated users can create/update.
+    
+    // The publicServices collection is world-readable but only writable by authenticated users.
+    // This allows anyone with the link to view a service sheet.
     match /publicServices/{serviceId} {
       allow read: if true;
       allow write: if request.auth != null;
+    }
+
+    // Explicitly deny access to any other top-level collections by default.
+    match /{document=**} {
+      allow read, write: if false;
     }
   }
 }

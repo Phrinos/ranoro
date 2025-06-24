@@ -59,6 +59,7 @@ export interface ServiceRecord {
   customerItems?: string;
   serviceAdvisorId?: string;
   serviceAdvisorName?: string;
+  serviceAdvisorSignatureDataUrl?: string; // Added for public sheet
   customerSignatureReception?: string;
   customerSignatureDelivery?: string;
   receptionSignatureViewed?: boolean;
