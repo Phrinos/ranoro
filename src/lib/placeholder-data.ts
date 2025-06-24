@@ -291,32 +291,27 @@ export const calculateSaleProfit = (sale: SaleReceipt, inventory: InventoryItem[
   let totalProfit = 0;
 
   for (const saleItem of sale.items) {
+    // Ensure all values are valid numbers before calculation
     const inventoryItem = inventory.find(inv => inv && inv.id === saleItem.inventoryItemId);
+    const costPrice = (inventoryItem && !inventoryItem.isService) ? Number(inventoryItem.unitPrice || 0) : 0;
+    const sellingPriceWithTax = Number(saleItem.unitPrice || 0);
+    const quantitySold = Number(saleItem.quantity || 0);
 
-    // Default to 0 if inventoryItem is not found or it's a service
-    const costPrice = (inventoryItem && !inventoryItem.isService) ? Number(inventoryItem.unitPrice) : 0;
-    
-    // Default to 0 if unitPrice is missing from the sale item
-    const sellingPriceWithTax = Number(saleItem.unitPrice);
-    const quantitySold = Number(saleItem.quantity);
-
-    // This is the critical check. If any value is not a valid number, we skip this item.
-    if (isNaN(costPrice) || isNaN(sellingPriceWithTax) || isNaN(quantitySold)) {
+    // Skip if any essential value is not a valid number or if quantity is zero
+    if (isNaN(costPrice) || isNaN(sellingPriceWithTax) || isNaN(quantitySold) || quantitySold === 0) {
       console.warn(`Skipping item in profit calculation due to invalid data. Sale ID: ${sale.id}, Item: ${saleItem.itemName || saleItem.inventoryItemId}`);
-      continue; // Skips to the next item in the loop
+      continue;
     }
     
     const sellingPriceSubTotal = sellingPriceWithTax / (1 + ivaRate);
     const itemProfit = (sellingPriceSubTotal - costPrice) * quantitySold;
     
-    // Final check before adding to the total, to be absolutely sure.
     if (!isNaN(itemProfit)) {
         totalProfit += itemProfit;
     }
   }
 
-  // Final check on the total before returning
-  return isNaN(totalProfit) ? 0 : totalProfit;
+  return totalProfit;
 };
 
 

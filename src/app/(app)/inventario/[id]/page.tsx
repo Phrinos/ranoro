@@ -89,8 +89,8 @@ export default function InventoryItemDetailPage() {
       isService: formData.isService || false,
       quantity: formData.isService ? 0 : Number(formData.quantity),
       lowStockThreshold: formData.isService ? 0 : Number(formData.lowStockThreshold),
-      unitPrice: Number(formData.unitPrice),
-      sellingPrice: Number(formData.sellingPrice),
+      unitPrice: Number(formData.unitPrice) || 0,
+      sellingPrice: Number(formData.sellingPrice) || 0,
     };
     
     const updatedItem = { ...item, ...updatedItemData } as InventoryItem;
@@ -101,7 +101,7 @@ export default function InventoryItemDetailPage() {
       placeholderInventory[pIndex] = updatedItem;
     }
     
-    await persistToFirestore();
+    await persistToFirestore(['inventory']);
 
     setIsEditDialogOpen(false);
     toast({
@@ -117,7 +117,7 @@ export default function InventoryItemDetailPage() {
       placeholderInventory.splice(itemIndex, 1);
     }
     
-    await persistToFirestore();
+    await persistToFirestore(['inventory']);
     
     toast({
       title: "Ítem Eliminado",
