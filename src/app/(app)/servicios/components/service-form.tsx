@@ -20,7 +20,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent, CardHeader, CardTitle} from "@/components/ui/card";
-import { CalendarIcon, PlusCircle, Search, Trash2, AlertCircle, Car as CarIcon, Clock, DollarSign, PackagePlus, BrainCircuit, Loader2, Printer } from "lucide-react";
+import { CalendarIcon, PlusCircle, Search, Trash2, AlertCircle, Car as CarIcon, Clock, DollarSign, PackagePlus, BrainCircuit, Loader2, Printer, Plus, Minus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format, parseISO, setHours, setMinutes, isValid, startOfDay } from "date-fns";
 import { es } from 'date-fns/locale';
@@ -170,7 +170,7 @@ export function ServiceForm({
     }
   });
 
-  const { fields, append, remove, replace } = useFieldArray({
+  const { fields, append, remove, replace, update } = useFieldArray({
     control: form.control,
     name: "suppliesUsed",
   });
@@ -617,6 +617,25 @@ export function ServiceForm({
       setAddSupplyQuantity(1);
       setSelectedInventoryItemForDialog(null);
   };
+  
+  const handleQuantityChange = (index: number, delta: number) => {
+    const currentItem = form.getValues(`suppliesUsed.${index}`);
+    if (!currentItem) return;
+
+    const newQuantity = (currentItem.quantity || 0) + delta;
+    if (newQuantity < 1) return; // Prevent going below 1
+
+    const itemDetails = currentInventoryItems.find(invItem => invItem.id === currentItem.supplyId);
+    if (itemDetails && !itemDetails.isService && newQuantity > itemDetails.quantity) {
+        toast({ title: "Stock Insuficiente", description: `Solo hay ${itemDetails.quantity} unidades de ${itemDetails.name}.`, variant: "destructive", duration: 3000});
+        return; // Don't allow quantity to exceed stock
+    }
+
+    update(index, {
+        ...currentItem,
+        quantity: newQuantity,
+    });
+  };
 
   const handleOpenCreateNewSupplyDialog = () => {
       setNewSupplyInitialData({
@@ -1059,7 +1078,7 @@ export function ServiceForm({
                             <TableHeader>
                                 <TableRow>
                                     <TableHead>Insumo/Servicio</TableHead>
-                                    <TableHead className="text-center">Cant.</TableHead>
+                                    <TableHead className="text-center w-40">Cant.</TableHead>
                                     <TableHead className="text-right">{mode === 'quote' ? 'Precio Venta Unit. (IVA Inc.)' : 'Costo Unit. (Taller)'}</TableHead>
                                     <TableHead className="text-right">{mode === 'quote' ? 'Precio Total (IVA Inc.)' : 'Costo Total (Taller)'}</TableHead>
                                     {!isReadOnly && <TableHead className="text-right">Acción</TableHead>}
@@ -1073,7 +1092,29 @@ export function ServiceForm({
                                     return (
                                         <TableRow key={item.id}>
                                             <TableCell className="font-medium">{item.supplyName || currentItemDetails?.name || 'N/A'}</TableCell>
-                                            <TableCell className="text-center">{item.quantity}{item.unitType === 'ml' ? ' ml' : item.unitType === 'liters' ? ' L' : ''}</TableCell>
+                                            <TableCell className="text-center">
+                                                <div className="flex items-center justify-center gap-2">
+                                                    <Button
+                                                        type="button" variant="outline" size="icon"
+                                                        className="h-6 w-6"
+                                                        onClick={() => handleQuantityChange(index, -1)}
+                                                        disabled={isReadOnly}
+                                                    >
+                                                        <Minus className="h-4 w-4" />
+                                                    </Button>
+                                                    <span className="w-12 text-center font-medium">
+                                                        {item.quantity}{item.unitType === 'ml' ? 'ml' : item.unitType === 'liters' ? 'L' : ''}
+                                                    </span>
+                                                    <Button
+                                                        type="button" variant="outline" size="icon"
+                                                        className="h-6 w-6"
+                                                        onClick={() => handleQuantityChange(index, 1)}
+                                                        disabled={isReadOnly}
+                                                    >
+                                                        <Plus className="h-4 w-4" />
+                                                    </Button>
+                                                </div>
+                                            </TableCell>
                                             <TableCell className="text-right">
                                                 {formatCurrency(unitPriceForCalc)}
                                                 {item.unitType === 'ml' ? <span className="text-xs text-muted-foreground">/ml</span> : item.unitType === 'liters' ? <span className="text-xs text-muted-foreground">/L</span> : ''}
