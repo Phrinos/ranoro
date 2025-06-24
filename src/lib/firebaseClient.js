@@ -1,3 +1,4 @@
+
 // lib/firebaseClient.js
 //-------------------------------------------
 // Inicializa Firebase solo una vez
@@ -48,7 +49,7 @@ if (firebaseConfig.apiKey && !firebaseConfig.apiKey.startsWith("TU_")) {
             * ADVERTENCIA: La configuración de Firebase no ha sido establecida.           *
             *                                                                             *
             * Por favor, edita el archivo 'lib/firebaseClient.js' con tus credenciales.   *
-            * La aplicación se ejecutará en modo local sin conexión a Firebase.           *
+            * La aplicación se ejecutará en MODO DEMO sin conexión a Firebase.            *
             *******************************************************************************
         `);
     }

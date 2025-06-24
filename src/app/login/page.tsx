@@ -11,7 +11,8 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { useToast } from '@/hooks/use-toast';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '@root/lib/firebaseClient.js';
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, TestTube2 } from 'lucide-react';
+import { defaultSuperAdmin, AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -28,6 +29,15 @@ export default function LoginPage() {
     }
   }, []);
 
+  const handleDemoLogin = () => {
+    localStorage.setItem(AUTH_USER_LOCALSTORAGE_KEY, JSON.stringify(defaultSuperAdmin));
+    toast({
+      title: 'Modo Demo Activado',
+      description: 'Has iniciado sesión como Superadmin. No se guardarán datos en la nube.',
+    });
+    router.push('/dashboard');
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!isFirebaseConfigured) return;
@@ -36,11 +46,8 @@ export default function LoginPage() {
     setError('');
 
     try {
-      // Step 1: Authenticate with Firebase. The AppLayout will handle the rest.
       await signInWithEmailAndPassword(auth, email, password);
       
-      // On success, the onAuthStateChanged listener in AppLayout will fire.
-      // We can just redirect to the dashboard.
       toast({
         title: 'Inicio de Sesión Correcto',
         description: 'Redirigiendo al panel principal...',
@@ -63,7 +70,7 @@ export default function LoginPage() {
         description: friendlyMessage,
         variant: 'destructive',
       });
-      setIsLoading(false); // Only stop loading on error
+      setIsLoading(false);
     }
   };
 
@@ -90,10 +97,16 @@ export default function LoginPage() {
         </CardHeader>
         <CardContent>
           {!isFirebaseConfigured ? (
-            <div className="text-center text-destructive bg-destructive/10 p-4 rounded-md flex flex-col items-center gap-2">
-              <AlertCircle className="h-6 w-6" />
-              <p className="font-bold">Firebase no configurado</p>
-              <p className="text-sm mt-1">Por favor, añade tus credenciales en `src/lib/firebaseClient.js` para habilitar el inicio de sesión.</p>
+             <div className="space-y-4">
+              <div className="text-center text-destructive bg-destructive/10 p-4 rounded-md flex flex-col items-center gap-2">
+                <AlertCircle className="h-6 w-6" />
+                <p className="font-bold">Firebase no configurado</p>
+                <p className="text-sm mt-1">La aplicación se ejecutará en Modo Demo.</p>
+              </div>
+              <Button onClick={handleDemoLogin} className="w-full">
+                  <TestTube2 className="mr-2 h-4 w-4" />
+                  Ingresar en Modo Demo
+              </Button>
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">

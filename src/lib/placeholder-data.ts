@@ -45,7 +45,7 @@ export const defaultSuperAdmin: User = {
   phone: '4493930914'
 };
 
-export let placeholderUsers: User[] = [defaultSuperAdmin]; // This will be hydrated from Firestore
+export let placeholderUsers: User[] = []; // This will be hydrated from Firestore
 export const AUTH_USER_LOCALSTORAGE_KEY = 'authUser';
 export const USER_LOCALSTORAGE_KEY = 'appUsers';
 export const ROLES_LOCALSTORAGE_KEY = 'appRoles';
@@ -83,12 +83,7 @@ export let placeholderQuotes: QuoteRecord[] = [];
 export let placeholderSales: SaleReceipt[] = [];
 
 // --- GASTOS FIJOS ---
-export let placeholderFixedMonthlyExpenses: MonthlyFixedExpense[] = [
-    { id: 'exp_1', name: 'Renta del Local', amount: 12000 },
-    { id: 'exp_2', name: 'Servicio de Internet', amount: 800 },
-    { id: 'exp_3', name: 'Servicio de Luz', amount: 2500 },
-    { id: 'exp_4', name: 'Servicio de Agua', amount: 600 },
-];
+export let placeholderFixedMonthlyExpenses: MonthlyFixedExpense[] = [];
 
 // --- DATOS SIMULADOS (BORRAR O REEMPLAZAR) ---
 export const placeholderDashboardMetrics: DashboardMetrics = {
@@ -125,7 +120,6 @@ const DATA_ARRAYS = {
 
 /**
  * Loads all application data from a single Firestore document.
- * This function is now more resilient to read failures.
  */
 export async function hydrateFromFirestore() {
   if (typeof window === 'undefined' || (window as any).__APP_HYDRATED__) {
@@ -150,49 +144,16 @@ export async function hydrateFromFirestore() {
         }
       }
     } else {
-      console.warn("No database document found. The application will be seeded with initial data.");
-    }
-  } catch (error) {
-    console.error("Error reading from Firestore:", error);
-    console.warn("Could not read from Firestore. This might be due to Firestore rules. The app will proceed with in-memory data for this session.");
-  }
+      console.warn("No database document found. Seeding the app with initial default data.");
+      
+      // If the DB is completely empty, seed it with some starter data.
+      placeholderFixedMonthlyExpenses.splice(0, placeholderFixedMonthlyExpenses.length, ...[
+          { id: 'exp_1', name: 'Renta del Local', amount: 12000 },
+          { id: 'exp_2', name: 'Servicio de Internet', amount: 800 },
+          { id: 'exp_3', name: 'Servicio de Luz', amount: 2500 },
+          { id: 'exp_4', name: 'Servicio de Agua', amount: 600 },
+      ]);
 
-  // Force a clean slate for operational data as requested.
-  // This ensures that even if data exists in Firestore, the app starts fresh.
-  if (placeholderVehicles.length > 0) {
-    console.log(`Forcing clean slate: Removing ${placeholderVehicles.length} vehicles.`);
-    placeholderVehicles.splice(0, placeholderVehicles.length);
-    changesMade = true;
-  }
-  if (placeholderServiceRecords.length > 0) {
-    console.log(`Forcing clean slate: Removing ${placeholderServiceRecords.length} services.`);
-    placeholderServiceRecords.splice(0, placeholderServiceRecords.length);
-    changesMade = true;
-  }
-  if (placeholderQuotes.length > 0) {
-    console.log(`Forcing clean slate: Removing ${placeholderQuotes.length} quotes.`);
-    placeholderQuotes.splice(0, placeholderQuotes.length);
-    changesMade = true;
-  }
-  if (placeholderSales.length > 0) {
-    console.log(`Forcing clean slate: Removing ${placeholderSales.length} sales.`);
-    placeholderSales.splice(0, placeholderSales.length);
-    changesMade = true;
-  }
-  
-
-  // --- DATA INTEGRITY CHECKS ---
-  // Always ensure default users exist in memory, regardless of what was loaded from the database.
-  // This makes the app resilient to a corrupted or empty 'users' array in the DB.
-  if (!placeholderUsers.some(u => u.id === defaultSuperAdmin.id)) {
-    placeholderUsers.unshift(defaultSuperAdmin);
-    changesMade = true;
-    console.log(`Default user '${defaultSuperAdmin.email}' was missing and has been added to the current session.`);
-  }
-
-  // Check for AppRoles
-  if (!docSnap?.exists() || !docSnap.data()?.appRoles || docSnap.data()?.appRoles.length === 0) {
-      console.log("No roles found in DB, seeding default roles.");
       const adminPermissions = ALL_AVAILABLE_PERMISSIONS
           .filter(p => !['users:manage', 'roles:manage'].includes(p.id))
           .map(p => p.id);
@@ -204,17 +165,27 @@ export async function hydrateFromFirestore() {
           { id: 'role_ventas_default', name: 'Ventas', permissions: ['dashboard:view', 'pos:create_sale', 'pos:view_sales', 'inventory:view', 'vehicles:manage'] }
       ];
       placeholderAppRoles.splice(0, placeholderAppRoles.length, ...defaultRoles);
+      
       changesMade = true;
+    }
+  } catch (error) {
+    console.error("Error reading from Firestore:", error);
+    console.warn("Could not read from Firestore. This might be due to Firestore rules. The app will proceed with in-memory data for this session.");
   }
   
-  (window as any).__APP_HYDRATED__ = true;
-  console.log("Hydration process complete. Checking for necessary persistence...");
+  // --- DATA INTEGRITY CHECKS ---
+  if (!placeholderUsers.some(u => u.id === defaultSuperAdmin.id)) {
+    placeholderUsers.unshift(defaultSuperAdmin);
+    changesMade = true;
+    console.log(`Default user '${defaultSuperAdmin.email}' was missing and has been added to the current session.`);
+  }
 
-  // If the document didn't exist or we had to add/remove data, we should try to persist.
+  (window as any).__APP_HYDRATED__ = true;
+  console.log("Hydration process complete.");
+
+  // If the document didn't exist or we had to make integrity changes, persist back to Firestore.
   if (!docSnap || !docSnap.exists() || changesMade) {
-    console.log("Attempting to persist updated data to Firestore in the background...");
-    // We don't await this so that the app can continue loading without waiting for the write to finish.
-    // This is a "fire-and-forget" operation for faster startup.
+    console.log("Attempting to persist initial/updated data to Firestore in the background...");
     persistToFirestore().catch(err => {
         console.error("Background persistence failed:", err);
     });
@@ -226,6 +197,10 @@ export async function hydrateFromFirestore() {
  * Saves the entire application state from memory to a single Firestore document.
  */
 export async function persistToFirestore() {
+  if (!db) {
+    console.warn("Persist skipped: Firebase not configured.");
+    return;
+  }
   // Do not persist if hydration hasn't occurred, to avoid overwriting cloud data with empty arrays.
   if (typeof window === 'undefined' || !(window as any).__APP_HYDRATED__) {
     console.warn("Persist skipped: App not yet hydrated.");
@@ -317,5 +292,3 @@ export const enrichServiceForPrinting = (service: ServiceRecord, inventory: Inve
     suppliesUsed: enrichedSupplies,
   };
 };
-
-

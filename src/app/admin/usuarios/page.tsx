@@ -9,7 +9,7 @@ import { PageHeader } from "@/components/page-header";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
@@ -201,8 +201,10 @@ export default function UsuariosPage() {
         <CardHeader className="flex flex-row items-start gap-4">
           <ShieldAlert className="h-6 w-6 text-blue-600 dark:text-blue-400 mt-1" />
           <div className="space-y-1">
-            <CardTitle className="text-blue-800 dark:text-blue-300">¡Importante! Nuevo Proceso de Usuarios</CardTitle>
-            <CardDescription className="text-blue-700/90 dark:text-blue-400/90">
+            <CardTitle className="text-blue-800 dark:text-blue-300">
+              ¡Importante! Nuevo Proceso de Usuarios
+            </CardTitle>
+            <CardDescription className="text-blue-700/90 dark:text-blue-400/90 mt-2">
               Con la integración de Firebase Authentication, la gestión de contraseñas y la creación inicial de usuarios ahora se realiza en la Consola de Firebase. Esta sección es para asignar roles y gestionar datos adicionales.
             </CardDescription>
           </div>
@@ -329,8 +331,9 @@ export default function UsuariosPage() {
                   name="email"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Correo Electrónico (Debe coincidir con Firebase)</FormLabel>
+                      <FormLabel>Correo Electrónico</FormLabel>
                       <FormControl><Input type="email" {...field} placeholder="usuario@ejemplo.com" disabled={!!editingUser} /></FormControl>
+                       <FormDescription>Debe coincidir con la cuenta creada en Firebase Authentication.</FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -381,8 +384,9 @@ export default function UsuariosPage() {
                       name="password"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Contraseña (temporal, para el registro local)</FormLabel>
+                          <FormLabel>Contraseña</FormLabel>
                           <FormControl><Input type="password" {...field} placeholder="••••••••" /></FormControl>
+                          <FormDescription>La contraseña real se gestiona en Firebase. Esto es para el registro inicial.</FormDescription>
                           <FormMessage />
                         </FormItem>
                       )}
