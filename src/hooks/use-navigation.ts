@@ -158,11 +158,14 @@ const useNavigation = (): NavigationEntry[] => {
             setCurrentUser(JSON.parse(authUserString));
         } catch (e) {
             console.error("Failed to parse authUser:", e);
+            setCurrentUser(null);
         }
+      } else {
+        setCurrentUser(null);
       }
       setRoles(placeholderAppRoles);
     }
-  }, []);
+  }, [pathname]);
 
   const userPermissions = React.useMemo(() => {
     if (!currentUser || !roles.length) return new Set<string>();
