@@ -36,70 +36,64 @@ export default function AppLayout({
 
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
-        // User is signed in with Firebase. Immediately show the app shell.
+        console.log(`Firebase onAuthStateChanged: User detected (UID: ${user.uid}).`);
         setAuthStatus('authenticated');
         
-        // Start hydration and user validation.
         setIsHydrating(true);
         try {
           await hydrateFromFirestore();
-          // Try to find user by UID first (the primary, correct way)
+          
           let appUser = placeholderUsers.find(u => u.id === user.uid);
           let needsPersistence = false;
     
-          // If not found by UID, try to find by email for pre-seeded users
           if (!appUser && user.email) {
+            console.log(`User with UID ${user.uid} not found. Attempting to link by email: ${user.email}...`);
             const preSeededUserIndex = placeholderUsers.findIndex(u => u.email && u.email.toLowerCase() === user.email!.toLowerCase());
             if (preSeededUserIndex !== -1) {
-              // Found a pre-seeded user by email. Update their ID to match the Firebase UID.
-              console.log(`Found pre-seeded user ${user.email} by email. Updating ID to Firebase UID ${user.uid}.`);
+              console.log(`Found pre-seeded user by email. Linking to Firebase UID.`);
               placeholderUsers[preSeededUserIndex].id = user.uid;
               appUser = placeholderUsers[preSeededUserIndex];
-              needsPersistence = true; // Mark that we need to save this change
+              needsPersistence = true;
             }
           }
 
           if (appUser) {
-            // User exists in our DB. `appUser` is a reference to the object in `placeholderUsers`.
+            console.log(`App user profile found for ${appUser.email}. Role: ${appUser.role}. Syncing profile info...`);
             
-            // Sync some info from Firebase Auth if it exists and differs
             if (user.displayName && appUser.name !== user.displayName) {
-                console.log(`Syncing user name for ${appUser.email} from Firebase Auth.`);
+                console.log(`- Syncing name: '${appUser.name}' -> '${user.displayName}'`);
                 appUser.name = user.displayName;
                 needsPersistence = true;
             }
             if (user.phoneNumber && appUser.phone !== user.phoneNumber) {
-                console.log(`Syncing user phone for ${appUser.email} from Firebase Auth.`);
+                 console.log(`- Syncing phone.`);
                 appUser.phone = user.phoneNumber;
                 needsPersistence = true;
             }
             
-            // Save the potentially updated user object to local storage for the current session
             localStorage.setItem(AUTH_USER_LOCALSTORAGE_KEY, JSON.stringify(appUser));
             
             if (needsPersistence) {
-                // Persist the changes to the global placeholderUsers array back to Firestore
+                console.log("Persisting profile updates to database...");
                 persistToFirestore().catch(err => console.error("Failed to persist user data update:", err));
             }
 
             setIsHydrating(false); 
           } else {
-            // User exists in Firebase Auth, but not in our app's database.
-            // Create a new user record for them "Just-In-Time".
-            console.log(`User with UID ${user.uid} not found in app DB. Creating new user record...`);
+            console.log(`User with UID ${user.uid} not found in app DB. Creating new user record (Just-In-Time)...`);
             
             const newUser: User = {
               id: user.uid,
               email: user.email!,
               name: user.displayName || user.email!.split('@')[0],
-              role: 'Tecnico', // Assign a default, non-admin role.
+              role: 'Tecnico',
               phone: user.phoneNumber || undefined,
             };
             
-            placeholderUsers.push(newUser); // Add to in-memory list
+            placeholderUsers.push(newUser);
             localStorage.setItem(AUTH_USER_LOCALSTORAGE_KEY, JSON.stringify(newUser));
             
-            // Persist the new user to Firestore in the background
+            console.log("Persisting new user profile to database...");
             persistToFirestore().catch(err => {
               console.error("Failed to persist newly created user:", err);
             });
@@ -109,7 +103,7 @@ export default function AppLayout({
               description: `Hemos creado un perfil para ti con el rol por defecto.`,
             });
             
-            setIsHydrating(false); // We can now proceed
+            setIsHydrating(false);
           }
         } catch (error) {
           console.error("Hydration failed:", error);
@@ -118,7 +112,7 @@ export default function AppLayout({
         }
 
       } else {
-        // User is signed out.
+        console.log("Firebase onAuthStateChanged: No user detected.");
         setAuthStatus('unauthenticated');
         router.replace('/login');
       }
