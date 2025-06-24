@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/accordion";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
-  LayoutDashboard, Wrench, Car, FileText, Receipt, Package, DollarSign, Users, UserCog, Settings, BrainCircuit, BookOpen
+  LayoutDashboard, Wrench, Car, FileText, Receipt, Package, DollarSign, Users, Settings, BrainCircuit, BookOpen, UserCog, Briefcase
 } from "lucide-react";
 import React from 'react';
 
@@ -20,17 +20,18 @@ const manualSections = [
     icon: LayoutDashboard,
     content: (
       <>
-        <p>El Panel Principal es tu centro de operaciones. Aquí obtienes una vista rápida del estado actual de tu taller.</p>
-        <ul className="list-disc pl-5 mt-2 space-y-1">
-          <li><strong>Indicadores Clave (KPIs):</strong> Tarjetas en la parte superior que muestran Ingresos del Día, Servicios Activos, Alertas de Stock y Ganancia Estimada.</li>
-          <li><strong>Asistente de Compras IA:</strong> Un botón que analiza los servicios agendados para hoy y te genera una orden de compra consolidada con las refacciones que necesitas, ahorrándote tiempo.</li>
-          <li><strong>Columnas de Servicios:</strong>
-            <ul className="list-disc pl-5 mt-1 ml-5">
-              <li><strong>En Reparación:</strong> Todos los servicios que están actualmente en proceso.</li>
-              <li><strong>Agendados:</strong> Servicios programados para hoy o fechas futuras.</li>
-              <li><strong>Completados Hoy:</strong> Servicios que se han finalizado durante el día.</li>
+        <p>El Panel Principal es tu centro de mando, diseñado para darte una visión instantánea y clara del estado de tu taller. Aquí encontrarás KPIs (Indicadores Clave de Rendimiento) y herramientas de IA para optimizar tu día a día.</p>
+        <ul className="list-disc pl-5 mt-2 space-y-2">
+          <li><strong>Tarjetas de Resumen (KPIs):</strong> En la parte superior, verás datos cruciales actualizados en tiempo real:
+            <ul className="list-disc pl-5 mt-1">
+                <li><strong>Ingresos del Día:</strong> Suma total de ventas y servicios completados hoy, con la ganancia neta estimada.</li>
+                <li><strong>Servicios Activos:</strong> Cuántos vehículos están actualmente en reparación o agendados para hoy.</li>
+                <li><strong>Alertas de Stock Bajo:</strong> Un contador de los productos que han alcanzado o caído por debajo de su umbral mínimo.</li>
+                <li><strong>Capacidad del Taller (IA):</strong> Una predicción inteligente de qué tan ocupado estará el taller hoy, basada en los servicios agendados y las horas de tus técnicos.</li>
             </ul>
           </li>
+          <li><strong>Asistente de Compras con IA:</strong> Esta potente herramienta analiza todos los servicios agendados para el día, determina qué refacciones se necesitarán basándose en el historial y tu inventario actual, y genera una orden de compra consolidada y agrupada por proveedor. Te ahorra el trabajo manual de revisar cada orden de servicio.</li>
+          <li><strong>Gráficos de Rendimiento:</strong> Visualiza el rendimiento de tu taller con gráficos que muestran la comparativa de Ingresos vs. Ganancia de los últimos 6 meses, la distribución de los tipos de servicios más comunes y de dónde provienen tus ingresos (servicios vs. ventas de mostrador).</li>
         </ul>
       </>
     ),
@@ -40,11 +41,22 @@ const manualSections = [
     icon: Wrench,
     content: (
       <>
-        <p>Aquí gestionas todo el ciclo de vida de una reparación.</p>
-        <ul className="list-disc pl-5 mt-2 space-y-1">
-          <li><strong>Agenda:</strong> Vista de calendario para ver y gestionar citas futuras. La IA te ayuda a analizar la capacidad del taller para el día.</li>
-          <li><strong>Historial:</strong> Un registro completo de todos los servicios. Puedes buscar, filtrar y editar órdenes de servicio pasadas.</li>
-          <li><strong>Crear/Editar Servicio:</strong> El formulario de servicio te permite registrar todos los detalles: datos del vehículo, descripción del trabajo, técnico asignado, insumos utilizados y costos. La IA puede sugerirte un precio final basado en la rentabilidad y el historial.</li>
+        <p>Aquí gestionas todo el ciclo de vida de una reparación, desde la cita inicial hasta la entrega final del vehículo.</p>
+        <ul className="list-disc pl-5 mt-2 space-y-2">
+          <li><strong>Agenda:</strong> Planifica y visualiza todas las citas. Cuenta con dos vistas:
+             <ul className="list-disc pl-5 mt-1">
+                <li><strong>Vista de Lista:</strong> Un desglose detallado día por día de todas las citas futuras y pasadas, mostrando la ganancia estimada por día y el análisis de capacidad de la IA para el día actual.</li>
+                <li><strong>Vista de Calendario:</strong> Una vista mensual clásica donde puedes ver las citas marcadas y seleccionar un día para ver los detalles.</li>
+            </ul>
+          </li>
+          <li><strong>Historial:</strong> Un registro completo y detallado de todas las órdenes de servicio. Puedes buscar, filtrar por fecha y ordenar por múltiples criterios. Desde aquí puedes editar cualquier servicio pasado.</li>
+          <li><strong>Crear/Editar Servicio:</strong> Un formulario completo para capturar cada detalle:
+             <ul className="list-disc pl-5 mt-1">
+                <li><strong>Recepción de Unidad:</strong> Registra datos del vehículo, kilometraje, y observaciones sobre su estado (rayones, golpes) y nivel de combustible.</li>
+                <li><strong>Insumos:</strong> Añade refacciones y mano de obra. La IA puede sugerirte un precio final competitivo y rentable para el servicio completo.</li>
+                <li><strong>Impresión:</strong> Puedes imprimir una "Hoja de Servicio" para control interno en el taller o un "Comprobante de Servicio" para el cliente al finalizar.</li>
+            </ul>
+          </li>
         </ul>
       </>
     ),
@@ -54,11 +66,12 @@ const manualSections = [
     icon: FileText,
     content: (
         <>
-            <p>Genera presupuestos profesionales para tus clientes antes de iniciar un trabajo.</p>
-            <ul className="list-disc pl-5 mt-2 space-y-1">
-                <li><strong>Crear Cotización:</strong> Usa un formulario similar al de servicios para detallar los trabajos y refacciones. La IA puede ayudarte a generar una cotización completa (insumos y precio) basada en el historial del taller para trabajos similares.</li>
-                <li><strong>Historial de Cotizaciones:</strong> Visualiza todas las cotizaciones generadas. Puedes ver su estado (Pendiente o Ingresado), editarlas o convertirlas directamente en una Orden de Servicio con un solo clic.</li>
-                <li><strong>Compartir Cotización:</strong> Cada cotización genera un enlace público y un PDF que puedes compartir fácilmente con tus clientes.</li>
+            <p>Genera presupuestos profesionales y da seguimiento a tus oportunidades de venta. Este módulo es clave para formalizar tus ofertas y aumentar tu tasa de conversión.</p>
+            <ul className="list-disc pl-5 mt-2 space-y-2">
+                <li><strong>Crear Cotización con IA:</strong> El sistema es capaz de generar una cotización completa (insumos, mano de obra y precio final) basándose en una simple descripción y el historial de trabajos similares realizados en tu taller.</li>
+                <li><strong>Historial y Seguimiento:</strong> Visualiza todas las cotizaciones con su estado ("Pendiente" o "Ingresado"). Las tarjetas de resumen te muestran el total de cotizaciones, cuántas se han concretado y el valor total que representan.</li>
+                <li><strong>Convertir a Servicio:</strong> Con un solo clic, convierte una cotización aprobada en una Orden de Servicio, transfiriendo automáticamente toda la información y evitando la recaptura.</li>
+                <li><strong>Compartir con el Cliente:</strong> Cada cotización genera un PDF profesional y un enlace público que puedes compartir fácilmente por WhatsApp o correo electrónico.</li>
             </ul>
         </>
     )
@@ -68,11 +81,11 @@ const manualSections = [
     icon: Receipt,
     content: (
       <>
-        <p>Para ventas rápidas de mostrador que no requieren una orden de servicio completa.</p>
-        <ul className="list-disc pl-5 mt-2 space-y-1">
-          <li><strong>Registrar Venta:</strong> Busca y añade productos o servicios del inventario rápidamente.</li>
-          <li><strong>Múltiples Métodos de Pago:</strong> Acepta efectivo, tarjeta, transferencia o combinaciones.</li>
-          <li><strong>Tickets:</strong> Imprime un ticket de compra al finalizar la venta. El inventario se actualiza automáticamente.</li>
+        <p>Una herramienta diseñada para ventas rápidas de mostrador (refacciones, accesorios, etc.) que no requieren una orden de servicio completa.</p>
+        <ul className="list-disc pl-5 mt-2 space-y-2">
+          <li><strong>Venta Rápida:</strong> Busca y añade productos del inventario de forma ágil. Si un producto no existe, puedes crearlo directamente desde la interfaz de venta sin salir del flujo.</li>
+          <li><strong>Múltiples Métodos de Pago:</strong> Flexibilidad total para tus clientes. Acepta efectivo, tarjeta, transferencia o combinaciones de estos.</li>
+          <li><strong>Generación de Tickets:</strong> Al finalizar la venta, se genera un ticket de compra que puedes imprimir. El inventario se descuenta automáticamente para los productos vendidos.</li>
         </ul>
       </>
     ),
@@ -82,12 +95,13 @@ const manualSections = [
     icon: Package,
     content: (
       <>
-        <p>Control total sobre tus productos, servicios, proveedores y categorías.</p>
-        <ul className="list-disc pl-5 mt-2 space-y-1">
-          <li><strong>Productos y Servicios:</strong> Da de alta tanto refacciones físicas (con control de stock) como mano de obra (servicios sin stock).</li>
-          <li><strong>Análisis con IA:</strong> La IA puede analizar tu historial de uso y stock actual para recomendarte qué artículos necesitas reordenar y en qué cantidad.</li>
-          <li><strong>Ingreso de Compras:</strong> Registra fácilmente la llegada de nuevos productos, actualizando la cantidad en stock y los precios de costo/venta.</li>
-          <li><strong>Categorías y Proveedores:</strong> Organiza tu inventario y mantén un registro de tus proveedores.</li>
+        <p>El corazón de tu operación. Un control preciso de tu inventario te ahorra tiempo y dinero.</p>
+        <ul className="list-disc pl-5 mt-2 space-y-2">
+          <li><strong>Productos y Servicios:</strong> El sistema distingue entre productos físicos (con control de stock, como filtros o aceite) y servicios (sin control de stock, como "Mano de Obra Mecánica").</li>
+          <li><strong>Análisis de Inventario con IA:</strong> Esta función revisa tu historial de consumo, tu stock actual y los umbrales de stock bajo para darte recomendaciones inteligentes sobre qué artículos necesitas reordenar y en qué cantidad, optimizando tus compras.</li>
+          <li><strong>Ingreso de Compras:</strong> Un flujo sencillo para registrar la llegada de nuevos productos. Busca un artículo existente o crea uno nuevo, introduce la cantidad comprada y actualiza sus precios de costo y venta en un solo paso.</li>
+          <li><strong>Gestión Centralizada:</strong> Administra categorías y proveedores para mantener todo tu inventario organizado y accesible.</li>
+          <li><strong>Impresión Profesional:</strong> Genera una lista de inventario en formato carta, ideal para reportes físicos, que incluye un resumen del valor total de tu stock.</li>
         </ul>
       </>
     ),
@@ -97,39 +111,41 @@ const manualSections = [
     icon: DollarSign,
     content: (
       <>
-        <p>Entiende la salud financiera de tu negocio con reportes claros y detallados.</p>
-        <ul className="list-disc pl-5 mt-2 space-y-1">
-          <li><strong>Reporte de Operaciones:</strong> Un desglose detallado de cada venta y servicio completado en un rango de fechas. Ideal para el corte diario.</li>
-          <li><strong>Resumen Financiero:</strong> Una vista mensual de tus ingresos, costos, gastos (sueldos, rentas, etc.) y la ganancia neta final. Esencial para la toma de decisiones estratégicas.</li>
-          <li><strong>Gestión de Gastos Fijos:</strong> Define tus gastos mensuales recurrentes (renta, luz, internet) para que se incluyan automáticamente en el cálculo del resumen financiero.</li>
+        <p>Toma el control de la salud financiera de tu taller con reportes claros y poderosos.</p>
+        <ul className="list-disc pl-5 mt-2 space-y-2">
+          <li><strong>Reporte de Operaciones:</strong> Es tu herramienta para el día a día. Filtra todas las transacciones (ventas y servicios) por fecha para realizar tu "Corte de Caja" de manera rápida y precisa.</li>
+          <li><strong>Resumen Financiero Mensual:</strong> La vista estratégica de tu negocio. Analiza tus ingresos, costos de insumos, gastos fijos y sueldos para obtener la ganancia neta real de cada mes. Este reporte es crucial para entender la rentabilidad y tomar decisiones a largo plazo.</li>
+           <li><strong>Cálculo de Comisiones:</strong> El sistema calcula automáticamente las comisiones potenciales de tu personal, pero solo las aplica en el resumen financiero si el taller ha sido rentable ese mes (es decir, si la ganancia bruta supera los gastos fijos).</li>
+          <li><strong>Gestión de Gastos Fijos:</strong> Registra tus gastos recurrentes (renta, luz, internet, etc.) para que se incluyan automáticamente en los cálculos de rentabilidad, dándote una visión financiera completa.</li>
         </ul>
       </>
     ),
   },
   {
-    title: "Staff y Vehículos",
+    title: "Gestión de Staff",
     icon: Users,
     content: (
         <>
-            <p>Gestiona la información clave de tu equipo y de los vehículos de tus clientes.</p>
-            <ul className="list-disc pl-5 mt-2 space-y-1">
-                <li><strong>Staff (Técnico y Administrativo):</strong> Administra los perfiles de tus empleados, incluyendo su información de contacto, salario y comisiones. Visualiza su rendimiento basado en los servicios completados.</li>
-                <li><strong>Vehículos:</strong> Mantén una base de datos completa de los vehículos de tus clientes. Accede rápidamente a su historial de servicios para ofrecer una atención personalizada y eficiente.</li>
+            <p>Administra la información, roles y rendimiento de todo tu personal, tanto técnico como administrativo.</p>
+            <ul className="list-disc pl-5 mt-2 space-y-2">
+                <li><strong>Perfiles de Staff:</strong> Mantén un registro detallado de cada empleado, incluyendo su información de contacto, fecha de contratación, salario base y tasa de comisión.</li>
+                <li><strong>Rendimiento Individual:</strong> Analiza el rendimiento de cada miembro del staff en un rango de fechas. Visualiza los ingresos que han generado y las comisiones potenciales que han acumulado, ayudándote a identificar a tu personal más productivo.</li>
+                <li><strong>Separación por Roles:</strong> El sistema distingue entre Staff Técnico y Staff Administrativo, permitiendo una gestión más organizada y cálculos de rendimiento específicos para cada área.</li>
             </ul>
         </>
     )
   },
   {
-    title: "Administración y Configuración",
+    title: "Administración del Sistema",
     icon: Settings,
     content: (
         <>
-            <p>Configuraciones avanzadas para adaptar la plataforma a tus necesidades (acceso restringido a administradores).</p>
-            <ul className="list-disc pl-5 mt-2 space-y-1">
-                <li><strong>Gestión de Usuarios:</strong> Crea, edita o elimina las cuentas de usuario que pueden acceder al sistema.</li>
-                <li><strong>Roles y Permisos:</strong> Define qué puede hacer cada tipo de usuario (ej. un técnico no puede ver el resumen financiero).</li>
-                <li><strong>Migración de Datos:</strong> Usa la IA para importar datos desde un archivo Excel, ideal para cuando empiezas a usar la plataforma.</li>
-                <li><strong>Configuración de Ticket:</strong> Personaliza la información que aparece en los tickets impresos, como el nombre y el logo de tu taller.</li>
+            <p>Configuraciones avanzadas para adaptar la plataforma a tus necesidades (acceso restringido a roles de administrador).</p>
+            <ul className="list-disc pl-5 mt-2 space-y-2">
+                <li><strong>Gestión de Usuarios:</strong> Crea, edita o elimina las cuentas de usuario. La creación de la cuenta de correo y contraseña se hace en la consola de Firebase para mayor seguridad.</li>
+                <li><strong>Roles y Permisos:</strong> Define qué puede hacer cada tipo de usuario. Crea roles personalizados (ej. "Recepcionista") y asígnale permisos específicos para cada módulo del sistema (ej. "Crear Servicios" pero no "Ver Reporte Financiero").</li>
+                <li><strong>Migración de Datos con IA:</strong> Para una puesta en marcha rápida, puedes importar tu historial de clientes y servicios desde un archivo Excel. La IA se encarga de leer, interpretar y estructurar los datos correctamente en el sistema.</li>
+                <li><strong>Configuración de Ticket:</strong> Personaliza la información que aparece en los tickets y cotizaciones impresas, como el nombre, la dirección, el teléfono y el logo de tu taller.</li>
             </ul>
         </>
     )
@@ -141,7 +157,7 @@ const ManualUsuarioPage = () => {
         <div className="container mx-auto py-8">
             <PageHeader
                 title="Manual de Usuario"
-                description="Una guía completa para aprovechar al máximo la plataforma Ranoro."
+                description="Una guía completa para aprovechar al máximo todas las funciones de la plataforma Ranoro."
                 actions={<BookOpen className="h-8 w-8 text-primary"/>}
             />
 
