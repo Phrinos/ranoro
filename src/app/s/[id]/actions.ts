@@ -4,7 +4,6 @@
 import { revalidatePath } from 'next/cache';
 import { db } from '@root/lib/firebaseClient.js';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
-import { placeholderServiceRecords, persistToFirestore } from '@/lib/placeholder-data';
 import type { ServiceRecord } from '@/types';
 
 type SignatureType = 'reception' | 'delivery';
@@ -19,14 +18,25 @@ export async function saveSignature(
   }
 
   try {
+    const dbPath = 'database/main';
+    const mainDbRef = doc(db, dbPath);
+    const mainDbSnap = await getDoc(mainDbRef);
+
+    if (!mainDbSnap.exists()) {
+        return { success: false, message: 'La base de datos principal no fue encontrada.' };
+    }
+    
+    const mainDbData = mainDbSnap.data();
+    const allServices: ServiceRecord[] = mainDbData.serviceRecords || [];
+
     // --- 1. Update the main database document ---
-    const serviceIndex = placeholderServiceRecords.findIndex(s => s.publicId === publicId);
+    const serviceIndex = allServices.findIndex(s => s.publicId === publicId);
     
     if (serviceIndex === -1) {
       return { success: false, message: 'Servicio no encontrado en la base de datos principal.' };
     }
 
-    const serviceToUpdate = placeholderServiceRecords[serviceIndex];
+    const serviceToUpdate = allServices[serviceIndex];
 
     if (signatureType === 'reception') {
       serviceToUpdate.customerSignatureReception = signatureDataUrl;
@@ -36,24 +46,28 @@ export async function saveSignature(
       serviceToUpdate.deliverySignatureViewed = false; // Mark as unread
     }
 
-    // Persist only the serviceRecords array to avoid overwriting other data
-    await persistToFirestore(['serviceRecords']);
+    // Update the service record in the array
+    allServices[serviceIndex] = serviceToUpdate;
+
+    // Persist only the serviceRecords array back to the main document
+    await setDoc(mainDbRef, { serviceRecords: allServices }, { merge: true });
+
 
     // --- 2. Update the separate public document ---
     const publicDocRef = doc(db, 'publicServices', publicId);
     const publicDocSnap = await getDoc(publicDocRef);
     if (!publicDocSnap.exists()) {
-        return { success: false, message: 'El documento público del servicio no existe.' };
-    }
-    
-    const updateData: Partial<ServiceRecord> = {};
-    if (signatureType === 'reception') {
-      updateData.customerSignatureReception = signatureDataUrl;
+        // This is a less critical error, the main DB is updated. We can log it.
+        console.warn(`Public document ${publicId} not found, but main DB was updated.`);
     } else {
-      updateData.customerSignatureDelivery = signatureDataUrl;
+        const updateData: Partial<ServiceRecord> = {};
+        if (signatureType === 'reception') {
+          updateData.customerSignatureReception = signatureDataUrl;
+        } else {
+          updateData.customerSignatureDelivery = signatureDataUrl;
+        }
+        await setDoc(publicDocRef, updateData, { merge: true });
     }
-    await setDoc(publicDocRef, updateData, { merge: true });
-
 
     // --- 3. Revalidate Path ---
     revalidatePath(`/s/${publicId}`);
