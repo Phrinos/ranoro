@@ -2,13 +2,15 @@
 "use client";
 
 import { useParams, useRouter } from 'next/navigation';
-import { placeholderInventory, placeholderCategories, placeholderSuppliers, persistToFirestore } from '@/lib/placeholder-data';
-import type { InventoryItem } from '@/types';
+import { placeholderInventory, placeholderCategories, placeholderSuppliers, persistToFirestore, placeholderServiceRecords, placeholderSales } from '@/lib/placeholder-data';
+import type { InventoryItem, ServiceRecord, SaleReceipt } from '@/types';
 import { PageHeader } from '@/components/page-header';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { Archive, Edit, ShieldAlert, Package, Server } from 'lucide-react';
+import { Archive, Edit, ShieldAlert, Package, Server, History, ArrowRight } from 'lucide-react';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { InventoryItemDialog } from '../components/inventory-item-dialog';
@@ -25,6 +27,16 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { format, parseISO } from 'date-fns';
+import { es } from 'date-fns/locale';
+
+interface InventoryMovement {
+    date: string;
+    type: 'Salida por Servicio' | 'Salida por Venta' | 'Entrada por Compra';
+    quantity: number;
+    relatedId: string;
+    unitType?: 'units' | 'ml' | 'liters';
+}
 
 export default function InventoryItemDetailPage() {
   const params = useParams();
@@ -34,10 +46,39 @@ export default function InventoryItemDetailPage() {
 
   const [item, setItem] = useState<InventoryItem | null | undefined>(undefined);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [history, setHistory] = useState<InventoryMovement[]>([]);
 
   useEffect(() => {
     const foundItem = placeholderInventory.find(i => i.id === itemId);
     setItem(foundItem || null);
+
+    if (foundItem) {
+        const serviceExits = placeholderServiceRecords.flatMap(service =>
+            service.suppliesUsed
+                .filter(supply => supply.supplyId === foundItem.id)
+                .map(supply => ({
+                    date: service.serviceDate,
+                    type: 'Salida por Servicio' as const,
+                    quantity: supply.quantity,
+                    relatedId: service.id,
+                    unitType: foundItem.unitType,
+                }))
+        );
+        const saleExits = placeholderSales.flatMap(sale =>
+            sale.items
+                .filter(saleItem => saleItem.inventoryItemId === foundItem.id)
+                .map(saleItem => ({
+                    date: sale.saleDate,
+                    type: 'Salida por Venta' as const,
+                    quantity: saleItem.quantity,
+                    relatedId: sale.id,
+                    unitType: foundItem.unitType,
+                }))
+        );
+        // NOTE: Purchase history is not recorded, so 'Entrada por Compra' cannot be generated.
+        const allMovements = [...serviceExits, ...saleExits].sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+        setHistory(allMovements);
+    }
   }, [itemId]);
 
   const handleSaveEditedItem = async (formData: InventoryItemFormValues) => {
@@ -113,7 +154,7 @@ export default function InventoryItemDetailPage() {
       <Tabs defaultValue="details" className="w-full">
         <TabsList className="grid w-full grid-cols-2 md:grid-cols-2 lg:w-1/3 mb-6">
           <TabsTrigger value="details" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Información del Ítem</TabsTrigger>
-          <TabsTrigger value="history" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Historial (Pendiente)</TabsTrigger>
+          <TabsTrigger value="history" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Historial</TabsTrigger>
         </TabsList>
 
         <TabsContent value="details">
@@ -177,10 +218,47 @@ export default function InventoryItemDetailPage() {
           <Card>
             <CardHeader>
               <CardTitle>Historial de Movimientos</CardTitle>
-              <CardDescription>Esta sección mostrará el historial de entradas y salidas del producto (Pendiente de implementación).</CardDescription>
+              <CardDescription>Entradas y salidas del producto. Las entradas se registran desde la pantalla principal de inventario.</CardDescription>
             </CardHeader>
             <CardContent>
-              <p className="text-muted-foreground">Funcionalidad pendiente.</p>
+                {history.length > 0 ? (
+                    <div className="rounded-md border">
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Fecha</TableHead>
+                                    <TableHead>Tipo de Movimiento</TableHead>
+                                    <TableHead className="text-right">Cantidad</TableHead>
+                                    <TableHead>ID Relacionado</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {history.map((move, index) => (
+                                    <TableRow key={index}>
+                                        <TableCell>{format(parseISO(move.date), 'dd MMM yyyy, HH:mm', { locale: es })}</TableCell>
+                                        <TableCell>
+                                            <Badge variant={move.type === 'Salida por Venta' ? 'destructive' : 'secondary'}>{move.type}</Badge>
+                                        </TableCell>
+                                        <TableCell className="text-right font-medium">
+                                            {move.type.startsWith('Salida') ? '-' : '+'}
+                                            {move.quantity} {move.unitType === 'ml' ? 'ml' : move.unitType === 'liters' ? 'L' : ''}
+                                        </TableCell>
+                                        <TableCell>
+                                            <Link 
+                                                href={move.relatedId.startsWith('SER') ? `/servicios/historial?id=${move.relatedId}` : `/pos?id=${move.relatedId}`} 
+                                                className="text-primary hover:underline flex items-center gap-1"
+                                            >
+                                                {move.relatedId} <ArrowRight className="h-3 w-3"/>
+                                            </Link>
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </div>
+                ) : (
+                    <p className="text-muted-foreground text-center py-4">No hay historial de movimientos para este producto.</p>
+                )}
             </CardContent>
           </Card>
         </TabsContent>

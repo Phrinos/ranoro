@@ -32,10 +32,10 @@ import type { InventoryItemFormValues } from "../../inventario/components/invent
 const saleItemSchema = z.object({
   inventoryItemId: z.string().min(1, "Seleccione un artículo."),
   itemName: z.string(),
-  quantity: z.coerce.number().min(1, "La cantidad debe ser al menos 1."),
+  quantity: z.coerce.number().min(0.001, "La cantidad debe ser mayor a 0."),
   unitPrice: z.coerce.number(),
   totalPrice: z.coerce.number(),
-  isService: z.boolean().optional(), // Added to know if it's a service
+  isService: z.boolean().optional(),
 });
 
 const paymentMethods: [PaymentMethod, ...PaymentMethod[]] = [
@@ -145,7 +145,7 @@ export function PosForm({ inventoryItems: parentInventoryItems, onSaleComplete, 
     setSelectedInventoryItemForDialog(null);
     setAddItemSearchTerm('');
     setAddItemQuantity(1);
-    setFilteredInventoryForDialog(currentInventoryItems.filter(item => item.isService || (item.unitType === 'units' && item.quantity > 0)).slice(0,10));
+    setFilteredInventoryForDialog(currentInventoryItems.filter(item => item.isService || item.quantity > 0).slice(0,10));
     setIsAddItemDialogOpen(true);
   };
 
@@ -206,14 +206,14 @@ export function PosForm({ inventoryItems: parentInventoryItems, onSaleComplete, 
   // --- Add Item Dialog Logic ---
   useEffect(() => {
     if (addItemSearchTerm.trim() === '') {
-        setFilteredInventoryForDialog(currentInventoryItems.filter(item => item.isService || (item.unitType === 'units' && item.quantity > 0)).slice(0,10));
+        setFilteredInventoryForDialog(currentInventoryItems.filter(item => item.isService || item.quantity > 0).slice(0,10));
         return;
     }
     const lowerSearchTerm = addItemSearchTerm.toLowerCase();
     setFilteredInventoryForDialog(
         currentInventoryItems.filter(item =>
             (item.name.toLowerCase().includes(lowerSearchTerm) ||
-            item.sku.toLowerCase().includes(lowerSearchTerm)) && (item.isService || (item.unitType === 'units' && item.quantity > 0))
+            item.sku.toLowerCase().includes(lowerSearchTerm)) && (item.isService || item.quantity > 0)
         ).slice(0, 10)
     );
   }, [addItemSearchTerm, currentInventoryItems]);
@@ -283,30 +283,20 @@ export function PosForm({ inventoryItems: parentInventoryItems, onSaleComplete, 
       if (onInventoryItemCreated) {
           onInventoryItemCreated(newInventoryItem);
       }
+      
+      toast({
+          title: "Nuevo Ítem Creado",
+          description: `${newInventoryItem.name} ha sido agregado al inventario y añadido a la venta.`,
+      });
 
-      // Check if the new item can be added to POS
-      if (!newInventoryItem.isService && newInventoryItem.unitType !== 'units') {
-          toast({
-              title: "Ítem Creado con Advertencia",
-              description: `${newInventoryItem.name} fue creado pero no puede ser añadido a una venta directa porque se mide por ${newInventoryItem.unitType}. Úselo desde una Orden de Servicio.`,
-              variant: 'default',
-              duration: 8000,
-          });
-      } else {
-          toast({
-              title: "Nuevo Ítem Creado",
-              description: `${newInventoryItem.name} ha sido agregado al inventario y añadido a la venta.`,
-          });
-
-          append({
-              inventoryItemId: newInventoryItem.id,
-              itemName: newInventoryItem.name,
-              quantity: addItemQuantity,
-              unitPrice: newInventoryItem.sellingPrice,
-              totalPrice: newInventoryItem.sellingPrice * addItemQuantity,
-              isService: newInventoryItem.isService,
-          });
-      }
+      append({
+          inventoryItemId: newInventoryItem.id,
+          itemName: newInventoryItem.name,
+          quantity: 1, // Default to 1, user can change it
+          unitPrice: newInventoryItem.sellingPrice,
+          totalPrice: newInventoryItem.sellingPrice * 1,
+          isService: newInventoryItem.isService,
+      });
 
       setIsNewInventoryItemDialogOpen(false);
       setNewItemInitialData(null);
@@ -353,8 +343,8 @@ export function PosForm({ inventoryItems: parentInventoryItems, onSaleComplete, 
                                 placeholder="Cant."
                                 {...controllerField}
                                 onChange={(e) => {
-                                    const val = parseInt(e.target.value, 10);
-                                    const newQuantity = val >= 1 ? val : 1;
+                                    const val = parseFloat(e.target.value);
+                                    const newQuantity = val > 0 ? val : 1;
                                     controllerField.onChange(newQuantity);
                                     const unitPrice = form.getValues(`items.${index}.unitPrice`) || 0;
                                     const itemDetails = currentInventoryItems.find(invItem => invItem.id === form.getValues(`items.${index}.inventoryItemId`));
@@ -509,7 +499,7 @@ export function PosForm({ inventoryItems: parentInventoryItems, onSaleComplete, 
             <DialogHeader>
                 <DialogTitle>Añadir Artículo/Servicio a la Venta</DialogTitle>
                 <DialogDescription>
-                    Busque por nombre o SKU. Los artículos vendidos por mililitro o litro solo pueden agregarse en la pantalla de Servicios.
+                    Busque por nombre o SKU. Puede agregar artículos medidos en unidades, ml o litros.
                 </DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-4">
@@ -539,7 +529,7 @@ export function PosForm({ inventoryItems: parentInventoryItems, onSaleComplete, 
                                     <div>
                                         <p className="font-medium">{item.name} <span className="text-xs text-muted-foreground">({item.sku})</span></p>
                                         <p className="text-xs text-muted-foreground">
-                                            {item.isService ? 'Servicio' : `Stock: ${item.quantity}`} | Venta: {formatCurrency(item.sellingPrice)}
+                                            {item.isService ? 'Servicio' : `Stock: ${item.quantity.toLocaleString('es-ES')}${item.unitType === 'ml' ? ' ml' : item.unitType === 'liters' ? ' L' : ''}`} | Venta: {formatCurrency(item.sellingPrice)}
                                         </p>
                                     </div>
                                 </Button>
@@ -562,13 +552,13 @@ export function PosForm({ inventoryItems: parentInventoryItems, onSaleComplete, 
                     </div>
                 )}
                 <div className="space-y-2">
-                    <Label htmlFor="item-quantity">Cantidad</Label>
+                    <Label htmlFor="item-quantity">Cantidad ({selectedInventoryItemForDialog?.unitType || 'unidades'})</Label>
                     <Input
                         id="item-quantity"
                         type="number"
                         min="1"
                         value={addItemQuantity}
-                        onChange={(e) => setAddItemQuantity(parseInt(e.target.value,10) || 1 )}
+                        onChange={(e) => setAddItemQuantity(parseFloat(e.target.value) || 1 )}
                     />
                 </div>
             </div>
