@@ -122,23 +122,41 @@ export function PosForm({ inventoryItems: parentInventoryItems, onSaleComplete, 
     control: form.control,
     name: "items",
   });
-
-  const currentItems = form.watch("items");
+  
+  const watchedItems = form.watch("items");
   const selectedPaymentMethod = form.watch("paymentMethod");
 
   useEffect(() => {
     setCurrentInventoryItems(parentInventoryItems);
   }, [parentInventoryItems]);
 
+  // Effect to react to changes in items (e.g., quantity) and update totals
   useEffect(() => {
-    const currentTotalAmount = currentItems.reduce((acc, item) => acc + (item.totalPrice || 0), 0);
-    const currentSubTotal = currentTotalAmount / (1 + IVA_RATE);
-    const currentTax = currentTotalAmount - currentSubTotal;
+    let newTotalAmount = 0;
+    watchedItems.forEach((item, index) => {
+      // Coerce quantity to a number, handling both '.' and ','
+      const quantityStr = String(item.quantity || 0);
+      const quantity = parseFloat(quantityStr.replace(',', '.'));
+      
+      if (isNaN(quantity)) return; // Skip if quantity is not a valid number
+      
+      const unitPrice = item.unitPrice || 0;
+      const newTotal = quantity * unitPrice;
+      newTotalAmount += newTotal;
 
-    setSubTotalState(currentSubTotal);
-    setTaxState(currentTax);
-    setTotalState(currentTotalAmount);
-  }, [currentItems, IVA_RATE]);
+      // Only update if the total price for the item has changed to avoid infinite loops
+      if (item.totalPrice !== newTotal) {
+          form.setValue(`items.${index}.totalPrice`, newTotal, { shouldDirty: true });
+      }
+    });
+
+    const newSubTotal = newTotalAmount / (1 + IVA_RATE);
+    const newTax = newTotalAmount - newSubTotal;
+    
+    setSubTotalState(newSubTotal);
+    setTaxState(newTax);
+    setTotalState(newTotalAmount);
+  }, [watchedItems, IVA_RATE, form]);
 
 
   const handleOpenAddItemDialog = () => {
@@ -152,7 +170,7 @@ export function PosForm({ inventoryItems: parentInventoryItems, onSaleComplete, 
   const onSubmit = async (values: POSFormValues) => {
     const newSaleId = `SALE-${Date.now().toString(36).toUpperCase()}`;
 
-    const newSaleTotalAmount = values.items.reduce((sum, item) => sum + item.totalPrice, 0);
+    const newSaleTotalAmount = values.items.reduce((sum, item) => sum + (item.totalPrice || 0), 0);
     const newSaleSubTotal = newSaleTotalAmount / (1 + IVA_RATE);
     const newSaleTax = newSaleTotalAmount - newSaleSubTotal;
 
@@ -204,39 +222,6 @@ export function PosForm({ inventoryItems: parentInventoryItems, onSaleComplete, 
     return `$${amount.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   };
   
-  const handleQuantityChange = (index: number, newQuantityStr: string) => {
-    const sanitizedQuantityStr = newQuantityStr.replace(',', '.');
-    const newQuantity = parseFloat(sanitizedQuantityStr);
-  
-    if (isNaN(newQuantity) || newQuantity < 0) {
-      form.setValue(`items.${index}.quantity`, newQuantityStr as any);
-      return;
-    }
-  
-    const itemInSale = form.getValues(`items.${index}`);
-    const itemDetailsFromInv = currentInventoryItems.find(
-      (invItem) => invItem.id === itemInSale.inventoryItemId
-    );
-  
-    if (itemDetailsFromInv && !itemDetailsFromInv.isService && newQuantity > itemDetailsFromInv.quantity) {
-      toast({
-        title: 'Stock Insuficiente',
-        description: `Solo hay ${itemDetailsFromInv.quantity} ${
-          itemDetailsFromInv.unitType || 'unidades'
-        } de ${itemDetailsFromInv.name}.`,
-        variant: 'destructive',
-        duration: 3000,
-      });
-      return;
-    }
-  
-    const unitPrice = itemInSale.unitPrice || 0;
-    update(index, {
-      ...itemInSale,
-      quantity: newQuantity,
-      totalPrice: unitPrice * newQuantity,
-    });
-  };
 
   // --- Add Item Dialog Logic ---
   useEffect(() => {
@@ -377,11 +362,29 @@ export function PosForm({ inventoryItems: parentInventoryItems, onSaleComplete, 
                                             step="any"
                                             min="0.001"
                                             {...quantityField}
-                                            onChange={(e) => {
-                                                quantityField.onChange(e);
-                                                handleQuantityChange(index, e.target.value);
-                                            }}
                                             className="w-full text-center font-medium mt-1 h-8"
+                                            onBlur={(e) => {
+                                                const itemInSale = form.getValues(`items.${index}`);
+                                                const itemDetailsFromInv = currentInventoryItems.find(
+                                                  (invItem) => invItem.id === itemInSale.inventoryItemId
+                                                );
+                                                const value = e.target.value;
+                                                const quantity = value ? parseFloat(value.replace(',', '.')) : 0;
+                                
+                                                if (isNaN(quantity)) return;
+                                
+                                                if (itemDetailsFromInv && !itemDetailsFromInv.isService && quantity > itemDetailsFromInv.quantity) {
+                                                    toast({
+                                                        title: 'Stock Insuficiente',
+                                                        description: `Solo hay ${itemDetailsFromInv.quantity} ${
+                                                          itemDetailsFromInv.unitType || 'unidades'
+                                                        } de ${itemDetailsFromInv.name}. Se ajustará a la cantidad máxima disponible.`,
+                                                        variant: 'destructive',
+                                                        duration: 4000,
+                                                    });
+                                                    form.setValue(`items.${index}.quantity`, itemDetailsFromInv.quantity);
+                                                }
+                                            }}
                                         />
                                     )}
                                 />
@@ -612,3 +615,5 @@ export function PosForm({ inventoryItems: parentInventoryItems, onSaleComplete, 
     </>
   );
 }
+
+    
