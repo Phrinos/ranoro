@@ -291,14 +291,15 @@ export const calculateSaleProfit = (sale: SaleReceipt, inventory: InventoryItem[
   let totalProfit = 0;
 
   for (const saleItem of sale.items) {
-    // Ensure all values are valid numbers before calculation
     const inventoryItem = inventory.find(inv => inv && inv.id === saleItem.inventoryItemId);
+
     const costPrice = (inventoryItem && !inventoryItem.isService) ? Number(inventoryItem.unitPrice || 0) : 0;
     const sellingPriceWithTax = Number(saleItem.unitPrice || 0);
-    const quantitySold = Number(saleItem.quantity || 0);
+    
+    const quantitySoldStr = (saleItem.quantity || '0').toString().replace(',', '.');
+    const quantitySold = parseFloat(quantitySoldStr);
 
-    // Skip if any essential value is not a valid number or if quantity is zero
-    if (isNaN(costPrice) || isNaN(sellingPriceWithTax) || isNaN(quantitySold) || quantitySold === 0) {
+    if (isNaN(costPrice) || isNaN(sellingPriceWithTax) || isNaN(quantitySold) || quantitySold <= 0) {
       console.warn(`Skipping item in profit calculation due to invalid data. Sale ID: ${sale.id}, Item: ${saleItem.itemName || saleItem.inventoryItemId}`);
       continue;
     }
