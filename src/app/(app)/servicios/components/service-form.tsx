@@ -19,8 +19,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { Card, CardContent, CardHeader, CardTitle} from "@/components/ui/card";
-import { CalendarIcon, PlusCircle, Search, Trash2, AlertCircle, Car as CarIcon, Clock, DollarSign, PackagePlus, BrainCircuit, Loader2, Printer, Plus, Minus } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription} from "@/components/ui/card";
+import { CalendarIcon, PlusCircle, Search, Trash2, AlertCircle, Car as CarIcon, Clock, DollarSign, PackagePlus, BrainCircuit, Loader2, Printer, Plus, Minus, FileText } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format, parseISO, setHours, setMinutes, isValid, startOfDay } from "date-fns";
 import { es } from 'date-fns/locale';
@@ -30,7 +30,7 @@ import { useToast } from "@/hooks/use-toast";
 import { VehicleDialog } from "../../vehiculos/components/vehicle-dialog";
 import type { VehicleFormValues } from "../../vehiculos/components/vehicle-form";
 import { placeholderVehicles as defaultPlaceholderVehicles, placeholderInventory, placeholderCategories, placeholderSuppliers, placeholderQuotes, placeholderServiceRecords as defaultServiceRecords, persistToFirestore, AUTH_USER_LOCALSTORAGE_KEY } from "@/lib/placeholder-data";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription as DialogDesc, DialogFooter } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -40,6 +40,9 @@ import { InventoryItemDialog } from "../../inventario/components/inventory-item-
 import type { InventoryItemFormValues } from "../../inventario/components/inventory-item-form";
 import { suggestPrice, type SuggestPriceInput } from '@/ai/flows/price-suggestion-flow';
 import { suggestQuote, type QuoteSuggestionInput } from '@/ai/flows/quote-suggestion-flow';
+import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
+import { ServiceSheetContent } from './service-sheet-content';
+import { Checkbox } from "@/components/ui/checkbox";
 
 
 const supplySchema = z.object({
@@ -66,6 +69,9 @@ const serviceFormSchemaBase = z.object({
   status: z.enum(["Agendado", "Reparando", "Completado", "Cancelado"]).optional(),
   serviceType: z.enum(["Servicio General", "Cambio de Aceite", "Pintura"]).optional(),
   deliveryDateTime: z.date().optional(),
+  vehicleConditions: z.string().optional(),
+  fuelLevel: z.string().optional(),
+  customerItems: z.array(z.string()).optional(),
 });
 
 
@@ -98,13 +104,20 @@ const generateTimeSlots = () => {
             slots.push({ value: `${hour}:30`, label: `${hour}:30 PM`});
         }
          else {
-            slots.push({ value: `${hour}:00`, label: `${String(hour).padStart(2, '0')}:00 ${hour < 12 ? 'AM' : 'PM'}`});
-            slots.push({ value: `${hour}:30`, label: `${String(hour).padStart(2, '0')}:30 ${hour < 12 ? 'AM' : 'PM'}`});
+            slots.push({ value: `${String(hour).padStart(2, '0')}:00`, label: `${String(hour).padStart(2, '0')}:00 ${hour < 12 ? 'AM' : 'PM'}`});
+            slots.push({ value: `${String(hour).padStart(2, '0')}:30`, label: `${String(hour).padStart(2, '0')}:30 ${hour < 12 ? 'AM' : 'PM'}`});
         }
     }
     return slots;
 };
 const timeSlots = generateTimeSlots();
+
+const customerItemsChecklist = [
+  { id: 'keys', label: 'Llaves' },
+  { id: 'stereo', label: 'Estéreo' },
+  { id: 'spareTire', label: 'Llanta de refacción' },
+  { id: 'tools', label: 'Herramientas (gato, etc.)' },
+];
 
 
 export function ServiceForm({
@@ -136,7 +149,7 @@ export function ServiceForm({
   const [newVehicleInitialData, setNewVehicleInitialData] = useState<Partial<VehicleFormValues> | null>(null);
   const [vehicleSearchResults, setVehicleSearchResults] = useState<Vehicle[]>([]);
 
-
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [currentInventoryItems, setCurrentInventoryItems] = useState<InventoryItem[]>(inventoryItemsProp);
 
   const [isAddSupplyDialogOpen, setIsAddSupplyDialogOpen] = useState(false);
@@ -149,6 +162,9 @@ export function ServiceForm({
   const [newSupplyInitialData, setNewSupplyInitialData] = useState<Partial<InventoryItemFormValues> | null>(null);
   const [isSuggestingPrice, setIsSuggestingPrice] = useState(false);
   const [isGeneratingQuote, setIsGeneratingQuote] = useState(false);
+  
+  const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const [serviceForSheet, setServiceForSheet] = useState<ServiceRecord | null>(null);
 
 
   const form = useForm<ServiceFormValues>({
@@ -168,6 +184,9 @@ export function ServiceForm({
         status: mode === 'service' ? ((initialData as ServiceRecord)?.status || 'Agendado') : undefined,
         serviceType: mode === 'service' ? ((initialData as ServiceRecord)?.serviceType || 'Servicio General') : undefined,
         deliveryDateTime: undefined,
+        vehicleConditions: (initialData as ServiceRecord)?.vehicleConditions || "",
+        fuelLevel: (initialData as ServiceRecord)?.fuelLevel || undefined,
+        customerItems: (initialData as ServiceRecord)?.customerItems || [],
     }
   });
 
@@ -175,6 +194,15 @@ export function ServiceForm({
     control: form.control,
     name: "suppliesUsed",
   });
+  
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+        const authUserString = localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY);
+        if (authUserString) {
+            setCurrentUser(JSON.parse(authUserString));
+        }
+    }
+  }, []);
 
   // Main effect to set form values from initialData
   useEffect(() => {
@@ -231,6 +259,9 @@ export function ServiceForm({
             totalServicePrice: (data as ServiceRecord)?.totalCost ?? (data as QuoteRecord)?.estimatedTotalCost ?? undefined,
             status: mode === 'service' ? ((data as ServiceRecord)?.status || 'Agendado') : undefined,
             serviceType: mode === 'service' ? ((data as ServiceRecord)?.serviceType || 'Servicio General') : undefined,
+            vehicleConditions: (data as ServiceRecord)?.vehicleConditions || "",
+            fuelLevel: (data as ServiceRecord)?.fuelLevel || undefined,
+            customerItems: (data as ServiceRecord)?.customerItems || [],
         };
 
         // Reset all form fields except the array
@@ -242,20 +273,12 @@ export function ServiceForm({
       // Set default for new forms
       form.setValue('serviceDate', setHours(setMinutes(new Date(), 30), 8));
       if (mode === 'quote') {
-          if (typeof window !== "undefined") {
-              const authUserString = localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY);
-              if (authUserString) {
-                  try {
-                      const authUser: User = JSON.parse(authUserString);
-                      form.setValue('technicianId', authUser.id);
-                  } catch (e) {
-                      console.error("Failed to parse authUser for defaulting technician:", e);
-                  }
-              }
+          if (currentUser) {
+            form.setValue('technicianId', currentUser.id);
           }
       }
     }
-  }, [initialDataService, initialDataQuote, mode, localVehicles, currentInventoryItems, form, replace]);
+  }, [initialDataService, initialDataQuote, mode, localVehicles, currentInventoryItems, form, replace, currentUser]);
 
 
   useEffect(() => {
@@ -394,6 +417,11 @@ export function ServiceForm({
         taxAmount: finalTaxAmount,
         totalSuppliesCost: totalSuppliesWorkshopCost,
         serviceProfit: finalTotalCost - totalSuppliesWorkshopCost,
+        notes: values.notes,
+        vehicleConditions: values.vehicleConditions,
+        fuelLevel: values.fuelLevel,
+        customerItems: values.customerItems,
+        serviceAdvisorName: currentUser?.name || 'N/A',
       };
       await onSubmit(serviceData);
     } else { // mode === 'quote'
@@ -423,6 +451,28 @@ export function ServiceForm({
       await onSubmit(quoteData);
     }
   };
+  
+  const handlePrintSheet = () => {
+    const formValues = form.getValues();
+    const serviceDataForSheet: ServiceRecord = {
+      id: formValues.id || 'N/A',
+      vehicleId: formValues.vehicleId || 'N/A',
+      serviceDate: formValues.serviceDate ? formValues.serviceDate.toISOString() : new Date().toISOString(),
+      description: formValues.description,
+      technicianId: formValues.technicianId || 'N/A',
+      suppliesUsed: formValues.suppliesUsed || [],
+      totalCost: formValues.totalServicePrice || 0,
+      status: formValues.status || 'Agendado',
+      mileage: formValues.mileage,
+      vehicleConditions: formValues.vehicleConditions,
+      fuelLevel: formValues.fuelLevel,
+      customerItems: formValues.customerItems,
+      serviceAdvisorName: currentUser?.name || 'N/A',
+    };
+    setServiceForSheet(serviceDataForSheet);
+    setIsSheetOpen(true);
+  };
+
 
   const handleTimeChange = (timeString: string, dateField: "serviceDate" | "deliveryDateTime") => {
     const [hours, minutes] = timeString.split(':').map(Number);
@@ -1031,67 +1081,83 @@ export function ServiceForm({
                         </FormItem>
                     )}
                 />
+            </CardContent>
+        </Card>
+
+        <Card>
+            <CardHeader>
+                <CardTitle className="text-lg">Recepción de Unidad</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
                 <FormField
                     control={form.control}
-                    name="notes"
+                    name="vehicleConditions"
                     render={({ field }) => (
                         <FormItem>
-                        <FormLabel>Notas Adicionales (Opcional)</FormLabel>
-                        <FormControl>
-                            <Textarea placeholder={mode === 'quote' ? "Ej: Validez de la cotización, condiciones..." : "Notas internas o para el cliente..."} {...field} disabled={isReadOnly} />
-                        </FormControl>
-                        <FormMessage />
+                            <FormLabel>Condiciones del Vehículo (al recibir)</FormLabel>
+                            <FormControl>
+                                <Textarea placeholder="Ej: Rayón en puerta del conductor, llanta trasera derecha baja, etc." {...field} disabled={isReadOnly} />
+                            </FormControl>
+                            <FormMessage />
                         </FormItem>
                     )}
                 />
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 items-end">
-                    
-                      <FormField
-                          control={form.control}
-                          name="technicianId"
-                          render={({ field }) => (
-                            <FormItem className="md:col-span-1">
-                              <FormLabel className="text-lg">{technicianLabelText}</FormLabel>
-                              <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isReadOnly}>
-                                <FormControl>
-                                  <SelectTrigger>
-                                    <SelectValue placeholder="Seleccione un técnico" />
-                                  </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                  {technicians.map((technician) => (
-                                    <SelectItem key={technician.id} value={technician.id}>
-                                      {technician.name}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                    
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <FormField
                         control={form.control}
-                        name="totalServicePrice"
+                        name="fuelLevel"
                         render={({ field }) => (
-                            <FormItem className="md:col-span-1">
-                                <div className="flex justify-between items-center">
-                                    <FormLabel className="text-lg">{totalCostLabelText}</FormLabel>
-                                    {!isReadOnly && (
-                                        <Button type="button" size="sm" variant="outline" onClick={handleSuggestPrice} disabled={isSuggestingPrice}>
-                                            {isSuggestingPrice ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <BrainCircuit className="mr-2 h-4 w-4" />}
-                                            Sugerir con IA
-                                        </Button>
-                                    )}
+                            <FormItem>
+                                <FormLabel>Nivel de Combustible</FormLabel>
+                                <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isReadOnly}>
+                                    <FormControl>
+                                        <SelectTrigger><SelectValue placeholder="Seleccionar nivel..." /></SelectTrigger>
+                                    </FormControl>
+                                    <SelectContent>
+                                        <SelectItem value="Vacío">Vacío</SelectItem>
+                                        <SelectItem value="1/4">1/4</SelectItem>
+                                        <SelectItem value="1/2">1/2</SelectItem>
+                                        <SelectItem value="3/4">3/4</SelectItem>
+                                        <SelectItem value="Lleno">Lleno</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                    <FormField
+                        control={form.control}
+                        name="customerItems"
+                        render={() => (
+                            <FormItem>
+                                <FormLabel>Inventario de Pertenencias</FormLabel>
+                                <div className="flex flex-wrap gap-x-4 gap-y-2 items-center">
+                                {customerItemsChecklist.map((item) => (
+                                    <FormField
+                                        key={item.id}
+                                        control={form.control}
+                                        name="customerItems"
+                                        render={({ field }) => (
+                                            <FormItem className="flex flex-row items-start space-x-2 space-y-0">
+                                                <FormControl>
+                                                    <Checkbox
+                                                        checked={field.value?.includes(item.id)}
+                                                        onCheckedChange={(checked) => {
+                                                            return checked
+                                                            ? field.onChange([...(field.value || []), item.id])
+                                                            : field.onChange(field.value?.filter((value) => value !== item.id));
+                                                        }}
+                                                        disabled={isReadOnly}
+                                                    />
+                                                </FormControl>
+                                                <FormLabel className="text-sm font-normal">
+                                                    {item.label}
+                                                </FormLabel>
+                                            </FormItem>
+                                        )}
+                                    />
+                                ))}
                                 </div>
-                                <FormControl>
-                                  <div className="relative">
-                                    <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                    <Input type="number" step="0.01" placeholder="1740.00" {...field} disabled={isReadOnly || isSuggestingPrice} className="text-lg font-medium pl-8" value={field.value ?? ''} />
-                                  </div>
-                                </FormControl>
                                 <FormMessage />
                             </FormItem>
                         )}
@@ -1200,28 +1266,94 @@ export function ServiceForm({
             <CardHeader>
                 <CardTitle className="text-lg flex items-center gap-2">
                     <DollarSign className="h-5 w-5 text-green-600"/>
-                    Resumen Financiero
+                    Resumen Financiero y Notas
                 </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-1 text-lg">
-                <div className="flex justify-between pt-1">
-                    <span>{totalCostLabelText}:</span>
-                    <span className="font-semibold text-blue-600 dark:text-blue-400">{formatCurrency(watchedTotalServicePrice)}</span>
+            <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
+                    <div className="space-y-1 text-lg">
+                        <div className="flex justify-between pt-1">
+                            <span>{totalCostLabelText}:</span>
+                            <span className="font-semibold text-blue-600 dark:text-blue-400">{formatCurrency(watchedTotalServicePrice)}</span>
+                        </div>
+                        <div className="flex justify-between">
+                            <span>(-) Costo Insumos (Taller):</span>
+                            <span className="font-medium text-red-600 dark:text-red-400">
+                                {formatCurrency(totalSuppliesWorkshopCost)}
+                            </span>
+                        </div>
+                        <hr className="my-2 border-dashed"/>
+                        <div className="flex justify-between font-bold text-green-700 dark:text-green-400">
+                            <span>(=) Ganancia Estimada del {mode === 'quote' ? 'Trabajo Cotizado' : 'Servicio'}:</span>
+                            <span>{formatCurrency(serviceProfit)}</span>
+                        </div>
+                    </div>
+                     <FormField
+                        control={form.control}
+                        name="notes"
+                        render={({ field }) => (
+                            <FormItem>
+                            <FormLabel>Notas Adicionales (Opcional)</FormLabel>
+                            <FormControl>
+                                <Textarea placeholder={mode === 'quote' ? "Ej: Validez de la cotización, condiciones..." : "Notas internas o para el cliente..."} {...field} disabled={isReadOnly} className="min-h-[100px]"/>
+                            </FormControl>
+                            <FormMessage />
+                            </FormItem>
+                        )}
+                    />
                 </div>
-                <div className="flex justify-between">
-                    <span>(-) Costo Insumos (Taller):</span>
-                    <span className="font-medium text-red-600 dark:text-red-400">
-                         {formatCurrency(totalSuppliesWorkshopCost)}
-                    </span>
-                </div>
-                <hr className="my-2 border-dashed"/>
-                <div className="flex justify-between font-bold text-green-700 dark:text-green-400">
-                    <span>(=) Ganancia Estimada del {mode === 'quote' ? 'Trabajo Cotizado' : 'Servicio'}:</span>
-                    <span>{formatCurrency(serviceProfit)}</span>
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 items-end">
+                    <FormField
+                          control={form.control}
+                          name="technicianId"
+                          render={({ field }) => (
+                            <FormItem className="md:col-span-1">
+                              <FormLabel className="text-lg">{technicianLabelText}</FormLabel>
+                              <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isReadOnly}>
+                                <FormControl>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Seleccione un técnico" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  {technicians.map((technician) => (
+                                    <SelectItem key={technician.id} value={technician.id}>
+                                      {technician.name}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                    <FormField
+                        control={form.control}
+                        name="totalServicePrice"
+                        render={({ field }) => (
+                            <FormItem className="md:col-span-1">
+                                <div className="flex justify-between items-center">
+                                    <FormLabel className="text-lg">{totalCostLabelText}</FormLabel>
+                                    {!isReadOnly && (
+                                        <Button type="button" size="sm" variant="outline" onClick={handleSuggestPrice} disabled={isSuggestingPrice}>
+                                            {isSuggestingPrice ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <BrainCircuit className="mr-2 h-4 w-4" />}
+                                            Sugerir con IA
+                                        </Button>
+                                    )}
+                                </div>
+                                <FormControl>
+                                  <div className="relative">
+                                    <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                    <Input type="number" step="0.01" placeholder="1740.00" {...field} disabled={isReadOnly || isSuggestingPrice} className="text-lg font-medium pl-8" value={field.value ?? ''} />
+                                  </div>
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
                 </div>
             </CardContent>
         </Card>
-
 
         <div className="flex justify-end gap-2 pt-4">
           {isReadOnly ? (
@@ -1230,6 +1362,12 @@ export function ServiceForm({
             </Button>
           ) : (
             <>
+              {mode === 'service' && form.getValues('status') !== 'Agendado' && (
+                <Button type="button" variant="secondary" onClick={handlePrintSheet}>
+                    <FileText className="mr-2 h-4 w-4" />
+                    Hoja de Servicio
+                </Button>
+              )}
               {onDelete && mode === 'quote' && initialDataQuote?.id && (
                 <div className="mr-auto">
                   <AlertDialog>
@@ -1279,7 +1417,7 @@ export function ServiceForm({
         <DialogContent className="sm:max-w-lg">
             <DialogHeader>
                 <DialogTitle>Añadir Insumo/Servicio al {mode === 'quote' ? 'Presupuesto' : 'Servicio'}</DialogTitle>
-                <DialogDescription>Busque por nombre o SKU. Si no existe, puede crearlo.</DialogDescription>
+                <DialogDesc>Busque por nombre o SKU. Si no existe, puede crearlo.</DialogDesc>
             </DialogHeader>
             <div className="space-y-4 py-4">
                 <div className="relative">
@@ -1383,6 +1521,23 @@ export function ServiceForm({
         categories={placeholderCategories}
         suppliers={placeholderSuppliers}
       />
+    )}
+
+    {serviceForSheet && selectedVehicle && (
+        <PrintTicketDialog
+            open={isSheetOpen}
+            onOpenChange={setIsSheetOpen}
+            title="Hoja de Servicio"
+            onDialogClose={() => setServiceForSheet(null)}
+            dialogContentClassName="printable-quote-dialog"
+            footerActions={
+                <Button onClick={() => window.print()}>
+                    <Printer className="mr-2 h-4 w-4" /> Imprimir Hoja
+                </Button>
+            }
+        >
+            <ServiceSheetContent service={serviceForSheet} vehicle={selectedVehicle} />
+        </PrintTicketDialog>
     )}
     </>
   );
