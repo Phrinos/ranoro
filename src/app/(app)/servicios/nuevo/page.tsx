@@ -36,8 +36,7 @@ export default function NuevoServicioPage() {
   }, [dialogStep, router]);
 
   const handleSaveNewService = async (data: ServiceRecord | QuoteRecord) => {
-    // Since this page is for "Nuevo Servicio", we expect ServiceRecord
-    if (!('status' in data)) { // 'status' is a property unique to ServiceRecord
+    if (!('status' in data)) {
       toast({
         title: "Error de Tipo",
         description: "Se esperaba un registro de servicio.",
@@ -45,14 +44,11 @@ export default function NuevoServicioPage() {
       });
       return;
     }
-    const serviceData = data as ServiceRecord;
-
-    const newService: ServiceRecord = {
-      ...serviceData,
-      id: `SER_${Date.now().toString(36)}`,
-    };
+    const newService = data as ServiceRecord;
+    
+    // The form now handles public doc saving. We just update local state.
     placeholderServiceRecords.push(newService); 
-    await persistToFirestore();
+    await persistToFirestore(['serviceRecords']);
     
     toast({
       title: "Servicio Creado",

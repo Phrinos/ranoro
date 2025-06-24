@@ -171,34 +171,14 @@ export default function HistorialCotizacionesPage() {
       const editedQuote = data as QuoteRecord;
       const quoteIndex = placeholderQuotes.findIndex(q => q.id === editedQuote.id);
       if (quoteIndex !== -1) {
-          if (!editedQuote.publicId) {
-            editedQuote.publicId = `cot_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 9)}`;
-          }
-
-          // Ensure workshopInfo is embedded
-          editedQuote.workshopInfo = workshopInfo as WorkshopInfo;
-          
+          // The form now handles public doc saving, so we just update the main data store
           placeholderQuotes[quoteIndex] = editedQuote;
           setAllQuotes([...placeholderQuotes]);
           await persistToFirestore(['quotes']);
-
-          const vehicleForPublicQuote = vehicles.find(v => v.id === editedQuote.vehicleId);
-          if (vehicleForPublicQuote && db) { // Add check for db
-              const publicQuoteData = {
-                  ...editedQuote,
-                  vehicle: { ...vehicleForPublicQuote },
-              };
-              try {
-                  await setDoc(doc(db, "publicQuotes", editedQuote.publicId!), publicQuoteData);
-              } catch (e) {
-                  console.error("Failed to update public quote:", e);
-              }
-          }
-
           toast({ title: "Cotización Actualizada", description: `La cotización ${editedQuote.id} se actualizó correctamente.` });
       }
       setIsEditQuoteDialogOpen(false);
-  }, [toast, vehicles, workshopInfo]);
+  }, [toast]);
   
   const handleSaveServiceFromQuote = useCallback(async (data: ServiceRecord | QuoteRecord) => {
       const newService = data as ServiceRecord;
@@ -242,10 +222,10 @@ export default function HistorialCotizacionesPage() {
   const handleSendWhatsApp = useCallback(async (quoteForAction: QuoteRecord | null) => {
     if (!quoteForAction) return;
 
-    if (!db) {
+    if (!quoteForAction.publicId) {
       toast({
-        title: 'Modo Demo',
-        description: 'La función de compartir no está disponible sin conexión a la base de datos.',
+        title: 'Enlace no disponible',
+        description: 'Esta cotización aún no se ha guardado en la nube. Guarda los cambios primero.',
         variant: 'default',
       });
       return;
@@ -256,40 +236,9 @@ export default function HistorialCotizacionesPage() {
         toast({ title: "Faltan Datos", description: "No se encontró el vehículo asociado.", variant: "destructive" });
         return;
     }
-
-    // Ensure public ID exists and public document is created/updated
-    if (!quoteForAction.publicId) {
-      quoteForAction.publicId = `cot_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 9)}`;
-    }
-    
-    quoteForAction.workshopInfo = workshopInfo as WorkshopInfo;
-
-    const quoteIndex = placeholderQuotes.findIndex(q => q.id === quoteForAction.id);
-    if (quoteIndex !== -1) {
-        placeholderQuotes[quoteIndex] = quoteForAction;
-        setAllQuotes([...placeholderQuotes]);
-
-        if (db) {
-            const publicQuoteData = {
-                ...quoteForAction,
-                vehicle: { ...vehicleForAction },
-            };
-            try {
-                await setDoc(doc(db, "publicQuotes", quoteForAction.publicId), publicQuoteData);
-                 toast({
-                    title: "Enlace Público Creado/Actualizado",
-                    description: "El enlace para esta cotización ya está activo.",
-                    duration: 4000,
-                });
-            } catch (e) {
-                console.error("Failed to create/update public quote on-the-fly:", e);
-            }
-        }
-        await persistToFirestore(['quotes']);
-    }
     
     const shareUrl = `${window.location.origin}/c/${quoteForAction.publicId}`;
-    const workshopName = (workshopInfo as WorkshopInfo)?.name || 'RANORO';
+    const workshopName = (quoteForAction.workshopInfo as WorkshopInfo)?.name || 'RANORO';
     const message = `Hola ${vehicleForAction.ownerName || 'Cliente'}, Gracias por confiar en ${workshopName}. Le enviamos su cotización de servicio ${quoteForAction.id} de nuestro taller para su vehículo ${vehicleForAction.make} ${vehicleForAction.model} ${vehicleForAction.year}. En este link encontrara el PDF de la cotizacion: ${shareUrl}`;
 
     navigator.clipboard.writeText(message).then(() => {
@@ -306,7 +255,7 @@ export default function HistorialCotizacionesPage() {
             variant: "destructive",
         });
     });
-  }, [toast, vehicles, workshopInfo]);
+  }, [toast, vehicles]);
 
   return (
     <>

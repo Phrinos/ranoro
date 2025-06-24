@@ -27,8 +27,6 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { MessageSquare, Download } from "lucide-react";
 import html2pdf from "html2pdf.js";
-import { doc, setDoc } from 'firebase/firestore';
-import { db } from '@root/lib/firebaseClient.js';
 
 
 /* --------------------------------------------------
@@ -57,15 +55,6 @@ export default function NuevaCotizacionPage() {
     useState<Vehicle | null>(null);
   const quoteContentRef = useRef<HTMLDivElement>(null);
 
-  /* ---------- Info del taller (localStorage) ---------- */
-  const [workshopInfo, setWorkshopInfo] = useState<WorkshopInfo | {}>({});
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const stored = localStorage.getItem("workshopTicketInfo");
-      if (stored) setWorkshopInfo(JSON.parse(stored));
-    }
-  }, []);
-
   /* ---------- Redirección al cerrar ---------- */
   useEffect(() => {
     if (dialogStep === "closed") {
@@ -76,7 +65,7 @@ export default function NuevaCotizacionPage() {
   /* --------------------------------------------------
      1. Crear cotización y pasar a vista previa
   -------------------------------------------------- */
-  const handleGenerateQuotePdf = async (data: ServiceRecord | QuoteRecord) => {
+  const handleQuoteCreated = async (data: ServiceRecord | QuoteRecord) => {
     if (!("estimatedTotalCost" in data)) {
       toast({
         title: "Error de tipo",
@@ -85,71 +74,20 @@ export default function NuevaCotizacionPage() {
       });
       return;
     }
-
-    // Usuario actual para preparedBy
-    let authUserName = "Usuario del Sistema";
-    let authUserId = "system_user";
-    if (typeof window !== "undefined") {
-      const authUserString = localStorage.getItem("authUser");
-      if (authUserString) {
-        try {
-          const authUser: User = JSON.parse(authUserString);
-          authUserName = authUser.name;
-          authUserId = authUser.id;
-        } catch (e) {
-          console.error("Failed to parse authUser:", e);
-        }
-      }
-    }
     
-    const publicId = `cot_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 9)}`;
+    const newQuote = data as QuoteRecord;
 
-    const newQuote: QuoteRecord = {
-      ...(data as QuoteRecord),
-      id: `COT_${Date.now().toString(36)}`,
-      publicId: publicId,
-      preparedByTechnicianId: authUserId,
-      preparedByTechnicianName: authUserName,
-      workshopInfo: workshopInfo as WorkshopInfo,
-    };
-
+    // The form now handles saving the public document.
+    // This function just handles local data and UI transitions.
     placeholderQuotes.unshift(newQuote);
     await persistToFirestore(['quotes']);
-
-    if (!db) {
-        toast({
-            title: "Modo Demo: Enlace no disponible",
-            description: "La cotización se guardó localmente, pero el enlace público no funcionará sin conexión a la base de datos.",
-            variant: "default",
-        });
-    } else {
-        // Save to public collection for sharing
-        const vehicleForPublicQuote = vehicles.find((v) => v.id === newQuote.vehicleId);
-        if (vehicleForPublicQuote) {
-            const publicQuoteData = {
-                ...newQuote,
-                vehicle: { ...vehicleForPublicQuote },
-            };
-            try {
-                await setDoc(doc(db, "publicQuotes", newQuote.publicId!), publicQuoteData);
-            } catch (e) {
-                console.error("Failed to save public quote:", e);
-                toast({
-                    title: "Error de Sincronización Pública",
-                    description: "La cotización se guardó, pero el enlace público podría no funcionar.",
-                    variant: "destructive",
-                });
-            }
-        }
-    }
-
 
     setCurrentQuoteForPdf(newQuote);
     setCurrentVehicleForPdf(
       vehicles.find((v) => v.id === newQuote.vehicleId) || null
     );
     toast({
-      title: "Cotización lista",
+      title: "Cotización Creada",
       description: `La cotización ${newQuote.id} está lista para generar el PDF.`,
     });
     setDialogStep("print_preview");
@@ -186,11 +124,16 @@ export default function NuevaCotizacionPage() {
       });
       return;
     }
+    
+    if (!currentQuoteForPdf.publicId) {
+        toast({ title: "Enlace no disponible", description: "La cotización aún no tiene un enlace público para compartir.", variant: "default" });
+        return;
+    }
 
     const shareUrl = `${window.location.origin}/c/${currentQuoteForPdf.publicId}`;
     const { ownerName = "Cliente", make, model, year } = currentVehicleForPdf;
 
-    const workshopName = (workshopInfo as WorkshopInfo)?.name || 'RANORO';
+    const workshopName = (currentQuoteForPdf.workshopInfo as WorkshopInfo)?.name || 'RANORO';
     const message = `Hola ${ownerName}, gracias por confiar en ${workshopName}. Le enviamos su cotización ${currentQuoteForPdf.id} para su ${make} ${model} ${year}. Puede consultarla aquí: ${shareUrl}`;
 
     navigator.clipboard
@@ -231,7 +174,7 @@ export default function NuevaCotizacionPage() {
           vehicles={vehicles}
           technicians={[]}
           inventoryItems={inventoryItems}
-          onSave={handleGenerateQuotePdf}
+          onSave={handleQuoteCreated}
           onVehicleCreated={(v) => {
             if (!vehicles.find((x) => x.id === v.id)) {
               setVehicles((prev) => [...prev, v]);
