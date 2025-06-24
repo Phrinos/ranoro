@@ -175,7 +175,7 @@ export function AppSidebar() {
           </SidebarGroup>
         ))}
       </SidebarContent>
-      <SidebarFooter className="mt-auto border-t border-sidebar-border px-3 py-2 flex flex-row items-center justify-between">
+      <SidebarFooter className="mt-auto border-t border-sidebar-border px-4 py-2 flex flex-row items-center justify-between">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button
@@ -229,7 +229,7 @@ export function AppSidebar() {
          <DropdownMenu>
             <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="justify-center text-sidebar-foreground relative hover:bg-sidebar-accent hover:text-sidebar-accent-foreground shrink-0 w-8 h-8 p-0">
-                    <Bell className="h-5 w-5"/>
+                    <Bell className="h-6 w-6"/>
                     {newSignatureServices.length > 0 && (
                         <span className="absolute top-1 right-1 flex h-2.5 w-2.5">
                             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
