@@ -24,7 +24,7 @@ import { PlusCircle, Edit, Trash2 } from "lucide-react";
 import { FixedExpenseForm, type FixedExpenseFormValues } from "./fixed-expense-form";
 import type { MonthlyFixedExpense } from "@/types";
 import { useToast } from "@/hooks/use-toast";
-import { placeholderFixedMonthlyExpenses } from '@/lib/placeholder-data'; // Import the placeholder
+import { placeholderFixedMonthlyExpenses, persistToFirestore } from '@/lib/placeholder-data'; // Import the placeholder
 
 interface FixedExpensesDialogProps {
   open: boolean;
@@ -54,7 +54,7 @@ export function FixedExpensesDialog({
     setIsSubFormOpen(true);
   };
 
-  const handleSaveExpense = (values: FixedExpenseFormValues) => {
+  const handleSaveExpense = async (values: FixedExpenseFormValues) => {
     let updatedExpensesList: MonthlyFixedExpense[];
     if (editingExpense) {
       updatedExpensesList = expenses.map(exp =>
@@ -72,16 +72,22 @@ export function FixedExpensesDialog({
     setExpenses(updatedExpensesList);
     placeholderFixedMonthlyExpenses.splice(0, placeholderFixedMonthlyExpenses.length, ...updatedExpensesList); // Update global placeholder
     onExpensesUpdated(updatedExpensesList);
+    
+    await persistToFirestore();
+
     setIsSubFormOpen(false);
     setEditingExpense(null);
   };
 
-  const handleDeleteExpense = (expenseId: string) => {
+  const handleDeleteExpense = async (expenseId: string) => {
     const expenseToDelete = expenses.find(exp => exp.id === expenseId);
     const updatedExpensesList = expenses.filter(exp => exp.id !== expenseId);
     setExpenses(updatedExpensesList);
     placeholderFixedMonthlyExpenses.splice(0, placeholderFixedMonthlyExpenses.length, ...updatedExpensesList); // Update global placeholder
     onExpensesUpdated(updatedExpensesList);
+
+    await persistToFirestore();
+
     toast({ title: "Gasto Eliminado", description: `El gasto "${expenseToDelete?.name}" ha sido eliminado.` });
   };
   

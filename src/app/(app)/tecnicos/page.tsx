@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { PlusCircle, ListFilter, TrendingUp, DollarSign as DollarSignIcon, CalendarIcon as CalendarDateIcon, BadgeCent, Users, Search, Archive } from "lucide-react";
 import { TechniciansTable } from "./components/technicians-table";
 import { TechnicianDialog } from "./components/technician-dialog";
-import { placeholderTechnicians, placeholderServiceRecords } from "@/lib/placeholder-data";
+import { placeholderTechnicians, placeholderServiceRecords, persistToFirestore } from "@/lib/placeholder-data";
 import type { Technician, ServiceRecord } from "@/types";
 import type { TechnicianFormValues } from "./components/technician-form";
 import { parseISO, compareAsc, compareDesc, startOfMonth, endOfMonth, isWithinInterval, format, isValid, startOfDay, endOfDay } from 'date-fns';
@@ -64,6 +64,8 @@ export default function TecnicosPage() {
     const updatedTechnicians = [...technicians, newTechnician];
     setTechnicians(updatedTechnicians);
     placeholderTechnicians.push(newTechnician);
+
+    await persistToFirestore();
   };
   
   const totalTechnicians = useMemo(() => technicians.filter(t => !t.isArchived).length, [technicians]);

@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect, useMemo } from 'react';
@@ -17,7 +16,7 @@ import { useToast } from '@/hooks/use-toast';
 import type { User, AppRole } from '@/types';
 import { PlusCircle, Trash2, Edit, Search, ShieldQuestion, ShieldAlert } from "lucide-react";
 import { useRouter } from 'next/navigation';
-import { placeholderUsers, defaultSuperAdmin, AUTH_USER_LOCALSTORAGE_KEY, placeholderAppRoles } from '@/lib/placeholder-data';
+import { placeholderUsers, defaultSuperAdmin, AUTH_USER_LOCALSTORAGE_KEY, placeholderAppRoles, persistToFirestore } from '@/lib/placeholder-data';
 
 
 const userFormSchema = z.object({
@@ -107,7 +106,7 @@ export default function UsuariosPage() {
     setIsFormOpen(true);
   };
 
-  const onSubmit = (data: UserFormValues) => {
+  const onSubmit = async (data: UserFormValues) => {
     if (editingUser) {
       if (!canEditOrDelete(editingUser)) {
         toast({ title: 'Acción no permitida', description: 'No tienes permisos para editar este usuario.', variant: 'destructive' });
@@ -120,6 +119,8 @@ export default function UsuariosPage() {
         placeholderUsers[userIndex] = updatedUser;
       }
       setUsers([...placeholderUsers]);
+
+      await persistToFirestore();
       
       toast({ title: 'Usuario Actualizado', description: `El usuario ${data.name} ha sido actualizado.` });
     } else {
@@ -142,13 +143,15 @@ export default function UsuariosPage() {
       
       placeholderUsers.push(newUser);
       setUsers([...placeholderUsers]);
+
+      await persistToFirestore();
       
       toast({ title: 'Usuario Creado (Local)', description: `El usuario ${data.name} ha sido creado en el sistema local. Debe crearlo en Firebase.` });
     }
     setIsFormOpen(false);
   };
 
-  const handleDeleteUser = (userId: string) => {
+  const handleDeleteUser = async (userId: string) => {
     const userToDelete = users.find(u => u.id === userId);
     if (!userToDelete || !canEditOrDelete(userToDelete)) {
          toast({ title: 'Acción no permitida', description: 'No puedes eliminar a este usuario.', variant: 'destructive' });
@@ -161,6 +164,8 @@ export default function UsuariosPage() {
     }
     setUsers([...placeholderUsers]);
     
+    await persistToFirestore();
+
     toast({ title: 'Usuario Eliminado (Local)', description: `El usuario ha sido eliminado. Recuerde eliminarlo de Firebase.` });
   };
   
