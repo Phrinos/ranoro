@@ -7,12 +7,13 @@ import { es } from 'date-fns/locale';
 import { PageHeader } from "@/components/page-header";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { placeholderServiceRecords, placeholderVehicles, placeholderTechnicians, placeholderInventory, placeholderSales, calculateSaleProfit, IVA_RATE } from "@/lib/placeholder-data";
-import type { ServiceRecord, Vehicle, Technician, InventoryItem, User, QuoteRecord, PurchaseRecommendation, SaleReceipt } from "@/types";
+import type { ServiceRecord, Vehicle, Technician, InventoryItem, User, QuoteRecord, PurchaseRecommendation, SaleReceipt, CapacityAnalysisOutput } from "@/types";
 import { Badge } from "@/components/ui/badge";
-import { User as UserIcon, Wrench, CheckCircle, CalendarClock, Clock, AlertTriangle, ShoppingCart, BrainCircuit, Loader2, Printer, DollarSign, TrendingUp } from "lucide-react"; 
+import { User as UserIcon, Wrench, CheckCircle, CalendarClock, Clock, AlertTriangle, ShoppingCart, BrainCircuit, Loader2, Printer, DollarSign } from "lucide-react"; 
 import { ServiceDialog } from "../servicios/components/service-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { getPurchaseRecommendations, type PurchaseRecommendationOutput } from '@/ai/flows/purchase-recommendation-flow';
+import { analyzeWorkshopCapacity } from '@/ai/flows/capacity-analysis-flow';
 import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
 import { PurchaseOrderContent } from './components/purchase-order-content';
 import { Button } from "@/components/ui/button";
@@ -176,6 +177,10 @@ export default function DashboardPage() {
     lowStockAlerts: 0,
   });
 
+  const [capacityInfo, setCapacityInfo] = useState<CapacityAnalysisOutput | null>(null);
+  const [isCapacityLoading, setIsCapacityLoading] = useState(true);
+  const [capacityError, setCapacityError] = useState<string | null>(null);
+
   const loadAndFilterServices = useCallback(() => {
     setIsLoading(true);
     const clientToday = new Date();
@@ -266,6 +271,52 @@ export default function DashboardPage() {
     }
     loadAndFilterServices();
   }, [loadAndFilterServices]);
+  
+  useEffect(() => {
+    const runCapacityAnalysis = async () => {
+      setIsCapacityLoading(true);
+      setCapacityError(null);
+      try {
+        const today = new Date();
+        const servicesForToday = placeholderServiceRecords.filter(s => {
+          const serviceDay = parseISO(s.serviceDate);
+          return isValid(serviceDay) && isToday(serviceDay) && s.status !== 'Completado' && s.status !== 'Cancelado';
+        });
+
+        if (servicesForToday.length === 0) {
+            const totalAvailable = placeholderTechnicians
+                .filter(t => !t.isArchived)
+                .reduce((sum, t) => sum + (t.standardHoursPerDay || 8), 0);
+            
+            setCapacityInfo({
+                totalRequiredHours: 0,
+                totalAvailableHours: totalAvailable,
+                capacityPercentage: 0,
+                recommendation: "Taller disponible. ¡A agendar!",
+            });
+            setIsCapacityLoading(false);
+            return;
+        }
+
+        const result = await analyzeWorkshopCapacity({
+            servicesForDay: servicesForToday.map(s => ({ description: s.description })),
+            technicians: placeholderTechnicians.filter(t => !t.isArchived).map(t => ({ id: t.id, standardHoursPerDay: t.standardHoursPerDay || 8 })),
+            serviceHistory: placeholderServiceRecords.map(s => ({
+                description: s.description,
+                serviceDate: s.serviceDate,
+                deliveryDateTime: s.deliveryDateTime,
+            })),
+        });
+        setCapacityInfo(result);
+      } catch (e) {
+        console.error("Capacity analysis failed on dashboard:", e);
+        setCapacityError("La IA no pudo calcular la capacidad.");
+      } finally {
+        setIsCapacityLoading(false);
+      }
+    };
+    runCapacityAnalysis();
+  }, []); // Run once on mount
 
   const handleOpenServiceDialog = (service: EnrichedServiceRecord) => {
     const originalService = placeholderServiceRecords.find(s => s.id === service.id);
@@ -399,12 +450,32 @@ export default function DashboardPage() {
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Ganancia del día (Beta)</CardTitle>
-            <TrendingUp className="h-5 w-5 text-purple-500" />
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                  Capacidad del Taller (Hoy)
+              </CardTitle>
+              <BrainCircuit className="h-5 w-5 text-purple-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold font-headline">{formatCurrency(kpiData.dailyProfit)}</div>
-            <p className="text-xs text-muted-foreground">Estimación basada en ventas y servicios</p>
+              {isCapacityLoading ? (
+                  <div className="flex items-center gap-2 pt-2">
+                      <Loader2 className="h-5 w-5 animate-spin" />
+                      <span className="text-muted-foreground text-sm">Calculando...</span>
+                  </div>
+              ) : capacityError ? (
+                  <div className="flex items-center gap-2 pt-2 text-destructive">
+                      <AlertTriangle className="h-5 w-5" />
+                      <span className="text-sm">{capacityError}</span>
+                  </div>
+              ) : capacityInfo ? (
+                  <>
+                      <div className="text-2xl font-bold font-headline">{capacityInfo.capacityPercentage}%</div>
+                      <p className="text-xs text-muted-foreground" title={`${capacityInfo.totalRequiredHours}h de ${capacityInfo.totalAvailableHours}h`}>
+                          {capacityInfo.recommendation}
+                      </p>
+                  </>
+              ) : (
+                  <p className="text-xs text-muted-foreground pt-2">No hay datos de capacidad.</p>
+              )}
           </CardContent>
         </Card>
       </div>
