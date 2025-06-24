@@ -98,7 +98,12 @@ export let placeholderQuotes: QuoteRecord[] = [];
 export let placeholderSales: SaleReceipt[] = [];
 
 // --- GASTOS FIJOS ---
-export let placeholderFixedMonthlyExpenses: MonthlyFixedExpense[] = [];
+export let placeholderFixedMonthlyExpenses: MonthlyFixedExpense[] = [
+    { id: 'exp_1', name: 'Renta del Local', amount: 12000 },
+    { id: 'exp_2', name: 'Servicio de Internet', amount: 800 },
+    { id: 'exp_3', name: 'Servicio de Luz', amount: 2500 },
+    { id: 'exp_4', name: 'Servicio de Agua', amount: 600 },
+];
 
 // --- DATOS SIMULADOS (BORRAR O REEMPLAZAR) ---
 export const placeholderDashboardMetrics: DashboardMetrics = {
