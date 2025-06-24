@@ -23,6 +23,7 @@ export default function PublicQuoteViewPage() {
 
   const [quote, setQuote] = useState<QuoteRecord | null | undefined>(undefined);
   const [vehicle, setVehicle] = useState<Vehicle | null | undefined>(undefined);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!quoteId) {
@@ -32,6 +33,7 @@ export default function PublicQuoteViewPage() {
 
     if (!db) {
         console.error("Firebase (db) no está configurado. No se puede cargar la cotización pública.");
+        setError("La conexión con la base de datos no está configurada. Este enlace no funcionará.");
         setQuote(null); // Marcar como no encontrado si DB no está disponible
         return;
     }
@@ -104,17 +106,21 @@ export default function PublicQuoteViewPage() {
       </div>
     );
   }
-
-  if (!quote) {
-    return (
+  
+  if (error || !quote) {
+     return (
       <div className="container mx-auto py-8">
         <Card className="max-w-4xl mx-auto text-center">
           <CardHeader>
             <ShieldAlert className="mx-auto h-16 w-16 text-destructive mb-4" />
-            <CardTitle className="text-2xl font-bold">Cotización no encontrada</CardTitle>
+            <CardTitle className="text-2xl font-bold">Cotización no Válida</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-muted-foreground">La cotización con ID <span className="font-mono">{quoteId}</span> no se encontró o ha expirado.</p>
+            {error ? (
+              <p className="text-muted-foreground">{error}</p>
+            ) : (
+              <p className="text-muted-foreground">La cotización con ID <span className="font-mono">{quoteId}</span> no se encontró o ha expirado.</p>
+            )}
             <p className="text-muted-foreground mt-2">Por favor, contacte al taller para una nueva cotización.</p>
             <Button asChild className="mt-6">
               <Link href="/login">Volver al Inicio</Link>

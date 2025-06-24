@@ -101,7 +101,7 @@ export default function NuevaCotizacionPage() {
       }
     }
     
-    const publicId = `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 9)}`;
+    const publicId = `cot_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 9)}`;
 
     const newQuote: QuoteRecord = {
       ...(data as QuoteRecord),
@@ -112,26 +112,29 @@ export default function NuevaCotizacionPage() {
     };
 
     placeholderQuotes.unshift(newQuote);
-    await persistToFirestore();
+    await persistToFirestore(['quotes']);
 
     // Save to public collection for sharing
-    const vehicleForPublicQuote = vehicles.find((v) => v.id === newQuote.vehicleId);
-    if (vehicleForPublicQuote && db) { // Add check for db
-        const publicQuoteData = {
-            ...newQuote,
-            vehicle: { ...vehicleForPublicQuote },
-        };
-        try {
-            await setDoc(doc(db, "publicQuotes", newQuote.publicId!), publicQuoteData);
-        } catch (e) {
-            console.error("Failed to save public quote:", e);
-            toast({
-                title: "Error de Sincronización Pública",
-                description: "La cotización se guardó, pero el enlace público podría no funcionar.",
-                variant: "destructive",
-            });
+    if (db) {
+        const vehicleForPublicQuote = vehicles.find((v) => v.id === newQuote.vehicleId);
+        if (vehicleForPublicQuote) {
+            const publicQuoteData = {
+                ...newQuote,
+                vehicle: { ...vehicleForPublicQuote },
+            };
+            try {
+                await setDoc(doc(db, "publicQuotes", newQuote.publicId!), publicQuoteData);
+            } catch (e) {
+                console.error("Failed to save public quote:", e);
+                toast({
+                    title: "Error de Sincronización Pública",
+                    description: "La cotización se guardó, pero el enlace público podría no funcionar.",
+                    variant: "destructive",
+                });
+            }
         }
     }
+
 
     setCurrentQuoteForPdf(newQuote);
     setCurrentVehicleForPdf(

@@ -75,7 +75,7 @@ export default function AppLayout({
             
             if (needsPersistence) {
                 console.log("Persisting profile updates to database...");
-                persistToFirestore().catch(err => console.error("Failed to persist user data update:", err));
+                persistToFirestore(['users']).catch(err => console.error("Failed to persist user data update:", err));
             }
 
             setIsHydrating(false); 
@@ -94,7 +94,7 @@ export default function AppLayout({
             localStorage.setItem(AUTH_USER_LOCALSTORAGE_KEY, JSON.stringify(newUser));
             
             console.log("Persisting new user profile to database...");
-            persistToFirestore().catch(err => {
+            persistToFirestore(['users']).catch(err => {
               console.error("Failed to persist newly created user:", err);
             });
             

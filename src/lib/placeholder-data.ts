@@ -119,6 +119,9 @@ const DATA_ARRAYS = {
     appRoles: placeholderAppRoles,
 };
 
+type DataKey = keyof typeof DATA_ARRAYS;
+
+
 /**
  * Loads all application data from a single Firestore document.
  */
@@ -140,7 +143,7 @@ export async function hydrateFromFirestore() {
       const firestoreData = docSnap.data();
       for (const key in DATA_ARRAYS) {
         if (firestoreData[key] && Array.isArray(firestoreData[key])) {
-          const targetArray = DATA_ARRAYS[key as keyof typeof DATA_ARRAYS];
+          const targetArray = DATA_ARRAYS[key as DataKey];
           targetArray.splice(0, targetArray.length, ...firestoreData[key]);
         }
       }
@@ -185,9 +188,10 @@ export async function hydrateFromFirestore() {
   console.log("Hydration process complete.");
 
   // If the document didn't exist or we had to make integrity changes, persist back to Firestore.
-  if (!docSnap || !docSnap.exists() || changesMade) {
+  if ((!docSnap || !docSnap.exists() || changesMade) && db) {
     console.log("Attempting to persist initial/updated data to Firestore in the background...");
-    persistToFirestore().catch(err => {
+    const keysToPersist = Object.keys(DATA_ARRAYS) as DataKey[];
+    persistToFirestore(keysToPersist).catch(err => {
         console.error("Background persistence failed:", err);
     });
   }
@@ -195,38 +199,47 @@ export async function hydrateFromFirestore() {
 
 
 /**
- * Saves the entire application state from memory to a single Firestore document.
+ * Saves specific parts of the application state from memory to a single Firestore document.
+ * @param keysToUpdate An array of keys corresponding to the data arrays to be updated.
  */
-export async function persistToFirestore() {
+export async function persistToFirestore(keysToUpdate: DataKey[]) {
   if (!db) {
     console.warn("Persist skipped: Firebase not configured.");
     return;
   }
-  // Do not persist if hydration hasn't occurred, to avoid overwriting cloud data with empty arrays.
   if (typeof window === 'undefined' || !(window as any).__APP_HYDRATED__) {
     console.warn("Persist skipped: App not yet hydrated.");
     return;
   }
   
-  console.log("Persisting application data to Firestore...");
+  if (!keysToUpdate || keysToUpdate.length === 0) {
+      console.warn("Persist skipped: No keys provided for update.");
+      return;
+  }
 
-  const allData: { [key: string]: any[] } = {};
-  for (const key in DATA_ARRAYS) {
-      const originalArray = DATA_ARRAYS[key as keyof typeof DATA_ARRAYS];
-      // Sanitize each object in the array to remove 'undefined' fields, which are invalid in Firestore.
-      allData[key] = originalArray.map(item => {
-          const cleanItem = { ...item };
-          Object.keys(cleanItem).forEach(prop => {
-              if (cleanItem[prop] === undefined) {
-                  delete (cleanItem as any)[prop];
-              }
+  console.log(`Persisting granular data to Firestore for keys: ${keysToUpdate.join(', ')}`);
+
+  const dataToPersist: { [key in DataKey]?: any[] } = {};
+  
+  for (const key of keysToUpdate) {
+      if (DATA_ARRAYS[key]) {
+          const originalArray = DATA_ARRAYS[key];
+          // Sanitize each object in the array to remove 'undefined' fields
+          dataToPersist[key] = originalArray.map(item => {
+              const cleanItem = { ...item };
+              Object.keys(cleanItem).forEach(prop => {
+                  if (cleanItem[prop] === undefined) {
+                      delete (cleanItem as any)[prop];
+                  }
+              });
+              return cleanItem;
           });
-          return cleanItem;
-      });
+      }
   }
 
   try {
-    await setDoc(doc(db, DB_PATH), allData);
+    // Use setDoc with merge:true to only update the specified fields in the document
+    await setDoc(doc(db, DB_PATH), dataToPersist, { merge: true });
     console.log("Data successfully persisted to Firestore.");
   } catch (e) {
     console.error("Error persisting data to Firestore:", e);

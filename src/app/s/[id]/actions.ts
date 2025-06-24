@@ -20,8 +20,6 @@ export async function saveSignature(
 
   try {
     // --- 1. Update the main database document ---
-    // Note: In a real high-concurrency app, this read-modify-write is not ideal.
-    // A transactional update or a more granular database structure would be better.
     const serviceIndex = placeholderServiceRecords.findIndex(s => s.publicId === publicId);
     
     if (serviceIndex === -1) {
@@ -38,27 +36,26 @@ export async function saveSignature(
       serviceToUpdate.deliverySignatureViewed = false; // Mark as unread
     }
 
-    // Persist the entire updated array back to the single document
-    await persistToFirestore();
+    // Persist only the serviceRecords array to avoid overwriting other data
+    await persistToFirestore(['serviceRecords']);
 
     // --- 2. Update the separate public document ---
     const publicDocRef = doc(db, 'publicServices', publicId);
     const publicDocSnap = await getDoc(publicDocRef);
     if (!publicDocSnap.exists()) {
-        // This is a fallback. The public doc should ideally always exist if the page is viewable.
         return { success: false, message: 'El documento público del servicio no existe.' };
     }
-    const publicData = publicDocSnap.data() as ServiceRecord;
+    
+    const updateData: Partial<ServiceRecord> = {};
     if (signatureType === 'reception') {
-      publicData.customerSignatureReception = signatureDataUrl;
+      updateData.customerSignatureReception = signatureDataUrl;
     } else {
-      publicData.customerSignatureDelivery = signatureDataUrl;
+      updateData.customerSignatureDelivery = signatureDataUrl;
     }
-    await setDoc(publicDocRef, publicData, { merge: true });
+    await setDoc(publicDocRef, updateData, { merge: true });
 
 
     // --- 3. Revalidate Path ---
-    // This tells Next.js to regenerate the page on the next visit.
     revalidatePath(`/s/${publicId}`);
 
     return { success: true, message: 'Firma guardada exitosamente.' };
