@@ -74,12 +74,10 @@ const analyzeInventoryFlow = ai.defineFlow(
     outputSchema: AnalyzeInventoryOutputSchema,
   },
   async (input) => {
-    const llmResponse = await analyzeInventoryPrompt.generate({
-        input,
+    const { output } = await analyzeInventoryPrompt(input, {
         config: { temperature: 0.2 }
     });
     
-    const output = llmResponse.output();
     if (!output) {
       throw new Error("Failed to get a valid structured response from the model.");
     }

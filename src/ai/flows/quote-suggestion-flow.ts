@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview An AI flow to suggest a full quote (supplies and price) for a vehicle service based on historical data.
@@ -84,12 +85,10 @@ const suggestQuoteFlow = ai.defineFlow(
     outputSchema: QuoteSuggestionOutputSchema,
   },
   async (input) => {
-    const llmResponse = await suggestQuotePrompt.generate({
-        input,
+    const { output } = await suggestQuotePrompt(input, {
         config: { temperature: 0.3 }
     });
     
-    const output = llmResponse.output();
     if (!output) {
       throw new Error("Failed to get a valid structured response from the model.");
     }

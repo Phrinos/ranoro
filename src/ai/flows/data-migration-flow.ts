@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview An AI flow to migrate historical vehicle and service data from CSV-formatted text.
@@ -80,12 +81,10 @@ const migrateDataFlow = ai.defineFlow(
     outputSchema: MigrateDataOutputSchema,
   },
   async (input) => {
-    const llmResponse = await migrateDataPrompt.generate({
-        input,
+    const { output } = await migrateDataPrompt(input, {
         config: { temperature: 0.1 } // Lower temperature for more deterministic data extraction
     });
     
-    const output = llmResponse.output();
     if (!output) {
       throw new Error("Failed to get a valid structured response from the model.");
     }
