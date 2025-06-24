@@ -284,31 +284,35 @@ export const getYesterdayRange = () => {
 };
 
 export const calculateSaleProfit = (sale: SaleReceipt, inventory: InventoryItem[], ivaRate: number): number => {
-  if (!sale || !sale.items) return 0;
+  if (!sale || !sale.items || !Array.isArray(sale.items)) {
+    return 0;
+  }
 
   return sale.items.reduce((totalProfit, saleItem) => {
-    const inventoryItem = inventory.find(inv => inv.id === saleItem.inventoryItemId);
-    
-    // Explicitly handle the case where the item might not be found or is a service
-    const costPrice = (inventoryItem && !inventoryItem.isService) 
-      ? Number(inventoryItem.unitPrice || 0) 
+    // Find the corresponding item in the current inventory
+    const inventoryItem = inventory.find(inv => inv && inv.id === saleItem.inventoryItemId);
+
+    // If the item doesn't exist in inventory or is a service, its cost is 0.
+    const costPrice = inventoryItem && !inventoryItem.isService 
+      ? parseFloat(String(inventoryItem.unitPrice || 0)) 
       : 0;
 
-    const sellingPriceWithTax = Number(saleItem.unitPrice || 0);
-    const quantitySold = Number(saleItem.quantity || 0);
+    // The price the item was sold at (tax-inclusive)
+    const sellingPriceWithTax = parseFloat(String(saleItem.unitPrice || 0));
+    
+    // The quantity sold
+    const quantitySold = parseFloat(String(saleItem.quantity || 0));
 
-    // If selling price is 0, profit is negative cost (a loss)
-    if (sellingPriceWithTax === 0) {
-        return totalProfit - (costPrice * quantitySold);
+    // If any value is not a valid number, skip this item to prevent corrupting the total
+    if (isNaN(costPrice) || isNaN(sellingPriceWithTax) || isNaN(quantitySold)) {
+      console.error("Invalid number encountered in profit calculation for sale:", sale.id, "item:", saleItem.itemName);
+      return totalProfit;
     }
-    
+
+    // Calculate the selling price before tax
     const sellingPriceSubTotal = sellingPriceWithTax / (1 + ivaRate);
-    
-    // Ensure all components are valid numbers before calculation
-    if (isNaN(sellingPriceSubTotal) || isNaN(costPrice) || isNaN(quantitySold)) {
-      return totalProfit; // Don't add NaN to the total, just continue with the accumulated profit
-    }
-    
+
+    // Calculate profit for this line item and add to total
     const itemProfit = (sellingPriceSubTotal - costPrice) * quantitySold;
     
     return totalProfit + itemProfit;
