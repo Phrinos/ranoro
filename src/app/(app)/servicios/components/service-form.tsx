@@ -428,7 +428,7 @@ export function ServiceForm({
     if (mode === 'service') {
       const serviceData: ServiceRecord = {
         id: initialDataService?.id || `SER${defaultServiceRecords.length + 1}`,
-        publicId: initialDataService?.publicId || `srv_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 9)}`,
+        publicId: values.publicId || `srv_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 9)}`,
         vehicleId: vehicleIdToSave,
         vehicleIdentifier: selectedVehicle?.licensePlate || values.vehicleLicensePlateSearch,
         serviceDate: values.serviceDate!.toISOString(),
@@ -519,10 +519,13 @@ export function ServiceForm({
   }, [form, currentUser, selectedVehicle, toast]);
 
   const handleShareServiceSheet = async () => {
-    const serviceId = form.getValues('id');
-    const publicId = initialDataService?.publicId || (serviceId ? placeholderServiceRecords.find(s => s.id === serviceId)?.publicId : null);
+    if (!db) {
+        toast({ title: "Firebase no configurado", description: "La función de compartir requiere una conexión a la base de datos.", variant: "destructive" });
+        return;
+    }
+    const publicId = form.getValues('publicId');
 
-    if (!serviceId || !publicId) {
+    if (!publicId) {
         toast({ title: "Guardar primero", description: "Guarda el servicio para generar o actualizar el enlace para compartir.", variant: "default" });
         return;
     }
