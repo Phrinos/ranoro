@@ -289,7 +289,7 @@ export function ServiceForm({
       setSelectedVehicle(found);
       form.setValue('vehicleId', found.id, { shouldValidate: true });
       setVehicleNotFound(false);
-      toast({ title: "Vehículo Encontrado", description: `${found.make} ${found.model} (${found.licensePlate})`});
+      toast({ title: "Vehículo Encontrado", description: `${found.make} ${found.model} (${found.year})`});
     } else {
       setSelectedVehicle(null);
       form.setValue('vehicleId', undefined, { shouldValidate: true });
@@ -722,7 +722,7 @@ export function ServiceForm({
                 {selectedVehicle && (
                     <div className="p-3 border rounded-md bg-muted text-sm space-y-1">
                         <p><strong>Placa:</strong> {selectedVehicle.licensePlate}</p>
-                        <p><strong>Vehículo Seleccionado:</strong> {selectedVehicle.make} {selectedVehicle.model} ({selectedVehicle.year})</p>
+                        <p><strong>Vehículo Seleccionado:</strong> {selectedVehicle.make} {selectedVehicle.model} {selectedVehicle.year}</p>
                         <p><strong>Propietario:</strong> {selectedVehicle.ownerName}</p>
                     </div>
                 )}

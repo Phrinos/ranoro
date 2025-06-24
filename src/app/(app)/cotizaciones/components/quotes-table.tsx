@@ -43,7 +43,7 @@ export function QuotesTable({ quotes, vehicles, onViewQuote, onEditQuote, onGene
     const quoteDate = quote.quoteDate ? parseISO(quote.quoteDate) : new Date();
     const vehicle = vehicles.find(v => v.id === quote.vehicleId);
     const vehicleDisplay = vehicle 
-      ? `${vehicle.licensePlate} - ${vehicle.make} ${vehicle.model} (${vehicle.year})`
+      ? `${vehicle.licensePlate} - ${vehicle.make} ${vehicle.model} ${vehicle.year}`
       : quote.vehicleIdentifier || 'N/A';
 
     return {
