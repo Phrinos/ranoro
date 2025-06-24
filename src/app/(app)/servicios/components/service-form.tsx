@@ -1523,22 +1523,22 @@ export function ServiceForm({
       />
     )}
 
-    {serviceForSheet && selectedVehicle && (
-        <PrintTicketDialog
-            open={isSheetOpen}
-            onOpenChange={setIsSheetOpen}
-            title="Hoja de Servicio"
-            onDialogClose={() => setServiceForSheet(null)}
-            dialogContentClassName="printable-quote-dialog"
-            footerActions={
-                <Button onClick={() => window.print()}>
-                    <Printer className="mr-2 h-4 w-4" /> Imprimir Hoja
-                </Button>
-            }
-        >
-            <ServiceSheetContent service={serviceForSheet} vehicle={selectedVehicle} />
-        </PrintTicketDialog>
-    )}
+    <PrintTicketDialog
+        open={isSheetOpen}
+        onOpenChange={setIsSheetOpen}
+        title="Hoja de Servicio"
+        onDialogClose={() => setServiceForSheet(null)}
+        dialogContentClassName="printable-quote-dialog"
+        footerActions={
+            <Button onClick={() => window.print()}>
+                <Printer className="mr-2 h-4 w-4" /> Imprimir Hoja
+            </Button>
+        }
+    >
+        {serviceForSheet && (
+            <ServiceSheetContent service={serviceForSheet} vehicle={localVehicles.find(v => v.id === serviceForSheet.vehicleId)} />
+        )}
+    </PrintTicketDialog>
     </>
   );
 }
