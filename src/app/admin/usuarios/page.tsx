@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useMemo } from 'react';
@@ -16,7 +17,7 @@ import { useToast } from '@/hooks/use-toast';
 import type { User, AppRole } from '@/types';
 import { PlusCircle, Trash2, Edit, Search, ShieldQuestion, ShieldAlert } from "lucide-react";
 import { useRouter } from 'next/navigation';
-import { placeholderUsers, defaultSuperAdmin, AUTH_USER_LOCALSTORAGE_KEY, ROLES_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
+import { placeholderUsers, defaultSuperAdmin, AUTH_USER_LOCALSTORAGE_KEY, placeholderAppRoles } from '@/lib/placeholder-data';
 
 
 const userFormSchema = z.object({
@@ -62,18 +63,17 @@ export default function UsuariosPage() {
 
       // Set local state from the global, in-memory placeholderUsers array
       setUsers(placeholderUsers);
-
-      const storedRolesString = localStorage.getItem(ROLES_LOCALSTORAGE_KEY);
-      const loadedRoles: AppRole[] = storedRolesString ? JSON.parse(storedRolesString) : [];
-      setAvailableRoles(loadedRoles);
+      setAvailableRoles(placeholderAppRoles);
     }
   }, []);
 
   const canEditOrDelete = (user: User): boolean => {
     if (!currentUser) return false;
-    if (currentUser.role === 'Superadmin') return user.email !== currentUser.email;
-    if (currentUser.role === 'Admin') return user.role !== 'Superadmin' && user.email !== currentUser.email;
-    return false; 
+    // Superadmin can edit anyone except themselves.
+    if (currentUser.role === 'Superadmin') return user.id !== currentUser.id;
+    // Admin can edit anyone except Superadmins and themselves.
+    if (currentUser.role === 'Admin') return user.role !== 'Superadmin' && user.id !== currentUser.id;
+    return false;
   };
   
   const canCreateUsers = (): boolean => {

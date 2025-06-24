@@ -66,6 +66,25 @@ export const AUTH_USER_LOCALSTORAGE_KEY = 'authUser';
 export const USER_LOCALSTORAGE_KEY = 'appUsers';
 export const ROLES_LOCALSTORAGE_KEY = 'appRoles';
 
+const ALL_AVAILABLE_PERMISSIONS = [
+    { id: 'dashboard:view', label: 'Ver Panel Principal' },
+    { id: 'services:create', label: 'Crear Servicios' },
+    { id: 'services:edit', label: 'Editar Servicios' },
+    { id: 'services:view_history', label: 'Ver Historial de Servicios' },
+    { id: 'inventory:manage', label: 'Gestionar Inventario (Productos, Cat, Prov)' },
+    { id: 'inventory:view', label: 'Ver Inventario' },
+    { id: 'pos:create_sale', label: 'Registrar Ventas (POS)' },
+    { id: 'pos:view_sales', label: 'Ver Registro de Ventas' },
+    { id: 'finances:view_report', label: 'Ver Reporte Financiero' },
+    { id: 'technicians:manage', label: 'Gestionar Técnicos' },
+    { id: 'vehicles:manage', label: 'Gestionar Vehículos' },
+    { id: 'users:manage', label: 'Gestionar Usuarios (Admin)' },
+    { id: 'roles:manage', label: 'Gestionar Roles y Permisos (Admin)' },
+    { id: 'ticket_config:manage', label: 'Configurar Ticket (Admin)' },
+];
+
+export let placeholderAppRoles: AppRole[] = [];
+
 // =======================================
 // ===          OPERACIONES          ===
 // =======================================
@@ -92,7 +111,6 @@ export const placeholderDashboardMetrics: DashboardMetrics = {
 
 export let placeholderTechnicianMonthlyPerformance: TechnicianMonthlyPerformance[] = [];
 
-export let placeholderAppRoles: AppRole[] = [];
 
 // =======================================
 // ===  LÓGICA DE PERSISTENCIA DE DATOS  ===
@@ -167,6 +185,23 @@ export async function hydrateFromFirestore() {
     placeholderUsers.push(dianaArriagaUser);
     changesMade = true;
     console.log(`Default user '${dianaArriagaUser.email}' was missing and has been added to the current session.`);
+  }
+
+  // Check for AppRoles
+  if (!docSnap?.exists() || !docSnap.data()?.appRoles || docSnap.data()?.appRoles.length === 0) {
+      console.log("No roles found in DB, seeding default roles.");
+      const adminPermissions = ALL_AVAILABLE_PERMISSIONS
+          .filter(p => !['users:manage', 'roles:manage'].includes(p.id))
+          .map(p => p.id);
+      
+      const defaultRoles: AppRole[] = [
+          { id: 'role_superadmin_default', name: 'Superadmin', permissions: ALL_AVAILABLE_PERMISSIONS.map(p => p.id) },
+          { id: 'role_admin_default', name: 'Admin', permissions: adminPermissions },
+          { id: 'role_tecnico_default', name: 'Tecnico', permissions: ['dashboard:view', 'services:create', 'services:edit', 'services:view_history', 'inventory:view', 'vehicles:manage', 'pos:view_sales'] },
+          { id: 'role_ventas_default', name: 'Ventas', permissions: ['dashboard:view', 'pos:create_sale', 'pos:view_sales', 'inventory:view', 'vehicles:manage'] }
+      ];
+      placeholderAppRoles.splice(0, placeholderAppRoles.length, ...defaultRoles);
+      changesMade = true;
   }
   
   (window as any).__APP_HYDRATED__ = true;
