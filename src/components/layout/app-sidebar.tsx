@@ -175,7 +175,7 @@ export function AppSidebar() {
           </SidebarGroup>
         ))}
       </SidebarContent>
-      <SidebarFooter className="mt-auto border-t border-sidebar-border p-2 flex items-center gap-1">
+      <SidebarFooter className="mt-auto border-t border-sidebar-border p-2 flex flex-row items-center justify-between">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button
