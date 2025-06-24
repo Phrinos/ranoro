@@ -1362,7 +1362,7 @@ export function ServiceForm({
             </Button>
           ) : (
             <>
-              {mode === 'service' && form.getValues('status') !== 'Agendado' && (
+              {mode === 'service' && (
                 <Button type="button" variant="secondary" onClick={handlePrintSheet}>
                     <FileText className="mr-2 h-4 w-4" />
                     Hoja de Servicio
