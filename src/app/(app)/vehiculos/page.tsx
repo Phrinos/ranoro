@@ -17,7 +17,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { subMonths, parseISO, isBefore, compareAsc, compareDesc } from 'date-fns';
 
 export default function VehiculosPage() {
-  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
+  const [vehicles, setVehicles] = useState<Vehicle[]>(allVehicles);
   const { toast } = useToast();
   const [isNewVehicleDialogOpen, setIsNewVehicleDialogOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
@@ -25,9 +25,8 @@ export default function VehiculosPage() {
   const [sortOption, setSortOption] = useState<string>("date_asc"); 
   const [activityCounts, setActivityCounts] = useState({ inactive6MonthsCount: 0, inactive12MonthsCount: 0 });
 
-
-  useEffect(() => {
-    const vehiclesWithLastService = allVehicles.map(v => {
+  const vehiclesWithLastService = useMemo(() => {
+    return vehicles.map(v => {
       const history = placeholderServiceRecords.filter(s => s.vehicleId === v.id);
       let lastServiceDate: string | undefined = undefined;
       if (history.length > 0) {
@@ -42,8 +41,7 @@ export default function VehiculosPage() {
         lastServiceDate: lastServiceDate,
       };
     });
-    setVehicles(vehiclesWithLastService);
-  }, []);
+  }, [vehicles]);
   
   useEffect(() => {
     const now = new Date();
@@ -53,7 +51,7 @@ export default function VehiculosPage() {
     let count6 = 0;
     let count12 = 0;
 
-    vehicles.forEach(v => {
+    vehiclesWithLastService.forEach(v => {
       if (!v.lastServiceDate) { 
         count6++;
         count12++;
@@ -68,7 +66,7 @@ export default function VehiculosPage() {
       }
     });
     setActivityCounts({ inactive6MonthsCount: count6, inactive12MonthsCount: count12 });
-  }, [vehicles]);
+  }, [vehiclesWithLastService]);
 
 
   const handleSaveVehicle = async (data: VehicleFormValues) => {
@@ -83,9 +81,8 @@ export default function VehiculosPage() {
       serviceHistory: [], 
     };
 
-    const updatedVehicles = [...vehicles, newVehicle];
-    setVehicles(updatedVehicles);
     allVehicles.push(newVehicle); 
+    setVehicles([...allVehicles]);
     
     await persistToFirestore();
 
@@ -97,7 +94,7 @@ export default function VehiculosPage() {
   };
 
   const filteredAndSortedVehicles = useMemo(() => {
-    let itemsToDisplay = [...vehicles];
+    let itemsToDisplay = [...vehiclesWithLastService];
 
     if (searchTerm) {
       itemsToDisplay = itemsToDisplay.filter(vehicle =>
@@ -154,7 +151,7 @@ export default function VehiculosPage() {
     });
 
     return itemsToDisplay;
-  }, [vehicles, searchTerm, activityFilter, sortOption]);
+  }, [vehiclesWithLastService, searchTerm, activityFilter, sortOption]);
 
   const handleShowArchived = () => {
     toast({
