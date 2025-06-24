@@ -1,3 +1,4 @@
+
 "use client";
 
 import { PageHeader } from "@/components/page-header";
@@ -80,7 +81,7 @@ export default function VehiculosPage() {
     };
 
     const newVehicle: Vehicle = {
-      id: `VEH${placeholderVehicles.length + 1}`,
+      id: `VEH_${Date.now().toString(36)}`,
       ...newVehicleData,
       serviceHistory: [],
     };

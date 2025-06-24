@@ -200,7 +200,7 @@ export default function HistorialCotizacionesPage() {
       const newService = data as ServiceRecord;
       if (!quoteToConvert) return;
 
-      const newServiceId = `SER${placeholderServiceRecords.length + 1}`;
+      const newServiceId = `SER_${Date.now().toString(36)}`;
       const serviceToSave: ServiceRecord = { ...newService, id: newServiceId };
       placeholderServiceRecords.push(serviceToSave);
 

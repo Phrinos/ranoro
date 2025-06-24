@@ -100,7 +100,7 @@ export default function RolesPage() {
       toast({ title: 'Rol Actualizado', description: `El rol ${data.name} ha sido actualizado.` });
     } else {
       const newRole: AppRole = {
-        id: `role_${Date.now()}`,
+        id: `role_${Date.now().toString(36)}`,
         ...data,
         permissions: data.permissions || [],
       };

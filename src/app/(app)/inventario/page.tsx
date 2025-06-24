@@ -45,7 +45,7 @@ export default function InventarioPage() {
 
   const handleSaveNewItem = async (data: InventoryItemFormValues) => {
     const newItem: InventoryItem = {
-      id: `P${String(inventoryItems.length + 1).padStart(3, '0')}${Date.now().toString().slice(-3)}`, 
+      id: `PROD_${Date.now().toString(36)}`, 
       ...data,
       isService: data.isService || false,
       quantity: data.isService ? 0 : Number(data.quantity),

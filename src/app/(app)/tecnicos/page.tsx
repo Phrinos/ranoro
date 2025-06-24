@@ -53,7 +53,7 @@ export default function TecnicosPage() {
 
   const handleSaveTechnician = async (data: TechnicianFormValues) => {
     const newTechnician: Technician = {
-      id: `T${String(technicians.length + 1).padStart(3, '0')}${Date.now().toString().slice(-3)}`, 
+      id: `T_${Date.now().toString(36)}`, 
       ...data,
       hireDate: data.hireDate ? new Date(data.hireDate).toISOString().split('T')[0] : undefined,
       monthlySalary: Number(data.monthlySalary) || undefined,

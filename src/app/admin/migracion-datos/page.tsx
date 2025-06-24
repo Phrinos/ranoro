@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from 'react';
@@ -114,13 +115,13 @@ export default function MigracionDatosPage() {
       let servicesAddedCount = 0;
 
       // Process and add vehicles first
-      result.vehicles.forEach(vehicleData => {
+      result.vehicles.forEach((vehicleData, index) => {
         const plateExists = placeholderVehicles.some(
           v => v.licensePlate.toLowerCase() === vehicleData.licensePlate.toLowerCase()
         );
         if (!plateExists) {
           const newVehicle: Vehicle = {
-            id: placeholderVehicles.length > 0 ? Math.max(...placeholderVehicles.map(v => v.id)) + 1 : 1,
+            id: `VEH_MIG_${index}_${Date.now().toString(36)}`,
             make: vehicleData.make,
             model: vehicleData.model,
             year: vehicleData.year,

@@ -143,7 +143,7 @@ export default function UsuariosPage() {
         return;
       }
       const newUser: User = {
-        id: `user_${Date.now()}`,
+        id: `user_${Date.now().toString(36)}`,
         name: data.name,
         email: data.email,
         phone: data.phone || undefined,

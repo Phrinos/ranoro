@@ -53,7 +53,7 @@ export default function AdministrativosPage() {
   
   const handleSaveStaff = async (data: AdministrativeStaffFormValues) => {
     const newStaffMember: AdministrativeStaff = {
-      id: `ADM${String(staffList.length + 1).padStart(3, '0')}${Date.now().toString().slice(-3)}`, 
+      id: `ADM_${Date.now().toString(36)}`, 
       ...data,
       hireDate: data.hireDate ? new Date(data.hireDate).toISOString().split('T')[0] : undefined,
       monthlySalary: Number(data.monthlySalary) || undefined,

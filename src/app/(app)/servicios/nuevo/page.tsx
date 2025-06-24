@@ -49,7 +49,7 @@ export default function NuevoServicioPage() {
 
     const newService: ServiceRecord = {
       ...serviceData,
-      id: `SER${placeholderServiceRecords.length + 1}`,
+      id: `SER_${Date.now().toString(36)}`,
     };
     placeholderServiceRecords.push(newService); 
     await persistToFirestore();
