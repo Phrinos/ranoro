@@ -289,13 +289,14 @@ export const calculateSaleProfit = (sale: SaleReceipt, inventory: InventoryItem[
 
   return sale.items.reduce((profit, saleItem) => {
     const inventoryItem = inventory.find(inv => inv.id === saleItem.inventoryItemId);
-    const costPrice = inventoryItem?.unitPrice ?? 0;
+    
+    // For services sold via POS, cost is 0. For products, it's their stored unitPrice.
+    const costPrice = (inventoryItem && !inventoryItem.isService) ? (inventoryItem.unitPrice ?? 0) : 0;
 
-    const sellingPriceWithTax = typeof saleItem.unitPrice === 'number' ? saleItem.unitPrice : 0;
+    const sellingPriceWithTax = saleItem.unitPrice ?? 0;
     const sellingPriceSubTotal = sellingPriceWithTax / (1 + ivaRate);
-
-    const quantitySold = typeof saleItem.quantity === 'number' ? saleItem.quantity : 0;
-
+    const quantitySold = saleItem.quantity ?? 0;
+    
     const itemProfit = (sellingPriceSubTotal - costPrice) * quantitySold;
     
     return profit + (Number.isNaN(itemProfit) ? 0 : itemProfit);
