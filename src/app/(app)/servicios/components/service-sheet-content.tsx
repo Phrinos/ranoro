@@ -65,7 +65,7 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
     const fuelColor = getFuelColorClass(fuelPercentage);
 
     return (
-      <div ref={ref} data-format="letter" className="font-sans bg-white text-black shadow-lg mx-auto p-8 text-[10px] flex flex-col min-h-[10in]">
+      <div ref={ref} data-format="letter" className="font-sans bg-white text-black shadow-lg mx-auto p-8 text-sm flex flex-col min-h-[10in]">
         <header className="mb-4 pb-2 border-b-2 border-black">
           <div className="flex justify-between items-center">
             <img src={workshopInfo.logoUrl} alt={`${workshopInfo.name} Logo`} className="h-16" data-ai-hint="workshop logo"/>
@@ -74,57 +74,56 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
               <p className="font-mono text-base">Folio: <span className="font-bold">{service.id}</span></p>
             </div>
           </div>
-          <div className="flex justify-between items-end mt-2 text-xs">
-             <div>
-                <p className="font-bold text-sm">{workshopInfo.name}</p>
+          <div className="flex justify-between items-end mt-2">
+             <div className="space-y-0.5 leading-tight text-sm">
+                <p className="font-bold text-base">{workshopInfo.name}</p>
                 <p>{workshopInfo.addressLine1}</p>
                 {workshopInfo.addressLine2 && <p>{workshopInfo.addressLine2}</p>}
                 <p>{workshopInfo.cityState}</p>
                 <p>Tel: {workshopInfo.phone}</p>
              </div>
-             <div className="text-sm">
+             <div className="text-base text-right">
                 <p><span className="font-bold">Fecha de Recepción:</span> {formattedServiceDate}</p>
              </div>
           </div>
         </header>
 
         <main className="flex-grow">
-          <section className="grid grid-cols-2 gap-4 mb-4 text-[10px]">
-            <div className="border-2 border-black p-2 rounded">
-              <h3 className="font-bold text-xs mb-1 border-b-2 border-black pb-1">DATOS DEL CLIENTE</h3>
-              <div className="space-y-0.5 pt-1">
-                <p><span className="font-semibold">Nombre:</span> <span className="text-sm font-bold">{vehicle?.ownerName}</span></p>
-                <p><span className="font-semibold">Teléfono:</span> <span className="text-sm font-bold">{vehicle?.ownerPhone}</span></p>
-                <p><span className="font-semibold">Email:</span> <span className="text-sm font-bold">{vehicle?.ownerEmail || 'N/A'}</span></p>
+          <section className="grid grid-cols-2 gap-4 mb-4 text-xs">
+            <div className="border-2 border-black rounded-md overflow-hidden">
+              <h3 className="font-bold p-1 bg-gray-700 text-white">DATOS DEL CLIENTE</h3>
+              <div className="space-y-0.5 p-2">
+                <p><span className="font-semibold">Nombre:</span> <span className="font-bold">{vehicle?.ownerName?.toUpperCase()}</span></p>
+                <p><span className="font-semibold">Teléfono:</span> <span className="font-bold">{vehicle?.ownerPhone}</span></p>
+                <p><span className="font-semibold">Email:</span> <span className="font-bold">{vehicle?.ownerEmail || 'N/A'}</span></p>
               </div>
             </div>
-            <div className="border-2 border-black p-2 rounded">
-              <h3 className="font-bold text-xs mb-1 border-b-2 border-black pb-1">DATOS DEL VEHÍCULO</h3>
-              <div className="space-y-0.5 pt-1">
-                <p><span className="font-semibold">Marca/Modelo:</span> <span className="text-sm font-bold">{vehicle?.make} {vehicle?.model}</span></p>
-                <p><span className="font-semibold">Año:</span> <span className="text-sm font-bold">{vehicle?.year}</span></p>
-                <p><span className="font-semibold">Placas:</span> <span className="text-sm font-bold">{vehicle?.licensePlate}</span></p>
-                <p><span className="font-semibold">Color:</span> <span className="text-sm font-bold">{vehicle?.color || 'N/A'}</span></p>
-                <p><span className="font-semibold">Kilometraje:</span> <span className="text-sm font-bold">{service.mileage?.toLocaleString('es-MX') || 'N/A'} km</span></p>
+            <div className="border-2 border-black rounded-md overflow-hidden">
+              <h3 className="font-bold p-1 bg-gray-700 text-white">DATOS DEL VEHÍCULO</h3>
+              <div className="space-y-0.5 p-2">
+                <p><span className="font-semibold">Marca/Modelo/Año:</span> <span className="font-bold">{vehicle?.make} {vehicle?.model} {vehicle?.year}</span></p>
+                <p><span className="font-semibold">Placas:</span> <span className="font-bold">{vehicle?.licensePlate}</span></p>
+                <p><span className="font-semibold">Color:</span> <span className="font-bold">{vehicle?.color || 'N/A'}</span></p>
+                <p><span className="font-semibold">Kilometraje:</span> <span className="font-bold">{service.mileage?.toLocaleString('es-MX') || 'N/A'} km</span></p>
               </div>
             </div>
           </section>
 
-          <section className="border-2 border-black p-2 rounded mb-4">
-              <h3 className="font-bold text-xs mb-1 border-b-2 border-black pb-1">SERVICIO SOLICITADO</h3>
-              <p className="whitespace-pre-wrap min-h-[40px] text-base font-bold pt-1">{service.description}</p>
+          <section className="border-2 border-black rounded-md overflow-hidden mb-4">
+              <h3 className="font-bold p-1 bg-gray-700 text-white">SERVICIO SOLICITADO</h3>
+              <p className="whitespace-pre-wrap p-2 min-h-[40px] text-base font-bold">{service.description}</p>
           </section>
           
-          <section className="grid grid-cols-3 gap-4 mb-4 text-[10px]">
-              <div className="border-2 border-black p-2 rounded col-span-2">
-                 <h3 className="font-bold text-xs mb-1 border-b-2 border-black pb-1">CONDICIONES DEL VEHÍCULO (AL INGRESAR AL TALLER)</h3>
-                 <p className="whitespace-pre-wrap min-h-[40px] pt-1">{service.vehicleConditions || 'No especificado.'}</p>
+          <section className="grid grid-cols-3 gap-4 mb-4 text-xs">
+              <div className="border-2 border-black rounded-md overflow-hidden col-span-2">
+                 <h3 className="font-bold p-1 bg-gray-700 text-white">CONDICIONES DEL VEHÍCULO (AL INGRESAR AL TALLER)</h3>
+                 <p className="whitespace-pre-wrap p-2 min-h-[20px] text-sm">{service.vehicleConditions || 'No especificado.'}</p>
               </div>
-              <div className="border-2 border-black p-2 rounded col-span-1 flex flex-col justify-center">
-                  <h3 className="font-bold text-xs mb-1 border-b-2 border-black pb-1 text-center">NIVEL DE COMBUSTIBLE</h3>
-                  <div className="flex-grow flex flex-col items-center justify-center pt-1">
-                    <span className="font-semibold text-base mb-1">{service.fuelLevel || 'N/A'}</span>
-                    <div className="h-3 w-full bg-gray-200 rounded-full overflow-hidden border border-gray-300">
+              <div className="border-2 border-black rounded-md overflow-hidden col-span-1 flex flex-col justify-center">
+                  <h3 className="font-bold p-1 bg-gray-700 text-white text-center">NIVEL DE COMBUSTIBLE</h3>
+                  <div className="flex-grow flex flex-col items-center justify-center p-2">
+                    <span className="font-semibold text-sm mb-1">{service.fuelLevel || 'N/A'}</span>
+                    <div className="h-2 w-full bg-gray-200 rounded-full overflow-hidden border border-gray-300">
                         <div className={cn("h-full transition-all", fuelColor)} style={{ width: `${fuelPercentage}%` }} />
                     </div>
                     <div className="w-full flex justify-between text-[8px] mt-0.5 px-0.5">
@@ -135,15 +134,15 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
               </div>
           </section>
 
-          <section className="grid grid-cols-2 gap-4 mb-4 text-[10px]">
-            <div className="border-2 border-black p-2 rounded">
-                <h3 className="font-bold text-xs mb-1 border-b-2 border-black pb-1">INVENTARIO DE PERTENENCIAS</h3>
-                <p className="whitespace-pre-wrap min-h-[60px] pt-1">{service.customerItems || 'No especificado.'}</p>
+          <section className="grid grid-cols-2 gap-4 mb-4 text-xs">
+            <div className="border-2 border-black rounded-md overflow-hidden">
+                <h3 className="font-bold p-1 bg-gray-700 text-white">INVENTARIO DE PERTENENCIAS</h3>
+                <p className="whitespace-pre-wrap p-2 min-h-[60px] text-sm">{service.customerItems || 'No especificado.'}</p>
             </div>
-            <div className="border-2 border-black p-2 rounded flex flex-col justify-between">
-                <h3 className="font-bold text-xs mb-1 border-b-2 border-black pb-1">Autorizo que se realicen los servicios arriba descritos</h3>
+            <div className="border-2 border-black p-2 rounded-md flex flex-col justify-between min-h-[80px]">
+                <h3 className="font-bold uppercase">AUTORIZO QUE SE REALICEN LOS SERVICIOS ARRIBA DESCRITOS</h3>
                 <div className="border-t border-black mt-auto pt-1 text-center">
-                    <p className="text-xs font-semibold">{vehicle?.ownerName || '________________________________'}</p>
+                    <p className="text-xs font-semibold">{vehicle?.ownerName?.toUpperCase() || '________________________________'}</p>
                 </div>
             </div>
           </section>
@@ -151,16 +150,14 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
         
         <footer className="mt-auto pt-4 text-xs">
            <div className="grid grid-cols-2 gap-8 text-center mb-4">
-               <div className="pt-12">
+               <div className="pt-12 min-h-[80px] flex flex-col justify-end">
                    <div className="border-t border-black pt-1">
-                       <p className="font-bold">FIRMA ASESOR DE SERVICIO</p>
-                       <p className="text-xs">{service.serviceAdvisorName || '________________________________'}</p>
+                       <p className="font-bold">FIRMA ASESOR DE SERVICIO: {service.serviceAdvisorName?.toUpperCase() || '________________________________'}</p>
                    </div>
                </div>
-                <div className="pt-12">
+                <div className="pt-12 min-h-[80px] flex flex-col justify-end">
                    <div className="border-t border-black pt-1">
-                       <p className="font-bold">FIRMA DE CONFORMIDAD (AL RECIBIR)</p>
-                       <p className="text-xs font-semibold">{vehicle?.ownerName || '________________________________'}</p>
+                       <p className="font-bold">FIRMA DE RECIBO DE CONFORMIDAD: {vehicle?.ownerName?.toUpperCase() || '________________________________'}</p>
                    </div>
                </div>
            </div>
