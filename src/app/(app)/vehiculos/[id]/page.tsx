@@ -192,7 +192,7 @@ export default function VehicleDetailPage() {
                 )}
               </CardContent>
             </Card>
-            <Card>
+            <Card className="bg-amber-50 dark:bg-amber-950/50">
               <CardHeader>
                 <CardTitle>Datos del Propietario</CardTitle>
               </CardHeader>
