@@ -1,12 +1,22 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    match /database/main {
-      allow read, write: if request.auth != null;
-    }
+    
+    // Public collections are readable by anyone, but only writable by authenticated users.
+    // This prevents anonymous users from creating spam.
     match /publicQuotes/{quoteId} {
       allow read: if true;
       allow write: if request.auth != null;
+    }
+
+    match /publicServices/{serviceId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+
+    // Main database document is only accessible by authenticated users.
+    match /database/{docId} {
+      allow read, write: if request.auth != null;
     }
   }
 }
