@@ -23,7 +23,7 @@ import Link from "next/link";
 import { cn } from "@/lib/utils";
 import html2pdf from 'html2pdf.js';
 import { ServiceDialog } from "../../servicios/components/service-dialog";
-import { doc, setDoc } from 'firebase/firestore';
+import { doc, setDoc, deleteDoc } from 'firebase/firestore';
 import { db } from '@root/lib/firebaseClient.js';
 
 
@@ -133,6 +133,36 @@ export default function HistorialCotizacionesPage() {
   const handleEditQuote = (quote: QuoteRecord) => {
     setSelectedQuoteForEdit(quote);
     setIsEditQuoteDialogOpen(true);
+  };
+
+  const handleDeleteQuote = async (quoteId: string) => {
+    const quoteToDelete = allQuotes.find(q => q.id === quoteId);
+    if (!quoteToDelete) {
+      toast({ title: "Error", description: "No se pudo encontrar la cotización para eliminar.", variant: "destructive" });
+      return;
+    }
+
+    // Delete public quote from Firestore first
+    if (quoteToDelete.publicId) {
+      try {
+        await deleteDoc(doc(db, "publicQuotes", quoteToDelete.publicId));
+      } catch (e) {
+        console.error("Failed to delete public quote:", e);
+        // Do not block main deletion if this fails, but log it.
+      }
+    }
+
+    // Update local state and placeholder data
+    setAllQuotes(prev => prev.filter(q => q.id !== quoteId));
+    const pIndex = placeholderQuotes.findIndex(q => q.id === quoteId);
+    if (pIndex > -1) {
+      placeholderQuotes.splice(pIndex, 1);
+    }
+    
+    await persistToFirestore();
+
+    toast({ title: "Cotización Eliminada", description: `La cotización ${quoteId} ha sido eliminada.` });
+    setIsEditQuoteDialogOpen(false); // Close the dialog after deletion
   };
   
   const handleGenerateService = (quote: QuoteRecord) => {
@@ -405,6 +435,7 @@ export default function HistorialCotizacionesPage() {
             technicians={technicians}
             inventoryItems={inventoryItems}
             onSave={handleSaveEditedQuote}
+            onDelete={handleDeleteQuote}
             mode="quote"
          />
       )}

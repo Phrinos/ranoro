@@ -30,7 +30,7 @@ import { useToast } from "@/hooks/use-toast";
 import { VehicleDialog } from "../../vehiculos/components/vehicle-dialog";
 import type { VehicleFormValues } from "../../vehiculos/components/vehicle-form";
 import { placeholderVehicles as defaultPlaceholderVehicles, placeholderInventory, placeholderCategories, placeholderSuppliers, placeholderQuotes, placeholderServiceRecords as defaultServiceRecords, persistToFirestore } from "@/lib/placeholder-data";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -81,6 +81,7 @@ interface ServiceFormProps {
   onVehicleCreated?: (newVehicle: Vehicle) => void;
   mode?: 'service' | 'quote';
   onInventoryItemCreatedFromService?: (newItem: InventoryItem) => void; // Optional: To notify parent of new items
+  onDelete?: (id: string) => void;
 }
 
 const IVA_RATE = 0.16;
@@ -115,7 +116,8 @@ export function ServiceForm({
   isReadOnly = false,
   onVehicleCreated,
   mode = 'service',
-  onInventoryItemCreatedFromService
+  onInventoryItemCreatedFromService,
+  onDelete,
 }: ServiceFormProps) {
   const { toast } = useToast();
   
@@ -363,6 +365,7 @@ export function ServiceForm({
     } else { // mode === 'quote'
       const quoteData: QuoteRecord = {
         id: (initialDataQuote as QuoteRecord)?.id || `Q_NEW_${Date.now()}`,
+        publicId: (initialDataQuote as QuoteRecord)?.publicId || `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 9)}`,
         quoteDate: values.serviceDate.toISOString(),
         vehicleId: values.vehicleId,
         vehicleIdentifier: selectedVehicle?.licensePlate || values.vehicleLicensePlateSearch,
@@ -514,6 +517,13 @@ export function ServiceForm({
     }
 };
 
+  const handleConfirmDelete = () => {
+    if (onDelete && mode === 'quote' && initialDataQuote?.id) {
+        onDelete(initialDataQuote.id);
+        onClose(); // This will close the main dialog
+    }
+  };
+
   const cardTitleText = mode === 'quote' ? "Información del Vehículo y Cotización" : "Información del Vehículo y Servicio";
   const dateLabelText = mode === 'quote' ? "Fecha de Cotización" : "Fecha y Hora de Recepción";
   const totalCostLabelText = mode === 'quote' ? "Costo Estimado (IVA incluido)" : "Costo del Servicio (IVA incluido)";
@@ -590,7 +600,7 @@ export function ServiceForm({
           lowStockThreshold: newItemFormValues.isService ? 0 : Number(newItemFormValues.lowStockThreshold),
           unitPrice: Number(newItemFormValues.unitPrice),
           sellingPrice: Number(newItemFormValues.sellingPrice),
-          unitType: newItemFormValues.unitType || 'units',
+          unitType: newItemFormValues.unitType || 'units'
       };
       placeholderInventory.push(newInventoryItem);
       await persistToFirestore();
@@ -1064,6 +1074,32 @@ export function ServiceForm({
             </Button>
           ) : (
             <>
+              {onDelete && mode === 'quote' && initialDataQuote?.id && (
+                <div className="mr-auto">
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button type="button" variant="destructive">
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        Eliminar Cotización
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>¿Estás seguro de eliminar esta cotización?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Esta acción no se puede deshacer. Se eliminará permanentemente la cotización {initialDataQuote.id}.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleConfirmDelete} className="bg-destructive hover:bg-destructive/90">
+                          Sí, Eliminar
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </div>
+              )}
               <Button type="button" variant="outline" onClick={onClose}>
                 Cancelar
               </Button>
