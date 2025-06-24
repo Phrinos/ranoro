@@ -34,13 +34,13 @@ export const InventoryTable = React.memo(({ items }: InventoryTableProps) => {
       <Table>
         <TableHeader className="bg-white">
           <TableRow>
-            <TableHead className="font-bold">Código</TableHead>
+            <TableHead className="font-bold print:hidden">Código</TableHead>
             <TableHead className="font-bold">Categoría</TableHead>
             <TableHead className="font-bold">Nombre</TableHead>
             <TableHead className="text-right font-bold">Cantidad</TableHead>
             <TableHead className="text-right font-bold">Costo</TableHead>
             <TableHead className="text-right font-bold">Precio Venta</TableHead>
-            <TableHead className="font-bold">Stock</TableHead>
+            <TableHead className="font-bold print:hidden">Stock</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -50,7 +50,7 @@ export const InventoryTable = React.memo(({ items }: InventoryTableProps) => {
               onClick={() => handleRowClick(item.id)}
               className={`cursor-pointer hover:bg-muted/50 ${!item.isService && item.quantity <= item.lowStockThreshold ? "bg-orange-50 dark:bg-orange-900/30" : ""}`}
             >
-              <TableCell className="font-medium">{item.sku}</TableCell>
+              <TableCell className="font-medium print:hidden">{item.sku}</TableCell>
               <TableCell>{item.category}</TableCell>
               <TableCell>{item.name}</TableCell>
               <TableCell className="text-right">
@@ -70,7 +70,7 @@ export const InventoryTable = React.memo(({ items }: InventoryTableProps) => {
                 {item.unitType === 'ml' && <span className="text-xs text-muted-foreground"> /ml</span>}
                 {item.unitType === 'liters' && <span className="text-xs text-muted-foreground"> /L</span>}
                 </TableCell>
-              <TableCell>
+              <TableCell className="print:hidden">
                 {!item.isService && item.quantity <= item.lowStockThreshold && (
                   <Badge variant="destructive">Bajo</Badge>
                 )}
