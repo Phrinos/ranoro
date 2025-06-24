@@ -26,7 +26,6 @@ import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { MessageSquare, Download } from "lucide-react";
-import html2pdf from "html2pdf.js";
 
 
 /* --------------------------------------------------
@@ -93,11 +92,12 @@ export default function NuevaCotizacionPage() {
     setDialogStep("print_preview");
   };
 
-  const handleDownloadPdf = () => {
+  const handleDownloadPdf = async () => {
     if (!quoteContentRef.current || !currentQuoteForPdf) {
       toast({ title: "Error", description: "No se pudo generar el PDF.", variant: "destructive" });
       return;
     }
+    const html2pdf = (await import('html2pdf.js')).default;
     const element = quoteContentRef.current;
     const pdfFileName = `Cotizacion-${currentQuoteForPdf.id}.pdf`;
     const opt = {

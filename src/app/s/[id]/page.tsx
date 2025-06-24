@@ -10,7 +10,6 @@ import type { ServiceRecord, Vehicle, WorkshopInfo } from '@/types';
 import { ShieldAlert, Download, Loader2, Signature } from 'lucide-react';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
-import html2pdf from 'html2pdf.js';
 import { getDoc, doc } from 'firebase/firestore';
 import { db } from '@root/lib/firebaseClient.js';
 import { SignatureDialog } from '@/app/(app)/servicios/components/signature-dialog';
@@ -71,8 +70,9 @@ export default function PublicServiceSheetPage() {
     fetchPublicService();
   }, [publicId]);
 
-  const handleDownloadPDF = () => {
+  const handleDownloadPDF = async () => {
     if (!serviceSheetRef.current || !service) return;
+    const html2pdf = (await import('html2pdf.js')).default;
     const element = serviceSheetRef.current;
     const pdfFileName = `HojaDeServicio-${service.id}.pdf`;
     const opt = {

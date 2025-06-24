@@ -10,7 +10,6 @@ import type { QuoteRecord, Vehicle, WorkshopInfo } from '@/types';
 import { ShieldAlert, Download, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
-import html2pdf from 'html2pdf.js';
 import { getDoc, doc } from 'firebase/firestore';
 import { db } from '@root/lib/firebaseClient.js';
 
@@ -66,8 +65,9 @@ export default function PublicQuoteViewPage() {
     fetchPublicQuote();
   }, [quoteId]);
 
-  const handleDownloadPDF = () => {
+  const handleDownloadPDF = async () => {
     if (!quoteContentRef.current || !quote) return;
+    const html2pdf = (await import('html2pdf.js')).default;
     const element = quoteContentRef.current;
     const pdfFileName = `Cotizacion-${quote.id}.pdf`;
     const opt = {
