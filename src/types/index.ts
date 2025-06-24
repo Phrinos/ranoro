@@ -48,6 +48,7 @@ export interface ServiceRecord {
   fuelLevel?: string;
   customerItems?: string;
   serviceAdvisorName?: string;
+  customerSignature?: string; // Added for digital signature
 }
 
 export interface Technician {

@@ -6,6 +6,7 @@ import { format, parseISO, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
 import React, { useEffect, useState } from 'react';
 import { cn } from "@/lib/utils";
+import Image from 'next/image';
 
 const initialWorkshopInfo = {
   name: "RANORO",
@@ -141,9 +142,15 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
             </div>
             <div className="border-2 border-black p-2 rounded-md flex flex-col justify-between items-center min-h-[130px]">
                 <h3 className="font-bold uppercase text-center text-sm">AUTORIZO QUE SE REALICEN ESTOS SERVICIOS</h3>
-                <div className="border-t-2 border-black mt-auto pt-1 text-center w-full">
-                    <p className="text-xs font-semibold">{vehicle?.ownerName?.toUpperCase() || '________________________________'}</p>
-                </div>
+                {service.customerSignature ? (
+                    <div className="w-full h-full flex items-center justify-center">
+                        <Image src={service.customerSignature} alt="Firma del cliente" width={200} height={100} style={{objectFit: 'contain'}} />
+                    </div>
+                ) : (
+                    <div className="border-t-2 border-black mt-auto pt-1 text-center w-full">
+                        <p className="text-xs font-semibold">{vehicle?.ownerName?.toUpperCase() || '________________________________'}</p>
+                    </div>
+                )}
             </div>
           </section>
         </main>

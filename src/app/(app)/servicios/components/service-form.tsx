@@ -20,7 +20,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription} from "@/components/ui/card";
-import { CalendarIcon, PlusCircle, Search, Trash2, AlertCircle, Car as CarIcon, Clock, DollarSign, PackagePlus, BrainCircuit, Loader2, Printer, Plus, Minus, FileText } from "lucide-react";
+import { CalendarIcon, PlusCircle, Search, Trash2, AlertCircle, Car as CarIcon, Clock, DollarSign, PackagePlus, BrainCircuit, Loader2, Printer, Plus, Minus, FileText, Signature } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format, parseISO, setHours, setMinutes, isValid, startOfDay } from "date-fns";
 import { es } from 'date-fns/locale';
@@ -43,6 +43,8 @@ import { suggestQuote, type QuoteSuggestionInput } from '@/ai/flows/quote-sugges
 import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
 import { ServiceSheetContent } from './service-sheet-content';
 import { Checkbox } from "@/components/ui/checkbox";
+import { SignatureDialog } from "./signature-dialog";
+import Image from "next/image";
 
 
 const supplySchema = z.object({
@@ -72,6 +74,7 @@ const serviceFormSchemaBase = z.object({
   vehicleConditions: z.string().optional(),
   fuelLevel: z.string().optional(),
   customerItems: z.string().optional(),
+  customerSignature: z.string().optional(),
 });
 
 
@@ -159,6 +162,8 @@ export function ServiceForm({
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [serviceForSheet, setServiceForSheet] = useState<ServiceRecord | null>(null);
 
+  const [isSignatureDialogOpen, setIsSignatureDialogOpen] = useState(false);
+
 
   const form = useForm<ServiceFormValues>({
     resolver: zodResolver(serviceFormSchemaBase),
@@ -180,6 +185,7 @@ export function ServiceForm({
         vehicleConditions: (initialData as ServiceRecord)?.vehicleConditions || "",
         fuelLevel: (initialData as ServiceRecord)?.fuelLevel || undefined,
         customerItems: (initialData as ServiceRecord)?.customerItems || "",
+        customerSignature: (initialData as ServiceRecord)?.customerSignature || undefined,
     }
   });
 
@@ -255,6 +261,7 @@ export function ServiceForm({
             vehicleConditions: (data as ServiceRecord)?.vehicleConditions || "",
             fuelLevel: (data as ServiceRecord)?.fuelLevel || undefined,
             customerItems: (data as ServiceRecord)?.customerItems || '',
+            customerSignature: (data as ServiceRecord)?.customerSignature || undefined,
         };
 
         // Reset all form fields except the array
@@ -283,6 +290,7 @@ export function ServiceForm({
   }, [inventoryItemsProp]);
 
   const watchedStatus = form.watch("status");
+  const customerSignature = form.watch("customerSignature");
 
   useEffect(() => {
     if (mode === 'service' && watchedStatus === "Completado" && !form.getValues("deliveryDateTime")) {
@@ -422,6 +430,7 @@ export function ServiceForm({
         fuelLevel: values.fuelLevel,
         customerItems: values.customerItems,
         serviceAdvisorName: currentUser?.name || 'N/A',
+        customerSignature: values.customerSignature,
       };
       await onSubmit(serviceData);
     } else { // mode === 'quote'
@@ -476,6 +485,7 @@ export function ServiceForm({
       fuelLevel: formValues.fuelLevel,
       customerItems: formValues.customerItems,
       serviceAdvisorName: currentUser?.name || 'N/A',
+      customerSignature: formValues.customerSignature,
     };
     
     setServiceForSheet({ ...serviceDataForSheet, vehicleIdentifier: vehicleForSheet.licensePlate });
@@ -1341,6 +1351,24 @@ export function ServiceForm({
                         )}
                     />
                 </div>
+                {mode === 'service' && !isReadOnly && (
+                    <div className="pt-4">
+                        <Label>Firma del Cliente</Label>
+                        {customerSignature ? (
+                            <div className="mt-2 p-2 border rounded-md bg-muted/50 flex items-center justify-between">
+                                <Image src={customerSignature} alt="Firma del cliente" width={150} height={75} style={{objectFit: 'contain'}}/>
+                                <Button type="button" variant="ghost" size="sm" onClick={() => form.setValue('customerSignature', undefined)}>
+                                    Borrar Firma
+                                </Button>
+                            </div>
+                        ) : (
+                            <Button type="button" variant="outline" className="w-full mt-2" onClick={() => setIsSignatureDialogOpen(true)}>
+                                <Signature className="mr-2 h-4 w-4" />
+                                Capturar Firma del Cliente
+                            </Button>
+                        )}
+                    </div>
+                )}
             </CardContent>
         </Card>
 
@@ -1532,6 +1560,18 @@ export function ServiceForm({
             <ServiceSheetContent service={serviceForSheet} vehicle={localVehicles.find(v => v.id === serviceForSheet.vehicleId)} />
         )}
     </PrintTicketDialog>
+
+    {isSignatureDialogOpen && (
+        <SignatureDialog
+            open={isSignatureDialogOpen}
+            onOpenChange={setIsSignatureDialogOpen}
+            onSave={(signatureData) => {
+                form.setValue('customerSignature', signatureData, { shouldValidate: true, shouldDirty: true });
+                setIsSignatureDialogOpen(false);
+                toast({title: "Firma Capturada", description: "La firma del cliente ha sido guardada."})
+            }}
+        />
+    )}
     </>
   );
 }
