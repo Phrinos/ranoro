@@ -1,7 +1,7 @@
 
 
 export interface Vehicle {
-  id: number; 
+  id: string; 
   make: string;
   model: string;
   year: number;
@@ -26,7 +26,7 @@ export interface ServiceSupply {
 
 export interface ServiceRecord {
   id: string;
-  vehicleId: number;
+  vehicleId: string;
   vehicleIdentifier?: string;
   serviceDate: string; 
   description: string;
@@ -147,7 +147,7 @@ export interface QuoteRecord {
   publicId?: string; // Unique, random ID for public sharing
   serviceDate?: string; 
   quoteDate?: string;
-  vehicleId?: number; // Optional if quote is generic initially
+  vehicleId?: string; // Optional if quote is generic initially
   vehicleIdentifier?: string;
   description: string;
   preparedByTechnicianId?: string; // Who prepared the quote
@@ -174,7 +174,7 @@ export interface DashboardMetrics {
 export interface FinancialOperation {
   id: string;
   date: string;
-  type: 'Venta' | 'Servicio';
+  type: 'Venta' | 'Servicio' | 'C. Aceite';
   description: string; 
   totalAmount: number; // This is the final, tax-inclusive amount
   profit: number;

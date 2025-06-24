@@ -53,7 +53,7 @@ const supplySchema = z.object({
 
 const serviceFormSchemaBase = z.object({
   id: z.string().optional(), // For identifying existing records
-  vehicleId: z.number({invalid_type_error: "Debe seleccionar o registrar un vehículo."}).positive("Debe seleccionar o registrar un vehículo.").optional(),
+  vehicleId: z.string({required_error: "Debe seleccionar o registrar un vehículo."}).min(1, "Debe seleccionar o registrar un vehículo.").optional(),
   vehicleLicensePlateSearch: z.string().optional(),
   serviceDate: z.date({ required_error: "La fecha es obligatoria." }).optional(),
   quoteDate: z.date().optional(), // For quote mode
@@ -332,7 +332,7 @@ export function ServiceForm({
 
   const handleSaveNewVehicle = async (vehicleData: VehicleFormValues) => {
     const newVehicle: Vehicle = {
-      id: defaultPlaceholderVehicles.reduce((maxId, v) => Math.max(v.id, maxId), 0) + 1,
+      id: `VEH${defaultPlaceholderVehicles.length + 1}`,
       ...vehicleData,
       year: Number(vehicleData.year),
     };

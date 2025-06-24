@@ -24,7 +24,7 @@ import { TicketContent } from '@/components/ticket-content';
 
 export default function VehicleDetailPage() {
   const params = useParams();
-  const vehicleId = parseInt(params.id as string, 10);
+  const vehicleId = params.id as string;
   const { toast } = useToast();
   const router = useRouter();
   const ticketContentRef = useRef<HTMLDivElement>(null);

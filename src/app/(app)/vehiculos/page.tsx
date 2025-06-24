@@ -78,7 +78,7 @@ export default function VehiculosPage() {
     };
 
     const newVehicle: Vehicle = {
-      id: vehicles.length > 0 ? Math.max(...vehicles.map(v => v.id)) + 1 : 1,
+      id: `VEH${allVehicles.length + 1}`,
       ...newVehicleData,
       serviceHistory: [], 
     };
