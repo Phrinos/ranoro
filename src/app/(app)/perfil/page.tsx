@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useState } from 'react';
@@ -15,7 +16,7 @@ import { Save } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { getAuth, onAuthStateChanged, updatePassword, reauthenticateWithCredential, EmailAuthProvider } from 'firebase/auth';
 import { auth } from '@root/lib/firebaseClient.js';
-import { USER_LOCALSTORAGE_KEY, AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
+import { placeholderUsers, persistToFirestore, AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
 
 
 const profileSchema = z.object({
@@ -84,7 +85,10 @@ export default function PerfilPage() {
   }, [form, router]);
 
   const onSubmit = async (data: ProfileFormValues) => {
-    if (!currentUser || !auth.currentUser) return;
+    if (!currentUser || !auth.currentUser) {
+      toast({ title: "Error", description: "No se ha encontrado un usuario autenticado.", variant: "destructive" });
+      return;
+    }
 
     // --- Update Password in Firebase ---
     if (data.newPassword && data.currentPassword) {
@@ -101,47 +105,54 @@ export default function PerfilPage() {
         let message = "Ocurrió un error al cambiar la contraseña.";
         if (error.code === 'auth/wrong-password') {
             message = "La contraseña actual es incorrecta.";
+        } else if (error.code === 'auth/too-many-requests') {
+            message = 'Demasiados intentos fallidos. Inténtalo más tarde.';
         }
         toast({ title: "Error de Contraseña", description: message, variant: "destructive" });
         return; // Stop execution if password change fails
       }
     }
 
-    // --- Update User Info in Local Storage ---
+    // --- Update User Info in the main data array ---
+    const userIndex = placeholderUsers.findIndex(u => u.id === currentUser.id);
+    if (userIndex === -1) {
+      toast({ title: "Error", description: "No se pudo encontrar tu perfil en la base de datos local para actualizarlo.", variant: "destructive" });
+      return;
+    }
+
     const updatedUser: User = {
-      ...currentUser,
+      ...placeholderUsers[userIndex],
       name: data.name,
-      // email updates require verification and are more complex, so we disable it for now
-      // email: data.email, 
       phone: data.phone || undefined,
     };
     
-    // In a real app, you might want to call updateProfile(auth.currentUser, { displayName: data.name }) here
-    // For this app, we manage user data in our own list.
+    placeholderUsers[userIndex] = updatedUser; // Update the in-memory master list
 
-    localStorage.setItem(AUTH_USER_LOCALSTORAGE_KEY, JSON.stringify(updatedUser));
+    // --- Persist all data to Firestore ---
+    try {
+        await persistToFirestore();
+        // Also update the local storage for immediate UI feedback in the current session
+        localStorage.setItem(AUTH_USER_LOCALSTORAGE_KEY, JSON.stringify(updatedUser));
+        setCurrentUser(updatedUser); // Update local state
+        
+        toast({
+            title: "Perfil Actualizado",
+            description: "Tu información ha sido actualizada exitosamente.",
+        });
+        
+        form.reset({ 
+            ...form.getValues(),
+            name: data.name,
+            phone: data.phone,
+            newPassword: '',
+            confirmNewPassword: '',
+            currentPassword: ''
+        });
 
-    const storedUsersString = localStorage.getItem(USER_LOCALSTORAGE_KEY);
-    let appUsers: User[] = storedUsersString ? JSON.parse(storedUsersString) : [];
-    const userIndex = appUsers.findIndex(u => u.id === currentUser.id);
-    if (userIndex !== -1) {
-      appUsers[userIndex] = { ...appUsers[userIndex], ...updatedUser };
+    } catch (e) {
+        console.error("Failed to persist profile changes:", e);
+        toast({ title: "Error de Guardado", description: "No se pudieron guardar los cambios en la base de datos.", variant: "destructive" });
     }
-    localStorage.setItem(USER_LOCALSTORAGE_KEY, JSON.stringify(appUsers));
-
-    toast({
-      title: "Perfil Actualizado",
-      description: "Tu información ha sido actualizada exitosamente.",
-    });
-
-    form.reset({ 
-        ...form.getValues(),
-        name: data.name,
-        phone: data.phone,
-        newPassword: '',
-        confirmNewPassword: '',
-        currentPassword: ''
-    });
   };
 
   if (isLoading) {
