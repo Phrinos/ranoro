@@ -114,7 +114,7 @@ body {
   }
 
   /* Hide the sidebar and other non-printable elements */
-  .peer, .print-hidden {
+  .peer, .print-hidden, .print\:hidden {
     display: none !important;
   }
   
@@ -126,6 +126,26 @@ body {
       padding: 0 !important;
       margin: 0 !important;
       overflow: visible !important;
+  }
+
+  .print\:block {
+    display: block !important;
+  }
+
+  /* Styles for inventory list printing */
+  .inventory-page-print-context {
+    font-size: 10px;
+  }
+  .inventory-page-print-context h1 {
+    font-size: 18px;
+  }
+  .inventory-page-print-context table {
+    font-size: 10px;
+  }
+  .inventory-page-print-context th,
+  .inventory-page-print-context td {
+    padding-top: 4px;
+    padding-bottom: 4px;
   }
 
   /* Styles for other printable dialogs (tickets, quotes) */
