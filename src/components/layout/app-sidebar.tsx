@@ -175,10 +175,10 @@ export function AppSidebar() {
           </SidebarGroup>
         ))}
       </SidebarContent>
-      <SidebarFooter className="mt-auto border-t border-sidebar-border p-2 space-y-2">
+      <SidebarFooter className="mt-auto border-t border-sidebar-border p-2 flex items-center gap-1">
          <DropdownMenu>
             <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="w-full justify-center text-sidebar-foreground relative hover:bg-sidebar-accent hover:text-sidebar-accent-foreground group-data-[collapsible=icon]:justify-center">
+                <Button variant="ghost" className="justify-center text-sidebar-foreground relative hover:bg-sidebar-accent hover:text-sidebar-accent-foreground shrink-0 w-8 h-8 p-0">
                     <Bell className="h-5 w-5"/>
                     {newSignatureServices.length > 0 && (
                         <span className="absolute top-1 right-1 flex h-2.5 w-2.5">
@@ -215,7 +215,7 @@ export function AppSidebar() {
             >
               <UserCircle className="h-4 w-4" />
               <span className="group-data-[collapsible=icon]:hidden">
-                {currentUser?.name || "Mi Cuenta"}
+                Mi Cuenta
               </span>
             </Button>
           </DropdownMenuTrigger>
