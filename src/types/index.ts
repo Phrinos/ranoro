@@ -43,7 +43,11 @@ export interface ServiceRecord {
   notes?: string;
   mileage?: number;
   deliveryDateTime?: string; 
-  quoteDate?: string;   // ← ¡nuevo! lo marcamos opcional
+  quoteDate?: string;
+  vehicleConditions?: string;
+  fuelLevel?: string;
+  customerItems?: string[];
+  serviceAdvisorName?: string;
 }
 
 export interface Technician {
