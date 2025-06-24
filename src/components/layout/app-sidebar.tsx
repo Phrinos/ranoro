@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from "next/link";
@@ -26,6 +27,7 @@ import {
   ShieldQuestion,
   DatabaseZap,
   Database,
+  Bell,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -37,15 +39,19 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
-import type { User } from "@/types";
+import type { User, ServiceRecord } from "@/types";
 import { signOut } from "firebase/auth"; // Firebase
 import { auth } from "@root/lib/firebaseClient.js"; // Firebase
+import { placeholderServiceRecords } from "@/lib/placeholder-data";
+import { format, parseISO } from 'date-fns';
+import { es } from 'date-fns/locale';
 
 export function AppSidebar() {
   const navItems = useNavigation();
   const router = useRouter();
   const { toast } = useToast();
   const [currentUser, setCurrentUser] = React.useState<User | null>(null);
+  const [newSignatureServices, setNewSignatureServices] = React.useState<ServiceRecord[]>([]);
 
   React.useEffect(() => {
     if (typeof window !== "undefined") {
@@ -58,6 +64,13 @@ export function AppSidebar() {
           setCurrentUser(null);
         }
       }
+      
+      // Check for new signatures on load
+      const unreadServices = placeholderServiceRecords.filter(s => 
+        (s.customerSignatureReception && !s.receptionSignatureViewed) ||
+        (s.customerSignatureDelivery && !s.deliverySignatureViewed)
+      );
+      setNewSignatureServices(unreadServices);
     }
   }, []);
 
@@ -162,7 +175,38 @@ export function AppSidebar() {
           </SidebarGroup>
         ))}
       </SidebarContent>
-      <SidebarFooter className="mt-auto border-t border-sidebar-border p-2">
+      <SidebarFooter className="mt-auto border-t border-sidebar-border p-2 space-y-2">
+         <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="w-full justify-center text-sidebar-foreground relative hover:bg-sidebar-accent hover:text-sidebar-accent-foreground group-data-[collapsible=icon]:justify-center">
+                    <Bell className="h-5 w-5"/>
+                    {newSignatureServices.length > 0 && (
+                        <span className="absolute top-1 right-1 flex h-2.5 w-2.5">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500"></span>
+                        </span>
+                    )}
+                </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" side="top" className="mb-1 w-72">
+                <DropdownMenuLabel>Notificaciones de Firma</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {newSignatureServices.length > 0 ? (
+                    newSignatureServices.map(service => (
+                        <DropdownMenuItem key={service.id} onSelect={() => router.push(`/vehiculos/${service.vehicleId}`)}>
+                            <div className="flex flex-col">
+                                <span className="font-medium">Nueva firma para {service.vehicleIdentifier}</span>
+                                <span className="text-xs text-muted-foreground">{service.description}</span>
+                                <span className="text-xs text-muted-foreground">{format(parseISO(service.serviceDate), "dd MMM yyyy", { locale: es })}</span>
+                            </div>
+                        </DropdownMenuItem>
+                    ))
+                ) : (
+                    <DropdownMenuItem disabled>No hay firmas nuevas</DropdownMenuItem>
+                )}
+            </DropdownMenuContent>
+        </DropdownMenu>
+
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button

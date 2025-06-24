@@ -2,7 +2,7 @@
 
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -14,6 +14,7 @@ import {
 import { ServiceForm } from "./service-form";
 import type { ServiceRecord, Vehicle, Technician, InventoryItem, QuoteRecord } from "@/types";
 import { useToast } from "@/hooks/use-toast"; 
+import { persistToFirestore, placeholderServiceRecords } from '@/lib/placeholder-data';
 
 
 interface ServiceDialogProps {
@@ -53,6 +54,29 @@ export function ServiceDialog({
   const isControlled = controlledOpen !== undefined && setControlledOpen !== undefined;
   const open = isControlled ? controlledOpen : uncontrolledOpen;
   const onOpenChange = isControlled ? setControlledOpen : setUncontrolledOpen;
+
+  // Mark signatures as "viewed" when the dialog opens
+  useEffect(() => {
+    if (open && service && mode === 'service') {
+      let changed = false;
+      if (service.customerSignatureReception && !service.receptionSignatureViewed) {
+        service.receptionSignatureViewed = true;
+        changed = true;
+      }
+      if (service.customerSignatureDelivery && !service.deliverySignatureViewed) {
+        service.deliverySignatureViewed = true;
+        changed = true;
+      }
+      
+      if (changed) {
+        const serviceIndex = placeholderServiceRecords.findIndex(s => s.id === service.id);
+        if (serviceIndex > -1) {
+          placeholderServiceRecords[serviceIndex] = { ...service };
+          persistToFirestore().catch(err => console.error("Failed to mark signature as viewed", err));
+        }
+      }
+    }
+  }, [open, service, mode]);
 
   const handleSubmit = async (formData: ServiceRecord | QuoteRecord) => { 
     if (isReadOnly) {
