@@ -5,6 +5,7 @@ import type { ServiceRecord, Vehicle } from '@/types';
 import { format, parseISO, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
 import React, { useEffect, useState } from 'react';
+import { Progress } from '@/components/ui/progress';
 
 const initialWorkshopInfo = {
   name: "RANORO",
@@ -40,6 +41,20 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
     const serviceDate = parseISO(service.serviceDate ?? "");
     const formattedServiceDate = isValid(serviceDate) ? format(serviceDate, "dd 'de' MMMM 'de' yyyy, HH:mm 'hrs'", { locale: es }) : 'N/A';
 
+    const fuelLevelMap: Record<string, number> = {
+        'Vacío': 0,
+        '1/8': 12.5,
+        '1/4': 25,
+        '3/8': 37.5,
+        '1/2': 50,
+        '5/8': 62.5,
+        '3/4': 75,
+        '7/8': 87.5,
+        'Lleno': 100,
+    };
+
+    const fuelPercentage = service.fuelLevel ? fuelLevelMap[service.fuelLevel] ?? 0 : 0;
+
     return (
       <div ref={ref} data-format="letter" className="font-sans bg-white text-black shadow-lg mx-auto p-8 text-xs flex flex-col min-h-[10in]">
         <header className="mb-4 pb-2 border-b-2 border-black">
@@ -69,19 +84,19 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
             <div className="border-2 border-black p-3 rounded">
               <h3 className="font-bold text-sm mb-2 border-b-2 border-black pb-1">DATOS DEL CLIENTE</h3>
               <div className="space-y-1">
-                <p><span className="font-semibold">Nombre:</span> <span className="text-base font-medium">{vehicle?.ownerName}</span></p>
-                <p><span className="font-semibold">Teléfono:</span> <span className="text-base font-medium">{vehicle?.ownerPhone}</span></p>
-                <p><span className="font-semibold">Email:</span> <span className="text-base font-medium">{vehicle?.ownerEmail || 'N/A'}</span></p>
+                <p><span className="font-semibold">Nombre:</span> <span className="text-base font-bold">{vehicle?.ownerName}</span></p>
+                <p><span className="font-semibold">Teléfono:</span> <span className="text-base font-bold">{vehicle?.ownerPhone}</span></p>
+                <p><span className="font-semibold">Email:</span> <span className="text-base font-bold">{vehicle?.ownerEmail || 'N/A'}</span></p>
               </div>
             </div>
             <div className="border-2 border-black p-3 rounded">
               <h3 className="font-bold text-sm mb-2 border-b-2 border-black pb-1">DATOS DEL VEHÍCULO</h3>
               <div className="space-y-1">
-                <p><span className="font-semibold">Marca/Modelo:</span> <span className="text-base font-medium">{vehicle?.make} {vehicle?.model}</span></p>
-                <p><span className="font-semibold">Año:</span> <span className="text-base font-medium">{vehicle?.year}</span></p>
+                <p><span className="font-semibold">Marca/Modelo:</span> <span className="text-base font-bold">{vehicle?.make} {vehicle?.model}</span></p>
+                <p><span className="font-semibold">Año:</span> <span className="text-base font-bold">{vehicle?.year}</span></p>
                 <p><span className="font-semibold">Placas:</span> <span className="text-base font-bold">{vehicle?.licensePlate}</span></p>
-                <p><span className="font-semibold">Color:</span> <span className="text-base font-medium">{vehicle?.color || 'N/A'}</span></p>
-                <p><span className="font-semibold">Kilometraje:</span> <span className="text-base font-medium">{service.mileage?.toLocaleString('es-MX') || 'N/A'} km</span></p>
+                <p><span className="font-semibold">Color:</span> <span className="text-base font-bold">{vehicle?.color || 'N/A'}</span></p>
+                <p><span className="font-semibold">Kilometraje:</span> <span className="text-base font-bold">{service.mileage?.toLocaleString('es-MX') || 'N/A'} km</span></p>
               </div>
             </div>
           </section>
@@ -96,9 +111,16 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
                  <h3 className="font-bold text-sm mb-2 border-b-2 border-black pb-1">CONDICIONES DEL VEHÍCULO (AL RECIBIR)</h3>
                  <p className="whitespace-pre-wrap min-h-[60px]">{service.vehicleConditions || 'No especificado.'}</p>
               </div>
-              <div className="border-2 border-black p-3 rounded col-span-1 flex flex-col">
+              <div className="border-2 border-black p-3 rounded col-span-1 flex flex-col justify-center">
                   <h3 className="font-bold text-sm mb-2 border-b-2 border-black pb-1 text-center">NIVEL DE COMBUSTIBLE</h3>
-                  <p className={`font-bold text-center flex-grow flex items-center justify-center ${service.fuelLevel === '1/2' ? 'text-2xl' : 'text-xl'}`}>{service.fuelLevel || 'N/A'}</p>
+                  <div className="flex-grow flex flex-col items-center justify-center pt-2">
+                    <span className="font-semibold text-lg mb-2">{service.fuelLevel || 'N/A'}</span>
+                    <Progress value={fuelPercentage} className="h-4 w-full" />
+                    <div className="w-full flex justify-between text-[10px] mt-1 px-1">
+                        <span>E</span>
+                        <span>F</span>
+                    </div>
+                  </div>
               </div>
           </section>
 
