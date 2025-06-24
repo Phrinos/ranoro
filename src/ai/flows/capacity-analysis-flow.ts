@@ -24,7 +24,7 @@ const ServiceHistoryItemSchema = z.object({
 });
 
 // The input for the main flow, which is called from the UI
-export const CapacityAnalysisInputSchema = z.object({
+const CapacityAnalysisInputSchema = z.object({
   servicesForDay: z.array(ServiceForDaySchema).describe("A list of services scheduled for the day to be analyzed."),
   technicians: z.array(TechnicianInputSchema).describe("A list of all active technicians and their standard daily hours."),
   serviceHistory: z.array(ServiceHistoryItemSchema).describe("A comprehensive history of past services to learn time estimations from."),

@@ -30,7 +30,7 @@ const ServiceHistoryItemSchema = z.object({
   })).describe("A list of supplies used in the past service."),
 });
 
-export const PurchaseRecommendationInputSchema = z.object({
+const PurchaseRecommendationInputSchema = z.object({
   scheduledServices: z.array(ScheduledServiceSchema).describe("A list of all services scheduled for today that need parts."),
   inventoryItems: z.array(InventoryItemSchema).describe("The current list of all inventory items to check stock and supplier."),
   serviceHistory: z.array(ServiceHistoryItemSchema).describe("A comprehensive history of past services to learn which parts are needed for which job."),
@@ -69,7 +69,7 @@ const SupplierPurchaseListSchema = z.object({
   items: z.array(PurchaseItemSchema),
 });
 
-export const PurchaseRecommendationOutputSchema = z.object({
+const PurchaseRecommendationOutputSchema = z.object({
   recommendations: z.array(SupplierPurchaseListSchema).describe("The final purchase list, grouped by supplier."),
   reasoning: z.string().describe("A brief summary of the process, mentioning number of services analyzed and items needed."),
 });
