@@ -80,7 +80,6 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
               <p><span className="font-semibold">Marca/Modelo:</span> {vehicle?.make} {vehicle?.model}</p>
               <p><span className="font-semibold">Año:</span> {vehicle?.year}</p>
               <p><span className="font-semibold">Placas:</span> {vehicle?.licensePlate}</p>
-              <p><span className="font-semibold">VIN:</span> {vehicle?.vin || 'N/A'}</p>
               <p><span className="font-semibold">Color:</span> {vehicle?.color || 'N/A'}</p>
               <p><span className="font-semibold">Kilometraje:</span> {service.mileage?.toLocaleString('es-MX') || 'N/A'} km</p>
             </div>
