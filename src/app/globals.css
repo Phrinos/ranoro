@@ -126,11 +126,64 @@ body {
       padding: 0 !important;
       margin: 0 !important;
       overflow: visible !important;
+      background: white !important; /* Ensure main background is white */
   }
 
   .print\:block {
     display: block !important;
   }
+
+  /* Styles for other printable dialogs (tickets, quotes) */
+  .printable-content, .printable-content *,
+  .printable-ticket-dialog, .printable-ticket-dialog *,
+  .printable-quote-dialog, .printable-quote-dialog * {
+    visibility: visible;
+    color: black !important;
+  }
+
+  .printable-content, .printable-ticket-dialog, .printable-quote-dialog {
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    height: auto !important;
+    max-width: unset !important;
+    border: none !important;
+    box-shadow: none !important;
+    transform: none !important;
+    display: block !important;
+    background-color: white !important;
+  }
+  
+  /* This rule applies to both thermal receipts and letter docs.
+     Thermal printer drivers will typically ignore this and fit to roll.
+     Regular printers will use this for a sane default.
+     The user can always adjust settings in the print dialog. */
+  @page {
+    margin: 1cm;
+  }
+  
+  /* --- Styles specific to thermal receipt printing --- */
+  /* This selector targets both TicketContent and CorteDiaContent */
+  [data-format="receipt"] {
+      width: 80mm !important; /* Force width for thermal printers */
+      margin: 0 auto; /* Center it for preview */
+      padding: 5mm 3mm !important; /* Reduce vertical padding */
+      color: black !important;
+      background: white !important;
+  }
+
+  /* --- Styles specific to letter-sized document printing --- */
+  [data-format="letter"] {
+      width: 100%;
+      min-height: auto; /* Let content flow */
+      padding: 0;
+      color: black !important;
+      background: white !important;
+  }
+
 
   /* Styles for inventory list printing */
   .inventory-page-print-context {
@@ -146,42 +199,6 @@ body {
   .inventory-page-print-context td {
     padding-top: 4px;
     padding-bottom: 4px;
-  }
-
-  /* Styles for other printable dialogs (tickets, quotes) */
-  .printable-content, .printable-content * {
-    visibility: visible;
-  }
-
-  .printable-content {
-    position: absolute !important;
-    left: 0 !important;
-    top: 0 !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    width: 100% !important;
-    max-width: 100% !important;
-    height: auto !important;
-    border: none !important;
-    box-shadow: none !important;
-    transform: none !important;
-    display: block !important;
-  }
-  
-  .printable-content [data-format="receipt"] {
-      width: 80mm;
-      padding: 1cm 3mm;
-      color: black;
-      background-color: white;
-  }
-  
-  .printable-content [data-format="letter"] {
-      padding: 1in;
-  }
-
-  @page {
-    size: letter portrait;
-    margin: 1.5cm;
   }
 }
 
