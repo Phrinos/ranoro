@@ -19,7 +19,7 @@ interface TechniciansTableProps {
   technicians: Technician[];
 }
 
-export function TechniciansTable({ technicians: initialTechnicians }: TechniciansTableProps) {
+export const TechniciansTable = React.memo(({ technicians: initialTechnicians }: TechniciansTableProps) => {
   const router = useRouter();
 
   const handleRowClick = (technicianId: string) => {
@@ -66,4 +66,6 @@ export function TechniciansTable({ technicians: initialTechnicians }: Technician
       </Table>
     </div>
   );
-}
+});
+
+TechniciansTable.displayName = 'TechniciansTable';

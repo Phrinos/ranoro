@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -87,12 +87,12 @@ export default function ProveedoresPage() {
 
   }, [suppliers, searchTerm, sortOption]);
 
-  const handleOpenDialog = (supplier: Supplier | null = null) => {
+  const handleOpenDialog = useCallback((supplier: Supplier | null = null) => {
     setEditingSupplier(supplier);
     setIsDialogOpen(true);
-  };
+  }, []);
 
-  const handleSaveSupplier = async (formData: SupplierFormValues) => {
+  const handleSaveSupplier = useCallback(async (formData: SupplierFormValues) => {
     if (editingSupplier) {
       const updatedSuppliers = suppliers.map(sup =>
         sup.id === editingSupplier.id ? { ...editingSupplier, ...formData, debtAmount: Number(formData.debtAmount) || 0 } : sup
@@ -125,9 +125,9 @@ export default function ProveedoresPage() {
     }
     setIsDialogOpen(false);
     setEditingSupplier(null);
-  };
+  }, [editingSupplier, suppliers, toast]);
 
-  const handleDeleteSupplier = async (supplierId: string) => {
+  const handleDeleteSupplier = useCallback(async (supplierId: string) => {
     const supplierToDelete = suppliers.find(s => s.id === supplierId);
     if (!supplierToDelete) return;
 
@@ -143,7 +143,7 @@ export default function ProveedoresPage() {
       title: "Proveedor Eliminado",
       description: `El proveedor "${supplierToDelete.name}" ha sido eliminado.`,
     });
-  };
+  }, [suppliers, toast]);
 
   return (
     <>
