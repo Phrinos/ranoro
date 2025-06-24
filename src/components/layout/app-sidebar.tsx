@@ -176,42 +176,11 @@ export function AppSidebar() {
         ))}
       </SidebarContent>
       <SidebarFooter className="mt-auto border-t border-sidebar-border p-2 flex items-center gap-1">
-         <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="justify-center text-sidebar-foreground relative hover:bg-sidebar-accent hover:text-sidebar-accent-foreground shrink-0 w-8 h-8 p-0">
-                    <Bell className="h-5 w-5"/>
-                    {newSignatureServices.length > 0 && (
-                        <span className="absolute top-1 right-1 flex h-2.5 w-2.5">
-                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500"></span>
-                        </span>
-                    )}
-                </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" side="top" className="mb-1 w-72">
-                <DropdownMenuLabel>Notificaciones de Firma</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                {newSignatureServices.length > 0 ? (
-                    newSignatureServices.map(service => (
-                        <DropdownMenuItem key={service.id} onSelect={() => router.push(`/vehiculos/${service.vehicleId}`)}>
-                            <div className="flex flex-col">
-                                <span className="font-medium">Nueva firma para {service.vehicleIdentifier}</span>
-                                <span className="text-xs text-muted-foreground">{service.description}</span>
-                                <span className="text-xs text-muted-foreground">{format(parseISO(service.serviceDate), "dd MMM yyyy", { locale: es })}</span>
-                            </div>
-                        </DropdownMenuItem>
-                    ))
-                ) : (
-                    <DropdownMenuItem disabled>No hay firmas nuevas</DropdownMenuItem>
-                )}
-            </DropdownMenuContent>
-        </DropdownMenu>
-
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button
               variant="ghost"
-              className="w-full justify-start gap-2 text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground group-data-[collapsible=icon]:justify-center"
+              className="flex-grow justify-start gap-2 text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground group-data-[collapsible=icon]:justify-center"
             >
               <UserCircle className="h-4 w-4" />
               <span className="group-data-[collapsible=icon]:hidden">
@@ -256,6 +225,36 @@ export function AppSidebar() {
               <span className="text-destructive">Cerrar Sesión</span>
             </DropdownMenuItem>
           </DropdownMenuContent>
+        </DropdownMenu>
+         <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="justify-center text-sidebar-foreground relative hover:bg-sidebar-accent hover:text-sidebar-accent-foreground shrink-0 w-8 h-8 p-0">
+                    <Bell className="h-5 w-5"/>
+                    {newSignatureServices.length > 0 && (
+                        <span className="absolute top-1 right-1 flex h-2.5 w-2.5">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500"></span>
+                        </span>
+                    )}
+                </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" side="top" className="mb-1 w-72">
+                <DropdownMenuLabel>Notificaciones de Firma</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {newSignatureServices.length > 0 ? (
+                    newSignatureServices.map(service => (
+                        <DropdownMenuItem key={service.id} onSelect={() => router.push(`/vehiculos/${service.vehicleId}`)}>
+                            <div className="flex flex-col">
+                                <span className="font-medium">Nueva firma para {service.vehicleIdentifier}</span>
+                                <span className="text-xs text-muted-foreground">{service.description}</span>
+                                <span className="text-xs text-muted-foreground">{format(parseISO(service.serviceDate), "dd MMM yyyy", { locale: es })}</span>
+                            </div>
+                        </DropdownMenuItem>
+                    ))
+                ) : (
+                    <DropdownMenuItem disabled>No hay firmas nuevas</DropdownMenuItem>
+                )}
+            </DropdownMenuContent>
         </DropdownMenu>
       </SidebarFooter>
     </Sidebar>
