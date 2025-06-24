@@ -34,7 +34,7 @@ const vehicleFormSchema = z.object({
 export type VehicleFormValues = z.infer<typeof vehicleFormSchema>; // Export type
 
 interface VehicleFormProps {
-  initialData?: Vehicle | null;
+  initialData?: Partial<Vehicle> | null;
   onSubmit: (values: VehicleFormValues) => Promise<void>;
   onClose: () => void;
 }
@@ -82,8 +82,11 @@ export function VehicleForm({ initialData, onSubmit, onClose }: VehicleFormProps
   });
 
   useEffect(() => {
-    if (!initialData) {
+    if (!initialData?.year) {
       form.setValue('year', new Date().getFullYear());
+    }
+    if(initialData?.licensePlate) {
+        form.setValue('licensePlate', initialData.licensePlate);
     }
   }, [initialData, form]);
 
@@ -235,7 +238,7 @@ export function VehicleForm({ initialData, onSubmit, onClose }: VehicleFormProps
             Cancelar
           </Button>
           <Button type="submit" disabled={form.formState.isSubmitting}>
-            {form.formState.isSubmitting ? "Guardando..." : (initialData ? "Actualizar Vehículo" : "Crear Vehículo")}
+            {form.formState.isSubmitting ? "Guardando..." : (initialData && 'id' in initialData ? "Actualizar Vehículo" : "Crear Vehículo")}
           </Button>
         </div>
       </form>

@@ -27,8 +27,8 @@ const inventoryItemFormSchema = z.object({
   description: z.string().optional(),
   isService: z.boolean().default(false).optional(),
   quantity: z.coerce.number().int().min(0, "La cantidad no puede ser negativa."),
-  unitPrice: z.coerce.number().min(0, "El precio de compra no puede ser negativo."),
-  sellingPrice: z.coerce.number().min(0, "El precio de venta no puede ser negativo."),
+  unitPrice: z.coerce.number().min(0, "El precio de compra no puede ser negativo.").optional(),
+  sellingPrice: z.coerce.number().min(0, "El precio de venta no puede ser negativo.").optional(),
   lowStockThreshold: z.coerce.number().int().min(0, "El umbral de stock bajo no puede ser negativo."),
   unitType: z.enum(['units', 'ml', 'liters']).default('units').optional(),
   category: z.string().min(1, "La categoría es obligatoria."),
@@ -54,7 +54,7 @@ const inventoryItemFormSchema = z.object({
 export type InventoryItemFormValues = z.infer<typeof inventoryItemFormSchema>;
 
 interface InventoryItemFormProps {
-  initialData?: InventoryItem | null;
+  initialData?: Partial<InventoryItemFormValues> | null;
   onSubmit: (values: InventoryItemFormValues) => Promise<void>;
   onClose: () => void;
   categories: InventoryCategory[];
@@ -70,8 +70,8 @@ export function InventoryItemForm({ initialData, onSubmit, onClose, categories, 
       description: "",
       isService: false,
       quantity: 0,
-      unitPrice: 0,
-      sellingPrice: 0,
+      unitPrice: undefined,
+      sellingPrice: undefined,
       lowStockThreshold: 5,
       unitType: 'units',
       category: categories.length > 0 ? categories[0].name : "", 
@@ -93,6 +93,8 @@ export function InventoryItemForm({ initialData, onSubmit, onClose, categories, 
       ...values,
       quantity: values.isService ? 0 : values.quantity,
       lowStockThreshold: values.isService ? 0 : values.lowStockThreshold,
+      unitPrice: values.unitPrice || 0,
+      sellingPrice: values.sellingPrice || 0,
     };
     await onSubmit(submissionValues);
   };
@@ -305,7 +307,7 @@ export function InventoryItemForm({ initialData, onSubmit, onClose, categories, 
                   {unitTypeWatch === 'ml' ? 'Precio de Compra (por ml)' : unitTypeWatch === 'liters' ? 'Precio de Compra (por L)' : 'Precio de Compra (por unidad)'}
                 </FormLabel>
                 <FormControl>
-                  <Input type="number" step="0.01" placeholder="Ej: 10.50" {...field} />
+                  <Input type="number" step="0.01" placeholder="Ej: 10.50" {...field} value={field.value ?? ''} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -320,7 +322,7 @@ export function InventoryItemForm({ initialData, onSubmit, onClose, categories, 
                   {unitTypeWatch === 'ml' ? 'Precio de Venta (por ml, IVA Inc.)' : unitTypeWatch === 'liters' ? 'Precio de Venta (por L, IVA Inc.)' : 'Precio de Venta (por unidad, IVA Inc.)'}
                 </FormLabel>
                 <FormControl>
-                  <Input type="number" step="0.01" placeholder="Ej: 15.99" {...field} />
+                  <Input type="number" step="0.01" placeholder="Ej: 15.99" {...field} value={field.value ?? ''} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
