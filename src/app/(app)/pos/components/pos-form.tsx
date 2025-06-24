@@ -18,7 +18,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { PlusCircle, Trash2, Receipt, Search, PackagePlus, Wallet, CreditCard, Send, WalletCards, ArrowRightLeft } from "lucide-react";
+import { PlusCircle, Trash2, Receipt, Search, PackagePlus, Wallet, CreditCard, Send, WalletCards, ArrowRightLeft, Plus, Minus } from "lucide-react";
 import type { InventoryItem, SaleItem, PaymentMethod, SaleReceipt } from "@/types";
 import { useToast } from "@/hooks/use-toast";
 import React, { useState, useEffect } from "react";
@@ -150,7 +150,7 @@ export function PosForm({ inventoryItems: parentInventoryItems, onSaleComplete, 
   };
 
   const onSubmit = async (values: POSFormValues) => {
-    const newSaleId = `SALE_${Date.now().toString(36)}`;
+    const newSaleId = `SALE-${Date.now().toString(36).toUpperCase()}`;
 
     const newSaleTotalAmount = values.items.reduce((sum, item) => sum + item.totalPrice, 0);
     const newSaleSubTotal = newSaleTotalAmount / (1 + IVA_RATE);
@@ -193,7 +193,7 @@ export function PosForm({ inventoryItems: parentInventoryItems, onSaleComplete, 
       }
     });
     
-    await persistToFirestore();
+    await persistToFirestore(['sales', 'inventory']);
 
     onSaleComplete(newSale);
   };
@@ -201,6 +201,29 @@ export function PosForm({ inventoryItems: parentInventoryItems, onSaleComplete, 
   const formatCurrency = (amount: number | undefined) => {
     if (amount === undefined) return '$0.00';
     return `$${amount.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  };
+  
+  const handleQuantityChange = (index: number, delta: number) => {
+    const itemInFields = fields[index];
+    if (!itemInFields) return;
+
+    const currentQuantity = form.getValues(`items.${index}.quantity`);
+    const newQuantity = currentQuantity + delta;
+    
+    if (newQuantity < 1) return;
+
+    const itemDetails = currentInventoryItems.find(invItem => invItem.id === itemInFields.inventoryItemId);
+    if (itemDetails && !itemDetails.isService && newQuantity > itemDetails.quantity) {
+        toast({ title: "Stock Insuficiente", description: `Solo hay ${itemDetails.quantity} unidades de ${itemDetails.name}.`, variant: "destructive", duration: 3000});
+        return;
+    }
+    
+    const unitPrice = form.getValues(`items.${index}.unitPrice`) || 0;
+    update(index, {
+      ...form.getValues(`items.${index}`),
+      quantity: newQuantity,
+      totalPrice: unitPrice * newQuantity,
+    });
   };
 
   // --- Add Item Dialog Logic ---
@@ -266,7 +289,7 @@ export function PosForm({ inventoryItems: parentInventoryItems, onSaleComplete, 
 
   const handleNewItemCreated = async (newItemFormValues: InventoryItemFormValues) => {
       const newInventoryItem: InventoryItem = {
-          id: `PROD_${Date.now().toString(36)}`,
+          id: `PROD-${Date.now().toString(36).toUpperCase()}`,
           ...newItemFormValues,
           isService: newItemFormValues.isService || false,
           quantity: newItemFormValues.isService ? 0 : Number(newItemFormValues.quantity),
@@ -276,7 +299,7 @@ export function PosForm({ inventoryItems: parentInventoryItems, onSaleComplete, 
           unitType: newItemFormValues.unitType || 'units'
       };
       placeholderInventory.push(newInventoryItem);
-      await persistToFirestore();
+      await persistToFirestore(['inventory']);
       
       setCurrentInventoryItems(prev => [...prev, newInventoryItem]);
 
@@ -321,7 +344,7 @@ export function PosForm({ inventoryItems: parentInventoryItems, onSaleComplete, 
                 {fields.length > 0 ? (
                     <div className="space-y-4">
                     {fields.map((field, index) => (
-                        <div key={field.id} className="flex items-end gap-2 p-3 border rounded-md bg-muted/20 dark:bg-muted/50">
+                        <div key={field.id} className="flex items-center gap-2 p-3 border rounded-md bg-muted/20 dark:bg-muted/50">
                             <div className="flex-1">
                                 <FormLabel className="text-xs">Artículo</FormLabel>
                                 <Input
@@ -331,49 +354,38 @@ export function PosForm({ inventoryItems: parentInventoryItems, onSaleComplete, 
                                     className="bg-muted/30 dark:bg-muted/60 border-none text-sm font-medium w-full"
                                 />
                             </div>
-                        <FormField
-                            control={form.control}
-                            name={`items.${index}.quantity`}
-                            render={({ field: controllerField }) => (
-                            <FormItem>
+                            <div className="w-36">
                                 <FormLabel className="text-xs">Cantidad</FormLabel>
-                                <Input
-                                type="number"
-                                min="1"
-                                placeholder="Cant."
-                                {...controllerField}
-                                value={controllerField.value ?? ''}
-                                onChange={(e) => {
-                                    const val = parseFloat(e.target.value);
-                                    const newQuantity = val > 0 ? val : 1;
-                                    controllerField.onChange(newQuantity);
-                                    const unitPrice = form.getValues(`items.${index}.unitPrice`) || 0;
-                                    const itemDetails = currentInventoryItems.find(invItem => invItem.id === form.getValues(`items.${index}.inventoryItemId`));
-                                    if (itemDetails && !itemDetails.isService && newQuantity > itemDetails.quantity) {
-                                        toast({ title: "Stock Insuficiente", description: `Solo hay ${itemDetails.quantity} unidades de ${itemDetails.name}.`, variant: "destructive", duration: 3000});
-                                    }
-                                    update(index, {
-                                    ...form.getValues(`items.${index}`),
-                                    quantity: newQuantity,
-                                    totalPrice: unitPrice * newQuantity,
-                                    });
-                                }}
-                                className="w-24"
-                                />
-                                <FormMessage />
-                            </FormItem>
-                            )}
-                        />
-                        <div className="w-28">
+                                <div className="flex items-center justify-center gap-2 mt-2">
+                                    <Button
+                                        type="button" variant="outline" size="icon"
+                                        className="h-6 w-6"
+                                        onClick={() => handleQuantityChange(index, -1)}
+                                    >
+                                        <Minus className="h-4 w-4" />
+                                    </Button>
+                                    <span className="w-12 text-center font-medium">
+                                        {field.quantity}
+                                    </span>
+                                    <Button
+                                        type="button" variant="outline" size="icon"
+                                        className="h-6 w-6"
+                                        onClick={() => handleQuantityChange(index, 1)}
+                                    >
+                                        <Plus className="h-4 w-4" />
+                                    </Button>
+                                </div>
+                            </div>
+                        <div className="w-28 self-end">
                             <FormLabel className="text-xs">Precio Total (IVA Inc.)</FormLabel>
                             <Input
                                 type="text"
                                 readOnly
                                 value={formatCurrency(form.getValues(`items.${index}.totalPrice`))}
-                                className="bg-muted/50 dark:bg-muted/80 border-none text-sm font-medium"
+                                className="bg-muted/50 dark:bg-muted/80 border-none text-sm font-medium mt-1"
                             />
                             </div>
-                        <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)} aria-label="Eliminar artículo">
+                        <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)} aria-label="Eliminar artículo" className="self-end mb-1">
                             <Trash2 className="h-4 w-4 text-destructive" />
                         </Button>
                         </div>
@@ -554,13 +566,34 @@ export function PosForm({ inventoryItems: parentInventoryItems, onSaleComplete, 
                 )}
                 <div className="space-y-2">
                     <Label htmlFor="item-quantity">Cantidad ({selectedInventoryItemForDialog?.unitType || 'unidades'})</Label>
-                    <Input
-                        id="item-quantity"
-                        type="number"
-                        min="1"
-                        value={addItemQuantity}
-                        onChange={(e) => setAddItemQuantity(parseFloat(e.target.value) || 1 )}
-                    />
+                    <div className="flex items-center gap-2">
+                        <Button
+                            type="button"
+                            variant="outline"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() => setAddItemQuantity(q => Math.max(1, q - 1))}
+                        >
+                            <Minus className="h-4 w-4" />
+                        </Button>
+                        <Input
+                            id="item-quantity"
+                            type="number"
+                            min="1"
+                            value={addItemQuantity}
+                            onChange={(e) => setAddItemQuantity(parseInt(e.target.value, 10) || 1)}
+                            className="w-20 text-center"
+                        />
+                        <Button
+                            type="button"
+                            variant="outline"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() => setAddItemQuantity(q => q + 1)}
+                        >
+                            <Plus className="h-4 w-4" />
+                        </Button>
+                    </div>
                 </div>
             </div>
             <DialogFooter>

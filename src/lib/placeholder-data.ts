@@ -273,13 +273,23 @@ export const getYesterdayRange = () => {
 };
 
 export const calculateSaleProfit = (sale: SaleReceipt, inventory: InventoryItem[], ivaRate: number): number => {
+  if (!sale || !sale.items) return 0;
+
   return sale.items.reduce((profit, saleItem) => {
-      const inventoryItem = inventory.find(inv => inv.id === saleItem.inventoryItemId);
-      const costPrice = inventoryItem ? inventoryItem.unitPrice : 0;
-      const sellingPriceSubTotal = saleItem.unitPrice / (1 + ivaRate);
-      return profit + (sellingPriceSubTotal - costPrice) * saleItem.quantity;
+    const inventoryItem = inventory.find(inv => inv.id === saleItem.inventoryItemId);
+    const costPrice = inventoryItem?.unitPrice ?? 0;
+
+    const sellingPriceWithTax = typeof saleItem.unitPrice === 'number' ? saleItem.unitPrice : 0;
+    const sellingPriceSubTotal = sellingPriceWithTax / (1 + ivaRate);
+
+    const quantitySold = typeof saleItem.quantity === 'number' ? saleItem.quantity : 0;
+
+    const itemProfit = (sellingPriceSubTotal - costPrice) * quantitySold;
+    
+    return profit + (Number.isNaN(itemProfit) ? 0 : itemProfit);
   }, 0);
 };
+
 
 /**
  * Creates a new ServiceRecord object with the unitPrice of supplies
