@@ -647,7 +647,9 @@ export function ServiceForm({
     const itemInFields = fields[index];
     if (!itemInFields) return;
 
-    const newQuantity = (itemInFields.quantity || 0) + delta;
+    const currentQuantity = form.getValues(`suppliesUsed.${index}.quantity`);
+    const newQuantity = currentQuantity + delta;
+    
     if (newQuantity < 1) return;
 
     const itemDetails = currentInventoryItems.find(invItem => invItem.id === itemInFields.supplyId);
@@ -656,12 +658,8 @@ export function ServiceForm({
         return;
     }
     
-    const { id, ...restOfItem } = itemInFields;
-    
-    update(index, {
-      ...restOfItem,
-      quantity: newQuantity,
-    });
+    form.setValue(`suppliesUsed.${index}.quantity`, newQuantity);
+    update(index, { ...form.getValues(`suppliesUsed.${index}`), quantity: newQuantity });
   };
 
   const handleOpenCreateNewSupplyDialog = () => {
@@ -1339,13 +1337,34 @@ export function ServiceForm({
                     <Label htmlFor="supply-quantity">
                         Cantidad ({selectedInventoryItemForDialog?.unitType === 'ml' ? 'ml' : selectedInventoryItemForDialog?.unitType === 'liters' ? 'L' : 'unidades'})
                     </Label>
-                    <Input
-                        id="supply-quantity"
-                        type="number"
-                        min="1"
-                        value={addSupplyQuantity}
-                        onChange={(e) => setAddSupplyQuantity(parseInt(e.target.value,10) || 1 )}
-                    />
+                    <div className="flex items-center gap-2">
+                        <Button
+                            type="button"
+                            variant="outline"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() => setAddSupplyQuantity(q => Math.max(1, q - 1))}
+                        >
+                            <Minus className="h-4 w-4" />
+                        </Button>
+                        <Input
+                            id="supply-quantity"
+                            type="number"
+                            min="1"
+                            value={addSupplyQuantity}
+                            onChange={(e) => setAddSupplyQuantity(parseInt(e.target.value, 10) || 1)}
+                            className="w-20 text-center"
+                        />
+                        <Button
+                            type="button"
+                            variant="outline"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() => setAddSupplyQuantity(q => q + 1)}
+                        >
+                            <Plus className="h-4 w-4" />
+                        </Button>
+                    </div>
                 </div>
             </div>
             <DialogFooter>
