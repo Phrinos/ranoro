@@ -380,11 +380,9 @@ export default function AgendaServiciosPage() {
                               <Button variant="ghost" size="icon" aria-label="Editar Servicio" onClick={(e) => {e.stopPropagation(); handleOpenEditDialog(service);}}>
                                 <Edit className="h-4 w-4" />
                               </Button>
-                              {(service.status === 'Reparando' || service.status === 'Completado') && (
-                                <Button variant="ghost" size="icon" aria-label="Ver Hoja de Servicio" onClick={(e) => { e.stopPropagation(); handleShowSheet(service); }}>
-                                    <FileText className="h-4 w-4" />
-                                </Button>
-                              )}
+                              <Button variant="ghost" size="icon" aria-label="Ver Hoja de Servicio" onClick={(e) => { e.stopPropagation(); handleShowSheet(service); }}>
+                                  <FileText className="h-4 w-4" />
+                              </Button>
                               {service.status === 'Completado' && (
                                 <Button variant="ghost" size="icon" aria-label="Reimprimir Comprobante" onClick={(e) => { e.stopPropagation(); handleReprintService(service); }}>
                                     <Printer className="h-4 w-4" />
