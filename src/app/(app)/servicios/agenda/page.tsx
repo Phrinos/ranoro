@@ -13,7 +13,7 @@ import {
   enrichServiceForPrinting,
 } from "@/lib/placeholder-data";
 import type { ServiceRecord, Vehicle, Technician, InventoryItem, QuoteRecord } from "@/types";
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { format, parseISO, compareAsc, isFuture, isToday, isPast, isValid, addDays, isSameDay } from "date-fns";
 import { es } from 'date-fns/locale';
@@ -28,6 +28,7 @@ import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
 import { TicketContent } from '@/components/ticket-content';
 import Link from "next/link";
 import { analyzeWorkshopCapacity, type CapacityAnalysisOutput } from '@/ai/flows/capacity-analysis-flow';
+import { ServiceSheetContent } from '../components/service-sheet-content';
 
 
 interface GroupedServices {
@@ -52,11 +53,38 @@ export default function AgendaServiciosPage() {
   const [currentServiceForTicket, setCurrentServiceForTicket] = useState<ServiceRecord | null>(null);
   const [currentVehicleForTicket, setCurrentVehicleForTicket] = useState<Vehicle | null>(null);
   const [currentTechnicianForTicket, setCurrentTechnicianForTicket] = useState<Technician | null>(null);
+  
+  const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const [serviceForSheet, setServiceForSheet] = useState<ServiceRecord | null>(null);
 
   const [capacityInfo, setCapacityInfo] = useState<CapacityAnalysisOutput | null>(null);
   const [isCapacityLoading, setIsCapacityLoading] = useState(true);
   const [capacityError, setCapacityError] = useState<string | null>(null);
 
+
+  const handleServiceUpdated = useCallback(async (data: ServiceRecord) => {
+    setAllServices(prevServices => 
+        prevServices.map(s => s.id === data.id ? data : s)
+    );
+    const pIndex = placeholderServiceRecords.findIndex(s => s.id === data.id);
+    if (pIndex !== -1) {
+        placeholderServiceRecords[pIndex] = data;
+    }
+    await persistToFirestore();
+    
+    toast({
+      title: "Servicio Actualizado",
+      description: `El servicio ${data.id} ha sido actualizado.`,
+    });
+
+    if (data.status === 'Completado') {
+      const serviceForTicket = enrichServiceForPrinting(data, inventoryItemsState);
+      setCurrentServiceForTicket(serviceForTicket);
+      setCurrentVehicleForTicket(vehicles.find(v => v.id === data.vehicleId) || null);
+      setCurrentTechnicianForTicket(techniciansState.find(t => t.id === data.technicianId) || null);
+      setShowPrintTicketDialog(true);
+    }
+  }, [inventoryItemsState, techniciansState, vehicles, toast]);
 
   useEffect(() => {
     setAllServices(placeholderServiceRecords);
@@ -157,12 +185,12 @@ export default function AgendaServiciosPage() {
     return { todayCount, tomorrowCount };
   }, [allServices]);
 
-  const handleOpenEditDialog = (service: ServiceRecord) => {
+  const handleOpenEditDialog = useCallback((service: ServiceRecord) => {
     setEditingService(service);
     setIsEditDialogOpen(true);
-  };
+  }, []);
 
-  const handleUpdateService = async (data: ServiceRecord | QuoteRecord) => {
+  const handleUpdateService = useCallback(async (data: ServiceRecord | QuoteRecord) => {
     if (!('status' in data)) {
       toast({
         title: "Error de Tipo",
@@ -171,30 +199,12 @@ export default function AgendaServiciosPage() {
       });
       return;
     }
-    const updatedServiceData = data as ServiceRecord;
-
-    setAllServices(prevServices =>
-      prevServices.map(s => (s.id === updatedServiceData.id ? updatedServiceData : s))
-    );
-    const pIndex = placeholderServiceRecords.findIndex(s => s.id === updatedServiceData.id);
-    if (pIndex !== -1) {
-      placeholderServiceRecords[pIndex] = updatedServiceData;
-    }
-    await persistToFirestore();
-
-     toast({
-      title: "Servicio Actualizado",
-      description: `El servicio para ${vehicles.find(v => v.id === updatedServiceData.vehicleId)?.licensePlate} ha sido actualizado.`,
-    });
+    await handleServiceUpdated(data);
     setIsEditDialogOpen(false);
     setEditingService(null);
+  }, [handleServiceUpdated, toast]);
 
-    if (updatedServiceData.status === 'Completado') {
-      handleReprintService(updatedServiceData);
-    }
-  };
-
-  const handleDeleteService = async (serviceId: string) => {
+  const handleDeleteService = useCallback(async (serviceId: string) => {
     const serviceToDelete = allServices.find(s => s.id === serviceId);
     setAllServices(prevServices => prevServices.filter(s => s.id !== serviceId));
     const pIndex = placeholderServiceRecords.findIndex(s => s.id === serviceId);
@@ -206,18 +216,22 @@ export default function AgendaServiciosPage() {
       title: "Servicio Eliminado",
       description: `El servicio con ID ${serviceId} (${serviceToDelete?.description}) ha sido eliminado.`,
     });
-  };
+  }, [allServices, toast]);
   
-  const handleReprintService = (service: ServiceRecord) => {
+  const handleReprintService = useCallback((service: ServiceRecord) => {
     const serviceForTicket = enrichServiceForPrinting(service, inventoryItemsState);
     setCurrentServiceForTicket(serviceForTicket);
     setCurrentVehicleForTicket(vehicles.find(v => v.id === service.vehicleId) || null);
     setCurrentTechnicianForTicket(techniciansState.find(t => t.id === service.technicianId) || null);
     setShowPrintTicketDialog(true);
-  };
+  }, [inventoryItemsState, techniciansState, vehicles]);
 
+  const handleShowSheet = useCallback((service: ServiceRecord) => {
+    setServiceForSheet(service);
+    setIsSheetOpen(true);
+  }, []);
 
-  const onVehicleCreated = async (newVehicle: Vehicle) => {
+  const onVehicleCreated = useCallback(async (newVehicle: Vehicle) => {
     setVehicles(currentVehicles => {
       if (currentVehicles.find(v => v.id === newVehicle.id)) return currentVehicles;
       const updated = [...currentVehicles, newVehicle];
@@ -227,11 +241,11 @@ export default function AgendaServiciosPage() {
       return updated;
     });
     await persistToFirestore();
-  };
+  }, []);
 
-  const handlePrintTicket = () => {
+  const handlePrintTicket = useCallback(() => {
     window.print();
-  };
+  }, []);
 
 
   const futureServices = useMemo(() => {
@@ -366,6 +380,11 @@ export default function AgendaServiciosPage() {
                               <Button variant="ghost" size="icon" aria-label="Editar Servicio" onClick={(e) => {e.stopPropagation(); handleOpenEditDialog(service);}}>
                                 <Edit className="h-4 w-4" />
                               </Button>
+                              {(service.status === 'Reparando' || service.status === 'Completado') && (
+                                <Button variant="ghost" size="icon" aria-label="Ver Hoja de Servicio" onClick={(e) => { e.stopPropagation(); handleShowSheet(service); }}>
+                                    <FileText className="h-4 w-4" />
+                                </Button>
+                              )}
                               {service.status === 'Completado' && (
                                 <Button variant="ghost" size="icon" aria-label="Reimprimir Comprobante" onClick={(e) => { e.stopPropagation(); handleReprintService(service); }}>
                                     <Printer className="h-4 w-4" />
@@ -536,6 +555,23 @@ export default function AgendaServiciosPage() {
             vehicle={currentVehicleForTicket || undefined}
             technician={currentTechnicianForTicket || undefined}
           />
+        </PrintTicketDialog>
+      )}
+
+      {serviceForSheet && (
+        <PrintTicketDialog
+            open={isSheetOpen}
+            onOpenChange={setIsSheetOpen}
+            title="Hoja de Servicio"
+            onDialogClose={() => setServiceForSheet(null)}
+            dialogContentClassName="printable-quote-dialog"
+            footerActions={
+                <Button onClick={() => window.print()}>
+                    <Printer className="mr-2 h-4 w-4" /> Imprimir Hoja
+                </Button>
+            }
+        >
+            <ServiceSheetContent service={serviceForSheet} vehicle={vehicles.find(v => v.id === serviceForSheet.vehicleId)} />
         </PrintTicketDialog>
       )}
     </>
