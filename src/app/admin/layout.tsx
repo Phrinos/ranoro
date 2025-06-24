@@ -1,11 +1,16 @@
 
-"use client"; // Required for useEffect and useRouter
+"use client";
 
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, ShieldCheck } from 'lucide-react';
-import { useEffect } from 'react';
-import { useRouter, usePathname } from 'next/navigation';
+import { ArrowLeft, ShieldCheck, Loader2 } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { onAuthStateChanged, signOut } from 'firebase/auth'; 
+import { auth } from '@root/lib/firebaseClient.js';
+import { hydrateFromFirestore, AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
+import { useToast } from '@/hooks/use-toast';
+import type { User } from '@/types';
 
 export default function AdminLayout({
   children,
@@ -13,36 +18,69 @@ export default function AdminLayout({
   children: React.ReactNode;
 }) {
   const router = useRouter();
-  const pathname = usePathname();
+  const { toast } = useToast();
+  const [authStatus, setAuthStatus] = useState<'loading' | 'unauthenticated' | 'authenticated'>('loading');
+  const [isHydrating, setIsHydrating] = useState(true);
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const authUserString = localStorage.getItem('authUser');
-      if (!authUserString) {
-        router.replace('/login');
-        return;
-      }
-      try {
-        const authUser = JSON.parse(authUserString);
-        // Optionally, check for admin role here if needed for /admin routes
-        // For now, just being authenticated is enough for this simulation
-        if (!authUser || (authUser.role !== 'superadmin' && authUser.role !== 'admin')) {
-           // If specific admin roles are required, enforce here
-           // toast({ title: "Acceso Denegado", description: "No tienes permisos para acceder a esta sección.", variant: "destructive" });
-           // router.replace('/dashboard'); // or '/login'
-        }
-      } catch (e) {
-        console.error("Error parsing authUser from localStorage", e);
-        router.replace('/login');
-      }
+    if (!auth) {
+      console.warn("Firebase not configured for Admin area. Running in mock auth mode.");
+      setAuthStatus('authenticated');
+      setIsHydrating(false);
+      return;
     }
-  }, [router, pathname]);
 
-  // Prevent rendering children if redirecting
-  if (typeof window !== 'undefined' && !localStorage.getItem('authUser') && pathname !== '/login') {
-    return null; 
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        setAuthStatus('authenticated');
+        setIsHydrating(true);
+        try {
+          await hydrateFromFirestore();
+
+          const authUserString = localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY);
+          if (authUserString) {
+            const appUser: User = JSON.parse(authUserString);
+            if (appUser.role !== 'Superadmin' && appUser.role !== 'Admin') {
+               toast({ title: "Acceso Denegado", description: "No tienes permisos para acceder a esta sección.", variant: "destructive" });
+               router.replace('/dashboard');
+               return;
+            }
+          } else {
+             toast({ title: "Sesión no válida", description: "Por favor, inicie sesión de nuevo.", variant: "destructive" });
+             router.replace('/login');
+             return;
+          }
+          setIsHydrating(false);
+
+        } catch (error) {
+          console.error("Hydration failed in AdminLayout:", error);
+          toast({ title: "Error de Carga", description: "No se pudieron cargar los datos del taller.", variant: "destructive" });
+          await signOut(auth).catch(() => {});
+          router.replace('/login');
+        }
+      } else {
+        setAuthStatus('unauthenticated');
+        router.replace('/login');
+      }
+    });
+
+    return () => unsubscribe();
+  }, [router, toast]);
+
+
+  if (authStatus === 'loading' || isHydrating) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center bg-muted/40">
+        <Loader2 className="h-8 w-8 animate-spin" />
+        <p className="text-lg ml-4">Cargando sección de administración...</p>
+      </div>
+    );
   }
 
+  if (authStatus === 'unauthenticated') {
+    return null; 
+  }
+  
   return (
     <div className="min-h-screen flex flex-col bg-muted/40">
       <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6 py-4">
