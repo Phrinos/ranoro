@@ -1,4 +1,5 @@
 
+
 import type { Vehicle, ServiceRecord, Technician, InventoryItem, DashboardMetrics, SaleReceipt, ServiceSupply, TechnicianMonthlyPerformance, InventoryCategory, Supplier, SaleItem, PaymentMethod, AppRole, QuoteRecord, MonthlyFixedExpense, AdministrativeStaff, User } from '@/types';
 import { format, subMonths, addDays, getYear, getMonth, setHours, setMinutes, subDays, startOfMonth, endOfMonth, startOfDay, endOfDay } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -172,6 +173,30 @@ export async function hydrateFromFirestore() {
     console.warn("Could not read from Firestore. This might be due to Firestore rules. The app will proceed with in-memory data for this session.");
   }
 
+  // Force a clean slate for operational data as requested.
+  // This ensures that even if data exists in Firestore, the app starts fresh.
+  if (placeholderVehicles.length > 0) {
+    console.log(`Forcing clean slate: Removing ${placeholderVehicles.length} vehicles.`);
+    placeholderVehicles.splice(0, placeholderVehicles.length);
+    changesMade = true;
+  }
+  if (placeholderServiceRecords.length > 0) {
+    console.log(`Forcing clean slate: Removing ${placeholderServiceRecords.length} services.`);
+    placeholderServiceRecords.splice(0, placeholderServiceRecords.length);
+    changesMade = true;
+  }
+  if (placeholderQuotes.length > 0) {
+    console.log(`Forcing clean slate: Removing ${placeholderQuotes.length} quotes.`);
+    placeholderQuotes.splice(0, placeholderQuotes.length);
+    changesMade = true;
+  }
+  if (placeholderSales.length > 0) {
+    console.log(`Forcing clean slate: Removing ${placeholderSales.length} sales.`);
+    placeholderSales.splice(0, placeholderSales.length);
+    changesMade = true;
+  }
+  
+
   // --- DATA INTEGRITY CHECKS ---
   // Always ensure default users exist in memory, regardless of what was loaded from the database.
   // This makes the app resilient to a corrupted or empty 'users' array in the DB.
@@ -211,7 +236,7 @@ export async function hydrateFromFirestore() {
   (window as any).__APP_HYDRATED__ = true;
   console.log("Hydration process complete. Checking for necessary persistence...");
 
-  // If the document didn't exist or we had to add a missing user, we should try to persist.
+  // If the document didn't exist or we had to add/remove data, we should try to persist.
   if (!docSnap || !docSnap.exists() || changesMade) {
     console.log("Attempting to persist updated data to Firestore in the background...");
     // We don't await this so that the app can continue loading without waiting for the write to finish.
@@ -318,3 +343,4 @@ export const enrichServiceForPrinting = (service: ServiceRecord, inventory: Inve
     suppliesUsed: enrichedSupplies,
   };
 };
+
