@@ -302,17 +302,40 @@ export default function AgendaServiciosPage() {
 
     return Object.entries(groupedServicesData).map(([date, dayServices]) => {
       const dailyProfit = dayServices.reduce((sum, service) => sum + (service.serviceProfit || 0), 0);
+      const isCurrentDateToday = isToday(parseISO(date));
       return (
         <div key={date} className="mb-6">
           <div className="flex justify-between items-center mb-3 bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 p-3 rounded-lg shadow-md">
               <h3 className="text-lg font-semibold">
                   {format(parseISO(date), "EEEE, dd 'de' MMMM 'de' yyyy", { locale: es })}
               </h3>
-              <div className="text-right">
-                  <p className="text-sm font-medium text-slate-600 dark:text-slate-300">Ganancia Estimada del Día</p>
-                  <p className="text-xl font-bold">
-                      {`$${dailyProfit.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
-                  </p>
+              <div className="flex items-center gap-6">
+                <div className="text-right">
+                    <p className="text-sm font-medium text-slate-600 dark:text-slate-300">Ganancia Estimada del Día</p>
+                    <p className="text-xl font-bold">
+                        {`$${dailyProfit.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+                    </p>
+                </div>
+                {isCurrentDateToday && (
+                  <div className="text-right">
+                      <p className="text-sm font-medium text-slate-600 dark:text-slate-300">Capacidad del Taller</p>
+                      {isCapacityLoading ? (
+                          <div className="flex items-center justify-end gap-2 pt-1">
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                              <span className="text-xs">Calculando...</span>
+                          </div>
+                      ) : capacityError ? (
+                          <div className="flex items-center justify-end gap-2 pt-1 text-destructive">
+                              <AlertTriangle className="h-4 w-4" />
+                              <span className="text-xs">{capacityError}</span>
+                          </div>
+                      ) : capacityInfo && (
+                          <p className="text-xl font-bold" title={`${capacityInfo.totalRequiredHours}h de ${capacityInfo.totalAvailableHours}h`}>
+                             {capacityInfo.capacityPercentage}%
+                          </p>
+                      )}
+                  </div>
+                )}
               </div>
           </div>
           <div className="space-y-4">
