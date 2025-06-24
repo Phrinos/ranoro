@@ -22,7 +22,7 @@ import type { DateRange } from "react-day-picker";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
-import { ServiceSheetContent } from '../components/service-sheet-content';
+import { ServiceSheetContent } from '@/components/service-sheet-content';
 
 type ServiceSortOption = 
   | "serviceDate_desc" | "serviceDate_asc"

@@ -1,26 +1,20 @@
-
 rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    // --- PUBLIC COLLECTIONS ---
-    // These collections are world-readable so anyone with a link can view them.
-    // Writing is restricted to authenticated users within the app.
-    match /publicQuotes/{quoteId} {
-      allow read: if true;
-      allow create, update, delete: if request.auth != null;
-    }
-
-    match /publicServices/{serviceId} {
-      allow read: if true;
-      allow create, update, delete: if request.auth != null;
-    }
-
-    // --- PRIVATE COLLECTIONS ---
-    // The main database document is private and requires authentication.
+    // The main database document is private to authenticated users.
     match /database/main {
       allow read, write: if request.auth != null;
+    }
+
+    // Public collections are world-readable, but only writable by authenticated users.
+    match /publicQuotes/{quoteId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+    match /publicServices/{serviceId} {
+      allow read: if true;
+      allow write: if request.auth != null;
     }
   }
 }
