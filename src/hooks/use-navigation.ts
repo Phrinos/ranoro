@@ -35,6 +35,7 @@ import {
   BookOpen
 } from 'lucide-react';
 import type { User, AppRole } from '@/types';
+import { placeholderAppRoles, AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
 
 export interface NavigationEntry {
   label: string;
@@ -44,9 +45,6 @@ export interface NavigationEntry {
   groupTag: string;
   permissions?: string[]; 
 }
-
-const ROLES_LOCALSTORAGE_KEY = 'appRoles';
-const AUTH_USER_LOCALSTORAGE_KEY = 'authUser';
 
 const BASE_NAV_STRUCTURE: ReadonlyArray<Omit<NavigationEntry, 'isActive'>> = [
   // Mi Taller
@@ -144,24 +142,6 @@ const BASE_NAV_STRUCTURE: ReadonlyArray<Omit<NavigationEntry, 'isActive'>> = [
   },
 ];
 
-const ALL_AVAILABLE_PERMISSIONS = [
-    { id: 'dashboard:view', label: 'Ver Panel Principal' },
-    { id: 'services:create', label: 'Crear Servicios' },
-    { id: 'services:edit', label: 'Editar Servicios' },
-    { id: 'services:view_history', label: 'Ver Historial de Servicios' },
-    { id: 'inventory:manage', label: 'Gestionar Inventario (Productos, Cat, Prov)' },
-    { id: 'inventory:view', label: 'Ver Inventario' },
-    { id: 'pos:create_sale', label: 'Registrar Ventas (POS)' },
-    { id: 'pos:view_sales', label: 'Ver Registro de Ventas' },
-    { id: 'finances:view_report', label: 'Ver Reporte Financiero' },
-    { id: 'technicians:manage', label: 'Gestionar Técnicos' },
-    { id: 'vehicles:manage', label: 'Gestionar Vehículos' },
-    { id: 'users:manage', label: 'Gestionar Usuarios (Admin)' },
-    { id: 'roles:manage', label: 'Gestionar Roles y Permisos (Admin)' },
-    { id: 'ticket_config:manage', label: 'Configurar Ticket (Admin)' },
-    { id: 'backup:manage', label: 'Gestionar Respaldos (Admin)' },
-];
-
 const DESIRED_GROUP_ORDER = ["Mi Taller", "Mi Inventario", "Mi Oficina", "Soporte"];
 
 
@@ -180,32 +160,7 @@ const useNavigation = (): NavigationEntry[] => {
             console.error("Failed to parse authUser:", e);
         }
       }
-
-      let loadedRoles: AppRole[] = [];
-      const rolesString = localStorage.getItem(ROLES_LOCALSTORAGE_KEY);
-      if (rolesString) {
-        try {
-            loadedRoles = JSON.parse(rolesString);
-        } catch (e) {
-            console.error("Failed to parse roles:", e);
-        }
-      }
-      
-      if (loadedRoles.length === 0) {
-        const adminPermissions = ALL_AVAILABLE_PERMISSIONS
-            .filter(p => !['users:manage', 'roles:manage'].includes(p.id))
-            .map(p => p.id);
-        
-        const defaultRoles: AppRole[] = [
-            { id: 'role_superadmin_default', name: 'Superadmin', permissions: ALL_AVAILABLE_PERMISSIONS.map(p => p.id) },
-            { id: 'role_admin_default', name: 'Admin', permissions: adminPermissions },
-            { id: 'role_tecnico_default', name: 'Tecnico', permissions: ['dashboard:view', 'services:create', 'services:edit', 'services:view_history', 'inventory:view', 'vehicles:manage', 'pos:view_sales'] },
-            { id: 'role_ventas_default', name: 'Ventas', permissions: ['dashboard:view', 'pos:create_sale', 'pos:view_sales', 'inventory:view', 'vehicles:manage'] }
-        ];
-        localStorage.setItem(ROLES_LOCALSTORAGE_KEY, JSON.stringify(defaultRoles));
-        loadedRoles = defaultRoles;
-      }
-      setRoles(loadedRoles);
+      setRoles(placeholderAppRoles);
     }
   }, []);
 
