@@ -435,17 +435,15 @@ export function ServiceForm({
 
     const collectionName = type === 'quote' ? 'publicQuotes' : 'publicServices';
     const publicDocRef = doc(db, collectionName, data.publicId);
-
-    const fullPublicData = {
+    
+    const fullPublicData = sanitizeObjectForFirestore({
         ...data,
         vehicle,
         workshopInfo,
-    };
-    
-    const sanitizedPublicData = sanitizeObjectForFirestore(fullPublicData);
+    });
     
     try {
-      await setDoc(publicDocRef, sanitizedPublicData, { merge: true });
+      await setDoc(publicDocRef, fullPublicData);
       console.log(`Public ${type} document ${data.publicId} saved successfully.`);
     } catch (e) {
       console.error(`Failed to save public ${type} document:`, e);
@@ -493,42 +491,37 @@ export function ServiceForm({
     const finalSubTotal = finalTotalCost / (1 + IVA_RATE);
     const finalTaxAmount = finalTotalCost - finalSubTotal;
     
+    // DEFENSIVE OBJECT CONSTRUCTION
+    
     if (mode === 'service') {
+      // Start with only required fields
       const serviceData: Partial<ServiceRecord> = {
         id: initialDataService?.id || `SER_${Date.now().toString(36)}`,
         publicId: values.publicId || `srv_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 9)}`,
         vehicleId: vehicleIdToSave,
-        vehicleIdentifier: selectedVehicle?.licensePlate || values.vehicleLicensePlateSearch || 'N/A',
         serviceDate: values.serviceDate!.toISOString(),
         description: values.description || '',
         technicianId: values.technicianId || '',
-        technicianName: technicians.find(t => t.id === values.technicianId)?.name || 'N/A',
         status: values.status || 'Agendado',
-        suppliesUsed: values.suppliesUsed?.map(s => {
-            const item: ServiceSupply = {
-                supplyId: s.supplyId,
-                quantity: s.quantity,
-                unitPrice: currentInventoryItems.find(i => i.id === s.supplyId)?.unitPrice || 0,
-                supplyName: s.supplyName || ''
-            };
-            if (s.unitType) item.unitType = s.unitType;
-            return item;
-        }) || [],
         totalCost: finalTotalCost,
-        subTotal: finalSubTotal,
-        taxAmount: finalTaxAmount,
-        totalSuppliesCost: totalSuppliesWorkshopCost,
-        serviceProfit: finalTotalCost - totalSuppliesWorkshopCost,
         serviceAdvisorId: currentUser.id,
-        serviceAdvisorName: currentUser.name,
-        serviceAdvisorSignatureDataUrl: currentUser.signatureDataUrl || '',
-        customerSignatureReception: values.customerSignatureReception || '',
-        customerSignatureDelivery: values.customerSignatureDelivery || '',
-        receptionSignatureViewed: (initialDataService as ServiceRecord)?.receptionSignatureViewed || false,
-        deliverySignatureViewed: (initialDataService as ServiceRecord)?.deliverySignatureViewed || false,
-        workshopInfo: workshopInfo as WorkshopInfo,
       };
 
+      // Add other required/calculated fields
+      serviceData.vehicleIdentifier = selectedVehicle?.licensePlate || values.vehicleLicensePlateSearch || 'N/A';
+      serviceData.technicianName = technicians.find(t => t.id === values.technicianId)?.name || 'N/A';
+      serviceData.subTotal = finalSubTotal;
+      serviceData.taxAmount = finalTaxAmount;
+      serviceData.totalSuppliesCost = totalSuppliesWorkshopCost;
+      serviceData.serviceProfit = finalTotalCost - totalSuppliesWorkshopCost;
+      serviceData.serviceAdvisorName = currentUser.name;
+      serviceData.receptionSignatureViewed = (initialDataService as ServiceRecord)?.receptionSignatureViewed || false;
+      serviceData.deliverySignatureViewed = (initialDataService as ServiceRecord)?.deliverySignatureViewed || false;
+      
+      // Add optional fields ONLY if they have a value
+      if (currentUser.signatureDataUrl) serviceData.serviceAdvisorSignatureDataUrl = currentUser.signatureDataUrl;
+      if (values.customerSignatureReception) serviceData.customerSignatureReception = values.customerSignatureReception;
+      if (values.customerSignatureDelivery) serviceData.customerSignatureDelivery = values.customerSignatureDelivery;
       if (values.serviceType) serviceData.serviceType = values.serviceType;
       if (values.mileage) serviceData.mileage = values.mileage;
       if (values.notes) serviceData.notes = values.notes;
@@ -536,40 +529,53 @@ export function ServiceForm({
       if (values.fuelLevel) serviceData.fuelLevel = values.fuelLevel;
       if (values.customerItems) serviceData.customerItems = values.customerItems;
       if (values.deliveryDateTime) serviceData.deliveryDateTime = values.deliveryDateTime.toISOString();
+      if (workshopInfo && Object.keys(workshopInfo).length > 0) serviceData.workshopInfo = workshopInfo as WorkshopInfo;
+
+      // Sanitize and add supplies
+      serviceData.suppliesUsed = values.suppliesUsed?.map(s => ({
+            supplyId: s.supplyId,
+            quantity: s.quantity,
+            unitPrice: currentInventoryItems.find(i => i.id === s.supplyId)?.unitPrice || 0,
+            supplyName: s.supplyName || '',
+            unitType: s.unitType || 'units'
+        })) || [];
 
       await savePublicDocument('service', serviceData as ServiceRecord, selectedVehicle);
       await onSubmit(serviceData as ServiceRecord);
 
     } else { // mode === 'quote'
+      // Start with only required fields
       const quoteData: Partial<QuoteRecord> = {
         id: (initialDataQuote as QuoteRecord)?.id || `COT_${Date.now().toString(36)}`,
         publicId: (initialDataQuote as QuoteRecord)?.publicId || `cot_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 9)}`,
         quoteDate: values.serviceDate!.toISOString(),
         vehicleId: vehicleIdToSave,
-        vehicleIdentifier: selectedVehicle?.licensePlate || values.vehicleLicensePlateSearch || 'N/A',
         description: values.description || '',
-        preparedByTechnicianId: values.technicianId || '',
-        preparedByTechnicianName: technicians.find(t => t.id === values.technicianId)?.name || 'N/A',
-        suppliesProposed: values.suppliesUsed?.map(s => {
-            const item: ServiceSupply = {
-                supplyId: s.supplyId,
-                quantity: s.quantity,
-                unitPrice: s.unitPrice || 0, 
-                supplyName: s.supplyName || '',
-            };
-            if (s.unitType) item.unitType = s.unitType;
-            return item;
-        }) || [],
-        estimatedTotalCost: finalTotalCost,
-        estimatedSubTotal: finalSubTotal,
-        estimatedTaxAmount: finalTaxAmount,
-        estimatedTotalSuppliesCost: totalSuppliesWorkshopCost,
-        estimatedProfit: finalTotalCost - totalSuppliesWorkshopCost,
-        workshopInfo: workshopInfo as WorkshopInfo,
       };
       
+      // Add other required/calculated fields
+      quoteData.vehicleIdentifier = selectedVehicle?.licensePlate || values.vehicleLicensePlateSearch || 'N/A';
+      quoteData.preparedByTechnicianId = values.technicianId || '';
+      quoteData.preparedByTechnicianName = technicians.find(t => t.id === values.technicianId)?.name || 'N/A';
+      quoteData.estimatedTotalCost = finalTotalCost;
+      quoteData.estimatedSubTotal = finalSubTotal;
+      quoteData.estimatedTaxAmount = finalTaxAmount;
+      quoteData.estimatedTotalSuppliesCost = totalSuppliesWorkshopCost;
+      quoteData.estimatedProfit = finalTotalCost - totalSuppliesWorkshopCost;
+      
+      // Add optional fields ONLY if they have a value
       if (values.notes) quoteData.notes = values.notes;
       if (values.mileage) quoteData.mileage = values.mileage;
+      if (workshopInfo && Object.keys(workshopInfo).length > 0) quoteData.workshopInfo = workshopInfo as WorkshopInfo;
+
+      // Sanitize and add supplies
+      quoteData.suppliesProposed = values.suppliesUsed?.map(s => ({
+            supplyId: s.supplyId,
+            quantity: s.quantity,
+            unitPrice: s.unitPrice || 0,
+            supplyName: s.supplyName || '',
+            unitType: s.unitType || 'units'
+        })) || [];
       
       await savePublicDocument('quote', quoteData as QuoteRecord, selectedVehicle);
       await onSubmit(quoteData as QuoteRecord);
