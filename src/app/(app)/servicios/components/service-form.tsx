@@ -393,9 +393,9 @@ export function ServiceForm({
   }, [watchedServiceItems, currentInventoryItems]);
 
   const serviceProfit = useMemo(() => {
-    const totalCostBeforeTax = watchedServiceItems?.reduce((sum, item) => sum + (item.price || 0), 0) / (1 + IVA_RATE) || 0;
+    const totalCostBeforeTax = totalCost / (1 + IVA_RATE) || 0;
     return totalCostBeforeTax - totalSuppliesWorkshopCost;
-  }, [watchedServiceItems, totalSuppliesWorkshopCost]);
+  }, [totalCost, totalSuppliesWorkshopCost]);
 
 
   const handleSearchVehicle = () => {
@@ -780,7 +780,9 @@ export function ServiceForm({
                     {vehicleNotFound && !selectedVehicle && !isReadOnly && (<div className="p-3 border border-orange-500 rounded-md bg-orange-50 dark:bg-orange-900/30 dark:text-orange-300 text-sm flex flex-col sm:flex-row items-center justify-between gap-2"><div className="flex items-center gap-2"><AlertCircle className="h-5 w-5 shrink-0"/><p>Vehículo con placa "{vehicleLicensePlateSearch}" no encontrado.</p></div><Button type="button" size="sm" variant="outline" onClick={() => {setNewVehicleInitialData({ licensePlate: vehicleLicensePlateSearch }); setIsVehicleDialogOpen(true);}} className="w-full sm:w-auto"><CarIcon className="mr-2 h-4 w-4"/> Registrar Nuevo Vehículo</Button></div>)}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 pt-4">
                         <FormField control={form.control} name="notes" render={({ field }) => (<FormItem><FormLabel>Notas Adicionales (Opcional)</FormLabel><FormControl><Textarea placeholder={mode === 'quote' ? "Ej: Validez de la cotización, condiciones..." : "Notas internas o para el cliente..."} {...field} disabled={isReadOnly} className="min-h-[100px]"/></FormControl><FormMessage /></FormItem>)}/>
-                        <FormField control={form.control} name="technicianId" render={({ field }) => (<FormItem><FormLabel>{technicianLabelText}</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value} disabled={isReadOnly || mode === 'quote'}><FormControl><SelectTrigger><SelectValue placeholder="Seleccione un técnico" /></SelectTrigger></FormControl><SelectContent>{technicians.map((technician) => (<SelectItem key={technician.id} value={technician.id}>{technician.name}</SelectItem>))}</SelectContent></Select><FormMessage /></FormItem>)}/>
+                        {mode === 'service' && (
+                          <FormField control={form.control} name="technicianId" render={({ field }) => (<FormItem><FormLabel>{technicianLabelText}</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value} disabled={isReadOnly}><FormControl><SelectTrigger><SelectValue placeholder="Seleccione un técnico" /></SelectTrigger></FormControl><SelectContent>{technicians.map((technician) => (<SelectItem key={technician.id} value={technician.id}>{technician.name}</SelectItem>))}</SelectContent></Select><FormMessage /></FormItem>)}/>
+                        )}
                     </div>
                 </CardContent>
               </Card>
