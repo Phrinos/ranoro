@@ -29,7 +29,7 @@ import React, { useEffect, useState, useMemo, useCallback, useRef } from "react"
 import { useToast } from "@/hooks/use-toast";
 import { VehicleDialog } from "../../vehiculos/components/vehicle-dialog";
 import type { VehicleFormValues } from "../../vehiculos/components/vehicle-form";
-import { placeholderVehicles as defaultPlaceholderVehicles, placeholderInventory, placeholderCategories, placeholderSuppliers, placeholderQuotes, placeholderServiceRecords as defaultServiceRecords, persistToFirestore, AUTH_USER_LOCALSTORAGE_KEY } from "@/lib/placeholder-data";
+import { placeholderVehicles as defaultPlaceholderVehicles, placeholderInventory, placeholderCategories, placeholderSuppliers, placeholderQuotes, placeholderServiceRecords as defaultServiceRecords, persistToFirestore, AUTH_USER_LOCALSTORAGE_KEY, sanitizeObjectForFirestore } from "@/lib/placeholder-data";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription as DialogDesc, DialogFooter } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/label";
@@ -158,7 +158,7 @@ export function ServiceForm({
   const [selectedInventoryItemForDialog, setSelectedInventoryItemForDialog] = useState<InventoryItem | null>(null);
 
   const [isNewInventoryItemDialogOpen, setIsNewInventoryItemDialogOpen] = useState(false);
-  const [newSupplyInitialData, setNewSupplyInitialData] = useState<Partial<InventoryItemFormValues> | null>(newSupplyInitialData);
+  const [newSupplyInitialData, setNewSupplyInitialData] = useState<Partial<InventoryItemFormValues> | null>(null);
   const [isSuggestingPrice, setIsSuggestingPrice] = useState(false);
   const [isGeneratingQuote, setIsGeneratingQuote] = useState(false);
   
@@ -409,7 +409,7 @@ export function ServiceForm({
   ) => {
     if (!db) {
       console.warn(`Public ${type} save skipped: Database not configured.`);
-      return; // Do not show toast for demo mode, just log it.
+      return; 
     }
     if (!data.publicId || !vehicle) {
       console.warn(`Public ${type} save skipped: Missing publicId or vehicle data.`);
@@ -425,7 +425,10 @@ export function ServiceForm({
         vehicle: { ...vehicle },
         workshopInfo: workshopInfo as WorkshopInfo,
       };
-      await setDoc(publicDocRef, publicData, { merge: true });
+      
+      const sanitizedPublicData = sanitizeObjectForFirestore(publicData);
+      
+      await setDoc(publicDocRef, sanitizedPublicData, { merge: true });
       console.log(`Public ${type} document ${data.publicId} saved successfully.`);
     } catch (e) {
       console.error(`Failed to save public ${type} document:`, e);
@@ -545,9 +548,9 @@ export function ServiceForm({
   };
   
   const handlePrintSheet = useCallback(() => {
-    const authUserString = typeof window !== 'undefined' ? localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY) : null;
-    const freshCurrentUser: User | null = authUserString ? JSON.parse(authUserString) : null;
-
+    refreshCurrentUser(); // Ensure latest user data before printing
+    const authUser = freshUserRef.current;
+    
     const vehicleForSheet = selectedVehicle;
 
     if (!vehicleForSheet) {
@@ -570,9 +573,9 @@ export function ServiceForm({
       vehicleConditions: formValues.vehicleConditions || '',
       fuelLevel: formValues.fuelLevel || '',
       customerItems: formValues.customerItems || '',
-      serviceAdvisorId: freshCurrentUser?.id || '',
-      serviceAdvisorName: freshCurrentUser?.name || 'N/A',
-      serviceAdvisorSignatureDataUrl: freshCurrentUser?.signatureDataUrl || '',
+      serviceAdvisorId: authUser?.id || '',
+      serviceAdvisorName: authUser?.name || 'N/A',
+      serviceAdvisorSignatureDataUrl: authUser?.signatureDataUrl || '',
       customerSignatureReception: formValues.customerSignatureReception || '',
       customerSignatureDelivery: formValues.customerSignatureDelivery || '',
       receptionSignatureViewed: false,
@@ -581,7 +584,7 @@ export function ServiceForm({
     
     setServiceForSheet({ ...serviceDataForSheet, vehicleIdentifier: vehicleForSheet.licensePlate });
     setIsSheetOpen(true);
-  }, [form, selectedVehicle, toast]);
+  }, [form, selectedVehicle, toast, refreshCurrentUser]);
 
   const handleTimeChange = (timeString: string, dateField: "serviceDate" | "deliveryDateTime") => {
     const [hours, minutes] = timeString.split(':').map(Number);

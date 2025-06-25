@@ -1,3 +1,4 @@
+
 import type {
   Vehicle,
   ServiceRecord,
@@ -160,6 +161,34 @@ export const hydrationReady = new Promise<void>((res) => {
 });
 
 /**
+ * Removes properties with `undefined` values from an object, recursively.
+ * This is necessary because Firestore does not support `undefined`.
+ * @param obj The object to sanitize.
+ * @returns A new object with `undefined` values removed.
+ */
+export function sanitizeObjectForFirestore(obj: any): any {
+  if (obj === null || typeof obj !== 'object') {
+    return obj;
+  }
+  
+  if (Array.isArray(obj)) {
+    return obj.map(item => sanitizeObjectForFirestore(item));
+  }
+
+  const newObj: { [key: string]: any } = {};
+  for (const key in obj) {
+    if (Object.prototype.hasOwnProperty.call(obj, key)) {
+      const value = obj[key];
+      if (value !== undefined) {
+        newObj[key] = sanitizeObjectForFirestore(value);
+      }
+    }
+  }
+  return newObj;
+}
+
+
+/**
  * Loads all application data from a single Firestore document.
  */
 export async function hydrateFromFirestore() {
@@ -280,23 +309,15 @@ export async function persistToFirestore(keysToUpdate?: DataKey[]) {
 
   for (const key of keys) {
     if (DATA_ARRAYS[key]) {
-      const originalArray = DATA_ARRAYS[key];
-      // Sanitize each object in the array to remove 'undefined' fields
-      dataToPersist[key] = originalArray.map((item) => {
-        const cleanItem: any = {};
-        for (const prop in item) {
-          if (item[prop] !== undefined) {
-            cleanItem[prop] = item[prop];
-          }
-        }
-        return cleanItem;
-      });
+      dataToPersist[key] = DATA_ARRAYS[key];
     }
   }
+  
+  const sanitizedData = sanitizeObjectForFirestore(dataToPersist);
 
   try {
     // Use setDoc with merge:true to only update the specified fields in the document
-    await setDoc(doc(db, DB_PATH), dataToPersist, { merge: true });
+    await setDoc(doc(db, DB_PATH), sanitizedData, { merge: true });
     console.log('Data successfully persisted to Firestore.');
   } catch (e) {
     console.error('Error persisting data to Firestore:', e);
