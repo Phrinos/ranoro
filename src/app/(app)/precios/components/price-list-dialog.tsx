@@ -1,3 +1,4 @@
+
 "use client";
 
 import {
@@ -8,11 +9,11 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { PriceListForm, type PriceListFormValues } from "./price-list-form";
-import type { PriceListRecord } from "@/types";
+import type { VehiclePriceList } from "@/types";
 import { useToast } from "@/hooks/use-toast";
 
 interface PriceListDialogProps {
-  record?: PriceListRecord | null;
+  record?: VehiclePriceList | null;
   onSave: (data: PriceListFormValues) => Promise<void>;
   open: boolean;
   onOpenChange: (isOpen: boolean) => void;
@@ -30,10 +31,10 @@ export function PriceListDialog({
     try {
       await onSave(values);
     } catch (error) {
-      console.error("Error saving price list record:", error);
+      console.error("Error saving vehicle price list:", error);
       toast({
         title: "Error al guardar",
-        description: "No se pudo guardar el registro. Intente de nuevo.",
+        description: "No se pudo guardar la lista de precios. Intente de nuevo.",
         variant: "destructive",
       });
     }
@@ -43,9 +44,9 @@ export function PriceListDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-4xl flex flex-col max-h-[90vh]">
         <DialogHeader className="flex-shrink-0">
-          <DialogTitle>{record ? "Editar Registro de Precio" : "Nuevo Registro de Precio"}</DialogTitle>
+          <DialogTitle>{record ? "Editar Lista de Precios" : "Nueva Lista de Precios por Vehículo"}</DialogTitle>
           <DialogDescription>
-            {record ? "Actualiza los detalles del servicio." : "Completa la información para un nuevo servicio en la lista de precios."}
+            {record ? `Actualiza los detalles para ${record.make} ${record.model}.` : "Completa la información del vehículo y añade los servicios estandarizados."}
           </DialogDescription>
         </DialogHeader>
         <div className="flex-grow overflow-y-auto -mx-6 px-6">

@@ -17,7 +17,7 @@ import type {
   MonthlyFixedExpense,
   AdministrativeStaff,
   User,
-  PriceListRecord,
+  VehiclePriceList,
 } from '@/types';
 import {
   format,
@@ -115,7 +115,7 @@ export let placeholderSales: SaleReceipt[] = [];
 export let placeholderFixedMonthlyExpenses: MonthlyFixedExpense[] = [];
 
 // --- LISTA DE PRECIOS ---
-export let placeholderPriceList: PriceListRecord[] = [];
+export let placeholderVehiclePriceLists: VehiclePriceList[] = [];
 
 // --- DATOS SIMULADOS (BORRAR O REEMPLAZAR) ---
 export const placeholderDashboardMetrics: DashboardMetrics = {
@@ -147,7 +147,7 @@ const DATA_ARRAYS = {
   fixedExpenses: placeholderFixedMonthlyExpenses,
   technicianPerformance: placeholderTechnicianMonthlyPerformance,
   appRoles: placeholderAppRoles,
-  priceList: placeholderPriceList,
+  vehiclePriceLists: placeholderVehiclePriceLists,
 };
 
 type DataKey = keyof typeof DATA_ARRAYS;
