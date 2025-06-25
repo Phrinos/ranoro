@@ -59,6 +59,7 @@ import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { db } from '@root/lib/firebaseClient.js';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AddSupplyDialog } from './add-supply-dialog';
+import { QuoteContent } from '@/components/quote-content';
 
 
 const supplySchema = z.object({
@@ -179,6 +180,9 @@ export function ServiceForm({
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [serviceForSheet, setServiceForSheet] = useState<ServiceRecord | null>(null);
   
+  const [isQuoteViewOpen, setIsQuoteViewOpen] = useState(false);
+  const [quoteForView, setQuoteForView] = useState<QuoteRecord | null>(null);
+  
   const freshUserRef = useRef<User | null>(null);
 
   const form = useForm<ServiceFormValues>({
@@ -266,18 +270,34 @@ export function ServiceForm({
         }
 
         const rawServiceDate = data.serviceDate || data.quoteDate;
-        const parsedServiceDate = rawServiceDate ? parseISO(rawServiceDate) : undefined;
-        
+        let parsedServiceDate: Date | undefined = undefined;
+        if (rawServiceDate) {
+            if (rawServiceDate instanceof Date) {
+                parsedServiceDate = rawServiceDate;
+            } else if (typeof rawServiceDate === 'string') {
+                const parsed = parseISO(rawServiceDate);
+                if (isValid(parsed)) parsedServiceDate = parsed;
+            }
+        }
+
         const rawDeliveryDate = (data as ServiceRecord)?.deliveryDateTime;
-        const parsedDeliveryDate = rawDeliveryDate ? parseISO(rawDeliveryDate) : undefined;
+        let parsedDeliveryDate: Date | undefined = undefined;
+        if (rawDeliveryDate) {
+            if (rawDeliveryDate instanceof Date) {
+                parsedDeliveryDate = rawDeliveryDate;
+            } else if (typeof rawDeliveryDate === 'string') {
+                const parsed = parseISO(rawDeliveryDate);
+                if (isValid(parsed)) parsedDeliveryDate = parsed;
+            }
+        }
 
         const dataToReset: Partial<ServiceFormValues> = {
             id: data.id,
             publicId: (data as ServiceRecord)?.publicId || (data as QuoteRecord)?.publicId,
             vehicleId: data.vehicleId ? String(data.vehicleId) : undefined,
             vehicleLicensePlateSearch: vehicle?.licensePlate || data.vehicleIdentifier || "",
-            serviceDate: parsedServiceDate && isValid(parsedServiceDate) ? parsedServiceDate : undefined,
-            deliveryDateTime: parsedDeliveryDate && isValid(parsedDeliveryDate) ? parsedDeliveryDate : undefined,
+            serviceDate: parsedServiceDate,
+            deliveryDateTime: parsedDeliveryDate,
             mileage: data.mileage || undefined,
             description: (data as any).description || "",
             notes: data.notes || "",
@@ -491,6 +511,19 @@ export function ServiceForm({
       });
     }
   };
+  
+  const handleViewQuote = useCallback(() => {
+    const serviceId = form.getValues('id');
+    if (!serviceId) return;
+
+    const originalQuote = placeholderQuotes.find(q => q.serviceId === serviceId);
+    if (originalQuote) {
+        setQuoteForView(originalQuote);
+        setIsQuoteViewOpen(true);
+    } else {
+        toast({ title: "No encontrada", description: "No se encontró la cotización original para este servicio.", variant: "default" });
+    }
+  }, [form, toast]);
 
   const handleFormSubmit = async (values: ServiceFormValues) => {
     if (isReadOnly) {
@@ -769,7 +802,7 @@ export function ServiceForm({
     return [];
   }, [mode, initialDataQuote]);
 
-  const isDateDisabled = isReadOnly || (mode === 'service' && !!initialDataService?.id && initialDataService.status !== 'Agendado');
+  const isDateDisabled = isReadOnly || (mode === 'service' && !!initialDataService?.id && initialDataService.status !== 'Agendado' && !(isConvertingQuote && watchedStatus === 'Agendado'));
 
   return (
     <>
@@ -782,11 +815,17 @@ export function ServiceForm({
                     {showReceptionTab && <TabsTrigger value="recepcion" className="text-base data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none">Recepción y Entrega</TabsTrigger>}
                     {showReceptionTab && <TabsTrigger value="seguridad" className="text-base data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none">Revisión de Seguridad</TabsTrigger>}
                 </TabsList>
-                 {mode === 'service' && !isReadOnly && (
-                    <Button type="button" onClick={handlePrintSheet} variant="outline" className="bg-card">
-                        <Printer className="mr-2 h-4 w-4" /> Ver Hoja de Servicio
-                    </Button>
-                )}
+                 {mode === 'service' && !isReadOnly && initialData?.id ? (
+                    watchedStatus === 'Agendado' ? (
+                        <Button type="button" onClick={handleViewQuote} variant="outline" className="bg-card">
+                            <FileText className="mr-2 h-4 w-4" /> Ver Cotización
+                        </Button>
+                    ) : (
+                        <Button type="button" onClick={handlePrintSheet} variant="outline" className="bg-card">
+                            <Printer className="mr-2 h-4 w-4" /> Ver Hoja de Servicio
+                        </Button>
+                    )
+                ) : null}
             </div>
 
             <TabsContent value="servicio" className="space-y-6 mt-0">
@@ -819,7 +858,7 @@ export function ServiceForm({
                                 </FormItem>
                             )}
                         />
-                        {watchedStatus !== 'Agendado' && watchedStatus !== 'Cotizacion' && (
+                        {(watchedStatus === 'Reparando' || watchedStatus === 'Completado') && (
                             <FormField
                                 control={form.control}
                                 name="technicianId"
@@ -839,7 +878,7 @@ export function ServiceForm({
                     {vehicleNotFound && !selectedVehicle && !isReadOnly && (<div className="p-3 border border-orange-500 rounded-md bg-orange-50 dark:bg-orange-900/30 dark:text-orange-300 text-sm flex flex-col sm:flex-row items-center justify-between gap-2"><div className="flex items-center gap-2"><AlertCircle className="h-5 w-5 shrink-0"/><p>Vehículo con placa "{vehicleLicensePlateSearch}" no encontrado.</p></div><Button type="button" size="sm" variant="outline" onClick={() => {setNewVehicleInitialData({ licensePlate: vehicleLicensePlateSearch }); setIsVehicleDialogOpen(true);}} className="w-full sm:w-auto"><CarIcon className="mr-2 h-4 w-4"/> Registrar Nuevo Vehículo</Button></div>)}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 pt-4">
                         <FormField control={form.control} name="notes" render={({ field }) => (
-                          <FormItem className="md:col-span-2">
+                          <FormItem className={cn(mode === 'quote' && 'md:col-span-2')}>
                               <FormLabel>Notas Adicionales (Opcional)</FormLabel>
                               <FormControl><Textarea placeholder={mode === 'quote' ? "Ej: Validez de la cotización, condiciones..." : "Notas internas o para el cliente..."} {...field} disabled={isReadOnly} className="min-h-[100px]"/></FormControl>
                               <FormMessage />
@@ -965,6 +1004,27 @@ export function ServiceForm({
           </div>
         </form>
       </Form>
+
+      {isQuoteViewOpen && quoteForView && (
+        <PrintTicketDialog
+            open={isQuoteViewOpen}
+            onOpenChange={setIsQuoteViewOpen}
+            title={`Cotización Original: ${quoteForView.id}`}
+            dialogContentClassName="printable-quote-dialog"
+            onDialogClose={() => setQuoteForView(null)}
+            footerActions={
+            <Button onClick={() => window.print()}>
+                <Printer className="mr-2 h-4 w-4" /> Imprimir Cotización
+            </Button>
+            }
+        >
+            <QuoteContent
+                quote={quoteForView}
+                vehicle={localVehicles.find(v => v.id === quoteForView.vehicleId)}
+                workshopInfo={quoteForView.workshopInfo}
+            />
+        </PrintTicketDialog>
+      )}
 
       <VehicleDialog
           open={isVehicleDialogOpen}
