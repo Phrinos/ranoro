@@ -162,22 +162,37 @@ export function AddSupplyDialog({ open, onOpenChange, inventoryItems, onAddSuppl
               </>
             ) : (
               <div className="pt-2 space-y-4">
-                  <div className="p-2 border rounded-md bg-muted">
-                        <p className="font-medium text-sm">Artículo: {selectedInventoryItem.name}</p>
-                        <p className="text-xs text-muted-foreground">Stock Disponible: {selectedInventoryItem.quantity}</p>
+                <div className="p-2 border rounded-md bg-muted">
+                  <p className="font-medium text-sm">Artículo: {selectedInventoryItem.name}</p>
+                  <p className="text-xs text-muted-foreground">Stock Disponible: {selectedInventoryItem.quantity}</p>
+                </div>
+                <div className="flex justify-between items-end pt-2">
+                  <Button variant="ghost" onClick={() => setSelectedInventoryItem(null)}>
+                    <ArrowLeft className="mr-2 h-4 w-4" />
+                    Cambiar Artículo
+                  </Button>
+                  <div className="text-right">
+                    <Label htmlFor="inventory-quantity" className="text-xs">Cantidad a Añadir</Label>
+                    <div className="flex items-center gap-2 mt-1">
+                      <Button type="button" variant="outline" size="icon" className="h-8 w-8" onClick={() => setInventoryQuantity(q => Math.max(1, q - 1))}>
+                        <Minus className="h-4 w-4" />
+                      </Button>
+                      <Input
+                        id="inventory-quantity"
+                        type="number"
+                        value={inventoryQuantity}
+                        onChange={(e) => setInventoryQuantity(Number(e.target.value))}
+                        className="w-20 text-center h-8"
+                      />
+                      <Button type="button" variant="outline" size="icon" className="h-8 w-8" onClick={() => setInventoryQuantity(q => q + 1)}>
+                        <Plus className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
-                  <div className="space-y-2">
-                      <Label htmlFor="inventory-quantity">Cantidad a Añadir</Label>
-                      <div className="flex items-center gap-2">
-                           <Button type="button" variant="outline" size="icon" className="h-8 w-8" onClick={() => setInventoryQuantity(q => Math.max(1, q - 1))}><Minus className="h-4 w-4" /></Button>
-                           <Input id="inventory-quantity" type="number" value={inventoryQuantity} onChange={e => setInventoryQuantity(Number(e.target.value))} className="w-20 text-center" />
-                           <Button type="button" variant="outline" size="icon" className="h-8 w-8" onClick={() => setInventoryQuantity(q => q + 1)}><Plus className="h-4 w-4" /></Button>
-                      </div>
-                  </div>
-                  <div className="flex justify-between items-center pt-2">
-                      <Button variant="ghost" onClick={() => setSelectedInventoryItem(null)}><ArrowLeft className="mr-2 h-4 w-4" /> Cambiar Artículo</Button>
-                      <Button onClick={handleConfirmInventoryAdd}>Añadir al Servicio</Button>
-                  </div>
+                </div>
+                <div className="flex justify-end pt-4 border-t">
+                    <Button onClick={handleConfirmInventoryAdd}>Añadir al Servicio</Button>
+                </div>
               </div>
             )}
           </TabsContent>
