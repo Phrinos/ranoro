@@ -143,8 +143,8 @@ export default function PerfilPage() {
         form.reset({ 
             ...form.getValues(),
             name: data.name,
-            phone: data.phone,
-            signatureDataUrl: data.signatureDataUrl,
+            phone: data.phone || '',
+            signatureDataUrl: data.signatureDataUrl || '',
             newPassword: '',
             confirmNewPassword: '',
             currentPassword: ''
