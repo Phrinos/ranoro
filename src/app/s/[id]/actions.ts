@@ -18,63 +18,35 @@ export async function saveSignature(
   }
 
   try {
-    const dbPath = 'database/main';
-    const mainDbRef = doc(db, dbPath);
-    const mainDbSnap = await getDoc(mainDbRef);
-
-    if (!mainDbSnap.exists()) {
-        return { success: false, message: 'La base de datos principal no fue encontrada.' };
-    }
-    
-    const mainDbData = mainDbSnap.data();
-    const allServices: ServiceRecord[] = mainDbData.serviceRecords || [];
-
-    // --- 1. Update the main database document ---
-    const serviceIndex = allServices.findIndex(s => s.publicId === publicId);
-    
-    if (serviceIndex === -1) {
-      return { success: false, message: 'Servicio no encontrado en la base de datos principal.' };
-    }
-
-    const serviceToUpdate = allServices[serviceIndex];
-
-    if (signatureType === 'reception') {
-      serviceToUpdate.customerSignatureReception = signatureDataUrl;
-      serviceToUpdate.receptionSignatureViewed = false; // Mark as unread
-    } else {
-      serviceToUpdate.customerSignatureDelivery = signatureDataUrl;
-      serviceToUpdate.deliverySignatureViewed = false; // Mark as unread
-    }
-
-    // Update the service record in the array
-    allServices[serviceIndex] = serviceToUpdate;
-
-    // Persist only the serviceRecords array back to the main document
-    await setDoc(mainDbRef, { serviceRecords: allServices }, { merge: true });
-
-
-    // --- 2. Update the separate public document ---
+    // This server action, callable from a public URL, should ONLY interact with the public document.
+    // It must not attempt to read or write to the main private database document.
     const publicDocRef = doc(db, 'publicServices', publicId);
+
+    // First, check if the document exists. This read is public.
     const publicDocSnap = await getDoc(publicDocRef);
     if (!publicDocSnap.exists()) {
-        // This is a less critical error, the main DB is updated. We can log it.
-        console.warn(`Public document ${publicId} not found, but main DB was updated.`);
-    } else {
-        const updateData: Partial<ServiceRecord> = {};
-        if (signatureType === 'reception') {
-          updateData.customerSignatureReception = signatureDataUrl;
-        } else {
-          updateData.customerSignatureDelivery = signatureDataUrl;
-        }
-        await setDoc(publicDocRef, updateData, { merge: true });
+      return { success: false, message: 'El documento público del servicio no fue encontrado.' };
     }
 
-    // --- 3. Revalidate Path ---
+    const updateData: Partial<ServiceRecord> = {};
+    if (signatureType === 'reception') {
+      updateData.customerSignatureReception = signatureDataUrl;
+      updateData.receptionSignatureViewed = false; // Mark as unread for admin notifications
+    } else {
+      updateData.customerSignatureDelivery = signatureDataUrl;
+      updateData.deliverySignatureViewed = false; // Mark as unread for admin notifications
+    }
+
+    // Now, perform the update. Firestore rules must allow this specific, limited write.
+    await setDoc(publicDocRef, updateData, { merge: true });
+
+    // Revalidate the public path so the client sees the new signature.
     revalidatePath(`/s/${publicId}`);
 
     return { success: true, message: 'Firma guardada exitosamente.' };
   } catch (error) {
     console.error('Error saving signature:', error);
+    // Provide a more generic error to the user for security.
     return { success: false, message: 'Ocurrió un error en el servidor al guardar la firma.' };
   }
 }
