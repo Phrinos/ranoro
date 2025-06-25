@@ -22,7 +22,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription} from "@/components/ui/card";
 import { CalendarIcon, PlusCircle, Search, Trash2, AlertCircle, Car as CarIcon, Clock, DollarSign, PackagePlus, BrainCircuit, Loader2, Printer, Plus, Minus, FileText, Signature, MessageSquare } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { format, parseISO, setHours, setMinutes, isValid, startOfDay } from "date-fns";
+import { format, parseISO, setHours, setMinutes, isValid, startOfDay } from 'date-fns';
 import { es } from 'date-fns/locale';
 import type { ServiceRecord, Vehicle, Technician, InventoryItem, ServiceSupply, QuoteRecord, InventoryCategory, Supplier, User, WorkshopInfo, ServiceItem } from "@/types";
 import React, { useEffect, useState, useMemo, useCallback, useRef } from "react";
@@ -736,7 +736,7 @@ export function ServiceForm({
   };
 
   const cardTitleText = mode === 'quote' ? "Información del Vehículo y Cotización" : "Información del Vehículo";
-  const technicianLabelText = mode === 'quote' ? "Preparado por" : "Técnico Asignado";
+  const technicianLabelText = "Técnico Asignado";
   const submitButtonText = mode === 'quote' ? "Guardar Cotización" : (initialDataService ? "Actualizar Servicio" : "Crear Servicio");
 
   return (
@@ -772,7 +772,7 @@ export function ServiceForm({
                       <FormField control={form.control} name="vehicleLicensePlateSearch" render={({ field }) => (<FormItem className="w-full"><FormLabel>Placa del Vehículo</FormLabel><FormControl><Input placeholder="Buscar/Ingresar Placas" {...field} value={vehicleLicensePlateSearch} onChange={(e) => {setVehicleLicensePlateSearch(e.target.value.toUpperCase()); field.onChange(e.target.value.toUpperCase());}} disabled={isReadOnly} className="uppercase" onKeyDown={handleVehiclePlateKeyDown} /></FormControl></FormItem>)}/>
                       <FormField control={form.control} name="mileage" render={({ field }) => ( <FormItem><FormLabel>Kilometraje (Opcional)</FormLabel><FormControl><Input type="number" placeholder="Ej: 55000 km" {...field} disabled={isReadOnly} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>)}/>
                     </div>
-                     <FormField control={form.control} name="serviceDate" render={({ field }) => (<FormItem className="flex flex-col"><FormLabel>{mode === 'quote' ? 'Fecha y Hora de la Cita' : 'Fecha y Hora del Servicio Agendado'}</FormLabel><Popover><PopoverTrigger asChild disabled={isReadOnly || isConvertingQuote}><FormControl><Button variant={"outline"} className={cn("w-full justify-start text-left font-normal",!field.value && "text-muted-foreground")} disabled={isReadOnly || isConvertingQuote}>{field.value && isValid(field.value) ? (format(field.value, "PPPp", { locale: es })) : (<span>Seleccione fecha y hora</span>)}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value} onSelect={(date) => { const currentTime = field.value || setHours(setMinutes(new Date(), 30), 8); const newDateTime = date ? setHours(setMinutes(startOfDay(date), currentTime.getMinutes()), currentTime.getHours()) : undefined; field.onChange(newDateTime);}} disabled={(date) => date < new Date("1900-01-01") || isReadOnly || (isConvertingQuote && mode === 'service') } initialFocus locale={es}/><div className="p-2 border-t"><Select value={field.value ? `${String(field.value.getHours()).padStart(2, '0')}:${String(field.value.getMinutes()).padStart(2, '0')}` : "08:30"} onValueChange={(timeValue) => handleTimeChange(timeValue, "serviceDate")} disabled={isReadOnly || (isConvertingQuote && mode === 'service')}><SelectTrigger><SelectValue placeholder="Seleccione hora" /></SelectTrigger><SelectContent>{timeSlots.map(slot => (<SelectItem key={slot.value} value={slot.value}>{slot.label}</SelectItem>))}</SelectContent></Select></div></PopoverContent></Popover><FormMessage /></FormItem>)}/>
+                     <FormField control={form.control} name="serviceDate" render={({ field }) => (<FormItem className="flex flex-col"><FormLabel>{mode === 'quote' ? 'Fecha y Hora de la Cita' : 'Fecha y Hora del Servicio Agendado'}</FormLabel><Popover><PopoverTrigger asChild disabled={isReadOnly || (isConvertingQuote && mode === 'service') }><FormControl><Button variant={"outline"} className={cn("w-full justify-start text-left font-normal",!field.value && "text-muted-foreground")} disabled={isReadOnly || (isConvertingQuote && mode === 'service') }>{field.value && isValid(field.value) ? (format(field.value, "PPPp", { locale: es })) : (<span>Seleccione fecha y hora</span>)}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value} onSelect={(date) => { const currentTime = field.value || setHours(setMinutes(new Date(), 30), 8); const newDateTime = date ? setHours(setMinutes(startOfDay(date), currentTime.getMinutes()), currentTime.getHours()) : undefined; field.onChange(newDateTime);}} disabled={(date) => date < new Date("1900-01-01") || isReadOnly || (isConvertingQuote && mode === 'service') } initialFocus locale={es}/><div className="p-2 border-t"><Select value={field.value ? `${String(field.value.getHours()).padStart(2, '0')}:${String(field.value.getMinutes()).padStart(2, '0')}` : "08:30"} onValueChange={(timeValue) => handleTimeChange(timeValue, "serviceDate")} disabled={isReadOnly || (isConvertingQuote && mode === 'service')}><SelectTrigger><SelectValue placeholder="Seleccione hora" /></SelectTrigger><SelectContent>{timeSlots.map(slot => (<SelectItem key={slot.value} value={slot.value}>{slot.label}</SelectItem>))}</SelectContent></Select></div></PopoverContent></Popover><FormMessage /></FormItem>)}/>
 
                     <FormField control={form.control} name="vehicleId" render={() => ( <FormMessage /> )}/>
                     {vehicleSearchResults.length > 0 && ( <ScrollArea className="h-auto max-h-[150px] w-full rounded-md border"><div className="p-2">{vehicleSearchResults.map(v => (<button type="button" key={v.id} onClick={() => handleSelectVehicleFromSearch(v)} className="w-full text-left p-2 rounded-md hover:bg-muted"><p className="font-semibold">{v.licensePlate}</p><p className="text-sm text-muted-foreground">{v.make} {v.model} - {v.ownerName}</p></button>))}</div></ScrollArea>)}
@@ -794,7 +794,7 @@ export function ServiceForm({
                           <ServiceItemCard
                               key={serviceField.id}
                               serviceIndex={serviceIndex}
-                              control={form.control}
+                              form={form}
                               removeServiceItem={removeServiceItem}
                               isReadOnly={isReadOnly}
                               inventoryItems={currentInventoryItems}
@@ -893,14 +893,15 @@ export function ServiceForm({
 // Sub-component for a single Service Item card
 interface ServiceItemCardProps {
   serviceIndex: number;
-  control: Control<ServiceFormValues>;
+  form: ReturnType<typeof useForm<ServiceFormValues>>;
   removeServiceItem: (index: number) => void;
   isReadOnly?: boolean;
   inventoryItems: InventoryItem[];
   mode: 'service' | 'quote';
 }
 
-function ServiceItemCard({ serviceIndex, control, removeServiceItem, isReadOnly, inventoryItems, mode }: ServiceItemCardProps) {
+function ServiceItemCard({ serviceIndex, form, removeServiceItem, isReadOnly, inventoryItems, mode }: ServiceItemCardProps) {
+    const { control } = form;
     const { fields, append, remove, update } = useFieldArray({
         control,
         name: `serviceItems.${serviceIndex}.suppliesUsed`
@@ -914,9 +915,9 @@ function ServiceItemCard({ serviceIndex, control, removeServiceItem, isReadOnly,
         
         // If a manual item with a selling price is added, add its price to the service item's total price
         if (sellingPriceToApply !== undefined) {
-            const currentItemPrice = control.getValues(`serviceItems.${serviceIndex}.price`) || 0;
+            const currentItemPrice = form.getValues(`serviceItems.${serviceIndex}.price`) || 0;
             const priceToAdd = sellingPriceToApply * supply.quantity;
-            control.setValue(`serviceItems.${serviceIndex}.price`, currentItemPrice + priceToAdd, { shouldDirty: true });
+            form.setValue(`serviceItems.${serviceIndex}.price`, currentItemPrice + priceToAdd, { shouldDirty: true });
         }
         
         setIsAddSupplyDialogOpen(false);
@@ -929,7 +930,7 @@ function ServiceItemCard({ serviceIndex, control, removeServiceItem, isReadOnly,
 
     const handleSupplyQuantityChange = (supplyIndex: number, delta: number) => {
         const supplyPath = `serviceItems.${serviceIndex}.suppliesUsed.${supplyIndex}`;
-        const currentSupply = control.getValues(supplyPath);
+        const currentSupply = form.getValues(supplyPath);
         if (!currentSupply) return;
 
         const newQuantity = currentSupply.quantity + delta;
@@ -948,7 +949,7 @@ function ServiceItemCard({ serviceIndex, control, removeServiceItem, isReadOnly,
         }
 
         // Update the quantity for this specific supply
-        control.setValue(`${supplyPath}.quantity`, newQuantity, { shouldDirty: true });
+        form.setValue(`${supplyPath}.quantity`, newQuantity, { shouldDirty: true });
     };
 
     return (
@@ -1015,3 +1016,5 @@ function ServiceItemCard({ serviceIndex, control, removeServiceItem, isReadOnly,
         </Card>
     );
 }
+
+    
