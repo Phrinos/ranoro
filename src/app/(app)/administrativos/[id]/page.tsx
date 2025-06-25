@@ -29,7 +29,11 @@ import {
 
 export default function AdministrativeStaffDetailPage() {
   const params = useParams();
-  const staffId = params.id as string;
+  if (!params || !params.id) {
+ return <div>Error: ID de staff no proporcionado.</div>;
+  }
+  const staffId = params.id as string; 
+  
   const { toast } = useToast();
   const router = useRouter();
 

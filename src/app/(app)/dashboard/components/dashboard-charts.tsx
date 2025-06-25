@@ -79,7 +79,7 @@ export function DashboardCharts() {
 
   }, []);
   
-  const formatCurrency = (value: number) => `$${new Intl.NumberFormat('es-MX').format(value)}`;
+  const formatCurrency = (value: any) => `$${new Intl.NumberFormat('es-MX').format(value)}`;
   
   const monthlyChartConfig = {
     revenue: {
@@ -155,11 +155,11 @@ export function DashboardCharts() {
            <CardContent className="flex-1 flex items-center justify-center p-4">
               <Legend content={({ payload }) => (
                 <ul className="grid gap-2 text-sm">
-                  {payload?.map((item, index) => (
+                  {payload?.map((item, index) => item.payload && (
                     <li key={index} className="flex items-center gap-2">
                       <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: item.color }} />
-                      <span className="text-muted-foreground">{item.payload.name}</span>
-                      <span className="font-medium">{item.payload.value}</span>
+                      <span className="text-muted-foreground">{item.name}</span>
+                      <span className="font-medium">{item.value}</span>
                     </li>
                   ))}
                 </ul>
@@ -186,7 +186,7 @@ export function DashboardCharts() {
           <CardContent className="flex-1 flex items-center justify-center p-4">
             <Legend content={({ payload }) => (
               <ul className="grid gap-2 text-sm">
-                {payload?.map((item, index) => (
+                {payload?.map((item, index) => item.payload && (
                   <li key={index} className="flex items-center gap-2">
                     <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: item.color }} />
                     <span className="text-muted-foreground">{item.payload.source}</span>
