@@ -148,7 +148,6 @@ export function ServiceForm({
   const [newVehicleInitialData, setNewVehicleInitialData] = useState<Partial<VehicleFormValues> | null>(null);
   const [vehicleSearchResults, setVehicleSearchResults] = useState<Vehicle[]>([]);
 
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [currentInventoryItems, setCurrentInventoryItems] = useState<InventoryItem[]>(inventoryItemsProp);
   const [workshopInfo, setWorkshopInfo] = useState<WorkshopInfo | {}>({});
 
@@ -159,7 +158,7 @@ export function ServiceForm({
   const [selectedInventoryItemForDialog, setSelectedInventoryItemForDialog] = useState<InventoryItem | null>(null);
 
   const [isNewInventoryItemDialogOpen, setIsNewInventoryItemDialogOpen] = useState(false);
-  const [newSupplyInitialData, setNewSupplyInitialData] = useState<Partial<InventoryItemFormValues> | null>(null);
+  const [newSupplyInitialData, setNewSupplyInitialData] = useState<Partial<InventoryItemFormValues> | null>(newSupplyInitialData);
   const [isSuggestingPrice, setIsSuggestingPrice] = useState(false);
   const [isGeneratingQuote, setIsGeneratingQuote] = useState(false);
   
@@ -198,10 +197,6 @@ export function ServiceForm({
   
   useEffect(() => {
     if (typeof window !== "undefined") {
-        const authUserString = localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY);
-        if (authUserString) {
-            setCurrentUser(JSON.parse(authUserString));
-        }
         const storedWorkshopInfo = localStorage.getItem("workshopTicketInfo");
         if (storedWorkshopInfo) {
           setWorkshopInfo(JSON.parse(storedWorkshopInfo));
@@ -288,12 +283,14 @@ export function ServiceForm({
       // Set default for new forms
       form.setValue('serviceDate', setHours(setMinutes(new Date(), 30), 8));
       if (mode === 'quote') {
-          if (currentUser) {
-            form.setValue('technicianId', currentUser.id);
+          const authUserString = typeof window !== 'undefined' ? localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY) : null;
+          const freshCurrentUser: User | null = authUserString ? JSON.parse(authUserString) : null;
+          if (freshCurrentUser) {
+            form.setValue('technicianId', freshCurrentUser.id);
           }
       }
     }
-  }, [initialDataService, initialDataQuote, mode, localVehicles, currentInventoryItems, form, replace, currentUser]);
+  }, [initialDataService, initialDataQuote, mode, localVehicles, currentInventoryItems, form, replace]);
 
 
   useEffect(() => {
@@ -428,6 +425,14 @@ export function ServiceForm({
         onClose();
         return;
     }
+    
+    const authUserString = typeof window !== 'undefined' ? localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY) : null;
+    const currentUser: User | null = authUserString ? JSON.parse(authUserString) : null;
+
+    if (!currentUser) {
+        toast({ title: "Error de Sesión", description: "No se pudo verificar su sesión. Por favor, inicie sesión de nuevo.", variant: "destructive" });
+        return;
+    }
 
     const vehicleIdToSave = selectedVehicle?.id;
 
@@ -480,9 +485,9 @@ export function ServiceForm({
         vehicleConditions: values.vehicleConditions || '',
         fuelLevel: values.fuelLevel,
         customerItems: values.customerItems || '',
-        serviceAdvisorId: currentUser?.id || '',
-        serviceAdvisorName: currentUser?.name || 'N/A',
-        serviceAdvisorSignatureDataUrl: currentUser?.signatureDataUrl,
+        serviceAdvisorId: currentUser.id,
+        serviceAdvisorName: currentUser.name,
+        serviceAdvisorSignatureDataUrl: currentUser.signatureDataUrl,
         customerSignatureReception: values.customerSignatureReception,
         customerSignatureDelivery: values.customerSignatureDelivery,
         receptionSignatureViewed: (initialDataService as ServiceRecord)?.receptionSignatureViewed,
@@ -527,6 +532,9 @@ export function ServiceForm({
   };
   
   const handlePrintSheet = useCallback(() => {
+    const authUserString = typeof window !== 'undefined' ? localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY) : null;
+    const freshCurrentUser: User | null = authUserString ? JSON.parse(authUserString) : null;
+
     const vehicleForSheet = selectedVehicle;
 
     if (!vehicleForSheet) {
@@ -540,7 +548,7 @@ export function ServiceForm({
       id: formValues.id || 'N/A',
       vehicleId: vehicleForSheet.id,
       serviceDate: formValues.serviceDate ? formValues.serviceDate.toISOString() : new Date().toISOString(),
-      description: formValues.description,
+      description: formValues.description || '',
       technicianId: formValues.technicianId || 'N/A',
       suppliesUsed: formValues.suppliesUsed || [],
       totalCost: formValues.totalServicePrice || 0,
@@ -549,15 +557,16 @@ export function ServiceForm({
       vehicleConditions: formValues.vehicleConditions,
       fuelLevel: formValues.fuelLevel,
       customerItems: formValues.customerItems,
-      serviceAdvisorId: currentUser?.id,
-      serviceAdvisorName: currentUser?.name || 'N/A',
+      serviceAdvisorId: freshCurrentUser?.id,
+      serviceAdvisorName: freshCurrentUser?.name || 'N/A',
+      serviceAdvisorSignatureDataUrl: freshCurrentUser?.signatureDataUrl,
       customerSignatureReception: formValues.customerSignatureReception,
       customerSignatureDelivery: formValues.customerSignatureDelivery,
     };
     
     setServiceForSheet({ ...serviceDataForSheet, vehicleIdentifier: vehicleForSheet.licensePlate });
     setIsSheetOpen(true);
-  }, [form, currentUser, selectedVehicle, toast]);
+  }, [form, selectedVehicle, toast]);
 
   const handleTimeChange = (timeString: string, dateField: "serviceDate" | "deliveryDateTime") => {
     const [hours, minutes] = timeString.split(':').map(Number);
