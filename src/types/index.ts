@@ -51,7 +51,7 @@ export interface ServiceRecord {
   vehicleIdentifier?: string;
   serviceDate: string; 
   serviceType?: 'Servicio General' | 'Cambio de Aceite' | 'Pintura';
-  description: string;
+  description?: string;
   technicianId: string;
   technicianName?: string;
   serviceItems: ServiceItem[];
@@ -187,7 +187,7 @@ export interface QuoteRecord {
   quoteDate?: string;
   vehicleId?: string; // Optional if quote is generic initially
   vehicleIdentifier?: string;
-  description: string;
+  description?: string;
   preparedByTechnicianId?: string; // Who prepared the quote
   preparedByTechnicianName?: string;
   suppliesProposed: ServiceSupply[]; // Renamed from suppliesUsed
@@ -286,3 +286,4 @@ export interface VehiclePriceList {
   years: number[];
   services: PricedService[];
 }
+
