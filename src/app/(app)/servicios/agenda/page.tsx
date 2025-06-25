@@ -125,7 +125,7 @@ export default function AgendaServiciosPage() {
           vehicle.ownerName.toLowerCase().includes(searchLower)
         )) ||
         (technician && technician.name.toLowerCase().includes(searchLower)) ||
-        service.description.toLowerCase().includes(searchLower) ||
+        (service.description && service.description.toLowerCase().includes(searchLower)) ||
         (service.serviceItems && service.serviceItems.some(item => item.name.toLowerCase().includes(searchLower)))
       );
     });
@@ -162,10 +162,10 @@ export default function AgendaServiciosPage() {
 
           try {
               const result = await analyzeWorkshopCapacity({
-                  servicesForDay: todayServices.map(s => ({ description: s.description })),
+                  servicesForDay: todayServices.map(s => ({ description: s.description || '' })),
                   technicians: placeholderTechnicians.filter(t => !t.isArchived).map(t => ({ id: t.id, standardHoursPerDay: t.standardHoursPerDay || 8 })),
                   serviceHistory: placeholderServiceRecords.map(s => ({
-                      description: s.description,
+                      description: s.description || '',
                       serviceDate: s.serviceDate,
                       deliveryDateTime: s.deliveryDateTime,
                   })),
@@ -411,15 +411,23 @@ export default function AgendaServiciosPage() {
 
   const futureServices = useMemo(() => {
     return filteredServices.filter(service => {
+      if (service.status === 'Agendado') {
+        return true; // Always show 'Agendado' services in the main list
+      }
       const serviceDate = parseISO(service.serviceDate);
+      // Show 'Reparando' services for today or the future
       return isValid(serviceDate) && (isToday(serviceDate) || isFuture(serviceDate));
     });
   }, [filteredServices]);
 
   const pastServices = useMemo(() => {
     return filteredServices.filter(service => {
+      // Only 'Reparando' services can be in the past list
+      if (service.status !== 'Reparando') return false;
+
       const serviceDate = parseISO(service.serviceDate);
       if (!isValid(serviceDate)) return false;
+      
       const isServiceInThePast = isPast(serviceDate) && !isToday(serviceDate);
       return isServiceInThePast;
     });
@@ -458,7 +466,7 @@ export default function AgendaServiciosPage() {
     if (service.serviceItems && service.serviceItems.length > 0) {
       return service.serviceItems.map(item => item.name).join(', ');
     }
-    return service.description;
+    return service.description || '';
   };
 
   const renderServiceGroup = (groupedServicesData: GroupedServices) => {
@@ -594,9 +602,11 @@ export default function AgendaServiciosPage() {
                                 <Button variant="ghost" size="icon" title="Editar Detalles" onClick={(e) => {e.stopPropagation(); handleOpenEditDialog(service);}} disabled={service.status === 'Completado' || service.status === 'Cancelado'}>
                                     <Edit className="h-4 w-4" />
                                 </Button>
-                                <Button variant="ghost" size="icon" title={service.status === 'Agendado' ? "Ingresar a Taller" : "Actualizar Estado"} onClick={(e) => {e.stopPropagation(); handleOpenEditDialog(service);}} disabled={service.status === 'Completado' || service.status === 'Cancelado'}>
-                                    <Wrench className="h-4 w-4 text-blue-600" />
-                                </Button>
+                                {service.status === 'Agendado' && (
+                                  <Button variant="ghost" size="icon" title="Ingresar a Taller" onClick={(e) => {e.stopPropagation(); handleOpenEditDialog(service);}}>
+                                      <Wrench className="h-4 w-4 text-blue-600" />
+                                  </Button>
+                                )}
                                 <AlertDialog onOpenChange={(e) => e.stopPropagation()}>
                                     <AlertDialogTrigger asChild>
                                         <Button variant="ghost" size="icon" title="Cancelar Servicio" disabled={service.status === 'Completado' || service.status === 'Cancelado'} onClick={(e) => e.stopPropagation()}>
@@ -832,7 +842,7 @@ export default function AgendaServiciosPage() {
             </>
           }
       >
-          {serviceForSheet && <ServiceSheetContent service={serviceForSheet} vehicle={vehicles.find(v => v.id === serviceForSheet.id)} />}
+          {serviceForSheet && <ServiceSheetContent service={serviceForSheet} vehicle={vehicles.find(v => v.id === serviceForSheet.vehicleId)} />}
       </PrintTicketDialog>
     </>
   );

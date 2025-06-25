@@ -69,8 +69,8 @@ export default function HistorialCotizacionesPage() {
     setAllQuotes(placeholderQuotes);
     setVehicles(placeholderVehicles);
     setTechnicians(placeholderTechnicians);
-    setInventoryItems(placeholderInventory);
-  }, []);
+    setInventoryItems(inventoryItems);
+  }, [inventoryItems]);
   
   const getQuoteDescriptionText = (quote: QuoteRecord) => {
     if (quote.serviceItems && quote.serviceItems.length > 0) {
@@ -105,13 +105,22 @@ export default function HistorialCotizacionesPage() {
       switch (sortOption) {
         case "date_asc":
           return compareAsc(parseISO(a.quoteDate ?? ""), parseISO(b.quoteDate ?? ""));
-        case "date_desc":
+        case "date_desc": {
+          const statusA = a.serviceId ? 2 : 1;
+          const statusB = b.serviceId ? 2 : 1;
+          if (statusA !== statusB) return statusA - statusB;
           return compareDesc(parseISO(a.quoteDate ?? ""), parseISO(b.quoteDate ?? ""));
+        }
         case "total_asc": return (a.estimatedTotalCost || 0) - (b.estimatedTotalCost || 0);
         case "total_desc": return (b.estimatedTotalCost || 0) - (a.estimatedTotalCost || 0);
         case "vehicle_asc": return (a.vehicleIdentifier || '').localeCompare(b.vehicleIdentifier || '');
         case "vehicle_desc": return (b.vehicleIdentifier || '').localeCompare(a.vehicleIdentifier || '');
-        default: return compareDesc(parseISO(a.quoteDate ?? ""), parseISO(b.quoteDate ?? ""));
+        default: {
+           const statusA = a.serviceId ? 2 : 1;
+           const statusB = b.serviceId ? 2 : 1;
+           if (statusA !== statusB) return statusA - statusB;
+           return compareDesc(parseISO(a.quoteDate ?? ""), parseISO(b.quoteDate ?? ""));
+        }
       }
     });
     return filtered;
