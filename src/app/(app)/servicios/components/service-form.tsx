@@ -29,7 +29,7 @@ import React, { useEffect, useState, useMemo, useCallback, useRef } from "react"
 import { useToast } from "@/hooks/use-toast";
 import { VehicleDialog } from "../../vehiculos/components/vehicle-dialog";
 import type { VehicleFormValues } from "../../vehiculos/components/vehicle-form";
-import { placeholderVehicles as defaultPlaceholderVehicles, placeholderInventory, placeholderCategories, placeholderSuppliers, placeholderQuotes, placeholderServiceRecords as defaultServiceRecords, persistToFirestore, AUTH_USER_LOCALSTORAGE_KEY, sanitizeObjectForFirestore } from "@/lib/placeholder-data";
+import { placeholderVehicles as defaultPlaceholderVehicles, placeholderInventory, placeholderCategories, placeholderSuppliers, placeholderQuotes, placeholderServiceRecords as defaultServiceRecords, persistToFirestore, AUTH_USER_LOCALSTORAGE_KEY } from "@/lib/placeholder-data";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription as DialogDesc, DialogFooter } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/label";
@@ -408,33 +408,63 @@ export function ServiceForm({
     vehicle: Vehicle | null
   ) => {
     if (!db) {
-      console.warn(`Public ${type} save skipped: Database not configured.`);
-      return; 
+      toast({
+        title: "Configuración Incompleta",
+        description: "La base de datos (Firebase) no está configurada. No se pudo crear el documento público.",
+        variant: "destructive",
+        duration: 10000,
+      });
+      console.error("Public save failed: Firebase (db) is not configured in lib/firebaseClient.js");
+      return;
     }
+
     if (!data.publicId || !vehicle) {
-      console.warn(`Public ${type} save skipped: Missing publicId or vehicle data.`);
+      console.warn(`Public save skipped: Missing publicId or vehicle data.`);
       return;
     }
 
     const collectionName = type === 'quote' ? 'publicQuotes' : 'publicServices';
     const publicDocRef = doc(db, collectionName, data.publicId);
 
+    // Manually construct the object to ensure no undefined values are passed.
+    const publicData: any = {};
+
+    // Copy properties from 'data' (the service or quote record)
+    Object.keys(data).forEach(key => {
+        const value = (data as any)[key];
+        if (value !== undefined) {
+            publicData[key] = value;
+        }
+    });
+
+    // Explicitly add vehicle and workshop info, ensuring they are clean
+    const cleanVehicle: any = {};
+    Object.keys(vehicle).forEach(key => {
+        const value = (vehicle as any)[key];
+        if (value !== undefined) {
+            cleanVehicle[key] = value;
+        }
+    });
+    publicData.vehicle = cleanVehicle;
+
+    const cleanWorkshopInfo: any = {};
+     Object.keys(workshopInfo).forEach(key => {
+        const value = (workshopInfo as any)[key];
+        if (value !== undefined) {
+            cleanWorkshopInfo[key] = value;
+        }
+    });
+    publicData.workshopInfo = cleanWorkshopInfo;
+
+
     try {
-      const publicData = {
-        ...data,
-        vehicle: { ...vehicle },
-        workshopInfo: workshopInfo as WorkshopInfo,
-      };
-      
-      const sanitizedPublicData = sanitizeObjectForFirestore(publicData);
-      
-      await setDoc(publicDocRef, sanitizedPublicData, { merge: true });
+      await setDoc(publicDocRef, publicData, { merge: true });
       console.log(`Public ${type} document ${data.publicId} saved successfully.`);
     } catch (e) {
       console.error(`Failed to save public ${type} document:`, e);
       toast({
         title: "Error de Sincronización",
-        description: `No se pudo guardar el documento público. El enlace compartido podría no funcionar.`,
+        description: `No se pudo guardar el documento público. El enlace compartido podría no funcionar. Error: ${e instanceof Error ? e.message : String(e)}`,
         variant: "destructive",
       });
     }
@@ -477,7 +507,7 @@ export function ServiceForm({
     const finalTaxAmount = finalTotalCost - finalSubTotal;
     
     if (mode === 'service') {
-      const serviceData: ServiceRecord = {
+      const serviceData: Partial<ServiceRecord> = {
         id: initialDataService?.id || `SER_${Date.now().toString(36)}`,
         publicId: values.publicId || `srv_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 9)}`,
         vehicleId: vehicleIdToSave,
@@ -500,26 +530,28 @@ export function ServiceForm({
         serviceProfit: finalTotalCost - totalSuppliesWorkshopCost,
         serviceAdvisorId: currentUser.id,
         serviceAdvisorName: currentUser.name,
-        // Optional fields are added conditionally or with fallbacks
-        ...(values.serviceType && { serviceType: values.serviceType }),
-        ...(values.mileage && { mileage: values.mileage }),
-        ...(values.notes && { notes: values.notes }),
-        ...(values.vehicleConditions && { vehicleConditions: values.vehicleConditions }),
-        ...(values.fuelLevel && { fuelLevel: values.fuelLevel }),
-        ...(values.customerItems && { customerItems: values.customerItems }),
         serviceAdvisorSignatureDataUrl: currentUser.signatureDataUrl || '',
         customerSignatureReception: values.customerSignatureReception || '',
         customerSignatureDelivery: values.customerSignatureDelivery || '',
         receptionSignatureViewed: (initialDataService as ServiceRecord)?.receptionSignatureViewed || false,
         deliverySignatureViewed: (initialDataService as ServiceRecord)?.deliverySignatureViewed || false,
         workshopInfo: workshopInfo as WorkshopInfo,
-        ...(values.deliveryDateTime && { deliveryDateTime: values.deliveryDateTime.toISOString() }),
       };
+      
+      // Add optional fields only if they have a value
+      if (values.serviceType) serviceData.serviceType = values.serviceType;
+      if (values.mileage) serviceData.mileage = values.mileage;
+      if (values.notes) serviceData.notes = values.notes;
+      if (values.vehicleConditions) serviceData.vehicleConditions = values.vehicleConditions;
+      if (values.fuelLevel) serviceData.fuelLevel = values.fuelLevel;
+      if (values.customerItems) serviceData.customerItems = values.customerItems;
+      if (values.deliveryDateTime) serviceData.deliveryDateTime = values.deliveryDateTime.toISOString();
 
-      await savePublicDocument('service', serviceData, selectedVehicle);
-      await onSubmit(serviceData);
+      await savePublicDocument('service', serviceData as ServiceRecord, selectedVehicle);
+      await onSubmit(serviceData as ServiceRecord);
+
     } else { // mode === 'quote'
-      const quoteData: QuoteRecord = {
+      const quoteData: Partial<QuoteRecord> = {
         id: (initialDataQuote as QuoteRecord)?.id || `COT_${Date.now().toString(36)}`,
         publicId: (initialDataQuote as QuoteRecord)?.publicId || `cot_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 9)}`,
         quoteDate: values.serviceDate!.toISOString(),
@@ -540,13 +572,14 @@ export function ServiceForm({
         estimatedTotalSuppliesCost: totalSuppliesWorkshopCost,
         estimatedProfit: finalTotalCost - totalSuppliesWorkshopCost,
         workshopInfo: workshopInfo as WorkshopInfo,
-        // Optional fields
-        ...(values.notes && { notes: values.notes }),
-        ...(values.mileage && { mileage: values.mileage }),
       };
       
-      await savePublicDocument('quote', quoteData, selectedVehicle);
-      await onSubmit(quoteData);
+      // Add optional fields only if they have a value
+      if (values.notes) quoteData.notes = values.notes;
+      if (values.mileage) quoteData.mileage = values.mileage;
+
+      await savePublicDocument('quote', quoteData as QuoteRecord, selectedVehicle);
+      await onSubmit(quoteData as QuoteRecord);
     }
   };
   
@@ -1682,5 +1715,3 @@ export function ServiceForm({
     </>
   );
 }
-
-    
