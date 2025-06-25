@@ -34,6 +34,7 @@ import {
   Filter as FilterIcon,
   Printer,
   PlusCircle,
+  Copy,
 } from "lucide-react";
 import { SalesTable } from "./components/sales-table";
 import { PrintTicketDialog } from "@/components/ui/print-ticket-dialog";
@@ -278,6 +279,39 @@ export default function POSPage() {
     },
     [toast]
   );
+  
+  const handleCopyAsImage = async () => {
+    if (!ticketContentRef.current) {
+        toast({ title: "Error", description: "No se encontró el contenido del ticket.", variant: "destructive" });
+        return;
+    }
+    try {
+        const html2canvas = (await import('html2canvas')).default;
+        const canvas = await html2canvas(ticketContentRef.current, {
+            useCORS: true,
+            backgroundColor: '#ffffff',
+            scale: 2.5, 
+        });
+        canvas.toBlob(async (blob) => {
+            if (blob) {
+                try {
+                    await navigator.clipboard.write([
+                        new ClipboardItem({ 'image/png': blob })
+                    ]);
+                    toast({ title: "Copiado", description: "La imagen del ticket ha sido copiada." });
+                } catch (clipboardErr) {
+                    console.error('Clipboard API error:', clipboardErr);
+                    toast({ title: "Error de Copiado", description: "Tu navegador no pudo copiar la imagen. Intenta imprimir.", variant: "destructive" });
+                }
+            } else {
+                 toast({ title: "Error de Conversión", description: "No se pudo convertir el ticket a imagen.", variant: "destructive" });
+            }
+        }, 'image/png');
+    } catch (e) {
+        console.error("html2canvas error:", e);
+        toast({ title: "Error de Captura", description: "No se pudo generar la imagen del ticket.", variant: "destructive" });
+    }
+  };
 
   // -------------------- Render --------------------
 
@@ -479,9 +513,14 @@ export default function POSPage() {
           onDialogClose={() => setIsReprintDialogOpen(false)}
           dialogContentClassName="printable-content"
           footerActions={
-            <Button onClick={() => window.print()}>
-              <Printer className="mr-2 h-4 w-4" /> Imprimir Ticket
-            </Button>
+            <div className="flex gap-2">
+                <Button variant="outline" onClick={handleCopyAsImage}>
+                    <Copy className="mr-2 h-4 w-4"/> Copiar Imagen
+                </Button>
+                <Button onClick={() => window.print()}>
+                  <Printer className="mr-2 h-4 w-4" /> Imprimir Ticket
+                </Button>
+            </div>
           }
         >
           <TicketContent ref={ticketContentRef} sale={selectedSaleForReprint} />

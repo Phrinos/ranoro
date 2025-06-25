@@ -8,7 +8,7 @@ import { PageHeader } from '@/components/page-header';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { Archive, ShieldAlert, Edit, Eye, Printer } from 'lucide-react';
+import { Archive, ShieldAlert, Edit, Eye, Printer, Copy } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { format, parseISO } from 'date-fns';
@@ -124,6 +124,39 @@ export default function VehicleDetailPage() {
   
   const handlePrintTicket = () => {
     window.print();
+  };
+  
+  const handleCopyAsImage = async () => {
+    if (!ticketContentRef.current) {
+        toast({ title: "Error", description: "No se encontró el contenido del ticket.", variant: "destructive" });
+        return;
+    }
+    try {
+        const html2canvas = (await import('html2canvas')).default;
+        const canvas = await html2canvas(ticketContentRef.current, {
+            useCORS: true,
+            backgroundColor: '#ffffff',
+            scale: 2.5, 
+        });
+        canvas.toBlob(async (blob) => {
+            if (blob) {
+                try {
+                    await navigator.clipboard.write([
+                        new ClipboardItem({ 'image/png': blob })
+                    ]);
+                    toast({ title: "Copiado", description: "La imagen del ticket ha sido copiada." });
+                } catch (clipboardErr) {
+                    console.error('Clipboard API error:', clipboardErr);
+                    toast({ title: "Error de Copiado", description: "Tu navegador no pudo copiar la imagen. Intenta imprimir.", variant: "destructive" });
+                }
+            } else {
+                 toast({ title: "Error de Conversión", description: "No se pudo convertir el ticket a imagen.", variant: "destructive" });
+            }
+        }, 'image/png');
+    } catch (e) {
+        console.error("html2canvas error:", e);
+        toast({ title: "Error de Captura", description: "No se pudo generar la imagen del ticket.", variant: "destructive" });
+    }
   };
 
 
@@ -281,9 +314,14 @@ export default function VehicleDetailPage() {
           onDialogClose={() => setCurrentServiceForTicket(null)}
           dialogContentClassName="printable-content"
           footerActions={
-             <Button onClick={handlePrintTicket}>
-                <Printer className="mr-2 h-4 w-4" /> Imprimir Comprobante
-            </Button>
+             <div className="flex gap-2">
+                <Button variant="outline" onClick={handleCopyAsImage}>
+                    <Copy className="mr-2 h-4 w-4"/> Copiar Imagen
+                </Button>
+                <Button onClick={handlePrintTicket}>
+                    <Printer className="mr-2 h-4 w-4" /> Imprimir Comprobante
+                </Button>
+             </div>
           }
         >
           <TicketContent 

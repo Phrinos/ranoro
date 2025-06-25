@@ -25,7 +25,7 @@ import type {
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { MessageSquare, Download } from "lucide-react";
+import { MessageSquare, Download, Copy } from "lucide-react";
 
 
 /* --------------------------------------------------
@@ -109,6 +109,39 @@ export default function NuevaCotizacionPage() {
     };
     toast({ title: "Generando PDF...", description: `Se está preparando ${pdfFileName}.` });
     html2pdf().from(element).set(opt).save();
+  };
+
+  const handleCopyAsImage = async () => {
+    if (!quoteContentRef.current) {
+        toast({ title: "Error", description: "No se encontró el contenido para copiar.", variant: "destructive" });
+        return;
+    }
+    try {
+        const html2canvas = (await import('html2canvas')).default;
+        const canvas = await html2canvas(quoteContentRef.current, {
+            useCORS: true,
+            backgroundColor: '#ffffff',
+            scale: 2.5,
+        });
+        canvas.toBlob(async (blob) => {
+            if (blob) {
+                try {
+                    await navigator.clipboard.write([
+                        new ClipboardItem({ 'image/png': blob })
+                    ]);
+                    toast({ title: "Copiado", description: "La imagen de la cotización ha sido copiada." });
+                } catch (clipboardErr) {
+                    console.error('Clipboard API error:', clipboardErr);
+                    toast({ title: "Error de Copiado", description: "Tu navegador no pudo copiar la imagen. Intenta descargar el PDF.", variant: "destructive" });
+                }
+            } else {
+                 toast({ title: "Error de Conversión", description: "No se pudo convertir a imagen.", variant: "destructive" });
+            }
+        }, 'image/png');
+    } catch (e) {
+        console.error("html2canvas error:", e);
+        toast({ title: "Error de Captura", description: "No se pudo generar la imagen.", variant: "destructive" });
+    }
   };
 
 
@@ -197,6 +230,9 @@ export default function NuevaCotizacionPage() {
             <>
               <Button variant="outline" onClick={handleSendWhatsApp}>
                 <MessageSquare className="mr-2 h-4 w-4" /> Copiar para WhatsApp
+              </Button>
+              <Button variant="outline" onClick={handleCopyAsImage}>
+                <Copy className="mr-2 h-4 w-4" /> Copiar Imagen
               </Button>
               <Button onClick={handleDownloadPdf}>
                 <Download className="mr-2 h-4 w-4" /> Descargar PDF

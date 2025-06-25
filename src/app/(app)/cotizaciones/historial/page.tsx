@@ -8,7 +8,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Search, ListFilter, CalendarIcon as CalendarDateIcon, FileText, DollarSign, MessageSquare, PlusCircle, Download, Wrench } from "lucide-react";
+import { Search, ListFilter, CalendarIcon as CalendarDateIcon, FileText, DollarSign, MessageSquare, PlusCircle, Download, Wrench, Copy } from "lucide-react";
 import { QuotesTable } from "../components/quotes-table"; 
 import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
 import { QuoteContent } from '@/components/quote-content';
@@ -218,6 +218,39 @@ export default function HistorialCotizacionesPage() {
     toast({ title: "Generando PDF...", description: `Se está preparando ${pdfFileName}.` });
     html2pdf().from(element).set(opt).save();
   }, [toast]);
+  
+  const handleCopyAsImage = async () => {
+    if (!quoteContentRef.current) {
+        toast({ title: "Error", description: "No se encontró el contenido para copiar.", variant: "destructive" });
+        return;
+    }
+    try {
+        const html2canvas = (await import('html2canvas')).default;
+        const canvas = await html2canvas(quoteContentRef.current, {
+            useCORS: true,
+            backgroundColor: '#ffffff',
+            scale: 2.5,
+        });
+        canvas.toBlob(async (blob) => {
+            if (blob) {
+                try {
+                    await navigator.clipboard.write([
+                        new ClipboardItem({ 'image/png': blob })
+                    ]);
+                    toast({ title: "Copiado", description: "La imagen de la cotización ha sido copiada." });
+                } catch (clipboardErr) {
+                    console.error('Clipboard API error:', clipboardErr);
+                    toast({ title: "Error de Copiado", description: "Tu navegador no pudo copiar la imagen. Intenta descargar el PDF.", variant: "destructive" });
+                }
+            } else {
+                 toast({ title: "Error de Conversión", description: "No se pudo convertir a imagen.", variant: "destructive" });
+            }
+        }, 'image/png');
+    } catch (e) {
+        console.error("html2canvas error:", e);
+        toast({ title: "Error de Captura", description: "No se pudo generar la imagen.", variant: "destructive" });
+    }
+  };
 
   const handleSendWhatsApp = useCallback(async (quoteForAction: QuoteRecord | null) => {
     if (!quoteForAction) return;
@@ -392,6 +425,9 @@ export default function HistorialCotizacionesPage() {
             <>
               <Button variant="outline" onClick={() => handleSendWhatsApp(selectedQuoteForView)}>
                 <MessageSquare className="mr-2 h-4 w-4" /> Copiar para WhatsApp
+              </Button>
+              <Button variant="outline" onClick={handleCopyAsImage}>
+                <Copy className="mr-2 h-4 w-4" /> Copiar Imagen
               </Button>
               <Button onClick={() => generateAndDownloadPdf(selectedQuoteForView)}>
                  <Download className="mr-2 h-4 w-4" /> Descargar PDF
