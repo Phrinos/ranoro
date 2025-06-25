@@ -158,7 +158,7 @@ export function ServiceForm({
   const [selectedInventoryItemForDialog, setSelectedInventoryItemForDialog] = useState<InventoryItem | null>(null);
 
   const [isNewInventoryItemDialogOpen, setIsNewInventoryItemDialogOpen] = useState(false);
-  const [newSupplyInitialData, setNewSupplyInitialData] = useState<Partial<InventoryItemFormValues> | null>(newSupplyInitialData);
+  const [newSupplyInitialData, setNewSupplyInitialData] = useState<Partial<InventoryItemFormValues> | null>(null);
   const [isSuggestingPrice, setIsSuggestingPrice] = useState(false);
   const [isGeneratingQuote, setIsGeneratingQuote] = useState(false);
   
