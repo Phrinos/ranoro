@@ -53,15 +53,16 @@ import { suggestQuote, type QuoteSuggestionInput } from '@/ai/flows/quote-sugges
 import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
 import { ServiceSheetContent } from '@/components/service-sheet-content';
 import { Checkbox } from "@/components/ui/checkbox";
-import Image from "next/image";
+import Image from 'next/image';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { db } from '@root/lib/firebaseClient.js';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { AddSupplyDialog } from './add-supply-dialog';
 
 
 const supplySchema = z.object({
   supplyId: z.string().min(1, "Seleccione un insumo"),
-  quantity: z.coerce.number().min(1, "La cantidad debe ser al menos 1."),
+  quantity: z.coerce.number().min(0.001, "La cantidad debe ser mayor a 0"),
   unitPrice: z.coerce.number().optional(),
   supplyName: z.string().optional(),
   isService: z.boolean().optional(),
@@ -386,7 +387,7 @@ export function ServiceForm({
   const totalSuppliesWorkshopCost = useMemo(() => {
     return watchedServiceItems?.flatMap(item => item.suppliesUsed).reduce((sum, supply) => {
         const item = currentInventoryItems.find(i => i.id === supply.supplyId);
-        const costPerUnit = item?.unitPrice || 0;
+        const costPerUnit = item?.unitPrice || supply.unitPrice || 0;
         return sum + costPerUnit * supply.quantity;
     }, 0) || 0;
   }, [watchedServiceItems, currentInventoryItems]);
@@ -569,8 +570,8 @@ export function ServiceForm({
       };
       
       quoteData.vehicleIdentifier = selectedVehicle?.licensePlate || values.vehicleLicensePlateSearch || 'N/A';
-      quoteData.preparedByTechnicianId = values.technicianId || '';
-      quoteData.preparedByTechnicianName = technicians.find(t => t.id === values.technicianId)?.name || 'N/A';
+      quoteData.preparedByTechnicianId = currentUser.id;
+      quoteData.preparedByTechnicianName = currentUser.name;
       quoteData.estimatedTotalCost = totalCost;
       quoteData.estimatedSubTotal = finalSubTotal;
       quoteData.estimatedTaxAmount = finalTaxAmount;
@@ -726,7 +727,7 @@ export function ServiceForm({
   };
 
   const cardTitleText = mode === 'quote' ? "Información del Vehículo y Cotización" : "Información del Vehículo";
-  const technicianLabelText = mode === 'quote' ? "Preparado por" : "Técnico Asignado";
+  const technicianLabelText = "Técnico Asignado";
   const submitButtonText = mode === 'quote' ? "Guardar Cotización" : (initialDataService ? "Actualizar Servicio" : "Crear Servicio");
 
   return (
@@ -762,13 +763,15 @@ export function ServiceForm({
                       <FormField control={form.control} name="vehicleLicensePlateSearch" render={({ field }) => (<FormItem className="w-full"><FormLabel>Placa del Vehículo</FormLabel><FormControl><Input placeholder="Buscar/Ingresar Placas" {...field} value={vehicleLicensePlateSearch} onChange={(e) => {setVehicleLicensePlateSearch(e.target.value.toUpperCase()); field.onChange(e.target.value.toUpperCase());}} disabled={isReadOnly} className="uppercase" onKeyDown={handleVehiclePlateKeyDown} /></FormControl></FormItem>)}/>
                       <FormField control={form.control} name="mileage" render={({ field }) => ( <FormItem><FormLabel>Kilometraje (Opcional)</FormLabel><FormControl><Input type="number" placeholder="Ej: 55000 km" {...field} disabled={isReadOnly} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>)}/>
                     </div>
+                     <FormField control={form.control} name="serviceDate" render={({ field }) => (<FormItem className="flex flex-col"><FormLabel>Fecha y Hora del Servicio</FormLabel><Popover><PopoverTrigger asChild disabled={isReadOnly}><FormControl><Button variant={"outline"} className={cn("w-full justify-start text-left font-normal",!field.value && "text-muted-foreground")} disabled={isReadOnly}>{field.value && isValid(field.value) ? (format(field.value, "PPPp", { locale: es })) : (<span>Seleccione fecha y hora</span>)}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value} onSelect={(date) => { const currentTime = field.value || setHours(setMinutes(new Date(), 30), 8); const newDateTime = date ? setHours(setMinutes(startOfDay(date), currentTime.getMinutes()), currentTime.getHours()) : undefined; field.onChange(newDateTime);}} disabled={(date) => date < new Date("1900-01-01") || isReadOnly } initialFocus locale={es}/><div className="p-2 border-t"><Select value={field.value ? `${String(field.value.getHours()).padStart(2, '0')}:${String(field.value.getMinutes()).padStart(2, '0')}` : "08:30"} onValueChange={(timeValue) => handleTimeChange(timeValue, "serviceDate")} disabled={isReadOnly}><SelectTrigger><SelectValue placeholder="Seleccione hora" /></SelectTrigger><SelectContent>{timeSlots.map(slot => (<SelectItem key={slot.value} value={slot.value}>{slot.label}</SelectItem>))}</SelectContent></Select></div></PopoverContent></Popover><FormMessage /></FormItem>)}/>
+
                     <FormField control={form.control} name="vehicleId" render={() => ( <FormMessage /> )}/>
                     {vehicleSearchResults.length > 0 && ( <ScrollArea className="h-auto max-h-[150px] w-full rounded-md border"><div className="p-2">{vehicleSearchResults.map(v => (<button type="button" key={v.id} onClick={() => handleSelectVehicleFromSearch(v)} className="w-full text-left p-2 rounded-md hover:bg-muted"><p className="font-semibold">{v.licensePlate}</p><p className="text-sm text-muted-foreground">{v.make} {v.model} - {v.ownerName}</p></button>))}</div></ScrollArea>)}
                     {selectedVehicle && (<div className="p-3 border rounded-md bg-amber-50 dark:bg-amber-950/50 text-sm space-y-1"><p><strong>Vehículo Seleccionado:</strong> {selectedVehicle.make} {selectedVehicle.model} {selectedVehicle.year} (<span className="font-bold">{selectedVehicle.licensePlate}</span>)</p><p><strong>Propietario:</strong> {selectedVehicle.ownerName}</p>{lastServiceInfo && (<p className="text-xs font-medium text-blue-600 dark:text-blue-400 mt-1">{lastServiceInfo}</p>)}</div>)}
                     {vehicleNotFound && !selectedVehicle && !isReadOnly && (<div className="p-3 border border-orange-500 rounded-md bg-orange-50 dark:bg-orange-900/30 dark:text-orange-300 text-sm flex flex-col sm:flex-row items-center justify-between gap-2"><div className="flex items-center gap-2"><AlertCircle className="h-5 w-5 shrink-0"/><p>Vehículo con placa "{vehicleLicensePlateSearch}" no encontrado.</p></div><Button type="button" size="sm" variant="outline" onClick={() => {setNewVehicleInitialData({ licensePlate: vehicleLicensePlateSearch }); setIsVehicleDialogOpen(true);}} className="w-full sm:w-auto"><CarIcon className="mr-2 h-4 w-4"/> Registrar Nuevo Vehículo</Button></div>)}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 pt-4">
                         <FormField control={form.control} name="notes" render={({ field }) => (<FormItem><FormLabel>Notas Adicionales (Opcional)</FormLabel><FormControl><Textarea placeholder={mode === 'quote' ? "Ej: Validez de la cotización, condiciones..." : "Notas internas o para el cliente..."} {...field} disabled={isReadOnly} className="min-h-[100px]"/></FormControl><FormMessage /></FormItem>)}/>
-                        <FormField control={form.control} name="technicianId" render={({ field }) => (<FormItem><FormLabel>{technicianLabelText}</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value} disabled={isReadOnly}><FormControl><SelectTrigger><SelectValue placeholder="Seleccione un técnico" /></SelectTrigger></FormControl><SelectContent>{technicians.map((technician) => (<SelectItem key={technician.id} value={technician.id}>{technician.name}</SelectItem>))}</SelectContent></Select><FormMessage /></FormItem>)}/>
+                        {mode === 'service' && <FormField control={form.control} name="technicianId" render={({ field }) => (<FormItem><FormLabel>{technicianLabelText}</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value} disabled={isReadOnly}><FormControl><SelectTrigger><SelectValue placeholder="Seleccione un técnico" /></SelectTrigger></FormControl><SelectContent>{technicians.map((technician) => (<SelectItem key={technician.id} value={technician.id}>{technician.name}</SelectItem>))}</SelectContent></Select><FormMessage /></FormItem>)}/>}
                     </div>
                 </CardContent>
               </Card>
@@ -892,15 +895,22 @@ function ServiceItemCard({ serviceIndex, control, removeServiceItem, isReadOnly,
         name: `serviceItems.${serviceIndex}.suppliesUsed`
     });
 
+    const [isAddSupplyDialogOpen, setIsAddSupplyDialogOpen] = useState(false);
+    
+    const handleAddSupply = (supply: ServiceSupply) => {
+        append(supply);
+        setIsAddSupplyDialogOpen(false);
+    };
+
     const formatCurrency = (amount: number | undefined) => {
-      if (amount === undefined) return '$0.00';
+      if (amount === undefined) return '';
       return `$${amount.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
     };
 
     return (
         <Card className="p-4 bg-muted/30">
             <div className="flex justify-between items-start mb-4">
-                <h4 className="text-base font-semibold">Ítem de Servicio #{serviceIndex + 1}</h4>
+                <h4 className="text-base font-semibold">Trabajo a Realizar #{serviceIndex + 1}</h4>
                 {!isReadOnly && <Button type="button" variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => removeServiceItem(serviceIndex)}><Trash2 className="h-4 w-4"/></Button>}
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -923,12 +933,18 @@ function ServiceItemCard({ serviceIndex, control, removeServiceItem, isReadOnly,
                         </div>
                     ))}
                     {!isReadOnly && (
-                        <Button type="button" variant="outline" size="sm" onClick={() => { /* Open add supply dialog here */ }}>
+                        <Button type="button" variant="outline" size="sm" onClick={() => setIsAddSupplyDialogOpen(true) }>
                             <Plus className="mr-2 h-4 w-4"/> Añadir Insumo
                         </Button>
                     )}
                 </div>
             </div>
+             <AddSupplyDialog
+                open={isAddSupplyDialogOpen}
+                onOpenChange={setIsAddSupplyDialogOpen}
+                inventoryItems={inventoryItems}
+                onAddSupply={handleAddSupply}
+            />
         </Card>
     );
 }
