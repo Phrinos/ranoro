@@ -392,6 +392,7 @@ export default function AgendaServiciosPage() {
 
   const futureServices = useMemo(() => {
     return filteredServices.filter(service => {
+      if (service.status !== 'Agendado' && service.status !== 'Reparando') return false;
       const serviceDate = parseISO(service.serviceDate);
       return isValid(serviceDate) && (isToday(serviceDate) || isFuture(serviceDate));
     });
@@ -401,11 +402,13 @@ export default function AgendaServiciosPage() {
     return filteredServices.filter(service => {
       const serviceDate = parseISO(service.serviceDate);
       if (!isValid(serviceDate)) return false;
+      
+      if (service.status !== 'Agendado' && service.status !== 'Reparando') {
+          return false;
+      }
 
       const isServiceInThePast = isPast(serviceDate) && !isToday(serviceDate);
-      const isValidStatusForPast = service.status === 'Agendado' || service.status === 'Cancelado';
-
-      return isServiceInThePast && isValidStatusForPast;
+      return isServiceInThePast;
     });
   }, [filteredServices]);
 
@@ -564,42 +567,11 @@ export default function AgendaServiciosPage() {
                               <Button variant="ghost" size="icon" aria-label="Ver Hoja de Servicio" onClick={() => handleShowSheet(service)}>
                                   <FileText className="h-4 w-4" />
                               </Button>
-                              {service.status === 'Completado' && (
-                                <Button variant="ghost" size="icon" aria-label="Reimprimir Comprobante" onClick={(e) => { e.stopPropagation(); handleReprintService(service); }}>
-                                    <Printer className="h-4 w-4" />
+                              {service.status === 'Agendado' && (
+                                <Button variant="ghost" size="icon" title="Ingresar a Taller" onClick={(e) => { e.stopPropagation(); handleOpenEditDialog(service); }}>
+                                    <Wrench className="h-4 w-4 text-blue-600" />
                                 </Button>
                               )}
-                              <AlertDialog onOpenChange={(open) => !open && setCancellationReason('')}>
-                                <AlertDialogTrigger asChild>
-                                  <Button variant="ghost" size="icon" aria-label="Cancelar Servicio" onClick={(e) => e.stopPropagation()} disabled={service.status === 'Cancelado'}>
-                                    <Ban className="h-4 w-4 text-destructive" />
-                                  </Button>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent>
-                                  <AlertDialogHeader>
-                                    <AlertDialogTitle>¿Cancelar Servicio?</AlertDialogTitle>
-                                    <AlertDialogDescription>
-                                        Esta acción no se puede deshacer. El servicio se marcará como cancelado.
-                                        <div className="mt-4">
-                                            <Label htmlFor={`cancel-reason-${service.id}`} className="text-left font-semibold">Motivo de la cancelación (obligatorio)</Label>
-                                            <Textarea
-                                                id={`cancel-reason-${service.id}`}
-                                                placeholder="Ej: El cliente no se presentó, no se consiguieron las refacciones..."
-                                                value={cancellationReason}
-                                                onChange={(e) => setCancellationReason(e.target.value)}
-                                                className="mt-2"
-                                            />
-                                        </div>
-                                    </AlertDialogDescription>
-                                  </AlertDialogHeader>
-                                  <AlertDialogFooter>
-                                    <AlertDialogCancel>Cerrar</AlertDialogCancel>
-                                    <AlertDialogAction onClick={() => handleCancelService(service.id, cancellationReason)} disabled={!cancellationReason.trim()} className="bg-destructive hover:bg-destructive/90">
-                                      Confirmar Cancelación
-                                    </AlertDialogAction>
-                                  </AlertDialogFooter>
-                                </AlertDialogContent>
-                              </AlertDialog>
                             </div>
                         </div>
                     </div>

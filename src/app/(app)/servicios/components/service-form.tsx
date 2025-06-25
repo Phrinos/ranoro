@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -754,7 +755,7 @@ export function ServiceForm({
 
   const deleteButtonText = mode === 'quote'
     ? 'Eliminar Cotización'
-    : (initialDataService?.status === 'Agendado' ? 'Cancelar Agenda' : 'Cancelar Servicio');
+    : (initialDataService?.status === 'Agendado' ? 'Cancelar Servicio Agendado' : 'Cancelar Servicio');
 
   const showStatusFields = mode === 'service' || (mode === 'quote' && !!initialData?.id);
   
@@ -769,6 +770,7 @@ export function ServiceForm({
   }, [mode, initialDataQuote]);
 
   const cardTitleText = mode === 'quote' ? "Información de la Cotización" : "Información del Servicio";
+  const isDateDisabled = isConvertingQuote ? false : (isReadOnly || mode === 'service' && !!initialDataService?.id);
 
   return (
     <>
@@ -817,29 +819,11 @@ export function ServiceForm({
                                 </FormItem>
                             )}
                         />
-                        {mode === 'service' && 
+                        {mode === 'service' && watchedStatus !== 'Agendado' && watchedStatus !== 'Cotizacion' &&
                             <FormField
                                 control={form.control}
-                                name="serviceType"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel className="font-bold">Tipo de Servicio</FormLabel>
-                                        <Select onValueChange={field.onChange} value={field.value || 'Servicio General'} disabled={isReadOnly}>
-                                            <FormControl>
-                                                <SelectTrigger className="font-bold">
-                                                    <SelectValue placeholder="Seleccione un tipo" />
-                                                </SelectTrigger>
-                                            </FormControl>
-                                            <SelectContent>
-                                                {["Servicio General", "Cambio de Aceite", "Pintura"].map((type) => (
-                                                    <SelectItem key={type} value={type}>{type}</SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
+                                name="technicianId"
+                                render={({ field }) => (<FormItem><FormLabel>Técnico Asignado</FormLabel><Select onValueChange={field.onChange} value={field.value} disabled={isReadOnly}><FormControl><SelectTrigger><SelectValue placeholder="Seleccione un técnico" /></SelectTrigger></FormControl><SelectContent>{technicians.map((technician) => (<SelectItem key={technician.id} value={technician.id}>{technician.name}</SelectItem>))}</SelectContent></Select><FormMessage /></FormItem>)}/>
                         }
                       </div>
                     )}
@@ -847,7 +831,7 @@ export function ServiceForm({
                       <FormField control={form.control} name="vehicleLicensePlateSearch" render={({ field }) => (<FormItem className="w-full"><FormLabel>Placa del Vehículo</FormLabel><FormControl><Input placeholder="Buscar/Ingresar Placas" {...field} value={vehicleLicensePlateSearch} onChange={(e) => {setVehicleLicensePlateSearch(e.target.value.toUpperCase()); field.onChange(e.target.value.toUpperCase());}} disabled={isReadOnly} className="uppercase" onKeyDown={handleVehiclePlateKeyDown} /></FormControl></FormItem>)}/>
                       <FormField control={form.control} name="mileage" render={({ field }) => ( <FormItem><FormLabel>Kilometraje (Opcional)</FormLabel><FormControl><Input type="number" placeholder="Ej: 55000 km" {...field} disabled={isReadOnly} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>)}/>
                     </div>
-                     <FormField control={form.control} name="serviceDate" render={({ field }) => (<FormItem className="flex flex-col"><FormLabel>Fecha y Hora del Servicio Agendado</FormLabel><Popover><PopoverTrigger asChild disabled={isReadOnly && mode === 'service'}><FormControl><Button variant={"outline"} className={cn("w-full justify-start text-left font-normal",!field.value && "text-muted-foreground")} disabled={isReadOnly && mode === 'service'}>{field.value && isValid(field.value) ? (format(field.value, "PPPp", { locale: es })) : (<span>Seleccione fecha y hora</span>)}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value} onSelect={(date) => { const currentTime = field.value || setHours(setMinutes(new Date(), 30), 8); const newDateTime = date ? setHours(setMinutes(startOfDay(date), currentTime.getMinutes()), currentTime.getHours()) : undefined; field.onChange(newDateTime);}} disabled={(date) => date < new Date("1900-01-01") || (isReadOnly && mode === 'service')} initialFocus locale={es}/><div className="p-2 border-t"><Select value={field.value ? `${String(field.value.getHours()).padStart(2, '0')}:${String(field.value.getMinutes()).padStart(2, '0')}` : "08:30"} onValueChange={(timeValue) => handleTimeChange(timeValue, "serviceDate")} disabled={isReadOnly && mode === 'service'}><SelectTrigger><SelectValue placeholder="Seleccione hora" /></SelectTrigger><SelectContent>{timeSlots.map(slot => (<SelectItem key={slot.value} value={slot.value}>{slot.label}</SelectItem>))}</SelectContent></Select></div></PopoverContent></Popover><FormMessage /></FormItem>)}/>
+                     <FormField control={form.control} name="serviceDate" render={({ field }) => (<FormItem className="flex flex-col"><FormLabel>Fecha y Hora del Servicio Agendado</FormLabel><Popover><PopoverTrigger asChild disabled={isDateDisabled}><FormControl><Button variant={"outline"} className={cn("w-full justify-start text-left font-normal",!field.value && "text-muted-foreground")} disabled={isDateDisabled}>{field.value && isValid(field.value) ? (format(field.value, "PPPp", { locale: es })) : (<span>Seleccione fecha y hora</span>)}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value} onSelect={(date) => { const currentTime = field.value || setHours(setMinutes(new Date(), 30), 8); const newDateTime = date ? setHours(setMinutes(startOfDay(date), currentTime.getMinutes()), currentTime.getHours()) : undefined; field.onChange(newDateTime);}} disabled={(date) => date < new Date("1900-01-01") || (isReadOnly && mode === 'service')} initialFocus locale={es}/><div className="p-2 border-t"><Select value={field.value ? `${String(field.value.getHours()).padStart(2, '0')}:${String(field.value.getMinutes()).padStart(2, '0')}` : "08:30"} onValueChange={(timeValue) => handleTimeChange(timeValue, "serviceDate")} disabled={isDateDisabled}><SelectTrigger><SelectValue placeholder="Seleccione hora" /></SelectTrigger><SelectContent>{timeSlots.map(slot => (<SelectItem key={slot.value} value={slot.value}>{slot.label}</SelectItem>))}</SelectContent></Select></div></PopoverContent></Popover><FormMessage /></FormItem>)}/>
 
                     <FormField control={form.control} name="vehicleId" render={() => ( <FormMessage /> )}/>
                     {vehicleSearchResults.length > 0 && ( <ScrollArea className="h-auto max-h-[150px] w-full rounded-md border"><div className="p-2">{vehicleSearchResults.map(v => (<button type="button" key={v.id} onClick={() => handleSelectVehicleFromSearch(v)} className="w-full text-left p-2 rounded-md hover:bg-muted"><p className="font-semibold">{v.licensePlate}</p><p className="text-sm text-muted-foreground">{v.make} {v.model} - {v.ownerName}</p></button>))}</div></ScrollArea>)}
@@ -855,15 +839,12 @@ export function ServiceForm({
                     {vehicleNotFound && !selectedVehicle && !isReadOnly && (<div className="p-3 border border-orange-500 rounded-md bg-orange-50 dark:bg-orange-900/30 dark:text-orange-300 text-sm flex flex-col sm:flex-row items-center justify-between gap-2"><div className="flex items-center gap-2"><AlertCircle className="h-5 w-5 shrink-0"/><p>Vehículo con placa "{vehicleLicensePlateSearch}" no encontrado.</p></div><Button type="button" size="sm" variant="outline" onClick={() => {setNewVehicleInitialData({ licensePlate: vehicleLicensePlateSearch }); setIsVehicleDialogOpen(true);}} className="w-full sm:w-auto"><CarIcon className="mr-2 h-4 w-4"/> Registrar Nuevo Vehículo</Button></div>)}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 pt-4">
                         <FormField control={form.control} name="notes" render={({ field }) => (
-                          <FormItem className={cn((mode === 'quote' || (mode === 'service' && watchedStatus === 'Agendado')) && "md:col-span-2")}>
+                          <FormItem className="md:col-span-2">
                               <FormLabel>Notas Adicionales (Opcional)</FormLabel>
                               <FormControl><Textarea placeholder={mode === 'quote' ? "Ej: Validez de la cotización, condiciones..." : "Notas internas o para el cliente..."} {...field} disabled={isReadOnly} className="min-h-[100px]"/></FormControl>
                               <FormMessage />
                           </FormItem>
                         )}/>
-                        {mode === 'service' && watchedStatus !== 'Agendado' && (
-                          <FormField control={form.control} name="technicianId" render={({ field }) => (<FormItem><FormLabel>Técnico Asignado</FormLabel><Select onValueChange={field.onChange} value={field.value} disabled={isReadOnly}><FormControl><SelectTrigger><SelectValue placeholder="Seleccione un técnico" /></SelectTrigger></FormControl><SelectContent>{technicians.map((technician) => (<SelectItem key={technician.id} value={technician.id}>{technician.name}</SelectItem>))}</SelectContent></Select><FormMessage /></FormItem>)}/>
-                        )}
                     </div>
                 </CardContent>
               </Card>
@@ -1027,9 +1008,9 @@ function ServiceItemCard({ serviceIndex, form, removeServiceItem, isReadOnly, in
         
         // If a manual item with a selling price is added, add its price to the service item's total price
         if (sellingPriceToApply !== undefined) {
-            const currentItemPrice = getValues(`serviceItems.${serviceIndex}.price`) || 0;
+            const currentItemPrice = form.getValues(`serviceItems.${serviceIndex}.price`) || 0;
             const priceToAdd = sellingPriceToApply * supply.quantity;
-            setValue(`serviceItems.${serviceIndex}.price`, currentItemPrice + priceToAdd, { shouldDirty: true });
+            form.setValue(`serviceItems.${serviceIndex}.price`, currentItemPrice + priceToAdd, { shouldDirty: true });
         }
         
         setIsAddSupplyDialogOpen(false);
