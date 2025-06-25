@@ -37,8 +37,7 @@ import {
     placeholderQuotes, 
     placeholderServiceRecords as defaultServiceRecords, 
     persistToFirestore, 
-    AUTH_USER_LOCALSTORAGE_KEY,
-    sanitizeObjectForFirestore // Import the recursive sanitizer
+    AUTH_USER_LOCALSTORAGE_KEY
 } from '@/lib/placeholder-data';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription as DialogDesc, DialogFooter } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
@@ -418,13 +417,13 @@ export function ServiceForm({
     vehicle: Vehicle | null
   ) => {
     if (!db) {
-      toast({
+      console.error("Public save failed: Firebase (db) is not configured in lib/firebaseClient.js");
+       toast({
         title: "Configuración Incompleta",
         description: "La base de datos (Firebase) no está configurada. No se pudo crear el documento público.",
         variant: "destructive",
         duration: 10000,
       });
-      console.error("Public save failed: Firebase (db) is not configured in lib/firebaseClient.js");
       return;
     }
 
@@ -436,18 +435,14 @@ export function ServiceForm({
     const collectionName = type === 'quote' ? 'publicQuotes' : 'publicServices';
     const publicDocRef = doc(db, collectionName, data.publicId);
 
-    // Construct the full object payload
     const fullPublicData = {
         ...data,
         vehicle,
         workshopInfo,
     };
-
-    // Sanitize the object to remove any 'undefined' values, which Firestore rejects.
-    const sanitizedData = sanitizeObjectForFirestore(fullPublicData);
-
+    
     try {
-      await setDoc(publicDocRef, sanitizedData, { merge: true });
+      await setDoc(publicDocRef, fullPublicData, { merge: true });
       console.log(`Public ${type} document ${data.publicId} saved successfully.`);
     } catch (e) {
       console.error(`Failed to save public ${type} document:`, e);
@@ -496,7 +491,7 @@ export function ServiceForm({
     const finalTaxAmount = finalTotalCost - finalSubTotal;
     
     if (mode === 'service') {
-      const serviceData: ServiceRecord = {
+      const serviceData: Partial<ServiceRecord> = {
         id: initialDataService?.id || `SER_${Date.now().toString(36)}`,
         publicId: values.publicId || `srv_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 9)}`,
         vehicleId: vehicleIdToSave,
@@ -506,13 +501,16 @@ export function ServiceForm({
         technicianId: values.technicianId || '',
         technicianName: technicians.find(t => t.id === values.technicianId)?.name || 'N/A',
         status: values.status || 'Agendado',
-        suppliesUsed: values.suppliesUsed?.map(s => ({
-          supplyId: s.supplyId,
-          quantity: s.quantity,
-          unitPrice: currentInventoryItems.find(i => i.id === s.supplyId)?.unitPrice || 0,
-          supplyName: s.supplyName || '',
-          unitType: s.unitType
-        })) || [],
+        suppliesUsed: values.suppliesUsed?.map(s => {
+            const item: ServiceSupply = {
+                supplyId: s.supplyId,
+                quantity: s.quantity,
+                unitPrice: currentInventoryItems.find(i => i.id === s.supplyId)?.unitPrice || 0,
+                supplyName: s.supplyName || ''
+            };
+            if (s.unitType) item.unitType = s.unitType;
+            return item;
+        }) || [],
         totalCost: finalTotalCost,
         subTotal: finalSubTotal,
         taxAmount: finalTaxAmount,
@@ -526,20 +524,21 @@ export function ServiceForm({
         receptionSignatureViewed: (initialDataService as ServiceRecord)?.receptionSignatureViewed || false,
         deliverySignatureViewed: (initialDataService as ServiceRecord)?.deliverySignatureViewed || false,
         workshopInfo: workshopInfo as WorkshopInfo,
-        serviceType: values.serviceType,
-        mileage: values.mileage,
-        notes: values.notes,
-        vehicleConditions: values.vehicleConditions,
-        fuelLevel: values.fuelLevel,
-        customerItems: values.customerItems,
-        deliveryDateTime: values.deliveryDateTime?.toISOString(),
       };
 
-      await savePublicDocument('service', serviceData, selectedVehicle);
-      await onSubmit(serviceData);
+      if (values.serviceType) serviceData.serviceType = values.serviceType;
+      if (values.mileage) serviceData.mileage = values.mileage;
+      if (values.notes) serviceData.notes = values.notes;
+      if (values.vehicleConditions) serviceData.vehicleConditions = values.vehicleConditions;
+      if (values.fuelLevel) serviceData.fuelLevel = values.fuelLevel;
+      if (values.customerItems) serviceData.customerItems = values.customerItems;
+      if (values.deliveryDateTime) serviceData.deliveryDateTime = values.deliveryDateTime.toISOString();
+
+      await savePublicDocument('service', serviceData as ServiceRecord, selectedVehicle);
+      await onSubmit(serviceData as ServiceRecord);
 
     } else { // mode === 'quote'
-      const quoteData: QuoteRecord = {
+      const quoteData: Partial<QuoteRecord> = {
         id: (initialDataQuote as QuoteRecord)?.id || `COT_${Date.now().toString(36)}`,
         publicId: (initialDataQuote as QuoteRecord)?.publicId || `cot_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 9)}`,
         quoteDate: values.serviceDate!.toISOString(),
@@ -548,25 +547,29 @@ export function ServiceForm({
         description: values.description || '',
         preparedByTechnicianId: values.technicianId || '',
         preparedByTechnicianName: technicians.find(t => t.id === values.technicianId)?.name || 'N/A',
-        suppliesProposed: values.suppliesUsed?.map(s => ({
-          supplyId: s.supplyId,
-          quantity: s.quantity,
-          unitPrice: s.unitPrice || 0, 
-          supplyName: s.supplyName || '',
-          unitType: s.unitType,
-        })) || [],
+        suppliesProposed: values.suppliesUsed?.map(s => {
+            const item: ServiceSupply = {
+                supplyId: s.supplyId,
+                quantity: s.quantity,
+                unitPrice: s.unitPrice || 0, 
+                supplyName: s.supplyName || '',
+            };
+            if (s.unitType) item.unitType = s.unitType;
+            return item;
+        }) || [],
         estimatedTotalCost: finalTotalCost,
         estimatedSubTotal: finalSubTotal,
         estimatedTaxAmount: finalTaxAmount,
         estimatedTotalSuppliesCost: totalSuppliesWorkshopCost,
         estimatedProfit: finalTotalCost - totalSuppliesWorkshopCost,
         workshopInfo: workshopInfo as WorkshopInfo,
-        notes: values.notes,
-        mileage: values.mileage,
       };
       
-      await savePublicDocument('quote', quoteData, selectedVehicle);
-      await onSubmit(quoteData);
+      if (values.notes) quoteData.notes = values.notes;
+      if (values.mileage) quoteData.mileage = values.mileage;
+      
+      await savePublicDocument('quote', quoteData as QuoteRecord, selectedVehicle);
+      await onSubmit(quoteData as QuoteRecord);
     }
   };
   
