@@ -171,16 +171,22 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
                 </div>
             </div>
         </section>
+        
+        {quote.notes && (
+            <div className="w-full text-left mt-4 border-t border-dashed pt-2">
+                <h4 className="font-semibold text-sm text-gray-700 mb-1">Notas Adicionales:</h4>
+                <p className="text-xs text-gray-600 whitespace-pre-wrap">{quote.notes}</p>
+            </div>
+        )}
 
         <div className="text-xs text-gray-600 mt-6 border-t border-gray-300 pt-4">
             <div className="mb-4">
-            <h4 className="font-semibold text-gray-700 mb-1">Notas y Condiciones:</h4>
+            <h4 className="font-semibold text-gray-700 mb-1">Términos y Condiciones:</h4>
             <p className="leading-snug">
                 {`Cotización realizada por: ${quote.preparedByTechnicianName || 'N/A'}. `}
                 {`Precios en MXN. Esta cotización es válida hasta el ${validityDate}. `}
                 No incluye trabajos o materiales que no estén especificados explícitamente en la presente cotización. Los precios aquí detallados están sujetos a cambios sin previo aviso en caso de variaciones en los costos de los insumos proporcionados por nuestros proveedores, los cuales están fuera de nuestro control.
             </p>
-            {quote.notes && <p className="leading-snug mt-1">Notas adicionales: {quote.notes}</p>}
             </div>
             <div className="text-left space-y-1 leading-snug">
                 <p className="font-semibold">¡Gracias por confiar en Ranoro!</p>
