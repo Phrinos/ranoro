@@ -1,23 +1,5 @@
+// This file is intentionally left empty.
+// The Next.js configuration is now managed in next.config.js.
+// Having both can cause conflicts, so this file is kept blank.
 
-import type {NextConfig} from 'next';
-
-const nextConfig: NextConfig = {
-  typescript: {
-    ignoreBuildErrors: true,
-  },
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
-  images: {
-    remotePatterns: [
-      {
-        protocol: 'https',
-        hostname: 'placehold.co',
-        port: '',
-        pathname: '/**',
-      },
-    ],
-  },
-};
-
-export default nextConfig;
+export {};
