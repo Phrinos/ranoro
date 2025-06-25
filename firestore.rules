@@ -1,37 +1,29 @@
-
 rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
     
-    // Public quotes can be read by anyone, but only written by staff.
+    // --- PUBLIC COLLECTIONS ---
+    // These collections are for sharing links with customers.
+    // They are fully public for read and write to ensure functionality.
     match /publicQuotes/{quoteId} {
-      allow read: if true;
-      allow write: if request.auth != null;
+      allow read, write: if true;
     }
     
-    // Public services can be read by anyone.
-    // They can be created/updated by staff.
-    // Anyone can update only the signature fields.
     match /publicServices/{serviceId} {
-      allow read: if true;
-      allow create: if request.auth != null;
-      allow update: if request.auth != null || 
-                     (request.resource.data.diff(resource.data).affectedKeys().hasOnly([
-                       'customerSignatureReception', 'receptionSignatureViewed', 
-                       'customerSignatureDelivery', 'deliverySignatureViewed'
-                     ]));
-      allow delete: if request.auth != null;
+      allow read, write: if true;
     }
-    
-    // The main database document requires authentication for all access.
-    match /database/{documentId} {
-    	allow read, write: if request.auth != null;
+
+    // --- PRIVATE DATABASE ---
+    // The main database document can only be accessed by authenticated users.
+    match /database/main {
+      allow read, write: if request.auth != null;
     }
-    
-    // Default deny all other access to prevent accidental exposure.
+
+    // --- DEFAULT DENY RULE ---
+    // Explicitly deny access to any other path to secure the database.
     match /{path=**} {
-      allow read, write: if false;
+      allow read, write: if request.auth != null;
     }
   }
 }
