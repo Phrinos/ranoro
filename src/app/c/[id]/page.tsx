@@ -11,7 +11,7 @@ import { ShieldAlert, Download, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
 import { getDoc, doc } from 'firebase/firestore';
-import { db } from '@root/lib/firebaseClient.js';
+import { db } from '@/lib/firebasePublic.js';
 
 
 export default function PublicQuoteViewPage() {

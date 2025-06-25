@@ -2,7 +2,7 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { db } from '@root/lib/firebaseClient.js';
+import { db } from '@/lib/firebasePublic.js';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import type { ServiceRecord } from '@/types';
 

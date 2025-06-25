@@ -11,7 +11,7 @@ import { ShieldAlert, Download, Loader2, Signature } from 'lucide-react';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
 import { getDoc, doc } from 'firebase/firestore';
-import { db } from '@root/lib/firebaseClient.js';
+import { db } from '@/lib/firebasePublic.js';
 import { SignatureDialog } from '@/app/(app)/servicios/components/signature-dialog';
 import { saveSignature } from './actions';
 
