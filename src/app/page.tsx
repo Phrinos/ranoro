@@ -5,7 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowRight, Car, Wrench, BrainCircuit, Users, ShieldCheck, Drill, GitCommitHorizontal, CircleDotDashed, Truck, CheckCircle } from 'lucide-react';
+import { Car, Wrench, BrainCircuit, Users, ShieldCheck, Drill, GitCommitHorizontal, CircleDotDashed, Truck, CheckCircle, MessageSquare } from 'lucide-react';
 
 const services = [
   {
@@ -41,6 +41,8 @@ const services = [
 ];
 
 export default function LandingPage() {
+  const workshopPhone = "524491425323"; // Country code + phone number
+
   return (
     <div className="bg-background text-foreground">
       {/* Header */}
@@ -86,7 +88,14 @@ export default function LandingPage() {
             </p>
             <div className="mt-8 flex gap-4">
               <Button size="lg" asChild>
-                <Link href="/login">Agendar Cita</Link>
+                <a 
+                  href={`https://wa.me/${workshopPhone}?text=Hola%2C%20me%20gustar%C3%ADa%20agendar%20una%20cita.`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <MessageSquare className="mr-2 h-5 w-5" />
+                  Agendar Cita por WhatsApp
+                </a>
               </Button>
               <Button size="lg" variant="outline" asChild>
                 <Link href="#servicios">Ver Servicios</Link>
@@ -147,7 +156,14 @@ export default function LandingPage() {
                 </ul>
                 <div className="mt-8">
                   <Button size="lg" asChild>
-                    <Link href="/login">Contactar para Flotillas</Link>
+                     <a
+                      href={`https://wa.me/${workshopPhone}?text=Hola%2C%20me%20gustar%C3%ADa%20recibir%20informaci%C3%B3n%20sobre%20el%20servicio%20para%20flotillas.`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                       <MessageSquare className="mr-2 h-5 w-5" />
+                      Contactar para Flotillas
+                    </a>
                   </Button>
                 </div>
               </div>
