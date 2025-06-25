@@ -14,23 +14,18 @@ const services = [
     description: 'Mantenimiento esencial para la longevidad de tu motor.',
   },
   {
-    icon: <Drill className="h-8 w-8 text-primary" />,
-    title: 'Afinación Clásica y Integral',
-    description: 'Recupera la eficiencia y potencia original de tu vehículo.',
-  },
-  {
-    icon: <CircleDotDashed className="h-8 w-8 text-primary" />,
-    title: 'Frenos',
-    description: 'Inspección y reparación completa del sistema de frenado para tu seguridad.',
-  },
-  {
     icon: <BrainCircuit className="h-8 w-8 text-primary" />,
     title: 'Diagnóstico por Computadora',
     description: 'Tecnología de punta para detectar fallas con precisión milimétrica.',
   },
+   {
+    icon: <CircleDotDashed className="h-8 w-8 text-primary" />,
+    title: 'Servicio de Frenos',
+    description: 'Inspección y reparación completa para tu seguridad al volante.',
+  },
   {
     icon: <GitCommitHorizontal className="h-8 w-8 text-primary" />,
-    title: 'Suspensiones',
+    title: 'Revisión de Suspensión',
     description: 'Reparación de amortiguadores y componentes para un manejo suave.',
   },
   {
@@ -38,7 +33,13 @@ const services = [
     title: 'Alineación y Balanceo',
     description: 'Evita el desgaste irregular de llantas y mejora la estabilidad.',
   },
+  {
+    icon: <ShieldCheck className="h-8 w-8 text-primary" />,
+    title: 'Revisión de Motor',
+    description: 'Análisis y diagnóstico para asegurar el corazón de tu vehículo.',
+  },
 ];
+
 
 export default function LandingPage() {
   const workshopPhone = "524491425323"; // Country code + phone number
@@ -131,8 +132,30 @@ export default function LandingPage() {
           </div>
         </section>
 
+        {/* Tuning Packages Section */}
+        <section id="afinacion" className="bg-muted py-16 sm:py-24">
+          <div className="container mx-auto px-4 md:px-6">
+            <div className="text-center">
+              <h2 className="text-3xl font-bold tracking-tight sm:text-4xl font-headline">Paquetes de Afinación</h2>
+              <p className="mt-4 text-lg text-muted-foreground">
+                Elige el paquete que mejor se adapta a las necesidades de tu vehículo.
+              </p>
+            </div>
+            <div className="mt-12 flex justify-center">
+              <Image
+                src="/afinacion.jpg"
+                alt="Paquetes de afinación Clásica e Integral"
+                width={1080}
+                height={1080}
+                className="rounded-lg shadow-xl max-w-full lg:max-w-4xl"
+                data-ai-hint="tuning packages"
+              />
+            </div>
+          </div>
+        </section>
+
         {/* Fleet Services Section */}
-        <section id="flotillas" className="bg-muted py-16 sm:py-24">
+        <section id="flotillas" className="bg-background py-16 sm:py-24">
           <div className="container mx-auto px-4 md:px-6">
             <div className="grid grid-cols-1 items-center gap-12 lg:grid-cols-2">
               <div>
