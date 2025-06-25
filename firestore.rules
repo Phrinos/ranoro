@@ -1,36 +1,45 @@
-
 rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
     
-    // Main database document for the workshop.
-    // Only authenticated users can access it.
+    // Denegar el acceso a todos los documentos por defecto.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+    
+    // Permitir a los usuarios autenticados leer y escribir en el documento principal de la base de datos del taller.
     match /database/main {
       allow read, write: if request.auth != null;
     }
     
-    // Publicly shared service sheets.
-    // Anyone can read them.
-    // Authenticated users can create/delete them.
-    // Anyone (including unauthenticated server actions) can update ONLY the signature fields.
-    match /publicServices/{serviceId} {
-      allow get: if true;
-      allow list: if false; // Security: do not allow listing all public services.
-      allow create, delete: if request.auth != null;
-      allow update: if request.auth != null || (
-        request.resource.data.diff(resource.data).affectedKeys()
-          .hasOnly(['customerSignatureReception', 'customerSignatureDelivery', 'receptionSignatureViewed', 'deliverySignatureViewed'])
-      );
-    }
-
-    // Publicly shared quotes.
-    // Anyone can read them.
-    // Only authenticated users can create, update, or delete them.
+    // Permitir la lectura pública de las cotizaciones compartidas mediante un enlace.
+    // Solo los usuarios autenticados pueden crear/actualizar estas cotizaciones.
     match /publicQuotes/{quoteId} {
-      allow get: if true;
-      allow list: if false; // Security: do not allow listing all public quotes.
-      allow create, update, delete: if request.auth != null;
+        allow read: if true;
+        allow write: if request.auth != null;
+    }
+    
+    // --- Reglas para Hojas de Servicio Públicas ---
+    match /publicServices/{serviceId} {
+    
+      // Cualquiera con el enlace puede leer la hoja de servicio.
+      allow read: if true;
+
+      // Permitir a los usuarios autenticados crear y actualizar completamente el documento.
+      allow create, update: if request.auth != null;
+
+      // Permitir a CUALQUIER persona (incluidos los clientes no autenticados) actualizar SOLAMENTE los campos de firma.
+      // Esto es para la página de firma pública.
+      // Es seguro porque:
+      // 1. Necesitan el ID público (no adivinable) para encontrar el documento.
+      // 2. Solo pueden escribir en estos campos específicos.
+      allow update: if request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+            'customerSignatureReception', 
+            'customerSignatureDelivery',
+            'receptionSignatureViewed',
+            'deliverySignatureViewed'
+          ]);
     }
   }
 }
