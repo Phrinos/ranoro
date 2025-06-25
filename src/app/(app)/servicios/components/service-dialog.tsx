@@ -33,6 +33,7 @@ interface ServiceDialogProps {
   onVehicleCreated?: (newVehicle: Vehicle) => void; 
   mode?: 'service' | 'quote'; // New mode prop
   onDelete?: (id: string) => void; // For quote deletion
+  onCancelService?: (serviceId: string, reason: string) => void;
 }
 
 export function ServiceDialog({ 
@@ -49,6 +50,7 @@ export function ServiceDialog({
   onVehicleCreated,
   mode = 'service', // Default to service mode
   onDelete,
+  onCancelService,
 }: ServiceDialogProps) {
   const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
   const { toast } = useToast();
@@ -132,6 +134,7 @@ export function ServiceDialog({
               onVehicleCreated={onVehicleCreated} 
               mode={mode}
               onDelete={onDelete}
+              onCancelService={onCancelService}
             />
           </div>
         </DialogContent>

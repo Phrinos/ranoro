@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { PageHeader } from "@/components/page-header";
@@ -734,6 +735,7 @@ export default function AgendaServiciosPage() {
           inventoryItems={inventoryItemsState}
           onSave={handleUpdateService}
           onVehicleCreated={onVehicleCreated}
+          onCancelService={handleCancelService}
         />
       )}
       {currentServiceForTicket && (

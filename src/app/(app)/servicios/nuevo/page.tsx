@@ -6,19 +6,21 @@ import { PageHeader } from "@/components/page-header";
 import { ServiceDialog } from "../components/service-dialog";
 import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
 import { TicketContent } from '@/components/ticket-content';
+import { ServiceSheetContent } from '@/components/service-sheet-content';
 import { placeholderVehicles, placeholderTechnicians, placeholderInventory, placeholderServiceRecords, persistToFirestore } from "@/lib/placeholder-data";
-import type { ServiceRecord, Vehicle, Technician, QuoteRecord, InventoryItem } from "@/types";
+import type { ServiceRecord, Vehicle, Technician, QuoteRecord, InventoryItem, WorkshopInfo } from "@/types";
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { Printer, Copy } from 'lucide-react';
+import { Printer, Copy, MessageSquare } from 'lucide-react';
 
-type DialogStep = 'service' | 'print' | 'closed';
+type DialogStep = 'service' | 'print' | 'sheet' | 'closed';
 
 export default function NuevoServicioPage() {
   const { toast } = useToast();
   const router = useRouter();
   const ticketContentRef = useRef<HTMLDivElement>(null);
+  const serviceSheetRef = useRef<HTMLDivElement>(null);
   
   const [vehicles, setVehicles] = useState<Vehicle[]>(placeholderVehicles);
   const technicians = placeholderTechnicians; 
@@ -26,12 +28,20 @@ export default function NuevoServicioPage() {
 
   const [dialogStep, setDialogStep] = useState<DialogStep>('service');
   const [currentServiceForTicket, setCurrentServiceForTicket] = useState<ServiceRecord | null>(null);
-  const [currentVehicleForTicket, setCurrentVehicleForTicket] = useState<Vehicle | null>(null);
-  const [currentTechnicianForTicket, setCurrentTechnicianForTicket] = useState<Technician | null>(null);
+  const [currentVehicle, setCurrentVehicle] = useState<Vehicle | null>(null);
+  const [currentTechnician, setCurrentTechnician] = useState<Technician | null>(null);
+  const [workshopInfo, setWorkshopInfo] = useState<WorkshopInfo | {}>({});
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+        const stored = localStorage.getItem('workshopTicketInfo');
+        if (stored) setWorkshopInfo(JSON.parse(stored));
+    }
+  }, []);
 
   useEffect(() => {
     if (dialogStep === 'closed') {
-      router.push('/servicios/historial');
+      router.push('/servicios/agenda');
     }
   }, [dialogStep, router]);
 
@@ -46,50 +56,44 @@ export default function NuevoServicioPage() {
     }
     const newService = data as ServiceRecord;
     
-    // The form now handles public doc saving. We just update local state.
     placeholderServiceRecords.push(newService); 
     await persistToFirestore(['serviceRecords']);
     
+    const vehicle = vehicles.find(v => v.id === newService.vehicleId);
+    const technician = technicians.find(t => t.id === newService.technicianId);
+
     toast({
       title: "Servicio Creado",
-      description: `El nuevo servicio para ${vehicles.find(v => v.id === newService.vehicleId)?.licensePlate} ha sido registrado.`,
+      description: `El nuevo servicio para ${vehicle?.licensePlate} ha sido registrado.`,
     });
     
+    setCurrentServiceForTicket(newService);
+    setCurrentVehicle(vehicle || null);
+    setCurrentTechnician(technician || null);
+
     if (newService.status === 'Completado') {
-      setCurrentServiceForTicket(newService);
-      setCurrentVehicleForTicket(vehicles.find(v => v.id === newService.vehicleId) || null);
-      setCurrentTechnicianForTicket(technicians.find(t => t.id === newService.technicianId) || null);
       setDialogStep('print');
     } else {
-      setDialogStep('closed'); 
+      setDialogStep('sheet'); 
     }
   };
 
-  const handleServiceDialogExternalClose = () => { 
-     if (dialogStep === 'service') { 
-      setDialogStep('closed');
-    }
-  };
-
-  const handlePrintDialogClose = () => {
-    setCurrentServiceForTicket(null);
-    setCurrentVehicleForTicket(null);
-    setCurrentTechnicianForTicket(null);
-    setDialogStep('closed'); 
+  const handleDialogClose = () => {
+    setDialogStep('closed');
   };
 
   const handlePrintTicket = () => {
     window.print();
   };
   
-  const handleCopyAsImage = async () => {
-    if (!ticketContentRef.current) {
-        toast({ title: "Error", description: "No se encontró el contenido del ticket.", variant: "destructive" });
+  const handleCopyAsImage = async (ref: React.RefObject<HTMLDivElement>) => {
+    if (!ref.current) {
+        toast({ title: "Error", description: "No se encontró el contenido para copiar.", variant: "destructive" });
         return;
     }
     try {
         const html2canvas = (await import('html2canvas')).default;
-        const canvas = await html2canvas(ticketContentRef.current, {
+        const canvas = await html2canvas(ref.current, {
             useCORS: true,
             backgroundColor: '#ffffff',
             scale: 2.5,
@@ -100,20 +104,27 @@ export default function NuevoServicioPage() {
                     await navigator.clipboard.write([
                         new ClipboardItem({ 'image/png': blob })
                     ]);
-                    toast({ title: "Copiado", description: "La imagen del ticket ha sido copiada." });
+                    toast({ title: "Copiado", description: "La imagen ha sido copiada." });
                 } catch (clipboardErr) {
-                    console.error('Clipboard API error:', clipboardErr);
-                    toast({ title: "Error de Copiado", description: "Tu navegador no pudo copiar la imagen. Intenta imprimir.", variant: "destructive" });
+                    toast({ title: "Error de Copiado", description: "Tu navegador no pudo copiar la imagen.", variant: "destructive" });
                 }
             } else {
-                 toast({ title: "Error de Conversión", description: "No se pudo convertir el ticket a imagen.", variant: "destructive" });
+                 toast({ title: "Error de Conversión", description: "No se pudo convertir a imagen.", variant: "destructive" });
             }
         }, 'image/png');
     } catch (e) {
-        console.error("html2canvas error:", e);
-        toast({ title: "Error de Captura", description: "No se pudo generar la imagen del ticket.", variant: "destructive" });
+        toast({ title: "Error de Captura", description: "No se pudo generar la imagen.", variant: "destructive" });
     }
   };
+  
+  const handleShareService = (service: ServiceRecord | null) => {
+    if (!service || !service.publicId) return;
+    const shareUrl = `${window.location.origin}/s/${service.publicId}`;
+    navigator.clipboard.writeText(shareUrl).then(() => {
+        toast({ title: 'Enlace copiado', description: 'El enlace a la hoja de servicio ha sido copiado.' });
+    });
+  };
+
 
   const handleVehicleCreated = (newVehicle: Vehicle) => {
     setVehicles(prev => {
@@ -136,7 +147,7 @@ export default function NuevoServicioPage() {
         <ServiceDialog
           open={true}
           onOpenChange={(isOpen) => {
-             if (!isOpen) handleServiceDialogExternalClose();
+             if (!isOpen) handleDialogClose();
           }}
           service={null} 
           vehicles={vehicles}
@@ -147,19 +158,44 @@ export default function NuevoServicioPage() {
           mode="service"
         />
       )}
+      
+      {dialogStep === 'sheet' && currentServiceForTicket && (
+        <PrintTicketDialog
+          open={true}
+          onOpenChange={(isOpen) => !isOpen && handleDialogClose()}
+          title="Hoja de Servicio"
+          onDialogClose={handleDialogClose}
+          dialogContentClassName="printable-quote-dialog"
+          footerActions={
+            <>
+              <Button variant="outline" onClick={() => handleShareService(currentServiceForTicket)}>
+                  <MessageSquare className="mr-2 h-4 w-4" /> Copiar Enlace
+              </Button>
+              <Button onClick={() => window.print()}>
+                  <Printer className="mr-2 h-4 w-4" /> Imprimir Hoja
+              </Button>
+            </>
+          }
+        >
+          <ServiceSheetContent
+            ref={serviceSheetRef}
+            service={currentServiceForTicket}
+            vehicle={currentVehicle || undefined}
+            workshopInfo={workshopInfo}
+          />
+        </PrintTicketDialog>
+      )}
 
       {dialogStep === 'print' && currentServiceForTicket && (
         <PrintTicketDialog
           open={true}
-          onOpenChange={(isOpen) => {
-            if (!isOpen) handlePrintDialogClose();
-          }} 
+          onOpenChange={(isOpen) => !isOpen && handleDialogClose()}
           title="Comprobante de Servicio"
-          onDialogClose={handlePrintDialogClose}
+          onDialogClose={handleDialogClose}
           dialogContentClassName="printable-content"
           footerActions={
              <div className="flex gap-2">
-                <Button variant="outline" onClick={handleCopyAsImage}>
+                <Button variant="outline" onClick={() => handleCopyAsImage(ticketContentRef)}>
                     <Copy className="mr-2 h-4 w-4"/> Copiar Imagen
                 </Button>
                 <Button onClick={handlePrintTicket}>
@@ -171,8 +207,8 @@ export default function NuevoServicioPage() {
           <TicketContent 
             ref={ticketContentRef}
             service={currentServiceForTicket} 
-            vehicle={currentVehicleForTicket || undefined}
-            technician={currentTechnicianForTicket || undefined}
+            vehicle={currentVehicle || undefined}
+            technician={currentTechnician || undefined}
           />
         </PrintTicketDialog>
       )}
