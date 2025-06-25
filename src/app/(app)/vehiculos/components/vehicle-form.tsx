@@ -23,7 +23,7 @@ const vehicleFormSchema = z.object({
   model: z.string().min(1, "El modelo es obligatorio."),
   year: z.coerce.number().min(1900, "El año debe ser posterior a 1900.").max(2040, `El año no puede ser mayor a 2040.`),
   vin: z.string().length(17, "El VIN debe tener 17 caracteres.").optional().or(z.literal('')),
-  licensePlate: z.string().min(3, "La placa debe tener al menos 3 caracteres."),
+  licensePlate: z.string().min(1, "La placa no puede estar vacía. Ingrese 'SINPLACA' si es necesario."),
   color: z.string().optional(), // Added
   ownerName: z.string().min(2, "El nombre del propietario es obligatorio."),
   ownerPhone: z.string().min(7, "Ingrese un número de teléfono válido."),
