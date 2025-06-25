@@ -487,8 +487,6 @@ export function ServiceForm({
         technicianId: values.technicianId || '',
         technicianName: technicians.find(t => t.id === values.technicianId)?.name || 'N/A',
         status: values.status || 'Agendado',
-        serviceType: values.serviceType || 'Servicio General',
-        mileage: values.mileage || 0,
         suppliesUsed: values.suppliesUsed?.map(s => ({
           supplyId: s.supplyId,
           quantity: s.quantity,
@@ -500,25 +498,28 @@ export function ServiceForm({
         taxAmount: finalTaxAmount,
         totalSuppliesCost: totalSuppliesWorkshopCost,
         serviceProfit: finalTotalCost - totalSuppliesWorkshopCost,
-        notes: values.notes || '',
-        vehicleConditions: values.vehicleConditions || '',
-        fuelLevel: values.fuelLevel || '',
-        customerItems: values.customerItems || '',
         serviceAdvisorId: currentUser.id,
         serviceAdvisorName: currentUser.name,
+        // Optional fields are added conditionally or with fallbacks
+        ...(values.serviceType && { serviceType: values.serviceType }),
+        ...(values.mileage && { mileage: values.mileage }),
+        ...(values.notes && { notes: values.notes }),
+        ...(values.vehicleConditions && { vehicleConditions: values.vehicleConditions }),
+        ...(values.fuelLevel && { fuelLevel: values.fuelLevel }),
+        ...(values.customerItems && { customerItems: values.customerItems }),
         serviceAdvisorSignatureDataUrl: currentUser.signatureDataUrl || '',
         customerSignatureReception: values.customerSignatureReception || '',
         customerSignatureDelivery: values.customerSignatureDelivery || '',
         receptionSignatureViewed: (initialDataService as ServiceRecord)?.receptionSignatureViewed || false,
         deliverySignatureViewed: (initialDataService as ServiceRecord)?.deliverySignatureViewed || false,
         workshopInfo: workshopInfo as WorkshopInfo,
-        deliveryDateTime: values.deliveryDateTime ? values.deliveryDateTime.toISOString() : undefined,
+        ...(values.deliveryDateTime && { deliveryDateTime: values.deliveryDateTime.toISOString() }),
       };
 
       await savePublicDocument('service', serviceData, selectedVehicle);
       await onSubmit(serviceData);
     } else { // mode === 'quote'
-      let quoteData: QuoteRecord = {
+      const quoteData: QuoteRecord = {
         id: (initialDataQuote as QuoteRecord)?.id || `COT_${Date.now().toString(36)}`,
         publicId: (initialDataQuote as QuoteRecord)?.publicId || `cot_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 9)}`,
         quoteDate: values.serviceDate!.toISOString(),
@@ -538,10 +539,12 @@ export function ServiceForm({
         estimatedTaxAmount: finalTaxAmount,
         estimatedTotalSuppliesCost: totalSuppliesWorkshopCost,
         estimatedProfit: finalTotalCost - totalSuppliesWorkshopCost,
-        notes: values.notes || '',
-        mileage: values.mileage || 0,
         workshopInfo: workshopInfo as WorkshopInfo,
+        // Optional fields
+        ...(values.notes && { notes: values.notes }),
+        ...(values.mileage && { mileage: values.mileage }),
       };
+      
       await savePublicDocument('quote', quoteData, selectedVehicle);
       await onSubmit(quoteData);
     }
@@ -746,7 +749,7 @@ export function ServiceForm({
     } finally {
         setIsGeneratingQuote(false);
     }
-};
+  };
 
   const handleConfirmDelete = () => {
     if (onDelete && mode === 'quote' && initialDataQuote?.id) {
@@ -1679,3 +1682,5 @@ export function ServiceForm({
     </>
   );
 }
+
+    
