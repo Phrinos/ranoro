@@ -21,11 +21,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription} from "@/components/ui/card";
-import { CalendarIcon, PlusCircle, Search, Trash2, AlertCircle, Car as CarIcon, Clock, DollarSign, PackagePlus, BrainCircuit, Loader2, Printer, Plus, Minus, FileText, Signature, MessageSquare, Ban, ShieldQuestion, Wrench } from "lucide-react";
+import { CalendarIcon, PlusCircle, Search, Trash2, AlertCircle, Car as CarIcon, Clock, DollarSign, PackagePlus, BrainCircuit, Loader2, Printer, Plus, Minus, FileText, Signature, MessageSquare, Ban, ShieldQuestion, Wrench, Wallet, CreditCard, Send, WalletCards, ArrowRightLeft } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format, parseISO, setHours, setMinutes, isValid, startOfDay } from 'date-fns';
 import { es } from 'date-fns/locale';
-import type { ServiceRecord, Vehicle, Technician, InventoryItem, ServiceSupply, QuoteRecord, InventoryCategory, Supplier, User, WorkshopInfo, ServiceItem, SafetyInspection, SafetyCheckItem } from "@/types";
+import type { ServiceRecord, Vehicle, Technician, InventoryItem, ServiceSupply, QuoteRecord, InventoryCategory, Supplier, User, WorkshopInfo, ServiceItem, SafetyInspection, SafetyCheckItem, PaymentMethod } from "@/types";
 import React, { useEffect, useState, useMemo, useCallback, useRef } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { VehicleDialog } from "../../vehiculos/components/vehicle-dialog";
@@ -94,6 +94,13 @@ const safetyInspectionSchema = z.object({
   horn: safetyCheckItemSchema.optional(),
 });
 
+const paymentMethods: [PaymentMethod, ...PaymentMethod[]] = [
+  "Efectivo",
+  "Tarjeta",
+  "Transferencia",
+  "Efectivo+Transferencia",
+  "Tarjeta+Transferencia"
+];
 
 const serviceFormSchemaBase = z.object({
   id: z.string().optional(), // For identifying existing records
@@ -116,6 +123,25 @@ const serviceFormSchemaBase = z.object({
   customerSignatureReception: z.string().optional(),
   customerSignatureDelivery: z.string().optional(),
   safetyInspection: safetyInspectionSchema.optional(),
+  paymentMethod: z.enum(paymentMethods).optional(),
+  cardFolio: z.string().optional(),
+  transferFolio: z.string().optional(),
+}).refine(data => {
+  if (data.status === 'Completado' && (data.paymentMethod === "Tarjeta" || data.paymentMethod === "Tarjeta+Transferencia") && !data.cardFolio) {
+    return false;
+  }
+  return true;
+}, {
+  message: "El folio de la tarjeta es obligatorio para este método de pago.",
+  path: ["cardFolio"],
+}).refine(data => {
+  if (data.status === 'Completado' && (data.paymentMethod === "Transferencia" || data.paymentMethod === "Efectivo+Transferencia" || data.paymentMethod === "Tarjeta+Transferencia") && !data.transferFolio) {
+    return false;
+  }
+  return true;
+}, {
+  message: "El folio de la transferencia es obligatorio para este método de pago.",
+  path: ["transferFolio"],
 });
 
 
@@ -156,6 +182,14 @@ const generateTimeSlots = () => {
     return slots;
 };
 const timeSlots = generateTimeSlots();
+
+const paymentMethodIcons: Record<PaymentMethod, React.ElementType> = {
+  "Efectivo": Wallet,
+  "Tarjeta": CreditCard,
+  "Transferencia": Send,
+  "Efectivo+Transferencia": WalletCards,
+  "Tarjeta+Transferencia": ArrowRightLeft,
+};
 
 
 export function ServiceForm({
@@ -224,6 +258,9 @@ export function ServiceForm({
         customerSignatureReception: (initialData as ServiceRecord)?.customerSignatureReception || undefined,
         customerSignatureDelivery: (initialData as ServiceRecord)?.customerSignatureDelivery || undefined,
         safetyInspection: (initialData as ServiceRecord)?.safetyInspection || {},
+        paymentMethod: (initialData as ServiceRecord)?.paymentMethod || 'Efectivo',
+        cardFolio: (initialData as ServiceRecord)?.cardFolio || '',
+        transferFolio: (initialData as ServiceRecord)?.transferFolio || '',
     }
   });
 
@@ -329,6 +366,9 @@ export function ServiceForm({
             customerSignatureDelivery: (data as ServiceRecord)?.customerSignatureDelivery || undefined,
             serviceItems: serviceItemsData,
             safetyInspection: (data as ServiceRecord)?.safetyInspection || {},
+            paymentMethod: (data as ServiceRecord)?.paymentMethod || 'Efectivo',
+            cardFolio: (data as ServiceRecord)?.cardFolio || '',
+            transferFolio: (data as ServiceRecord)?.transferFolio || '',
         };
 
         form.reset(dataToReset);
@@ -394,6 +434,7 @@ export function ServiceForm({
   }, [inventoryItemsProp]);
 
   const watchedStatus = form.watch("status");
+  const selectedPaymentMethod = form.watch("paymentMethod");
   const customerSignatureReception = form.watch("customerSignatureReception");
   const customerSignatureDelivery = form.watch("customerSignatureDelivery");
 
@@ -608,6 +649,12 @@ export function ServiceForm({
         serviceType: values.serviceType || 'Servicio General',
       };
 
+      if (values.status === 'Completado') {
+        serviceData.paymentMethod = values.paymentMethod;
+        serviceData.cardFolio = values.cardFolio;
+        serviceData.transferFolio = values.transferFolio;
+      }
+      
       serviceData.vehicleIdentifier = selectedVehicle?.licensePlate || values.vehicleLicensePlateSearch || 'N/A';
       serviceData.technicianName = technicians.find(t => t.id === values.technicianId)?.name || 'N/A';
       serviceData.subTotal = finalSubTotal;
@@ -832,7 +879,7 @@ export function ServiceForm({
   return (
     <>
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-6">
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
           <Tabs defaultValue="servicio" className="w-full">
             <div className="flex justify-between items-center mb-4 border-b">
                 <TabsList className="bg-transparent p-0">
@@ -850,13 +897,13 @@ export function ServiceForm({
                             {mode === 'quote' ? "Información de la Cotización" : "Información del Servicio"}
                         </CardTitle>
                         <div className="flex gap-2">
-                           {(mode === 'quote' || originalQuote) && (
-                              <Button type="button" onClick={handleViewQuote} variant="outline" size="icon" className="bg-card" title="Ver Cotización">
+                           {(originalQuote || mode === 'quote') && (
+                              <Button type="button" onClick={handleViewQuote} variant="ghost" size="icon" className="bg-card" title="Ver Cotización">
                                   <FileText className="h-4 w-4" />
                               </Button>
                            )}
                            {mode === 'service' && !isReadOnly && (watchedStatus === 'Reparando' || watchedStatus === 'Completado') && (
-                              <Button type="button" onClick={handlePrintSheet} variant="outline" size="icon" className="bg-card" title="Ver Hoja de Servicio">
+                              <Button type="button" onClick={handlePrintSheet} variant="ghost" size="icon" className="bg-card" title="Ver Hoja de Servicio">
                                 <Wrench className="h-4 w-4" />
                               </Button>
                            )}
@@ -924,11 +971,33 @@ export function ServiceForm({
                     {vehicleNotFound && !selectedVehicle && !isReadOnly && (<div className="p-3 border border-orange-500 rounded-md bg-orange-50 dark:bg-orange-900/30 dark:text-orange-300 text-sm flex flex-col sm:flex-row items-center justify-between gap-2"><div className="flex items-center gap-2"><AlertCircle className="h-5 w-5 shrink-0"/><p>Vehículo con placa "{vehicleLicensePlateSearch}" no encontrado.</p></div><Button type="button" size="sm" variant="outline" onClick={() => {setNewVehicleInitialData({ licensePlate: vehicleLicensePlateSearch }); setIsVehicleDialogOpen(true);}} className="w-full sm:w-auto"><CarIcon className="mr-2 h-4 w-4"/> Registrar Nuevo Vehículo</Button></div>)}
                 </CardContent>
               </Card>
+              
+              <Card>
+                  <CardHeader><CardTitle className="text-lg">Trabajos a Realizar</CardTitle></CardHeader>
+                  <CardContent className="space-y-4">
+                      {serviceItemsFields.map((serviceField, serviceIndex) => (
+                          <ServiceItemCard
+                              key={serviceField.id}
+                              serviceIndex={serviceIndex}
+                              form={form}
+                              removeServiceItem={removeServiceItem}
+                              isReadOnly={isReadOnly}
+                              inventoryItems={currentInventoryItems}
+                              mode={mode}
+                          />
+                      ))}
+                      {!isReadOnly && (
+                          <Button type="button" variant="outline" onClick={() => appendServiceItem({ id: `item_${Date.now()}`, name: '', price: undefined, suppliesUsed: [] })}>
+                              <PlusCircle className="mr-2 h-4 w-4"/> Añadir Trabajo a Realizar
+                          </Button>
+                      )}
+                  </CardContent>
+              </Card>
 
               {(watchedStatus === 'Reparando' || watchedStatus === 'Completado') && (
                   <Card>
                       <CardHeader>
-                          <CardTitle>Técnico Asignado</CardTitle>
+                          <CardTitle className="text-lg">Técnico Asignado</CardTitle>
                       </CardHeader>
                       <CardContent>
                           <FormField
@@ -955,28 +1024,6 @@ export function ServiceForm({
                       </CardContent>
                   </Card>
               )}
-
-              <Card>
-                  <CardHeader><CardTitle className="text-lg">Trabajos a Realizar</CardTitle></CardHeader>
-                  <CardContent className="space-y-4">
-                      {serviceItemsFields.map((serviceField, serviceIndex) => (
-                          <ServiceItemCard
-                              key={serviceField.id}
-                              serviceIndex={serviceIndex}
-                              form={form}
-                              removeServiceItem={removeServiceItem}
-                              isReadOnly={isReadOnly}
-                              inventoryItems={currentInventoryItems}
-                              mode={mode}
-                          />
-                      ))}
-                      {!isReadOnly && (
-                          <Button type="button" variant="outline" onClick={() => appendServiceItem({ id: `item_${Date.now()}`, name: '', price: undefined, suppliesUsed: [] })}>
-                              <PlusCircle className="mr-2 h-4 w-4"/> Añadir Trabajo a Realizar
-                          </Button>
-                      )}
-                  </CardContent>
-              </Card>
               
               <Card>
                   <CardHeader>
@@ -993,20 +1040,66 @@ export function ServiceForm({
                   </CardContent>
               </Card>
 
-
-              <Card className="bg-card">
-                  <CardHeader><CardTitle className="text-lg flex items-center gap-2"><DollarSign className="h-5 w-5 text-green-600"/>Resumen Financiero</CardTitle></CardHeader>
-                  <CardContent>
-                      <div className="flex justify-end">
-                          <div className="w-full max-w-md space-y-1 text-lg">
-                              <div className="flex justify-between pt-1"><span className="font-bold text-blue-600 dark:text-blue-400">Total del Servicio (IVA Inc.):</span><span className="font-semibold text-blue-600 dark:text-blue-400">{formatCurrency(totalCost)}</span></div>
-                              <div className="flex justify-between"><span>(-) Costo Insumos (Taller):</span><span className="font-medium text-red-600 dark:text-red-400">{formatCurrency(totalSuppliesWorkshopCost)}</span></div>
-                              <hr className="my-2 border-dashed"/>
-                              <div className="flex justify-between font-bold text-green-700 dark:text-green-400"><span>(=) Ganancia Estimada:</span><span>{formatCurrency(serviceProfit)}</span></div>
-                          </div>
+              {watchedStatus === 'Completado' ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+                  <Card>
+                    <CardHeader><CardTitle className="text-lg">Método de Pago</CardTitle></CardHeader>
+                    <CardContent className="space-y-4">
+                      <FormField
+                        control={form.control}
+                        name="paymentMethod"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Método de Pago</FormLabel>
+                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                              <FormControl><SelectTrigger><SelectValue placeholder="Seleccione método de pago" /></SelectTrigger></FormControl>
+                              <SelectContent>
+                                {paymentMethods.map(method => {
+                                  const Icon = paymentMethodIcons[method];
+                                  return (<SelectItem key={method} value={method}><div className="flex items-center gap-2"><Icon className="h-4 w-4" /><span>{method}</span></div></SelectItem>)
+                                })}
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      {(selectedPaymentMethod === "Tarjeta" || selectedPaymentMethod === "Tarjeta+Transferencia") && (
+                        <FormField control={form.control} name="cardFolio" render={({ field }) => (<FormItem><FormLabel>Folio Terminal (Tarjeta)</FormLabel><FormControl><Input placeholder="Ingrese folio de la transacción" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                      )}
+                      {(selectedPaymentMethod === "Transferencia" || selectedPaymentMethod === "Efectivo+Transferencia" || selectedPaymentMethod === "Tarjeta+Transferencia") && (
+                        <FormField control={form.control} name="transferFolio" render={({ field }) => (<FormItem><FormLabel>Folio Transferencia</FormLabel><FormControl><Input placeholder="Ingrese folio/referencia" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                      )}
+                    </CardContent>
+                  </Card>
+                  <Card className="bg-card">
+                    <CardHeader><CardTitle className="text-lg">Resumen Financiero</CardTitle></CardHeader>
+                    <CardContent>
+                      <div className="space-y-1 text-base">
+                        <div className="flex justify-between pt-1"><span className="font-bold text-blue-600 dark:text-blue-400">Total (IVA Inc.):</span><span className="font-semibold text-blue-600 dark:text-blue-400">{formatCurrency(totalCost)}</span></div>
+                        <div className="flex justify-between"><span>(-) Costo Insumos:</span><span className="font-medium text-red-600 dark:text-red-400">{formatCurrency(totalSuppliesWorkshopCost)}</span></div>
+                        <hr className="my-2 border-dashed"/>
+                        <div className="flex justify-between font-bold text-green-700 dark:text-green-400"><span>(=) Ganancia:</span><span>{formatCurrency(serviceProfit)}</span></div>
                       </div>
-                  </CardContent>
-              </Card>
+                    </CardContent>
+                  </Card>
+                </div>
+              ) : (
+                <Card className="bg-card">
+                    <CardHeader><CardTitle className="text-lg flex items-center gap-2"><DollarSign className="h-5 w-5 text-green-600"/>Resumen Financiero</CardTitle></CardHeader>
+                    <CardContent>
+                        <div className="flex justify-end">
+                            <div className="w-full max-w-md space-y-1 text-lg">
+                                <div className="flex justify-between pt-1"><span className="font-bold text-blue-600 dark:text-blue-400">Total del Servicio (IVA Inc.):</span><span className="font-semibold text-blue-600 dark:text-blue-400">{formatCurrency(totalCost)}</span></div>
+                                <div className="flex justify-between"><span>(-) Costo Insumos (Taller):</span><span className="font-medium text-red-600 dark:text-red-400">{formatCurrency(totalSuppliesWorkshopCost)}</span></div>
+                                <hr className="my-2 border-dashed"/>
+                                <div className="flex justify-between font-bold text-green-700 dark:text-green-400"><span>(=) Ganancia Estimada:</span><span>{formatCurrency(serviceProfit)}</span></div>
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+              )}
+
 
             </TabsContent>
 
@@ -1332,4 +1425,5 @@ function SafetyCheckItemControl({ name, label, control, isReadOnly }: SafetyChec
     </div>
   );
 }
+
 
