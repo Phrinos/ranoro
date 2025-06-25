@@ -1,4 +1,3 @@
-
 "use client";
 
 import type { ServiceRecord, Vehicle, User, WorkshopInfo } from '@/types';
@@ -202,15 +201,15 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
                         <p className="font-bold">ASESOR DE SERVICIO: {service.serviceAdvisorName?.toUpperCase() || '________________________________'}</p>
                     </div>
                 </div>
-                <div className="min-h-[80px] flex flex-col justify-end">
-                   <div className="h-20 flex-grow flex items-center justify-center">
+                <div className="min-h-[130px] flex flex-col justify-end">
+                   <div className="flex-grow flex items-center justify-center">
                        {service.customerSignatureDelivery ? (
                          <div className="relative w-full h-full">
                            <Image src={service.customerSignatureDelivery} alt="Firma de conformidad" layout="fill" objectFit="contain" />
                          </div>
                        ) : null}
                    </div>
-                   <div className="border-t-2 border-black pt-1 w-full text-center">
+                   <div className="border-t-2 border-black pt-1 w-full text-center mt-auto">
                        <p className="font-bold">RECIBO DE CONFORMIDAD: {vehicle?.ownerName?.toUpperCase() || '________________________________'}</p>
                    </div>
                </div>
