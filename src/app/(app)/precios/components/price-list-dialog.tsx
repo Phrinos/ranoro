@@ -1,0 +1,61 @@
+"use client";
+
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { PriceListForm, type PriceListFormValues } from "./price-list-form";
+import type { PriceListRecord } from "@/types";
+import { useToast } from "@/hooks/use-toast";
+
+interface PriceListDialogProps {
+  record?: PriceListRecord | null;
+  onSave: (data: PriceListFormValues) => Promise<void>;
+  open: boolean;
+  onOpenChange: (isOpen: boolean) => void;
+}
+
+export function PriceListDialog({ 
+  record, 
+  onSave,
+  open,
+  onOpenChange 
+}: PriceListDialogProps) {
+  const { toast } = useToast();
+
+  const handleSubmit = async (values: PriceListFormValues) => {
+    try {
+      await onSave(values);
+    } catch (error) {
+      console.error("Error saving price list record:", error);
+      toast({
+        title: "Error al guardar",
+        description: "No se pudo guardar el registro. Intente de nuevo.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-4xl flex flex-col max-h-[90vh]">
+        <DialogHeader className="flex-shrink-0">
+          <DialogTitle>{record ? "Editar Registro de Precio" : "Nuevo Registro de Precio"}</DialogTitle>
+          <DialogDescription>
+            {record ? "Actualiza los detalles del servicio." : "Completa la información para un nuevo servicio en la lista de precios."}
+          </DialogDescription>
+        </DialogHeader>
+        <div className="flex-grow overflow-y-auto -mx-6 px-6">
+          <PriceListForm
+            initialData={record}
+            onSubmit={handleSubmit}
+            onClose={() => onOpenChange(false)}
+          />
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}

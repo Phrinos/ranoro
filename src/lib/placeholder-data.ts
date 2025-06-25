@@ -17,6 +17,7 @@ import type {
   MonthlyFixedExpense,
   AdministrativeStaff,
   User,
+  PriceListRecord,
 } from '@/types';
 import {
   format,
@@ -113,6 +114,9 @@ export let placeholderSales: SaleReceipt[] = [];
 // --- GASTOS FIJOS ---
 export let placeholderFixedMonthlyExpenses: MonthlyFixedExpense[] = [];
 
+// --- LISTA DE PRECIOS ---
+export let placeholderPriceList: PriceListRecord[] = [];
+
 // --- DATOS SIMULADOS (BORRAR O REEMPLAZAR) ---
 export const placeholderDashboardMetrics: DashboardMetrics = {
   activeServices: 0,
@@ -143,6 +147,7 @@ const DATA_ARRAYS = {
   fixedExpenses: placeholderFixedMonthlyExpenses,
   technicianPerformance: placeholderTechnicianMonthlyPerformance,
   appRoles: placeholderAppRoles,
+  priceList: placeholderPriceList,
 };
 
 type DataKey = keyof typeof DATA_ARRAYS;
@@ -266,13 +271,6 @@ export async function hydrateFromFirestore() {
     console.warn('Could not read from Firestore. This might be due to Firestore rules. The app will proceed with in-memory data for this session.');
   }
 
-  // Clear all sales records as requested
-  if (placeholderSales.length > 0) {
-    placeholderSales.splice(0, placeholderSales.length);
-    console.log('All POS sales have been cleared.');
-    changesMade = true;
-  }
-
   // --- DATA INTEGRITY CHECKS ---
   if (!placeholderUsers.some((u) => u.id === defaultSuperAdmin.id)) {
     placeholderUsers.unshift(defaultSuperAdmin);
@@ -394,7 +392,8 @@ export const calculateSaleProfit = (
     // If cost is not defined or invalid, treat it as 0 but don't stop the whole calculation.
     const effectiveCostPrice = (inventoryItem.isService || !isFinite(costPricePerUnit)) ? 0 : costPricePerUnit;
     
-    const profitPerUnit = sellingPriceWithTax - effectiveCostPrice;
+    const sellingPriceBeforeTax = sellingPriceWithTax / (1 + IVA_RATE);
+    const profitPerUnit = sellingPriceBeforeTax - effectiveCostPrice;
     const profitForItem = profitPerUnit * quantitySold;
     
     if (isFinite(profitForItem)) {
@@ -429,6 +428,3 @@ export const enrichServiceForPrinting = (
     suppliesUsed: enrichedSupplies,
   };
 };
-
-
-    

@@ -252,3 +252,26 @@ export interface NavigationEntry {
   groupTag: string;
   permissions?: string[];
 }
+
+export interface PriceListSupply {
+  name: string;
+  cost: number;
+  quantity: number;
+  supplier: string;
+}
+
+export interface ApplicableVehicle {
+  make: string;
+  model: string;
+  years: string;
+}
+
+export interface PriceListRecord {
+  id: string;
+  serviceName: string;
+  description?: string;
+  customerPrice: number;
+  estimatedTimeHours?: number;
+  supplies: PriceListSupply[];
+  applicableVehicles: ApplicableVehicle[];
+}
