@@ -1,4 +1,5 @@
 
+
 export interface WorkshopInfo {
   name: string;
   phone: string;
@@ -39,6 +40,22 @@ export interface ServiceItem {
   suppliesUsed: ServiceSupply[];
 }
 
+export interface SafetyCheckItem {
+  status: 'ok' | 'regular' | 'atencion' | 'na';
+  notes?: string;
+}
+
+export interface SafetyInspection {
+  brakes?: SafetyCheckItem;
+  tires?: SafetyCheckItem;
+  lights?: SafetyCheckItem;
+  fluidLevels?: SafetyCheckItem;
+  suspensionSteering?: SafetyCheckItem;
+  battery?: SafetyCheckItem;
+  wipers?: SafetyCheckItem;
+  horn?: SafetyCheckItem;
+}
+
 export interface ServiceRecord {
   id: string;
   publicId?: string; // Unique, random ID for public sharing
@@ -65,6 +82,7 @@ export interface ServiceRecord {
   vehicleConditions?: string;
   fuelLevel?: string;
   customerItems?: string;
+  safetyInspection?: SafetyInspection; // Added for safety checklist
   serviceAdvisorId?: string;
   serviceAdvisorName?: string;
   serviceAdvisorSignatureDataUrl?: string; // Added for public sheet
