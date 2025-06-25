@@ -10,7 +10,6 @@ import {
   placeholderTechnicians,
   placeholderInventory,
   persistToFirestore,
-  enrichServiceForPrinting,
   AUTH_USER_LOCALSTORAGE_KEY,
 } from "@/lib/placeholder-data";
 import type { ServiceRecord, Vehicle, Technician, InventoryItem, QuoteRecord, User } from "@/types";
@@ -87,13 +86,12 @@ export default function AgendaServiciosPage() {
     });
 
     if (data.status === 'Completado') {
-      const serviceForTicket = enrichServiceForPrinting(data, inventoryItemsState);
-      setCurrentServiceForTicket(serviceForTicket);
+      setCurrentServiceForTicket(data);
       setCurrentVehicleForTicket(vehicles.find(v => v.id === data.vehicleId) || null);
       setCurrentTechnicianForTicket(techniciansState.find(t => t.id === data.technicianId) || null);
       setShowPrintTicketDialog(true);
     }
-  }, [inventoryItemsState, techniciansState, vehicles, toast]);
+  }, [techniciansState, vehicles, toast]);
 
   useEffect(() => {
     setAllServices(placeholderServiceRecords);
@@ -118,7 +116,8 @@ export default function AgendaServiciosPage() {
           vehicle.ownerName.toLowerCase().includes(searchLower)
         )) ||
         (technician && technician.name.toLowerCase().includes(searchLower)) ||
-        service.description.toLowerCase().includes(searchLower)
+        service.description.toLowerCase().includes(searchLower) ||
+        (service.serviceItems && service.serviceItems.some(item => item.name.toLowerCase().includes(searchLower)))
       );
     });
   }, [allServices, vehicles, techniciansState, searchTerm]);
@@ -145,7 +144,8 @@ export default function AgendaServiciosPage() {
               setCapacityInfo({
                   totalRequiredHours: 0,
                   totalAvailableHours: totalAvailable,
-                  recommendation: "Taller disponible. ¡A agendar!",
+                  capacityPercentage: 0,
+                  recommendation: "Taller disponible",
               });
               setIsCapacityLoading(false);
               return;
@@ -233,12 +233,14 @@ export default function AgendaServiciosPage() {
     service.cancelledBy = currentUser?.name || 'Usuario desconocido';
     
     // Restore inventory if items were used
-    if (service.suppliesUsed && service.suppliesUsed.length > 0) {
-      service.suppliesUsed.forEach(supply => {
-        const invIndex = placeholderInventory.findIndex(i => i.id === supply.supplyId);
-        if (invIndex > -1 && !placeholderInventory[invIndex].isService) {
-          placeholderInventory[invIndex].quantity += supply.quantity;
-        }
+    if (service.serviceItems && service.serviceItems.length > 0) {
+      service.serviceItems.forEach(item => {
+        item.suppliesUsed.forEach(supply => {
+          const invIndex = placeholderInventory.findIndex(i => i.id === supply.supplyId);
+          if (invIndex > -1 && !placeholderInventory[invIndex].isService) {
+            placeholderInventory[invIndex].quantity += supply.quantity;
+          }
+        });
       });
     }
 
@@ -252,12 +254,11 @@ export default function AgendaServiciosPage() {
   }, [toast]);
   
   const handleReprintService = useCallback((service: ServiceRecord) => {
-    const serviceForTicket = enrichServiceForPrinting(service, inventoryItemsState);
-    setCurrentServiceForTicket(serviceForTicket);
+    setCurrentServiceForTicket(service);
     setCurrentVehicleForTicket(vehicles.find(v => v.id === service.vehicleId) || null);
     setCurrentTechnicianForTicket(techniciansState.find(t => t.id === service.technicianId) || null);
     setShowPrintTicketDialog(true);
-  }, [inventoryItemsState, techniciansState, vehicles]);
+  }, [techniciansState, vehicles]);
 
   const handleShowSheet = async (service: ServiceRecord) => {
     const authUserString = typeof window !== 'undefined' ? localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY) : null;
@@ -434,6 +435,13 @@ export default function AgendaServiciosPage() {
       default: return "default";
     }
   };
+  
+  const getServiceDescriptionText = (service: ServiceRecord) => {
+    if (service.serviceItems && service.serviceItems.length > 0) {
+      return service.serviceItems.map(item => item.name).join(', ');
+    }
+    return service.description;
+  };
 
   const renderServiceGroup = (groupedServicesData: GroupedServices) => {
     if (Object.keys(groupedServicesData).length === 0) {
@@ -491,6 +499,7 @@ export default function AgendaServiciosPage() {
               const vehicleMakeModelYear = vehicle ? `${vehicle.make} ${vehicle.model} ${vehicle.year}` : 'N/A';
               const totalCostFormatted = `$${service.totalCost.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
               const serviceProfitFormatted = service.serviceProfit !== undefined ? `$${service.serviceProfit.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : 'N/A';
+              const descriptionText = getServiceDescriptionText(service);
 
               return (
                 <Card key={service.id} className="shadow-sm">
@@ -530,8 +539,8 @@ export default function AgendaServiciosPage() {
                                     <h4 className="font-semibold text-lg" title={vehicleMakeModelYear}>
                                         {vehicle ? `${vehicle.licensePlate} - ${vehicleMakeModelYear}` : 'N/A'}
                                     </h4>
-                                    <p className="text-sm text-muted-foreground mt-1 truncate" title={service.description}>
-                                        {service.description}
+                                    <p className="text-sm text-muted-foreground mt-1 truncate" title={descriptionText}>
+                                        {descriptionText}
                                     </p>
                                 </div>
                             </div>

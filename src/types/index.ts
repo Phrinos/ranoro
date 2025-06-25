@@ -3,6 +3,7 @@
 
 
 
+
 export interface WorkshopInfo {
   name: string;
   phone: string;
@@ -36,6 +37,13 @@ export interface ServiceSupply {
   unitType?: 'units' | 'ml' | 'liters';
 }
 
+export interface ServiceItem {
+  id: string;
+  name: string;
+  price: number;
+  suppliesUsed: ServiceSupply[];
+}
+
 export interface ServiceRecord {
   id: string;
   publicId?: string; // Unique, random ID for public sharing
@@ -46,7 +54,7 @@ export interface ServiceRecord {
   description: string;
   technicianId: string;
   technicianName?: string;
-  suppliesUsed: ServiceSupply[]; 
+  serviceItems: ServiceItem[];
   subTotal?: number; // Pre-tax amount
   taxAmount?: number; // IVA amount
   totalCost: number; // Final, tax-inclusive price. For services, this is the "Costo del Servicio (IVA incluido)"
