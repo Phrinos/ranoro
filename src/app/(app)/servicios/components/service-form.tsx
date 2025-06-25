@@ -458,7 +458,7 @@ export function ServiceForm({
     const finalTaxAmount = finalTotalCost - finalSubTotal;
     
     if (mode === 'service') {
-      const serviceData: Partial<ServiceRecord> = {
+      const serviceData: ServiceRecord = {
         id: initialDataService?.id || `SER_${Date.now().toString(36)}`,
         publicId: values.publicId || `srv_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 9)}`,
         vehicleId: vehicleIdToSave,
@@ -483,7 +483,7 @@ export function ServiceForm({
         serviceProfit: finalTotalCost - totalSuppliesWorkshopCost,
         notes: values.notes || '',
         vehicleConditions: values.vehicleConditions || '',
-        fuelLevel: values.fuelLevel,
+        fuelLevel: values.fuelLevel || '',
         customerItems: values.customerItems || '',
         serviceAdvisorId: currentUser.id,
         serviceAdvisorName: currentUser.name,
@@ -493,14 +493,11 @@ export function ServiceForm({
         receptionSignatureViewed: (initialDataService as ServiceRecord)?.receptionSignatureViewed || false,
         deliverySignatureViewed: (initialDataService as ServiceRecord)?.deliverySignatureViewed || false,
         workshopInfo: workshopInfo as WorkshopInfo,
+        deliveryDateTime: values.deliveryDateTime ? values.deliveryDateTime.toISOString() : undefined,
       };
 
-      if (values.deliveryDateTime) {
-        serviceData.deliveryDateTime = values.deliveryDateTime.toISOString();
-      }
-
-      await savePublicDocument('service', serviceData as ServiceRecord, selectedVehicle);
-      await onSubmit(serviceData as ServiceRecord);
+      await savePublicDocument('service', serviceData, selectedVehicle);
+      await onSubmit(serviceData);
     } else { // mode === 'quote'
       let quoteData: QuoteRecord = {
         id: (initialDataQuote as QuoteRecord)?.id || `COT_${Date.now().toString(36)}`,
@@ -553,15 +550,17 @@ export function ServiceForm({
       suppliesUsed: formValues.suppliesUsed || [],
       totalCost: formValues.totalServicePrice || 0,
       status: formValues.status || 'Agendado',
-      mileage: formValues.mileage,
-      vehicleConditions: formValues.vehicleConditions,
-      fuelLevel: formValues.fuelLevel,
-      customerItems: formValues.customerItems,
-      serviceAdvisorId: freshCurrentUser?.id,
+      mileage: formValues.mileage || 0,
+      vehicleConditions: formValues.vehicleConditions || '',
+      fuelLevel: formValues.fuelLevel || '',
+      customerItems: formValues.customerItems || '',
+      serviceAdvisorId: freshCurrentUser?.id || '',
       serviceAdvisorName: freshCurrentUser?.name || 'N/A',
-      serviceAdvisorSignatureDataUrl: freshCurrentUser?.signatureDataUrl,
-      customerSignatureReception: formValues.customerSignatureReception,
-      customerSignatureDelivery: formValues.customerSignatureDelivery,
+      serviceAdvisorSignatureDataUrl: freshCurrentUser?.signatureDataUrl || '',
+      customerSignatureReception: formValues.customerSignatureReception || '',
+      customerSignatureDelivery: formValues.customerSignatureDelivery || '',
+      receptionSignatureViewed: false,
+      deliverySignatureViewed: false,
     };
     
     setServiceForSheet({ ...serviceDataForSheet, vehicleIdentifier: vehicleForSheet.licensePlate });
