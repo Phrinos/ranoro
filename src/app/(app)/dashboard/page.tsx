@@ -6,7 +6,7 @@ import dynamic from "next/dynamic";
 import { format, parseISO, isToday, isValid, isSameDay } from "date-fns";
 import { PageHeader } from "@/components/page-header";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { placeholderServiceRecords, placeholderInventory, placeholderSales, calculateSaleProfit, IVA_RATE, placeholderTechnicians, persistToFirestore, placeholderVehicles } from "@/lib/placeholder-data";
+import { placeholderServiceRecords, placeholderInventory, placeholderSales, calculateSaleProfit, placeholderTechnicians, persistToFirestore, placeholderVehicles } from "@/lib/placeholder-data";
 import type { User, CapacityAnalysisOutput, PurchaseRecommendation } from "@/types";
 import { BrainCircuit, Loader2, ShoppingCart, AlertTriangle, Printer, Wrench, DollarSign } from "lucide-react"; 
 import { useToast } from "@/hooks/use-toast";
@@ -67,6 +67,7 @@ const formatCurrency = (amount: number) => {
 export default function DashboardPage() {
   const [userName, setUserName] = useState<string | null>(null);
   const { toast } = useToast();
+  const IVA_RATE = 0.16;
 
   const [purchaseRecommendations, setPurchaseRecommendations] = useState<PurchaseRecommendation[] | null>(null);
   const [isPurchaseLoading, setIsPurchaseLoading] = useState(false);
