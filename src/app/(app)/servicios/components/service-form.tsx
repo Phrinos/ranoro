@@ -37,7 +37,8 @@ import {
     placeholderQuotes, 
     placeholderServiceRecords as defaultServiceRecords, 
     persistToFirestore, 
-    AUTH_USER_LOCALSTORAGE_KEY
+    AUTH_USER_LOCALSTORAGE_KEY,
+    sanitizeObjectForFirestore
 } from '@/lib/placeholder-data';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription as DialogDesc, DialogFooter } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
@@ -441,8 +442,10 @@ export function ServiceForm({
         workshopInfo,
     };
     
+    const sanitizedPublicData = sanitizeObjectForFirestore(fullPublicData);
+    
     try {
-      await setDoc(publicDocRef, fullPublicData, { merge: true });
+      await setDoc(publicDocRef, sanitizedPublicData, { merge: true });
       console.log(`Public ${type} document ${data.publicId} saved successfully.`);
     } catch (e) {
       console.error(`Failed to save public ${type} document:`, e);
