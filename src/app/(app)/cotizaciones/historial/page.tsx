@@ -443,6 +443,7 @@ export default function HistorialCotizacionesPage() {
         onViewQuote={handleViewQuote} 
         onEditQuote={handleEditQuote}
         onGenerateService={handleGenerateService}
+        onDeleteQuote={handleDeleteQuote}
       />
 
       {isViewQuoteDialogOpen && selectedQuoteForView && (

@@ -11,7 +11,18 @@ import { Badge, type BadgeProps } from "@/components/ui/badge";
 import type { QuoteRecord, Vehicle } from "@/types";
 import { format, parseISO, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { Eye, Edit, Pencil, FileText as FileTextIcon, Calendar as CalendarIcon, Wrench } from "lucide-react";
+import { Eye, Edit, Wrench, Trash2 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 interface QuotesTableProps {
   quotes: QuoteRecord[];
@@ -19,9 +30,10 @@ interface QuotesTableProps {
   onViewQuote: (quote: QuoteRecord) => void;
   onEditQuote: (quote: QuoteRecord) => void;
   onGenerateService: (quote: QuoteRecord) => void;
+  onDeleteQuote: (quoteId: string) => void;
 }
 
-export const QuotesTable = React.memo(({ quotes, vehicles, onViewQuote, onEditQuote, onGenerateService }: QuotesTableProps) => {
+export const QuotesTable = React.memo(({ quotes, vehicles, onViewQuote, onEditQuote, onGenerateService, onDeleteQuote }: QuotesTableProps) => {
   if (!quotes.length) {
     return <p className="text-muted-foreground text-center py-8">No hay cotizaciones registradas que coincidan con los filtros.</p>;
   }
@@ -85,7 +97,7 @@ export const QuotesTable = React.memo(({ quotes, vehicles, onViewQuote, onEditQu
                 <div className="flex-grow border-l border-r p-4 space-y-3">
                   <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2 text-sm text-muted-foreground">
                     <div className="flex items-center gap-1.5" title="ID de Cotización">
-                      <FileTextIcon className="h-4 w-4" />
+                      <FileText className="h-4 w-4" />
                       <span>ID: {quote.id}</span>
                     </div>
                     <div className="flex items-center gap-1.5" title="Fecha de Cotización">
@@ -124,6 +136,27 @@ export const QuotesTable = React.memo(({ quotes, vehicles, onViewQuote, onEditQu
                     <Button variant="ghost" size="icon" onClick={(e) => {e.stopPropagation(); onGenerateService(quotes.find(q => q.id === quote.id)!);}} title="Generar Servicio" disabled={!!quote.serviceId}>
                       <Wrench className="h-4 w-4" />
                     </Button>
+                    <AlertDialog onOpenChange={(e) => e.stopPropagation()}>
+                        <AlertDialogTrigger asChild>
+                            <Button variant="ghost" size="icon" title="Eliminar Cotización" disabled={!!quote.serviceId} onClick={(e) => e.stopPropagation()}>
+                                <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent onClick={(e) => e.stopPropagation()}>
+                            <AlertDialogHeader>
+                                <AlertDialogTitle>¿Eliminar esta cotización?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                    Esta acción no se puede deshacer y eliminará permanentemente la cotización {quote.id}.
+                                </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                <AlertDialogAction onClick={() => onDeleteQuote(quote.id)} className="bg-destructive hover:bg-destructive/90">
+                                    Sí, Eliminar
+                                </AlertDialogAction>
+                            </AlertDialogFooter>
+                        </AlertDialogContent>
+                    </AlertDialog>
                   </div>
                 </div>
               </div>
