@@ -91,6 +91,9 @@ export interface ServiceRecord {
   receptionSignatureViewed?: boolean;
   deliverySignatureViewed?: boolean;
   workshopInfo?: WorkshopInfo;
+  paymentMethod?: PaymentMethod;
+  cardFolio?: string;
+  transferFolio?: string;
 }
 
 export interface Technician {
@@ -300,3 +303,4 @@ export interface VehiclePriceList {
   years: number[];
   services: PricedService[];
 }
+
