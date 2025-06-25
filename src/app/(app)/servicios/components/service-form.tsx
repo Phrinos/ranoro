@@ -735,7 +735,7 @@ export function ServiceForm({
   };
 
   const cardTitleText = mode === 'quote' ? "Información del Vehículo y Cotización" : "Información del Vehículo";
-  const technicianLabelText = "Técnico Asignado";
+  const technicianLabelText = mode === 'quote' ? "Preparado por" : "Técnico Asignado";
   const submitButtonText = mode === 'quote' ? "Guardar Cotización" : (initialDataService ? "Actualizar Servicio" : "Crear Servicio");
 
   return (
@@ -779,7 +779,7 @@ export function ServiceForm({
                     {vehicleNotFound && !selectedVehicle && !isReadOnly && (<div className="p-3 border border-orange-500 rounded-md bg-orange-50 dark:bg-orange-900/30 dark:text-orange-300 text-sm flex flex-col sm:flex-row items-center justify-between gap-2"><div className="flex items-center gap-2"><AlertCircle className="h-5 w-5 shrink-0"/><p>Vehículo con placa "{vehicleLicensePlateSearch}" no encontrado.</p></div><Button type="button" size="sm" variant="outline" onClick={() => {setNewVehicleInitialData({ licensePlate: vehicleLicensePlateSearch }); setIsVehicleDialogOpen(true);}} className="w-full sm:w-auto"><CarIcon className="mr-2 h-4 w-4"/> Registrar Nuevo Vehículo</Button></div>)}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 pt-4">
                         <FormField control={form.control} name="notes" render={({ field }) => (<FormItem><FormLabel>Notas Adicionales (Opcional)</FormLabel><FormControl><Textarea placeholder={mode === 'quote' ? "Ej: Validez de la cotización, condiciones..." : "Notas internas o para el cliente..."} {...field} disabled={isReadOnly} className="min-h-[100px]"/></FormControl><FormMessage /></FormItem>)}/>
-                        {mode === 'service' && <FormField control={form.control} name="technicianId" render={({ field }) => (<FormItem><FormLabel>{technicianLabelText}</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value} disabled={isReadOnly}><FormControl><SelectTrigger><SelectValue placeholder="Seleccione un técnico" /></SelectTrigger></FormControl><SelectContent>{technicians.map((technician) => (<SelectItem key={technician.id} value={technician.id}>{technician.name}</SelectItem>))}</SelectContent></Select><FormMessage /></FormItem>)}/>}
+                        <FormField control={form.control} name="technicianId" render={({ field }) => (<FormItem><FormLabel>{technicianLabelText}</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value} disabled={isReadOnly || mode === 'quote'}><FormControl><SelectTrigger><SelectValue placeholder="Seleccione un técnico" /></SelectTrigger></FormControl><SelectContent>{technicians.map((technician) => (<SelectItem key={technician.id} value={technician.id}>{technician.name}</SelectItem>))}</SelectContent></Select><FormMessage /></FormItem>)}/>
                     </div>
                 </CardContent>
               </Card>
@@ -902,6 +902,7 @@ function ServiceItemCard({ serviceIndex, control, removeServiceItem, isReadOnly,
         control,
         name: `serviceItems.${serviceIndex}.suppliesUsed`
     });
+    const { toast } = useToast();
 
     const [isAddSupplyDialogOpen, setIsAddSupplyDialogOpen] = useState(false);
     
@@ -923,6 +924,30 @@ function ServiceItemCard({ serviceIndex, control, removeServiceItem, isReadOnly,
       return `$${amount.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
     };
 
+    const handleSupplyQuantityChange = (supplyIndex: number, delta: number) => {
+        const supplyPath = `serviceItems.${serviceIndex}.suppliesUsed.${supplyIndex}`;
+        const currentSupply = control.getValues(supplyPath);
+        if (!currentSupply) return;
+
+        const newQuantity = currentSupply.quantity + delta;
+        if (newQuantity <= 0) return;
+
+        const inventoryItem = inventoryItems.find(item => item.id === currentSupply.supplyId);
+
+        // Check stock only if it's an inventory item (not manual) and not a service
+        if (inventoryItem && !inventoryItem.isService && newQuantity > inventoryItem.quantity) {
+            toast({
+                title: 'Stock Insuficiente',
+                description: `Solo hay ${inventoryItem.quantity} de ${inventoryItem.name} en inventario.`,
+                variant: 'destructive'
+            });
+            return;
+        }
+
+        // Update the quantity for this specific supply
+        control.setValue(`${supplyPath}.quantity`, newQuantity, { shouldDirty: true });
+    };
+
     return (
         <Card className="p-4 bg-muted/30">
             <div className="flex justify-between items-start mb-4">
@@ -930,21 +955,44 @@ function ServiceItemCard({ serviceIndex, control, removeServiceItem, isReadOnly,
                 {!isReadOnly && <Button type="button" variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => removeServiceItem(serviceIndex)}><Trash2 className="h-4 w-4"/></Button>}
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField control={control} name={`serviceItems.${serviceIndex}.name`} render={({ field }) => ( <FormItem><FormLabel>Nombre del Servicio</FormLabel><FormControl><Input placeholder="Afinación Mayor" {...field} /></FormControl><FormMessage/></FormItem> )}/>
-                <FormField control={control} name={`serviceItems.${serviceIndex}.price`} render={({ field }) => ( <FormItem><FormLabel>Precio Cliente (IVA Inc.)</FormLabel><FormControl><Input type="number" placeholder="0.00" {...field} value={field.value ?? ''} /></FormControl><FormMessage/></FormItem> )}/>
+                <FormField control={control} name={`serviceItems.${serviceIndex}.name`} render={({ field }) => ( <FormItem><FormLabel>Nombre del Servicio</FormLabel><FormControl><Input placeholder="Afinación Mayor" {...field} disabled={isReadOnly}/></FormControl><FormMessage/></FormItem> )}/>
+                <FormField control={control} name={`serviceItems.${serviceIndex}.price`} render={({ field }) => ( <FormItem><FormLabel>Precio Cliente (IVA Inc.)</FormLabel><FormControl><Input type="number" placeholder="0.00" {...field} value={field.value ?? ''} disabled={isReadOnly} /></FormControl><FormMessage/></FormItem> )}/>
             </div>
 
             <div className="mt-4">
                 <h5 className="text-sm font-medium mb-2">Insumos para este Servicio</h5>
                 <div className="space-y-2">
                     {fields.map((supplyField, supplyIndex) => (
-                        <div key={supplyField.id} className="flex items-end gap-2">
+                        <div key={supplyField.id} className="flex items-center gap-2 p-2 border rounded-md bg-background">
                             <div className="flex-1">
                                 <p className="text-xs font-medium">{supplyField.supplyName}</p>
                                 <p className="text-xs text-muted-foreground">
-                                    {`Cant: ${supplyField.quantity} ${supplyField.unitType === 'ml' ? 'ml' : supplyField.unitType === 'liters' ? 'L' : ''} @ ${formatCurrency(supplyField.unitPrice)}`}
+                                    {`Costo: ${formatCurrency(supplyField.unitPrice)}`}
                                 </p>
                             </div>
+                            <div className="flex items-center gap-1">
+                                <Button type="button" variant="outline" size="icon" className="h-7 w-7" onClick={() => handleSupplyQuantityChange(supplyIndex, -1)} disabled={isReadOnly}>
+                                    <Minus className="h-3 w-3" />
+                                </Button>
+                                <FormField
+                                    control={control}
+                                    name={`serviceItems.${serviceIndex}.suppliesUsed.${supplyIndex}.quantity`}
+                                    render={({ field }) => (
+                                        <Input
+                                            type="number"
+                                            step="any"
+                                            min="0.001"
+                                            {...field}
+                                            className="w-16 text-center h-7 text-sm"
+                                            disabled={isReadOnly}
+                                        />
+                                    )}
+                                />
+                                <Button type="button" variant="outline" size="icon" className="h-7 w-7" onClick={() => handleSupplyQuantityChange(supplyIndex, 1)} disabled={isReadOnly}>
+                                    <Plus className="h-3 w-3" />
+                                </Button>
+                            </div>
+                            <span className="text-sm w-12 text-center">{supplyField.unitType === 'ml' ? 'ml' : supplyField.unitType === 'liters' ? 'L' : 'uds.'}</span>
                             {!isReadOnly && <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => remove(supplyIndex)}><Trash2 className="h-4 w-4"/></Button>}
                         </div>
                     ))}
