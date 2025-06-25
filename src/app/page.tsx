@@ -156,7 +156,7 @@ export default function LandingPage() {
               </div>
               <div className="flex justify-center">
                 <Image
-                  src="https://placehold.co/600x400.png"
+                  src="/__fsh_user_images__/image.png"
                   alt="Servicio a flotillas"
                   width={600}
                   height={400}
