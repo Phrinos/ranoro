@@ -844,23 +844,23 @@ export function ServiceForm({
 
             <TabsContent value="servicio" className="space-y-6 mt-0">
               <Card>
-                <CardHeader className="flex flex-row items-center justify-between">
-                    <CardTitle className="text-lg">
-                        {mode === 'quote' ? "Información de la Cotización" : "Información del Servicio"}
-                    </CardTitle>
-                    <div className="flex gap-2">
-                        {((mode === 'quote' && initialDataQuote?.id) || originalQuote) && (
-                            <Button type="button" onClick={handleViewQuote} variant="outline" size="icon" className="bg-card" title="Ver Cotización">
-                                <FileText className="h-4 w-4" />
-                                <span className="sr-only">Ver Cotización</span>
-                            </Button>
-                        )}
-                        {mode === 'service' && !isReadOnly && (watchedStatus === 'Reparando' || watchedStatus === 'Completado') && (
-                            <Button type="button" onClick={handlePrintSheet} variant="outline" size="icon" className="bg-card" title="Ver Hoja de Servicio">
+                <CardHeader>
+                    <div className="flex justify-between items-center">
+                        <CardTitle className="text-lg">
+                            {mode === 'quote' ? "Información de la Cotización" : "Información del Servicio"}
+                        </CardTitle>
+                        <div className="flex gap-2">
+                           {(mode === 'quote' || originalQuote) && (
+                              <Button type="button" onClick={handleViewQuote} variant="outline" size="icon" className="bg-card" title="Ver Cotización">
+                                  <FileText className="h-4 w-4" />
+                              </Button>
+                           )}
+                           {mode === 'service' && !isReadOnly && (watchedStatus === 'Reparando' || watchedStatus === 'Completado') && (
+                              <Button type="button" onClick={handlePrintSheet} variant="outline" size="icon" className="bg-card" title="Ver Hoja de Servicio">
                                 <Wrench className="h-4 w-4" />
-                                <span className="sr-only">Ver Hoja de Servicio</span>
-                            </Button>
-                        )}
+                              </Button>
+                           )}
+                        </div>
                     </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -911,12 +911,6 @@ export function ServiceForm({
                           </FormItem>
                         )}
                       />
-                      {(watchedStatus === 'Reparando' || watchedStatus === 'Completado') && (
-                          <FormField
-                              control={form.control}
-                              name="technicianId"
-                              render={({ field }) => (<FormItem><FormLabel>Técnico Asignado</FormLabel><Select onValueChange={field.onChange} value={field.value} disabled={isReadOnly}><FormControl><SelectTrigger><SelectValue placeholder="Seleccione un técnico" /></SelectTrigger></FormControl><SelectContent>{technicians.map((technician) => (<SelectItem key={technician.id} value={technician.id}>{technician.name}</SelectItem>))}</SelectContent></Select><FormMessage /></FormItem>)}/>
-                      )}
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
                       <FormField control={form.control} name="vehicleLicensePlateSearch" render={({ field }) => (<FormItem className="w-full"><FormLabel>Placa del Vehículo</FormLabel><FormControl><Input placeholder="Buscar/Ingresar Placas" {...field} value={vehicleLicensePlateSearch} onChange={(e) => {setVehicleLicensePlateSearch(e.target.value.toUpperCase()); field.onChange(e.target.value.toUpperCase());}} disabled={isReadOnly} className="uppercase" onKeyDown={handleVehiclePlateKeyDown} /></FormControl></FormItem>)}/>
@@ -928,17 +922,39 @@ export function ServiceForm({
                     {vehicleSearchResults.length > 0 && ( <ScrollArea className="h-auto max-h-[150px] w-full rounded-md border"><div className="p-2">{vehicleSearchResults.map(v => (<button type="button" key={v.id} onClick={() => handleSelectVehicleFromSearch(v)} className="w-full text-left p-2 rounded-md hover:bg-muted"><p className="font-semibold">{v.licensePlate}</p><p className="text-sm text-muted-foreground">{v.make} {v.model} - {v.ownerName}</p></button>))}</div></ScrollArea>)}
                     {selectedVehicle && (<div className="p-3 border rounded-md bg-amber-50 dark:bg-amber-950/50 text-sm space-y-1"><p><strong>Vehículo Seleccionado:</strong> {selectedVehicle.make} {selectedVehicle.model} {selectedVehicle.year} (<span className="font-bold">{selectedVehicle.licensePlate}</span>)</p><p><strong>Propietario:</strong> {selectedVehicle.ownerName}</p>{lastServiceInfo && (<p className="text-xs font-medium text-blue-600 dark:text-blue-400 mt-1">{lastServiceInfo}</p>)}</div>)}
                     {vehicleNotFound && !selectedVehicle && !isReadOnly && (<div className="p-3 border border-orange-500 rounded-md bg-orange-50 dark:bg-orange-900/30 dark:text-orange-300 text-sm flex flex-col sm:flex-row items-center justify-between gap-2"><div className="flex items-center gap-2"><AlertCircle className="h-5 w-5 shrink-0"/><p>Vehículo con placa "{vehicleLicensePlateSearch}" no encontrado.</p></div><Button type="button" size="sm" variant="outline" onClick={() => {setNewVehicleInitialData({ licensePlate: vehicleLicensePlateSearch }); setIsVehicleDialogOpen(true);}} className="w-full sm:w-auto"><CarIcon className="mr-2 h-4 w-4"/> Registrar Nuevo Vehículo</Button></div>)}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 pt-4">
-                        <FormField control={form.control} name="notes" render={({ field }) => (
-                          <FormItem className={cn(mode === 'quote' && 'md:col-span-2')}>
-                              <FormLabel>Notas Adicionales (Opcional)</FormLabel>
-                              <FormControl><Textarea placeholder={mode === 'quote' ? "Ej: Validez de la cotización, condiciones..." : "Notas internas o para el cliente..."} {...field} disabled={isReadOnly} className="min-h-[100px]"/></FormControl>
-                              <FormMessage />
-                          </FormItem>
-                        )}/>
-                    </div>
                 </CardContent>
               </Card>
+
+              {(watchedStatus === 'Reparando' || watchedStatus === 'Completado') && (
+                  <Card>
+                      <CardHeader>
+                          <CardTitle>Técnico Asignado</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                          <FormField
+                              control={form.control}
+                              name="technicianId"
+                              render={({ field }) => (
+                                  <FormItem>
+                                      <Select onValueChange={field.onChange} value={field.value} disabled={isReadOnly}>
+                                          <FormControl>
+                                              <SelectTrigger>
+                                                  <SelectValue placeholder="Seleccione un técnico" />
+                                              </SelectTrigger>
+                                          </FormControl>
+                                          <SelectContent>
+                                              {technicians.map((technician) => (
+                                                  <SelectItem key={technician.id} value={technician.id}>{technician.name}</SelectItem>
+                                              ))}
+                                          </SelectContent>
+                                      </Select>
+                                      <FormMessage />
+                                  </FormItem>
+                              )}
+                          />
+                      </CardContent>
+                  </Card>
+              )}
 
               <Card>
                   <CardHeader><CardTitle className="text-lg">Trabajos a Realizar</CardTitle></CardHeader>
@@ -961,6 +977,22 @@ export function ServiceForm({
                       )}
                   </CardContent>
               </Card>
+              
+              <Card>
+                  <CardHeader>
+                      <CardTitle className="text-lg">Notas Adicionales</CardTitle>
+                      <CardDescription>(Opcional) Notas internas o para el cliente.</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                      <FormField control={form.control} name="notes" render={({ field }) => (
+                          <FormItem>
+                              <FormControl><Textarea placeholder={"Añadir notas..."} {...field} disabled={isReadOnly} className="min-h-[100px]"/></FormControl>
+                              <FormMessage />
+                          </FormItem>
+                      )}/>
+                  </CardContent>
+              </Card>
+
 
               <Card className="bg-card">
                   <CardHeader><CardTitle className="text-lg flex items-center gap-2"><DollarSign className="h-5 w-5 text-green-600"/>Resumen Financiero</CardTitle></CardHeader>
@@ -1300,3 +1332,4 @@ function SafetyCheckItemControl({ name, label, control, isReadOnly }: SafetyChec
     </div>
   );
 }
+
