@@ -62,19 +62,19 @@ const BASE_NAV_STRUCTURE: ReadonlyArray<Omit<NavigationEntry, 'isActive'>> = [
     groupTag: "Mi Taller",
     permissions: ['vehicles:manage']
   },
-  { 
-    label: 'Agenda', 
-    path: '/servicios/agenda', 
-    icon: CalendarClock, 
-    groupTag: "Mi Taller",
-    permissions: ['services:view_history']
-  },
   {
     label: 'Cotizaciones', 
     path: '/cotizaciones/historial', 
     icon: FileText, 
     groupTag: "Mi Taller",
     permissions: ['services:create']
+  },
+  { 
+    label: 'Agenda', 
+    path: '/servicios/agenda', 
+    icon: CalendarClock, 
+    groupTag: "Mi Taller",
+    permissions: ['services:view_history']
   },
   { 
     label: 'Servicios', 

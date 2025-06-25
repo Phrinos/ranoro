@@ -558,17 +558,12 @@ export default function AgendaServiciosPage() {
                         <div className="w-48 shrink-0 flex flex-col items-center justify-center p-4 gap-y-2">
                             <Badge variant={getStatusVariant(service.status)} className="w-full justify-center text-center text-base">{service.status}</Badge>
                             <div className="flex">
-                              <Button variant="ghost" size="icon" aria-label="Editar Servicio" onClick={(e) => {e.stopPropagation(); handleOpenEditDialog(service);}}>
-                                <Edit className="h-4 w-4" />
+                              <Button variant="ghost" size="icon" aria-label={service.status === 'Agendado' ? "Ingresar a Taller" : "Editar Servicio"} title={service.status === 'Agendado' ? "Ingresar a Taller" : "Editar Servicio"} onClick={(e) => {e.stopPropagation(); handleOpenEditDialog(service);}}>
+                                {service.status === 'Agendado' ? <Wrench className="h-4 w-4 text-blue-600" /> : <Edit className="h-4 w-4" />}
                               </Button>
                               {service.status !== 'Agendado' && onShowSheet && (
                                 <Button variant="ghost" size="icon" aria-label="Ver Hoja de Servicio" onClick={() => handleShowSheet(service)}>
                                     <FileText className="h-4 w-4" />
-                                </Button>
-                              )}
-                              {service.status === 'Agendado' && (
-                                <Button variant="ghost" size="icon" title="Ingresar a Taller" onClick={(e) => { e.stopPropagation(); handleOpenEditDialog(service); }}>
-                                    <Wrench className="h-4 w-4 text-blue-600" />
                                 </Button>
                               )}
                             </div>
