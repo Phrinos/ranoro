@@ -4,7 +4,7 @@
 
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Edit, Trash2, Clock, Search as SearchIcon, Calendar as CalendarIcon, CalendarCheck, CheckCircle, Wrench, Printer, Tag, FileText, BrainCircuit, Loader2, AlertTriangle, List, CalendarDays, MessageSquare, Ban, Copy } from "lucide-react";
+import { PlusCircle, Edit, Trash2, Clock, Search as SearchIcon, Calendar as CalendarIcon, CalendarCheck, CheckCircle, Wrench, Printer, Tag, FileText, BrainCircuit, Loader2, AlertTriangle, List, CalendarDays, MessageSquare, Ban, Copy, Pencil } from "lucide-react";
 import {
   placeholderServiceRecords,
   placeholderVehicles,
@@ -491,13 +491,11 @@ export default function AgendaServiciosPage() {
           <div className="space-y-4">
             {dayServices.map(service => {
               const vehicle = vehicles.find(v => v.id === service.vehicleId);
-              const technician = techniciansState.find(t => t.id === service.technicianId);
               const serviceDateObj = service.serviceDate ? parseISO(service.serviceDate) : null;
               const deliveryDateObj = service.deliveryDateTime ? parseISO(service.deliveryDateTime) : null;
               
               const serviceReceptionTime = serviceDateObj && isValid(serviceDateObj) ? format(serviceDateObj, "HH:mm", { locale: es }) : 'N/A';
               const formattedDeliveryDateTime = deliveryDateObj && isValid(deliveryDateObj) ? format(deliveryDateObj, "dd MMM yy, HH:mm", { locale: es }) : 'N/A';
-              const technicianName = technician ? technician.name : service.technicianId;
               const vehicleMakeModelYear = vehicle ? `${vehicle.make} ${vehicle.model} ${vehicle.year}` : 'N/A';
               const totalCostFormatted = `$${service.totalCost.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
               const serviceProfitFormatted = service.serviceProfit !== undefined ? `$${service.serviceProfit.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : 'N/A';
@@ -520,13 +518,22 @@ export default function AgendaServiciosPage() {
                         
                         <div className="flex-grow border-l border-r p-4 space-y-3">
                             <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2 text-sm text-muted-foreground">
-                                <div className="flex items-center gap-1.5" title="Hora de Recepción">
-                                    {(service.status === 'Reparando' || service.status === 'Completado') ? <CheckCircle className="h-4 w-4 text-green-600" /> : <Clock className="h-4 w-4" />}
-                                    <span>Recepción: {serviceReceptionTime}</span>
+                                <div className="flex items-center gap-1.5" title="Hora de Recepción / Ingreso">
+                                    {service.status === 'Agendado' ? (
+                                        <>
+                                            <Clock className="h-4 w-4" />
+                                            <span>Ingreso Programado: {serviceReceptionTime}</span>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <CheckCircle className="h-4 w-4 text-green-600" />
+                                            <span>Recepción: {serviceReceptionTime}</span>
+                                        </>
+                                    )}
                                 </div>
-                                <div className="flex items-center gap-1.5" title="Técnico">
-                                    <Wrench className="h-4 w-4" />
-                                    <span>{technicianName}</span>
+                                <div className="flex items-center gap-1.5" title="Asesor">
+                                    <Pencil className="h-4 w-4" />
+                                    <span>{service.serviceAdvisorName || 'N/A'}</span>
                                 </div>
                                 <div className="flex items-center gap-1.5" title="Fecha de Entrega">
                                     {service.status === 'Completado' ? <CheckCircle className="h-4 w-4 text-green-600" /> : <CalendarCheck className="h-4 w-4" />}

@@ -27,6 +27,8 @@ const badgeVariants = cva(
           "border-transparent bg-green-300 text-green-800 hover:bg-green-300/80 dark:bg-green-700 dark:text-green-100 dark:hover:bg-green-700/80",
         lightPurple: // For "Tarjeta+Transferencia"
           "border-transparent bg-purple-300 text-purple-800 hover:bg-purple-300/80 dark:bg-purple-700 dark:text-purple-100 dark:hover:bg-purple-700/80",
+        lightRed: // For "Agendado" from quote
+          "border-transparent bg-red-100 text-red-800 hover:bg-red-100/80 dark:bg-red-900/50 dark:text-red-300",
       },
     },
     defaultVariants: {

@@ -7,7 +7,7 @@ import {
   CardContent,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { Badge, type BadgeProps } from "@/components/ui/badge";
 import type { QuoteRecord, Vehicle } from "@/types";
 import { format, parseISO, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -31,12 +31,12 @@ export const QuotesTable = React.memo(({ quotes, vehicles, onViewQuote, onEditQu
     return `$${amount.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   };
   
-  const getStatusVariant = (serviceId?: string): "success" | "outline" => {
-    return serviceId ? "success" : "outline";
+  const getStatusVariant = (serviceId?: string): BadgeProps['variant'] => {
+    return serviceId ? "lightRed" : "outline";
   };
   
   const getStatusText = (serviceId?: string): string => {
-      return serviceId ? "Ingresado" : "Cotizacion";
+      return serviceId ? "Agendado" : "Cotizacion";
   }
 
   const getQuoteDescriptionText = (quote: QuoteRecord) => {
