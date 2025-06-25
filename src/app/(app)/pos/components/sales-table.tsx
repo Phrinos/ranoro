@@ -16,7 +16,7 @@ import type { SaleReceipt, InventoryItem } from "@/types";
 import { format, parseISO, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Printer, Edit, Ban } from "lucide-react";
-import { calculateSaleProfit, IVA_RATE } from "@/lib/placeholder-data";
+import { calculateSaleProfit } from "@/lib/placeholder-data";
 import { cn } from "@/lib/utils";
 
 interface SalesTableProps {
@@ -79,7 +79,7 @@ export const SalesTable = React.memo(({ sales, onReprintTicket, inventoryItems, 
               ? format(saleDate, "dd MMM yyyy, HH:mm", { locale: es })
               : 'Fecha Inválida';
             
-            const profit = calculateSaleProfit(sale, inventoryItems, IVA_RATE);
+            const profit = calculateSaleProfit(sale, inventoryItems);
             const isCancelled = sale.status === 'Cancelado';
 
             return (

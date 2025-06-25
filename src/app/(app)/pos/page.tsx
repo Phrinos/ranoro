@@ -86,8 +86,7 @@ type SaleSortOption =
 export default function POSPage() {
   const router = useRouter();
   const { toast } = useToast();
-  const IVA_RATE = 0.16;
-
+  
   // Forzar re–renderes cuando las colecciones placeholder cambian
   const [version, setVersion] = useState(0);
 
@@ -189,7 +188,7 @@ export default function POSPage() {
     const totalSalesCount = active.length;
     const totalRevenue = active.reduce((sum, s) => sum + s.totalAmount, 0);
     const totalProfit = active.reduce(
-      (sum, s) => sum + calculateSaleProfit(s, placeholderInventory, IVA_RATE),
+      (sum, s) => sum + calculateSaleProfit(s, placeholderInventory),
       0
     );
 

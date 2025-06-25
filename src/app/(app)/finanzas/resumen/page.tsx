@@ -103,7 +103,7 @@ export default function ResumenFinancieroPage() {
     const totalCostOfGoodsFromServices = completedServicesThisMonth.reduce((sum, service) => sum + (service.totalSuppliesCost || 0), 0);
     const totalCostOfGoods = totalCostOfGoodsFromSales + totalCostOfGoodsFromServices;
 
-    const totalProfitFromSales = salesThisMonth.reduce((sum, sale) => sum + calculateSaleProfit(sale, inventory, IVA_RATE), 0);
+    const totalProfitFromSales = salesThisMonth.reduce((sum, sale) => sum + calculateSaleProfit(sale, inventory), 0);
     const totalProfitFromServices = completedServicesThisMonth.reduce((sum, service) => sum + (service.serviceProfit || 0), 0);
     const totalOperationalProfit = totalProfitFromSales + totalProfitFromServices;
     
