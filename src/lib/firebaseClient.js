@@ -34,10 +34,14 @@ let db = null;
 //-------------------------------------------
 // Solo inicializa Firebase si las credenciales son válidas.
 if (firebaseConfig.apiKey && !firebaseConfig.apiKey.startsWith("TU_")) {
-  const app = !getApps().length ? initializeApp(firebaseConfig) : getApps()[0];
-  auth = getAuth(app);
-  storage = getStorage(app);
-  db = getFirestore(app);
+  // Use a more robust way to get the default app instance.
+  // This avoids accidentally getting a named instance if it initializes first.
+  const apps = getApps();
+  const defaultApp = apps.find(app => app.name === '[DEFAULT]') || initializeApp(firebaseConfig);
+
+  auth = getAuth(defaultApp);
+  storage = getStorage(defaultApp);
+  db = getFirestore(defaultApp);
 } else {
     // Muestra una advertencia clara en la consola del navegador si las credenciales no están configuradas.
     if (typeof window !== 'undefined') {
