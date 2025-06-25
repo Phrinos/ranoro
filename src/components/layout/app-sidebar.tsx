@@ -54,24 +54,34 @@ export function AppSidebar() {
   const [newSignatureServices, setNewSignatureServices] = React.useState<ServiceRecord[]>([]);
 
   React.useEffect(() => {
-    if (typeof window !== "undefined") {
-      const authUserString = localStorage.getItem("authUser");
-      if (authUserString) {
-        try {
-          setCurrentUser(JSON.parse(authUserString));
-        } catch (e) {
-          console.error("Failed to parse authUser for sidebar:", e);
-          setCurrentUser(null);
+    const checkNotifications = () => {
+      if (typeof window !== "undefined") {
+        const authUserString = localStorage.getItem("authUser");
+        if (authUserString) {
+          try {
+            setCurrentUser(JSON.parse(authUserString));
+          } catch (e) {
+            console.error("Failed to parse authUser for sidebar:", e);
+            setCurrentUser(null);
+          }
         }
+        
+        // Check for new signatures on load
+        const unreadServices = placeholderServiceRecords.filter(s => 
+          (s.customerSignatureReception && !s.receptionSignatureViewed) ||
+          (s.customerSignatureDelivery && !s.deliverySignatureViewed)
+        );
+        setNewSignatureServices(unreadServices);
       }
-      
-      // Check for new signatures on load
-      const unreadServices = placeholderServiceRecords.filter(s => 
-        (s.customerSignatureReception && !s.receptionSignatureViewed) ||
-        (s.customerSignatureDelivery && !s.deliverySignatureViewed)
-      );
-      setNewSignatureServices(unreadServices);
-    }
+    };
+
+    checkNotifications(); // Initial check
+
+    window.addEventListener('focus', checkNotifications); // Re-check when window gains focus
+
+    return () => {
+      window.removeEventListener('focus', checkNotifications); // Cleanup listener
+    };
   }, []);
 
   const handleLogout = () => {

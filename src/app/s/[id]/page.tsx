@@ -98,7 +98,7 @@ export default function PublicServiceSheetPage() {
       if (result.success) {
         toast({ title: "Firma Guardada", description: result.message });
         setSignatureType(null);
-        router.refresh(); // Refresh server component data
+        window.location.reload(); // Reload the page to show the new signature
       } else {
         toast({ title: "Error al Guardar", description: result.message, variant: "destructive" });
       }
