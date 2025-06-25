@@ -54,7 +54,7 @@ import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
 import { ServiceSheetContent } from '@/components/service-sheet-content';
 import { Checkbox } from "@/components/ui/checkbox";
 import Image from "next/image";
-import { doc, setDoc } from 'firebase/firestore';
+import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { db } from '@root/lib/firebaseClient.js';
 
 
@@ -278,7 +278,7 @@ export function ServiceForm({
         const parsedServiceDate = rawServiceDate ? parseISO(rawServiceDate) : undefined;
         
         const rawDeliveryDate = (data as ServiceRecord)?.deliveryDateTime;
-        const parsedDeliveryDate = rawDeliveryDate ? parseISO(rawDeliveryDate) : undefined;
+        const parsedDeliveryDate = rawRawDeliveryDate ? parseISO(rawDeliveryDate) : undefined;
 
         const dataToReset: Partial<ServiceFormValues> = {
             id: data.id,
@@ -318,6 +318,45 @@ export function ServiceForm({
       }
     }
   }, [initialDataService, initialDataQuote, mode, localVehicles, currentInventoryItems, form, replace]);
+  
+  // Effect to sync signatures from public doc
+  useEffect(() => {
+    const syncSignatures = async () => {
+      const serviceData = mode === 'service' ? initialDataService : null;
+      if (serviceData?.id && serviceData.publicId && db) {
+        try {
+          const publicDocRef = doc(db, 'publicServices', serviceData.publicId);
+          const docSnap = await getDoc(publicDocRef);
+          if (docSnap.exists()) {
+            const publicData = docSnap.data() as ServiceRecord;
+            let changed = false;
+
+            if (publicData.customerSignatureReception && form.getValues('customerSignatureReception') !== publicData.customerSignatureReception) {
+              form.setValue('customerSignatureReception', publicData.customerSignatureReception);
+              changed = true;
+            }
+            if (publicData.customerSignatureDelivery && form.getValues('customerSignatureDelivery') !== publicData.customerSignatureDelivery) {
+              form.setValue('customerSignatureDelivery', publicData.customerSignatureDelivery);
+              changed = true;
+            }
+
+            if (changed) {
+              const serviceIndex = defaultServiceRecords.findIndex(s => s.id === serviceData.id);
+              if (serviceIndex > -1) {
+                if(publicData.customerSignatureReception) defaultServiceRecords[serviceIndex].customerSignatureReception = publicData.customerSignatureReception;
+                if(publicData.customerSignatureDelivery) defaultServiceRecords[serviceIndex].customerSignatureDelivery = publicData.customerSignatureDelivery;
+                await persistToFirestore(['serviceRecords']);
+              }
+              toast({ title: 'Firma Sincronizada', description: 'Se cargó una nueva firma de cliente.' });
+            }
+          }
+        } catch (e) {
+          console.error("Failed to sync signatures from public doc:", e);
+        }
+      }
+    };
+    syncSignatures();
+  }, [initialDataService, mode, form, toast]);
 
 
   useEffect(() => {
