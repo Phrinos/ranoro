@@ -1,6 +1,7 @@
 
 
 
+
 export interface WorkshopInfo {
   name: string;
   phone: string;
@@ -263,7 +264,7 @@ export interface PriceListSupply {
 export interface ApplicableVehicle {
   make: string;
   model: string;
-  years: string;
+  years: number[];
 }
 
 export interface PriceListRecord {

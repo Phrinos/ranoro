@@ -32,7 +32,7 @@ export default function PriceListPage() {
       record.applicableVehicles.some(v => 
         v.make.toLowerCase().includes(lowerSearch) || 
         v.model.toLowerCase().includes(lowerSearch) ||
-        v.years.toLowerCase().includes(lowerSearch)
+        v.years.some(year => String(year).includes(lowerSearch))
       )
     );
   }, [priceList, searchTerm]);
@@ -82,6 +82,12 @@ export default function PriceListPage() {
   }, [priceList, toast]);
   
   const formatCurrency = (amount: number) => `$${amount.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  
+  const formatYearRange = (years: number[]): string => {
+    if (!years || years.length === 0) return 'N/A';
+    const sortedYears = [...years].sort((a, b) => a - b);
+    return sortedYears.join(', ');
+  };
 
   return (
     <>
@@ -137,7 +143,7 @@ export default function PriceListPage() {
                 <ScrollArea className="h-20 pr-3">
                     <div className="flex flex-wrap gap-1">
                       {record.applicableVehicles.map((v, i) => (
-                        <Badge key={i} variant="outline">{v.make} {v.model} ({v.years})</Badge>
+                        <Badge key={i} variant="outline">{v.make} {v.model} ({formatYearRange(v.years)})</Badge>
                       ))}
                     </div>
                 </ScrollArea>

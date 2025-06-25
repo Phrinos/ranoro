@@ -11,6 +11,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { PlusCircle, Trash2, DollarSign } from "lucide-react";
 import type { PriceListRecord } from "@/types";
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuCheckboxItem, DropdownMenuLabel, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 const supplySchema = z.object({
   name: z.string().min(2, "Mínimo 2 caracteres"),
@@ -22,7 +24,7 @@ const supplySchema = z.object({
 const vehicleSchema = z.object({
   make: z.string().min(2, "Mínimo 2 caracteres"),
   model: z.string().min(1, "Mínimo 1 caracter"),
-  years: z.string().min(4, "Ej: 2020-2023"),
+  years: z.array(z.number()).min(1, "Seleccione al menos un año."),
 });
 
 const priceListFormSchema = z.object({
@@ -64,6 +66,9 @@ export function PriceListForm({ initialData, onSubmit, onClose }: PriceListFormP
     control: form.control,
     name: "applicableVehicles",
   });
+
+  const currentYear = new Date().getFullYear();
+  const yearsToShow = Array.from({ length: currentYear - 1980 + 2 }, (_, i) => currentYear + 1 - i);
 
   return (
     <Form {...form}>
@@ -167,11 +172,52 @@ export function PriceListForm({ initialData, onSubmit, onClose }: PriceListFormP
                    <div className="grid grid-cols-3 gap-2">
                     <FormField control={form.control} name={`applicableVehicles.${index}.make`} render={({ field }) => ( <FormItem><FormLabel className="text-xs">Marca</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage/></FormItem> )}/>
                     <FormField control={form.control} name={`applicableVehicles.${index}.model`} render={({ field }) => ( <FormItem><FormLabel className="text-xs">Modelo</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage/></FormItem> )}/>
-                    <FormField control={form.control} name={`applicableVehicles.${index}.years`} render={({ field }) => ( <FormItem><FormLabel className="text-xs">Años</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage/></FormItem> )}/>
+                    <FormField
+                        control={form.control}
+                        name={`applicableVehicles.${index}.years`}
+                        render={({ field: yearsField }) => (
+                            <FormItem>
+                            <FormLabel className="text-xs">Años</FormLabel>
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                <FormControl>
+                                    <Button variant="outline" className="w-full justify-start font-normal text-xs h-9">
+                                    {(yearsField.value?.length || 0) > 0
+                                        ? `${yearsField.value.length} año(s) seleccionado(s)`
+                                        : "Seleccionar años"}
+                                    </Button>
+                                </FormControl>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent className="w-56" align="start">
+                                <DropdownMenuLabel>Años de Modelo</DropdownMenuLabel>
+                                <DropdownMenuSeparator />
+                                <ScrollArea className="h-60">
+                                    {yearsToShow.map((year) => (
+                                    <DropdownMenuCheckboxItem
+                                        key={year}
+                                        checked={yearsField.value?.includes(year)}
+                                        onCheckedChange={(checked) => {
+                                        const currentYears = yearsField.value || [];
+                                        const newYears = checked
+                                            ? [...currentYears, year]
+                                            : currentYears.filter((y) => y !== year);
+                                        yearsField.onChange(newYears.sort((a, b) => b - a));
+                                        }}
+                                    >
+                                        {year}
+                                    </DropdownMenuCheckboxItem>
+                                    ))}
+                                </ScrollArea>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                            <FormMessage />
+                            </FormItem>
+                        )}
+                    />
                    </div>
                 </div>
               ))}
-               <Button type="button" variant="outline" size="sm" onClick={() => appendVehicle({ make: '', model: '', years: '' })}>
+               <Button type="button" variant="outline" size="sm" onClick={() => appendVehicle({ make: '', model: '', years: [] })}>
                 <PlusCircle className="mr-2 h-4 w-4" /> Añadir Vehículo
               </Button>
             </CardContent>
