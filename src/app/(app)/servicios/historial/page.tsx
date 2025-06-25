@@ -194,20 +194,44 @@ export default function HistorialServiciosPage() {
     }
   }, [inventoryItems, technicians, vehicles, toast]);
 
-  const handleDeleteService = useCallback(async (serviceId: string) => {
-    const serviceToDelete = allServices.find(s => s.id === serviceId);
-    setAllServices(prevServices => prevServices.filter(s => s.id !== serviceId));
-    const pIndex = placeholderServiceRecords.findIndex(s => s.id === serviceId);
-    if (pIndex !== -1) {
-        placeholderServiceRecords.splice(pIndex, 1);
+  const handleCancelService = useCallback(async (serviceId: string, reason: string) => {
+    const authUserString = localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY);
+    const currentUser: User | null = authUserString ? JSON.parse(authUserString) : null;
+    
+    const serviceIndex = placeholderServiceRecords.findIndex(s => s.id === serviceId);
+    if (serviceIndex === -1) {
+        toast({ title: "Error", description: "Servicio no encontrado.", variant: "destructive" });
+        return;
     }
-    await persistToFirestore(['serviceRecords']);
+    
+    const service = placeholderServiceRecords[serviceIndex];
+    if (service.status === 'Cancelado') {
+        toast({ title: "Acción no válida", description: "Este servicio ya ha sido cancelado.", variant: "default" });
+        return;
+    }
+
+    service.status = 'Cancelado';
+    service.cancellationReason = reason;
+    service.cancelledBy = currentUser?.name || 'Usuario desconocido';
+
+    // Restore inventory if items were used
+    if (service.suppliesUsed && service.suppliesUsed.length > 0) {
+      service.suppliesUsed.forEach(supply => {
+        const invIndex = placeholderInventory.findIndex(i => i.id === supply.supplyId);
+        if (invIndex > -1 && !placeholderInventory[invIndex].isService) {
+          placeholderInventory[invIndex].quantity += supply.quantity;
+        }
+      });
+    }
+    
+    setAllServices([...placeholderServiceRecords]);
+    await persistToFirestore(['serviceRecords', 'inventory']);
 
     toast({
-      title: "Servicio Eliminado",
-      description: `El servicio con ID ${serviceId} (${serviceToDelete?.description}) ha sido eliminado.`,
+      title: "Servicio Cancelado",
+      description: `El servicio ${serviceId} ha sido cancelado.`,
     });
-  }, [allServices, toast]);
+  }, [toast]);
   
   const handleVehicleCreated = useCallback((newVehicle: Vehicle) => {
     setVehicles(prev => {
@@ -430,7 +454,7 @@ export default function HistorialServiciosPage() {
         technicians={technicians}
         inventoryItems={inventoryItems}
         onServiceUpdated={handleUpdateService}
-        onServiceDeleted={handleDeleteService}
+        onServiceCancelled={handleCancelService}
         onVehicleCreated={handleVehicleCreated}
         onShowSheet={handleShowSheet}
         isHistoryView={true}
