@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useMemo, useCallback } from 'react';
@@ -5,7 +6,7 @@ import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
-import { PlusCircle, Search, Trash2, Edit, Car, Wrench, Clock, DollarSign } from "lucide-react";
+import { PlusCircle, Search, Trash2, Edit, Car, Wrench, Clock } from "lucide-react";
 import { useToast } from '@/hooks/use-toast';
 import { persistToFirestore, placeholderPriceList } from '@/lib/placeholder-data';
 import type { PriceListRecord } from '@/types';

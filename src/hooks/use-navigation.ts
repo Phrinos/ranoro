@@ -117,7 +117,7 @@ const BASE_NAV_STRUCTURE: ReadonlyArray<Omit<NavigationEntry, 'isActive'>> = [
     path: '/precios',
     icon: Database,
     groupTag: "Mi Oficina",
-    permissions: ['inventory:manage']
+    permissions: ['services:edit']
   },
   { 
     label: 'Staff Técnico', 
