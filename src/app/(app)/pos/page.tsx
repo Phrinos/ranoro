@@ -1,3 +1,4 @@
+
 "use client";
 
 import { PageHeader } from "@/components/page-header";
@@ -41,7 +42,6 @@ import {
   placeholderSales,
   placeholderInventory,
   calculateSaleProfit,
-  IVA_RATE,
   persistToFirestore,
   hydrateReady, // <- NUEVO
 } from "@/lib/placeholder-data";
@@ -63,7 +63,7 @@ import {
   startOfDay,
   endOfDay,
 } from "date-fns";
-import { es } from "date-fns/locale";
+import { es } from 'date-fns/locale';
 import type { DateRange } from "react-day-picker";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -86,6 +86,7 @@ type SaleSortOption =
 export default function POSPage() {
   const router = useRouter();
   const { toast } = useToast();
+  const IVA_RATE = 0.16;
 
   // Forzar re–renderes cuando las colecciones placeholder cambian
   const [version, setVersion] = useState(0);

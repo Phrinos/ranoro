@@ -5,7 +5,7 @@ import * as React from "react"
 import { Bar, BarChart, Pie, PieChart, CartesianGrid, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer } from "recharts"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart"
-import { placeholderServiceRecords, placeholderSales, calculateSaleProfit, placeholderInventory, IVA_RATE } from "@/lib/placeholder-data"
+import { placeholderServiceRecords, placeholderSales, calculateSaleProfit, placeholderInventory } from "@/lib/placeholder-data"
 import { subMonths, format, startOfMonth, endOfMonth, isWithinInterval, parseISO } from "date-fns"
 import { es } from "date-fns/locale"
 
@@ -13,6 +13,7 @@ export function DashboardCharts() {
   const [monthlyChartData, setMonthlyChartData] = React.useState<any[]>([]);
   const [serviceTypeChartData, setServiceTypeChartData] = React.useState<any[]>([]);
   const [revenueSourceChartData, setRevenueSourceChartData] = React.useState<any[]>([]);
+  const IVA_RATE = 0.16;
 
   React.useEffect(() => {
     // Process data for monthly performance chart
