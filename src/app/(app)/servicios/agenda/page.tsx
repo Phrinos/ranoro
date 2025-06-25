@@ -565,9 +565,14 @@ export default function AgendaServiciosPage() {
                                     <h4 className="font-semibold text-lg" title={vehicleMakeModelYear}>
                                         {vehicle ? `${vehicle.licensePlate} - ${vehicleMakeModelYear}` : 'N/A'}
                                     </h4>
-                                    <p className="text-sm text-muted-foreground mt-1 truncate" title={descriptionText}>
-                                        {descriptionText}
-                                    </p>
+                                    <div className="flex items-center gap-2 mt-1">
+                                      {service.serviceType && (
+                                        <Badge variant="outline" className="shrink-0">{service.serviceType}</Badge>
+                                      )}
+                                      <p className="text-sm text-muted-foreground truncate" title={descriptionText}>
+                                          {descriptionText}
+                                      </p>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -575,16 +580,16 @@ export default function AgendaServiciosPage() {
                         <div className="w-48 shrink-0 flex flex-col items-center justify-center p-4 gap-y-2">
                             <Badge variant={getStatusVariant(service.status)} className="w-full justify-center text-center text-base">{service.status}</Badge>
                             <div className="flex">
-                                {service.status === 'Agendado' ? (
-                                    originalQuote && (
-                                        <Button variant="ghost" size="icon" title="Ver Cotización Original" onClick={(e) => { e.stopPropagation(); handleViewQuote(service.id); }}>
-                                            <Tag className="h-4 w-4 text-purple-600" />
+                                {originalQuote ? (
+                                    <Button variant="ghost" size="icon" title="Ver Cotización Original" onClick={(e) => { e.stopPropagation(); handleViewQuote(service.id); }}>
+                                        <Tag className="h-4 w-4 text-purple-600" />
+                                    </Button>
+                                ) : (
+                                    service.status !== 'Agendado' && (
+                                        <Button variant="ghost" size="icon" title="Ver Hoja de Servicio" onClick={() => handleShowSheet(service)}>
+                                            <FileText className="h-4 w-4" />
                                         </Button>
                                     )
-                                ) : (
-                                    <Button variant="ghost" size="icon" title="Ver Hoja de Servicio" onClick={() => handleShowSheet(service)}>
-                                        <FileText className="h-4 w-4" />
-                                    </Button>
                                 )}
                                 <Button variant="ghost" size="icon" title="Editar Detalles" onClick={(e) => {e.stopPropagation(); handleOpenEditDialog(service);}} disabled={service.status === 'Completado' || service.status === 'Cancelado'}>
                                     <Edit className="h-4 w-4" />
@@ -612,7 +617,7 @@ export default function AgendaServiciosPage() {
                                         <AlertDialogFooter>
                                             <AlertDialogCancel onClick={() => setCancellationReason('')}>No</AlertDialogCancel>
                                             <AlertDialogAction onClick={() => { handleCancelService(service.id, cancellationReason); setCancellationReason(''); }} disabled={!cancellationReason.trim()} className="bg-destructive hover:bg-destructive/90">
-                                                Sí, Cancelar
+                                                Sí, Cancelar Servicio Agendado
                                             </AlertDialogAction>
                                         </AlertDialogFooter>
                                     </AlertDialogContent>

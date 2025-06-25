@@ -216,7 +216,7 @@ export function ServiceForm({
         technicianId: (initialData as ServiceRecord)?.technicianId || (initialData as QuoteRecord)?.preparedByTechnicianId || "",
         serviceItems: [],
         status: mode === 'service' ? ((initialData as ServiceRecord)?.status || 'Agendado') : 'Cotizacion',
-        serviceType: mode === 'service' ? ((initialData as ServiceRecord)?.serviceType || 'Servicio General') : undefined,
+        serviceType: (initialData as ServiceRecord)?.serviceType || (initialData as QuoteRecord)?.serviceType || 'Servicio General',
         deliveryDateTime: undefined,
         vehicleConditions: (initialData as ServiceRecord)?.vehicleConditions || "",
         fuelLevel: (initialData as ServiceRecord)?.fuelLevel || undefined,
@@ -321,7 +321,7 @@ export function ServiceForm({
             notes: data.notes || "",
             technicianId: (data as ServiceRecord)?.technicianId || (data as QuoteRecord)?.preparedByTechnicianId || undefined,
             status: mode === 'service' ? ((data as ServiceRecord)?.status || 'Agendado') : 'Cotizacion',
-            serviceType: mode === 'service' ? ((data as ServiceRecord)?.serviceType || 'Servicio General') : undefined,
+            serviceType: (data as ServiceRecord)?.serviceType || (data as QuoteRecord)?.serviceType || 'Servicio General',
             vehicleConditions: (data as ServiceRecord)?.vehicleConditions || "",
             fuelLevel: (data as ServiceRecord)?.fuelLevel || undefined,
             customerItems: (data as ServiceRecord)?.customerItems || '',
@@ -605,6 +605,7 @@ export function ServiceForm({
         serviceAdvisorId: currentUser.id,
         serviceItems: values.serviceItems,
         safetyInspection: values.safetyInspection,
+        serviceType: values.serviceType || 'Servicio General',
       };
 
       serviceData.vehicleIdentifier = selectedVehicle?.licensePlate || values.vehicleLicensePlateSearch || 'N/A';
@@ -618,7 +619,6 @@ export function ServiceForm({
       if (currentUser.signatureDataUrl) serviceData.serviceAdvisorSignatureDataUrl = currentUser.signatureDataUrl;
       if (values.customerSignatureReception) serviceData.customerSignatureReception = values.customerSignatureReception;
       if (values.customerSignatureDelivery) serviceData.customerSignatureDelivery = values.customerSignatureDelivery;
-      if (values.serviceType) serviceData.serviceType = values.serviceType;
       if (values.mileage) serviceData.mileage = values.mileage;
       if (values.notes) serviceData.notes = values.notes;
       if (values.vehicleConditions) serviceData.vehicleConditions = values.vehicleConditions;
@@ -638,7 +638,8 @@ export function ServiceForm({
         vehicleId: vehicleIdToSave,
         description: compositeDescription,
         serviceItems: values.serviceItems,
-        status: 'Cotizacion' // Always Cotizacion if not converting
+        status: 'Cotizacion', // Always Cotizacion if not converting
+        serviceType: values.serviceType || 'Servicio General',
       };
       
       quoteData.vehicleIdentifier = selectedVehicle?.licensePlate || values.vehicleLicensePlateSearch || 'N/A';
@@ -844,9 +845,9 @@ export function ServiceForm({
             <TabsContent value="servicio" className="space-y-6 mt-0">
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between">
-                    <CardTitle className="text-lg">{mode === 'quote' ? "Información de la Cotización" : "Información del Servicio"}</CardTitle>
-                    <div className="flex gap-2">
-                        {((mode === 'quote' && initialDataQuote?.id) || (mode === 'service' && originalQuote)) && (
+                    <CardTitle className="text-lg flex items-center gap-4">{mode === 'quote' ? "Información de la Cotización" : "Información del Servicio"}
+                      <div className="flex gap-2">
+                        {((mode === 'quote' && initialDataQuote?.id) || originalQuote) && (
                             <Button type="button" onClick={handleViewQuote} variant="outline" size="icon" className="bg-card" title="Ver Cotización">
                                 <FileText className="h-4 w-4" />
                                 <span className="sr-only">Ver Cotización</span>
@@ -858,11 +859,12 @@ export function ServiceForm({
                                 <span className="sr-only">Ver Hoja de Servicio</span>
                             </Button>
                         )}
-                    </div>
+                      </div>
+                    </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                    {showStatusFields && (
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {showStatusFields && (
                         <FormField
                             control={form.control}
                             name="status"
@@ -885,14 +887,36 @@ export function ServiceForm({
                                 </FormItem>
                             )}
                         />
-                        {(watchedStatus === 'Reparando' || watchedStatus === 'Completado') && (
-                            <FormField
-                                control={form.control}
-                                name="technicianId"
-                                render={({ field }) => (<FormItem><FormLabel>Técnico Asignado</FormLabel><Select onValueChange={field.onChange} value={field.value} disabled={isReadOnly}><FormControl><SelectTrigger><SelectValue placeholder="Seleccione un técnico" /></SelectTrigger></FormControl><SelectContent>{technicians.map((technician) => (<SelectItem key={technician.id} value={technician.id}>{technician.name}</SelectItem>))}</SelectContent></Select><FormMessage /></FormItem>)}/>
+                      )}
+                      <FormField
+                        control={form.control}
+                        name="serviceType"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Tipo de Servicio</FormLabel>
+                            <Select onValueChange={field.onChange} value={field.value || 'Servicio General'} disabled={isReadOnly}>
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Seleccione un tipo" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                <SelectItem value="Servicio General">Servicio General</SelectItem>
+                                <SelectItem value="Cambio de Aceite">Cambio de Aceite</SelectItem>
+                                <SelectItem value="Pintura">Pintura</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
                         )}
-                      </div>
-                    )}
+                      />
+                      {(watchedStatus === 'Reparando' || watchedStatus === 'Completado') && (
+                          <FormField
+                              control={form.control}
+                              name="technicianId"
+                              render={({ field }) => (<FormItem><FormLabel>Técnico Asignado</FormLabel><Select onValueChange={field.onChange} value={field.value} disabled={isReadOnly}><FormControl><SelectTrigger><SelectValue placeholder="Seleccione un técnico" /></SelectTrigger></FormControl><SelectContent>{technicians.map((technician) => (<SelectItem key={technician.id} value={technician.id}>{technician.name}</SelectItem>))}</SelectContent></Select><FormMessage /></FormItem>)}/>
+                      )}
+                    </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
                       <FormField control={form.control} name="vehicleLicensePlateSearch" render={({ field }) => (<FormItem className="w-full"><FormLabel>Placa del Vehículo</FormLabel><FormControl><Input placeholder="Buscar/Ingresar Placas" {...field} value={vehicleLicensePlateSearch} onChange={(e) => {setVehicleLicensePlateSearch(e.target.value.toUpperCase()); field.onChange(e.target.value.toUpperCase());}} disabled={isReadOnly} className="uppercase" onKeyDown={handleVehiclePlateKeyDown} /></FormControl></FormItem>)}/>
                       <FormField control={form.control} name="mileage" render={({ field }) => ( <FormItem><FormLabel>Kilometraje (Opcional)</FormLabel><FormControl><Input type="number" placeholder="Ej: 55000 km" {...field} disabled={isReadOnly} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>)}/>
@@ -1275,6 +1299,3 @@ function SafetyCheckItemControl({ name, label, control, isReadOnly }: SafetyChec
     </div>
   );
 }
-
-
-
