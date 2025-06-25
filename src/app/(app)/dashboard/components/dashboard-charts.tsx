@@ -2,7 +2,7 @@
 "use client"
 
 import * as React from "react"
-import { Bar, BarChart, Pie, PieChart, CartesianGrid, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer } from "recharts"
+import { Line, LineChart, Pie, PieChart, CartesianGrid, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer } from "recharts"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart"
 import { placeholderServiceRecords, placeholderSales, calculateSaleProfit, placeholderInventory } from "@/lib/placeholder-data"
@@ -63,9 +63,9 @@ export function DashboardCharts() {
         }
     });
     setServiceTypeChartData([
-        { name: "General", value: serviceTypeCounts['Servicio General'], fill: "var(--color-general)" },
-        { name: "Aceite", value: serviceTypeCounts['Cambio de Aceite'], fill: "var(--color-aceite)" },
-        { name: "Pintura", value: serviceTypeCounts['Pintura'], fill: "var(--color-pintura)" }
+        { name: "General", value: serviceTypeCounts['Servicio General'], fill: "hsl(var(--chart-1))" },
+        { name: "Aceite", value: serviceTypeCounts['Cambio de Aceite'], fill: "hsl(var(--chart-2))" },
+        { name: "Pintura", value: serviceTypeCounts['Pintura'], fill: "hsl(var(--chart-3))" }
     ]);
     
     // Process data for revenue source chart
@@ -74,8 +74,8 @@ export function DashboardCharts() {
         .reduce((sum, s) => sum + s.totalCost, 0);
     const totalPosRevenue = placeholderSales.reduce((sum, s) => sum + s.totalAmount, 0);
     setRevenueSourceChartData([
-        { source: 'Servicios', value: totalServiceRevenue, fill: 'var(--color-servicios)' },
-        { source: 'Ventas POS', value: totalPosRevenue, fill: 'var(--color-ventas)' },
+        { source: 'Servicios', value: totalServiceRevenue, fill: 'hsl(var(--chart-1))' },
+        { source: 'Ventas POS', value: totalPosRevenue, fill: 'hsl(var(--chart-2))' },
     ]);
 
   }, []);
@@ -94,14 +94,14 @@ export function DashboardCharts() {
   } satisfies ChartConfig;
   
   const serviceTypeChartConfig = {
-      general: { label: "General", color: "hsl(var(--chart-1))" },
-      aceite: { label: "Cambio de Aceite", color: "hsl(var(--chart-2))" },
-      pintura: { label: "Pintura", color: "hsl(var(--chart-3))" },
+      General: { label: "General", color: "hsl(var(--chart-1))" },
+      Aceite: { label: "Cambio de Aceite", color: "hsl(var(--chart-2))" },
+      Pintura: { label: "Pintura", color: "hsl(var(--chart-3))" },
   } satisfies ChartConfig;
 
   const revenueSourceChartConfig = {
-    servicios: { label: 'Servicios', color: "hsl(var(--chart-1))" },
-    ventas: { label: 'Ventas POS', color: "hsl(var(--chart-2))" },
+    Servicios: { label: 'Servicios', color: "hsl(var(--chart-1))" },
+    'Ventas POS': { label: 'Ventas POS', color: "hsl(var(--chart-2))" },
   } satisfies ChartConfig
 
   return (
@@ -109,32 +109,19 @@ export function DashboardCharts() {
       <Card>
         <CardHeader>
           <CardTitle>Ingresos vs. Ganancia (Últimos 6 Meses)</CardTitle>
-          <CardDescription>Comparativo mensual de ingresos brutos y ganancia neta.</CardDescription>
+          <CardDescription>Evolución mensual de ingresos brutos y ganancia neta.</CardDescription>
         </CardHeader>
         <CardContent>
-          <ChartContainer config={monthlyChartConfig}>
-            <BarChart data={monthlyChartData}>
+          <ChartContainer config={monthlyChartConfig} className="h-[250px] w-full">
+            <LineChart accessibilityLayer data={monthlyChartData} margin={{ left: 12, right: 12, top: 5 }}>
               <CartesianGrid vertical={false} />
-              <XAxis
-                dataKey="month"
-                tickLine={false}
-                tickMargin={10}
-                axisLine={false}
-              />
-              <YAxis
-                tickFormatter={formatCurrency}
-                tickLine={false}
-                axisLine={false}
-                tickMargin={10}
-              />
-              <ChartTooltip
-                cursor={false}
-                content={<ChartTooltipContent formatter={formatCurrency} />}
-              />
+              <XAxis dataKey="month" tickLine={false} axisLine={false} tickMargin={8} />
+              <YAxis tickLine={false} axisLine={false} tickMargin={8} tickFormatter={(value) => `$${new Intl.NumberFormat('es-MX', {notation: "compact", compactDisplay: "short"}).format(value)}`} />
+              <ChartTooltip cursor={false} content={<ChartTooltipContent formatter={formatCurrency} />} />
               <Legend />
-              <Bar dataKey="revenue" fill="var(--color-revenue)" radius={4} name="Ingresos" />
-              <Bar dataKey="profit" fill="var(--color-profit)" radius={4} name="Ganancia" />
-            </BarChart>
+              <Line dataKey="revenue" type="monotone" stroke="var(--color-revenue)" strokeWidth={2} dot={{ r: 4 }} activeDot={{ r: 6 }} name="Ingresos" />
+              <Line dataKey="profit" type="monotone" stroke="var(--color-profit)" strokeWidth={2} dot={{ r: 4 }} activeDot={{ r: 6 }} name="Ganancia" />
+            </LineChart>
           </ChartContainer>
         </CardContent>
       </Card>
@@ -145,27 +132,25 @@ export function DashboardCharts() {
             <CardTitle>Distribución de Servicios</CardTitle>
             <CardDescription>Tipos de servicios más comunes.</CardDescription>
           </CardHeader>
-          <CardContent className="flex-1 pb-0">
-            <ChartContainer config={serviceTypeChartConfig}>
+          <CardContent className="flex-1 flex items-center justify-center pb-4">
+            <ChartContainer config={serviceTypeChartConfig} className="mx-auto aspect-square max-h-[250px]">
               <PieChart>
                 <ChartTooltip content={<ChartTooltipContent hideLabel />} />
-                <Pie data={serviceTypeChartData} dataKey="value" nameKey="name" />
+                <Pie data={serviceTypeChartData} dataKey="value" nameKey="name" innerRadius={50} />
+                <Legend content={({ payload }) => (
+                  <ul className="grid gap-2 text-sm mt-4">
+                    {payload?.map((item, index) => (
+                      <li key={index} className="flex items-center gap-2">
+                        <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: item.color }} />
+                        <span className="text-muted-foreground">{item.value}</span>
+                        <span className="font-medium">({item.payload.value})</span>
+                      </li>
+                    ))}
+                  </ul>
+                )} />
               </PieChart>
             </ChartContainer>
           </CardContent>
-           <CardContent className="flex-1 flex items-center justify-center p-4">
-              <Legend content={({ payload }) => (
-                <ul className="grid gap-2 text-sm">
-                  {payload?.map((item, index) => item.payload && (
-                    <li key={index} className="flex items-center gap-2">
-                      <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: item.color }} />
-                      <span className="text-muted-foreground">{item.value}</span>
-                      <span className="font-medium">{item.payload.value}</span>
-                    </li>
-                  ))}
-                </ul>
-              )} />
-            </CardContent>
         </Card>
 
         <Card className="flex flex-col">
@@ -173,29 +158,24 @@ export function DashboardCharts() {
             <CardTitle>Fuentes de Ingreso</CardTitle>
             <CardDescription>Comparativo de ingresos por servicios vs. ventas POS.</CardDescription>
           </CardHeader>
-          <CardContent className="flex-1 pb-0">
-            <ChartContainer
-                config={revenueSourceChartConfig}
-                className="mx-auto aspect-square max-h-[250px]"
-            >
-                <PieChart>
-                    <ChartTooltip content={<ChartTooltipContent hideLabel formatter={formatCurrency} />} />
-                    <Pie data={revenueSourceChartData} dataKey="value" nameKey="source" innerRadius={60} />
-                </PieChart>
-            </ChartContainer>
-          </CardContent>
-          <CardContent className="flex-1 flex items-center justify-center p-4">
-            <Legend content={({ payload }) => (
-              <ul className="grid gap-2 text-sm">
-                {payload?.map((item, index) => item.payload && (
-                  <li key={index} className="flex items-center gap-2">
-                    <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: item.color }} />
-                    <span className="text-muted-foreground">{item.payload.source}</span>
-                    <span className="font-medium">{formatCurrency(item.payload.value)}</span>
-                  </li>
-                ))}
-              </ul>
-            )} />
+          <CardContent className="flex-1 flex items-center justify-center pb-4">
+              <ChartContainer config={revenueSourceChartConfig} className="mx-auto aspect-square max-h-[250px]">
+                  <PieChart>
+                      <ChartTooltip content={<ChartTooltipContent hideLabel formatter={formatCurrency} />} />
+                      <Pie data={revenueSourceChartData} dataKey="value" nameKey="source" innerRadius={50} />
+                      <Legend content={({ payload }) => (
+                        <ul className="grid gap-2 text-sm mt-4">
+                          {payload?.map((item, index) => (
+                            <li key={index} className="flex items-center gap-2">
+                              <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: item.color }} />
+                              <span className="text-muted-foreground">{item.value}</span>
+                              <span className="font-medium">{formatCurrency(item.payload.value)}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      )} />
+                  </PieChart>
+              </ChartContainer>
           </CardContent>
         </Card>
       </div>
