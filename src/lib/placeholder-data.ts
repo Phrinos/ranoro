@@ -266,6 +266,13 @@ export async function hydrateFromFirestore() {
     console.warn('Could not read from Firestore. This might be due to Firestore rules. The app will proceed with in-memory data for this session.');
   }
 
+  // Clear all quotes after hydration to ensure they are deleted from the database
+  if (placeholderQuotes.length > 0) {
+    console.log(`DELETING ${placeholderQuotes.length} QUOTES AS REQUESTED...`);
+    placeholderQuotes.splice(0, placeholderQuotes.length);
+    changesMade = true;
+  }
+
   // --- DATA INTEGRITY CHECKS ---
   if (!placeholderUsers.some((u) => u.id === defaultSuperAdmin.id)) {
     placeholderUsers.unshift(defaultSuperAdmin);
