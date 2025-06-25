@@ -38,6 +38,13 @@ export const QuotesTable = React.memo(({ quotes, vehicles, onViewQuote, onEditQu
   const getStatusText = (serviceId?: string): string => {
       return serviceId ? "Ingresado" : "Pendiente";
   }
+
+  const getQuoteDescriptionText = (quote: QuoteRecord) => {
+    if (quote.serviceItems && quote.serviceItems.length > 0) {
+      return quote.serviceItems.map(item => item.name).join(', ');
+    }
+    return quote.description || 'Sin descripción';
+  };
   
   const memoizedQuotes = useMemo(() => quotes.map(quote => {
     const quoteDate = quote.quoteDate ? parseISO(quote.quoteDate) : new Date();
@@ -54,6 +61,7 @@ export const QuotesTable = React.memo(({ quotes, vehicles, onViewQuote, onEditQu
         estimatedCostFormatted: formatCurrency(quote.estimatedTotalCost),
         estimatedProfitFormatted: formatCurrency(quote.estimatedProfit),
         vehicleDisplay,
+        descriptionText: getQuoteDescriptionText(quote),
     }
   }), [quotes, vehicles]);
 
@@ -94,8 +102,8 @@ export const QuotesTable = React.memo(({ quotes, vehicles, onViewQuote, onEditQu
                       <h4 className="font-semibold text-lg" title={quote.vehicleDisplay}>
                         {quote.vehicleDisplay || 'N/A'}
                       </h4>
-                      <p className="text-sm text-muted-foreground mt-1 truncate" title={quote.description}>
-                        {quote.description}
+                      <p className="text-sm text-muted-foreground mt-1 truncate" title={quote.descriptionText}>
+                        {quote.descriptionText}
                       </p>
                     </div>
                   </div>
