@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React, { useState, useMemo } from "react";
@@ -213,7 +214,8 @@ export const ServicesTable = React.memo(({
             technicians={technicians}
             inventoryItems={inventoryItems}
             onSave={handleDialogSave as any}
-            onVehicleCreated={onVehicleCreated} 
+            onVehicleCreated={onVehicleCreated}
+            onCancelService={onServiceCancelled}
         />
       )}
     </>
