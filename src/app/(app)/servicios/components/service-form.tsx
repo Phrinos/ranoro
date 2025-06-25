@@ -72,7 +72,7 @@ const supplySchema = z.object({
 const serviceItemSchema = z.object({
   id: z.string(),
   name: z.string().min(3, "El nombre del servicio es requerido."),
-  price: z.coerce.number().min(0, "El precio debe ser un número positivo.").optional(),
+  price: z.coerce.number({invalid_type_error: "El precio debe ser un número."}).min(0, "El precio debe ser un número positivo.").optional(),
   suppliesUsed: z.array(supplySchema),
 });
 
@@ -514,10 +514,18 @@ export function ServiceForm({
         return;
     }
 
-    const finalSubTotal = totalCost / (1 + IVA_RATE);
-    const finalTaxAmount = totalCost - finalSubTotal;
+    // Recalculate totals on submit to ensure accuracy
+    const finalTotalCost = values.serviceItems?.reduce((sum, item) => sum + (item.price || 0), 0) || 0;
+    const finalTotalSuppliesCost = values.serviceItems?.flatMap(item => item.suppliesUsed).reduce((sum, supply) => {
+        const item = currentInventoryItems.find(i => i.id === supply.supplyId);
+        const costPerUnit = item?.unitPrice || supply.unitPrice || 0;
+        return sum + costPerUnit * supply.quantity;
+    }, 0) || 0;
+
+    const finalSubTotal = finalTotalCost / (1 + IVA_RATE);
+    const finalTaxAmount = finalTotalCost - finalSubTotal;
+    const finalProfit = finalTotalCost - finalTotalSuppliesCost;
     
-    // Create a composite description from service items
     const compositeDescription = values.serviceItems.map(item => item.name).join(', ') || 'Servicio';
     
     if (mode === 'service') {
@@ -529,7 +537,7 @@ export function ServiceForm({
         description: compositeDescription,
         technicianId: values.technicianId || '',
         status: values.status || 'Agendado',
-        totalCost: totalCost,
+        totalCost: finalTotalCost,
         serviceAdvisorId: currentUser.id,
         serviceItems: values.serviceItems,
       };
@@ -538,8 +546,8 @@ export function ServiceForm({
       serviceData.technicianName = technicians.find(t => t.id === values.technicianId)?.name || 'N/A';
       serviceData.subTotal = finalSubTotal;
       serviceData.taxAmount = finalTaxAmount;
-      serviceData.totalSuppliesCost = totalSuppliesWorkshopCost;
-      serviceData.serviceProfit = totalCost - totalSuppliesWorkshopCost;
+      serviceData.totalSuppliesCost = finalTotalSuppliesCost;
+      serviceData.serviceProfit = finalProfit;
       serviceData.serviceAdvisorName = currentUser.name;
       serviceData.receptionSignatureViewed = (initialDataService as ServiceRecord)?.receptionSignatureViewed || false;
       serviceData.deliverySignatureViewed = (initialDataService as ServiceRecord)?.deliverySignatureViewed || false;
@@ -572,11 +580,11 @@ export function ServiceForm({
       quoteData.vehicleIdentifier = selectedVehicle?.licensePlate || values.vehicleLicensePlateSearch || 'N/A';
       quoteData.preparedByTechnicianId = currentUser.id;
       quoteData.preparedByTechnicianName = currentUser.name;
-      quoteData.estimatedTotalCost = totalCost;
+      quoteData.estimatedTotalCost = finalTotalCost;
       quoteData.estimatedSubTotal = finalSubTotal;
       quoteData.estimatedTaxAmount = finalTaxAmount;
-      quoteData.estimatedTotalSuppliesCost = totalSuppliesWorkshopCost;
-      quoteData.estimatedProfit = totalCost - totalSuppliesWorkshopCost;
+      quoteData.estimatedTotalSuppliesCost = finalTotalSuppliesCost;
+      quoteData.estimatedProfit = finalProfit;
       
       if (values.notes) quoteData.notes = values.notes;
       if (values.mileage) quoteData.mileage = values.mileage;
@@ -763,7 +771,7 @@ export function ServiceForm({
                       <FormField control={form.control} name="vehicleLicensePlateSearch" render={({ field }) => (<FormItem className="w-full"><FormLabel>Placa del Vehículo</FormLabel><FormControl><Input placeholder="Buscar/Ingresar Placas" {...field} value={vehicleLicensePlateSearch} onChange={(e) => {setVehicleLicensePlateSearch(e.target.value.toUpperCase()); field.onChange(e.target.value.toUpperCase());}} disabled={isReadOnly} className="uppercase" onKeyDown={handleVehiclePlateKeyDown} /></FormControl></FormItem>)}/>
                       <FormField control={form.control} name="mileage" render={({ field }) => ( <FormItem><FormLabel>Kilometraje (Opcional)</FormLabel><FormControl><Input type="number" placeholder="Ej: 55000 km" {...field} disabled={isReadOnly} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>)}/>
                     </div>
-                     <FormField control={form.control} name="serviceDate" render={({ field }) => (<FormItem className="flex flex-col"><FormLabel>Fecha y Hora del Servicio</FormLabel><Popover><PopoverTrigger asChild disabled={isReadOnly}><FormControl><Button variant={"outline"} className={cn("w-full justify-start text-left font-normal",!field.value && "text-muted-foreground")} disabled={isReadOnly}>{field.value && isValid(field.value) ? (format(field.value, "PPPp", { locale: es })) : (<span>Seleccione fecha y hora</span>)}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value} onSelect={(date) => { const currentTime = field.value || setHours(setMinutes(new Date(), 30), 8); const newDateTime = date ? setHours(setMinutes(startOfDay(date), currentTime.getMinutes()), currentTime.getHours()) : undefined; field.onChange(newDateTime);}} disabled={(date) => date < new Date("1900-01-01") || isReadOnly } initialFocus locale={es}/><div className="p-2 border-t"><Select value={field.value ? `${String(field.value.getHours()).padStart(2, '0')}:${String(field.value.getMinutes()).padStart(2, '0')}` : "08:30"} onValueChange={(timeValue) => handleTimeChange(timeValue, "serviceDate")} disabled={isReadOnly}><SelectTrigger><SelectValue placeholder="Seleccione hora" /></SelectTrigger><SelectContent>{timeSlots.map(slot => (<SelectItem key={slot.value} value={slot.value}>{slot.label}</SelectItem>))}</SelectContent></Select></div></PopoverContent></Popover><FormMessage /></FormItem>)}/>
+                     <FormField control={form.control} name="serviceDate" render={({ field }) => (<FormItem className="flex flex-col"><FormLabel>Fecha y Hora del Servicio Agendado</FormLabel><Popover><PopoverTrigger asChild disabled={isReadOnly}><FormControl><Button variant={"outline"} className={cn("w-full justify-start text-left font-normal",!field.value && "text-muted-foreground")} disabled={isReadOnly}>{field.value && isValid(field.value) ? (format(field.value, "PPPp", { locale: es })) : (<span>Seleccione fecha y hora</span>)}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value} onSelect={(date) => { const currentTime = field.value || setHours(setMinutes(new Date(), 30), 8); const newDateTime = date ? setHours(setMinutes(startOfDay(date), currentTime.getMinutes()), currentTime.getHours()) : undefined; field.onChange(newDateTime);}} disabled={(date) => date < new Date("1900-01-01") || isReadOnly } initialFocus locale={es}/><div className="p-2 border-t"><Select value={field.value ? `${String(field.value.getHours()).padStart(2, '0')}:${String(field.value.getMinutes()).padStart(2, '0')}` : "08:30"} onValueChange={(timeValue) => handleTimeChange(timeValue, "serviceDate")} disabled={isReadOnly}><SelectTrigger><SelectValue placeholder="Seleccione hora" /></SelectTrigger><SelectContent>{timeSlots.map(slot => (<SelectItem key={slot.value} value={slot.value}>{slot.label}</SelectItem>))}</SelectContent></Select></div></PopoverContent></Popover><FormMessage /></FormItem>)}/>
 
                     <FormField control={form.control} name="vehicleId" render={() => ( <FormMessage /> )}/>
                     {vehicleSearchResults.length > 0 && ( <ScrollArea className="h-auto max-h-[150px] w-full rounded-md border"><div className="p-2">{vehicleSearchResults.map(v => (<button type="button" key={v.id} onClick={() => handleSelectVehicleFromSearch(v)} className="w-full text-left p-2 rounded-md hover:bg-muted"><p className="font-semibold">{v.licensePlate}</p><p className="text-sm text-muted-foreground">{v.make} {v.model} - {v.ownerName}</p></button>))}</div></ScrollArea>)}
@@ -871,7 +879,7 @@ export function ServiceForm({
           footerActions={<><Button type="button" onClick={() => {if (serviceForSheet?.publicId) {const shareUrl = `${window.location.origin}/s/${serviceForSheet.publicId}`; navigator.clipboard.writeText(shareUrl).then(() => {toast({ title: 'Enlace copiado', description: 'El enlace a la hoja de servicio ha sido copiado.' });});} else {toast({ title: 'Error', description: 'Guarde el servicio para generar un enlace.', variant: 'destructive' });}}} variant="outline"><MessageSquare className="mr-2 h-4 w-4" /> Copiar Enlace</Button><Button onClick={() => window.print()}><Printer className="mr-2 h-4 w-4" /> Imprimir Hoja</Button></>}
       >
           {serviceForSheet && (
-              <ServiceSheetContent service={serviceForSheet} vehicle={localVehicles.find(v => v.id === serviceForSheet.vehicleId)} workshopInfo={workshopInfo as WorkshopInfo} />
+              <ServiceSheetContent service={serviceForSheet} vehicle={localVehicles.find(v => v.id === serviceForSheet.id)} workshopInfo={workshopInfo as WorkshopInfo} />
           )}
       </PrintTicketDialog>
     </>
@@ -897,8 +905,16 @@ function ServiceItemCard({ serviceIndex, control, removeServiceItem, isReadOnly,
 
     const [isAddSupplyDialogOpen, setIsAddSupplyDialogOpen] = useState(false);
     
-    const handleAddSupply = (supply: ServiceSupply) => {
+    const handleAddSupply = (supply: ServiceSupply, sellingPriceToApply?: number) => {
         append(supply);
+        
+        // If a manual item with a selling price is added, add its price to the service item's total price
+        if (sellingPriceToApply !== undefined) {
+            const currentItemPrice = control.getValues(`serviceItems.${serviceIndex}.price`) || 0;
+            const priceToAdd = sellingPriceToApply * supply.quantity;
+            control.setValue(`serviceItems.${serviceIndex}.price`, currentItemPrice + priceToAdd, { shouldDirty: true });
+        }
+        
         setIsAddSupplyDialogOpen(false);
     };
 
@@ -915,7 +931,7 @@ function ServiceItemCard({ serviceIndex, control, removeServiceItem, isReadOnly,
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField control={control} name={`serviceItems.${serviceIndex}.name`} render={({ field }) => ( <FormItem><FormLabel>Nombre del Servicio</FormLabel><FormControl><Input placeholder="Afinación Mayor" {...field} /></FormControl><FormMessage/></FormItem> )}/>
-                <FormField control={control} name={`serviceItems.${serviceIndex}.price`} render={({ field }) => ( <FormItem><FormLabel>Precio Cliente (IVA Inc.)</FormLabel><FormControl><Input type="number" placeholder="1999.00" {...field} value={field.value ?? ''} /></FormControl><FormMessage/></FormItem> )}/>
+                <FormField control={control} name={`serviceItems.${serviceIndex}.price`} render={({ field }) => ( <FormItem><FormLabel>Precio Cliente (IVA Inc.)</FormLabel><FormControl><Input type="number" placeholder="0.00" {...field} value={field.value ?? ''} /></FormControl><FormMessage/></FormItem> )}/>
             </div>
 
             <div className="mt-4">
