@@ -431,7 +431,8 @@ export default function AgendaServiciosPage() {
       case "Completado": return "success"; 
       case "Reparando": return "secondary"; 
       case "Cancelado": return "destructive"; 
-      case "Agendado": return "default"; 
+      case "Agendado": return "default";
+      case "Cotizacion": return "outline";
       default: return "default";
     }
   };
@@ -779,7 +780,7 @@ export default function AgendaServiciosPage() {
             </>
           }
       >
-          {serviceForSheet && <ServiceSheetContent service={serviceForSheet} vehicle={vehicles.find(v => v.id === serviceForSheet.vehicleId)} />}
+          {serviceForSheet && <ServiceSheetContent service={serviceForSheet} vehicle={vehicles.find(v => v.id === serviceForSheet.id)} />}
       </PrintTicketDialog>
     </>
   );

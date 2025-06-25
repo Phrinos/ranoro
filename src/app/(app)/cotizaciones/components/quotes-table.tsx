@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import type { QuoteRecord, Vehicle } from "@/types";
 import { format, parseISO, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { Eye, Edit, Wrench, FileText as FileTextIcon, Calendar as CalendarIcon } from "lucide-react";
+import { Eye, Edit, Pencil, FileText as FileTextIcon, Calendar as CalendarIcon, Wrench } from "lucide-react";
 
 interface QuotesTableProps {
   quotes: QuoteRecord[];
@@ -36,7 +36,7 @@ export const QuotesTable = React.memo(({ quotes, vehicles, onViewQuote, onEditQu
   };
   
   const getStatusText = (serviceId?: string): string => {
-      return serviceId ? "Ingresado" : "Pendiente";
+      return serviceId ? "Ingresado" : "Cotizacion";
   }
 
   const getQuoteDescriptionText = (quote: QuoteRecord) => {
@@ -93,7 +93,7 @@ export const QuotesTable = React.memo(({ quotes, vehicles, onViewQuote, onEditQu
                       <span>Fecha: {quote.formattedDate}</span>
                     </div>
                     <div className="flex items-center gap-1.5" title="Atendido por">
-                        <Wrench className="h-4 w-4" />
+                        <Pencil className="h-4 w-4" />
                         <span>{quote.preparedByTechnicianName || 'N/A'}</span>
                     </div>
                   </div>
