@@ -2,6 +2,7 @@
 
 
 
+
 export interface WorkshopInfo {
   name: string;
   phone: string;
@@ -261,18 +262,19 @@ export interface PriceListSupply {
   supplier: string;
 }
 
-export interface ApplicableVehicle {
+export interface PricedService {
+    id: string;
+    serviceName: string;
+    description?: string;
+    customerPrice: number;
+    estimatedTimeHours?: number;
+    supplies: PriceListSupply[];
+}
+
+export interface VehiclePriceList {
+  id: string;
   make: string;
   model: string;
   years: number[];
-}
-
-export interface PriceListRecord {
-  id: string;
-  serviceName: string;
-  description?: string;
-  customerPrice: number;
-  estimatedTimeHours?: number;
-  supplies: PriceListSupply[];
-  applicableVehicles: ApplicableVehicle[];
+  services: PricedService[];
 }
