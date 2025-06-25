@@ -1,3 +1,4 @@
+
 "use client";
 
 import type { ServiceRecord, Vehicle, User, WorkshopInfo } from '@/types';
@@ -128,7 +129,8 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
           <section className="border-2 border-black rounded-md overflow-hidden mb-4">
               <h3 className="font-bold p-1 bg-gray-700 text-white text-xs text-center">TRABAJOS A REALIZAR</h3>
               <div className="p-2 space-y-2 text-xs">
-                  {service.serviceItems.map((item, index) => {
+                {service.serviceItems && service.serviceItems.length > 0 ? (
+                  service.serviceItems.map((item, index) => {
                       const isLastItem = index === service.serviceItems.length - 1;
                       return (
                           <div key={index} className={cn("pb-2", !isLastItem && "border-b border-dashed border-gray-300")}>
@@ -145,7 +147,10 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
                               )}
                           </div>
                       )
-                  })}
+                  })
+                ) : (
+                  <p className="text-gray-600 italic">No se especificaron trabajos.</p>
+                )}
               </div>
           </section>
           
@@ -202,7 +207,7 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
                     </div>
                 </div>
                 <div className="min-h-[130px] flex flex-col justify-end">
-                   <div className="flex-grow flex items-center justify-center">
+                   <div className="h-full flex-grow flex items-center justify-center">
                        {service.customerSignatureDelivery ? (
                          <div className="relative w-full h-full">
                            <Image src={service.customerSignatureDelivery} alt="Firma de conformidad" layout="fill" objectFit="contain" />
