@@ -95,16 +95,13 @@ export const TicketContent = React.forwardRef<HTMLDivElement, TicketContentProps
 
       {renderDashedLine()}
       
-      <div>Folio: {operationId}</div>
       <div>Fecha: {formattedDateTime}</div>
+      <div>Folio: {operationId}</div>
+      {vehicle && <div>Vehículo: {vehicle.make} {vehicle.model} ({vehicle.licensePlate})</div>}
       {sale?.customerName && <div>Cliente: {sale.customerName}</div>}
-      {vehicle && (
-        <>
-          <div>Cliente: {vehicle.ownerName}</div>
-          <div>Vehículo: {vehicle.make} {vehicle.model} ({vehicle.licensePlate})</div>
-        </>
-      )}
-      {technician && <div>Atendió: {technician.name}</div>}
+      {!sale?.customerName && vehicle && <div>Cliente: {vehicle.ownerName}</div>}
+      {service?.serviceAdvisorName && <div>Asesor: {service.serviceAdvisorName}</div>}
+      {technician && <div>Técnico: {technician.name}</div>}
       
       {renderDashedLine()}
 
