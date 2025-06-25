@@ -54,8 +54,15 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
         return `$${amount.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
     };
 
-
-    const serviceDate = parseISO(service.serviceDate ?? "");
+    const serviceDateInput = service.serviceDate;
+    let serviceDate: Date;
+    if (typeof serviceDateInput === 'string') {
+      serviceDate = parseISO(serviceDateInput);
+    } else if (serviceDateInput instanceof Date) {
+      serviceDate = serviceDateInput;
+    } else {
+      serviceDate = new Date(NaN); // Invalid date
+    }
     const formattedServiceDate = isValid(serviceDate) ? format(serviceDate, "dd 'de' MMMM 'de' yyyy, HH:mm 'hrs'", { locale: es }) : 'N/A';
 
     const fuelLevelMap: Record<string, number> = {
