@@ -3,38 +3,40 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Default rule: Deny all reads and writes
+
+    // Default to denying all access to prevent unauthorized reads/writes.
     match /{document=**} {
       allow read, write: if false;
     }
 
-    // Allow authenticated users to read and write to the main workshop database
-    match /database/{version} {
+    // Allow authenticated users to read and write the main database document
+    // which contains all the private workshop data.
+    match /database/{docId} {
       allow read, write: if request.auth != null;
     }
 
-    // Rules for public quotes. Anyone can read, only signed-in users can write.
+    // --- Public Collections ---
+
+    // Allow anyone to read a public quote document.
+    // Only authenticated users (employees) can create or update them.
     match /publicQuotes/{quoteId} {
       allow read: if true;
       allow write: if request.auth != null;
     }
 
-    // Rules for public service sheets.
+    // Allow anyone to read a public service sheet.
+    // Allow authenticated users to create them.
     match /publicServices/{serviceId} {
-      // Anyone can read a public service sheet
       allow read: if true;
-      
-      // Only authenticated users (employees) can create or overwrite the whole document
-      allow create, update: if request.auth != null;
-      
-      // Allow anyone (including unauthenticated customers) to update ONLY the signature fields.
-      // This is crucial for the public signing feature.
-      allow update: if request.auth == null 
-                    && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
-                        'customerSignatureReception', 'receptionSignatureViewed', 
-                        'customerSignatureDelivery', 'deliverySignatureViewed'
-                       ]);
+      allow create: if request.auth != null;
+
+      // Allow updates only under specific conditions:
+      // 1. If the user is authenticated (an employee), they can update anything.
+      // 2. If the user is NOT authenticated (a customer), they can ONLY update
+      //    the signature fields. This is crucial for the public signing feature.
+      allow update: if request.auth != null ||
+        (request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['customerSignatureReception', 'receptionSignatureViewed', 'customerSignatureDelivery', 'deliverySignatureViewed']));
     }
   }
 }
-    
