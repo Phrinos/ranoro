@@ -1,10 +1,4 @@
 
-
-
-
-
-
-
 export interface WorkshopInfo {
   name: string;
   phone: string;
@@ -61,7 +55,7 @@ export interface ServiceRecord {
   totalCost: number; // Final, tax-inclusive price. For services, this is the "Costo del Servicio (IVA incluido)"
   totalSuppliesCost?: number; // Cost of supplies to the workshop (pre-tax)
   serviceProfit?: number; // Profit: (totalCost / (1+IVA)) - totalSuppliesCost
-  status: 'Agendado' | 'Reparando' | 'Completado' | 'Cancelado';
+  status: 'Cotizacion' | 'Agendado' | 'Reparando' | 'Completado' | 'Cancelado';
   cancellationReason?: string;
   cancelledBy?: string;
   notes?: string;
@@ -287,4 +281,3 @@ export interface VehiclePriceList {
   years: number[];
   services: PricedService[];
 }
-
