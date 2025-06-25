@@ -36,7 +36,7 @@ import { es } from 'date-fns/locale';
 import { db } from '@root/lib/firebaseClient.js';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 
-const IVA_RATE = 0.16;
+export const IVA_RATE = 0.16;
 
 // =======================================
 // ===          CATEGORÍAS Y PROVEEDORES ===
