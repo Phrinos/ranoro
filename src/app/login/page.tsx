@@ -13,6 +13,7 @@ import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '@root/lib/firebaseClient.js';
 import { AlertCircle, TestTube2 } from 'lucide-react';
 import { defaultSuperAdmin, AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
+import Link from 'next/link';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -77,15 +78,17 @@ export default function LoginPage() {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-muted/40 p-4">
       <div className="mb-8 text-center">
-        <Image
-          src="/ranoro-logo.png" 
-          alt="Ranoro Logo"
-          width={250} 
-          height={80} 
-          priority
-          className="mx-auto"
-          data-ai-hint="ranoro-logo"
-        />
+        <Link href="/">
+          <Image
+            src="/ranoro-logo.png" 
+            alt="Ranoro Logo"
+            width={250} 
+            height={80} 
+            priority
+            className="mx-auto"
+            data-ai-hint="ranoro logo"
+          />
+        </Link>
         <p className="mt-3 text-lg font-medium text-foreground">
           ¡Tu taller en una App!
         </p>
