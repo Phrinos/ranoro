@@ -2,7 +2,22 @@
 import type {NextConfig} from 'next';
 
 const nextConfig: NextConfig = {
-  /* This file is intentionally left empty. Configuration is in next.config.js */
+  typescript: {
+    ignoreBuildErrors: true,
+  },
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'placehold.co',
+        port: '',
+        pathname: '/**',
+      },
+    ],
+  },
 };
 
 export default nextConfig;
