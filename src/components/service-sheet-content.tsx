@@ -48,6 +48,12 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
             setWorkshopInfo(initialWorkshopInfo);
         }
     }, [workshopInfoProp]);
+    
+    const formatCurrency = (amount: number | undefined) => {
+        if (amount === undefined) return '$0.00';
+        return `$${amount.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    };
+
 
     const serviceDate = parseISO(service.serviceDate ?? "");
     const formattedServiceDate = isValid(serviceDate) ? format(serviceDate, "dd 'de' MMMM 'de' yyyy, HH:mm 'hrs'", { locale: es }) : 'N/A';
@@ -121,8 +127,27 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
           </section>
 
           <section className="border-2 border-black rounded-md overflow-hidden mb-4">
-              <h3 className="font-bold p-1 bg-gray-700 text-white text-xs text-center">SERVICIO SOLICITADO</h3>
-              <p className="whitespace-pre-wrap p-2 min-h-[40px] text-lg font-bold">{service.description}</p>
+              <h3 className="font-bold p-1 bg-gray-700 text-white text-xs text-center">TRABAJOS A REALIZAR</h3>
+              <div className="p-2 space-y-2 text-xs">
+                  {service.serviceItems.map((item, index) => {
+                      const isLastItem = index === service.serviceItems.length - 1;
+                      return (
+                          <div key={index} className={cn("pb-2", !isLastItem && "border-b border-dashed border-gray-300")}>
+                              <div className="flex justify-between items-center font-bold text-base">
+                                  <p>{item.name}</p>
+                                  <p>{formatCurrency(item.price)}</p>
+                              </div>
+                              {item.suppliesUsed && item.suppliesUsed.length > 0 && (
+                                  <ul className="list-disc list-inside pl-2 text-gray-600 mt-1">
+                                      {item.suppliesUsed.map((supply, sIndex) => (
+                                          <li key={sIndex}>{supply.quantity} x {supply.supplyName}</li>
+                                      ))}
+                                  </ul>
+                              )}
+                          </div>
+                      )
+                  })}
+              </div>
           </section>
           
           <section className="grid grid-cols-3 gap-4 mb-4 text-xs">
