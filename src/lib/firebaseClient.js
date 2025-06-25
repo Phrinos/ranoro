@@ -28,20 +28,22 @@ const firebaseConfig = {
 let auth = null;
 let storage = null;
 let db = null;
+const PRIVATE_APP_NAME = "firebase-private-app"; // New name for the main app instance
 
 //-------------------------------------------
 // 2. Crear/obtener la app de Firebase
 //-------------------------------------------
 // Solo inicializa Firebase si las credenciales son válidas.
 if (firebaseConfig.apiKey && !firebaseConfig.apiKey.startsWith("TU_")) {
-  // Use a more robust way to get the default app instance.
-  // This avoids accidentally getting a named instance if it initializes first.
-  const apps = getApps();
-  const defaultApp = apps.find(app => app.name === '[DEFAULT]') || initializeApp(firebaseConfig);
+  // Use a named instance to completely isolate it from the public app instance.
+  const privateApp = (() => {
+    const existing = getApps().find(app => app.name === PRIVATE_APP_NAME);
+    return existing ?? initializeApp(firebaseConfig, PRIVATE_APP_NAME);
+  })();
 
-  auth = getAuth(defaultApp);
-  storage = getStorage(defaultApp);
-  db = getFirestore(defaultApp);
+  auth = getAuth(privateApp);
+  storage = getStorage(privateApp);
+  db = getFirestore(privateApp);
 } else {
     // Muestra una advertencia clara en la consola del navegador si las credenciales no están configuradas.
     if (typeof window !== 'undefined') {
