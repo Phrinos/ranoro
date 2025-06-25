@@ -95,8 +95,8 @@ export const SalesTable = React.memo(({ sales, onReprintTicket, inventoryItems, 
                 <TableCell>{sale.customerName || 'N/A'}</TableCell>
                 <TableCell className="text-center">{sale.items.length}</TableCell>
                 <TableCell>
-                  <Badge variant={getPaymentMethodVariant(sale.paymentMethod)}>
-                    {isCancelled ? `Cancelado (${sale.paymentMethod})` : sale.paymentMethod}
+                  <Badge variant={isCancelled ? "destructive" : getPaymentMethodVariant(sale.paymentMethod)}>
+                    {isCancelled ? "Cancelado" : sale.paymentMethod}
                   </Badge>
                 </TableCell>
                 <TableCell className="text-right font-semibold">{formatCurrency(sale.totalAmount)}</TableCell>
