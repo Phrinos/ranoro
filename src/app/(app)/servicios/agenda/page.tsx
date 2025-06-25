@@ -583,7 +583,7 @@ export default function AgendaServiciosPage() {
                                     <Tag className="h-4 w-4 text-purple-600" />
                                 </Button>
                               )}
-                              {onShowSheet && service.status !== 'Agendado' && (
+                              {service.status !== 'Agendado' && (
                                 <Button variant="ghost" size="icon" aria-label="Ver Hoja de Servicio" title="Ver Hoja de Servicio" onClick={() => handleShowSheet(service)}>
                                     <FileText className="h-4 w-4" />
                                 </Button>
