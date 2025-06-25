@@ -83,7 +83,7 @@ export const TicketContent = React.forwardRef<HTMLDivElement, TicketContentProps
       data-format="receipt"
       className="font-mono bg-white text-black px-2 py-9 max-w-[300px] mx-auto text-[10px] leading-snug print:max-w-full print:text-[9px] print:p-0"
     >
-      <div className="text-center mb-1">
+      <div className="text-center mb-1 space-y-0 leading-snug">
         <img src={workshopInfo.logoUrl} alt="Logo" className="w-32 mx-auto mb-1" data-ai-hint="workshop logo"/>
         <p className="font-semibold">{workshopInfo.name}</p>
         <p>{workshopInfo.addressLine1}</p>
