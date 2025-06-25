@@ -141,9 +141,12 @@ export const ServicesTable = React.memo(({
                                 <h4 className="font-semibold text-lg" title={service.vehicleMakeModelYear}>
                                     {vehicle ? `${vehicle.licensePlate} - ${service.vehicleMakeModelYear}` : service.vehicleIdentifier}
                                 </h4>
-                                <p className="text-sm text-muted-foreground mt-1 truncate" title={service.description}>
-                                    {service.description}
-                                </p>
+                                <div className="flex items-center gap-2 mt-1">
+                                  {service.serviceType && <Badge variant="outline" className="shrink-0">{service.serviceType}</Badge>}
+                                  <p className="text-sm text-muted-foreground truncate" title={service.description}>
+                                      {service.description}
+                                  </p>
+                                </div>
                             </div>
                         </div>
                     </div>

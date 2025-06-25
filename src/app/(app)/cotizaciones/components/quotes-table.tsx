@@ -114,9 +114,14 @@ export const QuotesTable = React.memo(({ quotes, vehicles, onViewQuote, onEditQu
                       <h4 className="font-semibold text-lg" title={quote.vehicleDisplay}>
                         {quote.vehicleDisplay || 'N/A'}
                       </h4>
-                      <p className="text-sm text-muted-foreground mt-1 truncate" title={quote.descriptionText}>
-                        {quote.descriptionText}
-                      </p>
+                      <div className="flex items-center gap-2 mt-1">
+                        {quote.serviceType && (
+                          <Badge variant="outline" className="shrink-0">{quote.serviceType}</Badge>
+                        )}
+                        <p className="text-sm text-muted-foreground truncate" title={quote.descriptionText}>
+                          {quote.descriptionText}
+                        </p>
+                      </div>
                     </div>
                   </div>
                 </div>
