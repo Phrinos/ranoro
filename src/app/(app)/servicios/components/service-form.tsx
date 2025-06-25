@@ -21,11 +21,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription} from "@/components/ui/card";
-import { CalendarIcon, PlusCircle, Search, Trash2, AlertCircle, Car as CarIcon, Clock, DollarSign, PackagePlus, BrainCircuit, Loader2, Printer, Plus, Minus, FileText, Signature, MessageSquare, Ban } from "lucide-react";
+import { CalendarIcon, PlusCircle, Search, Trash2, AlertCircle, Car as CarIcon, Clock, DollarSign, PackagePlus, BrainCircuit, Loader2, Printer, Plus, Minus, FileText, Signature, MessageSquare, Ban, ShieldQuestion } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format, parseISO, setHours, setMinutes, isValid, startOfDay } from 'date-fns';
 import { es } from 'date-fns/locale';
-import type { ServiceRecord, Vehicle, Technician, InventoryItem, ServiceSupply, QuoteRecord, InventoryCategory, Supplier, User, WorkshopInfo, ServiceItem } from "@/types";
+import type { ServiceRecord, Vehicle, Technician, InventoryItem, ServiceSupply, QuoteRecord, InventoryCategory, Supplier, User, WorkshopInfo, ServiceItem, SafetyInspection, SafetyCheckItem } from "@/types";
 import React, { useEffect, useState, useMemo, useCallback, useRef } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { VehicleDialog } from "../../vehiculos/components/vehicle-dialog";
@@ -78,6 +78,22 @@ const serviceItemSchema = z.object({
   suppliesUsed: z.array(supplySchema),
 });
 
+const safetyCheckItemSchema = z.object({
+    status: z.enum(['ok', 'regular', 'atencion', 'na']).default('na'),
+    notes: z.string().optional(),
+});
+
+const safetyInspectionSchema = z.object({
+  brakes: safetyCheckItemSchema.optional(),
+  tires: safetyCheckItemSchema.optional(),
+  lights: safetyCheckItemSchema.optional(),
+  fluidLevels: safetyCheckItemSchema.optional(),
+  suspensionSteering: safetyCheckItemSchema.optional(),
+  battery: safetyCheckItemSchema.optional(),
+  wipers: safetyCheckItemSchema.optional(),
+  horn: safetyCheckItemSchema.optional(),
+});
+
 
 const serviceFormSchemaBase = z.object({
   id: z.string().optional(), // For identifying existing records
@@ -99,6 +115,7 @@ const serviceFormSchemaBase = z.object({
   customerItems: z.string().optional(),
   customerSignatureReception: z.string().optional(),
   customerSignatureDelivery: z.string().optional(),
+  safetyInspection: safetyInspectionSchema.optional(),
 });
 
 
@@ -206,6 +223,7 @@ export function ServiceForm({
         customerItems: (initialData as ServiceRecord)?.customerItems || '',
         customerSignatureReception: (initialData as ServiceRecord)?.customerSignatureReception || undefined,
         customerSignatureDelivery: (initialData as ServiceRecord)?.customerSignatureDelivery || undefined,
+        safetyInspection: (initialData as ServiceRecord)?.safetyInspection || {},
     }
   });
 
@@ -309,7 +327,8 @@ export function ServiceForm({
             customerItems: (data as ServiceRecord)?.customerItems || '',
             customerSignatureReception: (data as ServiceRecord)?.customerSignatureReception || undefined,
             customerSignatureDelivery: (data as ServiceRecord)?.customerSignatureDelivery || undefined,
-            serviceItems: serviceItemsData
+            serviceItems: serviceItemsData,
+            safetyInspection: (data as ServiceRecord)?.safetyInspection || {},
         };
 
         form.reset(dataToReset);
@@ -512,18 +531,19 @@ export function ServiceForm({
     }
   };
   
-  const handleViewQuote = useCallback(() => {
-    const serviceId = form.getValues('id');
-    if (!serviceId) return;
+  const originalQuote = useMemo(() => {
+    if (!initialData?.id || mode !== 'service') return null;
+    return placeholderQuotes.find(q => q.serviceId === initialData.id);
+  }, [initialData, mode]);
 
-    const originalQuote = placeholderQuotes.find(q => q.serviceId === serviceId);
+  const handleViewQuote = useCallback(() => {
     if (originalQuote) {
         setQuoteForView(originalQuote);
         setIsQuoteViewOpen(true);
     } else {
         toast({ title: "No encontrada", description: "No se encontró la cotización original para este servicio.", variant: "default" });
     }
-  }, [form, toast]);
+  }, [originalQuote, toast]);
 
   const handleFormSubmit = async (values: ServiceFormValues) => {
     if (isReadOnly) {
@@ -581,6 +601,7 @@ export function ServiceForm({
         totalCost: finalTotalCost,
         serviceAdvisorId: currentUser.id,
         serviceItems: values.serviceItems,
+        safetyInspection: values.safetyInspection,
       };
 
       serviceData.vehicleIdentifier = selectedVehicle?.licensePlate || values.vehicleLicensePlateSearch || 'N/A';
@@ -802,7 +823,7 @@ export function ServiceForm({
     return [];
   }, [mode, initialDataQuote]);
 
-  const isDateDisabled = isReadOnly || (mode === 'service' && !!initialDataService?.id && initialDataService.status !== 'Agendado' && !(isConvertingQuote && watchedStatus === 'Agendado'));
+  const isDateDisabled = isReadOnly || (isConvertingQuote && watchedStatus === 'Agendado') ? false : (mode === 'service' && !!initialDataService?.id && initialDataService.status !== 'Agendado');
 
   return (
     <>
@@ -815,17 +836,24 @@ export function ServiceForm({
                     {showReceptionTab && <TabsTrigger value="recepcion" className="text-base data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none">Recepción y Entrega</TabsTrigger>}
                     {showReceptionTab && <TabsTrigger value="seguridad" className="text-base data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none">Revisión de Seguridad</TabsTrigger>}
                 </TabsList>
-                 {mode === 'service' && !isReadOnly && initialData?.id ? (
-                    watchedStatus === 'Agendado' ? (
+                 
+                <div className="flex gap-2">
+                  {mode === 'service' && !isReadOnly && initialData?.id && (
+                    <>
+                      {originalQuote && (
                         <Button type="button" onClick={handleViewQuote} variant="outline" className="bg-card">
-                            <FileText className="mr-2 h-4 w-4" /> Ver Cotización
+                          <FileText className="mr-2 h-4 w-4" /> Ver Cotización
                         </Button>
-                    ) : (
+                      )}
+                      {(watchedStatus === 'Reparando' || watchedStatus === 'Completado') && (
                         <Button type="button" onClick={handlePrintSheet} variant="outline" className="bg-card">
-                            <Printer className="mr-2 h-4 w-4" /> Ver Hoja de Servicio
+                          <Printer className="mr-2 h-4 w-4" /> Ver Hoja de Servicio
                         </Button>
-                    )
-                ) : null}
+                      )}
+                    </>
+                  )}
+                </div>
+
             </div>
 
             <TabsContent value="servicio" className="space-y-6 mt-0">
@@ -956,7 +984,24 @@ export function ServiceForm({
 
             {showReceptionTab && (
               <TabsContent value="seguridad" className="space-y-6 mt-0">
-                  <p>Funcionalidad de Revisión de Seguridad en desarrollo.</p>
+                  <Card>
+                    <CardHeader>
+                        <CardTitle>Checklist de Puntos de Seguridad</CardTitle>
+                        <CardDescription>Documenta el estado de los componentes clave. El estado "N/A" se aplica por defecto.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+                        <SafetyCheckItemControl name="safetyInspection.brakes" label="Frenos" control={form.control} isReadOnly={isReadOnly} />
+                        <SafetyCheckItemControl name="safetyInspection.tires" label="Llantas" control={form.control} isReadOnly={isReadOnly} />
+                        <SafetyCheckItemControl name="safetyInspection.lights" label="Luces" control={form.control} isReadOnly={isReadOnly} />
+                        <SafetyCheckItemControl name="safetyInspection.fluidLevels" label="Niveles de Fluidos" control={form.control} isReadOnly={isReadOnly} />
+                        <SafetyCheckItemControl name="safetyInspection.suspensionSteering" label="Suspensión / Dirección" control={form.control} isReadOnly={isReadOnly} />
+                        <SafetyCheckItemControl name="safetyInspection.battery" label="Batería y Sistema Eléctrico" control={form.control} isReadOnly={isReadOnly} />
+                        <SafetyCheckItemControl name="safetyInspection.wipers" label="Limpiaparabrisas" control={form.control} isReadOnly={isReadOnly} />
+                        <SafetyCheckItemControl name="safetyInspection.horn" label="Claxon (Bocina)" control={form.control} isReadOnly={isReadOnly} />
+                      </div>
+                    </CardContent>
+                  </Card>
               </TabsContent>
             )}
 
@@ -1174,3 +1219,61 @@ function ServiceItemCard({ serviceIndex, form, removeServiceItem, isReadOnly, in
         </Card>
     );
 }
+
+// Sub-component for Safety Checklist item
+interface SafetyCheckItemControlProps {
+  name: `safetyInspection.${keyof SafetyInspection}`;
+  label: string;
+  control: Control<ServiceFormValues>;
+  isReadOnly?: boolean;
+}
+
+function SafetyCheckItemControl({ name, label, control, isReadOnly }: SafetyCheckItemControlProps) {
+  const statusFieldName = `${name}.status`;
+  const notesFieldName = `${name}.notes`;
+  const statusValue = control.getValues(statusFieldName as any);
+  
+  return (
+    <div className="space-y-2">
+      <Label className="font-semibold">{label}</Label>
+      <Controller
+        name={statusFieldName as any}
+        control={control}
+        render={({ field }) => (
+          <div className="flex items-center gap-2 flex-wrap">
+            {(['ok', 'regular', 'atencion', 'na'] as const).map(status => {
+                const statusLabels = { ok: 'OK', regular: 'Regular', atencion: 'Atención', na: 'N/A' };
+                const statusColors = { ok: 'bg-green-500', regular: 'bg-yellow-500', atencion: 'bg-red-500', na: 'bg-gray-400'};
+                return (
+                  <Button
+                    key={status}
+                    type="button"
+                    variant={field.value === status ? 'default' : 'outline'}
+                    className={cn("text-xs h-8", field.value === status && `${statusColors[status]} hover:${statusColors[status]}/90 text-white`)}
+                    onClick={() => field.onChange(status)}
+                    disabled={isReadOnly}
+                  >
+                    {statusLabels[status]}
+                  </Button>
+                )
+            })}
+          </div>
+        )}
+      />
+      {statusValue === 'regular' || statusValue === 'atencion' ? (
+        <FormField
+          control={control}
+          name={notesFieldName as any}
+          render={({ field }) => (
+            <FormItem>
+              <FormControl>
+                <Textarea {...field} placeholder="Añadir notas específicas..." disabled={isReadOnly} rows={2} className="text-xs"/>
+              </FormControl>
+            </FormItem>
+          )}
+        />
+      ) : null}
+    </div>
+  );
+}
+
