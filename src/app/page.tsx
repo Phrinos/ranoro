@@ -63,9 +63,6 @@ export default function LandingPage() {
             <Button variant="ghost" asChild>
               <Link href="#flotillas">Flotillas</Link>
             </Button>
-            <Button asChild>
-              <Link href="/login">Acceso a Empleados</Link>
-            </Button>
           </nav>
         </div>
       </header>
@@ -156,7 +153,7 @@ export default function LandingPage() {
               </div>
               <div className="flex justify-center">
                 <Image
-                  src="/__fsh_user_images__/image.png"
+                  src="/__fsh_user_images__/image_1.png"
                   alt="Servicio a flotillas"
                   width={600}
                   height={400}
@@ -172,9 +169,14 @@ export default function LandingPage() {
       {/* Footer */}
       <footer className="border-t bg-background">
         <div className="container mx-auto flex flex-col items-center justify-between gap-4 px-4 py-8 md:flex-row md:px-6">
-          <p className="text-sm text-muted-foreground">
-            &copy; {new Date().getFullYear()} Ranoro Taller Automotriz. Todos los derechos reservados.
-          </p>
+          <div className="text-center md:text-left">
+            <p className="text-sm text-muted-foreground">
+                &copy; {new Date().getFullYear()} Ranoro Taller Automotriz. Todos los derechos reservados.
+            </p>
+            <p className="text-sm text-muted-foreground">
+                Desarrollado por Arturo Valdelamar
+            </p>
+          </div>
           <div className="flex items-center gap-4">
              <Link href="/login" className="text-sm text-muted-foreground hover:text-primary">
                 Acceso Empleados
