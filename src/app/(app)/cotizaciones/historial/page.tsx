@@ -71,6 +71,13 @@ export default function HistorialCotizacionesPage() {
     setTechnicians(placeholderTechnicians);
     setInventoryItems(placeholderInventory);
   }, []);
+  
+  const getQuoteDescriptionText = (quote: QuoteRecord) => {
+    if (quote.serviceItems && quote.serviceItems.length > 0) {
+      return quote.serviceItems.map(item => item.name).join(', ');
+    }
+    return quote.description || 'Sin descripción';
+  };
 
   const filteredAndSortedQuotes = useMemo(() => {
     let filtered = [...allQuotes];
@@ -90,7 +97,7 @@ export default function HistorialCotizacionesPage() {
       filtered = filtered.filter(quote => 
         quote.id.toLowerCase().includes(lowerSearchTerm) ||
         (quote.vehicleIdentifier && quote.vehicleIdentifier.toLowerCase().includes(lowerSearchTerm)) ||
-        quote.description.toLowerCase().includes(lowerSearchTerm)
+        getQuoteDescriptionText(quote).toLowerCase().includes(lowerSearchTerm)
       );
     }
     

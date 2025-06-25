@@ -259,16 +259,6 @@ export function ServiceForm({
                     unitPrice: currentInventoryItems.find(i => i.id === supply.supplyId)?.unitPrice || 0,
                 }))
             }));
-        } else if ('suppliesProposed' in data) { // Quote conversion
-            serviceItemsData = [{
-                id: `item_${Date.now()}`,
-                name: (data as any).description || 'Servicio Cotizado',
-                price: (data as QuoteRecord).estimatedTotalCost || 0,
-                suppliesUsed: ((data as QuoteRecord).suppliesProposed || []).map(s => ({
-                    ...s,
-                    unitPrice: currentInventoryItems.find(i => i.id === s.supplyId)?.unitPrice || 0,
-                })),
-            }];
         }
 
         const rawServiceDate = data.serviceDate || data.quoteDate;
@@ -279,7 +269,7 @@ export function ServiceForm({
 
         const dataToReset: Partial<ServiceFormValues> = {
             id: data.id,
-            publicId: (data as ServiceRecord)?.publicId,
+            publicId: (data as ServiceRecord)?.publicId || (data as QuoteRecord)?.publicId,
             vehicleId: data.vehicleId ? String(data.vehicleId) : undefined,
             vehicleLicensePlateSearch: vehicle?.licensePlate || data.vehicleIdentifier || "",
             serviceDate: parsedServiceDate && isValid(parsedServiceDate) ? parsedServiceDate : undefined,
@@ -575,6 +565,7 @@ export function ServiceForm({
         quoteDate: values.serviceDate!.toISOString(),
         vehicleId: vehicleIdToSave,
         description: compositeDescription,
+        serviceItems: values.serviceItems,
       };
       
       quoteData.vehicleIdentifier = selectedVehicle?.licensePlate || values.vehicleLicensePlateSearch || 'N/A';
@@ -589,8 +580,6 @@ export function ServiceForm({
       if (values.notes) quoteData.notes = values.notes;
       if (values.mileage) quoteData.mileage = values.mileage;
       if (workshopInfo && Object.keys(workshopInfo).length > 0) quoteData.workshopInfo = workshopInfo as WorkshopInfo;
-
-      quoteData.suppliesProposed = values.serviceItems.flatMap(item => item.suppliesUsed); // Flatten for quote
       
       await savePublicDocument('quote', quoteData as QuoteRecord, selectedVehicle);
       await onSubmit(quoteData as QuoteRecord);
@@ -676,10 +665,10 @@ export function ServiceForm({
     try {
         const history = [...defaultServiceRecords, ...placeholderQuotes].map(h => ({
             description: h.description,
-            suppliesUsed: ('serviceItems' in h ? h.serviceItems.flatMap(i => i.suppliesUsed) : h.suppliesProposed)?.map(s => ({
+            suppliesUsed: ('serviceItems' in h ? h.serviceItems.flatMap(i => i.suppliesUsed) : []).map(s => ({
                 supplyName: s.supplyName || currentInventoryItems.find(i => i.id === s.supplyId)?.name || 'Unknown',
                 quantity: s.quantity
-            })) || [],
+            })),
             totalCost: ('totalCost' in h ? h.totalCost : h.estimatedTotalCost) || 0
         }));
 

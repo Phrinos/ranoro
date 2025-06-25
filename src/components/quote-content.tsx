@@ -5,6 +5,7 @@ import type { QuoteRecord, Vehicle, Technician, WorkshopInfo } from '@/types';
 import { format, parseISO, isValid, addDays } from 'date-fns';
 import { es } from 'date-fns/locale';
 import React, { useEffect, useState } from 'react';
+import { cn } from "@/lib/utils";
 
 const initialWorkshopInfo: WorkshopInfo = {
   name: "RANORO",
@@ -125,35 +126,27 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
         </section>
 
         <section className="mt-4 mb-4">
-            <h3 className="font-semibold text-base text-gray-700 mb-2 border-b pb-1">Descripción del Trabajo a Realizar:</h3>
-            <p className="text-gray-800 whitespace-pre-wrap pt-1">{quote.description}</p>
+            <h3 className="font-semibold text-base text-gray-700 mb-2 border-b pb-1">TRABAJOS A REALIZAR (Precios con IVA)</h3>
+            <div className="space-y-2 pt-2">
+                {quote.serviceItems && quote.serviceItems.length > 0 ? (
+                    quote.serviceItems.map((item, index) => (
+                        <div key={index} className="pb-2 border-b border-dashed last:border-b-0">
+                            <div className="flex justify-between items-center text-base">
+                                <span className="font-bold">{item.name}</span>
+                                <span className="font-bold">{formatCurrency(item.price)}</span>
+                            </div>
+                            {item.suppliesUsed && item.suppliesUsed.length > 0 && (
+                                <p className="text-xs text-gray-500 pl-4 mt-1">
+                                    Insumos: {item.suppliesUsed.map(s => `${s.quantity}x ${s.supplyName}`).join(', ')}
+                                </p>
+                            )}
+                        </div>
+                    ))
+                ) : (
+                    <p className="text-gray-500 italic">No se especificaron trabajos en esta cotización.</p>
+                )}
+            </div>
         </section>
-
-        {quote.suppliesProposed && quote.suppliesProposed.length > 0 && (
-            <section className="mb-8">
-            <h3 className="font-semibold text-base text-gray-700 mb-3">Refacciones y Materiales Propuestos (Precios con IVA):</h3>
-            <table className="w-full text-left border-collapse">
-                <thead>
-                <tr className="border-b-2 border-gray-300 bg-gray-100">
-                    <th className="py-2 px-3 font-semibold text-gray-600">Cantidad</th>
-                    <th className="py-2 px-3 font-semibold text-gray-600">Descripción</th>
-                    <th className="py-2 px-3 font-semibold text-gray-600 text-right">Precio Unit.</th>
-                    <th className="py-2 px-3 font-semibold text-gray-600 text-right">Importe</th>
-                </tr>
-                </thead>
-                <tbody>
-                {quote.suppliesProposed.map((supply, idx) => (
-                    <tr key={idx} className="border-b border-gray-200">
-                    <td className="py-2 px-3">{supply.quantity}</td>
-                    <td className="py-2 px-3">{supply.supplyName || `ID: ${supply.supplyId}`}</td>
-                    <td className="py-2 px-3 text-right">{formatCurrency(supply.unitPrice)}</td>
-                    <td className="py-2 px-3 text-right">{formatCurrency((supply.unitPrice || 0) * supply.quantity)}</td>
-                    </tr>
-                ))}
-                </tbody>
-            </table>
-            </section>
-        )}
       </main>
 
       {/* Footer section that will be pushed to the bottom */}
