@@ -174,17 +174,41 @@ export default function HistorialCotizacionesPage() {
   }, [toast]);
 
   const handleSaveEditedQuote = useCallback(async (data: ServiceRecord | QuoteRecord) => {
+      // If the form submits a record with a status, it's being converted to a service
+    if ('status' in data && data.status && data.status !== 'Cotizacion') {
+      const newService = data as ServiceRecord;
+      const originalQuote = selectedQuoteForEdit;
+      if (!originalQuote) return;
+
+      const serviceToSave: ServiceRecord = { ...newService, id: `SER_${Date.now().toString(36)}` };
+      placeholderServiceRecords.push(serviceToSave);
+
+      // Find original quote and link it to the new service
+      const quoteIndex = placeholderQuotes.findIndex(q => q.id === originalQuote.id);
+      if (quoteIndex !== -1) {
+        placeholderQuotes[quoteIndex].serviceId = serviceToSave.id;
+      }
+      
+      setAllQuotes([...placeholderQuotes]);
+      await persistToFirestore(['serviceRecords', 'quotes']);
+      toast({
+        title: "Servicio Generado desde Cotización",
+        description: `Se creó el nuevo servicio ${serviceToSave.id}.`
+      });
+      
+    } else { // It's just a regular quote update
       const editedQuote = data as QuoteRecord;
       const quoteIndex = placeholderQuotes.findIndex(q => q.id === editedQuote.id);
       if (quoteIndex !== -1) {
-          // The form now handles public doc saving, so we just update the main data store
           placeholderQuotes[quoteIndex] = editedQuote;
           setAllQuotes([...placeholderQuotes]);
           await persistToFirestore(['quotes']);
           toast({ title: "Cotización Actualizada", description: `La cotización ${editedQuote.id} se actualizó correctamente.` });
       }
-      setIsEditQuoteDialogOpen(false);
-  }, [toast]);
+    }
+    setIsEditQuoteDialogOpen(false);
+    setSelectedQuoteForEdit(null);
+  }, [toast, selectedQuoteForEdit]);
   
   const handleSaveServiceFromQuote = useCallback(async (data: ServiceRecord | QuoteRecord) => {
       const newService = data as ServiceRecord;

@@ -1,3 +1,4 @@
+
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -114,6 +115,7 @@ interface ServiceFormProps {
   mode?: 'service' | 'quote';
   onInventoryItemCreatedFromService?: (newItem: InventoryItem) => void; // Optional: To notify parent of new items
   onDelete?: (id: string) => void;
+  onCancelService?: (serviceId: string, reason: string) => void;
 }
 
 const IVA_RATE = 0.16;
@@ -356,11 +358,9 @@ export function ServiceForm({
 
   const showReceptionTab = useMemo(() => {
     if (mode !== 'service') return false;
-    // The tab should be visible if the status is NOT 'Cotizacion' and NOT 'Agendado'.
     if (!watchedStatus || watchedStatus === 'Cotizacion' || watchedStatus === 'Agendado') {
         return false;
     }
-    // Show for 'Reparando', 'Completado', 'Cancelado'
     return true;
   }, [mode, watchedStatus]);
 
@@ -372,17 +372,14 @@ export function ServiceForm({
 
       const previousStatus = previousStatusRef.current;
       
-      // Update reception date only when status changes TO "Reparando"
       if (previousStatus !== 'Reparando' && watchedStatus === 'Reparando') {
           form.setValue('serviceDate', new Date(), { shouldDirty: true });
       }
       
-      // Update delivery date only when status changes TO "Completado"
       if (previousStatus !== 'Completado' && watchedStatus === 'Completado') {
           form.setValue('deliveryDateTime', new Date(), { shouldDirty: true });
       }
       
-      // Update ref for next render
       previousStatusRef.current = watchedStatus;
 
   }, [watchedStatus, form, isReadOnly, mode]);
@@ -518,30 +515,28 @@ export function ServiceForm({
         return;
     }
 
-
     const isValidForm = await form.trigger();
     if (!isValidForm) {
         toast({ title: "Formulario Incompleto", description: "Por favor, revise los campos marcados en rojo.", variant: "destructive"});
         return;
     }
 
-    // Recalculate totals on submit to ensure accuracy
     const finalTotalCost = values.serviceItems?.reduce((sum, item) => sum + (item.price || 0), 0) || 0;
     const finalTotalSuppliesCost = values.serviceItems?.flatMap(item => item.suppliesUsed).reduce((sum, supply) => {
         const item = currentInventoryItems.find(i => i.id === supply.supplyId);
         const costPerUnit = item?.unitPrice || supply.unitPrice || 0;
         return sum + costPerUnit * supply.quantity;
     }, 0) || 0;
-
     const finalSubTotal = finalTotalCost / (1 + IVA_RATE);
     const finalTaxAmount = finalTotalCost - finalSubTotal;
     const finalProfit = finalTotalCost - finalTotalSuppliesCost;
-    
     const compositeDescription = values.serviceItems.map(item => item.name).join(', ') || 'Servicio';
     
-    if (mode === 'service') {
+    const isConvertingQuoteToService = mode === 'quote' && values.status && values.status !== 'Cotizacion';
+
+    if (mode === 'service' || isConvertingQuoteToService) {
       const serviceData: Partial<ServiceRecord> = {
-        id: initialDataService?.id || `SER_${Date.now().toString(36)}`,
+        id: initialData?.id || `SER_${Date.now().toString(36)}`,
         publicId: values.publicId || `srv_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 9)}`,
         vehicleId: vehicleIdToSave,
         serviceDate: values.serviceDate!.toISOString(),
@@ -560,8 +555,6 @@ export function ServiceForm({
       serviceData.totalSuppliesCost = finalTotalSuppliesCost;
       serviceData.serviceProfit = finalProfit;
       serviceData.serviceAdvisorName = currentUser.name;
-      serviceData.receptionSignatureViewed = (initialDataService as ServiceRecord)?.receptionSignatureViewed || false;
-      serviceData.deliverySignatureViewed = (initialDataService as ServiceRecord)?.deliverySignatureViewed || false;
       
       if (currentUser.signatureDataUrl) serviceData.serviceAdvisorSignatureDataUrl = currentUser.signatureDataUrl;
       if (values.customerSignatureReception) serviceData.customerSignatureReception = values.customerSignatureReception;
@@ -586,6 +579,7 @@ export function ServiceForm({
         vehicleId: vehicleIdToSave,
         description: compositeDescription,
         serviceItems: values.serviceItems,
+        status: 'Cotizacion' // Always Cotizacion if not converting
       };
       
       quoteData.vehicleIdentifier = selectedVehicle?.licensePlate || values.vehicleLicensePlateSearch || 'N/A';
@@ -606,10 +600,13 @@ export function ServiceForm({
     }
   };
   
-  const handlePrintSheet = useCallback(() => {
-    // This part might need refactoring as well if the service sheet needs to show multiple jobs
-    toast({ title: "Función en desarrollo", description: "La impresión de la hoja de servicio con múltiples ítems se está actualizando." });
-  }, [toast]);
+  const handlePrintSheet = useCallback(async () => {
+    const serviceData = { ...form.getValues() } as ServiceRecord;
+    serviceData.serviceAdvisorName = freshUserRef.current?.name || 'N/A';
+    serviceData.serviceAdvisorSignatureDataUrl = freshUserRef.current?.signatureDataUrl;
+    setServiceForSheet(serviceData);
+    setIsSheetOpen(true);
+  }, [form]);
 
   const handleTimeChange = (timeString: string, dateField: "serviceDate" | "deliveryDateTime") => {
     const [hours, minutes] = timeString.split(':').map(Number);
@@ -666,8 +663,6 @@ export function ServiceForm({
     }, [vehicleLicensePlateSearch, localVehicles, selectedVehicle]);
 
   const handleSuggestPrice = async (serviceItemIndex: number) => {
-    // This needs to be adapted. AI price suggestion will work on a single item.
-    // For now, let's disable it to avoid complexity.
     toast({ title: "Función no disponible", description: "La sugerencia de precios con IA se está adaptando al nuevo formato." });
   };
 
@@ -737,17 +732,39 @@ export function ServiceForm({
         setIsGeneratingQuote(false);
     }
   };
+  
+  const [cancellationReason, setCancellationReason] = useState('');
+  const [isCancelAlertOpen, setIsCancelAlertOpen] = useState(false);
 
   const handleConfirmDelete = () => {
     if (onDelete && mode === 'quote' && initialDataQuote?.id) {
-        onDelete(initialDataQuote.id);
-        onClose(); // This will close the main dialog
+      onDelete(initialDataQuote.id);
+      onClose();
+    } else if (onCancelService && initialDataService?.id) {
+      if (!cancellationReason.trim()) {
+        toast({ title: "Motivo Requerido", description: "Por favor, ingrese un motivo para la cancelación.", variant: "destructive" });
+        return;
+      }
+      onCancelService(initialDataService.id, cancellationReason);
+      setIsCancelAlertOpen(false);
+      onClose();
     }
   };
 
-  const cardTitleText = mode === 'quote' ? "Información del Vehículo y Cotización" : "Información del Vehículo";
-  const technicianLabelText = "Técnico Asignado";
-  const submitButtonText = mode === 'quote' ? "Guardar Cotización" : (initialDataService ? "Actualizar Servicio" : "Crear Servicio");
+  const deleteButtonText = mode === 'quote'
+    ? 'Eliminar Cotización'
+    : (initialDataService?.status === 'Agendado' ? 'Cancelar Agenda' : 'Cancelar Servicio');
+
+  const showStatusFields = mode === 'service' || (mode === 'quote' && !!initialData?.id);
+  
+  const statusOptions = useMemo(() => {
+    if (mode === 'quote') {
+      return ["Cotizacion", "Agendado", "Reparando"];
+    }
+    return ["Agendado", "Reparando", "Completado"];
+  }, [mode]);
+
+  const cardTitleText = mode === 'quote' ? "Información de la Cotización" : "Información del Servicio";
 
   return (
     <>
@@ -772,17 +789,59 @@ export function ServiceForm({
                     <CardTitle className="text-lg">{cardTitleText}</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                    {mode === 'service' && (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <FormField control={form.control} name="status" render={({ field }) => (<FormItem><FormLabel className="font-bold">Estado del Servicio</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value} disabled={isReadOnly}><FormControl><SelectTrigger className="font-bold"><SelectValue placeholder="Seleccione un estado" /></SelectTrigger></FormControl><SelectContent>{["Cotizacion", "Agendado", "Reparando", "Completado", "Cancelado"].map((statusVal) => (<SelectItem key={statusVal} value={statusVal}>{statusVal}</SelectItem>))}</SelectContent></Select><FormMessage /></FormItem>)}/>
-                            <FormField control={form.control} name="serviceType" render={({ field }) => (<FormItem><FormLabel className="font-bold">Tipo de Servicio</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value || 'Servicio General'} disabled={isReadOnly}><FormControl><SelectTrigger className="font-bold"><SelectValue placeholder="Seleccione un tipo" /></SelectTrigger></FormControl><SelectContent>{["Servicio General", "Cambio de Aceite", "Pintura"].map((type) => (<SelectItem key={type} value={type}>{type}</SelectItem>))}</SelectContent></Select><FormMessage /></FormItem>)}/>
-                        </div>
+                    {showStatusFields && (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <FormField
+                            control={form.control}
+                            name="status"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel className="font-bold">Estado</FormLabel>
+                                    <Select onValueChange={field.onChange} value={field.value} disabled={isReadOnly}>
+                                        <FormControl>
+                                            <SelectTrigger className="font-bold">
+                                                <SelectValue placeholder="Seleccione un estado" />
+                                            </SelectTrigger>
+                                        </FormControl>
+                                        <SelectContent>
+                                            {statusOptions.map((statusVal) => (
+                                                <SelectItem key={statusVal} value={statusVal}>{statusVal}</SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                        <FormField
+                            control={form.control}
+                            name="serviceType"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel className="font-bold">Tipo de Servicio</FormLabel>
+                                    <Select onValueChange={field.onChange} value={field.value || 'Servicio General'} disabled={isReadOnly}>
+                                        <FormControl>
+                                            <SelectTrigger className="font-bold">
+                                                <SelectValue placeholder="Seleccione un tipo" />
+                                            </SelectTrigger>
+                                        </FormControl>
+                                        <SelectContent>
+                                            {["Servicio General", "Cambio de Aceite", "Pintura"].map((type) => (
+                                                <SelectItem key={type} value={type}>{type}</SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                      </div>
                     )}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
                       <FormField control={form.control} name="vehicleLicensePlateSearch" render={({ field }) => (<FormItem className="w-full"><FormLabel>Placa del Vehículo</FormLabel><FormControl><Input placeholder="Buscar/Ingresar Placas" {...field} value={vehicleLicensePlateSearch} onChange={(e) => {setVehicleLicensePlateSearch(e.target.value.toUpperCase()); field.onChange(e.target.value.toUpperCase());}} disabled={isReadOnly} className="uppercase" onKeyDown={handleVehiclePlateKeyDown} /></FormControl></FormItem>)}/>
                       <FormField control={form.control} name="mileage" render={({ field }) => ( <FormItem><FormLabel>Kilometraje (Opcional)</FormLabel><FormControl><Input type="number" placeholder="Ej: 55000 km" {...field} disabled={isReadOnly} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>)}/>
                     </div>
-                     <FormField control={form.control} name="serviceDate" render={({ field }) => (<FormItem className="flex flex-col"><FormLabel>{mode === 'quote' ? 'Fecha y Hora de la Cita' : 'Fecha y Hora del Servicio Agendado'}</FormLabel><Popover><PopoverTrigger asChild disabled={isReadOnly || (isConvertingQuote && mode === 'service') }><FormControl><Button variant={"outline"} className={cn("w-full justify-start text-left font-normal",!field.value && "text-muted-foreground")} disabled={isReadOnly || (isConvertingQuote && mode === 'service') }>{field.value && isValid(field.value) ? (format(field.value, "PPPp", { locale: es })) : (<span>Seleccione fecha y hora</span>)}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value} onSelect={(date) => { const currentTime = field.value || setHours(setMinutes(new Date(), 30), 8); const newDateTime = date ? setHours(setMinutes(startOfDay(date), currentTime.getMinutes()), currentTime.getHours()) : undefined; field.onChange(newDateTime);}} disabled={(date) => date < new Date("1900-01-01") || isReadOnly || (isConvertingQuote && mode === 'service') } initialFocus locale={es}/><div className="p-2 border-t"><Select value={field.value ? `${String(field.value.getHours()).padStart(2, '0')}:${String(field.value.getMinutes()).padStart(2, '0')}` : "08:30"} onValueChange={(timeValue) => handleTimeChange(timeValue, "serviceDate")} disabled={isReadOnly || (isConvertingQuote && mode === 'service')}><SelectTrigger><SelectValue placeholder="Seleccione hora" /></SelectTrigger><SelectContent>{timeSlots.map(slot => (<SelectItem key={slot.value} value={slot.value}>{slot.label}</SelectItem>))}</SelectContent></Select></div></PopoverContent></Popover><FormMessage /></FormItem>)}/>
+                     <FormField control={form.control} name="serviceDate" render={({ field }) => (<FormItem className="flex flex-col"><FormLabel>Fecha y Hora de la Cita</FormLabel><Popover><PopoverTrigger asChild disabled={isReadOnly || (isConvertingQuote && mode === 'service') }><FormControl><Button variant={"outline"} className={cn("w-full justify-start text-left font-normal",!field.value && "text-muted-foreground")} disabled={isReadOnly || (isConvertingQuote && mode === 'service') }>{field.value && isValid(field.value) ? (format(field.value, "PPPp", { locale: es })) : (<span>Seleccione fecha y hora</span>)}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value} onSelect={(date) => { const currentTime = field.value || setHours(setMinutes(new Date(), 30), 8); const newDateTime = date ? setHours(setMinutes(startOfDay(date), currentTime.getMinutes()), currentTime.getHours()) : undefined; field.onChange(newDateTime);}} disabled={(date) => date < new Date("1900-01-01") || isReadOnly || (isConvertingQuote && mode === 'service') } initialFocus locale={es}/><div className="p-2 border-t"><Select value={field.value ? `${String(field.value.getHours()).padStart(2, '0')}:${String(field.value.getMinutes()).padStart(2, '0')}` : "08:30"} onValueChange={(timeValue) => handleTimeChange(timeValue, "serviceDate")} disabled={isReadOnly || (isConvertingQuote && mode === 'service')}><SelectTrigger><SelectValue placeholder="Seleccione hora" /></SelectTrigger><SelectContent>{timeSlots.map(slot => (<SelectItem key={slot.value} value={slot.value}>{slot.label}</SelectItem>))}</SelectContent></Select></div></PopoverContent></Popover><FormMessage /></FormItem>)}/>
 
                     <FormField control={form.control} name="vehicleId" render={() => ( <FormMessage /> )}/>
                     {vehicleSearchResults.length > 0 && ( <ScrollArea className="h-auto max-h-[150px] w-full rounded-md border"><div className="p-2">{vehicleSearchResults.map(v => (<button type="button" key={v.id} onClick={() => handleSelectVehicleFromSearch(v)} className="w-full text-left p-2 rounded-md hover:bg-muted"><p className="font-semibold">{v.licensePlate}</p><p className="text-sm text-muted-foreground">{v.make} {v.model} - {v.ownerName}</p></button>))}</div></ScrollArea>)}
@@ -797,7 +856,7 @@ export function ServiceForm({
                           </FormItem>
                         )}/>
                         {mode === 'service' && (
-                          <FormField control={form.control} name="technicianId" render={({ field }) => (<FormItem><FormLabel>{technicianLabelText}</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value} disabled={isReadOnly}><FormControl><SelectTrigger><SelectValue placeholder="Seleccione un técnico" /></SelectTrigger></FormControl><SelectContent>{technicians.map((technician) => (<SelectItem key={technician.id} value={technician.id}>{technician.name}</SelectItem>))}</SelectContent></Select><FormMessage /></FormItem>)}/>
+                          <FormField control={form.control} name="technicianId" render={({ field }) => (<FormItem><FormLabel>Técnico Asignado</FormLabel><Select onValueChange={field.onChange} value={field.value} disabled={isReadOnly}><FormControl><SelectTrigger><SelectValue placeholder="Seleccione un técnico" /></SelectTrigger></FormControl><SelectContent>{technicians.map((technician) => (<SelectItem key={technician.id} value={technician.id}>{technician.name}</SelectItem>))}</SelectContent></Select><FormMessage /></FormItem>)}/>
                         )}
                     </div>
                 </CardContent>
@@ -846,7 +905,7 @@ export function ServiceForm({
                 <Card>
                   <CardHeader><CardTitle>Fechas y Horarios</CardTitle></CardHeader>
                   <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 items-end">
-                      <FormField control={form.control} name="serviceDate" render={({ field }) => (<FormItem className="flex flex-col"><FormLabel>Fecha y Hora de Recepción</FormLabel><Popover><PopoverTrigger asChild disabled={isReadOnly}><FormControl><Button variant={"outline"} className={cn("w-full justify-start text-left font-normal",!field.value && "text-muted-foreground")} disabled={isReadOnly}>{field.value && isValid(field.value) ? (format(field.value, "PPPp", { locale: es })) : (<span>Seleccione fecha y hora</span>)}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value} onSelect={(date) => { const currentTime = field.value || setHours(setMinutes(new Date(), 30), 8); const newDateTime = date ? setHours(setMinutes(startOfDay(date), currentTime.getMinutes()), currentTime.getHours()) : undefined; field.onChange(newDateTime);}} disabled={(date) => date < new Date("1900-01-01") || isReadOnly } initialFocus locale={es}/><div className="p-2 border-t"><Select value={field.value ? `${String(field.value.getHours()).padStart(2, '0')}:${String(field.value.getMinutes()).padStart(2, '0')}` : "08:30"} onValueChange={(timeValue) => handleTimeChange(timeValue, "serviceDate")} disabled={isReadOnly}><SelectTrigger><SelectValue placeholder="Seleccione hora" /></SelectTrigger><SelectContent>{timeSlots.map(slot => (<SelectItem key={slot.value} value={slot.value}>{slot.label}</SelectItem>))}</SelectContent></Select></div></PopoverContent></Popover><FormMessage /></FormItem>)}/>
+                      <FormField control={form.control} name="serviceDate" render={({ field }) => (<FormItem className="flex flex-col"><FormLabel>Fecha y Hora del Servicio Agendado</FormLabel><Popover><PopoverTrigger asChild disabled={isReadOnly}><FormControl><Button variant={"outline"} className={cn("w-full justify-start text-left font-normal",!field.value && "text-muted-foreground")} disabled={isReadOnly}>{field.value && isValid(field.value) ? (format(field.value, "PPPp", { locale: es })) : (<span>Seleccione fecha y hora</span>)}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value} onSelect={(date) => { const currentTime = field.value || setHours(setMinutes(new Date(), 30), 8); const newDateTime = date ? setHours(setMinutes(startOfDay(date), currentTime.getMinutes()), currentTime.getHours()) : undefined; field.onChange(newDateTime);}} disabled={(date) => date < new Date("1900-01-01") || isReadOnly } initialFocus locale={es}/><div className="p-2 border-t"><Select value={field.value ? `${String(field.value.getHours()).padStart(2, '0')}:${String(field.value.getMinutes()).padStart(2, '0')}` : "08:30"} onValueChange={(timeValue) => handleTimeChange(timeValue, "serviceDate")} disabled={isReadOnly}><SelectTrigger><SelectValue placeholder="Seleccione hora" /></SelectTrigger><SelectContent>{timeSlots.map(slot => (<SelectItem key={slot.value} value={slot.value}>{slot.label}</SelectItem>))}</SelectContent></Select></div></PopoverContent></Popover><FormMessage /></FormItem>)}/>
                       <FormField control={form.control} name="deliveryDateTime" render={({ field }) => ( <FormItem className="flex flex-col"><FormLabel>Fecha y Hora de Entrega</FormLabel><Popover><PopoverTrigger asChild disabled={isReadOnly}><FormControl><Button variant={"outline"} className={cn("w-full justify-start text-left font-normal",!field.value && "text-muted-foreground")} disabled={isReadOnly}>{field.value && isValid(field.value) ? (format(field.value, "PPPp", { locale: es })) : (<span>Seleccione fecha y hora</span>)}<Clock className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value} onSelect={(date) => { const currentTime = field.value || new Date(); const newDateTime = date ? setHours(setMinutes(startOfDay(date), currentTime.getMinutes()), currentTime.getHours()): undefined; field.onChange(newDateTime);}} disabled={isReadOnly} initialFocus locale={es}/><div className="p-2 border-t"><Select value={field.value ? `${String(field.value.getHours()).padStart(2, '0')}:${String(field.value.getMinutes()).padStart(2, '0')}` : "08:30"} onValueChange={(timeValue) => handleTimeChange(timeValue, "deliveryDateTime")} disabled={isReadOnly}><SelectTrigger><SelectValue placeholder="Seleccione hora" /></SelectTrigger><SelectContent>{timeSlots.map(slot => (<SelectItem key={slot.value} value={slot.value}>{slot.label}</SelectItem>))}</SelectContent></Select></div></PopoverContent></Popover><FormMessage /></FormItem>)}/>
                   </CardContent>
                 </Card>
@@ -856,7 +915,7 @@ export function ServiceForm({
                   <CardContent className="space-y-4">
                       <FormField control={form.control} name="vehicleConditions" render={({ field }) => (<FormItem><FormLabel>Condiciones del Vehículo (al recibir)</FormLabel><FormControl><Textarea placeholder="Ej: Rayón en puerta del conductor, llanta trasera derecha baja, etc." {...field} disabled={isReadOnly} /></FormControl><FormMessage /></FormItem>)}/>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <FormField control={form.control} name="fuelLevel" render={({ field }) => (<FormItem><FormLabel>Nivel de Combustible</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value} disabled={isReadOnly}><FormControl><SelectTrigger><SelectValue placeholder="Seleccionar nivel..." /></SelectTrigger></FormControl><SelectContent><SelectItem value="Vacío">Vacío</SelectItem><SelectItem value="1/8">1/8</SelectItem><SelectItem value="1/4">1/4</SelectItem><SelectItem value="3/8">3/8</SelectItem><SelectItem value="1/2">1/2</SelectItem><SelectItem value="5/8">5/8</SelectItem><SelectItem value="3/4">3/4</SelectItem><SelectItem value="7/8">7/8</SelectItem><SelectItem value="Lleno">Lleno</SelectItem></SelectContent></Select><FormMessage /></FormItem>)}/>
+                          <FormField control={form.control} name="fuelLevel" render={({ field }) => (<FormItem><FormLabel>Nivel de Combustible</FormLabel><Select onValueChange={field.onChange} value={field.value} disabled={isReadOnly}><FormControl><SelectTrigger><SelectValue placeholder="Seleccionar nivel..." /></SelectTrigger></FormControl><SelectContent><SelectItem value="Vacío">Vacío</SelectItem><SelectItem value="1/8">1/8</SelectItem><SelectItem value="1/4">1/4</SelectItem><SelectItem value="3/8">3/8</SelectItem><SelectItem value="1/2">1/2</SelectItem><SelectItem value="5/8">5/8</SelectItem><SelectItem value="3/4">3/4</SelectItem><SelectItem value="7/8">7/8</SelectItem><SelectItem value="Lleno">Lleno</SelectItem></SelectContent></Select><FormMessage /></FormItem>)}/>
                           <FormField control={form.control} name="customerItems" render={({ field }) => (<FormItem><FormLabel>Pertenencias del Cliente (Opcional)</FormLabel><FormControl><Textarea placeholder="Ej: Gato, llanta de refacción, cargador de celular en la guantera, etc." {...field} disabled={isReadOnly} /></FormControl><FormMessage /></FormItem>)}/>
                       </div>
                       <div className="pt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -871,12 +930,41 @@ export function ServiceForm({
           </Tabs>
 
           <div className="flex justify-between items-center pt-4">
+            <AlertDialog open={isCancelAlertOpen} onOpenChange={setIsCancelAlertOpen}>
+                <AlertDialogTrigger asChild>
+                    {!isReadOnly && initialData?.id && (
+                        <Button type="button" variant="destructive">
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            {deleteButtonText}
+                        </Button>
+                    )}
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>¿Está seguro?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          {mode === 'quote' ? `Se eliminará la cotización ${initialDataQuote?.id}. Esta acción no se puede deshacer.` : `Se cancelará el servicio ${initialDataService?.id}.`}
+                          {mode === 'service' && (
+                            <div className="mt-4">
+                              <Label htmlFor="cancellation-reason" className="text-left font-semibold">Motivo de la cancelación (obligatorio)</Label>
+                              <Textarea id="cancellation-reason" value={cancellationReason} onChange={(e) => setCancellationReason(e.target.value)} placeholder="Ej: El cliente no se presentó..." className="mt-2" />
+                            </div>
+                          )}
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel onClick={() => setCancellationReason('')}>No, volver</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleConfirmDelete} disabled={mode === 'service' && !cancellationReason.trim()} className="bg-destructive hover:bg-destructive/90">
+                           Sí, proceder
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
             <div className="flex justify-end gap-2 w-full">
             {isReadOnly ? (<Button type="button" variant="outline" onClick={onClose}>Cerrar</Button>) : (
                 <>
-                {onDelete && mode === 'quote' && initialDataQuote?.id && (<div className="mr-auto"><AlertDialog><AlertDialogTrigger asChild><Button type="button" variant="destructive"><Trash2 className="mr-2 h-4 w-4" />Eliminar Cotización</Button></AlertDialogTrigger><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>¿Estás seguro de eliminar esta cotización?</AlertDialogTitle><AlertDialogDescription>Esta acción no se puede deshacer. Se eliminará permanentemente la cotización {initialDataQuote.id}.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Cancelar</AlertDialogCancel><AlertDialogAction onClick={handleConfirmDelete} className="bg-destructive hover:bg-destructive/90">Sí, Eliminar</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog></div>)}
                 <Button type="button" variant="outline" onClick={onClose}>Cancelar</Button>
-                <Button type="submit" disabled={form.formState.isSubmitting || !selectedVehicle}>{form.formState.isSubmitting ? "Guardando..." : submitButtonText}</Button>
+                <Button type="submit" disabled={form.formState.isSubmitting || !selectedVehicle}>{form.formState.isSubmitting ? "Guardando..." : (initialData?.id ? "Actualizar" : "Crear")}</Button>
                 </>
             )}
             </div>
@@ -931,7 +1019,6 @@ function ServiceItemCard({ serviceIndex, form, removeServiceItem, isReadOnly, in
     const handleAddSupply = (supply: ServiceSupply, sellingPriceToApply?: number) => {
         append(supply);
         
-        // If a manual item with a selling price is added, add its price to the service item's total price
         if (sellingPriceToApply !== undefined) {
             const currentItemPrice = getValues(`serviceItems.${serviceIndex}.price`) || 0;
             const priceToAdd = sellingPriceToApply * supply.quantity;
@@ -956,7 +1043,6 @@ function ServiceItemCard({ serviceIndex, form, removeServiceItem, isReadOnly, in
 
         const inventoryItem = inventoryItems.find(item => item.id === currentSupply.supplyId);
 
-        // Check stock only if it's an inventory item (not manual) and not a service
         if (inventoryItem && !inventoryItem.isService && newQuantity > inventoryItem.quantity) {
             toast({
                 title: 'Stock Insuficiente',
@@ -966,7 +1052,6 @@ function ServiceItemCard({ serviceIndex, form, removeServiceItem, isReadOnly, in
             return;
         }
 
-        // Update the quantity for this specific supply
         setValue(`${supplyPath}.quantity`, newQuantity, { shouldDirty: true });
     };
 
