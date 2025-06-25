@@ -159,6 +159,16 @@ export const TicketContent = React.forwardRef<HTMLDivElement, TicketContentProps
           </>
       )}
 
+      {service?.notes && (
+          <>
+              {renderDashedLine()}
+              <div className="mt-1">
+                <div className="font-semibold text-center">NOTAS:</div>
+                <p className="whitespace-pre-wrap text-left">{service.notes}</p>
+              </div>
+          </>
+      )}
+
       {renderDashedLine()}
 
       <div className="text-center mt-1 space-y-0">
