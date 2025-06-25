@@ -403,8 +403,3 @@ export const enrichServiceForPrinting = (
     suppliesUsed: enrichedSupplies,
   };
 };
-
-// Inicia la hidratación en cuanto el módulo se carga en el cliente.
-if (typeof window !== 'undefined') {
-  hydrateFromFirestore();
-}
