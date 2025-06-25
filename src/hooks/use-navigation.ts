@@ -62,6 +62,13 @@ const BASE_NAV_STRUCTURE: ReadonlyArray<Omit<NavigationEntry, 'isActive'>> = [
     groupTag: "Mi Taller",
     permissions: ['vehicles:manage']
   },
+  { 
+    label: 'Agenda', 
+    path: '/servicios/agenda', 
+    icon: CalendarClock, 
+    groupTag: "Mi Taller",
+    permissions: ['services:view_history']
+  },
   {
     label: 'Cotizaciones', 
     path: '/cotizaciones/historial', 
@@ -70,28 +77,21 @@ const BASE_NAV_STRUCTURE: ReadonlyArray<Omit<NavigationEntry, 'isActive'>> = [
     permissions: ['services:create']
   },
   { 
-    label: 'Agenda', 
-    path: '/servicios/agenda', 
-    icon: CalendarClock, 
-    groupTag: "Mi Taller",
-    permissions: ['services:view_history']
-  },
-  { 
     label: 'Servicios', 
     path: '/servicios/historial', 
     icon: Wrench, 
     groupTag: "Mi Taller",
     permissions: ['services:view_history']
   },
+  
+  // Mi Inventario
   {
     label: 'Punto de Venta', 
     path: '/pos',
     icon: Receipt, 
-    groupTag: "Mi Taller",
+    groupTag: "Mi Inventario",
     permissions: ['pos:create_sale']
   },
-  
-  // Mi Inventario
   { label: 'Productos', path: '/inventario', icon: Package, groupTag: "Mi Inventario", permissions: ['inventory:view'] },
   { label: 'Análisis IA', path: '/inventario/analisis', icon: BarChartHorizontal, groupTag: "Mi Inventario", permissions: ['inventory:manage'] },
   { label: 'Categorías', path: '/inventario/categorias', icon: Shapes, groupTag: "Mi Inventario", permissions: ['inventory:manage'] },
