@@ -25,7 +25,7 @@ import { cn } from "@/lib/utils";
 import { format, parseISO, setHours, setMinutes, isValid, startOfDay } from "date-fns";
 import { es } from 'date-fns/locale';
 import type { ServiceRecord, Vehicle, Technician, InventoryItem, ServiceSupply, QuoteRecord, InventoryCategory, Supplier, User, WorkshopInfo } from "@/types";
-import React, { useEffect, useState, useMemo, useCallback } from "react";
+import React, { useEffect, useState, useMemo, useCallback, useRef } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { VehicleDialog } from "../../vehiculos/components/vehicle-dialog";
 import type { VehicleFormValues } from "../../vehiculos/components/vehicle-form";
@@ -158,12 +158,14 @@ export function ServiceForm({
   const [selectedInventoryItemForDialog, setSelectedInventoryItemForDialog] = useState<InventoryItem | null>(null);
 
   const [isNewInventoryItemDialogOpen, setIsNewInventoryItemDialogOpen] = useState(false);
-  const [newSupplyInitialData, setNewSupplyInitialData] = useState<Partial<InventoryItemFormValues> | null>(null);
+  const [newSupplyInitialData, setNewSupplyInitialData] = useState<Partial<InventoryItemFormValues> | null>(newSupplyInitialData);
   const [isSuggestingPrice, setIsSuggestingPrice] = useState(false);
   const [isGeneratingQuote, setIsGeneratingQuote] = useState(false);
   
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [serviceForSheet, setServiceForSheet] = useState<ServiceRecord | null>(null);
+  
+  const freshUserRef = useRef<User | null>(null);
 
   const form = useForm<ServiceFormValues>({
     resolver: zodResolver(serviceFormSchemaBase),
@@ -194,6 +196,21 @@ export function ServiceForm({
     control: form.control,
     name: "suppliesUsed",
   });
+
+  const refreshCurrentUser = useCallback(() => {
+    const authUserString = localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY);
+    if (authUserString) {
+      freshUserRef.current = JSON.parse(authUserString);
+    }
+  }, []);
+
+  useEffect(() => {
+    refreshCurrentUser(); // Initial load
+    window.addEventListener('focus', refreshCurrentUser);
+    return () => {
+      window.removeEventListener('focus', refreshCurrentUser);
+    };
+  }, [refreshCurrentUser]);
   
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -426,8 +443,7 @@ export function ServiceForm({
         return;
     }
     
-    const authUserString = typeof window !== 'undefined' ? localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY) : null;
-    const currentUser: User | null = authUserString ? JSON.parse(authUserString) : null;
+    const currentUser = freshUserRef.current;
 
     if (!currentUser) {
         toast({ title: "Error de Sesión", description: "No se pudo verificar su sesión. Por favor, inicie sesión de nuevo.", variant: "destructive" });
