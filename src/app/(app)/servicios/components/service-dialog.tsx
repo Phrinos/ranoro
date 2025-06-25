@@ -15,6 +15,8 @@ import { ServiceForm } from "./service-form";
 import type { ServiceRecord, Vehicle, Technician, InventoryItem, QuoteRecord } from "@/types";
 import { useToast } from "@/hooks/use-toast"; 
 import { persistToFirestore, placeholderServiceRecords } from '@/lib/placeholder-data';
+import { db } from '@/lib/firebasePublic.js';
+import { doc, getDoc } from 'firebase/firestore';
 
 
 interface ServiceDialogProps {
@@ -72,7 +74,7 @@ export function ServiceDialog({
         const serviceIndex = placeholderServiceRecords.findIndex(s => s.id === service.id);
         if (serviceIndex > -1) {
           placeholderServiceRecords[serviceIndex] = { ...service };
-          persistToFirestore().catch(err => console.error("Failed to mark signature as viewed", err));
+          persistToFirestore(['serviceRecords']).catch(err => console.error("Failed to mark signature as viewed", err));
         }
       }
     }

@@ -23,6 +23,8 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { ServiceSheetContent } from '@/components/service-sheet-content';
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '@/lib/firebasePublic.js';
 
 type ServiceSortOption = 
   | "serviceDate_desc" | "serviceDate_asc"
@@ -222,22 +224,53 @@ export default function HistorialServiciosPage() {
     window.print();
   };
   
-  const handleShowSheet = useCallback((service: ServiceRecord) => {
+  const handleShowSheet = useCallback(async (service: ServiceRecord) => {
     const authUserString = typeof window !== 'undefined' ? localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY) : null;
     const currentUser: User | null = authUserString ? JSON.parse(authUserString) : null;
 
-    let enrichedService = { ...service };
-    // Only enrich if the current user is the service advisor
+    let serviceToDisplay = { ...service };
+
+    // Fetch latest signatures from public doc before displaying
+    if (service.publicId && db) {
+        try {
+            const publicDocRef = doc(db, 'publicServices', service.publicId);
+            const docSnap = await getDoc(publicDocRef);
+            if (docSnap.exists()) {
+                const publicData = docSnap.data() as ServiceRecord;
+                let changed = false;
+                if (publicData.customerSignatureReception && serviceToDisplay.customerSignatureReception !== publicData.customerSignatureReception) {
+                    serviceToDisplay.customerSignatureReception = publicData.customerSignatureReception;
+                    changed = true;
+                }
+                if (publicData.customerSignatureDelivery && serviceToDisplay.customerSignatureDelivery !== publicData.customerSignatureDelivery) {
+                    serviceToDisplay.customerSignatureDelivery = publicData.customerSignatureDelivery;
+                    changed = true;
+                }
+
+                if (changed) {
+                    const pIndex = placeholderServiceRecords.findIndex(s => s.id === service.id);
+                    if (pIndex > -1) {
+                        placeholderServiceRecords[pIndex] = { ...placeholderServiceRecords[pIndex], ...serviceToDisplay };
+                        await persistToFirestore(['serviceRecords']);
+                    }
+                }
+            }
+        } catch(e) {
+            console.error("Error syncing sheet for view", e);
+        }
+    }
+
+    // Enrich with advisor info
     if (currentUser && currentUser.id === service.serviceAdvisorId) {
-      enrichedService = {
-        ...enrichedService,
+      serviceToDisplay = {
+        ...serviceToDisplay,
         serviceAdvisorName: currentUser.name,
         serviceAdvisorSignatureDataUrl: currentUser.signatureDataUrl,
       };
     }
-    setServiceForSheet(enrichedService);
+    setServiceForSheet(serviceToDisplay);
     setIsSheetOpen(true);
-  }, []);
+  }, [toast]);
 
   const handleShareService = useCallback(async (service: ServiceRecord | null) => {
     if (!service) return;
