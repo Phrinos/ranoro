@@ -266,6 +266,13 @@ export async function hydrateFromFirestore() {
     console.warn('Could not read from Firestore. This might be due to Firestore rules. The app will proceed with in-memory data for this session.');
   }
 
+  // Clear all sales records as requested
+  if (placeholderSales.length > 0) {
+    placeholderSales.splice(0, placeholderSales.length);
+    console.log('All POS sales have been cleared.');
+    changesMade = true;
+  }
+
   // --- DATA INTEGRITY CHECKS ---
   if (!placeholderUsers.some((u) => u.id === defaultSuperAdmin.id)) {
     placeholderUsers.unshift(defaultSuperAdmin);
@@ -422,3 +429,6 @@ export const enrichServiceForPrinting = (
     suppliesUsed: enrichedSupplies,
   };
 };
+
+
+    
