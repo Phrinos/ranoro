@@ -13,17 +13,14 @@ import { getFirestore } from 'firebase/firestore';          // Base de datos
 //-------------------------------------------
 // 1. Configuración del proyecto
 //-------------------------------------------
-// ¡IMPORTANTE! Reemplaza los valores de marcador de posición a continuación
-// con la configuración real de tu proyecto de Firebase.
-// Puedes encontrarla en la consola de Firebase, en la configuración de tu proyecto.
-// (Project settings -> General -> Your apps -> Firebase SDK snippet -> Config)
+// Se utilizan las credenciales del proyecto de Firebase.
 const firebaseConfig = {
-  apiKey:             "TU_API_KEY_AQUI", // Ejemplo: "AIzaSy..."
-  authDomain:         "TU_AUTH_DOMAIN_AQUI", // Ejemplo: "tu-proyecto.firebaseapp.com"
-  projectId:          "TU_PROJECT_ID_AQUI", // Ejemplo: "tu-proyecto"
-  storageBucket:      "TU_STORAGE_BUCKET_AQUI", // Ejemplo: "tu-proyecto.appspot.com"
-  messagingSenderId:  "TU_MESSAGING_SENDER_ID_AQUI", // Ejemplo: "1234567890"
-  appId:              "TU_APP_ID_AQUI", // Ejemplo: "1:1234567890:web:abcdef123456"
+  apiKey:             "AIzaSyA_ot6L0zgglc1tC0BounxYIvj7y8048Sg",
+  authDomain:         "ranoro-jm8l0.firebaseapp.com",
+  projectId:          "ranoro-jm8l0",
+  storageBucket:      "ranoro-jm8l0.appspot.com",
+  messagingSenderId:  "290934350177",
+  appId:              "1:290934350177:web:2365c77eaca4bb0d906520",
 };
 
 
@@ -35,7 +32,7 @@ let db = null;
 //-------------------------------------------
 // 2. Crear/obtener la app de Firebase
 //-------------------------------------------
-// Solo inicializa Firebase si las credenciales NO son los placeholders.
+// Solo inicializa Firebase si las credenciales son válidas.
 if (firebaseConfig.apiKey && !firebaseConfig.apiKey.startsWith("TU_")) {
   const app = !getApps().length ? initializeApp(firebaseConfig) : getApps()[0];
   auth = getAuth(app);
