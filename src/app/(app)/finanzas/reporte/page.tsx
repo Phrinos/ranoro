@@ -79,7 +79,7 @@ export default function FinancialReportPage() {
       type: 'Venta',
       description: `Venta a ${sale.customerName || 'Cliente Mostrador'} - ${sale.items.length} artículo(s)`,
       totalAmount: sale.totalAmount, 
-      profit: calculateSaleProfit(sale, inventory, IVA_RATE),
+      profit: calculateSaleProfit(sale, inventory),
       originalObject: sale,
     }));
 

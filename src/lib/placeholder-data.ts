@@ -266,13 +266,6 @@ export async function hydrateFromFirestore() {
     console.warn('Could not read from Firestore. This might be due to Firestore rules. The app will proceed with in-memory data for this session.');
   }
 
-  // Clear all quotes after hydration to ensure they are deleted from the database
-  if (placeholderQuotes.length > 0) {
-    console.log(`DELETING ${placeholderQuotes.length} QUOTES AS REQUESTED...`);
-    placeholderQuotes.splice(0, placeholderQuotes.length);
-    changesMade = true;
-  }
-
   // --- DATA INTEGRITY CHECKS ---
   if (!placeholderUsers.some((u) => u.id === defaultSuperAdmin.id)) {
     placeholderUsers.unshift(defaultSuperAdmin);
@@ -364,7 +357,6 @@ export const getYesterdayRange = () => {
 export const calculateSaleProfit = (
   sale: SaleReceipt,
   inventory: InventoryItem[],
-  ivaRate: number,
 ): number => {
   if (!sale?.items?.length) return 0;
 
@@ -395,8 +387,7 @@ export const calculateSaleProfit = (
     // If cost is not defined or invalid, treat it as 0 but don't stop the whole calculation.
     const effectiveCostPrice = (inventoryItem.isService || !isFinite(costPricePerUnit)) ? 0 : costPricePerUnit;
     
-    const sellingPriceBeforeTax = sellingPriceWithTax / (1 + ivaRate);
-    const profitPerUnit = sellingPriceBeforeTax - effectiveCostPrice;
+    const profitPerUnit = sellingPriceWithTax - effectiveCostPrice;
     const profitForItem = profitPerUnit * quantitySold;
     
     if (isFinite(profitForItem)) {

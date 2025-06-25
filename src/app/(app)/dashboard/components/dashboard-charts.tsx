@@ -13,7 +13,6 @@ export function DashboardCharts() {
   const [monthlyChartData, setMonthlyChartData] = React.useState<any[]>([]);
   const [serviceTypeChartData, setServiceTypeChartData] = React.useState<any[]>([]);
   const [revenueSourceChartData, setRevenueSourceChartData] = React.useState<any[]>([]);
-  const IVA_RATE = 0.16;
 
   React.useEffect(() => {
     // Process data for monthly performance chart
@@ -44,7 +43,7 @@ export function DashboardCharts() {
         const monthKey = format(date, "yyyy-MM");
         if (monthlyData[monthKey]) {
             monthlyData[monthKey].revenue += sale.totalAmount;
-            monthlyData[monthKey].profit += calculateSaleProfit(sale, placeholderInventory, IVA_RATE);
+            monthlyData[monthKey].profit += calculateSaleProfit(sale, placeholderInventory);
         }
     });
 

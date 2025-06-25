@@ -67,8 +67,7 @@ const formatCurrency = (amount: number) => {
 export default function DashboardPage() {
   const [userName, setUserName] = useState<string | null>(null);
   const { toast } = useToast();
-  const IVA_RATE = 0.16;
-
+  
   const [purchaseRecommendations, setPurchaseRecommendations] = useState<PurchaseRecommendation[] | null>(null);
   const [isPurchaseLoading, setIsPurchaseLoading] = useState(false);
   const [purchaseError, setPurchaseError] = useState<string | null>(null);
@@ -104,7 +103,7 @@ export default function DashboardPage() {
     const revenueFromSales = salesToday.reduce((sum, s) => sum + s.totalAmount, 0);
     const revenueFromServices = servicesCompletedToday.reduce((sum, s) => sum + s.totalCost, 0);
     
-    const profitFromSales = salesToday.reduce((sum, s) => sum + calculateSaleProfit(s, placeholderInventory, IVA_RATE), 0);
+    const profitFromSales = salesToday.reduce((sum, s) => sum + calculateSaleProfit(s, placeholderInventory), 0);
     const profitFromServices = servicesCompletedToday.reduce((sum, s) => sum + (s.serviceProfit || 0), 0);
 
     setKpiData({
