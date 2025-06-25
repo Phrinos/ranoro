@@ -193,7 +193,7 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
         <footer className="mt-auto pt-4 text-xs">
            <div className="grid grid-cols-2 gap-8 text-center mb-4">
                <div className="pt-2 min-h-[80px] flex flex-col justify-between">
-                    <div className="h-14 flex items-center justify-center">
+                    <div className="h-14 flex-grow flex items-center justify-center">
                         {service.serviceAdvisorSignatureDataUrl && service.serviceAdvisorSignatureDataUrl.startsWith('data:image') && (
                             <Image src={service.serviceAdvisorSignatureDataUrl} alt="Firma del asesor" width={150} height={56} style={{objectFit: 'contain'}} />
                         )}
@@ -202,13 +202,15 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
                         <p className="font-bold">ASESOR DE SERVICIO: {service.serviceAdvisorName?.toUpperCase() || '________________________________'}</p>
                     </div>
                 </div>
-                <div className="pt-12 min-h-[80px] flex flex-col justify-end">
-                   <div className="border-t-2 border-black pt-1 w-full flex flex-col items-center">
+                <div className="min-h-[80px] flex flex-col justify-end">
+                   <div className="h-20 flex-grow flex items-center justify-center">
                        {service.customerSignatureDelivery ? (
-                         <div className="w-full h-full flex items-center justify-center mb-1">
-                           <Image src={service.customerSignatureDelivery} alt="Firma de conformidad" width={200} height={70} style={{objectFit: 'contain'}} />
+                         <div className="relative w-full h-full">
+                           <Image src={service.customerSignatureDelivery} alt="Firma de conformidad" layout="fill" objectFit="contain" />
                          </div>
                        ) : null}
+                   </div>
+                   <div className="border-t-2 border-black pt-1 w-full text-center">
                        <p className="font-bold">RECIBO DE CONFORMIDAD: {vehicle?.ownerName?.toUpperCase() || '________________________________'}</p>
                    </div>
                </div>
