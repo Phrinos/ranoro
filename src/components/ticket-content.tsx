@@ -1,6 +1,7 @@
+
 "use client";
 
-import type { SaleReceipt, ServiceRecord, Vehicle, Technician } from '@/types';
+import type { SaleReceipt, ServiceRecord, Vehicle, Technician, ServiceItem } from '@/types';
 import { format, parseISO, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
 import React, { useEffect, useState } from 'react';
@@ -60,7 +61,8 @@ export const TicketContent = React.forwardRef<HTMLDivElement, TicketContentProps
     return `$${amount.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   };
   
-  const items = sale?.items || service?.suppliesUsed || [];
+  const items = sale?.items || [];
+  const serviceItems = service?.serviceItems || [];
   const subTotal = sale?.subTotal || service?.subTotal || 0;
   const tax = sale?.tax || service?.taxAmount || 0;
   const totalAmount = sale?.totalAmount || service?.totalCost || 0;
@@ -106,23 +108,16 @@ export const TicketContent = React.forwardRef<HTMLDivElement, TicketContentProps
       
       {renderDashedLine()}
 
-      {service?.description && (
-        <>
-          <div className="font-semibold text-center my-1">SERVICIO REALIZADO</div>
-          <div className="whitespace-pre-wrap text-left mb-1">{service.description}</div>
-          {renderDashedLine()}
-        </>
-      )}
-      
       <div className="font-semibold text-center my-1">DETALLE</div>
       
       <div className="py-0.5 space-y-1">
+        {/* For POS Sales */}
         {items.map((item, idx) => {
             const unitPrice = 'unitPrice' in item ? (item.unitPrice || 0) : 0;
             const totalPrice = ('totalPrice' in item && item.totalPrice) ? item.totalPrice : (unitPrice * item.quantity);
             const itemName = 'itemName' in item ? item.itemName : ('supplyName' in item ? item.supplyName : 'Artículo desconocido');
             return (
-                <div key={idx}>
+                <div key={`sale-${idx}`}>
                     <div className="w-full">{itemName}</div>
                     <div className="flex justify-between">
                         <span>&nbsp;&nbsp;{item.quantity} x {formatCurrency(unitPrice)}</span>
@@ -131,6 +126,22 @@ export const TicketContent = React.forwardRef<HTMLDivElement, TicketContentProps
                 </div>
             )
         })}
+
+        {/* For Service Orders */}
+        {serviceItems.map((item, idx) => (
+          <div key={`service-${idx}`}>
+            <div className="flex justify-between font-semibold">
+              <span>{item.name}</span>
+              <span>{formatCurrency(item.price)}</span>
+            </div>
+            {item.suppliesUsed.map((supply, supplyIdx) => (
+              <div key={`supply-${supplyIdx}`} className="flex justify-between text-neutral-600 pl-2">
+                <span>- {supply.supplyName}</span>
+                <span>Cant: {supply.quantity}</span>
+              </div>
+            ))}
+          </div>
+        ))}
       </div>
 
       {renderDashedLine()}

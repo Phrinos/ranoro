@@ -2,7 +2,7 @@
 "use client";
 
 import { useParams, useRouter } from 'next/navigation';
-import { placeholderVehicles, placeholderServiceRecords, placeholderTechnicians, placeholderInventory, persistToFirestore, enrichServiceForPrinting } from '@/lib/placeholder-data';
+import { placeholderVehicles, placeholderServiceRecords, placeholderTechnicians, placeholderInventory, persistToFirestore } from '@/lib/placeholder-data';
 import type { Vehicle, ServiceRecord, Technician, QuoteRecord, InventoryItem } from '@/types';
 import { PageHeader } from '@/components/page-header';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -109,8 +109,7 @@ export default function VehicleDetailPage() {
     });
 
     if (updatedService.status === 'Completado') {
-      const serviceForTicket = enrichServiceForPrinting(updatedService, placeholderInventory);
-      setCurrentServiceForTicket(serviceForTicket);
+      setCurrentServiceForTicket(updatedService);
       setCurrentTechnicianForTicket(technicians.find(t => t.id === updatedService.technicianId) || null);
       setShowPrintTicketDialog(true);
     }
@@ -185,6 +184,13 @@ export default function VehicleDetailPage() {
       case "Agendado": return "default";
       default: return "default";
     }
+  };
+  
+  const getServiceDescriptionText = (service: ServiceRecord) => {
+    if (service.serviceItems && service.serviceItems.length > 0) {
+      return service.serviceItems.map(item => item.name).join(', ');
+    }
+    return service.description;
   };
 
   return (
@@ -269,7 +275,7 @@ export default function VehicleDetailPage() {
                       <TableRow key={service.id} onClick={() => handleServiceRowClick(service)} className="cursor-pointer hover:bg-muted/50">
                         <TableCell>{format(parseISO(service.serviceDate), "dd MMM yyyy, HH:mm", { locale: es })}</TableCell>
                         <TableCell>{service.mileage ? `${service.mileage.toLocaleString('es-ES')} km` : 'N/A'}</TableCell>
-                        <TableCell>{service.description}</TableCell>
+                        <TableCell>{getServiceDescriptionText(service)}</TableCell>
                         <TableCell>{technicians.find(t => t.id === service.technicianId)?.name || service.technicianId}</TableCell>
                         <TableCell className="text-right">${service.totalCost.toLocaleString('es-ES', { minimumFractionDigits: 2 })}</TableCell>
                         <TableCell><Badge variant={getStatusVariant(service.status)}>{service.status}</Badge></TableCell>

@@ -12,7 +12,7 @@ import { Search, ListFilter, CalendarIcon as CalendarDateIcon, DollarSign, Trend
 import { ServicesTable } from "../components/services-table"; 
 import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
 import { TicketContent } from '@/components/ticket-content';
-import { placeholderServiceRecords, placeholderVehicles, placeholderTechnicians, placeholderInventory, persistToFirestore, enrichServiceForPrinting, AUTH_USER_LOCALSTORAGE_KEY } from "@/lib/placeholder-data";
+import { placeholderServiceRecords, placeholderVehicles, placeholderTechnicians, placeholderInventory, persistToFirestore, AUTH_USER_LOCALSTORAGE_KEY } from "@/lib/placeholder-data";
 import type { ServiceRecord, Vehicle, Technician, InventoryItem, QuoteRecord, WorkshopInfo, User } from "@/types";
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { useToast } from "@/hooks/use-toast";
@@ -186,8 +186,7 @@ export default function HistorialServiciosPage() {
     });
 
     if (data.status === 'Completado') {
-      const serviceForTicket = enrichServiceForPrinting(data, inventoryItems);
-      setCurrentServiceForTicket(serviceForTicket);
+      setCurrentServiceForTicket(data);
       setCurrentVehicleForTicket(vehicles.find(v => v.id === data.vehicleId) || null);
       setCurrentTechnicianForTicket(technicians.find(t => t.id === data.technicianId) || null);
       setShowPrintTicketDialog(true);
@@ -215,12 +214,14 @@ export default function HistorialServiciosPage() {
     service.cancelledBy = currentUser?.name || 'Usuario desconocido';
 
     // Restore inventory if items were used
-    if (service.suppliesUsed && service.suppliesUsed.length > 0) {
-      service.suppliesUsed.forEach(supply => {
-        const invIndex = placeholderInventory.findIndex(i => i.id === supply.supplyId);
-        if (invIndex > -1 && !placeholderInventory[invIndex].isService) {
-          placeholderInventory[invIndex].quantity += supply.quantity;
-        }
+    if (service.serviceItems && service.serviceItems.length > 0) {
+      service.serviceItems.forEach(item => {
+        item.suppliesUsed.forEach(supply => {
+          const invIndex = placeholderInventory.findIndex(i => i.id === supply.supplyId);
+          if (invIndex > -1 && !placeholderInventory[invIndex].isService) {
+            placeholderInventory[invIndex].quantity += supply.quantity;
+          }
+        });
       });
     }
     

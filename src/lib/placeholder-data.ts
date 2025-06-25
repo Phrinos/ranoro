@@ -403,28 +403,3 @@ export const calculateSaleProfit = (
   
   return isFinite(totalProfit) ? totalProfit : 0;
 };
-
-
-/**
- * Crea un ServiceRecord listo para imprimir sustituyendo el unitPrice de supplies
- * por su sellingPrice.
- */
-export const enrichServiceForPrinting = (
-  service: ServiceRecord,
-  inventory: InventoryItem[],
-): ServiceRecord => {
-  if (!service || !service.suppliesUsed) return service;
-
-  const enrichedSupplies = service.suppliesUsed.map((supply) => {
-    const inventoryItem = inventory.find((item) => item.id === supply.supplyId);
-    return {
-      ...supply,
-      unitPrice: inventoryItem?.sellingPrice ?? supply.unitPrice ?? 0,
-    };
-  });
-
-  return {
-    ...service,
-    suppliesUsed: enrichedSupplies,
-  };
-};
