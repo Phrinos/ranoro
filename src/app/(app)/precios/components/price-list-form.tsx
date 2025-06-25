@@ -2,7 +2,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm, useFieldArray } from "react-hook-form";
+import { useForm, useFieldArray, type Control } from "react-hook-form";
 import * as z from "zod";
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -11,14 +11,14 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { PlusCircle, Trash2, DollarSign, Wrench } from "lucide-react";
 import type { VehiclePriceList } from "@/types";
-import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuCheckboxItem, DropdownMenuLabel, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
+import { Checkbox } from "@/components/ui/checkbox";
 
 const supplySchema = z.object({
   name: z.string().min(2, "Mínimo 2 caracteres"),
   cost: z.coerce.number().min(0, "Debe ser >= 0"),
-  quantity: z.coerce.number().min(0.1, "Debe ser > 0"),
+  quantity: z.coerce.number().min(0.001, "Debe ser > 0"),
   supplier: z.string().min(2, "Mínimo 2 caracteres"),
 });
 
@@ -73,7 +73,7 @@ export function PriceListForm({ initialData, onSubmit, onClose }: PriceListFormP
             <CardTitle>Vehículo</CardTitle>
             <CardDescription>Define el vehículo al que se aplicará esta lista de precios.</CardDescription>
           </CardHeader>
-          <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <FormField
               control={form.control}
               name="make"
@@ -99,41 +99,41 @@ export function PriceListForm({ initialData, onSubmit, onClose }: PriceListFormP
              <FormField
                 control={form.control}
                 name="years"
-                render={({ field: yearsField }) => (
-                    <FormItem>
+                render={() => (
+                    <FormItem className="md:col-span-2">
                     <FormLabel>Años Aplicables</FormLabel>
-                    <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                        <FormControl>
-                            <Button variant="outline" className="w-full justify-start font-normal">
-                            {(yearsField.value?.length || 0) > 0
-                                ? `${yearsField.value.length} año(s) seleccionado(s)`
-                                : "Seleccionar años"}
-                            </Button>
-                        </FormControl>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent className="w-56" align="start">
-                        <DropdownMenuLabel>Años de Modelo</DropdownMenuLabel>
-                        <DropdownMenuSeparator />
-                        <ScrollArea className="h-60">
+                    <Card>
+                        <CardContent className="p-2">
+                        <ScrollArea className="h-40">
+                            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-4 p-4">
                             {yearsToShow.map((year) => (
-                            <DropdownMenuCheckboxItem
+                                <FormField
                                 key={year}
-                                checked={yearsField.value?.includes(year)}
-                                onCheckedChange={(checked) => {
-                                const currentYears = yearsField.value || [];
-                                const newYears = checked
-                                    ? [...currentYears, year]
-                                    : currentYears.filter((y) => y !== year);
-                                yearsField.onChange(newYears.sort((a, b) => b - a));
-                                }}
-                            >
-                                {year}
-                            </DropdownMenuCheckboxItem>
+                                control={form.control}
+                                name="years"
+                                render={({ field }) => (
+                                    <FormItem className="flex flex-row items-start space-x-2 space-y-0">
+                                    <FormControl>
+                                        <Checkbox
+                                        checked={field.value?.includes(year)}
+                                        onCheckedChange={(checked) => {
+                                            const currentYears = field.value || [];
+                                            const newYears = checked
+                                            ? [...currentYears, year]
+                                            : currentYears.filter((y) => y !== year);
+                                            field.onChange(newYears.sort((a, b) => b - a));
+                                        }}
+                                        />
+                                    </FormControl>
+                                    <FormLabel className="text-sm font-normal">{year}</FormLabel>
+                                    </FormItem>
+                                )}
+                                />
                             ))}
+                            </div>
                         </ScrollArea>
-                        </DropdownMenuContent>
-                    </DropdownMenu>
+                        </CardContent>
+                    </Card>
                     <FormMessage />
                     </FormItem>
                 )}
@@ -159,17 +159,17 @@ export function PriceListForm({ initialData, onSubmit, onClose }: PriceListFormP
                             </Button>
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                            <FormField control={form.control} name={`services.${serviceIndex}.serviceName`} render={({ field }) => ( <FormItem><FormLabel>Nombre Servicio</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage/></FormItem> )}/>
-                            <FormField control={form.control} name={`services.${serviceIndex}.customerPrice`} render={({ field }) => ( <FormItem><FormLabel>Precio Cliente</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage/></FormItem> )}/>
-                            <FormField control={form.control} name={`services.${serviceIndex}.estimatedTimeHours`} render={({ field }) => ( <FormItem><FormLabel>Horas Est.</FormLabel><FormControl><Input type="number" step="0.1" {...field} /></FormControl><FormMessage/></FormItem> )}/>
-                            <FormField control={form.control} name={`services.${serviceIndex}.description`} render={({ field }) => ( <FormItem className="md:col-span-3"><FormLabel>Descripción</FormLabel><FormControl><Textarea rows={2} {...field} /></FormControl><FormMessage/></FormItem> )}/>
+                            <FormField control={form.control} name={`services.${serviceIndex}.serviceName`} render={({ field }) => ( <FormItem><FormLabel>Nombre Servicio</FormLabel><FormControl><Input placeholder="Afinación Mayor" {...field} /></FormControl><FormMessage/></FormItem> )}/>
+                            <FormField control={form.control} name={`services.${serviceIndex}.customerPrice`} render={({ field }) => ( <FormItem><FormLabel>Precio Cliente</FormLabel><FormControl><Input type="number" placeholder="1999.00" {...field} value={field.value ?? ''} /></FormControl><FormMessage/></FormItem> )}/>
+                            <FormField control={form.control} name={`services.${serviceIndex}.estimatedTimeHours`} render={({ field }) => ( <FormItem><FormLabel>Horas Est.</FormLabel><FormControl><Input type="number" step="0.1" placeholder="2.5" {...field} value={field.value ?? ''} /></FormControl><FormMessage/></FormItem> )}/>
+                            <FormField control={form.control} name={`services.${serviceIndex}.description`} render={({ field }) => ( <FormItem className="md:col-span-3"><FormLabel>Descripción</FormLabel><FormControl><Textarea rows={2} placeholder="Incluye cambio de aceite, filtros y bujías." {...field} /></FormControl><FormMessage/></FormItem> )}/>
                         </div>
                         <Separator className="my-4"/>
                         <p className="text-sm font-medium mb-2">Insumos del Servicio</p>
-                        <ServiceSuppliesArray serviceIndex={serviceIndex} />
+                        <ServiceSuppliesArray serviceIndex={serviceIndex} control={form.control} />
                     </Card>
                 ))}
-                <Button type="button" variant="outline" size="sm" onClick={() => appendService({ id: `SVC_${Date.now()}`, serviceName: '', customerPrice: 0, supplies: [], description: '', estimatedTimeHours: 0 })}>
+                <Button type="button" variant="outline" size="sm" onClick={() => appendService({ id: `SVC_${Date.now()}`, serviceName: '', customerPrice: undefined, supplies: [], description: '', estimatedTimeHours: undefined })}>
                     <PlusCircle className="mr-2 h-4 w-4" /> Añadir Servicio
                 </Button>
             </CardContent>
@@ -188,27 +188,26 @@ export function PriceListForm({ initialData, onSubmit, onClose }: PriceListFormP
 }
 
 // Sub-component for nested supplies array
-function ServiceSuppliesArray({ serviceIndex }: { serviceIndex: number }) {
-    const { control } = useForm<PriceListFormValues>(); // Note: this is re-instantiating, but we just need control
+function ServiceSuppliesArray({ serviceIndex, control }: { serviceIndex: number; control: Control<PriceListFormValues> }) {
     const { fields, append, remove } = useFieldArray({
-        control: control, // Re-use control here
+        control,
         name: `services.${serviceIndex}.supplies`
     });
 
     return (
         <div className="space-y-3">
              {fields.map((supplyField, supplyIndex) => (
-                <div key={supplyField.id} className="grid grid-cols-10 gap-2 items-end">
-                    <FormField control={control} name={`services.${serviceIndex}.supplies.${supplyIndex}.name`} render={({ field }) => ( <FormItem className="col-span-3"><FormLabel className="text-xs">Nombre</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage/></FormItem> )}/>
-                    <FormField control={control} name={`services.${serviceIndex}.supplies.${supplyIndex}.quantity`} render={({ field }) => ( <FormItem className="col-span-2"><FormLabel className="text-xs">Cant.</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage/></FormItem> )}/>
-                    <FormField control={control} name={`services.${serviceIndex}.supplies.${supplyIndex}.cost`} render={({ field }) => ( <FormItem className="col-span-2"><FormLabel className="text-xs">Costo</FormLabel><FormControl><Input type="number" step="0.01" {...field} /></FormControl><FormMessage/></FormItem> )}/>
-                    <FormField control={control} name={`services.${serviceIndex}.supplies.${supplyIndex}.supplier`} render={({ field }) => ( <FormItem className="col-span-2"><FormLabel className="text-xs">Proveedor</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage/></FormItem> )}/>
-                    <Button type="button" variant="ghost" size="icon" className="h-9 w-9" onClick={() => remove(supplyIndex)}>
+                <div key={supplyField.id} className="grid grid-cols-1 md:grid-cols-10 gap-2 items-end">
+                    <FormField control={control} name={`services.${serviceIndex}.supplies.${supplyIndex}.name`} render={({ field }) => ( <FormItem className="col-span-10 md:col-span-3"><FormLabel className="text-xs">Nombre</FormLabel><FormControl><Input placeholder="Aceite Sintético 5W-30" {...field} /></FormControl><FormMessage/></FormItem> )}/>
+                    <FormField control={control} name={`services.${serviceIndex}.supplies.${supplyIndex}.quantity`} render={({ field }) => ( <FormItem className="col-span-5 md:col-span-2"><FormLabel className="text-xs">Cant.</FormLabel><FormControl><Input type="number" placeholder="4.5" {...field} value={field.value ?? ''} /></FormControl><FormMessage/></FormItem> )}/>
+                    <FormField control={control} name={`services.${serviceIndex}.supplies.${supplyIndex}.cost`} render={({ field }) => ( <FormItem className="col-span-5 md:col-span-2"><FormLabel className="text-xs">Costo</FormLabel><FormControl><Input type="number" step="0.01" placeholder="150.00" {...field} value={field.value ?? ''} /></FormControl><FormMessage/></FormItem> )}/>
+                    <FormField control={control} name={`services.${serviceIndex}.supplies.${supplyIndex}.supplier`} render={({ field }) => ( <FormItem className="col-span-10 md:col-span-2"><FormLabel className="text-xs">Proveedor</FormLabel><FormControl><Input placeholder="Refaccionaria GDL" {...field} /></FormControl><FormMessage/></FormItem> )}/>
+                    <Button type="button" variant="ghost" size="icon" className="h-9 w-9 md:col-span-1 col-span-10 md:self-end" onClick={() => remove(supplyIndex)}>
                         <Trash2 className="h-4 w-4 text-destructive"/>
                     </Button>
                 </div>
              ))}
-            <Button type="button" variant="outline" size="xs" className="text-xs" onClick={() => append({ name: '', cost: 0, quantity: 1, supplier: '' })}>
+            <Button type="button" variant="outline" size="xs" className="text-xs" onClick={() => append({ name: '', cost: undefined, quantity: 1, supplier: '' })}>
                 <PlusCircle className="mr-2 h-3 w-3" /> Añadir Insumo
             </Button>
         </div>
