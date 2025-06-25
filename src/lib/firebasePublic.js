@@ -16,11 +16,28 @@ const firebaseConfig = {
 };
 
 let db = null;
+const PUBLIC_APP_NAME = "firebase-public-app";
+
+/**
+ * Initializes and returns a named, secondary Firebase app instance
+ * specifically for public-facing pages. This avoids initializing
+ * auth services and prevents unwanted redirects to login.
+ * @returns The public Firebase app instance.
+ */
+function initializePublicApp() {
+  const apps = getApps();
+  const existingApp = apps.find(app => app.name === PUBLIC_APP_NAME);
+  if (existingApp) {
+    return existingApp;
+  }
+  return initializeApp(firebaseConfig, PUBLIC_APP_NAME);
+}
+
 
 if (firebaseConfig.apiKey && !firebaseConfig.apiKey.startsWith("TU_")) {
-  // Inicializa la app, pero no los otros servicios
-  const app = !getApps().length ? initializeApp(firebaseConfig, "firebase-public-app") : getApps().find(app => app.name === "firebase-public-app") || getApps()[0];
-  db = getFirestore(app);
+  // Inicializa la app pública, pero no los otros servicios de Firebase
+  const publicApp = initializePublicApp();
+  db = getFirestore(publicApp);
 } else {
   if (typeof window !== 'undefined') {
     console.warn("MODO DEMO: Conexión a base de datos pública no disponible sin credenciales de Firebase.");
