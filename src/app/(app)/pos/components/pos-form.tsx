@@ -222,6 +222,33 @@ export function PosForm({ inventoryItems: parentInventoryItems, onSaleComplete, 
     return `$${amount.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   };
   
+  const handleQuantityChange = (index: number, delta: number) => {
+    const itemInSale = form.getValues(`items.${index}`);
+    if (!itemInSale) return;
+    
+    const currentQuantity = itemInSale.quantity;
+    const newQuantity = currentQuantity + delta;
+    
+    if (newQuantity < 0.001) return;
+
+    const itemDetailsFromInv = currentInventoryItems.find(
+      (invItem) => invItem.id === itemInSale.inventoryItemId
+    );
+
+    if (itemDetailsFromInv && !itemDetailsFromInv.isService && newQuantity > itemDetailsFromInv.quantity) {
+        toast({
+            title: 'Stock Insuficiente',
+            description: `Solo hay ${itemDetailsFromInv.quantity} de ${itemDetailsFromInv.name}.`,
+            variant: 'destructive',
+            duration: 3000
+        });
+        return;
+    }
+    
+    form.setValue(`items.${index}.quantity`, newQuantity, { shouldDirty: true, shouldValidate: true });
+    update(index, { ...form.getValues(`items.${index}`), quantity: newQuantity });
+  };
+
 
   // --- Add Item Dialog Logic ---
   useEffect(() => {
@@ -351,43 +378,29 @@ export function PosForm({ inventoryItems: parentInventoryItems, onSaleComplete, 
                                     className="bg-muted/30 dark:bg-muted/60 border-none text-sm font-medium w-full"
                                 />
                             </div>
-                            <div className="w-36">
+                            <div className="w-40">
                                 <FormLabel className="text-xs">Cantidad</FormLabel>
-                                <FormField
-                                    control={form.control}
-                                    name={`items.${index}.quantity`}
-                                    render={({ field: quantityField }) => (
-                                        <Input
-                                            type="number"
-                                            step="any"
-                                            min="0.001"
-                                            {...quantityField}
-                                            className="w-full text-center font-medium mt-1 h-8"
-                                            onBlur={(e) => {
-                                                const itemInSale = form.getValues(`items.${index}`);
-                                                const itemDetailsFromInv = currentInventoryItems.find(
-                                                  (invItem) => invItem.id === itemInSale.inventoryItemId
-                                                );
-                                                const value = e.target.value;
-                                                const quantity = value ? parseFloat(value.replace(',', '.')) : 0;
-                                
-                                                if (isNaN(quantity)) return;
-                                
-                                                if (itemDetailsFromInv && !itemDetailsFromInv.isService && quantity > itemDetailsFromInv.quantity) {
-                                                    toast({
-                                                        title: 'Stock Insuficiente',
-                                                        description: `Solo hay ${itemDetailsFromInv.quantity} ${
-                                                          itemDetailsFromInv.unitType || 'unidades'
-                                                        } de ${itemDetailsFromInv.name}. Se ajustará a la cantidad máxima disponible.`,
-                                                        variant: 'destructive',
-                                                        duration: 4000,
-                                                    });
-                                                    form.setValue(`items.${index}.quantity`, itemDetailsFromInv.quantity);
-                                                }
-                                            }}
-                                        />
-                                    )}
-                                />
+                                 <div className="flex items-center justify-center gap-1 mt-1">
+                                    <Button type="button" variant="outline" size="icon" className="h-8 w-8" onClick={() => handleQuantityChange(index, -1)}>
+                                        <Minus className="h-4 w-4" />
+                                    </Button>
+                                    <FormField
+                                        control={form.control}
+                                        name={`items.${index}.quantity`}
+                                        render={({ field: quantityField }) => (
+                                            <Input
+                                                type="number"
+                                                step="any"
+                                                min="0.001"
+                                                {...quantityField}
+                                                className="w-full text-center font-medium h-8"
+                                            />
+                                        )}
+                                    />
+                                     <Button type="button" variant="outline" size="icon" className="h-8 w-8" onClick={() => handleQuantityChange(index, 1)}>
+                                        <Plus className="h-4 w-4" />
+                                    </Button>
+                                </div>
                             </div>
                         <div className="w-28 self-end">
                             <FormLabel className="text-xs">Precio Total (IVA Inc.)</FormLabel>
@@ -581,18 +594,38 @@ export function PosForm({ inventoryItems: parentInventoryItems, onSaleComplete, 
                     <Label htmlFor="item-quantity">
                         Cantidad ({selectedInventoryItemForDialog?.unitType || 'unidades'})
                     </Label>
-                    <Input
-                        id="item-quantity"
-                        type="number"
-                        step="any"
-                        min="0.001"
-                        value={addItemQuantity}
-                        onChange={(e) => {
-                            const val = e.target.value.replace(',', '.');
-                            setAddItemQuantity(parseFloat(val) || 0)
-                        }}
-                        className="w-full"
-                    />
+                    <div className="flex items-center gap-2">
+                        <Button
+                            type="button"
+                            variant="outline"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() => setAddItemQuantity(q => Math.max(1, q - 1))}
+                        >
+                            <Minus className="h-4 w-4" />
+                        </Button>
+                        <Input
+                            id="item-quantity"
+                            type="number"
+                            step="any"
+                            min="0.001"
+                            value={addItemQuantity}
+                            onChange={(e) => {
+                                const val = e.target.value.replace(',', '.');
+                                setAddItemQuantity(parseFloat(val) || 0)
+                            }}
+                            className="w-20 text-center"
+                        />
+                        <Button
+                            type="button"
+                            variant="outline"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() => setAddItemQuantity(q => q + 1)}
+                        >
+                            <Plus className="h-4 w-4" />
+                        </Button>
+                    </div>
                 </div>
             </div>
             <DialogFooter>
