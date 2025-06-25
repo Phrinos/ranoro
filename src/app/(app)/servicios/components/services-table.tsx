@@ -185,7 +185,6 @@ export const ServicesTable = React.memo(({
                                     <AlertDialogAction
                                         onClick={() => {
                                             onServiceCancelled(service.id, cancellationReason);
-                                            setCancellationReason('');
                                         }}
                                         disabled={!cancellationReason.trim()}
                                         className="bg-destructive hover:bg-destructive/90"
