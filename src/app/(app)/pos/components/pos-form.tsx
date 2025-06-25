@@ -229,7 +229,7 @@ export function PosForm({ inventoryItems: parentInventoryItems, onSaleComplete, 
     const currentQuantity = itemInSale.quantity;
     const newQuantity = currentQuantity + delta;
     
-    if (newQuantity < 0.001) return;
+    if (newQuantity <= 0) return;
 
     const itemDetailsFromInv = currentInventoryItems.find(
       (invItem) => invItem.id === itemInSale.inventoryItemId
@@ -246,7 +246,6 @@ export function PosForm({ inventoryItems: parentInventoryItems, onSaleComplete, 
     }
     
     form.setValue(`items.${index}.quantity`, newQuantity, { shouldDirty: true, shouldValidate: true });
-    update(index, { ...form.getValues(`items.${index}`), quantity: newQuantity });
   };
 
 
@@ -648,5 +647,7 @@ export function PosForm({ inventoryItems: parentInventoryItems, onSaleComplete, 
     </>
   );
 }
+
+    
 
     
