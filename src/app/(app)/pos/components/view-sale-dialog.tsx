@@ -1,6 +1,7 @@
 
 "use client";
 
+import { useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -28,15 +29,19 @@ import type { SaleReceipt } from "@/types";
 import { format, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
 import { Trash2 } from "lucide-react";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 
 interface ViewSaleDialogProps {
   open: boolean;
   onOpenChange: (isOpen: boolean) => void;
   sale: SaleReceipt;
-  onCancelSale: (saleId: string) => void;
+  onCancelSale: (saleId: string, reason: string) => void;
 }
 
 export function ViewSaleDialog({ open, onOpenChange, sale, onCancelSale }: ViewSaleDialogProps) {
+  const [reason, setReason] = useState('');
+
   if (!sale) return null;
 
   const isCancelled = sale.status === 'Cancelado';
@@ -67,8 +72,10 @@ export function ViewSaleDialog({ open, onOpenChange, sale, onCancelSale }: ViewS
             <Badge variant="outline">{sale.paymentMethod}</Badge>
           </div>
           {isCancelled && (
-            <div className="flex justify-center items-center text-sm p-2 bg-destructive/10 rounded-md">
+            <div className="flex flex-col justify-center items-center text-sm p-2 bg-destructive/10 rounded-md">
                 <span className="font-bold text-destructive">ESTA VENTA HA SIDO CANCELADA</span>
+                 {sale.cancellationReason && <span className="text-xs text-destructive mt-1">Motivo: {sale.cancellationReason}</span>}
+                 {sale.cancelledBy && <span className="text-xs text-destructive">Por: {sale.cancelledBy}</span>}
             </div>
           )}
 
@@ -125,11 +132,15 @@ export function ViewSaleDialog({ open, onOpenChange, sale, onCancelSale }: ViewS
                         <AlertDialogTitle>¿Está seguro de cancelar esta venta?</AlertDialogTitle>
                         <AlertDialogDescription>
                             Esta acción no se puede deshacer. El stock de los artículos vendidos será restaurado al inventario.
+                            <div className="mt-4">
+                              <Label htmlFor="cancellation-reason" className="text-left font-semibold">Motivo de la cancelación (obligatorio)</Label>
+                              <Textarea id="cancellation-reason" value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Ej: Error en el cobro, el cliente se arrepintió..." className="mt-2" />
+                            </div>
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <AlertDialogCancel>No</AlertDialogCancel>
-                        <AlertDialogAction onClick={() => onCancelSale(sale.id)}>
+                        <AlertDialogCancel onClick={() => setReason('')}>No</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => onCancelSale(sale.id, reason)} disabled={!reason.trim()} className="bg-destructive hover:bg-destructive/90">
                             Sí, Cancelar Venta
                         </AlertDialogAction>
                     </AlertDialogFooter>

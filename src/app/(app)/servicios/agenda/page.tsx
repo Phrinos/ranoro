@@ -3,7 +3,7 @@
 
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Edit, Trash2, Clock, Search as SearchIcon, Calendar as CalendarIcon, CalendarCheck, CheckCircle, Wrench, Printer, Tag, FileText, BrainCircuit, Loader2, AlertTriangle, List, CalendarDays, MessageSquare } from "lucide-react";
+import { PlusCircle, Edit, Trash2, Clock, Search as SearchIcon, Calendar as CalendarIcon, CalendarCheck, CheckCircle, Wrench, Printer, Tag, FileText, BrainCircuit, Loader2, AlertTriangle, List, CalendarDays, MessageSquare, Ban } from "lucide-react";
 import {
   placeholderServiceRecords,
   placeholderVehicles,
@@ -33,6 +33,8 @@ import { ServiceSheetContent } from '@/components/service-sheet-content';
 import { ServiceCalendar } from '../components/service-calendar';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebasePublic.js';
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 
 
 interface GroupedServices {
@@ -64,6 +66,8 @@ export default function AgendaServiciosPage() {
   const [capacityInfo, setCapacityInfo] = useState<CapacityAnalysisOutput | null>(null);
   const [isCapacityLoading, setIsCapacityLoading] = useState(true);
   const [capacityError, setCapacityError] = useState<string | null>(null);
+  
+  const [cancellationReason, setCancellationReason] = useState('');
 
 
   const handleServiceUpdated = useCallback(async (data: ServiceRecord) => {
@@ -141,7 +145,6 @@ export default function AgendaServiciosPage() {
               setCapacityInfo({
                   totalRequiredHours: 0,
                   totalAvailableHours: totalAvailable,
-                  capacityPercentage: 0,
                   recommendation: "Taller disponible. ¡A agendar!",
               });
               setIsCapacityLoading(false);
@@ -209,19 +212,44 @@ export default function AgendaServiciosPage() {
     setEditingService(null);
   }, [handleServiceUpdated, toast]);
 
-  const handleDeleteService = useCallback(async (serviceId: string) => {
-    const serviceToDelete = allServices.find(s => s.id === serviceId);
-    setAllServices(prevServices => prevServices.filter(s => s.id !== serviceId));
-    const pIndex = placeholderServiceRecords.findIndex(s => s.id === serviceId);
-    if (pIndex !== -1) {
-      placeholderServiceRecords.splice(pIndex, 1);
+  const handleCancelService = useCallback(async (serviceId: string, reason: string) => {
+    const authUserString = localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY);
+    const currentUser: User | null = authUserString ? JSON.parse(authUserString) : null;
+    
+    const serviceIndex = placeholderServiceRecords.findIndex(s => s.id === serviceId);
+    if (serviceIndex === -1) {
+        toast({ title: "Error", description: "Servicio no encontrado.", variant: "destructive" });
+        return;
     }
-    await persistToFirestore(['serviceRecords']);
+    
+    const service = placeholderServiceRecords[serviceIndex];
+    if (service.status === 'Cancelado') {
+        toast({ title: "Acción no válida", description: "Este servicio ya ha sido cancelado.", variant: "default" });
+        return;
+    }
+
+    service.status = 'Cancelado';
+    service.cancellationReason = reason;
+    service.cancelledBy = currentUser?.name || 'Usuario desconocido';
+    
+    // Restore inventory if items were used
+    if (service.suppliesUsed && service.suppliesUsed.length > 0) {
+      service.suppliesUsed.forEach(supply => {
+        const invIndex = placeholderInventory.findIndex(i => i.id === supply.supplyId);
+        if (invIndex > -1 && !placeholderInventory[invIndex].isService) {
+          placeholderInventory[invIndex].quantity += supply.quantity;
+        }
+      });
+    }
+
+    setAllServices([...placeholderServiceRecords]);
+    await persistToFirestore(['serviceRecords', 'inventory']);
+    
     toast({
-      title: "Servicio Eliminado",
-      description: `El servicio con ID ${serviceId} (${serviceToDelete?.description}) ha sido eliminado.`,
+      title: "Servicio Cancelado",
+      description: `El servicio ${serviceId} ha sido cancelado.`,
     });
-  }, [allServices, toast]);
+  }, [toast]);
   
   const handleReprintService = useCallback((service: ServiceRecord) => {
     const serviceForTicket = enrichServiceForPrinting(service, inventoryItemsState);
@@ -490,23 +518,33 @@ export default function AgendaServiciosPage() {
                                     <Printer className="h-4 w-4" />
                                 </Button>
                               )}
-                              <AlertDialog>
+                              <AlertDialog onOpenChange={(open) => !open && setCancellationReason('')}>
                                 <AlertDialogTrigger asChild>
-                                  <Button variant="ghost" size="icon" aria-label="Eliminar Servicio" onClick={(e) => e.stopPropagation()}>
-                                    <Trash2 className="h-4 w-4 text-destructive" />
+                                  <Button variant="ghost" size="icon" aria-label="Cancelar Servicio" onClick={(e) => e.stopPropagation()} disabled={service.status === 'Cancelado'}>
+                                    <Ban className="h-4 w-4 text-destructive" />
                                   </Button>
                                 </AlertDialogTrigger>
                                 <AlertDialogContent>
                                   <AlertDialogHeader>
-                                    <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
+                                    <AlertDialogTitle>¿Cancelar Servicio?</AlertDialogTitle>
                                     <AlertDialogDescription>
-                                      Esta acción no se puede deshacer. Esto eliminará permanentemente la orden de servicio.
+                                        Esta acción no se puede deshacer. El servicio se marcará como cancelado.
+                                        <div className="mt-4">
+                                            <Label htmlFor={`cancel-reason-${service.id}`} className="text-left font-semibold">Motivo de la cancelación (obligatorio)</Label>
+                                            <Textarea
+                                                id={`cancel-reason-${service.id}`}
+                                                placeholder="Ej: El cliente no se presentó, no se consiguieron las refacciones..."
+                                                value={cancellationReason}
+                                                onChange={(e) => setCancellationReason(e.target.value)}
+                                                className="mt-2"
+                                            />
+                                        </div>
                                     </AlertDialogDescription>
                                   </AlertDialogHeader>
                                   <AlertDialogFooter>
-                                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                    <AlertDialogAction onClick={() => handleDeleteService(service.id)} className="bg-destructive hover:bg-destructive/90">
-                                      Eliminar
+                                    <AlertDialogCancel>Cerrar</AlertDialogCancel>
+                                    <AlertDialogAction onClick={() => handleCancelService(service.id, cancellationReason)} disabled={!cancellationReason.trim()} className="bg-destructive hover:bg-destructive/90">
+                                      Confirmar Cancelación
                                     </AlertDialogAction>
                                   </AlertDialogFooter>
                                 </AlertDialogContent>

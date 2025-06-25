@@ -1,5 +1,6 @@
 
 
+
 export interface WorkshopInfo {
   name: string;
   phone: string;
@@ -50,6 +51,8 @@ export interface ServiceRecord {
   totalSuppliesCost?: number; // Cost of supplies to the workshop (pre-tax)
   serviceProfit?: number; // Profit: (totalCost / (1+IVA)) - totalSuppliesCost
   status: 'Agendado' | 'Reparando' | 'Completado' | 'Cancelado';
+  cancellationReason?: string;
+  cancelledBy?: string;
   notes?: string;
   mileage?: number;
   deliveryDateTime?: string; 
@@ -163,6 +166,8 @@ export interface SaleReceipt {
   cardFolio?: string;
   transferFolio?: string;
   status?: 'Completado' | 'Cancelado';
+  cancellationReason?: string;
+  cancelledBy?: string;
 }
 
 export interface QuoteRecord {

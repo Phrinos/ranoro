@@ -44,8 +44,9 @@ import {
   calculateSaleProfit,
   persistToFirestore,
   hydrateReady, // <- NUEVO
+  AUTH_USER_LOCALSTORAGE_KEY,
 } from "@/lib/placeholder-data";
-import type { SaleReceipt, PaymentMethod } from "@/types";
+import type { SaleReceipt, PaymentMethod, User } from "@/types";
 import {
   useState,
   useEffect,
@@ -230,7 +231,15 @@ export default function POSPage() {
   }, []);
 
   const handleCancelSale = useCallback(
-    async (saleId: string) => {
+    async (saleId: string, reason: string) => {
+      const authUserString = localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY);
+      const currentUser: User | null = authUserString ? JSON.parse(authUserString) : null;
+
+      if (!reason.trim()) {
+          toast({ title: "Error", description: "Debe proporcionar un motivo para la cancelación.", variant: "destructive" });
+          return;
+      }
+      
       const idx = placeholderSales.findIndex((s) => s.id === saleId);
       if (idx === -1) {
         toast({
@@ -250,6 +259,9 @@ export default function POSPage() {
         return;
       }
       sale.status = "Cancelado";
+      sale.cancellationReason = reason;
+      sale.cancelledBy = currentUser?.name || 'Usuario desconocido';
+
       sale.items.forEach((it) => {
         const invIdx = placeholderInventory.findIndex((inv) => inv.id === it.inventoryItemId);
         if (invIdx !== -1 && !placeholderInventory[invIdx].isService) {

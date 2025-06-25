@@ -4,7 +4,7 @@
 import React, { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Edit, Trash2, Clock, CheckCircle, Wrench, CalendarCheck, FileText } from "lucide-react";
+import { Edit, Ban, Clock, CheckCircle, Wrench, CalendarCheck, FileText } from "lucide-react";
 import type { ServiceRecord, Vehicle, Technician, InventoryItem, QuoteRecord } from "@/types";
 import { format, parseISO, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -12,7 +12,8 @@ import { ServiceDialog } from './service-dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent } from "@/components/ui/card";
-
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 
 interface ServicesTableProps {
   services: ServiceRecord[];
@@ -20,7 +21,7 @@ interface ServicesTableProps {
   technicians: Technician[]; 
   inventoryItems: InventoryItem[];
   onServiceUpdated: (updatedService: ServiceRecord) => void;
-  onServiceDeleted: (serviceId: string) => void;
+  onServiceCancelled: (serviceId: string, reason: string) => void;
   onVehicleCreated?: (newVehicle: Vehicle) => void; 
   onShowSheet?: (service: ServiceRecord) => void;
   isHistoryView?: boolean;
@@ -32,7 +33,7 @@ export const ServicesTable = React.memo(({
   technicians, 
   inventoryItems, 
   onServiceUpdated, 
-  onServiceDeleted,
+  onServiceCancelled,
   onVehicleCreated,
   onShowSheet,
   isHistoryView = false,
@@ -40,6 +41,7 @@ export const ServicesTable = React.memo(({
   const { toast } = useToast();
   const [editingService, setEditingService] = useState<ServiceRecord | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [cancellationReason, setCancellationReason] = useState('');
 
   const getStatusVariant = (status: ServiceRecord['status']): "default" | "secondary" | "outline" | "destructive" | "success" => {
     switch (status) {
@@ -155,26 +157,40 @@ export const ServicesTable = React.memo(({
                             <Button variant="ghost" size="icon" onClick={() => handleOpenEditDialog(services.find(s => s.id === service.id)!)} title="Editar Servicio">
                                 <Edit className="h-4 w-4" />
                             </Button>
-                            <AlertDialog>
+                            <AlertDialog onOpenChange={(open) => !open && setCancellationReason('')}>
                                 <AlertDialogTrigger asChild>
-                                <Button variant="ghost" size="icon" title="Eliminar Servicio">
-                                    <Trash2 className="h-4 w-4 text-destructive" />
+                                <Button variant="ghost" size="icon" title="Cancelar Servicio" disabled={service.status === 'Cancelado'}>
+                                    <Ban className="h-4 w-4 text-destructive" />
                                 </Button>
                                 </AlertDialogTrigger>
                                 <AlertDialogContent>
                                     <AlertDialogHeader>
-                                    <AlertDialogTitle>¿Eliminar Servicio?</AlertDialogTitle>
+                                    <AlertDialogTitle>¿Cancelar Servicio?</AlertDialogTitle>
                                     <AlertDialogDescription>
-                                      Esta acción no se puede deshacer. ¿Seguro que quieres eliminar este servicio?
+                                      Esta acción no se puede deshacer. El servicio se marcará como cancelado.
+                                      <div className="mt-4">
+                                        <Label htmlFor={`cancel-reason-${service.id}`} className="text-left font-semibold">Motivo de la cancelación (obligatorio)</Label>
+                                        <Textarea
+                                            id={`cancel-reason-${service.id}`}
+                                            placeholder="Ej: El cliente no se presentó, no se consiguieron las refacciones..."
+                                            value={cancellationReason}
+                                            onChange={(e) => setCancellationReason(e.target.value)}
+                                            className="mt-2"
+                                        />
+                                      </div>
                                     </AlertDialogDescription>
                                     </AlertDialogHeader>
                                     <AlertDialogFooter>
-                                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                    <AlertDialogCancel>Cerrar</AlertDialogCancel>
                                     <AlertDialogAction
-                                        onClick={() => onServiceDeleted(service.id)}
+                                        onClick={() => {
+                                            onServiceCancelled(service.id, cancellationReason);
+                                            setCancellationReason('');
+                                        }}
+                                        disabled={!cancellationReason.trim()}
                                         className="bg-destructive hover:bg-destructive/90"
                                     >
-                                        Sí, Eliminar
+                                        Confirmar Cancelación
                                     </AlertDialogAction>
                                     </AlertDialogFooter>
                                 </AlertDialogContent>
