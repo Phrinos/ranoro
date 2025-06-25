@@ -29,7 +29,17 @@ import React, { useEffect, useState, useMemo, useCallback, useRef } from "react"
 import { useToast } from "@/hooks/use-toast";
 import { VehicleDialog } from "../../vehiculos/components/vehicle-dialog";
 import type { VehicleFormValues } from "../../vehiculos/components/vehicle-form";
-import { placeholderVehicles as defaultPlaceholderVehicles, placeholderInventory, placeholderCategories, placeholderSuppliers, placeholderQuotes, placeholderServiceRecords as defaultServiceRecords, persistToFirestore, AUTH_USER_LOCALSTORAGE_KEY } from "@/lib/placeholder-data";
+import { 
+    placeholderVehicles as defaultPlaceholderVehicles, 
+    placeholderInventory, 
+    placeholderCategories, 
+    placeholderSuppliers, 
+    placeholderQuotes, 
+    placeholderServiceRecords as defaultServiceRecords, 
+    persistToFirestore, 
+    AUTH_USER_LOCALSTORAGE_KEY,
+    sanitizeObjectForFirestore // Import the recursive sanitizer
+} from '@/lib/placeholder-data';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription as DialogDesc, DialogFooter } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/label";
@@ -426,39 +436,18 @@ export function ServiceForm({
     const collectionName = type === 'quote' ? 'publicQuotes' : 'publicServices';
     const publicDocRef = doc(db, collectionName, data.publicId);
 
-    // Manually construct the object to ensure no undefined values are passed.
-    const publicData: any = {};
+    // Construct the full object payload
+    const fullPublicData = {
+        ...data,
+        vehicle,
+        workshopInfo,
+    };
 
-    // Copy properties from 'data' (the service or quote record)
-    Object.keys(data).forEach(key => {
-        const value = (data as any)[key];
-        if (value !== undefined) {
-            publicData[key] = value;
-        }
-    });
-
-    // Explicitly add vehicle and workshop info, ensuring they are clean
-    const cleanVehicle: any = {};
-    Object.keys(vehicle).forEach(key => {
-        const value = (vehicle as any)[key];
-        if (value !== undefined) {
-            cleanVehicle[key] = value;
-        }
-    });
-    publicData.vehicle = cleanVehicle;
-
-    const cleanWorkshopInfo: any = {};
-     Object.keys(workshopInfo).forEach(key => {
-        const value = (workshopInfo as any)[key];
-        if (value !== undefined) {
-            cleanWorkshopInfo[key] = value;
-        }
-    });
-    publicData.workshopInfo = cleanWorkshopInfo;
-
+    // Sanitize the object to remove any 'undefined' values, which Firestore rejects.
+    const sanitizedData = sanitizeObjectForFirestore(fullPublicData);
 
     try {
-      await setDoc(publicDocRef, publicData, { merge: true });
+      await setDoc(publicDocRef, sanitizedData, { merge: true });
       console.log(`Public ${type} document ${data.publicId} saved successfully.`);
     } catch (e) {
       console.error(`Failed to save public ${type} document:`, e);
@@ -507,7 +496,7 @@ export function ServiceForm({
     const finalTaxAmount = finalTotalCost - finalSubTotal;
     
     if (mode === 'service') {
-      const serviceData: Partial<ServiceRecord> = {
+      const serviceData: ServiceRecord = {
         id: initialDataService?.id || `SER_${Date.now().toString(36)}`,
         publicId: values.publicId || `srv_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 9)}`,
         vehicleId: vehicleIdToSave,
@@ -522,6 +511,7 @@ export function ServiceForm({
           quantity: s.quantity,
           unitPrice: currentInventoryItems.find(i => i.id === s.supplyId)?.unitPrice || 0,
           supplyName: s.supplyName || '',
+          unitType: s.unitType
         })) || [],
         totalCost: finalTotalCost,
         subTotal: finalSubTotal,
@@ -536,22 +526,20 @@ export function ServiceForm({
         receptionSignatureViewed: (initialDataService as ServiceRecord)?.receptionSignatureViewed || false,
         deliverySignatureViewed: (initialDataService as ServiceRecord)?.deliverySignatureViewed || false,
         workshopInfo: workshopInfo as WorkshopInfo,
+        serviceType: values.serviceType,
+        mileage: values.mileage,
+        notes: values.notes,
+        vehicleConditions: values.vehicleConditions,
+        fuelLevel: values.fuelLevel,
+        customerItems: values.customerItems,
+        deliveryDateTime: values.deliveryDateTime?.toISOString(),
       };
-      
-      // Add optional fields only if they have a value
-      if (values.serviceType) serviceData.serviceType = values.serviceType;
-      if (values.mileage) serviceData.mileage = values.mileage;
-      if (values.notes) serviceData.notes = values.notes;
-      if (values.vehicleConditions) serviceData.vehicleConditions = values.vehicleConditions;
-      if (values.fuelLevel) serviceData.fuelLevel = values.fuelLevel;
-      if (values.customerItems) serviceData.customerItems = values.customerItems;
-      if (values.deliveryDateTime) serviceData.deliveryDateTime = values.deliveryDateTime.toISOString();
 
-      await savePublicDocument('service', serviceData as ServiceRecord, selectedVehicle);
-      await onSubmit(serviceData as ServiceRecord);
+      await savePublicDocument('service', serviceData, selectedVehicle);
+      await onSubmit(serviceData);
 
     } else { // mode === 'quote'
-      const quoteData: Partial<QuoteRecord> = {
+      const quoteData: QuoteRecord = {
         id: (initialDataQuote as QuoteRecord)?.id || `COT_${Date.now().toString(36)}`,
         publicId: (initialDataQuote as QuoteRecord)?.publicId || `cot_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 9)}`,
         quoteDate: values.serviceDate!.toISOString(),
@@ -565,6 +553,7 @@ export function ServiceForm({
           quantity: s.quantity,
           unitPrice: s.unitPrice || 0, 
           supplyName: s.supplyName || '',
+          unitType: s.unitType,
         })) || [],
         estimatedTotalCost: finalTotalCost,
         estimatedSubTotal: finalSubTotal,
@@ -572,14 +561,12 @@ export function ServiceForm({
         estimatedTotalSuppliesCost: totalSuppliesWorkshopCost,
         estimatedProfit: finalTotalCost - totalSuppliesWorkshopCost,
         workshopInfo: workshopInfo as WorkshopInfo,
+        notes: values.notes,
+        mileage: values.mileage,
       };
       
-      // Add optional fields only if they have a value
-      if (values.notes) quoteData.notes = values.notes;
-      if (values.mileage) quoteData.mileage = values.mileage;
-
-      await savePublicDocument('quote', quoteData as QuoteRecord, selectedVehicle);
-      await onSubmit(quoteData as QuoteRecord);
+      await savePublicDocument('quote', quoteData, selectedVehicle);
+      await onSubmit(quoteData);
     }
   };
   
