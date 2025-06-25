@@ -21,7 +21,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription} from "@/components/ui/card";
-import { CalendarIcon, PlusCircle, Search, Trash2, AlertCircle, Car as CarIcon, Clock, DollarSign, PackagePlus, BrainCircuit, Loader2, Printer, Plus, Minus, FileText, Signature, MessageSquare, Ban, ShieldQuestion } from "lucide-react";
+import { CalendarIcon, PlusCircle, Search, Trash2, AlertCircle, Car as CarIcon, Clock, DollarSign, PackagePlus, BrainCircuit, Loader2, Printer, Plus, Minus, FileText, Signature, MessageSquare, Ban, ShieldQuestion, Wrench } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format, parseISO, setHours, setMinutes, isValid, startOfDay } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -841,13 +841,15 @@ export function ServiceForm({
                   {mode === 'service' && !isReadOnly && initialData?.id && (
                     <>
                       {originalQuote && (
-                        <Button type="button" onClick={handleViewQuote} variant="outline" className="bg-card">
-                          <FileText className="mr-2 h-4 w-4" /> Ver Cotización
+                        <Button type="button" onClick={handleViewQuote} variant="outline" size="icon" className="bg-card" title="Ver Cotización Original">
+                          <FileText className="h-4 w-4" />
+                          <span className="sr-only">Ver Cotización</span>
                         </Button>
                       )}
                       {(watchedStatus === 'Reparando' || watchedStatus === 'Completado') && (
-                        <Button type="button" onClick={handlePrintSheet} variant="outline" className="bg-card">
-                          <Printer className="mr-2 h-4 w-4" /> Ver Hoja de Servicio
+                        <Button type="button" onClick={handlePrintSheet} variant="outline" size="icon" className="bg-card" title="Ver Hoja de Servicio">
+                          <Wrench className="h-4 w-4" />
+                          <span className="sr-only">Ver Hoja de Servicio</span>
                         </Button>
                       )}
                     </>
@@ -1276,4 +1278,5 @@ function SafetyCheckItemControl({ name, label, control, isReadOnly }: SafetyChec
     </div>
   );
 }
+
 
