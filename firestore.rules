@@ -1,35 +1,37 @@
+
 rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
     
-    // --- PUBLIC DATA ---
-    // Anyone can read public quotes
+    // Public quotes can be read by anyone, but only written by staff.
     match /publicQuotes/{quoteId} {
       allow read: if true;
-      allow write: if false; // Cannot be changed by public
+      allow write: if request.auth != null;
     }
     
-    // Anyone can read public service sheets.
-    // Write access is limited.
+    // Public services can be read by anyone.
+    // They can be created/updated by staff.
+    // Anyone can update only the signature fields.
     match /publicServices/{serviceId} {
       allow read: if true;
-      
-      // Allow writes under two conditions:
-      // 1. The user is authenticated (staff member managing the document).
-      // 2. The user is unauthenticated BUT is only updating the signature fields.
-      allow write: if (request.auth != null) || 
-                      (request.method == 'update' && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
-                        'customerSignatureReception', 'receptionSignatureViewed', 
-                        'customerSignatureDelivery', 'deliverySignatureViewed'
-                      ]));
+      allow create: if request.auth != null;
+      allow update: if request.auth != null || 
+                     (request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+                       'customerSignatureReception', 'receptionSignatureViewed', 
+                       'customerSignatureDelivery', 'deliverySignatureViewed'
+                     ]));
+      allow delete: if request.auth != null;
     }
-
-    // --- PRIVATE DATA ---
-    // All other collections/documents are private and require authentication.
-    // This covers the main database at /database/main.
+    
+    // The main database document requires authentication for all access.
+    match /database/{documentId} {
+    	allow read, write: if request.auth != null;
+    }
+    
+    // Default deny all other access to prevent accidental exposure.
     match /{path=**} {
-      allow read, write: if request.auth != null;
+      allow read, write: if false;
     }
   }
 }
