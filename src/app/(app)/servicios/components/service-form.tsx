@@ -537,13 +537,16 @@ export function ServiceForm({
   }, [initialData, mode]);
 
   const handleViewQuote = useCallback(() => {
-    if (originalQuote) {
-        setQuoteForView(originalQuote);
+    const quoteToShow = originalQuote || (mode === 'quote' ? (initialDataQuote as QuoteRecord) : null);
+    
+    if (quoteToShow && quoteToShow.id) { // Check if we have a valid quote object
+        setQuoteForView(quoteToShow);
         setIsQuoteViewOpen(true);
     } else {
-        toast({ title: "No encontrada", description: "No se encontró la cotización original para este servicio.", variant: "default" });
+        toast({ title: "No encontrada", description: "No se encontró la cotización para mostrar.", variant: "default" });
     }
-  }, [originalQuote, toast]);
+  }, [originalQuote, mode, initialDataQuote, toast]);
+
 
   const handleFormSubmit = async (values: ServiceFormValues) => {
     if (isReadOnly) {
@@ -836,32 +839,26 @@ export function ServiceForm({
                     {showReceptionTab && <TabsTrigger value="recepcion" className="text-base data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none">Recepción y Entrega</TabsTrigger>}
                     {showReceptionTab && <TabsTrigger value="seguridad" className="text-base data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none">Revisión de Seguridad</TabsTrigger>}
                 </TabsList>
-                 
-                <div className="flex gap-2">
-                  {mode === 'service' && !isReadOnly && initialData?.id && (
-                    <>
-                      {originalQuote && (
-                        <Button type="button" onClick={handleViewQuote} variant="outline" size="icon" className="bg-card" title="Ver Cotización Original">
-                          <FileText className="h-4 w-4" />
-                          <span className="sr-only">Ver Cotización</span>
-                        </Button>
-                      )}
-                      {(watchedStatus === 'Reparando' || watchedStatus === 'Completado') && (
-                        <Button type="button" onClick={handlePrintSheet} variant="outline" size="icon" className="bg-card" title="Ver Hoja de Servicio">
-                          <Wrench className="h-4 w-4" />
-                          <span className="sr-only">Ver Hoja de Servicio</span>
-                        </Button>
-                      )}
-                    </>
-                  )}
-                </div>
-
             </div>
 
             <TabsContent value="servicio" className="space-y-6 mt-0">
               <Card>
-                <CardHeader>
+                <CardHeader className="flex flex-row items-center justify-between">
                     <CardTitle className="text-lg">{mode === 'quote' ? "Información de la Cotización" : "Información del Servicio"}</CardTitle>
+                    <div className="flex gap-2">
+                        {((mode === 'quote' && initialDataQuote?.id) || (mode === 'service' && originalQuote)) && (
+                            <Button type="button" onClick={handleViewQuote} variant="outline" size="icon" className="bg-card" title="Ver Cotización">
+                                <FileText className="h-4 w-4" />
+                                <span className="sr-only">Ver Cotización</span>
+                            </Button>
+                        )}
+                        {mode === 'service' && !isReadOnly && (watchedStatus === 'Reparando' || watchedStatus === 'Completado') && (
+                            <Button type="button" onClick={handlePrintSheet} variant="outline" size="icon" className="bg-card" title="Ver Hoja de Servicio">
+                                <Wrench className="h-4 w-4" />
+                                <span className="sr-only">Ver Hoja de Servicio</span>
+                            </Button>
+                        )}
+                    </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
                     {showStatusFields && (
@@ -1278,5 +1275,6 @@ function SafetyCheckItemControl({ name, label, control, isReadOnly }: SafetyChec
     </div>
   );
 }
+
 
 
