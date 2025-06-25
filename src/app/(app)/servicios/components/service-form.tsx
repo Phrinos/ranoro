@@ -278,7 +278,7 @@ export function ServiceForm({
         const parsedServiceDate = rawServiceDate ? parseISO(rawServiceDate) : undefined;
         
         const rawDeliveryDate = (data as ServiceRecord)?.deliveryDateTime;
-        const parsedDeliveryDate = rawRawDeliveryDate ? parseISO(rawDeliveryDate) : undefined;
+        const parsedDeliveryDate = rawDeliveryDate ? parseISO(rawDeliveryDate) : undefined;
 
         const dataToReset: Partial<ServiceFormValues> = {
             id: data.id,
@@ -1643,7 +1643,7 @@ export function ServiceForm({
                                     <div>
                                         <p className="font-medium">{item.name} <span className="text-xs text-muted-foreground">({item.sku})</span></p>
                                         <p className="text-xs text-muted-foreground">
-                                            {item.isService ? 'Servicio' : `Stock: ${item.quantity.toLocaleString()}${item.unitType === 'ml' ? ' ml' : item.unitType === 'liters' ? ' L' : ''}`} | {mode === 'quote' ? `Venta: ${formatCurrency(item.sellingPrice)}` : `Costo: ${formatCurrency(item.unitPrice)}`}{item.unitType === 'ml' ? '/ml' : item.unitType === 'liters' ? '/L' : ''}
+                                            {item.isService ? 'Servicio' : `Stock: ${item.quantity.toLocaleString('es-ES')}${item.unitType === 'ml' ? ' ml' : item.unitType === 'liters' ? ' L' : ''}`} | {mode === 'quote' ? `Venta: ${formatCurrency(item.sellingPrice)}` : `Costo: ${formatCurrency(item.unitPrice)}`}{item.unitType === 'ml' ? '/ml' : item.unitType === 'liters' ? '/L' : ''}
                                         </p>
                                     </div>
                                 </Button>
