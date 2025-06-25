@@ -56,6 +56,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import Image from "next/image";
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { db } from '@root/lib/firebaseClient.js';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 
 const supplySchema = z.object({
@@ -437,7 +438,7 @@ export function ServiceForm({
     vehicle: Vehicle | null
   ) => {
     if (!db) {
-      console.error("Public save failed: Firebase (db) is not configured in lib/firebaseClient.js");
+      console.error("Public save failed: Firebase (db) no está configurado en lib/firebaseClient.js");
        toast({
         title: "Configuración Incompleta",
         description: "La base de datos (Firebase) no está configurada. No se pudo crear el documento público.",
@@ -719,117 +720,123 @@ export function ServiceForm({
     }
   };
 
-  const cardTitleText = mode === 'quote' ? "Información del Vehículo y Cotización" : "Información del Vehículo y Servicio";
-  const dateLabelText = mode === 'quote' ? "Fecha de Cotización" : "Fecha y Hora de Recepción";
+  const cardTitleText = mode === 'quote' ? "Información del Vehículo y Cotización" : "Información del Vehículo";
   const technicianLabelText = mode === 'quote' ? "Preparado por" : "Técnico Asignado";
   const submitButtonText = mode === 'quote' ? "Guardar Cotización" : (initialDataService ? "Actualizar Servicio" : "Crear Servicio");
 
   return (
     <>
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-6">
-
-        <Card>
-            <CardHeader>
-                <CardTitle className="text-lg">{cardTitleText}</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {mode === 'service' && (
-                        <FormField control={form.control} name="status" render={({ field }) => (<FormItem><FormLabel className="font-bold">Estado del Servicio</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value} disabled={isReadOnly}><FormControl><SelectTrigger className="font-bold"><SelectValue placeholder="Seleccione un estado" /></SelectTrigger></FormControl><SelectContent>{["Agendado", "Reparando", "Completado", "Cancelado"].map((statusVal) => (<SelectItem key={statusVal} value={statusVal}>{statusVal}</SelectItem>))}</SelectContent></Select><FormMessage /></FormItem>)}/>
-                    )}
-                     {mode === 'service' && (
-                        <FormField control={form.control} name="serviceType" render={({ field }) => (<FormItem><FormLabel className="font-bold">Tipo de Servicio</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value || 'Servicio General'} disabled={isReadOnly}><FormControl><SelectTrigger className="font-bold"><SelectValue placeholder="Seleccione un tipo" /></SelectTrigger></FormControl><SelectContent>{["Servicio General", "Cambio de Aceite", "Pintura"].map((type) => (<SelectItem key={type} value={type}>{type}</SelectItem>))}</SelectContent></Select><FormMessage /></FormItem>)}/>
-                    )}
-                 </div>
-
-                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
-                    <FormField control={form.control} name="vehicleLicensePlateSearch" render={({ field }) => (<FormItem className="w-full"><FormLabel>Placa del Vehículo</FormLabel><FormControl><Input placeholder="Buscar/Ingresar Placas" {...field} value={vehicleLicensePlateSearch} onChange={(e) => {setVehicleLicensePlateSearch(e.target.value.toUpperCase()); field.onChange(e.target.value.toUpperCase());}} disabled={isReadOnly} className="uppercase" onKeyDown={handleVehiclePlateKeyDown} /></FormControl></FormItem>)}/>
-                    <FormField control={form.control} name="mileage" render={({ field }) => ( <FormItem><FormLabel>Kilometraje (Opcional)</FormLabel><FormControl><Input type="number" placeholder="Ej: 55000 km" {...field} disabled={isReadOnly} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>)}/>
-                 </div>
-                 <FormField control={form.control} name="vehicleId" render={() => ( <FormMessage /> )}/>
-                  {vehicleSearchResults.length > 0 && ( <ScrollArea className="h-auto max-h-[150px] w-full rounded-md border"><div className="p-2">{vehicleSearchResults.map(v => (<button type="button" key={v.id} onClick={() => handleSelectVehicleFromSearch(v)} className="w-full text-left p-2 rounded-md hover:bg-muted"><p className="font-semibold">{v.licensePlate}</p><p className="text-sm text-muted-foreground">{v.make} {v.model} - {v.ownerName}</p></button>))}</div></ScrollArea>)}
-                {selectedVehicle && (<div className="p-3 border rounded-md bg-amber-50 dark:bg-amber-950/50 text-sm space-y-1"><p><strong>Vehículo Seleccionado:</strong> {selectedVehicle.make} {selectedVehicle.model} {selectedVehicle.year} (<span className="font-bold">{selectedVehicle.licensePlate}</span>)</p><p><strong>Propietario:</strong> {selectedVehicle.ownerName}</p>{lastServiceInfo && (<p className="text-xs font-medium text-blue-600 dark:text-blue-400 mt-1">{lastServiceInfo}</p>)}</div>)}
-                {vehicleNotFound && !selectedVehicle && !isReadOnly && (<div className="p-3 border border-orange-500 rounded-md bg-orange-50 dark:bg-orange-900/30 dark:text-orange-300 text-sm flex flex-col sm:flex-row items-center justify-between gap-2"><div className="flex items-center gap-2"><AlertCircle className="h-5 w-5 shrink-0"/><p>Vehículo con placa "{vehicleLicensePlateSearch}" no encontrado.</p></div><Button type="button" size="sm" variant="outline" onClick={() => {setNewVehicleInitialData({ licensePlate: vehicleLicensePlateSearch }); setIsVehicleDialogOpen(true);}} className="w-full sm:w-auto"><CarIcon className="mr-2 h-4 w-4"/> Registrar Nuevo Vehículo</Button></div>)}
-                
-                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 items-end">
-                    <FormField control={form.control} name="serviceDate" render={({ field }) => (<FormItem className="flex flex-col"><FormLabel>{dateLabelText}</FormLabel><Popover><PopoverTrigger asChild disabled={isReadOnly}><FormControl><Button variant={"outline"} className={cn("w-full justify-start text-left font-normal",!field.value && "text-muted-foreground")} disabled={isReadOnly}>{field.value && isValid(field.value) ? (format(field.value, "PPPp", { locale: es })) : (<span>Seleccione fecha y hora</span>)}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value} onSelect={(date) => { const currentTime = field.value || setHours(setMinutes(new Date(), 30), 8); const newDateTime = date ? setHours(setMinutes(startOfDay(date), currentTime.getMinutes()), currentTime.getHours()) : undefined; field.onChange(newDateTime);}} disabled={(date) => date < new Date("1900-01-01") || isReadOnly } initialFocus locale={es}/><div className="p-2 border-t"><Select value={field.value ? `${String(field.value.getHours()).padStart(2, '0')}:${String(field.value.getMinutes()).padStart(2, '0')}` : "08:30"} onValueChange={(timeValue) => handleTimeChange(timeValue, "serviceDate")} disabled={isReadOnly}><SelectTrigger><SelectValue placeholder="Seleccione hora" /></SelectTrigger><SelectContent>{timeSlots.map(slot => (<SelectItem key={slot.value} value={slot.value}>{slot.label}</SelectItem>))}</SelectContent></Select></div></PopoverContent></Popover><FormMessage /></FormItem>)}/>
-                    {mode === 'service' && (<FormField control={form.control} name="deliveryDateTime" render={({ field }) => ( <FormItem className="flex flex-col"><FormLabel>Fecha y Hora de Entrega</FormLabel><Popover><PopoverTrigger asChild disabled={isReadOnly}><FormControl><Button variant={"outline"} className={cn("w-full justify-start text-left font-normal",!field.value && "text-muted-foreground")} disabled={isReadOnly}>{field.value && isValid(field.value) ? (format(field.value, "PPPp", { locale: es })) : (<span>Seleccione fecha y hora</span>)}<Clock className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value} onSelect={(date) => { const currentTime = field.value || new Date(); const newDateTime = date ? setHours(setMinutes(startOfDay(date), currentTime.getMinutes()), currentTime.getHours()): undefined; field.onChange(newDateTime);}} disabled={isReadOnly} initialFocus locale={es}/><div className="p-2 border-t"><Select value={field.value ? `${String(field.value.getHours()).padStart(2, '0')}:${String(field.value.getMinutes()).padStart(2, '0')}` : "08:30"} onValueChange={(timeValue) => handleTimeChange(timeValue, "deliveryDateTime")} disabled={isReadOnly}><SelectTrigger><SelectValue placeholder="Seleccione hora" /></SelectTrigger><SelectContent>{timeSlots.map(slot => (<SelectItem key={slot.value} value={slot.value}>{slot.label}</SelectItem>))}</SelectContent></Select></div></PopoverContent></Popover><FormMessage /></FormItem>)}/>)}
-                </div>
-
-                <FormField control={form.control} name="description" render={({ field }) => (<FormItem><div className="flex justify-between items-center"><FormLabel>Descripción General del Trabajo</FormLabel>{mode === 'quote' && !isReadOnly && (<Button type="button" size="sm" variant="outline" onClick={handleGenerateQuoteWithAI} disabled={isGeneratingQuote}>{isGeneratingQuote ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <BrainCircuit className="mr-2 h-4 w-4" />}Generar con IA</Button>)}</div><FormControl><Textarea placeholder="Ej: Servicio de Afinación Mayor y cambio de balatas delanteras..." {...field} disabled={isReadOnly} /></FormControl><FormMessage /></FormItem>)}/>
-            </CardContent>
-        </Card>
-
-        {mode === 'service' && (
-          <Card>
-              <CardHeader><CardTitle className="text-lg">Recepción de Unidad</CardTitle></CardHeader>
-              <CardContent className="space-y-4">
-                  <FormField control={form.control} name="vehicleConditions" render={({ field }) => (<FormItem><FormLabel>Condiciones del Vehículo (al recibir)</FormLabel><FormControl><Textarea placeholder="Ej: Rayón en puerta del conductor, llanta trasera derecha baja, etc." {...field} disabled={isReadOnly} /></FormControl><FormMessage /></FormItem>)}/>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <FormField control={form.control} name="fuelLevel" render={({ field }) => (<FormItem><FormLabel>Nivel de Combustible</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value} disabled={isReadOnly}><FormControl><SelectTrigger><SelectValue placeholder="Seleccionar nivel..." /></SelectTrigger></FormControl><SelectContent><SelectItem value="Vacío">Vacío</SelectItem><SelectItem value="1/8">1/8</SelectItem><SelectItem value="1/4">1/4</SelectItem><SelectItem value="3/8">3/8</SelectItem><SelectItem value="1/2">1/2</SelectItem><SelectItem value="5/8">5/8</SelectItem><SelectItem value="3/4">3/4</SelectItem><SelectItem value="7/8">7/8</SelectItem><SelectItem value="Lleno">Lleno</SelectItem></SelectContent></Select><FormMessage /></FormItem>)}/>
-                      <FormField control={form.control} name="customerItems" render={({ field }) => (<FormItem><FormLabel>Pertenencias del Cliente (Opcional)</FormLabel><FormControl><Textarea placeholder="Ej: Gato, llanta de refacción, cargador de celular en la guantera, etc." {...field} disabled={isReadOnly} /></FormControl><FormMessage /></FormItem>)}/>
-                  </div>
-                  <div className="pt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div><Label>Firma de Recepción</Label><div className="mt-2 p-2 h-24 border rounded-md bg-muted/50 flex items-center justify-center">{customerSignatureReception ? (<Image src={customerSignatureReception} alt="Firma de recepción" width={150} height={75} style={{objectFit: 'contain'}}/>) : (<span className="text-sm text-muted-foreground">Pendiente de firma del cliente</span>)}</div></div>
-                      <div><Label>Firma de Entrega</Label><div className="mt-2 p-2 h-24 border rounded-md bg-muted/50 flex items-center justify-center">{customerSignatureDelivery ? (<Image src={customerSignatureDelivery} alt="Firma de entrega" width={150} height={75} style={{objectFit: 'contain'}}/>) : (<span className="text-sm text-muted-foreground">Pendiente de firma del cliente</span>)}</div></div>
-                  </div>
-              </CardContent>
-          </Card>
-        )}
-        
-        <Card>
-            <CardHeader><CardTitle className="text-lg">Items del Servicio</CardTitle></CardHeader>
-            <CardContent className="space-y-4">
-                {serviceItemsFields.map((serviceField, serviceIndex) => (
-                    <ServiceItemCard
-                        key={serviceField.id}
-                        serviceIndex={serviceIndex}
-                        control={form.control}
-                        removeServiceItem={removeServiceItem}
-                        isReadOnly={isReadOnly}
-                        inventoryItems={currentInventoryItems}
-                        mode={mode}
-                    />
-                ))}
-                 {!isReadOnly && (
-                    <Button type="button" variant="outline" onClick={() => appendServiceItem({ id: `item_${Date.now()}`, name: '', price: 0, suppliesUsed: [] })}>
-                        <PlusCircle className="mr-2 h-4 w-4"/> Añadir Item de Servicio
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-6">
+          <Tabs defaultValue="servicio" className="w-full">
+            <div className="flex justify-between items-center mb-4 border-b">
+                <TabsList className="bg-transparent p-0">
+                    <TabsTrigger value="servicio" className="text-base data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none">Detalles del Servicio</TabsTrigger>
+                    {mode === 'service' && <TabsTrigger value="recepcion" className="text-base data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none">Recepción y Entrega</TabsTrigger>}
+                </TabsList>
+                 {mode === 'service' && !isReadOnly && (
+                    <Button type="button" onClick={handlePrintSheet} variant="outline" className="bg-card">
+                        <Printer className="mr-2 h-4 w-4" /> Ver Hoja de Servicio
                     </Button>
                 )}
-            </CardContent>
-        </Card>
-
-        <Card className="bg-card">
-            <CardHeader><CardTitle className="text-lg flex items-center gap-2"><DollarSign className="h-5 w-5 text-green-600"/>Resumen Financiero y Notas</CardTitle></CardHeader>
-            <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
-                    <div className="space-y-1 text-lg">
-                        <div className="flex justify-between pt-1"><span className="font-bold text-blue-600 dark:text-blue-400">Total del Servicio (IVA Inc.):</span><span className="font-semibold text-blue-600 dark:text-blue-400">{formatCurrency(totalCost)}</span></div>
-                        <div className="flex justify-between"><span>(-) Costo Insumos (Taller):</span><span className="font-medium text-red-600 dark:text-red-400">{formatCurrency(totalSuppliesWorkshopCost)}</span></div>
-                        <hr className="my-2 border-dashed"/>
-                        <div className="flex justify-between font-bold text-green-700 dark:text-green-400"><span>(=) Ganancia Estimada:</span><span>{formatCurrency(serviceProfit)}</span></div>
-                    </div>
-                    <FormField control={form.control} name="notes" render={({ field }) => (<FormItem><FormLabel>Notas Adicionales (Opcional)</FormLabel><FormControl><Textarea placeholder={mode === 'quote' ? "Ej: Validez de la cotización, condiciones..." : "Notas internas o para el cliente..."} {...field} disabled={isReadOnly} className="min-h-[100px]"/></FormControl><FormMessage /></FormItem>)}/>
-                </div>
-                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 items-end">
-                    <FormField control={form.control} name="technicianId" render={({ field }) => (<FormItem className="md:col-span-1"><FormLabel className="text-lg">{technicianLabelText}</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value} disabled={isReadOnly}><FormControl><SelectTrigger><SelectValue placeholder="Seleccione un técnico" /></SelectTrigger></FormControl><SelectContent>{technicians.map((technician) => (<SelectItem key={technician.id} value={technician.id}>{technician.name}</SelectItem>))}</SelectContent></Select><FormMessage /></FormItem>)}/>
-                </div>
-            </CardContent>
-        </Card>
-
-        <div className="flex justify-between items-center pt-4">
-            <div>
-              {mode === 'service' && !isReadOnly && (
-                <div className="flex gap-2">
-                    <Button type="button" onClick={handlePrintSheet} variant="outline" className="bg-card">
-                        <Printer className="mr-2 h-4 w-4" />
-                        Ver / Imprimir Hoja de Servicio
-                    </Button>
-                </div>
-              )}
             </div>
-            <div className="flex justify-end gap-2">
+
+            <TabsContent value="servicio" className="space-y-6 mt-0">
+              <Card>
+                <CardHeader>
+                    <CardTitle className="text-lg">{cardTitleText}</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    {mode === 'service' && (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <FormField control={form.control} name="status" render={({ field }) => (<FormItem><FormLabel className="font-bold">Estado del Servicio</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value} disabled={isReadOnly}><FormControl><SelectTrigger className="font-bold"><SelectValue placeholder="Seleccione un estado" /></SelectTrigger></FormControl><SelectContent>{["Agendado", "Reparando", "Completado", "Cancelado"].map((statusVal) => (<SelectItem key={statusVal} value={statusVal}>{statusVal}</SelectItem>))}</SelectContent></Select><FormMessage /></FormItem>)}/>
+                            <FormField control={form.control} name="serviceType" render={({ field }) => (<FormItem><FormLabel className="font-bold">Tipo de Servicio</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value || 'Servicio General'} disabled={isReadOnly}><FormControl><SelectTrigger className="font-bold"><SelectValue placeholder="Seleccione un tipo" /></SelectTrigger></FormControl><SelectContent>{["Servicio General", "Cambio de Aceite", "Pintura"].map((type) => (<SelectItem key={type} value={type}>{type}</SelectItem>))}</SelectContent></Select><FormMessage /></FormItem>)}/>
+                        </div>
+                    )}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
+                      <FormField control={form.control} name="vehicleLicensePlateSearch" render={({ field }) => (<FormItem className="w-full"><FormLabel>Placa del Vehículo</FormLabel><FormControl><Input placeholder="Buscar/Ingresar Placas" {...field} value={vehicleLicensePlateSearch} onChange={(e) => {setVehicleLicensePlateSearch(e.target.value.toUpperCase()); field.onChange(e.target.value.toUpperCase());}} disabled={isReadOnly} className="uppercase" onKeyDown={handleVehiclePlateKeyDown} /></FormControl></FormItem>)}/>
+                      <FormField control={form.control} name="mileage" render={({ field }) => ( <FormItem><FormLabel>Kilometraje (Opcional)</FormLabel><FormControl><Input type="number" placeholder="Ej: 55000 km" {...field} disabled={isReadOnly} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>)}/>
+                    </div>
+                    <FormField control={form.control} name="vehicleId" render={() => ( <FormMessage /> )}/>
+                    {vehicleSearchResults.length > 0 && ( <ScrollArea className="h-auto max-h-[150px] w-full rounded-md border"><div className="p-2">{vehicleSearchResults.map(v => (<button type="button" key={v.id} onClick={() => handleSelectVehicleFromSearch(v)} className="w-full text-left p-2 rounded-md hover:bg-muted"><p className="font-semibold">{v.licensePlate}</p><p className="text-sm text-muted-foreground">{v.make} {v.model} - {v.ownerName}</p></button>))}</div></ScrollArea>)}
+                    {selectedVehicle && (<div className="p-3 border rounded-md bg-amber-50 dark:bg-amber-950/50 text-sm space-y-1"><p><strong>Vehículo Seleccionado:</strong> {selectedVehicle.make} {selectedVehicle.model} {selectedVehicle.year} (<span className="font-bold">{selectedVehicle.licensePlate}</span>)</p><p><strong>Propietario:</strong> {selectedVehicle.ownerName}</p>{lastServiceInfo && (<p className="text-xs font-medium text-blue-600 dark:text-blue-400 mt-1">{lastServiceInfo}</p>)}</div>)}
+                    {vehicleNotFound && !selectedVehicle && !isReadOnly && (<div className="p-3 border border-orange-500 rounded-md bg-orange-50 dark:bg-orange-900/30 dark:text-orange-300 text-sm flex flex-col sm:flex-row items-center justify-between gap-2"><div className="flex items-center gap-2"><AlertCircle className="h-5 w-5 shrink-0"/><p>Vehículo con placa "{vehicleLicensePlateSearch}" no encontrado.</p></div><Button type="button" size="sm" variant="outline" onClick={() => {setNewVehicleInitialData({ licensePlate: vehicleLicensePlateSearch }); setIsVehicleDialogOpen(true);}} className="w-full sm:w-auto"><CarIcon className="mr-2 h-4 w-4"/> Registrar Nuevo Vehículo</Button></div>)}
+                    
+                    <FormField control={form.control} name="description" render={({ field }) => (<FormItem><div className="flex justify-between items-center"><FormLabel>Descripción General del Trabajo</FormLabel>{mode === 'quote' && !isReadOnly && (<Button type="button" size="sm" variant="outline" onClick={handleGenerateQuoteWithAI} disabled={isGeneratingQuote}>{isGeneratingQuote ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <BrainCircuit className="mr-2 h-4 w-4" />}Generar con IA</Button>)}</div><FormControl><Textarea placeholder="Ej: Servicio de Afinación Mayor y cambio de balatas delanteras..." {...field} disabled={isReadOnly} /></FormControl><FormMessage /></FormItem>)}/>
+                </CardContent>
+              </Card>
+
+              <Card>
+                  <CardHeader><CardTitle className="text-lg">Items del Servicio</CardTitle></CardHeader>
+                  <CardContent className="space-y-4">
+                      {serviceItemsFields.map((serviceField, serviceIndex) => (
+                          <ServiceItemCard
+                              key={serviceField.id}
+                              serviceIndex={serviceIndex}
+                              control={form.control}
+                              removeServiceItem={removeServiceItem}
+                              isReadOnly={isReadOnly}
+                              inventoryItems={currentInventoryItems}
+                              mode={mode}
+                          />
+                      ))}
+                      {!isReadOnly && (
+                          <Button type="button" variant="outline" onClick={() => appendServiceItem({ id: `item_${Date.now()}`, name: '', price: 0, suppliesUsed: [] })}>
+                              <PlusCircle className="mr-2 h-4 w-4"/> Añadir Item de Servicio
+                          </Button>
+                      )}
+                  </CardContent>
+              </Card>
+
+              <Card className="bg-card">
+                  <CardHeader><CardTitle className="text-lg flex items-center gap-2"><DollarSign className="h-5 w-5 text-green-600"/>Resumen Financiero y Notas</CardTitle></CardHeader>
+                  <CardContent className="space-y-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
+                          <div className="space-y-1 text-lg">
+                              <div className="flex justify-between pt-1"><span className="font-bold text-blue-600 dark:text-blue-400">Total del Servicio (IVA Inc.):</span><span className="font-semibold text-blue-600 dark:text-blue-400">{formatCurrency(totalCost)}</span></div>
+                              <div className="flex justify-between"><span>(-) Costo Insumos (Taller):</span><span className="font-medium text-red-600 dark:text-red-400">{formatCurrency(totalSuppliesWorkshopCost)}</span></div>
+                              <hr className="my-2 border-dashed"/>
+                              <div className="flex justify-between font-bold text-green-700 dark:text-green-400"><span>(=) Ganancia Estimada:</span><span>{formatCurrency(serviceProfit)}</span></div>
+                          </div>
+                          <FormField control={form.control} name="notes" render={({ field }) => (<FormItem><FormLabel>Notas Adicionales (Opcional)</FormLabel><FormControl><Textarea placeholder={mode === 'quote' ? "Ej: Validez de la cotización, condiciones..." : "Notas internas o para el cliente..."} {...field} disabled={isReadOnly} className="min-h-[100px]"/></FormControl><FormMessage /></FormItem>)}/>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 items-end">
+                          <FormField control={form.control} name="technicianId" render={({ field }) => (<FormItem className="md:col-span-1"><FormLabel className="text-lg">{technicianLabelText}</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value} disabled={isReadOnly}><FormControl><SelectTrigger><SelectValue placeholder="Seleccione un técnico" /></SelectTrigger></FormControl><SelectContent>{technicians.map((technician) => (<SelectItem key={technician.id} value={technician.id}>{technician.name}</SelectItem>))}</SelectContent></Select><FormMessage /></FormItem>)}/>
+                      </div>
+                  </CardContent>
+              </Card>
+
+            </TabsContent>
+
+            <TabsContent value="recepcion" className="space-y-6 mt-0">
+               <Card>
+                 <CardHeader><CardTitle>Fechas y Horarios</CardTitle></CardHeader>
+                 <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 items-end">
+                     <FormField control={form.control} name="serviceDate" render={({ field }) => (<FormItem className="flex flex-col"><FormLabel>Fecha y Hora de Recepción</FormLabel><Popover><PopoverTrigger asChild disabled={isReadOnly}><FormControl><Button variant={"outline"} className={cn("w-full justify-start text-left font-normal",!field.value && "text-muted-foreground")} disabled={isReadOnly}>{field.value && isValid(field.value) ? (format(field.value, "PPPp", { locale: es })) : (<span>Seleccione fecha y hora</span>)}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value} onSelect={(date) => { const currentTime = field.value || setHours(setMinutes(new Date(), 30), 8); const newDateTime = date ? setHours(setMinutes(startOfDay(date), currentTime.getMinutes()), currentTime.getHours()) : undefined; field.onChange(newDateTime);}} disabled={(date) => date < new Date("1900-01-01") || isReadOnly } initialFocus locale={es}/><div className="p-2 border-t"><Select value={field.value ? `${String(field.value.getHours()).padStart(2, '0')}:${String(field.value.getMinutes()).padStart(2, '0')}` : "08:30"} onValueChange={(timeValue) => handleTimeChange(timeValue, "serviceDate")} disabled={isReadOnly}><SelectTrigger><SelectValue placeholder="Seleccione hora" /></SelectTrigger><SelectContent>{timeSlots.map(slot => (<SelectItem key={slot.value} value={slot.value}>{slot.label}</SelectItem>))}</SelectContent></Select></div></PopoverContent></Popover><FormMessage /></FormItem>)}/>
+                     <FormField control={form.control} name="deliveryDateTime" render={({ field }) => ( <FormItem className="flex flex-col"><FormLabel>Fecha y Hora de Entrega</FormLabel><Popover><PopoverTrigger asChild disabled={isReadOnly}><FormControl><Button variant={"outline"} className={cn("w-full justify-start text-left font-normal",!field.value && "text-muted-foreground")} disabled={isReadOnly}>{field.value && isValid(field.value) ? (format(field.value, "PPPp", { locale: es })) : (<span>Seleccione fecha y hora</span>)}<Clock className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value} onSelect={(date) => { const currentTime = field.value || new Date(); const newDateTime = date ? setHours(setMinutes(startOfDay(date), currentTime.getMinutes()), currentTime.getHours()): undefined; field.onChange(newDateTime);}} disabled={isReadOnly} initialFocus locale={es}/><div className="p-2 border-t"><Select value={field.value ? `${String(field.value.getHours()).padStart(2, '0')}:${String(field.value.getMinutes()).padStart(2, '0')}` : "08:30"} onValueChange={(timeValue) => handleTimeChange(timeValue, "deliveryDateTime")} disabled={isReadOnly}><SelectTrigger><SelectValue placeholder="Seleccione hora" /></SelectTrigger><SelectContent>{timeSlots.map(slot => (<SelectItem key={slot.value} value={slot.value}>{slot.label}</SelectItem>))}</SelectContent></Select></div></PopoverContent></Popover><FormMessage /></FormItem>)}/>
+                 </CardContent>
+               </Card>
+
+               <Card>
+                <CardHeader><CardTitle>Condiciones de la Unidad y Firmas</CardTitle></CardHeader>
+                <CardContent className="space-y-4">
+                    <FormField control={form.control} name="vehicleConditions" render={({ field }) => (<FormItem><FormLabel>Condiciones del Vehículo (al recibir)</FormLabel><FormControl><Textarea placeholder="Ej: Rayón en puerta del conductor, llanta trasera derecha baja, etc." {...field} disabled={isReadOnly} /></FormControl><FormMessage /></FormItem>)}/>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <FormField control={form.control} name="fuelLevel" render={({ field }) => (<FormItem><FormLabel>Nivel de Combustible</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value} disabled={isReadOnly}><FormControl><SelectTrigger><SelectValue placeholder="Seleccionar nivel..." /></SelectTrigger></FormControl><SelectContent><SelectItem value="Vacío">Vacío</SelectItem><SelectItem value="1/8">1/8</SelectItem><SelectItem value="1/4">1/4</SelectItem><SelectItem value="3/8">3/8</SelectItem><SelectItem value="1/2">1/2</SelectItem><SelectItem value="5/8">5/8</SelectItem><SelectItem value="3/4">3/4</SelectItem><SelectItem value="7/8">7/8</SelectItem><SelectItem value="Lleno">Lleno</SelectItem></SelectContent></Select><FormMessage /></FormItem>)}/>
+                        <FormField control={form.control} name="customerItems" render={({ field }) => (<FormItem><FormLabel>Pertenencias del Cliente (Opcional)</FormLabel><FormControl><Textarea placeholder="Ej: Gato, llanta de refacción, cargador de celular en la guantera, etc." {...field} disabled={isReadOnly} /></FormControl><FormMessage /></FormItem>)}/>
+                    </div>
+                    <div className="pt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div><Label>Firma de Recepción</Label><div className="mt-2 p-2 h-24 border rounded-md bg-muted/50 flex items-center justify-center">{customerSignatureReception ? (<Image src={customerSignatureReception} alt="Firma de recepción" width={150} height={75} style={{objectFit: 'contain'}}/>) : (<span className="text-sm text-muted-foreground">Pendiente de firma del cliente</span>)}</div></div>
+                        <div><Label>Firma de Entrega</Label><div className="mt-2 p-2 h-24 border rounded-md bg-muted/50 flex items-center justify-center">{customerSignatureDelivery ? (<Image src={customerSignatureDelivery} alt="Firma de entrega" width={150} height={75} style={{objectFit: 'contain'}}/>) : (<span className="text-sm text-muted-foreground">Pendiente de firma del cliente</span>)}</div></div>
+                    </div>
+                </CardContent>
+              </Card>
+
+            </TabsContent>
+          </Tabs>
+
+          <div className="flex justify-between items-center pt-4">
+            <div className="flex justify-end gap-2 w-full">
             {isReadOnly ? (<Button type="button" variant="outline" onClick={onClose}>Cerrar</Button>) : (
                 <>
                 {onDelete && mode === 'quote' && initialDataQuote?.id && (<div className="mr-auto"><AlertDialog><AlertDialogTrigger asChild><Button type="button" variant="destructive"><Trash2 className="mr-2 h-4 w-4" />Eliminar Cotización</Button></AlertDialogTrigger><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>¿Estás seguro de eliminar esta cotización?</AlertDialogTitle><AlertDialogDescription>Esta acción no se puede deshacer. Se eliminará permanentemente la cotización {initialDataQuote.id}.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Cancelar</AlertDialogCancel><AlertDialogAction onClick={handleConfirmDelete} className="bg-destructive hover:bg-destructive/90">Sí, Eliminar</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog></div>)}
@@ -838,29 +845,29 @@ export function ServiceForm({
                 </>
             )}
             </div>
-        </div>
-      </form>
-    </Form>
+          </div>
+        </form>
+      </Form>
 
-    <VehicleDialog
-        open={isVehicleDialogOpen}
-        onOpenChange={setIsVehicleDialogOpen}
-        onSave={handleSaveNewVehicle}
-        vehicle={newVehicleInitialData}
-    />
-    
-    <PrintTicketDialog
-        open={isSheetOpen}
-        onOpenChange={setIsSheetOpen}
-        title="Hoja de Servicio"
-        onDialogClose={() => setServiceForSheet(null)}
-        dialogContentClassName="printable-quote-dialog"
-        footerActions={<><Button type="button" onClick={() => {if (serviceForSheet?.publicId) {const shareUrl = `${window.location.origin}/s/${serviceForSheet.publicId}`; navigator.clipboard.writeText(shareUrl).then(() => {toast({ title: 'Enlace copiado', description: 'El enlace a la hoja de servicio ha sido copiado.' });});} else {toast({ title: 'Error', description: 'Guarde el servicio para generar un enlace.', variant: 'destructive' });}}} variant="outline"><MessageSquare className="mr-2 h-4 w-4" /> Copiar Enlace</Button><Button onClick={() => window.print()}><Printer className="mr-2 h-4 w-4" /> Imprimir Hoja</Button></>}
-    >
-        {serviceForSheet && (
-            <ServiceSheetContent service={serviceForSheet} vehicle={localVehicles.find(v => v.id === serviceForSheet.vehicleId)} workshopInfo={workshopInfo as WorkshopInfo} />
-        )}
-    </PrintTicketDialog>
+      <VehicleDialog
+          open={isVehicleDialogOpen}
+          onOpenChange={setIsVehicleDialogOpen}
+          onSave={handleSaveNewVehicle}
+          vehicle={newVehicleInitialData}
+      />
+      
+      <PrintTicketDialog
+          open={isSheetOpen}
+          onOpenChange={setIsSheetOpen}
+          title="Hoja de Servicio"
+          onDialogClose={() => setServiceForSheet(null)}
+          dialogContentClassName="printable-quote-dialog"
+          footerActions={<><Button type="button" onClick={() => {if (serviceForSheet?.publicId) {const shareUrl = `${window.location.origin}/s/${serviceForSheet.publicId}`; navigator.clipboard.writeText(shareUrl).then(() => {toast({ title: 'Enlace copiado', description: 'El enlace a la hoja de servicio ha sido copiado.' });});} else {toast({ title: 'Error', description: 'Guarde el servicio para generar un enlace.', variant: 'destructive' });}}} variant="outline"><MessageSquare className="mr-2 h-4 w-4" /> Copiar Enlace</Button><Button onClick={() => window.print()}><Printer className="mr-2 h-4 w-4" /> Imprimir Hoja</Button></>}
+      >
+          {serviceForSheet && (
+              <ServiceSheetContent service={serviceForSheet} vehicle={localVehicles.find(v => v.id === serviceForSheet.vehicleId)} workshopInfo={workshopInfo as WorkshopInfo} />
+          )}
+      </PrintTicketDialog>
     </>
   );
 }
@@ -922,4 +929,3 @@ function ServiceItemCard({ serviceIndex, control, removeServiceItem, isReadOnly,
         </Card>
     );
 }
-
