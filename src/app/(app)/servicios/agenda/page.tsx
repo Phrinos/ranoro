@@ -10,6 +10,7 @@ import {
   placeholderVehicles,
   placeholderTechnicians,
   placeholderInventory,
+  placeholderQuotes,
   persistToFirestore,
   AUTH_USER_LOCALSTORAGE_KEY,
 } from "@/lib/placeholder-data";
@@ -27,6 +28,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
 import { TicketContent } from '@/components/ticket-content';
+import { QuoteContent } from '@/components/quote-content';
 import Link from "next/link";
 import { analyzeWorkshopCapacity, type CapacityAnalysisOutput } from '@/ai/flows/capacity-analysis-flow';
 import { ServiceSheetContent } from '@/components/service-sheet-content';
@@ -62,6 +64,9 @@ export default function AgendaServiciosPage() {
   
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [serviceForSheet, setServiceForSheet] = useState<ServiceRecord | null>(null);
+
+  const [isQuoteViewOpen, setIsQuoteViewOpen] = useState(false);
+  const [quoteForView, setQuoteForView] = useState<QuoteRecord | null>(null);
 
   const [capacityInfo, setCapacityInfo] = useState<CapacityAnalysisOutput | null>(null);
   const [isCapacityLoading, setIsCapacityLoading] = useState(true);
@@ -313,6 +318,17 @@ export default function AgendaServiciosPage() {
     setServiceForSheet(serviceToDisplay);
     setIsSheetOpen(true);
   };
+  
+  const handleViewQuote = useCallback((serviceId: string) => {
+    const quote = placeholderQuotes.find(q => q.serviceId === serviceId);
+    if (quote) {
+      setQuoteForView(quote);
+      setIsQuoteViewOpen(true);
+    } else {
+      toast({ title: 'No encontrada', description: 'No se encontró la cotización original para este servicio.', variant: 'default' });
+    }
+  }, [toast]);
+
 
   const onVehicleCreated = useCallback(async (newVehicle: Vehicle) => {
     setVehicles(currentVehicles => {
@@ -500,6 +516,7 @@ export default function AgendaServiciosPage() {
               const totalCostFormatted = `$${service.totalCost.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
               const serviceProfitFormatted = service.serviceProfit !== undefined ? `$${service.serviceProfit.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : 'N/A';
               const descriptionText = getServiceDescriptionText(service);
+              const originalQuote = placeholderQuotes.find(q => q.serviceId === service.id);
 
               return (
                 <Card key={service.id} className="shadow-sm">
@@ -561,8 +578,13 @@ export default function AgendaServiciosPage() {
                               <Button variant="ghost" size="icon" aria-label={service.status === 'Agendado' ? "Ingresar a Taller" : "Editar Servicio"} title={service.status === 'Agendado' ? "Ingresar a Taller" : "Editar Servicio"} onClick={(e) => {e.stopPropagation(); handleOpenEditDialog(service);}}>
                                 {service.status === 'Agendado' ? <Wrench className="h-4 w-4 text-blue-600" /> : <Edit className="h-4 w-4" />}
                               </Button>
-                              {service.status !== 'Agendado' && onShowSheet && (
-                                <Button variant="ghost" size="icon" aria-label="Ver Hoja de Servicio" onClick={() => handleShowSheet(service)}>
+                              {originalQuote && (
+                                <Button variant="ghost" size="icon" aria-label="Ver Cotización Original" title="Ver Cotización Original" onClick={(e) => { e.stopPropagation(); handleViewQuote(service.id); }}>
+                                    <Tag className="h-4 w-4 text-purple-600" />
+                                </Button>
+                              )}
+                              {onShowSheet && service.status !== 'Agendado' && (
+                                <Button variant="ghost" size="icon" aria-label="Ver Hoja de Servicio" title="Ver Hoja de Servicio" onClick={() => handleShowSheet(service)}>
                                     <FileText className="h-4 w-4" />
                                 </Button>
                               )}
@@ -734,6 +756,27 @@ export default function AgendaServiciosPage() {
             service={currentServiceForTicket} 
             vehicle={currentVehicleForTicket || undefined}
             technician={currentTechnicianForTicket || undefined}
+          />
+        </PrintTicketDialog>
+      )}
+
+      {isQuoteViewOpen && quoteForView && (
+        <PrintTicketDialog
+          open={isQuoteViewOpen}
+          onOpenChange={setIsQuoteViewOpen}
+          title={`Cotización Original: ${quoteForView.id}`}
+          dialogContentClassName="printable-quote-dialog"
+          onDialogClose={() => setQuoteForView(null)}
+          footerActions={
+            <Button onClick={() => window.print()}>
+              <Printer className="mr-2 h-4 w-4" /> Imprimir Cotización
+            </Button>
+          }
+        >
+          <QuoteContent
+            quote={quoteForView}
+            vehicle={vehicles.find(v => v.id === quoteForView.vehicleId)}
+            workshopInfo={quoteForView.workshopInfo}
           />
         </PrintTicketDialog>
       )}
