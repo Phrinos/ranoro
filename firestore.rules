@@ -1,23 +1,36 @@
+
 rules_version = '2';
+
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Main database document: Only authenticated users can read/write.
-    match /database/{docId} {
+    
+    // Main database document for the workshop.
+    // Only authenticated users can access it.
+    match /database/main {
       allow read, write: if request.auth != null;
     }
-
-    // Public quotes: Anyone can read a single quote document. No one can write.
-    match /publicQuotes/{quoteId} {
-      allow get: if true;
-      allow list, create, update, delete: if false;
-    }
-
-    // Public services: Anyone can read a single service.
-    // Writes are only allowed to update the signature-related fields.
+    
+    // Publicly shared service sheets.
+    // Anyone can read them.
+    // Authenticated users can create/delete them.
+    // Anyone (including unauthenticated server actions) can update ONLY the signature fields.
     match /publicServices/{serviceId} {
       allow get: if true;
-      allow update: if request.resource.data.diff(resource.data).affectedKeys().hasOnly(['customerSignatureReception', 'customerSignatureDelivery', 'receptionSignatureViewed', 'deliverySignatureViewed']);
-      allow list, create, delete: if false;
+      allow list: if false; // Security: do not allow listing all public services.
+      allow create, delete: if request.auth != null;
+      allow update: if request.auth != null || (
+        request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['customerSignatureReception', 'customerSignatureDelivery', 'receptionSignatureViewed', 'deliverySignatureViewed'])
+      );
+    }
+
+    // Publicly shared quotes.
+    // Anyone can read them.
+    // Only authenticated users can create, update, or delete them.
+    match /publicQuotes/{quoteId} {
+      allow get: if true;
+      allow list: if false; // Security: do not allow listing all public quotes.
+      allow create, update, delete: if request.auth != null;
     }
   }
 }
