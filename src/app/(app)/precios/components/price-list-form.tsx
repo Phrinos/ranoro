@@ -207,8 +207,8 @@ function ServiceSuppliesArray({ serviceIndex, control }: { serviceIndex: number;
                     </Button>
                 </div>
              ))}
-            <Button type="button" variant="outline" size="xs" className="text-xs" onClick={() => append({ name: '', cost: undefined, quantity: 1, supplier: '' })}>
-                <PlusCircle className="mr-2 h-3 w-3" /> Añadir Insumo
+            <Button type="button" variant="outline" size="sm" onClick={() => append({ name: '', cost: undefined, quantity: 1, supplier: '' })}>
+                <PlusCircle className="mr-2 h-4 w-4" /> Añadir Insumo
             </Button>
         </div>
     );
