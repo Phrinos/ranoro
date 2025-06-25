@@ -575,19 +575,48 @@ export default function AgendaServiciosPage() {
                         <div className="w-48 shrink-0 flex flex-col items-center justify-center p-4 gap-y-2">
                             <Badge variant={getStatusVariant(service.status)} className="w-full justify-center text-center text-base">{service.status}</Badge>
                             <div className="flex">
-                              <Button variant="ghost" size="icon" aria-label={service.status === 'Agendado' ? "Ingresar a Taller" : "Editar Servicio"} title={service.status === 'Agendado' ? "Ingresar a Taller" : "Editar Servicio"} onClick={(e) => {e.stopPropagation(); handleOpenEditDialog(service);}}>
-                                {service.status === 'Agendado' ? <Wrench className="h-4 w-4 text-blue-600" /> : <Edit className="h-4 w-4" />}
-                              </Button>
-                              {originalQuote && (
-                                <Button variant="ghost" size="icon" aria-label="Ver Cotización Original" title="Ver Cotización Original" onClick={(e) => { e.stopPropagation(); handleViewQuote(service.id); }}>
-                                    <Tag className="h-4 w-4 text-purple-600" />
+                                {service.status === 'Agendado' ? (
+                                    originalQuote && (
+                                        <Button variant="ghost" size="icon" title="Ver Cotización Original" onClick={(e) => { e.stopPropagation(); handleViewQuote(service.id); }}>
+                                            <Tag className="h-4 w-4 text-purple-600" />
+                                        </Button>
+                                    )
+                                ) : (
+                                    <Button variant="ghost" size="icon" title="Ver Hoja de Servicio" onClick={() => handleShowSheet(service)}>
+                                        <FileText className="h-4 w-4" />
+                                    </Button>
+                                )}
+                                <Button variant="ghost" size="icon" title="Editar Detalles" onClick={(e) => {e.stopPropagation(); handleOpenEditDialog(service);}} disabled={service.status === 'Completado' || service.status === 'Cancelado'}>
+                                    <Edit className="h-4 w-4" />
                                 </Button>
-                              )}
-                              {service.status !== 'Agendado' && (
-                                <Button variant="ghost" size="icon" aria-label="Ver Hoja de Servicio" title="Ver Hoja de Servicio" onClick={() => handleShowSheet(service)}>
-                                    <FileText className="h-4 w-4" />
+                                <Button variant="ghost" size="icon" title={service.status === 'Agendado' ? "Ingresar a Taller" : "Actualizar Estado"} onClick={(e) => {e.stopPropagation(); handleOpenEditDialog(service);}} disabled={service.status === 'Completado' || service.status === 'Cancelado'}>
+                                    <Wrench className="h-4 w-4 text-blue-600" />
                                 </Button>
-                              )}
+                                <AlertDialog onOpenChange={(e) => e.stopPropagation()}>
+                                    <AlertDialogTrigger asChild>
+                                        <Button variant="ghost" size="icon" title="Cancelar Servicio" disabled={service.status === 'Completado' || service.status === 'Cancelado'} onClick={(e) => e.stopPropagation()}>
+                                            <Ban className="h-4 w-4 text-destructive" />
+                                        </Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent onClick={(e) => e.stopPropagation()}>
+                                        <AlertDialogHeader>
+                                            <AlertDialogTitle>¿Cancelar este servicio?</AlertDialogTitle>
+                                            <AlertDialogDescription>
+                                                Esta acción marcará el servicio {service.id} como cancelado y no se podrá revertir.
+                                                <div className="mt-4">
+                                                  <Label htmlFor={`cancel-reason-agenda-${service.id}`} className="text-left font-semibold">Motivo de la cancelación (obligatorio)</Label>
+                                                  <Textarea id={`cancel-reason-agenda-${service.id}`} value={cancellationReason} onChange={(e) => setCancellationReason(e.target.value)} placeholder="Ej: El cliente no se presentó..." className="mt-2" />
+                                                </div>
+                                            </AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                            <AlertDialogCancel onClick={() => setCancellationReason('')}>No</AlertDialogCancel>
+                                            <AlertDialogAction onClick={() => { handleCancelService(service.id, cancellationReason); setCancellationReason(''); }} disabled={!cancellationReason.trim()} className="bg-destructive hover:bg-destructive/90">
+                                                Sí, Cancelar
+                                            </AlertDialogAction>
+                                        </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                </AlertDialog>
                             </div>
                         </div>
                     </div>

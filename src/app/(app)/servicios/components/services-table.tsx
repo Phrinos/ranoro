@@ -156,12 +156,15 @@ export const ServicesTable = React.memo(({
                                     <FileText className="h-4 w-4" />
                                 </Button>
                             )}
-                            <Button variant="ghost" size="icon" onClick={() => handleOpenEditDialog(services.find(s => s.id === service.id)!)} title="Editar Servicio">
+                            <Button variant="ghost" size="icon" onClick={() => handleOpenEditDialog(services.find(s => s.id === service.id)!)} title="Editar Servicio" disabled={service.status === 'Completado' || service.status === 'Cancelado'}>
                                 <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button variant="ghost" size="icon" onClick={() => handleOpenEditDialog(services.find(s => s.id === service.id)!)} title="Actualizar Estado" disabled={service.status === 'Completado' || service.status === 'Cancelado'}>
+                                <Wrench className="h-4 w-4 text-blue-600" />
                             </Button>
                             <AlertDialog onOpenChange={(open) => !open && setCancellationReason('')}>
                                 <AlertDialogTrigger asChild>
-                                <Button variant="ghost" size="icon" title="Cancelar Servicio" disabled={service.status === 'Cancelado'}>
+                                <Button variant="ghost" size="icon" title="Cancelar Servicio" disabled={service.status === 'Cancelado' || service.status === 'Completado'}>
                                     <Ban className="h-4 w-4 text-destructive" />
                                 </Button>
                                 </AlertDialogTrigger>
