@@ -102,8 +102,11 @@ export default function AgendaServiciosPage() {
   }, []);
   
   const filteredServices = useMemo(() => {
-    if (!searchTerm) return allServices;
-    return allServices.filter(service => {
+    let servicesToList = allServices.filter(s => s.status === 'Agendado' || s.status === 'Reparando');
+
+    if (!searchTerm) return servicesToList;
+
+    return servicesToList.filter(service => {
       const vehicle = vehicles.find(v => v.id === service.vehicleId);
       const technician = techniciansState.find(t => t.id === service.technicianId);
       const searchLower = searchTerm.toLowerCase();
@@ -392,7 +395,6 @@ export default function AgendaServiciosPage() {
 
   const futureServices = useMemo(() => {
     return filteredServices.filter(service => {
-      if (service.status !== 'Agendado' && service.status !== 'Reparando') return false;
       const serviceDate = parseISO(service.serviceDate);
       return isValid(serviceDate) && (isToday(serviceDate) || isFuture(serviceDate));
     });
@@ -402,11 +404,6 @@ export default function AgendaServiciosPage() {
     return filteredServices.filter(service => {
       const serviceDate = parseISO(service.serviceDate);
       if (!isValid(serviceDate)) return false;
-      
-      if (service.status !== 'Agendado' && service.status !== 'Reparando') {
-          return false;
-      }
-
       const isServiceInThePast = isPast(serviceDate) && !isToday(serviceDate);
       return isServiceInThePast;
     });
@@ -564,9 +561,11 @@ export default function AgendaServiciosPage() {
                               <Button variant="ghost" size="icon" aria-label="Editar Servicio" onClick={(e) => {e.stopPropagation(); handleOpenEditDialog(service);}}>
                                 <Edit className="h-4 w-4" />
                               </Button>
-                              <Button variant="ghost" size="icon" aria-label="Ver Hoja de Servicio" onClick={() => handleShowSheet(service)}>
-                                  <FileText className="h-4 w-4" />
-                              </Button>
+                              {service.status !== 'Agendado' && onShowSheet && (
+                                <Button variant="ghost" size="icon" aria-label="Ver Hoja de Servicio" onClick={() => handleShowSheet(service)}>
+                                    <FileText className="h-4 w-4" />
+                                </Button>
+                              )}
                               {service.status === 'Agendado' && (
                                 <Button variant="ghost" size="icon" title="Ingresar a Taller" onClick={(e) => { e.stopPropagation(); handleOpenEditDialog(service); }}>
                                     <Wrench className="h-4 w-4 text-blue-600" />
