@@ -1,48 +1,43 @@
-
 rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    // --- Public Facing Documents ---
-    // These documents are intended to be shared via public links.
-
-    match /publicQuotes/{quoteId} {
-      // Anyone can read a public quote.
-      allow read: if true;
-      
-      // Only authenticated users can create, update, or delete quotes.
-      allow write: if request.auth != null;
+    
+    // Default to secure: no one can access anything unless explicitly allowed.
+    match /{document=**} {
+      allow read, write: if false;
     }
 
+    // Main database document for the workshop.
+    // Only authenticated users of the app can read or write.
+    match /database/main {
+      allow read, write: if request.auth != null;
+    }
+    
+    // Publicly readable collection for quotes.
+    // No one can write to them from the client side.
+    match /publicQuotes/{quoteId} {
+      allow read: if true;
+      allow write: if false; 
+    }
+    
+    // Publicly readable collection for service sheets.
     match /publicServices/{serviceId} {
       // Anyone can read a public service sheet.
       allow read: if true;
       
-      // Only authenticated users can create or delete service sheets.
-      allow create, delete: if request.auth != null;
-      
-      // Allow updates if:
-      // 1. The user is authenticated (e.g., an admin updating the whole record).
-      // 2. An unauthenticated user (the customer) is ONLY updating the signature fields.
-      // This is crucial for the public signing feature to work securely.
-      allow update: if request.auth != null ||
-                       (request.resource.data.diff(resource.data).affectedKeys()
-                          .hasOnly(['customerSignatureReception', 'customerSignatureDelivery', 'receptionSignatureViewed', 'deliverySignatureViewed']));
-    }
-    
-    // --- Main Private Database ---
-    // This single document holds all the workshop's private data.
-
-    match /database/main {
-      // Only authenticated users of the app can read from or write to the main database.
-      allow read, write: if request.auth != null;
-    }
-    
-    // By default, deny all access to any other path for security.
-    // This rule is evaluated if no other rule above allows the request.
-    match /{document=**} {
-      allow read, write: if false;
+      // Allow anyone (including unauthenticated customers) to update ONLY the signature fields.
+      // This is crucial for the public signing feature.
+      // This rule is designed to work with the `saveSignature` server action.
+      allow update: if request.writeFields.hasOnly([
+            'customerSignatureReception', 
+            'receptionSignatureViewed',
+            'customerSignatureDelivery',
+            'deliverySignatureViewed'
+           ]);
+                   
+      // Deny creates and deletes from the client.
+      allow create, delete: if false;
     }
   }
 }
