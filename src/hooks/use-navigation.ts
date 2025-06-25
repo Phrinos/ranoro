@@ -112,6 +112,13 @@ const BASE_NAV_STRUCTURE: ReadonlyArray<Omit<NavigationEntry, 'isActive'>> = [
     groupTag: "Mi Oficina",
     permissions: ['finances:view_report']
   },
+  {
+    label: 'Lista de Precios',
+    path: '/precios',
+    icon: Database,
+    groupTag: "Mi Oficina",
+    permissions: ['inventory:manage']
+  },
   { 
     label: 'Staff Técnico', 
     path: '/tecnicos', 
@@ -230,6 +237,9 @@ const useNavigation = (): NavigationEntry[] => {
         isActive = true;
     }
     if (entry.path === '/manual' && pathname === '/manual') {
+        isActive = true;
+    }
+    if (entry.path === '/precios' && pathname === '/precios') {
         isActive = true;
     }
 
