@@ -5,7 +5,7 @@ import * as React from "react"
 import { Bar, BarChart, Pie, PieChart, CartesianGrid, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer } from "recharts"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart"
-import { placeholderServiceRecords, placeholderSales, calculateSaleProfit, IVA_RATE, placeholderInventory } from "@/lib/placeholder-data"
+import { placeholderServiceRecords, placeholderSales, calculateSaleProfit, placeholderInventory, IVA_RATE } from "@/lib/placeholder-data"
 import { subMonths, format, startOfMonth, endOfMonth, isWithinInterval, parseISO } from "date-fns"
 import { es } from "date-fns/locale"
 
@@ -158,8 +158,8 @@ export function DashboardCharts() {
                   {payload?.map((item, index) => item.payload && (
                     <li key={index} className="flex items-center gap-2">
                       <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: item.color }} />
-                      <span className="text-muted-foreground">{item.name}</span>
-                      <span className="font-medium">{item.value}</span>
+                      <span className="text-muted-foreground">{item.value}</span>
+                      <span className="font-medium">{item.payload.value}</span>
                     </li>
                   ))}
                 </ul>
