@@ -11,7 +11,7 @@ import { Badge, type BadgeProps } from "@/components/ui/badge";
 import type { QuoteRecord, Vehicle } from "@/types";
 import { format, parseISO, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { Eye, Edit, Wrench, Trash2 } from "lucide-react";
+import { Eye, Edit, Wrench, Trash2, FileText, CalendarIcon, Pencil } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
