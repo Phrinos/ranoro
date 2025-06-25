@@ -66,6 +66,9 @@ export default function LandingPage() {
             <Button variant="ghost" asChild>
               <Link href="#flotillas">Flotillas</Link>
             </Button>
+             <Button variant="ghost" asChild>
+              <Link href="/login">Acceso Empleados</Link>
+            </Button>
           </nav>
         </div>
       </header>
@@ -141,32 +144,22 @@ export default function LandingPage() {
                 Elige el paquete que mejor se adapta a las necesidades de tu vehículo.
               </p>
             </div>
-            <div className="mt-12 flex justify-center">
-              <Image
-                src="/afinacion.jpg"
-                alt="Paquetes de afinación Clásica e Integral"
-                width={1080}
-                height={1080}
-                className="rounded-lg shadow-xl max-w-full lg:max-w-4xl"
-                data-ai-hint="tuning packages"
-              />
-            </div>
             <div className="mt-12 grid grid-cols-1 gap-8 md:grid-cols-2 lg:max-w-4xl lg:mx-auto">
               <Card className="flex flex-col">
                 <CardHeader>
                   <CardTitle className="text-2xl font-bold">Afinación Clásica</CardTitle>
-                  <p className="text-3xl font-bold text-primary">$1,250</p>
+                  <p className="text-3xl font-bold text-primary">Desde $1,999</p>
                 </CardHeader>
                 <CardContent className="flex-grow">
                   <ul className="space-y-3 text-left text-muted-foreground">
-                    <li className="flex items-start gap-3"><CheckCircle className="h-5 w-5 text-green-500 mt-0.5 shrink-0" /><span>Cambio de 4 bujías de cobre</span></li>
+                    <li className="flex items-start gap-3"><CheckCircle className="h-5 w-5 text-green-500 mt-0.5 shrink-0" /><span>Cambio de aceite de motor</span></li>
                     <li className="flex items-start gap-3"><CheckCircle className="h-5 w-5 text-green-500 mt-0.5 shrink-0" /><span>Cambio de filtro de aire</span></li>
                     <li className="flex items-start gap-3"><CheckCircle className="h-5 w-5 text-green-500 mt-0.5 shrink-0" /><span>Cambio de filtro de gasolina</span></li>
                     <li className="flex items-start gap-3"><CheckCircle className="h-5 w-5 text-green-500 mt-0.5 shrink-0" /><span>Cambio de filtro de aceite</span></li>
-                    <li className="flex items-start gap-3"><CheckCircle className="h-5 w-5 text-green-500 mt-0.5 shrink-0" /><span>Cambio de aceite (hasta 4 litros de aceite mineral)</span></li>
-                    <li className="flex items-start gap-3"><CheckCircle className="h-5 w-5 text-green-500 mt-0.5 shrink-0" /><span>Lavado de inyectores</span></li>
-                    <li className="flex items-start gap-3"><CheckCircle className="h-5 w-5 text-green-500 mt-0.5 shrink-0" /><span>Lavado de cuerpo de aceleración</span></li>
-                    <li className="flex items-start gap-3"><CheckCircle className="h-5 w-5 text-green-500 mt-0.5 shrink-0" /><span>Revisión de niveles</span></li>
+                    <li className="flex items-start gap-3"><CheckCircle className="h-5 w-5 text-green-500 mt-0.5 shrink-0" /><span>Cambio de bujías</span></li>
+                    <li className="flex items-start gap-3"><CheckCircle className="h-5 w-5 text-green-500 mt-0.5 shrink-0" /><span>Lavado de inyectores con boya</span></li>
+                    <li className="flex items-start gap-3"><CheckCircle className="h-5 w-5 text-green-500 mt-0.5 shrink-0" /><span>Lavado de cuerpo de aceleración no electrónico</span></li>
+                    <li className="flex items-start gap-3"><CheckCircle className="h-5 w-5 text-green-500 mt-0.5 shrink-0" /><span>Revisión y relleno de niveles hasta 250ml.</span></li>
                     <li className="flex items-start gap-3"><CheckCircle className="h-5 w-5 text-green-500 mt-0.5 shrink-0" /><span>Revisión de puntos de seguridad</span></li>
                   </ul>
                 </CardContent>
@@ -175,23 +168,24 @@ export default function LandingPage() {
               <Card className="flex flex-col border-primary border-2 ring-4 ring-primary/20">
                 <CardHeader>
                   <CardTitle className="text-2xl font-bold">Afinación Integral</CardTitle>
-                  <p className="text-3xl font-bold text-primary">$2,350</p>
+                  <p className="text-3xl font-bold text-primary">Desde $2,999</p>
                 </CardHeader>
                 <CardContent className="flex-grow">
                    <ul className="space-y-3 text-left text-muted-foreground">
-                    <li className="flex items-start gap-3"><CheckCircle className="h-5 w-5 text-green-500 mt-0.5 shrink-0" /><span>Cambio de 4 bujías de <strong>platino</strong></span></li>
+                    <li className="flex items-start gap-3"><CheckCircle className="h-5 w-5 text-green-500 mt-0.5 shrink-0" /><span>Cambio de aceite de motor</span></li>
                     <li className="flex items-start gap-3"><CheckCircle className="h-5 w-5 text-green-500 mt-0.5 shrink-0" /><span>Cambio de filtro de aire</span></li>
                     <li className="flex items-start gap-3"><CheckCircle className="h-5 w-5 text-green-500 mt-0.5 shrink-0" /><span>Cambio de filtro de gasolina</span></li>
                     <li className="flex items-start gap-3"><CheckCircle className="h-5 w-5 text-green-500 mt-0.5 shrink-0" /><span>Cambio de filtro de aceite</span></li>
-                    <li className="flex items-start gap-3"><CheckCircle className="h-5 w-5 text-green-500 mt-0.5 shrink-0" /><span>Cambio de aceite (hasta 4 litros de aceite <strong>sintético</strong>)</span></li>
-                    <li className="flex items-start gap-3"><CheckCircle className="h-5 w-5 text-green-500 mt-0.5 shrink-0" /><span>Lavado de inyectores con <strong>ultrasonido</strong></span></li>
-                    <li className="flex items-start gap-3"><CheckCircle className="h-5 w-5 text-green-500 mt-0.5 shrink-0" /><span>Lavado de cuerpo de aceleración</span></li>
-                    <li className="flex items-start gap-3"><CheckCircle className="h-5 w-5 text-green-500 mt-0.5 shrink-0" /><span>Limpieza de válvula PCV</span></li>
-                    <li className="flex items-start gap-3"><CheckCircle className="h-5 w-5 text-green-500 mt-0.5 shrink-0" /><span>Limpieza de sensor MAF</span></li>
-                    <li className="flex items-start gap-3"><CheckCircle className="h-5 w-5 text-green-500 mt-0.5 shrink-0" /><span>Revisión de niveles</span></li>
+                    <li className="flex items-start gap-3"><CheckCircle className="h-5 w-5 text-green-500 mt-0.5 shrink-0" /><span>Cambio de bujías</span></li>
+                    <li className="flex items-start gap-3"><CheckCircle className="h-5 w-5 text-green-500 mt-0.5 shrink-0" /><span>Lavado de inyectores con laboratorio y ultrasonido</span></li>
+                    <li className="flex items-start gap-3"><CheckCircle className="h-5 w-5 text-green-500 mt-0.5 shrink-0" /><span>Lavado de cuerpo de aceleración no electrónico y válvula IAC</span></li>
+                    <li className="flex items-start gap-3"><CheckCircle className="h-5 w-5 text-green-500 mt-0.5 shrink-0" /><span>Calibración, rotación y alineación de llantas</span></li>
+                    <li className="flex items-start gap-3"><CheckCircle className="h-5 w-5 text-green-500 mt-0.5 shrink-0" /><span>Lavado de motor</span></li>
+                    <li className="flex items-start gap-3"><CheckCircle className="h-5 w-5 text-green-500 mt-0.5 shrink-0" /><span>Lavado y aspirado de vehículo</span></li>
+                    <li className="flex items-start gap-3"><CheckCircle className="h-5 w-5 text-green-500 mt-0.5 shrink-0" /><span>Diagnostico por Computadora</span></li>
+                    <li className="flex items-start gap-3"><CheckCircle className="h-5 w-5 text-green-500 mt-0.5 shrink-0" /><span>Revisión y relleno de niveles hasta 500ml.</span></li>
                     <li className="flex items-start gap-3"><CheckCircle className="h-5 w-5 text-green-500 mt-0.5 shrink-0" /><span>Revisión de puntos de seguridad</span></li>
-                    <li className="flex items-start gap-3"><CheckCircle className="h-5 w-5 text-green-500 mt-0.5 shrink-0" /><span><strong>Relleno</strong> de niveles</span></li>
-                    <li className="flex items-start gap-3"><CheckCircle className="h-5 w-5 text-green-500 mt-0.5 shrink-0" /><span><strong>Diagnóstico por computadora</strong></span></li>
+                    <li className="flex items-start gap-3"><CheckCircle className="h-5 w-5 text-green-500 mt-0.5 shrink-0" /><span>Transporte de Cortesia</span></li>
                   </ul>
                 </CardContent>
               </Card>
@@ -259,11 +253,6 @@ export default function LandingPage() {
             <p className="text-sm text-muted-foreground">
                 Desarrollado por Arturo Valdelamar
             </p>
-          </div>
-          <div className="flex items-center gap-4">
-             <Link href="/login" className="text-sm text-muted-foreground hover:text-primary">
-                Acceso Empleados
-              </Link>
           </div>
         </div>
       </footer>
