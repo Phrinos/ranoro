@@ -487,11 +487,11 @@ export function ServiceForm({
         customerItems: values.customerItems || '',
         serviceAdvisorId: currentUser.id,
         serviceAdvisorName: currentUser.name,
-        serviceAdvisorSignatureDataUrl: currentUser.signatureDataUrl,
-        customerSignatureReception: values.customerSignatureReception,
-        customerSignatureDelivery: values.customerSignatureDelivery,
-        receptionSignatureViewed: (initialDataService as ServiceRecord)?.receptionSignatureViewed,
-        deliverySignatureViewed: (initialDataService as ServiceRecord)?.deliverySignatureViewed,
+        serviceAdvisorSignatureDataUrl: currentUser.signatureDataUrl || '',
+        customerSignatureReception: values.customerSignatureReception || '',
+        customerSignatureDelivery: values.customerSignatureDelivery || '',
+        receptionSignatureViewed: (initialDataService as ServiceRecord)?.receptionSignatureViewed || false,
+        deliverySignatureViewed: (initialDataService as ServiceRecord)?.deliverySignatureViewed || false,
         workshopInfo: workshopInfo as WorkshopInfo,
       };
 
