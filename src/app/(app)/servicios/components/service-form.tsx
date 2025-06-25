@@ -71,7 +71,7 @@ const supplySchema = z.object({
 const serviceItemSchema = z.object({
   id: z.string(),
   name: z.string().min(3, "El nombre del servicio es requerido."),
-  price: z.coerce.number().min(0, "El precio es requerido."),
+  price: z.coerce.number().min(0, "El precio debe ser un número positivo.").optional(),
   suppliesUsed: z.array(supplySchema),
 });
 
@@ -785,7 +785,7 @@ export function ServiceForm({
               </Card>
 
               <Card>
-                  <CardHeader><CardTitle className="text-lg">Items del Servicio</CardTitle></CardHeader>
+                  <CardHeader><CardTitle className="text-lg">Trabajos a Realizar</CardTitle></CardHeader>
                   <CardContent className="space-y-4">
                       {serviceItemsFields.map((serviceField, serviceIndex) => (
                           <ServiceItemCard
@@ -799,7 +799,7 @@ export function ServiceForm({
                           />
                       ))}
                       {!isReadOnly && (
-                          <Button type="button" variant="outline" onClick={() => appendServiceItem({ id: `item_${Date.now()}`, name: '', price: 0, suppliesUsed: [] })}>
+                          <Button type="button" variant="outline" onClick={() => appendServiceItem({ id: `item_${Date.now()}`, name: '', price: undefined, suppliesUsed: [] })}>
                               <PlusCircle className="mr-2 h-4 w-4"/> Añadir Item de Servicio
                           </Button>
                       )}
@@ -808,9 +808,9 @@ export function ServiceForm({
 
               <Card className="bg-card">
                   <CardHeader><CardTitle className="text-lg flex items-center gap-2"><DollarSign className="h-5 w-5 text-green-600"/>Resumen Financiero</CardTitle></CardHeader>
-                  <CardContent className="space-y-4">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
-                          <div className="space-y-1 text-lg">
+                  <CardContent>
+                      <div className="flex justify-end">
+                          <div className="w-full max-w-md space-y-1 text-lg">
                               <div className="flex justify-between pt-1"><span className="font-bold text-blue-600 dark:text-blue-400">Total del Servicio (IVA Inc.):</span><span className="font-semibold text-blue-600 dark:text-blue-400">{formatCurrency(totalCost)}</span></div>
                               <div className="flex justify-between"><span>(-) Costo Insumos (Taller):</span><span className="font-medium text-red-600 dark:text-red-400">{formatCurrency(totalSuppliesWorkshopCost)}</span></div>
                               <hr className="my-2 border-dashed"/>
@@ -943,4 +943,3 @@ function ServiceItemCard({ serviceIndex, control, removeServiceItem, isReadOnly,
         </Card>
     );
 }
-
