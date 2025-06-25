@@ -169,7 +169,7 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
            <div className="grid grid-cols-2 gap-8 text-center mb-4">
                <div className="pt-2 min-h-[80px] flex flex-col justify-between">
                     <div className="h-14 flex items-center justify-center">
-                        {service.serviceAdvisorSignatureDataUrl && (
+                        {service.serviceAdvisorSignatureDataUrl && service.serviceAdvisorSignatureDataUrl.startsWith('data:image') && (
                             <Image src={service.serviceAdvisorSignatureDataUrl} alt="Firma del asesor" width={150} height={56} style={{objectFit: 'contain'}} />
                         )}
                     </div>
