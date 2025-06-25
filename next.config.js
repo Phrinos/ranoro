@@ -16,6 +16,9 @@ const nextConfig = {
       },
     ],
   },
+  experimental: {
+    serverComponentsExternalPackages: ['xlsx'],
+  },
 };
 
 module.exports = nextConfig;

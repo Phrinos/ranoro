@@ -32,15 +32,10 @@ import {
 } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
 import { Save, Eye, Printer } from "lucide-react";
-import dynamic from "next/dynamic";
 import type { SaleReceipt } from "@/types";
 import { TicketContent } from "@/components/ticket-content";
+import { PrintTicketDialog } from "@/components/ui/print-ticket-dialog";
 
-// Dialog dinámico sólo cliente
-const PrintTicketDialog = dynamic<any>(
-  () => import("@/components/ui/print-ticket-dialog").then((m: any) => m.PrintTicketDialog || m.default),
-  { ssr: false }
-);
 
 /* ----------------- Datos y validación ----------------- */
 const LOCALSTORAGE_KEY = "workshopTicketInfo";

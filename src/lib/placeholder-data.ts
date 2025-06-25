@@ -156,7 +156,7 @@ let resolveHydration: () => void;
  * para deshabilitar acciones (como Registrar Venta) hasta que el inventario
  * esté disponible.
  */
-export const hydrationReady = new Promise<void>((res) => {
+export const hydrateReady = new Promise<void>((res) => {
   resolveHydration = res;
 });
 
