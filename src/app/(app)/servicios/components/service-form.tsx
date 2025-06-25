@@ -769,8 +769,7 @@ export function ServiceForm({
     return [];
   }, [mode, initialDataQuote]);
 
-  const cardTitleText = mode === 'quote' ? "Información de la Cotización" : "Información del Servicio";
-  const isDateDisabled = isConvertingQuote ? false : (isReadOnly || mode === 'service' && !!initialDataService?.id);
+  const isDateDisabled = isReadOnly || (mode === 'service' && !!initialDataService?.id && initialDataService.status !== 'Agendado');
 
   return (
     <>
@@ -781,6 +780,7 @@ export function ServiceForm({
                 <TabsList className="bg-transparent p-0">
                     <TabsTrigger value="servicio" className="text-base data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none">Detalles del Servicio</TabsTrigger>
                     {showReceptionTab && <TabsTrigger value="recepcion" className="text-base data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none">Recepción y Entrega</TabsTrigger>}
+                    {showReceptionTab && <TabsTrigger value="seguridad" className="text-base data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none">Revisión de Seguridad</TabsTrigger>}
                 </TabsList>
                  {mode === 'service' && !isReadOnly && (
                     <Button type="button" onClick={handlePrintSheet} variant="outline" className="bg-card">
@@ -792,7 +792,7 @@ export function ServiceForm({
             <TabsContent value="servicio" className="space-y-6 mt-0">
               <Card>
                 <CardHeader>
-                    <CardTitle className="text-lg">{cardTitleText}</CardTitle>
+                    <CardTitle className="text-lg">{mode === 'quote' ? "Información de la Cotización" : "Información del Servicio"}</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                     {showStatusFields && (
@@ -819,12 +819,12 @@ export function ServiceForm({
                                 </FormItem>
                             )}
                         />
-                        {mode === 'service' && watchedStatus !== 'Agendado' && watchedStatus !== 'Cotizacion' &&
+                        {watchedStatus !== 'Agendado' && watchedStatus !== 'Cotizacion' && (
                             <FormField
                                 control={form.control}
                                 name="technicianId"
                                 render={({ field }) => (<FormItem><FormLabel>Técnico Asignado</FormLabel><Select onValueChange={field.onChange} value={field.value} disabled={isReadOnly}><FormControl><SelectTrigger><SelectValue placeholder="Seleccione un técnico" /></SelectTrigger></FormControl><SelectContent>{technicians.map((technician) => (<SelectItem key={technician.id} value={technician.id}>{technician.name}</SelectItem>))}</SelectContent></Select><FormMessage /></FormItem>)}/>
-                        }
+                        )}
                       </div>
                     )}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
@@ -914,6 +914,13 @@ export function ServiceForm({
 
               </TabsContent>
             )}
+
+            {showReceptionTab && (
+              <TabsContent value="seguridad" className="space-y-6 mt-0">
+                  <p>Funcionalidad de Revisión de Seguridad en desarrollo.</p>
+              </TabsContent>
+            )}
+
           </Tabs>
 
           <div className="flex justify-between items-center pt-4">
@@ -1008,9 +1015,9 @@ function ServiceItemCard({ serviceIndex, form, removeServiceItem, isReadOnly, in
         
         // If a manual item with a selling price is added, add its price to the service item's total price
         if (sellingPriceToApply !== undefined) {
-            const currentItemPrice = form.getValues(`serviceItems.${serviceIndex}.price`) || 0;
+            const currentItemPrice = getValues(`serviceItems.${serviceIndex}.price`) || 0;
             const priceToAdd = sellingPriceToApply * supply.quantity;
-            form.setValue(`serviceItems.${serviceIndex}.price`, currentItemPrice + priceToAdd, { shouldDirty: true });
+            setValue(`serviceItems.${serviceIndex}.price`, currentItemPrice + priceToAdd, { shouldDirty: true });
         }
         
         setIsAddSupplyDialogOpen(false);
@@ -1107,4 +1114,3 @@ function ServiceItemCard({ serviceIndex, form, removeServiceItem, isReadOnly, in
         </Card>
     );
 }
-
