@@ -1,4 +1,3 @@
-
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -191,7 +190,7 @@ export function ServiceForm({
         notes: initialData?.notes || "",
         technicianId: (initialData as ServiceRecord)?.technicianId || (initialData as QuoteRecord)?.preparedByTechnicianId || "",
         serviceItems: [],
-        status: mode === 'service' ? ((initialData as ServiceRecord)?.status || 'Agendado') : undefined,
+        status: mode === 'service' ? ((initialData as ServiceRecord)?.status || 'Agendado') : 'Cotizacion',
         serviceType: mode === 'service' ? ((initialData as ServiceRecord)?.serviceType || 'Servicio General') : undefined,
         deliveryDateTime: undefined,
         vehicleConditions: (initialData as ServiceRecord)?.vehicleConditions || "",
@@ -279,7 +278,7 @@ export function ServiceForm({
             description: (data as any).description || "",
             notes: data.notes || "",
             technicianId: (data as ServiceRecord)?.technicianId || (data as QuoteRecord)?.preparedByTechnicianId || undefined,
-            status: mode === 'service' ? ((data as ServiceRecord)?.status || 'Agendado') : undefined,
+            status: mode === 'service' ? ((data as ServiceRecord)?.status || 'Agendado') : 'Cotizacion',
             serviceType: mode === 'service' ? ((data as ServiceRecord)?.serviceType || 'Servicio General') : undefined,
             vehicleConditions: (data as ServiceRecord)?.vehicleConditions || "",
             fuelLevel: (data as ServiceRecord)?.fuelLevel || undefined,
@@ -354,6 +353,17 @@ export function ServiceForm({
   const watchedStatus = form.watch("status");
   const customerSignatureReception = form.watch("customerSignatureReception");
   const customerSignatureDelivery = form.watch("customerSignatureDelivery");
+
+  const showReceptionTab = useMemo(() => {
+    if (mode !== 'service') return false;
+    // The tab should be visible if the status is NOT 'Cotizacion' and NOT 'Agendado'.
+    if (!watchedStatus || watchedStatus === 'Cotizacion' || watchedStatus === 'Agendado') {
+        return false;
+    }
+    // Show for 'Reparando', 'Completado', 'Cancelado'
+    return true;
+  }, [mode, watchedStatus]);
+
 
   const previousStatusRef = useRef<ServiceRecord['status']>();
 
@@ -747,7 +757,7 @@ export function ServiceForm({
             <div className="flex justify-between items-center mb-4 border-b">
                 <TabsList className="bg-transparent p-0">
                     <TabsTrigger value="servicio" className="text-base data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none">Detalles del Servicio</TabsTrigger>
-                    {mode === 'service' && <TabsTrigger value="recepcion" className="text-base data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none">Recepción y Entrega</TabsTrigger>}
+                    {showReceptionTab && <TabsTrigger value="recepcion" className="text-base data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none">Recepción y Entrega</TabsTrigger>}
                 </TabsList>
                  {mode === 'service' && !isReadOnly && (
                     <Button type="button" onClick={handlePrintSheet} variant="outline" className="bg-card">
@@ -831,31 +841,33 @@ export function ServiceForm({
 
             </TabsContent>
 
-            <TabsContent value="recepcion" className="space-y-6 mt-0">
-               <Card>
-                 <CardHeader><CardTitle>Fechas y Horarios</CardTitle></CardHeader>
-                 <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 items-end">
-                     <FormField control={form.control} name="serviceDate" render={({ field }) => (<FormItem className="flex flex-col"><FormLabel>Fecha y Hora de Recepción</FormLabel><Popover><PopoverTrigger asChild disabled={isReadOnly}><FormControl><Button variant={"outline"} className={cn("w-full justify-start text-left font-normal",!field.value && "text-muted-foreground")} disabled={isReadOnly}>{field.value && isValid(field.value) ? (format(field.value, "PPPp", { locale: es })) : (<span>Seleccione fecha y hora</span>)}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value} onSelect={(date) => { const currentTime = field.value || setHours(setMinutes(new Date(), 30), 8); const newDateTime = date ? setHours(setMinutes(startOfDay(date), currentTime.getMinutes()), currentTime.getHours()) : undefined; field.onChange(newDateTime);}} disabled={(date) => date < new Date("1900-01-01") || isReadOnly } initialFocus locale={es}/><div className="p-2 border-t"><Select value={field.value ? `${String(field.value.getHours()).padStart(2, '0')}:${String(field.value.getMinutes()).padStart(2, '0')}` : "08:30"} onValueChange={(timeValue) => handleTimeChange(timeValue, "serviceDate")} disabled={isReadOnly}><SelectTrigger><SelectValue placeholder="Seleccione hora" /></SelectTrigger><SelectContent>{timeSlots.map(slot => (<SelectItem key={slot.value} value={slot.value}>{slot.label}</SelectItem>))}</SelectContent></Select></div></PopoverContent></Popover><FormMessage /></FormItem>)}/>
-                     <FormField control={form.control} name="deliveryDateTime" render={({ field }) => ( <FormItem className="flex flex-col"><FormLabel>Fecha y Hora de Entrega</FormLabel><Popover><PopoverTrigger asChild disabled={isReadOnly}><FormControl><Button variant={"outline"} className={cn("w-full justify-start text-left font-normal",!field.value && "text-muted-foreground")} disabled={isReadOnly}>{field.value && isValid(field.value) ? (format(field.value, "PPPp", { locale: es })) : (<span>Seleccione fecha y hora</span>)}<Clock className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value} onSelect={(date) => { const currentTime = field.value || new Date(); const newDateTime = date ? setHours(setMinutes(startOfDay(date), currentTime.getMinutes()), currentTime.getHours()): undefined; field.onChange(newDateTime);}} disabled={isReadOnly} initialFocus locale={es}/><div className="p-2 border-t"><Select value={field.value ? `${String(field.value.getHours()).padStart(2, '0')}:${String(field.value.getMinutes()).padStart(2, '0')}` : "08:30"} onValueChange={(timeValue) => handleTimeChange(timeValue, "deliveryDateTime")} disabled={isReadOnly}><SelectTrigger><SelectValue placeholder="Seleccione hora" /></SelectTrigger><SelectContent>{timeSlots.map(slot => (<SelectItem key={slot.value} value={slot.value}>{slot.label}</SelectItem>))}</SelectContent></Select></div></PopoverContent></Popover><FormMessage /></FormItem>)}/>
-                 </CardContent>
-               </Card>
+            {showReceptionTab && (
+              <TabsContent value="recepcion" className="space-y-6 mt-0">
+                <Card>
+                  <CardHeader><CardTitle>Fechas y Horarios</CardTitle></CardHeader>
+                  <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 items-end">
+                      <FormField control={form.control} name="serviceDate" render={({ field }) => (<FormItem className="flex flex-col"><FormLabel>Fecha y Hora de Recepción</FormLabel><Popover><PopoverTrigger asChild disabled={isReadOnly}><FormControl><Button variant={"outline"} className={cn("w-full justify-start text-left font-normal",!field.value && "text-muted-foreground")} disabled={isReadOnly}>{field.value && isValid(field.value) ? (format(field.value, "PPPp", { locale: es })) : (<span>Seleccione fecha y hora</span>)}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value} onSelect={(date) => { const currentTime = field.value || setHours(setMinutes(new Date(), 30), 8); const newDateTime = date ? setHours(setMinutes(startOfDay(date), currentTime.getMinutes()), currentTime.getHours()) : undefined; field.onChange(newDateTime);}} disabled={(date) => date < new Date("1900-01-01") || isReadOnly } initialFocus locale={es}/><div className="p-2 border-t"><Select value={field.value ? `${String(field.value.getHours()).padStart(2, '0')}:${String(field.value.getMinutes()).padStart(2, '0')}` : "08:30"} onValueChange={(timeValue) => handleTimeChange(timeValue, "serviceDate")} disabled={isReadOnly}><SelectTrigger><SelectValue placeholder="Seleccione hora" /></SelectTrigger><SelectContent>{timeSlots.map(slot => (<SelectItem key={slot.value} value={slot.value}>{slot.label}</SelectItem>))}</SelectContent></Select></div></PopoverContent></Popover><FormMessage /></FormItem>)}/>
+                      <FormField control={form.control} name="deliveryDateTime" render={({ field }) => ( <FormItem className="flex flex-col"><FormLabel>Fecha y Hora de Entrega</FormLabel><Popover><PopoverTrigger asChild disabled={isReadOnly}><FormControl><Button variant={"outline"} className={cn("w-full justify-start text-left font-normal",!field.value && "text-muted-foreground")} disabled={isReadOnly}>{field.value && isValid(field.value) ? (format(field.value, "PPPp", { locale: es })) : (<span>Seleccione fecha y hora</span>)}<Clock className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value} onSelect={(date) => { const currentTime = field.value || new Date(); const newDateTime = date ? setHours(setMinutes(startOfDay(date), currentTime.getMinutes()), currentTime.getHours()): undefined; field.onChange(newDateTime);}} disabled={isReadOnly} initialFocus locale={es}/><div className="p-2 border-t"><Select value={field.value ? `${String(field.value.getHours()).padStart(2, '0')}:${String(field.value.getMinutes()).padStart(2, '0')}` : "08:30"} onValueChange={(timeValue) => handleTimeChange(timeValue, "deliveryDateTime")} disabled={isReadOnly}><SelectTrigger><SelectValue placeholder="Seleccione hora" /></SelectTrigger><SelectContent>{timeSlots.map(slot => (<SelectItem key={slot.value} value={slot.value}>{slot.label}</SelectItem>))}</SelectContent></Select></div></PopoverContent></Popover><FormMessage /></FormItem>)}/>
+                  </CardContent>
+                </Card>
 
-               <Card>
-                <CardHeader><CardTitle>Condiciones de la Unidad y Firmas</CardTitle></CardHeader>
-                <CardContent className="space-y-4">
-                    <FormField control={form.control} name="vehicleConditions" render={({ field }) => (<FormItem><FormLabel>Condiciones del Vehículo (al recibir)</FormLabel><FormControl><Textarea placeholder="Ej: Rayón en puerta del conductor, llanta trasera derecha baja, etc." {...field} disabled={isReadOnly} /></FormControl><FormMessage /></FormItem>)}/>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <FormField control={form.control} name="fuelLevel" render={({ field }) => (<FormItem><FormLabel>Nivel de Combustible</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value} disabled={isReadOnly}><FormControl><SelectTrigger><SelectValue placeholder="Seleccionar nivel..." /></SelectTrigger></FormControl><SelectContent><SelectItem value="Vacío">Vacío</SelectItem><SelectItem value="1/8">1/8</SelectItem><SelectItem value="1/4">1/4</SelectItem><SelectItem value="3/8">3/8</SelectItem><SelectItem value="1/2">1/2</SelectItem><SelectItem value="5/8">5/8</SelectItem><SelectItem value="3/4">3/4</SelectItem><SelectItem value="7/8">7/8</SelectItem><SelectItem value="Lleno">Lleno</SelectItem></SelectContent></Select><FormMessage /></FormItem>)}/>
-                        <FormField control={form.control} name="customerItems" render={({ field }) => (<FormItem><FormLabel>Pertenencias del Cliente (Opcional)</FormLabel><FormControl><Textarea placeholder="Ej: Gato, llanta de refacción, cargador de celular en la guantera, etc." {...field} disabled={isReadOnly} /></FormControl><FormMessage /></FormItem>)}/>
-                    </div>
-                    <div className="pt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div><Label>Firma de Recepción</Label><div className="mt-2 p-2 h-24 border rounded-md bg-muted/50 flex items-center justify-center">{customerSignatureReception ? (<Image src={customerSignatureReception} alt="Firma de recepción" width={150} height={75} style={{objectFit: 'contain'}}/>) : (<span className="text-sm text-muted-foreground">Pendiente de firma del cliente</span>)}</div></div>
-                        <div><Label>Firma de Entrega</Label><div className="mt-2 p-2 h-24 border rounded-md bg-muted/50 flex items-center justify-center">{customerSignatureDelivery ? (<Image src={customerSignatureDelivery} alt="Firma de entrega" width={150} height={75} style={{objectFit: 'contain'}}/>) : (<span className="text-sm text-muted-foreground">Pendiente de firma del cliente</span>)}</div></div>
-                    </div>
-                </CardContent>
-              </Card>
+                <Card>
+                  <CardHeader><CardTitle>Condiciones de la Unidad y Firmas</CardTitle></CardHeader>
+                  <CardContent className="space-y-4">
+                      <FormField control={form.control} name="vehicleConditions" render={({ field }) => (<FormItem><FormLabel>Condiciones del Vehículo (al recibir)</FormLabel><FormControl><Textarea placeholder="Ej: Rayón en puerta del conductor, llanta trasera derecha baja, etc." {...field} disabled={isReadOnly} /></FormControl><FormMessage /></FormItem>)}/>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <FormField control={form.control} name="fuelLevel" render={({ field }) => (<FormItem><FormLabel>Nivel de Combustible</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value} disabled={isReadOnly}><FormControl><SelectTrigger><SelectValue placeholder="Seleccionar nivel..." /></SelectTrigger></FormControl><SelectContent><SelectItem value="Vacío">Vacío</SelectItem><SelectItem value="1/8">1/8</SelectItem><SelectItem value="1/4">1/4</SelectItem><SelectItem value="3/8">3/8</SelectItem><SelectItem value="1/2">1/2</SelectItem><SelectItem value="5/8">5/8</SelectItem><SelectItem value="3/4">3/4</SelectItem><SelectItem value="7/8">7/8</SelectItem><SelectItem value="Lleno">Lleno</SelectItem></SelectContent></Select><FormMessage /></FormItem>)}/>
+                          <FormField control={form.control} name="customerItems" render={({ field }) => (<FormItem><FormLabel>Pertenencias del Cliente (Opcional)</FormLabel><FormControl><Textarea placeholder="Ej: Gato, llanta de refacción, cargador de celular en la guantera, etc." {...field} disabled={isReadOnly} /></FormControl><FormMessage /></FormItem>)}/>
+                      </div>
+                      <div className="pt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          <div><Label>Firma de Recepción</Label><div className="mt-2 p-2 h-24 border rounded-md bg-muted/50 flex items-center justify-center">{customerSignatureReception ? (<Image src={customerSignatureReception} alt="Firma de recepción" width={150} height={75} style={{objectFit: 'contain'}}/>) : (<span className="text-sm text-muted-foreground">Pendiente de firma del cliente</span>)}</div></div>
+                          <div><Label>Firma de Entrega</Label><div className="mt-2 p-2 h-24 border rounded-md bg-muted/50 flex items-center justify-center">{customerSignatureDelivery ? (<Image src={customerSignatureDelivery} alt="Firma de entrega" width={150} height={75} style={{objectFit: 'contain'}}/>) : (<span className="text-sm text-muted-foreground">Pendiente de firma del cliente</span>)}</div></div>
+                      </div>
+                  </CardContent>
+                </Card>
 
-            </TabsContent>
+              </TabsContent>
+            )}
           </Tabs>
 
           <div className="flex justify-between items-center pt-4">
@@ -907,7 +919,7 @@ interface ServiceItemCardProps {
 }
 
 function ServiceItemCard({ serviceIndex, form, removeServiceItem, isReadOnly, inventoryItems, mode }: ServiceItemCardProps) {
-    const { control } = form;
+    const { control, getValues, setValue } = form;
     const { fields, append, remove, update } = useFieldArray({
         control,
         name: `serviceItems.${serviceIndex}.suppliesUsed`
@@ -921,9 +933,9 @@ function ServiceItemCard({ serviceIndex, form, removeServiceItem, isReadOnly, in
         
         // If a manual item with a selling price is added, add its price to the service item's total price
         if (sellingPriceToApply !== undefined) {
-            const currentItemPrice = form.getValues(`serviceItems.${serviceIndex}.price`) || 0;
+            const currentItemPrice = getValues(`serviceItems.${serviceIndex}.price`) || 0;
             const priceToAdd = sellingPriceToApply * supply.quantity;
-            form.setValue(`serviceItems.${serviceIndex}.price`, currentItemPrice + priceToAdd, { shouldDirty: true });
+            setValue(`serviceItems.${serviceIndex}.price`, currentItemPrice + priceToAdd, { shouldDirty: true });
         }
         
         setIsAddSupplyDialogOpen(false);
@@ -936,7 +948,7 @@ function ServiceItemCard({ serviceIndex, form, removeServiceItem, isReadOnly, in
 
     const handleSupplyQuantityChange = (supplyIndex: number, delta: number) => {
         const supplyPath = `serviceItems.${serviceIndex}.suppliesUsed.${supplyIndex}`;
-        const currentSupply = form.getValues(supplyPath);
+        const currentSupply = getValues(supplyPath);
         if (!currentSupply) return;
 
         const newQuantity = currentSupply.quantity + delta;
@@ -955,7 +967,7 @@ function ServiceItemCard({ serviceIndex, form, removeServiceItem, isReadOnly, in
         }
 
         // Update the quantity for this specific supply
-        form.setValue(`${supplyPath}.quantity`, newQuantity, { shouldDirty: true });
+        setValue(`${supplyPath}.quantity`, newQuantity, { shouldDirty: true });
     };
 
     return (
@@ -1022,7 +1034,3 @@ function ServiceItemCard({ serviceIndex, form, removeServiceItem, isReadOnly, in
         </Card>
     );
 }
-
-    
-
-    
