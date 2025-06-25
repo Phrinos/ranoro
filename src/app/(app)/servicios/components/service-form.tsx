@@ -599,7 +599,7 @@ export function ServiceForm({
   const handlePrintSheet = useCallback(() => {
     // This part might need refactoring as well if the service sheet needs to show multiple jobs
     toast({ title: "Función en desarrollo", description: "La impresión de la hoja de servicio con múltiples ítems se está actualizando." });
-  }, [form, selectedVehicle, toast, refreshCurrentUser]);
+  }, [toast]);
 
   const handleTimeChange = (timeString: string, dateField: "serviceDate" | "deliveryDateTime") => {
     const [hours, minutes] = timeString.split(':').map(Number);
@@ -779,7 +779,13 @@ export function ServiceForm({
                     {selectedVehicle && (<div className="p-3 border rounded-md bg-amber-50 dark:bg-amber-950/50 text-sm space-y-1"><p><strong>Vehículo Seleccionado:</strong> {selectedVehicle.make} {selectedVehicle.model} {selectedVehicle.year} (<span className="font-bold">{selectedVehicle.licensePlate}</span>)</p><p><strong>Propietario:</strong> {selectedVehicle.ownerName}</p>{lastServiceInfo && (<p className="text-xs font-medium text-blue-600 dark:text-blue-400 mt-1">{lastServiceInfo}</p>)}</div>)}
                     {vehicleNotFound && !selectedVehicle && !isReadOnly && (<div className="p-3 border border-orange-500 rounded-md bg-orange-50 dark:bg-orange-900/30 dark:text-orange-300 text-sm flex flex-col sm:flex-row items-center justify-between gap-2"><div className="flex items-center gap-2"><AlertCircle className="h-5 w-5 shrink-0"/><p>Vehículo con placa "{vehicleLicensePlateSearch}" no encontrado.</p></div><Button type="button" size="sm" variant="outline" onClick={() => {setNewVehicleInitialData({ licensePlate: vehicleLicensePlateSearch }); setIsVehicleDialogOpen(true);}} className="w-full sm:w-auto"><CarIcon className="mr-2 h-4 w-4"/> Registrar Nuevo Vehículo</Button></div>)}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 pt-4">
-                        <FormField control={form.control} name="notes" render={({ field }) => (<FormItem><FormLabel>Notas Adicionales (Opcional)</FormLabel><FormControl><Textarea placeholder={mode === 'quote' ? "Ej: Validez de la cotización, condiciones..." : "Notas internas o para el cliente..."} {...field} disabled={isReadOnly} className="min-h-[100px]"/></FormControl><FormMessage /></FormItem>)}/>
+                        <FormField control={form.control} name="notes" render={({ field }) => (
+                          <FormItem className={cn(mode === 'quote' && "md:col-span-2")}>
+                              <FormLabel>Notas Adicionales (Opcional)</FormLabel>
+                              <FormControl><Textarea placeholder={mode === 'quote' ? "Ej: Validez de la cotización, condiciones..." : "Notas internas o para el cliente..."} {...field} disabled={isReadOnly} className="min-h-[100px]"/></FormControl>
+                              <FormMessage />
+                          </FormItem>
+                        )}/>
                         {mode === 'service' && (
                           <FormField control={form.control} name="technicianId" render={({ field }) => (<FormItem><FormLabel>{technicianLabelText}</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value} disabled={isReadOnly}><FormControl><SelectTrigger><SelectValue placeholder="Seleccione un técnico" /></SelectTrigger></FormControl><SelectContent>{technicians.map((technician) => (<SelectItem key={technician.id} value={technician.id}>{technician.name}</SelectItem>))}</SelectContent></Select><FormMessage /></FormItem>)}/>
                         )}
@@ -1016,5 +1022,7 @@ function ServiceItemCard({ serviceIndex, form, removeServiceItem, isReadOnly, in
         </Card>
     );
 }
+
+    
 
     
