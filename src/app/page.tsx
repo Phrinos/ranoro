@@ -4,7 +4,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Car, Wrench, BrainCircuit, Users, ShieldCheck, Drill, GitCommitHorizontal, CircleDotDashed, Truck, CheckCircle, MessageSquare } from 'lucide-react';
 
 const services = [
@@ -150,6 +150,51 @@ export default function LandingPage() {
                 className="rounded-lg shadow-xl max-w-full lg:max-w-4xl"
                 data-ai-hint="tuning packages"
               />
+            </div>
+            <div className="mt-12 grid grid-cols-1 gap-8 md:grid-cols-2 lg:max-w-4xl lg:mx-auto">
+              <Card className="flex flex-col">
+                <CardHeader>
+                  <CardTitle className="text-2xl font-bold">Afinación Clásica</CardTitle>
+                  <p className="text-3xl font-bold text-primary">$1,250</p>
+                </CardHeader>
+                <CardContent className="flex-grow">
+                  <ul className="space-y-3 text-left text-muted-foreground">
+                    <li className="flex items-start gap-3"><CheckCircle className="h-5 w-5 text-green-500 mt-0.5 shrink-0" /><span>Cambio de 4 bujías de cobre</span></li>
+                    <li className="flex items-start gap-3"><CheckCircle className="h-5 w-5 text-green-500 mt-0.5 shrink-0" /><span>Cambio de filtro de aire</span></li>
+                    <li className="flex items-start gap-3"><CheckCircle className="h-5 w-5 text-green-500 mt-0.5 shrink-0" /><span>Cambio de filtro de gasolina</span></li>
+                    <li className="flex items-start gap-3"><CheckCircle className="h-5 w-5 text-green-500 mt-0.5 shrink-0" /><span>Cambio de filtro de aceite</span></li>
+                    <li className="flex items-start gap-3"><CheckCircle className="h-5 w-5 text-green-500 mt-0.5 shrink-0" /><span>Cambio de aceite (hasta 4 litros de aceite mineral)</span></li>
+                    <li className="flex items-start gap-3"><CheckCircle className="h-5 w-5 text-green-500 mt-0.5 shrink-0" /><span>Lavado de inyectores</span></li>
+                    <li className="flex items-start gap-3"><CheckCircle className="h-5 w-5 text-green-500 mt-0.5 shrink-0" /><span>Lavado de cuerpo de aceleración</span></li>
+                    <li className="flex items-start gap-3"><CheckCircle className="h-5 w-5 text-green-500 mt-0.5 shrink-0" /><span>Revisión de niveles</span></li>
+                    <li className="flex items-start gap-3"><CheckCircle className="h-5 w-5 text-green-500 mt-0.5 shrink-0" /><span>Revisión de puntos de seguridad</span></li>
+                  </ul>
+                </CardContent>
+              </Card>
+
+              <Card className="flex flex-col border-primary border-2 ring-4 ring-primary/20">
+                <CardHeader>
+                  <CardTitle className="text-2xl font-bold">Afinación Integral</CardTitle>
+                  <p className="text-3xl font-bold text-primary">$2,350</p>
+                </CardHeader>
+                <CardContent className="flex-grow">
+                   <ul className="space-y-3 text-left text-muted-foreground">
+                    <li className="flex items-start gap-3"><CheckCircle className="h-5 w-5 text-green-500 mt-0.5 shrink-0" /><span>Cambio de 4 bujías de <strong>platino</strong></span></li>
+                    <li className="flex items-start gap-3"><CheckCircle className="h-5 w-5 text-green-500 mt-0.5 shrink-0" /><span>Cambio de filtro de aire</span></li>
+                    <li className="flex items-start gap-3"><CheckCircle className="h-5 w-5 text-green-500 mt-0.5 shrink-0" /><span>Cambio de filtro de gasolina</span></li>
+                    <li className="flex items-start gap-3"><CheckCircle className="h-5 w-5 text-green-500 mt-0.5 shrink-0" /><span>Cambio de filtro de aceite</span></li>
+                    <li className="flex items-start gap-3"><CheckCircle className="h-5 w-5 text-green-500 mt-0.5 shrink-0" /><span>Cambio de aceite (hasta 4 litros de aceite <strong>sintético</strong>)</span></li>
+                    <li className="flex items-start gap-3"><CheckCircle className="h-5 w-5 text-green-500 mt-0.5 shrink-0" /><span>Lavado de inyectores con <strong>ultrasonido</strong></span></li>
+                    <li className="flex items-start gap-3"><CheckCircle className="h-5 w-5 text-green-500 mt-0.5 shrink-0" /><span>Lavado de cuerpo de aceleración</span></li>
+                    <li className="flex items-start gap-3"><CheckCircle className="h-5 w-5 text-green-500 mt-0.5 shrink-0" /><span>Limpieza de válvula PCV</span></li>
+                    <li className="flex items-start gap-3"><CheckCircle className="h-5 w-5 text-green-500 mt-0.5 shrink-0" /><span>Limpieza de sensor MAF</span></li>
+                    <li className="flex items-start gap-3"><CheckCircle className="h-5 w-5 text-green-500 mt-0.5 shrink-0" /><span>Revisión de niveles</span></li>
+                    <li className="flex items-start gap-3"><CheckCircle className="h-5 w-5 text-green-500 mt-0.5 shrink-0" /><span>Revisión de puntos de seguridad</span></li>
+                    <li className="flex items-start gap-3"><CheckCircle className="h-5 w-5 text-green-500 mt-0.5 shrink-0" /><span><strong>Relleno</strong> de niveles</span></li>
+                    <li className="flex items-start gap-3"><CheckCircle className="h-5 w-5 text-green-500 mt-0.5 shrink-0" /><span><strong>Diagnóstico por computadora</strong></span></li>
+                  </ul>
+                </CardContent>
+              </Card>
             </div>
           </div>
         </section>
