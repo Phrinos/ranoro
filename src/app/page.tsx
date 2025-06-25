@@ -71,12 +71,11 @@ export default function LandingPage() {
         {/* Hero Section */}
         <section className="relative h-[60vh] min-h-[400px] w-full">
           <Image
-            src="https://placehold.co/1600x900.png"
+            src="/ranoro1.jpg"
             alt="Taller mecánico profesional"
             layout="fill"
             objectFit="cover"
             className="absolute z-0 opacity-20"
-            data-ai-hint="mechanic workshop"
           />
           <div className="relative z-10 flex h-full flex-col items-center justify-center text-center">
             <h1 className="text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl font-headline">
@@ -154,12 +153,11 @@ export default function LandingPage() {
               </div>
               <div className="flex justify-center">
                 <Image
-                  src="https://placehold.co/600x400.png"
+                  src="/ranoro2.jpg"
                   alt="Servicio a flotillas"
                   width={600}
                   height={400}
                   className="rounded-lg shadow-xl"
-                  data-ai-hint="fleet vehicles"
                 />
               </div>
             </div>
