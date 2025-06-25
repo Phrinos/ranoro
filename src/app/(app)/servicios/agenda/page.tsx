@@ -11,8 +11,9 @@ import {
   placeholderInventory,
   persistToFirestore,
   enrichServiceForPrinting,
+  AUTH_USER_LOCALSTORAGE_KEY,
 } from "@/lib/placeholder-data";
-import type { ServiceRecord, Vehicle, Technician, InventoryItem, QuoteRecord } from "@/types";
+import type { ServiceRecord, Vehicle, Technician, InventoryItem, QuoteRecord, User } from "@/types";
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { format, parseISO, compareAsc, isFuture, isToday, isPast, isValid, addDays, isSameDay } from "date-fns";
@@ -229,7 +230,19 @@ export default function AgendaServiciosPage() {
   }, [inventoryItemsState, techniciansState, vehicles]);
 
   const handleShowSheet = (service: ServiceRecord) => {
-    setServiceForSheet(service);
+    const authUserString = typeof window !== 'undefined' ? localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY) : null;
+    const currentUser: User | null = authUserString ? JSON.parse(authUserString) : null;
+
+    let enrichedService = { ...service };
+    // Only enrich if the current user is the service advisor
+    if (currentUser && currentUser.id === service.serviceAdvisorId) {
+      enrichedService = {
+        ...enrichedService,
+        serviceAdvisorName: currentUser.name,
+        serviceAdvisorSignatureDataUrl: currentUser.signatureDataUrl,
+      };
+    }
+    setServiceForSheet(enrichedService);
     setIsSheetOpen(true);
   };
 
