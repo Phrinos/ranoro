@@ -8,15 +8,16 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Search, PackagePlus } from 'lucide-react';
+import { Search, PackagePlus, Plus, Minus, ArrowLeft } from 'lucide-react';
 import type { InventoryItem, ServiceSupply } from '@/types';
 import { useToast } from '@/hooks/use-toast';
+import { formatCurrency } from '@/lib/utils'; // Assuming you might want this
 
 interface AddSupplyDialogProps {
   open: boolean;
   onOpenChange: (isOpen: boolean) => void;
   inventoryItems: InventoryItem[];
-  onAddSupply: (supply: ServiceSupply) => void;
+  onAddSupply: (supply: ServiceSupply, sellingPriceToApply?: number) => void;
 }
 
 export function AddSupplyDialog({ open, onOpenChange, inventoryItems, onAddSupply }: AddSupplyDialogProps) {
@@ -25,11 +26,14 @@ export function AddSupplyDialog({ open, onOpenChange, inventoryItems, onAddSuppl
   
   // State for inventory search
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedInventoryItem, setSelectedInventoryItem] = useState<InventoryItem | null>(null);
+  const [inventoryQuantity, setInventoryQuantity] = useState(1);
   
   // State for manual entry
   const [manualName, setManualName] = useState('');
   const [manualQuantity, setManualQuantity] = useState(1);
   const [manualCost, setManualCost] = useState<number | undefined>(undefined);
+  const [manualSellingPrice, setManualSellingPrice] = useState<number | undefined>(undefined);
 
   const filteredItems = useMemo(() => {
     if (!searchTerm.trim()) {
@@ -44,38 +48,51 @@ export function AddSupplyDialog({ open, onOpenChange, inventoryItems, onAddSuppl
     );
   }, [searchTerm, inventoryItems]);
 
-  const resetManualForm = () => {
+  const resetForms = () => {
+    setSearchTerm('');
+    setSelectedInventoryItem(null);
+    setInventoryQuantity(1);
     setManualName('');
     setManualQuantity(1);
     setManualCost(undefined);
+    setManualSellingPrice(undefined);
   };
   
   useEffect(() => {
     if (open) {
-      setSearchTerm('');
-      resetManualForm();
+      resetForms();
       setActiveTab('inventory');
     }
   }, [open]);
 
-  const handleAddFromInventory = (item: InventoryItem) => {
-    if (item.quantity <= 0) {
-      toast({ title: 'Sin Stock', description: `No hay stock disponible para ${item.name}.`, variant: 'destructive' });
+  const handleSelectFromInventory = (item: InventoryItem) => {
+    setSelectedInventoryItem(item);
+    setInventoryQuantity(1);
+  };
+
+  const handleConfirmInventoryAdd = () => {
+    if (!selectedInventoryItem) return;
+    if (inventoryQuantity <= 0) {
+      toast({ title: 'Cantidad inválida', variant: 'destructive' });
+      return;
+    }
+    if (selectedInventoryItem.quantity < inventoryQuantity) {
+      toast({ title: 'Sin Stock', description: `No hay suficiente stock para ${selectedInventoryItem.name}.`, variant: 'destructive' });
       return;
     }
     onAddSupply({
-      supplyId: item.id,
-      supplyName: item.name,
-      quantity: 1, // Default quantity
-      unitPrice: item.unitPrice,
-      isService: item.isService,
-      unitType: item.unitType,
+      supplyId: selectedInventoryItem.id,
+      supplyName: selectedInventoryItem.name,
+      quantity: inventoryQuantity,
+      unitPrice: selectedInventoryItem.unitPrice,
+      isService: selectedInventoryItem.isService,
+      unitType: selectedInventoryItem.unitType,
     });
     onOpenChange(false);
   };
 
   const handleAddManualSupply = () => {
-    if (!manualName.trim() || manualQuantity <= 0 || manualCost === undefined || manualCost < 0) {
+    if (!manualName.trim() || manualQuantity <= 0 || manualCost === undefined || manualCost < 0 || manualSellingPrice === undefined || manualSellingPrice < 0) {
       toast({ title: 'Datos incompletos', description: 'Por favor, complete todos los campos del insumo manual.', variant: 'destructive' });
       return;
     }
@@ -86,7 +103,7 @@ export function AddSupplyDialog({ open, onOpenChange, inventoryItems, onAddSuppl
       unitPrice: manualCost,
       isService: false,
       unitType: 'units',
-    });
+    }, manualSellingPrice);
     onOpenChange(false);
   };
 
@@ -104,42 +121,67 @@ export function AddSupplyDialog({ open, onOpenChange, inventoryItems, onAddSuppl
             <TabsTrigger value="inventory">Buscar en Inventario</TabsTrigger>
             <TabsTrigger value="manual">Insumo Manual</TabsTrigger>
           </TabsList>
+          
           <TabsContent value="inventory" className="space-y-4">
-            <div className="relative mt-2">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Buscar por nombre o SKU..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-8"
-              />
-            </div>
-            <ScrollArea className="h-60 border rounded-md">
-              <div className="p-2 space-y-1">
-                {filteredItems.length > 0 ? (
-                  filteredItems.map((item) => (
-                    <Button
-                      key={item.id}
-                      variant="ghost"
-                      className="w-full justify-start text-left h-auto py-1.5 px-2"
-                      onClick={() => handleAddFromInventory(item)}
-                    >
-                      <div>
-                        <p className="font-medium">{item.name}</p>
-                        <p className="text-xs text-muted-foreground">
-                          Stock: {item.quantity} | Costo: ${item.unitPrice.toFixed(2)}
-                        </p>
+            {!selectedInventoryItem ? (
+              <>
+                <div className="relative mt-2">
+                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Buscar por nombre o SKU..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-8"
+                  />
+                </div>
+                <ScrollArea className="h-60 border rounded-md">
+                  <div className="p-2 space-y-1">
+                    {filteredItems.length > 0 ? (
+                      filteredItems.map((item) => (
+                        <Button
+                          key={item.id}
+                          variant="ghost"
+                          className="w-full justify-start text-left h-auto py-1.5 px-2"
+                          onClick={() => handleSelectFromInventory(item)}
+                        >
+                          <div>
+                            <p className="font-medium">{item.name}</p>
+                            <p className="text-xs text-muted-foreground">
+                              Stock: {item.quantity} | Costo: ${item.unitPrice.toFixed(2)}
+                            </p>
+                          </div>
+                        </Button>
+                      ))
+                    ) : (
+                      <p className="p-4 text-center text-sm text-muted-foreground">
+                        No se encontraron productos.
+                      </p>
+                    )}
+                  </div>
+                </ScrollArea>
+              </>
+            ) : (
+              <div className="pt-2 space-y-4">
+                  <div className="p-2 border rounded-md bg-muted">
+                        <p className="font-medium text-sm">Artículo: {selectedInventoryItem.name}</p>
+                        <p className="text-xs text-muted-foreground">Stock Disponible: {selectedInventoryItem.quantity}</p>
+                  </div>
+                  <div className="space-y-2">
+                      <Label htmlFor="inventory-quantity">Cantidad a Añadir</Label>
+                      <div className="flex items-center gap-2">
+                           <Button type="button" variant="outline" size="icon" className="h-8 w-8" onClick={() => setInventoryQuantity(q => Math.max(1, q - 1))}><Minus className="h-4 w-4" /></Button>
+                           <Input id="inventory-quantity" type="number" value={inventoryQuantity} onChange={e => setInventoryQuantity(Number(e.target.value))} className="w-20 text-center" />
+                           <Button type="button" variant="outline" size="icon" className="h-8 w-8" onClick={() => setInventoryQuantity(q => q + 1)}><Plus className="h-4 w-4" /></Button>
                       </div>
-                    </Button>
-                  ))
-                ) : (
-                  <p className="p-4 text-center text-sm text-muted-foreground">
-                    No se encontraron productos.
-                  </p>
-                )}
+                  </div>
+                  <div className="flex justify-between items-center pt-2">
+                      <Button variant="ghost" onClick={() => setSelectedInventoryItem(null)}><ArrowLeft className="mr-2 h-4 w-4" /> Cambiar Artículo</Button>
+                      <Button onClick={handleConfirmInventoryAdd}>Añadir al Servicio</Button>
+                  </div>
               </div>
-            </ScrollArea>
+            )}
           </TabsContent>
+
           <TabsContent value="manual" className="space-y-4 pt-2">
             <div className="space-y-2">
               <Label htmlFor="manual-name">Nombre del Insumo</Label>
@@ -147,22 +189,30 @@ export function AddSupplyDialog({ open, onOpenChange, inventoryItems, onAddSuppl
             </div>
              <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="manual-quantity">Cantidad</Label>
-                  <Input id="manual-quantity" type="number" min="1" value={manualQuantity} onChange={e => setManualQuantity(Number(e.target.value))}/>
-                </div>
-                <div className="space-y-2">
                   <Label htmlFor="manual-cost">Costo Unitario (Taller)</Label>
                   <Input id="manual-cost" type="number" step="0.01" min="0" value={manualCost ?? ''} onChange={e => setManualCost(Number(e.target.value))} placeholder="Ej: 15.50"/>
                 </div>
+                 <div className="space-y-2">
+                  <Label htmlFor="manual-selling-price">Precio Venta (IVA Inc.)</Label>
+                  <Input id="manual-selling-price" type="number" step="0.01" min="0" value={manualSellingPrice ?? ''} onChange={e => setManualSellingPrice(Number(e.target.value))} placeholder="Ej: 25.00"/>
+                </div>
              </div>
+             <div className="space-y-2">
+                  <Label htmlFor="manual-quantity">Cantidad</Label>
+                  <div className="flex items-center gap-2">
+                      <Button type="button" variant="outline" size="icon" className="h-8 w-8" onClick={() => setManualQuantity(q => Math.max(1, q - 1))}><Minus className="h-4 w-4" /></Button>
+                      <Input id="manual-quantity" type="number" min="1" value={manualQuantity} onChange={e => setManualQuantity(Number(e.target.value))} className="w-20 text-center"/>
+                      <Button type="button" variant="outline" size="icon" className="h-8 w-8" onClick={() => setManualQuantity(q => q + 1)}><Plus className="h-4 w-4" /></Button>
+                  </div>
+            </div>
              <Button onClick={handleAddManualSupply} className="w-full">
                 <PackagePlus className="mr-2 h-4 w-4" />
                 Añadir Insumo Manual
              </Button>
           </TabsContent>
         </Tabs>
-         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
+         <DialogFooter className="mt-4">
+          <Button variant="outline" onClick={() => onOpenChange(false)}>Cerrar</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
