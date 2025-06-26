@@ -206,6 +206,33 @@ export default function AgendaServiciosPage() {
     setEditingService(service);
     setIsEditDialogOpen(true);
   };
+  
+  const handleIngresarATaller = async (service: ServiceRecord) => {
+    const serviceIndex = placeholderServiceRecords.findIndex(s => s.id === service.id);
+    if (serviceIndex === -1) {
+        toast({ title: "Error", description: "No se encontró el servicio para actualizar.", variant: "destructive" });
+        return;
+    }
+
+    const updatedServiceData = {
+        ...placeholderServiceRecords[serviceIndex],
+        status: 'Reparando' as const,
+        serviceDate: new Date().toISOString(),
+    };
+    
+    placeholderServiceRecords[serviceIndex] = updatedServiceData;
+    
+    await persistToFirestore(['serviceRecords']);
+    
+    setAllServices([...placeholderServiceRecords]);
+    
+    toast({
+        title: "Servicio en Progreso",
+        description: `El servicio ${service.id} ha ingresado al taller.`,
+    });
+    
+    handleOpenEditDialog(updatedServiceData);
+  };
 
   const handleUpdateService = useCallback(async (data: ServiceRecord | QuoteRecord) => {
     if (!('status' in data)) {
@@ -473,15 +500,16 @@ export default function AgendaServiciosPage() {
                     <Card key={service.id} className="shadow-sm overflow-hidden">
                       <CardContent className="p-0">
                         <div className="flex flex-col md:flex-row text-sm">
-                          <div className="p-4 flex flex-col justify-center items-center text-center w-full md:w-48 flex-shrink-0">
-                              <p className="text-muted-foreground text-sm font-bold">{format(parseISO(service.serviceDate), "HH:mm 'hrs'", { locale: es })}</p>
-                          </div>
+                            <div className="p-4 flex flex-col justify-center items-center text-center w-full md:w-48 flex-shrink-0">
+                                <p className="text-2xl font-semibold text-foreground">{format(parseISO(service.serviceDate), "HH:mm 'hrs'", { locale: es })}</p>
+                                <p className="text-xs text-muted-foreground mt-1">Folio: {service.id}</p>
+                            </div>
                           
                           <Separator orientation="vertical" className="hidden md:block h-auto"/>
 
-                          <div className="p-4 flex flex-col justify-start flex-grow space-y-1">
+                          <div className="p-4 flex flex-col justify-start text-left flex-grow space-y-1">
                               <p className="text-sm text-gray-500">{vehicle?.ownerName} - {vehicle?.ownerPhone}</p>
-                              <p className="font-bold text-lg">{vehicle ? `${vehicle.licensePlate} - ${vehicle.make} ${vehicle.model} ${vehicle.year}` : 'N/A'}</p>
+                              <p className="font-bold text-2xl">{vehicle ? `${vehicle.licensePlate} - ${vehicle.make} ${vehicle.model} ${vehicle.year}` : 'N/A'}</p>
                               <p className="text-sm text-foreground">
                                   <span className="font-semibold">{service.serviceType}:</span> {getServiceDescriptionText(service)}
                               </p>
@@ -491,7 +519,7 @@ export default function AgendaServiciosPage() {
                           
                           <div className="p-4 flex flex-col justify-center items-center text-center w-full md:w-48 flex-shrink-0">
                             <p className="text-xs text-muted-foreground">Costo Estimado</p>
-                            <p className="font-bold text-black">{formatCurrency(service.totalCost)}</p>
+                            <p className="font-bold text-xl text-black">{formatCurrency(service.totalCost)}</p>
                           </div>
 
                           <Separator orientation="vertical" className="hidden md:block h-auto"/>
@@ -501,7 +529,7 @@ export default function AgendaServiciosPage() {
                                {service.status}
                              </Badge>
                              <div className="w-full space-y-2">
-                                <p className="text-xs text-gray-500 mt-2">Asesor: {service.serviceAdvisorName || 'N/A'}</p>
+                                <p className="text-xs text-muted-foreground mt-2">Asesor: {service.serviceAdvisorName || 'N/A'}</p>
                                 <div className="flex justify-center items-center gap-1 mt-2">
                                     {originalQuote && (
                                       <Button variant="ghost" size="icon" title="Ver Cotización" onClick={() => handleViewQuote(service.id)}>
@@ -511,7 +539,7 @@ export default function AgendaServiciosPage() {
                                     <Button variant="ghost" size="icon" title="Ver Hoja de Servicio" onClick={() => handleShowSheet(service)}>
                                       <Edit className="h-4 w-4" />
                                     </Button>
-                                    <Button variant="ghost" size="icon" title="Ingresar a Taller" onClick={() => handleOpenEditDialog(service)} className="text-blue-600 hover:text-blue-700">
+                                    <Button variant="ghost" size="icon" title="Ingresar a Taller" onClick={() => handleIngresarATaller(service)} className="text-blue-600 hover:text-blue-700">
                                       <Wrench className="h-4 w-4" />
                                     </Button>
                                     <AlertDialog>
