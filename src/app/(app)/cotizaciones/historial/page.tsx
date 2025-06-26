@@ -478,93 +478,86 @@ export default function HistorialCotizacionesPage() {
 
             return (
               <Card key={quote.id} className="shadow-sm overflow-hidden">
-                <CardContent className="p-0">
-                  <div className="flex flex-col md:flex-row items-stretch text-sm">
-                    {/* Bloque 1 & 2 */}
-                    <div className="flex-[1.5] p-4 flex flex-col gap-4">
-                      <div>
-                        <p className="text-xs text-muted-foreground">Folio / Fecha Cotización</p>
-                        <p className="font-semibold">{quote.id} - {format(parseISO(quote.quoteDate!), "dd MMM yy, HH:mm", { locale: es })}</p>
+                <CardContent className="p-4">
+                  <div className="flex flex-col md:flex-row gap-4 text-sm">
+                    {/* Bloque 1 & 2: Izquierda */}
+                    <div className="flex flex-col justify-start pr-4 md:border-r md:border-dashed pb-4 md:pb-0 border-b md:border-b-0">
+                      {/* Bloque 1 */}
+                      <div className="mb-4">
+                          <p className="text-xs text-muted-foreground">Folio</p>
+                          <p className="font-semibold">{quote.id}</p>
+                          <p className="text-xs text-muted-foreground mt-1">Fecha</p>
+                          <p className="font-semibold">{format(parseISO(quote.quoteDate!), "dd MMM yyyy", { locale: es })}</p>
                       </div>
-                      <Separator className="md:hidden"/>
+                      {/* Bloque 2 */}
                       <div>
-                        <p className="text-xs text-muted-foreground">Vehículo y Cliente</p>
-                        <p className="font-semibold">{vehicle ? `${vehicle.make} ${vehicle.model} ${vehicle.year}` : 'N/A'} (<span className="font-mono">{vehicle?.licensePlate}</span>)</p>
-                        <p className="text-muted-foreground">{vehicle?.ownerName} - {vehicle?.ownerPhone}</p>
+                          <p className="text-xs text-muted-foreground">Vehículo y Cliente</p>
+                          <p className="font-semibold">{vehicle ? `${vehicle.make} ${vehicle.model} ${vehicle.year}` : 'N/A'}</p>
+                          <p className="text-muted-foreground">{vehicle?.licensePlate}</p>
+                          <p className="text-muted-foreground">{vehicle?.ownerName}</p>
                       </div>
                     </div>
-
-                    <Separator orientation="vertical" className="h-auto hidden md:block" />
-
-                    {/* Bloque 3 */}
-                    <div className="flex-[2] p-4 border-y md:border-y-0 md:border-x">
-                      <p className="text-xs text-muted-foreground">Detalles del Servicio</p>
-                      <p><span className="font-semibold">Asesor:</span> {quote.preparedByTechnicianName || 'N/A'}</p>
-                      <div>
-                        <span className="font-semibold">Tipo:</span>
-                        <div className="inline-block ml-1"><Badge variant="outline">{quote.serviceType}</Badge></div>
-                      </div>
-                      <p className="truncate" title={getQuoteDescriptionText(quote)}>
-                          <span className="font-semibold">Servicio:</span> {getQuoteDescriptionText(quote)}
-                      </p>
-                    </div>
-
-                    <Separator orientation="vertical" className="h-auto hidden md:block" />
                     
-                    {/* Bloque 4 & 5 Wrapper */}
-                    <div className="flex-[1.5] p-4 flex flex-col md:flex-row justify-between gap-4">
-                       <div className="flex-grow text-left">
+                    {/* Bloque 3: Centro */}
+                    <div className="flex-grow space-y-2">
+                        <p className="text-xs text-muted-foreground">Detalles</p>
+                        <p><span className="font-semibold">Asesor:</span> {quote.preparedByTechnicianName || 'N/A'}</p>
+                        <div>
+                          <span className="font-semibold">Tipo: </span>
+                          <Badge variant="outline" className="ml-1">{quote.serviceType}</Badge>
+                        </div>
+                        <p className="truncate" title={getQuoteDescriptionText(quote)}>
+                            <span className="font-semibold">Servicio:</span> {getQuoteDescriptionText(quote)}
+                        </p>
+                    </div>
+                    
+                    {/* Bloque 4 & 5: Derecha */}
+                    <div className="flex flex-col justify-between items-end pl-4 md:border-l md:border-dashed border-t md:border-t-0 pt-4 md:pt-0">
+                        {/* Bloque 4 */}
+                        <div className="text-right">
                           <p className="text-xs text-muted-foreground">Costo Estimado</p>
                           <p className="font-bold text-lg text-primary">{formatCurrency(quote.estimatedTotalCost)}</p>
                           <p className="text-xs text-muted-foreground mt-1">Ganancia Estimada</p>
                           <p className="font-semibold text-base text-green-600">{formatCurrency(quote.estimatedProfit)}</p>
-                       </div>
-                       <Separator className="md:hidden"/>
-                       <div className="flex flex-col items-stretch md:items-end justify-between gap-2 w-full md:w-32">
-                          <Badge variant={quote.serviceId ? "lightRed" : "outline"} className="w-full justify-center text-center text-base">
+                        </div>
+                        {/* Bloque 5 */}
+                        <div className="mt-2 text-right space-y-2">
+                           <Badge variant={quote.serviceId ? "lightRed" : "outline"} className="w-full justify-center text-center text-base">
                               {quote.serviceId ? "Agendado" : "Cotizacion"}
                           </Badge>
                           <div className="flex justify-end flex-wrap gap-1">
                               <Button variant="ghost" size="icon" onClick={() => handleViewQuote(originalQuote)} title="Ver Cotización">
                                 <FileText className="h-4 w-4" />
                               </Button>
-                              {quote.serviceId ? (
-                                  <Button variant="ghost" size="icon" onClick={() => handleEditService(quote.serviceId!)} title="Editar Servicio">
-                                      <Wrench className="h-4 w-4 text-blue-600" />
-                                  </Button>
-                              ) : (
-                                  <>
-                                      <Button variant="ghost" size="icon" onClick={() => handleEditQuote(originalQuote)} title="Editar Cotización">
-                                          <Edit className="h-4 w-4" />
-                                      </Button>
-                                      <Button variant="ghost" size="icon" onClick={() => handleGenerateService(originalQuote)} title="Generar Servicio">
-                                          <Wrench className="h-4 w-4 text-blue-600" />
-                                      </Button>
-                                  </>
-                              )}
+                              <Button variant="ghost" size="icon" onClick={() => handleEditQuote(originalQuote)} title="Editar Cotización">
+                                  <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button variant="ghost" size="icon" onClick={() => handleGenerateService(originalQuote)} title="Generar Servicio">
+                                  <Wrench className="h-4 w-4 text-blue-600" />
+                              </Button>
                               <AlertDialog>
                                 <AlertDialogTrigger asChild>
                                     <Button variant="ghost" size="icon" title="Cancelar Cotización" disabled={!!quote.serviceId}>
-                                    <Ban className="h-4 w-4 text-destructive" />
+                                      <Ban className="h-4 w-4 text-destructive" />
                                     </Button>
                                 </AlertDialogTrigger>
                                 <AlertDialogContent>
                                     <AlertDialogHeader>
-                                    <AlertDialogTitle>¿Cancelar esta cotización?</AlertDialogTitle>
-                                    <AlertDialogDescription>
+                                      <AlertDialogTitle>¿Cancelar esta cotización?</AlertDialogTitle>
+                                      <AlertDialogDescription>
                                         Esta acción no se puede deshacer y eliminará permanentemente la cotización {quote.id}. No se puede cancelar si ya tiene un servicio agendado.
-                                    </AlertDialogDescription>
+                                      </AlertDialogDescription>
                                     </AlertDialogHeader>
                                     <AlertDialogFooter>
-                                    <AlertDialogCancel>No</AlertDialogCancel>
-                                    <AlertDialogAction onClick={() => handleDeleteQuote(quote.id)} className="bg-destructive hover:bg-destructive/90">
+                                      <AlertDialogCancel>No</AlertDialogCancel>
+                                      <AlertDialogAction onClick={() => handleDeleteQuote(quote.id)} className="bg-destructive hover:bg-destructive/90">
                                         Sí, Cancelar
-                                    </AlertDialogAction>
+                                      </AlertDialogAction>
                                     </AlertDialogFooter>
                                 </AlertDialogContent>
                               </AlertDialog>
                           </div>
-                       </div>
+                        </div>
                     </div>
                   </div>
                 </CardContent>
