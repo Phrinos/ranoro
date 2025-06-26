@@ -487,7 +487,7 @@ export default function AgendaServiciosPage() {
                           {/* Block 1 */}
                           <div className="p-4 space-y-1 border-b md:border-b-0 md:border-r md:flex-shrink-0">
                             <div className="text-xs text-muted-foreground">
-                              Folio: <span className="font-semibold text-foreground">{service.id}</span>
+                              <span className="font-semibold">Folio:</span> <span className="font-mono">{service.id}</span>
                             </div>
                             <p className="text-lg font-semibold">{format(parseISO(service.serviceDate), "HH:mm 'hrs'", { locale: es })}</p>
                           </div>
@@ -500,13 +500,13 @@ export default function AgendaServiciosPage() {
                           </div>
                           
                           {/* Block 3 */}
-                          <div className="p-4 space-y-2 border-b md:border-b-0 md:border-r md:w-auto md:flex-shrink-0">
-                            <div className="text-xs text-muted-foreground">
-                              Asesor: <span className="font-semibold text-foreground">{service.serviceAdvisorName || 'N/A'}</span>
-                            </div>
-                            <div className="font-medium text-foreground text-sm" title={getServiceDescriptionText(service)}>
-                                <span className="font-semibold">{service.serviceType}:</span> {getServiceDescriptionText(service)}
-                            </div>
+                          <div className="p-4 space-y-2 border-b md:border-b-0 md:border-r md:w-auto md:flex-shrink-0 flex-shrink-0 flex-grow-0">
+                              <div className="text-xs text-muted-foreground">
+                                <span className="font-semibold">Asesor:</span> {service.serviceAdvisorName || 'N/A'}
+                              </div>
+                              <div className="font-medium text-foreground text-sm" title={getServiceDescriptionText(service)}>
+                                  <p><span className="font-semibold">{service.serviceType}:</span> {getServiceDescriptionText(service)}</p>
+                              </div>
                           </div>
                           
                           {/* Block 4 */}
