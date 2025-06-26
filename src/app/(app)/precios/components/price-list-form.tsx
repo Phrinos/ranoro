@@ -14,6 +14,7 @@ import type { VehiclePriceList } from "@/types";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Checkbox } from "@/components/ui/checkbox";
+import { capitalizeWords } from "@/lib/utils";
 
 const supplySchema = z.object({
   name: z.string().min(2, "Mínimo 2 caracteres"),
@@ -80,7 +81,7 @@ export function PriceListForm({ initialData, onSubmit, onClose }: PriceListFormP
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Marca</FormLabel>
-                  <FormControl><Input placeholder="Ej: Nissan" {...field} /></FormControl>
+                  <FormControl><Input placeholder="Ej: Nissan" {...field} onChange={(e) => field.onChange(capitalizeWords(e.target.value))} /></FormControl>
                   <FormMessage />
                 </FormItem>
               )}
@@ -91,7 +92,7 @@ export function PriceListForm({ initialData, onSubmit, onClose }: PriceListFormP
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Modelo</FormLabel>
-                  <FormControl><Input placeholder="Ej: Versa" {...field} /></FormControl>
+                  <FormControl><Input placeholder="Ej: Versa" {...field} onChange={(e) => field.onChange(capitalizeWords(e.target.value))} /></FormControl>
                   <FormMessage />
                 </FormItem>
               )}

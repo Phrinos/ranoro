@@ -17,6 +17,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import type { Vehicle } from "@/types";
 import { useEffect } from "react";
+import { capitalizeWords, capitalizeSentences } from "@/lib/utils";
 
 const vehicleFormSchema = z.object({
   make: z.string().min(2, "La marca debe tener al menos 2 caracteres."),
@@ -38,23 +39,6 @@ interface VehicleFormProps {
   onSubmit: (values: VehicleFormValues) => Promise<void>;
   onClose: () => void;
 }
-
-// Helper functions for text transformation
-const capitalizeWords = (str: string) => {
-  if (!str) return '';
-  return str.replace(/\b\w/g, char => char.toUpperCase());
-};
-
-const capitalizeSentences = (str: string) => {
-    if (!str) return '';
-    let processedStr = str.trim();
-    // Capitalize the very first letter of the whole string
-    processedStr = processedStr.charAt(0).toUpperCase() + processedStr.slice(1);
-    // Capitalize the letter after each period and one or more spaces
-    processedStr = processedStr.replace(/(\.\s+)([a-z])/g, (_match, p1, p2) => p1 + p2.toUpperCase());
-    return processedStr;
-};
-
 
 export function VehicleForm({ initialData, onSubmit, onClose }: VehicleFormProps) {
   const form = useForm<VehicleFormValues>({

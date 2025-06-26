@@ -1,3 +1,4 @@
+
 "use client";
 
 import { PageHeader } from "@/components/page-header";
@@ -519,6 +520,8 @@ export default function AgendaServiciosPage() {
                           <div className="p-4 flex flex-col justify-center items-center text-center w-full md:w-48 flex-shrink-0">
                             <p className="text-xs text-muted-foreground">Costo Estimado</p>
                             <p className="font-bold text-2xl text-black">{formatCurrency(service.totalCost)}</p>
+                            <p className="text-xs text-muted-foreground mt-1">Ganancia Estimada</p>
+                            <p className="font-semibold text-green-600">{formatCurrency(service.serviceProfit)}</p>
                           </div>
 
                           <Separator orientation="vertical" className="hidden md:block h-auto"/>
