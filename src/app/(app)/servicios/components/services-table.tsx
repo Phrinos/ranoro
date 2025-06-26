@@ -5,7 +5,7 @@
 import React, { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Edit, Ban, Clock, CheckCircle, Wrench, CalendarCheck, FileText } from "lucide-react";
+import { Edit, Ban, Clock, CheckCircle, Wrench, CalendarCheck, FileText, FileCheck } from "lucide-react";
 import type { ServiceRecord, Vehicle, Technician, InventoryItem, QuoteRecord } from "@/types";
 import { format, parseISO, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -21,10 +21,12 @@ interface ServicesTableProps {
   vehicles: Vehicle[]; 
   technicians: Technician[]; 
   inventoryItems: InventoryItem[];
+  quotes: QuoteRecord[];
   onServiceUpdated: (updatedService: ServiceRecord) => void;
   onServiceCancelled: (serviceId: string, reason: string) => void;
   onVehicleCreated?: (newVehicle: Vehicle) => void; 
   onShowSheet?: (service: ServiceRecord) => void;
+  onShowQuote?: (quote: QuoteRecord) => void;
   isHistoryView?: boolean;
 }
 
@@ -32,11 +34,13 @@ export const ServicesTable = React.memo(({
   services, 
   vehicles, 
   technicians, 
-  inventoryItems, 
+  inventoryItems,
+  quotes,
   onServiceUpdated, 
   onServiceCancelled,
   onVehicleCreated,
   onShowSheet,
+  onShowQuote,
   isHistoryView = false,
 }: ServicesTableProps) => {
   const { toast } = useToast();
@@ -102,6 +106,7 @@ export const ServicesTable = React.memo(({
         {memoizedServices.map((service) => {
           const serviceReceptionTime = service.serviceDate && isValid(parseISO(service.serviceDate)) ? format(parseISO(service.serviceDate), "HH:mm", { locale: es }) : 'N/A';
           const vehicle = vehicles.find(v => v.id === service.vehicleId);
+          const originalQuote = quotes.find(q => q.serviceId === service.id);
 
           return (
             <Card key={service.id} className="shadow-sm">
@@ -154,9 +159,14 @@ export const ServicesTable = React.memo(({
                     <div className="w-48 shrink-0 flex flex-col items-center justify-center p-4 gap-y-2">
                         <Badge variant={getStatusVariant(service.status)} className="w-full justify-center text-center text-base">{service.status}</Badge>
                         <div className="flex">
+                            {originalQuote && onShowQuote && (
+                                <Button variant="ghost" size="icon" onClick={() => onShowQuote(originalQuote)} title="Ver Cotización Original">
+                                    <FileText className="h-4 w-4" />
+                                </Button>
+                            )}
                             {onShowSheet && (
                                 <Button variant="ghost" size="icon" onClick={() => onShowSheet(services.find(s => s.id === service.id)!)} title="Ver Hoja de Servicio">
-                                    <FileText className="h-4 w-4" />
+                                    <FileCheck className="h-4 w-4" />
                                 </Button>
                             )}
                             <Button variant="ghost" size="icon" onClick={() => handleOpenEditDialog(services.find(s => s.id === service.id)!)} title="Editar Servicio" disabled={service.status === 'Completado' || service.status === 'Cancelado'}>

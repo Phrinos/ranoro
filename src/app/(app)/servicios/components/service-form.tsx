@@ -20,7 +20,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription} from '@/components/ui/card';
-import { CalendarIcon, PlusCircle, Search, Trash2, AlertCircle, Car as CarIcon, Clock, DollarSign, PackagePlus, BrainCircuit, Loader2, Printer, Plus, Minus, FileText, Signature, MessageSquare, Ban, ShieldQuestion, Wrench, Wallet, CreditCard, Send, WalletCards, ArrowRightLeft, Tag } from "lucide-react";
+import { CalendarIcon, PlusCircle, Search, Trash2, AlertCircle, Car as CarIcon, Clock, DollarSign, PackagePlus, BrainCircuit, Loader2, Printer, Plus, Minus, FileText, Signature, MessageSquare, Ban, ShieldQuestion, Wrench, Wallet, CreditCard, Send, WalletCards, ArrowRightLeft, Tag, FileCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format, parseISO, setHours, setMinutes, isValid, startOfDay } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -127,7 +127,7 @@ const serviceFormSchemaBase = z.object({
   transferFolio: z.string().optional(),
 }).refine(data => {
     // Only require serviceDate if status is not Cotizacion
-    if (data.status !== 'Cotizacion' && !data.serviceDate) {
+    if (data.status && data.status !== 'Cotizacion' && !data.serviceDate) {
         return false;
     }
     return true;
@@ -901,9 +901,8 @@ export function ServiceForm({
     return [];
   }, [mode, initialDataQuote]);
 
-  const isDateDisabled = isReadOnly || (isConvertingQuote && watchedStatus === 'Agendado') ? false : (mode === 'service' && !!initialDataService?.id && initialDataService.status !== 'Agendado');
-  
-  const showDateFields = mode === 'service' && (watchedStatus === 'Agendado' || watchedStatus === 'Reparando' || watchedStatus === 'Completado');
+  const showDateInDetails = mode === 'service' && watchedStatus === 'Agendado';
+  const showDateInReception = mode === 'service' && (watchedStatus === 'Reparando' || watchedStatus === 'Completado');
 
   return (
     <>
@@ -924,7 +923,7 @@ export function ServiceForm({
                     )}
                     {mode === 'service' && !isReadOnly && (watchedStatus === 'Reparando' || watchedStatus === 'Completado') && (
                         <Button type="button" onClick={handlePrintSheet} variant="ghost" size="icon" className="bg-card" title="Ver Hoja de Servicio">
-                        <FileText className="h-5 w-5" />
+                          <FileCheck className="h-5 w-5" />
                         </Button>
                     )}
                 </div>
@@ -987,6 +986,12 @@ export function ServiceForm({
                           </FormItem>
                         )}
                       />
+                      {showDateInDetails && (
+                        <>
+                          <FormField control={form.control} name="serviceDate" render={({ field }) => ( <FormItem className="flex flex-col"><FormLabel>Fecha de Servicio</FormLabel><Popover><PopoverTrigger asChild disabled={isReadOnly}><FormControl><Button variant={"outline"} className={cn("w-full justify-start text-left font-normal", !field.value && "text-muted-foreground")} disabled={isReadOnly}>{field.value && isValid(field.value) ? (format(field.value, "PPP", { locale: es })) : (<span>Seleccione fecha</span>)}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value} onSelect={(date) => { const currentTime = field.value || setHours(setMinutes(new Date(), 30), 8); const newDateTime = date ? setHours(setMinutes(startOfDay(date), currentTime.getMinutes()), currentTime.getHours()): undefined; field.onChange(newDateTime);}} disabled={(date) => date < new Date("1900-01-01")} initialFocus locale={es}/></PopoverContent></Popover><FormMessage /></FormItem> )} />
+                          <FormField control={form.control} name="serviceDate" render={({ field }) => { const serviceDateValue = useWatch({ control, name: 'serviceDate' }); return ( <FormItem> <FormLabel>Hora del Servicio</FormLabel> <Select value={isValid(serviceDateValue) ? format(serviceDateValue, 'HH:mm') : ""} onValueChange={(timeValue) => { const [hours, minutes] = timeValue.split(':').map(Number); const currentDate = form.getValues('serviceDate') || new Date(); const newDateTime = setHours(setMinutes(startOfDay(currentDate), minutes), hours); field.onChange(newDateTime); }} disabled={isReadOnly} > <FormControl><SelectTrigger><SelectValue placeholder="Seleccione hora" /></SelectTrigger></FormControl> <SelectContent>{timeSlots.map(slot => (<SelectItem key={slot.value} value={slot.value}>{slot.label}</SelectItem>))}</SelectContent> </Select> </FormItem> )}} />
+                        </>
+                      )}
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
                       <FormField control={form.control} name="vehicleLicensePlateSearch" render={({ field }) => (<FormItem className="w-full"><FormLabel>Placa del Vehículo</FormLabel><FormControl><Input placeholder="Buscar/Ingresar Placas" {...field} value={vehicleLicensePlateSearch} onChange={(e) => {setVehicleLicensePlateSearch(e.target.value.toUpperCase()); field.onChange(e.target.value.toUpperCase());}} disabled={isReadOnly} className="uppercase" onKeyDown={handleVehiclePlateKeyDown} /></FormControl></FormItem>)}/>
@@ -996,12 +1001,6 @@ export function ServiceForm({
                     {vehicleSearchResults.length > 0 && ( <ScrollArea className="h-auto max-h-[150px] w-full rounded-md border"><div className="p-2">{vehicleSearchResults.map(v => (<button type="button" key={v.id} onClick={() => handleSelectVehicleFromSearch(v)} className="w-full text-left p-2 rounded-md hover:bg-muted"><p className="font-semibold">{v.licensePlate}</p><p className="text-sm text-muted-foreground">{v.make} {v.model} - {v.ownerName}</p></button>))}</div></ScrollArea>)}
                     {selectedVehicle && (<div className="p-3 border rounded-md bg-amber-50 dark:bg-amber-950/50 text-sm space-y-1"><p><strong>Vehículo Seleccionado:</strong> {selectedVehicle.make} {selectedVehicle.model} {selectedVehicle.year} (<span className="font-bold">{selectedVehicle.licensePlate}</span>)</p><p><strong>Propietario:</strong> {selectedVehicle.ownerName}</p>{lastServiceInfo && (<p className="text-xs font-medium text-blue-600 dark:text-blue-400 mt-1">{lastServiceInfo}</p>)}</div>)}
                     {vehicleNotFound && !selectedVehicle && !isReadOnly && (<div className="p-3 border border-orange-500 rounded-md bg-orange-50 dark:bg-orange-900/30 dark:text-orange-300 text-sm flex flex-col sm:flex-row items-center justify-between gap-2"><div className="flex items-center gap-2"><AlertCircle className="h-5 w-5 shrink-0"/><p>Vehículo con placa "{vehicleLicensePlateSearch}" no encontrado.</p></div><Button type="button" size="sm" variant="outline" onClick={() => {setNewVehicleInitialData({ licensePlate: vehicleLicensePlateSearch }); setIsVehicleDialogOpen(true);}} className="w-full sm:w-auto"><CarIcon className="mr-2 h-4 w-4"/> Registrar Nuevo Vehículo</Button></div>)}
-                    {showDateFields && selectedVehicle && (
-                        <div className="pt-4 grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
-                            <FormField control={form.control} name="serviceDate" render={({ field }) => (<FormItem className="flex flex-col"><FormLabel>Fecha de Servicio</FormLabel><Popover><PopoverTrigger asChild disabled={isDateDisabled}><FormControl><Button variant={"outline"} className={cn("w-full justify-start text-left font-normal", !field.value && "text-muted-foreground")} disabled={isDateDisabled}>{field.value && isValid(field.value) ? (format(field.value, "PPP", { locale: es })) : (<span>Seleccione fecha</span>)}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value} onSelect={(date) => { const currentTime = field.value || setHours(setMinutes(new Date(), 30), 8); const newDateTime = date ? setHours(setMinutes(startOfDay(date), currentTime.getMinutes()), currentTime.getHours()): undefined; field.onChange(newDateTime);}} disabled={(date) => date < new Date("1900-01-01") || (isReadOnly && mode === 'service') } initialFocus locale={es}/></PopoverContent></Popover><FormMessage /></FormItem>)} />
-                            <FormField control={form.control} name="serviceDate" render={({ field }) => { const serviceDateValue = useWatch({ control: form.control, name: 'serviceDate' }); return ( <FormItem> <FormLabel>Hora del Servicio</FormLabel> <Select value={isValid(serviceDateValue) ? format(serviceDateValue, 'HH:mm') : ""} onValueChange={(timeValue) => { const [hours, minutes] = timeValue.split(':').map(Number); const currentDate = form.getValues('serviceDate') || new Date(); const newDateTime = setHours(setMinutes(startOfDay(currentDate), minutes), hours); field.onChange(newDateTime); }} disabled={isDateDisabled} > <FormControl><SelectTrigger><SelectValue placeholder="Seleccione hora" /></SelectTrigger></FormControl> <SelectContent>{timeSlots.map(slot => (<SelectItem key={slot.value} value={slot.value}>{slot.label}</SelectItem>))}</SelectContent> </Select> </FormItem> )}} />
-                        </div>
-                    )}
                 </CardContent>
               </Card>
 
@@ -1109,13 +1108,14 @@ export function ServiceForm({
             </TabsContent>
 
             {showReceptionTab && (
-              <>
-                <TabsContent value="recepcion" className="space-y-6 mt-0">
+              <TabsContent value="recepcion" className="space-y-6 mt-0">
                   <Card>
                     <CardHeader><CardTitle>Fechas y Horarios</CardTitle></CardHeader>
                     <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 items-end">
+                        <FormField control={form.control} name="serviceDate" render={({ field }) => ( <FormItem className="flex flex-col"><FormLabel>Fecha de Recepción</FormLabel><Popover><PopoverTrigger asChild disabled={isReadOnly}><FormControl><Button variant={"outline"} className={cn("w-full justify-start text-left font-normal", !field.value && "text-muted-foreground")} disabled={isReadOnly}>{field.value && isValid(field.value) ? (format(field.value, "PPP", { locale: es })) : (<span>Seleccione fecha</span>)}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value} onSelect={(date) => { const currentTime = field.value || new Date(); const newDateTime = date ? setHours(setMinutes(startOfDay(date), currentTime.getMinutes()), currentTime.getHours()): undefined; field.onChange(newDateTime);}} disabled={(date) => date < new Date("1900-01-01")} initialFocus locale={es}/></PopoverContent></Popover><FormMessage /></FormItem> )} />
+                        <FormField control={form.control} name="serviceDate" render={({ field }) => { const serviceDateValue = useWatch({ control, name: 'serviceDate' }); return ( <FormItem> <FormLabel>Hora de Recepción</FormLabel> <Select value={isValid(serviceDateValue) ? format(serviceDateValue, 'HH:mm') : ""} onValueChange={(timeValue) => { const [hours, minutes] = timeValue.split(':').map(Number); const currentDate = form.getValues('serviceDate') || new Date(); const newDateTime = setHours(setMinutes(startOfDay(currentDate), minutes), hours); field.onChange(newDateTime); }} disabled={isReadOnly} > <FormControl><SelectTrigger><SelectValue placeholder="Seleccione hora" /></SelectTrigger></FormControl> <SelectContent>{timeSlots.map(slot => (<SelectItem key={slot.value} value={slot.value}>{slot.label}</SelectItem>))}</SelectContent> </Select> </FormItem> )}} />
                         <FormField control={form.control} name="deliveryDateTime" render={({ field }) => { return ( <FormItem className="flex flex-col"><FormLabel>Fecha de Entrega</FormLabel><Popover><PopoverTrigger asChild disabled={isReadOnly}><FormControl><Button variant={"outline"} className={cn("w-full justify-start text-left font-normal",!field.value && "text-muted-foreground")} disabled={isReadOnly}>{field.value && isValid(field.value) ? (format(field.value, "PPP", { locale: es })) : (<span>Seleccione fecha y hora</span>)}<Clock className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value} onSelect={(date) => { const currentTime = field.value || new Date(); const newDateTime = date ? setHours(setMinutes(startOfDay(date), currentTime.getMinutes()), currentTime.getHours()): undefined; field.onChange(newDateTime);}} disabled={isReadOnly} initialFocus locale={es}/></PopoverContent></Popover><FormMessage /></FormItem>)} }/>
-                        <FormField control={form.control} name="deliveryDateTime" render={({ field }) => { const deliveryDateValue = useWatch({ control: form.control, name: 'deliveryDateTime' }); return ( <FormItem> <FormLabel>Hora de Entrega</FormLabel> <Select value={isValid(deliveryDateValue) ? format(deliveryDateValue, 'HH:mm') : ""} onValueChange={(timeValue) => { const [hours, minutes] = timeValue.split(':').map(Number); const currentDate = form.getValues('deliveryDateTime') || new Date(); const newDateTime = setHours(setMinutes(startOfDay(currentDate), minutes), hours); field.onChange(newDateTime); }} disabled={isReadOnly} > <FormControl><SelectTrigger><SelectValue placeholder="Seleccione hora" /></SelectTrigger></FormControl> <SelectContent>{timeSlots.map(slot => (<SelectItem key={slot.value} value={slot.value}>{slot.label}</SelectItem>))}</SelectContent> </Select> </FormItem> )}} />
+                        <FormField control={form.control} name="deliveryDateTime" render={({ field }) => { const deliveryDateValue = useWatch({ control, name: 'deliveryDateTime' }); return ( <FormItem> <FormLabel>Hora de Entrega</FormLabel> <Select value={isValid(deliveryDateValue) ? format(deliveryDateValue, 'HH:mm') : ""} onValueChange={(timeValue) => { const [hours, minutes] = timeValue.split(':').map(Number); const currentDate = form.getValues('deliveryDateTime') || new Date(); const newDateTime = setHours(setMinutes(startOfDay(currentDate), minutes), hours); field.onChange(newDateTime); }} disabled={isReadOnly} > <FormControl><SelectTrigger><SelectValue placeholder="Seleccione hora" /></SelectTrigger></FormControl> <SelectContent>{timeSlots.map(slot => (<SelectItem key={slot.value} value={slot.value}>{slot.label}</SelectItem>))}</SelectContent> </Select> </FormItem> )}} />
                     </CardContent>
                   </Card>
 
@@ -1133,28 +1133,29 @@ export function ServiceForm({
                         </div>
                     </CardContent>
                   </Card>
-                </TabsContent>
-                <TabsContent value="seguridad" className="space-y-6 mt-0">
-                    <Card>
-                      <CardHeader>
-                          <CardTitle>Checklist de Puntos de Seguridad</CardTitle>
-                          <CardDescription>Documenta el estado de los componentes clave. El estado "N/A" se aplica por defecto.</CardDescription>
-                      </CardHeader>
-                      <CardContent className="space-y-4">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
-                          <SafetyCheckItemControl name="safetyInspection.brakes" label="Frenos" control={form.control} isReadOnly={isReadOnly} />
-                          <SafetyCheckItemControl name="safetyInspection.tires" label="Llantas" control={form.control} isReadOnly={isReadOnly} />
-                          <SafetyCheckItemControl name="safetyInspection.lights" label="Luces" control={form.control} isReadOnly={isReadOnly} />
-                          <SafetyCheckItemControl name="safetyInspection.fluidLevels" label="Niveles de Fluidos" control={form.control} isReadOnly={isReadOnly} />
-                          <SafetyCheckItemControl name="safetyInspection.suspensionSteering" label="Suspensión / Dirección" control={form.control} isReadOnly={isReadOnly} />
-                          <SafetyCheckItemControl name="safetyInspection.battery" label="Batería y Sistema Eléctrico" control={form.control} isReadOnly={isReadOnly} />
-                          <SafetyCheckItemControl name="safetyInspection.wipers" label="Limpiaparabrisas" control={form.control} isReadOnly={isReadOnly} />
-                          <SafetyCheckItemControl name="safetyInspection.horn" label="Claxon (Bocina)" control={form.control} isReadOnly={isReadOnly} />
-                        </div>
-                      </CardContent>
-                    </Card>
-                </TabsContent>
-              </>
+              </TabsContent>
+            )}
+            {showReceptionTab && (
+              <TabsContent value="seguridad" className="space-y-6 mt-0">
+                  <Card>
+                    <CardHeader>
+                        <CardTitle>Checklist de Puntos de Seguridad</CardTitle>
+                        <CardDescription>Documenta el estado de los componentes clave. El estado "N/A" se aplica por defecto.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+                        <SafetyCheckItemControl name="safetyInspection.brakes" label="Frenos" control={form.control} isReadOnly={isReadOnly} />
+                        <SafetyCheckItemControl name="safetyInspection.tires" label="Llantas" control={form.control} isReadOnly={isReadOnly} />
+                        <SafetyCheckItemControl name="safetyInspection.lights" label="Luces" control={form.control} isReadOnly={isReadOnly} />
+                        <SafetyCheckItemControl name="safetyInspection.fluidLevels" label="Niveles de Fluidos" control={form.control} isReadOnly={isReadOnly} />
+                        <SafetyCheckItemControl name="safetyInspection.suspensionSteering" label="Suspensión / Dirección" control={form.control} isReadOnly={isReadOnly} />
+                        <SafetyCheckItemControl name="safetyInspection.battery" label="Batería y Sistema Eléctrico" control={form.control} isReadOnly={isReadOnly} />
+                        <SafetyCheckItemControl name="safetyInspection.wipers" label="Limpiaparabrisas" control={form.control} isReadOnly={isReadOnly} />
+                        <SafetyCheckItemControl name="safetyInspection.horn" label="Claxon (Bocina)" control={form.control} isReadOnly={isReadOnly} />
+                      </div>
+                    </CardContent>
+                  </Card>
+              </TabsContent>
             )}
           </Tabs>
 

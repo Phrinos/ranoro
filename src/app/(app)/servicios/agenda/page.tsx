@@ -4,7 +4,7 @@
 
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Edit, Ban, Clock, Search as SearchIcon, Calendar as CalendarIcon, CalendarCheck, CheckCircle, Wrench, Printer, Tag, FileText, BrainCircuit, Loader2, AlertTriangle, List, CalendarDays, MessageSquare, Copy, Pencil } from "lucide-react";
+import { PlusCircle, Edit, Ban, Clock, Search as SearchIcon, Calendar as CalendarIcon, CalendarCheck, CheckCircle, Wrench, Printer, Tag, FileText, BrainCircuit, Loader2, AlertTriangle, List, CalendarDays, MessageSquare, Copy, Pencil, FileCheck } from "lucide-react";
 import {
   placeholderServiceRecords,
   placeholderVehicles,
@@ -133,12 +133,12 @@ export default function AgendaServiciosPage() {
 
   const todayServices = useMemo(() => {
       const today = new Date();
-      return filteredServices.filter(service => {
+      return allServices.filter(service => {
           if (service.status === 'Completado' || service.status === 'Cancelado') return false;
           const serviceDate = parseISO(service.serviceDate);
           return isValid(serviceDate) && isToday(serviceDate);
       });
-  }, [filteredServices]);
+  }, [allServices]);
 
   useEffect(() => {
       const runAnalysis = async () => {
@@ -411,7 +411,7 @@ export default function AgendaServiciosPage() {
 
   const futureServices = useMemo(() => {
     return filteredServices.filter(service => {
-      if (service.status === 'Agendado' || service.status === 'Reparando') {
+      if (service.status === 'Agendado') {
         return true; 
       }
       return false;
@@ -571,17 +571,17 @@ export default function AgendaServiciosPage() {
                         <div className="w-48 shrink-0 flex flex-col items-center justify-center p-4 gap-y-2">
                             <Badge variant={getStatusVariant(service.status)} className="w-full justify-center text-center text-base">{service.status}</Badge>
                             <div className="flex">
-                                <Button variant="ghost" size="icon" title="Ver Hoja de Servicio" onClick={() => handleShowSheet(service)}>
-                                  <FileText className="h-4 w-4" />
-                                </Button>
-                                <Button variant="ghost" size="icon" title="Editar Detalles" onClick={(e) => {e.stopPropagation(); handleOpenEditDialog(service);}} disabled={service.status === 'Completado' || service.status === 'Cancelado'}>
-                                    <Edit className="h-4 w-4" />
-                                </Button>
-                                {service.status === 'Agendado' && (
-                                  <Button variant="ghost" size="icon" title="Ingresar a Taller" onClick={(e) => {e.stopPropagation(); handleOpenEditDialog(service);}}>
-                                      <Wrench className="h-4 w-4 text-blue-600" />
-                                  </Button>
+                                {originalQuote && (
+                                    <Button variant="ghost" size="icon" title="Ver Cotización" onClick={() => handleViewQuote(service.id)}>
+                                        <FileText className="h-4 w-4" />
+                                    </Button>
                                 )}
+                                <Button variant="ghost" size="icon" title="Ver Hoja de Servicio" onClick={() => handleShowSheet(service)}>
+                                  <FileCheck className="h-4 w-4" />
+                                </Button>
+                                <Button variant="ghost" size="icon" title="Ingresar a Taller" onClick={(e) => {e.stopPropagation(); handleOpenEditDialog(service);}} className="text-blue-600 hover:text-blue-700">
+                                    <Wrench className="h-4 w-4" />
+                                </Button>
                                 <AlertDialog onOpenChange={(e) => e.stopPropagation()}>
                                     <AlertDialogTrigger asChild>
                                         <Button variant="ghost" size="icon" title="Cancelar Servicio" disabled={service.status === 'Completado' || service.status === 'Cancelado'} onClick={(e) => e.stopPropagation()}>
