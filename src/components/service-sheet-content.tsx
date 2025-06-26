@@ -81,51 +81,86 @@ const StatusIndicator = ({ status }: { status: SafetyCheckStatus }) => {
   );
 };
 
-const SafetyChecklistDisplay = ({ inspection }: { inspection: SafetyInspection }) => {
+const SafetyChecklistDisplay = ({
+  inspection,
+  workshopInfo,
+  service,
+  vehicle
+}: {
+  inspection: SafetyInspection;
+  workshopInfo: WorkshopInfo;
+  service: ServiceRecord;
+  vehicle?: Vehicle;
+}) => {
+    const formattedServiceDate = isValid(parseISO(service.serviceDate))
+        ? format(parseISO(service.serviceDate), "dd 'de' MMMM 'de' yyyy", { locale: es })
+        : 'N/A';
+
     return (
-        <Card className="mt-4 print:shadow-none print:border-none print:mt-0">
-            <CardHeader className="text-center print:text-left print:px-0">
-                <CardTitle className="text-xl">INSPECCIÓN DE PUNTOS DE SEGURIDAD</CardTitle>
-                <CardDescription className="print:hidden">Resultado de la revisión realizada por el técnico.</CardDescription>
-            </CardHeader>
-            <CardContent className="print:p-0">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
-                    {inspectionGroups.map(group => (
-                        <div key={group.title}>
-                            <h4 className="font-bold text-base mb-2 border-b-2 border-black pb-1">{group.title}</h4>
-                            <div className="space-y-1">
-                                {group.items.map(item => {
-                                    const statusKey = item.name.split('.')[1] as keyof SafetyInspection;
-                                    const status = inspection[statusKey] as SafetyCheckStatus;
-                                    return (
-                                        <div key={item.name} className="flex justify-between items-center text-sm py-1 border-b border-dashed last:border-none">
-                                            <span className="pr-4">{item.label}</span>
-                                            <StatusIndicator status={status} />
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        </div>
-                    ))}
+        <div className="mt-4 print:mt-0">
+            <header className="mb-4 pb-2 border-b-2 border-black">
+                <div className="flex justify-between items-center">
+                    <img src={workshopInfo.logoUrl} alt={`${workshopInfo.name} Logo`} className="h-12" data-ai-hint="workshop logo"/>
+                    <div className="text-right">
+                    <h1 className="text-lg font-bold">REVISIÓN DE PUNTOS DE SEGURIDAD</h1>
+                    <p className="font-mono text-xs">Folio de Servicio: <span className="font-semibold">{service.id}</span></p>
+                    </div>
                 </div>
-                {inspection.inspectionNotes && (
-                    <div className="mt-6 border-t pt-4">
-                        <h4 className="font-bold text-base mb-2">Observaciones Generales de la Inspección:</h4>
-                        <p className="text-sm whitespace-pre-wrap p-2 bg-gray-50 rounded-md border">{inspection.inspectionNotes}</p>
+                <div className="grid grid-cols-2 gap-4 mt-2 text-xs">
+                    <div>
+                        <p className="font-bold">Vehículo:</p>
+                        <p>{vehicle ? `${vehicle.make} ${vehicle.model} ${vehicle.year}` : 'N/A'}</p>
                     </div>
-                )}
-                {inspection.technicianSignature && (
-                    <div className="mt-8 border-t pt-4 text-center flex flex-col items-center">
-                        <div className="h-24 w-64 relative">
-                            <Image src={inspection.technicianSignature} alt="Firma del técnico" layout="fill" objectFit="contain" />
-                        </div>
-                        <div className="border-t-2 border-black mt-2 pt-1 w-64 text-center">
-                          <p className="text-xs font-bold">FIRMA DEL TÉCNICO</p>
+                    <div className="text-right">
+                        <p className="font-bold">Placas:</p>
+                        <p>{vehicle?.licensePlate}</p>
+                    </div>
+                    <div>
+                        <p className="font-bold">Fecha de Revisión:</p>
+                        <p>{formattedServiceDate}</p>
+                    </div>
+                    <div className="text-right">
+                        <p className="font-bold">Kilometraje:</p>
+                        <p>{service.mileage?.toLocaleString('es-MX') || 'N/A'} km</p>
+                    </div>
+                </div>
+            </header>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+                {inspectionGroups.map(group => (
+                    <div key={group.title}>
+                        <h4 className="font-bold text-base mb-2 border-b-2 border-black pb-1">{group.title}</h4>
+                        <div className="space-y-1">
+                            {group.items.map(item => {
+                                const statusKey = item.name.split('.')[1] as keyof SafetyInspection;
+                                const status = (inspection[statusKey] as SafetyCheckStatus) || 'na';
+                                return (
+                                    <div key={item.name} className="flex justify-between items-center text-sm py-1 border-b border-dashed last:border-none">
+                                        <span className="pr-4">{item.label}</span>
+                                        <StatusIndicator status={status} />
+                                    </div>
+                                );
+                            })}
                         </div>
                     </div>
-                )}
-            </CardContent>
-        </Card>
+                ))}
+            </div>
+            {inspection.inspectionNotes && (
+                <div className="mt-6 border-t pt-4">
+                    <h4 className="font-bold text-base mb-2">Observaciones Generales de la Inspección:</h4>
+                    <p className="text-sm whitespace-pre-wrap p-2 bg-gray-50 rounded-md border">{inspection.inspectionNotes}</p>
+                </div>
+            )}
+            {inspection.technicianSignature && (
+                <div className="mt-8 border-t pt-4 text-center flex flex-col items-center">
+                    <div className="h-24 w-64 relative">
+                        <Image src={inspection.technicianSignature} alt="Firma del técnico" layout="fill" objectFit="contain" />
+                    </div>
+                    <div className="border-t-2 border-black mt-2 pt-1 w-64 text-center">
+                        <p className="text-xs font-bold">FIRMA DEL TÉCNICO</p>
+                    </div>
+                </div>
+            )}
+        </div>
     )
 }
 
@@ -350,7 +385,12 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
     );
 
     const SafetyChecklistContent = showChecklist ? (
-        <SafetyChecklistDisplay inspection={service.safetyInspection!} />
+        <SafetyChecklistDisplay 
+            inspection={service.safetyInspection!}
+            workshopInfo={workshopInfo}
+            service={service}
+            vehicle={vehicle}
+        />
     ) : null;
 
     return (
@@ -375,7 +415,9 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
 
         {/* For Print View */}
         <div className="hidden print:block">
-          {ServiceOrderContent}
+          <div className="p-8">
+            {ServiceOrderContent}
+          </div>
           {showChecklist && (
             <>
               <div style={{ pageBreakBefore: 'always' }} />
@@ -388,5 +430,3 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
   }
 );
 ServiceSheetContent.displayName = "ServiceSheetContent";
-
-    
