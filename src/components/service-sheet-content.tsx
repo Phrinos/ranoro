@@ -223,7 +223,7 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
     
     const fuelColor = getFuelColorClass(fuelPercentage);
     
-    const showChecklist = !!service.safetyInspection;
+    const showChecklist = !!service.safetyInspection && service.serviceType !== 'Cambio de Aceite';
 
     const ServiceOrderContent = (
       <div className="flex flex-col min-h-[10in]">
@@ -398,7 +398,7 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
             <TabsContent value="checklist" className="mt-4">
               {showChecklist ? SafetyChecklistContent : (
                 <div className="text-center p-8 text-muted-foreground">
-                  La revisión de seguridad no ha sido completada o firmada por el técnico.
+                  La revisión de seguridad no es necesaria para este tipo de servicio.
                 </div>
               )}
             </TabsContent>
