@@ -62,6 +62,7 @@ import { AddSupplyDialog } from './add-supply-dialog';
 import { QuoteContent } from '@/components/quote-content';
 import { SignatureDialog } from './signature-dialog';
 import { TicketContent } from '@/components/ticket-content';
+import { capitalizeWords } from '@/lib/utils';
 
 
 const supplySchema = z.object({
@@ -686,7 +687,7 @@ export function ServiceForm({
     }, 0) || 0;
     const finalSubTotal = finalTotalCost / (1 + IVA_RATE);
     const finalTaxAmount = finalTotalCost - finalSubTotal;
-    const finalProfit = finalTotalCost - finalTotalSuppliesWorkshopCost;
+    const finalProfit = finalSubTotal - finalTotalSuppliesWorkshopCost;
     const compositeDescription = values.serviceItems.map(item => item.name).join(', ') || 'Servicio';
     
     const isConvertingQuoteToService = mode === 'quote' && values.status && values.status !== 'Cotizacion';
@@ -1639,7 +1640,7 @@ function ServiceItemCard({ serviceIndex, form, removeServiceItem, isReadOnly, in
                 {!isReadOnly && <Button type="button" variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => removeServiceItem(serviceIndex)}><Trash2 className="h-4 w-4"/></Button>}
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField control={control} name={`serviceItems.${serviceIndex}.name`} render={({ field }) => ( <FormItem><FormLabel>Nombre del Servicio</FormLabel><FormControl><Input placeholder="Afinación Mayor" {...field} disabled={isReadOnly}/></FormControl></FormItem> )}/>
+                <FormField control={control} name={`serviceItems.${serviceIndex}.name`} render={({ field }) => ( <FormItem><FormLabel>Nombre del Servicio</FormLabel><FormControl><Input placeholder="Afinación Mayor" {...field} disabled={isReadOnly} onChange={(e) => field.onChange(capitalizeWords(e.target.value))}/></FormControl></FormItem> )}/>
                 <FormField control={control} name={`serviceItems.${serviceIndex}.price`} render={({ field }) => ( <FormItem><FormLabel>Precio Cliente (IVA Inc.)</FormLabel><FormControl><Input type="number" placeholder="0.00" {...field} value={field.value ?? ''} disabled={isReadOnly} /></FormControl></FormItem> )}/>
             </div>
 
@@ -1893,4 +1894,3 @@ const SafetyCheckRow = ({ name, label, control, isReadOnly }: { name: string; la
     </div>
   );
 };
-
