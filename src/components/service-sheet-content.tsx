@@ -105,21 +105,21 @@ const SafetyChecklistDisplay = ({
     return (
         <div className="mt-4 print:mt-0">
             <header className="mb-4 pb-2 border-b-2 border-black">
-                <div className="flex justify-between items-center">
-                    <img src={workshopInfo.logoUrl} alt={`${workshopInfo.name} Logo`} className="h-12" data-ai-hint="workshop logo"/>
-                    <div className="text-right">
-                    <h1 className="text-lg font-bold">REVISIÓN DE PUNTOS DE SEGURIDAD</h1>
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                    <img src={workshopInfo.logoUrl} alt={`${workshopInfo.name} Logo`} className="h-10 sm:h-12" data-ai-hint="workshop logo"/>
+                    <div className="text-left sm:text-right">
+                    <h1 className="text-base sm:text-lg font-bold">REVISIÓN DE PUNTOS DE SEGURIDAD</h1>
                     <p className="font-mono text-xs">Folio de Servicio: <span className="font-semibold">{service.id}</span></p>
                     </div>
                 </div>
-                <div className="grid grid-cols-2 gap-4 mt-2 text-xs">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-2 text-xs">
                     <div>
                         <p className="font-bold">Placas:</p>
                         <p>{vehicle?.licensePlate}</p>
                         <p className="font-bold mt-2">Vehículo:</p>
                         <p>{vehicle ? `${vehicle.year} ${vehicle.make} ${vehicle.model}` : 'N/A'}</p>
                     </div>
-                    <div className="text-right">
+                    <div className="text-left sm:text-right">
                         <p className="font-bold">Fecha de Revisión:</p>
                         <p>{formattedServiceDate}</p>
                         {service.mileage && (
@@ -135,7 +135,7 @@ const SafetyChecklistDisplay = ({
                     <p>{vehicle?.ownerName}{vehicle?.ownerPhone && ` - ${vehicle.ownerPhone}`}</p>
                 </div>
             </header>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
                 {inspectionGroups.map(group => (
                     <div key={group.title}>
                         <h4 className="font-bold text-base mb-2 border-b-2 border-black pb-1">{group.title}</h4>
@@ -232,29 +232,29 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
     const ServiceOrderContent = (
       <div className="flex flex-col min-h-[10in]">
         <header className="mb-4 pb-2 border-b-2 border-black">
-          <div className="flex justify-between items-center">
-            <img src={effectiveWorkshopInfo.logoUrl} alt={`${effectiveWorkshopInfo.name} Logo`} className="h-16" data-ai-hint="workshop logo"/>
-            <div className="text-right">
-              <h1 className="text-xl font-bold">ORDEN DE SERVICIO</h1>
-              <p className="font-mono text-base">Folio: <span className="font-bold">{service.id}</span></p>
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+            <img src={effectiveWorkshopInfo.logoUrl} alt={`${effectiveWorkshopInfo.name} Logo`} className="h-12 sm:h-16" data-ai-hint="workshop logo"/>
+            <div className="text-left sm:text-right">
+              <h1 className="text-lg sm:text-xl font-bold">ORDEN DE SERVICIO</h1>
+              <p className="font-mono text-sm sm:text-base">Folio: <span className="font-bold">{service.id}</span></p>
             </div>
           </div>
-          <div className="flex justify-between items-end mt-2">
-             <div className="space-y-0.5 leading-tight text-base">
-                <p className="font-bold text-lg">{effectiveWorkshopInfo.name}</p>
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end mt-2 text-xs">
+             <div className="space-y-0.5 leading-tight">
+                <p className="font-bold text-sm sm:text-base">{effectiveWorkshopInfo.name}</p>
                 <p>{effectiveWorkshopInfo.addressLine1}</p>
                 {effectiveWorkshopInfo.addressLine2 && <p>{effectiveWorkshopInfo.addressLine2}</p>}
                 <p>{effectiveWorkshopInfo.cityState}</p>
                 <p>Tel: {effectiveWorkshopInfo.phone}</p>
              </div>
-             <div className="text-base text-right text-[10px]">
+             <div className="text-left sm:text-right text-[10px] mt-2 sm:mt-0">
                 <p><span className="font-bold">Fecha de Recepción:</span> {formattedServiceDate}</p>
              </div>
           </div>
         </header>
 
         <main className="flex-grow">
-          <section className="grid grid-cols-2 gap-4 mb-4 text-xs">
+          <section className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4 text-xs">
             <div className="border-2 border-black rounded-md overflow-hidden">
               <h3 className="font-bold p-1 bg-gray-700 text-white text-xs text-center">DATOS DEL CLIENTE</h3>
               <div className="space-y-0.5 p-2">
@@ -282,7 +282,7 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
                       const isLastItem = index === service.serviceItems.length - 1;
                       return (
                           <div key={index} className={cn("pb-2", !isLastItem && "border-b border-dashed border-gray-300")}>
-                              <div className="flex justify-between items-center font-bold text-base">
+                              <div className="flex justify-between items-center font-bold text-sm sm:text-base">
                                   <p>{item.name}</p>
                                   <p>{formatCurrency(item.price)}</p>
                               </div>
@@ -302,10 +302,10 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
               </div>
           </section>
           
-          <section className="grid grid-cols-3 gap-4 mb-4 text-xs">
-              <div className="border-2 border-black rounded-md overflow-hidden col-span-2">
+          <section className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4 text-xs">
+              <div className="border-2 border-black rounded-md overflow-hidden col-span-1 md:col-span-2">
                  <h3 className="font-bold p-1 bg-gray-700 text-white text-xs text-center">CONDICIONES DEL VEHÍCULO (AL INGRESAR AL TALLER)</h3>
-                 <p className="whitespace-pre-wrap p-2 min-h-[20px] text-base">{service.vehicleConditions || 'No especificado.'}</p>
+                 <p className="whitespace-pre-wrap p-2 min-h-[20px] text-sm sm:text-base">{service.vehicleConditions || 'No especificado.'}</p>
               </div>
               <div className="border-2 border-black rounded-md overflow-hidden col-span-1 flex flex-col justify-center min-h-[60px]">
                   <h3 className="font-bold p-1 bg-gray-700 text-white text-center text-xs">NIVEL DE COMBUSTIBLE</h3>
@@ -322,10 +322,10 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
               </div>
           </section>
 
-          <section className="grid grid-cols-2 gap-4 mb-4 text-xs">
+          <section className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4 text-xs">
             <div className="border-2 border-black rounded-md overflow-hidden">
                 <h3 className="font-bold p-1 bg-gray-700 text-white text-xs text-center">INVENTARIO DE PERTENENCIAS</h3>
-                <p className="whitespace-pre-wrap p-2 min-h-[104px] text-base">{service.customerItems || 'No especificado.'}</p>
+                <p className="whitespace-pre-wrap p-2 min-h-[104px] text-sm sm:text-base">{service.customerItems || 'No especificado.'}</p>
             </div>
             <div className="border-2 border-black p-2 rounded-md flex flex-col justify-between items-center min-h-[130px]">
                 <h3 className="font-bold uppercase text-center text-sm">AUTORIZO QUE SE REALICEN ESTOS SERVICIOS</h3>
@@ -343,7 +343,7 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
         </main>
         
         <footer className="mt-auto pt-4 text-xs">
-           <div className="grid grid-cols-2 gap-8 text-center mb-4">
+           <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 text-center mb-4">
                <div className="pt-2 min-h-[80px] flex flex-col justify-between">
                     <div className="h-14 flex-grow flex items-center justify-center">
                         {service.serviceAdvisorSignatureDataUrl && service.serviceAdvisorSignatureDataUrl.startsWith('data:image') && (
@@ -390,14 +390,14 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
     return (
       <div ref={ref} data-format="letter" className="font-sans bg-white text-black text-sm">
         {/* For Screen View */}
-        <div className="print:hidden p-4 sm:p-8 shadow-lg">
+        <div className="print:hidden p-0 sm:p-2 md:p-4 shadow-lg">
           <Tabs defaultValue="order" className="w-full">
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="order">Orden de Servicio</TabsTrigger>
               <TabsTrigger value="checklist" disabled={!showChecklist}>Revisión de Seguridad</TabsTrigger>
             </TabsList>
-            <TabsContent value="order">{ServiceOrderContent}</TabsContent>
-            <TabsContent value="checklist">
+            <TabsContent value="order" className="mt-4">{ServiceOrderContent}</TabsContent>
+            <TabsContent value="checklist" className="mt-4">
               {showChecklist ? SafetyChecklistContent : (
                 <div className="text-center p-8 text-muted-foreground">
                   La revisión de seguridad no ha sido completada o firmada por el técnico.
@@ -409,13 +409,13 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
 
         {/* For Print View */}
         <div className="hidden print:block">
-          <div className="p-8">
+          <div className="p-4 md:p-8">
             {ServiceOrderContent}
           </div>
           {showChecklist && (
             <>
               <div style={{ pageBreakBefore: 'always' }} />
-              <div className="p-8">{SafetyChecklistContent}</div>
+              <div className="p-4 md:p-8">{SafetyChecklistContent}</div>
             </>
           )}
         </div>

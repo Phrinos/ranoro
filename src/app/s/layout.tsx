@@ -8,7 +8,7 @@ export default function ServiceSheetLayout({
 }) {
   return (
     <div className="bg-muted/40 min-h-screen">
-        <main className="py-8">
+        <main className="p-2 sm:p-4 md:py-8">
             {children}
         </main>
     </div>
