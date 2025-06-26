@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useParams, useRouter } from 'next/navigation';
@@ -53,8 +52,10 @@ export default function InventoryItemDetailPage() {
     setItem(foundItem || null);
 
     if (foundItem) {
+        // Corrected logic to handle the new ServiceRecord structure
         const serviceExits = placeholderServiceRecords.flatMap(service =>
-            service.suppliesUsed
+            (service.serviceItems || [])
+                .flatMap(item => item.suppliesUsed || [])
                 .filter(supply => supply.supplyId === foundItem.id)
                 .map(supply => ({
                     date: service.serviceDate,
@@ -64,8 +65,9 @@ export default function InventoryItemDetailPage() {
                     unitType: foundItem.unitType,
                 }))
         );
+        
         const saleExits = placeholderSales.flatMap(sale =>
-            sale.items
+            (sale.items || [])
                 .filter(saleItem => saleItem.inventoryItemId === foundItem.id)
                 .map(saleItem => ({
                     date: sale.saleDate,
@@ -75,6 +77,7 @@ export default function InventoryItemDetailPage() {
                     unitType: foundItem.unitType,
                 }))
         );
+
         // NOTE: Purchase history is not recorded, so 'Entrada por Compra' cannot be generated.
         const allMovements = [...serviceExits, ...saleExits].sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime());
         setHistory(allMovements);
@@ -101,7 +104,7 @@ export default function InventoryItemDetailPage() {
       placeholderInventory[pIndex] = updatedItem;
     }
     
-    await persistToFirestore(['inventory']);
+    persistToFirestore(['inventory']);
 
     setIsEditDialogOpen(false);
     toast({
