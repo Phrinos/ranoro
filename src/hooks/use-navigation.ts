@@ -102,7 +102,6 @@ const BASE_NAV_STRUCTURE: ReadonlyArray<Omit<NavigationEntry, 'isActive'>> = [
   { label: 'Productos', path: '/inventario', icon: Package, groupTag: "Mi Inventario", permissions: ['inventory:view'] },
   { label: 'Categorías', path: '/inventario/categorias', icon: Shapes, groupTag: "Mi Inventario", permissions: ['inventory:manage'] },
   { label: 'Proveedores', path: '/inventario/proveedores', icon: Building, groupTag: "Mi Inventario", permissions: ['inventory:manage'] },
-  { label: 'Análisis IA', path: '/inventario/analisis', icon: BarChartHorizontal, groupTag: "Mi Inventario", permissions: ['inventory:manage'] },
   
   // Mi Oficina
   {
@@ -133,18 +132,9 @@ const BASE_NAV_STRUCTURE: ReadonlyArray<Omit<NavigationEntry, 'isActive'>> = [
     groupTag: "Mi Oficina",
     permissions: ['technicians:manage'] // Reusing technician permission for all staff
   },
-    
-  // Soporte
-  {
-    label: 'Manual de Usuario',
-    path: '/manual',
-    icon: BookOpen,
-    groupTag: "Soporte",
-    permissions: ['dashboard:view'] // Everyone can see it
-  },
 ];
 
-const DESIRED_GROUP_ORDER = ["Mi Taller", "Mi Inventario", "Mi Oficina", "Soporte"];
+const DESIRED_GROUP_ORDER = ["Mi Taller", "Mi Inventario", "Mi Oficina"];
 
 
 const useNavigation = (): NavigationEntry[] => {
