@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { PageHeader } from "@/components/page-header";
@@ -9,8 +8,8 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Search, ListFilter, CalendarIcon as CalendarDateIcon, DollarSign, TrendingUp, Car as CarIcon, Wrench as WrenchIcon, PlusCircle, Printer, MessageSquare, Copy } from "lucide-react";
-import { ServicesTable } from "../components/services-table"; 
+import { Separator } from "@/components/ui/separator";
+import { Search, ListFilter, CalendarIcon as CalendarDateIcon, DollarSign, TrendingUp, Car as CarIcon, Wrench as WrenchIcon, PlusCircle, Printer, MessageSquare, Copy, FileText, FileCheck, Edit, Ban } from "lucide-react";
 import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
 import { TicketContent } from '@/components/ticket-content';
 import { placeholderServiceRecords, placeholderVehicles, placeholderTechnicians, placeholderInventory, persistToFirestore, AUTH_USER_LOCALSTORAGE_KEY, placeholderQuotes } from "@/lib/placeholder-data";
@@ -27,6 +26,8 @@ import { ServiceSheetContent } from '@/components/service-sheet-content';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebasePublic.js';
 import { QuoteContent } from '@/components/quote-content';
+import { Badge } from "@/components/ui/badge";
+import { ServiceDialog } from "../components/service-dialog";
 
 
 type ServiceSortOption = 
@@ -60,7 +61,9 @@ export default function HistorialServiciosPage() {
   
   const [isQuoteViewOpen, setIsQuoteViewOpen] = useState(false);
   const [quoteForView, setQuoteForView] = useState<QuoteRecord | null>(null);
-
+  
+  const [editingService, setEditingService] = useState<ServiceRecord | null>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
   useEffect(() => {
     setAllServices(placeholderServiceRecords);
@@ -148,6 +151,13 @@ export default function HistorialServiciosPage() {
     });
     return filtered;
   }, [allServices, vehicles, technicians, searchTerm, dateRange, sortOption]);
+  
+  const getServiceDescriptionText = (service: ServiceRecord) => {
+    if (service.serviceItems && service.serviceItems.length > 0) {
+      return service.serviceItems.map(item => item.name).join(', ');
+    }
+    return service.description || '';
+  };
 
   const summaryData = useMemo(() => {
     const totalServices = filteredAndSortedServices.length;
@@ -370,6 +380,22 @@ export default function HistorialServiciosPage() {
     });
   }, [vehicles, toast]);
 
+  const formatCurrency = (amount: number | undefined) => {
+    if (amount === undefined) return 'N/A';
+    return `$${amount.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  };
+  
+  const getStatusVariant = (status: ServiceRecord['status']): "default" | "secondary" | "outline" | "destructive" | "success" => {
+    switch (status) {
+      case "Completado": return "success"; 
+      case "Reparando": return "secondary"; 
+      case "Cancelado": return "destructive"; 
+      case "Agendado": return "default";
+      case "Cotizacion": return "outline";
+      default: return "default";
+    }
+  };
+
 
   return (
     <>
@@ -493,19 +519,101 @@ export default function HistorialServiciosPage() {
         </DropdownMenu>
       </div>
 
-      <ServicesTable 
-        services={filteredAndSortedServices} 
-        vehicles={vehicles}
-        technicians={technicians}
-        inventoryItems={inventoryItems}
-        onServiceUpdated={handleUpdateService}
-        onServiceCancelled={handleCancelService}
-        onVehicleCreated={handleVehicleCreated}
-        onShowSheet={handleShowSheet}
-        quotes={placeholderQuotes}
-        onShowQuote={handleShowQuote}
-        isHistoryView={true}
-      />
+       <div className="space-y-4">
+        {filteredAndSortedServices.length > 0 ? (
+          filteredAndSortedServices.map(service => {
+            const vehicle = vehicles.find(v => v.id === service.vehicleId);
+            const originalQuote = placeholderQuotes.find(q => q.serviceId === service.id);
+
+            return (
+              <Card key={service.id} className="shadow-sm overflow-hidden">
+                <div className="flex flex-col md:flex-row">
+                  {/* Bloque 4: Costo y Ganancia */}
+                  <div className="w-full md:w-48 shrink-0 flex flex-row md:flex-col justify-around md:justify-center items-center text-center p-4 bg-muted/50">
+                    <div>
+                      <p className="text-xs text-muted-foreground">Costo Total</p>
+                      <p className="font-bold text-lg text-foreground">{formatCurrency(service.totalCost)}</p>
+                    </div>
+                    <div className="md:mt-2">
+                      <p className="text-xs text-muted-foreground">Ganancia</p>
+                      <p className="font-semibold text-lg text-green-600">{formatCurrency(service.serviceProfit)}</p>
+                    </div>
+                  </div>
+
+                  {/* Main Content */}
+                  <div className="flex-grow border-t md:border-t-0 md:border-l p-4 space-y-3">
+                    {/* Bloque 1 & 2 */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <p className="text-xs font-semibold text-muted-foreground">Folio / Recepción y Entrega</p>
+                        <p><span className="font-mono">{service.id}</span></p>
+                        <p className="text-xs">Recepción: {service.serviceDate ? format(parseISO(service.serviceDate), "dd MMM yy, HH:mm") : 'N/A'}</p>
+                        <p className="text-xs">Entrega: {service.deliveryDateTime ? format(parseISO(service.deliveryDateTime), "dd MMM yy, HH:mm") : 'N/A'}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs font-semibold text-muted-foreground">Vehículo</p>
+                        <p className="font-semibold">{vehicle ? `${vehicle.make} ${vehicle.model} ${vehicle.year}` : 'N/A'}</p>
+                        <p><span className="font-mono">{vehicle?.licensePlate}</span></p>
+                      </div>
+                      <div className="sm:col-span-2">
+                        <p className="text-xs font-semibold text-muted-foreground">Cliente</p>
+                        <p>{vehicle?.ownerName} - {vehicle?.ownerPhone}</p>
+                      </div>
+                    </div>
+                    <Separator />
+                    {/* Bloque 3 */}
+                    <div>
+                      <p className="text-xs font-semibold text-muted-foreground">Detalles del Servicio</p>
+                      <p><b>Técnico:</b> {service.technicianName || 'N/A'}</p>
+                      <p><b>Tipo:</b> <Badge variant="outline">{service.serviceType}</Badge></p>
+                      <p className="text-sm truncate" title={getServiceDescriptionText(service)}>
+                        <b>Servicio:</b> {getServiceDescriptionText(service)}
+                      </p>
+                    </div>
+                  </div>
+                  
+                  {/* Bloque 5: Estatus y Acciones */}
+                  <div className="w-full md:w-48 shrink-0 flex flex-col items-center justify-center p-4 border-t md:border-t-0 md:border-l bg-muted/50 gap-y-2">
+                    <Badge variant={getStatusVariant(service.status)} className="w-full justify-center text-center text-base mb-2">
+                      {service.status}
+                    </Badge>
+                    <div className="flex justify-center flex-wrap gap-1">
+                      {originalQuote && (
+                        <Button variant="ghost" size="icon" onClick={() => handleShowQuote(originalQuote)} title="Ver Cotización Original">
+                          <FileText className="h-4 w-4" />
+                        </Button>
+                      )}
+                      <Button variant="ghost" size="icon" onClick={() => handleShowSheet(service)} title="Ver Hoja de Servicio">
+                        <FileCheck className="h-4 w-4" />
+                      </Button>
+                      <Button variant="ghost" size="icon" onClick={() => { setEditingService(service); setIsEditDialogOpen(true); }} title="Editar Servicio" disabled={service.status === 'Completado' || service.status === 'Cancelado'}>
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </Card>
+            )
+          })
+        ) : (
+          <p className="text-muted-foreground text-center py-8">No hay servicios que coincidan con los filtros.</p>
+        )}
+      </div>
+
+      {editingService && (
+        <ServiceDialog
+          open={isEditDialogOpen}
+          onOpenChange={setIsEditDialogOpen}
+          service={editingService}
+          vehicles={vehicles}
+          technicians={technicians}
+          inventoryItems={inventoryItems}
+          onSave={handleUpdateService}
+          onVehicleCreated={handleVehicleCreated}
+          onCancelService={handleCancelService}
+          mode="service"
+        />
+      )}
       
       {currentServiceForTicket && (
         <PrintTicketDialog

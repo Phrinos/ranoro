@@ -8,8 +8,8 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Search, ListFilter, CalendarIcon as CalendarDateIcon, FileText, DollarSign, MessageSquare, PlusCircle, Download, Wrench, Copy, Ban, Edit } from "lucide-react";
-import { QuotesTable } from "../components/quotes-table"; 
+import { Separator } from "@/components/ui/separator";
+import { Search, ListFilter, CalendarIcon as CalendarDateIcon, FileText, DollarSign, Wrench, PlusCircle, Download, Copy, Ban, Edit } from "lucide-react";
 import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
 import { QuoteContent } from '@/components/quote-content';
 import { placeholderQuotes, placeholderVehicles, placeholderTechnicians, placeholderServiceRecords, placeholderInventory, persistToFirestore } from "@/lib/placeholder-data"; 
@@ -24,6 +24,7 @@ import { cn } from "@/lib/utils";
 import { ServiceDialog } from "../../servicios/components/service-dialog";
 import { doc, setDoc, deleteDoc } from 'firebase/firestore';
 import { db } from '@root/lib/firebaseClient.js';
+import { Badge } from "@/components/ui/badge";
 
 
 type QuoteSortOption = 
@@ -54,8 +55,6 @@ export default function HistorialCotizacionesPage() {
 
   const [isServiceDialogOpen, setIsServiceDialogOpen] = useState(false);
   const [editingService, setEditingService] = useState<ServiceRecord | null>(null);
-
-  const [vehicleForSelectedQuote, setVehicleForSelectedQuote] = useState<Vehicle | null>(null);
   
   const [workshopInfo, setWorkshopInfo] = useState<WorkshopInfo | {}>({});
   const quoteContentRef = useRef<HTMLDivElement>(null);
@@ -83,7 +82,7 @@ export default function HistorialCotizacionesPage() {
   };
 
   const filteredAndSortedQuotes = useMemo(() => {
-    let filtered = allQuotes.filter(q => !q.serviceId);
+    let filtered = allQuotes.filter(q => !q.serviceId); // Filter to only show pure quotes
 
     if (dateRange?.from) {
       filtered = filtered.filter(quote => {
@@ -108,22 +107,14 @@ export default function HistorialCotizacionesPage() {
       switch (sortOption) {
         case "date_asc":
           return compareAsc(parseISO(a.quoteDate ?? ""), parseISO(b.quoteDate ?? ""));
-        case "date_desc": {
-          const statusA = a.serviceId ? 2 : 1;
-          const statusB = b.serviceId ? 2 : 1;
-          if (statusA !== statusB) return statusA - statusB;
+        case "date_desc":
           return compareDesc(parseISO(a.quoteDate ?? ""), parseISO(b.quoteDate ?? ""));
-        }
         case "total_asc": return (a.estimatedTotalCost || 0) - (b.estimatedTotalCost || 0);
         case "total_desc": return (b.estimatedTotalCost || 0) - (a.estimatedTotalCost || 0);
         case "vehicle_asc": return (a.vehicleIdentifier || '').localeCompare(b.vehicleIdentifier || '');
         case "vehicle_desc": return (b.vehicleIdentifier || '').localeCompare(a.vehicleIdentifier || '');
-        default: {
-           const statusA = a.serviceId ? 2 : 1;
-           const statusB = b.serviceId ? 2 : 1;
-           if (statusA !== statusB) return statusA - statusB;
+        default:
            return compareDesc(parseISO(a.quoteDate ?? ""), parseISO(b.quoteDate ?? ""));
-        }
       }
     });
     return filtered;
@@ -132,17 +123,15 @@ export default function HistorialCotizacionesPage() {
   const summaryData = useMemo(() => {
     const totalQuotesCount = filteredAndSortedQuotes.length;
     const totalEstimatedValue = filteredAndSortedQuotes.reduce((sum, q) => sum + (q.estimatedTotalCost || 0), 0);
-    const completedQuotesCount = filteredAndSortedQuotes.filter(q => !!q.serviceId).length;
     
-    return { totalQuotesCount, totalEstimatedValue, completedQuotesCount };
+    return { totalQuotesCount, totalEstimatedValue };
   }, [filteredAndSortedQuotes]);
 
 
   const handleViewQuote = useCallback((quote: QuoteRecord) => {
     setSelectedQuoteForView(quote);
-    setVehicleForSelectedQuote(vehicles.find(v => v.id === quote.vehicleId) || null);
     setIsViewQuoteDialogOpen(true);
-  }, [vehicles]);
+  }, []);
   
   const handleEditQuote = useCallback((quote: QuoteRecord) => {
     setSelectedQuoteForEdit(quote);
@@ -359,27 +348,22 @@ export default function HistorialCotizacionesPage() {
     });
   }, [toast, vehicles]);
 
+  const formatCurrency = (amount: number | undefined) => {
+    if (amount === undefined) return 'N/A';
+    return `$${amount.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  };
+
   return (
     <>
-      <div className="mb-6 grid gap-6 md:grid-cols-3">
+      <div className="mb-6 grid gap-6 md:grid-cols-2">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Total de Cotizaciones</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Total de Cotizaciones Activas</CardTitle>
             <FileText className="h-5 w-5 text-blue-500" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold font-headline">{summaryData.totalQuotesCount}</div>
             <p className="text-xs text-muted-foreground">En el rango de fechas seleccionado</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Cotizaciones Concretadas</CardTitle>
-            <Wrench className="h-5 w-5 text-green-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold font-headline">{summaryData.completedQuotesCount}</div>
-            <p className="text-xs text-muted-foreground">Convertidas en órdenes de servicio</p>
           </CardContent>
         </Card>
         <Card>
@@ -475,15 +459,107 @@ export default function HistorialCotizacionesPage() {
         </DropdownMenu>
       </div>
 
-      <QuotesTable 
-        quotes={filteredAndSortedQuotes} 
-        vehicles={vehicles}
-        onViewQuote={handleViewQuote} 
-        onEditQuote={handleEditQuote}
-        onGenerateService={handleGenerateService}
-        onDeleteQuote={handleDeleteQuote}
-        onEditService={handleEditService}
-      />
+       <div className="space-y-4">
+        {filteredAndSortedQuotes.length > 0 ? (
+          filteredAndSortedQuotes.map(quote => {
+            const vehicle = vehicles.find(v => v.id === quote.vehicleId);
+            const originalQuote = quote;
+
+            return (
+              <Card key={quote.id} className="shadow-sm overflow-hidden">
+                <div className="flex flex-col md:flex-row">
+                  {/* Bloque 4: Costo y Ganancia */}
+                  <div className="w-full md:w-48 shrink-0 flex flex-row md:flex-col justify-around md:justify-center items-center text-center p-4 bg-muted/50">
+                    <div>
+                      <p className="text-xs text-muted-foreground">Costo Estimado</p>
+                      <p className="font-bold text-lg text-foreground">{formatCurrency(quote.estimatedTotalCost)}</p>
+                    </div>
+                    <div className="md:mt-2">
+                      <p className="text-xs text-muted-foreground">Ganancia Estimada</p>
+                      <p className="font-semibold text-lg text-green-600">{formatCurrency(quote.estimatedProfit)}</p>
+                    </div>
+                  </div>
+
+                  {/* Main Content */}
+                  <div className="flex-grow border-t md:border-t-0 md:border-l p-4 space-y-3">
+                    {/* Bloque 1 & 2 */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <p className="text-xs font-semibold text-muted-foreground">Folio / Fecha Cotización</p>
+                        <p><span className="font-mono">{quote.id}</span> - {format(parseISO(quote.quoteDate!), "dd MMM yy, HH:mm", { locale: es })}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs font-semibold text-muted-foreground">Vehículo</p>
+                        <p className="font-semibold">{vehicle ? `${vehicle.make} ${vehicle.model} ${vehicle.year}` : 'N/A'}</p>
+                        <p><span className="font-mono">{vehicle?.licensePlate}</span></p>
+                      </div>
+                      <div className="sm:col-span-2">
+                         <p className="text-xs font-semibold text-muted-foreground">Cliente</p>
+                         <p>{vehicle?.ownerName} - {vehicle?.ownerPhone}</p>
+                      </div>
+                    </div>
+                    <Separator />
+                    {/* Bloque 3 */}
+                    <div>
+                      <p className="text-xs font-semibold text-muted-foreground">Detalles del Servicio</p>
+                      <p><b>Asesor:</b> {quote.preparedByTechnicianName || 'N/A'}</p>
+                      <p><b>Tipo:</b> <Badge variant="outline">{quote.serviceType}</Badge></p>
+                      <p className="text-sm truncate" title={getQuoteDescriptionText(quote)}>
+                        <b>Servicio:</b> {getQuoteDescriptionText(quote)}
+                      </p>
+                    </div>
+                  </div>
+                  
+                  {/* Bloque 5: Estatus y Acciones */}
+                  <div className="w-full md:w-48 shrink-0 flex flex-col items-center justify-center p-4 border-t md:border-t-0 md:border-l bg-muted/50 gap-y-2">
+                    <Badge variant={quote.serviceId ? "lightRed" : "outline"} className="w-full justify-center text-center text-base mb-2">
+                      {quote.serviceId ? "Agendado" : "Cotizacion"}
+                    </Badge>
+                    <div className="flex justify-center flex-wrap gap-1">
+                      <Button variant="ghost" size="icon" onClick={() => handleEditQuote(originalQuote)} title="Ver / Editar Cotización">
+                        <FileText className="h-4 w-4" />
+                      </Button>
+                      {quote.serviceId ? (
+                        <Button variant="ghost" size="icon" onClick={() => handleEditService(quote.serviceId!)} title="Editar Servicio">
+                          <Wrench className="h-4 w-4 text-blue-600" />
+                        </Button>
+                      ) : (
+                        <Button variant="ghost" size="icon" onClick={() => handleGenerateService(originalQuote)} title="Generar Servicio">
+                          <Wrench className="h-4 w-4 text-blue-600" />
+                        </Button>
+                      )}
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                           <Button variant="ghost" size="icon" title="Cancelar Cotización" disabled={!!quote.serviceId}>
+                            <Ban className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>¿Cancelar esta cotización?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Esta acción no se puede deshacer y eliminará permanentemente la cotización {quote.id}. No se puede cancelar si ya tiene un servicio agendado.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>No</AlertDialogCancel>
+                            <AlertDialogAction onClick={() => handleDeleteQuote(quote.id)} className="bg-destructive hover:bg-destructive/90">
+                              Sí, Cancelar
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
+                  </div>
+                </div>
+              </Card>
+            )
+          })
+        ) : (
+          <p className="text-muted-foreground text-center py-8">No hay cotizaciones que coincidan con los filtros.</p>
+        )}
+      </div>
+
 
       {isViewQuoteDialogOpen && selectedQuoteForView && (
         <PrintTicketDialog
@@ -495,7 +571,7 @@ export default function HistorialCotizacionesPage() {
           footerActions={
             <>
               <Button variant="outline" onClick={() => handleSendWhatsApp(selectedQuoteForView)}>
-                <MessageSquare className="mr-2 h-4 w-4" /> Copiar para WhatsApp
+                <Copy className="mr-2 h-4 w-4" /> Copiar para WhatsApp
               </Button>
               <Button variant="outline" onClick={handleCopyAsImage}>
                 <Copy className="mr-2 h-4 w-4" /> Copiar Imagen
@@ -554,7 +630,6 @@ export default function HistorialCotizacionesPage() {
             mode="service"
         />
       )}
-
     </>
   );
 }
