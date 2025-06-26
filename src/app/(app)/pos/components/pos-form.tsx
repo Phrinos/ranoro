@@ -367,17 +367,17 @@ export function PosForm({ inventoryItems: parentInventoryItems, onSaleComplete, 
                 {fields.length > 0 ? (
                     <div className="space-y-4">
                     {fields.map((field, index) => (
-                        <div key={field.id} className="flex items-center gap-2 p-3 border rounded-md bg-muted/20 dark:bg-muted/50">
-                            <div className="flex-1">
+                        <div key={field.id} className="flex flex-col sm:flex-row items-start sm:items-center gap-2 p-3 border rounded-md bg-muted/20 dark:bg-muted/50">
+                            <div className="flex-1 w-full sm:w-auto">
                                 <FormLabel className="text-xs">Artículo</FormLabel>
                                 <Input
                                     type="text"
                                     readOnly
                                     value={`${field.itemName} (${formatCurrency(field.unitPrice)} c/u)`}
-                                    className="bg-muted/30 dark:bg-muted/60 border-none text-sm font-medium w-full"
+                                    className="bg-muted/30 dark:bg-muted/60 border-none text-sm font-medium w-full mt-1"
                                 />
                             </div>
-                            <div className="w-40">
+                            <div className="w-full sm:w-40">
                                 <FormLabel className="text-xs">Cantidad</FormLabel>
                                  <div className="flex items-center justify-center gap-1 mt-1">
                                     <Button type="button" variant="outline" size="icon" className="h-8 w-8" onClick={() => handleQuantityChange(index, -1)}>
@@ -401,7 +401,7 @@ export function PosForm({ inventoryItems: parentInventoryItems, onSaleComplete, 
                                     </Button>
                                 </div>
                             </div>
-                        <div className="w-28 self-end">
+                        <div className="w-full sm:w-28 mt-2 sm:mt-0 sm:self-end">
                             <FormLabel className="text-xs">Precio Total (IVA Inc.)</FormLabel>
                             <Input
                                 type="text"
@@ -410,7 +410,7 @@ export function PosForm({ inventoryItems: parentInventoryItems, onSaleComplete, 
                                 className="bg-muted/50 dark:bg-muted/80 border-none text-sm font-medium mt-1"
                             />
                             </div>
-                        <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)} aria-label="Eliminar artículo" className="self-end mb-1">
+                        <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)} aria-label="Eliminar artículo" className="sm:self-end mb-1">
                             <Trash2 className="h-4 w-4 text-destructive" />
                         </Button>
                         </div>

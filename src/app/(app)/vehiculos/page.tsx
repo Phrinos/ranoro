@@ -190,7 +190,7 @@ export default function VehiculosPage() {
 
   return (
     <>
-      <div className="mb-6 grid gap-6 md:grid-cols-3">
+      <div className="mb-6 grid gap-6 grid-cols-1 md:grid-cols-3">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
@@ -239,12 +239,12 @@ export default function VehiculosPage() {
         title="Vehículos"
         description="Administra la información de los vehículos y su historial de servicios."
         actions={
-          <div className="flex flex-wrap gap-2">
-            <Button variant="secondary" onClick={handleShowArchived}>
+          <div className="flex flex-col sm:flex-row gap-2">
+            <Button variant="secondary" onClick={handleShowArchived} className="w-full sm:w-auto">
               <Archive className="mr-2 h-4 w-4" />
               Ver Archivados
             </Button>
-            <Button onClick={() => setIsNewVehicleDialogOpen(true)}>
+            <Button onClick={() => setIsNewVehicleDialogOpen(true)} className="w-full sm:w-auto">
               <PlusCircle className="mr-2 h-4 w-4" />
               Nuevo Vehículo
             </Button>
@@ -252,7 +252,7 @@ export default function VehiculosPage() {
         }
       />
 
-      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:flex-wrap">
+      <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:flex-wrap gap-4">
         <div className="relative flex-1 min-w-[200px] sm:min-w-[300px]">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
@@ -265,7 +265,7 @@ export default function VehiculosPage() {
         </div>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="outline" className="min-w-[150px] flex-1 sm:flex-initial sm:ml-2 bg-card">
+            <Button variant="outline" className="min-w-[150px] flex-1 sm:flex-initial bg-card">
               <ListFilter className="mr-2 h-4 w-4" />
               Ordenar
             </Button>
@@ -282,7 +282,7 @@ export default function VehiculosPage() {
         </DropdownMenu>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="outline" className="min-w-[180px] flex-1 sm:flex-initial sm:ml-2 bg-card">
+            <Button variant="outline" className="min-w-[180px] flex-1 sm:flex-initial bg-card">
               <Filter className="mr-2 h-4 w-4" /> 
               Filtrar Actividad
             </Button>
@@ -298,7 +298,9 @@ export default function VehiculosPage() {
         </DropdownMenu>
       </div>
       
-      <VehiclesTable vehicles={filteredAndSortedVehicles} />
+      <div className="overflow-x-auto">
+        <VehiclesTable vehicles={filteredAndSortedVehicles} />
+      </div>
 
       <VehicleDialog
         open={isNewVehicleDialogOpen}

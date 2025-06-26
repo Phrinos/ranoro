@@ -149,7 +149,7 @@ export default function AdministrativosPage() {
 
   return (
     <>
-      <div className="mb-6 grid gap-6 md:grid-cols-2">
+      <div className="mb-6 grid gap-6 grid-cols-1 md:grid-cols-2">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
@@ -221,7 +221,7 @@ export default function AdministrativosPage() {
         </CardHeader>
         <CardContent>
           {aggregatedAdminPerformance.length > 0 ? (
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
               {aggregatedAdminPerformance.map(staffPerf => (
                 <Card key={staffPerf.staffId} className="shadow-sm border">
                   <CardHeader className="pb-3 pt-4">
@@ -305,7 +305,9 @@ export default function AdministrativosPage() {
           </div>
         </CardHeader>
         <CardContent>
+          <div className="overflow-x-auto">
             <AdministrativeStaffTable staffList={filteredAndSortedStaff} />
+          </div>
         </CardContent>
       </Card>
     </>

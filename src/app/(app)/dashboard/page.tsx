@@ -168,7 +168,6 @@ export default function DashboardPage() {
             setCapacityInfo({
                 totalRequiredHours: 0,
                 totalAvailableHours: totalAvailable,
-                capacityPercentage: 0,
                 recommendation: "Taller disponible",
             });
             setIsCapacityLoading(false);
@@ -294,7 +293,7 @@ export default function DashboardPage() {
         description="Vista del estado actual de los servicios y herramientas de IA."
       />
 
-       <div className="mb-6 grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+       <div className="mb-6 grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">Ingresos del Día</CardTitle>
