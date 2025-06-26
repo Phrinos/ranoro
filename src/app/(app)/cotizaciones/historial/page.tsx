@@ -9,7 +9,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { Search, ListFilter, CalendarIcon as CalendarDateIcon, FileText, DollarSign, Wrench, PlusCircle, Download, Copy, Ban, Edit } from "lucide-react";
+import { Search, ListFilter, CalendarIcon as CalendarDateIcon, FileText, DollarSign, Wrench, PlusCircle, Download, Copy, Ban, Edit, MessageSquare } from "lucide-react";
 import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
 import { QuoteContent } from '@/components/quote-content';
 import { placeholderQuotes, placeholderVehicles, placeholderTechnicians, placeholderServiceRecords, placeholderInventory, persistToFirestore } from "@/lib/placeholder-data"; 
@@ -478,87 +478,87 @@ export default function HistorialCotizacionesPage() {
 
             return (
               <Card key={quote.id} className="shadow-sm overflow-hidden">
-                <CardContent className="p-4 flex flex-col md:flex-row items-start justify-between gap-4">
-                  {/* Left Side: Blocks 1 & 2 */}
-                  <div className="flex flex-col gap-4 min-w-0 pr-4 md:w-1/4">
-                    {/* Block 1 */}
-                    <div>
-                      <p className="text-xs font-semibold text-muted-foreground">Folio / Fecha Cotización</p>
-                      <p><span className="font-mono">{quote.id}</span> - {format(parseISO(quote.quoteDate!), "dd MMM yy, HH:mm", { locale: es })}</p>
-                    </div>
-                    {/* Block 2 */}
-                    <div>
-                      <p className="text-xs font-semibold text-muted-foreground">Vehículo y Cliente</p>
-                      <p className="font-semibold">{vehicle ? `${vehicle.make} ${vehicle.model} ${vehicle.year}` : 'N/A'} (<span className="font-mono">{vehicle?.licensePlate}</span>)</p>
-                      <p className="text-sm">{vehicle?.ownerName} - {vehicle?.ownerPhone}</p>
-                    </div>
-                  </div>
-
-                  {/* Center: Block 3 */}
-                  <div className="flex-1 text-center px-4 min-w-0">
-                    <p className="text-xs font-semibold text-muted-foreground">Detalles del Servicio</p>
-                    <p><b>Asesor:</b> {quote.preparedByTechnicianName || 'N/A'}</p>
-                    <div><b>Tipo:</b> <Badge variant="outline">{quote.serviceType}</Badge></div>
-                    <p className="text-sm truncate" title={getQuoteDescriptionText(quote)}>
-                      <b>Servicio:</b> {getQuoteDescriptionText(quote)}
-                    </p>
-                  </div>
-
-                  {/* Right Side: Blocks 4 & 5 */}
-                  <div className="flex justify-end items-start gap-4 min-w-0 md:w-1/3">
-                    {/* Block 4 */}
-                    <div className="text-right">
-                      <p className="text-xs text-muted-foreground">Costo Estimado</p>
-                      <p className="font-bold text-lg text-foreground">{formatCurrency(quote.estimatedTotalCost)}</p>
-                      <p className="text-xs text-muted-foreground mt-1">Ganancia Estimada</p>
-                      <p className="font-semibold text-base text-green-600">{formatCurrency(quote.estimatedProfit)}</p>
-                    </div>
-                    {/* Block 5 */}
-                    <div className="flex flex-col items-end w-32">
-                      <Badge variant={quote.serviceId ? "lightRed" : "outline"} className="w-full justify-center text-center text-base mb-2">
-                        {quote.serviceId ? "Agendado" : "Cotizacion"}
-                      </Badge>
-                      <div className="flex justify-center flex-wrap gap-1">
-                        <Button variant="ghost" size="icon" onClick={() => handleViewQuote(originalQuote)} title="Ver Cotización">
-                          <FileText className="h-4 w-4" />
-                        </Button>
-                        {quote.serviceId ? (
-                          <Button variant="ghost" size="icon" onClick={() => handleEditService(quote.serviceId!)} title="Editar Servicio">
-                            <Wrench className="h-4 w-4 text-blue-600" />
-                          </Button>
-                        ) : (
-                          <>
-                            <Button variant="ghost" size="icon" onClick={() => handleEditQuote(originalQuote)} title="Editar Cotización">
-                                <Edit className="h-4 w-4" />
-                            </Button>
-                             <Button variant="ghost" size="icon" onClick={() => handleGenerateService(originalQuote)} title="Generar Servicio">
-                                <Wrench className="h-4 w-4 text-blue-600" />
-                            </Button>
-                          </>
-                        )}
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button variant="ghost" size="icon" title="Cancelar Cotización" disabled={!!quote.serviceId}>
-                              <Ban className="h-4 w-4 text-destructive" />
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>¿Cancelar esta cotización?</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                Esta acción no se puede deshacer y eliminará permanentemente la cotización {quote.id}. No se puede cancelar si ya tiene un servicio agendado.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>No</AlertDialogCancel>
-                              <AlertDialogAction onClick={() => handleDeleteQuote(quote.id)} className="bg-destructive hover:bg-destructive/90">
-                                Sí, Cancelar
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
+                <CardContent className="p-4 flex flex-col md:flex-row items-stretch gap-4 text-sm">
+                  {/* Bloques 1 y 2 */}
+                  <div className="flex flex-col gap-4 flex-[1.5]">
+                      <div>
+                          <p className="text-xs text-muted-foreground">Folio / Fecha Cotización</p>
+                          <p className="font-semibold">{quote.id} - {format(parseISO(quote.quoteDate!), "dd MMM yy, HH:mm", { locale: es })}</p>
                       </div>
-                    </div>
+                      <div>
+                          <p className="text-xs text-muted-foreground">Vehículo y Cliente</p>
+                          <p className="font-semibold">{vehicle ? `${vehicle.make} ${vehicle.model} ${vehicle.year}` : 'N/A'} (<span className="font-mono">{vehicle?.licensePlate}</span>)</p>
+                          <p className="text-muted-foreground">{vehicle?.ownerName} - {vehicle?.ownerPhone}</p>
+                      </div>
+                  </div>
+                  
+                  <Separator orientation="vertical" className="h-auto hidden md:block" />
+                  
+                  {/* Bloque 3 */}
+                  <div className="flex-[2] md:border-l md:border-r md:px-4 py-4 md:py-0 border-t md:border-t-0">
+                      <p className="text-xs text-muted-foreground">Detalles del Servicio</p>
+                      <p><span className="font-semibold">Asesor:</span> {quote.preparedByTechnicianName || 'N/A'}</p>
+                      <div><span className="font-semibold">Tipo:</span> <Badge variant="outline" className="ml-1">{quote.serviceType}</Badge></div>
+                      <p className="truncate" title={getQuoteDescriptionText(quote)}>
+                          <span className="font-semibold">Servicio:</span> {getQuoteDescriptionText(quote)}
+                      </p>
+                  </div>
+                  
+                  <Separator orientation="vertical" className="h-auto hidden md:block" />
+
+                  {/* Bloques 4 y 5 */}
+                  <div className="flex-[1.5] flex flex-col md:flex-row justify-between md:items-start gap-4">
+                      <div className="flex-grow text-left md:text-right">
+                          <p className="text-xs text-muted-foreground">Costo Estimado</p>
+                          <p className="font-bold text-lg text-primary">{formatCurrency(quote.estimatedTotalCost)}</p>
+                          <p className="text-xs text-muted-foreground mt-1">Ganancia Estimada</p>
+                          <p className="font-semibold text-base text-green-600">{formatCurrency(quote.estimatedProfit)}</p>
+                      </div>
+                      <div className="flex flex-col items-stretch md:items-end gap-2 w-full md:w-32">
+                          <Badge variant={quote.serviceId ? "lightRed" : "outline"} className="w-full justify-center text-center text-base">
+                              {quote.serviceId ? "Agendado" : "Cotizacion"}
+                          </Badge>
+                          <div className="flex justify-center flex-wrap gap-1">
+                              <Button variant="ghost" size="icon" onClick={() => handleViewQuote(originalQuote)} title="Ver Cotización">
+                                <FileText className="h-4 w-4" />
+                              </Button>
+                              {quote.serviceId ? (
+                                  <Button variant="ghost" size="icon" onClick={() => handleEditService(quote.serviceId!)} title="Editar Servicio">
+                                      <Wrench className="h-4 w-4 text-blue-600" />
+                                  </Button>
+                              ) : (
+                                  <>
+                                      <Button variant="ghost" size="icon" onClick={() => handleEditQuote(originalQuote)} title="Editar Cotización">
+                                          <Edit className="h-4 w-4" />
+                                      </Button>
+                                      <Button variant="ghost" size="icon" onClick={() => handleGenerateService(originalQuote)} title="Generar Servicio">
+                                          <Wrench className="h-4 w-4 text-blue-600" />
+                                      </Button>
+                                  </>
+                              )}
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                    <Button variant="ghost" size="icon" title="Cancelar Cotización" disabled={!!quote.serviceId}>
+                                    <Ban className="h-4 w-4 text-destructive" />
+                                    </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                    <AlertDialogTitle>¿Cancelar esta cotización?</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                        Esta acción no se puede deshacer y eliminará permanentemente la cotización {quote.id}. No se puede cancelar si ya tiene un servicio agendado.
+                                    </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                    <AlertDialogCancel>No</AlertDialogCancel>
+                                    <AlertDialogAction onClick={() => handleDeleteQuote(quote.id)} className="bg-destructive hover:bg-destructive/90">
+                                        Sí, Cancelar
+                                    </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
+                          </div>
+                      </div>
                   </div>
                 </CardContent>
               </Card>
@@ -580,7 +580,7 @@ export default function HistorialCotizacionesPage() {
           footerActions={
             <>
               <Button variant="outline" onClick={() => handleSendWhatsApp(selectedQuoteForView)}>
-                <Copy className="mr-2 h-4 w-4" /> Copiar para WhatsApp
+                <MessageSquare className="mr-2 h-4 w-4" /> Copiar para WhatsApp
               </Button>
               <Button variant="outline" onClick={handleCopyAsImage}>
                 <Copy className="mr-2 h-4 w-4" /> Copiar Imagen
