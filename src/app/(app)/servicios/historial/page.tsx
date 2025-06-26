@@ -261,10 +261,17 @@ export default function HistorialServiciosPage() {
     });
   }, []);
   
-  const handlePrintTicket = () => {
+  const handlePrintTicket = useCallback(() => {
     window.print();
-  };
+  }, []);
   
+  const handleReprintService = useCallback((service: ServiceRecord) => {
+    setCurrentServiceForTicket(service);
+    setCurrentVehicleForTicket(vehicles.find(v => v.id === service.vehicleId) || null);
+    setCurrentTechnicianForTicket(technicians.find(t => t.id === service.technicianId) || null);
+    setShowPrintTicketDialog(true);
+  }, [technicians, vehicles]);
+
   const handleCopyAsImage = async () => {
     if (!ticketContentRef.current) {
         toast({ title: "Error", description: "No se encontró el contenido del ticket.", variant: "destructive" });
@@ -570,6 +577,11 @@ export default function HistorialServiciosPage() {
                           <Button variant="ghost" size="icon" onClick={() => handleShowSheet(service)} title="Ver Hoja de Servicio">
                             <FileCheck className="h-4 w-4" />
                           </Button>
+                           {service.status === 'Completado' && (
+                            <Button variant="ghost" size="icon" onClick={() => handleReprintService(service)} title="Reimprimir Comprobante">
+                                <Printer className="h-4 w-4" />
+                            </Button>
+                          )}
                           <Button variant="ghost" size="icon" onClick={() => { setEditingService(service); setIsEditDialogOpen(true); }} title="Editar Servicio">
                             <Edit className="h-4 w-4" />
                           </Button>
