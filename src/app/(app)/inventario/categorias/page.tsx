@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -38,6 +38,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { capitalizeWords } from '@/lib/utils';
 
 export default function CategoriasInventarioPage() {
   const [categories, setCategories] = useState<InventoryCategory[]>(placeholderCategories);
@@ -75,7 +76,7 @@ export default function CategoriasInventarioPage() {
     setIsCategoryDialogOpen(true);
   };
 
-  const handleSaveCategory = async (e?: React.FormEvent) => {
+  const handleSaveCategory = (e?: React.FormEvent) => {
     e?.preventDefault();
     const categoryName = currentCategoryName.trim();
     if (!categoryName) {
@@ -126,14 +127,14 @@ export default function CategoriasInventarioPage() {
       });
     }
 
-    await persistToFirestore(['categories']);
+    persistToFirestore(['categories']);
 
     setIsCategoryDialogOpen(false);
     setEditingCategory(null);
     setCurrentCategoryName('');
   };
 
-  const handleDeleteCategory = async () => {
+  const handleDeleteCategory = () => {
     if (!categoryToDelete) return;
 
     setCategories(prev => prev.filter(cat => cat.id !== categoryToDelete.id));
@@ -142,7 +143,7 @@ export default function CategoriasInventarioPage() {
       placeholderCategories.splice(pIndex, 1);
     }
     
-    await persistToFirestore(['categories']);
+    persistToFirestore(['categories']);
 
     toast({
       title: "Categoría Eliminada",
@@ -256,7 +257,7 @@ export default function CategoriasInventarioPage() {
                 <Input
                   id="category-name"
                   value={currentCategoryName}
-                  onChange={(e) => setCurrentCategoryName(e.target.value)}
+                  onChange={(e) => setCurrentCategoryName(capitalizeWords(e.target.value))}
                   className="col-span-3"
                   placeholder="Ej: Aceites"
                 />

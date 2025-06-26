@@ -167,7 +167,7 @@ export function PosForm({ inventoryItems: parentInventoryItems, onSaleComplete, 
     setIsAddItemDialogOpen(true);
   };
 
-  const onSubmit = async (values: POSFormValues) => {
+  const onSubmit = (values: POSFormValues) => {
     const newSaleId = `SALE-${Date.now().toString(36).toUpperCase()}`;
 
     const newSaleTotalAmount = values.items.reduce((sum, item) => sum + (item.totalPrice || 0), 0);
@@ -212,7 +212,7 @@ export function PosForm({ inventoryItems: parentInventoryItems, onSaleComplete, 
       }
     });
     
-    await persistToFirestore(['sales', 'inventory']);
+    persistToFirestore(['sales', 'inventory']);
 
     onSaleComplete(newSale);
   };
@@ -310,7 +310,7 @@ export function PosForm({ inventoryItems: parentInventoryItems, onSaleComplete, 
       setIsNewInventoryItemDialogOpen(true);
   };
 
-  const handleNewItemCreated = async (newItemFormValues: InventoryItemFormValues) => {
+  const handleNewItemCreated = (newItemFormValues: InventoryItemFormValues) => {
       const newInventoryItem: InventoryItem = {
           id: `PROD-${Date.now().toString(36).toUpperCase()}`,
           ...newItemFormValues,
@@ -322,7 +322,7 @@ export function PosForm({ inventoryItems: parentInventoryItems, onSaleComplete, 
           unitType: newItemFormValues.unitType || 'units'
       };
       placeholderInventory.push(newInventoryItem);
-      await persistToFirestore(['inventory']);
+      persistToFirestore(['inventory']);
       
       setCurrentInventoryItems(prev => [...prev, newInventoryItem]);
 

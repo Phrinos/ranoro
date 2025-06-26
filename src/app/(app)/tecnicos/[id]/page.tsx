@@ -49,7 +49,7 @@ export default function TechnicianDetailPage() {
     }
   }, [technicianId]);
 
-  const handleSaveEditedTechnician = async (formData: TechnicianFormValues) => {
+  const handleSaveEditedTechnician = (formData: TechnicianFormValues) => {
     if (!technician) return;
 
     const updatedTechnicianData: Partial<Technician> = {
@@ -68,7 +68,7 @@ export default function TechnicianDetailPage() {
       placeholderTechnicians[pIndex] = updatedTechnician;
     }
     
-    await persistToFirestore(['technicians']);
+    persistToFirestore(['technicians']);
 
     setIsEditDialogOpen(false);
     toast({
@@ -77,14 +77,14 @@ export default function TechnicianDetailPage() {
     });
   };
 
-  const handleArchiveTechnician = async () => {
+  const handleArchiveTechnician = () => {
     if (!technician) return;
     const techIndex = placeholderTechnicians.findIndex(t => t.id === technician.id);
     if (techIndex > -1) {
       placeholderTechnicians[techIndex].isArchived = true;
     }
 
-    await persistToFirestore(['technicians']);
+    persistToFirestore(['technicians']);
 
     toast({
       title: "Staff Archivado",
