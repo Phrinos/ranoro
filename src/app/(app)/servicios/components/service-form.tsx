@@ -56,7 +56,7 @@ import { ServiceSheetContent } from '@/components/service-sheet-content';
 import { Checkbox } from "@/components/ui/checkbox";
 import Image from 'next/image';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
-import { db } from '@root/lib/firebaseClient.js';
+import { db } from '@/lib/firebasePublic.js';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AddSupplyDialog } from './add-supply-dialog';
 import { QuoteContent } from '@/components/quote-content';
@@ -587,7 +587,7 @@ export function ServiceForm({
     vehicle: Vehicle | null
   ) => {
     if (!db) {
-      console.error("Public save failed: Firebase (db) no está configurado en lib/firebaseClient.js");
+      console.error("Public save failed: Firebase (db) no está configurado en lib/firebasePublic.js");
        toast({
         title: "Configuración Incompleta",
         description: "La base de datos (Firebase) no está configurada. No se pudo crear el documento público.",
@@ -837,8 +837,8 @@ export function ServiceForm({
     
     setIsEnhancingText(fieldName);
     try {
-        const enhancedText = await enhanceText({ text: currentValue, context });
-        form.setValue(fieldName, enhancedText, { shouldDirty: true });
+        const result = await enhanceText({ text: currentValue, context });
+        form.setValue(fieldName, result, { shouldDirty: true });
         toast({ title: 'Texto Mejorado', description: 'La IA ha corregido y mejorado el texto.' });
     } catch (e) {
         console.error("Error enhancing text:", e);
@@ -1816,4 +1816,3 @@ const SafetyCheckRow = ({ name, label, control, isReadOnly }: { name: string; la
     </div>
   );
 };
-
