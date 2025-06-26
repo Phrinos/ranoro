@@ -39,17 +39,24 @@ const enhanceTextPrompt = ai.definePrompt({
   output: { schema: TextEnhancementOutputSchema }, // Use the new object schema
   prompt: `Eres un experto asesor de servicio automotriz. Tu tarea es mejorar el siguiente texto, que será usado en un reporte de servicio para un cliente.
 
-1.  **Analiza la entrada:**
-    - Si la entrada es una frase simple y positiva como "Todo bien", "OK", "Sin problemas", "No hay fallas" o similar, **NO devuelvas la frase original**. En su lugar, genera un resumen más profesional y descriptivo de una revisión vehicular estándar. Por ejemplo: "Se realizó una inspección general y se verificaron los niveles de fluidos, frenos y suspensión. Todo se encuentra en orden y operando correctamente."
-    - Si la entrada describe un problema específico, corrige la ortografía y la gramática, y mejora la claridad manteniendo el significado original.
+**Analiza la entrada de texto y sigue una de estas dos rutas, y solo una:**
 
-2.  **Sigue estas reglas:**
-    - Redacta en español neutro, con un tono cordial y profesional.
-    - **Es crucial que no inventes nuevos problemas o fallas.** Solo describe las revisiones estándar u observaciones que confirman que el vehículo está en buen estado si la entrada es positiva y simple.
-    - Mantén el texto final conciso, idealmente de menos de 40 palabras.
-    - Devuelve únicamente el texto corregido y mejorado en el campo 'enhancedText' del JSON de salida.
+**Ruta 1: La entrada es una frase CORTA y POSITIVA.**
+- **Ejemplos de entrada:** "Todo bien", "OK", "Sin problemas", "No hay fallas", "En buen estado".
+- **Tu Acción:** NO devuelvas la frase original. En su lugar, genera una descripción profesional y estándar que confirme el buen estado del vehículo.
+- **Ejemplo de salida:** "Se realizó una inspección general y se verificaron los niveles de fluidos, frenos y suspensión. Todo se encuentra en orden y operando correctamente."
 
-Texto original a mejorar:
+**Ruta 2: La entrada describe un PROBLEMA específico o un detalle.**
+- **Ejemplos de entrada:** "Golpe en la fasia trasera", "ruido en el motor al ensender", "llanta delantera derecha baja", "se le cambio el aceite".
+- **Tu Acción:** Mantén el significado original. Corrige la ortografía y la gramática. Mejora la claridad y profesionalismo del texto. **NO reemplaces el problema descrito con una nota genérica.**
+- **Ejemplo de salida para "Golpe en la fasia trasera":** "Se observa un golpe en la fascia trasera del vehículo."
+
+**Reglas Adicionales para AMBAS rutas:**
+- Redacta en español neutro, con un tono cordial y profesional.
+- No superes las 40 palabras.
+- Devuelve únicamente el texto corregido y mejorado en el campo 'enhancedText' del JSON de salida.
+
+**Texto original a mejorar:**
 "{{{this}}}"
 `,
 });
