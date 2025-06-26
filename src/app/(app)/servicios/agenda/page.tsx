@@ -482,9 +482,9 @@ export default function AgendaServiciosPage() {
                           <Separator orientation="vertical" className="hidden md:block h-auto"/>
 
                           {/* Block 2: Vehículo y Servicio (Alineado a la Izquierda) */}
-                          <div className="p-4 flex-grow space-y-1 text-left border-b md:border-b-0">
-                              <p className="text-sm text-muted-foreground">{vehicle?.ownerName} - {vehicle?.ownerPhone}</p>
+                          <div className="p-4 flex flex-col justify-center flex-grow space-y-2 text-left border-b md:border-b-0">
                               <p className="font-bold text-lg">{vehicle ? `${vehicle.licensePlate} - ${vehicle.make} ${vehicle.model} ${vehicle.year}` : 'N/A'}</p>
+                              <p className="text-sm text-muted-foreground">{vehicle?.ownerName} - {vehicle?.ownerPhone}</p>
                               <p className="text-sm text-foreground" title={getServiceDescriptionText(service)}>
                                   <span className="font-semibold">{service.serviceType}:</span> {getServiceDescriptionText(service)}
                               </p>
@@ -503,12 +503,12 @@ export default function AgendaServiciosPage() {
                           <Separator orientation="vertical" className="hidden md:block h-auto"/>
                           
                           {/* Block 4: Estatus, Asesor y Acciones (Centrado) */}
-                          <div className="p-4 flex flex-col justify-center items-center text-center space-y-2 border-b md:border-b-0 md:border-l w-full md:w-48 flex-shrink-0">
+                          <div className="p-4 flex flex-col justify-center items-center text-center space-y-2 border-b md:border-b-0 md:border-l w-full md:w-56 flex-shrink-0">
                              <Badge variant="default" className="w-full justify-center text-center text-sm">
                                {service.status}
                              </Badge>
                              <p className="text-xs text-muted-foreground">Asesor: {service.serviceAdvisorName || 'N/A'}</p>
-                            <div className="flex justify-center flex-wrap gap-1 mt-1">
+                            <div className="flex justify-center items-center gap-1 mt-1">
                                 {originalQuote && (
                                   <Button variant="ghost" size="icon" title="Ver Cotización" onClick={() => handleViewQuote(service.id)}>
                                       <FileText className="h-4 w-4" />
