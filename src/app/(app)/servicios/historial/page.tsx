@@ -65,7 +65,7 @@ export default function HistorialServiciosPage() {
   }, []);
 
   const filteredAndSortedServices = useMemo(() => {
-    let filtered = [...allServices];
+    let filtered = [...allServices].filter(s => s.status === 'Reparando' || s.status === 'Completado' || s.status === 'Cancelado');
 
     if (dateRange?.from) {
       filtered = filtered.filter(service => {
@@ -104,7 +104,7 @@ export default function HistorialServiciosPage() {
         case "serviceDate_asc": 
           return compareAsc(parseISO(a.serviceDate), parseISO(b.serviceDate));
         case "serviceDate_desc": {
-          const statusOrder = { "Agendado": 1, "Reparando": 2, "Completado": 3, "Cancelado": 3 };
+          const statusOrder = { "Reparando": 1, "Completado": 2, "Cancelado": 3 };
           const statusAVal = statusOrder[a.status as keyof typeof statusOrder] || 4;
           const statusBVal = statusOrder[b.status as keyof typeof statusOrder] || 4;
 
@@ -128,7 +128,7 @@ export default function HistorialServiciosPage() {
         case "status_asc": return a.status.localeCompare(b.status);
         case "status_desc": return b.status.localeCompare(a.status);
         default: {
-          const defaultStatusOrderSort = { "Agendado": 1, "Reparando": 2, "Completado": 3, "Cancelado": 3 };
+          const defaultStatusOrderSort = { "Reparando": 1, "Completado": 2, "Cancelado": 3 };
           const defaultStatusASortVal = defaultStatusOrderSort[a.status as keyof typeof defaultStatusOrderSort] || 4;
           const defaultStatusBSortVal = defaultStatusOrderSort[b.status as keyof typeof defaultStatusOrderSort] || 4;
 

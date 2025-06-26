@@ -8,7 +8,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Search, ListFilter, CalendarIcon as CalendarDateIcon, FileText, DollarSign, MessageSquare, PlusCircle, Download, Wrench, Copy } from "lucide-react";
+import { Search, ListFilter, CalendarIcon as CalendarDateIcon, FileText, DollarSign, MessageSquare, PlusCircle, Download, Wrench, Copy, Ban, Edit } from "lucide-react";
 import { QuotesTable } from "../components/quotes-table"; 
 import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
 import { QuoteContent } from '@/components/quote-content';
@@ -51,6 +51,9 @@ export default function HistorialCotizacionesPage() {
 
   const [isGenerateServiceDialogOpen, setIsGenerateServiceDialogOpen] = useState(false);
   const [quoteToConvert, setQuoteToConvert] = useState<QuoteRecord | null>(null);
+
+  const [isServiceDialogOpen, setIsServiceDialogOpen] = useState(false);
+  const [editingService, setEditingService] = useState<ServiceRecord | null>(null);
 
   const [vehicleForSelectedQuote, setVehicleForSelectedQuote] = useState<Vehicle | null>(null);
   
@@ -181,6 +184,16 @@ export default function HistorialCotizacionesPage() {
     setQuoteToConvert(quote);
     setIsGenerateServiceDialogOpen(true);
   }, [toast]);
+  
+  const handleEditService = useCallback((serviceId: string) => {
+    const serviceToEdit = placeholderServiceRecords.find(s => s.id === serviceId);
+    if (serviceToEdit) {
+        setEditingService(serviceToEdit);
+        setIsServiceDialogOpen(true);
+    } else {
+        toast({ title: "Error", description: "No se pudo encontrar el servicio correspondiente.", variant: "destructive" });
+    }
+  }, [toast]);
 
   const handleSaveEditedQuote = useCallback(async (data: ServiceRecord | QuoteRecord) => {
       // If the form submits a record with a status, it's being converted to a service
@@ -238,6 +251,22 @@ export default function HistorialCotizacionesPage() {
       toast({ title: "Servicio Generado", description: `Se creó el servicio ${newServiceId} desde la cotización.` });
       setIsGenerateServiceDialogOpen(false);
   }, [toast, quoteToConvert]);
+
+  const handleServiceUpdatedFromDialog = useCallback(async (data: ServiceRecord | QuoteRecord) => {
+    if (!('status' in data)) {
+      toast({ title: "Error de Tipo", variant: "destructive" });
+      return;
+    }
+    const serviceData = data as ServiceRecord;
+    const serviceIndex = placeholderServiceRecords.findIndex(s => s.id === serviceData.id);
+    if (serviceIndex > -1) {
+      placeholderServiceRecords[serviceIndex] = serviceData;
+      await persistToFirestore(['serviceRecords']);
+      toast({ title: "Servicio Actualizado", description: `El servicio ${serviceData.id} ha sido actualizado.` });
+    }
+    setIsServiceDialogOpen(false);
+    setEditingService(null);
+  }, [toast]);
 
 
   const generateAndDownloadPdf = useCallback(async (quoteToPrint: QuoteRecord | null) => {
@@ -453,6 +482,7 @@ export default function HistorialCotizacionesPage() {
         onEditQuote={handleEditQuote}
         onGenerateService={handleGenerateService}
         onDeleteQuote={handleDeleteQuote}
+        onEditService={handleEditService}
       />
 
       {isViewQuoteDialogOpen && selectedQuoteForView && (
@@ -510,6 +540,19 @@ export default function HistorialCotizacionesPage() {
             onSave={handleSaveServiceFromQuote}
             mode="service"
           />
+      )}
+      
+      {isServiceDialogOpen && editingService && (
+        <ServiceDialog
+            open={isServiceDialogOpen}
+            onOpenChange={setIsServiceDialogOpen}
+            service={editingService} 
+            vehicles={vehicles} 
+            technicians={technicians}
+            inventoryItems={inventoryItems}
+            onSave={handleServiceUpdatedFromDialog}
+            mode="service"
+        />
       )}
 
     </>
