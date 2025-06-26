@@ -478,47 +478,53 @@ export default function HistorialCotizacionesPage() {
 
             return (
               <Card key={quote.id} className="shadow-sm overflow-hidden">
-                <CardContent className="p-4 flex flex-col md:flex-row items-stretch gap-4 text-sm">
-                  {/* Bloques 1 y 2 */}
-                  <div className="flex flex-col gap-4 flex-[1.5]">
+                <CardContent className="p-0">
+                  <div className="flex flex-col md:flex-row items-stretch text-sm">
+                    {/* Bloque 1 & 2 */}
+                    <div className="flex-[1.5] p-4 flex flex-col gap-4">
                       <div>
-                          <p className="text-xs text-muted-foreground">Folio / Fecha Cotización</p>
-                          <p className="font-semibold">{quote.id} - {format(parseISO(quote.quoteDate!), "dd MMM yy, HH:mm", { locale: es })}</p>
+                        <p className="text-xs text-muted-foreground">Folio / Fecha Cotización</p>
+                        <p className="font-semibold">{quote.id} - {format(parseISO(quote.quoteDate!), "dd MMM yy, HH:mm", { locale: es })}</p>
                       </div>
+                      <Separator className="md:hidden"/>
                       <div>
-                          <p className="text-xs text-muted-foreground">Vehículo y Cliente</p>
-                          <p className="font-semibold">{vehicle ? `${vehicle.make} ${vehicle.model} ${vehicle.year}` : 'N/A'} (<span className="font-mono">{vehicle?.licensePlate}</span>)</p>
-                          <p className="text-muted-foreground">{vehicle?.ownerName} - {vehicle?.ownerPhone}</p>
+                        <p className="text-xs text-muted-foreground">Vehículo y Cliente</p>
+                        <p className="font-semibold">{vehicle ? `${vehicle.make} ${vehicle.model} ${vehicle.year}` : 'N/A'} (<span className="font-mono">{vehicle?.licensePlate}</span>)</p>
+                        <p className="text-muted-foreground">{vehicle?.ownerName} - {vehicle?.ownerPhone}</p>
                       </div>
-                  </div>
-                  
-                  <Separator orientation="vertical" className="h-auto hidden md:block" />
-                  
-                  {/* Bloque 3 */}
-                  <div className="flex-[2] md:border-l md:border-r md:px-4 py-4 md:py-0 border-t md:border-t-0">
+                    </div>
+
+                    <Separator orientation="vertical" className="h-auto hidden md:block" />
+
+                    {/* Bloque 3 */}
+                    <div className="flex-[2] p-4 border-y md:border-y-0 md:border-x">
                       <p className="text-xs text-muted-foreground">Detalles del Servicio</p>
                       <p><span className="font-semibold">Asesor:</span> {quote.preparedByTechnicianName || 'N/A'}</p>
-                      <div><span className="font-semibold">Tipo:</span> <Badge variant="outline" className="ml-1">{quote.serviceType}</Badge></div>
+                      <div>
+                        <span className="font-semibold">Tipo:</span>
+                        <div className="inline-block ml-1"><Badge variant="outline">{quote.serviceType}</Badge></div>
+                      </div>
                       <p className="truncate" title={getQuoteDescriptionText(quote)}>
                           <span className="font-semibold">Servicio:</span> {getQuoteDescriptionText(quote)}
                       </p>
-                  </div>
-                  
-                  <Separator orientation="vertical" className="h-auto hidden md:block" />
+                    </div>
 
-                  {/* Bloques 4 y 5 */}
-                  <div className="flex-[1.5] flex flex-col md:flex-row justify-between md:items-start gap-4">
-                      <div className="flex-grow text-left md:text-right">
+                    <Separator orientation="vertical" className="h-auto hidden md:block" />
+                    
+                    {/* Bloque 4 & 5 Wrapper */}
+                    <div className="flex-[1.5] p-4 flex flex-col md:flex-row justify-between gap-4">
+                       <div className="flex-grow text-left">
                           <p className="text-xs text-muted-foreground">Costo Estimado</p>
                           <p className="font-bold text-lg text-primary">{formatCurrency(quote.estimatedTotalCost)}</p>
                           <p className="text-xs text-muted-foreground mt-1">Ganancia Estimada</p>
                           <p className="font-semibold text-base text-green-600">{formatCurrency(quote.estimatedProfit)}</p>
-                      </div>
-                      <div className="flex flex-col items-stretch md:items-end gap-2 w-full md:w-32">
+                       </div>
+                       <Separator className="md:hidden"/>
+                       <div className="flex flex-col items-stretch md:items-end justify-between gap-2 w-full md:w-32">
                           <Badge variant={quote.serviceId ? "lightRed" : "outline"} className="w-full justify-center text-center text-base">
                               {quote.serviceId ? "Agendado" : "Cotizacion"}
                           </Badge>
-                          <div className="flex justify-center flex-wrap gap-1">
+                          <div className="flex justify-end flex-wrap gap-1">
                               <Button variant="ghost" size="icon" onClick={() => handleViewQuote(originalQuote)} title="Ver Cotización">
                                 <FileText className="h-4 w-4" />
                               </Button>
@@ -558,7 +564,8 @@ export default function HistorialCotizacionesPage() {
                                 </AlertDialogContent>
                               </AlertDialog>
                           </div>
-                      </div>
+                       </div>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
