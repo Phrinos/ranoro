@@ -181,7 +181,7 @@ export default function NuevoServicioPage() {
             ref={serviceSheetRef}
             service={currentServiceForTicket}
             vehicle={currentVehicle || undefined}
-            workshopInfo={workshopInfo}
+            workshopInfo={workshopInfo as WorkshopInfo}
           />
         </PrintTicketDialog>
       )}
@@ -209,6 +209,7 @@ export default function NuevoServicioPage() {
             service={currentServiceForTicket} 
             vehicle={currentVehicle || undefined}
             technician={currentTechnician || undefined}
+            previewWorkshopInfo={workshopInfo}
           />
         </PrintTicketDialog>
       )}

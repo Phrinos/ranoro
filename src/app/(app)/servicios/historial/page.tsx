@@ -64,6 +64,14 @@ export default function HistorialServiciosPage() {
   
   const [editingService, setEditingService] = useState<ServiceRecord | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [workshopInfo, setWorkshopInfo] = useState<WorkshopInfo | {}>({});
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const stored = localStorage.getItem('workshopTicketInfo');
+      if (stored) setWorkshopInfo(JSON.parse(stored));
+    }
+  }, []);
 
   useEffect(() => {
     setAllServices(placeholderServiceRecords);
@@ -635,6 +643,7 @@ export default function HistorialServiciosPage() {
             service={currentServiceForTicket} 
             vehicle={currentVehicleForTicket || undefined}
             technician={currentTechnicianForTicket || undefined}
+            previewWorkshopInfo={workshopInfo}
           />
         </PrintTicketDialog>
       )}
@@ -677,7 +686,7 @@ export default function HistorialServiciosPage() {
             </>
           }
       >
-          {serviceForSheet && <ServiceSheetContent service={serviceForSheet} vehicle={vehicles.find(v => v.id === serviceForSheet.vehicleId)} />}
+          {serviceForSheet && <ServiceSheetContent service={serviceForSheet} vehicle={vehicles.find(v => v.id === serviceForSheet.vehicleId)} workshopInfo={workshopInfo} />}
       </PrintTicketDialog>
     </>
   );

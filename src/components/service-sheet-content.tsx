@@ -20,8 +20,6 @@ const initialWorkshopInfo: WorkshopInfo = {
   logoUrl: "/ranoro-logo.png" 
 };
 
-const LOCALSTORAGE_KEY = 'workshopTicketInfo';
-
 const inspectionGroups = [
   { title: "LUCES", items: [
     { name: "safetyInspection.luces_altas_bajas_niebla", label: "1. ALTAS, BAJAS Y NIEBLA" },
@@ -184,27 +182,9 @@ interface ServiceSheetContentProps {
 
 export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheetContentProps>(
   ({ service, vehicle, workshopInfo: workshopInfoProp }, ref) => {
-    const [workshopInfo, setWorkshopInfo] = useState<WorkshopInfo>(initialWorkshopInfo);
-
-    useEffect(() => {
-        if (workshopInfoProp) {
-          setWorkshopInfo({ ...initialWorkshopInfo, ...workshopInfoProp });
-        } else if (typeof window !== 'undefined') {
-          const storedInfo = localStorage.getItem(LOCALSTORAGE_KEY);
-          if (storedInfo) {
-            try {
-              setWorkshopInfo({ ...initialWorkshopInfo, ...JSON.parse(storedInfo) });
-            } catch (e) {
-              console.error("Failed to parse workshop info from localStorage", e);
-              setWorkshopInfo(initialWorkshopInfo);
-            }
-          } else {
-            setWorkshopInfo(initialWorkshopInfo);
-          }
-        } else {
-            setWorkshopInfo(initialWorkshopInfo);
-        }
-    }, [workshopInfoProp]);
+    // Directly use the prop if available, otherwise use the initial default.
+    // This removes the need for useState and useEffect.
+    const effectiveWorkshopInfo = { ...initialWorkshopInfo, ...workshopInfoProp };
     
     const formatCurrency = (amount: number | undefined) => {
         if (amount === undefined) return '$0.00';
@@ -253,7 +233,7 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
       <div className="flex flex-col min-h-[10in]">
         <header className="mb-4 pb-2 border-b-2 border-black">
           <div className="flex justify-between items-center">
-            <img src={workshopInfo.logoUrl} alt={`${workshopInfo.name} Logo`} className="h-16" data-ai-hint="workshop logo"/>
+            <img src={effectiveWorkshopInfo.logoUrl} alt={`${effectiveWorkshopInfo.name} Logo`} className="h-16" data-ai-hint="workshop logo"/>
             <div className="text-right">
               <h1 className="text-xl font-bold">ORDEN DE SERVICIO</h1>
               <p className="font-mono text-base">Folio: <span className="font-bold">{service.id}</span></p>
@@ -261,11 +241,11 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
           </div>
           <div className="flex justify-between items-end mt-2">
              <div className="space-y-0.5 leading-tight text-base">
-                <p className="font-bold text-lg">{workshopInfo.name}</p>
-                <p>{workshopInfo.addressLine1}</p>
-                {workshopInfo.addressLine2 && <p>{workshopInfo.addressLine2}</p>}
-                <p>{workshopInfo.cityState}</p>
-                <p>Tel: {workshopInfo.phone}</p>
+                <p className="font-bold text-lg">{effectiveWorkshopInfo.name}</p>
+                <p>{effectiveWorkshopInfo.addressLine1}</p>
+                {effectiveWorkshopInfo.addressLine2 && <p>{effectiveWorkshopInfo.addressLine2}</p>}
+                <p>{effectiveWorkshopInfo.cityState}</p>
+                <p>Tel: {effectiveWorkshopInfo.phone}</p>
              </div>
              <div className="text-base text-right text-[10px]">
                 <p><span className="font-bold">Fecha de Recepción:</span> {formattedServiceDate}</p>
@@ -401,7 +381,7 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
     const SafetyChecklistContent = showChecklist ? (
         <SafetyChecklistDisplay 
             inspection={service.safetyInspection!}
-            workshopInfo={workshopInfo}
+            workshopInfo={effectiveWorkshopInfo}
             service={service}
             vehicle={vehicle}
         />
