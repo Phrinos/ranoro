@@ -3,7 +3,7 @@
 
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Edit, Ban, Clock, Search as SearchIcon, Calendar as CalendarIcon, CalendarCheck, CheckCircle, Wrench, Printer, Tag, FileText, BrainCircuit, Loader2, AlertTriangle, List, CalendarDays, MessageSquare, Copy, Pencil, FileCheck } from "lucide-react";
+import { PlusCircle, Edit, Ban, Clock, Search as SearchIcon, Calendar as CalendarIcon, CalendarCheck, CheckCircle, Wrench, Printer, Tag, FileText, BrainCircuit, Loader2, AlertTriangle, List, CalendarDays, MessageSquare, Copy, Pencil } from "lucide-react";
 import {
   placeholderServiceRecords,
   placeholderVehicles,
@@ -474,15 +474,14 @@ export default function AgendaServiciosPage() {
                       <CardContent className="p-0">
                         <div className="flex flex-col md:flex-row text-sm">
                           <div className="p-4 flex flex-col justify-center items-center text-center w-full md:w-48 flex-shrink-0">
-                              <p className="text-xs text-gray-500">Folio: {service.id}</p>
-                              <p className="text-xl font-semibold text-foreground">{format(parseISO(service.serviceDate), "HH:mm 'hrs'", { locale: es })}</p>
+                              <p className="text-muted-foreground text-sm font-bold">{format(parseISO(service.serviceDate), "HH:mm 'hrs'", { locale: es })}</p>
                           </div>
                           
                           <Separator orientation="vertical" className="hidden md:block h-auto"/>
 
-                          <div className="p-4 flex flex-col justify-center flex-grow space-y-2">
+                          <div className="p-4 flex flex-col justify-start flex-grow space-y-1">
                               <p className="text-sm text-gray-500">{vehicle?.ownerName} - {vehicle?.ownerPhone}</p>
-                              <p className="font-bold text-2xl text-black">{vehicle ? `${vehicle.licensePlate} - ${vehicle.make} ${vehicle.model} ${vehicle.year}` : 'N/A'}</p>
+                              <p className="font-bold text-lg">{vehicle ? `${vehicle.licensePlate} - ${vehicle.make} ${vehicle.model} ${vehicle.year}` : 'N/A'}</p>
                               <p className="text-sm text-foreground">
                                   <span className="font-semibold">{service.serviceType}:</span> {getServiceDescriptionText(service)}
                               </p>
@@ -492,55 +491,55 @@ export default function AgendaServiciosPage() {
                           
                           <div className="p-4 flex flex-col justify-center items-center text-center w-full md:w-48 flex-shrink-0">
                             <p className="text-xs text-muted-foreground">Costo Estimado</p>
-                            <p className="font-bold text-2xl text-black">{formatCurrency(service.totalCost)}</p>
-                            <p className="text-xs text-muted-foreground mt-1">Ganancia Estimada</p>
-                            <p className="font-semibold text-green-600">{formatCurrency(service.serviceProfit)}</p>
+                            <p className="font-bold text-black">{formatCurrency(service.totalCost)}</p>
                           </div>
 
                           <Separator orientation="vertical" className="hidden md:block h-auto"/>
                           
-                          <div className="p-4 flex flex-col justify-center items-center text-center border-b md:border-b-0 md:border-l w-full md:w-56 flex-shrink-0">
+                          <div className="p-4 flex flex-col justify-center items-center text-center border-b md:border-b-0 md:border-l w-full md:w-56 flex-shrink-0 space-y-2">
                              <Badge variant="default" className="w-full justify-center text-center text-sm">
                                {service.status}
                              </Badge>
-                             <p className="text-xs text-gray-500 mt-4">Asesor: {service.serviceAdvisorName || 'N/A'}</p>
-                            <div className="flex justify-center items-center gap-1 mt-2">
-                                {originalQuote && (
-                                  <Button variant="ghost" size="icon" title="Ver Cotización" onClick={() => handleViewQuote(service.id)}>
-                                      <FileText className="h-4 w-4" />
-                                  </Button>
-                                )}
-                                <Button variant="ghost" size="icon" title="Ver Hoja de Servicio" onClick={() => handleShowSheet(service)}>
-                                  <FileCheck className="h-4 w-4" />
-                                </Button>
-                                <Button variant="ghost" size="icon" title="Ingresar a Taller" onClick={() => handleOpenEditDialog(service)} className="text-blue-600 hover:text-blue-700">
-                                  <Wrench className="h-4 w-4" />
-                                </Button>
-                                <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                    <Button variant="ghost" size="icon" title="Cancelar Cita" disabled={service.status === 'Completado' || service.status === 'Cancelado'}>
-                                    <Ban className="h-4 w-4 text-destructive" />
+                             <div className="w-full space-y-2">
+                                <p className="text-xs text-gray-500 mt-2">Asesor: {service.serviceAdvisorName || 'N/A'}</p>
+                                <div className="flex justify-center items-center gap-1 mt-2">
+                                    {originalQuote && (
+                                      <Button variant="ghost" size="icon" title="Ver Cotización" onClick={() => handleViewQuote(service.id)}>
+                                          <FileText className="h-4 w-4" />
+                                      </Button>
+                                    )}
+                                    <Button variant="ghost" size="icon" title="Ver Hoja de Servicio" onClick={() => handleShowSheet(service)}>
+                                      <Edit className="h-4 w-4" />
                                     </Button>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent>
-                                    <AlertDialogHeader>
-                                    <AlertDialogTitle>¿Cancelar esta cita?</AlertDialogTitle>
-                                    <AlertDialogDescription>
-                                        Esta acción marcará el servicio {service.id} como cancelado y no se podrá revertir.
-                                        <div className="mt-4">
-                                        <Label htmlFor={`cancel-reason-agenda-${service.id}`} className="text-left font-semibold">Motivo de la cancelación (obligatorio)</Label>
-                                        <Textarea id={`cancel-reason-agenda-${service.id}`} value={cancellationReason} onChange={(e) => setCancellationReason(e.target.value)} placeholder="Ej: El cliente no se presentó..." className="mt-2" />
-                                        </div>
-                                    </AlertDialogDescription>
-                                    </AlertDialogHeader>
-                                    <AlertDialogFooter>
-                                    <AlertDialogCancel onClick={() => setCancellationReason('')}>No</AlertDialogCancel>
-                                    <AlertDialogAction onClick={() => { handleCancelService(service.id, cancellationReason); setCancellationReason(''); }} disabled={!cancellationReason.trim()} className="bg-destructive hover:bg-destructive/90">
-                                        Sí, Cancelar Cita
-                                    </AlertDialogAction>
-                                    </AlertDialogFooter>
-                                </AlertDialogContent>
-                                </AlertDialog>
+                                    <Button variant="ghost" size="icon" title="Ingresar a Taller" onClick={() => handleOpenEditDialog(service)} className="text-blue-600 hover:text-blue-700">
+                                      <Wrench className="h-4 w-4" />
+                                    </Button>
+                                    <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                        <Button variant="ghost" size="icon" title="Cancelar Cita" disabled={service.status === 'Completado' || service.status === 'Cancelado'}>
+                                        <Ban className="h-4 w-4 text-destructive" />
+                                        </Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                        <AlertDialogHeader>
+                                        <AlertDialogTitle>¿Cancelar esta cita?</AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                            Esta acción marcará el servicio {service.id} como cancelado y no se podrá revertir.
+                                            <div className="mt-4">
+                                            <Label htmlFor={`cancel-reason-agenda-${service.id}`} className="text-left font-semibold">Motivo de la cancelación (obligatorio)</Label>
+                                            <Textarea id={`cancel-reason-agenda-${service.id}`} value={cancellationReason} onChange={(e) => setCancellationReason(e.target.value)} placeholder="Ej: El cliente no se presentó..." className="mt-2" />
+                                            </div>
+                                        </AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                        <AlertDialogCancel onClick={() => setCancellationReason('')}>No</AlertDialogCancel>
+                                        <AlertDialogAction onClick={() => { handleCancelService(service.id, cancellationReason); setCancellationReason(''); }} disabled={!cancellationReason.trim()} className="bg-destructive hover:bg-destructive/90">
+                                            Sí, Cancelar Cita
+                                        </AlertDialogAction>
+                                        </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                    </AlertDialog>
+                                </div>
                             </div>
                           </div>
                         </div>
