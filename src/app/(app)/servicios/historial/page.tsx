@@ -13,7 +13,7 @@ import { Search, ListFilter, CalendarIcon as CalendarDateIcon, DollarSign, Trend
 import { ServicesTable } from "../components/services-table"; 
 import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
 import { TicketContent } from '@/components/ticket-content';
-import { placeholderServiceRecords, placeholderVehicles, placeholderTechnicians, placeholderInventory, persistToFirestore, AUTH_USER_LOCALSTORAGE_KEY } from "@/lib/placeholder-data";
+import { placeholderServiceRecords, placeholderVehicles, placeholderTechnicians, placeholderInventory, persistToFirestore, AUTH_USER_LOCALSTORAGE_KEY, placeholderQuotes } from "@/lib/placeholder-data";
 import type { ServiceRecord, Vehicle, Technician, InventoryItem, QuoteRecord, WorkshopInfo, User } from "@/types";
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { useToast } from "@/hooks/use-toast";
@@ -26,6 +26,8 @@ import { cn } from "@/lib/utils";
 import { ServiceSheetContent } from '@/components/service-sheet-content';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebasePublic.js';
+import { QuoteContent } from '@/components/quote-content';
+
 
 type ServiceSortOption = 
   | "serviceDate_desc" | "serviceDate_asc"
@@ -55,6 +57,9 @@ export default function HistorialServiciosPage() {
   
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [serviceForSheet, setServiceForSheet] = useState<ServiceRecord | null>(null);
+  
+  const [isQuoteViewOpen, setIsQuoteViewOpen] = useState(false);
+  const [quoteForView, setQuoteForView] = useState<QuoteRecord | null>(null);
 
 
   useEffect(() => {
@@ -331,6 +336,11 @@ export default function HistorialServiciosPage() {
     setIsSheetOpen(true);
   }, [toast]);
 
+  const handleShowQuote = useCallback((quote: QuoteRecord) => {
+    setQuoteForView(quote);
+    setIsQuoteViewOpen(true);
+  }, []);
+
   const handleShareService = useCallback(async (service: ServiceRecord | null) => {
     if (!service) return;
 
@@ -492,6 +502,8 @@ export default function HistorialServiciosPage() {
         onServiceCancelled={handleCancelService}
         onVehicleCreated={handleVehicleCreated}
         onShowSheet={handleShowSheet}
+        quotes={placeholderQuotes}
+        onShowQuote={handleShowQuote}
         isHistoryView={true}
       />
       
@@ -518,6 +530,27 @@ export default function HistorialServiciosPage() {
             service={currentServiceForTicket} 
             vehicle={currentVehicleForTicket || undefined}
             technician={currentTechnicianForTicket || undefined}
+          />
+        </PrintTicketDialog>
+      )}
+
+       {isQuoteViewOpen && quoteForView && (
+        <PrintTicketDialog
+          open={isQuoteViewOpen}
+          onOpenChange={setIsQuoteViewOpen}
+          title={`Cotización Original: ${quoteForView.id}`}
+          dialogContentClassName="printable-quote-dialog"
+          onDialogClose={() => setQuoteForView(null)}
+          footerActions={
+            <Button onClick={() => window.print()}>
+              <Printer className="mr-2 h-4 w-4" /> Imprimir Cotización
+            </Button>
+          }
+        >
+          <QuoteContent
+            quote={quoteForView}
+            vehicle={vehicles.find(v => v.id === quoteForView.vehicleId)}
+            workshopInfo={quoteForView.workshopInfo}
           />
         </PrintTicketDialog>
       )}
