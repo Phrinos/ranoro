@@ -821,14 +821,23 @@ export function ServiceForm({
   };
   
   const handleEnhanceText = async (fieldName: 'notes' | 'vehicleConditions' | 'safetyInspection.inspectionNotes') => {
+    const contextMap = {
+      'notes': 'Notas Adicionales del Servicio',
+      'vehicleConditions': 'Condiciones del Vehículo (al recibir)',
+      'safetyInspection.inspectionNotes': 'Observaciones de la Inspección de Seguridad'
+    };
+
+    const context = contextMap[fieldName];
     const currentValue = form.getValues(fieldName);
-    if (!currentValue || currentValue.trim().length < 5) {
+
+    if (!currentValue || currentValue.trim().length < 2) {
         toast({ title: 'No hay suficiente texto', description: 'Escriba algo antes de mejorar el texto.', variant: 'default' });
         return;
     }
+    
     setIsEnhancingText(fieldName);
     try {
-        const enhancedText = await enhanceText(currentValue);
+        const enhancedText = await enhanceText({ text: currentValue, context });
         form.setValue(fieldName, enhancedText, { shouldDirty: true });
         toast({ title: 'Texto Mejorado', description: 'La IA ha corregido y mejorado el texto.' });
     } catch (e) {

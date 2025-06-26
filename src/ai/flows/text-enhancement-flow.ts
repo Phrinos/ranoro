@@ -6,7 +6,11 @@
 import {ai} from '@/ai/genkit';
 import {z} from 'zod';
 
-const TextEnhancementInputSchema = z.string().min(1).nullable().describe("The text to be enhanced.");
+const TextEnhancementFlowInputSchema = z.object({
+  textToEnhance: z.string().min(1).describe("The raw text to be enhanced."),
+  context: z.string().describe("The context of the text, e.g., 'Notas del Servicio', 'Condiciones del Vehículo'.")
+});
+
 const TextEnhancementOutputSchema = z.object({
   enhancedText: z.string().describe("The corrected and improved text, ready for display."),
 });
@@ -14,18 +18,18 @@ const TextEnhancementOutputSchema = z.object({
 /**
  * A wrapper function that validates the input text before calling the AI flow.
  * This is the function that UI components should call.
- * @param text The text to enhance. Can be null, undefined, o a string.
+ * @param input The object containing the text to enhance and its context.
  * @returns The enhanced text, or the original text if it was invalid or the AI failed.
  */
-export async function enhanceText(text: string | null | undefined): Promise<string> {
+export async function enhanceText(input: { text: string | null | undefined, context: string }): Promise<string> {
+  const { text, context } = input;
   if (!text || text.trim().length < 2) {
     return text || ''; // Return original/empty string if input is not valid for enhancement.
   }
   
-  // Only call the flow if we have valid text.
   try {
-    const result = await enhanceTextFlow(text);
-    return result.enhancedText; // Extract the text from the result object
+    const result = await enhanceTextFlow({ textToEnhance: text, context });
+    return result.enhancedText;
   } catch (e) {
     console.error("enhanceTextFlow failed:", e);
     // In case of AI failure, return the original text to not lose user's input.
@@ -35,50 +39,42 @@ export async function enhanceText(text: string | null | undefined): Promise<stri
 
 const enhanceTextPrompt = ai.definePrompt({
   name: 'enhanceTextPrompt',
-  input: { schema: TextEnhancementInputSchema },
-  output: { schema: TextEnhancementOutputSchema }, // Use the new object schema
-  prompt: `Eres un experto asesor de servicio automotriz. Tu tarea es mejorar el siguiente texto, que será usado en un reporte de servicio para un cliente.
+  input: { schema: TextEnhancementFlowInputSchema },
+  output: { schema: TextEnhancementOutputSchema },
+  prompt: `Eres un experto asesor de servicio automotriz. Tu tarea es mejorar un texto que se usará en un reporte para un cliente. El texto pertenece a la sección: "{{context}}".
 
-**Analiza la entrada de texto y sigue una de estas dos rutas, y solo una:**
+Analiza la entrada de texto y sigue una de estas dos rutas:
 
-**Ruta 1: La entrada es una frase CORTA y POSITIVA.**
-- **Ejemplos de entrada:** "Todo bien", "OK", "Sin problemas", "No hay fallas", "En buen estado".
-- **Tu Acción:** NO devuelvas la frase original. En su lugar, genera una descripción profesional y estándar que confirme el buen estado del vehículo.
-- **Ejemplo de salida:** "Se realizó una inspección general y se verificaron los niveles de fluidos, frenos y suspensión. Todo se encuentra en orden y operando correctamente."
+**Ruta 1: La entrada es una frase CORTA y POSITIVA** (ej: "Todo bien", "OK", "Sin problemas").
+- **Tu Acción:** Usa el contexto del campo para generar una descripción profesional y estándar que confirme el buen estado del vehículo. NO devuelvas la frase original.
+- **Ejemplo de salida para el contexto "Condiciones del Vehículo":** "Se realizó una inspección visual del vehículo al momento de la recepción. No se observaron daños evidentes en la carrocería ni en los cristales. El estado general es bueno."
 
-**Ruta 2: La entrada describe un PROBLEMA específico o un detalle.**
-- **Ejemplos de entrada:** "Golpe en la fasia trasera", "ruido en el motor al ensender", "llanta delantera derecha baja", "se le cambio el aceite".
+**Ruta 2: La entrada describe un PROBLEMA o DETALLE específico** (ej: "Golpe en la fasia trasera", "ruido en el motor al ensender", "llanta delantera derecha baja", "se le cambio el aceite").
 - **Tu Acción:** Mantén el significado original. Corrige la ortografía y la gramática. Mejora la claridad y profesionalismo del texto. **NO reemplaces el problema descrito con una nota genérica.**
 - **Ejemplo de salida para "Golpe en la fasia trasera":** "Se observa un golpe en la fascia trasera del vehículo."
 
-**Reglas Adicionales para AMBAS rutas:**
+Reglas Adicionales:
 - Redacta en español neutro, con un tono cordial y profesional.
 - No superes las 40 palabras.
 - Devuelve únicamente el texto corregido y mejorado en el campo 'enhancedText' del JSON de salida.
 
 **Texto original a mejorar:**
-"{{{this}}}"
+"{{{textToEnhance}}}"
 `,
 });
 
 const enhanceTextFlow = ai.defineFlow(
   {
     name: 'enhanceTextFlow',
-    inputSchema: TextEnhancementInputSchema,
-    outputSchema: TextEnhancementOutputSchema, // Use the new object schema
+    inputSchema: TextEnhancementFlowInputSchema,
+    outputSchema: TextEnhancementOutputSchema,
   },
-  async (text) => {
-    // Return early if text is null or invalid to avoid sending null data to the model.
-    if (!text || text.trim().length < 2) {
-      return { enhancedText: text || '' };
-    }
-    
-    // The result is in the `output` property.
-    const { output } = await enhanceTextPrompt(text, {
-      config: { temperature: 0.4 }, // Increased temperature for more creative enrichment
+  async (input) => {
+    const { output } = await enhanceTextPrompt(input, {
+      config: { temperature: 0.4 },
     });
     
     // If the model fails to return valid output, we fall back to the original text.
-    return output || { enhancedText: text };
+    return output || { enhancedText: input.textToEnhance };
   }
 );
