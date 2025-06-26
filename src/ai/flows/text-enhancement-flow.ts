@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview An AI flow to enhance text by correcting spelling and grammar.
@@ -6,21 +7,22 @@
 import {ai} from '@/ai/genkit';
 import {z} from 'zod';
 
-const EnhanceTextInputSchema = z.string().describe("The text to be enhanced.");
-const EnhanceTextOutputSchema = z.string().describe("The corrected and improved text.");
+// This is the schema for the prompt itself, which requires a non-empty string.
+const PromptInputSchema = z.string().min(1);
 
-export async function enhanceText(text: string): Promise<string> {
-  // A guard in case the caller sends a non-string value despite TypeScript types.
-  if (typeof text !== 'string') {
-    return '';
-  }
+// This is the schema for the flow, which can accept null or undefined text.
+const FlowInputSchema = z.string().nullable().optional();
+const FlowOutputSchema = z.string();
+
+
+export async function enhanceText(text: string | null | undefined): Promise<string> {
   return enhanceTextFlow(text);
 }
 
 const enhanceTextPrompt = ai.definePrompt({
   name: 'enhanceTextPrompt',
-  input: { schema: EnhanceTextInputSchema },
-  output: { schema: EnhanceTextOutputSchema },
+  input: { schema: PromptInputSchema }, // Prompt strictly requires a string
+  output: { schema: FlowOutputSchema },
   prompt: `You are a helpful assistant for an auto repair shop. Correct any spelling mistakes, fix grammar, and improve the clarity and professionalism of the following text. Return only the corrected text, without any preamble or explanation.
 
 Original Text:
@@ -31,16 +33,20 @@ Original Text:
 const enhanceTextFlow = ai.defineFlow(
   {
     name: 'enhanceTextFlow',
-    inputSchema: EnhanceTextInputSchema,
-    outputSchema: EnhanceTextOutputSchema,
+    inputSchema: FlowInputSchema, // Flow now accepts nullable string
+    outputSchema: FlowOutputSchema,
   },
   async (text) => {
+    // Check for null, undefined, or short/empty strings inside the flow.
     if (!text || text.trim().length < 2) {
-      return text || ''; // Don't process empty or very short strings, return original
+      return text || ''; // Return empty string if input is null/undefined/empty.
     }
+    
+    // Only call the prompt if the text is valid.
     const { output } = await enhanceTextPrompt(text, {
       config: { temperature: 0.2 },
     });
+    
     return output || text; // Return original text if AI fails
   }
 );
