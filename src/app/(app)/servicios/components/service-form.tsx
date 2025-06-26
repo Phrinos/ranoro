@@ -20,7 +20,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription} from '@/components/ui/card';
-import { CalendarIcon, PlusCircle, Search, Trash2, AlertCircle, Car as CarIcon, Clock, DollarSign, PackagePlus, BrainCircuit, Loader2, Printer, Plus, Minus, FileText, Signature, MessageSquare, Ban, ShieldQuestion, Wrench, Wallet, CreditCard, Send, WalletCards, ArrowRightLeft, Tag, FileCheck, Check, ShieldCheck } from "lucide-react";
+import { CalendarIcon, PlusCircle, Search, Trash2, AlertCircle, Car as CarIcon, Clock, DollarSign, PackagePlus, BrainCircuit, Loader2, Printer, Plus, Minus, FileText, Signature, MessageSquare, Ban, ShieldQuestion, Wrench, Wallet, CreditCard, Send, WalletCards, ArrowRightLeft, Tag, FileCheck, Check, ShieldCheck, Copy } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format, parseISO, setHours, setMinutes, isValid, startOfDay } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -61,6 +61,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AddSupplyDialog } from './add-supply-dialog';
 import { QuoteContent } from '@/components/quote-content';
 import { SignatureDialog } from './signature-dialog';
+import { TicketContent } from '@/components/ticket-content';
 
 
 const supplySchema = z.object({
@@ -280,6 +281,8 @@ export function ServiceForm({
   const freshUserRef = useRef<User | null>(null);
   const [isTechSignatureDialogOpen, setIsTechSignatureDialogOpen] = useState(false);
   const [isEnhancingText, setIsEnhancingText] = useState<string | null>(null);
+  const [isTicketPreviewOpen, setIsTicketPreviewOpen] = useState(false);
+  const ticketContentRef = useRef<HTMLDivElement>(null);
 
   const form = useForm<ServiceFormValues>({
     resolver: zodResolver(serviceFormSchemaBase),
@@ -915,6 +918,43 @@ export function ServiceForm({
     }
   };
   
+  const handlePrintTicket = useCallback(() => {
+    window.print();
+  }, []);
+  
+  const handleCopyAsImage = async () => {
+    if (!ticketContentRef.current) {
+        toast({ title: "Error", description: "No se encontró el contenido del ticket.", variant: "destructive" });
+        return;
+    }
+    try {
+        const html2canvas = (await import('html2canvas')).default;
+        const canvas = await html2canvas(ticketContentRef.current, {
+            useCORS: true,
+            backgroundColor: '#ffffff',
+            scale: 2.5, 
+        });
+        canvas.toBlob(async (blob) => {
+            if (blob) {
+                try {
+                    await navigator.clipboard.write([
+                        new ClipboardItem({ 'image/png': blob })
+                    ]);
+                    toast({ title: "Copiado", description: "La imagen del ticket ha sido copiada." });
+                } catch (clipboardErr) {
+                    console.error('Clipboard API error:', clipboardErr);
+                    toast({ title: "Error de Copiado", description: "Tu navegador no pudo copiar la imagen. Intenta imprimir.", variant: "destructive" });
+                }
+            } else {
+                 toast({ title: "Error de Conversión", description: "No se pudo convertir el ticket a imagen.", variant: "destructive" });
+            }
+        }, 'image/png');
+    } catch (e) {
+        console.error("html2canvas error:", e);
+        toast({ title: "Error de Captura", description: "No se pudo generar la imagen del ticket.", variant: "destructive" });
+    }
+  };
+
   const [cancellationReason, setCancellationReason] = useState('');
   const [isCancelAlertOpen, setIsCancelAlertOpen] = useState(false);
 
@@ -1398,36 +1438,49 @@ export function ServiceForm({
           </Tabs>
 
           <div className="flex justify-between items-center pt-4">
-            <AlertDialog open={isCancelAlertOpen} onOpenChange={setIsCancelAlertOpen}>
-                <AlertDialogTrigger asChild>
-                    {!isReadOnly && initialData?.id && (
-                        <Button type="button" variant="destructive">
-                            <Ban className="mr-2 h-4 w-4" />
-                            {deleteButtonText}
-                        </Button>
-                    )}
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                    <AlertDialogHeader>
-                        <AlertDialogTitle>¿Está seguro?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          {mode === 'quote' ? `Se eliminará la cotización ${initialDataQuote?.id}. Esta acción no se puede deshacer.` : `Se cancelará el servicio ${initialDataService?.id}.`}
-                          {mode === 'service' && (
-                            <div className="mt-4">
-                              <Label htmlFor="cancellation-reason">Motivo de la cancelación (obligatorio)</Label>
-                              <Textarea id="cancellation-reason" value={cancellationReason} onChange={(e) => setCancellationReason(e.target.value)} placeholder="Ej: El cliente no se presentó..." className="mt-2" />
-                            </div>
-                          )}
-                        </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel onClick={() => setCancellationReason('')}>No, volver</AlertDialogCancel>
-                        <AlertDialogAction onClick={handleConfirmDelete} disabled={mode === 'service' && !cancellationReason.trim()} className="bg-destructive hover:bg-destructive/90">
-                           Sí, proceder
-                        </AlertDialogAction>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
+            <div className="flex items-center gap-2">
+                <AlertDialog open={isCancelAlertOpen} onOpenChange={setIsCancelAlertOpen}>
+                    <AlertDialogTrigger asChild>
+                        {!isReadOnly && initialData?.id && (
+                            <Button type="button" variant="destructive">
+                                <Ban className="mr-2 h-4 w-4" />
+                                {deleteButtonText}
+                            </Button>
+                        )}
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                        <AlertDialogHeader>
+                            <AlertDialogTitle>¿Está seguro?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              {mode === 'quote' ? `Se eliminará la cotización ${initialDataQuote?.id}. Esta acción no se puede deshacer.` : `Se cancelará el servicio ${initialDataService?.id}.`}
+                              {mode === 'service' && (
+                                <div className="mt-4">
+                                  <Label htmlFor="cancellation-reason">Motivo de la cancelación (obligatorio)</Label>
+                                  <Textarea id="cancellation-reason" value={cancellationReason} onChange={(e) => setCancellationReason(e.target.value)} placeholder="Ej: El cliente no se presentó..." className="mt-2" />
+                                </div>
+                              )}
+                            </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                            <AlertDialogCancel onClick={() => setCancellationReason('')}>No, volver</AlertDialogCancel>
+                            <AlertDialogAction onClick={handleConfirmDelete} disabled={mode === 'service' && !cancellationReason.trim()} className="bg-destructive hover:bg-destructive/90">
+                               Sí, proceder
+                            </AlertDialogAction>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                </AlertDialog>
+                
+                {mode === 'service' && watchedStatus === 'Completado' && !isReadOnly && initialData?.id && (
+                    <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => setIsTicketPreviewOpen(true)}
+                    >
+                        <Printer className="mr-2 h-4 w-4" />
+                        Ver Comprobante
+                    </Button>
+                )}
+            </div>
             <div className="flex justify-end gap-2 w-full">
             {isReadOnly ? (<Button type="button" variant="outline" onClick={onClose}>Cerrar</Button>) : (
                 <>
@@ -1489,6 +1542,30 @@ export function ServiceForm({
           {serviceForSheet && (
               <ServiceSheetContent service={serviceForSheet} vehicle={localVehicles.find(v => v.id === serviceForSheet.id)} workshopInfo={workshopInfo as WorkshopInfo} />
           )}
+      </PrintTicketDialog>
+
+      <PrintTicketDialog
+        open={isTicketPreviewOpen}
+        onOpenChange={setIsTicketPreviewOpen}
+        title="Comprobante de Servicio"
+        dialogContentClassName="printable-content"
+        footerActions={
+            <div className="flex gap-2">
+                <Button variant="outline" onClick={handleCopyAsImage}>
+                    <Copy className="mr-2 h-4 w-4"/> Copiar Imagen
+                </Button>
+                <Button onClick={handlePrintTicket}>
+                    <Printer className="mr-2 h-4 w-4" /> Imprimir Comprobante
+                </Button>
+            </div>
+        }
+      >
+        <TicketContent 
+            ref={ticketContentRef}
+            service={form.getValues() as ServiceRecord}
+            vehicle={selectedVehicle}
+            technician={technicians.find(t => t.id === form.getValues('technicianId'))}
+        />
       </PrintTicketDialog>
     </>
   );
