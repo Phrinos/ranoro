@@ -39,14 +39,24 @@ export default function VehiculosPage() {
       const history = placeholderServiceRecords.filter(s => s.vehicleId === v.id);
       let lastServiceDate: string | undefined = undefined;
       if (history.length > 0) {
+        // Sort valid dates to the top, then sort by date descending to find the latest
         const sortedHistory = [...history].sort((a, b) => {
-            const dateA = a.serviceDate ? parseISO(a.serviceDate) : new Date(0);
-            const dateB = b.serviceDate ? parseISO(b.serviceDate) : new Date(0);
-            if(!isValid(dateA)) return 1;
-            if(!isValid(dateB)) return -1;
-            return dateB.getTime() - dateA.getTime();
+            const dateA = a.serviceDate ? parseISO(a.serviceDate) : null;
+            const dateB = b.serviceDate ? parseISO(b.serviceDate) : null;
+
+            const isAValid = dateA && isValid(dateA);
+            const isBValid = dateB && isValid(dateB);
+
+            if (isAValid && !isBValid) return -1; // Valid dates first
+            if (!isAValid && isBValid) return 1;
+            if (!isAValid && !isBValid) return 0; // Both invalid, keep order
+            
+            return compareDesc(dateA!, dateB!); // Both are valid, sort descending
         });
-        lastServiceDate = sortedHistory[0].serviceDate;
+        
+        if (sortedHistory[0]?.serviceDate && isValid(parseISO(sortedHistory[0].serviceDate))) {
+          lastServiceDate = sortedHistory[0].serviceDate;
+        }
       }
       return {
         ...v,
