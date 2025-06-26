@@ -111,18 +111,6 @@ export default function HistorialServiciosPage() {
       switch (sortOption) {
         case "serviceDate_asc": 
           return compareAsc(parseISO(a.serviceDate), parseISO(b.serviceDate));
-        case "serviceDate_desc": {
-          const statusOrder = { "Reparando": 1, "Completado": 2, "Cancelado": 3 };
-          const statusAVal = statusOrder[a.status as keyof typeof statusOrder] || 4;
-          const statusBVal = statusOrder[b.status as keyof typeof statusOrder] || 4;
-
-          if (statusAVal !== statusBVal) {
-            return statusAVal - statusBVal;
-          }
-          const dateComparison = compareDesc(parseISO(a.serviceDate), parseISO(b.serviceDate));
-          if (dateComparison !== 0) return dateComparison;
-          return a.id.localeCompare(b.id); 
-        }
         case "deliveryDate_asc":
           if (!a.deliveryDateTime) return 1; if (!b.deliveryDateTime) return -1;
           return compareAsc(parseISO(a.deliveryDateTime), parseISO(b.deliveryDateTime));
@@ -135,16 +123,17 @@ export default function HistorialServiciosPage() {
         case "price_desc": return b.totalCost - a.totalCost;
         case "status_asc": return a.status.localeCompare(b.status);
         case "status_desc": return b.status.localeCompare(a.status);
+        case "serviceDate_desc":
         default: {
-          const defaultStatusOrderSort = { "Reparando": 1, "Completado": 2, "Cancelado": 3 };
-          const defaultStatusASortVal = defaultStatusOrderSort[a.status as keyof typeof defaultStatusOrderSort] || 4;
-          const defaultStatusBSortVal = defaultStatusOrderSort[b.status as keyof typeof defaultStatusOrderSort] || 4;
+          const statusOrder = { "Reparando": 1, "Completado": 2, "Cancelado": 3 };
+          const statusAVal = statusOrder[a.status as keyof typeof statusOrder] || 4;
+          const statusBVal = statusOrder[b.status as keyof typeof statusOrder] || 4;
 
-          if (defaultStatusASortVal !== defaultStatusBSortVal) {
-            return defaultStatusASortVal - defaultStatusBSortVal;
+          if (statusAVal !== statusBVal) {
+            return statusAVal - statusBVal;
           }
-          const dateComparisonDefault = compareDesc(parseISO(a.serviceDate), parseISO(b.serviceDate));
-          if (dateComparisonDefault !== 0) return dateComparisonDefault;
+          const dateComparison = compareDesc(parseISO(a.serviceDate), parseISO(b.serviceDate));
+          if (dateComparison !== 0) return dateComparison;
           return a.id.localeCompare(b.id); 
         }
       }
@@ -213,25 +202,33 @@ export default function HistorialServiciosPage() {
     const authUserString = localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY);
     const currentUser: User | null = authUserString ? JSON.parse(authUserString) : null;
     
-    const serviceIndex = placeholderServiceRecords.findIndex(s => s.id === serviceId);
-    if (serviceIndex === -1) {
-        toast({ title: "Error", description: "Servicio no encontrado.", variant: "destructive" });
-        return;
+    let serviceToCancel: ServiceRecord | undefined;
+    const updatedServices = allServices.map(s => {
+      if (s.id === serviceId) {
+        if (s.status === 'Cancelado') return s; // Already cancelled
+        serviceToCancel = {
+          ...s,
+          status: 'Cancelado',
+          cancellationReason: reason,
+          cancelledBy: currentUser?.name || 'Usuario desconocido',
+        };
+        return serviceToCancel;
+      }
+      return s;
+    });
+
+    if (!serviceToCancel) {
+      toast({ title: "Error", description: "Servicio no encontrado.", variant: "destructive" });
+      return;
+    }
+    if (serviceToCancel.status !== 'Cancelado'){
+       toast({ title: "Acción no válida", description: "Este servicio ya ha sido cancelado.", variant: "default" });
+       return; // Already handled in the initial check, but as a safeguard.
     }
     
-    const service = placeholderServiceRecords[serviceIndex];
-    if (service.status === 'Cancelado') {
-        toast({ title: "Acción no válida", description: "Este servicio ya ha sido cancelado.", variant: "default" });
-        return;
-    }
-
-    service.status = 'Cancelado';
-    service.cancellationReason = reason;
-    service.cancelledBy = currentUser?.name || 'Usuario desconocido';
-
-    // Restore inventory if items were used
-    if (service.serviceItems && service.serviceItems.length > 0) {
-      service.serviceItems.forEach(item => {
+    // Restore inventory
+    if (serviceToCancel.serviceItems && serviceToCancel.serviceItems.length > 0) {
+      serviceToCancel.serviceItems.forEach(item => {
         item.suppliesUsed.forEach(supply => {
           const invIndex = placeholderInventory.findIndex(i => i.id === supply.supplyId);
           if (invIndex > -1 && !placeholderInventory[invIndex].isService) {
@@ -241,14 +238,17 @@ export default function HistorialServiciosPage() {
       });
     }
     
-    setAllServices([...placeholderServiceRecords]);
+    setAllServices(updatedServices); // Update local state
+    
+    // Update global source of truth
+    placeholderServiceRecords.splice(0, placeholderServiceRecords.length, ...updatedServices);
     await persistToFirestore(['serviceRecords', 'inventory']);
 
     toast({
       title: "Servicio Cancelado",
       description: `El servicio ${serviceId} ha sido cancelado.`,
     });
-  }, [toast]);
+  }, [allServices, toast]);
   
   const handleVehicleCreated = useCallback((newVehicle: Vehicle) => {
     setVehicles(prev => {
