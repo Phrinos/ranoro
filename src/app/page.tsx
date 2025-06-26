@@ -59,7 +59,7 @@ export default function LandingPage() {
               data-ai-hint="ranoro logo"
             />
           </Link>
-          <nav className="flex items-center gap-2">
+          <nav className="hidden md:flex items-center gap-2">
             <Button variant="ghost" asChild>
               <Link href="#servicios">Servicios</Link>
             </Button>
@@ -83,14 +83,14 @@ export default function LandingPage() {
             objectFit="cover"
             className="absolute z-0 opacity-20"
           />
-          <div className="relative z-10 flex h-full flex-col items-center justify-center text-center">
+          <div className="relative z-10 flex h-full flex-col items-center justify-center text-center px-4">
             <h1 className="text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl font-headline">
               Confianza y Calidad para tu Vehículo
             </h1>
             <p className="mt-4 max-w-2xl text-lg text-muted-foreground">
               En Ranoro, combinamos técnicos expertos, tecnología de punta y refacciones de calidad para ofrecerte el mejor servicio automotriz.
             </p>
-            <div className="mt-8 flex gap-4">
+            <div className="mt-8 flex flex-col sm:flex-row gap-4">
               <Button size="lg" asChild>
                 <a 
                   href={`https://wa.me/${workshopPhone}?text=Hola%2C%20me%20gustar%C3%ADa%20agendar%20una%20cita.`}

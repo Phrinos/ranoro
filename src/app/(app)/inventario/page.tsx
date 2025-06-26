@@ -244,7 +244,7 @@ export default function InventarioPage() {
   return (
     <>
       <div className="inventory-page-print-context">
-        <div className="mb-6 grid gap-6 md:grid-cols-2 lg:grid-cols-4 print:hidden">
+        <div className="mb-6 grid gap-6 grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 print:hidden">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
@@ -350,7 +350,9 @@ export default function InventarioPage() {
           />
         </div>
         
-        <InventoryTable items={filteredAndSortedInventoryItems} />
+        <div className="overflow-x-auto">
+            <InventoryTable items={filteredAndSortedInventoryItems} />
+        </div>
 
         <div className="print:hidden">
           <InventoryItemDialog

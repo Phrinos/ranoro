@@ -31,7 +31,7 @@ export const VehiclesTable = React.memo(({ vehicles: initialVehicles }: Vehicles
   }
 
   return (
-    <div className="rounded-lg border shadow-sm">
+    <div className="rounded-lg border shadow-sm overflow-x-auto">
       <Table>
         <TableHeader className="bg-white">
           <TableRow>

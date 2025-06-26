@@ -147,7 +147,7 @@ export default function ProveedoresPage() {
 
   return (
     <>
-      <div className="mb-6 grid gap-6 md:grid-cols-2">
+      <div className="mb-6 grid gap-6 grid-cols-1 md:grid-cols-2">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
@@ -227,11 +227,13 @@ export default function ProveedoresPage() {
             </div>
         </CardHeader>
         <CardContent>
-          <SuppliersTable
-            suppliers={filteredAndSortedSuppliers}
-            onEdit={handleOpenDialog}
-            onDelete={handleDeleteSupplier}
-          />
+          <div className="overflow-x-auto">
+            <SuppliersTable
+              suppliers={filteredAndSortedSuppliers}
+              onEdit={handleOpenDialog}
+              onDelete={handleDeleteSupplier}
+            />
+          </div>
         </CardContent>
       </Card>
 
