@@ -478,9 +478,9 @@ export default function HistorialCotizacionesPage() {
 
             return (
               <Card key={quote.id} className="shadow-sm overflow-hidden">
-                <CardContent className="p-4 flex flex-col md:flex-row justify-between items-start gap-4">
+                <CardContent className="p-4 flex flex-col md:flex-row items-start justify-between gap-4">
                   {/* Left Side: Blocks 1 & 2 */}
-                  <div className="flex-1 flex flex-col gap-4 min-w-0">
+                  <div className="flex flex-col gap-4 min-w-0 pr-4 md:w-1/4">
                     {/* Block 1 */}
                     <div>
                       <p className="text-xs font-semibold text-muted-foreground">Folio / Fecha Cotización</p>
@@ -505,7 +505,7 @@ export default function HistorialCotizacionesPage() {
                   </div>
 
                   {/* Right Side: Blocks 4 & 5 */}
-                  <div className="flex-1 flex justify-end items-start gap-4 min-w-0">
+                  <div className="flex justify-end items-start gap-4 min-w-0 md:w-1/3">
                     {/* Block 4 */}
                     <div className="text-right">
                       <p className="text-xs text-muted-foreground">Costo Estimado</p>
@@ -514,12 +514,12 @@ export default function HistorialCotizacionesPage() {
                       <p className="font-semibold text-base text-green-600">{formatCurrency(quote.estimatedProfit)}</p>
                     </div>
                     {/* Block 5 */}
-                    <div className="flex flex-col items-center w-32">
+                    <div className="flex flex-col items-end w-32">
                       <Badge variant={quote.serviceId ? "lightRed" : "outline"} className="w-full justify-center text-center text-base mb-2">
                         {quote.serviceId ? "Agendado" : "Cotizacion"}
                       </Badge>
                       <div className="flex justify-center flex-wrap gap-1">
-                        <Button variant="ghost" size="icon" onClick={() => handleEditQuote(originalQuote)} title="Ver / Editar Cotización">
+                        <Button variant="ghost" size="icon" onClick={() => handleViewQuote(originalQuote)} title="Ver Cotización">
                           <FileText className="h-4 w-4" />
                         </Button>
                         {quote.serviceId ? (
@@ -527,9 +527,14 @@ export default function HistorialCotizacionesPage() {
                             <Wrench className="h-4 w-4 text-blue-600" />
                           </Button>
                         ) : (
-                          <Button variant="ghost" size="icon" onClick={() => handleGenerateService(originalQuote)} title="Generar Servicio">
-                            <Wrench className="h-4 w-4 text-blue-600" />
-                          </Button>
+                          <>
+                            <Button variant="ghost" size="icon" onClick={() => handleEditQuote(originalQuote)} title="Editar Cotización">
+                                <Edit className="h-4 w-4" />
+                            </Button>
+                             <Button variant="ghost" size="icon" onClick={() => handleGenerateService(originalQuote)} title="Generar Servicio">
+                                <Wrench className="h-4 w-4 text-blue-600" />
+                            </Button>
+                          </>
                         )}
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
