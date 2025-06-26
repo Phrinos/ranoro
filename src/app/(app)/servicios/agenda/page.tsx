@@ -473,41 +473,37 @@ export default function AgendaServiciosPage() {
                     <Card key={service.id} className="shadow-sm overflow-hidden">
                       <CardContent className="p-0">
                         <div className="flex flex-col md:flex-row text-sm">
-                           {/* Block 1: Folio y Hora (Centrado) */}
                           <div className="p-4 flex flex-col justify-center items-center text-center w-full md:w-48 flex-shrink-0">
-                              <p className="text-xs text-muted-foreground">Folio: {service.id}</p>
-                              <p className="text-xl font-semibold">{format(parseISO(service.serviceDate), "HH:mm 'hrs'", { locale: es })}</p>
+                              <p className="text-xs text-gray-500">Folio: {service.id}</p>
+                              <p className="text-xl font-semibold text-foreground">{format(parseISO(service.serviceDate), "HH:mm 'hrs'", { locale: es })}</p>
                           </div>
                           
                           <Separator orientation="vertical" className="hidden md:block h-auto"/>
 
-                          {/* Block 2: Vehículo y Servicio (Alineado a la Izquierda) */}
-                          <div className="p-4 flex flex-col justify-center flex-grow space-y-2 text-left">
-                              <p className="text-sm text-muted-foreground">{vehicle?.ownerName} - {vehicle?.ownerPhone}</p>
-                              <p className="font-bold text-lg">{vehicle ? `${vehicle.licensePlate} - ${vehicle.make} ${vehicle.model} ${vehicle.year}` : 'N/A'}</p>
-                              <p className="text-sm text-foreground" title={getServiceDescriptionText(service)}>
+                          <div className="p-4 flex flex-col justify-center flex-grow space-y-2">
+                              <p className="text-sm text-gray-500">{vehicle?.ownerName} - {vehicle?.ownerPhone}</p>
+                              <p className="font-bold text-2xl text-black">{vehicle ? `${vehicle.licensePlate} - ${vehicle.make} ${vehicle.model} ${vehicle.year}` : 'N/A'}</p>
+                              <p className="text-sm text-foreground">
                                   <span className="font-semibold">{service.serviceType}:</span> {getServiceDescriptionText(service)}
                               </p>
                           </div>
 
                           <Separator orientation="vertical" className="hidden md:block h-auto"/>
                           
-                          {/* Block 3: Costo y Ganancia (Centrado) */}
                           <div className="p-4 flex flex-col justify-center items-center text-center w-full md:w-48 flex-shrink-0">
                             <p className="text-xs text-muted-foreground">Costo Estimado</p>
-                            <p className="font-bold text-xl text-black">{formatCurrency(service.totalCost)}</p>
+                            <p className="font-bold text-2xl text-black">{formatCurrency(service.totalCost)}</p>
                             <p className="text-xs text-muted-foreground mt-1">Ganancia Estimada</p>
                             <p className="font-semibold text-green-600">{formatCurrency(service.serviceProfit)}</p>
                           </div>
 
                           <Separator orientation="vertical" className="hidden md:block h-auto"/>
                           
-                          {/* Block 4: Estatus, Asesor y Acciones (Centrado) */}
                           <div className="p-4 flex flex-col justify-center items-center text-center border-b md:border-b-0 md:border-l w-full md:w-56 flex-shrink-0">
                              <Badge variant="default" className="w-full justify-center text-center text-sm">
                                {service.status}
                              </Badge>
-                             <p className="text-xs text-muted-foreground mt-2">Asesor: {service.serviceAdvisorName || 'N/A'}</p>
+                             <p className="text-xs text-gray-500 mt-4">Asesor: {service.serviceAdvisorName || 'N/A'}</p>
                             <div className="flex justify-center items-center gap-1 mt-2">
                                 {originalQuote && (
                                   <Button variant="ghost" size="icon" title="Ver Cotización" onClick={() => handleViewQuote(service.id)}>
@@ -750,7 +746,3 @@ export default function AgendaServiciosPage() {
     </>
   );
 }
-
-    
-
-    
