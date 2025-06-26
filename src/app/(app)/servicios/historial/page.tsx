@@ -665,7 +665,7 @@ export default function HistorialServiciosPage() {
             </>
           }
       >
-          {serviceForSheet && <ServiceSheetContent service={serviceForSheet} vehicle={vehicles.find(v => v.id === serviceForSheet.id)} />}
+          {serviceForSheet && <ServiceSheetContent service={serviceForSheet} vehicle={vehicles.find(v => v.id === serviceForSheet.vehicleId)} />}
       </PrintTicketDialog>
     </>
   );

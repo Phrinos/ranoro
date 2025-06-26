@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 import Image from 'next/image';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Check } from 'lucide-react';
 
 const initialWorkshopInfo: WorkshopInfo = {
   name: "RANORO",
@@ -159,7 +160,7 @@ const SafetyChecklistDisplay = ({
             )}
             {inspection.technicianSignature && (
                 <div className="mt-8 border-t pt-4 text-center flex flex-col items-center">
-                    <div className="h-24 w-64 relative">
+                    <div className="h-24 w-full max-w-[256px] relative">
                         <Image src={inspection.technicianSignature} alt="Firma del técnico" layout="fill" objectFit="contain" />
                     </div>
                     <div className="border-t-2 border-black mt-2 pt-1 w-64 text-center">
@@ -362,7 +363,9 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
                <div className="pt-2 min-h-[80px] flex flex-col justify-between">
                     <div className="h-14 flex-grow flex items-center justify-center">
                         {service.serviceAdvisorSignatureDataUrl && service.serviceAdvisorSignatureDataUrl.startsWith('data:image') && (
-                            <Image src={service.serviceAdvisorSignatureDataUrl} alt="Firma del asesor" width={150} height={56} style={{objectFit: 'contain'}} />
+                            <div className="relative w-full h-full max-w-[200px]">
+                                <Image src={service.serviceAdvisorSignatureDataUrl} alt="Firma del asesor" layout="fill" objectFit="contain" />
+                            </div>
                         )}
                     </div>
                     <div className="border-t-2 border-black pt-1 w-full text-center">
