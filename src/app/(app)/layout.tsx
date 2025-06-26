@@ -3,7 +3,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
+import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/layout/app-sidebar";
 import { hydrateFromFirestore, placeholderUsers, AUTH_USER_LOCALSTORAGE_KEY, persistToFirestore, defaultSuperAdmin } from '@/lib/placeholder-data';
 import { onAuthStateChanged, signOut } from 'firebase/auth'; 
@@ -138,8 +138,11 @@ export default function AppLayout({
   return (
     <SidebarProvider defaultOpen={true}>
       <AppSidebar key={isHydrating ? 'hydrating' : 'hydrated'} />
+      <div className="fixed top-4 left-4 z-50 md:hidden">
+        <SidebarTrigger className="h-10 w-10 shadow-lg bg-background/70 backdrop-blur-sm" />
+      </div>
       <SidebarInset className="flex flex-col">
-        <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
+        <main className="flex-1 overflow-y-auto p-4 pt-20 md:pt-6 lg:p-8">
           {isHydrating ? (
             <div className="flex h-full w-full items-center justify-center">
                <Loader2 className="h-8 w-8 animate-spin" />
