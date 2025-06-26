@@ -527,9 +527,9 @@ export default function HistorialServiciosPage() {
 
             return (
               <Card key={service.id} className="shadow-sm overflow-hidden">
-                <CardContent className="p-4 flex flex-col md:flex-row justify-between items-start gap-4">
+                <CardContent className="p-4 flex flex-col md:flex-row items-start justify-between gap-4">
                   {/* Left Side: Blocks 1 & 2 */}
-                  <div className="flex-1 flex flex-col gap-4 min-w-0">
+                  <div className="flex flex-col gap-4 min-w-0 pr-4 md:w-1/4">
                     {/* Block 1 */}
                     <div>
                       <p className="text-xs font-semibold text-muted-foreground">Folio / Recepción y Entrega</p>
@@ -556,7 +556,7 @@ export default function HistorialServiciosPage() {
                   </div>
 
                   {/* Right Side: Blocks 4 & 5 */}
-                  <div className="flex-1 flex justify-end items-start gap-4 min-w-0">
+                  <div className="flex justify-end items-start gap-4 min-w-0 md:w-1/3">
                     {/* Block 4 */}
                     <div className="text-right">
                       <p className="text-xs text-muted-foreground">Costo Total</p>
@@ -565,7 +565,7 @@ export default function HistorialServiciosPage() {
                       <p className="font-semibold text-base text-green-600">{formatCurrency(service.serviceProfit)}</p>
                     </div>
                     {/* Block 5 */}
-                    <div className="flex flex-col items-center w-32">
+                    <div className="flex flex-col items-end w-32">
                       <Badge variant={getStatusVariant(service.status)} className="w-full justify-center text-center text-base mb-2">
                         {service.status}
                       </Badge>
@@ -578,7 +578,7 @@ export default function HistorialServiciosPage() {
                         <Button variant="ghost" size="icon" onClick={() => handleShowSheet(service)} title="Ver Hoja de Servicio">
                           <FileCheck className="h-4 w-4" />
                         </Button>
-                        <Button variant="ghost" size="icon" onClick={() => { setEditingService(service); setIsEditDialogOpen(true); }} title="Editar Servicio" disabled={service.status === 'Completado' || service.status === 'Cancelado'}>
+                        <Button variant="ghost" size="icon" onClick={() => { setEditingService(service); setIsEditDialogOpen(true); }} title="Editar Servicio">
                           <Edit className="h-4 w-4" />
                         </Button>
                       </div>
