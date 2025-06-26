@@ -20,7 +20,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription} from '@/components/ui/card';
-import { CalendarIcon, PlusCircle, Search, Trash2, AlertCircle, Car as CarIcon, Clock, DollarSign, PackagePlus, BrainCircuit, Loader2, Printer, Plus, Minus, FileText, Signature, MessageSquare, Ban, ShieldQuestion, Wrench, Wallet, CreditCard, Send, WalletCards, ArrowRightLeft, Tag, FileCheck, Check } from "lucide-react";
+import { CalendarIcon, PlusCircle, Search, Trash2, AlertCircle, Car as CarIcon, Clock, DollarSign, PackagePlus, BrainCircuit, Loader2, Printer, Plus, Minus, FileText, Signature, MessageSquare, Ban, ShieldQuestion, Wrench, Wallet, CreditCard, Send, WalletCards, ArrowRightLeft, Tag, FileCheck, Check, ShieldCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format, parseISO, setHours, setMinutes, isValid, startOfDay } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -956,11 +956,27 @@ export function ServiceForm({
       <Form {...form}>
         <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-6">
           <Tabs defaultValue="servicio" className="w-full">
-            <div className="flex justify-between items-center mb-4 border-b">
+            <div className="flex flex-col sm:flex-row justify-between items-center gap-2 mb-4 border-b pb-2">
                 <TabsList className="bg-transparent p-0">
-                    <TabsTrigger value="servicio" className="text-base data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none">Detalles del Servicio</TabsTrigger>
-                    {showReceptionTab && <TabsTrigger value="recepcion" className="text-base data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none">Recepción y Entrega</TabsTrigger>}
-                    {showReceptionTab && <TabsTrigger value="seguridad" className="text-base data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none">Revisión de Seguridad</TabsTrigger>}
+                    <TabsTrigger value="servicio" className="text-sm sm:text-base data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none flex items-center gap-2 py-2 px-3 sm:px-4">
+                        <Wrench className="h-4 w-4 shrink-0"/>
+                        <span className="hidden sm:inline">Detalles del Servicio</span>
+                        <span className="sm:hidden">Detalles</span>
+                    </TabsTrigger>
+                    {showReceptionTab && (
+                        <TabsTrigger value="recepcion" className="text-sm sm:text-base data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none flex items-center gap-2 py-2 px-3 sm:px-4">
+                            <FileCheck className="h-4 w-4 shrink-0"/>
+                            <span className="hidden sm:inline">Recepción y Entrega</span>
+                            <span className="sm:hidden">Recepción</span>
+                        </TabsTrigger>
+                    )}
+                    {showReceptionTab && (
+                        <TabsTrigger value="seguridad" className="text-sm sm:text-base data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none flex items-center gap-2 py-2 px-3 sm:px-4">
+                            <ShieldCheck className="h-4 w-4 shrink-0"/>
+                            <span className="hidden sm:inline">Revisión de Seguridad</span>
+                            <span className="sm:hidden">Seguridad</span>
+                        </TabsTrigger>
+                    )}
                 </TabsList>
                  <div className="flex gap-2">
                     {(originalQuote || (mode === 'quote' && initialData?.id)) && (
@@ -1652,15 +1668,15 @@ const inspectionGroups = [
     { name: "safetyInspection.carroceria_asientos_tablero", label: "13. ASIENTOS / TABLERO / CONSOLA" },
     { name: "safetyInspection.carroceria_plumas", label: "14. PLUMAS LIMPIAPARABRISAS" },
   ]},
-  { title: "LLANTAS (ESTADO Y PRESIÓN)", items: [
-    { name: "safetyInspection.llantas_delanteras_traseras", label: "19. DELANTERAS / TRASERAS" },
-    { name: "safetyInspection.llantas_refaccion", label: "20. REFACCIÓN" },
-  ]},
   { title: "SUSPENSIÓN Y DIRECCIÓN", items: [
     { name: "safetyInspection.suspension_rotulas", label: "15. RÓTULAS Y GUARDAPOLVOS" },
     { name: "safetyInspection.suspension_amortiguadores", label: "16. AMORTIGUADORES" },
     { name: "safetyInspection.suspension_caja_direccion", label: "17. CAJA DE DIRECCIÓN" },
     { name: "safetyInspection.suspension_terminales", label: "18. TERMINALES DE DIRECCIÓN" },
+  ]},
+  { title: "LLANTAS (ESTADO Y PRESIÓN)", items: [
+    { name: "safetyInspection.llantas_delanteras_traseras", label: "19. DELANTERAS / TRASERAS" },
+    { name: "safetyInspection.llantas_refaccion", label: "20. REFACCIÓN" },
   ]},
   { title: "FRENOS", items: [
     { name: "safetyInspection.frenos_discos_delanteros", label: "21. DISCOS / BALATAS DELANTERAS" },
@@ -1800,3 +1816,4 @@ const SafetyCheckRow = ({ name, label, control, isReadOnly }: { name: string; la
     </div>
   );
 };
+
