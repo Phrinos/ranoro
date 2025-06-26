@@ -219,7 +219,7 @@ export function ServiceForm({
 
   const [vehicleLicensePlateSearch, setVehicleLicensePlateSearch] = useState(initialVehicleIdentifier || "");
   const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
-  const [lastServiceInfo, setLastServiceInfo] = useState<string | null>(null);
+  const [lastService, setLastService] = useState<ServiceRecord | null>(null);
   const [vehicleNotFound, setVehicleNotFound] = useState(false);
   const [isVehicleDialogOpen, setIsVehicleDialogOpen] = useState(false);
   const [localVehicles, setLocalVehicles] = useState<Vehicle[]>(parentVehicles);
@@ -320,10 +320,9 @@ export function ServiceForm({
             // Also fetch last service info for existing data
             const vehicleServices = defaultServiceRecords.filter(s => s.vehicleId === vehicle.id).sort((a, b) => new Date(b.serviceDate).getTime() - new Date(a.serviceDate).getTime());
             if (vehicleServices.length > 0) {
-                const lastService = vehicleServices[0];
-                setLastServiceInfo(`Últ. Servicio: ${format(parseISO(lastService.serviceDate), "dd MMM yyyy", { locale: es })} - ${lastService.description}`);
+                setLastService(vehicleServices[0]);
             } else {
-                setLastServiceInfo("No tiene historial de servicios.");
+                setLastService(null);
             }
         }
         
@@ -514,7 +513,7 @@ export function ServiceForm({
       setSelectedVehicle(null);
       form.setValue('vehicleId', undefined);
       setVehicleNotFound(true);
-      setLastServiceInfo(null);
+      setLastService(null);
       toast({ title: "Vehículo No Encontrado", description: "Puede registrarlo si es nuevo.", variant: "default"});
     }
   };
@@ -536,7 +535,7 @@ export function ServiceForm({
     setVehicleLicensePlateSearch(newVehicle.licensePlate);
     setVehicleNotFound(false);
     setIsVehicleDialogOpen(false);
-    setLastServiceInfo("Vehículo nuevo, sin historial de servicios.");
+    setLastService(null);
     toast({ title: "Vehículo Registrado", description: `Se registró ${newVehicle.make} ${newVehicle.model} (${newVehicle.licensePlate}).`});
     if (onVehicleCreated) {
         onVehicleCreated(newVehicle);
@@ -752,10 +751,9 @@ export function ServiceForm({
         setVehicleSearchResults([]);
         const vehicleServices = defaultServiceRecords.filter(s => s.vehicleId === vehicle.id).sort((a, b) => new Date(b.serviceDate).getTime() - new Date(a.serviceDate).getTime());
         if (vehicleServices.length > 0) {
-            const lastService = vehicleServices[0];
-            setLastServiceInfo(`Últ. Servicio: ${format(parseISO(lastService.serviceDate), "dd MMM yyyy", { locale: es })} - ${lastService.description}`);
+            setLastService(vehicleServices[0]);
         } else {
-            setLastServiceInfo("No tiene historial de servicios.");
+            setLastService(null);
         }
     };
     
@@ -967,78 +965,72 @@ export function ServiceForm({
                         )}
                       />
                       {showDateFields && (
-                         <FormField
-                            control={form.control}
-                            name="serviceDate"
-                            render={({ field }) => (
-                              <div className="grid grid-cols-2 gap-4 items-end md:col-span-2">
-                                <FormItem className="flex flex-col">
-                                  <FormLabel className={cn(form.formState.errors.serviceDate && "text-destructive")}>Fecha Agendada</FormLabel>
-                                  <Popover open={isServiceDatePickerOpen} onOpenChange={setIsServiceDatePickerOpen}>
-                                    <PopoverTrigger asChild disabled={isReadOnly}>
-                                      <FormControl>
-                                        <Button
-                                          variant={"outline"}
-                                          className={cn("w-full justify-start text-left font-normal", !field.value && "text-muted-foreground", form.formState.errors.serviceDate && "border-destructive")}
-                                          disabled={isReadOnly}
-                                        >
-                                          {field.value && isValid(field.value) ? format(field.value, "PPP", { locale: es }) : <span>Seleccione fecha</span>}
-                                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                                        </Button>
-                                      </FormControl>
-                                    </PopoverTrigger>
-                                    <PopoverContent className="w-auto p-0" align="start">
-                                      <Calendar
-                                        mode="single"
-                                        selected={field.value}
-                                        onSelect={(date) => {
-                                          if (!date) return;
-                                          const currentVal = field.value || new Date();
-                                          const newDate = new Date(date);
-                                          newDate.setHours(currentVal.getHours());
-                                          newDate.setMinutes(currentVal.getMinutes());
-                                          newDate.setSeconds(0);
-                                          field.onChange(newDate);
-                                          setIsServiceDatePickerOpen(false);
-                                        }}
-                                        disabled={(date) => date < new Date("1900-01-01") || (isReadOnly && mode === 'service')}
-                                        initialFocus
-                                        locale={es}
-                                      />
-                                    </PopoverContent>
-                                  </Popover>
-                                </FormItem>
-                                <FormItem className="flex flex-col">
-                                  <FormLabel className={cn(form.formState.errors.serviceDate && "text-destructive")}>Hora Agendada</FormLabel>
-                                  <Select
-                                    value={field.value && isValid(field.value) ? format(field.value, 'HH:mm') : ""}
-                                    onValueChange={(timeValue) => {
-                                      if (!timeValue) return;
-                                      const [hours, minutes] = timeValue.split(':').map(Number);
-                                      const currentVal = field.value || new Date();
-                                      const newDate = new Date(currentVal);
-                                      newDate.setHours(hours);
-                                      newDate.setMinutes(minutes);
+                         <div className="grid grid-cols-2 gap-4 items-end md:col-span-2">
+                            <FormItem className="flex flex-col">
+                              <FormLabel className={cn(form.formState.errors.serviceDate && "text-destructive")}>Fecha Agendada</FormLabel>
+                              <Popover open={isServiceDatePickerOpen} onOpenChange={setIsServiceDatePickerOpen}>
+                                <PopoverTrigger asChild disabled={isReadOnly}>
+                                  <FormControl>
+                                    <Button
+                                      variant={"outline"}
+                                      className={cn("w-full justify-start text-left font-normal", !form.getValues('serviceDate') && "text-muted-foreground", form.formState.errors.serviceDate && "border-destructive")}
+                                      disabled={isReadOnly}
+                                    >
+                                      {form.getValues('serviceDate') && isValid(form.getValues('serviceDate')) ? format(form.getValues('serviceDate'), "PPP", { locale: es }) : <span>Seleccione fecha</span>}
+                                      <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                    </Button>
+                                  </FormControl>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-auto p-0" align="start">
+                                  <Calendar
+                                    mode="single"
+                                    selected={form.getValues('serviceDate')}
+                                    onSelect={(date) => {
+                                      if (!date) return;
+                                      const currentVal = form.getValues('serviceDate') || new Date();
+                                      const newDate = new Date(date);
+                                      newDate.setHours(currentVal.getHours());
+                                      newDate.setMinutes(currentVal.getMinutes());
                                       newDate.setSeconds(0);
-                                      field.onChange(newDate);
+                                      form.setValue('serviceDate', newDate, { shouldValidate: true });
+                                      setIsServiceDatePickerOpen(false);
                                     }}
-                                    disabled={isReadOnly}
-                                  >
-                                    <FormControl>
-                                      <SelectTrigger className={cn(form.formState.errors.serviceDate && "border-destructive")}>
-                                        <SelectValue placeholder="Seleccione hora" />
-                                      </SelectTrigger>
-                                    </FormControl>
-                                    <SelectContent>
-                                      {timeSlots.map(slot => (
-                                        <SelectItem key={slot.value} value={slot.value}>{slot.label}</SelectItem>
-                                      ))}
-                                    </SelectContent>
-                                  </Select>
-                                </FormItem>
-                              </div>
-                            )}
-                          />
+                                    disabled={(date) => date < new Date("1900-01-01") || (isReadOnly && mode === 'service')}
+                                    initialFocus
+                                    locale={es}
+                                  />
+                                </PopoverContent>
+                              </Popover>
+                            </FormItem>
+                            <FormItem className="flex flex-col">
+                              <FormLabel className={cn(form.formState.errors.serviceDate && "text-destructive")}>Hora Agendada</FormLabel>
+                              <Select
+                                value={form.getValues('serviceDate') && isValid(form.getValues('serviceDate')) ? format(form.getValues('serviceDate'), 'HH:mm') : ""}
+                                onValueChange={(timeValue) => {
+                                  if (!timeValue) return;
+                                  const [hours, minutes] = timeValue.split(':').map(Number);
+                                  const currentVal = form.getValues('serviceDate') || new Date();
+                                  const newDate = new Date(currentVal);
+                                  newDate.setHours(hours);
+                                  newDate.setMinutes(minutes);
+                                  newDate.setSeconds(0);
+                                  form.setValue('serviceDate', newDate, { shouldValidate: true });
+                                }}
+                                disabled={isReadOnly}
+                              >
+                                <FormControl>
+                                  <SelectTrigger className={cn(form.formState.errors.serviceDate && "border-destructive")}>
+                                    <SelectValue placeholder="Seleccione hora" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  {timeSlots.map(slot => (
+                                    <SelectItem key={slot.value} value={slot.value}>{slot.label}</SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </FormItem>
+                          </div>
                       )}
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
@@ -1046,7 +1038,25 @@ export function ServiceForm({
                       <FormField control={form.control} name="mileage" render={({ field }) => ( <FormItem><FormLabel className={cn(form.formState.errors.mileage && "text-destructive")}>Kilometraje (Opcional)</FormLabel><FormControl><Input type="number" placeholder="Ej: 55000 km" {...field} disabled={isReadOnly} value={field.value ?? ''} /></FormControl></FormItem>)}/>
                     </div>
                     {vehicleSearchResults.length > 0 && ( <ScrollArea className="h-auto max-h-[150px] w-full rounded-md border"><div className="p-2">{vehicleSearchResults.map(v => (<button type="button" key={v.id} onClick={() => handleSelectVehicleFromSearch(v)} className="w-full text-left p-2 rounded-md hover:bg-muted"><p className="font-semibold">{v.licensePlate}</p><p className="text-sm text-muted-foreground">{v.make} {v.model} - {v.ownerName}</p></button>))}</div></ScrollArea>)}
-                    {selectedVehicle && (<div className="p-3 border rounded-md bg-amber-50 dark:bg-amber-950/50 text-sm space-y-1"><p><strong>Vehículo Seleccionado:</strong> {selectedVehicle.make} {selectedVehicle.model} {selectedVehicle.year} (<span className="font-bold">{selectedVehicle.licensePlate}</span>)</p><p><strong>Propietario:</strong> {selectedVehicle.ownerName}</p>{lastServiceInfo && (<p className="text-xs font-medium text-blue-600 dark:text-blue-400 mt-1">{lastServiceInfo}</p>)}</div>)}
+                    {selectedVehicle && (
+                      <div className="p-3 border rounded-md bg-amber-50 dark:bg-amber-950/50 text-sm space-y-1">
+                        <p>
+                          <strong>Vehículo Seleccionado:</strong> {selectedVehicle.licensePlate} {selectedVehicle.make} {selectedVehicle.model} {selectedVehicle.year}
+                        </p>
+                        <p>
+                          <strong>Propietario:</strong> {selectedVehicle.ownerName} - {selectedVehicle.ownerPhone}
+                        </p>
+                        {lastService ? (
+                            <p className="text-xs font-medium text-blue-600 dark:text-blue-400 mt-1">
+                                <strong>Últ. Servicio:</strong> {lastService.mileage ? `${lastService.mileage.toLocaleString('es-ES')} km - ` : ''}{format(parseISO(lastService.serviceDate), "dd MMM yyyy", { locale: es })} - {lastService.description}
+                            </p>
+                        ) : (
+                            <p className="text-xs font-medium text-blue-600 dark:text-blue-400 mt-1">
+                                No tiene historial de servicios.
+                            </p>
+                        )}
+                      </div>
+                    )}
                     {vehicleNotFound && !selectedVehicle && !isReadOnly && (<div className="p-3 border border-orange-500 rounded-md bg-orange-50 dark:bg-orange-900/30 dark:text-orange-300 text-sm flex flex-col sm:flex-row items-center justify-between gap-2"><div className="flex items-center gap-2"><AlertCircle className="h-5 w-5 shrink-0"/><p>Vehículo con placa "{vehicleLicensePlateSearch}" no encontrado.</p></div><Button type="button" size="sm" variant="outline" onClick={() => {setNewVehicleInitialData({ licensePlate: vehicleLicensePlateSearch }); setIsVehicleDialogOpen(true);}} className="w-full sm:w-auto"><CarIcon className="mr-2 h-4 w-4"/> Registrar Nuevo Vehículo</Button></div>)}
                 </CardContent>
               </Card>
@@ -1502,6 +1512,7 @@ function SafetyCheckItemControl({ name, label, control, isReadOnly }: SafetyChec
     </div>
   );
 }
+
 
 
 
