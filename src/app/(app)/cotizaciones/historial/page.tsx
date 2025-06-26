@@ -488,10 +488,10 @@ export default function HistorialCotizacionesPage() {
 
                     <Separator orientation="vertical" className="hidden md:block h-auto"/>
 
-                    {/* Block 2: Vehículo y Servicio (Alineado a la Izquierda) */}
-                    <div className="p-4 flex-grow space-y-1 text-left border-b md:border-b-0">
-                        <p className="text-sm text-muted-foreground">{vehicle?.ownerName} - {vehicle?.ownerPhone}</p>
+                    {/* Block 2: Vehículo y Servicio (Centrado verticalmente) */}
+                    <div className="p-4 flex flex-col justify-center flex-grow space-y-2 text-left border-b md:border-b-0">
                         <p className="font-bold text-lg">{vehicle ? `${vehicle.licensePlate} - ${vehicle.make} ${vehicle.model} ${vehicle.year}` : 'N/A'}</p>
+                        <p className="text-sm text-muted-foreground">{vehicle?.ownerName} - {vehicle?.ownerPhone}</p>
                         <p className="text-sm text-foreground" title={getQuoteDescriptionText(quote)}>
                             <span className="font-semibold">{quote.serviceType}:</span> {getQuoteDescriptionText(quote)}
                         </p>
@@ -510,12 +510,12 @@ export default function HistorialCotizacionesPage() {
                     <Separator orientation="vertical" className="hidden md:block h-auto"/>
 
                     {/* Block 4: Estatus, Asesor y Acciones (Centrado) */}
-                    <div className="p-4 flex flex-col justify-center items-center text-center space-y-2 border-b md:border-b-0 md:border-l w-full md:w-48 flex-shrink-0">
+                    <div className="p-4 flex flex-col justify-center items-center text-center space-y-2 border-b md:border-b-0 md:border-l w-full md:w-56 flex-shrink-0">
                         <Badge variant={quote.serviceId ? "lightRed" : "outline"} className="w-full justify-center text-center text-sm">
                             {quote.serviceId ? "Agendado" : "Cotizacion"}
                         </Badge>
                         <p className="text-xs text-muted-foreground">Asesor: {quote.preparedByTechnicianName || 'N/A'}</p>
-                        <div className="flex justify-center flex-wrap gap-1 mt-1">
+                        <div className="flex justify-center items-center gap-1 mt-1">
                           <Button variant="ghost" size="icon" onClick={() => handleViewQuote(originalQuote)} title="Ver Cotización">
                             <FileText className="h-4 w-4" />
                           </Button>
