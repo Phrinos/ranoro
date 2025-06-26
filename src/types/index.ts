@@ -335,5 +335,3 @@ export interface VehiclePriceList {
   years: number[];
   services: PricedService[];
 }
-
-

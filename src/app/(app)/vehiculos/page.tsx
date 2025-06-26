@@ -14,7 +14,7 @@ import type { VehicleFormValues } from "./components/vehicle-form";
 import { useToast } from "@/hooks/use-toast";
 import { useState, useMemo, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { subMonths, parseISO, isBefore, compareAsc, compareDesc } from 'date-fns';
+import { subMonths, parseISO, isBefore, compareAsc, compareDesc, isValid } from 'date-fns';
 
 export default function VehiculosPage() {
   const { toast } = useToast();
@@ -39,9 +39,13 @@ export default function VehiculosPage() {
       const history = placeholderServiceRecords.filter(s => s.vehicleId === v.id);
       let lastServiceDate: string | undefined = undefined;
       if (history.length > 0) {
-        const sortedHistory = [...history].sort((a, b) => 
-          new Date(b.serviceDate).getTime() - new Date(a.serviceDate).getTime()
-        );
+        const sortedHistory = [...history].sort((a, b) => {
+            const dateA = a.serviceDate ? parseISO(a.serviceDate) : new Date(0);
+            const dateB = b.serviceDate ? parseISO(b.serviceDate) : new Date(0);
+            if(!isValid(dateA)) return 1;
+            if(!isValid(dateB)) return -1;
+            return dateB.getTime() - dateA.getTime();
+        });
         lastServiceDate = sortedHistory[0].serviceDate;
       }
       return {
@@ -69,6 +73,7 @@ export default function VehiculosPage() {
         count12++;
       } else {
         const lastService = parseISO(v.lastServiceDate);
+        if (!isValid(lastService)) return; // Skip invalid dates
         if (isBefore(lastService, sixMonthsAgo)) {
           count6++;
         }
@@ -94,7 +99,7 @@ export default function VehiculosPage() {
     };
 
     placeholderVehicles.push(newVehicle); // Mutate the source
-    await persistToFirestore();
+    await persistToFirestore(['vehicles']);
     
     setVersion(v => v + 1); // Force a re-render
 
@@ -124,7 +129,9 @@ export default function VehiculosPage() {
 
       itemsToDisplay = itemsToDisplay.filter(v => {
         if (!v.lastServiceDate) return true;
-        return isBefore(parseISO(v.lastServiceDate), thresholdDate);
+        const lastServiceDate = parseISO(v.lastServiceDate);
+        if(!isValid(lastServiceDate)) return false;
+        return isBefore(lastServiceDate, thresholdDate);
       });
     }
     
@@ -144,19 +151,19 @@ export default function VehiculosPage() {
           if (dateA === null && dateB !== null) comparison = -1;
           else if (dateA !== null && dateB === null) comparison = 1;
           else if (dateA === null && dateB === null) comparison = 0;
-          else comparison = compareAsc(dateA!, dateB!);
+          else if (isValid(dateA) && isValid(dateB)) comparison = compareAsc(dateA, dateB);
           break;
         case 'date_desc': 
           if (dateA !== null && dateB === null) comparison = -1;
           else if (dateA === null && dateB !== null) comparison = 1;
           else if (dateA === null && dateB === null) comparison = 0;
-          else comparison = compareDesc(dateA!, dateB!);
+          else if (isValid(dateA) && isValid(dateB)) comparison = compareDesc(dateA, dateB);
           break;
         default:
           if (dateA === null && dateB !== null) comparison = -1;
           else if (dateA !== null && dateB === null) comparison = 1;
           else if (dateA === null && dateB === null) comparison = 0;
-          else comparison = compareAsc(dateA!, dateB!);
+          else if (isValid(dateA) && isValid(dateB)) comparison = compareAsc(dateA, dateB);
           break;
       }
       return comparison;
