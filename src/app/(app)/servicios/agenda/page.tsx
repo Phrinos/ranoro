@@ -485,37 +485,40 @@ export default function AgendaServiciosPage() {
                       <CardContent className="p-0">
                         <div className="flex flex-col md:flex-row text-sm">
                           {/* Block 1 */}
-                          <div className="p-4 space-y-1 border-b md:border-b-0 md:border-r md:flex-shrink-0">
-                            <div className="text-xs text-muted-foreground">
-                              <span className="font-semibold">Folio:</span> <span className="font-mono">{service.id}</span>
-                            </div>
-                            <p className="text-lg font-semibold">{format(parseISO(service.serviceDate), "HH:mm 'hrs'", { locale: es })}</p>
-                          </div>
-
-                          {/* Block 2 */}
-                          <div className="p-4 space-y-1 border-b md:border-b-0 md:border-r flex-grow">
-                            <p className="font-bold text-2xl">{vehicle ? `${vehicle.make} ${vehicle.model} ${vehicle.year}` : 'N/A'}</p>
-                            <p className="font-semibold">{vehicle?.licensePlate}</p>
-                            <p className="text-sm">{vehicle?.ownerName} ({vehicle?.ownerPhone})</p>
+                          <div className="p-4 space-y-1 border-b md:border-b-0 md:border-r md:flex-shrink-0 flex flex-col justify-center">
+                            <p className="text-xs text-muted-foreground">Folio: <span className="font-mono text-muted-foreground">{service.id}</span></p>
+                            <p className="text-xl font-semibold">{format(parseISO(service.serviceDate), "HH:mm 'hrs'", { locale: es })}</p>
                           </div>
                           
+                          <Separator orientation="vertical" className="hidden md:block h-auto"/>
+
+                          {/* Block 2 */}
+                          <div className="p-4 space-y-1 border-b md:border-b-0 flex-grow">
+                             <p className="font-bold text-2xl">{vehicle ? `${vehicle.licensePlate} - ${vehicle.make} ${vehicle.model} ${vehicle.year}` : 'N/A'}</p>
+                             <p className="text-sm text-muted-foreground">{vehicle?.ownerName} - {vehicle?.ownerPhone}</p>
+                          </div>
+
+                          <Separator orientation="vertical" className="hidden md:block h-auto"/>
+
                           {/* Block 3 */}
-                          <div className="p-4 space-y-2 border-b md:border-b-0 md:border-r md:w-auto md:flex-shrink-0 flex-shrink-0 flex-grow-0">
-                              <div className="text-xs text-muted-foreground">
-                                <span className="font-semibold">Asesor:</span> {service.serviceAdvisorName || 'N/A'}
-                              </div>
+                          <div className="p-4 space-y-2 md:w-auto md:flex-shrink-0 flex-shrink-0 flex-grow-0 flex flex-col justify-center">
+                              <p className="text-xs text-muted-foreground">Asesor: <span className="text-muted-foreground">{service.serviceAdvisorName || 'N/A'}</span></p>
                               <div className="font-medium text-foreground text-sm" title={getServiceDescriptionText(service)}>
                                   <p><span className="font-semibold">{service.serviceType}:</span> {getServiceDescriptionText(service)}</p>
                               </div>
                           </div>
-                          
+
+                          <Separator orientation="vertical" className="hidden md:block h-auto"/>
+
                           {/* Block 4 */}
-                          <div className="p-4 space-y-1 border-b md:border-b-0 md:border-r text-left md:text-right md:w-auto md:flex-shrink-0">
+                          <div className="p-4 space-y-1 border-t md:border-t-0 text-left md:text-right md:w-auto md:flex-shrink-0 flex flex-col justify-center">
                             <p className="text-xs text-muted-foreground">Costo Estimado</p>
-                            <p className="font-bold text-lg text-primary">{formatCurrency(service.totalCost)}</p>
+                            <p className="font-bold text-xl text-foreground">{formatCurrency(service.totalCost)}</p>
                             <p className="text-xs text-muted-foreground mt-1">Ganancia Estimada</p>
                             <p className="font-semibold text-green-600">{formatCurrency(service.serviceProfit)}</p>
                           </div>
+
+                          <Separator orientation="vertical" className="hidden md:block h-auto"/>
 
                           {/* Block 5 */}
                           <div className="p-4 flex flex-col items-center justify-center gap-2 md:w-36 md:flex-shrink-0">
