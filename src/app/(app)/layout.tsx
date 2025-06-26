@@ -139,7 +139,7 @@ export default function AppLayout({
     <SidebarProvider defaultOpen={true}>
       <AppSidebar key={isHydrating ? 'hydrating' : 'hydrated'} />
       <div className="fixed top-4 left-4 z-50 md:hidden">
-        <SidebarTrigger className="h-10 w-10 shadow-lg bg-background/70 backdrop-blur-sm" />
+        <SidebarTrigger className="h-10 w-10 shadow-lg bg-black text-white" />
       </div>
       <SidebarInset className="flex flex-col">
         <main className="flex-1 overflow-y-auto p-4 pt-20 md:pt-6 lg:p-8">
