@@ -83,7 +83,7 @@ export default function HistorialCotizacionesPage() {
   };
 
   const filteredAndSortedQuotes = useMemo(() => {
-    let filtered = [...allQuotes];
+    let filtered = allQuotes.filter(q => !q.serviceId);
 
     if (dateRange?.from) {
       filtered = filtered.filter(quote => {

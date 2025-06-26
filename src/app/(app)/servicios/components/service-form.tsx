@@ -19,7 +19,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription} from '@/components/ui/card';
 import { CalendarIcon, PlusCircle, Search, Trash2, AlertCircle, Car as CarIcon, Clock, DollarSign, PackagePlus, BrainCircuit, Loader2, Printer, Plus, Minus, FileText, Signature, MessageSquare, Ban, ShieldQuestion, Wrench, Wallet, CreditCard, Send, WalletCards, ArrowRightLeft, Tag } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format, parseISO, setHours, setMinutes, isValid, startOfDay } from 'date-fns';
@@ -901,8 +901,9 @@ export function ServiceForm({
     return [];
   }, [mode, initialDataQuote]);
 
-  const isDateDisabled = isReadOnly || (mode === 'service' && !!initialDataService?.id && initialDataService.status !== 'Agendado');
-  const showDateFields = watchedStatus === 'Agendado' || watchedStatus === 'Reparando' || watchedStatus === 'Completado';
+  const isDateDisabled = isReadOnly || (isConvertingQuote && watchedStatus === 'Agendado') ? false : (mode === 'service' && !!initialDataService?.id && initialDataService.status !== 'Agendado');
+  
+  const showDateFields = mode === 'service' && (watchedStatus === 'Agendado' || watchedStatus === 'Reparando' || watchedStatus === 'Completado');
 
   return (
     <>
@@ -918,7 +919,7 @@ export function ServiceForm({
                  <div className="flex gap-2">
                     {(originalQuote || (mode === 'quote' && initialData?.id)) && (
                         <Button type="button" onClick={handleViewQuote} variant="ghost" size="icon" className="bg-card" title="Ver Cotización">
-                            <Tag className="h-5 w-5 text-purple-600" />
+                            <FileText className="h-5 w-5 text-purple-600" />
                         </Button>
                     )}
                     {mode === 'service' && !isReadOnly && (watchedStatus === 'Reparando' || watchedStatus === 'Completado') && (
@@ -1093,7 +1094,7 @@ export function ServiceForm({
                       )}
                       
                       <Card className="bg-card">
-                          <CardHeader><CardTitle className="text-lg">Resumen Financiero</CardTitle></CardHeader>
+                          <CardHeader><CardTitle className="text-lg">Costo del Servicio</CardTitle></CardHeader>
                           <CardContent>
                               <div className="space-y-1 text-sm">
                                   <div className="flex justify-between pt-1"><span className="font-semibold text-blue-600 dark:text-blue-400">Total (IVA Inc.):</span><span className="font-semibold text-blue-600 dark:text-blue-400">{formatCurrency(totalCost)}</span></div>
@@ -1108,52 +1109,52 @@ export function ServiceForm({
             </TabsContent>
 
             {showReceptionTab && (
-              <TabsContent value="recepcion" className="space-y-6 mt-0">
-                <Card>
-                  <CardHeader><CardTitle>Fechas y Horarios</CardTitle></CardHeader>
-                  <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 items-end">
-                    <FormField control={form.control} name="deliveryDateTime" render={({ field }) => { return ( <FormItem className="flex flex-col"><FormLabel>Fecha de Entrega</FormLabel><Popover><PopoverTrigger asChild disabled={isReadOnly}><FormControl><Button variant={"outline"} className={cn("w-full justify-start text-left font-normal",!field.value && "text-muted-foreground")} disabled={isReadOnly}>{field.value && isValid(field.value) ? (format(field.value, "PPP", { locale: es })) : (<span>Seleccione fecha y hora</span>)}<Clock className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value} onSelect={(date) => { const currentTime = field.value || new Date(); const newDateTime = date ? setHours(setMinutes(startOfDay(date), currentTime.getMinutes()), currentTime.getHours()): undefined; field.onChange(newDateTime);}} disabled={isReadOnly} initialFocus locale={es}/></PopoverContent></Popover><FormMessage /></FormItem>)} }/>
-                    <FormField control={form.control} name="deliveryDateTime" render={({ field }) => { const deliveryDateValue = useWatch({ control: form.control, name: 'deliveryDateTime' }); return ( <FormItem> <FormLabel>Hora de Entrega</FormLabel> <Select value={isValid(deliveryDateValue) ? format(deliveryDateValue, 'HH:mm') : ""} onValueChange={(timeValue) => { const [hours, minutes] = timeValue.split(':').map(Number); const currentDate = form.getValues('deliveryDateTime') || new Date(); const newDateTime = setHours(setMinutes(startOfDay(currentDate), minutes), hours); field.onChange(newDateTime); }} disabled={isReadOnly} > <FormControl><SelectTrigger><SelectValue placeholder="Seleccione hora" /></SelectTrigger></FormControl> <SelectContent>{timeSlots.map(slot => (<SelectItem key={slot.value} value={slot.value}>{slot.label}</SelectItem>))}</SelectContent> </Select> </FormItem> )}} />
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader><CardTitle>Condiciones de la Unidad y Firmas</CardTitle></CardHeader>
-                  <CardContent className="space-y-4">
-                      <FormField control={form.control} name="vehicleConditions" render={({ field }) => (<FormItem><FormLabel>Condiciones del Vehículo (al recibir)</FormLabel><FormControl><Textarea placeholder="Ej: Rayón en puerta del conductor, llanta trasera derecha baja, etc." {...field} disabled={isReadOnly} /></FormControl><FormMessage /></FormItem>)}/>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <FormField control={form.control} name="fuelLevel" render={({ field }) => (<FormItem><FormLabel>Nivel de Combustible</FormLabel><Select onValueChange={field.onChange} value={field.value} disabled={isReadOnly}><FormControl><SelectTrigger><SelectValue placeholder="Seleccionar nivel..." /></SelectTrigger></FormControl><SelectContent><SelectItem value="Vacío">Vacío</SelectItem><SelectItem value="1/8">1/8</SelectItem><SelectItem value="1/4">1/4</SelectItem><SelectItem value="3/8">3/8</SelectItem><SelectItem value="1/2">1/2</SelectItem><SelectItem value="5/8">5/8</SelectItem><SelectItem value="3/4">3/4</SelectItem><SelectItem value="7/8">7/8</SelectItem><SelectItem value="Lleno">Lleno</SelectItem></SelectContent></Select><FormMessage /></FormItem>)}/>
-                          <FormField control={form.control} name="customerItems" render={({ field }) => (<FormItem><FormLabel>Pertenencias del Cliente (Opcional)</FormLabel><FormControl><Textarea placeholder="Ej: Gato, llanta de refacción, cargador de celular en la guantera, etc." {...field} disabled={isReadOnly} /></FormControl><FormMessage /></FormItem>)}/>
-                      </div>
-                      <div className="pt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                          <div><Label>Firma de Recepción</Label><div className="mt-2 p-2 h-24 border rounded-md bg-muted/50 flex items-center justify-center">{customerSignatureReception ? (<Image src={customerSignatureReception} alt="Firma de recepción" width={150} height={75} style={{objectFit: 'contain'}}/>) : (<span className="text-sm text-muted-foreground">Pendiente de firma del cliente</span>)}</div></div>
-                          <div><Label>Firma de Entrega</Label><div className="mt-2 p-2 h-24 border rounded-md bg-muted/50 flex items-center justify-center">{customerSignatureDelivery ? (<Image src={customerSignatureDelivery} alt="Firma de entrega" width={150} height={75} style={{objectFit: 'contain'}}/>) : (<span className="text-sm text-muted-foreground">Pendiente de firma del cliente</span>)}</div></div>
-                      </div>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-            )}
-            {showReceptionTab && (
-              <TabsContent value="seguridad" className="space-y-6 mt-0">
+              <>
+                <TabsContent value="recepcion" className="space-y-6 mt-0">
                   <Card>
-                    <CardHeader>
-                        <CardTitle>Checklist de Puntos de Seguridad</CardTitle>
-                        <CardDescription>Documenta el estado de los componentes clave. El estado "N/A" se aplica por defecto.</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
-                        <SafetyCheckItemControl name="safetyInspection.brakes" label="Frenos" control={form.control} isReadOnly={isReadOnly} />
-                        <SafetyCheckItemControl name="safetyInspection.tires" label="Llantas" control={form.control} isReadOnly={isReadOnly} />
-                        <SafetyCheckItemControl name="safetyInspection.lights" label="Luces" control={form.control} isReadOnly={isReadOnly} />
-                        <SafetyCheckItemControl name="safetyInspection.fluidLevels" label="Niveles de Fluidos" control={form.control} isReadOnly={isReadOnly} />
-                        <SafetyCheckItemControl name="safetyInspection.suspensionSteering" label="Suspensión / Dirección" control={form.control} isReadOnly={isReadOnly} />
-                        <SafetyCheckItemControl name="safetyInspection.battery" label="Batería y Sistema Eléctrico" control={form.control} isReadOnly={isReadOnly} />
-                        <SafetyCheckItemControl name="safetyInspection.wipers" label="Limpiaparabrisas" control={form.control} isReadOnly={isReadOnly} />
-                        <SafetyCheckItemControl name="safetyInspection.horn" label="Claxon (Bocina)" control={form.control} isReadOnly={isReadOnly} />
-                      </div>
+                    <CardHeader><CardTitle>Fechas y Horarios</CardTitle></CardHeader>
+                    <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 items-end">
+                        <FormField control={form.control} name="deliveryDateTime" render={({ field }) => { return ( <FormItem className="flex flex-col"><FormLabel>Fecha de Entrega</FormLabel><Popover><PopoverTrigger asChild disabled={isReadOnly}><FormControl><Button variant={"outline"} className={cn("w-full justify-start text-left font-normal",!field.value && "text-muted-foreground")} disabled={isReadOnly}>{field.value && isValid(field.value) ? (format(field.value, "PPP", { locale: es })) : (<span>Seleccione fecha y hora</span>)}<Clock className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value} onSelect={(date) => { const currentTime = field.value || new Date(); const newDateTime = date ? setHours(setMinutes(startOfDay(date), currentTime.getMinutes()), currentTime.getHours()): undefined; field.onChange(newDateTime);}} disabled={isReadOnly} initialFocus locale={es}/></PopoverContent></Popover><FormMessage /></FormItem>)} }/>
+                        <FormField control={form.control} name="deliveryDateTime" render={({ field }) => { const deliveryDateValue = useWatch({ control: form.control, name: 'deliveryDateTime' }); return ( <FormItem> <FormLabel>Hora de Entrega</FormLabel> <Select value={isValid(deliveryDateValue) ? format(deliveryDateValue, 'HH:mm') : ""} onValueChange={(timeValue) => { const [hours, minutes] = timeValue.split(':').map(Number); const currentDate = form.getValues('deliveryDateTime') || new Date(); const newDateTime = setHours(setMinutes(startOfDay(currentDate), minutes), hours); field.onChange(newDateTime); }} disabled={isReadOnly} > <FormControl><SelectTrigger><SelectValue placeholder="Seleccione hora" /></SelectTrigger></FormControl> <SelectContent>{timeSlots.map(slot => (<SelectItem key={slot.value} value={slot.value}>{slot.label}</SelectItem>))}</SelectContent> </Select> </FormItem> )}} />
                     </CardContent>
                   </Card>
-              </TabsContent>
+
+                  <Card>
+                    <CardHeader><CardTitle>Condiciones de la Unidad y Firmas</CardTitle></CardHeader>
+                    <CardContent className="space-y-4">
+                        <FormField control={form.control} name="vehicleConditions" render={({ field }) => (<FormItem><FormLabel>Condiciones del Vehículo (al recibir)</FormLabel><FormControl><Textarea placeholder="Ej: Rayón en puerta del conductor, llanta trasera derecha baja, etc." {...field} disabled={isReadOnly} /></FormControl><FormMessage /></FormItem>)}/>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <FormField control={form.control} name="fuelLevel" render={({ field }) => (<FormItem><FormLabel>Nivel de Combustible</FormLabel><Select onValueChange={field.onChange} value={field.value} disabled={isReadOnly}><FormControl><SelectTrigger><SelectValue placeholder="Seleccionar nivel..." /></SelectTrigger></FormControl><SelectContent><SelectItem value="Vacío">Vacío</SelectItem><SelectItem value="1/8">1/8</SelectItem><SelectItem value="1/4">1/4</SelectItem><SelectItem value="3/8">3/8</SelectItem><SelectItem value="1/2">1/2</SelectItem><SelectItem value="5/8">5/8</SelectItem><SelectItem value="3/4">3/4</SelectItem><SelectItem value="7/8">7/8</SelectItem><SelectItem value="Lleno">Lleno</SelectItem></SelectContent></Select><FormMessage /></FormItem>)}/>
+                            <FormField control={form.control} name="customerItems" render={({ field }) => (<FormItem><FormLabel>Pertenencias del Cliente (Opcional)</FormLabel><FormControl><Textarea placeholder="Ej: Gato, llanta de refacción, cargador de celular en la guantera, etc." {...field} disabled={isReadOnly} /></FormControl><FormMessage /></FormItem>)}/>
+                        </div>
+                        <div className="pt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div><Label>Firma de Recepción</Label><div className="mt-2 p-2 h-24 border rounded-md bg-muted/50 flex items-center justify-center">{customerSignatureReception ? (<Image src={customerSignatureReception} alt="Firma de recepción" width={150} height={75} style={{objectFit: 'contain'}}/>) : (<span className="text-sm text-muted-foreground">Pendiente de firma del cliente</span>)}</div></div>
+                            <div><Label>Firma de Entrega</Label><div className="mt-2 p-2 h-24 border rounded-md bg-muted/50 flex items-center justify-center">{customerSignatureDelivery ? (<Image src={customerSignatureDelivery} alt="Firma de entrega" width={150} height={75} style={{objectFit: 'contain'}}/>) : (<span className="text-sm text-muted-foreground">Pendiente de firma del cliente</span>)}</div></div>
+                        </div>
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+                <TabsContent value="seguridad" className="space-y-6 mt-0">
+                    <Card>
+                      <CardHeader>
+                          <CardTitle>Checklist de Puntos de Seguridad</CardTitle>
+                          <CardDescription>Documenta el estado de los componentes clave. El estado "N/A" se aplica por defecto.</CardDescription>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+                          <SafetyCheckItemControl name="safetyInspection.brakes" label="Frenos" control={form.control} isReadOnly={isReadOnly} />
+                          <SafetyCheckItemControl name="safetyInspection.tires" label="Llantas" control={form.control} isReadOnly={isReadOnly} />
+                          <SafetyCheckItemControl name="safetyInspection.lights" label="Luces" control={form.control} isReadOnly={isReadOnly} />
+                          <SafetyCheckItemControl name="safetyInspection.fluidLevels" label="Niveles de Fluidos" control={form.control} isReadOnly={isReadOnly} />
+                          <SafetyCheckItemControl name="safetyInspection.suspensionSteering" label="Suspensión / Dirección" control={form.control} isReadOnly={isReadOnly} />
+                          <SafetyCheckItemControl name="safetyInspection.battery" label="Batería y Sistema Eléctrico" control={form.control} isReadOnly={isReadOnly} />
+                          <SafetyCheckItemControl name="safetyInspection.wipers" label="Limpiaparabrisas" control={form.control} isReadOnly={isReadOnly} />
+                          <SafetyCheckItemControl name="safetyInspection.horn" label="Claxon (Bocina)" control={form.control} isReadOnly={isReadOnly} />
+                        </div>
+                      </CardContent>
+                    </Card>
+                </TabsContent>
+              </>
             )}
           </Tabs>
 
