@@ -252,24 +252,33 @@ export default function AgendaServiciosPage() {
     const authUserString = localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY);
     const currentUser: User | null = authUserString ? JSON.parse(authUserString) : null;
     
-    const serviceIndex = placeholderServiceRecords.findIndex(s => s.id === serviceId);
-    if (serviceIndex === -1) {
-        toast({ title: "Error", description: "Servicio no encontrado.", variant: "destructive" });
-        return;
-    }
-    
-    const service = placeholderServiceRecords[serviceIndex];
-    if (service.status === 'Cancelado') {
-        toast({ title: "Acción no válida", description: "Este servicio ya ha sido cancelado.", variant: "default" });
-        return;
-    }
+    let serviceToCancel: ServiceRecord | undefined;
+    const updatedServices = allServices.map(s => {
+      if (s.id === serviceId) {
+        if (s.status === 'Cancelado') return s; // Already cancelled
+        serviceToCancel = {
+          ...s,
+          status: 'Cancelado',
+          cancellationReason: reason,
+          cancelledBy: currentUser?.name || 'Usuario desconocido',
+        };
+        return serviceToCancel;
+      }
+      return s;
+    });
 
-    service.status = 'Cancelado';
-    service.cancellationReason = reason;
-    service.cancelledBy = currentUser?.name || 'Usuario desconocido';
+    if (!serviceToCancel) {
+      toast({ title: "Error", description: "Servicio no encontrado.", variant: "destructive" });
+      return;
+    }
+    if (serviceToCancel.status !== 'Cancelado'){
+       toast({ title: "Acción no válida", description: "Este servicio ya ha sido cancelado.", variant: "default" });
+       return; // Already handled in the initial check, but as a safeguard.
+    }
     
-    if (service.serviceItems && service.serviceItems.length > 0) {
-      service.serviceItems.forEach(item => {
+    // Restore inventory
+    if (serviceToCancel.serviceItems && serviceToCancel.serviceItems.length > 0) {
+      serviceToCancel.serviceItems.forEach(item => {
         item.suppliesUsed.forEach(supply => {
           const invIndex = placeholderInventory.findIndex(i => i.id === supply.supplyId);
           if (invIndex > -1 && !placeholderInventory[invIndex].isService) {
@@ -279,14 +288,17 @@ export default function AgendaServiciosPage() {
       });
     }
 
-    setAllServices([...placeholderServiceRecords]);
+    setAllServices(updatedServices); // Update local state
+    
+    // Update global source of truth
+    placeholderServiceRecords.splice(0, placeholderServiceRecords.length, ...updatedServices);
     await persistToFirestore(['serviceRecords', 'inventory']);
     
     toast({
       title: "Servicio Cancelado",
       description: `El servicio ${serviceId} ha sido cancelado.`,
     });
-  }, [toast]);
+  }, [allServices, toast]);
   
   const handleReprintService = useCallback((service: ServiceRecord) => {
     setCurrentServiceForTicket(service);
@@ -556,11 +568,11 @@ export default function AgendaServiciosPage() {
                                         <AlertDialogDescription>
                                             Esta acción marcará el servicio {service.id} como cancelado y no se podrá revertir.
                                         </AlertDialogDescription>
+                                        </AlertDialogHeader>
                                         <div className="mt-4">
                                           <Label htmlFor={`cancel-reason-agenda-${service.id}`} className="text-left font-semibold">Motivo de la cancelación (obligatorio)</Label>
                                           <Textarea id={`cancel-reason-agenda-${service.id}`} value={cancellationReason} onChange={(e) => setCancellationReason(e.target.value)} placeholder="Ej: El cliente no se presentó..." className="mt-2" />
                                         </div>
-                                        </AlertDialogHeader>
                                         <AlertDialogFooter>
                                         <AlertDialogCancel onClick={() => setCancellationReason('')}>No</AlertDialogCancel>
                                         <AlertDialogAction onClick={() => { handleCancelService(service.id, cancellationReason); setCancellationReason(''); }} disabled={!cancellationReason.trim()} className="bg-destructive hover:bg-destructive/90">

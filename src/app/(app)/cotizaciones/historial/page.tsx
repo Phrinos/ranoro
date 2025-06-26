@@ -117,12 +117,11 @@ export default function HistorialCotizacionesPage() {
       switch (sortOption) {
         case "date_asc":
           return compareAsc(parseISO(a.quoteDate ?? ""), parseISO(b.quoteDate ?? ""));
-        case "date_desc":
-          return compareDesc(parseISO(a.quoteDate ?? ""), parseISO(b.quoteDate ?? ""));
         case "total_asc": return (a.estimatedTotalCost || 0) - (b.estimatedTotalCost || 0);
-        case "total_desc": return (b.estimatedTotalCost || 0) - a.estimatedTotalCost || 0;
+        case "total_desc": return (b.estimatedTotalCost || 0) - (a.estimatedTotalCost || 0);
         case "vehicle_asc": return (a.vehicleIdentifier || '').localeCompare(b.vehicleIdentifier || '');
         case "vehicle_desc": return (b.vehicleIdentifier || '').localeCompare(a.vehicleIdentifier || '');
+        case "date_desc":
         default:
            return compareDesc(parseISO(a.quoteDate ?? ""), parseISO(b.quoteDate ?? ""));
       }
@@ -162,17 +161,14 @@ export default function HistorialCotizacionesPage() {
         console.error("Failed to delete public quote:", e);
       }
     }
-
-    const pIndex = placeholderQuotes.findIndex(q => q.id === quoteId);
-    if (pIndex > -1) {
-      placeholderQuotes.splice(pIndex, 1);
-    }
-    setAllQuotes([...placeholderQuotes]);
+    
+    const updatedQuotes = allQuotes.filter(q => q.id !== quoteId);
+    setAllQuotes(updatedQuotes);
+    placeholderQuotes.splice(0, placeholderQuotes.length, ...updatedQuotes);
     
     await persistToFirestore(['quotes']);
 
     toast({ title: "Cotización Eliminada", description: `La cotización ${quoteId} ha sido eliminada.` });
-    setIsEditQuoteDialogOpen(false);
   }, [allQuotes, toast]);
   
   const handleGenerateService = useCallback((quote: QuoteRecord) => {
