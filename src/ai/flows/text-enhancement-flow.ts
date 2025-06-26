@@ -35,11 +35,15 @@ const enhanceTextPrompt = ai.definePrompt({
   name: 'enhanceTextPrompt',
   input: { schema: TextEnhancementInputSchema },
   output: { schema: TextEnhancementOutputSchema },
-  prompt: `You are an expert copy editor. Correct any spelling mistakes, fix grammar, and improve the clarity and professionalism of the following text.
-  
-IMPORTANT: Return ONLY the corrected text as a raw string. Do not include any preamble, explanation, or markdown formatting like quotes or code blocks.
+  prompt: `Eres un asesor de servicio automotriz. Mejora el siguiente texto:
 
-Original Text:
+- Corrige ortografía y gramática.
+- Redacta en español neutro, tono cordial y profesional.
+- Enriquece con un breve contexto (ej. indicar que se verificaron niveles, frenos y suspensión) **sin inventar fallas**.
+- No superes 40 palabras.
+- Devuelve únicamente el texto corregido como una cadena de texto simple.
+
+Texto original:
 "{{{this}}}"
 `,
 });
