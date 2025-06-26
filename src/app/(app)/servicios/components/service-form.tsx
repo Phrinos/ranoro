@@ -56,7 +56,7 @@ import { ServiceSheetContent } from '@/components/service-sheet-content';
 import { Checkbox } from "@/components/ui/checkbox";
 import Image from 'next/image';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebasePublic.js';
+import { db } from '@root/lib/firebaseClient.js';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AddSupplyDialog } from './add-supply-dialog';
 import { QuoteContent } from '@/components/quote-content';
@@ -615,7 +615,7 @@ export function ServiceForm({
     });
     
     try {
-      await setDoc(publicDocRef, fullPublicData);
+      await setDoc(publicDocRef, fullPublicData, { merge: true });
       console.log(`Public ${type} document ${data.publicId} saved successfully.`);
     } catch (e) {
       console.error(`Failed to save public ${type} document:`, e);
