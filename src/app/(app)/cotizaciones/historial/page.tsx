@@ -121,7 +121,7 @@ export default function HistorialCotizacionesPage() {
         case "date_desc":
           return compareDesc(parseISO(a.quoteDate ?? ""), parseISO(b.quoteDate ?? ""));
         case "total_asc": return (a.estimatedTotalCost || 0) - (b.estimatedTotalCost || 0);
-        case "total_desc": return (b.estimatedTotalCost || 0) - (a.estimatedTotalCost || 0);
+        case "total_desc": return (b.estimatedTotalCost || 0) - a.estimatedTotalCost || 0;
         case "vehicle_asc": return (a.vehicleIdentifier || '').localeCompare(b.vehicleIdentifier || '');
         case "vehicle_desc": return (b.vehicleIdentifier || '').localeCompare(a.vehicleIdentifier || '');
         default:
@@ -483,7 +483,7 @@ export default function HistorialCotizacionesPage() {
                     {/* Block 1 */}
                     <div className="p-4 space-y-1 border-b md:border-b-0 md:border-r md:flex-shrink-0">
                       <div className="text-xs text-muted-foreground">
-                        Folio: <span className="font-semibold text-foreground">{quote.id}</span>
+                        <span className="font-semibold">Folio:</span> <span className="font-mono">{quote.id}</span>
                       </div>
                       <p className="text-lg font-semibold">{format(parseISO(quote.quoteDate!), "dd MMM yyyy", { locale: es })}</p>
                     </div>
@@ -496,13 +496,13 @@ export default function HistorialCotizacionesPage() {
                     </div>
                     
                     {/* Block 3 */}
-                    <div className="p-4 space-y-2 border-b md:border-b-0 md:border-r md:w-auto md:flex-shrink-0">
-                      <div className="text-xs text-muted-foreground">
-                          Asesor: <span className="font-semibold text-foreground">{quote.preparedByTechnicianName || 'N/A'}</span>
-                      </div>
-                      <div className="font-medium text-foreground text-sm" title={getQuoteDescriptionText(quote)}>
-                          <span className="font-semibold">{quote.serviceType}:</span> {getQuoteDescriptionText(quote)}
-                      </div>
+                    <div className="p-4 space-y-2 border-b md:border-b-0 md:border-r md:w-auto md:flex-shrink-0 flex-shrink-0 flex-grow-0">
+                        <div className="text-xs text-muted-foreground">
+                            <span className="font-semibold">Asesor:</span> {quote.preparedByTechnicianName || 'N/A'}
+                        </div>
+                        <div className="font-medium text-foreground text-sm" title={getQuoteDescriptionText(quote)}>
+                            <p><span className="font-semibold">{quote.serviceType}:</span> {getQuoteDescriptionText(quote)}</p>
+                        </div>
                     </div>
                     
                     {/* Block 4 */}
@@ -634,3 +634,4 @@ export default function HistorialCotizacionesPage() {
     </>
   );
 }
+
