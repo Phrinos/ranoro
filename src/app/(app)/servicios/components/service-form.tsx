@@ -1,9 +1,8 @@
 
-
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm, Controller, useFieldArray, Control } from "react-hook-form";
+import { useForm, Controller, useFieldArray, type Control, useWatch } from "react-hook-form";
 import * as z from "zod";
 import { Button } from "@/components/ui/button";
 import {
@@ -21,7 +20,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription} from "@/components/ui/card";
-import { CalendarIcon, PlusCircle, Search, Trash2, AlertCircle, Car as CarIcon, Clock, DollarSign, PackagePlus, BrainCircuit, Loader2, Printer, Plus, Minus, FileText, Signature, MessageSquare, Ban, ShieldQuestion, Wrench, Wallet, CreditCard, Send, WalletCards, ArrowRightLeft } from "lucide-react";
+import { CalendarIcon, PlusCircle, Search, Trash2, AlertCircle, Car as CarIcon, Clock, DollarSign, PackagePlus, BrainCircuit, Loader2, Printer, Plus, Minus, FileText, Signature, MessageSquare, Ban, ShieldQuestion, Wrench, Wallet, CreditCard, Send, WalletCards, ArrowRightLeft, Tag } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format, parseISO, setHours, setMinutes, isValid, startOfDay } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -879,7 +878,7 @@ export function ServiceForm({
   return (
     <>
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-6">
           <Tabs defaultValue="servicio" className="w-full">
             <div className="flex justify-between items-center mb-4 border-b">
                 <TabsList className="bg-transparent p-0">
@@ -899,12 +898,12 @@ export function ServiceForm({
                         <div className="flex gap-2">
                            {(originalQuote || mode === 'quote') && (
                               <Button type="button" onClick={handleViewQuote} variant="ghost" size="icon" className="bg-card" title="Ver Cotización">
-                                  <FileText className="h-4 w-4" />
+                                  <FileText className="h-5 w-5" />
                               </Button>
                            )}
                            {mode === 'service' && !isReadOnly && (watchedStatus === 'Reparando' || watchedStatus === 'Completado') && (
                               <Button type="button" onClick={handlePrintSheet} variant="ghost" size="icon" className="bg-card" title="Ver Hoja de Servicio">
-                                <Wrench className="h-4 w-4" />
+                                <Wrench className="h-5 w-5" />
                               </Button>
                            )}
                         </div>
@@ -972,28 +971,6 @@ export function ServiceForm({
                 </CardContent>
               </Card>
               
-              <Card>
-                  <CardHeader><CardTitle className="text-lg">Trabajos a Realizar</CardTitle></CardHeader>
-                  <CardContent className="space-y-4">
-                      {serviceItemsFields.map((serviceField, serviceIndex) => (
-                          <ServiceItemCard
-                              key={serviceField.id}
-                              serviceIndex={serviceIndex}
-                              form={form}
-                              removeServiceItem={removeServiceItem}
-                              isReadOnly={isReadOnly}
-                              inventoryItems={currentInventoryItems}
-                              mode={mode}
-                          />
-                      ))}
-                      {!isReadOnly && (
-                          <Button type="button" variant="outline" onClick={() => appendServiceItem({ id: `item_${Date.now()}`, name: '', price: undefined, suppliesUsed: [] })}>
-                              <PlusCircle className="mr-2 h-4 w-4"/> Añadir Trabajo a Realizar
-                          </Button>
-                      )}
-                  </CardContent>
-              </Card>
-
               {(watchedStatus === 'Reparando' || watchedStatus === 'Completado') && (
                   <Card>
                       <CardHeader>
@@ -1024,6 +1001,28 @@ export function ServiceForm({
                       </CardContent>
                   </Card>
               )}
+
+              <Card>
+                  <CardHeader><CardTitle className="text-lg">Trabajos a Realizar</CardTitle></CardHeader>
+                  <CardContent className="space-y-4">
+                      {serviceItemsFields.map((serviceField, serviceIndex) => (
+                          <ServiceItemCard
+                              key={serviceField.id}
+                              serviceIndex={serviceIndex}
+                              form={form}
+                              removeServiceItem={removeServiceItem}
+                              isReadOnly={isReadOnly}
+                              inventoryItems={currentInventoryItems}
+                              mode={mode}
+                          />
+                      ))}
+                      {!isReadOnly && (
+                          <Button type="button" variant="outline" onClick={() => appendServiceItem({ id: `item_${Date.now()}`, name: '', price: undefined, suppliesUsed: [] })}>
+                              <PlusCircle className="mr-2 h-4 w-4"/> Añadir Trabajo a Realizar
+                          </Button>
+                      )}
+                  </CardContent>
+              </Card>
               
               <Card>
                   <CardHeader>
@@ -1072,13 +1071,13 @@ export function ServiceForm({
                       )}
                     </CardContent>
                   </Card>
-                  <Card className="bg-card">
+                  <Card className="bg-card h-full">
                     <CardHeader><CardTitle className="text-lg">Resumen Financiero</CardTitle></CardHeader>
                     <CardContent>
-                      <div className="space-y-1 text-base">
-                        <div className="flex justify-between pt-1"><span className="font-bold text-blue-600 dark:text-blue-400">Total (IVA Inc.):</span><span className="font-semibold text-blue-600 dark:text-blue-400">{formatCurrency(totalCost)}</span></div>
-                        <div className="flex justify-between"><span>(-) Costo Insumos:</span><span className="font-medium text-red-600 dark:text-red-400">{formatCurrency(totalSuppliesWorkshopCost)}</span></div>
-                        <hr className="my-2 border-dashed"/>
+                      <div className="space-y-1 text-sm">
+                        <div className="flex justify-between pt-1"><span className="font-semibold text-blue-600 dark:text-blue-400">Total (IVA Inc.):</span><span className="font-semibold text-blue-600 dark:text-blue-400">{formatCurrency(totalCost)}</span></div>
+                        <div className="flex justify-between text-xs"><span>(-) Costo Insumos:</span><span className="font-medium text-red-600 dark:text-red-400">{formatCurrency(totalSuppliesWorkshopCost)}</span></div>
+                        <hr className="my-1 border-dashed"/>
                         <div className="flex justify-between font-bold text-green-700 dark:text-green-400"><span>(=) Ganancia:</span><span>{formatCurrency(serviceProfit)}</span></div>
                       </div>
                     </CardContent>
@@ -1089,11 +1088,11 @@ export function ServiceForm({
                     <CardHeader><CardTitle className="text-lg flex items-center gap-2"><DollarSign className="h-5 w-5 text-green-600"/>Resumen Financiero</CardTitle></CardHeader>
                     <CardContent>
                         <div className="flex justify-end">
-                            <div className="w-full max-w-md space-y-1 text-lg">
-                                <div className="flex justify-between pt-1"><span className="font-bold text-blue-600 dark:text-blue-400">Total del Servicio (IVA Inc.):</span><span className="font-semibold text-blue-600 dark:text-blue-400">{formatCurrency(totalCost)}</span></div>
-                                <div className="flex justify-between"><span>(-) Costo Insumos (Taller):</span><span className="font-medium text-red-600 dark:text-red-400">{formatCurrency(totalSuppliesWorkshopCost)}</span></div>
+                            <div className="w-full max-w-md space-y-1 text-base">
+                                <div className="flex justify-between pt-1"><span className="font-bold text-blue-600 dark:text-blue-400">Total (IVA Inc.):</span><span className="font-semibold text-blue-600 dark:text-blue-400">{formatCurrency(totalCost)}</span></div>
+                                <div className="flex justify-between"><span>(-) Costo Insumos:</span><span className="font-medium text-red-600 dark:text-red-400">{formatCurrency(totalSuppliesWorkshopCost)}</span></div>
                                 <hr className="my-2 border-dashed"/>
-                                <div className="flex justify-between font-bold text-green-700 dark:text-green-400"><span>(=) Ganancia Estimada:</span><span>{formatCurrency(serviceProfit)}</span></div>
+                                <div className="flex justify-between font-bold text-green-700 dark:text-green-400"><span>(=) Ganancia:</span><span>{formatCurrency(serviceProfit)}</span></div>
                             </div>
                         </div>
                     </CardContent>
@@ -1380,7 +1379,7 @@ interface SafetyCheckItemControlProps {
 function SafetyCheckItemControl({ name, label, control, isReadOnly }: SafetyCheckItemControlProps) {
   const statusFieldName = `${name}.status`;
   const notesFieldName = `${name}.notes`;
-  const statusValue = control.getValues(statusFieldName as any);
+  const statusValue = useWatch({ control, name: statusFieldName as any });
   
   return (
     <div className="space-y-2">
@@ -1425,5 +1424,3 @@ function SafetyCheckItemControl({ name, label, control, isReadOnly }: SafetyChec
     </div>
   );
 }
-
-
