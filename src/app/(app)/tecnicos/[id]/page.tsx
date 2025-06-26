@@ -68,7 +68,7 @@ export default function TechnicianDetailPage() {
       placeholderTechnicians[pIndex] = updatedTechnician;
     }
     
-    await persistToFirestore();
+    await persistToFirestore(['technicians']);
 
     setIsEditDialogOpen(false);
     toast({
@@ -84,7 +84,7 @@ export default function TechnicianDetailPage() {
       placeholderTechnicians[techIndex].isArchived = true;
     }
 
-    await persistToFirestore();
+    await persistToFirestore(['technicians']);
 
     toast({
       title: "Staff Archivado",

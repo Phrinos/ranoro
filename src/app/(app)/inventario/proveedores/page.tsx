@@ -98,11 +98,10 @@ export default function ProveedoresPage() {
         sup.id === editingSupplier.id ? { ...editingSupplier, ...formData, debtAmount: Number(formData.debtAmount) || 0 } : sup
       );
       setSuppliers(updatedSuppliers);
+      
       const pIndex = placeholderSuppliers.findIndex(sup => sup.id === editingSupplier.id);
       if (pIndex !== -1) placeholderSuppliers[pIndex] = { ...placeholderSuppliers[pIndex], ...formData, debtAmount: Number(formData.debtAmount) || 0 };
       
-      await persistToFirestore();
-
       toast({
         title: "Proveedor Actualizado",
         description: `El proveedor "${formData.name}" ha sido actualizado.`,
@@ -113,16 +112,18 @@ export default function ProveedoresPage() {
         ...formData,
         debtAmount: Number(formData.debtAmount) || 0,
       };
-      setSuppliers(prev => [...prev, newSupplier]);
+      const updatedSuppliers = [...suppliers, newSupplier];
+      setSuppliers(updatedSuppliers);
       placeholderSuppliers.push(newSupplier);
       
-      await persistToFirestore();
-
       toast({
         title: "Proveedor Agregado",
         description: `El proveedor "${newSupplier.name}" ha sido creado.`,
       });
     }
+
+    await persistToFirestore(['suppliers']);
+
     setIsDialogOpen(false);
     setEditingSupplier(null);
   }, [editingSupplier, suppliers, toast]);
@@ -137,7 +138,7 @@ export default function ProveedoresPage() {
       placeholderSuppliers.splice(pIndex, 1);
     }
     
-    await persistToFirestore();
+    await persistToFirestore(['suppliers']);
 
     toast({
       title: "Proveedor Eliminado",

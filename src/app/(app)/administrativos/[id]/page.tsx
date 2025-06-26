@@ -63,7 +63,7 @@ export default function AdministrativeStaffDetailPage() {
       placeholderAdministrativeStaff[pIndex] = updatedStaffMember;
     }
     
-    await persistToFirestore();
+    await persistToFirestore(['administrativeStaff']);
 
     setIsEditDialogOpen(false);
     toast({
@@ -79,7 +79,7 @@ export default function AdministrativeStaffDetailPage() {
       placeholderAdministrativeStaff[staffIndex].isArchived = true;
     }
     
-    await persistToFirestore();
+    await persistToFirestore(['administrativeStaff']);
 
     toast({
       title: "Staff Archivado",

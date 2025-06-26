@@ -61,11 +61,11 @@ export default function TecnicosPage() {
       standardHoursPerDay: data.standardHoursPerDay ? Number(data.standardHoursPerDay) : 8,
       isArchived: false,
     };
-    const updatedTechnicians = [...technicians, newTechnician];
-    setTechnicians(updatedTechnicians);
+    
     placeholderTechnicians.push(newTechnician);
+    setTechnicians([...placeholderTechnicians]);
 
-    await persistToFirestore();
+    await persistToFirestore(['technicians']);
   };
   
   const totalTechnicians = useMemo(() => technicians.filter(t => !t.isArchived).length, [technicians]);

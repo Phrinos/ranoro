@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useMemo, useEffect } from 'react';
@@ -6,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { PlusCircle, Trash2, Edit, Search } from "lucide-react";
 import { useToast } from '@/hooks/use-toast';
-import { placeholderCategories, placeholderInventory } from '@/lib/placeholder-data';
+import { placeholderCategories, placeholderInventory, persistToFirestore } from '@/lib/placeholder-data';
 import type { InventoryCategory, InventoryItem } from '@/types';
 import {
   AlertDialog,
@@ -74,7 +75,7 @@ export default function CategoriasInventarioPage() {
     setIsCategoryDialogOpen(true);
   };
 
-  const handleSaveCategory = (e?: React.FormEvent) => {
+  const handleSaveCategory = async (e?: React.FormEvent) => {
     e?.preventDefault();
     const categoryName = currentCategoryName.trim();
     if (!categoryName) {
@@ -104,6 +105,7 @@ export default function CategoriasInventarioPage() {
         cat.id === editingCategory.id ? { ...cat, name: categoryName } : cat
       );
       setCategories(updatedCategories);
+      
       const pIndex = placeholderCategories.findIndex(cat => cat.id === editingCategory.id);
       if (pIndex !== -1) placeholderCategories[pIndex].name = categoryName;
       
@@ -123,12 +125,15 @@ export default function CategoriasInventarioPage() {
         description: `La categoría "${newCategory.name}" ha sido creada.`,
       });
     }
+
+    await persistToFirestore(['categories']);
+
     setIsCategoryDialogOpen(false);
     setEditingCategory(null);
     setCurrentCategoryName('');
   };
 
-  const handleDeleteCategory = () => {
+  const handleDeleteCategory = async () => {
     if (!categoryToDelete) return;
 
     setCategories(prev => prev.filter(cat => cat.id !== categoryToDelete.id));
@@ -137,6 +142,8 @@ export default function CategoriasInventarioPage() {
       placeholderCategories.splice(pIndex, 1);
     }
     
+    await persistToFirestore(['categories']);
+
     toast({
       title: "Categoría Eliminada",
       description: `La categoría "${categoryToDelete.name}" ha sido eliminada.`,
