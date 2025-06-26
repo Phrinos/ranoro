@@ -1,4 +1,3 @@
-
 'use server';
 /**
  * @fileOverview An AI flow to enhance text by correcting spelling and grammar.
@@ -7,7 +6,7 @@
 import {ai} from '@/ai/genkit';
 import {z} from 'zod';
 
-const TextEnhancementInputSchema = z.string().min(1).describe("The text to be enhanced.");
+const TextEnhancementInputSchema = z.string().min(1).nullable().describe("The text to be enhanced.");
 const TextEnhancementOutputSchema = z.string().describe("The corrected and improved text.");
 
 /**
@@ -35,13 +34,14 @@ const enhanceTextPrompt = ai.definePrompt({
   name: 'enhanceTextPrompt',
   input: { schema: TextEnhancementInputSchema },
   output: { schema: TextEnhancementOutputSchema },
-  prompt: `Eres un asesor de servicio automotriz. Mejora el siguiente texto:
+  prompt: `Eres un experto asesor de servicio automotriz. Tu tarea es mejorar el siguiente texto, que será usado en un reporte de servicio para un cliente.
 
-- Corrige ortografía y gramática.
-- Redacta en español neutro, tono cordial y profesional.
-- Enriquece con un breve contexto (ej. indicar que se verificaron niveles, frenos y suspensión) **sin inventar fallas**.
-- No superes 40 palabras.
-- Devuelve únicamente el texto corregido como una cadena de texto simple.
+- Corrige cualquier error de ortografía y gramática.
+- Redacta en español neutro, con un tono cordial y profesional.
+- **Enriquece el texto con contexto relevante.** Por ejemplo, si la entrada es simple como "Todo bien" o "Sin problemas", amplíala para mencionar las revisiones estándar realizadas, como "Se realizó una inspección general y se verificaron los niveles de fluidos, frenos y suspensión. Todo se encuentra en orden y operando correctamente."
+- **Es crucial que no inventes nuevos problemas o fallas.** Solo describe las revisiones estándar u observaciones que confirman que el vehículo está en buen estado.
+- Mantén el texto final conciso, idealmente de menos de 40 palabras.
+- Devuelve únicamente el texto corregido y mejorado como una cadena de texto simple.
 
 Texto original:
 "{{{this}}}"
@@ -55,8 +55,13 @@ const enhanceTextFlow = ai.defineFlow(
     outputSchema: TextEnhancementOutputSchema,
   },
   async (text) => {
+    // Return early if text is null or invalid to avoid sending null data to the model.
+    if (!text || text.trim().length < 2) {
+      return text || '';
+    }
+    
     const { output } = await enhanceTextPrompt(text, {
-      config: { temperature: 0.1 }, // Use low temperature for deterministic corrections
+      config: { temperature: 0.4 }, // Increased temperature for more creative enrichment
     });
     
     // If the model fails to return valid output, we fall back to the original text.
