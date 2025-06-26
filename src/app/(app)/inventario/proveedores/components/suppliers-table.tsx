@@ -62,7 +62,7 @@ export const SuppliersTable = React.memo(({ suppliers, onEdit, onDelete }: Suppl
                 {supplier.debtAmount && supplier.debtAmount > 0 ? (
                   <Badge variant="destructive">${supplier.debtAmount.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</Badge>
                 ) : (
-                  <span>$0.00</span>
+                  <span className="text-muted-foreground">N/A</span>
                 )}
               </TableCell>
               <TableCell>{supplier.debtNote || 'N/A'}</TableCell>

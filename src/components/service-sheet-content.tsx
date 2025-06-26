@@ -182,8 +182,6 @@ interface ServiceSheetContentProps {
 
 export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheetContentProps>(
   ({ service, vehicle, workshopInfo: workshopInfoProp }, ref) => {
-    // Directly use the prop if available, otherwise use the initial default.
-    // This removes the need for useState and useEffect.
     const effectiveWorkshopInfo = { ...initialWorkshopInfo, ...workshopInfoProp };
     
     const formatCurrency = (amount: number | undefined) => {
@@ -225,9 +223,7 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
     
     const fuelColor = getFuelColorClass(fuelPercentage);
     
-    const hasSafetyInspection = service.safetyInspection && Object.values(service.safetyInspection).some(val => val && val !== 'na');
-    const isSignedByTechnician = !!service.safetyInspection?.technicianSignature;
-    const showChecklist = hasSafetyInspection && isSignedByTechnician;
+    const showChecklist = !!service.safetyInspection;
 
     const ServiceOrderContent = (
       <div className="flex flex-col min-h-[10in]">
@@ -327,18 +323,20 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
                 <h3 className="font-bold p-1 bg-gray-700 text-white text-xs text-center">INVENTARIO DE PERTENENCIAS</h3>
                 <p className="whitespace-pre-wrap p-2 min-h-[104px] text-sm sm:text-base">{service.customerItems || 'No especificado.'}</p>
             </div>
-            <div className="border-2 border-black p-2 rounded-md flex flex-col justify-between items-center min-h-[130px]">
-                <h3 className="font-bold uppercase text-center text-sm">AUTORIZO QUE SE REALICEN ESTOS SERVICIOS</h3>
-                {service.customerSignatureReception ? (
-                    <div className="w-full h-full flex items-center justify-center">
-                        <Image src={service.customerSignatureReception} alt="Firma del cliente" width={200} height={100} style={{objectFit: 'contain'}} />
-                    </div>
-                ) : (
-                    <div className="border-t-2 border-black mt-auto pt-1 text-center w-full">
-                        <p className="text-xs font-semibold">{vehicle?.ownerName?.toUpperCase() || '________________________________'}</p>
-                    </div>
-                )}
-            </div>
+            {service.serviceType !== 'Cambio de Aceite' && (
+              <div className="border-2 border-black p-2 rounded-md flex flex-col justify-between items-center min-h-[130px]">
+                  <h3 className="font-bold uppercase text-center text-sm">AUTORIZO QUE SE REALICEN ESTOS SERVICIOS</h3>
+                  {service.customerSignatureReception ? (
+                      <div className="w-full h-full flex items-center justify-center">
+                          <Image src={service.customerSignatureReception} alt="Firma del cliente" width={200} height={100} style={{objectFit: 'contain'}} />
+                      </div>
+                  ) : (
+                      <div className="border-t-2 border-black mt-auto pt-1 text-center w-full">
+                          <p className="text-xs font-semibold">{vehicle?.ownerName?.toUpperCase() || '________________________________'}</p>
+                      </div>
+                  )}
+              </div>
+            )}
           </section>
         </main>
         
