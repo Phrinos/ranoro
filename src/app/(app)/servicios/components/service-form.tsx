@@ -1,3 +1,4 @@
+
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -678,14 +679,14 @@ export function ServiceForm({
     }
 
     const finalTotalCost = values.serviceItems?.reduce((sum, item) => sum + (item.price || 0), 0) || 0;
-    const finalTotalSuppliesCost = values.serviceItems?.flatMap(item => item.suppliesUsed).reduce((sum, supply) => {
+    const finalTotalSuppliesWorkshopCost = values.serviceItems?.flatMap(item => item.suppliesUsed).reduce((sum, supply) => {
         const item = currentInventoryItems.find(i => i.id === supply.supplyId);
         const costPerUnit = item?.unitPrice || supply.unitPrice || 0;
         return sum + costPerUnit * supply.quantity;
     }, 0) || 0;
     const finalSubTotal = finalTotalCost / (1 + IVA_RATE);
     const finalTaxAmount = finalTotalCost - finalSubTotal;
-    const finalProfit = finalTotalCost - finalTotalSuppliesCost;
+    const finalProfit = finalTotalCost - finalTotalSuppliesWorkshopCost;
     const compositeDescription = values.serviceItems.map(item => item.name).join(', ') || 'Servicio';
     
     const isConvertingQuoteToService = mode === 'quote' && values.status && values.status !== 'Cotizacion';
@@ -716,7 +717,7 @@ export function ServiceForm({
       serviceData.technicianName = technicians.find(t => t.id === values.technicianId)?.name || 'N/A';
       serviceData.subTotal = finalSubTotal;
       serviceData.taxAmount = finalTaxAmount;
-      serviceData.totalSuppliesCost = finalTotalSuppliesCost;
+      serviceData.totalSuppliesCost = finalTotalSuppliesWorkshopCost;
       serviceData.serviceProfit = finalProfit;
       serviceData.serviceAdvisorName = currentUser.name;
       
@@ -1892,3 +1893,4 @@ const SafetyCheckRow = ({ name, label, control, isReadOnly }: { name: string; la
     </div>
   );
 };
+
