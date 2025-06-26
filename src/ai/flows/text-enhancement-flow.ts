@@ -7,23 +7,37 @@
 import {ai} from '@/ai/genkit';
 import {z} from 'zod';
 
-// This is the schema for the prompt itself, which requires a non-empty string.
-const PromptInputSchema = z.string().min(1);
+const TextEnhancementInputSchema = z.string().min(1).describe("The text to be enhanced.");
+const TextEnhancementOutputSchema = z.string().describe("The corrected and improved text.");
 
-// This is the schema for the flow, which can accept null or undefined text.
-const FlowInputSchema = z.string().nullable().optional();
-const FlowOutputSchema = z.string();
-
-
+/**
+ * A wrapper function that validates the input text before calling the AI flow.
+ * This is the function that UI components should call.
+ * @param text The text to enhance. Can be null, undefined, or a string.
+ * @returns The enhanced text, or the original text if it was invalid or the AI failed.
+ */
 export async function enhanceText(text: string | null | undefined): Promise<string> {
-  return enhanceTextFlow(text);
+  if (!text || text.trim().length < 2) {
+    return text || ''; // Return original/empty string if input is not valid for enhancement.
+  }
+  
+  // Only call the flow if we have valid text.
+  try {
+    return await enhanceTextFlow(text);
+  } catch (e) {
+    console.error("enhanceTextFlow failed:", e);
+    // In case of AI failure, return the original text to not lose user's input.
+    return text;
+  }
 }
 
 const enhanceTextPrompt = ai.definePrompt({
   name: 'enhanceTextPrompt',
-  input: { schema: PromptInputSchema }, // Prompt strictly requires a string
-  output: { schema: FlowOutputSchema },
-  prompt: `You are a helpful assistant for an auto repair shop. Correct any spelling mistakes, fix grammar, and improve the clarity and professionalism of the following text. Return only the corrected text, without any preamble or explanation.
+  input: { schema: TextEnhancementInputSchema },
+  output: { schema: TextEnhancementOutputSchema },
+  prompt: `You are an expert copy editor. Correct any spelling mistakes, fix grammar, and improve the clarity and professionalism of the following text.
+  
+IMPORTANT: Return ONLY the corrected text as a raw string. Do not include any preamble, explanation, or markdown formatting like quotes or code blocks.
 
 Original Text:
 "{{{this}}}"
@@ -33,20 +47,15 @@ Original Text:
 const enhanceTextFlow = ai.defineFlow(
   {
     name: 'enhanceTextFlow',
-    inputSchema: FlowInputSchema, // Flow now accepts nullable string
-    outputSchema: FlowOutputSchema,
+    inputSchema: TextEnhancementInputSchema,
+    outputSchema: TextEnhancementOutputSchema,
   },
   async (text) => {
-    // Check for null, undefined, or short/empty strings inside the flow.
-    if (!text || text.trim().length < 2) {
-      return text || ''; // Return empty string if input is null/undefined/empty.
-    }
-    
-    // Only call the prompt if the text is valid.
     const { output } = await enhanceTextPrompt(text, {
-      config: { temperature: 0.2 },
+      config: { temperature: 0.1 }, // Use low temperature for deterministic corrections
     });
     
-    return output || text; // Return original text if AI fails
+    // If the model fails to return valid output, we fall back to the original text.
+    return output || text;
   }
 );
