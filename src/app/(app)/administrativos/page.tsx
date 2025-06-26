@@ -64,7 +64,7 @@ export default function AdministrativosPage() {
     placeholderAdministrativeStaff.push(newStaffMember);
     setStaffList([...placeholderAdministrativeStaff]);
 
-    await persistToFirestore(['administrativeStaff']);
+    persistToFirestore(['administrativeStaff']);
 
     toast({
         title: "Staff Creado",

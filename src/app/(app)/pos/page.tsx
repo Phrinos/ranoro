@@ -232,7 +232,7 @@ export default function POSPage() {
   }, []);
 
   const handleCancelSale = useCallback(
-    async (saleId: string, reason: string) => {
+    (saleId: string, reason: string) => {
       const authUserString = localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY);
       const currentUser: User | null = authUserString ? JSON.parse(authUserString) : null;
 
@@ -269,8 +269,10 @@ export default function POSPage() {
           placeholderInventory[invIdx].quantity += it.quantity;
         }
       });
-      await persistToFirestore(["sales", "inventory"]);
+
       setVersion((v) => v + 1);
+      persistToFirestore(["sales", "inventory"]);
+
       toast({
         title: "Venta Cancelada",
         description: `La venta ${saleId} ha sido cancelada y el stock restaurado.`,

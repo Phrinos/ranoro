@@ -16,6 +16,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import type { Supplier } from "@/types";
+import { capitalizeWords } from "@/lib/utils";
 
 const supplierFormSchema = z.object({
   name: z.string().min(2, "El nombre del proveedor es obligatorio."),
@@ -63,7 +64,7 @@ export function SupplierForm({ initialData, onSubmit, onClose }: SupplierFormPro
             <FormItem>
               <FormLabel>Nombre del Proveedor</FormLabel>
               <FormControl>
-                <Input placeholder="Ej: Repuestos Acme S.A." {...field} />
+                <Input placeholder="Ej: Repuestos Acme S.A." {...field} onChange={(e) => field.onChange(capitalizeWords(e.target.value))} />
               </FormControl>
               <FormMessage />
             </FormItem>

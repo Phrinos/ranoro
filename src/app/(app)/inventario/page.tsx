@@ -57,7 +57,7 @@ export default function InventarioPage() {
     placeholderInventory.push(newItem); 
     setInventoryItems([...placeholderInventory]);
     
-    await persistToFirestore(['inventory']);
+    persistToFirestore(['inventory']);
     
     toast({
       title: "Producto/Servicio Creado",
@@ -107,7 +107,7 @@ export default function InventarioPage() {
     setIsNewItemDialogOpen(true); 
   };
 
-  const handleSavePurchaseDetails = async (details: PurchaseDetailsFormValues) => {
+  const handleSavePurchaseDetails = (details: PurchaseDetailsFormValues) => {
     if (!selectedItemForPurchase || selectedItemForPurchase.isService) {
       toast({ title: "Error", description: "No hay un artículo de stock seleccionado para la compra o es un servicio.", variant: "destructive" });
       return;
@@ -128,7 +128,7 @@ export default function InventarioPage() {
     placeholderInventory[itemIndex] = updatedItem;
     setInventoryItems([...placeholderInventory]); 
     
-    await persistToFirestore(['inventory']);
+    persistToFirestore(['inventory']);
 
     toast({
       title: "Compra Registrada",

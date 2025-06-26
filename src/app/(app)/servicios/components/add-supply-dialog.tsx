@@ -11,7 +11,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Search, PackagePlus, Plus, Minus, ArrowLeft } from 'lucide-react';
 import type { InventoryItem, ServiceSupply } from '@/types';
 import { useToast } from '@/hooks/use-toast';
-import { formatCurrency } from '@/lib/utils'; // Assuming you might want this
+import { capitalizeWords, formatCurrency } from '@/lib/utils';
 
 interface AddSupplyDialogProps {
   open: boolean;
@@ -200,7 +200,7 @@ export function AddSupplyDialog({ open, onOpenChange, inventoryItems, onAddSuppl
           <TabsContent value="manual" className="space-y-4 pt-2">
             <div className="space-y-2">
               <Label htmlFor="manual-name">Nombre del Insumo</Label>
-              <Input id="manual-name" value={manualName} onChange={e => setManualName(e.target.value)} placeholder="Ej: Tornillo especial"/>
+              <Input id="manual-name" value={manualName} onChange={e => setManualName(capitalizeWords(e.target.value))} placeholder="Ej: Tornillo especial"/>
             </div>
              <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">

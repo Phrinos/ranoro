@@ -122,7 +122,7 @@ export default function ProveedoresPage() {
       });
     }
 
-    await persistToFirestore(['suppliers']);
+    persistToFirestore(['suppliers']);
 
     setIsDialogOpen(false);
     setEditingSupplier(null);
@@ -138,7 +138,7 @@ export default function ProveedoresPage() {
       placeholderSuppliers.splice(pIndex, 1);
     }
     
-    await persistToFirestore(['suppliers']);
+    persistToFirestore(['suppliers']);
 
     toast({
       title: "Proveedor Eliminado",

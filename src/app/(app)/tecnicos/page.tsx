@@ -51,7 +51,7 @@ export default function TecnicosPage() {
     }
   }, []);
 
-  const handleSaveTechnician = async (data: TechnicianFormValues) => {
+  const handleSaveTechnician = (data: TechnicianFormValues) => {
     const newTechnician: Technician = {
       id: `T_${Date.now().toString(36)}`, 
       ...data,
@@ -65,7 +65,7 @@ export default function TecnicosPage() {
     placeholderTechnicians.push(newTechnician);
     setTechnicians([...placeholderTechnicians]);
 
-    await persistToFirestore(['technicians']);
+    persistToFirestore(['technicians']);
   };
   
   const totalTechnicians = useMemo(() => technicians.filter(t => !t.isArchived).length, [technicians]);

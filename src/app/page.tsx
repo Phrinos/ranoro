@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from 'next/link';
@@ -70,13 +71,11 @@ export default function LandingPage() {
             </Button>
           </nav>
           {/* Mobile Floating Login Button */}
-          <div className="md:hidden">
-              <Button asChild size="icon" className="fixed top-4 left-4 z-50 h-12 w-12 rounded-full shadow-lg">
-                  <Link href="/login" aria-label="Acceso Empleados">
-                      <Users className="h-6 w-6" />
-                  </Link>
-              </Button>
-          </div>
+          <Button asChild size="icon" className="md:hidden fixed top-4 right-4 z-50 h-12 w-12 rounded-full shadow-lg">
+            <Link href="/login" aria-label="Acceso Empleados">
+                <Users className="h-6 w-6" />
+            </Link>
+          </Button>
         </div>
       </header>
 
