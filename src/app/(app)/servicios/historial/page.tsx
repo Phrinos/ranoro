@@ -565,7 +565,7 @@ export default function HistorialServiciosPage() {
                     <div>
                       <p className="text-xs font-semibold text-muted-foreground">Detalles del Servicio</p>
                       <p><b>Técnico:</b> {service.technicianName || 'N/A'}</p>
-                      <p><b>Tipo:</b> <Badge variant="outline">{service.serviceType}</Badge></p>
+                      <div><b>Tipo:</b> <Badge variant="outline">{service.serviceType}</Badge></div>
                       <p className="text-sm truncate" title={getServiceDescriptionText(service)}>
                         <b>Servicio:</b> {getServiceDescriptionText(service)}
                       </p>
@@ -680,7 +680,7 @@ export default function HistorialServiciosPage() {
             </>
           }
       >
-          {serviceForSheet && <ServiceSheetContent service={serviceForSheet} vehicle={vehicles.find(v => v.id === serviceForSheet.vehicleId)} />}
+          {serviceForSheet && <ServiceSheetContent service={serviceForSheet} vehicle={vehicles.find(v => v.id === serviceForSheet.id)} />}
       </PrintTicketDialog>
     </>
   );

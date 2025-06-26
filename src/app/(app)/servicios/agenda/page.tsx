@@ -515,7 +515,7 @@ export default function AgendaServiciosPage() {
                             <div>
                               <p className="text-xs font-semibold text-muted-foreground">Detalles del Servicio</p>
                               <p><b>Asesor:</b> {service.serviceAdvisorName || 'N/A'}</p>
-                              <p><b>Tipo:</b> <Badge variant="outline">{service.serviceType}</Badge></p>
+                              <div><b>Tipo:</b> <Badge variant="outline">{service.serviceType}</Badge></div>
                               <p className="text-sm truncate" title={getServiceDescriptionText(service)}>
                                 <b>Servicio:</b> {getServiceDescriptionText(service)}
                               </p>
@@ -624,9 +624,9 @@ export default function AgendaServiciosPage() {
                         <span className="text-muted-foreground text-sm">Calculando...</span>
                     </div>
                 ) : capacityError ? (
-                    <div className="flex items-center gap-2 pt-2 text-destructive">
-                        <AlertTriangle className="h-5 w-5" />
-                        <span className="text-sm">{capacityError}</span>
+                    <div className="flex items-center justify-end gap-2 pt-1 text-destructive">
+                        <AlertTriangle className="h-4 w-4" />
+                        <span className="text-xs">{capacityError}</span>
                     </div>
                 ) : capacityInfo && (
                     <>
@@ -761,7 +761,7 @@ export default function AgendaServiciosPage() {
             </>
           }
       >
-          {serviceForSheet && <ServiceSheetContent service={serviceForSheet} vehicle={vehicles.find(v => v.id === serviceForSheet.vehicleId)} />}
+          {serviceForSheet && <ServiceSheetContent service={serviceForSheet} vehicle={vehicles.find(v => v.id === serviceForSheet.id)} />}
       </PrintTicketDialog>
     </>
   );
