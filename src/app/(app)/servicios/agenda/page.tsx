@@ -483,89 +483,87 @@ export default function AgendaServiciosPage() {
 
                   return (
                     <Card key={service.id} className="shadow-sm overflow-hidden">
-                      <div className="flex flex-col md:flex-row">
-                          <div className="w-full md:w-48 shrink-0 flex flex-row md:flex-col justify-around md:justify-center items-center text-center p-4 bg-muted/50">
-                            <div>
-                              <p className="text-xs text-muted-foreground">Costo Estimado</p>
-                              <p className="font-bold text-lg text-foreground">{formatCurrency(service.totalCost)}</p>
-                            </div>
-                            <div className="md:mt-2">
-                              <p className="text-xs text-muted-foreground">Ganancia Estimada</p>
-                              <p className="font-semibold text-lg text-green-600">{formatCurrency(service.serviceProfit)}</p>
-                            </div>
+                       <CardContent className="p-4 flex flex-col md:flex-row justify-between items-start gap-4">
+                        {/* Left Side: Blocks 1 & 2 */}
+                        <div className="flex-1 flex flex-col gap-4 min-w-0">
+                          {/* Block 1 */}
+                          <div>
+                            <p className="text-xs font-semibold text-muted-foreground">Folio / Hora Cita</p>
+                            <p><span className="font-mono">{service.id}</span> - {format(parseISO(service.serviceDate), "HH:mm 'hrs'", { locale: es })}</p>
                           </div>
-      
-                          <div className="flex-grow border-t md:border-t-0 md:border-l p-4 space-y-3">
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                              <div>
-                                <p className="text-xs font-semibold text-muted-foreground">Folio / Hora Cita</p>
-                                <p><span className="font-mono">{service.id}</span> - {format(parseISO(service.serviceDate), "HH:mm 'hrs'", { locale: es })}</p>
-                              </div>
-                              <div>
-                                <p className="text-xs font-semibold text-muted-foreground">Vehículo</p>
-                                <p className="font-semibold">{vehicle ? `${vehicle.make} ${vehicle.model} ${vehicle.year}` : 'N/A'}</p>
-                                <p><span className="font-mono">{vehicle?.licensePlate}</span></p>
-                              </div>
-                              <div className="sm:col-span-2">
-                                 <p className="text-xs font-semibold text-muted-foreground">Cliente</p>
-                                 <p>{vehicle?.ownerName} - {vehicle?.ownerPhone}</p>
-                              </div>
-                            </div>
-                            <Separator />
-                            <div>
-                              <p className="text-xs font-semibold text-muted-foreground">Detalles del Servicio</p>
-                              <p><b>Asesor:</b> {service.serviceAdvisorName || 'N/A'}</p>
-                              <div><b>Tipo:</b> <Badge variant="outline">{service.serviceType}</Badge></div>
-                              <p className="text-sm truncate" title={getServiceDescriptionText(service)}>
-                                <b>Servicio:</b> {getServiceDescriptionText(service)}
-                              </p>
-                            </div>
+                          {/* Block 2 */}
+                          <div>
+                            <p className="text-xs font-semibold text-muted-foreground">Vehículo y Cliente</p>
+                            <p className="font-semibold">{vehicle ? `${vehicle.make} ${vehicle.model} ${vehicle.year}` : 'N/A'} (<span className="font-mono">{vehicle?.licensePlate}</span>)</p>
+                            <p className="text-sm">{vehicle?.ownerName} - {vehicle?.ownerPhone}</p>
                           </div>
-                          
-                          <div className="w-full md:w-48 shrink-0 flex flex-col items-center justify-center p-4 border-t md:border-t-0 md:border-l bg-muted/50 gap-y-2">
+                        </div>
+
+                        {/* Center: Block 3 */}
+                        <div className="flex-1 text-center px-4 min-w-0">
+                          <p className="text-xs font-semibold text-muted-foreground">Detalles del Servicio</p>
+                          <p><b>Asesor:</b> {service.serviceAdvisorName || 'N/A'}</p>
+                          <div><b>Tipo:</b> <Badge variant="outline">{service.serviceType}</Badge></div>
+                          <p className="text-sm truncate" title={getServiceDescriptionText(service)}>
+                            <b>Servicio:</b> {getServiceDescriptionText(service)}
+                          </p>
+                        </div>
+
+                        {/* Right Side: Blocks 4 & 5 */}
+                        <div className="flex-1 flex justify-end items-start gap-4 min-w-0">
+                          {/* Block 4 */}
+                          <div className="text-right">
+                            <p className="text-xs text-muted-foreground">Costo Estimado</p>
+                            <p className="font-bold text-lg text-foreground">{formatCurrency(service.totalCost)}</p>
+                            <p className="text-xs text-muted-foreground mt-1">Ganancia Estimada</p>
+                            <p className="font-semibold text-base text-green-600">{formatCurrency(service.serviceProfit)}</p>
+                          </div>
+                          {/* Block 5 */}
+                          <div className="flex flex-col items-center w-32">
                             <Badge variant={getStatusVariant(service.status)} className="w-full justify-center text-center text-base mb-2">
                               {service.status}
                             </Badge>
                             <div className="flex justify-center flex-wrap gap-1">
-                              {originalQuote && (
-                                <Button variant="ghost" size="icon" title="Ver Cotización" onClick={() => handleViewQuote(service.id)}>
-                                  <FileText className="h-4 w-4" />
-                                </Button>
-                              )}
-                              <Button variant="ghost" size="icon" title="Ver Hoja de Servicio" onClick={() => handleShowSheet(service)}>
-                                <FileCheck className="h-4 w-4" />
-                              </Button>
-                              <Button variant="ghost" size="icon" title="Ingresar a Taller" onClick={() => handleOpenEditDialog(service)} className="text-blue-600 hover:text-blue-700">
-                                <Wrench className="h-4 w-4" />
-                              </Button>
-                              <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                  <Button variant="ghost" size="icon" title="Cancelar Cita" disabled={service.status === 'Completado' || service.status === 'Cancelado'}>
-                                    <Ban className="h-4 w-4 text-destructive" />
+                                {originalQuote && (
+                                  <Button variant="ghost" size="icon" title="Ver Cotización" onClick={() => handleViewQuote(service.id)}>
+                                    <FileText className="h-4 w-4" />
                                   </Button>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent>
-                                  <AlertDialogHeader>
-                                    <AlertDialogTitle>¿Cancelar esta cita?</AlertDialogTitle>
-                                    <AlertDialogDescription>
-                                      Esta acción marcará el servicio {service.id} como cancelado y no se podrá revertir.
-                                      <div className="mt-4">
-                                        <Label htmlFor={`cancel-reason-agenda-${service.id}`} className="text-left font-semibold">Motivo de la cancelación (obligatorio)</Label>
-                                        <Textarea id={`cancel-reason-agenda-${service.id}`} value={cancellationReason} onChange={(e) => setCancellationReason(e.target.value)} placeholder="Ej: El cliente no se presentó..." className="mt-2" />
-                                      </div>
-                                    </AlertDialogDescription>
-                                  </AlertDialogHeader>
-                                  <AlertDialogFooter>
-                                    <AlertDialogCancel onClick={() => setCancellationReason('')}>No</AlertDialogCancel>
-                                    <AlertDialogAction onClick={() => { handleCancelService(service.id, cancellationReason); setCancellationReason(''); }} disabled={!cancellationReason.trim()} className="bg-destructive hover:bg-destructive/90">
-                                      Sí, Cancelar Cita
-                                    </AlertDialogAction>
-                                  </AlertDialogFooter>
-                                </AlertDialogContent>
-                              </AlertDialog>
-                            </div>
+                                )}
+                                <Button variant="ghost" size="icon" title="Ver Hoja de Servicio" onClick={() => handleShowSheet(service)}>
+                                  <FileCheck className="h-4 w-4" />
+                                </Button>
+                                <Button variant="ghost" size="icon" title="Ingresar a Taller" onClick={() => handleOpenEditDialog(service)} className="text-blue-600 hover:text-blue-700">
+                                  <Wrench className="h-4 w-4" />
+                                </Button>
+                                <AlertDialog>
+                                  <AlertDialogTrigger asChild>
+                                    <Button variant="ghost" size="icon" title="Cancelar Cita" disabled={service.status === 'Completado' || service.status === 'Cancelado'}>
+                                      <Ban className="h-4 w-4 text-destructive" />
+                                    </Button>
+                                  </AlertDialogTrigger>
+                                  <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                      <AlertDialogTitle>¿Cancelar esta cita?</AlertDialogTitle>
+                                      <AlertDialogDescription>
+                                        Esta acción marcará el servicio {service.id} como cancelado y no se podrá revertir.
+                                        <div className="mt-4">
+                                          <Label htmlFor={`cancel-reason-agenda-${service.id}`} className="text-left font-semibold">Motivo de la cancelación (obligatorio)</Label>
+                                          <Textarea id={`cancel-reason-agenda-${service.id}`} value={cancellationReason} onChange={(e) => setCancellationReason(e.target.value)} placeholder="Ej: El cliente no se presentó..." className="mt-2" />
+                                        </div>
+                                      </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                      <AlertDialogCancel onClick={() => setCancellationReason('')}>No</AlertDialogCancel>
+                                      <AlertDialogAction onClick={() => { handleCancelService(service.id, cancellationReason); setCancellationReason(''); }} disabled={!cancellationReason.trim()} className="bg-destructive hover:bg-destructive/90">
+                                        Sí, Cancelar Cita
+                                      </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                  </AlertDialogContent>
+                                </AlertDialog>
+                              </div>
                           </div>
-                      </div>
+                        </div>
+                      </CardContent>
                     </Card>
                   );
                 })}

@@ -527,71 +527,64 @@ export default function HistorialServiciosPage() {
 
             return (
               <Card key={service.id} className="shadow-sm overflow-hidden">
-                <div className="flex flex-col md:flex-row">
-                  {/* Bloque 4: Costo y Ganancia */}
-                  <div className="w-full md:w-48 shrink-0 flex flex-row md:flex-col justify-around md:justify-center items-center text-center p-4 bg-muted/50">
+                <CardContent className="p-4 flex flex-col md:flex-row justify-between items-start gap-4">
+                  {/* Left Side: Blocks 1 & 2 */}
+                  <div className="flex-1 flex flex-col gap-4 min-w-0">
+                    {/* Block 1 */}
                     <div>
-                      <p className="text-xs text-muted-foreground">Costo Total</p>
-                      <p className="font-bold text-lg text-foreground">{formatCurrency(service.totalCost)}</p>
+                      <p className="text-xs font-semibold text-muted-foreground">Folio / Recepción y Entrega</p>
+                      <p><span className="font-mono">{service.id}</span></p>
+                      <p className="text-xs">Recepción: {service.serviceDate ? format(parseISO(service.serviceDate), "dd MMM yy, HH:mm") : 'N/A'}</p>
+                      <p className="text-xs">Entrega: {service.deliveryDateTime ? format(parseISO(service.deliveryDateTime), "dd MMM yy, HH:mm") : 'N/A'}</p>
                     </div>
-                    <div className="md:mt-2">
-                      <p className="text-xs text-muted-foreground">Ganancia</p>
-                      <p className="font-semibold text-lg text-green-600">{formatCurrency(service.serviceProfit)}</p>
+                    {/* Block 2 */}
+                    <div>
+                      <p className="text-xs font-semibold text-muted-foreground">Vehículo y Cliente</p>
+                      <p className="font-semibold">{vehicle ? `${vehicle.make} ${vehicle.model} ${vehicle.year}` : 'N/A'} (<span className="font-mono">{vehicle?.licensePlate}</span>)</p>
+                      <p className="text-sm">{vehicle?.ownerName} - {vehicle?.ownerPhone}</p>
                     </div>
                   </div>
 
-                  {/* Main Content */}
-                  <div className="flex-grow border-t md:border-t-0 md:border-l p-4 space-y-3">
-                    {/* Bloque 1 & 2 */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div>
-                        <p className="text-xs font-semibold text-muted-foreground">Folio / Recepción y Entrega</p>
-                        <p><span className="font-mono">{service.id}</span></p>
-                        <p className="text-xs">Recepción: {service.serviceDate ? format(parseISO(service.serviceDate), "dd MMM yy, HH:mm") : 'N/A'}</p>
-                        <p className="text-xs">Entrega: {service.deliveryDateTime ? format(parseISO(service.deliveryDateTime), "dd MMM yy, HH:mm") : 'N/A'}</p>
-                      </div>
-                      <div>
-                        <p className="text-xs font-semibold text-muted-foreground">Vehículo</p>
-                        <p className="font-semibold">{vehicle ? `${vehicle.make} ${vehicle.model} ${vehicle.year}` : 'N/A'}</p>
-                        <p><span className="font-mono">{vehicle?.licensePlate}</span></p>
-                      </div>
-                      <div className="sm:col-span-2">
-                        <p className="text-xs font-semibold text-muted-foreground">Cliente</p>
-                        <p>{vehicle?.ownerName} - {vehicle?.ownerPhone}</p>
-                      </div>
-                    </div>
-                    <Separator />
-                    {/* Bloque 3 */}
-                    <div>
-                      <p className="text-xs font-semibold text-muted-foreground">Detalles del Servicio</p>
-                      <p><b>Técnico:</b> {service.technicianName || 'N/A'}</p>
-                      <div><b>Tipo:</b> <Badge variant="outline">{service.serviceType}</Badge></div>
-                      <p className="text-sm truncate" title={getServiceDescriptionText(service)}>
-                        <b>Servicio:</b> {getServiceDescriptionText(service)}
-                      </p>
-                    </div>
+                  {/* Center: Block 3 */}
+                  <div className="flex-1 text-center px-4 min-w-0">
+                    <p className="text-xs font-semibold text-muted-foreground">Detalles del Servicio</p>
+                    <p><b>Técnico:</b> {service.technicianName || 'N/A'}</p>
+                    <div><b>Tipo:</b> <Badge variant="outline">{service.serviceType}</Badge></div>
+                    <p className="text-sm truncate" title={getServiceDescriptionText(service)}>
+                      <b>Servicio:</b> {getServiceDescriptionText(service)}
+                    </p>
                   </div>
-                  
-                  {/* Bloque 5: Estatus y Acciones */}
-                  <div className="w-full md:w-48 shrink-0 flex flex-col items-center justify-center p-4 border-t md:border-t-0 md:border-l bg-muted/50 gap-y-2">
-                    <Badge variant={getStatusVariant(service.status)} className="w-full justify-center text-center text-base mb-2">
-                      {service.status}
-                    </Badge>
-                    <div className="flex justify-center flex-wrap gap-1">
-                      {originalQuote && (
-                        <Button variant="ghost" size="icon" onClick={() => handleShowQuote(originalQuote)} title="Ver Cotización Original">
-                          <FileText className="h-4 w-4" />
+
+                  {/* Right Side: Blocks 4 & 5 */}
+                  <div className="flex-1 flex justify-end items-start gap-4 min-w-0">
+                    {/* Block 4 */}
+                    <div className="text-right">
+                      <p className="text-xs text-muted-foreground">Costo Total</p>
+                      <p className="font-bold text-lg text-foreground">{formatCurrency(service.totalCost)}</p>
+                      <p className="text-xs text-muted-foreground mt-1">Ganancia</p>
+                      <p className="font-semibold text-base text-green-600">{formatCurrency(service.serviceProfit)}</p>
+                    </div>
+                    {/* Block 5 */}
+                    <div className="flex flex-col items-center w-32">
+                      <Badge variant={getStatusVariant(service.status)} className="w-full justify-center text-center text-base mb-2">
+                        {service.status}
+                      </Badge>
+                       <div className="flex justify-center flex-wrap gap-1">
+                        {originalQuote && (
+                          <Button variant="ghost" size="icon" onClick={() => handleShowQuote(originalQuote)} title="Ver Cotización Original">
+                            <FileText className="h-4 w-4" />
+                          </Button>
+                        )}
+                        <Button variant="ghost" size="icon" onClick={() => handleShowSheet(service)} title="Ver Hoja de Servicio">
+                          <FileCheck className="h-4 w-4" />
                         </Button>
-                      )}
-                      <Button variant="ghost" size="icon" onClick={() => handleShowSheet(service)} title="Ver Hoja de Servicio">
-                        <FileCheck className="h-4 w-4" />
-                      </Button>
-                      <Button variant="ghost" size="icon" onClick={() => { setEditingService(service); setIsEditDialogOpen(true); }} title="Editar Servicio" disabled={service.status === 'Completado' || service.status === 'Cancelado'}>
-                        <Edit className="h-4 w-4" />
-                      </Button>
+                        <Button variant="ghost" size="icon" onClick={() => { setEditingService(service); setIsEditDialogOpen(true); }} title="Editar Servicio" disabled={service.status === 'Completado' || service.status === 'Cancelado'}>
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </div>
                   </div>
-                </div>
+                </CardContent>
               </Card>
             )
           })
