@@ -6,3 +6,6 @@ import './flows/inventory-analysis-flow';
 import './flows/quote-suggestion-flow';
 import './flows/capacity-analysis-flow';
 import './flows/purchase-recommendation-flow';
+import './flows/text-enhancement-flow';
+import './flows/vehicle-migration-flow';
+import './flows/product-migration-flow';

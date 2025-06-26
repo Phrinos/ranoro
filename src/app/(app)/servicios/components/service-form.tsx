@@ -50,6 +50,7 @@ import { InventoryItemDialog } from "../../inventario/components/inventory-item-
 import type { InventoryItemFormValues } from "../../inventario/components/inventory-item-form";
 import { suggestPrice, type SuggestPriceInput } from '@/ai/flows/price-suggestion-flow';
 import { suggestQuote, type QuoteSuggestionInput } from '@/ai/flows/quote-suggestion-flow';
+import { enhanceText } from '@/ai/flows/text-enhancement-flow';
 import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
 import { ServiceSheetContent } from '@/components/service-sheet-content';
 import { Checkbox } from "@/components/ui/checkbox";
@@ -81,34 +82,49 @@ const serviceItemSchema = z.object({
 const safetyCheckStatusSchema = z.enum(['ok', 'atencion', 'inmediata', 'na']).default('na');
 
 const safetyInspectionSchema = z.object({
-    luces_altas_bajas_niebla: safetyCheckStatusSchema.optional(),
-    luces_cuartos: safetyCheckStatusSchema.optional(),
-    luces_direccionales: safetyCheckStatusSchema.optional(),
-    luces_frenos_reversa: safetyCheckStatusSchema.optional(),
-    luces_interiores: safetyCheckStatusSchema.optional(),
-    fugas_refrigerante: safetyCheckStatusSchema.optional(),
-    fugas_limpiaparabrisas: safetyCheckStatusSchema.optional(),
-    fugas_frenos_embrague: safetyCheckStatusSchema.optional(),
-    fugas_transmision: safetyCheckStatusSchema.optional(),
-    fugas_direccion_hidraulica: safetyCheckStatusSchema.optional(),
-    carroceria_cristales_espejos: safetyCheckStatusSchema.optional(),
-    carroceria_puertas_cofre: safetyCheckStatusSchema.optional(),
-    carroceria_asientos_tablero: safetyCheckStatusSchema.optional(),
-    carroceria_plumas: safetyCheckStatusSchema.optional(),
-    suspension_rotulas: safetyCheckStatusSchema.optional(),
-    suspension_amortiguadores: safetyCheckStatusSchema.optional(),
-    suspension_caja_direccion: safetyCheckStatusSchema.optional(),
-    suspension_terminales: safetyCheckStatusSchema.optional(),
-    llantas_delanteras_traseras: safetyCheckStatusSchema.optional(),
-    llantas_refaccion: safetyCheckStatusSchema.optional(),
-    frenos_discos_delanteros: safetyCheckStatusSchema.optional(),
-    frenos_discos_traseros: safetyCheckStatusSchema.optional(),
-    otros_tuberia_escape: safetyCheckStatusSchema.optional(),
-    otros_soportes_motor: safetyCheckStatusSchema.optional(),
-    otros_claxon: safetyCheckStatusSchema.optional(),
-    otros_inspeccion_sdb: safetyCheckStatusSchema.optional(),
-    inspectionNotes: z.string().optional(),
-    technicianSignature: z.string().optional(),
+  // Luces
+  luces_altas_bajas_niebla: safetyCheckStatusSchema.optional(),
+  luces_cuartos: safetyCheckStatusSchema.optional(),
+  luces_direccionales: safetyCheckStatusSchema.optional(),
+  luces_frenos_reversa: safetyCheckStatusSchema.optional(),
+  luces_interiores: safetyCheckStatusSchema.optional(),
+  
+  // Fugas y Niveles
+  fugas_refrigerante: safetyCheckStatusSchema.optional(),
+  fugas_limpiaparabrisas: safetyCheckStatusSchema.optional(),
+  fugas_frenos_embrague: safetyCheckStatusSchema.optional(),
+  fugas_transmision: safetyCheckStatusSchema.optional(),
+  fugas_direccion_hidraulica: safetyCheckStatusSchema.optional(),
+  
+  // Carrocería
+  carroceria_cristales_espejos: safetyCheckStatusSchema.optional(),
+  carroceria_puertas_cofre: safetyCheckStatusSchema.optional(),
+  carroceria_asientos_tablero: safetyCheckStatusSchema.optional(),
+  carroceria_plumas: safetyCheckStatusSchema.optional(),
+  
+  // Suspensión y Dirección
+  suspension_rotulas: safetyCheckStatusSchema.optional(),
+  suspension_amortiguadores: safetyCheckStatusSchema.optional(),
+  suspension_caja_direccion: safetyCheckStatusSchema.optional(),
+  suspension_terminales: safetyCheckStatusSchema.optional(),
+
+  // Llantas (Estado y Presión)
+  llantas_delanteras_traseras: safetyCheckStatusSchema.optional(),
+  llantas_refaccion: safetyCheckStatusSchema.optional(),
+  
+  // Frenos
+  frenos_discos_delanteros: safetyCheckStatusSchema.optional(),
+  frenos_discos_traseros: safetyCheckStatusSchema.optional(),
+  
+  // Otros
+  otros_tuberia_escape: safetyCheckStatusSchema.optional(),
+  otros_soportes_motor: safetyCheckStatusSchema.optional(),
+  otros_claxon: safetyCheckStatusSchema.optional(),
+  otros_inspeccion_sdb: safetyCheckStatusSchema.optional(),
+  
+  // Global notes and signature for the inspection
+  inspectionNotes: z.string().optional(),
+  technicianSignature: z.string().optional(), 
 });
 
 
@@ -263,6 +279,7 @@ export function ServiceForm({
   
   const freshUserRef = useRef<User | null>(null);
   const [isTechSignatureDialogOpen, setIsTechSignatureDialogOpen] = useState(false);
+  const [isEnhancingText, setIsEnhancingText] = useState<string | null>(null);
 
   const form = useForm<ServiceFormValues>({
     resolver: zodResolver(serviceFormSchemaBase),
@@ -802,6 +819,25 @@ export function ServiceForm({
   const handleSuggestPrice = async (serviceItemIndex: number) => {
     toast({ title: "Función no disponible", description: "La sugerencia de precios con IA se está adaptando al nuevo formato." });
   };
+  
+  const handleEnhanceText = async (fieldName: 'notes' | 'vehicleConditions') => {
+    const currentValue = form.getValues(fieldName);
+    if (!currentValue || currentValue.trim().length < 5) {
+        toast({ title: 'No hay suficiente texto', description: 'Escriba algo antes de mejorar el texto.', variant: 'default' });
+        return;
+    }
+    setIsEnhancingText(fieldName);
+    try {
+        const enhancedText = await enhanceText(currentValue);
+        form.setValue(fieldName, enhancedText, { shouldDirty: true });
+        toast({ title: 'Texto Mejorado', description: 'La IA ha corregido y mejorado el texto.' });
+    } catch (e) {
+        console.error("Error enhancing text:", e);
+        toast({ title: "Error de IA", description: "No se pudo mejorar el texto.", variant: "destructive" });
+    } finally {
+        setIsEnhancingText(null);
+    }
+  };
 
   const handleGenerateQuoteWithAI = async () => {
     setIsGeneratingQuote(true);
@@ -1052,17 +1088,9 @@ export function ServiceForm({
                     {vehicleSearchResults.length > 0 && ( <ScrollArea className="h-auto max-h-[150px] w-full rounded-md border"><div className="p-2">{vehicleSearchResults.map(v => (<button type="button" key={v.id} onClick={() => handleSelectVehicleFromSearch(v)} className="w-full text-left p-2 rounded-md hover:bg-muted"><p className="font-semibold">{v.licensePlate}</p><p className="text-sm text-muted-foreground">{v.make} {v.model} - {v.ownerName}</p></button>))}</div></ScrollArea>)}
                     {selectedVehicle && (
                       <div className="p-3 border rounded-md bg-amber-50 dark:bg-amber-950/50 text-sm space-y-1">
-                        <p><strong>Vehículo Seleccionado:</strong> {selectedVehicle.licensePlate} - {selectedVehicle.make} {selectedVehicle.model} {selectedVehicle.year}</p>
-                        <p><strong>Propietario:</strong> {selectedVehicle.ownerName} - {selectedVehicle.ownerPhone}</p>
-                        {lastService ? (
-                            <p>
-                                <strong>Últ. Servicio:</strong> {lastService.mileage ? `${lastService.mileage.toLocaleString('es-ES')} km - ` : ''}{format(parseISO(lastService.serviceDate), "dd MMM yyyy", { locale: es })} - {lastService.description}
-                            </p>
-                        ) : (
-                            <p>
-                                No tiene historial de servicios.
-                            </p>
-                        )}
+                        <p className="font-semibold">{selectedVehicle.licensePlate} - {selectedVehicle.make} {selectedVehicle.model} {selectedVehicle.year}</p>
+                        <p>Propietario: {selectedVehicle.ownerName} - {selectedVehicle.ownerPhone}</p>
+                        <p>Últ. Servicio: {lastService ? `${lastService.mileage ? `${lastService.mileage.toLocaleString('es-ES')} km - ` : ''}${format(parseISO(lastService.serviceDate), "dd MMM yyyy", { locale: es })} - ${lastService.description}` : 'No tiene historial de servicios.'}</p>
                       </div>
                     )}
                     {vehicleNotFound && !selectedVehicle && !isReadOnly && (<div className="p-3 border border-orange-500 rounded-md bg-orange-50 dark:bg-orange-900/30 dark:text-orange-300 text-sm flex flex-col sm:flex-row items-center justify-between gap-2"><div className="flex items-center gap-2"><AlertCircle className="h-5 w-5 shrink-0"/><p>Vehículo con placa "{vehicleLicensePlateSearch}" no encontrado.</p></div><Button type="button" size="sm" variant="outline" onClick={() => {setNewVehicleInitialData({ licensePlate: vehicleLicensePlateSearch }); setIsVehicleDialogOpen(true);}} className="w-full sm:w-auto"><CarIcon className="mr-2 h-4 w-4"/> Registrar Nuevo Vehículo</Button></div>)}
@@ -1121,15 +1149,25 @@ export function ServiceForm({
                       
                       <Card>
                         <CardHeader>
-                          <CardTitle className="text-lg">Notas Adicionales (Opcional)</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <FormField control={form.control} name="notes" render={({ field }) => (
+                          <FormField
+                            control={form.control}
+                            name="notes"
+                            render={({ field }) => (
                                 <FormItem>
+                                    <FormLabel className="flex justify-between items-center w-full">
+                                        <span className="text-lg font-semibold">Notas Adicionales (Opcional)</span>
+                                        {!isReadOnly && (
+                                            <Button type="button" size="sm" variant="ghost" onClick={() => handleEnhanceText('notes')} disabled={isEnhancingText === 'notes' || !field.value}>
+                                                {isEnhancingText === 'notes' ? <Loader2 className="animate-spin" /> : <BrainCircuit className="h-4 w-4" />}
+                                                <span className="ml-2 hidden sm:inline">Mejorar texto</span>
+                                            </Button>
+                                        )}
+                                    </FormLabel>
                                     <FormControl><Textarea {...field} disabled={isReadOnly} className="min-h-[100px]"/></FormControl>
                                 </FormItem>
-                            )}/>
-                        </CardContent>
+                            )}
+                          />
+                        </CardHeader>
                       </Card>
                   </div>
                   
@@ -1287,9 +1325,27 @@ export function ServiceForm({
                   </Card>
 
                   <Card>
-                    <CardHeader><CardTitle>Condiciones de la Unidad y Firmas</CardTitle></CardHeader>
+                    <CardHeader>
+                       <FormField
+                          control={form.control}
+                          name="vehicleConditions"
+                          render={({ field }) => (
+                              <FormItem>
+                                  <FormLabel className="flex justify-between items-center w-full">
+                                      <span className="text-lg font-semibold">Condiciones del Vehículo (al recibir)</span>
+                                      {!isReadOnly && (
+                                          <Button type="button" size="sm" variant="ghost" onClick={() => handleEnhanceText('vehicleConditions')} disabled={isEnhancingText === 'vehicleConditions' || !field.value}>
+                                              {isEnhancingText === 'vehicleConditions' ? <Loader2 className="animate-spin" /> : <BrainCircuit className="h-4 w-4" />}
+                                              <span className="ml-2 hidden sm:inline">Mejorar texto</span>
+                                          </Button>
+                                      )}
+                                  </FormLabel>
+                                  <FormControl><Textarea placeholder="Ej: Rayón en puerta del conductor, llanta trasera derecha baja, etc." {...field} disabled={isReadOnly} /></FormControl>
+                              </FormItem>
+                          )}
+                        />
+                    </CardHeader>
                     <CardContent className="space-y-4">
-                        <FormField control={form.control} name="vehicleConditions" render={({ field }) => (<FormItem><FormLabel>Condiciones del Vehículo (al recibir)</FormLabel><FormControl><Textarea placeholder="Ej: Rayón en puerta del conductor, llanta trasera derecha baja, etc." {...field} disabled={isReadOnly} /></FormControl></FormItem>)}/>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <FormField control={form.control} name="fuelLevel" render={({ field }) => (<FormItem><FormLabel>Nivel de Combustible</FormLabel><Select onValueChange={field.onChange} value={field.value} disabled={isReadOnly}><FormControl><SelectTrigger><SelectValue placeholder="Seleccionar nivel..." /></SelectTrigger></FormControl><SelectContent><SelectItem value="Vacío">Vacío</SelectItem><SelectItem value="1/8">1/8</SelectItem><SelectItem value="1/4">1/4</SelectItem><SelectItem value="3/8">3/8</SelectItem><SelectItem value="1/2">1/2</SelectItem><SelectItem value="5/8">5/8</SelectItem><SelectItem value="3/4">3/4</SelectItem><SelectItem value="7/8">7/8</SelectItem><SelectItem value="Lleno">Lleno</SelectItem></SelectContent></Select></FormItem>)}/>
                             <FormField control={form.control} name="customerItems" render={({ field }) => (<FormItem><FormLabel>Pertenencias del Cliente (Opcional)</FormLabel><FormControl><Textarea placeholder="Ej: Gato, llanta de refacción, cargador de celular en la guantera, etc." {...field} disabled={isReadOnly} /></FormControl></FormItem>)}/>
@@ -1580,15 +1636,15 @@ const inspectionGroups = [
     { name: "safetyInspection.carroceria_asientos_tablero", label: "13. ASIENTOS / TABLERO / CONSOLA" },
     { name: "safetyInspection.carroceria_plumas", label: "14. PLUMAS LIMPIAPARABRISAS" },
   ]},
-  { title: "LLANTAS (ESTADO Y PRESIÓN)", items: [
-    { name: "safetyInspection.llantas_delanteras_traseras", label: "19. DELANTERAS / TRASERAS" },
-    { name: "safetyInspection.llantas_refaccion", label: "20. REFACCIÓN" },
-  ]},
   { title: "SUSPENSIÓN Y DIRECCIÓN", items: [
     { name: "safetyInspection.suspension_rotulas", label: "15. RÓTULAS Y GUARDAPOLVOS" },
     { name: "safetyInspection.suspension_amortiguadores", label: "16. AMORTIGUADORES" },
     { name: "safetyInspection.suspension_caja_direccion", label: "17. CAJA DE DIRECCIÓN" },
     { name: "safetyInspection.suspension_terminales", label: "18. TERMINALES DE DIRECCIÓN" },
+  ]},
+  { title: "LLANTAS (ESTADO Y PRESIÓN)", items: [
+    { name: "safetyInspection.llantas_delanteras_traseras", label: "19. DELANTERAS / TRASERAS" },
+    { name: "safetyInspection.llantas_refaccion", label: "20. REFACCIÓN" },
   ]},
   { title: "FRENOS", items: [
     { name: "safetyInspection.frenos_discos_delanteros", label: "21. DISCOS / BALATAS DELANTERAS" },
@@ -1639,7 +1695,15 @@ const SafetyChecklist = ({ control, isReadOnly, onSignatureClick, signatureDataU
             name="safetyInspection.inspectionNotes"
             render={({ field }) => (
                 <FormItem className="pt-4">
-                    <FormLabel className="text-base font-semibold">Observaciones Generales de la Inspección</FormLabel>
+                    <FormLabel className="text-base font-semibold flex justify-between items-center w-full">
+                      <span>Observaciones Generales de la Inspección</span>
+                      {!isReadOnly && (
+                        <Button type="button" size="sm" variant="ghost" onClick={() => handleEnhanceText('safetyInspection.inspectionNotes' as any)} disabled={isEnhancingText === 'safetyInspection.inspectionNotes' || !field.value}>
+                            {isEnhancingText === 'safetyInspection.inspectionNotes' ? <Loader2 className="animate-spin" /> : <BrainCircuit className="h-4 w-4" />}
+                            <span className="ml-2 hidden sm:inline">Mejorar texto</span>
+                        </Button>
+                      )}
+                    </FormLabel>
                     <FormControl>
                         <Textarea
                             placeholder="Anotaciones sobre la inspección, detalles de los puntos que requieren atención, etc."
