@@ -392,8 +392,7 @@ export const calculateSaleProfit = (
     // If cost is not defined or invalid, treat it as 0 but don't stop the whole calculation.
     const effectiveCostPrice = (inventoryItem.isService || !isFinite(costPricePerUnit)) ? 0 : costPricePerUnit;
     
-    const sellingPriceBeforeTax = sellingPriceWithTax / (1 + IVA_RATE);
-    const profitPerUnit = sellingPriceBeforeTax - effectiveCostPrice;
+    const profitPerUnit = sellingPriceWithTax - effectiveCostPrice;
     const profitForItem = profitPerUnit * quantitySold;
     
     if (isFinite(profitForItem)) {
@@ -402,4 +401,29 @@ export const calculateSaleProfit = (
   }
   
   return isFinite(totalProfit) ? totalProfit : 0;
+};
+
+
+/**
+ * Crea un ServiceRecord listo para imprimir sustituyendo el unitPrice de supplies
+ * por su sellingPrice.
+ */
+export const enrichServiceForPrinting = (
+  service: ServiceRecord,
+  inventory: InventoryItem[],
+): ServiceRecord => {
+  if (!service || !service.suppliesUsed) return service;
+
+  const enrichedSupplies = service.suppliesUsed.map((supply) => {
+    const inventoryItem = inventory.find((item) => item.id === supply.supplyId);
+    return {
+      ...supply,
+      unitPrice: inventoryItem?.sellingPrice ?? supply.unitPrice ?? 0,
+    };
+  });
+
+  return {
+    ...service,
+    suppliesUsed: enrichedSupplies,
+  };
 };
