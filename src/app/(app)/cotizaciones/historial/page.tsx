@@ -514,7 +514,7 @@ export default function HistorialCotizacionesPage() {
                     <div>
                       <p className="text-xs font-semibold text-muted-foreground">Detalles del Servicio</p>
                       <p><b>Asesor:</b> {quote.preparedByTechnicianName || 'N/A'}</p>
-                      <p><b>Tipo:</b> <Badge variant="outline">{quote.serviceType}</Badge></p>
+                      <div><b>Tipo:</b> <Badge variant="outline">{quote.serviceType}</Badge></div>
                       <p className="text-sm truncate" title={getQuoteDescriptionText(quote)}>
                         <b>Servicio:</b> {getQuoteDescriptionText(quote)}
                       </p>
