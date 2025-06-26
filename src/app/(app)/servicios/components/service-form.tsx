@@ -12,6 +12,7 @@ import {
   FormField,
   FormItem,
   FormLabel,
+  FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -130,7 +131,7 @@ const serviceFormSchemaBase = z.object({
     }
     return true;
 }, {
-    message: "La fecha es obligatoria para este estado.",
+    message: "La fecha programada no es válida.",
     path: ["serviceDate"],
 }).refine(data => {
   if (data.status === 'Completado' && (data.paymentMethod === "Tarjeta" || data.paymentMethod === "Tarjeta+Transferencia") && !data.cardFolio) {
@@ -964,7 +965,7 @@ export function ServiceForm({
                           </FormItem>
                         )}
                       />
-                      {showDateFields && (
+                       {showDateFields && (
                          <div className="grid grid-cols-2 gap-4 items-end md:col-span-2">
                             <FormItem className="flex flex-col">
                               <FormLabel className={cn(form.formState.errors.serviceDate && "text-destructive")}>Fecha Agendada</FormLabel>
@@ -1047,11 +1048,11 @@ export function ServiceForm({
                           <strong>Propietario:</strong> {selectedVehicle.ownerName} - {selectedVehicle.ownerPhone}
                         </p>
                         {lastService ? (
-                            <p className="text-xs font-medium text-blue-600 dark:text-blue-400 mt-1">
+                            <p className="font-medium text-blue-600 dark:text-blue-400 mt-1">
                                 <strong>Últ. Servicio:</strong> {lastService.mileage ? `${lastService.mileage.toLocaleString('es-ES')} km - ` : ''}{format(parseISO(lastService.serviceDate), "dd MMM yyyy", { locale: es })} - {lastService.description}
                             </p>
                         ) : (
-                            <p className="text-xs font-medium text-blue-600 dark:text-blue-400 mt-1">
+                            <p className="font-medium text-blue-600 dark:text-blue-400 mt-1">
                                 No tiene historial de servicios.
                             </p>
                         )}
@@ -1512,6 +1513,7 @@ function SafetyCheckItemControl({ name, label, control, isReadOnly }: SafetyChec
     </div>
   );
 }
+
 
 
 
