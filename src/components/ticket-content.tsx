@@ -52,8 +52,17 @@ export const TicketContent = React.forwardRef<HTMLDivElement, TicketContentProps
   const operation = sale || service;
   const operationType = sale ? 'Venta' : 'Servicio';
   const operationId = sale?.id || service?.id;
-  const operationDateStr = sale?.saleDate || service?.serviceDate;
-  const operationDate = operationDateStr ? parseISO(operationDateStr) : new Date();
+  
+  const operationDateInput = sale?.saleDate || service?.serviceDate;
+  let operationDate: Date;
+  if (typeof operationDateInput === 'string') {
+    operationDate = parseISO(operationDateInput);
+  } else if (operationDateInput instanceof Date) {
+    operationDate = operationDateInput;
+  } else {
+    operationDate = new Date(NaN); // Invalid date
+  }
+  
   const formattedDateTime = isValid(operationDate) ? format(operationDate, "dd/MM/yyyy HH:mm:ss", { locale: es }) : 'N/A';
 
   const formatCurrency = (amount: number | undefined) => {
