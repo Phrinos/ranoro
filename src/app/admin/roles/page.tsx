@@ -53,6 +53,7 @@ export default function RolesPage() {
   const [editingRole, setEditingRole] = useState<AppRole | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [roleToDelete, setRoleToDelete] = useState<AppRole | null>(null);
   const formCardRef = useRef<HTMLDivElement>(null);
 
   const form = useForm<RoleFormValues>({
@@ -124,6 +125,7 @@ export default function RolesPage() {
     await persistToFirestore();
 
     toast({ title: 'Rol Eliminado', description: `El rol "${roleToDelete?.name}" ha sido eliminado.` });
+    setRoleToDelete(null);
   };
 
   return (
@@ -182,19 +184,20 @@ export default function RolesPage() {
                       </Button>
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
-                          <Button variant="ghost" size="icon" disabled={role.name === 'Superadmin' || role.name === 'Admin'}> {/* Basic protection */}
+                           <Button variant="ghost" size="icon" onClick={() => setRoleToDelete(role)} disabled={role.name === 'Superadmin' || role.name === 'Admin'}>
                             <Trash2 className="h-4 w-4 text-destructive" />
                           </Button>
                         </AlertDialogTrigger>
+                        {roleToDelete?.id === role.id && (
                         <AlertDialogContent>
                           <AlertDialogHeader>
                             <AlertDialogTitle>¿Eliminar Rol?</AlertDialogTitle>
                             <AlertDialogDescription>
-                              ¿Estás seguro de que quieres eliminar el rol "{role.name}"? Esta acción no se puede deshacer. Asegúrate de que ningún usuario esté asignado a este rol.
+                              ¿Estás seguro de que quieres eliminar el rol "{roleToDelete.name}"? Esta acción no se puede deshacer. Asegúrate de que ningún usuario esté asignado a este rol.
                             </AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter>
-                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                            <AlertDialogCancel onClick={() => setRoleToDelete(null)}>Cancelar</AlertDialogCancel>
                             <AlertDialogAction
                               onClick={() => handleDeleteRole(role.id)}
                               className="bg-destructive hover:bg-destructive/90"
@@ -203,6 +206,7 @@ export default function RolesPage() {
                             </AlertDialogAction>
                           </AlertDialogFooter>
                         </AlertDialogContent>
+                        )}
                       </AlertDialog>
                     </TableCell>
                   </TableRow>
