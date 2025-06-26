@@ -43,15 +43,15 @@ const inspectionGroups = [
     { name: "safetyInspection.carroceria_asientos_tablero", label: "13. ASIENTOS / TABLERO / CONSOLA" },
     { name: "safetyInspection.carroceria_plumas", label: "14. PLUMAS LIMPIAPARABRISAS" },
   ]},
-  { title: "LLANTAS (ESTADO Y PRESIÓN)", items: [
-    { name: "safetyInspection.llantas_delanteras_traseras", label: "15. DELANTERAS / TRASERAS" },
-    { name: "safetyInspection.llantas_refaccion", label: "16. REFACCIÓN" },
-  ]},
   { title: "SUSPENSIÓN Y DIRECCIÓN", items: [
-    { name: "safetyInspection.suspension_rotulas", label: "17. RÓTULAS Y GUARDAPOLVOS" },
-    { name: "safetyInspection.suspension_amortiguadores", label: "18. AMORTIGUADORES" },
-    { name: "safetyInspection.suspension_caja_direccion", label: "19. CAJA DE DIRECCIÓN" },
-    { name: "safetyInspection.suspension_terminales", label: "20. TERMINALES DE DIRECCIÓN" },
+    { name: "safetyInspection.suspension_rotulas", label: "15. RÓTULAS Y GUARDAPOLVOS" },
+    { name: "safetyInspection.suspension_amortiguadores", label: "16. AMORTIGUADORES" },
+    { name: "safetyInspection.suspension_caja_direccion", label: "17. CAJA DE DIRECCIÓN" },
+    { name: "safetyInspection.suspension_terminales", label: "18. TERMINALES DE DIRECCIÓN" },
+  ]},
+  { title: "LLANTAS (ESTADO Y PRESIÓN)", items: [
+    { name: "safetyInspection.llantas_delanteras_traseras", label: "19. DELANTERAS / TRASERAS" },
+    { name: "safetyInspection.llantas_refaccion", label: "20. REFACCIÓN" },
   ]},
   { title: "FRENOS", items: [
     { name: "safetyInspection.frenos_discos_delanteros", label: "21. DISCOS / BALATAS DELANTERAS" },
@@ -134,7 +134,7 @@ const SafetyChecklistDisplay = ({
                 </div>
                  <div className="mt-2 text-xs border-t pt-2">
                     <p className="font-bold">Cliente:</p>
-                    <p>{vehicle?.ownerName} - {vehicle?.ownerPhone}</p>
+                    <p>{vehicle?.ownerName}{vehicle?.ownerPhone && ` - ${vehicle.ownerPhone}`}</p>
                 </div>
             </header>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
@@ -163,8 +163,8 @@ const SafetyChecklistDisplay = ({
                 </div>
             )}
             {inspection.technicianSignature && (
-                <div className="mt-8 border-t pt-4 text-center flex flex-col items-center">
-                    <div className="h-24 w-full max-w-[256px] relative">
+                 <div className="mt-8 border-t pt-4 text-center flex flex-col items-center">
+                    <div className="h-24 w-full max-w-[200px] relative">
                         <Image src={inspection.technicianSignature} alt="Firma del técnico" layout="fill" objectFit="contain" />
                     </div>
                     <div className="border-t-2 border-black mt-2 pt-1 w-64 text-center">
