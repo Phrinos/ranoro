@@ -480,37 +480,27 @@ export default function HistorialCotizacionesPage() {
               <Card key={quote.id} className="shadow-sm overflow-hidden">
                 <CardContent className="p-0">
                   <div className="flex flex-col md:flex-row text-sm">
-                    {/* Block 1: Folio y Fecha */}
-                    <div className="p-4 space-y-1 border-b md:border-b-0 md:border-r md:flex-shrink-0 flex flex-col justify-center text-center items-center">
+                    {/* Block 1: Folio y Fecha (Centrado) */}
+                    <div className="p-4 flex flex-col justify-center items-center text-center space-y-1 border-b md:border-b-0 md:border-r w-full md:w-48 flex-shrink-0">
                       <p className="text-xs text-muted-foreground">Folio: {quote.id}</p>
-                      <p className="text-xl font-semibold">{format(parseISO(quote.quoteDate!), "dd MMM yyyy", { locale: es })}</p>
+                      <p className="text-lg font-semibold">{format(parseISO(quote.quoteDate!), "dd MMM yyyy", { locale: es })}</p>
                     </div>
 
                     <Separator orientation="vertical" className="hidden md:block h-auto"/>
 
-                    {/* Block 2: Vehículo y Cliente */}
-                    <div className="p-4 space-y-1 border-b md:border-b-0 flex-grow text-center">
-                      <p className="font-bold text-2xl">{vehicle ? `${vehicle.licensePlate} - ${vehicle.make} ${vehicle.model} ${vehicle.year}` : 'N/A'}</p>
-                      <p className="text-sm text-muted-foreground">{vehicle?.ownerName} - {vehicle?.ownerPhone}</p>
+                    {/* Block 2: Vehículo y Servicio (Alineado a la Izquierda) */}
+                    <div className="p-4 flex-grow space-y-1 text-left border-b md:border-b-0">
+                        <p className="text-sm text-muted-foreground">{vehicle?.ownerName} - {vehicle?.ownerPhone}</p>
+                        <p className="font-bold text-lg">{vehicle ? `${vehicle.licensePlate} - ${vehicle.make} ${vehicle.model} ${vehicle.year}` : 'N/A'}</p>
+                        <p className="text-sm text-foreground" title={getQuoteDescriptionText(quote)}>
+                            <span className="font-semibold">{quote.serviceType}:</span> {getQuoteDescriptionText(quote)}
+                        </p>
                     </div>
-
-                    <Separator orientation="vertical" className="hidden md:block h-auto"/>
                     
-                    {/* Block 3: Asesor, Tipo y Descripción */}
-                    <div className="p-4 space-y-2 md:w-auto md:flex-shrink-0 flex-shrink-0 flex-grow-0 flex flex-col justify-center text-center items-center">
-                       <Badge variant={quote.serviceId ? "lightRed" : "outline"} className="w-full justify-center text-center text-base mb-2">
-                           {quote.serviceId ? "Agendado" : "Cotizacion"}
-                       </Badge>
-                       <p className="text-xs text-muted-foreground">Asesor: {quote.preparedByTechnicianName || 'N/A'}</p>
-                       <div className="font-medium text-foreground text-sm" title={getQuoteDescriptionText(quote)}>
-                           <p><span className="font-semibold">{quote.serviceType}:</span> {getQuoteDescriptionText(quote)}</p>
-                       </div>
-                    </div>
-
                     <Separator orientation="vertical" className="hidden md:block h-auto"/>
-                    
-                    {/* Block 4: Costo y Ganancia */}
-                    <div className="p-4 space-y-1 border-t md:border-t-0 text-center md:w-auto md:flex-shrink-0 flex flex-col justify-center">
+
+                    {/* Block 3: Costo y Ganancia (Centrado) */}
+                    <div className="p-4 flex flex-col justify-center items-center text-center space-y-1 border-b md:border-b-0 md:border-l w-full md:w-48 flex-shrink-0">
                         <p className="text-xs text-muted-foreground">Costo Estimado</p>
                         <p className="font-bold text-xl text-black">{formatCurrency(quote.estimatedTotalCost)}</p>
                         <p className="text-xs text-muted-foreground mt-1">Ganancia Estimada</p>
@@ -519,9 +509,13 @@ export default function HistorialCotizacionesPage() {
 
                     <Separator orientation="vertical" className="hidden md:block h-auto"/>
 
-                    {/* Block 5: Acciones */}
-                    <div className="p-4 flex flex-col items-center justify-center gap-2 md:w-36 md:flex-shrink-0">
-                        <div className="flex justify-center flex-wrap gap-1">
+                    {/* Block 4: Estatus, Asesor y Acciones (Centrado) */}
+                    <div className="p-4 flex flex-col justify-center items-center text-center space-y-2 border-b md:border-b-0 md:border-l w-full md:w-48 flex-shrink-0">
+                        <Badge variant={quote.serviceId ? "lightRed" : "outline"} className="w-full justify-center text-center text-sm">
+                            {quote.serviceId ? "Agendado" : "Cotizacion"}
+                        </Badge>
+                        <p className="text-xs text-muted-foreground">Asesor: {quote.preparedByTechnicianName || 'N/A'}</p>
+                        <div className="flex justify-center flex-wrap gap-1 mt-1">
                           <Button variant="ghost" size="icon" onClick={() => handleViewQuote(originalQuote)} title="Ver Cotización">
                             <FileText className="h-4 w-4" />
                           </Button>
