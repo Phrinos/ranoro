@@ -629,7 +629,17 @@ export function ServiceForm({
 
     const isValidForm = await form.trigger();
     if (!isValidForm) {
-        toast({ title: "Formulario Incompleto", description: "Por favor, revise los campos marcados en rojo.", variant: "destructive"});
+        const messages = Object.values(form.formState.errors)
+            .map((error) => error?.message)
+            .filter((msg): msg is string => !!msg && !msg.includes('Expected'));
+        
+        const uniqueMessages = [...new Set(messages)];
+
+        toast({
+            title: "Formulario Incompleto",
+            description: uniqueMessages.length > 0 ? uniqueMessages.join('. ') : "Por favor, revise los campos marcados en rojo.",
+            variant: "destructive",
+        });
         return;
     }
 
@@ -918,7 +928,7 @@ export function ServiceForm({
                     </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4 items-end">
                       {showStatusFields && (
                         <FormField
                             control={form.control}
@@ -965,6 +975,26 @@ export function ServiceForm({
                           </FormItem>
                         )}
                       />
+                       { (watchedStatus === 'Reparando' || watchedStatus === 'Completado') && mode === 'service' && (
+                          <FormField
+                            control={form.control}
+                            name="technicianId"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Técnico Asignado</FormLabel>
+                                <Select onValueChange={field.onChange} value={field.value} disabled={isReadOnly}>
+                                  <FormControl><SelectTrigger><SelectValue placeholder="Seleccionar técnico..." /></SelectTrigger></FormControl>
+                                  <SelectContent>
+                                    {technicians.map((tech) => (
+                                      <SelectItem key={tech.id} value={tech.id}>{tech.name}</SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        )}
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
                       <FormField control={form.control} name="vehicleLicensePlateSearch" render={({ field }) => (<FormItem className="w-full"><FormLabel>Placa del Vehículo</FormLabel><FormControl><Input placeholder="Buscar/Ingresar Placas" {...field} value={vehicleLicensePlateSearch} onChange={(e) => {setVehicleLicensePlateSearch(e.target.value.toUpperCase()); field.onChange(e.target.value.toUpperCase());}} disabled={isReadOnly} className="uppercase" onKeyDown={handleVehiclePlateKeyDown} /></FormControl></FormItem>)}/>
@@ -976,66 +1006,39 @@ export function ServiceForm({
                     {vehicleNotFound && !selectedVehicle && !isReadOnly && (<div className="p-3 border border-orange-500 rounded-md bg-orange-50 dark:bg-orange-900/30 dark:text-orange-300 text-sm flex flex-col sm:flex-row items-center justify-between gap-2"><div className="flex items-center gap-2"><AlertCircle className="h-5 w-5 shrink-0"/><p>Vehículo con placa "{vehicleLicensePlateSearch}" no encontrado.</p></div><Button type="button" size="sm" variant="outline" onClick={() => {setNewVehicleInitialData({ licensePlate: vehicleLicensePlateSearch }); setIsVehicleDialogOpen(true);}} className="w-full sm:w-auto"><CarIcon className="mr-2 h-4 w-4"/> Registrar Nuevo Vehículo</Button></div>)}
                     {showDateFields && selectedVehicle && (
                         <div className="pt-4 grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
-                            <FormField
-                                control={form.control}
-                                name="serviceDate"
-                                render={({ field }) => (
-                                    <FormItem className="flex flex-col">
-                                        <FormLabel>Fecha de Servicio</FormLabel>
-                                        <Popover>
-                                            <PopoverTrigger asChild disabled={isDateDisabled}>
-                                                <FormControl>
-                                                    <Button variant={"outline"} className={cn("w-full justify-start text-left font-normal", !field.value && "text-muted-foreground")} disabled={isDateDisabled}>
-                                                        {field.value && isValid(field.value) ? (format(field.value, "PPP", { locale: es })) : (<span>Seleccione fecha</span>)}
-                                                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                                                    </Button>
-                                                </FormControl>
-                                            </PopoverTrigger>
-                                            <PopoverContent className="w-auto p-0" align="start">
-                                                <Calendar
-                                                    mode="single"
-                                                    selected={field.value}
-                                                    onSelect={(date) => {
-                                                        const currentTime = field.value || setHours(setMinutes(new Date(), 30), 8);
-                                                        const newDateTime = date ? setHours(setMinutes(startOfDay(date), currentTime.getMinutes()), currentTime.getHours()) : undefined;
-                                                        field.onChange(newDateTime);
-                                                    }}
-                                                    disabled={(date) => date < new Date("1900-01-01") || (isReadOnly && mode === 'service')}
-                                                    initialFocus
-                                                    locale={es}
-                                                />
-                                            </PopoverContent>
-                                        </Popover>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                            <FormField
-                                control={form.control}
-                                name="serviceDate"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Hora del Servicio</FormLabel>
-                                        <Select
-                                            value={field.value && isValid(field.value) ? format(field.value, 'HH:mm') : ""}
-                                            onValueChange={(timeValue) => {
-                                                const [hours, minutes] = timeValue.split(':').map(Number);
-                                                const currentDate = field.value || new Date();
-                                                const newDateTime = setHours(setMinutes(startOfDay(currentDate), minutes), hours);
-                                                field.onChange(newDateTime);
-                                            }}
-                                            disabled={isDateDisabled}
-                                        >
-                                            <FormControl><SelectTrigger><SelectValue placeholder="Seleccione hora" /></SelectTrigger></FormControl>
-                                            <SelectContent>{timeSlots.map(slot => (<SelectItem key={slot.value} value={slot.value}>{slot.label}</SelectItem>))}</SelectContent>
-                                        </Select>
-                                    </FormItem>
-                                )}
-                            />
+                            <FormField control={form.control} name="serviceDate" render={({ field }) => (<FormItem className="flex flex-col"><FormLabel>Fecha de Servicio</FormLabel><Popover><PopoverTrigger asChild disabled={isDateDisabled}><FormControl><Button variant={"outline"} className={cn("w-full justify-start text-left font-normal", !field.value && "text-muted-foreground")} disabled={isDateDisabled}>{field.value && isValid(field.value) ? (format(field.value, "PPP", { locale: es })) : (<span>Seleccione fecha</span>)}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value} onSelect={(date) => { const currentTime = field.value || setHours(setMinutes(new Date(), 30), 8); const newDateTime = date ? setHours(setMinutes(startOfDay(date), currentTime.getMinutes()), currentTime.getHours()) : undefined; field.onChange(newDateTime);}} disabled={(date) => date < new Date("1900-01-01") || (isReadOnly && mode === 'service')} initialFocus locale={es}/></PopoverContent></Popover><FormMessage /></FormItem>)} />
+                            <FormField control={form.control} name="serviceDate" render={({ field }) => ( <FormItem><FormLabel>Hora del Servicio</FormLabel><Select value={field.value && isValid(field.value) ? format(field.value, 'HH:mm') : ""} onValueChange={(timeValue) => { const [hours, minutes] = timeValue.split(':').map(Number); const currentDate = field.value || new Date(); const newDateTime = setHours(setMinutes(startOfDay(currentDate), minutes), hours); field.onChange(newDateTime);}} disabled={isDateDisabled}><FormControl><SelectTrigger><SelectValue placeholder="Seleccione hora" /></SelectTrigger></FormControl><SelectContent>{timeSlots.map(slot => (<SelectItem key={slot.value} value={slot.value}>{slot.label}</SelectItem>))}</SelectContent></Select></FormItem>)} />
                         </div>
                     )}
                 </CardContent>
               </Card>
+
+               {(watchedStatus === 'Reparando' || watchedStatus === 'Completado') && mode === 'service' && (
+                  <Card>
+                      <CardHeader>
+                          <CardTitle className="text-lg">Técnico Asignado</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                          <FormField
+                              control={form.control}
+                              name="technicianId"
+                              render={({ field }) => (
+                                  <FormItem>
+                                      <Select onValueChange={field.onChange} value={field.value} disabled={isReadOnly}>
+                                          <FormControl><SelectTrigger><SelectValue placeholder="Seleccionar técnico..." /></SelectTrigger></FormControl>
+                                          <SelectContent>
+                                              {technicians.map((tech) => (
+                                                  <SelectItem key={tech.id} value={tech.id}>{tech.name}</SelectItem>
+                                              ))}
+                                          </SelectContent>
+                                      </Select>
+                                      <FormMessage />
+                                  </FormItem>
+                              )}
+                          />
+                      </CardContent>
+                  </Card>
+              )}
               
               <Card>
                 <CardHeader><CardTitle className="text-lg">Trabajos a Realizar</CardTitle></CardHeader>
@@ -1058,11 +1061,9 @@ export function ServiceForm({
                     )}
                 </CardContent>
               </Card>
-              
+
               <Card>
-                <CardHeader>
-                    <CardTitle className="text-lg">Notas Adicionales (Opcional)</CardTitle>
-                </CardHeader>
+                <CardHeader><CardTitle className="text-lg">Notas Adicionales (Opcional)</CardTitle></CardHeader>
                 <CardContent>
                     <FormField control={form.control} name="notes" render={({ field }) => (
                         <FormItem>
@@ -1073,184 +1074,43 @@ export function ServiceForm({
                 </CardContent>
               </Card>
 
-              {watchedStatus === 'Completado' ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
-                  <Card>
-                    <CardHeader><CardTitle className="text-lg">Método de Pago</CardTitle></CardHeader>
-                    <CardContent className="space-y-4">
-                      <FormField
-                        control={form.control}
-                        name="paymentMethod"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Método de Pago</FormLabel>
-                            <Select onValueChange={field.onChange} defaultValue={field.value}>
-                              <FormControl><SelectTrigger><SelectValue placeholder="Seleccione método de pago" /></SelectTrigger></FormControl>
-                              <SelectContent>
-                                {paymentMethods.map(method => {
-                                  const Icon = paymentMethodIcons[method];
-                                  return (<SelectItem key={method} value={method}><div className="flex items-center gap-2"><Icon className="h-4 w-4" /><span>{method}</span></div></SelectItem>)
-                                })}
-                              </SelectContent>
-                            </Select>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      {(selectedPaymentMethod === "Tarjeta" || selectedPaymentMethod === "Tarjeta+Transferencia") && (
-                        <FormField control={form.control} name="cardFolio" render={({ field }) => (<FormItem><FormLabel>Folio Terminal (Tarjeta)</FormLabel><FormControl><Input placeholder="Ingrese folio de la transacción" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                      )}
-                      {(selectedPaymentMethod === "Transferencia" || selectedPaymentMethod === "Efectivo+Transferencia" || selectedPaymentMethod === "Tarjeta+Transferencia") && (
-                        <FormField control={form.control} name="transferFolio" render={({ field }) => (<FormItem><FormLabel>Folio Transferencia</FormLabel><FormControl><Input placeholder="Ingrese folio/referencia" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                      )}
-                    </CardContent>
-                  </Card>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+                  {watchedStatus === 'Completado' ? (
+                      <Card>
+                          <CardHeader><CardTitle className="text-lg">Método de Pago</CardTitle></CardHeader>
+                          <CardContent className="space-y-4">
+                            <FormField control={form.control} name="paymentMethod" render={({ field }) => (<FormItem><FormLabel>Método de Pago</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Seleccione método de pago" /></SelectTrigger></FormControl><SelectContent>{paymentMethods.map(method => { const Icon = paymentMethodIcons[method]; return (<SelectItem key={method} value={method}><div className="flex items-center gap-2"><Icon className="h-4 w-4" /><span>{method}</span></div></SelectItem>)})}</SelectContent></Select><FormMessage /></FormItem>)}/>
+                            {(selectedPaymentMethod === "Tarjeta" || selectedPaymentMethod === "Tarjeta+Transferencia") && ( <FormField control={form.control} name="cardFolio" render={({ field }) => (<FormItem><FormLabel>Folio Terminal (Tarjeta)</FormLabel><FormControl><Input placeholder="Ingrese folio de la transacción" {...field} /></FormControl><FormMessage /></FormItem>)} />)}
+                            {(selectedPaymentMethod === "Transferencia" || selectedPaymentMethod === "Efectivo+Transferencia" || selectedPaymentMethod === "Tarjeta+Transferencia") && ( <FormField control={form.control} name="transferFolio" render={({ field }) => (<FormItem><FormLabel>Folio Transferencia</FormLabel><FormControl><Input placeholder="Ingrese folio/referencia" {...field} /></FormControl><FormMessage /></FormItem>)} />)}
+                          </CardContent>
+                      </Card>
+                  ) : <div/>}
+
                   <Card className="bg-card h-full">
-                    <CardHeader><CardTitle className="text-lg">Resumen Financiero</CardTitle></CardHeader>
-                    <CardContent>
-                      <div className="space-y-1 text-sm">
-                        <div className="flex justify-between pt-1"><span className="font-semibold text-blue-600 dark:text-blue-400">Total (IVA Inc.):</span><span className="font-semibold text-blue-600 dark:text-blue-400">{formatCurrency(totalCost)}</span></div>
-                        <div className="flex justify-between text-xs"><span>(-) Costo Insumos:</span><span className="font-medium text-red-600 dark:text-red-400">{formatCurrency(totalSuppliesWorkshopCost)}</span></div>
-                        <hr className="my-1 border-dashed"/>
-                        <div className="flex justify-between font-bold text-green-700 dark:text-green-400"><span>(=) Ganancia:</span><span>{formatCurrency(serviceProfit)}</span></div>
-                      </div>
-                    </CardContent>
+                      <CardHeader><CardTitle className="text-lg">Resumen Financiero</CardTitle></CardHeader>
+                      <CardContent>
+                          <div className="space-y-1 text-sm">
+                              <div className="flex justify-between pt-1"><span className="font-semibold text-blue-600 dark:text-blue-400">Total (IVA Inc.):</span><span className="font-semibold text-blue-600 dark:text-blue-400">{formatCurrency(totalCost)}</span></div>
+                              <div className="flex justify-between text-xs"><span>(-) Costo Insumos:</span><span className="font-medium text-red-600 dark:text-red-400">{formatCurrency(totalSuppliesWorkshopCost)}</span></div>
+                              <hr className="my-1 border-dashed"/>
+                              <div className="flex justify-between font-bold text-green-700 dark:text-green-400"><span>(=) Ganancia:</span><span>{formatCurrency(serviceProfit)}</span></div>
+                          </div>
+                      </CardContent>
                   </Card>
-                </div>
-              ) : (
-                <div className="flex justify-end">
-                    <Card className="bg-card w-full md:w-1/2">
-                        <CardHeader><CardTitle className="text-lg flex items-center gap-2"><DollarSign className="h-5 w-5 text-green-600"/>Resumen Financiero</CardTitle></CardHeader>
-                        <CardContent>
-                            <div className="space-y-1 text-base">
-                                <div className="flex justify-between pt-1"><span className="font-bold text-blue-600 dark:text-blue-400">Total (IVA Inc.):</span><span className="font-semibold text-blue-600 dark:text-blue-400">{formatCurrency(totalCost)}</span></div>
-                                <div className="flex justify-between"><span>(-) Costo Insumos:</span><span className="font-medium text-red-600 dark:text-red-400">{formatCurrency(totalSuppliesWorkshopCost)}</span></div>
-                                <hr className="my-2 border-dashed"/>
-                                <div className="flex justify-between font-bold text-green-700 dark:text-green-400"><span>(=) Ganancia:</span><span>{formatCurrency(serviceProfit)}</span></div>
-                            </div>
-                        </CardContent>
-                    </Card>
-                </div>
-              )}
+              </div>
+
             </TabsContent>
 
             {showReceptionTab && (
+              <>
                 <TabsContent value="recepcion" className="space-y-6 mt-0">
                   <Card>
                     <CardHeader><CardTitle>Fechas y Horarios</CardTitle></CardHeader>
                     <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 items-end">
-                        <FormField
-                            control={form.control}
-                            name="serviceDate"
-                            render={({ field }) => (
-                                <FormItem className="flex flex-col">
-                                    <FormLabel>Fecha de Servicio</FormLabel>
-                                    <Popover>
-                                        <PopoverTrigger asChild disabled={isDateDisabled}>
-                                            <FormControl>
-                                                <Button variant={"outline"} className={cn("w-full justify-start text-left font-normal", !field.value && "text-muted-foreground")} disabled={isDateDisabled}>
-                                                    {field.value && isValid(field.value) ? (format(field.value, "PPP", { locale: es })) : (<span>Seleccione fecha</span>)}
-                                                    <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                                                </Button>
-                                            </FormControl>
-                                        </PopoverTrigger>
-                                        <PopoverContent className="w-auto p-0" align="start">
-                                            <Calendar
-                                                mode="single"
-                                                selected={field.value}
-                                                onSelect={(date) => {
-                                                    const currentTime = field.value || setHours(setMinutes(new Date(), 30), 8);
-                                                    const newDateTime = date ? setHours(setMinutes(startOfDay(date), currentTime.getMinutes()), currentTime.getHours()): undefined;
-                                                    field.onChange(newDateTime);
-                                                }}
-                                                disabled={(date) => date < new Date("1900-01-01") || (isReadOnly && mode === 'service') }
-                                                initialFocus
-                                                locale={es}
-                                            />
-                                        </PopoverContent>
-                                    </Popover>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                        <FormField
-                            control={form.control}
-                            name="serviceDate"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Hora del Servicio</FormLabel>
-                                    <Select
-                                        value={field.value && isValid(field.value) ? format(field.value, 'HH:mm') : ""}
-                                        onValueChange={(timeValue) => {
-                                            const [hours, minutes] = timeValue.split(':').map(Number);
-                                            const currentDate = field.value || new Date();
-                                            const newDateTime = setHours(setMinutes(startOfDay(currentDate), minutes), hours);
-                                            field.onChange(newDateTime);
-                                        }}
-                                        disabled={isDateDisabled}
-                                    >
-                                        <FormControl><SelectTrigger><SelectValue placeholder="Seleccione hora" /></SelectTrigger></FormControl>
-                                        <SelectContent>{timeSlots.map(slot => (<SelectItem key={slot.value} value={slot.value}>{slot.label}</SelectItem>))}</SelectContent>
-                                    </Select>
-                                </FormItem>
-                            )}
-                        />
-                        <FormField
-                            control={form.control}
-                            name="deliveryDateTime"
-                            render={({ field }) => (
-                                <FormItem className="flex flex-col">
-                                    <FormLabel>Fecha y Hora de Entrega</FormLabel>
-                                    <Popover>
-                                        <PopoverTrigger asChild disabled={isReadOnly}>
-                                            <FormControl>
-                                                <Button variant={"outline"} className={cn("w-full justify-start text-left font-normal",!field.value && "text-muted-foreground")} disabled={isReadOnly}>
-                                                    {field.value && isValid(field.value) ? (format(field.value, "PPP", { locale: es })) : (<span>Seleccione fecha y hora</span>)}
-                                                    <Clock className="ml-auto h-4 w-4 opacity-50" />
-                                                </Button>
-                                            </FormControl>
-                                        </PopoverTrigger>
-                                        <PopoverContent className="w-auto p-0" align="start">
-                                            <Calendar
-                                                mode="single"
-                                                selected={field.value}
-                                                onSelect={(date) => {
-                                                    const currentTime = field.value || new Date();
-                                                    const newDateTime = date ? setHours(setMinutes(startOfDay(date), currentTime.getMinutes()), currentTime.getHours()): undefined;
-                                                    field.onChange(newDateTime);
-                                                }}
-                                                disabled={isReadOnly}
-                                                initialFocus
-                                                locale={es}
-                                            />
-                                        </PopoverContent>
-                                    </Popover>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                        <FormField
-                            control={form.control}
-                            name="deliveryDateTime"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Hora de Entrega</FormLabel>
-                                    <Select
-                                        value={field.value && isValid(field.value) ? format(field.value, 'HH:mm') : ""}
-                                        onValueChange={(timeValue) => {
-                                            const [hours, minutes] = timeValue.split(':').map(Number);
-                                            const currentDate = field.value || new Date();
-                                            const newDateTime = setHours(setMinutes(startOfDay(currentDate), minutes), hours);
-                                            field.onChange(newDateTime);
-                                        }}
-                                        disabled={isReadOnly}
-                                    >
-                                        <FormControl><SelectTrigger><SelectValue placeholder="Seleccione hora" /></SelectTrigger></FormControl>
-                                        <SelectContent>{timeSlots.map(slot => (<SelectItem key={slot.value} value={slot.value}>{slot.label}</SelectItem>))}</SelectContent>
-                                    </Select>
-                                </FormItem>
-                            )}
-                        />
+                        <FormField control={form.control} name="serviceDate" render={({ field }) => { const serviceDateValue = form.getValues('serviceDate'); return (<FormItem className="flex flex-col"><FormLabel>Fecha de Servicio</FormLabel><Popover><PopoverTrigger asChild disabled={isDateDisabled}><FormControl><Button variant={"outline"} className={cn("w-full justify-start text-left font-normal", !field.value && "text-muted-foreground")} disabled={isDateDisabled}>{field.value && isValid(field.value) ? (format(field.value, "PPP", { locale: es })) : (<span>Seleccione fecha</span>)}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value} onSelect={(date) => { const currentTime = field.value || setHours(setMinutes(new Date(), 30), 8); const newDateTime = date ? setHours(setMinutes(startOfDay(date), currentTime.getMinutes()), currentTime.getHours()): undefined; field.onChange(newDateTime);}} disabled={(date) => date < new Date("1900-01-01") || (isReadOnly && mode === 'service') } initialFocus locale={es}/></PopoverContent></Popover><FormMessage /></FormItem>)} />
+                        <FormField control={form.control} name="serviceDate" render={({ field }) => { const serviceDateValue = useWatch({ control: form.control, name: 'serviceDate' }); return ( <FormItem> <FormLabel>Hora del Servicio</FormLabel> <Select value={isValid(serviceDateValue) ? format(serviceDateValue, 'HH:mm') : ""} onValueChange={(timeValue) => { const [hours, minutes] = timeValue.split(':').map(Number); const currentDate = form.getValues('serviceDate') || new Date(); const newDateTime = setHours(setMinutes(startOfDay(currentDate), minutes), hours); field.onChange(newDateTime); }} disabled={isDateDisabled} > <FormControl><SelectTrigger><SelectValue placeholder="Seleccione hora" /></SelectTrigger></FormControl> <SelectContent>{timeSlots.map(slot => (<SelectItem key={slot.value} value={slot.value}>{slot.label}</SelectItem>))}</SelectContent> </Select> </FormItem> )}} />
+                        <FormField control={form.control} name="deliveryDateTime" render={({ field }) => { return ( <FormItem className="flex flex-col"><FormLabel>Fecha y Hora de Entrega</FormLabel><Popover><PopoverTrigger asChild disabled={isReadOnly}><FormControl><Button variant={"outline"} className={cn("w-full justify-start text-left font-normal",!field.value && "text-muted-foreground")} disabled={isReadOnly}>{field.value && isValid(field.value) ? (format(field.value, "PPP", { locale: es })) : (<span>Seleccione fecha y hora</span>)}<Clock className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value} onSelect={(date) => { const currentTime = field.value || new Date(); const newDateTime = date ? setHours(setMinutes(startOfDay(date), currentTime.getMinutes()), currentTime.getHours()): undefined; field.onChange(newDateTime);}} disabled={isReadOnly} initialFocus locale={es}/></PopoverContent></Popover><FormMessage /></FormItem>)} }/>
+                        <FormField control={form.control} name="deliveryDateTime" render={({ field }) => { const deliveryDateValue = useWatch({ control: form.control, name: 'deliveryDateTime' }); return ( <FormItem> <FormLabel>Hora de Entrega</FormLabel> <Select value={isValid(deliveryDateValue) ? format(deliveryDateValue, 'HH:mm') : ""} onValueChange={(timeValue) => { const [hours, minutes] = timeValue.split(':').map(Number); const currentDate = form.getValues('deliveryDateTime') || new Date(); const newDateTime = setHours(setMinutes(startOfDay(currentDate), minutes), hours); field.onChange(newDateTime); }} disabled={isReadOnly} > <FormControl><SelectTrigger><SelectValue placeholder="Seleccione hora" /></SelectTrigger></FormControl> <SelectContent>{timeSlots.map(slot => (<SelectItem key={slot.value} value={slot.value}>{slot.label}</SelectItem>))}</SelectContent> </Select> </FormItem> )}} />
                     </CardContent>
                   </Card>
 
@@ -1269,8 +1129,6 @@ export function ServiceForm({
                     </CardContent>
                   </Card>
                 </TabsContent>
-            )}
-            {showReceptionTab && (
                 <TabsContent value="seguridad" className="space-y-6 mt-0">
                     <Card>
                       <CardHeader>
@@ -1291,6 +1149,7 @@ export function ServiceForm({
                       </CardContent>
                     </Card>
                 </TabsContent>
+              </>
             )}
           </Tabs>
 
