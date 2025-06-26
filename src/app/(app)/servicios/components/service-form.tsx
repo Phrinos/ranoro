@@ -20,7 +20,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription} from '@/components/ui/card';
-import { CalendarIcon, PlusCircle, Search, Trash2, AlertCircle, Car as CarIcon, Clock, DollarSign, PackagePlus, BrainCircuit, Loader2, Printer, Plus, Minus, FileText, Signature, MessageSquare, Ban, ShieldQuestion, Wrench, Wallet, CreditCard, Send, WalletCards, ArrowRightLeft, Tag, FileCheck } from "lucide-react";
+import { CalendarIcon, PlusCircle, Search, Trash2, AlertCircle, Car as CarIcon, Clock, DollarSign, PackagePlus, BrainCircuit, Loader2, Printer, Plus, Minus, FileText, Signature, MessageSquare, Ban, ShieldQuestion, Wrench, Wallet, CreditCard, Send, WalletCards, ArrowRightLeft, Tag, FileCheck, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format, parseISO, setHours, setMinutes, isValid, startOfDay } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -125,7 +125,7 @@ const serviceFormSchemaBase = z.object({
   publicId: z.string().optional(),
   vehicleId: z.string({required_error: "Debe seleccionar o registrar un vehículo."}).min(1, "Debe seleccionar o registrar un vehículo.").optional(),
   vehicleLicensePlateSearch: z.string().optional(),
-  serviceDate: z.date({ invalid_type_error: "La fecha programada no es válida." }).optional(),
+  serviceDate: z.date().optional(),
   quoteDate: z.date().optional(), // For quote mode
   mileage: z.coerce.number({ invalid_type_error: "El kilometraje debe ser numérico." }).int("El kilometraje debe ser un número entero.").min(0, "El kilometraje no puede ser negativo.").optional(),
   description: z.string().optional(),
@@ -1023,7 +1023,7 @@ export function ServiceForm({
                                 </PopoverContent>
                               </Popover>
                             </FormItem>
-                            <FormItem className="flex flex-col">
+                            <FormItem>
                               <FormLabel>Hora Agendada</FormLabel>
                               <Select
                                 value={form.getValues('serviceDate') && isValid(form.getValues('serviceDate')) ? format(form.getValues('serviceDate'), 'HH:mm') : ""}
@@ -1064,11 +1064,11 @@ export function ServiceForm({
                         <p><strong>Vehículo Seleccionado:</strong> {selectedVehicle.licensePlate} {selectedVehicle.make} {selectedVehicle.model} {selectedVehicle.year}</p>
                         <p><strong>Propietario:</strong> {selectedVehicle.ownerName} - {selectedVehicle.ownerPhone}</p>
                         {lastService ? (
-                            <p className="font-medium text-blue-600 dark:text-blue-400 mt-1">
+                            <p className="font-medium">
                                 <strong>Últ. Servicio:</strong> {lastService.mileage ? `${lastService.mileage.toLocaleString('es-ES')} km - ` : ''}{format(parseISO(lastService.serviceDate), "dd MMM yyyy", { locale: es })} - {lastService.description}
                             </p>
                         ) : (
-                            <p className="font-medium text-blue-600 dark:text-blue-400 mt-1">
+                            <p className="font-medium">
                                 No tiene historial de servicios.
                             </p>
                         )}
@@ -1494,7 +1494,9 @@ const SafetyCheckRow = ({ name, label, control, isReadOnly }: { name: string; la
                   isReadOnly ? 'cursor-not-allowed' : 'cursor-pointer hover:opacity-100'
                 )}
               >
-                <div className={cn("h-full w-full rounded-full", status.color)}></div>
+                <div className={cn("h-full w-full rounded-full flex items-center justify-center", status.color)}>
+                    {field.value === status.value && <Check className="h-4 w-4 text-white" />}
+                </div>
               </button>
             ))}
           </div>
