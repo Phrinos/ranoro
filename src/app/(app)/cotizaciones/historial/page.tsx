@@ -25,6 +25,17 @@ import { ServiceDialog } from "../../servicios/components/service-dialog";
 import { doc, setDoc, deleteDoc } from 'firebase/firestore';
 import { db } from '@root/lib/firebaseClient.js';
 import { Badge } from "@/components/ui/badge";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 
 type QuoteSortOption = 
