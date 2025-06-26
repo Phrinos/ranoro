@@ -24,7 +24,7 @@ import { CalendarIcon, PlusCircle, Search, Trash2, AlertCircle, Car as CarIcon, 
 import { cn } from "@/lib/utils";
 import { format, parseISO, setHours, setMinutes, isValid, startOfDay } from 'date-fns';
 import { es } from 'date-fns/locale';
-import type { ServiceRecord, Vehicle, Technician, InventoryItem, ServiceSupply, QuoteRecord, InventoryCategory, Supplier, User, WorkshopInfo, ServiceItem, SafetyInspection, PaymentMethod } from "@/types";
+import type { ServiceRecord, Vehicle, Technician, InventoryItem, ServiceSupply, QuoteRecord, InventoryCategory, Supplier, User, WorkshopInfo, ServiceItem, SafetyInspection, PaymentMethod, SafetyCheckStatus } from "@/types";
 import React, { useEffect, useState, useMemo, useCallback, useRef } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { VehicleDialog } from "../../vehiculos/components/vehicle-dialog";
@@ -59,6 +59,7 @@ import { db } from '@root/lib/firebaseClient.js';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AddSupplyDialog } from './add-supply-dialog';
 import { QuoteContent } from '@/components/quote-content';
+import { SignatureDialog } from './signature-dialog';
 
 
 const supplySchema = z.object({
@@ -77,21 +78,39 @@ const serviceItemSchema = z.object({
   suppliesUsed: z.array(supplySchema),
 });
 
-const safetyCheckItemSchema = z.object({
-    status: z.enum(['ok', 'regular', 'atencion', 'na']).default('na'),
-    notes: z.string().optional(),
-});
+const safetyCheckStatusSchema = z.enum(['ok', 'atencion', 'inmediata', 'na']).default('na');
 
 const safetyInspectionSchema = z.object({
-  brakes: safetyCheckItemSchema.optional(),
-  tires: safetyCheckItemSchema.optional(),
-  lights: safetyCheckItemSchema.optional(),
-  fluidLevels: safetyCheckItemSchema.optional(),
-  suspensionSteering: safetyCheckItemSchema.optional(),
-  battery: safetyCheckItemSchema.optional(),
-  wipers: safetyCheckItemSchema.optional(),
-  horn: safetyCheckItemSchema.optional(),
+    luces_altas_bajas_niebla: safetyCheckStatusSchema.optional(),
+    luces_cuartos: safetyCheckStatusSchema.optional(),
+    luces_direccionales: safetyCheckStatusSchema.optional(),
+    luces_frenos_reversa: safetyCheckStatusSchema.optional(),
+    luces_interiores: safetyCheckStatusSchema.optional(),
+    fugas_refrigerante: safetyCheckStatusSchema.optional(),
+    fugas_limpiaparabrisas: safetyCheckStatusSchema.optional(),
+    fugas_frenos_embrague: safetyCheckStatusSchema.optional(),
+    fugas_transmision: safetyCheckStatusSchema.optional(),
+    fugas_direccion_hidraulica: safetyCheckStatusSchema.optional(),
+    carroceria_cristales_espejos: safetyCheckStatusSchema.optional(),
+    carroceria_puertas_cofre: safetyCheckStatusSchema.optional(),
+    carroceria_asientos_tablero: safetyCheckStatusSchema.optional(),
+    carroceria_plumas: safetyCheckStatusSchema.optional(),
+    llantas_delanteras_traseras: safetyCheckStatusSchema.optional(),
+    llantas_refaccion: safetyCheckStatusSchema.optional(),
+    suspension_rotulas: safetyCheckStatusSchema.optional(),
+    suspension_amortiguadores: safetyCheckStatusSchema.optional(),
+    suspension_caja_direccion: safetyCheckStatusSchema.optional(),
+    suspension_terminales: safetyCheckStatusSchema.optional(),
+    frenos_discos_delanteros: safetyCheckStatusSchema.optional(),
+    frenos_discos_traseros: safetyCheckStatusSchema.optional(),
+    otros_tuberia_escape: safetyCheckStatusSchema.optional(),
+    otros_soportes_motor: safetyCheckStatusSchema.optional(),
+    otros_claxon: safetyCheckStatusSchema.optional(),
+    otros_inspeccion_sdb: safetyCheckStatusSchema.optional(),
+    inspectionNotes: z.string().optional(),
+    technicianSignature: z.string().optional(),
 });
+
 
 const paymentMethods: [PaymentMethod, ...PaymentMethod[]] = [
   "Efectivo",
@@ -243,6 +262,7 @@ export function ServiceForm({
   const [isDeliveryDatePickerOpen, setIsDeliveryDatePickerOpen] = useState(false);
   
   const freshUserRef = useRef<User | null>(null);
+  const [isTechSignatureDialogOpen, setIsTechSignatureDialogOpen] = useState(false);
 
   const form = useForm<ServiceFormValues>({
     resolver: zodResolver(serviceFormSchemaBase),
@@ -278,6 +298,7 @@ export function ServiceForm({
   const selectedPaymentMethod = useWatch({ control: form.control, name: 'paymentMethod' });
   const customerSignatureReception = useWatch({ control: form.control, name: 'customerSignatureReception' });
   const customerSignatureDelivery = useWatch({ control: form.control, name: 'customerSignatureDelivery' });
+  const technicianSignature = useWatch({ control: form.control, name: 'safetyInspection.technicianSignature' });
 
   const { fields: serviceItemsFields, append: appendServiceItem, remove: removeServiceItem, update: updateServiceItem } = useFieldArray({
     control: form.control,
@@ -712,7 +733,7 @@ export function ServiceForm({
       quoteData.estimatedTotalCost = finalTotalCost;
       quoteData.estimatedSubTotal = finalSubTotal;
       quoteData.estimatedTaxAmount = finalTaxAmount;
-      quoteData.estimatedTotalSuppliesCost = finalTotalSuppliesCost;
+      quoteData.estimatedTotalSuppliesCost = finalTotalSuppliesWorkshopCost;
       quoteData.estimatedProfit = finalProfit;
       
       if (values.notes) quoteData.notes = values.notes;
@@ -927,7 +948,7 @@ export function ServiceForm({
                             name="status"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel className={cn(form.formState.errors.status && "text-destructive")}>Estado</FormLabel>
+                                    <FormLabel>Estado</FormLabel>
                                     <Select onValueChange={field.onChange} value={field.value} disabled={isReadOnly}>
                                         <FormControl>
                                             <SelectTrigger className="font-bold">
@@ -949,7 +970,7 @@ export function ServiceForm({
                         name="serviceType"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel className={cn(form.formState.errors.serviceType && "text-destructive")}>Tipo de Servicio</FormLabel>
+                            <FormLabel>Tipo de Servicio</FormLabel>
                             <Select onValueChange={field.onChange} value={field.value || 'Servicio General'} disabled={isReadOnly}>
                               <FormControl>
                                 <SelectTrigger>
@@ -968,13 +989,13 @@ export function ServiceForm({
                        {showDateFields && (
                          <div className="grid grid-cols-2 gap-4 items-end md:col-span-2">
                             <FormItem className="flex flex-col">
-                              <FormLabel className={cn(form.formState.errors.serviceDate && "text-destructive")}>Fecha Agendada</FormLabel>
+                              <FormLabel>Fecha Agendada</FormLabel>
                               <Popover open={isServiceDatePickerOpen} onOpenChange={setIsServiceDatePickerOpen}>
                                 <PopoverTrigger asChild disabled={isReadOnly}>
                                   <FormControl>
                                     <Button
                                       variant={"outline"}
-                                      className={cn("w-full justify-start text-left font-normal", !form.getValues('serviceDate') && "text-muted-foreground", form.formState.errors.serviceDate && "border-destructive")}
+                                      className={cn("w-full justify-start text-left font-normal", !form.getValues('serviceDate') && "text-muted-foreground")}
                                       disabled={isReadOnly}
                                     >
                                       {form.getValues('serviceDate') && isValid(form.getValues('serviceDate')) ? format(form.getValues('serviceDate'), "PPP", { locale: es }) : <span>Seleccione fecha</span>}
@@ -987,16 +1008,15 @@ export function ServiceForm({
                                     mode="single"
                                     selected={form.getValues('serviceDate')}
                                     onSelect={(date) => {
-                                      if (!date) return;
                                       const currentVal = form.getValues('serviceDate') || new Date();
-                                      const newDate = new Date(date);
+                                      const newDate = date ? new Date(date) : new Date();
                                       newDate.setHours(currentVal.getHours());
                                       newDate.setMinutes(currentVal.getMinutes());
                                       newDate.setSeconds(0);
                                       form.setValue('serviceDate', newDate, { shouldValidate: true });
                                       setIsServiceDatePickerOpen(false);
                                     }}
-                                    disabled={(date) => date < new Date("1900-01-01") || (isReadOnly && mode === 'service')}
+                                    disabled={(date) => date < startOfDay(new Date()) || (isReadOnly && mode === 'service')}
                                     initialFocus
                                     locale={es}
                                   />
@@ -1004,7 +1024,7 @@ export function ServiceForm({
                               </Popover>
                             </FormItem>
                             <FormItem className="flex flex-col">
-                              <FormLabel className={cn(form.formState.errors.serviceDate && "text-destructive")}>Hora Agendada</FormLabel>
+                              <FormLabel>Hora Agendada</FormLabel>
                               <Select
                                 value={form.getValues('serviceDate') && isValid(form.getValues('serviceDate')) ? format(form.getValues('serviceDate'), 'HH:mm') : ""}
                                 onValueChange={(timeValue) => {
@@ -1020,7 +1040,7 @@ export function ServiceForm({
                                 disabled={isReadOnly}
                               >
                                 <FormControl>
-                                  <SelectTrigger className={cn(form.formState.errors.serviceDate && "border-destructive")}>
+                                  <SelectTrigger>
                                     <SelectValue placeholder="Seleccione hora" />
                                   </SelectTrigger>
                                 </FormControl>
@@ -1035,18 +1055,14 @@ export function ServiceForm({
                       )}
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
-                      <FormField control={form.control} name="vehicleLicensePlateSearch" render={({ field }) => (<FormItem className="w-full"><FormLabel className={cn(form.formState.errors.vehicleId && "text-destructive")}>Placa del Vehículo</FormLabel><FormControl><Input placeholder="Buscar/Ingresar Placas" {...field} value={vehicleLicensePlateSearch} onChange={(e) => {setVehicleLicensePlateSearch(e.target.value.toUpperCase()); field.onChange(e.target.value.toUpperCase());}} disabled={isReadOnly} className="uppercase" onKeyDown={handleVehiclePlateKeyDown} /></FormControl></FormItem>)}/>
-                      <FormField control={form.control} name="mileage" render={({ field }) => ( <FormItem><FormLabel className={cn(form.formState.errors.mileage && "text-destructive")}>Kilometraje (Opcional)</FormLabel><FormControl><Input type="number" placeholder="Ej: 55000 km" {...field} disabled={isReadOnly} value={field.value ?? ''} /></FormControl></FormItem>)}/>
+                      <FormField control={form.control} name="vehicleLicensePlateSearch" render={({ field }) => (<FormItem className="w-full"><FormLabel>Placa del Vehículo</FormLabel><FormControl><Input placeholder="Buscar/Ingresar Placas" {...field} value={vehicleLicensePlateSearch} onChange={(e) => {setVehicleLicensePlateSearch(e.target.value.toUpperCase()); field.onChange(e.target.value.toUpperCase());}} disabled={isReadOnly} className="uppercase" onKeyDown={handleVehiclePlateKeyDown} /></FormControl></FormItem>)}/>
+                      <FormField control={form.control} name="mileage" render={({ field }) => ( <FormItem><FormLabel>Kilometraje (Opcional)</FormLabel><FormControl><Input type="number" placeholder="Ej: 55000 km" {...field} disabled={isReadOnly} value={field.value ?? ''} /></FormControl></FormItem>)}/>
                     </div>
                     {vehicleSearchResults.length > 0 && ( <ScrollArea className="h-auto max-h-[150px] w-full rounded-md border"><div className="p-2">{vehicleSearchResults.map(v => (<button type="button" key={v.id} onClick={() => handleSelectVehicleFromSearch(v)} className="w-full text-left p-2 rounded-md hover:bg-muted"><p className="font-semibold">{v.licensePlate}</p><p className="text-sm text-muted-foreground">{v.make} {v.model} - {v.ownerName}</p></button>))}</div></ScrollArea>)}
                     {selectedVehicle && (
                       <div className="p-3 border rounded-md bg-amber-50 dark:bg-amber-950/50 text-sm space-y-1">
-                        <p>
-                          <strong>Vehículo Seleccionado:</strong> {selectedVehicle.licensePlate} {selectedVehicle.make} {selectedVehicle.model} {selectedVehicle.year}
-                        </p>
-                        <p>
-                          <strong>Propietario:</strong> {selectedVehicle.ownerName} - {selectedVehicle.ownerPhone}
-                        </p>
+                        <p><strong>Vehículo Seleccionado:</strong> {selectedVehicle.licensePlate} {selectedVehicle.make} {selectedVehicle.model} {selectedVehicle.year}</p>
+                        <p><strong>Propietario:</strong> {selectedVehicle.ownerName} - {selectedVehicle.ownerPhone}</p>
                         {lastService ? (
                             <p className="font-medium text-blue-600 dark:text-blue-400 mt-1">
                                 <strong>Últ. Servicio:</strong> {lastService.mileage ? `${lastService.mileage.toLocaleString('es-ES')} km - ` : ''}{format(parseISO(lastService.serviceDate), "dd MMM yyyy", { locale: es })} - {lastService.description}
@@ -1096,7 +1112,7 @@ export function ServiceForm({
                                     name="technicianId"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel className={cn(form.formState.errors.technicianId && "text-destructive")}>Técnico Responsable</FormLabel>
+                                            <FormLabel>Técnico Responsable</FormLabel>
                                             <Select onValueChange={field.onChange} value={field.value} disabled={isReadOnly}>
                                                 <FormControl><SelectTrigger><SelectValue placeholder="Seleccione un técnico" /></SelectTrigger></FormControl>
                                                 <SelectContent>
@@ -1133,7 +1149,7 @@ export function ServiceForm({
                             <CardContent className="space-y-4">
                                 <FormField control={form.control} name="paymentMethod" render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel className={cn(form.formState.errors.paymentMethod && "text-destructive")}>Método de Pago</FormLabel>
+                                        <FormLabel>Método de Pago</FormLabel>
                                         <Select onValueChange={field.onChange} value={field.value} disabled={isReadOnly}>
                                             <FormControl><SelectTrigger><SelectValue placeholder="Seleccione método"/></SelectTrigger></FormControl>
                                             <SelectContent>{paymentMethods.map(method => { const Icon = paymentMethodIcons[method]; return (<SelectItem key={method} value={method}><div className="flex items-center gap-2"><Icon className="h-4 w-4" /><span>{method}</span></div></SelectItem>)})}</SelectContent>
@@ -1141,10 +1157,10 @@ export function ServiceForm({
                                     </FormItem>
                                 )}/>
                                 {(selectedPaymentMethod === "Tarjeta" || selectedPaymentMethod === "Tarjeta+Transferencia") && (
-                                    <FormField control={form.control} name="cardFolio" render={({ field }) => (<FormItem><FormLabel className={cn(form.formState.errors.cardFolio && "text-destructive")}>Folio Tarjeta</FormLabel><FormControl><Input placeholder="Folio de la transacción" {...field} disabled={isReadOnly}/></FormControl></FormItem>)}/>
+                                    <FormField control={form.control} name="cardFolio" render={({ field }) => (<FormItem><FormLabel>Folio Tarjeta</FormLabel><FormControl><Input placeholder="Folio de la transacción" {...field} disabled={isReadOnly}/></FormControl></FormItem>)}/>
                                 )}
                                 {(selectedPaymentMethod === "Transferencia" || selectedPaymentMethod === "Efectivo+Transferencia" || selectedPaymentMethod === "Tarjeta+Transferencia") && (
-                                    <FormField control={form.control} name="transferFolio" render={({ field }) => (<FormItem><FormLabel className={cn(form.formState.errors.transferFolio && "text-destructive")}>Folio Transferencia</FormLabel><FormControl><Input placeholder="Referencia de la transferencia" {...field} disabled={isReadOnly}/></FormControl></FormItem>)}/>
+                                    <FormField control={form.control} name="transferFolio" render={({ field }) => (<FormItem><FormLabel>Folio Transferencia</FormLabel><FormControl><Input placeholder="Referencia de la transferencia" {...field} disabled={isReadOnly}/></FormControl></FormItem>)}/>
                                 )}
                             </CardContent>
                           </Card>
@@ -1170,20 +1186,20 @@ export function ServiceForm({
                   <Card>
                     <CardHeader><CardTitle>Fechas y Horarios</CardTitle></CardHeader>
                     <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 items-end">
-                        <FormField control={form.control} name="serviceDate" render={({ field }) => ( <FormItem className="flex flex-col"><FormLabel className={cn(form.formState.errors.serviceDate && "text-destructive")}>Fecha de Recepción</FormLabel><Popover open={isServiceDatePickerOpen} onOpenChange={setIsServiceDatePickerOpen}><PopoverTrigger asChild disabled={isReadOnly}><FormControl><Button variant={"outline"} className={cn("w-full justify-start text-left font-normal", !field.value && "text-muted-foreground", form.formState.errors.serviceDate && "border-destructive")} disabled={isReadOnly}>{field.value && isValid(field.value) ? (format(field.value, "PPP", { locale: es })) : (<span>Seleccione fecha</span>)}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value} onSelect={(date) => { if (!date) return; const currentVal = field.value || new Date(); const newDate = new Date(date); newDate.setHours(currentVal.getHours()); newDate.setMinutes(currentVal.getMinutes()); newDate.setSeconds(0); field.onChange(newDate); setIsServiceDatePickerOpen(false); }} disabled={(date) => date < new Date("1900-01-01")} initialFocus locale={es}/></PopoverContent></Popover></FormItem> )} />
-                        <FormField control={form.control} name="serviceDate" render={({ field }) => ( <FormItem> <FormLabel className={cn(form.formState.errors.serviceDate && "text-destructive")}>Hora de Recepción</FormLabel> <Select value={field.value && isValid(field.value) ? format(field.value, 'HH:mm') : ""} onValueChange={(timeValue) => { if (!timeValue) return; const [hours, minutes] = timeValue.split(':').map(Number); const currentVal = form.getValues('serviceDate') || new Date(); const newDate = new Date(currentVal); newDate.setHours(hours); newDate.setMinutes(minutes); newDate.setSeconds(0); field.onChange(newDate); }} disabled={isReadOnly} > <FormControl><SelectTrigger className={cn(form.formState.errors.serviceDate && "border-destructive")}><SelectValue placeholder="Seleccione hora" /></SelectTrigger></FormControl> <SelectContent>{timeSlots.map(slot => (<SelectItem key={slot.value} value={slot.value}>{slot.label}</SelectItem>))}</SelectContent> </Select> </FormItem> )} />
-                        <FormField control={form.control} name="deliveryDateTime" render={({ field }) => { return ( <FormItem className="flex flex-col"><FormLabel className={cn(form.formState.errors.deliveryDateTime && "text-destructive")}>Fecha de Entrega</FormLabel><Popover open={isDeliveryDatePickerOpen} onOpenChange={setIsDeliveryDatePickerOpen}><PopoverTrigger asChild disabled={isReadOnly}><FormControl><Button variant={"outline"} className={cn("w-full justify-start text-left font-normal",!field.value && "text-muted-foreground",form.formState.errors.deliveryDateTime && "border-destructive")} disabled={isReadOnly}>{field.value && isValid(field.value) ? (format(field.value, "PPP", { locale: es })) : (<span>Seleccione fecha y hora</span>)}<Clock className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value} onSelect={(date) => { if (!date) return; const currentVal = field.value || new Date(); const newDate = new Date(date); newDate.setHours(currentVal.getHours()); newDate.setMinutes(currentVal.getMinutes()); newDate.setSeconds(0); field.onChange(newDate); setIsDeliveryDatePickerOpen(false); }} disabled={isReadOnly} initialFocus locale={es}/></PopoverContent></Popover></FormItem>)} }/>
-                        <FormField control={form.control} name="deliveryDateTime" render={({ field }) => ( <FormItem> <FormLabel className={cn(form.formState.errors.deliveryDateTime && "text-destructive")}>Hora de Entrega</FormLabel> <Select value={field.value && isValid(field.value) ? format(field.value, 'HH:mm') : ""} onValueChange={(timeValue) => { if (!timeValue) return; const [hours, minutes] = timeValue.split(':').map(Number); const currentVal = form.getValues('deliveryDateTime') || new Date(); const newDate = new Date(currentVal); newDate.setHours(hours); newDate.setMinutes(minutes); newDate.setSeconds(0); field.onChange(newDate); }} disabled={isReadOnly} > <FormControl><SelectTrigger className={cn(form.formState.errors.deliveryDateTime && "border-destructive")}><SelectValue placeholder="Seleccione hora" /></SelectTrigger></FormControl> <SelectContent>{timeSlots.map(slot => (<SelectItem key={slot.value} value={slot.value}>{slot.label}</SelectItem>))}</SelectContent> </Select> </FormItem> )} />
+                        <FormItem className="flex flex-col"><FormLabel>Fecha de Recepción</FormLabel><Popover open={isServiceDatePickerOpen} onOpenChange={setIsServiceDatePickerOpen}><PopoverTrigger asChild disabled={isReadOnly}><FormControl><Button variant={"outline"} className={cn("w-full justify-start text-left font-normal", !form.getValues('serviceDate') && "text-muted-foreground")} disabled={isReadOnly}>{form.getValues('serviceDate') && isValid(form.getValues('serviceDate')) ? (format(form.getValues('serviceDate'), "PPP", { locale: es })) : (<span>Seleccione fecha</span>)}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={form.getValues('serviceDate')} onSelect={(date) => { if (!date) return; const currentVal = form.getValues('serviceDate') || new Date(); const newDate = new Date(date); newDate.setHours(currentVal.getHours()); newDate.setMinutes(currentVal.getMinutes()); newDate.setSeconds(0); form.setValue('serviceDate', newDate, { shouldValidate: true }); setIsServiceDatePickerOpen(false); }} disabled={(date) => date < new Date("1900-01-01")} initialFocus locale={es}/></PopoverContent></Popover></FormItem>
+                        <FormItem> <FormLabel>Hora de Recepción</FormLabel> <Select value={form.getValues('serviceDate') && isValid(form.getValues('serviceDate')) ? format(form.getValues('serviceDate'), 'HH:mm') : ""} onValueChange={(timeValue) => { if (!timeValue) return; const [hours, minutes] = timeValue.split(':').map(Number); const currentVal = form.getValues('serviceDate') || new Date(); const newDate = new Date(currentVal); newDate.setHours(hours); newDate.setMinutes(minutes); newDate.setSeconds(0); form.setValue('serviceDate', newDate, { shouldValidate: true }); }} disabled={isReadOnly} > <FormControl><SelectTrigger><SelectValue placeholder="Seleccione hora" /></SelectTrigger></FormControl> <SelectContent>{timeSlots.map(slot => (<SelectItem key={slot.value} value={slot.value}>{slot.label}</SelectItem>))}</SelectContent> </Select> </FormItem>
+                        <FormItem className="flex flex-col"><FormLabel>Fecha de Entrega</FormLabel><Popover open={isDeliveryDatePickerOpen} onOpenChange={setIsDeliveryDatePickerOpen}><PopoverTrigger asChild disabled={isReadOnly}><FormControl><Button variant={"outline"} className={cn("w-full justify-start text-left font-normal",!form.getValues('deliveryDateTime') && "text-muted-foreground")} disabled={isReadOnly}>{form.getValues('deliveryDateTime') && isValid(form.getValues('deliveryDateTime')) ? (format(form.getValues('deliveryDateTime'), "PPP", { locale: es })) : (<span>Seleccione fecha y hora</span>)}<Clock className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={form.getValues('deliveryDateTime')} onSelect={(date) => { if (!date) return; const currentVal = form.getValues('deliveryDateTime') || new Date(); const newDate = new Date(date); newDate.setHours(currentVal.getHours()); newDate.setMinutes(currentVal.getMinutes()); newDate.setSeconds(0); form.setValue('deliveryDateTime', newDate, { shouldValidate: true }); setIsDeliveryDatePickerOpen(false); }} disabled={isReadOnly} initialFocus locale={es}/></PopoverContent></Popover></FormItem>
+                        <FormItem> <FormLabel>Hora de Entrega</FormLabel> <Select value={form.getValues('deliveryDateTime') && isValid(form.getValues('deliveryDateTime')) ? format(form.getValues('deliveryDateTime'), 'HH:mm') : ""} onValueChange={(timeValue) => { if (!timeValue) return; const [hours, minutes] = timeValue.split(':').map(Number); const currentVal = form.getValues('deliveryDateTime') || new Date(); const newDate = new Date(currentVal); newDate.setHours(hours); newDate.setMinutes(minutes); newDate.setSeconds(0); form.setValue('deliveryDateTime', newDate, { shouldValidate: true }); }} disabled={isReadOnly} > <FormControl><SelectTrigger><SelectValue placeholder="Seleccione hora" /></SelectTrigger></FormControl> <SelectContent>{timeSlots.map(slot => (<SelectItem key={slot.value} value={slot.value}>{slot.label}</SelectItem>))}</SelectContent> </Select> </FormItem>
                     </CardContent>
                   </Card>
 
                   <Card>
                     <CardHeader><CardTitle>Condiciones de la Unidad y Firmas</CardTitle></CardHeader>
                     <CardContent className="space-y-4">
-                        <FormField control={form.control} name="vehicleConditions" render={({ field }) => (<FormItem><FormLabel className={cn(form.formState.errors.vehicleConditions && "text-destructive")}>Condiciones del Vehículo (al recibir)</FormLabel><FormControl><Textarea placeholder="Ej: Rayón en puerta del conductor, llanta trasera derecha baja, etc." {...field} disabled={isReadOnly} /></FormControl></FormItem>)}/>
+                        <FormField control={form.control} name="vehicleConditions" render={({ field }) => (<FormItem><FormLabel>Condiciones del Vehículo (al recibir)</FormLabel><FormControl><Textarea placeholder="Ej: Rayón en puerta del conductor, llanta trasera derecha baja, etc." {...field} disabled={isReadOnly} /></FormControl></FormItem>)}/>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <FormField control={form.control} name="fuelLevel" render={({ field }) => (<FormItem><FormLabel className={cn(form.formState.errors.fuelLevel && "text-destructive")}>Nivel de Combustible</FormLabel><Select onValueChange={field.onChange} value={field.value} disabled={isReadOnly}><FormControl><SelectTrigger><SelectValue placeholder="Seleccionar nivel..." /></SelectTrigger></FormControl><SelectContent><SelectItem value="Vacío">Vacío</SelectItem><SelectItem value="1/8">1/8</SelectItem><SelectItem value="1/4">1/4</SelectItem><SelectItem value="3/8">3/8</SelectItem><SelectItem value="1/2">1/2</SelectItem><SelectItem value="5/8">5/8</SelectItem><SelectItem value="3/4">3/4</SelectItem><SelectItem value="7/8">7/8</SelectItem><SelectItem value="Lleno">Lleno</SelectItem></SelectContent></Select></FormItem>)}/>
-                            <FormField control={form.control} name="customerItems" render={({ field }) => (<FormItem><FormLabel className={cn(form.formState.errors.customerItems && "text-destructive")}>Pertenencias del Cliente (Opcional)</FormLabel><FormControl><Textarea placeholder="Ej: Gato, llanta de refacción, cargador de celular en la guantera, etc." {...field} disabled={isReadOnly} /></FormControl></FormItem>)}/>
+                            <FormField control={form.control} name="fuelLevel" render={({ field }) => (<FormItem><FormLabel>Nivel de Combustible</FormLabel><Select onValueChange={field.onChange} value={field.value} disabled={isReadOnly}><FormControl><SelectTrigger><SelectValue placeholder="Seleccionar nivel..." /></SelectTrigger></FormControl><SelectContent><SelectItem value="Vacío">Vacío</SelectItem><SelectItem value="1/8">1/8</SelectItem><SelectItem value="1/4">1/4</SelectItem><SelectItem value="3/8">3/8</SelectItem><SelectItem value="1/2">1/2</SelectItem><SelectItem value="5/8">5/8</SelectItem><SelectItem value="3/4">3/4</SelectItem><SelectItem value="7/8">7/8</SelectItem><SelectItem value="Lleno">Lleno</SelectItem></SelectContent></Select></FormItem>)}/>
+                            <FormField control={form.control} name="customerItems" render={({ field }) => (<FormItem><FormLabel>Pertenencias del Cliente (Opcional)</FormLabel><FormControl><Textarea placeholder="Ej: Gato, llanta de refacción, cargador de celular en la guantera, etc." {...field} disabled={isReadOnly} /></FormControl></FormItem>)}/>
                         </div>
                         <div className="pt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div><Label>Firma de Recepción</Label><div className="mt-2 p-2 h-24 border rounded-md bg-muted/50 flex items-center justify-center">{customerSignatureReception ? (<Image src={customerSignatureReception} alt="Firma de recepción" width={150} height={75} style={{objectFit: 'contain'}}/>) : (<span className="text-sm text-muted-foreground">Pendiente de firma del cliente</span>)}</div></div>
@@ -1195,24 +1211,7 @@ export function ServiceForm({
             )}
             {showReceptionTab && (
               <TabsContent value="seguridad" className="space-y-6 mt-0">
-                  <Card>
-                    <CardHeader>
-                        <CardTitle>Checklist de Puntos de Seguridad</CardTitle>
-                        <CardDescription>Documenta el estado de los componentes clave. El estado "N/A" se aplica por defecto.</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
-                        <SafetyCheckItemControl name="safetyInspection.brakes" label="Frenos" control={form.control} isReadOnly={isReadOnly} />
-                        <SafetyCheckItemControl name="safetyInspection.tires" label="Llantas" control={form.control} isReadOnly={isReadOnly} />
-                        <SafetyCheckItemControl name="safetyInspection.lights" label="Luces" control={form.control} isReadOnly={isReadOnly} />
-                        <SafetyCheckItemControl name="safetyInspection.fluidLevels" label="Niveles de Fluidos" control={form.control} isReadOnly={isReadOnly} />
-                        <SafetyCheckItemControl name="safetyInspection.suspensionSteering" label="Suspensión / Dirección" control={form.control} isReadOnly={isReadOnly} />
-                        <SafetyCheckItemControl name="safetyInspection.battery" label="Batería y Sistema Eléctrico" control={form.control} isReadOnly={isReadOnly} />
-                        <SafetyCheckItemControl name="safetyInspection.wipers" label="Limpiaparabrisas" control={form.control} isReadOnly={isReadOnly} />
-                        <SafetyCheckItemControl name="safetyInspection.horn" label="Claxon (Bocina)" control={form.control} isReadOnly={isReadOnly} />
-                      </div>
-                    </CardContent>
-                  </Card>
+                  <SafetyChecklist control={form.control} isReadOnly={isReadOnly} onSignatureClick={() => setIsTechSignatureDialogOpen(true)} signatureDataUrl={technicianSignature} />
               </TabsContent>
             )}
           </Tabs>
@@ -1259,6 +1258,16 @@ export function ServiceForm({
           </div>
         </form>
       </Form>
+
+       <SignatureDialog
+        open={isTechSignatureDialogOpen}
+        onOpenChange={setIsTechSignatureDialogOpen}
+        onSave={(signature) => {
+          form.setValue('safetyInspection.technicianSignature', signature, { shouldDirty: true });
+          setIsTechSignatureDialogOpen(false);
+          toast({ title: 'Firma Capturada', description: 'La firma del técnico se ha guardado en el formulario.' });
+        }}
+      />
 
       {isQuoteViewOpen && quoteForView && (
         <PrintTicketDialog
@@ -1372,8 +1381,8 @@ function ServiceItemCard({ serviceIndex, form, removeServiceItem, isReadOnly, in
                 {!isReadOnly && <Button type="button" variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => removeServiceItem(serviceIndex)}><Trash2 className="h-4 w-4"/></Button>}
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField control={control} name={`serviceItems.${serviceIndex}.name`} render={({ field }) => ( <FormItem><FormLabel className={cn(form.formState.errors.serviceItems?.[serviceIndex]?.name && "text-destructive")}>Nombre del Servicio</FormLabel><FormControl><Input placeholder="Afinación Mayor" {...field} disabled={isReadOnly}/></FormControl></FormItem> )}/>
-                <FormField control={control} name={`serviceItems.${serviceIndex}.price`} render={({ field }) => ( <FormItem><FormLabel className={cn(form.formState.errors.serviceItems?.[serviceIndex]?.price && "text-destructive")}>Precio Cliente (IVA Inc.)</FormLabel><FormControl><Input type="number" placeholder="0.00" {...field} value={field.value ?? ''} disabled={isReadOnly} /></FormControl></FormItem> )}/>
+                <FormField control={control} name={`serviceItems.${serviceIndex}.name`} render={({ field }) => ( <FormItem><FormLabel>Nombre del Servicio</FormLabel><FormControl><Input placeholder="Afinación Mayor" {...field} disabled={isReadOnly}/></FormControl></FormItem> )}/>
+                <FormField control={control} name={`serviceItems.${serviceIndex}.price`} render={({ field }) => ( <FormItem><FormLabel>Precio Cliente (IVA Inc.)</FormLabel><FormControl><Input type="number" placeholder="0.00" {...field} value={field.value ?? ''} disabled={isReadOnly} /></FormControl></FormItem> )}/>
             </div>
 
             <div className="mt-4">
@@ -1457,65 +1466,152 @@ function ServiceSuppliesArray({ serviceIndex, control }: { serviceIndex: number;
     );
 }
 
-// Sub-component for Safety Checklist item
-interface SafetyCheckItemControlProps {
-  name: `safetyInspection.${keyof SafetyInspection}`;
-  label: string;
-  control: Control<ServiceFormValues>;
-  isReadOnly?: boolean;
-}
-
-function SafetyCheckItemControl({ name, label, control, isReadOnly }: SafetyCheckItemControlProps) {
-  const statusFieldName = `${name}.status`;
-  const notesFieldName = `${name}.notes`;
-  const statusValue = useWatch({ control, name: statusFieldName as any });
-  
+// Sub-component for Safety Checklist
+const SafetyCheckRow = ({ name, label, control, isReadOnly }: { name: string; label: string; control: Control<ServiceFormValues>; isReadOnly?: boolean; }) => {
   return (
-    <div className="space-y-2">
-      <Label className="font-semibold">{label}</Label>
+    <div className="flex items-center justify-between py-2 border-b last:border-none">
+      <span className="text-sm font-medium pr-4">{label}</span>
       <Controller
-        name={statusFieldName as any}
+        name={name as any}
         control={control}
+        defaultValue="na"
         render={({ field }) => (
-          <div className="flex items-center gap-2 flex-wrap">
-            {(['ok', 'regular', 'atencion', 'na'] as const).map(status => {
-                const statusLabels = { ok: 'OK', regular: 'Regular', atencion: 'Atención', na: 'N/A' };
-                const statusColors = { ok: 'bg-green-500', regular: 'bg-yellow-500', atencion: 'bg-red-500', na: 'bg-gray-400'};
-                return (
-                  <Button
-                    key={status}
-                    type="button"
-                    variant={field.value === status ? 'default' : 'outline'}
-                    className={cn("text-xs h-8", field.value === status && `${statusColors[status]} hover:${statusColors[status]}/90 text-white`)}
-                    onClick={() => field.onChange(status)}
-                    disabled={isReadOnly}
-                  >
-                    {statusLabels[status]}
-                  </Button>
-                )
-            })}
+          <div className="flex gap-2">
+            {[
+              { value: 'inmediata', color: 'bg-red-500', title: 'Requiere Reparación Inmediata' },
+              { value: 'atencion', color: 'bg-yellow-400', title: 'Requiere Atención' },
+              { value: 'ok', color: 'bg-green-500', title: 'Bien' },
+            ].map(status => (
+              <button
+                type="button"
+                key={status.value}
+                title={status.title}
+                onClick={() => !isReadOnly && field.onChange(status.value)}
+                disabled={isReadOnly}
+                className={cn(
+                  "h-7 w-7 rounded-full border-2 transition-all",
+                  field.value === status.value ? 'border-black dark:border-white scale-110' : 'border-transparent opacity-50',
+                  isReadOnly ? 'cursor-not-allowed' : 'cursor-pointer hover:opacity-100'
+                )}
+              >
+                <div className={cn("h-full w-full rounded-full", status.color)}></div>
+              </button>
+            ))}
           </div>
         )}
       />
-      {statusValue === 'regular' || statusValue === 'atencion' ? (
-        <FormField
-          control={control}
-          name={notesFieldName as any}
-          render={({ field }) => (
-            <FormItem>
-              <FormControl>
-                <Textarea {...field} placeholder="Añadir notas específicas..." disabled={isReadOnly} rows={2} className="text-xs"/>
-              </FormControl>
-            </FormItem>
-          )}
-        />
-      ) : null}
     </div>
   );
-}
+};
 
+const inspectionGroups = [
+  { title: "LUCES", items: [
+    { name: "safetyInspection.luces_altas_bajas_niebla", label: "1. ALTAS, BAJAS Y NIEBLA" },
+    { name: "safetyInspection.luces_cuartos", label: "2. CUARTOS DELANTEROS, TRASEROS Y LATERALES" },
+    { name: "safetyInspection.luces_direccionales", label: "3. DIRECCIONALES E INTERMITENTES" },
+    { name: "safetyInspection.luces_frenos_reversa", label: "4. FRENOS Y REVERSA" },
+    { name: "safetyInspection.luces_interiores", label: "5. INTERIORES" },
+  ]},
+  { title: "FUGAS Y NIVELES", items: [
+    { name: "safetyInspection.fugas_refrigerante", label: "6. REFRIGERANTE" },
+    { name: "safetyInspection.fugas_limpiaparabrisas", label: "7. LIMPIAPARABRISAS" },
+    { name: "safetyInspection.fugas_frenos_embrague", label: "8. FRENOS Y EMBRAGUE" },
+    { name: "safetyInspection.fugas_transmision", label: "9. TRANSMISIÓN Y TRANSEJE" },
+    { name: "safetyInspection.fugas_direccion_hidraulica", label: "10. DIRECCIÓN HIDRÁULICA" },
+  ]},
+  { title: "CARROCERÍA", items: [
+    { name: "safetyInspection.carroceria_cristales_espejos", label: "11. CRISTALES / ESPEJOS" },
+    { name: "safetyInspection.carroceria_puertas_cofre", label: "12. PUERTAS / COFRE / CAJUELA / SALPICADERA" },
+    { name: "safetyInspection.carroceria_asientos_tablero", label: "13. ASIENTOS / TABLERO / CONSOLA" },
+    { name: "safetyInspection.carroceria_plumas", label: "14. PLUMAS LIMPIAPARABRISAS" },
+  ]},
+  { title: "LLANTAS (ESTADO Y PRESIÓN)", items: [
+    { name: "safetyInspection.llantas_delanteras_traseras", label: "15. DELANTERAS / TRASERAS" },
+    { name: "safetyInspection.llantas_refaccion", label: "16. REFACCIÓN" },
+  ]},
+  { title: "SUSPENSIÓN Y DIRECCIÓN", items: [
+    { name: "safetyInspection.suspension_rotulas", label: "17. RÓTULAS Y GUARDAPOLVOS" },
+    { name: "safetyInspection.suspension_amortiguadores", label: "18. AMORTIGUADORES" },
+    { name: "safetyInspection.suspension_caja_direccion", label: "19. CAJA DE DIRECCIÓN" },
+    { name: "safetyInspection.suspension_terminales", label: "20. TERMINALES DE DIRECCIÓN" },
+  ]},
+  { title: "FRENOS", items: [
+    { name: "safetyInspection.frenos_discos_delanteros", label: "21. DISCOS / BALATAS DELANTERAS" },
+    { name: "safetyInspection.frenos_discos_traseros", label: "22. DISCOS / BALATAS TRASERAS" },
+  ]},
+  { title: "OTROS", items: [
+    { name: "safetyInspection.otros_tuberia_escape", label: "23. TUBERÍA DE ESCAPE" },
+    { name: "safetyInspection.otros_soportes_motor", label: "24. SOPORTES DE MOTOR" },
+    { name: "safetyInspection.otros_claxon", label: "25. CLAXON" },
+    { name: "safetyInspection.otros_inspeccion_sdb", label: "26. INSPECCIÓN DE SDB" },
+  ]},
+];
 
-
-
-
-
+const SafetyChecklist = ({ control, isReadOnly, onSignatureClick, signatureDataUrl }: { control: Control<ServiceFormValues>; isReadOnly?: boolean; onSignatureClick: () => void, signatureDataUrl?: string }) => {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Checklist de Puntos de Seguridad</CardTitle>
+        <CardDescription>Documenta el estado de los componentes clave.</CardDescription>
+        <div className="flex flex-wrap gap-x-4 gap-y-2 pt-2 text-sm">
+          <div className="flex items-center gap-2">
+            <div className="h-4 w-4 rounded-full bg-green-500" /><span>Bien</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="h-4 w-4 rounded-full bg-yellow-400" /><span>Requiere Atención</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="h-4 w-4 rounded-full bg-red-500" /><span>Requiere Reparación Inmediata</span>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+          {inspectionGroups.map(group => (
+            <div key={group.title}>
+              <h4 className="font-bold text-base mb-2 border-b-2 border-primary pb-1">{group.title}</h4>
+              <div className="space-y-1">
+                {group.items.map(item => (
+                  <SafetyCheckRow key={item.name} name={item.name} label={item.label} control={control} isReadOnly={isReadOnly} />
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+         <FormField
+            control={control}
+            name="safetyInspection.inspectionNotes"
+            render={({ field }) => (
+                <FormItem className="pt-4">
+                    <FormLabel className="text-base font-semibold">Observaciones Generales de la Inspección</FormLabel>
+                    <FormControl>
+                        <Textarea
+                            placeholder="Anotaciones sobre la inspección, detalles de los puntos que requieren atención, etc."
+                            className="min-h-[100px]"
+                            disabled={isReadOnly}
+                            {...field}
+                        />
+                    </FormControl>
+                </FormItem>
+            )}
+        />
+        <div>
+            <FormLabel className="text-base font-semibold">Firma del Técnico</FormLabel>
+            <div className="mt-2 p-2 min-h-[100px] border rounded-md bg-muted/50 flex items-center justify-center">
+                {signatureDataUrl ? (
+                    <Image src={signatureDataUrl} alt="Firma del técnico" width={250} height={125} style={{ objectFit: 'contain' }}/>
+                ) : (
+                    <span className="text-sm text-muted-foreground">Firma pendiente</span>
+                )}
+            </div>
+            {!isReadOnly && (
+                <Button type="button" variant="outline" onClick={onSignatureClick} className="w-full mt-2">
+                    <Signature className="mr-2 h-4 w-4" />
+                    {signatureDataUrl ? 'Cambiar Firma' : 'Capturar Firma del Técnico'}
+                </Button>
+            )}
+        </div>
+      </CardContent>
+    </Card>
+  );
+};

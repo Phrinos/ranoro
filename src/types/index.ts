@@ -40,20 +40,52 @@ export interface ServiceItem {
   suppliesUsed: ServiceSupply[];
 }
 
-export interface SafetyCheckItem {
-  status: 'ok' | 'regular' | 'atencion' | 'na';
-  notes?: string;
-}
+export type SafetyCheckStatus = 'ok' | 'atencion' | 'inmediata' | 'na';
 
 export interface SafetyInspection {
-  brakes?: SafetyCheckItem;
-  tires?: SafetyCheckItem;
-  lights?: SafetyCheckItem;
-  fluidLevels?: SafetyCheckItem;
-  suspensionSteering?: SafetyCheckItem;
-  battery?: SafetyCheckItem;
-  wipers?: SafetyCheckItem;
-  horn?: SafetyCheckItem;
+  // Luces
+  luces_altas_bajas_niebla?: SafetyCheckStatus;
+  luces_cuartos?: SafetyCheckStatus;
+  luces_direccionales?: SafetyCheckStatus;
+  luces_frenos_reversa?: SafetyCheckStatus;
+  luces_interiores?: SafetyCheckStatus;
+  
+  // Fugas y Niveles
+  fugas_refrigerante?: SafetyCheckStatus;
+  fugas_limpiaparabrisas?: SafetyCheckStatus;
+  fugas_frenos_embrague?: SafetyCheckStatus;
+  fugas_transmision?: SafetyCheckStatus;
+  fugas_direccion_hidraulica?: SafetyCheckStatus;
+  
+  // Carrocería
+  carroceria_cristales_espejos?: SafetyCheckStatus;
+  carroceria_puertas_cofre?: SafetyCheckStatus;
+  carroceria_asientos_tablero?: SafetyCheckStatus;
+  carroceria_plumas?: SafetyCheckStatus;
+  
+  // Llantas (Estado y Presión)
+  llantas_delanteras_traseras?: SafetyCheckStatus;
+  llantas_refaccion?: SafetyCheckStatus;
+  
+  // Suspensión y Dirección
+  suspension_rotulas?: SafetyCheckStatus;
+  suspension_amortiguadores?: SafetyCheckStatus;
+  suspension_caja_direccion?: SafetyCheckStatus;
+  suspension_terminales?: SafetyCheckStatus;
+  
+  // Frenos
+  frenos_discos_delanteros?: SafetyCheckStatus;
+  frenos_discos_traseros?: SafetyCheckStatus;
+  
+  // Otros
+  otros_tuberia_escape?: SafetyCheckStatus;
+  otros_soportes_motor?: SafetyCheckStatus;
+  otros_claxon?: SafetyCheckStatus;
+  otros_inspeccion_sdb?: SafetyCheckStatus;
+  
+  // Global notes and signature for the inspection
+  inspectionNotes?: string;
+  technicianSignature?: string; 
 }
 
 export interface ServiceRecord {
@@ -303,4 +335,5 @@ export interface VehiclePriceList {
   years: number[];
   services: PricedService[];
 }
+
 
