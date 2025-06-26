@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview An AI flow to enhance text by correcting spelling and grammar.
@@ -12,7 +13,7 @@ const TextEnhancementOutputSchema = z.string().describe("The corrected and impro
 /**
  * A wrapper function that validates the input text before calling the AI flow.
  * This is the function that UI components should call.
- * @param text The text to enhance. Can be null, undefined, or a string.
+ * @param text The text to enhance. Can be null, undefined, o a string.
  * @returns The enhanced text, or the original text if it was invalid or the AI failed.
  */
 export async function enhanceText(text: string | null | undefined): Promise<string> {
@@ -36,14 +37,17 @@ const enhanceTextPrompt = ai.definePrompt({
   output: { schema: TextEnhancementOutputSchema },
   prompt: `Eres un experto asesor de servicio automotriz. Tu tarea es mejorar el siguiente texto, que será usado en un reporte de servicio para un cliente.
 
-- Corrige cualquier error de ortografía y gramática.
-- Redacta en español neutro, con un tono cordial y profesional.
-- **Enriquece el texto con contexto relevante.** Por ejemplo, si la entrada es simple como "Todo bien" o "Sin problemas", amplíala para mencionar las revisiones estándar realizadas, como "Se realizó una inspección general y se verificaron los niveles de fluidos, frenos y suspensión. Todo se encuentra en orden y operando correctamente."
-- **Es crucial que no inventes nuevos problemas o fallas.** Solo describe las revisiones estándar u observaciones que confirman que el vehículo está en buen estado.
-- Mantén el texto final conciso, idealmente de menos de 40 palabras.
-- Devuelve únicamente el texto corregido y mejorado como una cadena de texto simple.
+1.  **Analiza la entrada:**
+    - Si la entrada es una frase simple y positiva como "Todo bien", "OK", "Sin problemas", "No hay fallas" o similar, **NO devuelvas la frase original**. En su lugar, genera un resumen más profesional y descriptivo de una revisión vehicular estándar. Por ejemplo: "Se realizó una inspección general y se verificaron los niveles de fluidos, frenos y suspensión. Todo se encuentra en orden y operando correctamente."
+    - Si la entrada describe un problema específico, corrige la ortografía y la gramática, y mejora la claridad manteniendo el significado original.
 
-Texto original:
+2.  **Sigue estas reglas:**
+    - Redacta en español neutro, con un tono cordial y profesional.
+    - **Es crucial que no inventes nuevos problemas o fallas.** Solo describe las revisiones estándar u observaciones que confirman que el vehículo está en buen estado si la entrada es positiva y simple.
+    - Mantén el texto final conciso, idealmente de menos de 40 palabras.
+    - Devuelve únicamente el texto corregido y mejorado como una cadena de texto simple.
+
+Texto original a mejorar:
 "{{{this}}}"
 `,
 });
