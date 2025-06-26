@@ -73,7 +73,7 @@ export function FixedExpensesDialog({
     placeholderFixedMonthlyExpenses.splice(0, placeholderFixedMonthlyExpenses.length, ...updatedExpensesList); // Update global placeholder
     onExpensesUpdated(updatedExpensesList);
     
-    await persistToFirestore();
+    await persistToFirestore(['fixedExpenses']);
 
     setIsSubFormOpen(false);
     setEditingExpense(null);
@@ -86,7 +86,7 @@ export function FixedExpensesDialog({
     placeholderFixedMonthlyExpenses.splice(0, placeholderFixedMonthlyExpenses.length, ...updatedExpensesList); // Update global placeholder
     onExpensesUpdated(updatedExpensesList);
 
-    await persistToFirestore();
+    await persistToFirestore(['fixedExpenses']);
 
     toast({ title: "Gasto Eliminado", description: `El gasto "${expenseToDelete?.name}" ha sido eliminado.` });
   };

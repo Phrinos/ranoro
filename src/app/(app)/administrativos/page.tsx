@@ -60,11 +60,11 @@ export default function AdministrativosPage() {
       commissionRate: data.commissionRate ? Number(data.commissionRate) : undefined,
       isArchived: false,
     };
-    const updatedStaffList = [...staffList, newStaffMember];
-    setStaffList(updatedStaffList);
+    
     placeholderAdministrativeStaff.push(newStaffMember);
+    setStaffList([...placeholderAdministrativeStaff]);
 
-    await persistToFirestore();
+    await persistToFirestore(['administrativeStaff']);
 
     toast({
         title: "Staff Creado",

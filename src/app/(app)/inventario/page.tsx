@@ -54,9 +54,8 @@ export default function InventarioPage() {
       sellingPrice: Number(data.sellingPrice) || 0,
     };
     
-    const updatedInventory = [...inventoryItems, newItem];
-    setInventoryItems(updatedInventory);
     placeholderInventory.push(newItem); 
+    setInventoryItems([...placeholderInventory]);
     
     await persistToFirestore(['inventory']);
     
