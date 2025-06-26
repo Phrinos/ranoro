@@ -488,10 +488,10 @@ export default function HistorialCotizacionesPage() {
 
                     <Separator orientation="vertical" className="hidden md:block h-auto"/>
 
-                    {/* Block 2: Vehículo y Servicio (Centrado verticalmente) */}
+                    {/* Block 2: Vehículo y Servicio (Alineado a la Izquierda) */}
                     <div className="p-4 flex flex-col justify-center flex-grow space-y-2 text-left border-b md:border-b-0">
-                        <p className="font-bold text-lg">{vehicle ? `${vehicle.licensePlate} - ${vehicle.make} ${vehicle.model} ${vehicle.year}` : 'N/A'}</p>
                         <p className="text-sm text-muted-foreground">{vehicle?.ownerName} - {vehicle?.ownerPhone}</p>
+                        <p className="font-bold text-lg">{vehicle ? `${vehicle.licensePlate} - ${vehicle.make} ${vehicle.model} ${vehicle.year}` : 'N/A'}</p>
                         <p className="text-sm text-foreground" title={getQuoteDescriptionText(quote)}>
                             <span className="font-semibold">{quote.serviceType}:</span> {getQuoteDescriptionText(quote)}
                         </p>
@@ -631,3 +631,5 @@ export default function HistorialCotizacionesPage() {
     </>
   );
 }
+
+    
