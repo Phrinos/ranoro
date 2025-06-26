@@ -7,7 +7,7 @@ import { PosDialog } from "../components/pos-dialog";
 import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
 import { TicketContent } from '@/components/ticket-content';
 import { placeholderInventory, placeholderSales } from "@/lib/placeholder-data"; // Added placeholderSales for ID generation
-import type { SaleReceipt, Vehicle, Technician, InventoryItem } from '@/types'; 
+import type { SaleReceipt, Vehicle, Technician, InventoryItem, WorkshopInfo } from '@/types'; 
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
@@ -23,6 +23,14 @@ export default function NuevaVentaPage() {
   const [currentInventoryItems, setCurrentInventoryItems] = useState<InventoryItem[]>(placeholderInventory); 
   const [dialogStep, setDialogStep] = useState<DialogStep>('pos');
   const [currentSaleForTicket, setCurrentSaleForTicket] = useState<SaleReceipt | null>(null);
+  const [workshopInfo, setWorkshopInfo] = useState<WorkshopInfo | {}>({});
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+        const stored = localStorage.getItem('workshopTicketInfo');
+        if (stored) setWorkshopInfo(JSON.parse(stored));
+    }
+  }, []);
 
   useEffect(() => {
     if (dialogStep === 'closed') {
@@ -135,7 +143,7 @@ export default function NuevaVentaPage() {
              </div>
           }
         >
-          <TicketContent ref={ticketContentRef} sale={currentSaleForTicket} />
+          <TicketContent ref={ticketContentRef} sale={currentSaleForTicket} previewWorkshopInfo={workshopInfo} />
         </PrintTicketDialog>
       )}
       
