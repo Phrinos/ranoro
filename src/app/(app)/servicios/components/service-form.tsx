@@ -24,7 +24,7 @@ import { CalendarIcon, PlusCircle, Search, Trash2, AlertCircle, Car as CarIcon, 
 import { cn } from "@/lib/utils";
 import { format, parseISO, setHours, setMinutes, isValid, startOfDay } from 'date-fns';
 import { es } from 'date-fns/locale';
-import type { ServiceRecord, Vehicle, Technician, InventoryItem, ServiceSupply, QuoteRecord, InventoryCategory, Supplier, User, WorkshopInfo, ServiceItem, SafetyInspection, SafetyCheckItem, PaymentMethod } from "@/types";
+import type { ServiceRecord, Vehicle, Technician, InventoryItem, ServiceSupply, QuoteRecord, InventoryCategory, Supplier, User, WorkshopInfo, ServiceItem, SafetyInspection, PaymentMethod } from "@/types";
 import React, { useEffect, useState, useMemo, useCallback, useRef } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { VehicleDialog } from "../../vehiculos/components/vehicle-dialog";
@@ -106,16 +106,16 @@ const serviceFormSchemaBase = z.object({
   publicId: z.string().optional(),
   vehicleId: z.string({required_error: "Debe seleccionar o registrar un vehículo."}).min(1, "Debe seleccionar o registrar un vehículo.").optional(),
   vehicleLicensePlateSearch: z.string().optional(),
-  serviceDate: z.date().optional(),
-  quoteDate: z.date().optional(), // For quote mode
-  mileage: z.coerce.number().int().min(0, "El kilometraje no puede ser negativo.").optional(),
+  serviceDate: z.date({ invalid_type_error: "La fecha programada no es válida." }).optional(),
+  quoteDate: z.date({ invalid_type_error: "La fecha de cotización no es válida." }).optional(), // For quote mode
+  mileage: z.coerce.number({ invalid_type_error: "El kilometraje debe ser numérico." }).int("El kilometraje debe ser un número entero.").min(0, "El kilometraje no puede ser negativo.").optional(),
   description: z.string().optional(),
   notes: z.string().optional(),
   technicianId: z.string().optional(),
   serviceItems: z.array(serviceItemSchema).min(1, "Debe agregar al menos un ítem de servicio."),
   status: z.enum(["Cotizacion", "Agendado", "Reparando", "Completado", "Cancelado"]).optional(),
   serviceType: z.enum(["Servicio General", "Cambio de Aceite", "Pintura"]).optional(),
-  deliveryDateTime: z.date().optional(),
+  deliveryDateTime: z.date({ invalid_type_error: "La fecha de entrega no es válida." }).optional(),
   vehicleConditions: z.string().optional(),
   fuelLevel: z.string().optional(),
   customerItems: z.string().optional(),
@@ -987,7 +987,7 @@ export function ServiceForm({
                         )}
                       />
                       {showDateFields && (
-                        <div className="md:col-span-2 grid grid-cols-2 gap-4 items-end">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end md:col-span-2">
                             <FormField control={form.control} name="serviceDate" render={({ field }) => ( <FormItem className="flex flex-col"><FormLabel>Fecha Agendada</FormLabel><Popover><PopoverTrigger asChild disabled={isReadOnly}><FormControl><Button variant={"outline"} className={cn("w-full justify-start text-left font-normal", !field.value && "text-muted-foreground")} disabled={isReadOnly}>{field.value && isValid(field.value) ? (format(field.value, "PPP", { locale: es })) : (<span>Seleccione fecha</span>)}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value} onSelect={(date) => { const currentTime = field.value || setHours(setMinutes(new Date(), 30), 8); const newDateTime = date ? setHours(setMinutes(startOfDay(date), currentTime.getMinutes()), currentTime.getHours()): undefined; field.onChange(newDateTime);}} disabled={(date) => date < new Date("1900-01-01") || (isReadOnly && mode === 'service') } initialFocus locale={es}/></PopoverContent></Popover><FormMessage /></FormItem> )} />
                             <FormField control={form.control} name="serviceDate" render={({ field }) => ( <FormItem> <FormLabel>Hora Agendada</FormLabel> <Select value={isValid(serviceDateValue) ? format(serviceDateValue, 'HH:mm') : ""} onValueChange={(timeValue) => { const [hours, minutes] = timeValue.split(':').map(Number); const currentDate = form.getValues('serviceDate') || new Date(); const newDateTime = setHours(setMinutes(startOfDay(currentDate), minutes), hours); field.onChange(newDateTime); }} disabled={isReadOnly} > <FormControl><SelectTrigger><SelectValue placeholder="Seleccione hora" /></SelectTrigger></FormControl> <SelectContent>{timeSlots.map(slot => (<SelectItem key={slot.value} value={slot.value}>{slot.label}</SelectItem>))}</SelectContent> </Select> </FormItem> )} />
                         </div>
