@@ -92,9 +92,16 @@ const SafetyChecklistDisplay = ({
   service: ServiceRecord;
   vehicle?: Vehicle;
 }) => {
-    const formattedServiceDate = isValid(parseISO(service.serviceDate))
-        ? format(parseISO(service.serviceDate), "dd 'de' MMMM 'de' yyyy", { locale: es })
-        : 'N/A';
+    const serviceDateInput = service.serviceDate;
+    let serviceDate: Date;
+    if (typeof serviceDateInput === 'string') {
+      serviceDate = parseISO(serviceDateInput);
+    } else if (serviceDateInput instanceof Date) {
+      serviceDate = serviceDateInput;
+    } else {
+      serviceDate = new Date(NaN); // Invalid date
+    }
+    const formattedServiceDate = isValid(serviceDate) ? format(serviceDate, "dd 'de' MMMM 'de' yyyy", { locale: es }) : 'N/A';
 
     return (
         <div className="mt-4 print:mt-0">
