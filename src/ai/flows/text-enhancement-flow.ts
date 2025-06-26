@@ -1,4 +1,3 @@
-
 'use server';
 /**
  * @fileOverview An AI flow to enhance text by correcting spelling and grammar.
@@ -64,7 +63,8 @@ const enhanceTextFlow = ai.defineFlow(
       return text || '';
     }
     
-    const { output } = await enhanceTextPrompt(text, {
+    // For a string output schema, the result is in the `text` property.
+    const { text: output } = await enhanceTextPrompt(text, {
       config: { temperature: 0.4 }, // Increased temperature for more creative enrichment
     });
     
