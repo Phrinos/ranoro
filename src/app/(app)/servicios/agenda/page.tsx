@@ -519,7 +519,7 @@ export default function AgendaServiciosPage() {
                           
                           <div className="p-4 flex flex-col justify-center items-center text-center w-full md:w-48 flex-shrink-0">
                             <p className="text-xs text-muted-foreground">Costo Estimado</p>
-                            <p className="font-bold text-xl text-black">{formatCurrency(service.totalCost)}</p>
+                            <p className="font-bold text-2xl text-black">{formatCurrency(service.totalCost)}</p>
                           </div>
 
                           <Separator orientation="vertical" className="hidden md:block h-auto"/>
@@ -536,7 +536,7 @@ export default function AgendaServiciosPage() {
                                           <FileText className="h-4 w-4" />
                                       </Button>
                                     )}
-                                    <Button variant="ghost" size="icon" title="Ver Hoja de Servicio" onClick={() => handleShowSheet(service)}>
+                                    <Button variant="ghost" size="icon" title="Editar Cita" onClick={() => handleOpenEditDialog(service)}>
                                       <Edit className="h-4 w-4" />
                                     </Button>
                                     <Button variant="ghost" size="icon" title="Ingresar a Taller" onClick={() => handleIngresarATaller(service)} className="text-blue-600 hover:text-blue-700">
