@@ -116,21 +116,25 @@ const SafetyChecklistDisplay = ({
                 </div>
                 <div className="grid grid-cols-2 gap-4 mt-2 text-xs">
                     <div>
-                        <p className="font-bold">Vehículo:</p>
-                        <p>{vehicle ? `${vehicle.make} ${vehicle.model} ${vehicle.year}` : 'N/A'}</p>
-                    </div>
-                    <div className="text-right">
                         <p className="font-bold">Placas:</p>
                         <p>{vehicle?.licensePlate}</p>
-                    </div>
-                    <div>
-                        <p className="font-bold">Fecha de Revisión:</p>
-                        <p>{formattedServiceDate}</p>
+                        <p className="font-bold mt-2">Vehículo:</p>
+                        <p>{vehicle ? `${vehicle.year} ${vehicle.make} ${vehicle.model}` : 'N/A'}</p>
                     </div>
                     <div className="text-right">
-                        <p className="font-bold">Kilometraje:</p>
-                        <p>{service.mileage?.toLocaleString('es-MX') || 'N/A'} km</p>
+                        <p className="font-bold">Fecha de Revisión:</p>
+                        <p>{formattedServiceDate}</p>
+                        {service.mileage && (
+                            <>
+                                <p className="font-bold mt-2">Kilometraje:</p>
+                                <p>{service.mileage.toLocaleString('es-MX')} km</p>
+                            </>
+                        )}
                     </div>
+                </div>
+                 <div className="mt-2 text-xs border-t pt-2">
+                    <p className="font-bold">Cliente:</p>
+                    <p>{vehicle?.ownerName} - {vehicle?.ownerPhone}</p>
                 </div>
             </header>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
@@ -276,16 +280,16 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
               <div className="space-y-0.5 p-2">
                 <p><span className="font-semibold">Nombre:</span> <span className="font-bold">{vehicle?.ownerName?.toUpperCase()}</span></p>
                 <p><span className="font-semibold">Teléfono:</span> <span className="font-bold">{vehicle?.ownerPhone}</span></p>
-                <p><span className="font-semibold">Email:</span> <span className="font-bold">{vehicle?.ownerEmail || 'N/A'}</span></p>
+                {vehicle?.ownerEmail && <p><span className="font-semibold">Email:</span> <span className="font-bold">{vehicle.ownerEmail}</span></p>}
               </div>
             </div>
             <div className="border-2 border-black rounded-md overflow-hidden">
               <h3 className="font-bold p-1 bg-gray-700 text-white text-xs text-center">DATOS DEL VEHÍCULO</h3>
               <div className="space-y-0.5 p-2">
-                <p><span className="font-semibold">Vehículo:</span> <span className="font-bold">{vehicle?.make} {vehicle?.model} ({vehicle?.year})</span></p>
+                <p><span className="font-semibold">Vehículo:</span> <span className="font-bold">{vehicle?.year} {vehicle?.make} {vehicle?.model}</span></p>
                 <p><span className="font-semibold">Placas:</span> <span className="font-bold">{vehicle?.licensePlate}</span></p>
-                <p><span className="font-semibold">Color:</span> <span className="font-bold">{vehicle?.color || 'N/A'}</span></p>
-                <p><span className="font-semibold">Kilometraje:</span> <span className="font-bold">{service.mileage?.toLocaleString('es-MX') || 'N/A'} km</span></p>
+                {vehicle?.color && <p><span className="font-semibold">Color:</span> <span className="font-bold">{vehicle.color}</span></p>}
+                {service.mileage && <p><span className="font-semibold">Kilometraje:</span> <span className="font-bold">{service.mileage.toLocaleString('es-MX')} km</span></p>}
               </div>
             </div>
           </section>
