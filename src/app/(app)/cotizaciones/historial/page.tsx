@@ -44,10 +44,10 @@ type QuoteSortOption =
   | "vehicle_asc" | "vehicle_desc";
 
 export default function HistorialCotizacionesPage() {
-  const [allQuotes, setAllQuotes] = useState<QuoteRecord[]>([]);
-  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
-  const [technicians, setTechnicians] = useState<Technician[]>([]);
-  const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
+  const [allQuotes, setAllQuotes] = useState<QuoteRecord[]>(placeholderQuotes);
+  const [vehicles, setVehicles] = useState<Vehicle[]>(placeholderVehicles);
+  const [technicians, setTechnicians] = useState<Technician[]>(placeholderTechnicians);
+  const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>(placeholderInventory);
 
   const { toast } = useToast();
   
@@ -75,15 +75,14 @@ export default function HistorialCotizacionesPage() {
     if (typeof window !== 'undefined') {
         const stored = localStorage.getItem('workshopTicketInfo');
         if (stored) setWorkshopInfo(JSON.parse(stored));
+        
+        // Refresh data from placeholders on component mount to get latest state
+        setAllQuotes(placeholderQuotes);
+        setVehicles(placeholderVehicles);
+        setTechnicians(placeholderTechnicians);
+        setInventoryItems(placeholderInventory);
     }
   }, []);
-
-  useEffect(() => {
-    setAllQuotes(placeholderQuotes);
-    setVehicles(placeholderVehicles);
-    setTechnicians(placeholderTechnicians);
-    setInventoryItems(inventoryItems);
-  }, [inventoryItems]);
   
   const getQuoteDescriptionText = (quote: QuoteRecord) => {
     if (quote.serviceItems && quote.serviceItems.length > 0) {
@@ -479,39 +478,39 @@ export default function HistorialCotizacionesPage() {
             return (
               <Card key={quote.id} className="shadow-sm overflow-hidden">
                 <CardContent className="p-0">
-                  <div className="flex flex-col md:flex-row text-sm">
+                  <div className="flex flex-col md:flex-row">
                     <div className="p-4 flex flex-col justify-center items-center text-center w-full md:w-48 flex-shrink-0">
-                        <p className="text-xs text-muted-foreground">Folio: {quote.id}</p>
-                        <p className="font-semibold text-lg text-foreground">{format(parseISO(quote.quoteDate!), "dd MMM yyyy", { locale: es })}</p>
+                      <p className="text-muted-foreground text-xs">Folio: {quote.id}</p>
+                      <p className="font-semibold text-lg text-foreground">{format(parseISO(quote.quoteDate!), "dd MMM yyyy", { locale: es })}</p>
                     </div>
 
                     <Separator orientation="vertical" className="hidden md:block h-auto"/>
 
-                    <div className="p-4 flex flex-col justify-center flex-grow space-y-2">
-                        <p className="text-sm text-gray-500">{vehicle?.ownerName} - {vehicle?.ownerPhone}</p>
-                        <p className="font-bold text-2xl text-black">{vehicle ? `${vehicle.licensePlate} - ${vehicle.make} ${vehicle.model} ${vehicle.year}` : 'N/A'}</p>
-                        <p className="text-sm text-foreground">
-                            <span className="font-semibold">{quote.serviceType}:</span> {getQuoteDescriptionText(quote)}
-                        </p>
+                    <div className="p-4 flex flex-col justify-center flex-grow space-y-2 text-left">
+                      <p className="text-sm text-muted-foreground">{vehicle?.ownerName} - {vehicle?.ownerPhone}</p>
+                      <p className="font-bold text-2xl text-black">{vehicle ? `${vehicle.licensePlate} - ${vehicle.make} ${vehicle.model} ${vehicle.year}` : 'N/A'}</p>
+                      <p className="text-sm text-foreground">
+                        <span className="font-semibold">{quote.serviceType}:</span> {getQuoteDescriptionText(quote)}
+                      </p>
                     </div>
                     
                     <Separator orientation="vertical" className="hidden md:block h-auto"/>
 
                     <div className="p-4 flex flex-col justify-center items-center text-center w-full md:w-48 flex-shrink-0">
-                        <p className="text-xs text-muted-foreground">Costo Estimado</p>
-                        <p className="font-bold text-2xl text-black">{formatCurrency(quote.estimatedTotalCost)}</p>
-                        <p className="text-xs text-muted-foreground mt-1">Ganancia Estimada</p>
-                        <p className="font-semibold text-green-600">{formatCurrency(quote.estimatedProfit)}</p>
+                      <p className="text-xs text-muted-foreground">Costo Estimado</p>
+                      <p className="font-bold text-2xl text-black">{formatCurrency(quote.estimatedTotalCost)}</p>
+                      <p className="text-xs text-muted-foreground mt-1">Ganancia Estimada</p>
+                      <p className="font-semibold text-green-600">{formatCurrency(quote.estimatedProfit)}</p>
                     </div>
 
                     <Separator orientation="vertical" className="hidden md:block h-auto"/>
 
-                    <div className="p-4 flex flex-col justify-center items-center text-center border-b md:border-b-0 md:border-l w-full md:w-56 flex-shrink-0">
+                    <div className="p-4 flex flex-col justify-center items-center text-center border-b md:border-b-0 md:border-l w-full md:w-56 flex-shrink-0 space-y-2">
                         <Badge variant={quote.serviceId ? "lightRed" : "outline"} className="w-full justify-center text-center text-sm">
                             {quote.serviceId ? "Agendado" : "Cotizacion"}
                         </Badge>
-                        <p className="text-xs text-gray-500 mt-4">Asesor: {quote.preparedByTechnicianName || 'N/A'}</p>
-                        <div className="flex justify-center items-center gap-1 mt-2">
+                         <p className="text-xs text-muted-foreground mt-4">Asesor: {quote.preparedByTechnicianName || 'N/A'}</p>
+                        <div className="flex justify-center items-center gap-1">
                           <Button variant="ghost" size="icon" onClick={() => handleViewQuote(originalQuote)} title="Ver Cotización">
                             <FileText className="h-4 w-4" />
                           </Button>
