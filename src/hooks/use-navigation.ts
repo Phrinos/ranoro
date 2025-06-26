@@ -133,37 +133,7 @@ const BASE_NAV_STRUCTURE: ReadonlyArray<Omit<NavigationEntry, 'isActive'>> = [
     groupTag: "Mi Oficina",
     permissions: ['technicians:manage'] // Reusing technician permission for all staff
   },
-  
-  // Administración
-  {
-    label: 'Usuarios',
-    path: '/admin/usuarios',
-    icon: Users,
-    groupTag: 'Administración',
-    permissions: ['users:manage'],
-  },
-  {
-    label: 'Roles y Permisos',
-    path: '/admin/roles',
-    icon: ShieldQuestion,
-    groupTag: 'Administración',
-    permissions: ['roles:manage'],
-  },
-  {
-    label: 'Migración de Datos',
-    path: '/admin/migracion-datos',
-    icon: DatabaseZap,
-    groupTag: 'Administración',
-    permissions: ['users:manage'], // Admin-level
-  },
-  {
-    label: 'Configurar Ticket',
-    path: '/admin/configuracion-ticket',
-    icon: Settings,
-    groupTag: "Administración",
-    permissions: ['ticket_config:manage']
-  },
-  
+    
   // Soporte
   {
     label: 'Manual de Usuario',
@@ -174,7 +144,7 @@ const BASE_NAV_STRUCTURE: ReadonlyArray<Omit<NavigationEntry, 'isActive'>> = [
   },
 ];
 
-const DESIRED_GROUP_ORDER = ["Mi Taller", "Mi Inventario", "Mi Oficina", "Administración", "Soporte"];
+const DESIRED_GROUP_ORDER = ["Mi Taller", "Mi Inventario", "Mi Oficina", "Soporte"];
 
 
 const useNavigation = (): NavigationEntry[] => {

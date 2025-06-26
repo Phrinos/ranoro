@@ -36,13 +36,14 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  DropdownMenuGroup,
 } from "@/components/ui/dropdown-menu";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
-import type { User, ServiceRecord } from "@/types";
+import type { User, ServiceRecord, AppRole } from "@/types";
 import { signOut } from "firebase/auth"; // Firebase
 import { auth } from "@root/lib/firebaseClient.js"; // Firebase
-import { placeholderServiceRecords } from "@/lib/placeholder-data";
+import { placeholderServiceRecords, placeholderAppRoles } from "@/lib/placeholder-data";
 import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 
@@ -51,6 +52,7 @@ export function AppSidebar() {
   const router = useRouter();
   const { toast } = useToast();
   const [currentUser, setCurrentUser] = React.useState<User | null>(null);
+  const [roles, setRoles] = React.useState<AppRole[]>([]);
   const [newSignatureServices, setNewSignatureServices] = React.useState<ServiceRecord[]>([]);
 
   React.useEffect(() => {
@@ -72,6 +74,7 @@ export function AppSidebar() {
           (s.customerSignatureDelivery && !s.deliverySignatureViewed)
         );
         setNewSignatureServices(unreadServices);
+        setRoles(placeholderAppRoles);
       }
     };
 
@@ -83,6 +86,12 @@ export function AppSidebar() {
       window.removeEventListener('focus', checkNotifications); // Cleanup listener
     };
   }, []);
+
+  const userPermissions = React.useMemo(() => {
+    if (!currentUser || !roles.length) return new Set<string>();
+    const userRole = roles.find(r => r && r.name === currentUser.role);
+    return new Set(userRole?.permissions || []);
+  }, [currentUser, roles]);
 
   const handleLogout = () => {
     signOut(auth).then(() => {
@@ -211,6 +220,40 @@ export function AppSidebar() {
               <UserCog className="mr-2 h-4 w-4" />
               <span>Mi Perfil</span>
             </DropdownMenuItem>
+
+            {(userPermissions.has('users:manage') || userPermissions.has('roles:manage') || userPermissions.has('ticket_config:manage')) && (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuGroup>
+                  <DropdownMenuLabel>Administración</DropdownMenuLabel>
+                  {userPermissions.has('users:manage') && (
+                    <DropdownMenuItem onClick={() => router.push('/admin/usuarios')}>
+                      <Users className="mr-2 h-4 w-4" />
+                      <span>Usuarios</span>
+                    </DropdownMenuItem>
+                  )}
+                  {userPermissions.has('roles:manage') && (
+                    <DropdownMenuItem onClick={() => router.push('/admin/roles')}>
+                      <ShieldQuestion className="mr-2 h-4 w-4" />
+                      <span>Roles y Permisos</span>
+                    </DropdownMenuItem>
+                  )}
+                  {userPermissions.has('users:manage') && (
+                    <DropdownMenuItem onClick={() => router.push('/admin/migracion-datos')}>
+                      <DatabaseZap className="mr-2 h-4 w-4" />
+                      <span>Migración de Datos</span>
+                    </DropdownMenuItem>
+                  )}
+                  {userPermissions.has('ticket_config:manage') && (
+                   <DropdownMenuItem onClick={() => router.push('/admin/configuracion-ticket')}>
+                    <Settings className="mr-2 h-4 w-4" />
+                    <span>Configurar Ticket</span>
+                  </DropdownMenuItem>
+                  )}
+                </DropdownMenuGroup>
+              </>
+            )}
+
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={handleLogout}>
               <LogOut className="mr-2 h-4 w-4 text-destructive" />
