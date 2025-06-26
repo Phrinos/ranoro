@@ -28,6 +28,7 @@ import {
   DatabaseZap,
   Database,
   Bell,
+  BookOpen,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -219,6 +220,10 @@ export function AppSidebar() {
             <DropdownMenuItem onClick={() => router.push("/perfil")}>
               <UserCog className="mr-2 h-4 w-4" />
               <span>Mi Perfil</span>
+            </DropdownMenuItem>
+             <DropdownMenuItem onClick={() => router.push("/manual")}>
+              <BookOpen className="mr-2 h-4 w-4" />
+              <span>Manual de Usuario</span>
             </DropdownMenuItem>
 
             {(userPermissions.has('users:manage') || userPermissions.has('roles:manage') || userPermissions.has('ticket_config:manage')) && (

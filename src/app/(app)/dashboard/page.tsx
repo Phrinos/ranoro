@@ -8,7 +8,7 @@ import { PageHeader } from "@/components/page-header";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { placeholderServiceRecords, placeholderInventory, placeholderSales, calculateSaleProfit, placeholderTechnicians, persistToFirestore, placeholderVehicles } from "@/lib/placeholder-data";
 import type { User, CapacityAnalysisOutput, PurchaseRecommendation } from "@/types";
-import { BrainCircuit, Loader2, ShoppingCart, AlertTriangle, Printer, Wrench, DollarSign } from "lucide-react"; 
+import { BrainCircuit, Loader2, ShoppingCart, AlertTriangle, Printer, Wrench, DollarSign, PackageSearch, CheckCircle } from "lucide-react"; 
 import { useToast } from "@/hooks/use-toast";
 import { getPurchaseRecommendations } from '@/ai/flows/purchase-recommendation-flow';
 import { analyzeWorkshopCapacity } from '@/ai/flows/capacity-analysis-flow';
@@ -16,6 +16,9 @@ import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
 import { PurchaseOrderContent } from './components/purchase-order-content';
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { analyzeInventory, type InventoryRecommendation } from '@/ai/flows/inventory-analysis-flow';
+import { ScrollArea } from "@/components/ui/scroll-area";
+
 
 const ChartLoadingSkeleton = () => (
     <div className="grid gap-6 sm:grid-cols-1 lg:grid-cols-2 mt-6">
@@ -75,6 +78,11 @@ export default function DashboardPage() {
   const [workshopName, setWorkshopName] = useState<string>('RANORO');
 
   const purchaseOrderRef = useRef<HTMLDivElement>(null);
+  
+  const [isAnalysisLoading, setIsAnalysisLoading] = useState(false);
+  const [analysisError, setAnalysisError] = useState<string | null>(null);
+  const [analysisResult, setAnalysisResult] = useState<InventoryRecommendation[] | null>(null);
+
 
   const [kpiData, setKpiData] = useState({
     dailyRevenue: 0,
@@ -231,6 +239,52 @@ export default function DashboardPage() {
       setIsPurchaseLoading(false);
     }
   };
+  
+  const handleRunAnalysis = async () => {
+    setIsAnalysisLoading(true);
+    setAnalysisError(null);
+    setAnalysisResult(null);
+
+    try {
+      const inventoryForAI = placeholderInventory.map(item => ({
+        id: item.id,
+        name: item.name,
+        quantity: item.quantity,
+        lowStockThreshold: item.lowStockThreshold,
+      }));
+
+      const servicesForAI = placeholderServiceRecords.map(service => ({
+        serviceDate: service.serviceDate,
+        suppliesUsed: service.suppliesUsed.map(supply => ({
+          supplyId: supply.supplyId,
+          quantity: supply.quantity,
+        })),
+      }));
+
+      const result = await analyzeInventory({
+        inventoryItems: inventoryForAI,
+        serviceRecords: servicesForAI,
+      });
+
+      setAnalysisResult(result.recommendations);
+      toast({
+        title: "Análisis Completado",
+        description: `La IA ha generado ${result.recommendations.length} recomendaciones.`,
+        variant: "default"
+      });
+
+    } catch (e) {
+      console.error(e);
+      setAnalysisError("La IA no pudo completar el análisis. Por favor, inténtelo de nuevo más tarde.");
+      toast({
+        title: "Error de Análisis",
+        description: "Hubo un problema al contactar con la IA.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsAnalysisLoading(false);
+    }
+  };
 
 
   return (
@@ -303,31 +357,105 @@ export default function DashboardPage() {
         </Card>
       </div>
       
-      <Card className="mb-6 shadow-lg">
-        <CardHeader className="flex flex-row items-center justify-between gap-4">
-          <div>
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <BrainCircuit className="h-5 w-5 text-purple-500" />
-              Asistente de Compras IA
-            </CardTitle>
-            <CardDescription>
-              Genera una orden de compra consolidada para los servicios de hoy.
-            </CardDescription>
-          </div>
-          <Button onClick={handleGeneratePurchaseOrder} disabled={isPurchaseLoading}>
-            {isPurchaseLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ShoppingCart className="mr-2 h-4 w-4" />}
-            {isPurchaseLoading ? 'Analizando...' : 'Generar Orden de Compra'}
-          </Button>
-        </CardHeader>
-        {purchaseError && (
-          <CardContent>
-            <div className="flex items-center gap-2 text-destructive">
-                <AlertTriangle className="h-5 w-5" />
-                <span className="text-sm">{purchaseError}</span>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+        <Card className="shadow-lg">
+          <CardHeader className="flex flex-row items-center justify-between gap-4">
+            <div>
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <BrainCircuit className="h-5 w-5 text-purple-500" />
+                Asistente de Compras IA
+              </CardTitle>
+              <CardDescription>
+                Genera una orden de compra consolidada para los servicios de hoy.
+              </CardDescription>
             </div>
-          </CardContent>
-        )}
-      </Card>
+            <Button onClick={handleGeneratePurchaseOrder} disabled={isPurchaseLoading}>
+              {isPurchaseLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ShoppingCart className="mr-2 h-4 w-4" />}
+              {isPurchaseLoading ? 'Analizando...' : 'Generar Orden'}
+            </Button>
+          </CardHeader>
+          {purchaseError && (
+            <CardContent>
+              <div className="flex items-center gap-2 text-destructive">
+                  <AlertTriangle className="h-5 w-5" />
+                  <span className="text-sm">{purchaseError}</span>
+              </div>
+            </CardContent>
+          )}
+        </Card>
+         <Card className="shadow-lg flex flex-col">
+            <CardHeader className="flex flex-row items-center justify-between gap-4">
+                <div>
+                <CardTitle className="flex items-center gap-2 text-lg">
+                    <BrainCircuit className="h-5 w-5 text-purple-500" />
+                    Análisis de Inventario IA
+                </CardTitle>
+                <CardDescription>
+                    Obtén recomendaciones inteligentes sobre qué reordenar.
+                </CardDescription>
+                </div>
+                <Button onClick={handleRunAnalysis} disabled={isAnalysisLoading}>
+                {isAnalysisLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <BrainCircuit className="mr-2 h-4 w-4" />}
+                {isAnalysisLoading ? 'Analizando...' : 'Analizar'}
+                </Button>
+            </CardHeader>
+            <CardContent className="flex-grow">
+                {isAnalysisLoading ? (
+                <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground p-8">
+                    <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
+                    <p>La IA está revisando tu inventario...</p>
+                </div>
+                ) : analysisError ? (
+                <div className="flex flex-col items-center justify-center h-full text-center text-destructive-foreground bg-destructive/10 p-8 rounded-lg">
+                    <AlertTriangle className="h-12 w-12 mb-4"/>
+                    <p className="font-medium">Ocurrió un Error</p>
+                    <p className="text-sm mt-1">{analysisError}</p>
+                </div>
+                ) : analysisResult ? (
+                    analysisResult.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center h-full text-center p-8 bg-green-50/50 border-green-200 rounded-lg">
+                        <CheckCircle className="h-12 w-12 text-green-600 mb-4"/>
+                        <p className="font-bold text-green-800">¡Todo en orden!</p>
+                        <p className="text-sm text-green-700 mt-1">
+                            Tu inventario está saludable. No se requieren compras inmediatas.
+                        </p>
+                    </div>
+                    ) : (
+                    <ScrollArea className="h-[200px] pr-3">
+                        <div className="space-y-3">
+                            {analysisResult.map((rec) => (
+                                <Card key={rec.itemId} className="bg-muted/30">
+                                    <CardHeader className="p-3">
+                                        <CardTitle className="flex items-center gap-2 text-base">
+                                            <AlertTriangle className="h-5 w-5 text-orange-500" />
+                                            {rec.itemName}
+                                        </CardTitle>
+                                        <CardDescription className="text-xs">{rec.recommendation}</CardDescription>
+                                    </CardHeader>
+                                    <CardContent className="p-3 pt-0">
+                                        <p className="text-xs text-muted-foreground mb-2">{rec.reasoning}</p>
+                                        <div className="flex justify-between items-center bg-background p-2 rounded-md">
+                                            <span className="font-medium text-xs">Sugerencia de compra:</span>
+                                            <span className="font-bold text-base text-primary flex items-center gap-1">
+                                                <ShoppingCart className="h-4 w-4"/>
+                                                {rec.suggestedReorderQuantity}
+                                            </span>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            ))}
+                        </div>
+                    </ScrollArea>
+                    )
+                ) : (
+                <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground p-8">
+                    <PackageSearch className="h-12 w-12 mb-4"/>
+                    <p>Listo para analizar tu inventario.</p>
+                </div>
+                )}
+            </CardContent>
+            </Card>
+      </div>
       
       <DashboardCharts />
 
