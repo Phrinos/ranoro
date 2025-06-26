@@ -138,7 +138,6 @@ const serviceFormSchemaBase = z.object({
   }
   return true;
 }, {
-  message: "El folio de la tarjeta es obligatorio para este método de pago.",
   path: ["cardFolio"],
 }).refine(data => {
   if (data.status === 'Completado' && (data.paymentMethod === "Transferencia" || data.paymentMethod === "Efectivo+Transferencia" || data.paymentMethod === "Tarjeta+Transferencia") && !data.transferFolio) {
@@ -146,7 +145,6 @@ const serviceFormSchemaBase = z.object({
   }
   return true;
 }, {
-  message: "El folio de la transferencia es obligatorio para este método de pago.",
   path: ["transferFolio"],
 });
 
@@ -239,6 +237,9 @@ export function ServiceForm({
   
   const [isQuoteViewOpen, setIsQuoteViewOpen] = useState(false);
   const [quoteForView, setQuoteForView] = useState<QuoteRecord | null>(null);
+  
+  const [isServiceDatePickerOpen, setIsServiceDatePickerOpen] = useState(false);
+  const [isDeliveryDatePickerOpen, setIsDeliveryDatePickerOpen] = useState(false);
   
   const freshUserRef = useRef<User | null>(null);
 
@@ -511,7 +512,7 @@ export function ServiceForm({
         toast({ title: "Vehículo Encontrado", description: `${found.make} ${found.model} ${found.year}`});
     } else {
       setSelectedVehicle(null);
-      form.setValue('vehicleId', undefined, { shouldValidate: true });
+      form.setValue('vehicleId', undefined);
       setVehicleNotFound(true);
       setLastServiceInfo(null);
       toast({ title: "Vehículo No Encontrado", description: "Puede registrarlo si es nuevo.", variant: "default"});
@@ -631,7 +632,6 @@ export function ServiceForm({
     if (!isValidForm) {
         toast({
             title: "Formulario Incompleto",
-            description: "Por favor, revise los campos marcados en rojo.",
             variant: "destructive",
         });
         return;
@@ -859,7 +859,7 @@ export function ServiceForm({
       onClose();
     } else if (onCancelService && initialDataService?.id) {
       if (!cancellationReason.trim()) {
-        toast({ title: "Motivo Requerido", description: "Por favor, ingrese un motivo para la cancelación.", variant: "destructive" });
+        toast({ title: "Motivo Requerido", variant: "destructive" });
         return;
       }
       onCancelService(initialDataService.id, cancellationReason);
@@ -974,7 +974,7 @@ export function ServiceForm({
                               <div className="grid grid-cols-2 gap-4 items-end md:col-span-2">
                                 <FormItem className="flex flex-col">
                                   <FormLabel className={cn(form.formState.errors.serviceDate && "text-destructive")}>Fecha Agendada</FormLabel>
-                                  <Popover>
+                                  <Popover open={isServiceDatePickerOpen} onOpenChange={setIsServiceDatePickerOpen}>
                                     <PopoverTrigger asChild disabled={isReadOnly}>
                                       <FormControl>
                                         <Button
@@ -999,6 +999,7 @@ export function ServiceForm({
                                           newDate.setMinutes(currentVal.getMinutes());
                                           newDate.setSeconds(0);
                                           field.onChange(newDate);
+                                          setIsServiceDatePickerOpen(false);
                                         }}
                                         disabled={(date) => date < new Date("1900-01-01") || (isReadOnly && mode === 'service')}
                                         initialFocus
@@ -1158,9 +1159,9 @@ export function ServiceForm({
                   <Card>
                     <CardHeader><CardTitle>Fechas y Horarios</CardTitle></CardHeader>
                     <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 items-end">
-                        <FormField control={form.control} name="serviceDate" render={({ field }) => ( <FormItem className="flex flex-col"><FormLabel className={cn(form.formState.errors.serviceDate && "text-destructive")}>Fecha de Recepción</FormLabel><Popover><PopoverTrigger asChild disabled={isReadOnly}><FormControl><Button variant={"outline"} className={cn("w-full justify-start text-left font-normal", !field.value && "text-muted-foreground", form.formState.errors.serviceDate && "border-destructive")} disabled={isReadOnly}>{field.value && isValid(field.value) ? (format(field.value, "PPP", { locale: es })) : (<span>Seleccione fecha</span>)}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value} onSelect={(date) => { if (!date) return; const currentVal = field.value || new Date(); const newDate = new Date(date); newDate.setHours(currentVal.getHours()); newDate.setMinutes(currentVal.getMinutes()); newDate.setSeconds(0); field.onChange(newDate); }} disabled={(date) => date < new Date("1900-01-01")} initialFocus locale={es}/></PopoverContent></Popover></FormItem> )} />
+                        <FormField control={form.control} name="serviceDate" render={({ field }) => ( <FormItem className="flex flex-col"><FormLabel className={cn(form.formState.errors.serviceDate && "text-destructive")}>Fecha de Recepción</FormLabel><Popover open={isServiceDatePickerOpen} onOpenChange={setIsServiceDatePickerOpen}><PopoverTrigger asChild disabled={isReadOnly}><FormControl><Button variant={"outline"} className={cn("w-full justify-start text-left font-normal", !field.value && "text-muted-foreground", form.formState.errors.serviceDate && "border-destructive")} disabled={isReadOnly}>{field.value && isValid(field.value) ? (format(field.value, "PPP", { locale: es })) : (<span>Seleccione fecha</span>)}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value} onSelect={(date) => { if (!date) return; const currentVal = field.value || new Date(); const newDate = new Date(date); newDate.setHours(currentVal.getHours()); newDate.setMinutes(currentVal.getMinutes()); newDate.setSeconds(0); field.onChange(newDate); setIsServiceDatePickerOpen(false); }} disabled={(date) => date < new Date("1900-01-01")} initialFocus locale={es}/></PopoverContent></Popover></FormItem> )} />
                         <FormField control={form.control} name="serviceDate" render={({ field }) => ( <FormItem> <FormLabel className={cn(form.formState.errors.serviceDate && "text-destructive")}>Hora de Recepción</FormLabel> <Select value={field.value && isValid(field.value) ? format(field.value, 'HH:mm') : ""} onValueChange={(timeValue) => { if (!timeValue) return; const [hours, minutes] = timeValue.split(':').map(Number); const currentVal = form.getValues('serviceDate') || new Date(); const newDate = new Date(currentVal); newDate.setHours(hours); newDate.setMinutes(minutes); newDate.setSeconds(0); field.onChange(newDate); }} disabled={isReadOnly} > <FormControl><SelectTrigger className={cn(form.formState.errors.serviceDate && "border-destructive")}><SelectValue placeholder="Seleccione hora" /></SelectTrigger></FormControl> <SelectContent>{timeSlots.map(slot => (<SelectItem key={slot.value} value={slot.value}>{slot.label}</SelectItem>))}</SelectContent> </Select> </FormItem> )} />
-                        <FormField control={form.control} name="deliveryDateTime" render={({ field }) => { return ( <FormItem className="flex flex-col"><FormLabel className={cn(form.formState.errors.deliveryDateTime && "text-destructive")}>Fecha de Entrega</FormLabel><Popover><PopoverTrigger asChild disabled={isReadOnly}><FormControl><Button variant={"outline"} className={cn("w-full justify-start text-left font-normal",!field.value && "text-muted-foreground",form.formState.errors.deliveryDateTime && "border-destructive")} disabled={isReadOnly}>{field.value && isValid(field.value) ? (format(field.value, "PPP", { locale: es })) : (<span>Seleccione fecha y hora</span>)}<Clock className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value} onSelect={(date) => { if (!date) return; const currentVal = field.value || new Date(); const newDate = new Date(date); newDate.setHours(currentVal.getHours()); newDate.setMinutes(currentVal.getMinutes()); newDate.setSeconds(0); field.onChange(newDate); }} disabled={isReadOnly} initialFocus locale={es}/></PopoverContent></Popover></FormItem>)} }/>
+                        <FormField control={form.control} name="deliveryDateTime" render={({ field }) => { return ( <FormItem className="flex flex-col"><FormLabel className={cn(form.formState.errors.deliveryDateTime && "text-destructive")}>Fecha de Entrega</FormLabel><Popover open={isDeliveryDatePickerOpen} onOpenChange={setIsDeliveryDatePickerOpen}><PopoverTrigger asChild disabled={isReadOnly}><FormControl><Button variant={"outline"} className={cn("w-full justify-start text-left font-normal",!field.value && "text-muted-foreground",form.formState.errors.deliveryDateTime && "border-destructive")} disabled={isReadOnly}>{field.value && isValid(field.value) ? (format(field.value, "PPP", { locale: es })) : (<span>Seleccione fecha y hora</span>)}<Clock className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value} onSelect={(date) => { if (!date) return; const currentVal = field.value || new Date(); const newDate = new Date(date); newDate.setHours(currentVal.getHours()); newDate.setMinutes(currentVal.getMinutes()); newDate.setSeconds(0); field.onChange(newDate); setIsDeliveryDatePickerOpen(false); }} disabled={isReadOnly} initialFocus locale={es}/></PopoverContent></Popover></FormItem>)} }/>
                         <FormField control={form.control} name="deliveryDateTime" render={({ field }) => ( <FormItem> <FormLabel className={cn(form.formState.errors.deliveryDateTime && "text-destructive")}>Hora de Entrega</FormLabel> <Select value={field.value && isValid(field.value) ? format(field.value, 'HH:mm') : ""} onValueChange={(timeValue) => { if (!timeValue) return; const [hours, minutes] = timeValue.split(':').map(Number); const currentVal = form.getValues('deliveryDateTime') || new Date(); const newDate = new Date(currentVal); newDate.setHours(hours); newDate.setMinutes(minutes); newDate.setSeconds(0); field.onChange(newDate); }} disabled={isReadOnly} > <FormControl><SelectTrigger className={cn(form.formState.errors.deliveryDateTime && "border-destructive")}><SelectValue placeholder="Seleccione hora" /></SelectTrigger></FormControl> <SelectContent>{timeSlots.map(slot => (<SelectItem key={slot.value} value={slot.value}>{slot.label}</SelectItem>))}</SelectContent> </Select> </FormItem> )} />
                     </CardContent>
                   </Card>
@@ -1222,7 +1223,7 @@ export function ServiceForm({
                           {mode === 'quote' ? `Se eliminará la cotización ${initialDataQuote?.id}. Esta acción no se puede deshacer.` : `Se cancelará el servicio ${initialDataService?.id}.`}
                           {mode === 'service' && (
                             <div className="mt-4">
-                              <Label htmlFor="cancellation-reason" className="text-left font-semibold">Motivo de la cancelación (obligatorio)</Label>
+                              <Label htmlFor="cancellation-reason">Motivo de la cancelación (obligatorio)</Label>
                               <Textarea id="cancellation-reason" value={cancellationReason} onChange={(e) => setCancellationReason(e.target.value)} placeholder="Ej: El cliente no se presentó..." className="mt-2" />
                             </div>
                           )}
@@ -1501,6 +1502,7 @@ function SafetyCheckItemControl({ name, label, control, isReadOnly }: SafetyChec
     </div>
   );
 }
+
 
 
 
