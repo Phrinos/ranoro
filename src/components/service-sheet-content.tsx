@@ -1,12 +1,14 @@
 
 "use client";
 
-import type { ServiceRecord, Vehicle, User, WorkshopInfo } from '@/types';
+import type { ServiceRecord, Vehicle, User, WorkshopInfo, SafetyInspection, SafetyCheckStatus } from '@/types';
 import { format, parseISO, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
 import React, { useEffect, useState } from 'react';
 import { cn } from "@/lib/utils";
 import Image from 'next/image';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
 const initialWorkshopInfo: WorkshopInfo = {
   name: "RANORO",
@@ -18,6 +20,114 @@ const initialWorkshopInfo: WorkshopInfo = {
 };
 
 const LOCALSTORAGE_KEY = 'workshopTicketInfo';
+
+const inspectionGroups = [
+  { title: "LUCES", items: [
+    { name: "safetyInspection.luces_altas_bajas_niebla", label: "1. ALTAS, BAJAS Y NIEBLA" },
+    { name: "safetyInspection.luces_cuartos", label: "2. CUARTOS DELANTEROS, TRASEROS Y LATERALES" },
+    { name: "safetyInspection.luces_direccionales", label: "3. DIRECCIONALES E INTERMITENTES" },
+    { name: "safetyInspection.luces_frenos_reversa", label: "4. FRENOS Y REVERSA" },
+    { name: "safetyInspection.luces_interiores", label: "5. INTERIORES" },
+  ]},
+  { title: "FUGAS Y NIVELES", items: [
+    { name: "safetyInspection.fugas_refrigerante", label: "6. REFRIGERANTE" },
+    { name: "safetyInspection.fugas_limpiaparabrisas", label: "7. LIMPIAPARABRISAS" },
+    { name: "safetyInspection.fugas_frenos_embrague", label: "8. FRENOS Y EMBRAGUE" },
+    { name: "safetyInspection.fugas_transmision", label: "9. TRANSMISIÓN Y TRANSEJE" },
+    { name: "safetyInspection.fugas_direccion_hidraulica", label: "10. DIRECCIÓN HIDRÁULICA" },
+  ]},
+  { title: "CARROCERÍA", items: [
+    { name: "safetyInspection.carroceria_cristales_espejos", label: "11. CRISTALES / ESPEJOS" },
+    { name: "safetyInspection.carroceria_puertas_cofre", label: "12. PUERTAS / COFRE / CAJUELA / SALPICADERA" },
+    { name: "safetyInspection.carroceria_asientos_tablero", label: "13. ASIENTOS / TABLERO / CONSOLA" },
+    { name: "safetyInspection.carroceria_plumas", label: "14. PLUMAS LIMPIAPARABRISAS" },
+  ]},
+  { title: "LLANTAS (ESTADO Y PRESIÓN)", items: [
+    { name: "safetyInspection.llantas_delanteras_traseras", label: "15. DELANTERAS / TRASERAS" },
+    { name: "safetyInspection.llantas_refaccion", label: "16. REFACCIÓN" },
+  ]},
+  { title: "SUSPENSIÓN Y DIRECCIÓN", items: [
+    { name: "safetyInspection.suspension_rotulas", label: "17. RÓTULAS Y GUARDAPOLVOS" },
+    { name: "safetyInspection.suspension_amortiguadores", label: "18. AMORTIGUADORES" },
+    { name: "safetyInspection.suspension_caja_direccion", label: "19. CAJA DE DIRECCIÓN" },
+    { name: "safetyInspection.suspension_terminales", label: "20. TERMINALES DE DIRECCIÓN" },
+  ]},
+  { title: "FRENOS", items: [
+    { name: "safetyInspection.frenos_discos_delanteros", label: "21. DISCOS / BALATAS DELANTERAS" },
+    { name: "safetyInspection.frenos_discos_traseros", label: "22. DISCOS / BALATAS TRASERAS" },
+  ]},
+  { title: "OTROS", items: [
+    { name: "safetyInspection.otros_tuberia_escape", label: "23. TUBERÍA DE ESCAPE" },
+    { name: "safetyInspection.otros_soportes_motor", label: "24. SOPORTES DE MOTOR" },
+    { name: "safetyInspection.otros_claxon", label: "25. CLAXON" },
+    { name: "safetyInspection.otros_inspeccion_sdb", label: "26. INSPECCIÓN DE SDB" },
+  ]},
+];
+
+const StatusIndicator = ({ status }: { status: SafetyCheckStatus }) => {
+  const statusInfo = {
+    ok: { label: "Bien", color: "bg-green-500", textColor: "text-green-700" },
+    atencion: { label: "Atención", color: "bg-yellow-400", textColor: "text-yellow-700" },
+    inmediata: { label: "Inmediata", color: "bg-red-500", textColor: "text-red-700" },
+    na: { label: "N/A", color: "bg-gray-300", textColor: "text-gray-500" },
+  };
+  const currentStatus = statusInfo[status] || statusInfo.na;
+
+  return (
+    <div className="flex items-center gap-2">
+      <div className={`h-3 w-3 rounded-full ${currentStatus.color}`} />
+      <span className={cn("text-xs font-semibold", currentStatus.textColor)}>{currentStatus.label}</span>
+    </div>
+  );
+};
+
+const SafetyChecklistDisplay = ({ inspection }: { inspection: SafetyInspection }) => {
+    return (
+        <Card className="mt-4 print:shadow-none print:border-none print:mt-0">
+            <CardHeader className="text-center print:text-left print:px-0">
+                <CardTitle className="text-xl">INSPECCIÓN DE PUNTOS DE SEGURIDAD</CardTitle>
+                <CardDescription className="print:hidden">Resultado de la revisión realizada por el técnico.</CardDescription>
+            </CardHeader>
+            <CardContent className="print:p-0">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+                    {inspectionGroups.map(group => (
+                        <div key={group.title}>
+                            <h4 className="font-bold text-base mb-2 border-b-2 border-black pb-1">{group.title}</h4>
+                            <div className="space-y-1">
+                                {group.items.map(item => {
+                                    const statusKey = item.name.split('.')[1] as keyof SafetyInspection;
+                                    const status = inspection[statusKey] as SafetyCheckStatus;
+                                    return (
+                                        <div key={item.name} className="flex justify-between items-center text-sm py-1 border-b border-dashed last:border-none">
+                                            <span className="pr-4">{item.label}</span>
+                                            <StatusIndicator status={status} />
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    ))}
+                </div>
+                {inspection.inspectionNotes && (
+                    <div className="mt-6 border-t pt-4">
+                        <h4 className="font-bold text-base mb-2">Observaciones Generales de la Inspección:</h4>
+                        <p className="text-sm whitespace-pre-wrap p-2 bg-gray-50 rounded-md border">{inspection.inspectionNotes}</p>
+                    </div>
+                )}
+                {inspection.technicianSignature && (
+                    <div className="mt-8 border-t pt-4 text-center flex flex-col items-center">
+                        <div className="h-24 w-64 relative">
+                            <Image src={inspection.technicianSignature} alt="Firma del técnico" layout="fill" objectFit="contain" />
+                        </div>
+                        <div className="border-t-2 border-black mt-2 pt-1 w-64 text-center">
+                          <p className="text-xs font-bold">FIRMA DEL TÉCNICO</p>
+                        </div>
+                    </div>
+                )}
+            </CardContent>
+        </Card>
+    )
+}
 
 interface ServiceSheetContentProps {
   service: ServiceRecord;
@@ -87,9 +197,13 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
     };
     
     const fuelColor = getFuelColorClass(fuelPercentage);
+    
+    const hasSafetyInspection = service.safetyInspection && Object.values(service.safetyInspection).some(val => val && val !== 'na');
+    const isSignedByTechnician = !!service.safetyInspection?.technicianSignature;
+    const showChecklist = hasSafetyInspection && isSignedByTechnician;
 
-    return (
-      <div ref={ref} data-format="letter" className="font-sans bg-white text-black shadow-lg mx-auto p-8 text-sm flex flex-col min-h-[10in]">
+    const ServiceOrderContent = (
+      <div className="flex flex-col min-h-[10in]">
         <header className="mb-4 pb-2 border-b-2 border-black">
           <div className="flex justify-between items-center">
             <img src={workshopInfo.logoUrl} alt={`${workshopInfo.name} Logo`} className="h-16" data-ai-hint="workshop logo"/>
@@ -234,6 +348,45 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
         </footer>
       </div>
     );
+
+    const SafetyChecklistContent = showChecklist ? (
+        <SafetyChecklistDisplay inspection={service.safetyInspection!} />
+    ) : null;
+
+    return (
+      <div ref={ref} data-format="letter" className="font-sans bg-white text-black text-sm">
+        {/* For Screen View */}
+        <div className="print:hidden p-4 sm:p-8 shadow-lg">
+          <Tabs defaultValue="order" className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="order">Orden de Servicio</TabsTrigger>
+              <TabsTrigger value="checklist" disabled={!showChecklist}>Revisión de Seguridad</TabsTrigger>
+            </TabsList>
+            <TabsContent value="order">{ServiceOrderContent}</TabsContent>
+            <TabsContent value="checklist">
+              {showChecklist ? SafetyChecklistContent : (
+                <div className="text-center p-8 text-muted-foreground">
+                  La revisión de seguridad no ha sido completada o firmada por el técnico.
+                </div>
+              )}
+            </TabsContent>
+          </Tabs>
+        </div>
+
+        {/* For Print View */}
+        <div className="hidden print:block">
+          {ServiceOrderContent}
+          {showChecklist && (
+            <>
+              <div style={{ pageBreakBefore: 'always' }} />
+              <div className="p-8">{SafetyChecklistContent}</div>
+            </>
+          )}
+        </div>
+      </div>
+    );
   }
 );
 ServiceSheetContent.displayName = "ServiceSheetContent";
+
+    
