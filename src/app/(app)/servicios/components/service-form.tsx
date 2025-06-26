@@ -1617,7 +1617,23 @@ function ServiceItemCard({ serviceIndex, form, removeServiceItem, isReadOnly, in
                 {!isReadOnly && <Button type="button" variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => removeServiceItem(serviceIndex)}><Trash2 className="h-4 w-4"/></Button>}
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField control={control} name={`serviceItems.${serviceIndex}.name`} render={({ field }) => ( <FormItem><FormLabel>Nombre del Servicio</FormLabel><FormControl><Input placeholder="Afinación Mayor" {...field} disabled={isReadOnly} onChange={(e) => field.onChange(capitalizeWords(e.target.value))}/></FormControl></FormItem> )}/>
+                <FormField
+                    control={control}
+                    name={`serviceItems.${serviceIndex}.name`}
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Nombre del Servicio</FormLabel>
+                            <FormControl>
+                                <Input
+                                    placeholder="Afinación Mayor"
+                                    {...field}
+                                    disabled={isReadOnly}
+                                    onChange={(e) => field.onChange(capitalizeWords(e.target.value))}
+                                />
+                            </FormControl>
+                        </FormItem>
+                    )}
+                />
                 <FormField control={control} name={`serviceItems.${serviceIndex}.price`} render={({ field }) => ( <FormItem><FormLabel>Precio Cliente (IVA Inc.)</FormLabel><FormControl><Input type="number" placeholder="0.00" {...field} value={field.value ?? ''} disabled={isReadOnly} /></FormControl></FormItem> )}/>
             </div>
 
