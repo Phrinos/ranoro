@@ -498,10 +498,17 @@ export function ServiceForm({
   }, [mode, watchedStatus]);
 
 
+  const isInitialRenderRef = useRef(true);
   const previousStatusRef = useRef<ServiceRecord['status']>();
 
   useEffect(() => {
       if (isReadOnly || mode !== 'service') return;
+
+      if (isInitialRenderRef.current) {
+          isInitialRenderRef.current = false;
+          previousStatusRef.current = watchedStatus;
+          return;
+      }
 
       const previousStatus = previousStatusRef.current;
       
@@ -515,6 +522,10 @@ export function ServiceForm({
       
       if (previousStatus !== 'Completado' && watchedStatus === 'Completado') {
           form.setValue('deliveryDateTime', new Date(), { shouldDirty: true });
+           toast({
+            title: "Servicio Completado",
+            description: "La fecha y hora de entrega se han actualizado al momento actual.",
+          });
       }
       
       previousStatusRef.current = watchedStatus;
@@ -525,22 +536,24 @@ export function ServiceForm({
   const watchedServiceItems = form.watch("serviceItems");
 
 
-  const totalCost = useMemo(() => {
-    return watchedServiceItems?.reduce((sum, item) => sum + (item.price || 0), 0) || 0;
-  }, [watchedServiceItems]);
-  
-  const totalSuppliesWorkshopCost = useMemo(() => {
-    return watchedServiceItems?.flatMap(item => item.suppliesUsed).reduce((sum, supply) => {
+  const { totalCost, totalSuppliesWorkshopCost, serviceProfit } = useMemo(() => {
+    const currentTotalCost = watchedServiceItems?.reduce((sum, item) => sum + (item.price || 0), 0) || 0;
+    
+    const currentTotalSuppliesWorkshopCost = watchedServiceItems?.flatMap(item => item.suppliesUsed).reduce((sum, supply) => {
         const item = currentInventoryItems.find(i => i.id === supply.supplyId);
         const costPerUnit = item?.unitPrice || supply.unitPrice || 0;
         return sum + costPerUnit * supply.quantity;
     }, 0) || 0;
-  }, [watchedServiceItems, currentInventoryItems]);
 
-  const serviceProfit = useMemo(() => {
-    const totalCostBeforeTax = totalCost / (1 + IVA_RATE) || 0;
-    return totalCostBeforeTax - totalSuppliesWorkshopCost;
-  }, [totalCost, totalSuppliesWorkshopCost]);
+    const totalCostBeforeTax = currentTotalCost / (1 + IVA_RATE) || 0;
+    const currentServiceProfit = totalCostBeforeTax - currentTotalSuppliesWorkshopCost;
+
+    return {
+      totalCost: currentTotalCost,
+      totalSuppliesWorkshopCost: currentTotalSuppliesWorkshopCost,
+      serviceProfit: currentServiceProfit,
+    };
+  }, [watchedServiceItems, currentInventoryItems]);
 
 
   const handleSearchVehicle = () => {
@@ -679,15 +692,9 @@ export function ServiceForm({
         return;
     }
 
-    const finalTotalCost = values.serviceItems?.reduce((sum, item) => sum + (item.price || 0), 0) || 0;
-    const finalTotalSuppliesWorkshopCost = values.serviceItems?.flatMap(item => item.suppliesUsed).reduce((sum, supply) => {
-        const item = currentInventoryItems.find(i => i.id === supply.supplyId);
-        const costPerUnit = item?.unitPrice || supply.unitPrice || 0;
-        return sum + costPerUnit * supply.quantity;
-    }, 0) || 0;
-    const finalSubTotal = finalTotalCost / (1 + IVA_RATE);
-    const finalTaxAmount = finalTotalCost - finalSubTotal;
-    const finalProfit = finalSubTotal - finalTotalSuppliesWorkshopCost;
+    const finalSubTotal = totalCost / (1 + IVA_RATE);
+    const finalTaxAmount = totalCost - finalSubTotal;
+    const finalProfit = serviceProfit;
     const compositeDescription = values.serviceItems.map(item => item.name).join(', ') || 'Servicio';
     
     const isConvertingQuoteToService = mode === 'quote' && values.status && values.status !== 'Cotizacion';
@@ -701,7 +708,7 @@ export function ServiceForm({
         description: compositeDescription,
         technicianId: values.technicianId || '',
         status: values.status || 'Agendado',
-        totalCost: finalTotalCost,
+        totalCost: totalCost,
         serviceAdvisorId: currentUser.id,
         serviceItems: values.serviceItems,
         safetyInspection: values.safetyInspection,
@@ -718,7 +725,7 @@ export function ServiceForm({
       serviceData.technicianName = technicians.find(t => t.id === values.technicianId)?.name || 'N/A';
       serviceData.subTotal = finalSubTotal;
       serviceData.taxAmount = finalTaxAmount;
-      serviceData.totalSuppliesCost = finalTotalSuppliesWorkshopCost;
+      serviceData.totalSuppliesCost = totalSuppliesWorkshopCost;
       serviceData.serviceProfit = finalProfit;
       serviceData.serviceAdvisorName = currentUser.name;
       
@@ -751,10 +758,10 @@ export function ServiceForm({
       quoteData.vehicleIdentifier = selectedVehicle?.licensePlate || values.vehicleLicensePlateSearch || 'N/A';
       quoteData.preparedByTechnicianId = currentUser.id;
       quoteData.preparedByTechnicianName = currentUser.name;
-      quoteData.estimatedTotalCost = finalTotalCost;
+      quoteData.estimatedTotalCost = totalCost;
       quoteData.estimatedSubTotal = finalSubTotal;
       quoteData.estimatedTaxAmount = finalTaxAmount;
-      quoteData.estimatedTotalSuppliesCost = finalTotalSuppliesWorkshopCost;
+      quoteData.estimatedTotalSuppliesCost = totalSuppliesWorkshopCost;
       quoteData.estimatedProfit = finalProfit;
       
       if (values.notes) quoteData.notes = values.notes;
