@@ -481,23 +481,25 @@ export default function HistorialCotizacionesPage() {
                 <CardContent className="p-0">
                   <div className="flex flex-col md:flex-row text-sm">
                     {/* Block 1 */}
-                    <div className="p-4 space-y-1 border-b md:border-b-0 md:border-r">
+                    <div className="p-4 space-y-1 border-b md:border-b-0 md:flex-shrink-0">
                       <p className="text-xs text-muted-foreground">Folio</p>
                       <p className="font-semibold">{quote.id}</p>
                       <p className="text-xs text-muted-foreground pt-1">Fecha</p>
-                      <p className="font-semibold text-base">{format(parseISO(quote.quoteDate!), "dd MMM yyyy", { locale: es })}</p>
+                      <p className="font-semibold text-lg">{format(parseISO(quote.quoteDate!), "dd MMM yyyy", { locale: es })}</p>
                     </div>
+                    <Separator orientation="vertical" className="mx-0 h-auto hidden md:block" />
 
                     {/* Block 2 */}
-                    <div className="p-4 space-y-1 border-b md:border-b-0 md:border-r">
+                    <div className="p-4 space-y-1 border-b md:border-b-0 md:flex-1 md:min-w-0">
                       <p className="text-xs text-muted-foreground">Vehículo</p>
-                      <p className="font-bold text-lg">{vehicle ? `${vehicle.licensePlate} - ${vehicle.make} ${vehicle.model} ${vehicle.year}` : 'N/A'}</p>
+                      <p className="font-bold text-2xl">{vehicle ? `${vehicle.licensePlate} - ${vehicle.make} ${vehicle.model} ${vehicle.year}` : 'N/A'}</p>
                       <p className="text-xs text-muted-foreground pt-1">Cliente</p>
                       <p className="font-semibold">{vehicle?.ownerName} ({vehicle?.ownerPhone})</p>
                     </div>
+                    <Separator orientation="vertical" className="mx-0 h-auto hidden md:block" />
 
                     {/* Block 3 */}
-                    <div className="flex-grow p-4 space-y-1 border-b md:border-b-0 md:border-r">
+                    <div className="p-4 space-y-1 border-b md:border-b-0 md:w-64 md:flex-shrink-0">
                       <p className="text-xs text-muted-foreground">Asesor</p>
                       <p className="font-semibold">{quote.preparedByTechnicianName || 'N/A'}</p>
                       <p className="text-xs text-muted-foreground mt-1">Servicio</p>
@@ -506,17 +508,19 @@ export default function HistorialCotizacionesPage() {
                           {getQuoteDescriptionText(quote)}
                       </div>
                     </div>
+                    <Separator orientation="vertical" className="mx-0 h-auto hidden md:block" />
                     
                     {/* Block 4 */}
-                    <div className="p-4 space-y-1 border-b md:border-b-0 md:border-r text-left md:text-right">
+                    <div className="p-4 space-y-1 border-b md:border-b-0 text-left md:text-right md:w-44 md:flex-shrink-0">
                         <p className="text-xs text-muted-foreground">Costo Estimado</p>
-                        <p className="font-bold text-base text-primary">{formatCurrency(quote.estimatedTotalCost)}</p>
+                        <p className="font-bold text-lg text-primary">{formatCurrency(quote.estimatedTotalCost)}</p>
                         <p className="text-xs text-muted-foreground mt-1">Ganancia Estimada</p>
                         <p className="font-semibold text-green-600">{formatCurrency(quote.estimatedProfit)}</p>
                     </div>
+                    <Separator orientation="vertical" className="mx-0 h-auto hidden md:block" />
 
                     {/* Block 5 */}
-                    <div className="p-4 flex flex-col items-center justify-center gap-2">
+                    <div className="p-4 flex flex-col items-center justify-center gap-2 md:w-36 md:flex-shrink-0">
                         <Badge variant={quote.serviceId ? "lightRed" : "outline"} className="w-full justify-center text-center text-base">
                             {quote.serviceId ? "Agendado" : "Cotizacion"}
                         </Badge>
