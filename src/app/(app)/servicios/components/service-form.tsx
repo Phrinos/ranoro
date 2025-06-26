@@ -820,7 +820,7 @@ export function ServiceForm({
     toast({ title: "Función no disponible", description: "La sugerencia de precios con IA se está adaptando al nuevo formato." });
   };
   
-  const handleEnhanceText = async (fieldName: 'notes' | 'vehicleConditions') => {
+  const handleEnhanceText = async (fieldName: 'notes' | 'vehicleConditions' | 'safetyInspection.inspectionNotes') => {
     const currentValue = form.getValues(fieldName);
     if (!currentValue || currentValue.trim().length < 5) {
         toast({ title: 'No hay suficiente texto', description: 'Escriba algo antes de mejorar el texto.', variant: 'default' });
@@ -1360,7 +1360,14 @@ export function ServiceForm({
             )}
             {showReceptionTab && (
               <TabsContent value="seguridad" className="space-y-6 mt-0">
-                  <SafetyChecklist control={form.control} isReadOnly={isReadOnly} onSignatureClick={() => setIsTechSignatureDialogOpen(true)} signatureDataUrl={technicianSignature} />
+                  <SafetyChecklist 
+                    control={form.control} 
+                    isReadOnly={isReadOnly} 
+                    onSignatureClick={() => setIsTechSignatureDialogOpen(true)} 
+                    signatureDataUrl={technicianSignature}
+                    isEnhancingText={isEnhancingText}
+                    handleEnhanceText={handleEnhanceText}
+                  />
               </TabsContent>
             )}
           </Tabs>
@@ -1636,15 +1643,15 @@ const inspectionGroups = [
     { name: "safetyInspection.carroceria_asientos_tablero", label: "13. ASIENTOS / TABLERO / CONSOLA" },
     { name: "safetyInspection.carroceria_plumas", label: "14. PLUMAS LIMPIAPARABRISAS" },
   ]},
+  { title: "LLANTAS (ESTADO Y PRESIÓN)", items: [
+    { name: "safetyInspection.llantas_delanteras_traseras", label: "19. DELANTERAS / TRASERAS" },
+    { name: "safetyInspection.llantas_refaccion", label: "20. REFACCIÓN" },
+  ]},
   { title: "SUSPENSIÓN Y DIRECCIÓN", items: [
     { name: "safetyInspection.suspension_rotulas", label: "15. RÓTULAS Y GUARDAPOLVOS" },
     { name: "safetyInspection.suspension_amortiguadores", label: "16. AMORTIGUADORES" },
     { name: "safetyInspection.suspension_caja_direccion", label: "17. CAJA DE DIRECCIÓN" },
     { name: "safetyInspection.suspension_terminales", label: "18. TERMINALES DE DIRECCIÓN" },
-  ]},
-  { title: "LLANTAS (ESTADO Y PRESIÓN)", items: [
-    { name: "safetyInspection.llantas_delanteras_traseras", label: "19. DELANTERAS / TRASERAS" },
-    { name: "safetyInspection.llantas_refaccion", label: "20. REFACCIÓN" },
   ]},
   { title: "FRENOS", items: [
     { name: "safetyInspection.frenos_discos_delanteros", label: "21. DISCOS / BALATAS DELANTERAS" },
@@ -1659,7 +1666,14 @@ const inspectionGroups = [
 ];
 
 
-const SafetyChecklist = ({ control, isReadOnly, onSignatureClick, signatureDataUrl }: { control: Control<ServiceFormValues>; isReadOnly?: boolean; onSignatureClick: () => void, signatureDataUrl?: string }) => {
+const SafetyChecklist = ({ control, isReadOnly, onSignatureClick, signatureDataUrl, isEnhancingText, handleEnhanceText }: { 
+  control: Control<ServiceFormValues>; 
+  isReadOnly?: boolean; 
+  onSignatureClick: () => void;
+  signatureDataUrl?: string;
+  isEnhancingText: string | null;
+  handleEnhanceText: (fieldName: 'notes' | 'vehicleConditions' | 'safetyInspection.inspectionNotes') => void;
+}) => {
   return (
     <Card>
       <CardHeader>
@@ -1698,7 +1712,7 @@ const SafetyChecklist = ({ control, isReadOnly, onSignatureClick, signatureDataU
                     <FormLabel className="text-base font-semibold flex justify-between items-center w-full">
                       <span>Observaciones Generales de la Inspección</span>
                       {!isReadOnly && (
-                        <Button type="button" size="sm" variant="ghost" onClick={() => handleEnhanceText('safetyInspection.inspectionNotes' as any)} disabled={isEnhancingText === 'safetyInspection.inspectionNotes' || !field.value}>
+                        <Button type="button" size="sm" variant="ghost" onClick={() => handleEnhanceText('safetyInspection.inspectionNotes')} disabled={isEnhancingText === 'safetyInspection.inspectionNotes' || !field.value}>
                             {isEnhancingText === 'safetyInspection.inspectionNotes' ? <Loader2 className="animate-spin" /> : <BrainCircuit className="h-4 w-4" />}
                             <span className="ml-2 hidden sm:inline">Mejorar texto</span>
                         </Button>
