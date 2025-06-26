@@ -498,41 +498,6 @@ export function ServiceForm({
   }, [mode, watchedStatus]);
 
 
-  const isInitialRenderRef = useRef(true);
-  const previousStatusRef = useRef<ServiceRecord['status']>();
-
-  useEffect(() => {
-      if (isReadOnly || mode !== 'service') return;
-
-      if (isInitialRenderRef.current) {
-          isInitialRenderRef.current = false;
-          previousStatusRef.current = watchedStatus;
-          return;
-      }
-
-      const previousStatus = previousStatusRef.current;
-      
-      if (previousStatus !== 'Reparando' && watchedStatus === 'Reparando') {
-          form.setValue('serviceDate', new Date(), { shouldDirty: true });
-          toast({
-            title: "Servicio en Progreso",
-            description: "La fecha y hora de recepción se han actualizado al momento actual.",
-          });
-      }
-      
-      if (previousStatus !== 'Completado' && watchedStatus === 'Completado') {
-          form.setValue('deliveryDateTime', new Date(), { shouldDirty: true });
-           toast({
-            title: "Servicio Completado",
-            description: "La fecha y hora de entrega se han actualizado al momento actual.",
-          });
-      }
-      
-      previousStatusRef.current = watchedStatus;
-
-  }, [watchedStatus, form, isReadOnly, mode, toast]);
-
-
   const watchedServiceItems = form.watch("serviceItems");
 
 
@@ -701,19 +666,30 @@ export function ServiceForm({
 
     if (mode === 'service' || isConvertingQuoteToService) {
       const serviceData: Partial<ServiceRecord> = {
+        ...values,
         id: initialData?.id || `SER_${Date.now().toString(36)}`,
         publicId: values.publicId || `srv_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 9)}`,
         vehicleId: vehicleIdToSave,
-        serviceDate: values.serviceDate!.toISOString(),
         description: compositeDescription,
         technicianId: values.technicianId || '',
         status: values.status || 'Agendado',
         totalCost: totalCost,
         serviceAdvisorId: currentUser.id,
         serviceItems: values.serviceItems,
-        safetyInspection: values.safetyInspection,
-        serviceType: values.serviceType || 'Servicio General',
       };
+      
+      const originalStatus = initialDataService?.status;
+      if (originalStatus !== 'Reparando' && serviceData.status === 'Reparando') {
+          serviceData.serviceDate = new Date().toISOString();
+      } else {
+          serviceData.serviceDate = values.serviceDate!.toISOString();
+      }
+
+      if (originalStatus !== 'Completado' && serviceData.status === 'Completado') {
+          serviceData.deliveryDateTime = new Date().toISOString();
+      } else if (values.deliveryDateTime) {
+          serviceData.deliveryDateTime = values.deliveryDateTime.toISOString();
+      }
 
       if (values.status === 'Completado') {
         serviceData.paymentMethod = values.paymentMethod;
@@ -730,14 +706,6 @@ export function ServiceForm({
       serviceData.serviceAdvisorName = currentUser.name;
       
       if (currentUser.signatureDataUrl) serviceData.serviceAdvisorSignatureDataUrl = currentUser.signatureDataUrl;
-      if (values.customerSignatureReception) serviceData.customerSignatureReception = values.customerSignatureReception;
-      if (values.customerSignatureDelivery) serviceData.customerSignatureDelivery = values.customerSignatureDelivery;
-      if (values.mileage) serviceData.mileage = values.mileage;
-      if (values.notes) serviceData.notes = values.notes;
-      if (values.vehicleConditions) serviceData.vehicleConditions = values.vehicleConditions;
-      if (values.fuelLevel) serviceData.fuelLevel = values.fuelLevel;
-      if (values.customerItems) serviceData.customerItems = values.customerItems;
-      if (values.deliveryDateTime) serviceData.deliveryDateTime = values.deliveryDateTime.toISOString();
       if (workshopInfo && Object.keys(workshopInfo).length > 0) serviceData.workshopInfo = workshopInfo as WorkshopInfo;
 
       await savePublicDocument('service', serviceData as ServiceRecord, selectedVehicle);
