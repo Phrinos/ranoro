@@ -6,14 +6,15 @@
 import {ai} from '@/ai/genkit';
 import {z} from 'zod';
 
-const EnhanceTextInputSchema = z.object({
-  text: z.string().describe("The text to be enhanced."),
-});
-
+const EnhanceTextInputSchema = z.string().describe("The text to be enhanced.");
 const EnhanceTextOutputSchema = z.string().describe("The corrected and improved text.");
 
 export async function enhanceText(text: string): Promise<string> {
-  return enhanceTextFlow({ text });
+  // A guard in case the caller sends a non-string value despite TypeScript types.
+  if (typeof text !== 'string') {
+    return '';
+  }
+  return enhanceTextFlow(text);
 }
 
 const enhanceTextPrompt = ai.definePrompt({
@@ -23,7 +24,7 @@ const enhanceTextPrompt = ai.definePrompt({
   prompt: `You are a helpful assistant for an auto repair shop. Correct any spelling mistakes, fix grammar, and improve the clarity and professionalism of the following text. Return only the corrected text, without any preamble or explanation.
 
 Original Text:
-"{{{text}}}"
+"{{{this}}}"
 `,
 });
 
@@ -33,13 +34,13 @@ const enhanceTextFlow = ai.defineFlow(
     inputSchema: EnhanceTextInputSchema,
     outputSchema: EnhanceTextOutputSchema,
   },
-  async (input) => {
-    if (!input.text || input.text.trim().length < 2) {
-      return input.text || ''; // Don't process empty or very short strings, return original
+  async (text) => {
+    if (!text || text.trim().length < 2) {
+      return text || ''; // Don't process empty or very short strings, return original
     }
-    const { output } = await enhanceTextPrompt(input, {
+    const { output } = await enhanceTextPrompt(text, {
       config: { temperature: 0.2 },
     });
-    return output || input.text; // Return original text if AI fails
+    return output || text; // Return original text if AI fails
   }
 );
