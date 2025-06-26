@@ -83,6 +83,13 @@ const BASE_NAV_STRUCTURE: ReadonlyArray<Omit<NavigationEntry, 'isActive'>> = [
     groupTag: "Mi Taller",
     permissions: ['services:view_history']
   },
+  {
+    label: 'Lista de Precios',
+    path: '/precios',
+    icon: Database,
+    groupTag: "Mi Taller",
+    permissions: ['services:edit']
+  },
   
   // Mi Inventario
   {
@@ -93,9 +100,9 @@ const BASE_NAV_STRUCTURE: ReadonlyArray<Omit<NavigationEntry, 'isActive'>> = [
     permissions: ['pos:create_sale']
   },
   { label: 'Productos', path: '/inventario', icon: Package, groupTag: "Mi Inventario", permissions: ['inventory:view'] },
-  { label: 'Análisis IA', path: '/inventario/analisis', icon: BarChartHorizontal, groupTag: "Mi Inventario", permissions: ['inventory:manage'] },
   { label: 'Categorías', path: '/inventario/categorias', icon: Shapes, groupTag: "Mi Inventario", permissions: ['inventory:manage'] },
   { label: 'Proveedores', path: '/inventario/proveedores', icon: Building, groupTag: "Mi Inventario", permissions: ['inventory:manage'] },
+  { label: 'Análisis IA', path: '/inventario/analisis', icon: BarChartHorizontal, groupTag: "Mi Inventario", permissions: ['inventory:manage'] },
   
   // Mi Oficina
   {
@@ -112,13 +119,6 @@ const BASE_NAV_STRUCTURE: ReadonlyArray<Omit<NavigationEntry, 'isActive'>> = [
     groupTag: "Mi Oficina",
     permissions: ['finances:view_report']
   },
-  {
-    label: 'Lista de Precios',
-    path: '/precios',
-    icon: Database,
-    groupTag: "Mi Oficina",
-    permissions: ['services:edit']
-  },
   { 
     label: 'Staff Técnico', 
     path: '/tecnicos', 
@@ -133,13 +133,38 @@ const BASE_NAV_STRUCTURE: ReadonlyArray<Omit<NavigationEntry, 'isActive'>> = [
     groupTag: "Mi Oficina",
     permissions: ['technicians:manage'] // Reusing technician permission for all staff
   },
+  
+  // Administración
+  {
+    label: 'Usuarios',
+    path: '/admin/usuarios',
+    icon: Users,
+    groupTag: 'Administración',
+    permissions: ['users:manage'],
+  },
+  {
+    label: 'Roles y Permisos',
+    path: '/admin/roles',
+    icon: ShieldQuestion,
+    groupTag: 'Administración',
+    permissions: ['roles:manage'],
+  },
+  {
+    label: 'Migración de Datos',
+    path: '/admin/migracion-datos',
+    icon: DatabaseZap,
+    groupTag: 'Administración',
+    permissions: ['users:manage'], // Admin-level
+  },
   {
     label: 'Configurar Ticket',
     path: '/admin/configuracion-ticket',
     icon: Settings,
-    groupTag: "Mi Oficina",
+    groupTag: "Administración",
     permissions: ['ticket_config:manage']
   },
+  
+  // Soporte
   {
     label: 'Manual de Usuario',
     path: '/manual',
@@ -149,7 +174,7 @@ const BASE_NAV_STRUCTURE: ReadonlyArray<Omit<NavigationEntry, 'isActive'>> = [
   },
 ];
 
-const DESIRED_GROUP_ORDER = ["Mi Taller", "Mi Inventario", "Mi Oficina", "Soporte"];
+const DESIRED_GROUP_ORDER = ["Mi Taller", "Mi Inventario", "Mi Oficina", "Administración", "Soporte"];
 
 
 const useNavigation = (): NavigationEntry[] => {
@@ -228,6 +253,9 @@ const useNavigation = (): NavigationEntry[] => {
     }
     
     if (entry.groupTag === "Mi Oficina" && pathname.startsWith(entry.path)) {
+        isActive = true;
+    }
+    if (entry.groupTag === "Administración" && pathname.startsWith(entry.path)) {
         isActive = true;
     }
      if (entry.path === '/finanzas/reporte' && pathname === '/finanzas/reporte') {

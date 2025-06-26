@@ -211,24 +211,6 @@ export function AppSidebar() {
               <UserCog className="mr-2 h-4 w-4" />
               <span>Mi Perfil</span>
             </DropdownMenuItem>
-            {(currentUser?.role === "Admin" || currentUser?.role === "Superadmin") && (
-              <>
-                <DropdownMenuSeparator />
-                <DropdownMenuLabel>Administración</DropdownMenuLabel>
-                <DropdownMenuItem onClick={() => router.push("/admin/usuarios")}>
-                  <Users className="mr-2 h-4 w-4" />
-                  <span>Usuarios</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => router.push("/admin/roles")}>
-                  <ShieldQuestion className="mr-2 h-4 w-4" />
-                  <span>Roles y Permisos</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => router.push("/admin/migracion-datos")}>
-                  <DatabaseZap className="mr-2 h-4 w-4" />
-                  <span>Migración de Datos</span>
-                </DropdownMenuItem>
-              </>
-            )}
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={handleLogout}>
               <LogOut className="mr-2 h-4 w-4 text-destructive" />
