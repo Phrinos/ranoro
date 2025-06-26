@@ -11,7 +11,7 @@ import { Badge, type BadgeProps } from "@/components/ui/badge";
 import type { QuoteRecord, Vehicle } from "@/types";
 import { format, parseISO, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { Eye, Edit, Wrench, Ban, FileText, CalendarIcon, Pencil } from "lucide-react";
+import { Edit, Wrench, Ban, FileText, CalendarIcon, Pencil } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -31,9 +31,10 @@ interface QuotesTableProps {
   onEditQuote: (quote: QuoteRecord) => void;
   onGenerateService: (quote: QuoteRecord) => void;
   onDeleteQuote: (quoteId: string) => void;
+  onEditService: (serviceId: string) => void;
 }
 
-export const QuotesTable = React.memo(({ quotes, vehicles, onViewQuote, onEditQuote, onGenerateService, onDeleteQuote }: QuotesTableProps) => {
+export const QuotesTable = React.memo(({ quotes, vehicles, onViewQuote, onEditQuote, onGenerateService, onDeleteQuote, onEditService }: QuotesTableProps) => {
   if (!quotes.length) {
     return <p className="text-muted-foreground text-center py-8">No hay cotizaciones registradas que coincidan con los filtros.</p>;
   }
@@ -133,14 +134,22 @@ export const QuotesTable = React.memo(({ quotes, vehicles, onViewQuote, onEditQu
                   </Badge>
                   <div className="flex">
                     <Button variant="ghost" size="icon" onClick={(e) => {e.stopPropagation(); onViewQuote(quotes.find(q => q.id === quote.id)!);}} title="Ver / Reimprimir Cotización">
-                      <Eye className="h-4 w-4" />
+                      <FileText className="h-4 w-4" />
                     </Button>
                     <Button variant="ghost" size="icon" onClick={(e) => {e.stopPropagation(); onEditQuote(quotes.find(q => q.id === quote.id)!);}} title="Editar Cotización">
                       <Edit className="h-4 w-4" />
                     </Button>
-                    <Button variant="ghost" size="icon" onClick={(e) => {e.stopPropagation(); onGenerateService(quotes.find(q => q.id === quote.id)!);}} title="Generar Servicio" disabled={!!quote.serviceId}>
-                      <Wrench className="h-4 w-4" />
-                    </Button>
+                    
+                    {quote.serviceId ? (
+                      <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); onEditService(quote.serviceId!); }} title="Editar Servicio">
+                          <Wrench className="h-4 w-4 text-blue-600" />
+                      </Button>
+                    ) : (
+                      <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); onGenerateService(quotes.find(q => q.id === quote.id)!); }} title="Generar Servicio">
+                          <Wrench className="h-4 w-4" />
+                      </Button>
+                    )}
+
                     <AlertDialog onOpenChange={(e) => e.stopPropagation()}>
                         <AlertDialogTrigger asChild>
                             <Button variant="ghost" size="icon" title="Cancelar Cotización" onClick={(e) => e.stopPropagation()}>

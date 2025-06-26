@@ -4,7 +4,7 @@
 
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Edit, Trash2, Clock, Search as SearchIcon, Calendar as CalendarIcon, CalendarCheck, CheckCircle, Wrench, Printer, Tag, FileText, BrainCircuit, Loader2, AlertTriangle, List, CalendarDays, MessageSquare, Ban, Copy, Pencil } from "lucide-react";
+import { PlusCircle, Edit, Ban, Clock, Search as SearchIcon, Calendar as CalendarIcon, CalendarCheck, CheckCircle, Wrench, Printer, Tag, FileText, BrainCircuit, Loader2, AlertTriangle, List, CalendarDays, MessageSquare, Copy, Pencil } from "lucide-react";
 import {
   placeholderServiceRecords,
   placeholderVehicles,
@@ -411,28 +411,12 @@ export default function AgendaServiciosPage() {
 
   const futureServices = useMemo(() => {
     return filteredServices.filter(service => {
-      if (service.status === 'Agendado') {
-        return true; // Always show 'Agendado' services in the main list
+      if (service.status === 'Agendado' || service.status === 'Reparando') {
+        return true; 
       }
-      const serviceDate = parseISO(service.serviceDate);
-      // Show 'Reparando' services for today or the future
-      return isValid(serviceDate) && (isToday(serviceDate) || isFuture(serviceDate));
+      return false;
     });
   }, [filteredServices]);
-
-  const pastServices = useMemo(() => {
-    return filteredServices.filter(service => {
-      // Only 'Reparando' services can be in the past list
-      if (service.status !== 'Reparando') return false;
-
-      const serviceDate = parseISO(service.serviceDate);
-      if (!isValid(serviceDate)) return false;
-      
-      const isServiceInThePast = isPast(serviceDate) && !isToday(serviceDate);
-      return isServiceInThePast;
-    });
-  }, [filteredServices]);
-
 
   const groupServicesByDate = (servicesToGroup: ServiceRecord[]): GroupedServices => {
     return servicesToGroup
@@ -448,7 +432,6 @@ export default function AgendaServiciosPage() {
   };
 
   const groupedFutureServices = useMemo(() => groupServicesByDate(futureServices), [futureServices]);
-  const groupedPastServices = useMemo(() => groupServicesByDate(pastServices), [pastServices]);
 
 
   const getStatusVariant = (status: ServiceRecord['status']): "default" | "secondary" | "outline" | "destructive" | "success" => {
@@ -588,17 +571,9 @@ export default function AgendaServiciosPage() {
                         <div className="w-48 shrink-0 flex flex-col items-center justify-center p-4 gap-y-2">
                             <Badge variant={getStatusVariant(service.status)} className="w-full justify-center text-center text-base">{service.status}</Badge>
                             <div className="flex">
-                                {originalQuote ? (
-                                    <Button variant="ghost" size="icon" title="Ver Cotización Original" onClick={(e) => { e.stopPropagation(); handleViewQuote(service.id); }}>
-                                        <Tag className="h-4 w-4 text-purple-600" />
-                                    </Button>
-                                ) : (
-                                    service.status !== 'Agendado' && (
-                                        <Button variant="ghost" size="icon" title="Ver Hoja de Servicio" onClick={() => handleShowSheet(service)}>
-                                            <FileText className="h-4 w-4" />
-                                        </Button>
-                                    )
-                                )}
+                                <Button variant="ghost" size="icon" title="Ver Hoja de Servicio" onClick={() => handleShowSheet(service)}>
+                                  <FileText className="h-4 w-4" />
+                                </Button>
                                 <Button variant="ghost" size="icon" title="Editar Detalles" onClick={(e) => {e.stopPropagation(); handleOpenEditDialog(service);}} disabled={service.status === 'Completado' || service.status === 'Cancelado'}>
                                     <Edit className="h-4 w-4" />
                                 </Button>
@@ -646,18 +621,9 @@ export default function AgendaServiciosPage() {
   };
 
   const serviceListSection = (
-    <Tabs defaultValue="futuras" className="w-full">
-      <TabsList className="grid w-full grid-cols-2 mb-6">
-        <TabsTrigger value="futuras" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">Citas Futuras</TabsTrigger>
-        <TabsTrigger value="pasadas" className="data-[state=active]:bg-gray-700 data-[state=active]:text-white">Citas Pasadas</TabsTrigger>
-      </TabsList>
-      <TabsContent value="futuras">
-        {renderServiceGroup(groupedFutureServices)}
-      </TabsContent>
-      <TabsContent value="pasadas">
-        {renderServiceGroup(groupedPastServices)}
-      </TabsContent>
-    </Tabs>
+    <>
+      {renderServiceGroup(groupedFutureServices)}
+    </>
   );
 
   return (
