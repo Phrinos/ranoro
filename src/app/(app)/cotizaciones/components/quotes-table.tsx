@@ -11,7 +11,7 @@ import { Badge, type BadgeProps } from "@/components/ui/badge";
 import type { QuoteRecord, Vehicle } from "@/types";
 import { format, parseISO, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { Eye, Edit, Wrench, Trash2, FileText, CalendarIcon, Pencil } from "lucide-react";
+import { Eye, Edit, Wrench, Ban, FileText, CalendarIcon, Pencil } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -135,7 +135,7 @@ export const QuotesTable = React.memo(({ quotes, vehicles, onViewQuote, onEditQu
                     <Button variant="ghost" size="icon" onClick={(e) => {e.stopPropagation(); onViewQuote(quotes.find(q => q.id === quote.id)!);}} title="Ver / Reimprimir Cotización">
                       <Eye className="h-4 w-4" />
                     </Button>
-                    <Button variant="ghost" size="icon" onClick={(e) => {e.stopPropagation(); onEditQuote(quotes.find(q => q.id === quote.id)!);}} title="Editar Cotización" disabled={!!quote.serviceId}>
+                    <Button variant="ghost" size="icon" onClick={(e) => {e.stopPropagation(); onEditQuote(quotes.find(q => q.id === quote.id)!);}} title="Editar Cotización">
                       <Edit className="h-4 w-4" />
                     </Button>
                     <Button variant="ghost" size="icon" onClick={(e) => {e.stopPropagation(); onGenerateService(quotes.find(q => q.id === quote.id)!);}} title="Generar Servicio" disabled={!!quote.serviceId}>
@@ -143,21 +143,21 @@ export const QuotesTable = React.memo(({ quotes, vehicles, onViewQuote, onEditQu
                     </Button>
                     <AlertDialog onOpenChange={(e) => e.stopPropagation()}>
                         <AlertDialogTrigger asChild>
-                            <Button variant="ghost" size="icon" title="Eliminar Cotización" disabled={!!quote.serviceId} onClick={(e) => e.stopPropagation()}>
-                                <Trash2 className="h-4 w-4 text-destructive" />
+                            <Button variant="ghost" size="icon" title="Cancelar Cotización" onClick={(e) => e.stopPropagation()}>
+                                <Ban className="h-4 w-4 text-destructive" />
                             </Button>
                         </AlertDialogTrigger>
                         <AlertDialogContent onClick={(e) => e.stopPropagation()}>
                             <AlertDialogHeader>
-                                <AlertDialogTitle>¿Eliminar esta cotización?</AlertDialogTitle>
+                                <AlertDialogTitle>¿Cancelar esta cotización?</AlertDialogTitle>
                                 <AlertDialogDescription>
-                                    Esta acción no se puede deshacer y eliminará permanentemente la cotización {quote.id}.
+                                    Esta acción no se puede deshacer y eliminará permanentemente la cotización {quote.id}. Si ya se generó un servicio, éste no será afectado.
                                 </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>
-                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                <AlertDialogCancel>No</AlertDialogCancel>
                                 <AlertDialogAction onClick={() => onDeleteQuote(quote.id)} className="bg-destructive hover:bg-destructive/90">
-                                    Sí, Eliminar
+                                    Sí, Cancelar
                                 </AlertDialogAction>
                             </AlertDialogFooter>
                         </AlertDialogContent>

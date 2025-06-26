@@ -28,7 +28,7 @@ import { Separator } from "@/components/ui/separator";
 import type { SaleReceipt } from "@/types";
 import { format, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
-import { Trash2 } from "lucide-react";
+import { Ban } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 
@@ -123,7 +123,7 @@ export function ViewSaleDialog({ open, onOpenChange, sale, onCancelSale }: ViewS
             <AlertDialog>
                 <AlertDialogTrigger asChild>
                     <Button variant="destructive" disabled={isCancelled}>
-                        <Trash2 className="mr-2 h-4 w-4" />
+                        <Ban className="mr-2 h-4 w-4" />
                         Cancelar Venta
                     </Button>
                 </AlertDialogTrigger>
