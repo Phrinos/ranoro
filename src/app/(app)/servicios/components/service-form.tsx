@@ -1,4 +1,3 @@
-
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -996,7 +995,7 @@ export function ServiceForm({
       <Form {...form}>
         <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-6">
           <Tabs defaultValue="servicio" className="w-full">
-            <div className="flex flex-col sm:flex-row justify-between items-center gap-2 mb-4 border-b pb-2">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-4 border-b pb-2">
                 <TabsList className="bg-transparent p-0">
                     <TabsTrigger value="servicio" className="text-sm sm:text-base data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none flex items-center gap-2 py-2 px-3 sm:px-4">
                         <Wrench className="h-4 w-4 shrink-0"/>
@@ -1453,13 +1452,13 @@ export function ServiceForm({
                             <AlertDialogTitle>¿Está seguro?</AlertDialogTitle>
                             <AlertDialogDescription>
                               {mode === 'quote' ? `Se eliminará la cotización ${initialDataQuote?.id}. Esta acción no se puede deshacer.` : `Se cancelará el servicio ${initialDataService?.id}.`}
-                              {mode === 'service' && (
-                                <div className="mt-4">
-                                  <Label htmlFor="cancellation-reason">Motivo de la cancelación (obligatorio)</Label>
-                                  <Textarea id="cancellation-reason" value={cancellationReason} onChange={(e) => setCancellationReason(e.target.value)} placeholder="Ej: El cliente no se presentó..." className="mt-2" />
-                                </div>
-                              )}
                             </AlertDialogDescription>
+                            {mode === 'service' && (
+                              <div className="mt-4">
+                                <Label htmlFor="cancellation-reason">Motivo de la cancelación (obligatorio)</Label>
+                                <Textarea id="cancellation-reason" value={cancellationReason} onChange={(e) => setCancellationReason(e.target.value)} placeholder="Ej: El cliente no se presentó..." className="mt-2" />
+                              </div>
+                            )}
                         </AlertDialogHeader>
                         <AlertDialogFooter>
                             <AlertDialogCancel onClick={() => setCancellationReason('')}>No, volver</AlertDialogCancel>

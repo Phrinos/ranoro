@@ -1,4 +1,3 @@
-
 "use client";
 
 import { PageHeader } from "@/components/page-header";
@@ -553,11 +552,11 @@ export default function AgendaServiciosPage() {
                                         <AlertDialogTitle>¿Cancelar esta cita?</AlertDialogTitle>
                                         <AlertDialogDescription>
                                             Esta acción marcará el servicio {service.id} como cancelado y no se podrá revertir.
-                                            <div className="mt-4">
-                                            <Label htmlFor={`cancel-reason-agenda-${service.id}`} className="text-left font-semibold">Motivo de la cancelación (obligatorio)</Label>
-                                            <Textarea id={`cancel-reason-agenda-${service.id}`} value={cancellationReason} onChange={(e) => setCancellationReason(e.target.value)} placeholder="Ej: El cliente no se presentó..." className="mt-2" />
-                                            </div>
                                         </AlertDialogDescription>
+                                        <div className="mt-4">
+                                          <Label htmlFor={`cancel-reason-agenda-${service.id}`} className="text-left font-semibold">Motivo de la cancelación (obligatorio)</Label>
+                                          <Textarea id={`cancel-reason-agenda-${service.id}`} value={cancellationReason} onChange={(e) => setCancellationReason(e.target.value)} placeholder="Ej: El cliente no se presentó..." className="mt-2" />
+                                        </div>
                                         </AlertDialogHeader>
                                         <AlertDialogFooter>
                                         <AlertDialogCancel onClick={() => setCancellationReason('')}>No</AlertDialogCancel>
