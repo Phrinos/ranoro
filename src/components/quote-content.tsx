@@ -49,22 +49,23 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
       <div 
         ref={ref}
         data-format="letter"
-        className="font-sans bg-white text-black shadow-lg mx-auto p-8 text-sm flex flex-col"
+        className="font-sans bg-white text-black shadow-lg mx-auto p-4 md:p-8 text-sm flex flex-col"
       >
         <header className="mb-4 border-b border-gray-300 pb-4">
           {/* Top Row: Logo and Title */}
-          <div className="flex justify-between items-center">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <img 
               src={effectiveWorkshopInfo.logoUrl} 
               alt={`${effectiveWorkshopInfo.name} Logo`} 
-              style={{ width: '180px', height: 'auto' }} 
+              style={{ width: '150px', height: 'auto' }} 
+              className="sm:w-[180px]"
               data-ai-hint="workshop logo"
             />
-            <h2 className="text-3xl font-semibold text-primary text-right">COTIZACIÓN</h2>
+            <h2 className="text-2xl sm:text-3xl font-semibold text-primary text-left sm:text-right w-full sm:w-auto">COTIZACIÓN</h2>
           </div>
 
           {/* Bottom Row: Address and Details */}
-          <div className="flex justify-between items-start mt-4 text-xs">
+          <div className="flex flex-col sm:flex-row justify-between items-start mt-4 text-xs gap-4">
             <div className="space-y-0 leading-tight">
               <div className="font-bold text-sm mb-1">{effectiveWorkshopInfo.name}</div>
               <div>{effectiveWorkshopInfo.addressLine1}</div>
@@ -72,7 +73,7 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
               <div>{effectiveWorkshopInfo.cityState}</div>
               <div>Tel: {effectiveWorkshopInfo.phone}</div>
             </div>
-            <div className="text-right space-y-0 leading-tight">
+            <div className="text-left sm:text-right space-y-0 leading-tight">
               <div>Folio: <span className="font-semibold">{quote.id}</span></div>
               <div>Fecha: <span className="font-semibold">{formattedQuoteDate}</span></div>
             </div>
@@ -81,10 +82,10 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
 
         {/* Main content area */}
         <main className="flex-grow">
-          <section className="grid grid-cols-2 gap-8 mb-2">
+          <section className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-2">
               <div className="bg-gray-50 p-3 rounded-md border border-gray-200">
               <h3 className="font-semibold text-sm text-gray-700 mb-1 border-b pb-1">Cliente:</h3>
-              <div className="space-y-1 leading-tight pt-1">
+              <div className="space-y-1 leading-tight pt-1 text-xs sm:text-sm">
                   <div className="font-bold">{vehicle?.ownerName || ''}</div>
                   {vehicle?.ownerPhone && <div>{vehicle.ownerPhone}</div>}
                   {vehicle?.ownerEmail && <div>{vehicle.ownerEmail}</div>}
@@ -92,7 +93,7 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
               </div>
               <div className="bg-gray-50 p-3 rounded-md border border-gray-200">
                 <h3 className="font-semibold text-sm text-gray-700 mb-1 border-b pb-1">Vehículo:</h3>
-                <div className="space-y-1 leading-tight pt-1">
+                <div className="space-y-1 leading-tight pt-1 text-xs sm:text-sm">
                     <div>
                         <span className="font-bold">{vehicle ? `${vehicle.make} ${vehicle.model} ${vehicle.year}` : (quote.vehicleIdentifier || '').replace(vehicle?.licensePlate || '', '')} </span>
                         <span className="font-bold">{vehicle?.licensePlate || 'N/A'}</span>
@@ -112,7 +113,7 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
                   {quote.serviceItems && quote.serviceItems.length > 0 ? (
                       quote.serviceItems.map((item, index) => (
                           <div key={index} className="pb-2 border-b border-dashed last:border-b-0">
-                              <div className="flex justify-between items-center text-base">
+                              <div className="flex justify-between items-center text-sm sm:text-base">
                                   <span className="font-bold">{item.name}</span>
                                   <span className="font-bold">{formatCurrency(item.price)}</span>
                               </div>
@@ -132,8 +133,8 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
 
         {/* Footer section that will be pushed to the bottom */}
         <footer className="mt-auto pt-4">
-          <section className="flex justify-end">
-              <div className="w-full max-w-sm space-y-2 text-base">
+          <section className="flex flex-col sm:flex-row justify-end">
+              <div className="w-full sm:max-w-xs md:max-w-sm space-y-2 text-sm sm:text-base">
                   {quote.estimatedSubTotal !== undefined && (
                       <div className="flex justify-between">
                           <span>Subtotal:</span>
@@ -146,7 +147,7 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
                           <span className="font-medium">{formatCurrency(quote.estimatedTaxAmount)}</span>
                       </div>
                   )}
-                  <div className="flex justify-between text-xl font-bold border-t-2 pt-2 mt-2 border-gray-300 text-primary">
+                  <div className="flex justify-between text-lg sm:text-xl font-bold border-t-2 pt-2 mt-2 border-gray-300 text-primary">
                       <span>Total Estimado:</span>
                       <span>{formatCurrency(quote.estimatedTotalCost)}</span>
                   </div>
