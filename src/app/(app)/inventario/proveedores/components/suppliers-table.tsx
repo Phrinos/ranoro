@@ -45,6 +45,7 @@ export const SuppliersTable = React.memo(({ suppliers, onEdit, onDelete }: Suppl
             <TableHead className="font-bold">Nombre</TableHead>
             <TableHead className="font-bold">Contacto</TableHead>
             <TableHead className="font-bold">Teléfono</TableHead>
+            <TableHead className="font-bold">RFC</TableHead>
             <TableHead className="text-right font-bold">Deuda</TableHead>
             <TableHead className="font-bold">Nota Deuda</TableHead>
             <TableHead className="text-right font-bold">Acciones</TableHead>
@@ -56,6 +57,7 @@ export const SuppliersTable = React.memo(({ suppliers, onEdit, onDelete }: Suppl
               <TableCell className="font-medium">{supplier.name}</TableCell>
               <TableCell>{supplier.contactPerson || 'N/A'}</TableCell>
               <TableCell>{supplier.phone || 'N/A'}</TableCell>
+              <TableCell>{supplier.rfc || 'N/A'}</TableCell>
               <TableCell className="text-right">
                 {supplier.debtAmount && supplier.debtAmount > 0 ? (
                   <Badge variant="destructive">${supplier.debtAmount.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</Badge>

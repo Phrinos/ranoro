@@ -192,6 +192,8 @@ export interface Supplier {
   phone?: string;
   email?: string;
   address?: string;
+  rfc?: string;
+  taxRegime?: string;
   debtAmount?: number;
   debtNote?: string;
 }
