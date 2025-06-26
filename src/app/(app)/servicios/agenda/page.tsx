@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { PageHeader } from "@/components/page-header";
@@ -20,7 +19,8 @@ import { useToast } from "@/hooks/use-toast";
 import { format, parseISO, compareAsc, isFuture, isToday, isPast, isValid, addDays, isSameDay } from "date-fns";
 import { es } from 'date-fns/locale';
 import { useRouter } from "next/navigation";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { ServiceDialog } from "../components/service-dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
@@ -107,7 +107,7 @@ export default function AgendaServiciosPage() {
   }, []);
   
   const filteredServices = useMemo(() => {
-    let servicesToList = allServices.filter(s => s.status === 'Agendado');
+    let servicesToList = allServices.filter(s => s.status === 'Agendado'); // Only show 'Agendado'
 
     if (!searchTerm) return servicesToList;
 
@@ -131,10 +131,11 @@ export default function AgendaServiciosPage() {
     });
   }, [allServices, vehicles, techniciansState, searchTerm]);
 
-  const todayServices = useMemo(() => {
+  const todayServicesForCapacity = useMemo(() => {
       const today = new Date();
       return allServices.filter(service => {
           if (service.status === 'Completado' || service.status === 'Cancelado') return false;
+          if (service.status !== 'Agendado' && service.status !== 'Reparando') return false;
           const serviceDate = parseISO(service.serviceDate);
           return isValid(serviceDate) && isToday(serviceDate);
       });
@@ -145,7 +146,7 @@ export default function AgendaServiciosPage() {
           setIsCapacityLoading(true);
           setCapacityError(null);
           
-          if (todayServices.length === 0) {
+          if (todayServicesForCapacity.length === 0) {
               const totalAvailable = placeholderTechnicians
                   .filter(t => !t.isArchived)
                   .reduce((sum, t) => sum + (t.standardHoursPerDay || 8), 0);
@@ -162,7 +163,7 @@ export default function AgendaServiciosPage() {
 
           try {
               const result = await analyzeWorkshopCapacity({
-                  servicesForDay: todayServices.map(s => ({ description: s.description || '' })),
+                  servicesForDay: todayServicesForCapacity.map(s => ({ description: s.description || '' })),
                   technicians: placeholderTechnicians.filter(t => !t.isArchived).map(t => ({ id: t.id, standardHoursPerDay: t.standardHoursPerDay || 8 })),
                   serviceHistory: placeholderServiceRecords.map(s => ({
                       description: s.description || '',
@@ -179,7 +180,7 @@ export default function AgendaServiciosPage() {
           }
       };
       runAnalysis();
-  }, [todayServices]);
+  }, [todayServicesForCapacity]);
 
   const appointmentSummary = useMemo(() => {
     const today = new Date();
@@ -189,7 +190,7 @@ export default function AgendaServiciosPage() {
     let tomorrowCount = 0;
 
     for (const service of allServices) {
-      if (!service.serviceDate || service.status === 'Completado' || service.status === 'Cancelado') continue;
+      if (!service.serviceDate || service.status !== 'Agendado') continue;
       const serviceDate = parseISO(service.serviceDate);
       if (isValid(serviceDate)) {
         if (isToday(serviceDate)) {
@@ -241,7 +242,6 @@ export default function AgendaServiciosPage() {
     service.cancellationReason = reason;
     service.cancelledBy = currentUser?.name || 'Usuario desconocido';
     
-    // Restore inventory if items were used
     if (service.serviceItems && service.serviceItems.length > 0) {
       service.serviceItems.forEach(item => {
         item.suppliesUsed.forEach(supply => {
@@ -275,7 +275,6 @@ export default function AgendaServiciosPage() {
 
     let serviceToDisplay = { ...service };
 
-    // Fetch latest signatures from public doc before displaying
     if (service.publicId && db) {
         try {
             const publicDocRef = doc(db, 'publicServices', service.publicId);
@@ -292,7 +291,6 @@ export default function AgendaServiciosPage() {
                     changed = true;
                 }
 
-                // If changes were found, update the main data array and persist
                 if (changed) {
                     const pIndex = placeholderServiceRecords.findIndex(s => s.id === service.id);
                     if (pIndex > -1) {
@@ -307,7 +305,6 @@ export default function AgendaServiciosPage() {
         }
     }
 
-    // Enrich with advisor info
     if (currentUser && currentUser.id === service.serviceAdvisorId) {
       serviceToDisplay = {
         ...serviceToDisplay,
@@ -408,16 +405,6 @@ export default function AgendaServiciosPage() {
     });
   }, [vehicles, toast]);
 
-
-  const futureServices = useMemo(() => {
-    return filteredServices.filter(service => {
-      if (service.status === 'Agendado') {
-        return true; 
-      }
-      return false;
-    });
-  }, [filteredServices]);
-
   const groupServicesByDate = (servicesToGroup: ServiceRecord[]): GroupedServices => {
     return servicesToGroup
       .sort((a, b) => compareAsc(parseISO(a.serviceDate), parseISO(b.serviceDate)))
@@ -431,8 +418,7 @@ export default function AgendaServiciosPage() {
       }, {});
   };
 
-  const groupedFutureServices = useMemo(() => groupServicesByDate(futureServices), [futureServices]);
-
+  const groupedFutureServices = useMemo(() => groupServicesByDate(filteredServices), [filteredServices]);
 
   const getStatusVariant = (status: ServiceRecord['status']): "default" | "secondary" | "outline" | "destructive" | "success" => {
     switch (status) {
@@ -451,178 +437,145 @@ export default function AgendaServiciosPage() {
     }
     return service.description || '';
   };
-
-  const renderServiceGroup = (groupedServicesData: GroupedServices) => {
-    if (Object.keys(groupedServicesData).length === 0) {
-      return <p className="text-muted-foreground text-center py-8">No hay servicios para mostrar en esta vista.</p>;
-    }
-
-    return Object.entries(groupedServicesData).map(([date, dayServices]) => {
-      const dailyProfit = dayServices.reduce((sum, service) => sum + (service.serviceProfit || 0), 0);
-      const isCurrentDateToday = isToday(parseISO(date));
-      return (
-        <div key={date} className="mb-6">
-          <div className="flex justify-between items-center mb-3 bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 p-3 rounded-lg shadow-md">
-              <h3 className="text-lg font-semibold">
-                  {format(parseISO(date), "EEEE, dd 'de' MMMM 'de' yyyy", { locale: es })}
-              </h3>
-              <div className="flex items-center gap-6">
-                <div className="text-right">
-                    <p className="text-sm font-medium text-slate-600 dark:text-slate-300">Ganancia Estimada del Día</p>
-                    <p className="text-xl font-bold">
-                        {`$${dailyProfit.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
-                    </p>
-                </div>
-                {isCurrentDateToday && (
-                  <div className="text-right">
-                      <p className="text-sm font-medium text-slate-600 dark:text-slate-300">Capacidad del Taller</p>
-                      {isCapacityLoading ? (
-                          <div className="flex items-center justify-end gap-2 pt-1">
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                              <span className="text-xs">Calculando...</span>
-                          </div>
-                      ) : capacityError ? (
-                          <div className="flex items-center justify-end gap-2 pt-1 text-destructive">
-                              <AlertTriangle className="h-4 w-4" />
-                              <span className="text-xs">{capacityError}</span>
-                          </div>
-                      ) : capacityInfo && (
-                          <p className="text-xl font-bold" title={`${capacityInfo.totalRequiredHours}h de ${capacityInfo.totalAvailableHours}h`}>
-                             {capacityInfo.capacityPercentage}%
-                          </p>
-                      )}
-                  </div>
-                )}
-              </div>
-          </div>
-          <div className="space-y-4">
-            {dayServices.map(service => {
-              const vehicle = vehicles.find(v => v.id === service.vehicleId);
-              const serviceDateObj = service.serviceDate ? parseISO(service.serviceDate) : null;
-              const deliveryDateObj = service.deliveryDateTime ? parseISO(service.deliveryDateTime) : null;
-              
-              const serviceReceptionTime = serviceDateObj && isValid(serviceDateObj) ? format(serviceDateObj, "HH:mm", { locale: es }) : 'N/A';
-              const formattedDeliveryDateTime = deliveryDateObj && isValid(deliveryDateObj) ? format(deliveryDateObj, "dd MMM yy, HH:mm", { locale: es }) : 'N/A';
-              const vehicleMakeModelYear = vehicle ? `${vehicle.make} ${vehicle.model} ${vehicle.year}` : 'N/A';
-              const totalCostFormatted = `$${service.totalCost.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-              const serviceProfitFormatted = service.serviceProfit !== undefined ? `$${service.serviceProfit.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : 'N/A';
-              const descriptionText = getServiceDescriptionText(service);
-              const originalQuote = placeholderQuotes.find(q => q.serviceId === service.id);
-
-              return (
-                <Card key={service.id} className="shadow-sm">
-                  <CardContent className="p-0">
-                    <div className="flex items-center">
-                        <div className="w-48 shrink-0 flex flex-col justify-center items-start text-left pl-6 py-4">
-                            <p className="font-bold text-lg text-foreground">
-                                {totalCostFormatted}
-                            </p>
-                            <p className="text-xs text-muted-foreground -mt-1">Costo</p>
-                            <p className="font-semibold text-lg text-green-600 mt-1">
-                                {serviceProfitFormatted}
-                            </p>
-                            <p className="text-xs text-muted-foreground -mt-1">Ganancia</p>
-                        </div>
-                        
-                        <div className="flex-grow border-l border-r p-4 space-y-3">
-                            <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2 text-sm text-muted-foreground">
-                                <div className="flex items-center gap-1.5" title="Hora de Recepción / Ingreso">
-                                    {service.status === 'Agendado' ? (
-                                        <>
-                                            <Clock className="h-4 w-4" />
-                                            <span>Ingreso Programado: {serviceReceptionTime}</span>
-                                        </>
-                                    ) : (
-                                        <>
-                                            <CheckCircle className="h-4 w-4 text-green-600" />
-                                            <span>Recepción: {serviceReceptionTime}</span>
-                                        </>
-                                    )}
-                                </div>
-                                <div className="flex items-center gap-1.5" title="Asesor">
-                                    <Pencil className="h-4 w-4" />
-                                    <span>{service.serviceAdvisorName || 'N/A'}</span>
-                                </div>
-                                <div className="flex items-center gap-1.5" title="Fecha de Entrega">
-                                    {service.status === 'Completado' ? <CheckCircle className="h-4 w-4 text-green-600" /> : <CalendarCheck className="h-4 w-4" />}
-                                    <span>Entrega: {formattedDeliveryDateTime}</span>
-                                </div>
-                                <div className="flex items-center gap-1.5" title="ID de Servicio">
-                                    <span>ID: {service.id}</span>
-                                </div>
-                            </div>
-                            <div className="mt-4 flex items-center gap-4">
-                                <div className="flex-grow">
-                                    <h4 className="font-semibold text-lg" title={vehicleMakeModelYear}>
-                                        {vehicle ? `${vehicle.licensePlate} - ${vehicleMakeModelYear}` : 'N/A'}
-                                    </h4>
-                                    <div className="mt-1 flex flex-col items-start gap-1">
-                                      {service.serviceType && (
-                                          <Badge variant="outline">{service.serviceType}</Badge>
-                                      )}
-                                      <p className="text-sm text-muted-foreground truncate" title={descriptionText}>
-                                          {descriptionText}
-                                      </p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="w-48 shrink-0 flex flex-col items-center justify-center p-4 gap-y-2">
-                            <Badge variant={getStatusVariant(service.status)} className="w-full justify-center text-center text-base">{service.status}</Badge>
-                            <div className="flex">
-                                {originalQuote && (
-                                    <Button variant="ghost" size="icon" title="Ver Cotización" onClick={() => handleViewQuote(service.id)}>
-                                        <FileText className="h-4 w-4" />
-                                    </Button>
-                                )}
-                                <Button variant="ghost" size="icon" title="Ver Hoja de Servicio" onClick={() => handleShowSheet(service)}>
-                                  <FileCheck className="h-4 w-4" />
-                                </Button>
-                                <Button variant="ghost" size="icon" title="Ingresar a Taller" onClick={(e) => {e.stopPropagation(); handleOpenEditDialog(service);}} className="text-blue-600 hover:text-blue-700">
-                                    <Wrench className="h-4 w-4" />
-                                </Button>
-                                <AlertDialog onOpenChange={(e) => e.stopPropagation()}>
-                                    <AlertDialogTrigger asChild>
-                                        <Button variant="ghost" size="icon" title="Cancelar Servicio" disabled={service.status === 'Completado' || service.status === 'Cancelado'} onClick={(e) => e.stopPropagation()}>
-                                            <Ban className="h-4 w-4 text-destructive" />
-                                        </Button>
-                                    </AlertDialogTrigger>
-                                    <AlertDialogContent onClick={(e) => e.stopPropagation()}>
-                                        <AlertDialogHeader>
-                                            <AlertDialogTitle>¿Cancelar este servicio?</AlertDialogTitle>
-                                            <AlertDialogDescription>
-                                                Esta acción marcará el servicio {service.id} como cancelado y no se podrá revertir.
-                                                <div className="mt-4">
-                                                  <Label htmlFor={`cancel-reason-agenda-${service.id}`} className="text-left font-semibold">Motivo de la cancelación (obligatorio)</Label>
-                                                  <Textarea id={`cancel-reason-agenda-${service.id}`} value={cancellationReason} onChange={(e) => setCancellationReason(e.target.value)} placeholder="Ej: El cliente no se presentó..." className="mt-2" />
-                                                </div>
-                                            </AlertDialogDescription>
-                                        </AlertDialogHeader>
-                                        <AlertDialogFooter>
-                                            <AlertDialogCancel onClick={() => setCancellationReason('')}>No</AlertDialogCancel>
-                                            <AlertDialogAction onClick={() => { handleCancelService(service.id, cancellationReason); setCancellationReason(''); }} disabled={!cancellationReason.trim()} className="bg-destructive hover:bg-destructive/90">
-                                                Sí, Cancelar Servicio Agendado
-                                            </AlertDialogAction>
-                                        </AlertDialogFooter>
-                                    </AlertDialogContent>
-                                </AlertDialog>
-                            </div>
-                        </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
-        </div>
-      );
-    });
+  
+  const formatCurrency = (amount: number | undefined) => {
+    if (amount === undefined) return 'N/A';
+    return `$${amount.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   };
+
 
   const serviceListSection = (
     <>
-      {renderServiceGroup(groupedFutureServices)}
+      {Object.keys(groupedFutureServices).length > 0 ? (
+        Object.entries(groupedFutureServices).map(([date, dayServices]) => {
+          const isCurrentDateToday = isToday(parseISO(date));
+          return (
+            <div key={date} className="mb-6">
+              <div className="flex justify-between items-center mb-3 bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 p-3 rounded-lg shadow-sm">
+                  <h3 className="text-lg font-semibold">
+                      {format(parseISO(date), "EEEE, dd 'de' MMMM 'de' yyyy", { locale: es })}
+                  </h3>
+                  {isCurrentDateToday && (
+                    <div className="text-right">
+                        <p className="text-sm font-medium text-slate-600 dark:text-slate-300">Capacidad del Taller</p>
+                        {isCapacityLoading ? (
+                            <div className="flex items-center justify-end gap-2 pt-1">
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                                <span className="text-xs">Calculando...</span>
+                            </div>
+                        ) : capacityError ? (
+                            <div className="flex items-center justify-end gap-2 pt-1 text-destructive">
+                                <AlertTriangle className="h-4 w-4" />
+                                <span className="text-xs">{capacityError}</span>
+                            </div>
+                        ) : capacityInfo && (
+                            <p className="text-xl font-bold" title={`${capacityInfo.totalRequiredHours}h de ${capacityInfo.totalAvailableHours}h`}>
+                               {capacityInfo.capacityPercentage}%
+                            </p>
+                        )}
+                    </div>
+                  )}
+              </div>
+              <div className="space-y-4">
+                {dayServices.map(service => {
+                  const vehicle = vehicles.find(v => v.id === service.vehicleId);
+                  const originalQuote = placeholderQuotes.find(q => q.serviceId === service.id);
+
+                  return (
+                    <Card key={service.id} className="shadow-sm overflow-hidden">
+                      <div className="flex flex-col md:flex-row">
+                          <div className="w-full md:w-48 shrink-0 flex flex-row md:flex-col justify-around md:justify-center items-center text-center p-4 bg-muted/50">
+                            <div>
+                              <p className="text-xs text-muted-foreground">Costo Estimado</p>
+                              <p className="font-bold text-lg text-foreground">{formatCurrency(service.totalCost)}</p>
+                            </div>
+                            <div className="md:mt-2">
+                              <p className="text-xs text-muted-foreground">Ganancia Estimada</p>
+                              <p className="font-semibold text-lg text-green-600">{formatCurrency(service.serviceProfit)}</p>
+                            </div>
+                          </div>
+      
+                          <div className="flex-grow border-t md:border-t-0 md:border-l p-4 space-y-3">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                              <div>
+                                <p className="text-xs font-semibold text-muted-foreground">Folio / Hora Cita</p>
+                                <p><span className="font-mono">{service.id}</span> - {format(parseISO(service.serviceDate), "HH:mm 'hrs'", { locale: es })}</p>
+                              </div>
+                              <div>
+                                <p className="text-xs font-semibold text-muted-foreground">Vehículo</p>
+                                <p className="font-semibold">{vehicle ? `${vehicle.make} ${vehicle.model} ${vehicle.year}` : 'N/A'}</p>
+                                <p><span className="font-mono">{vehicle?.licensePlate}</span></p>
+                              </div>
+                              <div className="sm:col-span-2">
+                                 <p className="text-xs font-semibold text-muted-foreground">Cliente</p>
+                                 <p>{vehicle?.ownerName} - {vehicle?.ownerPhone}</p>
+                              </div>
+                            </div>
+                            <Separator />
+                            <div>
+                              <p className="text-xs font-semibold text-muted-foreground">Detalles del Servicio</p>
+                              <p><b>Asesor:</b> {service.serviceAdvisorName || 'N/A'}</p>
+                              <p><b>Tipo:</b> <Badge variant="outline">{service.serviceType}</Badge></p>
+                              <p className="text-sm truncate" title={getServiceDescriptionText(service)}>
+                                <b>Servicio:</b> {getServiceDescriptionText(service)}
+                              </p>
+                            </div>
+                          </div>
+                          
+                          <div className="w-full md:w-48 shrink-0 flex flex-col items-center justify-center p-4 border-t md:border-t-0 md:border-l bg-muted/50 gap-y-2">
+                            <Badge variant={getStatusVariant(service.status)} className="w-full justify-center text-center text-base mb-2">
+                              {service.status}
+                            </Badge>
+                            <div className="flex justify-center flex-wrap gap-1">
+                              {originalQuote && (
+                                <Button variant="ghost" size="icon" title="Ver Cotización" onClick={() => handleViewQuote(service.id)}>
+                                  <FileText className="h-4 w-4" />
+                                </Button>
+                              )}
+                              <Button variant="ghost" size="icon" title="Ver Hoja de Servicio" onClick={() => handleShowSheet(service)}>
+                                <FileCheck className="h-4 w-4" />
+                              </Button>
+                              <Button variant="ghost" size="icon" title="Ingresar a Taller" onClick={() => handleOpenEditDialog(service)} className="text-blue-600 hover:text-blue-700">
+                                <Wrench className="h-4 w-4" />
+                              </Button>
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <Button variant="ghost" size="icon" title="Cancelar Cita" disabled={service.status === 'Completado' || service.status === 'Cancelado'}>
+                                    <Ban className="h-4 w-4 text-destructive" />
+                                  </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>¿Cancelar esta cita?</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                      Esta acción marcará el servicio {service.id} como cancelado y no se podrá revertir.
+                                      <div className="mt-4">
+                                        <Label htmlFor={`cancel-reason-agenda-${service.id}`} className="text-left font-semibold">Motivo de la cancelación (obligatorio)</Label>
+                                        <Textarea id={`cancel-reason-agenda-${service.id}`} value={cancellationReason} onChange={(e) => setCancellationReason(e.target.value)} placeholder="Ej: El cliente no se presentó..." className="mt-2" />
+                                      </div>
+                                    </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel onClick={() => setCancellationReason('')}>No</AlertDialogCancel>
+                                    <AlertDialogAction onClick={() => { handleCancelService(service.id, cancellationReason); setCancellationReason(''); }} disabled={!cancellationReason.trim()} className="bg-destructive hover:bg-destructive/90">
+                                      Sí, Cancelar Cita
+                                    </AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
+                            </div>
+                          </div>
+                      </div>
+                    </Card>
+                  );
+                })}
+              </div>
+            </div>
+          )
+        })
+      ) : (
+        <p className="text-muted-foreground text-center py-8">No hay servicios agendados.</p>
+      )}
     </>
   );
 
@@ -639,7 +592,7 @@ export default function AgendaServiciosPage() {
           <CardContent>
             <div className="text-2xl font-bold font-headline">{appointmentSummary.todayCount}</div>
             <p className="text-xs text-muted-foreground">
-              Servicios agendados o en progreso para hoy.
+              Servicios agendados para hoy.
             </p>
           </CardContent>
         </Card>
@@ -722,7 +675,7 @@ export default function AgendaServiciosPage() {
         </TabsContent>
         <TabsContent value="calendar" className="mt-0">
           <ServiceCalendar
-              services={futureServices}
+              services={filteredServices}
               vehicles={vehicles}
               technicians={techniciansState}
               onServiceClick={handleOpenEditDialog}
