@@ -478,54 +478,51 @@ export default function HistorialCotizacionesPage() {
 
             return (
               <Card key={quote.id} className="shadow-sm overflow-hidden">
-                <CardContent className="p-4">
-                  <div className="flex flex-col md:flex-row gap-4 text-sm">
-                    {/* Bloque 1 & 2: Izquierda */}
-                    <div className="flex flex-col justify-start pr-4 md:border-r md:border-dashed pb-4 md:pb-0 border-b md:border-b-0">
-                      {/* Bloque 1 */}
-                      <div className="mb-4">
-                          <p className="text-xs text-muted-foreground">Folio</p>
-                          <p className="font-semibold">{quote.id}</p>
-                          <p className="text-xs text-muted-foreground mt-1">Fecha</p>
-                          <p className="font-semibold">{format(parseISO(quote.quoteDate!), "dd MMM yyyy", { locale: es })}</p>
-                      </div>
-                      {/* Bloque 2 */}
-                      <div>
-                          <p className="text-xs text-muted-foreground">Vehículo y Cliente</p>
-                          <p className="font-semibold">{vehicle ? `${vehicle.make} ${vehicle.model} ${vehicle.year}` : 'N/A'}</p>
-                          <p className="text-muted-foreground">{vehicle?.licensePlate}</p>
-                          <p className="text-muted-foreground">{vehicle?.ownerName}</p>
-                      </div>
-                    </div>
-                    
-                    {/* Bloque 3: Centro */}
-                    <div className="flex-grow space-y-2">
-                        <p className="text-xs text-muted-foreground">Detalles</p>
-                        <p><span className="font-semibold">Asesor:</span> {quote.preparedByTechnicianName || 'N/A'}</p>
+                <CardContent className="p-0">
+                  <div className="flex flex-col md:flex-row text-sm">
+                    {/* Left Blocks */}
+                    <div className="p-4 w-full md:w-56 flex-none border-b md:border-b-0 md:border-r flex flex-col gap-3">
                         <div>
-                          <span className="font-semibold">Tipo: </span>
-                          <Badge variant="outline" className="ml-1">{quote.serviceType}</Badge>
+                            <p className="text-xs text-muted-foreground">Folio</p>
+                            <p className="font-semibold">{quote.id}</p>
+                            <p className="text-xs text-muted-foreground mt-1">Fecha</p>
+                            <p className="font-semibold">{format(parseISO(quote.quoteDate!), "dd MMM yyyy", { locale: es })}</p>
                         </div>
-                        <p className="truncate" title={getQuoteDescriptionText(quote)}>
-                            <span className="font-semibold">Servicio:</span> {getQuoteDescriptionText(quote)}
-                        </p>
+                        <Separator />
+                        <div>
+                            <p className="text-xs text-muted-foreground">Vehículo y Cliente</p>
+                            <p className="font-semibold">{vehicle ? `${vehicle.make} ${vehicle.model} ${vehicle.year}` : 'N/A'}</p>
+                            <p className="text-muted-foreground">{vehicle?.licensePlate}</p>
+                            <p className="text-muted-foreground">{vehicle?.ownerName}</p>
+                        </div>
                     </div>
-                    
-                    {/* Bloque 4 & 5: Derecha */}
-                    <div className="flex flex-col justify-between items-end pl-4 md:border-l md:border-dashed border-t md:border-t-0 pt-4 md:pt-0">
-                        {/* Bloque 4 */}
-                        <div className="text-right">
-                          <p className="text-xs text-muted-foreground">Costo Estimado</p>
-                          <p className="font-bold text-lg text-primary">{formatCurrency(quote.estimatedTotalCost)}</p>
-                          <p className="text-xs text-muted-foreground mt-1">Ganancia Estimada</p>
-                          <p className="font-semibold text-base text-green-600">{formatCurrency(quote.estimatedProfit)}</p>
-                        </div>
-                        {/* Bloque 5 */}
-                        <div className="mt-2 text-right space-y-2">
-                           <Badge variant={quote.serviceId ? "lightRed" : "outline"} className="w-full justify-center text-center text-base">
-                              {quote.serviceId ? "Agendado" : "Cotizacion"}
-                          </Badge>
-                          <div className="flex justify-end flex-wrap gap-1">
+                    {/* Center Block */}
+                    <div className="p-4 flex-grow border-b md:border-b-0 md:border-r">
+                         <p className="text-xs text-muted-foreground">Detalles del Servicio</p>
+                         <div className="mt-1 space-y-2">
+                             <p><span className="font-semibold">Asesor:</span> {quote.preparedByTechnicianName || 'N/A'}</p>
+                             <div>
+                               <span className="font-semibold">Tipo: </span>
+                               <Badge variant="outline" className="ml-1">{quote.serviceType}</Badge>
+                             </div>
+                             <p className="truncate" title={getQuoteDescriptionText(quote)}>
+                                 <span className="font-semibold">Servicio:</span> {getQuoteDescriptionText(quote)}
+                             </p>
+                         </div>
+                    </div>
+                    {/* Right Blocks */}
+                    <div className="p-4 w-full md:w-52 flex-none bg-muted/30 flex flex-col justify-between">
+                         <div>
+                           <p className="text-xs text-muted-foreground">Costo Estimado</p>
+                           <p className="font-bold text-lg text-primary">{formatCurrency(quote.estimatedTotalCost)}</p>
+                           <p className="text-xs text-muted-foreground mt-1">Ganancia Estimada</p>
+                           <p className="font-semibold text-base text-green-600">{formatCurrency(quote.estimatedProfit)}</p>
+                         </div>
+                         <div className="space-y-2 mt-2 text-right">
+                            <Badge variant={quote.serviceId ? "lightRed" : "outline"} className="w-full justify-center text-center text-base">
+                               {quote.serviceId ? "Agendado" : "Cotizacion"}
+                           </Badge>
+                           <div className="flex justify-end flex-wrap gap-1">
                               <Button variant="ghost" size="icon" onClick={() => handleViewQuote(originalQuote)} title="Ver Cotización">
                                 <FileText className="h-4 w-4" />
                               </Button>
@@ -556,8 +553,8 @@ export default function HistorialCotizacionesPage() {
                                     </AlertDialogFooter>
                                 </AlertDialogContent>
                               </AlertDialog>
-                          </div>
-                        </div>
+                           </div>
+                         </div>
                     </div>
                   </div>
                 </CardContent>

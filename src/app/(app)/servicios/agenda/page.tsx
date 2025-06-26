@@ -482,50 +482,46 @@ export default function AgendaServiciosPage() {
 
                   return (
                     <Card key={service.id} className="shadow-sm overflow-hidden">
-                       <CardContent className="p-4">
-                        <div className="flex flex-col md:flex-row gap-4 text-sm">
-                          {/* Bloque 1 & 2: Izquierda */}
-                          <div className="flex flex-col justify-start pr-4 md:border-r md:border-dashed pb-4 md:pb-0 border-b md:border-b-0">
-                            {/* Bloque 1 */}
-                            <div className="mb-4">
-                                <p className="text-xs text-muted-foreground">Folio</p>
-                                <p className="font-semibold">{service.id}</p>
-                                <p className="text-xs text-muted-foreground mt-1">Hora Cita</p>
-                                <p className="font-semibold">{format(parseISO(service.serviceDate), "HH:mm 'hrs'", { locale: es })}</p>
+                      <CardContent className="p-0">
+                        <div className="flex flex-col md:flex-row text-sm">
+                           <div className="p-4 w-full md:w-56 flex-none border-b md:border-b-0 md:border-r flex flex-col gap-3">
+                                <div>
+                                    <p className="text-xs text-muted-foreground">Folio</p>
+                                    <p className="font-semibold">{service.id}</p>
+                                    <p className="text-xs text-muted-foreground mt-1">Hora Cita</p>
+                                    <p className="font-semibold">{format(parseISO(service.serviceDate), "HH:mm 'hrs'", { locale: es })}</p>
+                                </div>
+                                <Separator />
+                                <div>
+                                    <p className="text-xs text-muted-foreground">Vehículo y Cliente</p>
+                                    <p className="font-semibold">{vehicle ? `${vehicle.make} ${vehicle.model} ${vehicle.year}` : 'N/A'}</p>
+                                    <p className="text-muted-foreground">{vehicle?.licensePlate}</p>
+                                    <p className="text-muted-foreground">{vehicle?.ownerName}</p>
+                                </div>
                             </div>
-                            {/* Bloque 2 */}
-                            <div>
-                                <p className="text-xs text-muted-foreground">Vehículo y Cliente</p>
-                                <p className="font-semibold">{vehicle ? `${vehicle.make} ${vehicle.model} ${vehicle.year}` : 'N/A'}</p>
-                                <p className="text-muted-foreground">{vehicle?.licensePlate}</p>
-                                <p className="text-muted-foreground">{vehicle?.ownerName}</p>
-                            </div>
-                          </div>
                           
-                          {/* Bloque 3: Centro */}
-                          <div className="flex-grow space-y-2">
-                              <p className="text-xs text-muted-foreground">Detalles</p>
-                              <p><span className="font-semibold">Asesor:</span> {service.serviceAdvisorName || 'N/A'}</p>
-                              <div>
-                                <span className="font-semibold">Tipo: </span>
-                                <Badge variant="outline" className="ml-1">{service.serviceType}</Badge>
+                           <div className="p-4 flex-grow border-b md:border-b-0 md:border-r">
+                              <p className="text-xs text-muted-foreground">Detalles del Servicio</p>
+                                <div className="mt-1 space-y-2">
+                                  <p><span className="font-semibold">Asesor:</span> {service.serviceAdvisorName || 'N/A'}</p>
+                                  <div>
+                                    <span className="font-semibold">Tipo: </span>
+                                    <Badge variant="outline" className="ml-1">{service.serviceType}</Badge>
+                                  </div>
+                                  <p className="truncate" title={getServiceDescriptionText(service)}>
+                                      <span className="font-semibold">Servicio:</span> {getServiceDescriptionText(service)}
+                                  </p>
                               </div>
-                              <p className="truncate" title={getServiceDescriptionText(service)}>
-                                  <span className="font-semibold">Servicio:</span> {getServiceDescriptionText(service)}
-                              </p>
-                          </div>
+                           </div>
                           
-                          {/* Bloque 4 & 5: Derecha */}
-                          <div className="flex flex-col justify-between items-end pl-4 md:border-l md:border-dashed border-t md:border-t-0 pt-4 md:pt-0">
-                              {/* Bloque 4 */}
-                              <div className="text-right">
+                           <div className="p-4 w-full md:w-52 flex-none bg-muted/30 flex flex-col justify-between">
+                              <div>
                                 <p className="text-xs text-muted-foreground">Costo Estimado</p>
                                 <p className="font-bold text-lg text-primary">{formatCurrency(service.totalCost)}</p>
                                 <p className="text-xs text-muted-foreground mt-1">Ganancia Estimada</p>
                                 <p className="font-semibold text-base text-green-600">{formatCurrency(service.serviceProfit)}</p>
                               </div>
-                              {/* Bloque 5 */}
-                              <div className="mt-2 text-right space-y-2">
+                              <div className="space-y-2 mt-2 text-right">
                                  <Badge variant={getStatusVariant(service.status)} className="w-full justify-center text-center text-base">
                                     {service.status}
                                 </Badge>
@@ -568,7 +564,7 @@ export default function AgendaServiciosPage() {
                                     </AlertDialog>
                                 </div>
                               </div>
-                          </div>
+                           </div>
                         </div>
                       </CardContent>
                     </Card>
@@ -699,6 +695,7 @@ export default function AgendaServiciosPage() {
           onSave={handleUpdateService}
           onVehicleCreated={onVehicleCreated}
           onCancelService={handleCancelService}
+          mode="service"
         />
       )}
       {currentServiceForTicket && (
