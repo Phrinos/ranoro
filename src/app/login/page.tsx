@@ -57,7 +57,7 @@ export default function LoginPage() {
 
     } catch (firebaseError: any) {
       console.error("Firebase Auth Error:", firebaseError.code, firebaseError.message);
-      let friendlyMessage = 'Correo electrónico o contraseña incorrectos.';
+      let friendlyMessage = 'Ocurrió un error inesperado.';
       if (firebaseError.code === 'auth/invalid-credential' || firebaseError.code === 'auth/user-not-found' || firebaseError.code === 'auth/wrong-password') {
         friendlyMessage = 'Correo electrónico o contraseña incorrectos.';
       } else if (firebaseError.code === 'auth/invalid-email') {

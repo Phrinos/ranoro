@@ -87,7 +87,7 @@ export default function NuevaCotizacionPage() {
     );
     toast({
       title: "Cotización Creada",
-      description: `La cotización ${newQuote.id} está lista para generar el PDF.`,
+      description: `Generando vista previa para la cotización ${newQuote.id}.`,
     });
     setDialogStep("print_preview");
   };
