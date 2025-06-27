@@ -40,6 +40,8 @@ export interface Driver {
     proofOfAddressUrl?: string;
     promissoryNoteUrl?: string;
   };
+  depositAmount?: number;
+  contractDate?: string; // ISO string
 }
 
 export interface RentalPayment {

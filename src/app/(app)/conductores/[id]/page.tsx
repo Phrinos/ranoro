@@ -12,28 +12,40 @@ import { PageHeader } from '@/components/page-header';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { ShieldAlert, Edit, User, Phone, Home, FileText, Upload, Link as LinkIcon, AlertTriangle, Car } from 'lucide-react';
+import { ShieldAlert, Edit, User, Phone, Home, FileText, Upload, Link as LinkIcon, AlertTriangle, Car, DollarSign, Printer } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import Link from 'next/link';
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useRef } from 'react';
 import { DriverDialog } from '../components/driver-dialog';
 import type { DriverFormValues } from '../components/driver-form';
 import { useToast } from '@/hooks/use-toast';
 import Image from 'next/image';
 import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { formatCurrency } from '@/lib/utils';
+import { format, parseISO } from 'date-fns';
+import { es } from 'date-fns/locale';
+import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
+import { ContractContent } from '../components/contract-content';
 
 export default function DriverDetailPage() {
   const params = useParams();
   const driverId = params.id as string;
   const { toast } = useToast();
   const router = useRouter();
+  const contractContentRef = useRef<HTMLDivElement>(null);
 
   const [driver, setDriver] = useState<Driver | null | undefined>(undefined);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [deposit, setDeposit] = useState<number | string>('');
+  const [isContractDialogOpen, setIsContractDialogOpen] = useState(false);
 
   useEffect(() => {
     const foundDriver = placeholderDrivers.find(d => d.id === driverId);
     setDriver(foundDriver || null);
+    if (foundDriver?.depositAmount) {
+      setDeposit(foundDriver.depositAmount);
+    }
   }, [driverId]);
 
   const handleSaveDriver = async (formData: DriverFormValues) => {
@@ -81,6 +93,31 @@ export default function DriverDetailPage() {
     await persistToFirestore(['drivers']);
     toast({ title: "Documento Simulado", description: "Se ha asignado una imagen de marcador de posición." });
   };
+
+  const handleSaveDeposit = async () => {
+    if (!driver || !deposit) return;
+    
+    const depositAmount = Number(deposit);
+    if (isNaN(depositAmount) || depositAmount < 0) {
+      toast({ title: "Monto inválido", description: "Ingrese un monto de depósito válido.", variant: "destructive" });
+      return;
+    }
+
+    const updatedDriver = { 
+      ...driver, 
+      depositAmount: depositAmount,
+      contractDate: new Date().toISOString() // Set contract date when deposit is saved
+    };
+    setDriver(updatedDriver);
+
+    const dIndex = placeholderDrivers.findIndex(d => d.id === driverId);
+    if (dIndex > -1) {
+      placeholderDrivers[dIndex] = updatedDriver;
+    }
+    
+    await persistToFirestore(['drivers']);
+    toast({ title: "Depósito Guardado", description: `Se guardó un depósito de ${formatCurrency(depositAmount)}.` });
+  };
   
   const assignedVehicle = useMemo(() => {
     if (!driver?.assignedVehicleId) return null;
@@ -104,6 +141,7 @@ export default function DriverDetailPage() {
   const fleetVehicles = placeholderVehicles.filter(v => v.isFleetVehicle);
 
   return (
+    <>
     <div className="container mx-auto py-8">
       <PageHeader
         title={driver.name}
@@ -125,6 +163,8 @@ export default function DriverDetailPage() {
               <div className="flex items-center gap-3"><Home className="h-4 w-4 text-muted-foreground" /><span>{driver.address}</span></div>
               <div className="flex items-center gap-3"><Phone className="h-4 w-4 text-muted-foreground" /><span>{driver.phone}</span></div>
               <div className="flex items-center gap-3"><AlertTriangle className="h-4 w-4 text-muted-foreground" /><span>Tel. Emergencia: {driver.emergencyPhone}</span></div>
+              <div className="flex items-center gap-3"><DollarSign className="h-4 w-4 text-muted-foreground" /><span>Depósito: {driver.depositAmount ? formatCurrency(driver.depositAmount) : 'N/A'}</span></div>
+              <div className="flex items-center gap-3"><FileText className="h-4 w-4 text-muted-foreground" /><span>Contrato: {driver.contractDate ? format(parseISO(driver.contractDate), "dd MMM yyyy", { locale: es }) : 'No generado'}</span></div>
             </CardContent>
           </Card>
           <Card className="mt-6">
@@ -161,8 +201,23 @@ export default function DriverDetailPage() {
           </Card>
           <Card className="mt-6">
             <CardHeader><CardTitle>Acciones</CardTitle></CardHeader>
-            <CardContent>
-              <Button disabled><FileText className="mr-2 h-4 w-4"/> Generar Contrato (Próximamente)</Button>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                  <Label htmlFor="deposit">Depósito en Garantía</Label>
+                  <div className="flex gap-2">
+                      <Input
+                          id="deposit"
+                          type="number"
+                          placeholder="Ej: 2500.00"
+                          value={deposit}
+                          onChange={(e) => setDeposit(e.target.value)}
+                      />
+                      <Button onClick={handleSaveDeposit}>Guardar Depósito</Button>
+                  </div>
+              </div>
+              <Button onClick={() => setIsContractDialogOpen(true)} disabled={!driver?.depositAmount}>
+                <FileText className="mr-2 h-4 w-4"/> Generar Contrato
+              </Button>
             </CardContent>
           </Card>
         </TabsContent>
@@ -208,5 +263,22 @@ export default function DriverDetailPage() {
         onSave={handleSaveDriver}
       />
     </div>
+
+    {assignedVehicle && (
+      <PrintTicketDialog
+        open={isContractDialogOpen}
+        onOpenChange={setIsContractDialogOpen}
+        title="Contrato de Arrendamiento"
+        dialogContentClassName="printable-quote-dialog max-w-4xl"
+        footerActions={
+          <Button onClick={() => window.print()}>
+            <Printer className="mr-2 h-4 w-4"/> Imprimir Contrato
+          </Button>
+        }
+      >
+        <ContractContent ref={contractContentRef} driver={driver} vehicle={assignedVehicle} />
+      </PrintTicketDialog>
+    )}
+    </>
   );
 }
