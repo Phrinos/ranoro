@@ -11,10 +11,10 @@ import {
 } from '@/lib/placeholder-data';
 import type { Driver, Vehicle, RentalPayment } from '@/types';
 import { PageHeader } from '@/components/page-header';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { ShieldAlert, Edit, User, Phone, Home, FileText, Upload, AlertTriangle, Car, DollarSign, Printer, ArrowLeft, Ban } from 'lucide-react';
+import { ShieldAlert, Edit, User, Phone, Home, FileText, Upload, AlertTriangle, Car, DollarSign, Printer, ArrowLeft } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import Link from 'next/link';
@@ -22,7 +22,6 @@ import { useEffect, useState, useMemo, useRef } from 'react';
 import { DriverDialog } from '../components/driver-dialog';
 import type { DriverFormValues } from '../components/driver-form';
 import { useToast } from '@/hooks/use-toast';
-import Image from 'next/image';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { formatCurrency } from '@/lib/utils';
@@ -41,15 +40,12 @@ export default function DriverDetailPage() {
   const [driver, setDriver] = useState<Driver | null | undefined>(undefined);
   const [driverPayments, setDriverPayments] = useState<RentalPayment[]>([]);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [deposit, setDeposit] = useState<number | string>('');
   const [isContractDialogOpen, setIsContractDialogOpen] = useState(false);
 
   useEffect(() => {
     const foundDriver = placeholderDrivers.find(d => d.id === driverId);
     setDriver(foundDriver || null);
-    if (foundDriver?.depositAmount) {
-      setDeposit(foundDriver.depositAmount);
-    }
+    
     const payments = placeholderRentalPayments.filter(p => p.driverId === driverId).sort((a,b) => parseISO(b.paymentDate).getTime() - parseISO(a.paymentDate).getTime());
     setDriverPayments(payments);
   }, [driverId]);
@@ -84,7 +80,14 @@ export default function DriverDetailPage() {
 
   const handleSaveDriver = async (formData: DriverFormValues) => {
     if (!driver) return;
+    
     const updatedDriver = { ...driver, ...formData };
+    
+    // If a deposit is being added for the first time, set the contract date.
+    if (formData.depositAmount && !driver.depositAmount) {
+        updatedDriver.contractDate = new Date().toISOString();
+    }
+    
     setDriver(updatedDriver);
 
     const dIndex = placeholderDrivers.findIndex(d => d.id === driverId);
@@ -126,31 +129,6 @@ export default function DriverDetailPage() {
 
     await persistToFirestore(['drivers']);
     toast({ title: "Documento Simulado", description: "Se ha asignado una imagen de marcador de posición." });
-  };
-
-  const handleSaveDeposit = async () => {
-    if (!driver || !deposit) return;
-    
-    const depositAmount = Number(deposit);
-    if (isNaN(depositAmount) || depositAmount < 0) {
-      toast({ title: "Monto inválido", description: "Ingrese un monto de depósito válido.", variant: "destructive" });
-      return;
-    }
-
-    const updatedDriver = { 
-      ...driver, 
-      depositAmount: depositAmount,
-      contractDate: new Date().toISOString() // Set contract date when deposit is saved
-    };
-    setDriver(updatedDriver);
-
-    const dIndex = placeholderDrivers.findIndex(d => d.id === driverId);
-    if (dIndex > -1) {
-      placeholderDrivers[dIndex] = updatedDriver;
-    }
-    
-    await persistToFirestore(['drivers']);
-    toast({ title: "Depósito Guardado", description: `Se guardó un depósito de ${formatCurrency(depositAmount)}.` });
   };
 
   if (driver === undefined) {
@@ -207,6 +185,11 @@ export default function DriverDetailPage() {
                 <div className="flex items-center gap-3"><DollarSign className="h-4 w-4 text-muted-foreground" /><span>Depósito: {driver.depositAmount ? formatCurrency(driver.depositAmount) : 'N/A'}</span></div>
                 <div className="flex items-center gap-3"><FileText className="h-4 w-4 text-muted-foreground" /><span>Contrato: {driver.contractDate ? format(parseISO(driver.contractDate), "dd MMM yyyy", { locale: es }) : 'No generado'}</span></div>
               </CardContent>
+              <CardFooter>
+                 <Button onClick={() => setIsContractDialogOpen(true)} disabled={!driver?.depositAmount}>
+                    <FileText className="mr-2 h-4 w-4"/> Generar Contrato
+                </Button>
+              </CardFooter>
             </Card>
             <Card className="lg:col-span-1 bg-amber-50 dark:bg-amber-900/50 border-amber-200">
                 <CardHeader>
@@ -255,27 +238,6 @@ export default function DriverDetailPage() {
                   </Select>
                 </div>
               </div>
-            </CardContent>
-          </Card>
-          <Card className="mt-6">
-            <CardHeader><CardTitle>Acciones</CardTitle></CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                  <Label htmlFor="deposit">Depósito en Garantía y Contrato</Label>
-                  <div className="flex gap-2">
-                      <Input
-                          id="deposit"
-                          type="number"
-                          placeholder="Ej: 2500.00"
-                          value={deposit}
-                          onChange={(e) => setDeposit(e.target.value)}
-                      />
-                      <Button onClick={handleSaveDeposit}>Guardar Depósito y Fecha Contrato</Button>
-                  </div>
-              </div>
-              <Button onClick={() => setIsContractDialogOpen(true)} disabled={!driver?.depositAmount}>
-                <FileText className="mr-2 h-4 w-4"/> Generar Contrato
-              </Button>
             </CardContent>
           </Card>
         </TabsContent>
