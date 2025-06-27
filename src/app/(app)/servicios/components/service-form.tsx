@@ -1044,7 +1044,7 @@ export function ServiceForm({
               </div>
               <div className="flex gap-2 self-end sm:self-center">
                   {originalQuote && (
-                      <Button type="button" onClick={handleViewQuote} variant="ghost" size="icon" className="bg-card" title="Ver Cotización">
+                      <Button type="button" onClick={handleViewQuote} variant="ghost" size="icon" className="bg-card" title="Ver Cotización Original">
                           <FileText className="h-5 w-5 text-purple-600" />
                       </Button>
                   )}
