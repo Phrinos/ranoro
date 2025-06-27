@@ -319,20 +319,6 @@ export function ServiceForm({
         nextServiceInfo: (initialData as ServiceRecord)?.nextServiceInfo,
     }
   });
-
-  const quoteForViewing = useMemo(() => {
-    if (mode === 'service') {
-      if (isConvertingQuote && initialDataQuote) {
-        return placeholderQuotes.find(q => q.id === initialDataQuote.id) || null;
-      }
-      if (initialDataService) {
-        return placeholderQuotes.find(q => q.serviceId === initialDataService.id) || null;
-      }
-    } else if (mode === 'quote' && initialDataQuote) {
-      return placeholderQuotes.find(q => q.id === initialDataQuote.id) || null;
-    }
-    return null;
-  }, [mode, initialDataService, initialDataQuote, isConvertingQuote]);
   
   const { control, getValues, setValue } = form;
   const originalStatusRef = useRef(initialDataService?.status || initialDataQuote?.status);
@@ -346,6 +332,14 @@ export function ServiceForm({
     control: form.control,
     name: "serviceItems",
   });
+
+  const quoteForViewing = useMemo(() => {
+    if (!initialData) return null;
+    return placeholderQuotes.find(q => 
+        (mode === 'service' && q.serviceId === initialData.id) || 
+        (mode === 'quote' && q.id === initialData.id)
+    ) || null;
+  }, [mode, initialData]);
 
   const refreshCurrentUser = useCallback(() => {
     const authUserString = localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY);
@@ -744,11 +738,11 @@ export function ServiceForm({
               
               const rendimientos = oilSupplies
                 .filter(item => 
-                  item.category?.toLowerCase().includes('aceite') && 
+                  item && item.category?.toLowerCase().includes('aceite') && 
                   typeof item.rendimiento === 'number' && 
                   item.rendimiento > 0
                 )
-                .map(item => item.rendimiento as number);
+                .map(item => item!.rendimiento as number);
       
               if (rendimientos.length > 0) {
                 const lowestRendimiento = Math.min(...rendimientos);
@@ -1036,7 +1030,9 @@ export function ServiceForm({
     return [];
   }, [mode, initialDataQuote]);
   
-  const showDateFields = watchedStatus === 'Agendado';
+  const showDateFields = mode === 'service' && (watchedStatus === 'Agendado' || watchedStatus === 'Reparando' || watchedStatus === 'Completado');
+  const dateLabel = (mode === 'service' && watchedStatus !== 'Agendado') ? 'Fecha de Recepción' : 'Fecha Agendada';
+  const timeLabel = (mode === 'service' && watchedStatus !== 'Agendado') ? 'Hora de Recepción' : 'Hora Agendada';
 
   return (
     <>
@@ -1143,7 +1139,7 @@ export function ServiceForm({
                                 control={form.control}
                                 render={({ field }) => (
                                     <FormItem className="flex flex-col">
-                                        <FormLabel>Fecha Agendada</FormLabel>
+                                        <FormLabel>{dateLabel}</FormLabel>
                                         <Popover open={isServiceDatePickerOpen} onOpenChange={setIsServiceDatePickerOpen}>
                                             <PopoverTrigger asChild disabled={isReadOnly}>
                                                 <Button variant="outline" className={cn("justify-start text-left font-normal", !field.value && "text-muted-foreground")} disabled={isReadOnly}>
@@ -1175,7 +1171,7 @@ export function ServiceForm({
                                 control={form.control}
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Hora Agendada</FormLabel>
+                                        <FormLabel>{timeLabel}</FormLabel>
                                         <Select
                                             value={field.value ? format(field.value, 'HH:mm') : ""}
                                             onValueChange={(timeValue) => {
@@ -1329,59 +1325,6 @@ export function ServiceForm({
                   <Card>
                     <CardHeader><CardTitle>Fechas y Horarios</CardTitle></CardHeader>
                     <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 items-end">
-                        <Controller
-                            name="serviceDate"
-                            control={form.control}
-                            render={({ field }) => (
-                                <FormItem className="flex flex-col">
-                                    <FormLabel>Fecha de Recepción</FormLabel>
-                                    <Popover open={isServiceDatePickerOpen} onOpenChange={setIsServiceDatePickerOpen}>
-                                        <PopoverTrigger asChild disabled={isReadOnly}>
-                                            <Button variant="outline" className={cn("justify-start text-left font-normal", !field.value && "text-muted-foreground")} disabled={isReadOnly}>
-                                                {field.value ? format(field.value, "PPP", { locale: es }) : <span>Seleccione fecha</span>}
-                                                <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                                            </Button>
-                                        </PopoverTrigger>
-                                        <PopoverContent className="w-auto p-0" align="start">
-                                            <Calendar
-                                                mode="single"
-                                                selected={field.value}
-                                                onSelect={(date) => {
-                                                    const currentVal = field.value || new Date();
-                                                    const newDate = date ? setMinutes(setHours(date, currentVal.getHours()), currentVal.getMinutes()) : new Date();
-                                                    field.onChange(newDate);
-                                                    setIsServiceDatePickerOpen(false);
-                                                }}
-                                                disabled={(date) => date < new Date("1900-01-01")}
-                                                initialFocus
-                                                locale={es}
-                                            />
-                                        </PopoverContent>
-                                    </Popover>
-                                </FormItem>
-                            )}
-                        />
-                        <Controller
-                            control={form.control}
-                            name="serviceDate"
-                            render={({ field }) => (
-                                <FormItem> <FormLabel>Hora de Recepción</FormLabel>
-                                    <Select
-                                        value={field.value && isValid(field.value) ? format(field.value, 'HH:mm') : ""}
-                                        onValueChange={(timeValue) => {
-                                            if (!timeValue) return;
-                                            const [hours, minutes] = timeValue.split(':').map(Number);
-                                            const currentVal = field.value || new Date();
-                                            field.onChange(setMinutes(setHours(currentVal, hours), minutes));
-                                        }}
-                                        disabled={isReadOnly}
-                                    >
-                                        <FormControl><SelectTrigger><SelectValue placeholder="Seleccione hora" /></SelectTrigger></FormControl>
-                                        <SelectContent>{timeSlots.map(slot => (<SelectItem key={slot.value} value={slot.value}>{slot.label}</SelectItem>))}</SelectContent>
-                                    </Select>
-                                 </FormItem>
-                            )}
-                        />
                         <Controller
                             name="deliveryDateTime"
                             control={form.control}
