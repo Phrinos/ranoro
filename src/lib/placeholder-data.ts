@@ -286,6 +286,24 @@ export async function hydrateFromFirestore() {
     changesMade = true;
     console.log(`Default user '${defaultSuperAdmin.email}' was missing and has been added to the current session.`);
   }
+  
+  // Ensure roles have all available permissions after hydrating
+  const superAdminRole = placeholderAppRoles.find(r => r.name === 'Superadmin');
+  const allPermissionIds = ALL_AVAILABLE_PERMISSIONS.map(p => p.id);
+  if (superAdminRole && superAdminRole.permissions.length < allPermissionIds.length) {
+    console.log("Updating Superadmin role with latest permissions...");
+    superAdminRole.permissions = allPermissionIds;
+    changesMade = true;
+  }
+  
+  const adminRole = placeholderAppRoles.find(r => r.name === 'Admin');
+  const adminPermissions = ALL_AVAILABLE_PERMISSIONS.filter(p => !['users:manage', 'roles:manage'].includes(p.id)).map(p => p.id);
+  if (adminRole && adminRole.permissions.length < adminPermissions.length) {
+      console.log("Updating Admin role with latest permissions...");
+      adminRole.permissions = adminPermissions;
+      changesMade = true;
+  }
+
 
   (window as any).__APP_HYDRATED__ = true;
   resolveHydration?.();
