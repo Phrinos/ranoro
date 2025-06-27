@@ -342,25 +342,17 @@ export function ServiceForm({
     ) || null;
   }, [mode, initialData]);
 
-  // DERIVED STATE CALCULATION
-  const { totalCost, totalSuppliesWorkshopCost, serviceProfit } = useMemo(() => {
-    const currentTotalCost = watchedServiceItems?.reduce((sum, item) => sum + (Number(item.price) || 0), 0) || 0;
-    
-    const currentTotalSuppliesWorkshopCost = watchedServiceItems?.flatMap(item => item.suppliesUsed).reduce((sum, supply) => {
-        const item = currentInventoryItems.find(i => i.id === supply.supplyId);
-        const costPerUnit = item?.unitPrice || supply.unitPrice || 0;
-        return sum + (costPerUnit * supply.quantity);
-    }, 0) || 0;
+  // Real-time calculation of costs and profit
+  const totalCost = watchedServiceItems?.reduce((sum, item) => sum + (Number(item.price) || 0), 0) || 0;
+  
+  const totalSuppliesWorkshopCost = watchedServiceItems?.flatMap(item => item.suppliesUsed).reduce((sum, supply) => {
+      const item = currentInventoryItems.find(i => i.id === supply.supplyId);
+      const costPerUnit = item?.unitPrice || supply.unitPrice || 0;
+      return sum + (costPerUnit * supply.quantity);
+  }, 0) || 0;
 
-    const totalCostBeforeTax = currentTotalCost / (1 + IVA_RATE) || 0;
-    const currentServiceProfit = totalCostBeforeTax - currentTotalSuppliesWorkshopCost;
-
-    return {
-        totalCost: currentTotalCost,
-        totalSuppliesWorkshopCost: currentTotalSuppliesWorkshopCost,
-        serviceProfit: currentServiceProfit,
-    };
-  }, [watchedServiceItems, currentInventoryItems]);
+  const totalCostBeforeTax = totalCost / (1 + IVA_RATE) || 0;
+  const serviceProfit = totalCostBeforeTax - totalSuppliesWorkshopCost;
 
 
   const refreshCurrentUser = useCallback(() => {
@@ -1901,3 +1893,4 @@ const SafetyCheckRow = ({ name, label, control, isReadOnly }: { name: string; la
 };
 
     
+
