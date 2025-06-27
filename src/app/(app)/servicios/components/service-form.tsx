@@ -704,7 +704,7 @@ export function ServiceForm({
           const oilRendimientos = values.serviceItems
               .flatMap(item => item.suppliesUsed)
               .map(supply => currentInventoryItems.find(i => i.id === supply.supplyId))
-              .filter((item): item is InventoryItem => !!(item && item.category?.toLowerCase() === 'aceites' && item.rendimiento))
+              .filter((item): item is InventoryItem => !!(item && item.category?.toLowerCase().includes('aceite') && item.rendimiento))
               .map(item => item.rendimiento as number);
 
           if (oilRendimientos.length > 0) {

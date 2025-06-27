@@ -326,7 +326,7 @@ export function InventoryItemForm({ initialData, onSubmit, onClose, categories, 
                   )}
                 />
               </div>
-              {categoryWatch?.toLowerCase() === 'aceites' && (
+              {categoryWatch?.toLowerCase().includes('aceite') && (
                 <FormField
                   control={form.control}
                   name="rendimiento"
