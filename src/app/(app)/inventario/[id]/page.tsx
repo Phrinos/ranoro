@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useParams, useRouter } from 'next/navigation';
@@ -197,16 +196,16 @@ export default function InventoryItemDetailPage() {
                 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-2 text-sm pt-2">
                   <div>
-                      <p className="font-medium text-muted-foreground">Tipo</p>
-                      <p>{item.isService ? 'Servicio' : 'Producto'}</p>
-                  </div>
-                  <div>
                       <p className="font-medium text-muted-foreground">Costo Unitario (Taller)</p>
                       <p>${item.unitPrice.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
                   </div>
                   <div>
                       <p className="font-medium text-muted-foreground">Precio de Venta (Cliente)</p>
                       <p>${item.sellingPrice.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                  </div>
+                   <div>
+                      <p className="font-medium text-muted-foreground">Tipo</p>
+                      <p>{item.isService ? 'Servicio' : 'Producto'}</p>
                   </div>
                 </div>
 
@@ -321,5 +320,3 @@ export default function InventoryItemDetailPage() {
     </div>
   );
 }
-
-    
