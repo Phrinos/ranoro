@@ -161,8 +161,12 @@ export const TicketContent = React.forwardRef<HTMLDivElement, TicketContentProps
                 <div className="font-semibold">PRÓXIMO SERVICIO</div>
                 <p className="text-xs">
                     {format(parseISO(service.nextServiceInfo.date), "dd MMMM yyyy", { locale: es })}
-                    <br/>
-                    o a los {service.nextServiceInfo.mileage.toLocaleString('es-MX')} km
+                    {service.nextServiceInfo.mileage && (
+                      <>
+                        <br/>
+                        o a los {service.nextServiceInfo.mileage.toLocaleString('es-MX')} km
+                      </>
+                    )}
                 </p>
               </div>
           </>
