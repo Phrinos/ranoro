@@ -13,7 +13,7 @@ import {
   persistToFirestore,
   AUTH_USER_LOCALSTORAGE_KEY,
 } from "@/lib/placeholder-data";
-import type { ServiceRecord, Vehicle, Technician, InventoryItem, QuoteRecord, User } from "@/types";
+import type { ServiceRecord, Vehicle, Technician, InventoryItem, QuoteRecord, User, WorkshopInfo } from "@/types";
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { format, parseISO, compareAsc, isFuture, isToday, isPast, isValid, addDays, isSameDay } from "date-fns";
@@ -73,6 +73,7 @@ export default function AgendaServiciosPage() {
   const [capacityError, setCapacityError] = useState<string | null>(null);
   
   const [cancellationReason, setCancellationReason] = useState('');
+  const [workshopInfo, setWorkshopInfo] = useState<WorkshopInfo | {}>({});
 
 
   const handleServiceUpdated = useCallback(async (data: ServiceRecord) => {
@@ -100,6 +101,10 @@ export default function AgendaServiciosPage() {
   }, [techniciansState, vehicles, toast]);
 
   useEffect(() => {
+    if (typeof window !== "undefined") {
+        const stored = localStorage.getItem('workshopTicketInfo');
+        if (stored) setWorkshopInfo(JSON.parse(stored));
+    }
     setAllServices(placeholderServiceRecords);
     setVehicles(placeholderVehicles);
     setTechniciansState(placeholderTechnicians);
@@ -782,7 +787,7 @@ export default function AgendaServiciosPage() {
             </>
           }
       >
-          {serviceForSheet && <ServiceSheetContent service={serviceForSheet} vehicle={vehicles.find(v => v.id === serviceForSheet.id)} />}
+          {serviceForSheet && <ServiceSheetContent service={serviceForSheet} vehicle={vehicles.find(v => v.id === serviceForSheet.vehicleId)} workshopInfo={workshopInfo} />}
       </PrintTicketDialog>
     </>
   );
