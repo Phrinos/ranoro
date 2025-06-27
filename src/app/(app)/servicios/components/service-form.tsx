@@ -696,39 +696,54 @@ export function ServiceForm({
       } else if (values.deliveryDateTime) {
           serviceData.deliveryDateTime = values.deliveryDateTime.toISOString();
       }
-
+      
       if (values.status === 'Completado') {
         serviceData.paymentMethod = values.paymentMethod;
         serviceData.cardFolio = values.cardFolio;
         serviceData.transferFolio = values.transferFolio;
 
-        const deliveryDate = serviceData.deliveryDateTime ? new Date(serviceData.deliveryDateTime) : new Date();
-        const nextServiceDate = addDays(deliveryDate, 365).toISOString();
-        let nextServiceMileage: number | undefined;
-
-        if (values.mileage && typeof values.mileage === 'number' && isFinite(values.mileage)) {
-          const oilRendimientos = values.serviceItems
-              .flatMap(item => item.suppliesUsed)
-              .map(supply => currentInventoryItems.find(i => i.id === supply.supplyId))
-              .filter((item): item is InventoryItem => !!(item && item.category?.toLowerCase().includes('aceite') && typeof item.rendimiento === 'number' && item.rendimiento > 0))
-              .map(item => item.rendimiento as number);
-
-          if (oilRendimientos.length > 0) {
-              const lowestRendimiento = Math.min(...oilRendimientos);
-              if (isFinite(lowestRendimiento)) {
-                   nextServiceMileage = values.mileage + lowestRendimiento;
+        try {
+          const deliveryDate = serviceData.deliveryDateTime ? new Date(serviceData.deliveryDateTime) : new Date();
+          
+          if (isValid(deliveryDate)) {
+            const nextServiceDate = addDays(deliveryDate, 365);
+            let nextServiceMileage: number | undefined;
+      
+            const mileageValue = values.mileage;
+            if (typeof mileageValue === 'number' && isFinite(mileageValue) && mileageValue > 0) {
+              const oilSupplies = values.serviceItems
+                .flatMap(item => item.suppliesUsed)
+                .map(supply => currentInventoryItems.find(i => i.id === supply.supplyId))
+                .filter(Boolean);
+              
+              const rendimientos = oilSupplies
+                .filter(item => 
+                  item.category?.toLowerCase().includes('aceite') && 
+                  typeof item.rendimiento === 'number' && 
+                  item.rendimiento > 0
+                )
+                .map(item => item.rendimiento as number);
+      
+              if (rendimientos.length > 0) {
+                const lowestRendimiento = Math.min(...rendimientos);
+                if (isFinite(lowestRendimiento)) {
+                  nextServiceMileage = mileageValue + lowestRendimiento;
+                }
               }
+            }
+            
+            const nextInfo: { date: string; mileage?: number } = {
+                date: nextServiceDate.toISOString(),
+            };
+            if (typeof nextServiceMileage === 'number' && isFinite(nextServiceMileage)) {
+                nextInfo.mileage = nextServiceMileage;
+            }
+            serviceData.nextServiceInfo = nextInfo;
+          } else {
+             console.warn("Could not calculate nextServiceInfo due to invalid delivery date.");
           }
-        }
-        
-        if (nextServiceDate) {
-          const nextInfo: { date: string; mileage?: number } = {
-              date: nextServiceDate,
-          };
-          if (typeof nextServiceMileage === 'number' && isFinite(nextServiceMileage)) {
-              nextInfo.mileage = nextServiceMileage;
-          }
-          serviceData.nextServiceInfo = nextInfo;
+        } catch (e) {
+          console.error("Error during nextServiceInfo calculation:", e);
         }
       }
       
