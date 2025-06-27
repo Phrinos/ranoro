@@ -334,11 +334,13 @@ export function ServiceForm({
     return null;
   }, [mode, initialDataService, initialDataQuote, isConvertingQuote]);
   
-  const watchedStatus = useWatch({ control: form.control, name: 'status' });
-  const selectedPaymentMethod = useWatch({ control: form.control, name: 'paymentMethod' });
-  const customerSignatureReception = useWatch({ control: form.control, name: 'customerSignatureReception' });
-  const customerSignatureDelivery = useWatch({ control: form.control, name: 'customerSignatureDelivery' });
-  const technicianSignature = useWatch({ control: form.control, name: 'safetyInspection.technicianSignature' });
+  const { control, getValues, setValue } = form;
+  const originalStatusRef = useRef(initialDataService?.status || initialDataQuote?.status);
+  const watchedStatus = useWatch({ control, name: 'status' });
+  const selectedPaymentMethod = useWatch({ control, name: 'paymentMethod' });
+  const customerSignatureReception = useWatch({ control, name: 'customerSignatureReception' });
+  const customerSignatureDelivery = useWatch({ control, name: 'customerSignatureDelivery' });
+  const technicianSignature = useWatch({ control, name: 'safetyInspection.technicianSignature' });
 
   const { fields: serviceItemsFields, append: appendServiceItem, remove: removeServiceItem, update: updateServiceItem } = useFieldArray({
     control: form.control,
@@ -351,6 +353,19 @@ export function ServiceForm({
       freshUserRef.current = JSON.parse(authUserString);
     }
   }, []);
+
+  // Effect to auto-populate delivery date when status changes to 'Completado'
+  useEffect(() => {
+    const initialStatus = originalStatusRef.current;
+    
+    // When status changes to 'Completado' for the first time in this form session
+    if (watchedStatus === 'Completado' && initialStatus !== 'Completado') {
+      // If deliveryDateTime is not already set (either by user or initial data), set it to now.
+      if (!getValues('deliveryDateTime')) {
+        setValue('deliveryDateTime', new Date(), { shouldDirty: true });
+      }
+    }
+  }, [watchedStatus, getValues, setValue]);
 
   useEffect(() => {
     refreshCurrentUser(); // Initial load
@@ -679,7 +694,6 @@ export function ServiceForm({
     const isConvertingQuoteToService = mode === 'quote' && values.status && values.status !== 'Cotizacion';
 
     if (mode === 'service' || isConvertingQuoteToService) {
-      const originalStatus = initialDataService?.status;
       const serviceData: Partial<ServiceRecord> = {
         ...values,
         id: initialData?.id || `SER_${Date.now().toString(36)}`,
@@ -693,16 +707,20 @@ export function ServiceForm({
         serviceItems: values.serviceItems,
       };
 
-      if (originalStatus !== 'Reparando' && serviceData.status === 'Reparando') {
-          serviceData.serviceDate = new Date().toISOString();
-      } else if (values.serviceDate) {
+      // Handle reception date (serviceDate)
+      if (values.serviceDate) {
           serviceData.serviceDate = values.serviceDate.toISOString();
+      } else if (values.status === 'Reparando') {
+          // Fallback if entering workshop via form status change
+          serviceData.serviceDate = new Date().toISOString();
       }
 
-      if (originalStatus !== 'Completado' && serviceData.status === 'Completado') {
-          serviceData.deliveryDateTime = new Date().toISOString();
-      } else if (values.deliveryDateTime) {
+      // Handle delivery date (deliveryDateTime)
+      if (values.deliveryDateTime) {
           serviceData.deliveryDateTime = values.deliveryDateTime.toISOString();
+      } else if (values.status === 'Completado') {
+          // Fallback if status is completed but date is missing.
+          serviceData.deliveryDateTime = new Date().toISOString();
       }
       
       if (values.status === 'Completado') {
