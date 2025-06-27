@@ -56,7 +56,7 @@ const ReportContent = React.forwardRef<HTMLDivElement, { report: PublicOwnerRepo
 
         <h2 className="text-xl font-semibold mb-4">Desglose por Vehículo</h2>
         <Table>
-          <TableHeader><TableRow><TableHead>Vehículo</TableHead><TableHead className="text-center">Días Rentados</TableHead><TableHead className="text-right">Ingresos</TableHead><TableHead className="text-right">Mantenimiento</TableHead><TableHead className="text-right">Balance</TableHead></TableRow></TableHeader>
+          <TableHeader><TableRow><TableHead>Vehículo</TableHead><TableHead className="text-center">Días Cubiertos</TableHead><TableHead className="text-right">Ingresos</TableHead><TableHead className="text-right">Mantenimiento</TableHead><TableHead className="text-right">Balance</TableHead></TableRow></TableHeader>
           <TableBody>
             {report.detailedReport.map(item => {
               const balance = item.rentalIncome - item.maintenanceCosts;
@@ -67,7 +67,7 @@ const ReportContent = React.forwardRef<HTMLDivElement, { report: PublicOwnerRepo
                       {item.vehicleInfo}
                     </Link>
                   </TableCell>
-                  <TableCell className="text-center">{item.daysRented}</TableCell>
+                  <TableCell className="text-center">{item.daysRented.toFixed(2)}</TableCell>
                   <TableCell className="text-right">{formatCurrency(item.rentalIncome)}</TableCell>
                   <TableCell className="text-right text-destructive">{formatCurrency(item.maintenanceCosts)}</TableCell>
                   <TableCell className={`text-right font-bold ${balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
@@ -110,25 +110,32 @@ export default function OwnerIncomeDetailPage() {
   const monthlyReportData = useMemo(() => {
     const monthStart = startOfMonth(selectedDate);
     const monthEnd = endOfMonth(selectedDate);
-
-    // Rental income calculation
-    const currentMonthPayments = placeholderRentalPayments.filter(p => {
-      const pDate = parseISO(p.paymentDate);
-      return isValid(pDate) && isWithinInterval(pDate, { start: monthStart, end: monthEnd });
-    });
-
     const prevMonthStart = startOfMonth(subMonths(selectedDate, 1));
     const prevMonthEnd = endOfMonth(subMonths(selectedDate, 1));
-    const prevMonthPayments = placeholderRentalPayments.filter(p => {
-      const pDate = parseISO(p.paymentDate);
-      return isValid(pDate) && isWithinInterval(pDate, { start: prevMonthStart, end: prevMonthEnd });
+
+    // Get all payments for this owner's vehicles, across all time
+    const ownerVehiclePlates = new Set(ownerVehicles.map(v => v.licensePlate));
+    const allOwnerPayments = placeholderRentalPayments.filter(p => ownerVehiclePlates.has(p.vehicleLicensePlate));
+    
+    // Filter payments for the current and previous month
+    const currentMonthOwnerPayments = allOwnerPayments.filter(p => {
+        const pDate = parseISO(p.paymentDate);
+        return isValid(pDate) && isWithinInterval(pDate, { start: monthStart, end: monthEnd });
+    });
+    const prevMonthOwnerPayments = allOwnerPayments.filter(p => {
+        const pDate = parseISO(p.paymentDate);
+        return isValid(pDate) && isWithinInterval(pDate, { start: prevMonthStart, end: prevMonthEnd });
     });
     
-    // Detailed table calculation
+    // Calculate total incomes for summary cards
+    const currentMonthIncome = currentMonthOwnerPayments.reduce((sum, p) => sum + p.amount, 0);
+    const prevMonthIncome = prevMonthOwnerPayments.reduce((sum, p) => sum + p.amount, 0);
+    
+    // Calculate detailed report for the table
     const report: VehicleMonthlyReport[] = ownerVehicles.map(vehicle => {
-      const vehiclePayments = currentMonthPayments.filter(p => p.vehicleLicensePlate === vehicle.licensePlate);
-      
-      const rentalIncome = vehiclePayments.reduce((sum, p) => sum + p.amount, 0);
+      const vehiclePaymentsInMonth = currentMonthOwnerPayments.filter(p => p.vehicleLicensePlate === vehicle.licensePlate);
+      const rentalIncome = vehiclePaymentsInMonth.reduce((sum, p) => sum + p.amount, 0);
+      const daysRented = vehiclePaymentsInMonth.reduce((sum, p) => sum + p.daysCovered, 0);
       
       const vehicleServices = placeholderServiceRecords.filter(s => {
           const sDate = parseISO(s.serviceDate);
@@ -139,19 +146,15 @@ export default function OwnerIncomeDetailPage() {
       return {
         vehicleId: vehicle.id,
         vehicleInfo: `${vehicle.make} ${vehicle.model} (${vehicle.licensePlate})`,
-        daysRented: vehiclePayments.length,
+        daysRented,
         rentalIncome,
         maintenanceCosts,
       };
     });
 
     return {
-      currentMonthIncome: currentMonthPayments
-        .filter(p => ownerVehicles.some(v => v.licensePlate === p.vehicleLicensePlate))
-        .reduce((sum, p) => sum + p.amount, 0),
-      prevMonthIncome: prevMonthPayments
-        .filter(p => ownerVehicles.some(v => v.licensePlate === p.vehicleLicensePlate))
-        .reduce((sum, p) => sum + p.amount, 0),
+      currentMonthIncome,
+      prevMonthIncome,
       detailedReport: report,
     };
   }, [selectedDate, ownerVehicles]);
@@ -276,7 +279,7 @@ export default function OwnerIncomeDetailPage() {
               <TableHeader>
                 <TableRow>
                   <TableHead className="font-bold">Vehículo</TableHead>
-                  <TableHead className="text-center font-bold">Días Rentados</TableHead>
+                  <TableHead className="text-center font-bold">Días Cubiertos</TableHead>
                   <TableHead className="text-right font-bold">Ingresos por Renta</TableHead>
                   <TableHead className="text-right font-bold">Costos de Mantenimiento</TableHead>
                   <TableHead className="text-right font-bold">Balance Neto</TableHead>
@@ -292,7 +295,7 @@ export default function OwnerIncomeDetailPage() {
                           {item.vehicleInfo}
                         </Link>
                       </TableCell>
-                      <TableCell className="text-center">{item.daysRented}</TableCell>
+                      <TableCell className="text-center">{item.daysRented.toFixed(2)}</TableCell>
                       <TableCell className="text-right">{formatCurrency(item.rentalIncome)}</TableCell>
                       <TableCell className="text-right text-destructive">{formatCurrency(item.maintenanceCosts)}</TableCell>
                       <TableCell className={`text-right font-bold ${balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
