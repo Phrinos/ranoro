@@ -17,7 +17,7 @@ import { Button } from '@/components/ui/button';
 import { ShieldAlert, Edit, Car, DollarSign } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { format, parseISO, compareAsc } from 'date-fns';
+import { format, parseISO, compareAsc, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
 import Link from 'next/link';
 import { useEffect, useState, useMemo, useCallback } from 'react';
@@ -25,8 +25,13 @@ import { useToast } from '@/hooks/use-toast';
 import { ServiceDialog } from '../../servicios/components/service-dialog';
 
 interface GroupedServices {
-  [monthYear: string]: ServiceRecord[];
+  [monthYearKey: string]: { // key is "YYYY-MM"
+    displayMonthYear: string;
+    services: ServiceRecord[];
+    totalCost: number;
+  };
 }
+
 
 export default function FleetVehicleDetailPage() {
   const params = useParams();
@@ -52,11 +57,21 @@ export default function FleetVehicleDetailPage() {
 
   const groupedServices = useMemo(() => {
     return services.reduce((acc: GroupedServices, service) => {
-      const monthYear = format(parseISO(service.serviceDate), "MMMM 'de' yyyy", { locale: es });
-      if (!acc[monthYear]) {
-        acc[monthYear] = [];
+      const serviceDate = parseISO(service.serviceDate);
+      if (!isValid(serviceDate)) return acc;
+
+      const monthYearKey = format(serviceDate, 'yyyy-MM');
+      const displayMonthYear = format(serviceDate, "MMMM 'de' yyyy", { locale: es });
+
+      if (!acc[monthYearKey]) {
+        acc[monthYearKey] = {
+            displayMonthYear,
+            services: [],
+            totalCost: 0
+        };
       }
-      acc[monthYear].push(service);
+      acc[monthYearKey].services.push(service);
+      acc[monthYearKey].totalCost += service.totalCost;
       return acc;
     }, {});
   }, [services]);
@@ -143,10 +158,16 @@ export default function FleetVehicleDetailPage() {
         </TabsContent>
         <TabsContent value="maintenances">
           {Object.entries(groupedServices).length > 0 ? (
-            Object.entries(groupedServices).sort((a,b) => new Date(b[0]).getTime() - new Date(a[0]).getTime()).map(([monthYear, monthServices]) => (
-              <Card key={monthYear} className="mb-6">
+            Object.entries(groupedServices).sort((a,b) => b[0].localeCompare(a[0])).map(([key, monthData]) => (
+              <Card key={key} className="mb-6">
                 <CardHeader>
-                  <CardTitle className="capitalize">{monthYear}</CardTitle>
+                    <div className="flex justify-between items-center">
+                        <CardTitle className="capitalize">{monthData.displayMonthYear}</CardTitle>
+                        <div className="text-right">
+                            <p className="text-sm text-muted-foreground">Total del Mes</p>
+                            <p className="text-lg font-bold">${monthData.totalCost.toLocaleString('es-ES', { minimumFractionDigits: 2 })}</p>
+                        </div>
+                    </div>
                 </CardHeader>
                 <CardContent>
                   <div className="rounded-md border">
@@ -160,7 +181,7 @@ export default function FleetVehicleDetailPage() {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {monthServices.sort((a, b) => compareAsc(parseISO(a.serviceDate), parseISO(b.serviceDate))).map(service => (
+                        {monthData.services.sort((a, b) => compareAsc(parseISO(a.serviceDate), parseISO(b.serviceDate))).map(service => (
                           <TableRow key={service.id} onClick={() => handleOpenService(service)} className="cursor-pointer">
                             <TableCell>{format(parseISO(service.serviceDate), "dd MMM, HH:mm", { locale: es })}</TableCell>
                             <TableCell>{service.mileage?.toLocaleString('es-ES')} km</TableCell>
