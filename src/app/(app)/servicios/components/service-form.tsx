@@ -62,7 +62,7 @@ import { AddSupplyDialog } from './add-supply-dialog';
 import { QuoteContent } from '@/components/quote-content';
 import { SignatureDialog } from './signature-dialog';
 import { TicketContent } from '@/components/ticket-content';
-import { capitalizeWords } from '@/lib/utils';
+import { capitalizeWords, formatCurrency } from '@/lib/utils';
 
 
 const supplySchema = z.object({
@@ -267,6 +267,7 @@ export function ServiceForm({
   const [localVehicles, setLocalVehicles] = useState<Vehicle[]>(parentVehicles);
   const [newVehicleInitialData, setNewVehicleInitialData] = useState<Partial<VehicleFormValues> | null>(null);
   const [vehicleSearchResults, setVehicleSearchResults] = useState<Vehicle[]>([]);
+  const [originalQuote, setOriginalQuote] = useState<QuoteRecord | null>(null);
 
   const [currentInventoryItems, setCurrentInventoryItems] = useState<InventoryItem[]>(inventoryItemsProp);
   const [workshopInfo, setWorkshopInfo] = useState<WorkshopInfo | {}>({});
@@ -434,6 +435,15 @@ export function ServiceForm({
         };
 
         form.reset(dataToReset);
+        
+        // Find and set original quote
+        if (mode === 'service' && data.id) {
+            const foundQuote = placeholderQuotes.find(q => q.serviceId === data.id);
+            setOriginalQuote(foundQuote || null);
+        } else {
+            setOriginalQuote(null);
+        }
+
     } else {
       // Set default for new forms
       if(mode === 'service') form.setValue('serviceDate', setHours(setMinutes(new Date(), 30), 8));
@@ -611,11 +621,6 @@ export function ServiceForm({
       });
     }
   };
-  
-  const originalQuote = useMemo(() => {
-    if (mode !== 'service' || !initialDataService?.id) return null;
-    return placeholderQuotes.find(q => q.serviceId === initialDataService.id);
-  }, [initialDataService, mode]);
 
   const handleViewQuote = useCallback(() => {
     let quoteToShow: Partial<QuoteRecord> | null = null;
@@ -803,11 +808,6 @@ export function ServiceForm({
     setServiceForSheet(serviceData);
     setIsSheetOpen(true);
   }, [form]);
-
-  const formatCurrency = (amount: number | undefined) => {
-      if (amount === undefined) return '$0.00';
-      return `$${amount.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-  };
 
   const handleVehiclePlateKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
     if (event.key === 'Enter') {
@@ -1052,7 +1052,7 @@ export function ServiceForm({
                 </TabsList>
               </div>
               <div className="flex gap-2 self-end sm:self-center">
-                  {(originalQuote || (mode === 'quote' && initialData?.id)) && (
+                  {originalQuote && (
                       <Button type="button" onClick={handleViewQuote} variant="ghost" size="icon" className="bg-card" title="Ver Cotización">
                           <FileText className="h-5 w-5 text-purple-600" />
                       </Button>
@@ -1636,11 +1636,6 @@ function ServiceItemCard({ serviceIndex, form, removeServiceItem, isReadOnly, in
         }
         
         setIsAddSupplyDialogOpen(false);
-    };
-
-    const formatCurrency = (amount: number | undefined) => {
-      if (amount === undefined) return '';
-      return `$${amount.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
     };
 
     const handleSupplyQuantityChange = (supplyIndex: number, delta: number) => {
