@@ -320,19 +320,18 @@ export function ServiceForm({
     }
   });
 
-  const originalQuote = useMemo(() => {
+  // Use a single, more robust useMemo for determining if the quote button should show.
+  const quoteForViewing = useMemo(() => {
+    // If we're in quote mode, we are editing the quote itself.
+    if (mode === 'quote' && initialDataQuote?.id) {
+        return placeholderQuotes.find(q => q.id === initialDataQuote.id) || null;
+    }
+    // If we are in service mode, find the quote linked to this service.
     if (mode === 'service' && initialDataService?.id) {
         return placeholderQuotes.find(q => q.serviceId === initialDataService.id) || null;
     }
     return null;
-  }, [mode, initialDataService]);
-
-  const quoteForViewing = useMemo(() => {
-    if (mode === 'quote' && initialDataQuote?.id) {
-        return placeholderQuotes.find(q => q.id === initialDataQuote.id) || null;
-    }
-    return originalQuote;
-  }, [mode, initialDataQuote, originalQuote]);
+  }, [mode, initialDataQuote, initialDataService]);
   
   const watchedStatus = useWatch({ control: form.control, name: 'status' });
   const selectedPaymentMethod = useWatch({ control: form.control, name: 'paymentMethod' });
@@ -1051,7 +1050,7 @@ export function ServiceForm({
               </div>
               <div className="flex gap-2 self-end sm:self-center">
                   {quoteForViewing && (
-                      <Button type="button" onClick={() => handleViewQuote(quoteForViewing)} variant="ghost" size="icon" className="bg-card" title="Ver Cotización">
+                      <Button type="button" onClick={() => handleViewQuote(quoteForViewing)} variant="ghost" size="icon" className="bg-card" title="Ver Cotización Original">
                           <FileText className="h-5 w-5 text-purple-600" />
                       </Button>
                   )}
