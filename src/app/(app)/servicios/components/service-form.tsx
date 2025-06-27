@@ -320,18 +320,13 @@ export function ServiceForm({
     }
   });
 
-  // Use a single, more robust useMemo for determining if the quote button should show.
-  const quoteForViewing = useMemo(() => {
-    // If we're in quote mode, we are editing the quote itself.
-    if (mode === 'quote' && initialDataQuote?.id) {
-        return placeholderQuotes.find(q => q.id === initialDataQuote.id) || null;
-    }
-    // If we are in service mode, find the quote linked to this service.
-    if (mode === 'service' && initialDataService?.id) {
-        return placeholderQuotes.find(q => q.serviceId === initialDataService.id) || null;
-    }
-    return null;
-  }, [mode, initialDataQuote, initialDataService]);
+  // Simplified logic to find the quote to view.
+  let quoteForViewing: QuoteRecord | null = null;
+  if (mode === 'service' && initialDataService?.id) {
+    quoteForViewing = placeholderQuotes.find(q => q.serviceId === initialDataService.id) || null;
+  } else if (mode === 'quote' && initialDataQuote?.id) {
+    quoteForViewing = placeholderQuotes.find(q => q.id === initialDataQuote.id) || null;
+  }
   
   const watchedStatus = useWatch({ control: form.control, name: 'status' });
   const selectedPaymentMethod = useWatch({ control: form.control, name: 'paymentMethod' });
@@ -1935,3 +1930,5 @@ const SafetyCheckRow = ({ name, label, control, isReadOnly }: { name: string; la
     </div>
   );
 };
+
+    
