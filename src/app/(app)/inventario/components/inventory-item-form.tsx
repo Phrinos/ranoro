@@ -34,6 +34,7 @@ const inventoryItemFormSchema = z.object({
   unitType: z.enum(['units', 'ml', 'liters']).default('units').optional(),
   category: z.string().min(1, "La categoría es obligatoria."),
   supplier: z.string().min(1, "El proveedor es obligatorio."),
+  rendimiento: z.coerce.number().int().min(0, "El rendimiento debe ser un número positivo.").optional(),
 }).superRefine((data, ctx) => {
   if (!data.isService && data.quantity === undefined) {
     ctx.addIssue({
@@ -65,7 +66,10 @@ interface InventoryItemFormProps {
 export function InventoryItemForm({ initialData, onSubmit, onClose, categories, suppliers }: InventoryItemFormProps) {
   const form = useForm<InventoryItemFormValues>({
     resolver: zodResolver(inventoryItemFormSchema),
-    defaultValues: initialData || {
+    defaultValues: initialData ? {
+        ...initialData,
+        rendimiento: 'rendimiento' in initialData ? initialData.rendimiento : undefined
+    } : {
       name: "",
       sku: "",
       description: "",
@@ -76,12 +80,14 @@ export function InventoryItemForm({ initialData, onSubmit, onClose, categories, 
       lowStockThreshold: 5,
       unitType: 'units',
       category: categories.length > 0 ? categories[0].name : "", 
-      supplier: suppliers.length > 0 ? suppliers[0].name : "", 
+      supplier: suppliers.length > 0 ? suppliers[0].name : "",
+      rendimiento: undefined,
     },
   });
 
   const isServiceWatch = form.watch("isService");
   const unitTypeWatch = form.watch("unitType");
+  const categoryWatch = form.watch("category");
   
   useEffect(() => {
     if (isServiceWatch) {
@@ -320,6 +326,22 @@ export function InventoryItemForm({ initialData, onSubmit, onClose, categories, 
                   )}
                 />
               </div>
+              {categoryWatch === 'Aceites' && (
+                <FormField
+                  control={form.control}
+                  name="rendimiento"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Rendimiento del Aceite (km)</FormLabel>
+                      <FormControl>
+                        <Input type="number" placeholder="Ej: 10000" {...field} value={field.value ?? ''} />
+                      </FormControl>
+                      <FormDescription>Duración estimada del aceite en kilómetros antes del próximo cambio.</FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
             </CardContent>
           </Card>
         )}

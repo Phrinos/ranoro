@@ -22,7 +22,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription} from '@/components/ui/card';
 import { CalendarIcon, PlusCircle, Search, Trash2, AlertCircle, Car as CarIcon, Clock, DollarSign, PackagePlus, BrainCircuit, Loader2, Printer, Plus, Minus, FileText, Signature, MessageSquare, Ban, ShieldQuestion, Wrench, Wallet, CreditCard, Send, WalletCards, ArrowRightLeft, Tag, FileCheck, Check, ShieldCheck, Copy } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { format, parseISO, setHours, setMinutes, isValid, startOfDay } from 'date-fns';
+import { format, parseISO, setHours, setMinutes, isValid, startOfDay, addDays } from 'date-fns';
 import { es } from 'date-fns/locale';
 import type { ServiceRecord, Vehicle, Technician, InventoryItem, ServiceSupply, QuoteRecord, InventoryCategory, Supplier, User, WorkshopInfo, ServiceItem, SafetyInspection, PaymentMethod, SafetyCheckStatus } from "@/types";
 import React, { useEffect, useState, useMemo, useCallback, useRef } from "react";
@@ -695,6 +695,31 @@ export function ServiceForm({
         serviceData.paymentMethod = values.paymentMethod;
         serviceData.cardFolio = values.cardFolio;
         serviceData.transferFolio = values.transferFolio;
+
+        // Calculate next service info
+        const deliveryDate = serviceData.deliveryDateTime ? new Date(serviceData.deliveryDateTime) : new Date();
+        const nextServiceDate = addDays(deliveryDate, 365).toISOString();
+        let nextServiceMileage: number | undefined;
+
+        if (values.mileage) {
+          const oilRendimientos = values.serviceItems
+              .flatMap(item => item.suppliesUsed)
+              .map(supply => currentInventoryItems.find(i => i.id === supply.supplyId))
+              .filter((item): item is InventoryItem => !!(item && item.category === 'Aceites' && item.rendimiento))
+              .map(item => item.rendimiento as number);
+
+          if (oilRendimientos.length > 0) {
+              const lowestRendimiento = Math.min(...oilRendimientos);
+              nextServiceMileage = values.mileage + lowestRendimiento;
+          }
+        }
+        
+        if (nextServiceDate && nextServiceMileage) {
+          serviceData.nextServiceInfo = {
+            date: nextServiceDate,
+            mileage: nextServiceMileage,
+          };
+        }
       }
       
       serviceData.vehicleIdentifier = selectedVehicle?.licensePlate || values.vehicleLicensePlateSearch || 'N/A';
