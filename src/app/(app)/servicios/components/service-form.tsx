@@ -287,6 +287,11 @@ export function ServiceForm({
   const [isEnhancingText, setIsEnhancingText] = useState<string | null>(null);
   const [isTicketPreviewOpen, setIsTicketPreviewOpen] = useState(false);
   const ticketContentRef = useRef<HTMLDivElement>(null);
+  
+  const [totalCost, setTotalCost] = useState(0);
+  const [totalSuppliesWorkshopCost, setTotalSuppliesWorkshopCost] = useState(0);
+  const [serviceProfit, setServiceProfit] = useState(0);
+
 
   const form = useForm<ServiceFormValues>({
     resolver: zodResolver(serviceFormSchemaBase),
@@ -346,6 +351,25 @@ export function ServiceForm({
       freshUserRef.current = JSON.parse(authUserString);
     }
   }, []);
+
+  const watchedServiceItems = form.watch("serviceItems");
+
+  useEffect(() => {
+    const currentTotalCost = watchedServiceItems?.reduce((sum, item) => sum + (item.price || 0), 0) || 0;
+    
+    const currentTotalSuppliesWorkshopCost = watchedServiceItems?.flatMap(item => item.suppliesUsed).reduce((sum, supply) => {
+        const item = currentInventoryItems.find(i => i.id === supply.supplyId);
+        const costPerUnit = item?.unitPrice || supply.unitPrice || 0;
+        return sum + costPerUnit * supply.quantity;
+    }, 0) || 0;
+
+    const totalCostBeforeTax = currentTotalCost / (1 + IVA_RATE) || 0;
+    const currentServiceProfit = totalCostBeforeTax - currentTotalSuppliesWorkshopCost;
+
+    setTotalCost(currentTotalCost);
+    setTotalSuppliesWorkshopCost(currentTotalSuppliesWorkshopCost);
+    setServiceProfit(currentServiceProfit);
+  }, [watchedServiceItems, currentInventoryItems]);
 
   // Effect to auto-populate delivery date when status changes to 'Completado'
   useEffect(() => {
@@ -529,29 +553,6 @@ export function ServiceForm({
     }
     return true;
   }, [mode, watchedStatus]);
-
-
-  const watchedServiceItems = form.watch("serviceItems");
-
-
-  const { totalCost, totalSuppliesWorkshopCost, serviceProfit } = useMemo(() => {
-    const currentTotalCost = watchedServiceItems?.reduce((sum, item) => sum + (item.price || 0), 0) || 0;
-    
-    const currentTotalSuppliesWorkshopCost = watchedServiceItems?.flatMap(item => item.suppliesUsed).reduce((sum, supply) => {
-        const item = currentInventoryItems.find(i => i.id === supply.supplyId);
-        const costPerUnit = item?.unitPrice || supply.unitPrice || 0;
-        return sum + costPerUnit * supply.quantity;
-    }, 0) || 0;
-
-    const totalCostBeforeTax = currentTotalCost / (1 + IVA_RATE) || 0;
-    const currentServiceProfit = totalCostBeforeTax - currentTotalSuppliesWorkshopCost;
-
-    return {
-      totalCost: currentTotalCost,
-      totalSuppliesWorkshopCost: currentTotalSuppliesWorkshopCost,
-      serviceProfit: currentServiceProfit,
-    };
-  }, [watchedServiceItems, currentInventoryItems]);
 
 
   const handleSearchVehicle = () => {
