@@ -23,7 +23,34 @@ export interface Vehicle {
   notes?: string;
   serviceHistory?: Pick<ServiceRecord, 'id' | 'serviceDate' | 'description' | 'totalCost' | 'status' | 'mileage'>[];
   lastServiceDate?: string; 
+  isFleetVehicle?: boolean;
+  dailyRentalCost?: number;
 }
+
+export interface Driver {
+  id: string;
+  name: string;
+  address: string;
+  phone: string;
+  emergencyPhone: string;
+  assignedVehicleId?: string;
+  documents?: {
+    ineUrl?: string;
+    licenseUrl?: string;
+    proofOfAddressUrl?: string;
+    promissoryNoteUrl?: string;
+  };
+}
+
+export interface RentalPayment {
+  id: string;
+  driverId: string;
+  driverName: string;
+  vehicleLicensePlate: string;
+  paymentDate: string; // ISO String
+  amount: number;
+}
+
 
 export interface ServiceSupply {
   supplyId: string; 

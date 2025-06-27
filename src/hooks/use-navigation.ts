@@ -32,7 +32,8 @@ import {
   Briefcase,
   BarChartHorizontal,
   Database,
-  BookOpen
+  BookOpen,
+  Truck
 } from 'lucide-react';
 import type { User, AppRole } from '@/types';
 import { placeholderAppRoles, AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
@@ -102,7 +103,30 @@ const BASE_NAV_STRUCTURE: ReadonlyArray<Omit<NavigationEntry, 'isActive'>> = [
   { label: 'Productos', path: '/inventario', icon: Package, groupTag: "Mi Inventario", permissions: ['inventory:view'] },
   { label: 'Categorías', path: '/inventario/categorias', icon: Shapes, groupTag: "Mi Inventario", permissions: ['inventory:manage'] },
   { label: 'Proveedores', path: '/inventario/proveedores', icon: Building, groupTag: "Mi Inventario", permissions: ['inventory:manage'] },
-  
+
+  // Mi Flotilla
+  {
+    label: 'Flotilla',
+    path: '/flotilla',
+    icon: Truck,
+    groupTag: "Mi Flotilla",
+    permissions: ['fleet:manage']
+  },
+  {
+    label: 'Conductores',
+    path: '/conductores',
+    icon: Users,
+    groupTag: "Mi Flotilla",
+    permissions: ['fleet:manage']
+  },
+  {
+    label: 'Registro de Rentas',
+    path: '/rentas',
+    icon: DollarSign,
+    groupTag: "Mi Flotilla",
+    permissions: ['fleet:manage']
+  },
+
   // Mi Oficina
   {
     label: 'Informe de Ventas', 
@@ -134,7 +158,7 @@ const BASE_NAV_STRUCTURE: ReadonlyArray<Omit<NavigationEntry, 'isActive'>> = [
   },
 ];
 
-const DESIRED_GROUP_ORDER = ["Mi Taller", "Mi Inventario", "Mi Oficina"];
+const DESIRED_GROUP_ORDER = ["Mi Taller", "Mi Inventario", "Mi Flotilla", "Mi Oficina"];
 
 
 const useNavigation = (): NavigationEntry[] => {
@@ -228,6 +252,16 @@ const useNavigation = (): NavigationEntry[] => {
         isActive = true;
     }
     if (entry.path === '/precios' && pathname === '/precios') {
+        isActive = true;
+    }
+
+    if (entry.path === '/flotilla' && pathname.startsWith('/flotilla')) {
+        isActive = true;
+    }
+    if (entry.path === '/conductores' && pathname.startsWith('/conductores')) {
+        isActive = true;
+    }
+    if (entry.path === '/rentas' && pathname.startsWith('/rentas')) {
         isActive = true;
     }
 

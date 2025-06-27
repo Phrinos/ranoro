@@ -1,4 +1,5 @@
 
+
 import type {
   Vehicle,
   ServiceRecord,
@@ -18,6 +19,8 @@ import type {
   AdministrativeStaff,
   User,
   VehiclePriceList,
+  Driver,
+  RentalPayment,
 } from '@/types';
 import {
   format,
@@ -60,6 +63,9 @@ export let placeholderVehicles: Vehicle[] = [];
 // =======================================
 export let placeholderTechnicians: Technician[] = [];
 export let placeholderAdministrativeStaff: AdministrativeStaff[] = [];
+export let placeholderDrivers: Driver[] = [];
+export let placeholderRentalPayments: RentalPayment[] = [];
+
 
 // =======================================
 // ===          USUARIOS Y ROLES         ===
@@ -91,6 +97,7 @@ const ALL_AVAILABLE_PERMISSIONS = [
   { id: 'finances:view_report', label: 'Ver Reporte Financiero' },
   { id: 'technicians:manage', label: 'Gestionar Técnicos' },
   { id: 'vehicles:manage', label: 'Gestionar Vehículos' },
+  { id: 'fleet:manage', label: 'Gestionar Flotilla' },
   { id: 'users:manage', label: 'Gestionar Usuarios (Admin)' },
   { id: 'roles:manage', label: 'Gestionar Roles y Permisos (Admin)' },
   { id: 'ticket_config:manage', label: 'Configurar Ticket (Admin)' },
@@ -148,6 +155,8 @@ const DATA_ARRAYS = {
   technicianPerformance: placeholderTechnicianMonthlyPerformance,
   appRoles: placeholderAppRoles,
   vehiclePriceLists: placeholderVehiclePriceLists,
+  drivers: placeholderDrivers,
+  rentalPayments: placeholderRentalPayments,
 };
 
 type DataKey = keyof typeof DATA_ARRAYS;
@@ -369,38 +378,25 @@ export const calculateSaleProfit = (
     inventory.map((i) => [i.id, i]),
   );
 
-  let totalProfit = 0;
+  let totalCost = 0;
 
   for (const saleItem of sale.items) {
     const inventoryItem = inventoryMap.get(saleItem.inventoryItemId);
 
-    if (!inventoryItem) {
-      console.warn(`[ProfitCalc] Inventory item ID ${saleItem.inventoryItemId} not found for sale ${sale.id}.`);
-      continue;
-    }
-
-    // Explicitly convert and validate numbers
-    const quantitySold = Number(String(saleItem.quantity ?? '0').replace(',', '.'));
-    const sellingPriceWithTax = Number(String(saleItem.unitPrice ?? '0').replace(',', '.'));
-    const costPricePerUnit = Number(String(inventoryItem.unitPrice ?? '0').replace(',', '.'));
-
-    if (!isFinite(quantitySold) || quantitySold <= 0 || !isFinite(sellingPriceWithTax)) {
-      console.warn(`[ProfitCalc] Invalid numeric data for sale item ${saleItem.itemName} in sale ${sale.id}. Skipping.`);
-      continue;
-    }
-
-    // If cost is not defined or invalid, treat it as 0 but don't stop the whole calculation.
-    const effectiveCostPrice = (inventoryItem.isService || !isFinite(costPricePerUnit)) ? 0 : costPricePerUnit;
-    
-    const profitPerUnit = sellingPriceWithTax - effectiveCostPrice;
-    const profitForItem = profitPerUnit * quantitySold;
-    
-    if (isFinite(profitForItem)) {
-      totalProfit += profitForItem;
+    // Only calculate cost for non-service items that exist in inventory
+    if (inventoryItem && !inventoryItem.isService) {
+        const costPricePerUnit = Number(String(inventoryItem.unitPrice ?? '0').replace(',', '.'));
+        const quantitySold = Number(String(saleItem.quantity ?? '0').replace(',', '.'));
+        if (isFinite(costPricePerUnit) && isFinite(quantitySold)) {
+            totalCost += costPricePerUnit * quantitySold;
+        }
     }
   }
   
-  return isFinite(totalProfit) ? totalProfit : 0;
+  // La ganancia es el subtotal (antes de IVA) menos el costo de los productos.
+  const profit = sale.subTotal - totalCost;
+  
+  return isFinite(profit) ? profit : 0;
 };
 
 
