@@ -42,6 +42,7 @@ export interface Driver {
   };
   depositAmount?: number;
   contractDate?: string; // ISO string
+  contractStartDate?: string;
 }
 
 export interface RentalPayment {
@@ -52,6 +53,14 @@ export interface RentalPayment {
   paymentDate: string; // ISO String
   amount: number;
   daysCovered: number;
+}
+
+export interface OwnerWithdrawal {
+  id: string;
+  ownerName: string;
+  date: string; // ISO String
+  amount: number;
+  reason?: string;
 }
 
 
