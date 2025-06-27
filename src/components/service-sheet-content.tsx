@@ -254,8 +254,8 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
             <div className="border-2 border-black rounded-md overflow-hidden">
               <h3 className="font-bold p-1 bg-gray-700 text-white text-xs text-center">DATOS DEL CLIENTE</h3>
               <div className="space-y-0.5 p-2">
-                <p><span className="font-semibold">Nombre:</span> <span className="font-bold">{vehicle?.ownerName?.toUpperCase()}</span></p>
-                <p><span className="font-semibold">Teléfono:</span> <span className="font-bold">{vehicle?.ownerPhone}</span></p>
+                <p><span className="font-semibold">Nombre:</span> <span className="font-bold">{vehicle?.ownerName?.toUpperCase() || ''}</span></p>
+                <p><span className="font-semibold">Teléfono:</span> <span className="font-bold">{vehicle?.ownerPhone || ''}</span></p>
                 {vehicle?.ownerEmail && <p><span className="font-semibold">Email:</span> <span className="font-bold">{vehicle.ownerEmail}</span></p>}
               </div>
             </div>
@@ -266,6 +266,15 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
                 <p><span className="font-semibold">Placas:</span> <span className="font-bold">{vehicle?.licensePlate}</span></p>
                 {vehicle?.color && <p><span className="font-semibold">Color:</span> <span className="font-bold">{vehicle.color}</span></p>}
                 {service.mileage && <p><span className="font-semibold">Kilometraje:</span> <span className="font-bold">{service.mileage.toLocaleString('es-MX')} km</span></p>}
+                 {service.nextServiceInfo && (
+                    <div className="mt-1 border-t border-dashed pt-1">
+                        <p className="font-bold text-red-600">
+                            Próximo Servicio: {format(parseISO(service.nextServiceInfo.date), "dd/MMMM/yyyy", { locale: es })}
+                            {service.nextServiceInfo.mileage ? ` o ${service.nextServiceInfo.mileage.toLocaleString('es-MX')} kms` : ''}.
+                            <span className="font-normal text-black"> Lo que suceda primero.</span>
+                        </p>
+                    </div>
+                )}
               </div>
             </div>
           </section>
