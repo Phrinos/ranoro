@@ -321,16 +321,18 @@ export function ServiceForm({
   });
 
   const quoteForViewing = useMemo(() => {
-    const serviceId = initialDataService?.id;
-    if (mode === 'service' && serviceId) {
-      return placeholderQuotes.find(q => q.serviceId === serviceId) || null;
-    }
-    const quoteId = initialDataQuote?.id;
-    if (mode === 'quote' && quoteId) {
-      return placeholderQuotes.find(q => q.id === quoteId) || null;
+    if (mode === 'service') {
+      if (isConvertingQuote && initialDataQuote) {
+        return placeholderQuotes.find(q => q.id === initialDataQuote.id) || null;
+      }
+      if (initialDataService) {
+        return placeholderQuotes.find(q => q.serviceId === initialDataService.id) || null;
+      }
+    } else if (mode === 'quote' && initialDataQuote) {
+      return placeholderQuotes.find(q => q.id === initialDataQuote.id) || null;
     }
     return null;
-  }, [initialDataService, initialDataQuote, mode]);
+  }, [mode, initialDataService, initialDataQuote, isConvertingQuote]);
   
   const watchedStatus = useWatch({ control: form.control, name: 'status' });
   const selectedPaymentMethod = useWatch({ control: form.control, name: 'paymentMethod' });
