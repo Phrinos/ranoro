@@ -1542,7 +1542,7 @@ export function ServiceForm({
           footerActions={<><Button type="button" onClick={() => {if (serviceForSheet?.publicId) {const shareUrl = `${window.location.origin}/s/${serviceForSheet.publicId}`; navigator.clipboard.writeText(shareUrl).then(() => {toast({ title: 'Enlace copiado', description: 'El enlace a la hoja de servicio ha sido copiado.' });});} else {toast({ title: 'Error', description: 'Guarde el servicio para generar un enlace.', variant: 'destructive' });}}} variant="outline"><MessageSquare className="mr-2 h-4 w-4" /> Copiar Enlace</Button><Button onClick={() => window.print()}><Printer className="mr-2 h-4 w-4" /> Imprimir Hoja</Button></>}
       >
           {serviceForSheet && (
-              <ServiceSheetContent service={serviceForSheet} vehicle={localVehicles.find(v => v.id === serviceForSheet.id)} workshopInfo={workshopInfo as WorkshopInfo} />
+              <ServiceSheetContent service={serviceForSheet} vehicle={localVehicles.find(v => v.id === serviceForSheet.vehicleId)} workshopInfo={workshopInfo as WorkshopInfo} />
           )}
       </PrintTicketDialog>
 
