@@ -663,7 +663,7 @@ export function ServiceForm({
     
     const finalSubTotal = totalCost / (1 + IVA_RATE);
     const finalTaxAmount = totalCost - finalSubTotal;
-    const finalProfit = serviceProfit;
+    const finalProfit = totalCost - totalSuppliesWorkshopCost;
     const compositeDescription = values.serviceItems.map(item => item.name).join(', ') || 'Servicio';
     
     const isConvertingQuoteToService = mode === 'quote' && values.status && values.status !== 'Cotizacion';
@@ -1020,21 +1020,21 @@ export function ServiceForm({
                 <TabsList className="bg-transparent p-0 w-max">
                   <TabsTrigger value="servicio" className="text-sm sm:text-base data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none flex items-center gap-2 py-2 px-3 sm:px-4">
                       <Wrench className="h-4 w-4 shrink-0"/>
-                      <span className="hidden sm:inline">Detalles del Servicio</span>
+                      <span className="hidden sm:inline">Detalles</span>
                       <span className="sm:hidden">Detalles</span>
                   </TabsTrigger>
                   {showReceptionTab && (
                       <TabsTrigger value="recepcion" className="text-sm sm:text-base data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none flex items-center gap-2 py-2 px-3 sm:px-4">
                           <FileCheck className="h-4 w-4 shrink-0"/>
-                          <span className="hidden sm:inline">Recepción y Entrega</span>
-                          <span className="sm:hidden">Recepción</span>
+                          <span className="hidden sm:inline">Rec. y Ent.</span>
+                          <span className="sm:hidden">Rec. y Ent.</span>
                       </TabsTrigger>
                   )}
                   {showReceptionTab && (
                       <TabsTrigger value="seguridad" className="text-sm sm:text-base data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none flex items-center gap-2 py-2 px-3 sm:px-4">
                           <ShieldCheck className="h-4 w-4 shrink-0"/>
-                          <span className="hidden sm:inline">Revisión de Seguridad</span>
-                          <span className="sm:hidden">Seguridad</span>
+                          <span className="hidden sm:inline">Revision</span>
+                          <span className="sm:hidden">Revision</span>
                       </TabsTrigger>
                   )}
                 </TabsList>
