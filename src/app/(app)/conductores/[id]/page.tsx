@@ -15,11 +15,12 @@ import { Button } from '@/components/ui/button';
 import { ShieldAlert, Edit, User, Phone, Home, FileText, Upload, Link as LinkIcon, AlertTriangle, Car } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { DriverDialog } from '../components/driver-dialog';
 import type { DriverFormValues } from '../components/driver-form';
 import { useToast } from '@/hooks/use-toast';
 import Image from 'next/image';
+import { Label } from '@/components/ui/label';
 
 export default function DriverDetailPage() {
   const params = useParams();
