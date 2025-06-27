@@ -24,6 +24,7 @@ import { isToday, parseISO, format, isValid, compareDesc } from 'date-fns';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { es } from 'date-fns/locale';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function RentasPage() {
   const { toast } = useToast();
@@ -159,73 +160,82 @@ export default function RentasPage() {
         />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Historial de Pagos de Renta</CardTitle>
-            <CardDescription>Pagos recibidos de los conductores.</CardDescription>
-          </CardHeader>
-          <CardContent>
-             <div className="rounded-lg border shadow-sm overflow-x-auto">
+      <Tabs defaultValue="pagos" className="w-full">
+        <TabsList className="grid w-full grid-cols-2 md:w-1/2 lg:w-1/3 mb-6">
+          <TabsTrigger value="pagos">Pagos de Renta</TabsTrigger>
+          <TabsTrigger value="retiros">Retiros de Propietarios</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="pagos">
+          <Card>
+            <CardHeader>
+              <CardTitle>Historial de Pagos de Renta</CardTitle>
+              <CardDescription>Pagos recibidos de los conductores.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="rounded-lg border shadow-sm overflow-x-auto">
                 <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>Fecha</TableHead>
-                            <TableHead>Conductor</TableHead>
-                            <TableHead>Vehículo</TableHead>
-                            <TableHead className="text-right">Monto</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {filteredPayments.length > 0 ? filteredPayments.map(p => (
-                            <TableRow key={p.id}>
-                                <TableCell>{format(parseISO(p.paymentDate), "dd MMM, HH:mm", {locale: es})}</TableCell>
-                                <TableCell>{p.driverName}</TableCell>
-                                <TableCell>{p.vehicleLicensePlate}</TableCell>
-                                <TableCell className="text-right font-semibold">{formatCurrency(p.amount)}</TableCell>
-                            </TableRow>
-                        )) : (
-                            <TableRow><TableCell colSpan={4} className="h-24 text-center">No hay pagos registrados.</TableCell></TableRow>
-                        )}
-                    </TableBody>
-                </Table>
-             </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader>
-            <CardTitle>Historial de Retiros de Propietarios</CardTitle>
-            <CardDescription>Salidas de dinero de las ganancias de la flotilla.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="rounded-lg border shadow-sm overflow-x-auto">
-              <Table>
-                <TableHeader>
+                  <TableHeader>
                     <TableRow>
-                        <TableHead>Fecha</TableHead>
-                        <TableHead>Propietario</TableHead>
-                        <TableHead>Motivo</TableHead>
-                        <TableHead className="text-right">Monto</TableHead>
+                      <TableHead>Fecha</TableHead>
+                      <TableHead>Conductor</TableHead>
+                      <TableHead>Vehículo</TableHead>
+                      <TableHead className="text-right">Monto</TableHead>
                     </TableRow>
-                </TableHeader>
-                <TableBody>
-                    {filteredWithdrawals.length > 0 ? filteredWithdrawals.map(w => (
-                        <TableRow key={w.id}>
-                            <TableCell>{format(parseISO(w.date), "dd MMM, HH:mm", {locale: es})}</TableCell>
-                            <TableCell>{w.ownerName}</TableCell>
-                            <TableCell>{w.reason || 'N/A'}</TableCell>
-                            <TableCell className="text-right font-semibold text-destructive">{formatCurrency(w.amount)}</TableCell>
-                        </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredPayments.length > 0 ? filteredPayments.map(p => (
+                      <TableRow key={p.id}>
+                        <TableCell>{format(parseISO(p.paymentDate), "dd MMM, HH:mm", {locale: es})}</TableCell>
+                        <TableCell>{p.driverName}</TableCell>
+                        <TableCell>{p.vehicleLicensePlate}</TableCell>
+                        <TableCell className="text-right font-semibold">{formatCurrency(p.amount)}</TableCell>
+                      </TableRow>
                     )) : (
-                        <TableRow><TableCell colSpan={4} className="h-24 text-center">No hay retiros registrados.</TableCell></TableRow>
+                      <TableRow><TableCell colSpan={4} className="h-24 text-center">No hay pagos registrados.</TableCell></TableRow>
                     )}
-                </TableBody>
-              </Table>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="retiros">
+          <Card>
+            <CardHeader>
+              <CardTitle>Historial de Retiros de Propietarios</CardTitle>
+              <CardDescription>Salidas de dinero de las ganancias de la flotilla.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="rounded-lg border shadow-sm overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Fecha</TableHead>
+                      <TableHead>Propietario</TableHead>
+                      <TableHead>Motivo</TableHead>
+                      <TableHead className="text-right">Monto</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredWithdrawals.length > 0 ? filteredWithdrawals.map(w => (
+                      <TableRow key={w.id}>
+                        <TableCell>{format(parseISO(w.date), "dd MMM, HH:mm", {locale: es})}</TableCell>
+                        <TableCell>{w.ownerName}</TableCell>
+                        <TableCell>{w.reason || 'N/A'}</TableCell>
+                        <TableCell className="text-right font-semibold text-destructive">{formatCurrency(w.amount)}</TableCell>
+                      </TableRow>
+                    )) : (
+                      <TableRow><TableCell colSpan={4} className="h-24 text-center">No hay retiros registrados.</TableCell></TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
       
       <RegisterPaymentDialog
         open={isPaymentDialogOpen}
