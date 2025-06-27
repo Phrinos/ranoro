@@ -41,6 +41,7 @@ export async function generateAndShareOwnerReport(
       });
 
       const rentalIncome = vehiclePayments.reduce((sum, p) => sum + p.amount, 0);
+      const daysRented = vehiclePayments.reduce((sum, p) => sum + p.daysCovered, 0);
 
       const vehicleServices = allServiceRecords.filter(s => {
         const sDate = parseISO(s.serviceDate);
@@ -51,7 +52,7 @@ export async function generateAndShareOwnerReport(
       return {
         vehicleId: vehicle.id,
         vehicleInfo: `${vehicle.make} ${vehicle.model} (${vehicle.licensePlate})`,
-        daysRented: vehiclePayments.length,
+        daysRented,
         rentalIncome,
         maintenanceCosts,
       };

@@ -23,8 +23,8 @@ export const ContractContent = React.forwardRef<
     : new Date();
 
   // Inicio = fecha de firma (01-jun-2025 en el ejemplo)
-  const startDate = driver.contractStartDate
-    ? parseISO(driver.contractStartDate)
+  const startDate = driver.contractDate
+    ? parseISO(driver.contractDate)
     : signatureDate;
 
   // Fin = un año menos un día (31-may-2026 en el ejemplo)
