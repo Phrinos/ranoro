@@ -14,7 +14,7 @@ import { PageHeader } from '@/components/page-header';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { ShieldAlert, Edit, User, Phone, Home, FileText, Upload, AlertTriangle, Car, DollarSign, Printer, ArrowLeft } from 'lucide-react';
+import { ShieldAlert, Edit, User, Phone, Home, FileText, Upload, AlertTriangle, Car, DollarSign, Printer, ArrowLeft, PlusCircle } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import Link from 'next/link';
@@ -29,6 +29,8 @@ import { format, parseISO, differenceInCalendarDays, startOfToday, isAfter } fro
 import { es } from 'date-fns/locale';
 import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
 import { ContractContent } from '../components/contract-content';
+import Image from 'next/image';
+import { RegisterPaymentDialog } from '../components/register-payment-dialog';
 
 export default function DriverDetailPage() {
   const params = useParams();
@@ -41,6 +43,7 @@ export default function DriverDetailPage() {
   const [driverPayments, setDriverPayments] = useState<RentalPayment[]>([]);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isContractDialogOpen, setIsContractDialogOpen] = useState(false);
+  const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
 
   useEffect(() => {
     const foundDriver = placeholderDrivers.find(d => d.id === driverId);
@@ -129,6 +132,31 @@ export default function DriverDetailPage() {
     await persistToFirestore(['drivers']);
     toast({ title: "Documento Simulado", description: "Se ha asignado una imagen de marcador de posición." });
   };
+
+  const handleRegisterPayment = async (details: { amount: number; daysCovered: number; }) => {
+    if (!driver || !assignedVehicle) return;
+
+    const newPayment: RentalPayment = {
+        id: `PAY_${Date.now().toString(36)}`,
+        driverId: driver.id,
+        driverName: driver.name,
+        vehicleLicensePlate: assignedVehicle.licensePlate,
+        paymentDate: new Date().toISOString(),
+        amount: details.amount,
+        daysCovered: details.daysCovered,
+    };
+    
+    placeholderRentalPayments.push(newPayment);
+    await persistToFirestore(['rentalPayments']);
+    
+    const updatedPayments = placeholderRentalPayments
+        .filter(p => p.driverId === driverId)
+        .sort((a,b) => parseISO(b.paymentDate).getTime() - parseISO(a.paymentDate).getTime());
+    setDriverPayments(updatedPayments);
+    
+    toast({ title: "Pago Registrado", description: `Se ha registrado el pago de ${formatCurrency(details.amount)}.` });
+  };
+
 
   if (driver === undefined) {
     return <div className="container mx-auto py-8 text-center">Cargando datos del conductor...</div>;
@@ -276,17 +304,29 @@ export default function DriverDetailPage() {
 
         <TabsContent value="payments">
           <Card>
-            <CardHeader><CardTitle>Historial de Pagos</CardTitle></CardHeader>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle>Historial de Pagos</CardTitle>
+               <Button onClick={() => setIsPaymentDialogOpen(true)} disabled={!assignedVehicle}>
+                <PlusCircle className="mr-2 h-4 w-4" />
+                Registrar Pago
+              </Button>
+            </CardHeader>
             <CardContent>
               {driverPayments.length > 0 ? (
                 <div className="rounded-md border">
                   <Table>
-                    <TableHeader><TableRow><TableHead>Folio de Pago</TableHead><TableHead>Fecha</TableHead><TableHead className="text-right">Monto</TableHead></TableRow></TableHeader>
+                    <TableHeader><TableRow>
+                      <TableHead>Folio de Pago</TableHead>
+                      <TableHead>Fecha</TableHead>
+                      <TableHead className="text-right">Días Cubiertos</TableHead>
+                      <TableHead className="text-right">Monto</TableHead>
+                    </TableRow></TableHeader>
                     <TableBody>
                       {driverPayments.map(payment => (
                         <TableRow key={payment.id}>
                           <TableCell className="font-mono">{payment.id}</TableCell>
                           <TableCell>{format(parseISO(payment.paymentDate), "dd MMM yyyy, HH:mm 'hrs'", { locale: es })}</TableCell>
+                          <TableCell className="text-right">{payment.daysCovered.toFixed(2)}</TableCell>
                           <TableCell className="text-right font-semibold">{formatCurrency(payment.amount)}</TableCell>
                         </TableRow>
                       ))}
@@ -307,6 +347,16 @@ export default function DriverDetailPage() {
       />
     </div>
 
+    {driver && assignedVehicle && (
+      <RegisterPaymentDialog
+          open={isPaymentDialogOpen}
+          onOpenChange={setIsPaymentDialogOpen}
+          driver={driver}
+          vehicle={assignedVehicle}
+          onSave={handleRegisterPayment}
+      />
+    )}
+
     {assignedVehicle && (
       <PrintTicketDialog
         open={isContractDialogOpen}
@@ -325,4 +375,3 @@ export default function DriverDetailPage() {
     </>
   );
 }
-

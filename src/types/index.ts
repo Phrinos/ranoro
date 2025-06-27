@@ -51,6 +51,7 @@ export interface RentalPayment {
   vehicleLicensePlate: string;
   paymentDate: string; // ISO String
   amount: number;
+  daysCovered: number;
 }
 
 
