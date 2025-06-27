@@ -162,14 +162,14 @@ export default function OwnerIncomeDetailPage() {
     const storedWorkshopInfo = typeof window !== 'undefined' ? localStorage.getItem('workshopTicketInfo') : null;
     const workshopInfo: WorkshopInfo | undefined = storedWorkshopInfo ? JSON.parse(storedWorkshopInfo) : undefined;
 
-    const result = await generateAndShareOwnerReport(ownerName, workshopInfo);
+    const result = await generateAndShareOwnerReport(ownerName, selectedDate.toISOString(), workshopInfo);
 
     if (result.success && result.report) {
       setReportToShare(result.report);
       setIsShareDialogOpen(true);
     } else {
       toast({
-        title: "Error al Compartir",
+        title: "Error al Generar Reporte",
         description: result.error || "No se pudo generar el enlace para compartir.",
         variant: "destructive",
       });
@@ -216,7 +216,7 @@ export default function OwnerIncomeDetailPage() {
             </Button>
             <Button onClick={handleShareReport} disabled={isSharing}>
               {isSharing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Share2 className="mr-2 h-4 w-4" />}
-              Compartir Reporte
+              Reporte Mensual
             </Button>
           </div>
         }
