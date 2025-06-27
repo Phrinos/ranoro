@@ -85,10 +85,7 @@ export default function NuevaCotizacionPage() {
     setCurrentVehicleForPdf(
       vehicles.find((v) => v.id === newQuote.vehicleId) || null
     );
-    toast({
-      title: "Cotización Creada",
-      description: `Generando vista previa para la cotización ${newQuote.id}.`,
-    });
+    
     setDialogStep("print_preview");
   };
 
