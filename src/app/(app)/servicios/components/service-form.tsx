@@ -267,7 +267,6 @@ export function ServiceForm({
   const [localVehicles, setLocalVehicles] = useState<Vehicle[]>(parentVehicles);
   const [newVehicleInitialData, setNewVehicleInitialData] = useState<Partial<VehicleFormValues> | null>(null);
   const [vehicleSearchResults, setVehicleSearchResults] = useState<Vehicle[]>([]);
-  const [originalQuote, setOriginalQuote] = useState<QuoteRecord | null>(null);
 
   const [currentInventoryItems, setCurrentInventoryItems] = useState<InventoryItem[]>(inventoryItemsProp);
   const [workshopInfo, setWorkshopInfo] = useState<WorkshopInfo | {}>({});
@@ -320,6 +319,13 @@ export function ServiceForm({
         nextServiceInfo: (initialData as ServiceRecord)?.nextServiceInfo,
     }
   });
+
+  const originalQuote = useMemo(() => {
+    if (mode === 'service' && initialDataService?.id) {
+        return placeholderQuotes.find(q => q.serviceId === initialDataService.id) || null;
+    }
+    return null;
+  }, [mode, initialDataService]);
   
   const watchedStatus = useWatch({ control: form.control, name: 'status' });
   const selectedPaymentMethod = useWatch({ control: form.control, name: 'paymentMethod' });
@@ -435,14 +441,6 @@ export function ServiceForm({
         };
 
         form.reset(dataToReset);
-        
-        // Find and set original quote
-        if (mode === 'service' && data.id) {
-            const foundQuote = placeholderQuotes.find(q => q.serviceId === data.id);
-            setOriginalQuote(foundQuote || null);
-        } else {
-            setOriginalQuote(null);
-        }
 
     } else {
       // Set default for new forms
@@ -623,20 +621,13 @@ export function ServiceForm({
   };
 
   const handleViewQuote = useCallback(() => {
-    let quoteToShow: Partial<QuoteRecord> | null = null;
-    if (originalQuote) {
-        quoteToShow = originalQuote;
-    } else if (mode === 'quote' && initialDataQuote) {
-        quoteToShow = initialDataQuote;
-    }
-    
-    if (quoteToShow && quoteToShow.id) {
-        setQuoteForView(quoteToShow as QuoteRecord);
+    if (originalQuote && originalQuote.id) {
+        setQuoteForView(originalQuote);
         setIsQuoteViewOpen(true);
     } else {
         toast({ title: "No encontrada", description: "No se encontró la cotización para mostrar.", variant: "default" });
     }
-  }, [originalQuote, mode, initialDataQuote, toast]);
+  }, [originalQuote, toast]);
 
 
   const handleFormSubmit = async (values: ServiceFormValues) => {
