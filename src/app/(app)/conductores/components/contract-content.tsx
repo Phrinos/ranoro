@@ -26,95 +26,76 @@ export const ContractContent = React.forwardRef<HTMLDivElement, ContractContentP
         className="font-serif bg-white text-black p-8 text-sm leading-relaxed"
       >
         <header className="text-center mb-6">
-            <h1 className="text-lg font-bold uppercase tracking-wider">Contrato de Arrendamiento de Vehículo</h1>
-            <p className="text-xs">CON OBLIGACIÓN SOLIDARIA Y PAGARÉ</p>
+            <h1 className="text-lg font-bold uppercase tracking-wider">Contrato de Arrendamiento de Vehículo Automotor</h1>
+            <p className="text-xs">Que celebran, por una parte, el C. {vehicle.ownerName ? vehicle.ownerName.toUpperCase() : '[PROPIETARIO]'}, en su carácter de "ARRENDADOR", y por la otra, el C. {driver.name.toUpperCase()}, en su carácter de "ARRENDATARIO", con la intervención de "RANORO" como "ADMINISTRADOR", al tenor de las siguientes Declaraciones y Cláusulas.</p>
         </header>
 
-        <section className="mb-6 text-justify text-xs">
-            <p>
-                CONTRATO DE ARRENDAMIENTO DE VEHÍCULO AUTOMOTOR, QUE CELEBRAN EN LA CIUDAD DE AGUASCALIENTES, AGS., A {formattedContractDate}.
-                POR UNA PARTE, <strong>{vehicle.ownerName ? `C. ${vehicle.ownerName.toUpperCase()}` : 'EL PROPIETARIO REGISTRADO'}</strong>, A QUIEN EN LO SUCESIVO SE LE DENOMINARÁ
-                <strong> "EL ARRENDADOR"</strong>. POR OTRA PARTE, <strong>C. {driver.name.toUpperCase()}</strong>, A QUIEN EN LO SUCESIVO SE LE DENOMINARÁ <strong>"EL ARRENDATARIO"</strong>.
-                Y POR ÚLTIMO <strong>RANORO</strong>, REPRESENTADA EN ESTE ACTO, A QUIEN EN LO SUCESIVO SE LE DENOMINARÁ <strong>"EL ADMINISTRADOR"</strong>,
-                AL TENOR DE LAS SIGUIENTES DECLARACIONES Y CLÁUSULAS:
-            </p>
-        </section>
-
-        <h2 className="font-bold text-center mb-4 uppercase text-sm">Declaraciones</h2>
+        <h2 className="font-bold text-center mb-4 uppercase text-sm">DECLARACIONES</h2>
 
         <section className="mb-6 text-xs space-y-2 text-justify">
             <p><strong>I.- DECLARA "EL ARRENDADOR":</strong></p>
-            <p>a) Ser una persona física con plena capacidad para contratar y obligarse.</p>
-            <p>b) Ser el legítimo propietario del vehículo objeto de este contrato, cuyas características se detallan más adelante.</p>
+            <p>a) Ser persona física de nacionalidad mexicana, mayor de edad, con plena capacidad jurídica para celebrar el presente acto.</p>
+            <p>b) Ser el único y legítimo propietario del vehículo automotor objeto del presente contrato, y que el mismo se encuentra libre de todo gravamen y al corriente en el pago de sus contribuciones.</p>
 
             <p className="mt-2"><strong>II.- DECLARA "EL ARRENDATARIO":</strong></p>
-            <p>a) Ser una persona física, con plena capacidad jurídica para celebrar el presente acto.</p>
-            <p>b) Que su domicilio para todos los efectos legales de este contrato es el de "EL ADMINISTRADOR", ubicado en <strong>{workshopAddress}</strong>.</p>
-            <p>c) Que cuenta con la licencia de conducir vigente y la pericia necesaria para operar el vehículo arrendado.</p>
-
-            <p className="mt-2"><strong>III.- DECLARA "EL ADMINISTRADOR":</strong></p>
-            <p>a) Ser una entidad con facultades para actuar como intermediario y administrador en el presente contrato, encargado de la gestión de cobros y mantenimientos del vehículo.</p>
+            <p>a) Ser persona física, de nacionalidad mexicana, mayor de edad, con plena capacidad para contratar y obligarse en los términos del presente instrumento.</p>
+            <p>b) Que tiene la pericia y los conocimientos técnicos necesarios para la operación y conducción del tipo de vehículo materia de este contrato, así como licencia para conducir vigente expedida por la autoridad competente.</p>
+            <p>c) Que para todos los efectos legales del presente contrato, señala como su domicilio el ubicado en: <strong>{driver.address}</strong>.</p>
+            
+            <p className="mt-2"><strong>III.- DECLARAN LAS PARTES:</strong></p>
+            <p>a) Que es su voluntad celebrar el presente contrato de arrendamiento, en los términos y condiciones que se establecen en las siguientes:</p>
         </section>
         
-        <h2 className="font-bold text-center mb-4 uppercase text-sm">Cláusulas</h2>
+        <h2 className="font-bold text-center mb-4 uppercase text-sm">CLÁUSULAS</h2>
 
         <section className="mb-6 text-xs space-y-3 text-justify">
-            <div>
-              <p>
-                <strong>PRIMERA.- OBJETO.</strong> "EL ARRENDADOR" da en arrendamiento a "EL ARRENDATARIO", quien recibe a su entera satisfacción, el vehículo de las siguientes características:
-              </p>
-              <div className="pl-4 border-l-2 border-gray-300 ml-4 py-2 my-2 text-sm">
-                  <p><strong>Marca:</strong> {vehicle.make}</p>
-                  <p><strong>Modelo:</strong> {vehicle.model}</p>
-                  <p><strong>Año:</strong> {vehicle.year}</p>
-                  <p><strong>Placas:</strong> {vehicle.licensePlate}</p>
-                  <p><strong>VIN:</strong> {vehicle.vin || 'N/A'}</p>
-              </div>
+            <p>
+                <strong>PRIMERA.- OBJETO.</strong> "EL ARRENDADOR" otorga en arrendamiento a "EL ARRENDATARIO" el vehículo automotor con las siguientes características:
+            </p>
+            <div className="pl-4 border-l-2 border-gray-300 ml-4 py-2 my-2 text-sm">
+                <p><strong>Marca:</strong> {vehicle.make}</p>
+                <p><strong>Modelo:</strong> {vehicle.model}</p>
+                <p><strong>Año:</strong> {vehicle.year}</p>
+                <p><strong>Placas:</strong> {vehicle.licensePlate}</p>
+                <p><strong>VIN (NIV):</strong> {vehicle.vin || 'NO ESPECIFICADO'}</p>
             </div>
+            <p>"EL ARRENDATARIO" recibe el vehículo en perfectas condiciones de funcionamiento, con todo el equipo completo y en estado de servir para el uso convenido.</p>
 
             <p>
-                <strong>SEGUNDA.- RENTA Y FORMA DE PAGO.</strong> "EL ARRENDATARIO" se obliga a pagar a "EL ADMINISTRADOR" una renta diaria de <strong>{formatCurrency(vehicle.dailyRentalCost || 0)}</strong>. Los pagos se realizarán de manera diaria, sin excepción, en las instalaciones de "EL ADMINISTRADOR".
+                <strong>SEGUNDA.- RENTA.</strong> "EL ARRENDATARIO" se obliga a pagar por concepto de renta la cantidad diaria de <strong>{formatCurrency(vehicle.dailyRentalCost || 0)}</strong>. Dicha cantidad será liquidada diariamente y por adelantado en el domicilio de "EL ADMINISTRADOR". La falta de pago de una sola de las rentas estipuladas será causa suficiente para que "EL ARRENDADOR" rescinda el presente contrato y solicite la devolución inmediata del vehículo.
             </p>
 
             <p>
-                <strong>TERCERA.- DEPÓSITO EN GARANTÍA.</strong> A la firma del presente contrato, "EL ARRENDATARIO" entrega a "EL ADMINISTRADOR" la cantidad de <strong>{formatCurrency(driver.depositAmount || 0)}</strong> por concepto de depósito en garantía. Este depósito no será considerado como pago de renta y servirá para garantizar el cumplimiento de las obligaciones del presente contrato, así como para cubrir posibles daños al vehículo o adeudos pendientes. Dicho depósito será devuelto íntegramente al término del contrato, siempre y cuando el vehículo sea restituido en las mismas condiciones en que fue entregado, salvo el demérito normal por su uso.
-            </p>
-
-            <p>
-                <strong>CUARTA.- VIGENCIA.</strong> La vigencia del presente contrato será indefinida, iniciando el día de su firma. Cualquiera de las partes podrá darlo por terminado notificando a "EL ADMINISTRADOR" con un mínimo de 24 horas de antelación.
-            </p>
-
-            <div>
-              <p><strong>QUINTA.- OBLIGACIONES DEL ARRENDATARIO.</strong></p>
-              <ul className="list-decimal pl-6 mt-1 space-y-1">
-                  <li>Utilizar el vehículo de manera prudente, de acuerdo a su naturaleza y exclusivamente para el fin convenido.</li>
-                  <li>Cubrir la totalidad de los gastos de combustible y demás consumibles necesarios para la operación del vehículo.</li>
-                  <li>Reportar de manera inmediata a "EL ADMINISTRADOR" cualquier falla mecánica, siniestro, robo o daño que sufra el vehículo.</li>
-                  <li>No realizar ni permitir que se realicen reparaciones o modificaciones de ningún tipo al vehículo sin la autorización previa y por escrito de "EL ADMINISTRADOR".</li>
-                  <li>Asumir la total responsabilidad por infracciones de tránsito, así como de los daños y perjuicios que cause a terceros en sus bienes o personas con motivo del uso del vehículo.</li>
-                  <li>Restituir el vehículo al término del contrato en las oficinas de "EL ADMINISTRADOR".</li>
-              </ul>
-            </div>
-
-            <div>
-              <p><strong>SEXTA.- OBLIGACIONES DE "EL ADMINISTRADOR".</strong></p>
-              <ul className="list-decimal pl-6 mt-1 space-y-1">
-                  <li>Coordinar y cubrir los costos de los mantenimientos preventivos y correctivos necesarios para el buen funcionamiento del vehículo, siempre que no se deban a negligencia o mal uso por parte de "EL ARRENDATARIO".</li>
-                  <li>Gestionar la recepción de los pagos de renta y la administración general del presente contrato.</li>
-              </ul>
-            </div>
-            
-            <p>
-                <strong>SÉPTIMA.- PAGARÉ.</strong> "EL ARRENDATARIO" suscribe un pagaré mercantil en favor de "EL ARRENDADOR" por la cantidad de ${'50,000.00'} (CINCUENTA MIL PESOS 00/100 M.N.) para garantizar el cumplimiento de todas y cada una de las obligaciones estipuladas en este contrato, el cual será devuelto a la terminación del mismo, siempre que no exista adeudo alguno.
+                <strong>TERCERA.- VIGENCIA.</strong> El presente contrato tendrá una vigencia indefinida, iniciando el día <strong>{formattedContractDate}</strong>. Cualquiera de las partes podrá darlo por terminado mediante aviso por escrito a la otra parte con al menos 24 horas de anticipación.
             </p>
             
             <p>
-                <strong>OCTAVA.- JURISDICCIÓN.</strong> Para la interpretación y cumplimiento del presente contrato, las partes se someten expresamente a la jurisdicción y competencia de los tribunales de la ciudad de Aguascalientes, Ags., renunciando a cualquier otro fuero que por razón de sus domicilios presentes o futuros pudiera corresponderles.
+                <strong>CUARTA.- USO DEL VEHÍCULO.</strong> "EL ARRENDATARIO" se obliga a utilizar el vehículo arrendado exclusivamente como medio de transporte particular y/o para el servicio de transporte de pasajeros mediante plataformas digitales. Le queda estrictamente prohibido subarrendarlo, destinarlo a fines ilícitos, utilizarlo en carreras o pruebas de velocidad, o para remolcar otros vehículos.
+            </p>
+
+            <p>
+                <strong>QUINTA.- MANTENIMIENTO.</strong> "EL ADMINISTRADOR" será responsable de realizar los servicios de mantenimiento preventivo y correctivo que sean necesarios para el buen funcionamiento del vehículo, siempre y cuando el deterioro no sea consecuencia de negligencia o mal uso por parte de "EL ARRENDATARIO". "EL ARRENDATARIO" se obliga a reportar cualquier falla de manera inmediata.
+            </p>
+
+            <p>
+                <strong>SEXTA.- DEPÓSITO EN GARANTÍA.</strong> A la firma del presente contrato, "EL ARRENDATARIO" entrega a "EL ADMINISTRADOR" la cantidad de <strong>{formatCurrency(driver.depositAmount || 0)}</strong> en calidad de depósito en garantía, para asegurar el cumplimiento de sus obligaciones. Dicha cantidad será devuelta al término del contrato, una vez que el vehículo sea entregado en las mismas condiciones en que se recibió, descontando los posibles adeudos por rentas, daños, multas o cualquier otro concepto imputable al "ARRENDATARIO".
+            </p>
+            
+            <p>
+                <strong>SÉPTIMA.- PAGARÉ.</strong> Para garantizar el cumplimiento de las obligaciones derivadas de este contrato, "EL ARRENDATARIO" suscribe en este acto un pagaré mercantil en favor de "EL ARRENDADOR" por la cantidad de <strong>${'50,000.00'} (CINCUENTA MIL PESOS 00/100 M.N.)</strong>, el cual será exigible en caso de incumplimiento y devuelto a la terminación satisfactoria del contrato.
+            </p>
+            
+            <p>
+                <strong>OCTAVA.- SINIESTROS Y MULTAS.</strong> "EL ARRENDATARIO" será el único responsable de los daños y perjuicios causados a terceros, así como de todas las multas y sanciones administrativas que se generen durante el tiempo que tenga la posesión del vehículo. En caso de siniestro, deberá notificarlo de inmediato al "ADMINISTRADOR".
+            </p>
+
+            <p>
+                <strong>NOVENA.- JURISDICCIÓN.</strong> Para todo lo relativo a la interpretación, cumplimiento y ejecución del presente contrato, las partes se someten expresamente a la jurisdicción y competencia de los tribunales de la ciudad de Aguascalientes, Aguascalientes, renunciando a cualquier otro fuero que pudiera corresponderles por razón de sus domicilios presentes o futuros.
             </p>
         </section>
 
         <p className="text-xs text-center mb-10">
-            Leído el presente contrato y enteradas las partes de su contenido y alcance legal, lo firman por duplicado de común acuerdo.
+            Enteradas las partes del contenido y alcance legal del presente contrato, lo firman de conformidad en la ciudad de Aguascalientes, Ags., en la fecha de su celebración.
         </p>
 
         <footer className="mt-20 grid grid-cols-2 gap-8 text-center text-xs">
