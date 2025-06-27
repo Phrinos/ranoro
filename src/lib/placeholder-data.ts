@@ -21,6 +21,7 @@ import type {
   VehiclePriceList,
   Driver,
   RentalPayment,
+  PublicOwnerReport,
 } from '@/types';
 import {
   format,
@@ -124,6 +125,9 @@ export let placeholderFixedMonthlyExpenses: MonthlyFixedExpense[] = [];
 // --- LISTA DE PRECIOS ---
 export let placeholderVehiclePriceLists: VehiclePriceList[] = [];
 
+// --- REPORTES PUBLICOS ---
+export let placeholderPublicOwnerReports: PublicOwnerReport[] = [];
+
 // --- DATOS SIMULADOS (BORRAR O REEMPLAZAR) ---
 export const placeholderDashboardMetrics: DashboardMetrics = {
   activeServices: 0,
@@ -157,6 +161,7 @@ const DATA_ARRAYS = {
   vehiclePriceLists: placeholderVehiclePriceLists,
   drivers: placeholderDrivers,
   rentalPayments: placeholderRentalPayments,
+  publicOwnerReports: placeholderPublicOwnerReports,
 };
 
 type DataKey = keyof typeof DATA_ARRAYS;
@@ -411,8 +416,8 @@ export const calculateSaleProfit = (
     }
   }
   
-  // La ganancia es el subtotal (antes de IVA) menos el costo de los productos.
-  const profit = sale.subTotal - totalCost;
+  // La ganancia es el total (con IVA) menos el costo de los productos.
+  const profit = sale.totalAmount - totalCost;
   
   return isFinite(profit) ? profit : 0;
 };

@@ -130,7 +130,7 @@ export interface ServiceRecord {
   taxAmount?: number; // IVA amount
   totalCost: number; // Final, tax-inclusive price. For services, this is the "Costo del Servicio (IVA incluido)"
   totalSuppliesCost?: number; // Cost of supplies to the workshop (pre-tax)
-  serviceProfit?: number; // Profit: (totalCost / (1+IVA)) - totalSuppliesCost
+  serviceProfit?: number; // Profit: totalCost - totalSuppliesCost
   status: 'Cotizacion' | 'Agendado' | 'Reparando' | 'Completado' | 'Cancelado';
   cancellationReason?: string;
   cancelledBy?: string;
@@ -368,4 +368,24 @@ export interface VehiclePriceList {
   model: string;
   years: number[];
   services: PricedService[];
+}
+
+export interface VehicleMonthlyReport {
+  vehicleId: string;
+  vehicleInfo: string;
+  daysRented: number;
+  rentalIncome: number;
+  maintenanceCosts: number;
+}
+
+export interface PublicOwnerReport {
+  publicId: string;
+  ownerName: string;
+  generatedDate: string; // ISO String
+  reportMonth: string; // e.g., "septiembre 2024"
+  detailedReport: VehicleMonthlyReport[];
+  totalRentalIncome: number;
+  totalMaintenanceCosts: number;
+  totalNetBalance: number;
+  workshopInfo?: WorkshopInfo;
 }
