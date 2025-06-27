@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useParams, useRouter } from 'next/navigation';
@@ -255,10 +256,12 @@ export default function VehicleDetailPage() {
                     <p className="font-semibold">Fecha:</p>
                     <p>{format(parseISO(nextServiceInfo.date), "dd 'de' MMMM 'de' yyyy", { locale: es })}</p>
                   </div>
-                  <div>
-                    <p className="font-semibold">Kilometraje:</p>
-                    <p>{nextServiceInfo.mileage.toLocaleString('es-MX')} km</p>
-                  </div>
+                  {nextServiceInfo.mileage && (
+                    <div>
+                      <p className="font-semibold">Kilometraje:</p>
+                      <p>{nextServiceInfo.mileage.toLocaleString('es-MX')} km</p>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             )}
