@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { useParams, useRouter } from 'next/navigation';
 import { PageHeader } from "@/components/page-header";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -11,7 +11,7 @@ import {
   placeholderRentalPayments,
   placeholderServiceRecords,
 } from '@/lib/placeholder-data';
-import type { Vehicle, RentalPayment, ServiceRecord, WorkshopInfo } from '@/types';
+import type { PublicOwnerReport, Vehicle, RentalPayment, ServiceRecord, WorkshopInfo } from '@/types';
 import {
   format,
   parseISO,
@@ -24,20 +24,69 @@ import {
   getDaysInMonth,
 } from "date-fns";
 import { es } from 'date-fns/locale';
-import { ChevronLeft, ChevronRight, DollarSign, Wrench, Calendar, ArrowLeft, Share2, Loader2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, DollarSign, Wrench, Calendar, ArrowLeft, Share2, Loader2, Copy, Download } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { formatCurrency } from "@/lib/utils";
 import Link from "next/link";
 import { useToast } from "@/hooks/use-toast";
 import { generateAndShareOwnerReport } from '../actions';
+import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
 
-interface VehicleMonthlyReport {
-  vehicleId: string;
-  vehicleInfo: string;
-  daysRented: number;
-  rentalIncome: number;
-  maintenanceCosts: number;
-}
+
+const ReportContent = React.forwardRef<HTMLDivElement, { report: PublicOwnerReport }>(({ report }, ref) => {
+  const workshopInfo = report.workshopInfo || { name: 'Taller', logoUrl: '/ranoro-logo.png' };
+
+  return (
+    <div ref={ref} className="p-8 font-sans bg-white text-black" data-format="letter">
+      <header className="flex justify-between items-center mb-8 border-b-2 border-black pb-4">
+        <img src={workshopInfo.logoUrl} alt={`${workshopInfo.name} Logo`} className="h-16" data-ai-hint="workshop logo" />
+        <div className="text-right">
+          <h1 className="text-2xl font-bold">Reporte de Ingresos de Flotilla</h1>
+          <p className="text-sm">Propietario: <span className="font-semibold">{report.ownerName}</span></p>
+          <p className="text-sm">Mes del Reporte: <span className="font-semibold">{report.reportMonth}</span></p>
+        </div>
+      </header>
+
+      <main>
+        <div className="grid grid-cols-3 gap-4 mb-8 text-center">
+          <Card><CardHeader><CardTitle className="text-sm font-medium">Ingreso por Renta</CardTitle><CardDescription className="text-2xl font-bold">{formatCurrency(report.totalRentalIncome)}</CardDescription></CardHeader></Card>
+          <Card><CardHeader><CardTitle className="text-sm font-medium">Costos de Mantenimiento</CardTitle><CardDescription className="text-2xl font-bold text-destructive">{formatCurrency(report.totalMaintenanceCosts)}</CardDescription></CardHeader></Card>
+          <Card><CardHeader><CardTitle className="text-sm font-medium">Balance Neto</CardTitle><CardDescription className={`text-2xl font-bold ${report.totalNetBalance >= 0 ? 'text-green-600' : 'text-red-600'}`}>{formatCurrency(report.totalNetBalance)}</CardDescription></CardHeader></Card>
+        </div>
+
+        <h2 className="text-xl font-semibold mb-4">Desglose por Vehículo</h2>
+        <Table>
+          <TableHeader><TableRow><TableHead>Vehículo</TableHead><TableHead className="text-center">Días Rentados</TableHead><TableHead className="text-right">Ingresos</TableHead><TableHead className="text-right">Mantenimiento</TableHead><TableHead className="text-right">Balance</TableHead></TableRow></TableHeader>
+          <TableBody>
+            {report.detailedReport.map(item => {
+              const balance = item.rentalIncome - item.maintenanceCosts;
+              return (
+                <TableRow key={item.vehicleId}>
+                  <TableCell className="font-medium">
+                    <Link href={`/flotilla/${item.vehicleId}`} className="hover:underline text-primary">
+                      {item.vehicleInfo}
+                    </Link>
+                  </TableCell>
+                  <TableCell className="text-center">{item.daysRented}</TableCell>
+                  <TableCell className="text-right">{formatCurrency(item.rentalIncome)}</TableCell>
+                  <TableCell className="text-right text-destructive">{formatCurrency(item.maintenanceCosts)}</TableCell>
+                  <TableCell className={`text-right font-bold ${balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                    {formatCurrency(balance)}
+                  </TableCell>
+                </TableRow>
+              )
+            })}
+          </TableBody>
+        </Table>
+      </main>
+      <footer className="text-xs text-center text-gray-500 mt-8 pt-4 border-t">
+        Reporte generado por Ranoro - {format(parseISO(report.generatedDate), "dd/MM/yyyy HH:mm", { locale: es })}
+      </footer>
+    </div>
+  );
+});
+ReportContent.displayName = "ReportContent";
+
 
 export default function OwnerIncomeDetailPage() {
   const params = useParams();
@@ -47,6 +96,9 @@ export default function OwnerIncomeDetailPage() {
   
   const [selectedDate, setSelectedDate] = useState(startOfMonth(new Date()));
   const [isSharing, setIsSharing] = useState(false);
+  const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
+  const [reportToShare, setReportToShare] = useState<PublicOwnerReport | null>(null);
+  const reportContentRef = useRef<HTMLDivElement>(null);
 
   const handlePreviousMonth = () => setSelectedDate(subMonths(selectedDate, 1));
   const handleNextMonth = () => setSelectedDate(addMonths(selectedDate, 1));
@@ -112,13 +164,9 @@ export default function OwnerIncomeDetailPage() {
 
     const result = await generateAndShareOwnerReport(ownerName, workshopInfo);
 
-    if (result.success && result.publicId) {
-      const reportUrl = `${window.location.origin}/r/${result.publicId}`;
-      navigator.clipboard.writeText(reportUrl);
-      toast({
-        title: "Enlace Copiado",
-        description: "El enlace público para el reporte ha sido copiado a tu portapapeles.",
-      });
+    if (result.success && result.report) {
+      setReportToShare(result.report);
+      setIsShareDialogOpen(true);
     } else {
       toast({
         title: "Error al Compartir",
@@ -128,6 +176,33 @@ export default function OwnerIncomeDetailPage() {
     }
     setIsSharing(false);
   };
+  
+  const handleCopyLink = () => {
+    if (!reportToShare?.publicId) return;
+    const reportUrl = `${window.location.origin}/r/${reportToShare.publicId}`;
+    navigator.clipboard.writeText(reportUrl);
+    toast({
+      title: "Enlace Copiado",
+      description: "El enlace público para el reporte ha sido copiado a tu portapapeles.",
+    });
+  };
+
+  const handleDownloadPDF = async () => {
+    if (!reportContentRef.current || !reportToShare) return;
+    const html2pdf = (await import('html2pdf.js')).default;
+    const element = reportContentRef.current;
+    const pdfFileName = `Reporte_Flotilla_${reportToShare.ownerName}_${reportToShare.reportMonth}.pdf`.replace(/ /g, '_');
+    const opt = {
+      margin: 10,
+      filename: pdfFileName,
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas:  { scale: 2, useCORS: true, letterRendering: true },
+      jsPDF:        { unit: 'mm', format: 'letter', orientation: 'portrait' }
+    };
+    toast({ title: "Generando PDF...", description: `Se está preparando ${pdfFileName}.` });
+    html2pdf().from(element).set(opt).save();
+  };
+
 
   return (
     <>
@@ -224,6 +299,27 @@ export default function OwnerIncomeDetailPage() {
           </div>
         </CardContent>
       </Card>
+      
+      {isShareDialogOpen && reportToShare && (
+        <PrintTicketDialog
+          open={isShareDialogOpen}
+          onOpenChange={setIsShareDialogOpen}
+          title="Vista Previa de Reporte"
+          dialogContentClassName="printable-quote-dialog max-w-4xl"
+          footerActions={
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={handleCopyLink}>
+                <Copy className="mr-2 h-4 w-4" /> Copiar Enlace
+              </Button>
+              <Button onClick={handleDownloadPDF}>
+                <Download className="mr-2 h-4 w-4" /> Descargar PDF
+              </Button>
+            </div>
+          }
+        >
+          <ReportContent report={reportToShare} ref={reportContentRef} />
+        </PrintTicketDialog>
+      )}
     </>
   );
 }

@@ -12,7 +12,7 @@ import type { PublicOwnerReport, VehicleMonthlyReport, WorkshopInfo } from '@/ty
 import { format, parseISO, startOfMonth, endOfMonth, isWithinInterval, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
 
-export async function generateAndShareOwnerReport(ownerName: string, workshopInfo?: WorkshopInfo): Promise<{ success: boolean; publicId?: string; error?: string; }> {
+export async function generateAndShareOwnerReport(ownerName: string, workshopInfo?: WorkshopInfo): Promise<{ success: boolean; report?: PublicOwnerReport; error?: string; }> {
   try {
     const reportDate = new Date();
     const monthStart = startOfMonth(reportDate);
@@ -50,8 +50,7 @@ export async function generateAndShareOwnerReport(ownerName: string, workshopInf
 
     // --- Check for existing report and Create/Update ---
     let existingReport = placeholderPublicOwnerReports.find(r => r.ownerName === ownerName);
-    let publicId: string;
-
+    
     const reportData = {
         ownerName,
         generatedDate: reportDate.toISOString(),
@@ -66,20 +65,19 @@ export async function generateAndShareOwnerReport(ownerName: string, workshopInf
     if (existingReport) {
       // Update existing report
       Object.assign(existingReport, reportData);
-      publicId = existingReport.publicId;
+      await persistToFirestore(['publicOwnerReports']);
+      return { success: true, report: existingReport };
     } else {
       // Create new report
-      publicId = `rep_${Date.now().toString(36)}`;
+      const publicId = `rep_${Date.now().toString(36)}`;
       const newPublicReport: PublicOwnerReport = {
         ...reportData,
         publicId,
       };
       placeholderPublicOwnerReports.push(newPublicReport);
+      await persistToFirestore(['publicOwnerReports']);
+      return { success: true, report: newPublicReport };
     }
-    
-    await persistToFirestore(['publicOwnerReports']);
-
-    return { success: true, publicId };
 
   } catch (e) {
     console.error("Error generating public owner report:", e);
