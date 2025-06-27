@@ -106,6 +106,13 @@ const BASE_NAV_STRUCTURE: ReadonlyArray<Omit<NavigationEntry, 'isActive'>> = [
 
   // Mi Flotilla
   {
+    label: 'Pago de rentas',
+    path: '/rentas',
+    icon: DollarSign,
+    groupTag: "Mi Flotilla",
+    permissions: ['fleet:manage']
+  },
+  {
     label: 'Flotilla',
     path: '/flotilla',
     icon: Truck,
@@ -116,13 +123,6 @@ const BASE_NAV_STRUCTURE: ReadonlyArray<Omit<NavigationEntry, 'isActive'>> = [
     label: 'Conductores',
     path: '/conductores',
     icon: Users,
-    groupTag: "Mi Flotilla",
-    permissions: ['fleet:manage']
-  },
-  {
-    label: 'Registro de Rentas',
-    path: '/rentas',
-    icon: DollarSign,
     groupTag: "Mi Flotilla",
     permissions: ['fleet:manage']
   },
