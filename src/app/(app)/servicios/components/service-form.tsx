@@ -352,7 +352,7 @@ export function ServiceForm({
   }, 0) || 0;
 
   const totalCostBeforeTax = totalCost / (1 + IVA_RATE) || 0;
-  const serviceProfit = totalCostBeforeTax - totalSuppliesWorkshopCost;
+  const serviceProfit = totalCost - totalSuppliesWorkshopCost;
 
 
   const refreshCurrentUser = useCallback(() => {
@@ -1893,4 +1893,5 @@ const SafetyCheckRow = ({ name, label, control, isReadOnly }: { name: string; la
 };
 
     
+
 
