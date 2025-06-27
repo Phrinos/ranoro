@@ -58,10 +58,11 @@ export default function CategoriasInventarioPage() {
   }, [categories]);
 
   const filteredCategories = useMemo(() => {
-    if (!searchTerm) return categories;
-    return categories.filter(cat =>
-      cat.name.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    const filtered = searchTerm
+      ? categories.filter(cat => cat.name.toLowerCase().includes(searchTerm.toLowerCase()))
+      : categories;
+
+    return [...filtered].sort((a, b) => a.name.localeCompare(b.name));
   }, [categories, searchTerm]);
 
   const handleOpenAddDialog = () => {
