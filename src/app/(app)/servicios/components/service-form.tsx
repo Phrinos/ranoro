@@ -278,7 +278,6 @@ export function ServiceForm({
   const [serviceForSheet, setServiceForSheet] = useState<ServiceRecord | null>(null);
   
   const [isQuoteViewOpen, setIsQuoteViewOpen] = useState(false);
-  const [quoteForView, setQuoteForView] = useState<QuoteRecord | null>(null);
   
   const [isServiceDatePickerOpen, setIsServiceDatePickerOpen] = useState(false);
   const [isDeliveryDatePickerOpen, setIsDeliveryDatePickerOpen] = useState(false);
@@ -468,8 +467,12 @@ export function ServiceForm({
             form.setValue('technicianId', freshCurrentUser.id);
           }
       }
+      // Automatically add one service item if none exist for a new form
+      if (form.getValues('serviceItems').length === 0) {
+        appendServiceItem({ id: `item_${Date.now()}`, name: '', price: undefined, suppliesUsed: [] });
+      }
     }
-  }, [initialDataService, initialDataQuote, mode, localVehicles, currentInventoryItems, form]);
+  }, [initialDataService, initialDataQuote, mode, localVehicles, currentInventoryItems, form, appendServiceItem]);
   
   // Effect to sync signatures from public doc
   useEffect(() => {
@@ -1495,11 +1498,11 @@ export function ServiceForm({
         }}
       />
 
-      {isQuoteViewOpen && quoteForView && (
+      {isQuoteViewOpen && quoteForViewing && (
         <PrintTicketDialog
             open={isQuoteViewOpen}
             onOpenChange={setIsQuoteViewOpen}
-            title={`Cotización: ${quoteForView.id}`}
+            title={`Cotización: ${quoteForViewing.id}`}
             dialogContentClassName="printable-quote-dialog"
             onDialogClose={() => setQuoteForView(null)}
             footerActions={
@@ -1509,9 +1512,9 @@ export function ServiceForm({
             }
         >
             <QuoteContent
-                quote={quoteForView}
-                vehicle={localVehicles.find(v => v.id === quoteForView.vehicleId)}
-                workshopInfo={quoteForView.workshopInfo}
+                quote={quoteForViewing}
+                vehicle={localVehicles.find(v => v.id === quoteForViewing.vehicleId)}
+                workshopInfo={quoteForViewing.workshopInfo}
             />
         </PrintTicketDialog>
       )}
