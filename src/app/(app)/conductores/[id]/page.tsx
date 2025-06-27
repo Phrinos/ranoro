@@ -5,15 +5,18 @@ import { useParams, useRouter } from 'next/navigation';
 import { 
   placeholderDrivers, 
   placeholderVehicles,
+  placeholderServiceRecords,
+  placeholderRentalPayments,
   persistToFirestore 
 } from '@/lib/placeholder-data';
-import type { Driver, Vehicle } from '@/types';
+import type { Driver, Vehicle, RentalPayment } from '@/types';
 import { PageHeader } from '@/components/page-header';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { ShieldAlert, Edit, User, Phone, Home, FileText, Upload, Link as LinkIcon, AlertTriangle, Car, DollarSign, Printer } from 'lucide-react';
+import { ShieldAlert, Edit, User, Phone, Home, FileText, Upload, AlertTriangle, Car, DollarSign, Printer, ArrowLeft, Ban } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import Link from 'next/link';
 import { useEffect, useState, useMemo, useRef } from 'react';
 import { DriverDialog } from '../components/driver-dialog';
@@ -23,7 +26,7 @@ import Image from 'next/image';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { formatCurrency } from '@/lib/utils';
-import { format, parseISO } from 'date-fns';
+import { format, parseISO, differenceInCalendarDays, startOfToday, isAfter } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
 import { ContractContent } from '../components/contract-content';
@@ -36,6 +39,7 @@ export default function DriverDetailPage() {
   const contractContentRef = useRef<HTMLDivElement>(null);
 
   const [driver, setDriver] = useState<Driver | null | undefined>(undefined);
+  const [driverPayments, setDriverPayments] = useState<RentalPayment[]>([]);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [deposit, setDeposit] = useState<number | string>('');
   const [isContractDialogOpen, setIsContractDialogOpen] = useState(false);
@@ -46,7 +50,37 @@ export default function DriverDetailPage() {
     if (foundDriver?.depositAmount) {
       setDeposit(foundDriver.depositAmount);
     }
+    const payments = placeholderRentalPayments.filter(p => p.driverId === driverId).sort((a,b) => parseISO(b.paymentDate).getTime() - parseISO(a.paymentDate).getTime());
+    setDriverPayments(payments);
   }, [driverId]);
+
+  const assignedVehicle = useMemo(() => {
+    if (!driver?.assignedVehicleId) return null;
+    return placeholderVehicles.find(v => v.id === driver.assignedVehicleId);
+  }, [driver]);
+  
+  const debtInfo = useMemo(() => {
+    if (!driver || !driver.contractDate || !assignedVehicle?.dailyRentalCost) {
+      return { debtAmount: 0, daysOwed: 0 };
+    }
+    const contractStartDate = parseISO(driver.contractDate);
+    const today = startOfToday();
+    
+    if (isAfter(contractStartDate, today)) {
+        return { debtAmount: 0, daysOwed: 0 };
+    }
+
+    const daysSinceContractStart = differenceInCalendarDays(today, contractStartDate) + 1;
+    const totalExpectedAmount = daysSinceContractStart * assignedVehicle.dailyRentalCost;
+    
+    const totalPaidAmount = driverPayments.reduce((sum, p) => sum + p.amount, 0);
+    const debtAmount = Math.max(0, totalExpectedAmount - totalPaidAmount);
+    const daysOwed = debtAmount > 0 ? Math.floor(debtAmount / assignedVehicle.dailyRentalCost) : 0;
+    
+    return { debtAmount, daysOwed };
+
+  }, [driver, assignedVehicle, driverPayments]);
+
 
   const handleSaveDriver = async (formData: DriverFormValues) => {
     if (!driver) return;
@@ -118,11 +152,6 @@ export default function DriverDetailPage() {
     await persistToFirestore(['drivers']);
     toast({ title: "Depósito Guardado", description: `Se guardó un depósito de ${formatCurrency(depositAmount)}.` });
   };
-  
-  const assignedVehicle = useMemo(() => {
-    if (!driver?.assignedVehicleId) return null;
-    return placeholderVehicles.find(v => v.id === driver.assignedVehicleId);
-  }, [driver]);
 
   if (driver === undefined) {
     return <div className="container mx-auto py-8 text-center">Cargando datos del conductor...</div>;
@@ -146,27 +175,51 @@ export default function DriverDetailPage() {
       <PageHeader
         title={driver.name}
         description={`ID Conductor: ${driver.id}`}
-        actions={<Button variant="outline" onClick={() => setIsEditDialogOpen(true)}><Edit className="mr-2 h-4 w-4" /> Editar</Button>}
+        actions={
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => router.back()}><ArrowLeft className="mr-2 h-4 w-4"/> Volver</Button>
+            <Button variant="outline" onClick={() => setIsEditDialogOpen(true)}><Edit className="mr-2 h-4 w-4"/> Editar</Button>
+          </div>
+        }
       />
 
       <Tabs defaultValue="details" className="w-full">
-        <TabsList className="grid w-full grid-cols-2 md:w-1/3">
+        <TabsList className="grid w-full grid-cols-3 md:w-1/2">
           <TabsTrigger value="details">Detalles</TabsTrigger>
           <TabsTrigger value="documents">Documentos</TabsTrigger>
+          <TabsTrigger value="payments">Pagos</TabsTrigger>
         </TabsList>
 
         <TabsContent value="details">
-          <Card>
-            <CardHeader><CardTitle>Información del Conductor</CardTitle></CardHeader>
-            <CardContent className="space-y-4 text-sm">
-              <div className="flex items-center gap-3"><User className="h-4 w-4 text-muted-foreground" /><span>{driver.name}</span></div>
-              <div className="flex items-center gap-3"><Home className="h-4 w-4 text-muted-foreground" /><span>{driver.address}</span></div>
-              <div className="flex items-center gap-3"><Phone className="h-4 w-4 text-muted-foreground" /><span>{driver.phone}</span></div>
-              <div className="flex items-center gap-3"><AlertTriangle className="h-4 w-4 text-muted-foreground" /><span>Tel. Emergencia: {driver.emergencyPhone}</span></div>
-              <div className="flex items-center gap-3"><DollarSign className="h-4 w-4 text-muted-foreground" /><span>Depósito: {driver.depositAmount ? formatCurrency(driver.depositAmount) : 'N/A'}</span></div>
-              <div className="flex items-center gap-3"><FileText className="h-4 w-4 text-muted-foreground" /><span>Contrato: {driver.contractDate ? format(parseISO(driver.contractDate), "dd MMM yyyy", { locale: es }) : 'No generado'}</span></div>
-            </CardContent>
-          </Card>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <Card className="lg:col-span-2">
+              <CardHeader><CardTitle>Información del Conductor</CardTitle></CardHeader>
+              <CardContent className="space-y-4 text-sm">
+                <div className="flex items-center gap-3"><User className="h-4 w-4 text-muted-foreground" /><span>{driver.name}</span></div>
+                <div className="flex items-center gap-3"><Home className="h-4 w-4 text-muted-foreground" /><span>{driver.address}</span></div>
+                <div className="flex items-center gap-3"><Phone className="h-4 w-4 text-muted-foreground" /><span>{driver.phone}</span></div>
+                <div className="flex items-center gap-3"><AlertTriangle className="h-4 w-4 text-muted-foreground" /><span>Tel. Emergencia: {driver.emergencyPhone}</span></div>
+                <div className="flex items-center gap-3"><DollarSign className="h-4 w-4 text-muted-foreground" /><span>Depósito: {driver.depositAmount ? formatCurrency(driver.depositAmount) : 'N/A'}</span></div>
+                <div className="flex items-center gap-3"><FileText className="h-4 w-4 text-muted-foreground" /><span>Contrato: {driver.contractDate ? format(parseISO(driver.contractDate), "dd MMM yyyy", { locale: es }) : 'No generado'}</span></div>
+              </CardContent>
+            </Card>
+            <Card className="lg:col-span-1 bg-amber-50 dark:bg-amber-900/50 border-amber-200">
+                <CardHeader>
+                    <CardTitle className="text-lg text-amber-900 dark:text-amber-200">Estado de Cuenta</CardTitle>
+                    <CardDescription className="text-amber-800 dark:text-amber-300">Resumen de la deuda actual.</CardDescription>
+                </CardHeader>
+                <CardContent className="text-center space-y-4">
+                    <div>
+                        <p className="text-sm font-medium text-muted-foreground">DEUDA TOTAL</p>
+                        <p className="text-3xl font-bold text-destructive">{formatCurrency(debtInfo.debtAmount)}</p>
+                    </div>
+                    <div>
+                        <p className="text-sm font-medium text-muted-foreground">DÍAS PENDIENTES</p>
+                        <p className="text-3xl font-bold">{debtInfo.daysOwed}</p>
+                    </div>
+                </CardContent>
+            </Card>
+          </div>
           <Card className="mt-6">
             <CardHeader>
               <CardTitle>Vehículo Asignado</CardTitle>
@@ -203,7 +256,7 @@ export default function DriverDetailPage() {
             <CardHeader><CardTitle>Acciones</CardTitle></CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                  <Label htmlFor="deposit">Depósito en Garantía</Label>
+                  <Label htmlFor="deposit">Depósito en Garantía y Contrato</Label>
                   <div className="flex gap-2">
                       <Input
                           id="deposit"
@@ -212,7 +265,7 @@ export default function DriverDetailPage() {
                           value={deposit}
                           onChange={(e) => setDeposit(e.target.value)}
                       />
-                      <Button onClick={handleSaveDeposit}>Guardar Depósito</Button>
+                      <Button onClick={handleSaveDeposit}>Guardar Depósito y Fecha Contrato</Button>
                   </div>
               </div>
               <Button onClick={() => setIsContractDialogOpen(true)} disabled={!driver?.depositAmount}>
@@ -251,6 +304,30 @@ export default function DriverDetailPage() {
                   </CardContent>
                 </Card>
               ))}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="payments">
+          <Card>
+            <CardHeader><CardTitle>Historial de Pagos</CardTitle></CardHeader>
+            <CardContent>
+              {driverPayments.length > 0 ? (
+                <div className="rounded-md border">
+                  <Table>
+                    <TableHeader><TableRow><TableHead>Folio de Pago</TableHead><TableHead>Fecha</TableHead><TableHead className="text-right">Monto</TableHead></TableRow></TableHeader>
+                    <TableBody>
+                      {driverPayments.map(payment => (
+                        <TableRow key={payment.id}>
+                          <TableCell className="font-mono">{payment.id}</TableCell>
+                          <TableCell>{format(parseISO(payment.paymentDate), "dd MMM yyyy, HH:mm 'hrs'", { locale: es })}</TableCell>
+                          <TableCell className="text-right font-semibold">{formatCurrency(payment.amount)}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              ) : <p className="text-muted-foreground text-center py-8">No hay pagos registrados para este conductor.</p>}
             </CardContent>
           </Card>
         </TabsContent>
