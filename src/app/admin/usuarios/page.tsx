@@ -17,7 +17,7 @@ import { useToast } from '@/hooks/use-toast';
 import type { User, AppRole } from '@/types';
 import { PlusCircle, Trash2, Edit, Search, ShieldQuestion, ShieldAlert } from "lucide-react";
 import { useRouter } from 'next/navigation';
-import { placeholderUsers, defaultSuperAdmin, AUTH_USER_LOCALSTORAGE_KEY, placeholderAppRoles, persistToFirestore } from '@/lib/placeholder-data';
+import { placeholderUsers, defaultSuperAdmin, AUTH_USER_LOCALSTORAGE_KEY, placeholderAppRoles, persistToFirestore, placeholderServiceRecords } from '@/lib/placeholder-data';
 
 
 const userFormSchema = z.object({
@@ -75,6 +75,39 @@ export default function UsuariosPage() {
         }, 100);
     }
   }, [isFormOpen]);
+
+  const handlePurgeCancelledServices = async () => {
+    const originalCount = placeholderServiceRecords.length;
+    const servicesToKeep = placeholderServiceRecords.filter(
+      (service) => service.status !== 'Cancelado'
+    );
+    const purgedCount = originalCount - servicesToKeep.length;
+
+    if (purgedCount === 0) {
+      toast({
+        title: 'Nada que purgar',
+        description: 'No se encontraron servicios cancelados para eliminar.',
+      });
+      return;
+    }
+
+    placeholderServiceRecords.splice(0, placeholderServiceRecords.length, ...servicesToKeep);
+    
+    try {
+      await persistToFirestore(['serviceRecords']);
+      toast({
+        title: 'Servicios Purgados',
+        description: `Se eliminaron permanentemente ${purgedCount} servicios cancelados.`,
+      });
+    } catch (e) {
+      console.error("Error purging cancelled services:", e);
+      toast({
+        title: 'Error',
+        description: 'No se pudieron purgar los servicios.',
+        variant: 'destructive',
+      });
+    }
+  };
 
   const canEditOrDelete = (user: User): boolean => {
     if (!currentUser) return false;
@@ -201,6 +234,29 @@ export default function UsuariosPage() {
               <Button variant="outline" onClick={() => router.push('/admin/roles')}>
                 <ShieldQuestion className="mr-2 h-4 w-4" /> Gestionar Roles
               </Button>
+            )}
+            {(currentUser?.role === 'Superadmin') && (
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="destructive">
+                    <Trash2 className="mr-2 h-4 w-4" /> Purgar Servicios Cancelados
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>¿Está seguro de purgar los servicios?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Esta acción eliminará permanentemente todos los servicios con estado "Cancelado". Esta acción no se puede deshacer.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>No, cancelar</AlertDialogCancel>
+                    <AlertDialogAction onClick={handlePurgeCancelledServices} className="bg-destructive hover:bg-destructive/90">
+                      Sí, Purgar Servicios
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             )}
           </div>
         }
