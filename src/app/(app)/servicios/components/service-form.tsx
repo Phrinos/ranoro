@@ -326,6 +326,13 @@ export function ServiceForm({
     }
     return null;
   }, [mode, initialDataService]);
+
+  const quoteForViewing = useMemo(() => {
+    if (mode === 'quote' && initialDataQuote?.id) {
+        return placeholderQuotes.find(q => q.id === initialDataQuote.id) || null;
+    }
+    return originalQuote;
+  }, [mode, initialDataQuote, originalQuote]);
   
   const watchedStatus = useWatch({ control: form.control, name: 'status' });
   const selectedPaymentMethod = useWatch({ control: form.control, name: 'paymentMethod' });
@@ -620,14 +627,14 @@ export function ServiceForm({
     }
   };
 
-  const handleViewQuote = useCallback(() => {
-    if (originalQuote && originalQuote.id) {
-        setQuoteForView(originalQuote);
+  const handleViewQuote = useCallback((quoteToView: QuoteRecord | null) => {
+    if (quoteToView) {
+        setQuoteForView(quoteToView);
         setIsQuoteViewOpen(true);
     } else {
         toast({ title: "No encontrada", description: "No se encontró la cotización para mostrar.", variant: "default" });
     }
-  }, [originalQuote, toast]);
+  }, [toast]);
 
 
   const handleFormSubmit = async (values: ServiceFormValues) => {
@@ -1043,8 +1050,8 @@ export function ServiceForm({
                 </TabsList>
               </div>
               <div className="flex gap-2 self-end sm:self-center">
-                  {originalQuote && (
-                      <Button type="button" onClick={handleViewQuote} variant="ghost" size="icon" className="bg-card" title="Ver Cotización Original">
+                  {quoteForViewing && (
+                      <Button type="button" onClick={() => handleViewQuote(quoteForViewing)} variant="ghost" size="icon" className="bg-card" title="Ver Cotización">
                           <FileText className="h-5 w-5 text-purple-600" />
                       </Button>
                   )}
@@ -1436,7 +1443,7 @@ export function ServiceForm({
                     </CardHeader>
                     <CardContent className="space-y-4">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <FormField control={form.control} name="fuelLevel" render={({ field }) => (<FormItem><FormLabel>Nivel de Combustible</FormLabel><Select onValueChange={field.onChange} value={field.value} disabled={isReadOnly}><FormControl><SelectTrigger><SelectValue placeholder="Seleccionar nivel..." /></SelectTrigger></FormControl><SelectContent><SelectItem value="Vacío">Vacío</SelectItem><SelectItem value="1/8">1/8</SelectItem><SelectItem value="1/4">1/4</SelectItem><SelectItem value="3/8">3/8</SelectItem><SelectItem value="1/2">1/2</SelectItem><SelectItem value="5/8">5/8</SelectItem><SelectItem value="3/4">3/4</SelectItem><SelectItem value="7/8">7/8</SelectItem><SelectItem value="Lleno">Lleno</SelectItem></SelectContent></Select></FormItem>)}/>
+                            <FormField control={form.control} name="fuelLevel" render={({ field }) => (<FormItem><FormLabel>Nivel de Combustible</FormLabel><Select onValueChange={field.onChange} value={field.value} disabled={isReadOnly}><FormControl><SelectTrigger><SelectValue placeholder="Seleccionar nivel..." /></SelectTrigger></FormControl><SelectContent><SelectItem value="Vacío">Vacío</SelectItem><SelectItem value="1/8">1/8</SelectItem><SelectItem value="1/4">1/4"></SelectItem><SelectItem value="3/8">3/8</SelectItem><SelectItem value="1/2">1/2</SelectItem><SelectItem value="5/8">5/8</SelectItem><SelectItem value="3/4">3/4</SelectItem><SelectItem value="7/8">7/8</SelectItem><SelectItem value="Lleno">Lleno</SelectItem></SelectContent></Select></FormItem>)}/>
                             <FormField control={form.control} name="customerItems" render={({ field }) => (<FormItem><FormLabel>Pertenencias del Cliente (Opcional)</FormLabel><FormControl><Textarea placeholder="Ej: Gato, llanta de refacción, cargador de celular en la guantera, etc." {...field} disabled={isReadOnly} /></FormControl></FormItem>)}/>
                         </div>
                         <div className="pt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -1531,7 +1538,7 @@ export function ServiceForm({
         <PrintTicketDialog
             open={isQuoteViewOpen}
             onOpenChange={setIsQuoteViewOpen}
-            title={`Cotización Original: ${quoteForView.id}`}
+            title={`Cotización: ${quoteForView.id}`}
             dialogContentClassName="printable-quote-dialog"
             onDialogClose={() => setQuoteForView(null)}
             footerActions={
