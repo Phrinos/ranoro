@@ -12,11 +12,17 @@ import type { PublicOwnerReport, VehicleMonthlyReport, WorkshopInfo } from '@/ty
 import { format, parseISO, startOfMonth, endOfMonth, isWithinInterval, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
 
-export async function generateAndShareOwnerReport(ownerName: string, workshopInfo?: WorkshopInfo): Promise<{ success: boolean; report?: PublicOwnerReport; error?: string; }> {
+export async function generateAndShareOwnerReport(
+  ownerName: string, 
+  forDateISO: string, // New parameter
+  workshopInfo?: WorkshopInfo
+): Promise<{ success: boolean; report?: PublicOwnerReport; error?: string; }> {
   try {
-    const reportDate = new Date();
-    const monthStart = startOfMonth(reportDate);
-    const monthEnd = endOfMonth(reportDate);
+    const reportDate = new Date(); // Generation date
+    const reportForDate = parseISO(forDateISO); // Date the report is about
+    
+    const monthStart = startOfMonth(reportForDate);
+    const monthEnd = endOfMonth(reportForDate);
     
     // --- Perform Calculations ---
     const ownerVehicles = placeholderVehicles.filter(v => v.isFleetVehicle && v.ownerName === ownerName);
@@ -49,12 +55,13 @@ export async function generateAndShareOwnerReport(ownerName: string, workshopInf
     const totalNetBalance = totalRentalIncome - totalMaintenanceCosts;
 
     // --- Check for existing report and Create/Update ---
+    // The logic is to have one single public document per owner that gets updated.
     let existingReport = placeholderPublicOwnerReports.find(r => r.ownerName === ownerName);
     
     const reportData = {
         ownerName,
         generatedDate: reportDate.toISOString(),
-        reportMonth: format(reportDate, "MMMM 'de' yyyy", { locale: es }),
+        reportMonth: format(reportForDate, "MMMM 'de' yyyy", { locale: es }),
         detailedReport,
         totalRentalIncome,
         totalMaintenanceCosts,
