@@ -9,12 +9,14 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import type { Driver } from "@/types";
+import { DollarSign } from "lucide-react";
 
 const driverFormSchema = z.object({
   name: z.string().min(3, "El nombre debe tener al menos 3 caracteres."),
   address: z.string().min(5, "La dirección es obligatoria."),
   phone: z.string().min(7, "Ingrese un número de teléfono válido."),
   emergencyPhone: z.string().min(7, "Ingrese un teléfono de emergencia válido."),
+  depositAmount: z.coerce.number().min(0, "El depósito no puede ser negativo.").optional(),
 });
 
 export type DriverFormValues = z.infer<typeof driverFormSchema>;
@@ -28,11 +30,15 @@ interface DriverFormProps {
 export function DriverForm({ initialData, onSubmit, onClose }: DriverFormProps) {
   const form = useForm<DriverFormValues>({
     resolver: zodResolver(driverFormSchema),
-    defaultValues: initialData || {
+    defaultValues: initialData ? {
+        ...initialData,
+        depositAmount: initialData.depositAmount ?? undefined,
+    } : {
       name: "",
       address: "",
       phone: "",
       emergencyPhone: "",
+      depositAmount: undefined,
     },
   });
 
@@ -85,6 +91,22 @@ export function DriverForm({ initialData, onSubmit, onClose }: DriverFormProps) 
             )}
           />
         </div>
+         <FormField
+            control={form.control}
+            name="depositAmount"
+            render={({ field }) => (
+                <FormItem>
+                <FormLabel>Depósito en Garantía</FormLabel>
+                <FormControl>
+                    <div className="relative">
+                        <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input type="number" step="0.01" placeholder="Ej: 2500.00" {...field} value={field.value ?? ''} className="pl-8" />
+                    </div>
+                </FormControl>
+                <FormMessage />
+                </FormItem>
+            )}
+        />
         <div className="flex justify-end gap-2 pt-4">
           <Button type="button" variant="outline" onClick={onClose}>Cancelar</Button>
           <Button type="submit" disabled={form.formState.isSubmitting}>
