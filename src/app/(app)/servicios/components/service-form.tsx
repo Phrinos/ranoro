@@ -211,24 +211,6 @@ interface ServiceFormProps {
 
 const IVA_RATE = 0.16;
 
-const generateTimeSlots = () => {
-    const slots = [];
-    for (let hour = 8; hour <= 18; hour++) {
-        if (hour === 8) {
-            slots.push({ value: `${hour}:30`, label: `08:30 AM`});
-        } else if (hour === 18) {
-            slots.push({ value: `${hour}:00`, label: `${hour}:00 PM`});
-            slots.push({ value: `${hour}:30`, label: `${hour}:30 PM`});
-        }
-         else {
-            slots.push({ value: `${String(hour).padStart(2, '0')}:00`, label: `${String(hour).padStart(2, '0')}:00 ${hour < 12 ? 'AM' : 'PM'}`});
-            slots.push({ value: `${String(hour).padStart(2, '0')}:30`, label: `${String(hour).padStart(2, '0')}:30 ${hour < 12 ? 'AM' : 'PM'}`});
-        }
-    }
-    return slots;
-};
-const timeSlots = generateTimeSlots();
-
 const paymentMethodIcons: Record<PaymentMethod, React.ElementType> = {
   "Efectivo": Wallet,
   "Tarjeta": CreditCard,
@@ -343,15 +325,20 @@ export function ServiceForm({
   }, [mode, initialData]);
 
   // Real-time calculation of costs and profit
-  const totalCost = watchedServiceItems?.reduce((sum, item) => sum + (Number(item.price) || 0), 0) || 0;
-  
-  const totalSuppliesWorkshopCost = watchedServiceItems?.flatMap(item => item.suppliesUsed).reduce((sum, supply) => {
-      const item = currentInventoryItems.find(i => i.id === supply.supplyId);
-      const costPerUnit = item?.unitPrice || supply.unitPrice || 0;
-      return sum + (costPerUnit * supply.quantity);
-  }, 0) || 0;
-
-  const serviceProfit = totalCost - totalSuppliesWorkshopCost;
+  const { totalCost, totalSuppliesWorkshopCost, serviceProfit } = useMemo(() => {
+    const calculatedTotalCost = watchedServiceItems?.reduce((sum, item) => sum + (Number(item.price) || 0), 0) || 0;
+    const calculatedTotalSuppliesCost = watchedServiceItems?.flatMap(item => item.suppliesUsed).reduce((sum, supply) => {
+        const item = currentInventoryItems.find(i => i.id === supply.supplyId);
+        const costPerUnit = item?.unitPrice || supply.unitPrice || 0;
+        return sum + (costPerUnit * supply.quantity);
+    }, 0) || 0;
+    const calculatedServiceProfit = calculatedTotalCost - calculatedTotalSuppliesCost;
+    return {
+      totalCost: calculatedTotalCost,
+      totalSuppliesWorkshopCost: calculatedTotalSuppliesCost,
+      serviceProfit: calculatedServiceProfit,
+    };
+  }, [watchedServiceItems, currentInventoryItems]);
 
 
   const refreshCurrentUser = useCallback(() => {
@@ -1289,25 +1276,26 @@ export function ServiceForm({
                                     </FormItem>
                                 )}
                             />
-                            <Controller
+                             <Controller
                                 name="serviceDate"
                                 control={form.control}
                                 render={({ field }) => (
                                     <FormItem>
                                         <FormLabel>Hora de Recepción</FormLabel>
-                                        <Select
-                                            value={field.value && isValid(field.value) ? format(field.value, 'HH:mm') : ""}
-                                            onValueChange={(timeValue) => {
-                                                if (!timeValue) return;
-                                                const [hours, minutes] = timeValue.split(':').map(Number);
-                                                const currentVal = field.value || new Date();
-                                                field.onChange(setMinutes(setHours(currentVal, hours), minutes));
-                                            }}
-                                            disabled={isReadOnly}
-                                        >
-                                            <SelectTrigger><SelectValue placeholder="Seleccione hora" /></SelectTrigger>
-                                            <SelectContent>{timeSlots.map(slot => (<SelectItem key={slot.value} value={slot.value}>{slot.label}</SelectItem>))}</SelectContent>
-                                        </Select>
+                                        <FormControl>
+                                            <Input
+                                                type="time"
+                                                value={field.value && isValid(field.value) ? format(field.value, 'HH:mm') : ""}
+                                                onChange={(e) => {
+                                                    const timeValue = e.target.value;
+                                                    if (!timeValue) return;
+                                                    const [hours, minutes] = timeValue.split(':').map(Number);
+                                                    const currentVal = field.value || new Date();
+                                                    field.onChange(setMinutes(setHours(currentVal, hours), minutes));
+                                                }}
+                                                disabled={isReadOnly}
+                                            />
+                                        </FormControl>
                                     </FormItem>
                                 )}
                             />
@@ -1349,20 +1337,22 @@ export function ServiceForm({
                                 control={form.control}
                                 name="deliveryDateTime"
                                 render={({ field }) => (
-                                    <FormItem> <FormLabel>Hora de Entrega</FormLabel>
-                                    <Select
-                                      value={field.value && isValid(field.value) ? format(field.value, 'HH:mm') : ""}
-                                      onValueChange={(timeValue) => {
-                                        if (!timeValue) return;
-                                        const [hours, minutes] = timeValue.split(':').map(Number);
-                                        const currentVal = field.value || new Date();
-                                        field.onChange(setMinutes(setHours(currentVal, hours), minutes));
-                                      }}
-                                      disabled={isReadOnly}
-                                    >
-                                      <FormControl><SelectTrigger><SelectValue placeholder="Seleccione hora" /></SelectTrigger></FormControl>
-                                      <SelectContent>{timeSlots.map(slot => (<SelectItem key={slot.value} value={slot.value}>{slot.label}</SelectItem>))}</SelectContent>
-                                    </Select>
+                                    <FormItem>
+                                        <FormLabel>Hora de Entrega</FormLabel>
+                                        <FormControl>
+                                            <Input
+                                                type="time"
+                                                value={field.value && isValid(field.value) ? format(field.value, 'HH:mm') : ""}
+                                                onChange={(e) => {
+                                                    const timeValue = e.target.value;
+                                                    if (!timeValue) return;
+                                                    const [hours, minutes] = timeValue.split(':').map(Number);
+                                                    const currentVal = field.value || new Date();
+                                                    field.onChange(setMinutes(setHours(currentVal, hours), minutes));
+                                                }}
+                                                disabled={isReadOnly}
+                                            />
+                                        </FormControl>
                                     </FormItem>
                                 )}
                             />
@@ -1891,3 +1881,6 @@ const SafetyCheckRow = ({ name, label, control, isReadOnly }: { name: string; la
 
 
 
+
+
+    
