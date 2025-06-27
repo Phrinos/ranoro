@@ -704,7 +704,7 @@ export function ServiceForm({
           const oilRendimientos = values.serviceItems
               .flatMap(item => item.suppliesUsed)
               .map(supply => currentInventoryItems.find(i => i.id === supply.supplyId))
-              .filter((item): item is InventoryItem => !!(item && item.category === 'Aceites' && item.rendimiento))
+              .filter((item): item is InventoryItem => !!(item && item.category?.toLowerCase() === 'aceites' && item.rendimiento))
               .map(item => item.rendimiento as number);
 
           if (oilRendimientos.length > 0) {
@@ -1714,6 +1714,7 @@ function ServiceItemCard({ serviceIndex, form, removeServiceItem, isReadOnly, in
         </Card>
     );
 }
+
 
 // Sub-component for nested supplies array (in price list form)
 function ServiceSuppliesArray({ serviceIndex, control }: { serviceIndex: number; control: Control<PriceListFormValues> }) {
