@@ -155,7 +155,7 @@ export interface ServiceRecord {
   transferFolio?: string;
   nextServiceInfo?: {
     date: string; // ISO String
-    mileage: number;
+    mileage?: number;
   };
 }
 

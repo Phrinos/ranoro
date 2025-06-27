@@ -696,7 +696,6 @@ export function ServiceForm({
         serviceData.cardFolio = values.cardFolio;
         serviceData.transferFolio = values.transferFolio;
 
-        // Calculate next service info
         const deliveryDate = serviceData.deliveryDateTime ? new Date(serviceData.deliveryDateTime) : new Date();
         const nextServiceDate = addDays(deliveryDate, 365).toISOString();
         let nextServiceMileage: number | undefined;
@@ -714,7 +713,7 @@ export function ServiceForm({
           }
         }
         
-        if (nextServiceDate && nextServiceMileage) {
+        if (nextServiceDate || nextServiceMileage) {
           serviceData.nextServiceInfo = {
             date: nextServiceDate,
             mileage: nextServiceMileage,
