@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useEffect } from 'react';
@@ -246,6 +245,22 @@ export function InventoryItemForm({ initialData, onSubmit, onClose, categories, 
                 )}
               />
             </div>
+            {!isServiceWatch && categoryWatch?.toLowerCase().includes('aceite') && (
+              <FormField
+                control={form.control}
+                name="rendimiento"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Rendimiento del Aceite (km)</FormLabel>
+                    <FormControl>
+                      <Input type="number" placeholder="Ej: 10000" {...field} value={field.value ?? ''} />
+                    </FormControl>
+                    <FormDescription>Duración estimada del aceite en kilómetros antes del próximo cambio.</FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
           </CardContent>
         </Card>
         
@@ -326,22 +341,6 @@ export function InventoryItemForm({ initialData, onSubmit, onClose, categories, 
                   )}
                 />
               </div>
-              {categoryWatch?.toLowerCase().includes('aceite') && (
-                <FormField
-                  control={form.control}
-                  name="rendimiento"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Rendimiento del Aceite (km)</FormLabel>
-                      <FormControl>
-                        <Input type="number" placeholder="Ej: 10000" {...field} value={field.value ?? ''} />
-                      </FormControl>
-                      <FormDescription>Duración estimada del aceite en kilómetros antes del próximo cambio.</FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              )}
             </CardContent>
           </Card>
         )}
