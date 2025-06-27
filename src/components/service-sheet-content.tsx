@@ -251,38 +251,38 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
 
         <main className="flex-grow">
            <section className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4 text-xs">
-              <div className="border-2 border-black rounded-md overflow-hidden md:col-span-1">
-                  <h3 className="font-bold p-1 bg-gray-700 text-white text-xs text-center">DATOS DEL CLIENTE</h3>
-                  <div className="space-y-0.5 p-2">
-                      <p><span className="font-semibold">Nombre:</span> <span className="font-bold">{vehicle?.ownerName?.toUpperCase() || ''}</span></p>
-                      <p><span className="font-semibold">Teléfono:</span> <span className="font-bold">{vehicle?.ownerPhone || ''}</span></p>
-                      {vehicle?.ownerEmail && <p><span className="font-semibold">Email:</span> <span className="font-bold">{vehicle.ownerEmail}</span></p>}
-                  </div>
-              </div>
-              <div className="md:col-span-2 space-y-4">
-                  <div className="border-2 border-black rounded-md overflow-hidden">
-                      <h3 className="font-bold p-1 bg-gray-700 text-white text-xs text-center">DATOS DEL VEHÍCULO</h3>
-                      <div className="space-y-0.5 p-2">
-                          <p><span className="font-semibold">Vehículo:</span> <span className="font-bold">{vehicle?.year} {vehicle?.make} {vehicle?.model}</span></p>
-                          <p><span className="font-semibold">Placas:</span> <span className="font-bold">{vehicle?.licensePlate}</span></p>
-                          {vehicle?.color && <p><span className="font-semibold">Color:</span> <span className="font-bold">{vehicle.color}</span></p>}
-                          {service.mileage && <p><span className="font-semibold">Kilometraje:</span> <span className="font-bold">{service.mileage.toLocaleString('es-MX')} km</span></p>}
-                      </div>
-                  </div>
-                  {service.nextServiceInfo && (
+                <div className="border-2 border-black rounded-md overflow-hidden md:col-span-1">
+                    <h3 className="font-bold p-1 bg-gray-700 text-white text-xs text-center">DATOS DEL CLIENTE</h3>
+                    <div className="space-y-0.5 p-2">
+                        <p><span className="font-semibold">Nombre:</span> <span className="font-bold">{vehicle?.ownerName?.toUpperCase() || ''}</span></p>
+                        <p><span className="font-semibold">Teléfono:</span> <span className="font-bold">{vehicle?.ownerPhone || ''}</span></p>
+                        {vehicle?.ownerEmail && <p><span className="font-semibold">Email:</span> <span className="font-bold">{vehicle.ownerEmail}</span></p>}
+                    </div>
+                </div>
+                <div className={cn("md:col-span-2 grid grid-cols-1 gap-4", service.nextServiceInfo && "md:grid-cols-2")}>
                     <div className="border-2 border-black rounded-md overflow-hidden">
-                        <h3 className="font-bold p-1 bg-red-700 text-white text-xs text-center">PRÓXIMO SERVICIO</h3>
-                        <div className="p-2 space-y-1 text-center">
-                            <p className="text-[10px] font-semibold">Lo que ocurra primero</p>
-                            <p className="font-bold">Fecha: {format(parseISO(service.nextServiceInfo.date), "dd/MMMM/yyyy", { locale: es })}</p>
-                            {service.nextServiceInfo.mileage && typeof service.nextServiceInfo.mileage === 'number' && isFinite(service.nextServiceInfo.mileage) && (
-                                <p className="font-bold">Kilometraje: {service.nextServiceInfo.mileage.toLocaleString('es-MX')} km</p>
-                            )}
+                        <h3 className="font-bold p-1 bg-gray-700 text-white text-xs text-center">DATOS DEL VEHÍCULO</h3>
+                        <div className="space-y-0.5 p-2">
+                            <p><span className="font-semibold">Vehículo:</span> <span className="font-bold">{vehicle?.year} {vehicle?.make} {vehicle?.model}</span></p>
+                            <p><span className="font-semibold">Placas:</span> <span className="font-bold">{vehicle?.licensePlate}</span></p>
+                            {vehicle?.color && <p><span className="font-semibold">Color:</span> <span className="font-bold">{vehicle.color}</span></p>}
+                            {service.mileage && <p><span className="font-semibold">Kilometraje:</span> <span className="font-bold">{service.mileage.toLocaleString('es-MX')} km</span></p>}
                         </div>
                     </div>
-                  )}
-              </div>
-          </section>
+                    {service.nextServiceInfo && (
+                        <div className="border-2 border-red-700 rounded-md overflow-hidden">
+                            <h3 className="font-bold p-1 bg-red-700 text-white text-xs text-center">PRÓXIMO SERVICIO</h3>
+                            <div className="p-2 space-y-1 text-center">
+                                <p className="text-[10px] font-semibold">Lo que ocurra primero</p>
+                                <p className="font-bold">Fecha: {format(parseISO(service.nextServiceInfo.date), "dd/MMMM/yyyy", { locale: es })}</p>
+                                {service.nextServiceInfo.mileage && typeof service.nextServiceInfo.mileage === 'number' && isFinite(service.nextServiceInfo.mileage) && (
+                                    <p className="font-bold">Kilometraje: {service.nextServiceInfo.mileage.toLocaleString('es-MX')} km</p>
+                                )}
+                            </div>
+                        </div>
+                    )}
+                </div>
+            </section>
 
 
           <section className="border-2 border-black rounded-md overflow-hidden mb-4">
