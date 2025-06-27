@@ -153,6 +153,10 @@ export interface ServiceRecord {
   paymentMethod?: PaymentMethod;
   cardFolio?: string;
   transferFolio?: string;
+  nextServiceInfo?: {
+    date: string; // ISO String
+    mileage: number;
+  };
 }
 
 export interface Technician {
@@ -205,6 +209,7 @@ export interface InventoryItem {
   category: string;
   isService?: boolean;
   unitType?: 'units' | 'ml' | 'liters';
+  rendimiento?: number;
 }
 
 export interface InventoryCategory {

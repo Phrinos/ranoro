@@ -154,6 +154,20 @@ export const TicketContent = React.forwardRef<HTMLDivElement, TicketContentProps
             </>
         )}
 
+        {service?.nextServiceInfo && (
+          <>
+              {renderDashedLine()}
+              <div className="mt-1 text-center">
+                <div className="font-semibold">PRÓXIMO SERVICIO</div>
+                <p className="text-xs">
+                    {format(parseISO(service.nextServiceInfo.date), "dd MMMM yyyy", { locale: es })}
+                    <br/>
+                    o a los {service.nextServiceInfo.mileage.toLocaleString('es-MX')} km
+                </p>
+              </div>
+          </>
+        )}
+
         {renderDashedLine()}
 
         <div className="text-center mt-1 space-y-0">
