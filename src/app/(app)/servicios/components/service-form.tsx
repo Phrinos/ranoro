@@ -613,15 +613,20 @@ export function ServiceForm({
   };
   
   const originalQuote = useMemo(() => {
-    if (!initialData?.id || mode !== 'service') return null;
-    return placeholderQuotes.find(q => q.serviceId === initialData.id);
-  }, [initialData, mode]);
+    if (mode !== 'service' || !initialDataService?.id) return null;
+    return placeholderQuotes.find(q => q.serviceId === initialDataService.id);
+  }, [initialDataService, mode]);
 
   const handleViewQuote = useCallback(() => {
-    const quoteToShow = originalQuote || (mode === 'quote' ? (initialDataQuote as QuoteRecord) : null);
+    let quoteToShow: Partial<QuoteRecord> | null = null;
+    if (originalQuote) {
+        quoteToShow = originalQuote;
+    } else if (mode === 'quote' && initialDataQuote) {
+        quoteToShow = initialDataQuote;
+    }
     
-    if (quoteToShow && quoteToShow.id) { // Check if we have a valid quote object
-        setQuoteForView(quoteToShow);
+    if (quoteToShow && quoteToShow.id) {
+        setQuoteForView(quoteToShow as QuoteRecord);
         setIsQuoteViewOpen(true);
     } else {
         toast({ title: "No encontrada", description: "No se encontró la cotización para mostrar.", variant: "default" });

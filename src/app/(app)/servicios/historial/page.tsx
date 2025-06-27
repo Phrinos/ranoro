@@ -1,4 +1,3 @@
-
 "use client";
 
 import { PageHeader } from "@/components/page-header";
@@ -360,11 +359,17 @@ export default function HistorialServiciosPage() {
     setServiceForSheet(serviceToDisplay);
     setIsSheetOpen(true);
   }, [toast]);
+  
+  const handleShowQuote = useCallback((serviceId: string) => {
+    const quote = placeholderQuotes.find(q => q.serviceId === serviceId);
+    if (quote) {
+      setQuoteForView(quote);
+      setIsQuoteViewOpen(true);
+    } else {
+      toast({ title: 'No encontrada', description: 'No se encontró la cotización original para este servicio.', variant: 'default' });
+    }
+  }, [toast]);
 
-  const handleShowQuote = useCallback((quote: QuoteRecord) => {
-    setQuoteForView(quote);
-    setIsQuoteViewOpen(true);
-  }, []);
 
   const handleShareService = useCallback(async (service: ServiceRecord | null) => {
     if (!service) return;
@@ -578,7 +583,7 @@ export default function HistorialServiciosPage() {
                       <p className="text-xs text-gray-500 mt-4">Técnico: {service.technicianName || 'N/A'}</p>
                       <div className="flex justify-center items-center gap-1 mt-2">
                           {originalQuote && (
-                            <Button variant="ghost" size="icon" onClick={() => handleShowQuote(originalQuote)} title="Ver Cotización Original">
+                            <Button variant="ghost" size="icon" onClick={() => handleShowQuote(service.id)} title="Ver Cotización Original">
                                 <FileText className="h-4 w-4" />
                             </Button>
                           )}
