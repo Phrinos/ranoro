@@ -5,56 +5,85 @@ import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, CheckCircle, XCircle, Printer } from "lucide-react";
+import { Search, Printer, DollarSign } from "lucide-react";
 import { useToast } from '@/hooks/use-toast';
-import { placeholderDrivers, placeholderVehicles, placeholderRentalPayments, persistToFirestore, hydrateReady } from '@/lib/placeholder-data';
-import type { Driver, Vehicle, RentalPayment } from '@/types';
+import {
+  placeholderDrivers,
+  placeholderVehicles,
+  placeholderRentalPayments,
+  placeholderOwnerWithdrawals,
+  persistToFirestore,
+  hydrateReady,
+} from '@/lib/placeholder-data';
+import type { Driver, Vehicle, RentalPayment, OwnerWithdrawal } from '@/types';
 import { RegisterPaymentDialog } from './components/register-payment-dialog';
+import { OwnerWithdrawalDialog, type OwnerWithdrawalFormValues } from './components/owner-withdrawal-dialog';
 import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
 import { RentalReceiptContent } from './components/rental-receipt-content';
-import { isToday, parseISO } from 'date-fns';
+import { isToday, parseISO, format, isValid, compareDesc } from 'date-fns';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { es } from 'date-fns/locale';
 
 export default function RentasPage() {
   const { toast } = useToast();
-  const [drivers, setDrivers] = useState<Driver[]>(placeholderDrivers);
-  const [payments, setPayments] = useState<RentalPayment[]>(placeholderRentalPayments);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [version, setVersion] = useState(0); // To force re-renders
+  const [version, setVersion] = useState(0);
   const [hydrated, setHydrated] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
+  const [isWithdrawalDialogOpen, setIsWithdrawalDialogOpen] = useState(false);
+
   const [isReceiptOpen, setIsReceiptOpen] = useState(false);
   const [paymentForReceipt, setPaymentForReceipt] = useState<RentalPayment | null>(null);
   const receiptRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    hydrateReady.then(() => setHydrated(true));
-  }, []);
   
+  const [payments, setPayments] = useState<RentalPayment[]>(placeholderRentalPayments);
+  const [withdrawals, setWithdrawals] = useState<OwnerWithdrawal[]>(placeholderOwnerWithdrawals);
+
   useEffect(() => {
-    setDrivers(placeholderDrivers);
-    setPayments(placeholderRentalPayments);
-  }, [hydrated, version]);
-
-
-  const filteredDrivers = useMemo(() => {
-    if (!searchTerm.trim()) return drivers;
-    return drivers.filter(driver =>
-      driver.name.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-  }, [drivers, searchTerm]);
-
-  const dailyPaymentsMap = useMemo(() => {
-    const map = new Map<string, boolean>();
-    payments.forEach(payment => {
-      if (isToday(parseISO(payment.paymentDate))) {
-        map.set(payment.driverId, true);
-      }
+    hydrateReady.then(() => {
+      setHydrated(true);
+      // Ensure local state is in sync with placeholder data after hydration
+      setPayments([...placeholderRentalPayments]);
+      setWithdrawals([...placeholderOwnerWithdrawals]);
     });
-    return map;
-  }, [payments]);
-  
+  }, []);
+
+  useEffect(() => {
+      setPayments([...placeholderRentalPayments]);
+      setWithdrawals([...placeholderOwnerWithdrawals]);
+  }, [version]); // Re-sync when data changes
+
+  const filteredPayments = useMemo(() => {
+    let list = [...payments].sort((a,b) => compareDesc(parseISO(a.paymentDate), parseISO(b.paymentDate)));
+    if (!searchTerm.trim()) return list;
+    const lowerSearch = searchTerm.toLowerCase();
+    return list.filter(payment =>
+      payment.driverName.toLowerCase().includes(lowerSearch) ||
+      payment.vehicleLicensePlate.toLowerCase().includes(lowerSearch) ||
+      payment.id.toLowerCase().includes(lowerSearch)
+    );
+  }, [payments, searchTerm]);
+
+  const filteredWithdrawals = useMemo(() => {
+    let list = [...withdrawals].sort((a,b) => compareDesc(parseISO(a.date), parseISO(b.date)));
+    if (!searchTerm.trim()) return list;
+    const lowerSearch = searchTerm.toLowerCase();
+    return list.filter(w =>
+      w.ownerName.toLowerCase().includes(lowerSearch) ||
+      (w.reason && w.reason.toLowerCase().includes(lowerSearch))
+    );
+  }, [withdrawals, searchTerm]);
+
+  const uniqueOwners = useMemo(() => {
+    const owners = new Set<string>();
+    placeholderVehicles.filter(v => v.isFleetVehicle).forEach(v => owners.add(v.ownerName));
+    return Array.from(owners);
+  }, []);
+
   const handleRegisterPayment = useCallback(async (driverId: string, amount: number) => {
-    const driver = drivers.find(d => d.id === driverId);
+    const driver = placeholderDrivers.find(d => d.id === driverId);
     const vehicle = placeholderVehicles.find(v => v.id === driver?.assignedVehicleId);
 
     if (!driver || !vehicle) {
@@ -63,12 +92,13 @@ export default function RentasPage() {
     }
     
     const newPayment: RentalPayment = {
-      id: `RENT_${Date.now().toString(36)}`,
+      id: `PAY_${Date.now().toString(36)}`,
       driverId: driver.id,
       driverName: driver.name,
       vehicleLicensePlate: vehicle.licensePlate,
       paymentDate: new Date().toISOString(),
       amount: amount,
+      daysCovered: vehicle.dailyRentalCost ? amount / vehicle.dailyRentalCost : 0,
     };
     
     placeholderRentalPayments.push(newPayment);
@@ -80,17 +110,41 @@ export default function RentasPage() {
     setIsReceiptOpen(true);
     
     toast({ title: "Pago Registrado", description: `Se registró el pago de ${driver.name}.` });
-  }, [drivers, toast]);
+  }, [toast]);
+  
+  const handleSaveWithdrawal = useCallback(async (values: OwnerWithdrawalFormValues) => {
+      const newWithdrawal: OwnerWithdrawal = {
+          id: `WDRL_${Date.now().toString(36)}`,
+          date: new Date().toISOString(),
+          ...values
+      };
+      
+      placeholderOwnerWithdrawals.push(newWithdrawal);
+      await persistToFirestore(['ownerWithdrawals']);
+      setVersion(v => v + 1);
+      setIsWithdrawalDialogOpen(false);
+      
+      toast({title: "Retiro Registrado", description: `Se registró un retiro para ${values.ownerName}.`});
+  }, [toast]);
+
+  const formatCurrency = (amount: number) => {
+    return `$${amount.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  };
 
   return (
     <>
       <PageHeader
-        title="Registro de Rentas"
-        description="Lleva el control de los pagos diarios de la flotilla."
+        title="Pago de Rentas"
+        description="Lleva el control de los pagos y retiros de la flotilla."
         actions={
-          <Button onClick={() => setIsPaymentDialogOpen(true)}>
-            Registrar Pago
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => setIsWithdrawalDialogOpen(true)}>
+              <DollarSign className="mr-2 h-4 w-4" /> Registrar Retiro
+            </Button>
+            <Button onClick={() => setIsPaymentDialogOpen(true)}>
+              Registrar Pago
+            </Button>
+          </div>
         }
       />
       
@@ -98,42 +152,94 @@ export default function RentasPage() {
         <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
         <Input
           type="search"
-          placeholder="Buscar conductor..."
+          placeholder="Buscar transacción..."
           className="w-full rounded-lg bg-card pl-8 md:w-1/3"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
         />
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-        {filteredDrivers.map(driver => {
-          const hasPaidToday = dailyPaymentsMap.get(driver.id) || false;
-          return (
-            <div key={driver.id} className={`p-4 border rounded-lg shadow-sm ${hasPaidToday ? 'bg-green-50' : 'bg-red-50'}`}>
-              <div className="flex items-center justify-between">
-                <h3 className="font-semibold">{driver.name}</h3>
-                {hasPaidToday ? (
-                  <CheckCircle className="h-5 w-5 text-green-600" />
-                ) : (
-                  <XCircle className="h-5 w-5 text-red-600" />
-                )}
-              </div>
-              <p className="text-sm text-muted-foreground mt-1">{placeholderVehicles.find(v => v.id === driver.assignedVehicleId)?.licensePlate || 'Sin vehículo'}</p>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Historial de Pagos de Renta</CardTitle>
+            <CardDescription>Pagos recibidos de los conductores.</CardDescription>
+          </CardHeader>
+          <CardContent>
+             <div className="rounded-lg border shadow-sm overflow-x-auto">
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead>Fecha</TableHead>
+                            <TableHead>Conductor</TableHead>
+                            <TableHead>Vehículo</TableHead>
+                            <TableHead className="text-right">Monto</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {filteredPayments.length > 0 ? filteredPayments.map(p => (
+                            <TableRow key={p.id}>
+                                <TableCell>{format(parseISO(p.paymentDate), "dd MMM, HH:mm", {locale: es})}</TableCell>
+                                <TableCell>{p.driverName}</TableCell>
+                                <TableCell>{p.vehicleLicensePlate}</TableCell>
+                                <TableCell className="text-right font-semibold">{formatCurrency(p.amount)}</TableCell>
+                            </TableRow>
+                        )) : (
+                            <TableRow><TableCell colSpan={4} className="h-24 text-center">No hay pagos registrados.</TableCell></TableRow>
+                        )}
+                    </TableBody>
+                </Table>
+             </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader>
+            <CardTitle>Historial de Retiros de Propietarios</CardTitle>
+            <CardDescription>Salidas de dinero de las ganancias de la flotilla.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="rounded-lg border shadow-sm overflow-x-auto">
+              <Table>
+                <TableHeader>
+                    <TableRow>
+                        <TableHead>Fecha</TableHead>
+                        <TableHead>Propietario</TableHead>
+                        <TableHead>Motivo</TableHead>
+                        <TableHead className="text-right">Monto</TableHead>
+                    </TableRow>
+                </TableHeader>
+                <TableBody>
+                    {filteredWithdrawals.length > 0 ? filteredWithdrawals.map(w => (
+                        <TableRow key={w.id}>
+                            <TableCell>{format(parseISO(w.date), "dd MMM, HH:mm", {locale: es})}</TableCell>
+                            <TableCell>{w.ownerName}</TableCell>
+                            <TableCell>{w.reason || 'N/A'}</TableCell>
+                            <TableCell className="text-right font-semibold text-destructive">{formatCurrency(w.amount)}</TableCell>
+                        </TableRow>
+                    )) : (
+                        <TableRow><TableCell colSpan={4} className="h-24 text-center">No hay retiros registrados.</TableCell></TableRow>
+                    )}
+                </TableBody>
+              </Table>
             </div>
-          );
-        })}
+          </CardContent>
+        </Card>
       </div>
       
-      {filteredDrivers.length === 0 && (
-          <p className="text-center text-muted-foreground py-8">No se encontraron conductores.</p>
-      )}
-
       <RegisterPaymentDialog
         open={isPaymentDialogOpen}
         onOpenChange={setIsPaymentDialogOpen}
-        drivers={drivers}
+        drivers={placeholderDrivers}
         vehicles={placeholderVehicles}
         onSave={handleRegisterPayment}
+      />
+      
+      <OwnerWithdrawalDialog
+        open={isWithdrawalDialogOpen}
+        onOpenChange={setIsWithdrawalDialogOpen}
+        owners={uniqueOwners}
+        onSave={handleSaveWithdrawal}
       />
       
       {paymentForReceipt && (
