@@ -316,7 +316,7 @@ export function ServiceForm({
         paymentMethod: (initialData as ServiceRecord)?.paymentMethod || 'Efectivo',
         cardFolio: (initialData as ServiceRecord)?.cardFolio || '',
         transferFolio: (initialData as ServiceRecord)?.transferFolio || '',
-        nextServiceInfo: (initialData as ServiceRecord)?.nextServiceInfo || undefined,
+        nextServiceInfo: (initialData as ServiceRecord)?.nextServiceInfo,
     }
   });
   
@@ -706,24 +706,29 @@ export function ServiceForm({
         const nextServiceDate = addDays(deliveryDate, 365).toISOString();
         let nextServiceMileage: number | undefined;
 
-        if (values.mileage) {
+        if (values.mileage && typeof values.mileage === 'number' && isFinite(values.mileage)) {
           const oilRendimientos = values.serviceItems
               .flatMap(item => item.suppliesUsed)
               .map(supply => currentInventoryItems.find(i => i.id === supply.supplyId))
-              .filter((item): item is InventoryItem => !!(item && item.category?.toLowerCase().includes('aceite') && item.rendimiento))
+              .filter((item): item is InventoryItem => !!(item && item.category?.toLowerCase().includes('aceite') && typeof item.rendimiento === 'number' && item.rendimiento > 0))
               .map(item => item.rendimiento as number);
 
           if (oilRendimientos.length > 0) {
               const lowestRendimiento = Math.min(...oilRendimientos);
-              nextServiceMileage = values.mileage + lowestRendimiento;
+              if (isFinite(lowestRendimiento)) {
+                   nextServiceMileage = values.mileage + lowestRendimiento;
+              }
           }
         }
         
-        if (nextServiceDate || nextServiceMileage) {
-          serviceData.nextServiceInfo = {
-            date: nextServiceDate,
-            mileage: nextServiceMileage,
+        if (nextServiceDate) {
+          const nextInfo: { date: string; mileage?: number } = {
+              date: nextServiceDate,
           };
+          if (typeof nextServiceMileage === 'number' && isFinite(nextServiceMileage)) {
+              nextInfo.mileage = nextServiceMileage;
+          }
+          serviceData.nextServiceInfo = nextInfo;
         }
       }
       
