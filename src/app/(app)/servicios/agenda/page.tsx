@@ -219,10 +219,11 @@ export default function AgendaServiciosPage() {
         return;
     }
 
-    const updatedServiceData = {
+    const updatedServiceData: ServiceRecord = {
         ...placeholderServiceRecords[serviceIndex],
         status: 'Reparando' as const,
-        serviceDate: new Date().toISOString(),
+        serviceDate: new Date().toISOString(), // Set reception date to now
+        deliveryDateTime: undefined, // Clear any previous delivery date
     };
     
     placeholderServiceRecords[serviceIndex] = updatedServiceData;
