@@ -1,102 +1,389 @@
-
 "use client";
 
-import React from 'react';
-import type { Driver, Vehicle } from '@/types';
-import { format, parseISO } from 'date-fns';
-import { es } from 'date-fns/locale';
-import { formatCurrency } from '@/lib/utils';
+import React from "react";
+import type { Driver, Vehicle } from "@/types";
+import { format, parseISO, addYears, subDays } from "date-fns";
+import { es } from "date-fns/locale";
+import { formatCurrency } from "@/lib/utils";
 
 interface ContractContentProps {
   driver: Driver;
   vehicle: Vehicle;
 }
 
-export const ContractContent = React.forwardRef<HTMLDivElement, ContractContentProps>(
-  ({ driver, vehicle }, ref) => {
-    
-    const contractDate = driver.contractDate ? parseISO(driver.contractDate) : new Date();
-    const formattedContractDate = format(contractDate, "dd 'de' MMMM 'de' yyyy", { locale: es });
+export const ContractContent = React.forwardRef<
+  HTMLDivElement,
+  ContractContentProps
+>(({ driver, vehicle }, ref) => {
+  // ──────────────────────────────────────────────────────────────
+  //  Fechas
+  // ──────────────────────────────────────────────────────────────
+  const signatureDate = driver.contractDate
+    ? parseISO(driver.contractDate)
+    : new Date();
 
-    return (
-      <div 
-        ref={ref}
-        data-format="letter"
-        className="font-serif bg-white text-black p-8 text-sm leading-relaxed"
-      >
-        <p className="text-center font-bold mb-6 text-lg uppercase">Contrato de Arrendamiento de Vehículo Automotor</p>
+  // Inicio = fecha de firma (01-jun-2025 en el ejemplo)
+  const startDate = driver.contractStartDate
+    ? parseISO(driver.contractStartDate)
+    : signatureDate;
 
-        <p className="mb-4 text-justify">
-            CONTRATO DE ARRENDAMIENTO DE VEHÍCULO AUTOMOTOR QUE CELEBRAN POR UNA PARTE, EL C. <strong>{vehicle.ownerName ? vehicle.ownerName.toUpperCase() : '[PROPIETARIO DEL VEHÍCULO]'}</strong>, A QUIEN EN LO SUCESIVO Y PARA LOS EFECTOS DEL PRESENTE CONTRATO SE LE DENOMINARÁ <strong>"EL ARRENDADOR"</strong>, Y POR LA OTRA PARTE, EL C. <strong>{driver.name.toUpperCase()}</strong>, A QUIEN EN LO SUCESIVO SE LE DENOMINARÁ <strong>"EL ARRENDATARIO"</strong>, AMBAS PARTES CON CAPACIDAD LEGAL PARA CONTRATAR Y OBLIGARSE, AL TENOR DE LAS SIGUIENTES DECLARACIONES Y CLÁUSULAS:
+  // Fin = un año menos un día (31-may-2026 en el ejemplo)
+  const endDate = subDays(addYears(startDate, 1), 1);
+
+  const fSignature = format(signatureDate, "dd 'de' MMMM 'de' yyyy", {
+    locale: es,
+  });
+  const fStart = format(startDate, "dd 'de' MMMM 'de' yyyy", { locale: es });
+  const fEnd = format(endDate, "dd 'de' MMMM 'de' yyyy", { locale: es });
+
+  // ──────────────────────────────────────────────────────────────
+  //  Renta diaria y depósito
+  // ──────────────────────────────────────────────────────────────
+  const dailyRent = vehicle.dailyRentalCost ?? 0;
+  const dailyRentWithVat = dailyRent * 1.16;
+  const deposit = driver.depositAmount ?? 0;
+
+  return (
+    <div
+      ref={ref}
+      data-format="letter"
+      className="font-serif bg-white text-black p-8 text-sm leading-relaxed"
+    >
+      {/* ===========================================================
+          CABECERA
+      ============================================================ */}
+      <p className="text-center font-bold mb-6 text-lg uppercase">
+        Contrato de Arrendamiento de Vehículo
+      </p>
+
+      {/* ===========================================================
+          HOJA DE FIRMAS
+      ============================================================ */}
+      <section className="mb-8 space-y-2">
+        <h2 className="font-bold uppercase text-center">Hoja de Firmas</h2>
+
+        <p>
+          <strong>Fecha de firma:</strong> {fSignature}
+        </p>
+        <p>
+          <strong>Inicio del contrato:</strong> {fStart}
+        </p>
+        <p>
+          <strong>Fin de contrato:</strong> {fEnd}
         </p>
 
-        <h2 className="font-bold text-center mb-2 uppercase">Declaraciones</h2>
-        
-        <p className="mb-2"><strong>I. Declara "EL ARRENDADOR":</strong></p>
-        <ol className="list-decimal list-inside pl-4 mb-4 space-y-1 text-justify">
-            <li>Ser una persona física, mayor de edad, de nacionalidad mexicana, con plena capacidad jurídica para celebrar el presente contrato y obligarse en sus términos.</li>
-            <li>Ser el legítimo propietario del vehículo automotor que se describe a continuación (en adelante "EL VEHÍCULO"):
-                <ul className="list-disc pl-8 mt-2">
-                    <li><strong>Marca:</strong> {vehicle.make}</li>
-                    <li><strong>Modelo:</strong> {vehicle.model}</li>
-                    <li><strong>Año:</strong> {vehicle.year}</li>
-                    <li><strong>Placas de Circulación:</strong> {vehicle.licensePlate}</li>
-                    <li><strong>Número de Identificación Vehicular (VIN):</strong> {vehicle.vin || 'NO ESPECIFICADO'}</li>
-                    <li><strong>Color:</strong> {vehicle.color || 'NO ESPECIFICADO'}</li>
-                </ul>
-            </li>
-            <li>Que "EL VEHÍCULO" se encuentra en óptimas condiciones mecánicas, de seguridad y de funcionamiento para el uso al que está destinado, libre de todo gravamen, limitación de dominio y al corriente en el pago de sus contribuciones fiscales y derechos vehiculares a la fecha de celebración de este contrato.</li>
-        </ol>
+        <p className="mt-4 font-semibold">“VEHÍCULO”</p>
+        <ul className="list-disc list-inside pl-4">
+          <li>
+            <strong>Marca / Modelo / Año / Color:</strong>{" "}
+            {vehicle.make} {vehicle.model} {vehicle.year}{" "}
+            {vehicle.color ?? ""}
+          </li>
+          <li>
+            <strong>Placas:</strong> {vehicle.licensePlate}
+          </li>
+          <li>
+            <strong>No. de motor:</strong> {vehicle.engineNumber ?? "—"}
+          </li>
+          <li>
+            <strong>Serie (VIN):</strong> {vehicle.vin ?? "—"}
+          </li>
+        </ul>
 
-        <p className="mb-2"><strong>II. Declara "EL ARRENDATARIO":</strong></p>
-        <ol className="list-decimal list-inside pl-4 mb-4 space-y-1 text-justify">
-            <li>Ser una persona física, mayor de edad, de nacionalidad mexicana, con plena capacidad para contratar y obligarse, y que su domicilio para todos los efectos legales del presente instrumento es el ubicado en: <strong>{driver.address}</strong>.</li>
-            <li>Que posee la pericia, los conocimientos técnicos necesarios y la licencia de conducir vigente y expedida por la autoridad competente, para la operación y manejo de "EL VEHÍCULO".</li>
-            <li>Que ha inspeccionado física y mecánicamente "EL VEHÍCULO" a su entera satisfacción, recibiéndolo en las condiciones descritas por "EL ARRENDADOR", y manifiesta su conformidad con el estado general del mismo.</li>
-        </ol>
-
-        <p className="mb-4 text-justify">
-            Expuesto lo anterior, las partes manifiestan su conformidad y se otorgan su consentimiento para celebrar el presente contrato, sujetándose a las siguientes:
+        <p className="mt-4">
+          <strong>RENTA DIARIA SIN IVA:</strong>{" "}
+          {formatCurrency(dailyRent)} (sin IVA)
+          <br />
+          <strong>RENTA DIARIA CON IVA 16 %:</strong>{" "}
+          {formatCurrency(dailyRentWithVat)}
         </p>
-        
-        <h2 className="font-bold text-center mb-2 uppercase">Cláusulas</h2>
 
-        <div className="space-y-3 text-justify">
-            <p><strong>PRIMERA.- OBJETO.</strong> "EL ARRENDADOR" otorga en arrendamiento puro a "EL ARRENDATARIO" el uso y goce temporal de "EL VEHÍCULO" descrito en la Declaración I, inciso 2, del presente contrato.</p>
-            
-            <p><strong>SEGUNDA.- RENTA.</strong> Las partes convienen que "EL ARRENDATARIO" pagará a "EL ARRENDADOR" como contraprestación por el uso de "EL VEHÍCULO", una renta diaria por la cantidad de <strong>{formatCurrency(vehicle.dailyRentalCost || 0)}</strong>. El pago deberá realizarse de manera diaria, por adelantado, en el domicilio de "EL ARRENDADOR" o mediante los medios que este designe. La falta de pago oportuno de una sola de las rentas estipuladas será causa de rescisión inmediata del contrato, sin necesidad de declaración judicial.</p>
-            
-            <p><strong>TERCERA.- VIGENCIA.</strong> El presente contrato tendrá una vigencia indefinida, iniciando su validez el día <strong>{formattedContractDate}</strong>. Cualquiera de las partes podrá darlo por terminado en cualquier momento, mediante notificación por escrito a la otra con al menos veinticuatro (24) horas de antelación, debiendo "EL ARRENDATARIO" devolver "EL VEHÍCULO" y liquidar cualquier adeudo pendiente.</p>
-            
-            <p><strong>CUARTA.- USO DEL VEHÍCULO.</strong> "EL ARRENDATARIO" se obliga a destinar "EL VEHÍCULO" exclusivamente para su uso como transporte particular y/o para la prestación del servicio de transporte de pasajeros mediante plataformas tecnológicas autorizadas. Le queda estrictamente prohibido subarrendarlo, ceder sus derechos, utilizarlo para fines ilícitos, participar en carreras, arrancones o pruebas de velocidad, o para remolcar otros vehículos, salvo que esté diseñado para ello.</p>
-            
-            <p><strong>QUINTA.- MANTENIMIENTO Y REPARACIONES.</strong> Los costos de mantenimiento preventivo y las reparaciones derivadas del desgaste normal y uso adecuado de "EL VEHÍCULO" serán cubiertos por "EL ARRENDADOR". "EL ARRENDATARIO" se compromete a notificar de inmediato a "EL ARRENDADOR" o a su administrador designado, cualquier falla, desperfecto o testigo de advertencia que presente "EL VEHÍCULO". Los daños causados por negligencia, mal uso, abuso o accidente imputable a "EL ARRENDATARIO" serán de su exclusiva responsabilidad, debiendo cubrir el costo total de las reparaciones.</p>
-            
-            <p><strong>SEXTA.- DEPÓSITO EN GARANTÍA.</strong> A la firma del presente contrato, "EL ARRENDATARIO" entrega a "EL ARRENDADOR" la cantidad de <strong>{formatCurrency(driver.depositAmount || 0)}</strong>, mediante [MÉTODO DE PAGO DEL DEPÓSITO], como depósito en garantía para asegurar el cumplimiento de sus obligaciones. Este monto será reintegrado al finalizar la relación contractual, una vez que "EL ARRENDATARIO" haya devuelto "EL VEHÍCULO" en las mismas condiciones en que fue recibido, salvo el desgaste normal, y no existan adeudos por rentas, multas, deducibles o daños.</p>
-            
-            <p><strong>SÉPTIMA.- PAGARÉ.</strong> De forma independiente al depósito en garantía, y para garantizar el cumplimiento de todas y cada una de las obligaciones estipuladas en este contrato, incluyendo el pago de rentas, daños al vehículo, multas o cualquier otro cargo aplicable, "EL ARRENDATARIO" suscribe en este acto un pagaré mercantil a favor de "EL ARRENDADOR" por la cantidad de <strong>$50,000.00 (CINCUENTA MIL PESOS 00/100 M.N.)</strong>. Dicho pagaré será exigible únicamente en caso de incumplimiento de "EL ARRENDATARIO" y será devuelto a la terminación satisfactoria del presente contrato.</p>
-            
-            <p><strong>OCTAVA.- RESPONSABILIDAD.</strong> "EL ARRENDATARIO" será el único y exclusivo responsable por los daños y perjuicios que se causen a terceros en sus bienes o personas con motivo del uso de "EL VEHÍCULO". Asimismo, será responsable de todas las infracciones a los reglamentos de tránsito y sanciones administrativas que se impongan durante la vigencia del contrato, obligándose a reembolsar a "EL ARRENDADOR" cualquier cantidad que este tuviere que pagar por dichos conceptos.</p>
-            
-            <p><strong>NOVENA.- JURISDICCIÓN Y COMPETENCIA.</strong> Para todo lo relativo a la interpretación, cumplimiento y ejecución del presente contrato, las partes se someten expresamente a la jurisdicción y competencia de los tribunales competentes de la ciudad de Aguascalientes, Aguascalientes, renunciando expresamente a cualquier otro fuero que por razón de sus domicilios presentes o futuros pudiera corresponderles.</p>
+        {/* ARRENDADOR */}
+        <div className="mt-6">
+          <p className="font-semibold">“ARRENDADOR”</p>
+          <p className="leading-tight">
+            GRUPO CASA DE NOBLES VALDELAMAR S.A. DE C.V.
+            <br />
+            Representante Legal / Administrador Único:{" "}
+            {vehicle.ownerName ?? "Arturo Federico Ángel Mojica Valdelamar"}
+            <br />
+            Domicilio: Avenida Convención de 1914 No 1421,
+            Col. Jardines de la Convención, C.P. 20267,
+            Aguascalientes, Ags., México.
+            <br />
+            Teléfono: 449 142 5323
+          </p>
         </div>
 
-        <p className="text-xs text-center my-10">
-            Leído que fue el presente contrato por ambas partes, y enteradas de su contenido y alcance legal, lo firman de entera conformidad en la ciudad de Aguascalientes, Aguascalientes, en la fecha de su celebración.
+        {/* ARRENDATARIO */}
+        <div className="mt-6">
+          <p className="font-semibold">“ARRENDATARIO”</p>
+          <p className="leading-tight">
+            Nombre: {driver.name}
+            <br />
+            Domicilio: {driver.address ?? "Aguascalientes, Ags."}
+            <br />
+            Teléfono: {driver.phone ?? "—"}
+          </p>
+        </div>
+      </section>
+
+      {/* ===========================================================
+          TEXTO INTEGRAL DEL CONTRATO
+      ============================================================ */}
+      <section className="space-y-4 text-justify">
+        <p className="font-bold text-center uppercase">
+          Contrato de Arrendamiento
         </p>
 
-        <footer className="mt-20 grid grid-cols-2 gap-8 text-center text-xs">
-            <div className="border-t-2 border-black pt-2">
-                <p className="font-semibold">{vehicle.ownerName?.toUpperCase()}</p>
-                <p><strong>"EL ARRENDADOR"</strong></p>
-            </div>
-            <div className="border-t-2 border-black pt-2">
-                <p className="font-semibold">{driver.name.toUpperCase()}</p>
-                <p><strong>"EL ARRENDATARIO"</strong></p>
-            </div>
-        </footer>
-      </div>
-    );
-  }
-);
+        <p>
+          CONTRATO DE ARRENDAMIENTO DE VEHÍCULOS (el “Contrato”) celebrado entre{" "}
+          <strong>GRUPO CASA DE NOBLES VALDELAMAR S.A. DE C.V.</strong> (en lo
+          sucesivo, el “<strong>ARRENDADOR</strong>”) y la persona física
+          indicada en la Hoja de Firmas (el “<strong>ARRENDATARIO</strong>”),
+          para el arrendamiento del bien mueble descrito anteriormente (el
+          “<strong>VEHÍCULO</strong>”).
+        </p>
+
+        <h3 className="font-bold text-center uppercase">Declaraciones</h3>
+
+        <p>
+          <strong>Del ARRENDADOR:</strong> (i) es sociedad mercantil conforme a
+          las leyes mexicanas, inscrita en el Registro Público del Comercio
+          (escritura 7 854, vol. 179, de 16-jul-2018, Not. 24 Durango); (ii)
+          acredita personalidad de su representante legal{" "}
+          <strong>Arturo Federico Ángel Mojica Valdelamar</strong> conforme al
+          testimonio notarial 7 854; (iii) se dedica al arrendamiento de bienes
+          muebles y se encuentra al corriente en sus obligaciones fiscales; (iv)
+          el VEHÍCULO está libre de gravamen, con verificación vehicular y
+          seguro vigentes; y (v) cuenta con facultades para administrar y rentar
+          el VEHÍCULO.
+        </p>
+
+        <p>
+          <strong>Del ARRENDATARIO:</strong> (i) es persona física mayor de edad
+          con capacidad jurídica y económica; (ii) cuenta con licencia de
+          conducir vigente y seguro de gastos médicos; y (iii) conoce y acepta
+          el estado físico-mecánico del VEHÍCULO.
+        </p>
+
+        <p className="text-center font-semibold">
+          <em>
+            Reconociéndose mutuamente la personalidad con que intervienen, LAS
+            PARTES acuerdan lo siguiente:
+          </em>
+        </p>
+
+        {/* ─────────────── CLÁUSULAS ─────────────── */}
+        <h3 className="font-bold text-center uppercase">Cláusulas</h3>
+
+        <p>
+          <strong>Primera. Objeto.</strong> El ARRENDADOR otorga al
+          ARRENDATARIO, y este acepta, el uso y goce temporal del VEHÍCULO,
+          obligándose a pagar la renta convenida y a cumplir lo aquí estipulado.
+        </p>
+
+        <p>
+          <strong>Segunda. Plazo.</strong> La vigencia inicial es de doce (12)
+          meses contados a partir del {fStart}. Salvo aviso escrito con 30 días
+          de anticipación, el contrato se prorrogará automáticamente por
+          periodos mensuales, ajustándose la renta conforme al INPC publicado
+          por INEGI.
+        </p>
+
+        <p>
+          <strong>Tercera. Uso autorizado.</strong> El ARRENDATARIO destinará el
+          VEHÍCULO a uso particular y/o prestación de servicio de transporte de
+          personas con chofer dentro de Aguascalientes. Para sacarlo fuera de la
+          entidad o ceder su conducción requerirá autorización escrita del
+          ARRENDADOR.
+        </p>
+
+        <p>
+          <strong>Cuarta. Obligaciones del ARRENDATARIO.</strong> Incluyen, de
+          forma enunciativa mas no limitativa: (a) no gravar ni subarrendar el
+          VEHÍCULO ni usarlo para fines ilícitos; (b) conducir con licencia
+          vigente y pagar de inmediato cualquier multa; (c) no permitir otros
+          conductores; (d) mantener mínimo ¼ de tanque y devolverlo igual; (e)
+          no conducir bajo efectos de alcohol o drogas; (f) no sobrecargar ni
+          remolcar; (g) no circular fuera de caminos reconocidos; (h) reportar
+          cualquier siniestro en 1 h; (i) acudir semanalmente a revisión
+          preventiva so pena de $500 diarios; (j) pagar puntualmente la renta
+          diaria + IVA en el domicilio del ARRENDADOR; y (k) restituir el
+          VEHÍCULO con el inventario del Anexo “A”.
+        </p>
+
+        <p>
+          <strong>Quinta. Entrega.</strong> El ARRENDADOR entregará el VEHÍCULO
+          a las 15:00 h del {fStart} con tanque lleno e inventario del
+          Anexo “A”.
+        </p>
+
+        <p>
+          <strong>Sexta. Devolución.</strong> El ARRENDATARIO lo devolverá a las
+          15:00 h del {fEnd} (o antes si se rescinde) en el mismo domicilio, con
+          inventario completo y desgaste normal; pagará faltantes o daños al
+          valor de mercado.
+        </p>
+
+        <p>
+          <strong>Séptima. Renta e impuestos.</strong> La renta diaria sin IVA
+          es {formatCurrency(dailyRent)}; con IVA,{" "}
+          {formatCurrency(dailyRentWithVat)}. El ARRENDADOR emitirá CFDI por
+          arrendamiento y el ARRENDATARIO retendrá lo que proceda.
+        </p>
+
+        <p>
+          <strong>Octava. Seguro.</strong> El VEHÍCULO cuenta con póliza de
+          cobertura amplia (deducible $15 000; excluye robo total). El
+          ARRENDATARIO cubrirá deducibles y daños no cubiertos, incluyendo robo
+          total, así como responsabilidad civil y penal mientras tenga el
+          VEHÍCULO en su poder.
+        </p>
+
+        <p>
+          <strong>Novena. Depósito en garantía.</strong> El ARRENDATARIO entrega
+          {formatCurrency(deposit)} como depósito. Se devolverá (o compensará)
+          dentro de las 48 h hábiles posteriores a la restitución satisfactoria
+          del VEHÍCULO.
+        </p>
+
+        <p>
+          <strong>Décima. Intereses moratorios.</strong> El retraso en el pago
+          de renta causará 5 % mensual sobre lo vencido.
+        </p>
+
+        <p>
+          <strong>Décima Primera. Mantenimiento y reparaciones.</strong> Toda
+          intervención al VEHÍCULO deberá hacerse únicamente en Taller Mecánico
+          y de Carrocería Ranoro (Av. Convención de 1914 #1421). Intervenciones
+          no autorizadas: multa $30 000. Falta de revisión semanal: $500 por día
+          de retraso.
+        </p>
+
+        <p>
+          <strong>Décima Segunda. Terminación anticipada.</strong> El ARRENDADOR
+          podrá rescindir sin declaración judicial ante incumplimiento del
+          ARRENDATARIO, bastando aviso escrito con 2 h; el ARRENDATARIO perderá
+          el depósito como pena convencional. El ARRENDATARIO podrá terminar con
+          30 días de aviso; de no hacerlo, perderá el depósito.
+        </p>
+
+        <p>
+          <strong>Décima Tercera. Caso fortuito o fuerza mayor.</strong> La
+          parte afectada notificará en 2 h; las obligaciones se suspenderán
+          mientras subsista la causa.
+        </p>
+
+        <p>
+          <strong>Décima Cuarta. Avisos.</strong> Se enviarán por correo
+          electrónico y/o WhatsApp a los datos de la Hoja de Firmas, con acuse
+          de lectura.
+        </p>
+
+        <p>
+          <strong>Décima Quinta. Protección de datos personales.</strong> Las
+          partes tratarán la información conforme a la Ley Federal de
+          Protección de Datos; el ARRENDATARIO acepta el Aviso de Privacidad en{" "}
+          <a
+            href="https://casadenobles.mx/aviso"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            casadenobles.mx/aviso
+          </a>
+          .
+        </p>
+
+        <p>
+          <strong>Décima Sexta. Legislación y jurisdicción.</strong> Para la
+          interpretación y cumplimiento, las partes se someten a las leyes
+          federales de México y a los tribunales competentes de Aguascalientes,
+          renunciando a otro fuero.
+        </p>
+
+        <p>
+          <strong>Décima Séptima. Geolocalización (GPS).</strong> El VEHÍCULO
+          cuenta con rastreo satelital; el ARRENDATARIO autoriza la recopilación
+          y tratamiento de datos de localización. Manipular el dispositivo será
+          incumplimiento grave y causa de rescisión.
+        </p>
+
+        <p>
+          <strong>Décima Octava. Uso en plataformas de choferes.</strong> Se
+          permite su uso en plataformas (Uber, DiDi, etc.) siempre que el
+          ARRENDATARIO mantenga cuenta activa, seguro ERT y cumpla requisitos
+          fiscales y métricas de la plataforma; de lo contrario se rescindirá.
+        </p>
+
+        <p>
+          <strong>Décima Novena. Integración.</strong> Este documento y anexos
+          constituyen la totalidad del acuerdo y solo podrán modificarse por
+          escrito firmado por ambas partes.
+        </p>
+
+        <p className="text-center my-6">
+          Leído que fue el presente Contrato y enteradas LAS PARTES de su
+          contenido y alcance legal, lo firman por duplicado en la ciudad de
+          Aguascalientes, Aguascalientes, a {fSignature}.
+        </p>
+      </section>
+
+      {/* ===========================================================
+          FIRMAS
+      ============================================================ */}
+      <footer className="mt-20 grid grid-cols-2 gap-8 text-center text-xs">
+        <div className="border-t-2 border-black pt-2">
+          <p className="font-semibold">
+            GRUPO CASA DE NOBLES VALDELAMAR S.A. DE C.V.
+          </p>
+          <p>
+            <strong>“EL ARRENDADOR”</strong>
+          </p>
+        </div>
+        <div className="border-t-2 border-black pt-2">
+          <p className="font-semibold">{driver.name.toUpperCase()}</p>
+          <p>
+            <strong>“EL ARRENDATARIO”</strong>
+          </p>
+        </div>
+      </footer>
+
+      {/* ===========================================================
+          PAGARÉ (resumen)
+      ============================================================ */}
+      <section className="mt-16 text-justify text-xs leading-relaxed">
+        <h3 className="font-bold text-center uppercase mb-2">Pagaré</h3>
+        <p className="text-center mb-2">Bueno por: $175,000.00</p>
+        <p>
+          En Aguascalientes, Aguascalientes, {fSignature}. Debo y pagaré
+          incondicionalmente por este pagaré a la orden de{" "}
+          <strong>Arturo Federico Ángel Mojica Valdelamar</strong> la cantidad de
+          $175 000.00 (CIENTO SETENTA Y CINCO MIL PESOS 00/100 M.N.) el{" "}
+          {fSignature}. Su impago causará intereses moratorios del 5 % mensual y
+          las partes se someten a los tribunales competentes de Aguascalientes.
+        </p>
+      </section>
+
+      {/* ===========================================================
+          ANEXO “A” (Inventario resumido)
+      ============================================================ */}
+      <section className="mt-16 text-xs leading-relaxed">
+        <h3 className="font-bold text-center uppercase mb-2">Anexo “A”</h3>
+        <p className="text-center font-semibold">Inventario de entrega</p>
+        <ul className="list-disc list-inside pl-4">
+          <li>Kilometraje inicial: _________ km</li>
+          <li>Nivel de combustible (mín. ¼): _________</li>
+          <li>Llave y control remoto, tarjeta de circulación, cables pasa
+            corriente, gato, cruceta, antena, llanta de refacción, tapetes,
+            extintor.</li>
+        </ul>
+        <p className="mt-4">
+          Recibo de conformidad el {fSignature}.<br />
+          Nombre: ______________________ Huella: __________ Firma: __________
+        </p>
+      </section>
+    </div>
+  );
+});
 ContractContent.displayName = "ContractContent";
