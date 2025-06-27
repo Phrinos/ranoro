@@ -8,13 +8,13 @@ import { PageHeader } from '@/components/page-header';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { Archive, ShieldAlert, Edit, Eye, Printer, Copy } from 'lucide-react';
+import { Archive, ShieldAlert, Edit, Eye, Printer, Copy, CalendarCheck } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { format, parseISO } from 'date-fns';
+import { format, parseISO, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
 import Link from 'next/link';
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useMemo } from 'react';
 import { VehicleDialog } from '../components/vehicle-dialog';
 import type { VehicleFormValues } from '../components/vehicle-form';
 import { useToast } from '@/hooks/use-toast';
@@ -55,6 +55,17 @@ export default function VehicleDetailPage() {
     setTechnicians(placeholderTechnicians);
 
   }, [vehicleId]);
+  
+  const nextServiceInfo = useMemo(() => {
+    const completedServicesWithNextInfo = services
+      .filter(s => s.status === 'Completado' && s.nextServiceInfo && s.deliveryDateTime)
+      .sort((a, b) => parseISO(b.deliveryDateTime!).getTime() - parseISO(a.deliveryDateTime!).getTime()); 
+      
+    if (completedServicesWithNextInfo.length > 0) {
+        return completedServicesWithNextInfo[0].nextServiceInfo;
+    }
+    return null;
+  }, [services]);
 
   const handleSaveEditedVehicle = async (formData: VehicleFormValues) => {
     if (!vehicle) return;
@@ -72,7 +83,7 @@ export default function VehicleDetailPage() {
       placeholderVehicles[pIndex] = updatedVehicle;
     }
     
-    await persistToFirestore();
+    await persistToFirestore(['vehicles']);
 
     setIsEditDialogOpen(false);
     toast({
@@ -100,7 +111,7 @@ export default function VehicleDetailPage() {
       placeholderServiceRecords[pIndex] = updatedService;
     }
     
-    await persistToFirestore();
+    await persistToFirestore(['serviceRecords']);
     
     setIsViewServiceDialogOpen(false); 
     toast({
@@ -231,6 +242,28 @@ export default function VehicleDetailPage() {
                 )}
               </CardContent>
             </Card>
+
+            {nextServiceInfo && (
+              <Card className="border-blue-200 bg-blue-50 dark:bg-blue-900/30">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-lg text-blue-800 dark:text-blue-300">
+                    <CalendarCheck className="h-5 w-5" />
+                    Próximo Servicio Recomendado
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <p className="font-semibold">Fecha:</p>
+                    <p>{format(parseISO(nextServiceInfo.date), "dd 'de' MMMM 'de' yyyy", { locale: es })}</p>
+                  </div>
+                  <div>
+                    <p className="font-semibold">Kilometraje:</p>
+                    <p>{nextServiceInfo.mileage.toLocaleString('es-MX')} km</p>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
             <Card className="bg-amber-50 dark:bg-amber-950/50">
               <CardHeader>
                 <CardTitle>Datos del Propietario</CardTitle>
