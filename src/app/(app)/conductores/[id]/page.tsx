@@ -81,12 +81,11 @@ export default function DriverDetailPage() {
   const handleSaveDriver = async (formData: DriverFormValues) => {
     if (!driver) return;
     
-    const updatedDriver = { ...driver, ...formData };
-    
-    // If a deposit is being added for the first time, set the contract date.
-    if (formData.depositAmount && !driver.depositAmount) {
-        updatedDriver.contractDate = new Date().toISOString();
-    }
+     const updatedDriver = { 
+        ...driver, 
+        ...formData,
+        contractDate: formData.contractDate ? new Date(formData.contractDate).toISOString() : undefined,
+    };
     
     setDriver(updatedDriver);
 
@@ -183,13 +182,13 @@ export default function DriverDetailPage() {
                 <div className="flex items-center gap-3"><Phone className="h-4 w-4 text-muted-foreground" /><span>{driver.phone}</span></div>
                 <div className="flex items-center gap-3"><AlertTriangle className="h-4 w-4 text-muted-foreground" /><span>Tel. Emergencia: {driver.emergencyPhone}</span></div>
                 <div className="flex items-center gap-3"><DollarSign className="h-4 w-4 text-muted-foreground" /><span>Depósito: {driver.depositAmount ? formatCurrency(driver.depositAmount) : 'N/A'}</span></div>
-                <div className="flex items-center gap-3"><FileText className="h-4 w-4 text-muted-foreground" /><span>Contrato: {driver.contractDate ? format(parseISO(driver.contractDate), "dd MMM yyyy", { locale: es }) : 'No generado'}</span></div>
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3"><FileText className="h-4 w-4 text-muted-foreground" /><span>Contrato: {driver.contractDate ? format(parseISO(driver.contractDate), "dd MMM yyyy", { locale: es }) : 'No generado'}</span></div>
+                    <Button onClick={() => setIsContractDialogOpen(true)} disabled={!driver?.depositAmount} size="sm">
+                        <FileText className="mr-2 h-4 w-4"/> Generar Contrato
+                    </Button>
+                </div>
               </CardContent>
-              <CardFooter>
-                 <Button onClick={() => setIsContractDialogOpen(true)} disabled={!driver?.depositAmount}>
-                    <FileText className="mr-2 h-4 w-4"/> Generar Contrato
-                </Button>
-              </CardFooter>
             </Card>
             <Card className="lg:col-span-1 bg-amber-50 dark:bg-amber-900/50 border-amber-200">
                 <CardHeader>
@@ -326,3 +325,4 @@ export default function DriverDetailPage() {
     </>
   );
 }
+
