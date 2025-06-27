@@ -162,6 +162,10 @@ const serviceFormSchemaBase = z.object({
   paymentMethod: z.enum(paymentMethods).optional(),
   cardFolio: z.string().optional(),
   transferFolio: z.string().optional(),
+  nextServiceInfo: z.object({
+    date: z.string(),
+    mileage: z.number().optional(),
+  }).optional(),
 }).refine(data => {
     if (data.status && data.status !== 'Cotizacion' && !data.serviceDate) {
         return false;
@@ -312,6 +316,7 @@ export function ServiceForm({
         paymentMethod: (initialData as ServiceRecord)?.paymentMethod || 'Efectivo',
         cardFolio: (initialData as ServiceRecord)?.cardFolio || '',
         transferFolio: (initialData as ServiceRecord)?.transferFolio || '',
+        nextServiceInfo: (initialData as ServiceRecord)?.nextServiceInfo || undefined,
     }
   });
   
@@ -425,6 +430,7 @@ export function ServiceForm({
             paymentMethod: (data as ServiceRecord)?.paymentMethod || 'Efectivo',
             cardFolio: (data as ServiceRecord)?.cardFolio || '',
             transferFolio: (initialData as ServiceRecord)?.transferFolio || '',
+            nextServiceInfo: (data as ServiceRecord)?.nextServiceInfo,
         };
 
         form.reset(dataToReset);
@@ -1912,3 +1918,4 @@ const SafetyCheckRow = ({ name, label, control, isReadOnly }: { name: string; la
     </div>
   );
 };
+
