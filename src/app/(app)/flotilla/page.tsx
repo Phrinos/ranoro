@@ -25,7 +25,8 @@ export default function FlotillaPage() {
 
   const allVehicles = useMemo(() => {
     if (!hydrated) return [];
-    return placeholderVehicles;
+    // Create a shallow copy to ensure React detects the change on re-render
+    return [...placeholderVehicles];
   }, [version, hydrated]);
 
   const fleetVehicles = useMemo(() => allVehicles.filter(v => v.isFleetVehicle), [allVehicles]);
