@@ -11,7 +11,7 @@ import {
   placeholderRentalPayments,
   placeholderServiceRecords,
 } from '@/lib/placeholder-data';
-import type { Vehicle, RentalPayment, ServiceRecord } from '@/types';
+import type { Vehicle, RentalPayment, ServiceRecord, WorkshopInfo } from '@/types';
 import {
   format,
   parseISO,
@@ -24,10 +24,12 @@ import {
   getDaysInMonth,
 } from "date-fns";
 import { es } from 'date-fns/locale';
-import { ChevronLeft, ChevronRight, DollarSign, Wrench, Calendar, ArrowLeft } from "lucide-react";
+import { ChevronLeft, ChevronRight, DollarSign, Wrench, Calendar, ArrowLeft, Share2, Loader2 } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { formatCurrency } from "@/lib/utils";
 import Link from "next/link";
+import { useToast } from "@/hooks/use-toast";
+import { generateAndShareOwnerReport } from '../actions';
 
 interface VehicleMonthlyReport {
   vehicleId: string;
@@ -40,9 +42,11 @@ interface VehicleMonthlyReport {
 export default function OwnerIncomeDetailPage() {
   const params = useParams();
   const router = useRouter();
+  const { toast } = useToast();
   const ownerName = decodeURIComponent(params.ownerName as string);
   
   const [selectedDate, setSelectedDate] = useState(startOfMonth(new Date()));
+  const [isSharing, setIsSharing] = useState(false);
 
   const handlePreviousMonth = () => setSelectedDate(subMonths(selectedDate, 1));
   const handleNextMonth = () => setSelectedDate(addMonths(selectedDate, 1));
@@ -100,15 +104,46 @@ export default function OwnerIncomeDetailPage() {
     };
   }, [selectedDate, ownerVehicles]);
 
+  const handleShareReport = async () => {
+    setIsSharing(true);
+    
+    const storedWorkshopInfo = typeof window !== 'undefined' ? localStorage.getItem('workshopTicketInfo') : null;
+    const workshopInfo: WorkshopInfo | undefined = storedWorkshopInfo ? JSON.parse(storedWorkshopInfo) : undefined;
+
+    const result = await generateAndShareOwnerReport(ownerName, workshopInfo);
+
+    if (result.success && result.publicId) {
+      const reportUrl = `${window.location.origin}/r/${result.publicId}`;
+      navigator.clipboard.writeText(reportUrl);
+      toast({
+        title: "Enlace Copiado",
+        description: "El enlace público para el reporte ha sido copiado a tu portapapeles.",
+      });
+    } else {
+      toast({
+        title: "Error al Compartir",
+        description: result.error || "No se pudo generar el enlace para compartir.",
+        variant: "destructive",
+      });
+    }
+    setIsSharing(false);
+  };
+
   return (
     <>
       <PageHeader
         title={`Reporte de Ingresos para ${ownerName}`}
         description="Análisis de los ingresos y costos de la flotilla de este propietario."
         actions={
-          <Button variant="outline" onClick={() => router.back()}>
-            <ArrowLeft className="mr-2 h-4 w-4" /> Volver a Propietarios
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => router.back()}>
+              <ArrowLeft className="mr-2 h-4 w-4" /> Volver
+            </Button>
+            <Button onClick={handleShareReport} disabled={isSharing}>
+              {isSharing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Share2 className="mr-2 h-4 w-4" />}
+              Compartir Reporte
+            </Button>
+          </div>
         }
       />
       
@@ -192,4 +227,3 @@ export default function OwnerIncomeDetailPage() {
     </>
   );
 }
-
