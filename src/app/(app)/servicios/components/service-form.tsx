@@ -575,7 +575,7 @@ export function ServiceForm({
     vehicle: Vehicle | null
   ) => {
     if (!db) {
-      console.error("Public save failed: Firebase (db) no está configurado en lib/firebasePublic.js");
+      console.error("Public save failed: Firebase (db) no está configurado en lib/firebaseClient.js");
        toast({
         title: "Configuración Incompleta",
         description: "La base de datos (Firebase) no está configurada. No se pudo crear el documento público.",
@@ -1923,4 +1923,3 @@ const SafetyCheckRow = ({ name, label, control, isReadOnly }: { name: string; la
     </div>
   );
 };
-

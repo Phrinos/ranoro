@@ -277,7 +277,7 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
                           <div className="p-2 space-y-1 text-center">
                               <p className="text-[10px] font-semibold">Lo que ocurra primero</p>
                               <p className="font-bold">Fecha: {format(parseISO(service.nextServiceInfo.date), "dd/MMMM/yyyy", { locale: es })}</p>
-                              {typeof service.nextServiceInfo.mileage === 'number' && (
+                              {service.nextServiceInfo.mileage && typeof service.nextServiceInfo.mileage === 'number' && isFinite(service.nextServiceInfo.mileage) && (
                                   <p className="font-bold">Kilometraje: {service.nextServiceInfo.mileage.toLocaleString('es-MX')} km</p>
                               )}
                           </div>
@@ -439,4 +439,3 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
   }
 );
 ServiceSheetContent.displayName = "ServiceSheetContent";
-
