@@ -287,11 +287,6 @@ export function ServiceForm({
   const [isEnhancingText, setIsEnhancingText] = useState<string | null>(null);
   const [isTicketPreviewOpen, setIsTicketPreviewOpen] = useState(false);
   const ticketContentRef = useRef<HTMLDivElement>(null);
-  
-  const [totalCost, setTotalCost] = useState(0);
-  const [totalSuppliesWorkshopCost, setTotalSuppliesWorkshopCost] = useState(0);
-  const [serviceProfit, setServiceProfit] = useState(0);
-
 
   const form = useForm<ServiceFormValues>({
     resolver: zodResolver(serviceFormSchemaBase),
@@ -336,6 +331,8 @@ export function ServiceForm({
     control: form.control,
     name: "serviceItems",
   });
+  
+  const watchedServiceItems = useWatch({ control, name: "serviceItems" });
 
   const quoteForViewing = useMemo(() => {
     if (!initialData) return null;
@@ -345,31 +342,33 @@ export function ServiceForm({
     ) || null;
   }, [mode, initialData]);
 
+  // DERIVED STATE CALCULATION
+  const { totalCost, totalSuppliesWorkshopCost, serviceProfit } = useMemo(() => {
+    const currentTotalCost = watchedServiceItems?.reduce((sum, item) => sum + (Number(item.price) || 0), 0) || 0;
+    
+    const currentTotalSuppliesWorkshopCost = watchedServiceItems?.flatMap(item => item.suppliesUsed).reduce((sum, supply) => {
+        const item = currentInventoryItems.find(i => i.id === supply.supplyId);
+        const costPerUnit = item?.unitPrice || supply.unitPrice || 0;
+        return sum + (costPerUnit * supply.quantity);
+    }, 0) || 0;
+
+    const totalCostBeforeTax = currentTotalCost / (1 + IVA_RATE) || 0;
+    const currentServiceProfit = totalCostBeforeTax - currentTotalSuppliesWorkshopCost;
+
+    return {
+        totalCost: currentTotalCost,
+        totalSuppliesWorkshopCost: currentTotalSuppliesWorkshopCost,
+        serviceProfit: currentServiceProfit,
+    };
+  }, [watchedServiceItems, currentInventoryItems]);
+
+
   const refreshCurrentUser = useCallback(() => {
     const authUserString = localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY);
     if (authUserString) {
       freshUserRef.current = JSON.parse(authUserString);
     }
   }, []);
-
-  const watchedServiceItems = form.watch("serviceItems");
-
-  useEffect(() => {
-    const currentTotalCost = watchedServiceItems?.reduce((sum, item) => sum + (item.price || 0), 0) || 0;
-    
-    const currentTotalSuppliesWorkshopCost = watchedServiceItems?.flatMap(item => item.suppliesUsed).reduce((sum, supply) => {
-        const item = currentInventoryItems.find(i => i.id === supply.supplyId);
-        const costPerUnit = item?.unitPrice || supply.unitPrice || 0;
-        return sum + costPerUnit * supply.quantity;
-    }, 0) || 0;
-
-    const totalCostBeforeTax = currentTotalCost / (1 + IVA_RATE) || 0;
-    const currentServiceProfit = totalCostBeforeTax - currentTotalSuppliesWorkshopCost;
-
-    setTotalCost(currentTotalCost);
-    setTotalSuppliesWorkshopCost(currentTotalSuppliesWorkshopCost);
-    setServiceProfit(currentServiceProfit);
-  }, [watchedServiceItems, currentInventoryItems]);
 
   // Effect to auto-populate delivery date when status changes to 'Completado'
   useEffect(() => {
@@ -701,7 +700,6 @@ export function ServiceForm({
         technicianId: values.technicianId || '',
         status: values.status || 'Agendado',
         totalCost: totalCost,
-        serviceAdvisorId: currentUser.id,
         serviceItems: values.serviceItems,
       };
 
