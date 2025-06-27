@@ -320,13 +320,17 @@ export function ServiceForm({
     }
   });
 
-  // Simplified logic to find the quote to view.
-  let quoteForViewing: QuoteRecord | null = null;
-  if (mode === 'service' && initialDataService?.id) {
-    quoteForViewing = placeholderQuotes.find(q => q.serviceId === initialDataService.id) || null;
-  } else if (mode === 'quote' && initialDataQuote?.id) {
-    quoteForViewing = placeholderQuotes.find(q => q.id === initialDataQuote.id) || null;
-  }
+  const quoteForViewing = useMemo(() => {
+    const serviceId = initialDataService?.id;
+    if (mode === 'service' && serviceId) {
+      return placeholderQuotes.find(q => q.serviceId === serviceId) || null;
+    }
+    const quoteId = initialDataQuote?.id;
+    if (mode === 'quote' && quoteId) {
+      return placeholderQuotes.find(q => q.id === quoteId) || null;
+    }
+    return null;
+  }, [initialDataService, initialDataQuote, mode]);
   
   const watchedStatus = useWatch({ control: form.control, name: 'status' });
   const selectedPaymentMethod = useWatch({ control: form.control, name: 'paymentMethod' });
