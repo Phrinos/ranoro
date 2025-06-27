@@ -46,8 +46,10 @@ export const ContractContent = React.forwardRef<HTMLDivElement, ContractContentP
 
         <h2 className="font-bold text-center mb-4">CLÁUSULAS</h2>
         
-        <p className="mb-4">
-          <strong>PRIMERA.- OBJETO.</strong> EL ARRENDADOR otorga en arrendamiento a EL ARRENDATARIO, el vehículo de las siguientes características:
+        <div className="mb-4">
+          <p>
+            <strong>PRIMERA.- OBJETO.</strong> EL ARRENDADOR otorga en arrendamiento a EL ARRENDATARIO, el vehículo de las siguientes características:
+          </p>
           <ul className="list-disc pl-8 mt-2">
             <li><strong>Marca:</strong> {vehicle.make}</li>
             <li><strong>Modelo:</strong> {vehicle.model}</li>
@@ -55,7 +57,7 @@ export const ContractContent = React.forwardRef<HTMLDivElement, ContractContentP
             <li><strong>Placas:</strong> {vehicle.licensePlate}</li>
             <li><strong>VIN:</strong> {vehicle.vin || 'N/A'}</li>
           </ul>
-        </p>
+        </div>
 
         <p className="mb-4">
           <strong>SEGUNDA.- PRECIO Y FORMA DE PAGO.</strong> EL ARRENDATARIO se obliga a pagar a EL ADMINISTRADOR una renta diaria de <strong>{formatCurrency(vehicle.dailyRentalCost || 0)}</strong>. Los pagos se realizarán diariamente en las instalaciones de EL ADMINISTRADOR.
@@ -69,8 +71,8 @@ export const ContractContent = React.forwardRef<HTMLDivElement, ContractContentP
           <strong>CUARTA.- VIGENCIA.</strong> El presente contrato tendrá una vigencia indefinida, iniciando el día de su firma. Cualquiera de las partes podrá darlo por terminado con un aviso previo de 24 horas.
         </p>
 
-        <p className="mb-4">
-          <strong>QUINTA.- OBLIGACIONES DEL ARRENDATARIO.</strong>
+        <div className="mb-4">
+          <p><strong>QUINTA.- OBLIGACIONES DEL ARRENDATARIO.</strong></p>
           <ul className="list-disc pl-8 mt-2 text-xs">
             <li>Utilizar el vehículo de manera prudente y exclusivamente para el fin convenido.</li>
             <li>Cubrir todos los gastos de combustible.</li>
@@ -78,15 +80,15 @@ export const ContractContent = React.forwardRef<HTMLDivElement, ContractContentP
             <li>No realizar reparaciones o modificaciones al vehículo sin autorización expresa de EL ADMINISTRADOR.</li>
             <li>Ser el único responsable por infracciones de tránsito y los daños y perjuicios que cause a terceros.</li>
           </ul>
-        </p>
+        </div>
         
-        <p className="mb-4">
-          <strong>SEXTA.- OBLIGACIONES DE EL ADMINISTRADOR.</strong>
+        <div className="mb-4">
+           <p><strong>SEXTA.- OBLIGACIONES DE EL ADMINISTRADOR.</strong></p>
            <ul className="list-disc pl-8 mt-2 text-xs">
             <li>Realizar los mantenimientos preventivos y correctivos necesarios para el buen funcionamiento del vehículo.</li>
             <li>Gestionar los pagos de renta y la relación administrativa entre las partes.</li>
           </ul>
-        </p>
+        </div>
 
         <p className="mb-4">
           Leído que fue el presente contrato y enteradas las partes de su contenido y alcance legal, lo firman de conformidad.
