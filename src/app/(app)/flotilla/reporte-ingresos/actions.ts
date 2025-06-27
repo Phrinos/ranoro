@@ -2,22 +2,29 @@
 'use server';
 
 import {
-  placeholderVehicles,
-  placeholderRentalPayments,
-  placeholderServiceRecords,
   placeholderPublicOwnerReports,
   persistToFirestore
 } from '@/lib/placeholder-data';
-import type { PublicOwnerReport, VehicleMonthlyReport, WorkshopInfo } from '@/types';
+import type { PublicOwnerReport, VehicleMonthlyReport, WorkshopInfo, Vehicle, RentalPayment, ServiceRecord } from '@/types';
 import { format, parseISO, startOfMonth, endOfMonth, isWithinInterval, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
 
+export interface ReportGenerationInput {
+  ownerName: string;
+  forDateISO: string;
+  workshopInfo?: WorkshopInfo;
+  allVehicles: Vehicle[];
+  allRentalPayments: RentalPayment[];
+  allServiceRecords: ServiceRecord[];
+}
+
+
 export async function generateAndShareOwnerReport(
-  ownerName: string, 
-  forDateISO: string, // New parameter
-  workshopInfo?: WorkshopInfo
+  input: ReportGenerationInput
 ): Promise<{ success: boolean; report?: PublicOwnerReport; error?: string; }> {
   try {
+    const { ownerName, forDateISO, workshopInfo, allVehicles, allRentalPayments, allServiceRecords } = input;
+    
     const reportDate = new Date(); // Generation date
     const reportForDate = parseISO(forDateISO); // Date the report is about
     
@@ -25,17 +32,17 @@ export async function generateAndShareOwnerReport(
     const monthEnd = endOfMonth(reportForDate);
     
     // --- Perform Calculations ---
-    const ownerVehicles = placeholderVehicles.filter(v => v.isFleetVehicle && v.ownerName === ownerName);
+    const ownerVehicles = allVehicles.filter(v => v.isFleetVehicle && v.ownerName === ownerName);
 
     const detailedReport: VehicleMonthlyReport[] = ownerVehicles.map(vehicle => {
-      const vehiclePayments = placeholderRentalPayments.filter(p => {
+      const vehiclePayments = allRentalPayments.filter(p => {
         const pDate = parseISO(p.paymentDate);
         return p.vehicleLicensePlate === vehicle.licensePlate && isValid(pDate) && isWithinInterval(pDate, { start: monthStart, end: monthEnd });
       });
 
       const rentalIncome = vehiclePayments.reduce((sum, p) => sum + p.amount, 0);
 
-      const vehicleServices = placeholderServiceRecords.filter(s => {
+      const vehicleServices = allServiceRecords.filter(s => {
         const sDate = parseISO(s.serviceDate);
         return s.vehicleId === vehicle.id && isValid(sDate) && isWithinInterval(sDate, { start: monthStart, end: monthEnd });
       });

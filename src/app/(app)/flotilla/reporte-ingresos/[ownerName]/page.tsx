@@ -11,7 +11,7 @@ import {
   placeholderRentalPayments,
   placeholderServiceRecords,
 } from '@/lib/placeholder-data';
-import type { PublicOwnerReport, Vehicle, RentalPayment, ServiceRecord, WorkshopInfo } from '@/types';
+import type { PublicOwnerReport, Vehicle, RentalPayment, ServiceRecord, WorkshopInfo, VehicleMonthlyReport } from '@/types';
 import {
   format,
   parseISO,
@@ -162,7 +162,14 @@ export default function OwnerIncomeDetailPage() {
     const storedWorkshopInfo = typeof window !== 'undefined' ? localStorage.getItem('workshopTicketInfo') : null;
     const workshopInfo: WorkshopInfo | undefined = storedWorkshopInfo ? JSON.parse(storedWorkshopInfo) : undefined;
 
-    const result = await generateAndShareOwnerReport(ownerName, selectedDate.toISOString(), workshopInfo);
+    const result = await generateAndShareOwnerReport({
+      ownerName: ownerName,
+      forDateISO: selectedDate.toISOString(),
+      workshopInfo: workshopInfo,
+      allVehicles: placeholderVehicles,
+      allRentalPayments: placeholderRentalPayments,
+      allServiceRecords: placeholderServiceRecords,
+    });
 
     if (result.success && result.report) {
       setReportToShare(result.report);
