@@ -178,7 +178,6 @@ export default function DriverDetailPage() {
         actions={
           <div className="flex gap-2">
             <Button variant="outline" onClick={() => router.back()}><ArrowLeft className="mr-2 h-4 w-4"/> Volver</Button>
-            <Button variant="outline" onClick={() => setIsEditDialogOpen(true)}><Edit className="mr-2 h-4 w-4"/> Editar</Button>
           </div>
         }
       />
@@ -193,7 +192,13 @@ export default function DriverDetailPage() {
         <TabsContent value="details">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <Card className="lg:col-span-2">
-              <CardHeader><CardTitle>Información del Conductor</CardTitle></CardHeader>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <CardTitle>Información del Conductor</CardTitle>
+                <Button variant="outline" size="sm" onClick={() => setIsEditDialogOpen(true)}>
+                    <Edit className="mr-2 h-4 w-4" />
+                    Editar
+                </Button>
+              </CardHeader>
               <CardContent className="space-y-4 text-sm">
                 <div className="flex items-center gap-3"><User className="h-4 w-4 text-muted-foreground" /><span>{driver.name}</span></div>
                 <div className="flex items-center gap-3"><Home className="h-4 w-4 text-muted-foreground" /><span>{driver.address}</span></div>
