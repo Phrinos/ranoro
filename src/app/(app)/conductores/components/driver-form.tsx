@@ -17,6 +17,7 @@ const driverFormSchema = z.object({
   phone: z.string().min(7, "Ingrese un número de teléfono válido."),
   emergencyPhone: z.string().min(7, "Ingrese un teléfono de emergencia válido."),
   depositAmount: z.coerce.number().min(0, "El depósito no puede ser negativo.").optional(),
+  contractDate: z.string().optional(),
 });
 
 export type DriverFormValues = z.infer<typeof driverFormSchema>;
@@ -33,12 +34,14 @@ export function DriverForm({ initialData, onSubmit, onClose }: DriverFormProps) 
     defaultValues: initialData ? {
         ...initialData,
         depositAmount: initialData.depositAmount ?? undefined,
+        contractDate: initialData.contractDate ? new Date(initialData.contractDate).toISOString().split('T')[0] : '',
     } : {
       name: "",
       address: "",
       phone: "",
       emergencyPhone: "",
       depositAmount: undefined,
+      contractDate: '',
     },
   });
 
@@ -91,22 +94,37 @@ export function DriverForm({ initialData, onSubmit, onClose }: DriverFormProps) 
             )}
           />
         </div>
-         <FormField
-            control={form.control}
-            name="depositAmount"
-            render={({ field }) => (
+         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <FormField
+                control={form.control}
+                name="depositAmount"
+                render={({ field }) => (
+                    <FormItem>
+                    <FormLabel>Depósito en Garantía</FormLabel>
+                    <FormControl>
+                        <div className="relative">
+                            <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                            <Input type="number" step="0.01" placeholder="Ej: 2500.00" {...field} value={field.value ?? ''} className="pl-8" />
+                        </div>
+                    </FormControl>
+                    <FormMessage />
+                    </FormItem>
+                )}
+            />
+            <FormField
+                control={form.control}
+                name="contractDate"
+                render={({ field }) => (
                 <FormItem>
-                <FormLabel>Depósito en Garantía</FormLabel>
-                <FormControl>
-                    <div className="relative">
-                        <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                        <Input type="number" step="0.01" placeholder="Ej: 2500.00" {...field} value={field.value ?? ''} className="pl-8" />
-                    </div>
-                </FormControl>
-                <FormMessage />
+                    <FormLabel>Fecha del Contrato</FormLabel>
+                    <FormControl>
+                    <Input type="date" {...field} />
+                    </FormControl>
+                    <FormMessage />
                 </FormItem>
-            )}
-        />
+                )}
+            />
+         </div>
         <div className="flex justify-end gap-2 pt-4">
           <Button type="button" variant="outline" onClick={onClose}>Cancelar</Button>
           <Button type="submit" disabled={form.formState.isSubmitting}>
@@ -117,3 +135,4 @@ export function DriverForm({ initialData, onSubmit, onClose }: DriverFormProps) 
     </Form>
   );
 }
+
