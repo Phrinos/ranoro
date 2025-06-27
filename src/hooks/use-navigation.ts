@@ -126,6 +126,13 @@ const BASE_NAV_STRUCTURE: ReadonlyArray<Omit<NavigationEntry, 'isActive'>> = [
     groupTag: "Mi Flotilla",
     permissions: ['fleet:manage']
   },
+  {
+    label: 'Reporte de Ingresos',
+    path: '/flotilla/reporte-ingresos',
+    icon: BarChart3,
+    groupTag: "Mi Flotilla",
+    permissions: ['fleet:manage']
+  },
 
   // Mi Oficina
   {
