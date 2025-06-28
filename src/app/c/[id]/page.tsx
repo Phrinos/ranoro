@@ -144,7 +144,7 @@ export default function PublicQuoteViewPage() {
                     <CardTitle>Vista Pública de Cotización: {quote.id}</CardTitle>
                     <CardDescription>Esta es una vista previa de la cotización. Puede descargarla.</CardDescription>
                 </div>
-                 <div className="flex gap-2">
+                 <div className="flex gap-2 flex-wrap justify-end">
                     <Button onClick={handleDownloadPDF}><Download className="mr-2 h-4 w-4"/> Descargar PDF</Button>
                  </div>
             </CardHeader>
