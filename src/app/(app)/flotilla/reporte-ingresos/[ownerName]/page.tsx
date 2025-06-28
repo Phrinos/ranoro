@@ -83,9 +83,7 @@ const ReportContent = React.forwardRef<HTMLDivElement, { report: PublicOwnerRepo
                                   <span>{formatCurrency(s.totalCost)}</span>
                                 </div>
                             ))}
-                            <div className="flex justify-between"><span>GPS:</span><span>{formatCurrency(item.gpsMonthlyCost)}</span></div>
-                            <div className="flex justify-between"><span>Admin:</span><span>{formatCurrency(item.adminMonthlyCost)}</span></div>
-                            <div className="flex justify-between"><span>Seguro:</span><span>{formatCurrency(item.insuranceMonthlyCost)}</span></div>
+                            <div className="flex justify-between"><span>Administración (GPS, Admin, Seguro):</span><span>{formatCurrency(item.administrationCost)}</span></div>
                         </div>
                       </TableCell>
                       <TableCell className="text-right align-top">{formatCurrency(item.rentalIncome)}</TableCell>
@@ -174,11 +172,9 @@ export default function OwnerIncomeDetailPage() {
       
       const maintenanceAndExpensesCost = maintenanceCostsFromServices + costsFromVehicleExpenses;
       
-      const gpsMonthlyCost = vehicle.gpsMonthlyCost ?? 150;
-      const adminMonthlyCost = vehicle.adminMonthlyCost ?? 200;
-      const insuranceMonthlyCost = vehicle.insuranceMonthlyCost ?? 250;
+      const administrationCost = (vehicle.gpsMonthlyCost ?? 150) + (vehicle.adminMonthlyCost ?? 200) + (vehicle.insuranceMonthlyCost ?? 250);
       
-      const totalDeductions = maintenanceAndExpensesCost + gpsMonthlyCost + adminMonthlyCost + insuranceMonthlyCost;
+      const totalDeductions = maintenanceAndExpensesCost + administrationCost;
       
       return {
         vehicleId: vehicle.id,
@@ -186,9 +182,7 @@ export default function OwnerIncomeDetailPage() {
         daysRented,
         rentalIncome,
         maintenanceAndExpensesCost,
-        gpsMonthlyCost,
-        adminMonthlyCost,
-        insuranceMonthlyCost,
+        administrationCost,
         totalDeductions,
         services: vehicleServices.map(s => ({ id: s.id, description: s.description, totalCost: s.totalCost })),
       };
@@ -357,9 +351,7 @@ export default function OwnerIncomeDetailPage() {
                                   <span>{formatCurrency(s.totalCost)}</span>
                                 </div>
                             ))}
-                            <div className="flex justify-between"><span>GPS:</span><span>{formatCurrency(item.gpsMonthlyCost)}</span></div>
-                            <div className="flex justify-between"><span>Admin:</span><span>{formatCurrency(item.adminMonthlyCost)}</span></div>
-                            <div className="flex justify-between"><span>Seguro:</span><span>{formatCurrency(item.insuranceMonthlyCost)}</span></div>
+                            <div className="flex justify-between"><span>Administración (GPS, Admin, Seguro):</span><span>{formatCurrency(item.administrationCost)}</span></div>
                         </div>
                       </TableCell>
                       <TableCell className="text-right align-top">{formatCurrency(item.rentalIncome)}</TableCell>
@@ -399,3 +391,4 @@ export default function OwnerIncomeDetailPage() {
     </>
   );
 }
+

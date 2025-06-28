@@ -425,9 +425,7 @@ export interface VehicleMonthlyReport {
   daysRented: number;
   rentalIncome: number;
   maintenanceAndExpensesCost: number;
-  gpsMonthlyCost: number;
-  adminMonthlyCost: number;
-  insuranceMonthlyCost: number;
+  administrationCost: number;
   totalDeductions: number;
   services?: { id: string; description?: string; totalCost: number }[];
 }
