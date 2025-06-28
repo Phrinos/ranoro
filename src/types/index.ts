@@ -301,7 +301,7 @@ export interface QuoteRecord {
   estimatedProfit?: number; // Profit: estimatedTotalCost - estimatedTotalSuppliesCost
   notes?: string; // For validity, terms, etc.
   mileage?: number; // Current mileage at time of quote
-  serviceType?: 'Servicio General' | 'Pintura';
+  serviceType?: 'Servicio General' | 'Pintura' | 'Cambio de Aceite';
   serviceId?: string; // ID of the service record if this quote was converted
   workshopInfo?: WorkshopInfo;
 }
