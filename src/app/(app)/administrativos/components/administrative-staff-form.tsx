@@ -170,7 +170,7 @@ export function AdministrativeStaffForm({ initialData, onSubmit, onClose }: Admi
             <FormItem>
               <FormLabel>Notas (Opcional)</FormLabel>
               <FormControl>
-                <Textarea placeholder="Notas adicionales sobre el personal..." {...field} onChange={(e) => field.onChange(capitalizeSentences(e.target.value))} />
+                <Textarea placeholder="Notas adicionales sobre el personal..." {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>

@@ -201,7 +201,7 @@ export function TechnicianForm({ initialData, onSubmit, onClose }: TechnicianFor
             <FormItem>
               <FormLabel>Notas (Opcional)</FormLabel>
               <FormControl>
-                <Textarea placeholder="Notas adicionales sobre el miembro del staff..." {...field} onChange={(e) => field.onChange(capitalizeSentences(e.target.value))} />
+                <Textarea placeholder="Notas adicionales sobre el miembro del staff..." {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
