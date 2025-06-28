@@ -373,7 +373,7 @@ export default function RentasPage() {
       </div>
 
       <Tabs defaultValue="pagos" className="w-full">
-        <TabsList className="grid w-full grid-cols-3 mb-6">
+        <TabsList className="grid w-full grid-cols-1 sm:grid-cols-3 mb-6">
           <TabsTrigger value="pagos">Pagos de Renta</TabsTrigger>
           <TabsTrigger value="retiros">Retiros de Propietarios</TabsTrigger>
           <TabsTrigger value="gastos">Gastos de Vehículos</TabsTrigger>
@@ -446,5 +446,3 @@ export default function RentasPage() {
     </>
   );
 }
-
-    
