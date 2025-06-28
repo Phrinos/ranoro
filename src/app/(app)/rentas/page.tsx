@@ -272,23 +272,6 @@ export default function RentasPage() {
 
   return (
     <>
-      <PageHeader
-        title="Principal"
-        description="Lleva el control de los pagos y retiros de la flotilla."
-      />
-      
-      <div className="flex flex-wrap gap-2 justify-end mb-6">
-          <Button variant="outline" onClick={() => setIsExpenseDialogOpen(true)}>
-            <ListCollapse className="mr-2 h-4 w-4" /> Registrar Gasto de Vehículo
-          </Button>
-          <Button variant="outline" onClick={() => setIsWithdrawalDialogOpen(true)}>
-            <DollarSign className="mr-2 h-4 w-4" /> Registrar Retiro
-          </Button>
-          <Button onClick={() => setIsPaymentDialogOpen(true)}>
-            Registrar Pago
-          </Button>
-      </div>
-
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
         <Card className="border-orange-500/50 bg-orange-50 dark:bg-orange-900/30">
             <CardHeader>
@@ -345,6 +328,23 @@ export default function RentasPage() {
                 )}
             </CardContent>
         </Card>
+      </div>
+      
+      <PageHeader
+        title="Principal"
+        description="Lleva el control de los pagos y retiros de la flotilla."
+      />
+      
+      <div className="flex flex-wrap gap-2 justify-start mb-6">
+          <Button variant="outline" onClick={() => setIsExpenseDialogOpen(true)}>
+            <ListCollapse className="mr-2 h-4 w-4" /> Registrar Gasto de Vehículo
+          </Button>
+          <Button variant="outline" onClick={() => setIsWithdrawalDialogOpen(true)}>
+            <DollarSign className="mr-2 h-4 w-4" /> Registrar Retiro
+          </Button>
+          <Button onClick={() => setIsPaymentDialogOpen(true)}>
+            Registrar Pago
+          </Button>
       </div>
 
       <div className="flex flex-col sm:flex-row items-center gap-4 mb-6">
