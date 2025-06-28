@@ -334,7 +334,7 @@ export default function RentasPage() {
         title="Principal"
         description="Lleva el control de los pagos y retiros de la flotilla."
         actions={
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-col sm:flex-row gap-2">
             <Button variant="outline" onClick={() => setIsExpenseDialogOpen(true)}>
               <ListCollapse className="mr-2 h-4 w-4" /> Registrar Gasto de Vehículo
             </Button>
