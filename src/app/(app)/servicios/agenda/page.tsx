@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { PageHeader } from "@/components/page-header";
@@ -524,7 +525,7 @@ ${shareUrl}
                       <CardContent className="p-0">
                         <div className="flex flex-col md:flex-row text-sm">
                             <div className="p-4 flex flex-col justify-center items-center text-center w-full md:w-48 flex-shrink-0">
-                                <p className="text-4xl font-semibold text-foreground">{format(parseISO(service.serviceDate), "HH:mm", { locale: es })}</p>
+                                <p className="text-4xl lg:text-5xl font-semibold text-foreground">{format(parseISO(service.serviceDate), "HH:mm", { locale: es })}</p>
                                 <p className="text-xs text-muted-foreground mt-1">Folio: {service.id}</p>
                             </div>
                           
@@ -726,6 +727,7 @@ ${shareUrl}
           onVehicleCreated={onVehicleCreated}
           onCancelService={handleCancelService}
           mode="service"
+          onViewQuoteRequest={handleViewQuote}
         />
       )}
       {currentServiceForTicket && (
