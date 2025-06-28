@@ -1,3 +1,4 @@
+
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -1111,18 +1112,18 @@ export function ServiceForm({
                           <span className="sm:hidden">Rec. y Ent.</span>
                       </TabsTrigger>
                   )}
-                  {showReceptionTab && (
-                      <TabsTrigger value="seguridad" className="text-sm sm:text-base data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none flex items-center gap-2 py-2 px-3 sm:px-4">
-                          <ShieldCheck className="h-4 w-4 shrink-0"/>
-                          <span className="hidden sm:inline">Revision</span>
-                          <span className="sm:hidden">Revision</span>
-                      </TabsTrigger>
-                  )}
                   {showReportTab && (
                       <TabsTrigger value="reporte" className="text-sm sm:text-base data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none flex items-center gap-2 py-2 px-3 sm:px-4">
                           <Camera className="h-4 w-4 shrink-0"/>
                           <span className="hidden sm:inline">Reporte</span>
                           <span className="sm:hidden">Reporte</span>
+                      </TabsTrigger>
+                  )}
+                  {showReceptionTab && (
+                      <TabsTrigger value="seguridad" className="text-sm sm:text-base data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none flex items-center gap-2 py-2 px-3 sm:px-4">
+                          <ShieldCheck className="h-4 w-4 shrink-0"/>
+                          <span className="hidden sm:inline">Revisión</span>
+                          <span className="sm:hidden">Revisión</span>
                       </TabsTrigger>
                   )}
                 </TabsList>
@@ -1196,6 +1197,68 @@ export function ServiceForm({
                         )}
                       />
                     </div>
+
+                    {watchedStatus === 'Agendado' && (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t items-end">
+                            <Controller
+                            name="serviceDate"
+                            control={form.control}
+                            render={({ field }) => (
+                                <FormItem className="flex flex-col">
+                                <FormLabel>Fecha de Cita</FormLabel>
+                                <Popover open={isServiceDatePickerOpen} onOpenChange={setIsServiceDatePickerOpen}>
+                                    <PopoverTrigger asChild disabled={isReadOnly}>
+                                    <Button variant="outline" className={cn("justify-start text-left font-normal", !field.value && "text-muted-foreground")} disabled={isReadOnly}>
+                                        {field.value ? format(field.value, "PPP", { locale: es }) : <span>Seleccione fecha</span>}
+                                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                    </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-auto p-0" align="start">
+                                    <Calendar
+                                        mode="single"
+                                        selected={field.value}
+                                        onSelect={(date) => {
+                                        const currentVal = field.value || new Date();
+                                        const newDate = date ? setMinutes(setHours(date, currentVal.getHours()), currentVal.getMinutes()) : new Date();
+                                        field.onChange(newDate);
+                                        setIsServiceDatePickerOpen(false);
+                                        }}
+                                        disabled={isReadOnly}
+                                        initialFocus
+                                        locale={es}
+                                    />
+                                    </PopoverContent>
+                                </Popover>
+                                </FormItem>
+                            )}
+                            />
+                            <Controller
+                            name="serviceDate"
+                            control={form.control}
+                            render={({ field }) => (
+                                <FormItem>
+                                <FormLabel>Hora de Cita</FormLabel>
+                                <FormControl>
+                                    <Input
+                                    type="time"
+                                    value={field.value && isValid(field.value) ? format(field.value, 'HH:mm') : ""}
+                                    onChange={(e) => {
+                                        const timeValue = e.target.value;
+                                        if (!timeValue) return;
+                                        const [hours, minutes] = timeValue.split(':').map(Number);
+                                        const currentVal = field.value || new Date();
+                                        field.onChange(setMinutes(setHours(currentVal, hours), minutes));
+                                    }}
+                                    disabled={isReadOnly}
+                                    />
+                                </FormControl>
+                                </FormItem>
+                            )}
+                            />
+                        </div>
+                    )}
+
+
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
                       <FormField control={form.control} name="vehicleLicensePlateSearch" render={({ field }) => (<FormItem className="w-full"><FormLabel>Placa del Vehículo</FormLabel><FormControl><Input placeholder="Buscar/Ingresar Placas" {...field} value={vehicleLicensePlateSearch} onChange={(e) => {setVehicleLicensePlateSearch(e.target.value.toUpperCase()); field.onChange(e.target.value.toUpperCase());}} disabled={isReadOnly} className="uppercase" onKeyDown={handleVehiclePlateKeyDown} /></FormControl></FormItem>)}/>
                       <FormField control={form.control} name="mileage" render={({ field }) => ( <FormItem><FormLabel>Kilometraje (Opcional)</FormLabel><FormControl><Input type="number" placeholder="Ej: 55000 km" {...field} disabled={isReadOnly} value={field.value ?? ''} /></FormControl></FormItem>)}/>
@@ -1481,18 +1544,7 @@ export function ServiceForm({
                   </Card>
               </TabsContent>
             )}
-            {showReceptionTab && (
-              <TabsContent value="seguridad" className="space-y-6 mt-0">
-                  <SafetyChecklist 
-                    control={form.control} 
-                    isReadOnly={isReadOnly} 
-                    onSignatureClick={() => setIsTechSignatureDialogOpen(true)} 
-                    signatureDataUrl={technicianSignature}
-                    isEnhancingText={isEnhancingText}
-                    handleEnhanceText={handleEnhanceText}
-                  />
-              </TabsContent>
-            )}
+            
             {showReportTab && (
               <TabsContent value="reporte" className="space-y-6 mt-0">
                 <Card>
@@ -1529,7 +1581,7 @@ export function ServiceForm({
                             <div className="grid grid-cols-3 gap-2 mt-2">
                                 {field.photos.map((photoUrl, photoIndex) => (
                                     <div key={photoIndex} className="relative aspect-video w-full bg-muted rounded-md">
-                                        <Image src={photoUrl} layout="fill" objectFit="cover" alt={`Foto ${photoIndex + 1} del reporte ${index + 1}`} />
+                                        <Image src={photoUrl} layout="fill" objectFit="cover" alt={`Foto ${photoIndex + 1} del reporte ${index + 1}`} data-ai-hint="car damage photo"/>
                                     </div>
                                 ))}
                             </div>
@@ -1548,6 +1600,19 @@ export function ServiceForm({
                     <input type="file" ref={fileInputRef} onChange={handleFileUpload} accept="image/*" multiple className="hidden" />
                   </CardContent>
                 </Card>
+              </TabsContent>
+            )}
+
+            {showReceptionTab && (
+              <TabsContent value="seguridad" className="space-y-6 mt-0">
+                  <SafetyChecklist 
+                    control={form.control} 
+                    isReadOnly={isReadOnly} 
+                    onSignatureClick={() => setIsTechSignatureDialogOpen(true)} 
+                    signatureDataUrl={technicianSignature}
+                    isEnhancingText={isEnhancingText}
+                    handleEnhanceText={handleEnhanceText}
+                  />
               </TabsContent>
             )}
           </Tabs>
