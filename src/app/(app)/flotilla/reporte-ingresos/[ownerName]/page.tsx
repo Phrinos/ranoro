@@ -13,7 +13,7 @@ import {
   placeholderVehicleExpenses,
   placeholderPublicOwnerReports,
   persistToFirestore,
-  sanitizeObjectForFirestore, // Import sanitizer
+  sanitizeObjectForFirestore,
 } from '@/lib/placeholder-data';
 import type { PublicOwnerReport, Vehicle, RentalPayment, ServiceRecord, WorkshopInfo, VehicleMonthlyReport, VehicleExpense } from '@/types';
 import {
@@ -35,8 +35,8 @@ import Link from "next/link";
 import { useToast } from "@/hooks/use-toast";
 import { generateAndShareOwnerReport } from '../actions';
 import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
-import { db } from '@root/lib/firebaseClient.js'; // Use main authenticated db
-import { doc, setDoc } from 'firebase/firestore'; // Import firestore functions
+import { db as publicDb } from '@/lib/firebasePublic.js'; // Correct client for public writes
+import { doc, setDoc } from 'firebase/firestore';
 
 
 const ReportContent = React.forwardRef<HTMLDivElement, { report: PublicOwnerReport }>(({ report }, ref) => {
@@ -200,15 +200,15 @@ export default function OwnerIncomeDetailPage() {
     });
 
     if (result.success && result.report) {
-      if (!db) {
-        toast({ title: "Error de Base de Datos", description: "La conexión a Firestore no está disponible.", variant: "destructive" });
+      if (!publicDb) {
+        toast({ title: "Error de Base de Datos", description: "La conexión a Firestore (pública) no está disponible.", variant: "destructive" });
         setIsSharing(false);
         return;
       }
 
       try {
-        // 1. Save the public document from the client
-        const publicDocRef = doc(db, 'publicOwnerReports', result.report.publicId);
+        // 1. Save the public document using the public client
+        const publicDocRef = doc(publicDb, 'publicOwnerReports', result.report.publicId);
         await setDoc(publicDocRef, sanitizeObjectForFirestore(result.report), { merge: true });
         
         // 2. Update the local placeholder array
@@ -222,6 +222,7 @@ export default function OwnerIncomeDetailPage() {
         }
         
         // 3. Persist the updated placeholder array to the main private document
+        // This function uses the authenticated client internally, which is correct.
         await persistToFirestore(['publicOwnerReports']);
 
         // 4. Update UI
