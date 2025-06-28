@@ -17,7 +17,6 @@ export interface ReportGenerationInput {
   allRentalPayments: RentalPayment[];
   allServiceRecords: ServiceRecord[];
   allVehicleExpenses: VehicleExpense[];
-  allPublicOwnerReports: PublicOwnerReport[]; // Receive current state from client
 }
 
 
@@ -29,10 +28,11 @@ export async function generateAndShareOwnerReport(
   }
   
   try {
-    const { ownerName, forDateISO, workshopInfo, allVehicles, allRentalPayments, allServiceRecords, allVehicleExpenses, allPublicOwnerReports } = input;
+    const { ownerName, forDateISO, workshopInfo, allVehicles, allRentalPayments, allServiceRecords, allVehicleExpenses } = input;
     
     const reportDate = new Date();
     const reportForDate = parseISO(forDateISO);
+    const reportMonth = format(reportForDate, "MMMM 'de' yyyy", { locale: es });
     
     const monthStart = startOfMonth(reportForDate);
     const monthEnd = endOfMonth(reportForDate);
@@ -77,15 +77,16 @@ export async function generateAndShareOwnerReport(
     const totalMaintenanceCosts = detailedReport.reduce((sum, r) => sum + r.maintenanceCosts, 0);
     const totalNetBalance = totalRentalIncome - totalMaintenanceCosts;
 
-    // Use the passed-in array to check for an existing report
-    const existingReport = allPublicOwnerReports.find(r => r.ownerName === ownerName);
-    const publicId = existingReport?.publicId || `rep_${Date.now().toString(36)}`;
+    // Create a deterministic publicId to allow overwriting/updating reports for the same period.
+    const safeOwnerName = ownerName.toLowerCase().replace(/[^a-z0-9]/g, '');
+    const monthId = format(reportForDate, "yyyy-MM");
+    const publicId = `${safeOwnerName}-${monthId}`;
     
     const newPublicReport: PublicOwnerReport = {
       publicId,
       ownerName,
       generatedDate: reportDate.toISOString(),
-      reportMonth: format(reportForDate, "MMMM 'de' yyyy", { locale: es }),
+      reportMonth,
       detailedReport,
       totalRentalIncome,
       totalMaintenanceCosts,
@@ -93,22 +94,12 @@ export async function generateAndShareOwnerReport(
       workshopInfo,
     };
     
-    // Save the individual public document
+    // The server action now ONLY saves the individual public document.
+    // It no longer touches the main private database document.
     const publicDocRef = doc(db, 'publicOwnerReports', publicId);
     await setDoc(publicDocRef, sanitizeObjectForFirestore(newPublicReport), { merge: true });
 
-    // Update the list of all public reports
-    let updatedPublicOwnerReports: PublicOwnerReport[];
-    if (existingReport) {
-      updatedPublicOwnerReports = allPublicOwnerReports.map(r => r.ownerName === ownerName ? newPublicReport : r);
-    } else {
-      updatedPublicOwnerReports = [...allPublicOwnerReports, newPublicReport];
-    }
-    
-    // Persist the entire updated list to the main database document
-    const mainDbRef = doc(db, 'database/main');
-    await setDoc(mainDbRef, { publicOwnerReports: sanitizeObjectForFirestore(updatedPublicOwnerReports) }, { merge: true });
-
+    // Return the new report object to the client. The client will handle persisting the updated list to the main doc.
     return { success: true, report: newPublicReport };
 
   } catch (e) {
