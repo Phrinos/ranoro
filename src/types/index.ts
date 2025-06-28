@@ -39,6 +39,8 @@ export interface Vehicle {
     checkedById: string; // User ID
   }[];
   paperwork?: VehiclePaperwork[];
+  currentMileage?: number;
+  lastMileageUpdate?: string; // ISO String
 }
 
 export interface Driver {

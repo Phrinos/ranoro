@@ -14,7 +14,7 @@ import { PageHeader } from '@/components/page-header';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { ShieldAlert, Edit, Car, DollarSign, ShieldCheck, ArrowLeft, Trash2, PlusCircle, CheckCircle, Circle } from 'lucide-react';
+import { ShieldAlert, Edit, Car, DollarSign, ShieldCheck, ArrowLeft, Trash2, PlusCircle, CheckCircle, Circle, Gauge } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { format, parseISO, compareAsc, isValid, isPast } from 'date-fns';
@@ -270,9 +270,14 @@ export default function FleetVehicleDetailPage() {
                   <p className="font-medium text-muted-foreground flex items-center gap-2"><DollarSign className="h-4 w-4" />Renta Diaria</p>
                   <p className="font-semibold text-base">${(vehicle.dailyRentalCost || 0).toFixed(2)}</p>
                 </div>
-                <div className="space-y-1 md:col-span-2">
+                 <div className="space-y-1">
+                  <p className="font-medium text-muted-foreground flex items-center gap-2"><Gauge className="h-4 w-4" />Kilometraje Actual</p>
+                  <p className="font-semibold text-base">{vehicle.currentMileage ? `${vehicle.currentMileage.toLocaleString('es-ES')} km` : 'N/A'}</p>
+                  {vehicle.lastMileageUpdate && <p className="text-xs text-muted-foreground">Últ. act: {format(parseISO(vehicle.lastMileageUpdate), "dd MMM yyyy", { locale: es })}</p>}
+                </div>
+                <div className="space-y-1">
                   <p className="font-medium text-muted-foreground">Propietario</p>
-                  <p>{vehicle.ownerName} - {vehicle.ownerPhone}</p>
+                  <p>{vehicle.ownerName}</p>
                 </div>
                 <div className="space-y-1 md:col-span-2">
                   <p className="font-medium text-muted-foreground">Notas</p>

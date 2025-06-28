@@ -202,13 +202,21 @@ export default function RentasPage() {
   const fleetVehicles = useMemo(() => placeholderVehicles.filter(v => v.isFleetVehicle), []);
 
 
-  const handleRegisterPayment = useCallback(async (driverId: string, amount: number) => {
+  const handleRegisterPayment = useCallback(async (driverId: string, amount: number, mileage?: number) => {
     const driver = placeholderDrivers.find(d => d.id === driverId);
     const vehicle = placeholderVehicles.find(v => v.id === driver?.assignedVehicleId);
 
     if (!driver || !vehicle) {
       toast({ title: "Error", description: "El conductor o su vehículo asignado no se encontraron.", variant: "destructive" });
       return;
+    }
+
+    if (mileage !== undefined && mileage !== null) {
+      const vehicleIndex = placeholderVehicles.findIndex(v => v.id === vehicle.id);
+      if (vehicleIndex > -1) {
+        placeholderVehicles[vehicleIndex].currentMileage = mileage;
+        placeholderVehicles[vehicleIndex].lastMileageUpdate = new Date().toISOString();
+      }
     }
     
     const newPayment: RentalPayment = {
@@ -222,7 +230,7 @@ export default function RentasPage() {
     };
     
     placeholderRentalPayments.push(newPayment);
-    await persistToFirestore(['rentalPayments']);
+    await persistToFirestore(['rentalPayments', 'vehicles']);
     setVersion(v => v + 1);
     setIsPaymentDialogOpen(false);
     
