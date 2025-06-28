@@ -29,6 +29,13 @@ export default function VehiculosPage() {
 
   useEffect(() => {
     hydrateReady.then(() => setHydrated(true));
+
+    const forceUpdate = () => setVersion(v => v + 1);
+    window.addEventListener('databaseUpdated', forceUpdate);
+
+    return () => {
+      window.removeEventListener('databaseUpdated', forceUpdate);
+    };
   }, []);
 
   // This useMemo now reads directly from the imported placeholder data.
@@ -109,10 +116,8 @@ export default function VehiculosPage() {
     };
 
     placeholderVehicles.push(newVehicle); // Mutate the source
-    await persistToFirestore(['vehicles']);
+    await persistToFirestore(['vehicles']); // This will trigger the 'databaseUpdated' event
     
-    setVersion(v => v + 1); // Force a re-render
-
     toast({
       title: "Vehículo Creado",
       description: `El vehículo ${newVehicle.make} ${newVehicle.model} ha sido agregado.`,

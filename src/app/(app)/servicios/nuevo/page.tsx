@@ -37,6 +37,15 @@ export default function NuevoServicioPage() {
         const stored = localStorage.getItem('workshopTicketInfo');
         if (stored) setWorkshopInfo(JSON.parse(stored));
     }
+
+    const handleDatabaseUpdate = () => {
+      setVehicles([...placeholderVehicles]);
+    };
+    window.addEventListener('databaseUpdated', handleDatabaseUpdate);
+
+    return () => {
+      window.removeEventListener('databaseUpdated', handleDatabaseUpdate);
+    };
   }, []);
 
   useEffect(() => {
@@ -148,14 +157,9 @@ ${shareUrl}
 
 
   const handleVehicleCreated = (newVehicle: Vehicle) => {
-    setVehicles(prev => {
-      if (prev.find(v => v.id === newVehicle.id)) return prev; 
-      const updatedVehicles = [...prev, newVehicle];
-      if (!placeholderVehicles.find(v => v.id === newVehicle.id)) {
-         placeholderVehicles.push(newVehicle);
-      }
-      return updatedVehicles;
-    });
+    // This function is now simpler. The 'databaseUpdated' event will handle
+    // refreshing the state from the placeholder array.
+    setVehicles(prev => [...prev, newVehicle]);
   };
 
   return (
