@@ -24,6 +24,7 @@ import type {
   PublicOwnerReport,
   OwnerWithdrawal,
   VehicleExpense,
+  VehiclePaperwork,
 } from '@/types';
 import {
   format,

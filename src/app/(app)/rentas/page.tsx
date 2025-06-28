@@ -23,7 +23,7 @@ import { OwnerWithdrawalDialog, type OwnerWithdrawalFormValues } from './compone
 import { VehicleExpenseDialog, type VehicleExpenseFormValues } from './components/vehicle-expense-dialog';
 import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
 import { RentalReceiptContent } from './components/rental-receipt-content';
-import { isToday, parseISO, format, isValid, compareDesc, differenceInCalendarDays, startOfToday, isAfter, subMonths, addMonths, startOfMonth, endOfMonth, isWithinInterval } from 'date-fns';
+import { isToday, parseISO, format, isValid, compareDesc, differenceInCalendarDays, startOfToday, isAfter, subMonths, addMonths, startOfMonth, endOfMonth, isWithinInterval, compareAsc } from 'date-fns';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { es } from 'date-fns/locale';
@@ -120,6 +120,32 @@ export default function RentasPage() {
       .filter((d): d is NonNullable<typeof d> => d !== null)
       .sort((a, b) => b.daysOwed - a.daysOwed); // Sort by most days owed
   }, [hydrated, version]);
+  
+  const overduePaperwork = useMemo(() => {
+    if (!hydrated) return [];
+    const today = startOfToday();
+    const alerts: any[] = [];
+
+    placeholderVehicles
+      .filter(v => v.isFleetVehicle && v.paperwork)
+      .forEach(vehicle => {
+        vehicle.paperwork!.forEach(p => {
+          const dueDate = parseISO(p.dueDate);
+          if (p.status === 'Pendiente' && isValid(dueDate) && !isAfter(dueDate, today)) {
+            alerts.push({
+              vehicleId: vehicle.id,
+              vehicleLicensePlate: vehicle.licensePlate,
+              paperworkId: p.id,
+              paperworkName: p.name,
+              dueDate: p.dueDate,
+            });
+          }
+        });
+      });
+    
+    return alerts.sort((a,b) => compareAsc(parseISO(a.dueDate), parseISO(b.dueDate)));
+  }, [hydrated, version]);
+
 
   const filteredPayments = useMemo(() => {
     const { start, end } = selectedMonthRange;
@@ -247,80 +273,89 @@ export default function RentasPage() {
   return (
     <>
       <PageHeader
-        title="Pago de Rentas"
+        title="Principal"
         description="Lleva el control de los pagos y retiros de la flotilla."
       />
-
-      <Card className="mb-6 border-orange-500/50 bg-orange-50 dark:bg-orange-900/30">
-          <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-orange-700 dark:text-orange-300">
-                  <AlertTriangle className="h-5 w-5" />
-                  Conductores con Atraso Mayor a 2 Días
-              </CardTitle>
-              <CardDescription>
-                  Estos conductores requieren atención inmediata para regularizar sus pagos.
-              </CardDescription>
-          </CardHeader>
-          <CardContent>
-              {indebtedDrivers.length > 0 ? (
-                  <div className="space-y-2">
-                      {indebtedDrivers.map(driver => (
-                          <Link href={`/conductores/${driver.id}`} key={driver.id} className="flex justify-between items-center p-2 rounded-md hover:bg-orange-100 dark:hover:bg-orange-800/50 transition-colors">
-                              <div>
-                                  <p className="font-semibold">{driver.name}</p>
-                                  <p className="text-xs text-muted-foreground">{driver.vehicleLicensePlate}</p>
-                              </div>
-                              <div className="text-right">
-                                  <p className="font-bold text-destructive text-lg">{driver.daysOwed} días</p>
-                                  <p className="text-xs text-muted-foreground">{formatCurrency(driver.debtAmount)}</p>
-                              </div>
-                          </Link>
-                      ))}
-                  </div>
-              ) : (
-                  <p className="text-muted-foreground text-center py-4">
-                      No hay conductores con atrasos significativos.
-                  </p>
-              )}
-          </CardContent>
-      </Card>
       
-      <div className="flex flex-col gap-4 mb-6">
-        <div className="flex flex-wrap gap-2 justify-end">
-            <Button variant="outline" onClick={() => setIsExpenseDialogOpen(true)}>
-              <ListCollapse className="mr-2 h-4 w-4" /> Registrar Gasto de Vehículo
-            </Button>
-            <Button variant="outline" onClick={() => setIsWithdrawalDialogOpen(true)}>
-              <DollarSign className="mr-2 h-4 w-4" /> Registrar Retiro
-            </Button>
-            <Button onClick={() => setIsPaymentDialogOpen(true)}>
-              Registrar Pago
-            </Button>
+      <div className="flex flex-wrap gap-2 justify-end mb-6">
+          <Button variant="outline" onClick={() => setIsExpenseDialogOpen(true)}>
+            <ListCollapse className="mr-2 h-4 w-4" /> Registrar Gasto de Vehículo
+          </Button>
+          <Button variant="outline" onClick={() => setIsWithdrawalDialogOpen(true)}>
+            <DollarSign className="mr-2 h-4 w-4" /> Registrar Retiro
+          </Button>
+          <Button onClick={() => setIsPaymentDialogOpen(true)}>
+            Registrar Pago
+          </Button>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+        <Card className="border-orange-500/50 bg-orange-50 dark:bg-orange-900/30">
+            <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-orange-700 dark:text-orange-300">
+                    <AlertTriangle className="h-5 w-5" />
+                    Conductores con Atraso Mayor a 2 Días
+                </CardTitle>
+            </CardHeader>
+            <CardContent>
+                {indebtedDrivers.length > 0 ? (
+                    <div className="space-y-2 max-h-40 overflow-y-auto pr-2">
+                        {indebtedDrivers.map(driver => (
+                            <Link href={`/conductores/${driver.id}`} key={driver.id} className="flex justify-between items-center p-2 rounded-md hover:bg-orange-100 dark:hover:bg-orange-800/50 transition-colors">
+                                <div>
+                                    <p className="font-semibold">{driver.name}</p>
+                                    <p className="text-xs text-muted-foreground">{driver.vehicleLicensePlate}</p>
+                                </div>
+                                <div className="text-right">
+                                    <p className="font-bold text-destructive text-lg">{driver.daysOwed} días</p>
+                                    <p className="text-xs text-muted-foreground">{formatCurrency(driver.debtAmount)}</p>
+                                </div>
+                            </Link>
+                        ))}
+                    </div>
+                ) : (
+                    <p className="text-muted-foreground text-center py-4">No hay conductores con atrasos significativos.</p>
+                )}
+            </CardContent>
+        </Card>
+        <Card className="border-red-500/50 bg-red-50 dark:bg-red-900/30">
+            <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-red-700 dark:text-red-300">
+                    <AlertTriangle className="h-5 w-5" />
+                    Trámites Vencidos o por Vencer
+                </CardTitle>
+            </CardHeader>
+            <CardContent>
+                {overduePaperwork.length > 0 ? (
+                    <div className="space-y-2 max-h-40 overflow-y-auto pr-2">
+                        {overduePaperwork.map(item => (
+                            <Link href={`/flotilla/${item.vehicleId}`} key={item.paperworkId} className="flex justify-between items-center p-2 rounded-md hover:bg-red-100 dark:hover:bg-red-800/50 transition-colors">
+                                <div>
+                                    <p className="font-semibold">{item.vehicleLicensePlate}: {item.paperworkName}</p>
+                                </div>
+                                <div className="text-right">
+                                    <p className="font-bold text-destructive text-sm">Vence:</p>
+                                    <p className="text-xs text-muted-foreground">{format(parseISO(item.dueDate), "dd MMM yyyy", { locale: es })}</p>
+                                </div>
+                            </Link>
+                        ))}
+                    </div>
+                ) : (
+                    <p className="text-muted-foreground text-center py-4">No hay trámites vencidos.</p>
+                )}
+            </CardContent>
+        </Card>
+      </div>
+
+      <div className="flex flex-col sm:flex-row items-center gap-4 mb-6">
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="icon" onClick={handlePreviousMonth}><ChevronLeft className="h-4 w-4" /></Button>
+          <span className="font-semibold text-center w-36">{format(selectedDate, "MMMM yyyy", { locale: es })}</span>
+          <Button variant="outline" size="icon" onClick={handleNextMonth}><ChevronRight className="h-4 w-4" /></Button>
         </div>
-
-        <div className="flex flex-col sm:flex-row items-center gap-4">
-          {/* Month Selector */}
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="icon" onClick={handlePreviousMonth}>
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-            <span className="font-semibold text-center w-36">{format(selectedDate, "MMMM yyyy", { locale: es })}</span>
-            <Button variant="outline" size="icon" onClick={handleNextMonth}>
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-          </div>
-
-          {/* Search Bar */}
-          <div className="relative flex-grow w-full sm:w-auto">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              type="search"
-              placeholder="Buscar en el mes seleccionado..."
-              className="w-full rounded-lg bg-card pl-8"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
+        <div className="relative flex-grow w-full sm:w-auto">
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input type="search" placeholder="Buscar en el mes seleccionado..." className="w-full rounded-lg bg-card pl-8" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
         </div>
       </div>
 
@@ -333,32 +368,15 @@ export default function RentasPage() {
 
         <TabsContent value="pagos">
           <Card>
-            <CardHeader>
-              <CardTitle>Historial de Pagos de Renta</CardTitle>
-              <CardDescription>Pagos recibidos de los conductores.</CardDescription>
-            </CardHeader>
+            <CardHeader><CardTitle>Historial de Pagos de Renta</CardTitle><CardDescription>Pagos recibidos de los conductores.</CardDescription></CardHeader>
             <CardContent>
               <div className="rounded-lg border shadow-sm overflow-x-auto">
                 <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Fecha</TableHead>
-                      <TableHead>Conductor</TableHead>
-                      <TableHead>Vehículo</TableHead>
-                      <TableHead className="text-right">Monto</TableHead>
-                    </TableRow>
-                  </TableHeader>
+                  <TableHeader><TableRow><TableHead>Fecha</TableHead><TableHead>Conductor</TableHead><TableHead>Vehículo</TableHead><TableHead className="text-right">Monto</TableHead></TableRow></TableHeader>
                   <TableBody>
                     {filteredPayments.length > 0 ? filteredPayments.map(p => (
-                      <TableRow key={p.id}>
-                        <TableCell>{format(parseISO(p.paymentDate), "dd MMM, HH:mm", {locale: es})}</TableCell>
-                        <TableCell>{p.driverName}</TableCell>
-                        <TableCell>{p.vehicleLicensePlate}</TableCell>
-                        <TableCell className="text-right font-semibold">{formatCurrency(p.amount)}</TableCell>
-                      </TableRow>
-                    )) : (
-                      <TableRow><TableCell colSpan={4} className="h-24 text-center">No hay pagos registrados.</TableCell></TableRow>
-                    )}
+                      <TableRow key={p.id}><TableCell>{format(parseISO(p.paymentDate), "dd MMM, HH:mm", {locale: es})}</TableCell><TableCell>{p.driverName}</TableCell><TableCell>{p.vehicleLicensePlate}</TableCell><TableCell className="text-right font-semibold">{formatCurrency(p.amount)}</TableCell></TableRow>
+                    )) : (<TableRow><TableCell colSpan={4} className="h-24 text-center">No hay pagos registrados.</TableCell></TableRow>)}
                   </TableBody>
                 </Table>
               </div>
@@ -368,32 +386,15 @@ export default function RentasPage() {
 
         <TabsContent value="retiros">
           <Card>
-            <CardHeader>
-              <CardTitle>Historial de Retiros de Propietarios</CardTitle>
-              <CardDescription>Salidas de dinero de las ganancias de la flotilla.</CardDescription>
-            </CardHeader>
+            <CardHeader><CardTitle>Historial de Retiros de Propietarios</CardTitle><CardDescription>Salidas de dinero de las ganancias de la flotilla.</CardDescription></CardHeader>
             <CardContent>
               <div className="rounded-lg border shadow-sm overflow-x-auto">
                 <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Fecha</TableHead>
-                      <TableHead>Propietario</TableHead>
-                      <TableHead>Motivo</TableHead>
-                      <TableHead className="text-right">Monto</TableHead>
-                    </TableRow>
-                  </TableHeader>
+                  <TableHeader><TableRow><TableHead>Fecha</TableHead><TableHead>Propietario</TableHead><TableHead>Motivo</TableHead><TableHead className="text-right">Monto</TableHead></TableRow></TableHeader>
                   <TableBody>
                     {filteredWithdrawals.length > 0 ? filteredWithdrawals.map(w => (
-                      <TableRow key={w.id}>
-                        <TableCell>{format(parseISO(w.date), "dd MMM, HH:mm", {locale: es})}</TableCell>
-                        <TableCell>{w.ownerName}</TableCell>
-                        <TableCell>{w.reason || 'N/A'}</TableCell>
-                        <TableCell className="text-right font-semibold text-destructive">{formatCurrency(w.amount)}</TableCell>
-                      </TableRow>
-                    )) : (
-                      <TableRow><TableCell colSpan={4} className="h-24 text-center">No hay retiros registrados.</TableCell></TableRow>
-                    )}
+                      <TableRow key={w.id}><TableCell>{format(parseISO(w.date), "dd MMM, HH:mm", {locale: es})}</TableCell><TableCell>{w.ownerName}</TableCell><TableCell>{w.reason || 'N/A'}</TableCell><TableCell className="text-right font-semibold text-destructive">{formatCurrency(w.amount)}</TableCell></TableRow>
+                    )) : (<TableRow><TableCell colSpan={4} className="h-24 text-center">No hay retiros registrados.</TableCell></TableRow>)}
                   </TableBody>
                 </Table>
               </div>
@@ -403,32 +404,15 @@ export default function RentasPage() {
 
         <TabsContent value="gastos">
           <Card>
-            <CardHeader>
-              <CardTitle>Historial de Gastos de Vehículos</CardTitle>
-              <CardDescription>Gastos directos asociados a los vehículos de la flotilla.</CardDescription>
-            </CardHeader>
+            <CardHeader><CardTitle>Historial de Gastos de Vehículos</CardTitle><CardDescription>Gastos directos asociados a los vehículos de la flotilla.</CardDescription></CardHeader>
             <CardContent>
               <div className="rounded-lg border shadow-sm overflow-x-auto">
                 <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Fecha</TableHead>
-                      <TableHead>Vehículo</TableHead>
-                      <TableHead>Descripción</TableHead>
-                      <TableHead className="text-right">Monto</TableHead>
-                    </TableRow>
-                  </TableHeader>
+                  <TableHeader><TableRow><TableHead>Fecha</TableHead><TableHead>Vehículo</TableHead><TableHead>Descripción</TableHead><TableHead className="text-right">Monto</TableHead></TableRow></TableHeader>
                   <TableBody>
                     {filteredVehicleExpenses.length > 0 ? filteredVehicleExpenses.map(e => (
-                      <TableRow key={e.id}>
-                        <TableCell>{format(parseISO(e.date), "dd MMM, HH:mm", {locale: es})}</TableCell>
-                        <TableCell>{e.vehicleLicensePlate}</TableCell>
-                        <TableCell>{e.description}</TableCell>
-                        <TableCell className="text-right font-semibold text-destructive">{formatCurrency(e.amount)}</TableCell>
-                      </TableRow>
-                    )) : (
-                      <TableRow><TableCell colSpan={4} className="h-24 text-center">No hay gastos de vehículos registrados.</TableCell></TableRow>
-                    )}
+                      <TableRow key={e.id}><TableCell>{format(parseISO(e.date), "dd MMM, HH:mm", {locale: es})}</TableCell><TableCell>{e.vehicleLicensePlate}</TableCell><TableCell>{e.description}</TableCell><TableCell className="text-right font-semibold text-destructive">{formatCurrency(e.amount)}</TableCell></TableRow>
+                    )) : (<TableRow><TableCell colSpan={4} className="h-24 text-center">No hay gastos de vehículos registrados.</TableCell></TableRow>)}
                   </TableBody>
                 </Table>
               </div>
@@ -437,40 +421,12 @@ export default function RentasPage() {
         </TabsContent>
       </Tabs>
       
-      <RegisterPaymentDialog
-        open={isPaymentDialogOpen}
-        onOpenChange={setIsPaymentDialogOpen}
-        drivers={placeholderDrivers}
-        vehicles={placeholderVehicles}
-        onSave={handleRegisterPayment}
-      />
-      
-      <OwnerWithdrawalDialog
-        open={isWithdrawalDialogOpen}
-        onOpenChange={setIsWithdrawalDialogOpen}
-        owners={uniqueOwners}
-        onSave={handleSaveWithdrawal}
-      />
-
-      <VehicleExpenseDialog
-        open={isExpenseDialogOpen}
-        onOpenChange={setIsExpenseDialogOpen}
-        fleetVehicles={fleetVehicles}
-        onSave={handleSaveVehicleExpense}
-      />
+      <RegisterPaymentDialog open={isPaymentDialogOpen} onOpenChange={setIsPaymentDialogOpen} drivers={placeholderDrivers} vehicles={placeholderVehicles} onSave={handleRegisterPayment}/>
+      <OwnerWithdrawalDialog open={isWithdrawalDialogOpen} onOpenChange={setIsWithdrawalDialogOpen} owners={uniqueOwners} onSave={handleSaveWithdrawal}/>
+      <VehicleExpenseDialog open={isExpenseDialogOpen} onOpenChange={setIsExpenseDialogOpen} fleetVehicles={fleetVehicles} onSave={handleSaveVehicleExpense}/>
       
       {paymentForReceipt && (
-        <PrintTicketDialog
-          open={isReceiptOpen}
-          onOpenChange={setIsReceiptOpen}
-          title="Recibo de Renta"
-          dialogContentClassName="printable-content"
-          footerActions={
-            <Button onClick={() => window.print()}>
-              <Printer className="mr-2 h-4 w-4" /> Imprimir Recibo
-            </Button>
-          }
-        >
+        <PrintTicketDialog open={isReceiptOpen} onOpenChange={setIsReceiptOpen} title="Recibo de Renta" dialogContentClassName="printable-content" footerActions={<Button onClick={() => window.print()}><Printer className="mr-2 h-4 w-4" /> Imprimir Recibo</Button>}>
           <RentalReceiptContent ref={receiptRef} payment={paymentForReceipt} />
         </PrintTicketDialog>
       )}

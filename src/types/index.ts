@@ -9,6 +9,14 @@ export interface WorkshopInfo {
   logoUrl: string;
 }
 
+export interface VehiclePaperwork {
+  id: string;
+  name: string;
+  dueDate: string; // ISO string
+  status: 'Pendiente' | 'Completado';
+  notes?: string;
+}
+
 export interface Vehicle {
   id: string; 
   make: string;
@@ -30,6 +38,7 @@ export interface Vehicle {
     checkedBy: string; // User name
     checkedById: string; // User ID
   }[];
+  paperwork?: VehiclePaperwork[];
 }
 
 export interface Driver {
