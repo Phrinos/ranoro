@@ -1,11 +1,10 @@
-
 "use client";
 
 import { useState, useMemo, useEffect } from 'react';
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { PlusCircle, Search, SortAz } from "lucide-react";
+import { PlusCircle, Search, ArrowDownAZ } from "lucide-react";
 import { VehiclesTable } from "../vehiculos/components/vehicles-table"; // Reusing the same table
 import { AddVehicleToFleetDialog } from "./components/add-vehicle-to-fleet-dialog";
 import { placeholderVehicles, persistToFirestore, hydrateReady } from "@/lib/placeholder-data";
@@ -90,7 +89,7 @@ export default function FlotillaPage() {
           />
         </div>
         <Button onClick={() => setSortAZ(s => !s)} variant="outline" className="sm:w-auto">
-          <SortAz className="mr-2 h-4 w-4" />
+          <ArrowDownAZ className="mr-2 h-4 w-4" />
           Ordenar A-Z {sortAZ && '(Activado)'}
         </Button>
       </div>
