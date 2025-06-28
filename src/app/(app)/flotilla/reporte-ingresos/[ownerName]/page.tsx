@@ -173,9 +173,13 @@ export default function OwnerIncomeDetailPage() {
       const costsFromVehicleExpenses = vehicleExpensesInMonth.reduce((sum, e) => sum + e.amount, 0);
       
       const maintenanceAndExpensesCost = maintenanceCostsFromServices + costsFromVehicleExpenses;
-      const gpsMonthlyCost = vehicle.gpsMonthlyCost || 0;
-      const adminMonthlyCost = vehicle.adminMonthlyCost || 0;
-      const insuranceMonthlyCost = vehicle.insuranceMonthlyCost || 0;
+      
+      // Use nullish coalescing (??) to apply defaults only if the property is undefined or null
+      // This respects a value of 0 if it's explicitly set on the vehicle.
+      const gpsMonthlyCost = vehicle.gpsMonthlyCost ?? 150;
+      const adminMonthlyCost = vehicle.adminMonthlyCost ?? 200;
+      const insuranceMonthlyCost = vehicle.insuranceMonthlyCost ?? 250;
+      
       const totalDeductions = maintenanceAndExpensesCost + gpsMonthlyCost + adminMonthlyCost + insuranceMonthlyCost;
       
       return {
