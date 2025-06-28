@@ -14,7 +14,7 @@ import { PageHeader } from '@/components/page-header';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { ShieldAlert, Edit, Car, DollarSign, ShieldCheck } from 'lucide-react';
+import { ShieldAlert, Edit, Car, DollarSign, ShieldCheck, ArrowLeft, Trash2 } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { format, parseISO, compareAsc, isValid } from 'date-fns';
@@ -23,6 +23,17 @@ import Link from 'next/link';
 import { useEffect, useState, useMemo, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { ServiceDialog } from '../../servicios/components/service-dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 interface GroupedServices {
   [monthYearKey: string]: { // key is "YYYY-MM"
@@ -100,6 +111,26 @@ export default function FleetVehicleDetailPage() {
     });
   }, [toast]);
 
+  const handleRemoveFromFleet = async () => {
+    if (!vehicle) return;
+
+    const vehicleIndex = placeholderVehicles.findIndex(v => v.id === vehicle.id);
+    if (vehicleIndex > -1) {
+      placeholderVehicles[vehicleIndex].isFleetVehicle = false;
+      delete placeholderVehicles[vehicleIndex].dailyRentalCost;
+    }
+
+    await persistToFirestore(['vehicles']);
+    
+    toast({
+      title: "Vehículo Removido",
+      description: `${vehicle.licensePlate} ha sido removido de la flotilla.`,
+    });
+
+    router.push('/flotilla');
+  };
+
+
   if (vehicle === undefined) {
     return <div className="container mx-auto py-8 text-center">Cargando datos del vehículo...</div>;
   }
@@ -119,6 +150,35 @@ export default function FleetVehicleDetailPage() {
       <PageHeader
         title={`${vehicle.licensePlate} - ${vehicle.make} ${vehicle.model}`}
         description="Detalles del vehículo de flotilla y su historial de mantenimiento."
+        actions={
+          <div className="flex flex-col sm:flex-row gap-2">
+             <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="destructive">
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Quitar de Flotilla
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>¿Quitar de la flotilla?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Esta acción quitará el vehículo de la flotilla, pero no lo eliminará del registro general de vehículos. ¿Estás seguro?
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleRemoveFromFleet} className="bg-destructive hover:bg-destructive/90">
+                    Sí, Quitar
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+            <Button variant="outline" onClick={() => router.back()}>
+              <ArrowLeft className="mr-2 h-4 w-4"/> Volver
+            </Button>
+          </div>
+        }
       />
 
       <Tabs defaultValue="details" className="w-full">
