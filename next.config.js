@@ -22,6 +22,14 @@ const nextConfig = {
       },
     ],
   },
+  webpack: (config, { isServer }) => {
+    // Fix for a build error with Handlebars, a dependency of Genkit.
+    // Webpack doesn't support `require.extensions`, which Handlebars uses.
+    if (isServer) {
+      config.externals.push('handlebars');
+    }
+    return config;
+  },
 };
 
 module.exports = nextConfig;
