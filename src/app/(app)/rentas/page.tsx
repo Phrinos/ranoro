@@ -333,20 +333,21 @@ export default function RentasPage() {
       <PageHeader
         title="Principal"
         description="Lleva el control de los pagos y retiros de la flotilla."
+        actions={
+          <div className="flex flex-wrap gap-2">
+            <Button variant="outline" onClick={() => setIsExpenseDialogOpen(true)}>
+              <ListCollapse className="mr-2 h-4 w-4" /> Registrar Gasto de Vehículo
+            </Button>
+            <Button variant="outline" onClick={() => setIsWithdrawalDialogOpen(true)}>
+              <DollarSign className="mr-2 h-4 w-4" /> Registrar Retiro
+            </Button>
+            <Button onClick={() => setIsPaymentDialogOpen(true)}>
+              Registrar Pago
+            </Button>
+          </div>
+        }
       />
       
-      <div className="flex flex-wrap gap-2 justify-start mb-6">
-          <Button variant="outline" onClick={() => setIsExpenseDialogOpen(true)}>
-            <ListCollapse className="mr-2 h-4 w-4" /> Registrar Gasto de Vehículo
-          </Button>
-          <Button variant="outline" onClick={() => setIsWithdrawalDialogOpen(true)}>
-            <DollarSign className="mr-2 h-4 w-4" /> Registrar Retiro
-          </Button>
-          <Button onClick={() => setIsPaymentDialogOpen(true)}>
-            Registrar Pago
-          </Button>
-      </div>
-
       <div className="flex flex-col sm:flex-row items-center gap-4 mb-6">
         <div className="flex items-center gap-2">
           <Button variant="outline" size="icon" onClick={handlePreviousMonth}><ChevronLeft className="h-4 w-4" /></Button>
