@@ -37,6 +37,8 @@ import {
 import { PaperworkDialog } from '../components/paperwork-dialog';
 import type { PaperworkFormValues } from '../components/paperwork-form';
 import { cn, formatCurrency } from '@/lib/utils';
+import { VehicleDialog } from '../../vehiculos/components/vehicle-dialog';
+import type { VehicleFormValues } from '../../vehiculos/components/vehicle-form';
 
 interface GroupedServices {
   [monthYearKey: string]: { // key is "YYYY-MM"
@@ -60,6 +62,8 @@ export default function FleetVehicleDetailPage() {
   
   const [isPaperworkDialogOpen, setIsPaperworkDialogOpen] = useState(false);
   const [editingPaperwork, setEditingPaperwork] = useState<VehiclePaperwork | null>(null);
+  
+  const [isVehicleEditDialogOpen, setIsVehicleEditDialogOpen] = useState(false);
 
   useEffect(() => {
     const foundVehicle = placeholderVehicles.find(v => v.id === vehicleId && v.isFleetVehicle);
@@ -194,6 +198,35 @@ export default function FleetVehicleDetailPage() {
         toast({ title: "Trámite Eliminado" });
     }
   }, [vehicle, vehicleId, toast]);
+  
+  const handleSaveVehicle = async (formData: VehicleFormValues) => {
+    if (!vehicle) return;
+
+    const updatedVehicleData: Partial<Vehicle> = {
+        ...formData,
+        year: Number(formData.year),
+        dailyRentalCost: formData.dailyRentalCost ? Number(formData.dailyRentalCost) : undefined,
+        gpsMonthlyCost: formData.gpsMonthlyCost ? Number(formData.gpsMonthlyCost) : undefined,
+        adminMonthlyCost: formData.adminMonthlyCost ? Number(formData.adminMonthlyCost) : undefined,
+        insuranceMonthlyCost: formData.insuranceMonthlyCost ? Number(formData.insuranceMonthlyCost) : undefined,
+    };
+    
+    const updatedVehicle = { ...vehicle, ...updatedVehicleData } as Vehicle;
+    setVehicle(updatedVehicle);
+
+    const pIndex = placeholderVehicles.findIndex(v => v.id === updatedVehicle.id);
+    if (pIndex !== -1) {
+      placeholderVehicles[pIndex] = updatedVehicle;
+    }
+    
+    await persistToFirestore(['vehicles']);
+
+    setIsVehicleEditDialogOpen(false);
+    toast({
+      title: "Vehículo Actualizado",
+      description: `Los datos de ${updatedVehicle.make} ${updatedVehicle.model} han sido actualizados.`,
+    });
+  };
 
 
   if (vehicle === undefined) {
@@ -286,11 +319,9 @@ export default function FleetVehicleDetailPage() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle>Costos y Deducciones Fijas</CardTitle>
-              <Button asChild variant="outline" size="sm">
-                <Link href={`/vehiculos/${vehicle.id}`}>
+              <Button variant="outline" size="sm" onClick={() => setIsVehicleEditDialogOpen(true)}>
                   <Edit className="mr-2 h-4 w-4" />
                   Editar
-                </Link>
               </Button>
             </CardHeader>
             <CardContent className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 text-center">
@@ -453,6 +484,13 @@ export default function FleetVehicleDetailPage() {
         onOpenChange={setIsPaperworkDialogOpen}
         paperwork={editingPaperwork}
         onSave={handleSavePaperwork}
+      />
+      
+      <VehicleDialog
+        open={isVehicleEditDialogOpen}
+        onOpenChange={setIsVehicleEditDialogOpen}
+        vehicle={vehicle}
+        onSave={handleSaveVehicle}
       />
     </div>
   );
