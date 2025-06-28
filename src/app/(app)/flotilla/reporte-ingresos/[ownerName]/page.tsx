@@ -64,7 +64,7 @@ const ReportContent = React.forwardRef<HTMLDivElement, { report: PublicOwnerRepo
                 <TableRow>
                     <TableHead className="font-bold">Vehículo</TableHead>
                     <TableHead className="text-right font-bold">Ingreso Renta</TableHead>
-                    <TableHead className="text-right font-bold">Mantenimiento</TableHead>
+                    <TableHead className="text-right font-bold">Ranoro</TableHead>
                     <TableHead className="text-right font-bold">GPS</TableHead>
                     <TableHead className="text-right font-bold">Admin</TableHead>
                     <TableHead className="text-right font-bold">Seguro</TableHead>
@@ -83,7 +83,16 @@ const ReportContent = React.forwardRef<HTMLDivElement, { report: PublicOwnerRepo
                       </Link>
                     </TableCell>
                     <TableCell className="text-right">{formatCurrency(item.rentalIncome)}</TableCell>
-                    <TableCell className="text-right text-destructive">{formatCurrency(item.maintenanceAndExpensesCost)}</TableCell>
+                    <TableCell className="text-right text-destructive">
+                      <div>{formatCurrency(item.maintenanceAndExpensesCost)}</div>
+                      {item.services && item.services.length > 0 && (
+                        <div className="text-right text-[9px] text-gray-500 font-normal">
+                          {item.services.map(s => (
+                            <div key={s.id} className="truncate" title={s.description || 'Servicio'}>{s.description || 'Servicio'}</div>
+                          ))}
+                        </div>
+                      )}
+                    </TableCell>
                     <TableCell className="text-right text-destructive">{formatCurrency(item.gpsMonthlyCost)}</TableCell>
                     <TableCell className="text-right text-destructive">{formatCurrency(item.adminMonthlyCost)}</TableCell>
                     <TableCell className="text-right text-destructive">{formatCurrency(item.insuranceMonthlyCost)}</TableCell>
@@ -174,8 +183,6 @@ export default function OwnerIncomeDetailPage() {
       
       const maintenanceAndExpensesCost = maintenanceCostsFromServices + costsFromVehicleExpenses;
       
-      // Use nullish coalescing (??) to apply defaults only if the property is undefined or null
-      // This respects a value of 0 if it's explicitly set on the vehicle.
       const gpsMonthlyCost = vehicle.gpsMonthlyCost ?? 150;
       const adminMonthlyCost = vehicle.adminMonthlyCost ?? 200;
       const insuranceMonthlyCost = vehicle.insuranceMonthlyCost ?? 250;
@@ -192,6 +199,7 @@ export default function OwnerIncomeDetailPage() {
         adminMonthlyCost,
         insuranceMonthlyCost,
         totalDeductions,
+        services: vehicleServices.map(s => ({ id: s.id, description: s.description, totalCost: s.totalCost })),
       };
     });
 
@@ -353,9 +361,19 @@ export default function OwnerIncomeDetailPage() {
                       <TableCell className="text-right">{formatCurrency(item.rentalIncome)}</TableCell>
                       <TableCell className="text-right text-destructive">
                           <span className="font-semibold">{formatCurrency(item.totalDeductions)}</span>
-                          <div className="text-xs font-normal text-muted-foreground">
-                              Mto: {formatCurrency(item.maintenanceAndExpensesCost)}
+                          <div className="text-xs font-normal text-muted-foreground mt-1">
+                              Ranoro: {formatCurrency(item.maintenanceAndExpensesCost)}
                           </div>
+                          {item.services && item.services.length > 0 && (
+                              <div className="text-left text-[11px] text-muted-foreground mt-1 pl-2 border-l-2 border-destructive/20">
+                                  {item.services.map(s => (
+                                      <div key={s.id} title={s.description} className="flex justify-between items-center">
+                                          <span className="truncate pr-2">- {s.description || 'Servicio'}</span>
+                                          <span>{formatCurrency(s.totalCost)}</span>
+                                      </div>
+                                  ))}
+                              </div>
+                          )}
                       </TableCell>
                       <TableCell className={`text-right font-bold ${balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                         {formatCurrency(balance)}

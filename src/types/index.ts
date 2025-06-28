@@ -424,13 +424,12 @@ export interface VehicleMonthlyReport {
   vehicleInfo: string;
   daysRented: number;
   rentalIncome: number;
-  // Breakdown of costs
   maintenanceAndExpensesCost: number;
   gpsMonthlyCost: number;
   adminMonthlyCost: number;
   insuranceMonthlyCost: number;
-  // Sum of all costs
   totalDeductions: number;
+  services?: { id: string; description?: string; totalCost: number }[];
 }
 
 export interface PublicOwnerReport {
