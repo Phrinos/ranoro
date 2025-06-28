@@ -80,6 +80,12 @@ export default function RentasPage() {
 
   const indebtedDrivers = useMemo(() => {
     if (!hydrated) return [];
+    
+    // Optimization: Pre-calculate total payments for each driver
+    const paymentsByDriver = new Map<string, number>();
+    placeholderRentalPayments.forEach(p => {
+        paymentsByDriver.set(p.driverId, (paymentsByDriver.get(p.driverId) || 0) + p.amount);
+    });
 
     return placeholderDrivers
       .map(driver => {
@@ -98,9 +104,7 @@ export default function RentasPage() {
         const daysSinceContractStart = differenceInCalendarDays(today, contractStartDate) + 1;
         const totalExpectedAmount = daysSinceContractStart * vehicle.dailyRentalCost;
         
-        const totalPaidAmount = placeholderRentalPayments
-          .filter(p => p.driverId === driver.id)
-          .reduce((sum, p) => sum + p.amount, 0);
+        const totalPaidAmount = paymentsByDriver.get(driver.id) || 0;
           
         const debtAmount = Math.max(0, totalExpectedAmount - totalPaidAmount);
         const daysOwed = debtAmount > 0 ? debtAmount / vehicle.dailyRentalCost : 0;
@@ -442,3 +446,5 @@ export default function RentasPage() {
     </>
   );
 }
+
+    
