@@ -337,7 +337,7 @@ export default function OwnerIncomeDetailPage() {
           title="Vista Previa de Reporte"
           dialogContentClassName="printable-quote-dialog max-w-4xl"
           footerActions={
-            <div className="flex gap-2">
+            <div className="flex flex-col sm:flex-row gap-2">
               <Button variant="outline" onClick={handleCopyLink}>
                 <Copy className="mr-2 h-4 w-4" /> Copiar Enlace
               </Button>
@@ -353,5 +353,3 @@ export default function OwnerIncomeDetailPage() {
     </>
   );
 }
-
-    

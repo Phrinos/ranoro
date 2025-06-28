@@ -181,14 +181,12 @@ export default function DriverDetailPage() {
         title={driver.name}
         description={`ID Conductor: ${driver.id}`}
         actions={
-          <div className="flex gap-2">
             <Button variant="outline" onClick={() => router.back()}><ArrowLeft className="mr-2 h-4 w-4"/> Volver</Button>
-          </div>
         }
       />
 
       <Tabs defaultValue="details" className="w-full">
-        <TabsList className="grid w-full grid-cols-3 md:w-1/2">
+        <TabsList className="grid w-full grid-cols-1 sm:grid-cols-3 md:w-1/2">
           <TabsTrigger value="details">Detalles</TabsTrigger>
           <TabsTrigger value="documents">Documentos</TabsTrigger>
           <TabsTrigger value="payments">Pagos</TabsTrigger>
