@@ -424,7 +424,13 @@ export interface VehicleMonthlyReport {
   vehicleInfo: string;
   daysRented: number;
   rentalIncome: number;
-  maintenanceCosts: number;
+  // Breakdown of costs
+  maintenanceAndExpensesCost: number;
+  gpsMonthlyCost: number;
+  adminMonthlyCost: number;
+  insuranceMonthlyCost: number;
+  // Sum of all costs
+  totalDeductions: number;
 }
 
 export interface PublicOwnerReport {
@@ -434,7 +440,7 @@ export interface PublicOwnerReport {
   reportMonth: string; // e.g., "septiembre 2024"
   detailedReport: VehicleMonthlyReport[];
   totalRentalIncome: number;
-  totalMaintenanceCosts: number;
+  totalDeductions: number;
   totalNetBalance: number;
   workshopInfo?: WorkshopInfo;
 }
