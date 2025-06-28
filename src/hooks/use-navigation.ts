@@ -108,12 +108,12 @@ const BASE_NAV_STRUCTURE: ReadonlyArray<Omit<NavigationEntry, 'isActive'>> = [
   {
     label: 'Principal',
     path: '/rentas',
-    icon: DollarSign,
+    icon: ClipboardList,
     groupTag: "Mi Flotilla",
     permissions: ['fleet:manage']
   },
   {
-    label: 'Flotilla',
+    label: 'Coches flotilla',
     path: '/flotilla',
     icon: Truck,
     groupTag: "Mi Flotilla",
