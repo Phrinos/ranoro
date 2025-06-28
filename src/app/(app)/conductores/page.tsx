@@ -45,7 +45,7 @@ export default function ConductoresPage() {
       updatedList = drivers.map(d => d.id === editingDriver.id ? { ...editingDriver, ...formData } : d);
       toast({ title: "Conductor Actualizado", description: `Los datos de ${formData.name} han sido actualizados.` });
     } else {
-      const newDriver: Driver = { id: `DRV_${Date.now().toString(36)}`, ...formData };
+      const newDriver: Driver = { id: `DRV_${Date.now().toString(36)}`, ...formData, documents: {} };
       updatedList = [...drivers, newDriver];
       toast({ title: "Conductor Creado", description: `Se ha registrado a ${formData.name}.` });
     }
@@ -95,7 +95,7 @@ export default function ConductoresPage() {
         />
       </div>
 
-      <div className="rounded-lg border shadow-sm">
+      <div className="rounded-lg border shadow-sm overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>

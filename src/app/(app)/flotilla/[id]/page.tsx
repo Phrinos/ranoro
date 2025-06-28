@@ -297,7 +297,7 @@ export default function FleetVehicleDetailPage() {
                     </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="rounded-md border">
+                  <div className="rounded-md border overflow-x-auto">
                     <Table>
                       <TableHeader><TableRow><TableHead>Fecha</TableHead><TableHead>Kilometraje</TableHead><TableHead>Servicio</TableHead><TableHead className="text-right">Costo</TableHead></TableRow></TableHeader>
                       <TableBody>
@@ -325,7 +325,7 @@ export default function FleetVehicleDetailPage() {
                 <CardHeader><CardTitle>Historial de Revisión de Multas</CardTitle><CardDescription>Registro de cuándo se ha verificado este vehículo.</CardDescription></CardHeader>
                 <CardContent>
                     {(vehicle.fineCheckHistory && vehicle.fineCheckHistory.length > 0) ? (
-                        <div className="rounded-md border">
+                        <div className="rounded-md border overflow-x-auto">
                             <Table>
                                 <TableHeader><TableRow><TableHead>Fecha de Revisión</TableHead><TableHead>Revisado por</TableHead></TableRow></TableHeader>
                                 <TableBody>
@@ -358,7 +358,7 @@ export default function FleetVehicleDetailPage() {
             </CardHeader>
             <CardContent>
               {vehicle.paperwork && vehicle.paperwork.length > 0 ? (
-                <div className="rounded-md border">
+                <div className="rounded-md border overflow-x-auto">
                   <Table>
                     <TableHeader>
                       <TableRow>

@@ -132,7 +132,7 @@ export default function FlotillaPage() {
         title="Flotilla"
         description="Gestiona los vehículos que forman parte de tu flotilla."
         actions={
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-col sm:flex-row gap-2">
             <Button variant={isCheckDue ? "destructive" : "secondary"} onClick={() => setIsFineCheckDialogOpen(true)}>
               <ShieldCheck className="mr-2 h-4 w-4" />
               Revisar Multas
