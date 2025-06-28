@@ -224,8 +224,8 @@ export default function FleetVehicleDetailPage() {
                     <div className="flex justify-between items-center">
                         <CardTitle className="capitalize">{monthData.displayMonthYear}</CardTitle>
                         <div className="text-right">
-                            <p className="text-sm text-muted-foreground">Total del Mes</p>
-                            <p className="text-lg font-bold">${monthData.totalCost.toLocaleString('es-ES', { minimumFractionDigits: 2 })}</p>
+                            <p className="text-sm text-muted-foreground">Costo Total del Mes</p>
+                            <p className="text-lg font-bold text-destructive">-${monthData.totalCost.toLocaleString('es-ES', { minimumFractionDigits: 2 })}</p>
                         </div>
                     </div>
                 </CardHeader>
@@ -239,7 +239,7 @@ export default function FleetVehicleDetailPage() {
                             <TableCell>{format(parseISO(service.serviceDate), "dd MMM, HH:mm", { locale: es })}</TableCell>
                             <TableCell>{service.mileage?.toLocaleString('es-ES')} km</TableCell>
                             <TableCell>{service.description}</TableCell>
-                            <TableCell className="text-right">${service.totalCost.toLocaleString('es-ES', { minimumFractionDigits: 2 })}</TableCell>
+                            <TableCell className="text-right text-destructive">-${service.totalCost.toLocaleString('es-ES', { minimumFractionDigits: 2 })}</TableCell>
                           </TableRow>
                         ))}
                       </TableBody>
