@@ -2,12 +2,8 @@
 'use server';
 
 import type { PublicOwnerReport, VehicleMonthlyReport, WorkshopInfo, Vehicle, RentalPayment, ServiceRecord, VehicleExpense } from '@/types';
-import { sanitizeObjectForFirestore } from '@/lib/placeholder-data';
 import { format, parseISO, startOfMonth, endOfMonth, isWithinInterval, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { db } from '@root/lib/firebaseClient.js';
-import { doc, setDoc } from 'firebase/firestore';
-
 
 export interface ReportGenerationInput {
   ownerName: string;
@@ -23,10 +19,7 @@ export interface ReportGenerationInput {
 export async function generateAndShareOwnerReport(
   input: ReportGenerationInput
 ): Promise<{ success: boolean; report?: PublicOwnerReport; error?: string; }> {
-  if (!db) {
-    return { success: false, error: 'La base de datos no está configurada.' };
-  }
-  
+  // This function is now purely for computation. No database access.
   try {
     const { ownerName, forDateISO, workshopInfo, allVehicles, allRentalPayments, allServiceRecords, allVehicleExpenses } = input;
     
@@ -94,17 +87,12 @@ export async function generateAndShareOwnerReport(
       workshopInfo,
     };
     
-    // The server action now ONLY saves the individual public document.
-    // It no longer touches the main private database document.
-    const publicDocRef = doc(db, 'publicOwnerReports', publicId);
-    await setDoc(publicDocRef, sanitizeObjectForFirestore(newPublicReport), { merge: true });
-
-    // Return the new report object to the client. The client will handle persisting the updated list to the main doc.
+    // The server action just returns the computed object.
     return { success: true, report: newPublicReport };
 
   } catch (e) {
     console.error("Error generating public owner report:", e);
-    const errorMessage = e instanceof Error ? e.message : 'No se pudo generar el reporte público.';
+    const errorMessage = e instanceof Error ? e.message : 'No se pudo generar el reporte.';
     return { success: false, error: errorMessage };
   }
 }
