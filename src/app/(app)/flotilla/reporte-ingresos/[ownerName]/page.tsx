@@ -53,17 +53,28 @@ const ReportContent = React.forwardRef<HTMLDivElement, { report: PublicOwnerRepo
       <main>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8 text-center">
           <Card><CardHeader><CardTitle className="text-sm font-medium">Ingreso por Renta</CardTitle><CardDescription className="text-2xl font-bold">{formatCurrency(report.totalRentalIncome)}</CardDescription></CardHeader></Card>
-          <Card><CardHeader><CardTitle className="text-sm font-medium">Costos y Deducciones</CardTitle><CardDescription className="text-2xl font-bold text-destructive">{formatCurrency(report.totalMaintenanceCosts)}</CardDescription></CardHeader></Card>
+          <Card><CardHeader><CardTitle className="text-sm font-medium">Costos y Deducciones</CardTitle><CardDescription className="text-2xl font-bold text-destructive">{formatCurrency(report.totalDeductions)}</CardDescription></CardHeader></Card>
           <Card><CardHeader><CardTitle className="text-sm font-medium">Balance Neto</CardTitle><CardDescription className={`text-2xl font-bold ${report.totalNetBalance >= 0 ? 'text-green-600' : 'text-red-600'}`}>{formatCurrency(report.totalNetBalance)}</CardDescription></CardHeader></Card>
         </div>
 
         <h2 className="text-xl font-semibold mb-4">Desglose por Vehículo</h2>
         <div className="overflow-x-auto">
           <Table>
-            <TableHeader><TableRow><TableHead>Vehículo</TableHead><TableHead className="text-center">Días Cubiertos</TableHead><TableHead className="text-right">Ingresos</TableHead><TableHead className="text-right">Costos y Deducc.</TableHead><TableHead className="text-right">Balance</TableHead></TableRow></TableHeader>
+            <TableHeader>
+                <TableRow>
+                    <TableHead className="font-bold">Vehículo</TableHead>
+                    <TableHead className="text-right font-bold">Ingreso Renta</TableHead>
+                    <TableHead className="text-right font-bold">Mantenimiento</TableHead>
+                    <TableHead className="text-right font-bold">GPS</TableHead>
+                    <TableHead className="text-right font-bold">Admin</TableHead>
+                    <TableHead className="text-right font-bold">Seguro</TableHead>
+                    <TableHead className="text-right font-bold text-primary">Total Deduc.</TableHead>
+                    <TableHead className="text-right font-bold">Balance</TableHead>
+                </TableRow>
+            </TableHeader>
             <TableBody>
               {report.detailedReport.map(item => {
-                const balance = item.rentalIncome - item.maintenanceCosts;
+                const balance = item.rentalIncome - item.totalDeductions;
                 return (
                   <TableRow key={item.vehicleId}>
                     <TableCell className="font-medium">
@@ -71,9 +82,12 @@ const ReportContent = React.forwardRef<HTMLDivElement, { report: PublicOwnerRepo
                         {item.vehicleInfo}
                       </Link>
                     </TableCell>
-                    <TableCell className="text-center">{item.daysRented.toFixed(2)}</TableCell>
                     <TableCell className="text-right">{formatCurrency(item.rentalIncome)}</TableCell>
-                    <TableCell className="text-right text-destructive">{formatCurrency(item.maintenanceCosts)}</TableCell>
+                    <TableCell className="text-right text-destructive">{formatCurrency(item.maintenanceAndExpensesCost)}</TableCell>
+                    <TableCell className="text-right text-destructive">{formatCurrency(item.gpsMonthlyCost)}</TableCell>
+                    <TableCell className="text-right text-destructive">{formatCurrency(item.adminMonthlyCost)}</TableCell>
+                    <TableCell className="text-right text-destructive">{formatCurrency(item.insuranceMonthlyCost)}</TableCell>
+                    <TableCell className="text-right font-bold text-destructive">{formatCurrency(item.totalDeductions)}</TableCell>
                     <TableCell className={`text-right font-bold ${balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                       {formatCurrency(balance)}
                     </TableCell>
@@ -118,7 +132,6 @@ export default function OwnerIncomeDetailPage() {
     const prevMonthStart = startOfMonth(subMonths(selectedDate, 1));
     const prevMonthEnd = endOfMonth(subMonths(selectedDate, 1));
 
-    // Optimization: Pre-filter all records for the owner's vehicles and for the relevant months
     const ownerVehicleIds = new Set(ownerVehicles.map(v => v.id));
     const ownerVehiclePlates = new Set(ownerVehicles.map(v => v.licensePlate));
 
@@ -145,7 +158,6 @@ export default function OwnerIncomeDetailPage() {
         return isValid(eDate) && isWithinInterval(eDate, { start: monthStart, end: monthEnd });
     });
 
-    // --- Aggregation ---
     const currentMonthIncome = currentMonthOwnerPayments.reduce((sum, p) => sum + p.amount, 0);
     const prevMonthIncome = prevMonthOwnerPayments.reduce((sum, p) => sum + p.amount, 0);
     
@@ -159,17 +171,23 @@ export default function OwnerIncomeDetailPage() {
 
       const vehicleExpensesInMonth = currentMonthExpenses.filter(e => e.vehicleId === vehicle.id);
       const costsFromVehicleExpenses = vehicleExpensesInMonth.reduce((sum, e) => sum + e.amount, 0);
-
-      const totalMaintenanceCosts = maintenanceCostsFromServices + costsFromVehicleExpenses;
-      const totalDeductions = (vehicle.gpsMonthlyCost || 0) + (vehicle.adminMonthlyCost || 0) + (vehicle.insuranceMonthlyCost || 0);
-      const finalCostsAndDeductions = totalMaintenanceCosts + totalDeductions;
+      
+      const maintenanceAndExpensesCost = maintenanceCostsFromServices + costsFromVehicleExpenses;
+      const gpsMonthlyCost = vehicle.gpsMonthlyCost || 0;
+      const adminMonthlyCost = vehicle.adminMonthlyCost || 0;
+      const insuranceMonthlyCost = vehicle.insuranceMonthlyCost || 0;
+      const totalDeductions = maintenanceAndExpensesCost + gpsMonthlyCost + adminMonthlyCost + insuranceMonthlyCost;
       
       return {
         vehicleId: vehicle.id,
         vehicleInfo: `${vehicle.make} ${vehicle.model} (${vehicle.licensePlate})`,
         daysRented,
         rentalIncome,
-        maintenanceCosts: finalCostsAndDeductions,
+        maintenanceAndExpensesCost,
+        gpsMonthlyCost,
+        adminMonthlyCost,
+        insuranceMonthlyCost,
+        totalDeductions,
       };
     });
 
@@ -188,8 +206,8 @@ export default function OwnerIncomeDetailPage() {
   
     try {
         const totalRentalIncome = monthlyReportData.detailedReport.reduce((sum, r) => sum + r.rentalIncome, 0);
-        const totalMaintenanceCosts = monthlyReportData.detailedReport.reduce((sum, r) => sum + r.maintenanceCosts, 0);
-        const totalNetBalance = totalRentalIncome - totalMaintenanceCosts;
+        const totalDeductions = monthlyReportData.detailedReport.reduce((sum, r) => sum + r.totalDeductions, 0);
+        const totalNetBalance = totalRentalIncome - totalDeductions;
 
         const reportForPreview: PublicOwnerReport = {
             publicId: `local-preview-${Date.now()}`,
@@ -198,7 +216,7 @@ export default function OwnerIncomeDetailPage() {
             reportMonth: format(selectedDate, "MMMM 'de' yyyy", { locale: es }),
             detailedReport: monthlyReportData.detailedReport,
             totalRentalIncome,
-            totalMaintenanceCosts,
+            totalDeductions,
             totalNetBalance,
             workshopInfo,
         };
@@ -313,7 +331,6 @@ export default function OwnerIncomeDetailPage() {
               <TableHeader>
                 <TableRow>
                   <TableHead className="font-bold">Vehículo</TableHead>
-                  <TableHead className="text-center font-bold">Días Cubiertos</TableHead>
                   <TableHead className="text-right font-bold">Ingresos por Renta</TableHead>
                   <TableHead className="text-right font-bold">Costos y Deducc.</TableHead>
                   <TableHead className="text-right font-bold">Balance Neto</TableHead>
@@ -321,7 +338,7 @@ export default function OwnerIncomeDetailPage() {
               </TableHeader>
               <TableBody>
                 {monthlyReportData.detailedReport.map(item => {
-                  const balance = item.rentalIncome - item.maintenanceCosts;
+                  const balance = item.rentalIncome - item.totalDeductions;
                   return (
                     <TableRow key={item.vehicleId}>
                       <TableCell className="font-medium">
@@ -329,9 +346,13 @@ export default function OwnerIncomeDetailPage() {
                           {item.vehicleInfo}
                         </Link>
                       </TableCell>
-                      <TableCell className="text-center">{item.daysRented.toFixed(2)}</TableCell>
                       <TableCell className="text-right">{formatCurrency(item.rentalIncome)}</TableCell>
-                      <TableCell className="text-right text-destructive">{formatCurrency(item.maintenanceCosts)}</TableCell>
+                      <TableCell className="text-right text-destructive">
+                          <span className="font-semibold">{formatCurrency(item.totalDeductions)}</span>
+                          <div className="text-xs font-normal text-muted-foreground">
+                              Mto: {formatCurrency(item.maintenanceAndExpensesCost)}
+                          </div>
+                      </TableCell>
                       <TableCell className={`text-right font-bold ${balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                         {formatCurrency(balance)}
                       </TableCell>
