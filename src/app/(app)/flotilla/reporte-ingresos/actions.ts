@@ -19,7 +19,9 @@ export interface ReportGenerationInput {
 export async function generateAndShareOwnerReport(
   input: ReportGenerationInput
 ): Promise<{ success: boolean; report?: PublicOwnerReport; error?: string; }> {
-  // This function is now purely for computation. No database access.
+  // This server action is now PURELY for computation. It does NOT interact with any database.
+  // It receives all necessary data from the client, computes the report, and returns the object.
+  // The authenticated client is responsible for all database write operations.
   try {
     const { ownerName, forDateISO, workshopInfo, allVehicles, allRentalPayments, allServiceRecords, allVehicleExpenses } = input;
     
@@ -70,7 +72,6 @@ export async function generateAndShareOwnerReport(
     const totalMaintenanceCosts = detailedReport.reduce((sum, r) => sum + r.maintenanceCosts, 0);
     const totalNetBalance = totalRentalIncome - totalMaintenanceCosts;
 
-    // Create a deterministic publicId to allow overwriting/updating reports for the same period.
     const safeOwnerName = ownerName.toLowerCase().replace(/[^a-z0-9]/g, '');
     const monthId = format(reportForDate, "yyyy-MM");
     const publicId = `${safeOwnerName}-${monthId}`;
@@ -87,11 +88,11 @@ export async function generateAndShareOwnerReport(
       workshopInfo,
     };
     
-    // The server action just returns the computed object.
+    // Return the computed object to the client. The client will handle saving.
     return { success: true, report: newPublicReport };
 
   } catch (e) {
-    console.error("Error generating public owner report:", e);
+    console.error("Error generating public owner report data:", e);
     const errorMessage = e instanceof Error ? e.message : 'No se pudo generar el reporte.';
     return { success: false, error: errorMessage };
   }
