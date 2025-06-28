@@ -161,7 +161,7 @@ const serviceFormSchemaBase = z.object({
   technicianId: z.string().optional(),
   serviceItems: z.array(serviceItemSchema).min(1, "Debe agregar al menos un ítem de servicio."),
   status: z.enum(["Cotizacion", "Agendado", "Reparando", "Completado", "Cancelado"]).optional(),
-  serviceType: z.enum(["Servicio General", "Pintura"]).optional(),
+  serviceType: z.enum(["Servicio General", "Cambio de Aceite", "Pintura"]).optional(),
   deliveryDateTime: z.date({ invalid_type_error: "La fecha de entrega no es válida." }).optional(),
   vehicleConditions: z.string().optional(),
   fuelLevel: z.string().optional(),
@@ -199,6 +199,14 @@ const serviceFormSchemaBase = z.object({
   return true;
 }, {
   path: ["transferFolio"],
+}).refine(data => {
+    if (data.status === 'Reparando' && !data.technicianId) {
+        return false;
+    }
+    return true;
+}, {
+    message: "Debe asignar un técnico cuando el servicio está en reparación.",
+    path: ["technicianId"],
 });
 
 
@@ -559,7 +567,7 @@ export function ServiceForm({
   const showReportTab = useMemo(() => {
     if (mode !== 'service') return false;
     const currentServiceType = form.getValues('serviceType');
-    if (!currentServiceType || (currentServiceType !== 'Servicio General' && currentServiceType !== 'Pintura')) {
+    if (!currentServiceType || (currentServiceType !== 'Servicio General' && currentServiceType !== 'Pintura' && currentServiceType !== 'Cambio de Aceite')) {
         return false;
     }
     return watchedStatus !== 'Agendado' && watchedStatus !== 'Cotizacion';
@@ -1234,6 +1242,7 @@ export function ServiceForm({
                               </FormControl>
                               <SelectContent>
                                 <SelectItem value="Servicio General">Servicio General</SelectItem>
+                                <SelectItem value="Cambio de Aceite">Cambio de Aceite</SelectItem>
                                 <SelectItem value="Pintura">Pintura</SelectItem>
                               </SelectContent>
                             </Select>
@@ -1241,7 +1250,7 @@ export function ServiceForm({
                         )}
                       />
                     </div>
-
+                    
                     {watchedStatus === 'Agendado' && (
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t items-end">
                             <Controller
@@ -1362,6 +1371,7 @@ export function ServiceForm({
                                                 ))}
                                                 </SelectContent>
                                             </Select>
+                                            <FormMessage />
                                         </FormItem>
                                     )}
                                 />
