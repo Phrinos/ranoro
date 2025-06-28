@@ -393,15 +393,6 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
       </div>
     );
 
-    const SafetyChecklistContent = showChecklist ? (
-        <SafetyChecklistDisplay 
-            inspection={service.safetyInspection!}
-            workshopInfo={effectiveWorkshopInfo}
-            service={service}
-            vehicle={vehicle}
-        />
-    ) : null;
-    
     const PhotoReportContent = showPhotoReport ? (
         <div className="mt-4 print:mt-0">
              <header className="mb-4 pb-2 border-b-2 border-black">
@@ -420,8 +411,8 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
                         </p>
                         <div className="grid grid-cols-2 gap-2">
                            {reportItem.photos.map((photoUrl, photoIndex) => (
-                             <div key={photoIndex} className="border-2 border-black p-1 inline-block">
-                                <Image src={photoUrl} alt={`Foto ${photoIndex + 1}`} width={400} height={300} objectFit="contain" data-ai-hint="car damage photo"/>
+                             <div key={photoIndex} className="relative aspect-video w-full bg-gray-100 rounded-md overflow-hidden">
+                               <Image src={photoUrl} alt={`Foto ${photoIndex + 1}`} fill style={{objectFit: 'contain'}} data-ai-hint="car damage photo"/>
                              </div>
                            ))}
                         </div>
@@ -443,7 +434,12 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
             </TabsList>
             <TabsContent value="order" className="mt-4">{ServiceOrderContent}</TabsContent>
             <TabsContent value="checklist" className="mt-4">
-              {showChecklist ? SafetyChecklistContent : (
+              {showChecklist ? <SafetyChecklistDisplay 
+                inspection={service.safetyInspection!}
+                workshopInfo={effectiveWorkshopInfo}
+                service={service}
+                vehicle={vehicle}
+              /> : (
                 <div className="text-center p-8 text-muted-foreground">
                   La revisión de seguridad no es aplicable a este servicio.
                 </div>
