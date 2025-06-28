@@ -6,7 +6,8 @@ import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PlusCircle, Search, ArrowDownAZ, ShieldCheck } from "lucide-react";
-import { VehiclesTable } from "../vehiculos/components/vehicles-table"; // Reusing the same table
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { useRouter } from 'next/navigation';
 import { AddVehicleToFleetDialog } from "./components/add-vehicle-to-fleet-dialog";
 import { FineCheckDialog } from "./components/fine-check-dialog";
 import { placeholderVehicles, persistToFirestore, hydrateReady, AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
@@ -20,6 +21,7 @@ const FINE_CHECK_STORAGE_KEY = 'fleetFineLastCheckDate';
 
 export default function FlotillaPage() {
   const { toast } = useToast();
+  const router = useRouter();
   const [version, setVersion] = useState(0);
   const [hydrated, setHydrated] = useState(false);
   const [isAddVehicleDialogOpen, setIsAddVehicleDialogOpen] = useState(false);
@@ -160,8 +162,29 @@ export default function FlotillaPage() {
         </Button>
       </div>
 
-      <div className="overflow-x-auto">
-        <VehiclesTable vehicles={filteredFleetVehicles} />
+      <div className="rounded-lg border shadow-sm overflow-x-auto">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Placa</TableHead>
+              <TableHead>Vehículo</TableHead>
+              <TableHead>Propietario</TableHead>
+              <TableHead className="text-right">Renta Diaria</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {filteredFleetVehicles.length > 0 ? filteredFleetVehicles.map(vehicle => (
+              <TableRow key={vehicle.id} className="cursor-pointer hover:bg-muted/50" onClick={() => router.push(`/flotilla/${vehicle.id}`)}>
+                <TableCell className="font-medium">{vehicle.licensePlate}</TableCell>
+                <TableCell>{vehicle.make} {vehicle.model} ({vehicle.year})</TableCell>
+                <TableCell>{vehicle.ownerName}</TableCell>
+                <TableCell className="text-right font-semibold">${(vehicle.dailyRentalCost || 0).toFixed(2)}</TableCell>
+              </TableRow>
+            )) : (
+              <TableRow><TableCell colSpan={4} className="h-24 text-center">No hay vehículos en la flotilla.</TableCell></TableRow>
+            )}
+          </TableBody>
+        </Table>
       </div>
 
       <AddVehicleToFleetDialog
