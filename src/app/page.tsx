@@ -164,7 +164,6 @@ export default function LandingPage() {
                     <li className="flex items-start gap-3"><CheckCircle className="h-5 w-5 text-green-500 mt-0.5 shrink-0" /><span>Lavado de inyectores con boya</span></li>
                     <li className="flex items-start gap-3"><CheckCircle className="h-5 w-5 text-green-500 mt-0.5 shrink-0" /><span>Lavado de cuerpo de aceleración no electrónico</span></li>
                     <li className="flex items-start gap-3"><CheckCircle className="h-5 w-5 text-green-500 mt-0.5 shrink-0" /><span>Revisión y relleno de niveles hasta 250ml.</span></li>
-                    <li className="flex items-start gap-3"><CheckCircle className="h-5 w-5 text-green-500 mt-0.5 shrink-0" /><span>Revisión de puntos de seguridad</span></li>
                   </ul>
                 </CardContent>
               </Card>
