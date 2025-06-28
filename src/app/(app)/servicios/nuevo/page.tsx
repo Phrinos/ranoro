@@ -118,10 +118,31 @@ export default function NuevoServicioPage() {
   };
   
   const handleShareService = (service: ServiceRecord | null) => {
-    if (!service || !service.publicId) return;
+    if (!service || !service.publicId) {
+      toast({ title: 'Enlace no disponible', description: 'No se ha podido generar el enlace público.', variant: 'default'});
+      return;
+    }
+
+    const vehicle = vehicles.find(v => v.id === service.vehicleId);
+    if (!vehicle) {
+        toast({ title: "Faltan Datos", description: "No se encontró el vehículo asociado.", variant: "destructive" });
+        return;
+    }
+
     const shareUrl = `${window.location.origin}/s/${service.publicId}`;
-    navigator.clipboard.writeText(shareUrl).then(() => {
-        toast({ title: 'Enlace copiado', description: 'El enlace a la hoja de servicio ha sido copiado.' });
+    const message = `Hola, ${vehicle.ownerName || 'Cliente'}:
+
+Te invitamos a consultar la hoja de servicio de tu ${vehicle.make} ${vehicle.model} ${vehicle.year}. Puedes revisarla en el siguiente enlace:
+
+${shareUrl}
+
+¡Gracias por confiar en Ranoro!`;
+
+    navigator.clipboard.writeText(message).then(() => {
+        toast({ title: 'Mensaje Copiado', description: 'El mensaje para WhatsApp ha sido copiado a tu portapapeles.' });
+    }).catch(err => {
+        console.error("Could not copy text:", err);
+        toast({ title: "Error al Copiar", variant: "destructive" });
     });
   };
 
@@ -169,7 +190,7 @@ export default function NuevoServicioPage() {
           footerActions={
             <>
               <Button variant="outline" onClick={() => handleShareService(currentServiceForTicket)}>
-                  <MessageSquare className="mr-2 h-4 w-4" /> Copiar Enlace
+                  <MessageSquare className="mr-2 h-4 w-4" /> Copiar para WhatsApp
               </Button>
               <Button onClick={() => window.print()}>
                   <Printer className="mr-2 h-4 w-4" /> Imprimir Hoja

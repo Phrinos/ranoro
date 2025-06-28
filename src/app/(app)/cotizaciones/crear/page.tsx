@@ -163,8 +163,12 @@ export default function NuevaCotizacionPage() {
     const shareUrl = `${window.location.origin}/c/${currentQuoteForPdf.publicId}`;
     const { ownerName = "Cliente", make, model, year } = currentVehicleForPdf;
 
-    const workshopName = (currentQuoteForPdf.workshopInfo as WorkshopInfo)?.name || 'RANORO';
-    const message = `Hola ${ownerName}, gracias por confiar en ${workshopName}. Le enviamos su cotización ${currentQuoteForPdf.id} para su ${make} ${model} ${year}. Puede consultarla aquí: ${shareUrl}`;
+    const message = `Hola ${ownerName}:
+Le enviamos su cotización folio ${currentQuoteForPdf.id} para su ${make} ${model} ${year}. Puede consultarla aquí: 
+
+${shareUrl}
+
+Quedamos a sus ordenes y a la espera de poder atender su vehiculo. Gracias por confiar en Ranoro.`;
 
     navigator.clipboard
       .writeText(message)

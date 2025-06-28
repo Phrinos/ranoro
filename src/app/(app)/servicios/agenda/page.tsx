@@ -1,3 +1,4 @@
+
 "use client";
 
 import { PageHeader } from "@/components/page-header";
@@ -434,8 +435,13 @@ export default function AgendaServiciosPage() {
     }
     
     const shareUrl = `${window.location.origin}/s/${service.publicId}`;
-    const workshopName = (service.workshopInfo?.name) || 'RANORO';
-    const message = `Hola ${vehicleForAction.ownerName || 'Cliente'}, aquí está la hoja de servicio ${service.id} de nuestro taller para su vehículo ${vehicleForAction.make} ${vehicleForAction.model} ${vehicleForAction.year}. Puede consultarla aquí: ${shareUrl}`;
+    const message = `Hola, ${vehicleForAction.ownerName || 'Cliente'}:
+
+Te invitamos a consultar la hoja de servicio de tu ${vehicleForAction.make} ${vehicleForAction.model} ${vehicleForAction.year}. Puedes revisarla en el siguiente enlace:
+
+${shareUrl}
+
+¡Gracias por confiar en Ranoro!`;
 
     navigator.clipboard.writeText(message).then(() => {
         toast({
@@ -518,7 +524,7 @@ export default function AgendaServiciosPage() {
                       <CardContent className="p-0">
                         <div className="flex flex-col md:flex-row text-sm">
                             <div className="p-4 flex flex-col justify-center items-center text-center w-full md:w-48 flex-shrink-0">
-                                <p className="text-4xl font-semibold text-foreground">{format(parseISO(service.serviceDate), "HH:mm 'hrs'", { locale: es })}</p>
+                                <p className="text-4xl font-semibold text-foreground">{format(parseISO(service.serviceDate), "HH:mm", { locale: es })}</p>
                                 <p className="text-xs text-muted-foreground mt-1">Folio: {service.id}</p>
                             </div>
                           

@@ -335,8 +335,12 @@ export default function HistorialCotizacionesPage() {
     }
     
     const shareUrl = `${window.location.origin}/c/${quoteForAction.publicId}`;
-    const workshopName = (quoteForAction.workshopInfo as WorkshopInfo)?.name || 'RANORO';
-    const message = `Hola ${vehicleForAction.ownerName || 'Cliente'}, Gracias por confiar en ${workshopName}. Le enviamos su cotización de servicio ${quoteForAction.id} de nuestro taller para su vehículo ${vehicleForAction.make} ${vehicleForAction.model} ${vehicleForAction.year}. En este link encontrara el PDF de la cotizacion: ${shareUrl}`;
+    const message = `Hola ${vehicleForAction.ownerName || 'Cliente'}:
+Le enviamos su cotización folio ${quoteForAction.id} para su ${vehicleForAction.make} ${vehicleForAction.model} ${vehicleForAction.year}. Puede consultarla aquí: 
+
+${shareUrl}
+
+Quedamos a sus ordenes y a la espera de poder atender su vehiculo. Gracias por confiar en Ranoro.`;
 
     navigator.clipboard.writeText(message).then(() => {
         toast({
