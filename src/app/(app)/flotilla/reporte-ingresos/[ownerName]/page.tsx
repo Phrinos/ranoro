@@ -10,8 +10,9 @@ import {
   placeholderVehicles,
   placeholderRentalPayments,
   placeholderServiceRecords,
+  placeholderVehicleExpenses,
 } from '@/lib/placeholder-data';
-import type { PublicOwnerReport, Vehicle, RentalPayment, ServiceRecord, WorkshopInfo, VehicleMonthlyReport } from '@/types';
+import type { PublicOwnerReport, Vehicle, RentalPayment, ServiceRecord, WorkshopInfo, VehicleMonthlyReport, VehicleExpense } from '@/types';
 import {
   format,
   parseISO,
@@ -141,14 +142,22 @@ export default function OwnerIncomeDetailPage() {
           const sDate = parseISO(s.serviceDate);
           return s.vehicleId === vehicle.id && isValid(sDate) && isWithinInterval(sDate, { start: monthStart, end: monthEnd });
       });
-      const maintenanceCosts = vehicleServices.reduce((sum, s) => sum + s.totalCost, 0);
+      const maintenanceCostsFromServices = vehicleServices.reduce((sum, s) => sum + s.totalCost, 0);
+
+      const vehicleExpensesInMonth = placeholderVehicleExpenses.filter(e => {
+        const eDate = parseISO(e.date);
+        return e.vehicleId === vehicle.id && isValid(eDate) && isWithinInterval(eDate, { start: monthStart, end: monthEnd });
+      });
+      const costsFromVehicleExpenses = vehicleExpensesInMonth.reduce((sum, e) => sum + e.amount, 0);
+
+      const totalMaintenanceCosts = maintenanceCostsFromServices + costsFromVehicleExpenses;
       
       return {
         vehicleId: vehicle.id,
         vehicleInfo: `${vehicle.make} ${vehicle.model} (${vehicle.licensePlate})`,
         daysRented,
         rentalIncome,
-        maintenanceCosts,
+        maintenanceCosts: totalMaintenanceCosts,
       };
     });
 
@@ -172,6 +181,7 @@ export default function OwnerIncomeDetailPage() {
       allVehicles: placeholderVehicles,
       allRentalPayments: placeholderRentalPayments,
       allServiceRecords: placeholderServiceRecords,
+      allVehicleExpenses: placeholderVehicleExpenses,
     });
 
     if (result.success && result.report) {

@@ -6,7 +6,7 @@ import {
   persistToFirestore,
   sanitizeObjectForFirestore,
 } from '@/lib/placeholder-data';
-import type { PublicOwnerReport, VehicleMonthlyReport, WorkshopInfo, Vehicle, RentalPayment, ServiceRecord } from '@/types';
+import type { PublicOwnerReport, VehicleMonthlyReport, WorkshopInfo, Vehicle, RentalPayment, ServiceRecord, VehicleExpense } from '@/types';
 import { format, parseISO, startOfMonth, endOfMonth, isWithinInterval, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { db } from '@root/lib/firebaseClient.js';
@@ -20,6 +20,7 @@ export interface ReportGenerationInput {
   allVehicles: Vehicle[];
   allRentalPayments: RentalPayment[];
   allServiceRecords: ServiceRecord[];
+  allVehicleExpenses: VehicleExpense[];
 }
 
 
@@ -31,7 +32,7 @@ export async function generateAndShareOwnerReport(
   }
   
   try {
-    const { ownerName, forDateISO, workshopInfo, allVehicles, allRentalPayments, allServiceRecords } = input;
+    const { ownerName, forDateISO, workshopInfo, allVehicles, allRentalPayments, allServiceRecords, allVehicleExpenses } = input;
     
     const reportDate = new Date(); // Generation date
     const reportForDate = parseISO(forDateISO); // Date the report is about
@@ -55,14 +56,23 @@ export async function generateAndShareOwnerReport(
         const sDate = parseISO(s.serviceDate);
         return s.vehicleId === vehicle.id && isValid(sDate) && isWithinInterval(sDate, { start: monthStart, end: monthEnd });
       });
-      const maintenanceCosts = vehicleServices.reduce((sum, s) => sum + s.totalCost, 0);
+      const maintenanceCostsFromServices = vehicleServices.reduce((sum, s) => sum + s.totalCost, 0);
+
+      const vehicleExpensesInMonth = allVehicleExpenses.filter(e => {
+        const eDate = parseISO(e.date);
+        return e.vehicleId === vehicle.id && isValid(eDate) && isWithinInterval(eDate, { start: monthStart, end: monthEnd });
+      });
+      const costsFromVehicleExpenses = vehicleExpensesInMonth.reduce((sum, e) => sum + e.amount, 0);
+
+      const totalMaintenanceCosts = maintenanceCostsFromServices + costsFromVehicleExpenses;
+
 
       return {
         vehicleId: vehicle.id,
         vehicleInfo: `${vehicle.make} ${vehicle.model} (${vehicle.licensePlate})`,
         daysRented,
         rentalIncome,
-        maintenanceCosts,
+        maintenanceCosts: totalMaintenanceCosts,
       };
     });
 

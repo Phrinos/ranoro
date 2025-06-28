@@ -5,19 +5,21 @@ import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, Printer, DollarSign } from "lucide-react";
+import { Search, Printer, DollarSign, ListCollapse } from "lucide-react";
 import { useToast } from '@/hooks/use-toast';
 import {
   placeholderDrivers,
   placeholderVehicles,
   placeholderRentalPayments,
   placeholderOwnerWithdrawals,
+  placeholderVehicleExpenses,
   persistToFirestore,
   hydrateReady,
 } from '@/lib/placeholder-data';
-import type { Driver, Vehicle, RentalPayment, OwnerWithdrawal } from '@/types';
+import type { Driver, Vehicle, RentalPayment, OwnerWithdrawal, VehicleExpense } from '@/types';
 import { RegisterPaymentDialog } from './components/register-payment-dialog';
 import { OwnerWithdrawalDialog, type OwnerWithdrawalFormValues } from './components/owner-withdrawal-dialog';
+import { VehicleExpenseDialog, type VehicleExpenseFormValues } from './components/vehicle-expense-dialog';
 import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
 import { RentalReceiptContent } from './components/rental-receipt-content';
 import { isToday, parseISO, format, isValid, compareDesc } from 'date-fns';
@@ -34,6 +36,7 @@ export default function RentasPage() {
 
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
   const [isWithdrawalDialogOpen, setIsWithdrawalDialogOpen] = useState(false);
+  const [isExpenseDialogOpen, setIsExpenseDialogOpen] = useState(false);
 
   const [isReceiptOpen, setIsReceiptOpen] = useState(false);
   const [paymentForReceipt, setPaymentForReceipt] = useState<RentalPayment | null>(null);
@@ -41,6 +44,7 @@ export default function RentasPage() {
   
   const [payments, setPayments] = useState<RentalPayment[]>(placeholderRentalPayments);
   const [withdrawals, setWithdrawals] = useState<OwnerWithdrawal[]>(placeholderOwnerWithdrawals);
+  const [vehicleExpenses, setVehicleExpenses] = useState<VehicleExpense[]>(placeholderVehicleExpenses);
 
   useEffect(() => {
     hydrateReady.then(() => {
@@ -48,12 +52,14 @@ export default function RentasPage() {
       // Ensure local state is in sync with placeholder data after hydration
       setPayments([...placeholderRentalPayments]);
       setWithdrawals([...placeholderOwnerWithdrawals]);
+      setVehicleExpenses([...placeholderVehicleExpenses]);
     });
   }, []);
 
   useEffect(() => {
       setPayments([...placeholderRentalPayments]);
       setWithdrawals([...placeholderOwnerWithdrawals]);
+      setVehicleExpenses([...placeholderVehicleExpenses]);
   }, [version]); // Re-sync when data changes
 
   const filteredPayments = useMemo(() => {
@@ -77,11 +83,24 @@ export default function RentasPage() {
     );
   }, [withdrawals, searchTerm]);
 
+  const filteredVehicleExpenses = useMemo(() => {
+    let list = [...vehicleExpenses].sort((a, b) => compareDesc(parseISO(a.date), parseISO(b.date)));
+    if (!searchTerm.trim()) return list;
+    const lowerSearch = searchTerm.toLowerCase();
+    return list.filter(e =>
+        e.vehicleLicensePlate.toLowerCase().includes(lowerSearch) ||
+        e.description.toLowerCase().includes(lowerSearch)
+    );
+  }, [vehicleExpenses, searchTerm]);
+
   const uniqueOwners = useMemo(() => {
     const owners = new Set<string>();
     placeholderVehicles.filter(v => v.isFleetVehicle).forEach(v => owners.add(v.ownerName));
     return Array.from(owners);
   }, []);
+
+  const fleetVehicles = useMemo(() => placeholderVehicles.filter(v => v.isFleetVehicle), []);
+
 
   const handleRegisterPayment = useCallback(async (driverId: string, amount: number) => {
     const driver = placeholderDrivers.find(d => d.id === driverId);
@@ -128,6 +147,29 @@ export default function RentasPage() {
       toast({title: "Retiro Registrado", description: `Se registró un retiro para ${values.ownerName}.`});
   }, [toast]);
 
+  const handleSaveVehicleExpense = useCallback(async (values: VehicleExpenseFormValues) => {
+      const vehicle = placeholderVehicles.find(v => v.id === values.vehicleId);
+      if (!vehicle) {
+          toast({ title: "Error", description: "Vehículo no encontrado.", variant: "destructive" });
+          return;
+      }
+      
+      const newExpense: VehicleExpense = {
+          id: `VEXP_${Date.now().toString(36)}`,
+          vehicleId: vehicle.id,
+          vehicleLicensePlate: vehicle.licensePlate,
+          date: new Date().toISOString(),
+          ...values
+      };
+      
+      placeholderVehicleExpenses.push(newExpense);
+      await persistToFirestore(['vehicleExpenses']);
+      setVersion(v => v + 1);
+      setIsExpenseDialogOpen(false);
+      
+      toast({title: "Gasto Registrado", description: `Se registró un gasto para ${vehicle.licensePlate}.`});
+  }, [toast]);
+
   const formatCurrency = (amount: number) => {
     return `$${amount.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   };
@@ -138,7 +180,10 @@ export default function RentasPage() {
         title="Pago de Rentas"
         description="Lleva el control de los pagos y retiros de la flotilla."
         actions={
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
+            <Button variant="outline" onClick={() => setIsExpenseDialogOpen(true)}>
+              <ListCollapse className="mr-2 h-4 w-4" /> Registrar Gasto de Vehículo
+            </Button>
             <Button variant="outline" onClick={() => setIsWithdrawalDialogOpen(true)}>
               <DollarSign className="mr-2 h-4 w-4" /> Registrar Retiro
             </Button>
@@ -161,9 +206,10 @@ export default function RentasPage() {
       </div>
 
       <Tabs defaultValue="pagos" className="w-full">
-        <TabsList className="grid w-full grid-cols-2 md:w-1/2 lg:w-1/3 mb-6">
+        <TabsList className="grid w-full grid-cols-3 mb-6">
           <TabsTrigger value="pagos">Pagos de Renta</TabsTrigger>
           <TabsTrigger value="retiros">Retiros de Propietarios</TabsTrigger>
+          <TabsTrigger value="gastos">Gastos de Vehículos</TabsTrigger>
         </TabsList>
 
         <TabsContent value="pagos">
@@ -235,6 +281,41 @@ export default function RentasPage() {
             </CardContent>
           </Card>
         </TabsContent>
+
+        <TabsContent value="gastos">
+          <Card>
+            <CardHeader>
+              <CardTitle>Historial de Gastos de Vehículos</CardTitle>
+              <CardDescription>Gastos directos asociados a los vehículos de la flotilla.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="rounded-lg border shadow-sm overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Fecha</TableHead>
+                      <TableHead>Vehículo</TableHead>
+                      <TableHead>Descripción</TableHead>
+                      <TableHead className="text-right">Monto</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredVehicleExpenses.length > 0 ? filteredVehicleExpenses.map(e => (
+                      <TableRow key={e.id}>
+                        <TableCell>{format(parseISO(e.date), "dd MMM, HH:mm", {locale: es})}</TableCell>
+                        <TableCell>{e.vehicleLicensePlate}</TableCell>
+                        <TableCell>{e.description}</TableCell>
+                        <TableCell className="text-right font-semibold text-destructive">{formatCurrency(e.amount)}</TableCell>
+                      </TableRow>
+                    )) : (
+                      <TableRow><TableCell colSpan={4} className="h-24 text-center">No hay gastos de vehículos registrados.</TableCell></TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
       </Tabs>
       
       <RegisterPaymentDialog
@@ -250,6 +331,13 @@ export default function RentasPage() {
         onOpenChange={setIsWithdrawalDialogOpen}
         owners={uniqueOwners}
         onSave={handleSaveWithdrawal}
+      />
+
+      <VehicleExpenseDialog
+        open={isExpenseDialogOpen}
+        onOpenChange={setIsExpenseDialogOpen}
+        fleetVehicles={fleetVehicles}
+        onSave={handleSaveVehicleExpense}
       />
       
       {paymentForReceipt && (

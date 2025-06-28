@@ -23,6 +23,7 @@ import type {
   RentalPayment,
   PublicOwnerReport,
   OwnerWithdrawal,
+  VehicleExpense,
 } from '@/types';
 import {
   format,
@@ -68,6 +69,7 @@ export let placeholderAdministrativeStaff: AdministrativeStaff[] = [];
 export let placeholderDrivers: Driver[] = [];
 export let placeholderRentalPayments: RentalPayment[] = [];
 export let placeholderOwnerWithdrawals: OwnerWithdrawal[] = [];
+export let placeholderVehicleExpenses: VehicleExpense[] = [];
 
 
 // =======================================
@@ -165,6 +167,7 @@ const DATA_ARRAYS = {
   rentalPayments: placeholderRentalPayments,
   publicOwnerReports: placeholderPublicOwnerReports,
   ownerWithdrawals: placeholderOwnerWithdrawals,
+  vehicleExpenses: placeholderVehicleExpenses,
 };
 
 type DataKey = keyof typeof DATA_ARRAYS;
