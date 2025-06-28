@@ -14,7 +14,7 @@ import { PageHeader } from '@/components/page-header';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { ShieldAlert, Edit, Car, DollarSign } from 'lucide-react';
+import { ShieldAlert, Edit, Car, DollarSign, ShieldCheck } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { format, parseISO, compareAsc, isValid } from 'date-fns';
@@ -109,9 +109,7 @@ export default function FleetVehicleDetailPage() {
       <div className="container mx-auto py-8 text-center">
         <ShieldAlert className="mx-auto h-16 w-16 text-destructive mb-4" />
         <h1 className="text-2xl font-bold">Vehículo de Flotilla no encontrado</h1>
-        <Button asChild className="mt-6">
-          <Link href="/flotilla">Volver a Flotilla</Link>
-        </Button>
+        <Button asChild className="mt-6"><Link href="/flotilla">Volver a Flotilla</Link></Button>
       </div>
     );
   }
@@ -124,9 +122,10 @@ export default function FleetVehicleDetailPage() {
       />
 
       <Tabs defaultValue="details" className="w-full">
-        <TabsList className="grid w-full grid-cols-2 md:w-1/3">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="details">Detalles</TabsTrigger>
           <TabsTrigger value="maintenances">Mantenimientos</TabsTrigger>
+          <TabsTrigger value="fines">Multas</TabsTrigger>
         </TabsList>
         <TabsContent value="details">
           <Card>
@@ -156,6 +155,7 @@ export default function FleetVehicleDetailPage() {
             </CardContent>
           </Card>
         </TabsContent>
+        
         <TabsContent value="maintenances">
           {Object.entries(groupedServices).length > 0 ? (
             Object.entries(groupedServices).sort((a,b) => b[0].localeCompare(a[0])).map(([key, monthData]) => (
@@ -172,14 +172,7 @@ export default function FleetVehicleDetailPage() {
                 <CardContent>
                   <div className="rounded-md border">
                     <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Fecha</TableHead>
-                          <TableHead>Kilometraje</TableHead>
-                          <TableHead>Servicio</TableHead>
-                          <TableHead className="text-right">Costo</TableHead>
-                        </TableRow>
-                      </TableHeader>
+                      <TableHeader><TableRow><TableHead>Fecha</TableHead><TableHead>Kilometraje</TableHead><TableHead>Servicio</TableHead><TableHead className="text-right">Costo</TableHead></TableRow></TableHeader>
                       <TableBody>
                         {monthData.services.sort((a, b) => compareAsc(parseISO(a.serviceDate), parseISO(b.serviceDate))).map(service => (
                           <TableRow key={service.id} onClick={() => handleOpenService(service)} className="cursor-pointer">
@@ -199,6 +192,32 @@ export default function FleetVehicleDetailPage() {
             <p className="text-muted-foreground text-center py-8">No hay mantenimientos registrados para este vehículo.</p>
           )}
         </TabsContent>
+
+        <TabsContent value="fines">
+            <Card>
+                <CardHeader><CardTitle>Historial de Revisión de Multas</CardTitle><CardDescription>Registro de cuándo se ha verificado este vehículo.</CardDescription></CardHeader>
+                <CardContent>
+                    {(vehicle.fineCheckHistory && vehicle.fineCheckHistory.length > 0) ? (
+                        <div className="rounded-md border">
+                            <Table>
+                                <TableHeader><TableRow><TableHead>Fecha de Revisión</TableHead><TableHead>Revisado por</TableHead></TableRow></TableHeader>
+                                <TableBody>
+                                    {vehicle.fineCheckHistory.sort((a,b) => parseISO(b.date).getTime() - parseISO(a.date).getTime()).map((check, index) => (
+                                        <TableRow key={index}>
+                                            <TableCell className="font-medium">{format(parseISO(check.date), "dd MMMM yyyy, HH:mm 'hrs'", { locale: es })}</TableCell>
+                                            <TableCell>{check.checkedBy}</TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        </div>
+                    ) : (
+                        <p className="text-muted-foreground text-center py-8">No hay registros de revisión de multas para este vehículo.</p>
+                    )}
+                </CardContent>
+            </Card>
+        </TabsContent>
+
       </Tabs>
       
       {editingService && (

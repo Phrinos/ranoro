@@ -25,6 +25,11 @@ export interface Vehicle {
   lastServiceDate?: string; 
   isFleetVehicle?: boolean;
   dailyRentalCost?: number;
+  fineCheckHistory?: {
+    date: string; // ISO String
+    checkedBy: string; // User name
+    checkedById: string; // User ID
+  }[];
 }
 
 export interface Driver {
