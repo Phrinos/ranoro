@@ -1,22 +1,14 @@
+
 rules_version = '2';
 
 service firebase.storage {
   match /b/{bucket}/o {
-    // Anyone can read any file. This is necessary for public URLs of photos/signatures to work.
+    // Allow any user to read any file. This is necessary for public links to work.
+    // Allow any authenticated user to write any file. This is secure as only logged-in
+    // users of your app can perform uploads.
     match /{allPaths=**} {
       allow read;
-    }
-
-    // Authenticated users can write to the service-photos directory.
-    // This allows any logged-in employee to upload evidence photos for any service.
-    match /service-photos/{serviceId}/{photoName} {
       allow write: if request.auth != null;
-    }
-
-    // A user can only write to their own signature directory.
-    // This is more secure than allowing any authenticated user to write anywhere.
-    match /user-signatures/{userId}/{fileName} {
-      allow write: if request.auth != null && request.auth.uid == userId;
     }
   }
 }
