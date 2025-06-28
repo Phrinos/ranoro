@@ -189,7 +189,7 @@ export default function OwnerIncomeDetailPage() {
     const workshopInfo: WorkshopInfo | undefined = storedWorkshopInfo ? JSON.parse(storedWorkshopInfo) : undefined;
   
     // 1. Calculate the report data using the server action.
-    const result = generateOwnerReportData({
+    const result = await generateOwnerReportData({
       ownerName: ownerName,
       forDateISO: selectedDate.toISOString(),
       workshopInfo: workshopInfo,
