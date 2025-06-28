@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useMemo, useEffect, useRef } from "react";
@@ -13,7 +12,6 @@ import {
   placeholderVehicleExpenses,
   placeholderPublicOwnerReports,
   persistToFirestore,
-  sanitizeObjectForFirestore, // Import sanitizer
 } from '@/lib/placeholder-data';
 import type { PublicOwnerReport, Vehicle, RentalPayment, ServiceRecord, WorkshopInfo, VehicleMonthlyReport, VehicleExpense } from '@/types';
 import {
@@ -33,10 +31,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { formatCurrency } from "@/lib/utils";
 import Link from "next/link";
 import { useToast } from "@/hooks/use-toast";
-import { generateOwnerReportData } from '../actions';
+import { generateAndSaveOwnerReport } from '../actions';
 import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
-import { db } from '@/lib/firebaseClient.js'; // Correct import for authenticated client
-import { doc, setDoc } from 'firebase/firestore'; 
+
 
 const ReportContent = React.forwardRef<HTMLDivElement, { report: PublicOwnerReport }>(({ report }, ref) => {
   const workshopInfo = report.workshopInfo || { name: 'Taller', logoUrl: '/ranoro-logo.png' };
@@ -188,30 +185,22 @@ export default function OwnerIncomeDetailPage() {
     const storedWorkshopInfo = typeof window !== 'undefined' ? localStorage.getItem('workshopTicketInfo') : null;
     const workshopInfo: WorkshopInfo | undefined = storedWorkshopInfo ? JSON.parse(storedWorkshopInfo) : undefined;
   
-    // 1. Calculate the report data using the server action.
-    const result = await generateOwnerReportData({
-      ownerName: ownerName,
-      forDateISO: selectedDate.toISOString(),
-      workshopInfo: workshopInfo,
-      allVehicles: placeholderVehicles,
-      allRentalPayments: placeholderRentalPayments,
-      allServiceRecords: placeholderServiceRecords,
-      allVehicleExpenses: placeholderVehicleExpenses,
-    });
-  
-    if (result.success && result.report) {
-      const finalReport = result.report;
-      
-      try {
-        // 2. Client saves the public document using the authenticated client.
-        if (db) {
-            const publicDocRef = doc(db, 'publicOwnerReports', finalReport.publicId);
-            await setDoc(publicDocRef, sanitizeObjectForFirestore(finalReport), { merge: true });
-        } else {
-            throw new Error("Cliente de DB no está disponible.");
-        }
+    try {
+      // 1. Call server action to calculate AND save the public document.
+      const result = await generateAndSaveOwnerReport({
+        ownerName: ownerName,
+        forDateISO: selectedDate.toISOString(),
+        workshopInfo: workshopInfo,
+        allVehicles: placeholderVehicles,
+        allRentalPayments: placeholderRentalPayments,
+        allServiceRecords: placeholderServiceRecords,
+        allVehicleExpenses: placeholderVehicleExpenses,
+      });
+
+      if (result.success && result.report) {
+        const finalReport = result.report;
         
-        // 3. Client updates the private history.
+        // 2. Client updates its local state and the private database document.
         const reportIndex = placeholderPublicOwnerReports.findIndex(r => r.publicId === finalReport.publicId);
         if (reportIndex > -1) {
           placeholderPublicOwnerReports[reportIndex] = finalReport;
@@ -220,24 +209,21 @@ export default function OwnerIncomeDetailPage() {
         }
         await persistToFirestore(['publicOwnerReports']);
   
-        // 4. Update UI.
+        // 3. Update UI.
         setReportToShare(finalReport);
         setIsShareDialogOpen(true);
         toast({ title: "Reporte Generado y Compartido", description: "El enlace público está listo." });
   
-      } catch (e) {
-         console.error("Error saving report to DBs:", e);
-         toast({ title: "Error al Guardar en Base de Datos", description: `No se pudo guardar el reporte. ${e instanceof Error ? e.message : ''}`, variant: "destructive" });
+      } else {
+        throw new Error(result.error || "No se pudo generar el enlace para compartir.");
       }
       
-    } else {
-      toast({
-        title: "Error al Generar Reporte",
-        description: result.error || "No se pudo generar el enlace para compartir.",
-        variant: "destructive",
-      });
+    } catch (e) {
+       console.error("Error sharing report:", e);
+       toast({ title: "Error al Generar Reporte", description: `No se pudo generar el reporte. ${e instanceof Error ? e.message : ''}`, variant: "destructive" });
+    } finally {
+        setIsSharing(false);
     }
-    setIsSharing(false);
   };
   
   const handleCopyLink = () => {
