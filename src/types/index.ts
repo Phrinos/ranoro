@@ -63,6 +63,15 @@ export interface OwnerWithdrawal {
   reason?: string;
 }
 
+export interface VehicleExpense {
+  id: string;
+  vehicleId: string;
+  vehicleLicensePlate: string;
+  date: string; // ISO String
+  amount: number;
+  description: string;
+}
+
 
 export interface ServiceSupply {
   supplyId: string; 
