@@ -2,10 +2,11 @@
 "use client";
 
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
+import Link from 'next/link';
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, Printer, DollarSign, ListCollapse } from "lucide-react";
+import { Search, Printer, DollarSign, ListCollapse, AlertTriangle } from "lucide-react";
 import { useToast } from '@/hooks/use-toast';
 import {
   placeholderDrivers,
@@ -22,7 +23,7 @@ import { OwnerWithdrawalDialog, type OwnerWithdrawalFormValues } from './compone
 import { VehicleExpenseDialog, type VehicleExpenseFormValues } from './components/vehicle-expense-dialog';
 import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
 import { RentalReceiptContent } from './components/rental-receipt-content';
-import { isToday, parseISO, format, isValid, compareDesc } from 'date-fns';
+import { isToday, parseISO, format, isValid, compareDesc, differenceInCalendarDays, startOfToday, isAfter } from 'date-fns';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { es } from 'date-fns/locale';
@@ -61,6 +62,53 @@ export default function RentasPage() {
       setWithdrawals([...placeholderOwnerWithdrawals]);
       setVehicleExpenses([...placeholderVehicleExpenses]);
   }, [version]); // Re-sync when data changes
+
+  const formatCurrency = (amount: number) => {
+    return `$${amount.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  };
+
+  const indebtedDrivers = useMemo(() => {
+    if (!hydrated) return [];
+
+    return placeholderDrivers
+      .map(driver => {
+        if (!driver.contractDate) return null;
+
+        const vehicle = placeholderVehicles.find(v => v.id === driver.assignedVehicleId);
+        if (!vehicle?.dailyRentalCost) return null;
+
+        const contractStartDate = parseISO(driver.contractDate);
+        const today = startOfToday();
+        
+        if (isAfter(contractStartDate, today)) {
+          return null;
+        }
+
+        const daysSinceContractStart = differenceInCalendarDays(today, contractStartDate) + 1;
+        const totalExpectedAmount = daysSinceContractStart * vehicle.dailyRentalCost;
+        
+        const totalPaidAmount = placeholderRentalPayments
+          .filter(p => p.driverId === driver.id)
+          .reduce((sum, p) => sum + p.amount, 0);
+          
+        const debtAmount = Math.max(0, totalExpectedAmount - totalPaidAmount);
+        const daysOwed = debtAmount > 0 ? debtAmount / vehicle.dailyRentalCost : 0;
+        
+        if (daysOwed > 2) {
+          return {
+            id: driver.id,
+            name: driver.name,
+            daysOwed: Math.floor(daysOwed), // Show whole days
+            debtAmount: debtAmount,
+            vehicleLicensePlate: vehicle.licensePlate,
+          };
+        }
+        
+        return null;
+      })
+      .filter((d): d is NonNullable<typeof d> => d !== null)
+      .sort((a, b) => b.daysOwed - a.daysOwed); // Sort by most days owed
+  }, [hydrated, version]);
 
   const filteredPayments = useMemo(() => {
     let list = [...payments].sort((a,b) => compareDesc(parseISO(a.paymentDate), parseISO(b.paymentDate)));
@@ -170,10 +218,6 @@ export default function RentasPage() {
       toast({title: "Gasto Registrado", description: `Se registró un gasto para ${vehicle.licensePlate}.`});
   }, [toast]);
 
-  const formatCurrency = (amount: number) => {
-    return `$${amount.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-  };
-
   return (
     <>
       <PageHeader
@@ -193,6 +237,40 @@ export default function RentasPage() {
           </div>
         }
       />
+
+      <Card className="mb-6 border-orange-500/50 bg-orange-50 dark:bg-orange-900/30">
+          <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-orange-700 dark:text-orange-300">
+                  <AlertTriangle className="h-5 w-5" />
+                  Conductores con Atraso Mayor a 2 Días
+              </CardTitle>
+              <CardDescription>
+                  Estos conductores requieren atención inmediata para regularizar sus pagos.
+              </CardDescription>
+          </CardHeader>
+          <CardContent>
+              {indebtedDrivers.length > 0 ? (
+                  <div className="space-y-2">
+                      {indebtedDrivers.map(driver => (
+                          <Link href={`/conductores/${driver.id}`} key={driver.id} className="flex justify-between items-center p-2 rounded-md hover:bg-orange-100 dark:hover:bg-orange-800/50 transition-colors">
+                              <div>
+                                  <p className="font-semibold">{driver.name}</p>
+                                  <p className="text-xs text-muted-foreground">{driver.vehicleLicensePlate}</p>
+                              </div>
+                              <div className="text-right">
+                                  <p className="font-bold text-destructive text-lg">{driver.daysOwed} días</p>
+                                  <p className="text-xs text-muted-foreground">{formatCurrency(driver.debtAmount)}</p>
+                              </div>
+                          </Link>
+                      ))}
+                  </div>
+              ) : (
+                  <p className="text-muted-foreground text-center py-4">
+                      No hay conductores con atrasos significativos.
+                  </p>
+              )}
+          </CardContent>
+      </Card>
       
       <div className="mb-6 relative">
         <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
