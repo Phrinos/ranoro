@@ -1,3 +1,6 @@
+// This server action is no longer used by the page component.
+// The calculation logic has been moved to the client-side `page.tsx`.
+// This file can be removed in a future cleanup if no other components use it.
 
 'use server';
 
@@ -15,7 +18,6 @@ export interface ReportGenerationInput {
   allVehicleExpenses: VehicleExpense[];
 }
 
-// This is now an async function that just performs calculations and returns the data.
 export async function generateOwnerReportData(
   input: ReportGenerationInput
 ): Promise<{ success: boolean; report?: PublicOwnerReport; error?: string; }> {

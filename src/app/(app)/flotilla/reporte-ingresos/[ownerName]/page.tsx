@@ -33,10 +33,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { formatCurrency } from "@/lib/utils";
 import Link from "next/link";
 import { useToast } from "@/hooks/use-toast";
-import { generateOwnerReportData } from '../actions';
 import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
-import { db } from '@root/lib/firebaseClient.js';
-import { doc, setDoc } from 'firebase/firestore';
 
 
 const ReportContent = React.forwardRef<HTMLDivElement, { report: PublicOwnerReport }>(({ report }, ref) => {
@@ -103,9 +100,9 @@ export default function OwnerIncomeDetailPage() {
   const ownerName = decodeURIComponent(params.ownerName as string);
   
   const [selectedDate, setSelectedDate] = useState(startOfMonth(new Date()));
-  const [isSharing, setIsSharing] = useState(false);
-  const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
-  const [reportToShare, setReportToShare] = useState<PublicOwnerReport | null>(null);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [isReportPreviewOpen, setIsReportPreviewOpen] = useState(false);
+  const [reportToPreview, setReportToPreview] = useState<PublicOwnerReport | null>(null);
   const reportContentRef = useRef<HTMLDivElement>(null);
 
   const handlePreviousMonth = () => setSelectedDate(subMonths(selectedDate, 1));
@@ -183,76 +180,62 @@ export default function OwnerIncomeDetailPage() {
     };
   }, [selectedDate, ownerVehicles]);
 
-  const handleShareReport = async () => {
-    setIsSharing(true);
+  const handleGenerateReport = () => {
+    setIsGenerating(true);
     
     const storedWorkshopInfo = typeof window !== 'undefined' ? localStorage.getItem('workshopTicketInfo') : null;
     const workshopInfo: WorkshopInfo | undefined = storedWorkshopInfo ? JSON.parse(storedWorkshopInfo) : undefined;
   
     try {
-      // 1. Call the server action to get the calculated report data.
-      const result = await generateOwnerReportData({
-        ownerName: ownerName,
-        forDateISO: selectedDate.toISOString(),
-        workshopInfo: workshopInfo,
-        allVehicles: placeholderVehicles,
-        allRentalPayments: placeholderRentalPayments,
-        allServiceRecords: placeholderServiceRecords,
-        allVehicleExpenses: placeholderVehicleExpenses,
-      });
+        const totalRentalIncome = monthlyReportData.detailedReport.reduce((sum, r) => sum + r.rentalIncome, 0);
+        const totalMaintenanceCosts = monthlyReportData.detailedReport.reduce((sum, r) => sum + r.maintenanceCosts, 0);
+        const totalNetBalance = totalRentalIncome - totalMaintenanceCosts;
 
-      if (!result.success || !result.report) {
-        throw new Error(result.error || "La acción del servidor no pudo calcular el reporte.");
-      }
+        const reportForPreview: PublicOwnerReport = {
+            publicId: `local-preview-${Date.now()}`,
+            ownerName: ownerName,
+            generatedDate: new Date().toISOString(),
+            reportMonth: format(selectedDate, "MMMM 'de' yyyy", { locale: es }),
+            detailedReport: monthlyReportData.detailedReport,
+            totalRentalIncome,
+            totalMaintenanceCosts,
+            totalNetBalance,
+            workshopInfo,
+        };
+        
+        setReportToPreview(reportForPreview);
+        setIsReportPreviewOpen(true);
 
-      const finalReport = result.report;
-
-      // 2. Client writes to public and private DBs.
-      if (!db) {
-        throw new Error("Cliente de base de datos no está disponible. No se puede guardar.");
-      }
-      
-      // A. Write to public collection
-      const publicDocRef = doc(db, 'publicOwnerReports', finalReport.publicId);
-      await setDoc(publicDocRef, sanitizeObjectForFirestore(finalReport), { merge: true });
-
-      // B. Update local placeholder and persist to private collection
-      const reportIndex = placeholderPublicOwnerReports.findIndex(r => r.publicId === finalReport.publicId);
-      if (reportIndex > -1) {
-        placeholderPublicOwnerReports[reportIndex] = finalReport;
-      } else {
-        placeholderPublicOwnerReports.push(finalReport);
-      }
-      await persistToFirestore(['publicOwnerReports']);
-  
-      // 3. Update UI.
-      setReportToShare(finalReport);
-      setIsShareDialogOpen(true);
-      toast({ title: "Reporte Generado y Compartido", description: "El enlace público está listo." });
-  
     } catch (e) {
-       console.error("Error sharing report:", e);
-       toast({ title: "Error al Generar Reporte", description: `No se pudo generar el reporte. ${e instanceof Error ? e.message : ''}`, variant: "destructive" });
+       console.error("Error generating local report preview:", e);
+       toast({ title: "Error al Generar Reporte", description: `No se pudo generar la vista previa del reporte.`, variant: "destructive" });
     } finally {
-        setIsSharing(false);
+        setIsGenerating(false);
     }
   };
   
-  const handleCopyLink = () => {
-    if (!reportToShare?.publicId) return;
-    const reportUrl = `${window.location.origin}/r/${reportToShare.publicId}`;
-    navigator.clipboard.writeText(reportUrl);
-    toast({
-      title: "Enlace Copiado",
-      description: "El enlace público para el reporte ha sido copiado a tu portapapeles.",
-    });
+  const handleCopyAsImage = async () => {
+    if (!reportContentRef.current) return;
+    const html2canvas = (await import('html2canvas')).default;
+    try {
+        const canvas = await html2canvas(reportContentRef.current, { scale: 2 });
+        canvas.toBlob((blob) => {
+            if (blob) {
+                navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+                toast({ title: "Copiado", description: "La imagen del reporte ha sido copiada." });
+            }
+        });
+    } catch (e) {
+        console.error("Error copying image:", e);
+        toast({ title: "Error", description: "No se pudo copiar la imagen del reporte.", variant: "destructive" });
+    }
   };
 
   const handleDownloadPDF = async () => {
-    if (!reportContentRef.current || !reportToShare) return;
+    if (!reportContentRef.current || !reportToPreview) return;
     const html2pdf = (await import('html2pdf.js')).default;
     const element = reportContentRef.current;
-    const pdfFileName = `Reporte_Flotilla_${reportToShare.ownerName}_${reportToShare.reportMonth}.pdf`.replace(/ /g, '_');
+    const pdfFileName = `Reporte_Flotilla_${reportToPreview.ownerName}_${reportToPreview.reportMonth}.pdf`.replace(/ /g, '_');
     const opt = {
       margin: 10,
       filename: pdfFileName,
@@ -275,8 +258,8 @@ export default function OwnerIncomeDetailPage() {
             <Button variant="outline" onClick={() => router.back()}>
               <ArrowLeft className="mr-2 h-4 w-4" /> Volver
             </Button>
-            <Button onClick={handleShareReport} disabled={isSharing}>
-              {isSharing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Share2 className="mr-2 h-4 w-4" />}
+            <Button onClick={handleGenerateReport} disabled={isGenerating}>
+              {isGenerating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Share2 className="mr-2 h-4 w-4" />}
               Reporte Mensual
             </Button>
           </div>
@@ -361,16 +344,16 @@ export default function OwnerIncomeDetailPage() {
         </CardContent>
       </Card>
       
-      {isShareDialogOpen && reportToShare && (
+      {isReportPreviewOpen && reportToPreview && (
         <PrintTicketDialog
-          open={isShareDialogOpen}
-          onOpenChange={setIsShareDialogOpen}
+          open={isReportPreviewOpen}
+          onOpenChange={setIsReportPreviewOpen}
           title="Vista Previa de Reporte"
           dialogContentClassName="printable-quote-dialog max-w-4xl"
           footerActions={
             <div className="flex flex-col sm:flex-row gap-2">
-              <Button variant="outline" onClick={handleCopyLink}>
-                <Copy className="mr-2 h-4 w-4" /> Copiar Enlace
+              <Button variant="outline" onClick={handleCopyAsImage}>
+                <Copy className="mr-2 h-4 w-4" /> Copiar Imagen
               </Button>
               <Button onClick={handleDownloadPDF}>
                 <Download className="mr-2 h-4 w-4" /> Descargar PDF
@@ -378,7 +361,7 @@ export default function OwnerIncomeDetailPage() {
             </div>
           }
         >
-          <ReportContent report={reportToShare} ref={reportContentRef} />
+          <ReportContent report={reportToPreview} ref={reportContentRef} />
         </PrintTicketDialog>
       )}
     </>
