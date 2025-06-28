@@ -1,9 +1,11 @@
-
 'use server';
 
+import { db } from '@/lib/firebasePublic.js'; // Use PUBLIC client for public write
+import { doc, setDoc } from 'firebase/firestore'; 
 import type { PublicOwnerReport, VehicleMonthlyReport, WorkshopInfo, Vehicle, RentalPayment, ServiceRecord, VehicleExpense } from '@/types';
 import { format, parseISO, startOfMonth, endOfMonth, isWithinInterval, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { sanitizeObjectForFirestore } from '@/lib/placeholder-data';
 
 export interface ReportGenerationInput {
   ownerName: string;
@@ -15,14 +17,13 @@ export interface ReportGenerationInput {
   allVehicleExpenses: VehicleExpense[];
 }
 
-
-// This is now an async function that just performs calculations.
-export async function generateOwnerReportData(
+export async function generateAndSaveOwnerReport(
   input: ReportGenerationInput
 ): Promise<{ success: boolean; report?: PublicOwnerReport; error?: string; }> {
   try {
     const { ownerName, forDateISO, workshopInfo, allVehicles, allRentalPayments, allServiceRecords, allVehicleExpenses } = input;
     
+    // --- All calculations happen here on the server ---
     const reportDate = new Date();
     const reportForDate = parseISO(forDateISO);
     const reportMonth = format(reportForDate, "MMMM 'de' yyyy", { locale: es });
@@ -46,7 +47,7 @@ export async function generateOwnerReportData(
         return s.vehicleId === vehicle.id && isValid(sDate) && isWithinInterval(sDate, { start: monthStart, end: monthEnd });
       });
       const maintenanceCostsFromServices = vehicleServices.reduce((sum, s) => sum + s.totalCost, 0);
-
+      
       const vehicleExpensesInMonth = allVehicleExpenses.filter(e => {
         const eDate = parseISO(e.date);
         return e.vehicleId === vehicle.id && isValid(eDate) && isWithinInterval(eDate, { start: monthStart, end: monthEnd });
@@ -86,11 +87,19 @@ export async function generateOwnerReportData(
       workshopInfo,
     };
     
+    // --- The public write happens here on the server, using the public client ---
+    if (!db) {
+        throw new Error("Public Firebase DB client is not available.");
+    }
+    const publicDocRef = doc(db, 'publicOwnerReports', publicId);
+    await setDoc(publicDocRef, sanitizeObjectForFirestore(publicReportObject), { merge: true });
+
+    // --- Return the created report to the client ---
     return { success: true, report: publicReportObject };
 
   } catch (e) {
-    console.error("Error generating owner report data:", e);
-    const errorMessage = e instanceof Error ? e.message : 'No se pudo generar el reporte.';
+    console.error("Error in generateAndSaveOwnerReport server action:", e);
+    const errorMessage = e instanceof Error ? e.message : 'No se pudo generar y guardar el reporte público.';
     return { success: false, error: errorMessage };
   }
 }
