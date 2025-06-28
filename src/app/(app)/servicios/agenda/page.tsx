@@ -1,4 +1,3 @@
-
 "use client";
 
 import { PageHeader } from "@/components/page-header";
@@ -411,7 +410,7 @@ export default function AgendaServiciosPage() {
                     toast({ title: "Error de Copiado", description: "Tu navegador no pudo copiar la imagen. Intenta imprimir.", variant: "destructive" });
                 }
             } else {
-                 toast({ title: "Error de Conversión", description: "No se pudo convertir el ticket a imagen.", variant: "destructive" });
+                 toast({ title: "Error de Conversión", description: "No se pudo convertir a imagen.", variant: "destructive" });
             }
         }, 'image/png');
     } catch (e) {
@@ -519,7 +518,7 @@ export default function AgendaServiciosPage() {
                       <CardContent className="p-0">
                         <div className="flex flex-col md:flex-row text-sm">
                             <div className="p-4 flex flex-col justify-center items-center text-center w-full md:w-48 flex-shrink-0">
-                                <p className="text-2xl font-semibold text-foreground">{format(parseISO(service.serviceDate), "HH:mm 'hrs'", { locale: es })}</p>
+                                <p className="text-4xl font-semibold text-foreground">{format(parseISO(service.serviceDate), "HH:mm 'hrs'", { locale: es })}</p>
                                 <p className="text-xs text-muted-foreground mt-1">Folio: {service.id}</p>
                             </div>
                           
