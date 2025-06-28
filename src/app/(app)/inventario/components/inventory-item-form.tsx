@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect } from 'react';
@@ -20,6 +21,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { DollarSign } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { capitalizeWords } from '@/lib/utils';
 
 const inventoryItemFormSchema = z.object({
   name: z.string().min(3, "El nombre del producto debe tener al menos 3 caracteres."),
@@ -173,7 +175,7 @@ export function InventoryItemForm({ initialData, onSubmit, onClose, categories, 
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Nombre del Producto/Servicio</FormLabel>
-                    <FormControl><Input placeholder="Ej: Filtro de Aceite XYZ" {...field} /></FormControl>
+                    <FormControl><Input placeholder="Ej: Filtro de Aceite XYZ" {...field} onChange={(e) => field.onChange(capitalizeWords(e.target.value))} /></FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
