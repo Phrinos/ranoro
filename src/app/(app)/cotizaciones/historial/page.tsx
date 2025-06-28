@@ -90,9 +90,21 @@ export default function HistorialCotizacionesPage() {
     }
     return quote.description || 'Sin descripción';
   };
+  
+  const getStatusVariant = (status: ServiceRecord['status'] | 'Cotizacion'): "default" | "secondary" | "outline" | "destructive" | "success" | "lightRed" => {
+    switch (status) {
+      case "Completado": return "success";
+      case "Reparando": return "secondary";
+      case "Cancelado": return "destructive";
+      case "Agendado": return "lightRed";
+      case "Cotizacion": return "outline";
+      default: return "default";
+    }
+  };
+
 
   const filteredAndSortedQuotes = useMemo(() => {
-    let filtered = allQuotes.filter(q => !q.serviceId); // Filter to only show pure quotes
+    let filtered = [...allQuotes]; // Show all quotes, not just ones without a serviceId
 
     if (dateRange?.from) {
       filtered = filtered.filter(quote => {
@@ -130,8 +142,9 @@ export default function HistorialCotizacionesPage() {
   }, [allQuotes, searchTerm, dateRange, sortOption]);
 
   const summaryData = useMemo(() => {
-    const totalQuotesCount = filteredAndSortedQuotes.length;
-    const totalEstimatedValue = filteredAndSortedQuotes.reduce((sum, q) => sum + (q.estimatedTotalCost || 0), 0);
+    const activeQuotes = filteredAndSortedQuotes.filter(q => !q.serviceId);
+    const totalQuotesCount = activeQuotes.length;
+    const totalEstimatedValue = activeQuotes.reduce((sum, q) => sum + (q.estimatedTotalCost || 0), 0);
     
     return { totalQuotesCount, totalEstimatedValue };
   }, [filteredAndSortedQuotes]);
@@ -373,17 +386,17 @@ Quedamos a sus ordenes y a la espera de poder atender su vehiculo. Gracias por c
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold font-headline">{summaryData.totalQuotesCount}</div>
-            <p className="text-xs text-muted-foreground">En el rango de fechas seleccionado</p>
+            <p className="text-xs text-muted-foreground">Solo cotizaciones pendientes en el rango</p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Valor Estimado Total</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Valor Estimado (Activas)</CardTitle>
             <DollarSign className="h-5 w-5 text-purple-500" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold font-headline">${(summaryData.totalEstimatedValue || 0).toLocaleString('es-ES')}</div>
-            <p className="text-xs text-muted-foreground">De las cotizaciones filtradas</p>
+            <p className="text-xs text-muted-foreground">De las cotizaciones activas filtradas</p>
           </CardContent>
         </Card>
       </div>
@@ -474,6 +487,9 @@ Quedamos a sus ordenes y a la espera de poder atender su vehiculo. Gracias por c
           filteredAndSortedQuotes.map(quote => {
             const vehicle = vehicles.find(v => v.id === quote.vehicleId);
             const originalQuote = quote;
+            const service = quote.serviceId ? placeholderServiceRecords.find(s => s.id === quote.serviceId) : null;
+            const status = service ? service.status : 'Cotizacion';
+
 
             return (
               <Card key={quote.id} className="shadow-sm overflow-hidden">
@@ -506,8 +522,8 @@ Quedamos a sus ordenes y a la espera de poder atender su vehiculo. Gracias por c
                     <Separator orientation="vertical" className="hidden md:block h-auto"/>
 
                     <div className="p-4 flex flex-col justify-center items-center text-center border-b md:border-b-0 md:border-l w-full md:w-56 flex-shrink-0 space-y-2">
-                        <Badge variant={quote.serviceId ? "lightRed" : "outline"} className="w-full justify-center text-center text-sm">
-                            {quote.serviceId ? "Agendado" : "Cotizacion"}
+                        <Badge variant={getStatusVariant(status)} className="w-full justify-center text-center text-sm">
+                           {status}
                         </Badge>
                          <p className="text-xs text-muted-foreground mt-4">Asesor: {quote.preparedByTechnicianName || 'N/A'}</p>
                         <div className="flex justify-center items-center gap-1">
