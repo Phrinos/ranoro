@@ -253,12 +253,8 @@ export default function LandingPage() {
       <footer className="border-t bg-background">
         <div className="container mx-auto flex flex-col items-center justify-between gap-4 px-4 py-8 md:flex-row md:px-6">
           <div className="text-center md:text-left">
-            <p className="text-sm text-muted-foreground">
-                &copy; {new Date().getFullYear()} Ranoro Taller Automotriz. Todos los derechos reservados.
-            </p>
-            <p className="text-sm text-muted-foreground">
-                Desarrollado por Arturo Valdelamar
-            </p>
+            <p className="text-sm font-semibold">Sistema de Administración de Talleres Ranoro®</p>
+            <p className="text-sm text-muted-foreground">Diseñado y Desarrollado por Arturo Valdelamar 4493930914</p>
           </div>
         </div>
       </footer>
