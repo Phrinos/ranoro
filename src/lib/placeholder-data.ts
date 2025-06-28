@@ -386,6 +386,9 @@ export async function persistToFirestore(keysToUpdate?: DataKey[]) {
     // Use setDoc with merge:true to only update the specified fields in the document
     await setDoc(doc(db, DB_PATH), sanitizedData, { merge: true });
     console.log('Data successfully persisted to Firestore.');
+    if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('databaseUpdated'));
+    }
   } catch (e) {
     console.error('Error persisting data to Firestore:', e);
   }

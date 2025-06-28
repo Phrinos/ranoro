@@ -27,7 +27,8 @@ type InventorySortOption =
   | "type_asc"; // New: Products first, then Services, then by name
 
 export default function InventarioPage() {
-  const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>(placeholderInventory);
+  const [version, setVersion] = useState(0);
+  const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
   const { toast } = useToast();
   const [isNewItemDialogOpen, setIsNewItemDialogOpen] = useState(false);
   
@@ -43,6 +44,19 @@ export default function InventarioPage() {
   const [selectedCategoryFilter, setSelectedCategoryFilter] = useState("all");
   const [sortOption, setSortOption] = useState<InventorySortOption>("stock_status_name_asc");
 
+  useEffect(() => {
+    const handleDatabaseUpdate = () => setVersion(v => v + 1);
+    
+    // Initial load and sync
+    setInventoryItems([...placeholderInventory]);
+
+    window.addEventListener('databaseUpdated', handleDatabaseUpdate);
+    return () => {
+      window.removeEventListener('databaseUpdated', handleDatabaseUpdate);
+    };
+  }, [version]);
+
+
   const handleSaveNewItem = async (data: InventoryItemFormValues) => {
     const newItem: InventoryItem = {
       id: `PROD_${Date.now().toString(36)}`, 
@@ -55,9 +69,8 @@ export default function InventarioPage() {
     };
     
     placeholderInventory.push(newItem); 
-    setInventoryItems([...placeholderInventory]);
     
-    persistToFirestore(['inventory']);
+    await persistToFirestore(['inventory']);
     
     toast({
       title: "Producto/Servicio Creado",
@@ -107,7 +120,7 @@ export default function InventarioPage() {
     setIsNewItemDialogOpen(true); 
   };
 
-  const handleSavePurchaseDetails = (details: PurchaseDetailsFormValues) => {
+  const handleSavePurchaseDetails = async (details: PurchaseDetailsFormValues) => {
     if (!selectedItemForPurchase || selectedItemForPurchase.isService) {
       toast({ title: "Error", description: "No hay un artículo de stock seleccionado para la compra o es un servicio.", variant: "destructive" });
       return;
@@ -126,9 +139,8 @@ export default function InventarioPage() {
       sellingPrice: details.newSellingPrice,
     };
     placeholderInventory[itemIndex] = updatedItem;
-    setInventoryItems([...placeholderInventory]); 
     
-    persistToFirestore(['inventory']);
+    await persistToFirestore(['inventory']);
 
     toast({
       title: "Compra Registrada",

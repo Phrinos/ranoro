@@ -48,10 +48,12 @@ export default function AgendaServiciosPage() {
   const { toast } = useToast();
   const router = useRouter();
   const ticketContentRef = useRef<HTMLDivElement>(null);
-  const [allServices, setAllServices] = useState<ServiceRecord[]>(placeholderServiceRecords);
-  const [vehicles, setVehicles] = useState<Vehicle[]>(placeholderVehicles);
-  const [techniciansState, setTechniciansState] = useState<Technician[]>(placeholderTechnicians);
-  const [inventoryItemsState, setInventoryItemsState] = useState<InventoryItem[]>(placeholderInventory);
+  const [version, setVersion] = useState(0);
+
+  const [allServices, setAllServices] = useState<ServiceRecord[]>([]);
+  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
+  const [techniciansState, setTechniciansState] = useState<Technician[]>([]);
+  const [inventoryItemsState, setInventoryItemsState] = useState<InventoryItem[]>([]);
 
   const [editingService, setEditingService] = useState<ServiceRecord | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -102,15 +104,26 @@ export default function AgendaServiciosPage() {
   }, [techniciansState, vehicles, toast]);
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
-        const stored = localStorage.getItem('workshopTicketInfo');
-        if (stored) setWorkshopInfo(JSON.parse(stored));
-    }
-    setAllServices(placeholderServiceRecords);
-    setVehicles(placeholderVehicles);
-    setTechniciansState(placeholderTechnicians);
-    setInventoryItemsState(placeholderInventory);
-  }, []);
+    const handleDatabaseUpdate = () => setVersion(v => v + 1);
+
+    const loadData = () => {
+      if (typeof window !== "undefined") {
+          const stored = localStorage.getItem('workshopTicketInfo');
+          if (stored) setWorkshopInfo(JSON.parse(stored));
+      }
+      setAllServices([...placeholderServiceRecords]);
+      setVehicles([...placeholderVehicles]);
+      setTechniciansState([...placeholderTechnicians]);
+      setInventoryItemsState([...placeholderInventory]);
+    };
+    
+    loadData(); // Initial load
+    window.addEventListener('databaseUpdated', handleDatabaseUpdate);
+
+    return () => {
+      window.removeEventListener('databaseUpdated', handleDatabaseUpdate);
+    };
+  }, [version]);
   
   const filteredServices = useMemo(() => {
     let servicesToList = allServices.filter(s => s.status === 'Agendado'); // Only show 'Agendado'
