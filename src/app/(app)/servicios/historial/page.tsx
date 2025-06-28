@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { PageHeader } from "@/components/page-header";
@@ -182,26 +183,31 @@ export default function HistorialServiciosPage() {
     return { totalServices, totalRevenue, totalProfit, mostCommonVehicle };
   }, [filteredAndSortedServices, vehicles]);
 
-  const handleUpdateService = useCallback(async (data: ServiceRecord) => {
-    // The form now handles public doc saving. We just update local state.
+  const handleUpdateService = useCallback(async (data: ServiceRecord | QuoteRecord) => {
+    if (!('status' in data)) {
+        toast({ title: "Error de tipo", description: "Se esperaba un registro de servicio para actualizar.", variant: "destructive" });
+        return;
+    }
+    const updatedService = data as ServiceRecord;
+
     setAllServices(prevServices => 
-        prevServices.map(s => s.id === data.id ? data : s)
+        prevServices.map(s => s.id === updatedService.id ? updatedService : s)
     );
-    const pIndex = placeholderServiceRecords.findIndex(s => s.id === data.id);
+    const pIndex = placeholderServiceRecords.findIndex(s => s.id === updatedService.id);
     if (pIndex !== -1) {
-        placeholderServiceRecords[pIndex] = data;
+        placeholderServiceRecords[pIndex] = updatedService;
     }
     await persistToFirestore(['serviceRecords']);
     
     toast({
       title: "Servicio Actualizado",
-      description: `El servicio ${data.id} ha sido actualizado.`,
+      description: `El servicio ${updatedService.id} ha sido actualizado.`,
     });
 
-    if (data.status === 'Completado') {
-      setCurrentServiceForTicket(data);
-      setCurrentVehicleForTicket(vehicles.find(v => v.id === data.vehicleId) || null);
-      setCurrentTechnicianForTicket(technicians.find(t => t.id === data.technicianId) || null);
+    if (updatedService.status === 'Completado') {
+      setCurrentServiceForTicket(updatedService);
+      setCurrentVehicleForTicket(vehicles.find(v => v.id === updatedService.vehicleId) || null);
+      setCurrentTechnicianForTicket(technicians.find(t => t.id === updatedService.technicianId) || null);
       setShowPrintTicketDialog(true);
     }
   }, [inventoryItems, technicians, vehicles, toast]);
@@ -628,6 +634,7 @@ ${shareUrl}
           onVehicleCreated={handleVehicleCreated}
           onCancelService={handleCancelService}
           mode="service"
+          onViewQuoteRequest={handleShowQuote}
         />
       )}
       

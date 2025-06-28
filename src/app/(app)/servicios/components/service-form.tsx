@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -217,6 +218,7 @@ interface ServiceFormProps {
   onInventoryItemCreatedFromService?: (newItem: InventoryItem) => void; // Optional: To notify parent of new items
   onDelete?: (id: string) => void;
   onCancelService?: (serviceId: string, reason: string) => void;
+  onViewQuoteRequest?: (serviceId: string) => void;
 }
 
 const IVA_RATE = 0.16;
@@ -244,6 +246,7 @@ export function ServiceForm({
   onInventoryItemCreatedFromService,
   onDelete,
   onCancelService,
+  onViewQuoteRequest,
 }: ServiceFormProps) {
   const { toast } = useToast();
   
@@ -647,16 +650,6 @@ export function ServiceForm({
       });
     }
   };
-
-  const handleViewQuote = useCallback((quoteToView: QuoteRecord | null) => {
-    if (quoteToView) {
-        setQuoteForView(quoteToView);
-        setIsQuoteViewOpen(true);
-    } else {
-        toast({ title: "No encontrada", description: "No se encontró la cotización para mostrar.", variant: "default" });
-    }
-  }, [toast]);
-
 
   const handleFormSubmit = async (values: ServiceFormValues) => {
     if (isReadOnly) {
@@ -1180,8 +1173,8 @@ export function ServiceForm({
                 </TabsList>
               </div>
               <div className="flex gap-2 self-end sm:self-center">
-                  {quoteForViewing && (
-                      <Button type="button" onClick={() => handleViewQuote(quoteForViewing)} variant="ghost" size="icon" className="bg-card" title="Ver Cotización Original">
+                  {quoteForViewing && onViewQuoteRequest && initialData?.id && (
+                      <Button type="button" onClick={() => onViewQuoteRequest(initialData.id)} variant="ghost" size="icon" className="bg-card" title="Ver Cotización Original">
                           <FileText className="h-5 w-5 text-purple-600" />
                       </Button>
                   )}
@@ -1632,7 +1625,7 @@ export function ServiceForm({
                             <div className="grid grid-cols-3 gap-2 mt-2">
                                 {field.photos.map((photoUrl, photoIndex) => (
                                     <div key={photoIndex} className="relative aspect-video w-full bg-muted rounded-md">
-                                        <Image src={photoUrl} layout="fill" objectFit="cover" alt={`Foto ${photoIndex + 1} del reporte ${index + 1}`} data-ai-hint="car damage photo"/>
+                                        <Image src={photoUrl} fill style={{objectFit:"cover"}} alt={`Foto ${photoIndex + 1} del reporte ${index + 1}`} />
                                     </div>
                                 ))}
                             </div>
@@ -1740,7 +1733,7 @@ export function ServiceForm({
             onOpenChange={setIsQuoteViewOpen}
             title={`Cotización: ${quoteForViewing.id}`}
             dialogContentClassName="printable-quote-dialog"
-            onDialogClose={() => setQuoteForView(null)}
+            onDialogClose={() => {}} // Remove setQuoteForView
             footerActions={
             <Button onClick={() => window.print()}>
                 <Printer className="mr-2 h-4 w-4" /> Imprimir Cotización
