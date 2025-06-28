@@ -66,7 +66,7 @@ export function DriverForm({ initialData, onSubmit, onClose }: DriverFormProps) 
           render={({ field }) => (
             <FormItem>
               <FormLabel>Dirección</FormLabel>
-              <FormControl><Textarea placeholder="Calle, número, colonia, ciudad..." {...field} onChange={(e) => field.onChange(capitalizeWords(e.target.value))}/></FormControl>
+              <FormControl><Textarea placeholder="Calle, número, colonia, ciudad..." {...field} /></FormControl>
               <FormMessage />
             </FormItem>
           )}

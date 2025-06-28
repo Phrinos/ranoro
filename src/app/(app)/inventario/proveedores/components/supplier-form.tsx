@@ -152,7 +152,7 @@ export function SupplierForm({ initialData, onSubmit, onClose }: SupplierFormPro
             <FormItem>
               <FormLabel>Dirección (Opcional)</FormLabel>
               <FormControl>
-                <Textarea placeholder="Ej: Calle Falsa 123, Ciudad, Provincia" {...field} onChange={(e) => field.onChange(capitalizeWords(e.target.value))}/>
+                <Textarea placeholder="Ej: Calle Falsa 123, Ciudad, Provincia" {...field}/>
               </FormControl>
               <FormMessage />
             </FormItem>

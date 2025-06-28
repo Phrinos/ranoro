@@ -211,7 +211,7 @@ export function VehicleForm({ initialData, onSubmit, onClose }: VehicleFormProps
               <FormItem>
                 <FormLabel>Notas (Opcional)</FormLabel>
                 <FormControl>
-                  <Textarea placeholder="Notas adicionales sobre el vehículo..." {...field} onChange={(e) => field.onChange(capitalizeSentences(e.target.value))} />
+                  <Textarea placeholder="Notas adicionales sobre el vehículo..." {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
