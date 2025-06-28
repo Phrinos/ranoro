@@ -9,15 +9,15 @@ import {
   placeholderTechnicians, 
   persistToFirestore 
 } from '@/lib/placeholder-data';
-import type { Vehicle, ServiceRecord, QuoteRecord } from '@/types';
+import type { Vehicle, ServiceRecord, QuoteRecord, VehiclePaperwork } from '@/types';
 import { PageHeader } from '@/components/page-header';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { ShieldAlert, Edit, Car, DollarSign, ShieldCheck, ArrowLeft, Trash2 } from 'lucide-react';
+import { ShieldAlert, Edit, Car, DollarSign, ShieldCheck, ArrowLeft, Trash2, PlusCircle, CheckCircle, Circle } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { format, parseISO, compareAsc, isValid } from 'date-fns';
+import { format, parseISO, compareAsc, isValid, isPast } from 'date-fns';
 import { es } from 'date-fns/locale';
 import Link from 'next/link';
 import { useEffect, useState, useMemo, useCallback } from 'react';
@@ -34,6 +34,9 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { PaperworkDialog } from '../components/paperwork-dialog';
+import type { PaperworkFormValues } from '../components/paperwork-form';
+import { cn } from '@/lib/utils';
 
 interface GroupedServices {
   [monthYearKey: string]: { // key is "YYYY-MM"
@@ -54,6 +57,9 @@ export default function FleetVehicleDetailPage() {
   const [services, setServices] = useState<ServiceRecord[]>([]);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editingService, setEditingService] = useState<ServiceRecord | null>(null);
+  
+  const [isPaperworkDialogOpen, setIsPaperworkDialogOpen] = useState(false);
+  const [editingPaperwork, setEditingPaperwork] = useState<VehiclePaperwork | null>(null);
 
   useEffect(() => {
     const foundVehicle = placeholderVehicles.find(v => v.id === vehicleId && v.isFleetVehicle);
@@ -130,6 +136,65 @@ export default function FleetVehicleDetailPage() {
     router.push('/flotilla');
   };
 
+  const handleOpenPaperworkDialog = (paperwork?: VehiclePaperwork) => {
+    setEditingPaperwork(paperwork || null);
+    setIsPaperworkDialogOpen(true);
+  };
+
+  const handleSavePaperwork = useCallback(async (values: PaperworkFormValues) => {
+    if (!vehicle) return;
+    const vehicleIndex = placeholderVehicles.findIndex(v => v.id === vehicleId);
+    if (vehicleIndex === -1) return;
+
+    const currentVehicle = placeholderVehicles[vehicleIndex];
+    if (!currentVehicle.paperwork) {
+      currentVehicle.paperwork = [];
+    }
+
+    if (editingPaperwork) {
+      const pIndex = currentVehicle.paperwork.findIndex(p => p.id === editingPaperwork.id);
+      if (pIndex !== -1) {
+        currentVehicle.paperwork[pIndex] = { ...currentVehicle.paperwork[pIndex], name: values.name, dueDate: values.dueDate.toISOString(), notes: values.notes };
+      }
+    } else {
+      currentVehicle.paperwork.push({ id: `doc_${Date.now()}`, name: values.name, dueDate: values.dueDate.toISOString(), status: 'Pendiente', notes: values.notes });
+    }
+    
+    await persistToFirestore(['vehicles']);
+    setVehicle({ ...currentVehicle });
+    setIsPaperworkDialogOpen(false);
+    toast({ title: "Trámite Guardado", description: "La lista de trámites ha sido actualizada." });
+  }, [vehicle, vehicleId, editingPaperwork, toast]);
+
+  const handleTogglePaperworkStatus = useCallback(async (paperworkId: string) => {
+    if (!vehicle) return;
+    const vehicleIndex = placeholderVehicles.findIndex(v => v.id === vehicleId);
+    if (vehicleIndex === -1) return;
+
+    const currentVehicle = placeholderVehicles[vehicleIndex];
+    const pIndex = currentVehicle.paperwork?.findIndex(p => p.id === paperworkId);
+
+    if (pIndex !== undefined && pIndex > -1) {
+        currentVehicle.paperwork![pIndex].status = currentVehicle.paperwork![pIndex].status === 'Pendiente' ? 'Completado' : 'Pendiente';
+        await persistToFirestore(['vehicles']);
+        setVehicle({ ...currentVehicle });
+    }
+  }, [vehicle, vehicleId]);
+  
+  const handleDeletePaperwork = useCallback(async (paperworkId: string) => {
+    if (!vehicle) return;
+    const vehicleIndex = placeholderVehicles.findIndex(v => v.id === vehicleId);
+    if (vehicleIndex === -1) return;
+    
+    const currentVehicle = placeholderVehicles[vehicleIndex];
+    if (currentVehicle.paperwork) {
+        currentVehicle.paperwork = currentVehicle.paperwork.filter(p => p.id !== paperworkId);
+        await persistToFirestore(['vehicles']);
+        setVehicle({ ...currentVehicle });
+        toast({ title: "Trámite Eliminado" });
+    }
+  }, [vehicle, vehicleId, toast]);
+
 
   if (vehicle === undefined) {
     return <div className="container mx-auto py-8 text-center">Cargando datos del vehículo...</div>;
@@ -182,11 +247,13 @@ export default function FleetVehicleDetailPage() {
       />
 
       <Tabs defaultValue="details" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="details">Detalles</TabsTrigger>
           <TabsTrigger value="maintenances">Mantenimientos</TabsTrigger>
           <TabsTrigger value="fines">Multas</TabsTrigger>
+          <TabsTrigger value="paperwork">Trámites</TabsTrigger>
         </TabsList>
+
         <TabsContent value="details">
           <Card>
             <CardHeader>
@@ -278,6 +345,63 @@ export default function FleetVehicleDetailPage() {
             </Card>
         </TabsContent>
 
+        <TabsContent value="paperwork">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle>Trámites y Vencimientos</CardTitle>
+                <CardDescription>Gestiona los documentos y pagos pendientes del vehículo.</CardDescription>
+              </div>
+              <Button onClick={() => handleOpenPaperworkDialog()}>
+                <PlusCircle className="mr-2 h-4 w-4"/> Añadir Trámite
+              </Button>
+            </CardHeader>
+            <CardContent>
+              {vehicle.paperwork && vehicle.paperwork.length > 0 ? (
+                <div className="rounded-md border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Estado</TableHead>
+                        <TableHead>Trámite</TableHead>
+                        <TableHead>Fecha de Vencimiento</TableHead>
+                        <TableHead className="text-right">Acciones</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {vehicle.paperwork.sort((a,b) => compareAsc(parseISO(a.dueDate), parseISO(b.dueDate))).map(p => {
+                        const isOverdue = p.status === 'Pendiente' && isPast(parseISO(p.dueDate));
+                        return (
+                          <TableRow key={p.id} className={cn(isOverdue && "bg-destructive/10")}>
+                            <TableCell>
+                              <Button variant="ghost" size="icon" onClick={() => handleTogglePaperworkStatus(p.id)}>
+                                {p.status === 'Completado' ? <CheckCircle className="h-5 w-5 text-green-500"/> : <Circle className="h-5 w-5 text-muted-foreground" />}
+                              </Button>
+                            </TableCell>
+                            <TableCell>
+                              <p className="font-semibold">{p.name}</p>
+                              {p.notes && <p className="text-xs text-muted-foreground">{p.notes}</p>}
+                            </TableCell>
+                            <TableCell className={cn(isOverdue && "font-bold text-destructive")}>
+                              {format(parseISO(p.dueDate), "dd MMM, yyyy", { locale: es })}
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <Button variant="ghost" size="icon" onClick={() => handleOpenPaperworkDialog(p)}><Edit className="h-4 w-4"/></Button>
+                              <Button variant="ghost" size="icon" onClick={() => handleDeletePaperwork(p.id)}><Trash2 className="h-4 w-4 text-destructive"/></Button>
+                            </TableCell>
+                          </TableRow>
+                        )
+                      })}
+                    </TableBody>
+                  </Table>
+                </div>
+              ) : (
+                <p className="text-muted-foreground text-center py-8">No hay trámites registrados para este vehículo.</p>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
       </Tabs>
       
       {editingService && (
@@ -292,6 +416,13 @@ export default function FleetVehicleDetailPage() {
           mode="service"
         />
       )}
+      
+      <PaperworkDialog
+        open={isPaperworkDialogOpen}
+        onOpenChange={setIsPaperworkDialogOpen}
+        paperwork={editingPaperwork}
+        onSave={handleSavePaperwork}
+      />
     </div>
   );
 }
