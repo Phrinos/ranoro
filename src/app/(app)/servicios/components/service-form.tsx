@@ -1,5 +1,3 @@
-
-
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -977,6 +975,39 @@ export function ServiceForm({
     window.print();
   }, []);
   
+  const handleCopyAsImage = async () => {
+    if (!ticketContentRef.current) {
+        toast({ title: "Error", description: "No se encontró el contenido del ticket.", variant: "destructive" });
+        return;
+    }
+    try {
+        const html2canvas = (await import('html2canvas')).default;
+        const canvas = await html2canvas(ticketContentRef.current, {
+            useCORS: true,
+            backgroundColor: '#ffffff',
+            scale: 2.5,
+        });
+        canvas.toBlob(async (blob) => {
+            if (blob) {
+                try {
+                    await navigator.clipboard.write([
+                        new ClipboardItem({ 'image/png': blob })
+                    ]);
+                    toast({ title: "Copiado", description: "La imagen del comprobante ha sido copiada." });
+                } catch (clipboardErr) {
+                    console.error('Clipboard API error:', clipboardErr);
+                    toast({ title: "Error de Copiado", description: "Tu navegador no pudo copiar la imagen. Intenta imprimir.", variant: "destructive" });
+                }
+            } else {
+                 toast({ title: "Error de Conversión", description: "No se pudo convertir a imagen.", variant: "destructive" });
+            }
+        }, 'image/png');
+    } catch (e) {
+        console.error("html2canvas error:", e);
+        toast({ title: "Error de Captura", description: "No se pudo generar la imagen.", variant: "destructive" });
+    }
+  };
+
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
     if (!files || activeReportIndex === null) return;
