@@ -191,6 +191,7 @@ const serviceFormSchemaBase = z.object({
   }
   return true;
 }, {
+  message: "El folio de la tarjeta es obligatorio para este método de pago.",
   path: ["cardFolio"],
 }).refine(data => {
   if (data.status === 'Completado' && (data.paymentMethod === "Transferencia" || data.paymentMethod === "Efectivo+Transferencia" || data.paymentMethod === "Tarjeta+Transferencia") && !data.transferFolio) {
@@ -198,6 +199,7 @@ const serviceFormSchemaBase = z.object({
   }
   return true;
 }, {
+  message: "El folio de la transferencia es obligatorio para este método de pago.",
   path: ["transferFolio"],
 }).refine(data => {
     if (data.status === 'Reparando' && !data.technicianId) {
@@ -1212,7 +1214,7 @@ export function ServiceForm({
                             render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>Estado</FormLabel>
-                                    <Select onValueChange={field.onChange} value={field.value} disabled={isReadOnly}>
+                                    <Select onValueChange={field.onChange} value={field.value} disabled={isReadOnly || watchedStatus === 'Completado'}>
                                         <FormControl>
                                             <SelectTrigger className="font-bold">
                                                 <SelectValue placeholder="Seleccione un estado" />
@@ -1418,10 +1420,10 @@ export function ServiceForm({
                                     </FormItem>
                                 )}/>
                                 {(selectedPaymentMethod === "Tarjeta" || selectedPaymentMethod === "Tarjeta+Transferencia") && (
-                                    <FormField control={form.control} name="cardFolio" render={({ field }) => (<FormItem><FormLabel>Folio Tarjeta</FormLabel><FormControl><Input placeholder="Folio de la transacción" {...field} disabled={isReadOnly}/></FormControl></FormItem>)}/>
+                                    <FormField control={form.control} name="cardFolio" render={({ field }) => (<FormItem><FormLabel>Folio Tarjeta</FormLabel><FormControl><Input placeholder="Folio de la transacción" {...field} disabled={isReadOnly}/></FormControl><FormMessage /></FormItem>)}/>
                                 )}
                                 {(selectedPaymentMethod === "Transferencia" || selectedPaymentMethod === "Efectivo+Transferencia" || selectedPaymentMethod === "Tarjeta+Transferencia") && (
-                                    <FormField control={form.control} name="transferFolio" render={({ field }) => (<FormItem><FormLabel>Folio Transferencia</FormLabel><FormControl><Input placeholder="Referencia de la transferencia" {...field} disabled={isReadOnly}/></FormControl></FormItem>)}/>
+                                    <FormField control={form.control} name="transferFolio" render={({ field }) => (<FormItem><FormLabel>Folio Transferencia</FormLabel><FormControl><Input placeholder="Referencia de la transferencia" {...field} disabled={isReadOnly}/></FormControl><FormMessage /></FormItem>)}/>
                                 )}
                             </CardContent>
                           </Card>
@@ -2142,3 +2144,4 @@ const SafetyCheckRow = ({ name, label, control, isReadOnly }: { name: string; la
     </div>
   );
 };
+
