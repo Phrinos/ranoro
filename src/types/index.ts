@@ -127,11 +127,13 @@ export interface SafetyInspection {
   technicianSignature?: string; 
 }
 
-export interface PhotoReportItem {
+export interface PhotoReportGroup {
   id: string;
-  photoDataUrl: string;
+  date: string; // ISO string
   description: string;
+  photos: string[]; // Array of data URLs or storage URLs
 }
+
 
 export interface ServiceRecord {
   id: string;
@@ -175,7 +177,7 @@ export interface ServiceRecord {
     date: string; // ISO String
     mileage?: number;
   };
-  photoReports?: PhotoReportItem[];
+  photoReports?: PhotoReportGroup[];
 }
 
 export interface Technician {
@@ -299,7 +301,7 @@ export interface QuoteRecord {
   estimatedProfit?: number; // Profit: estimatedTotalCost - estimatedTotalSuppliesCost
   notes?: string; // For validity, terms, etc.
   mileage?: number; // Current mileage at time of quote
-  serviceType?: 'Servicio General' | 'Cambio de Aceite' | 'Pintura';
+  serviceType?: 'Servicio General' | 'Pintura';
   serviceId?: string; // ID of the service record if this quote was converted
   workshopInfo?: WorkshopInfo;
 }

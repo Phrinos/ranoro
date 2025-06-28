@@ -2,7 +2,7 @@
 
 "use client";
 
-import type { ServiceRecord, Vehicle, User, WorkshopInfo, SafetyInspection, SafetyCheckStatus, PhotoReportItem } from '@/types';
+import type { ServiceRecord, Vehicle, User, WorkshopInfo, SafetyInspection, SafetyCheckStatus, PhotoReportGroup } from '@/types';
 import { format, parseISO, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
 import React, { useEffect, useState } from 'react';
@@ -361,7 +361,7 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
            <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 text-center mb-4">
                <div className="pt-2 min-h-[80px] flex flex-col justify-between">
                     <div className="h-14 flex-grow flex items-center justify-center">
-                        {service.serviceAdvisorSignatureDataUrl && service.serviceAdvisorSignatureDataUrl.startsWith('data:image') && (
+                        {service.serviceAdvisorSignatureDataUrl && (
                             <div className="relative w-full h-full max-w-[200px]">
                                 <Image src={service.serviceAdvisorSignatureDataUrl} alt="Firma del asesor" layout="fill" objectFit="contain" />
                             </div>
@@ -412,11 +412,19 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
              </header>
              <div className="space-y-4">
                  {service.photoReports!.map(reportItem => (
-                    <div key={reportItem.id} className="break-inside-avoid border-b pb-4 last:border-none">
-                        <div className="border-2 border-black p-1 inline-block">
-                           <Image src={reportItem.photoDataUrl} alt={reportItem.description} width={700} height={525} objectFit="contain" />
+                    <div key={reportItem.id} className="break-inside-avoid border-t pt-4 first:border-t-0">
+                        <p className="mb-2 text-sm">
+                            <span className="font-bold">Fecha:</span> {format(parseISO(reportItem.date), "dd/MM/yyyy HH:mm", { locale: es })}
+                            <br/>
+                            <span className="font-bold">Descripción:</span> {reportItem.description}
+                        </p>
+                        <div className="grid grid-cols-2 gap-2">
+                           {reportItem.photos.map((photoUrl, photoIndex) => (
+                             <div key={photoIndex} className="border-2 border-black p-1 inline-block">
+                                <Image src={photoUrl} alt={`Foto ${photoIndex + 1}`} width={400} height={300} objectFit="contain" data-ai-hint="car damage photo"/>
+                             </div>
+                           ))}
                         </div>
-                        <p className="mt-2 text-sm font-semibold text-center">{reportItem.description}</p>
                     </div>
                  ))}
              </div>
