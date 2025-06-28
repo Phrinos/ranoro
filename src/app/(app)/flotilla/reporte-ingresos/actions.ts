@@ -3,11 +3,15 @@
 
 import {
   placeholderPublicOwnerReports,
-  persistToFirestore
+  persistToFirestore,
+  sanitizeObjectForFirestore,
 } from '@/lib/placeholder-data';
 import type { PublicOwnerReport, VehicleMonthlyReport, WorkshopInfo, Vehicle, RentalPayment, ServiceRecord } from '@/types';
 import { format, parseISO, startOfMonth, endOfMonth, isWithinInterval, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { db } from '@root/lib/firebaseClient.js';
+import { doc, setDoc } from 'firebase/firestore';
+
 
 export interface ReportGenerationInput {
   ownerName: string;
@@ -22,6 +26,10 @@ export interface ReportGenerationInput {
 export async function generateAndShareOwnerReport(
   input: ReportGenerationInput
 ): Promise<{ success: boolean; report?: PublicOwnerReport; error?: string; }> {
+  if (!db) {
+    return { success: false, error: 'La base de datos no está configurada.' };
+  }
+  
   try {
     const { ownerName, forDateISO, workshopInfo, allVehicles, allRentalPayments, allServiceRecords } = input;
     
@@ -66,33 +74,32 @@ export async function generateAndShareOwnerReport(
     // The logic is to have one single public document per owner that gets updated.
     let existingReport = placeholderPublicOwnerReports.find(r => r.ownerName === ownerName);
     
-    const reportData = {
-        ownerName,
-        generatedDate: reportDate.toISOString(),
-        reportMonth: format(reportForDate, "MMMM 'de' yyyy", { locale: es }),
-        detailedReport,
-        totalRentalIncome,
-        totalMaintenanceCosts,
-        totalNetBalance,
-        workshopInfo,
+    const publicId = existingReport?.publicId || `rep_${Date.now().toString(36)}`;
+    
+    const newPublicReport: PublicOwnerReport = {
+      publicId,
+      ownerName,
+      generatedDate: new Date().toISOString(),
+      reportMonth: format(reportForDate, "MMMM 'de' yyyy", { locale: es }),
+      detailedReport,
+      totalRentalIncome,
+      totalMaintenanceCosts,
+      totalNetBalance,
+      workshopInfo,
     };
+    
+    const publicDocRef = doc(db, 'publicOwnerReports', publicId);
+    await setDoc(publicDocRef, sanitizeObjectForFirestore(newPublicReport), { merge: true });
 
+    // Update the local placeholder cache as well
     if (existingReport) {
-      // Update existing report
-      Object.assign(existingReport, reportData);
-      await persistToFirestore(['publicOwnerReports']);
-      return { success: true, report: existingReport };
+      Object.assign(existingReport, newPublicReport);
     } else {
-      // Create new report
-      const publicId = `rep_${Date.now().toString(36)}`;
-      const newPublicReport: PublicOwnerReport = {
-        ...reportData,
-        publicId,
-      };
       placeholderPublicOwnerReports.push(newPublicReport);
-      await persistToFirestore(['publicOwnerReports']);
-      return { success: true, report: newPublicReport };
     }
+    await persistToFirestore(['publicOwnerReports']); // This keeps the private master doc in sync
+
+    return { success: true, report: newPublicReport };
 
   } catch (e) {
     console.error("Error generating public owner report:", e);
