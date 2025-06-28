@@ -1,12 +1,8 @@
 
 'use server';
 
-import {
-  placeholderPublicOwnerReports,
-  persistToFirestore,
-  sanitizeObjectForFirestore,
-} from '@/lib/placeholder-data';
 import type { PublicOwnerReport, VehicleMonthlyReport, WorkshopInfo, Vehicle, RentalPayment, ServiceRecord, VehicleExpense } from '@/types';
+import { sanitizeObjectForFirestore } from '@/lib/placeholder-data';
 import { format, parseISO, startOfMonth, endOfMonth, isWithinInterval, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { db } from '@root/lib/firebaseClient.js';
@@ -21,6 +17,7 @@ export interface ReportGenerationInput {
   allRentalPayments: RentalPayment[];
   allServiceRecords: ServiceRecord[];
   allVehicleExpenses: VehicleExpense[];
+  allPublicOwnerReports: PublicOwnerReport[]; // Receive current state from client
 }
 
 
@@ -32,15 +29,14 @@ export async function generateAndShareOwnerReport(
   }
   
   try {
-    const { ownerName, forDateISO, workshopInfo, allVehicles, allRentalPayments, allServiceRecords, allVehicleExpenses } = input;
+    const { ownerName, forDateISO, workshopInfo, allVehicles, allRentalPayments, allServiceRecords, allVehicleExpenses, allPublicOwnerReports } = input;
     
-    const reportDate = new Date(); // Generation date
-    const reportForDate = parseISO(forDateISO); // Date the report is about
+    const reportDate = new Date();
+    const reportForDate = parseISO(forDateISO);
     
     const monthStart = startOfMonth(reportForDate);
     const monthEnd = endOfMonth(reportForDate);
     
-    // --- Perform Calculations ---
     const ownerVehicles = allVehicles.filter(v => v.isFleetVehicle && v.ownerName === ownerName);
 
     const detailedReport: VehicleMonthlyReport[] = ownerVehicles.map(vehicle => {
@@ -65,10 +61,8 @@ export async function generateAndShareOwnerReport(
       const costsFromVehicleExpenses = vehicleExpensesInMonth.reduce((sum, e) => sum + e.amount, 0);
 
       const totalMaintenanceCosts = maintenanceCostsFromServices + costsFromVehicleExpenses;
-      
       const totalDeductions = (vehicle.gpsMonthlyCost || 0) + (vehicle.adminMonthlyCost || 0) + (vehicle.insuranceMonthlyCost || 0);
       const finalCostsAndDeductions = totalMaintenanceCosts + totalDeductions;
-
 
       return {
         vehicleId: vehicle.id,
@@ -83,16 +77,14 @@ export async function generateAndShareOwnerReport(
     const totalMaintenanceCosts = detailedReport.reduce((sum, r) => sum + r.maintenanceCosts, 0);
     const totalNetBalance = totalRentalIncome - totalMaintenanceCosts;
 
-    // --- Check for existing report and Create/Update ---
-    // The logic is to have one single public document per owner that gets updated.
-    let existingReport = placeholderPublicOwnerReports.find(r => r.ownerName === ownerName);
-    
+    // Use the passed-in array to check for an existing report
+    const existingReport = allPublicOwnerReports.find(r => r.ownerName === ownerName);
     const publicId = existingReport?.publicId || `rep_${Date.now().toString(36)}`;
     
     const newPublicReport: PublicOwnerReport = {
       publicId,
       ownerName,
-      generatedDate: new Date().toISOString(),
+      generatedDate: reportDate.toISOString(),
       reportMonth: format(reportForDate, "MMMM 'de' yyyy", { locale: es }),
       detailedReport,
       totalRentalIncome,
@@ -101,21 +93,27 @@ export async function generateAndShareOwnerReport(
       workshopInfo,
     };
     
+    // Save the individual public document
     const publicDocRef = doc(db, 'publicOwnerReports', publicId);
     await setDoc(publicDocRef, sanitizeObjectForFirestore(newPublicReport), { merge: true });
 
-    // Update the local placeholder cache as well
+    // Update the list of all public reports
+    let updatedPublicOwnerReports: PublicOwnerReport[];
     if (existingReport) {
-      Object.assign(existingReport, newPublicReport);
+      updatedPublicOwnerReports = allPublicOwnerReports.map(r => r.ownerName === ownerName ? newPublicReport : r);
     } else {
-      placeholderPublicOwnerReports.push(newPublicReport);
+      updatedPublicOwnerReports = [...allPublicOwnerReports, newPublicReport];
     }
-    await persistToFirestore(['publicOwnerReports']); // This keeps the private master doc in sync
+    
+    // Persist the entire updated list to the main database document
+    const mainDbRef = doc(db, 'database/main');
+    await setDoc(mainDbRef, { publicOwnerReports: sanitizeObjectForFirestore(updatedPublicOwnerReports) }, { merge: true });
 
     return { success: true, report: newPublicReport };
 
   } catch (e) {
     console.error("Error generating public owner report:", e);
-    return { success: false, error: 'No se pudo generar el reporte público.' };
+    const errorMessage = e instanceof Error ? e.message : 'No se pudo generar el reporte público.';
+    return { success: false, error: errorMessage };
   }
 }
