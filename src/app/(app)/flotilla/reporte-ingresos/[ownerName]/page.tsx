@@ -60,51 +60,42 @@ const ReportContent = React.forwardRef<HTMLDivElement, { report: PublicOwnerRepo
         <h2 className="text-xl font-semibold mb-4">Desglose por Vehículo</h2>
         <div className="overflow-x-auto">
           <Table>
-            <TableHeader>
+              <TableHeader>
                 <TableRow>
-                    <TableHead className="font-bold">Vehículo</TableHead>
-                    <TableHead className="text-right font-bold">Ingreso Renta</TableHead>
-                    <TableHead className="text-right font-bold">Ranoro</TableHead>
-                    <TableHead className="text-right font-bold">GPS</TableHead>
-                    <TableHead className="text-right font-bold">Admin</TableHead>
-                    <TableHead className="text-right font-bold">Seguro</TableHead>
-                    <TableHead className="text-right font-bold text-primary">Total Deduc.</TableHead>
-                    <TableHead className="text-right font-bold">Balance</TableHead>
+                  <TableHead className="font-bold">Vehículo y Desglose de Deducciones</TableHead>
+                  <TableHead className="text-right font-bold">Ingreso Renta</TableHead>
+                  <TableHead className="text-right font-bold">Total Deduc.</TableHead>
+                  <TableHead className="text-right font-bold">Balance</TableHead>
                 </TableRow>
-            </TableHeader>
-            <TableBody>
-              {report.detailedReport.map(item => {
-                const balance = item.rentalIncome - item.totalDeductions;
-                return (
-                  <TableRow key={item.vehicleId}>
-                    <TableCell className="font-medium">
-                      <Link href={`/flotilla/${item.vehicleId}`} className="hover:underline text-primary">
-                        {item.vehicleInfo}
-                      </Link>
-                    </TableCell>
-                    <TableCell className="text-right">{formatCurrency(item.rentalIncome)}</TableCell>
-                    <TableCell className="text-right text-destructive">
-                      <div>{formatCurrency(item.maintenanceAndExpensesCost)}</div>
-                      {item.services && item.services.length > 0 && (
-                        <div className="text-right text-[9px] text-gray-500 font-normal">
-                          {item.services.map(s => (
-                            <div key={s.id} className="truncate" title={s.description || 'Servicio'}>{s.description || 'Servicio'}</div>
-                          ))}
+              </TableHeader>
+              <TableBody>
+                {report.detailedReport.map(item => {
+                  const balance = item.rentalIncome - item.totalDeductions;
+                  return (
+                    <TableRow key={item.vehicleId}>
+                      <TableCell className="font-medium align-top">
+                        <p className="font-semibold text-base">{item.vehicleInfo}</p>
+                         <div className="text-xs text-gray-600 mt-1 pl-2 border-l-2 space-y-0.5">
+                            <div className="flex justify-between"><span>Ranoro (Mantenimiento):</span><span>{formatCurrency(item.maintenanceAndExpensesCost)}</span></div>
+                            {item.services && item.services.length > 0 && item.services.map(s => (
+                                <div key={s.id} className="flex justify-between pl-2">
+                                  <span className="truncate pr-2">- {s.description || 'Servicio'}</span>
+                                  <span>{formatCurrency(s.totalCost)}</span>
+                                </div>
+                            ))}
+                            <div className="flex justify-between"><span>GPS:</span><span>{formatCurrency(item.gpsMonthlyCost)}</span></div>
+                            <div className="flex justify-between"><span>Admin:</span><span>{formatCurrency(item.adminMonthlyCost)}</span></div>
+                            <div className="flex justify-between"><span>Seguro:</span><span>{formatCurrency(item.insuranceMonthlyCost)}</span></div>
                         </div>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-right text-destructive">{formatCurrency(item.gpsMonthlyCost)}</TableCell>
-                    <TableCell className="text-right text-destructive">{formatCurrency(item.adminMonthlyCost)}</TableCell>
-                    <TableCell className="text-right text-destructive">{formatCurrency(item.insuranceMonthlyCost)}</TableCell>
-                    <TableCell className="text-right font-bold text-destructive">{formatCurrency(item.totalDeductions)}</TableCell>
-                    <TableCell className={`text-right font-bold ${balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                      {formatCurrency(balance)}
-                    </TableCell>
-                  </TableRow>
-                )
-              })}
-            </TableBody>
-          </Table>
+                      </TableCell>
+                      <TableCell className="text-right align-top">{formatCurrency(item.rentalIncome)}</TableCell>
+                      <TableCell className="text-right font-bold align-top text-destructive">{formatCurrency(item.totalDeductions)}</TableCell>
+                      <TableCell className={`text-right font-bold align-top ${balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>{formatCurrency(balance)}</TableCell>
+                    </TableRow>
+                  )
+                })}
+              </TableBody>
+            </Table>
         </div>
       </main>
       <footer className="text-xs text-center text-gray-500 mt-8 pt-4 border-t">
@@ -289,7 +280,7 @@ export default function OwnerIncomeDetailPage() {
               <ArrowLeft className="mr-2 h-4 w-4" /> Volver
             </Button>
             <Button onClick={handleGenerateReport} disabled={isGenerating}>
-              {isGenerating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Share2 className="mr-2 h-4 w-4" />}
+              {isGenerating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Calendar className="mr-2 h-4 w-4" />}
               Reporte Mensual
             </Button>
           </div>
@@ -353,29 +344,27 @@ export default function OwnerIncomeDetailPage() {
                   const balance = item.rentalIncome - item.totalDeductions;
                   return (
                     <TableRow key={item.vehicleId}>
-                      <TableCell className="font-medium">
-                        <Link href={`/flotilla/${item.vehicleId}`} className="hover:underline text-primary">
+                      <TableCell className="font-medium align-top">
+                        <Link href={`/flotilla/${item.vehicleId}`} className="hover:underline text-primary font-semibold">
                           {item.vehicleInfo}
                         </Link>
+                         <div className="text-xs text-muted-foreground mt-2 pl-2 border-l-2 border-destructive/20 space-y-1">
+                            <p className="font-semibold text-destructive/80 -ml-2 pl-2">Desglose de Deducciones:</p>
+                            <div className="flex justify-between"><span>Ranoro (Mantenimiento):</span><span>{formatCurrency(item.maintenanceAndExpensesCost)}</span></div>
+                            {item.services && item.services.length > 0 && item.services.map(s => (
+                                <div key={s.id} className="flex justify-between pl-2">
+                                  <span className="truncate pr-2">- {s.description || 'Servicio'}</span>
+                                  <span>{formatCurrency(s.totalCost)}</span>
+                                </div>
+                            ))}
+                            <div className="flex justify-between"><span>GPS:</span><span>{formatCurrency(item.gpsMonthlyCost)}</span></div>
+                            <div className="flex justify-between"><span>Admin:</span><span>{formatCurrency(item.adminMonthlyCost)}</span></div>
+                            <div className="flex justify-between"><span>Seguro:</span><span>{formatCurrency(item.insuranceMonthlyCost)}</span></div>
+                        </div>
                       </TableCell>
-                      <TableCell className="text-right">{formatCurrency(item.rentalIncome)}</TableCell>
-                      <TableCell className="text-right text-destructive">
-                          <span className="font-semibold">{formatCurrency(item.totalDeductions)}</span>
-                          <div className="text-xs font-normal text-muted-foreground mt-1">
-                              Ranoro: {formatCurrency(item.maintenanceAndExpensesCost)}
-                          </div>
-                          {item.services && item.services.length > 0 && (
-                              <div className="text-left text-[11px] text-muted-foreground mt-1 pl-2 border-l-2 border-destructive/20">
-                                  {item.services.map(s => (
-                                      <div key={s.id} title={s.description} className="flex justify-between items-center">
-                                          <span className="truncate pr-2">- {s.description || 'Servicio'}</span>
-                                          <span>{formatCurrency(s.totalCost)}</span>
-                                      </div>
-                                  ))}
-                              </div>
-                          )}
-                      </TableCell>
-                      <TableCell className={`text-right font-bold ${balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      <TableCell className="text-right align-top">{formatCurrency(item.rentalIncome)}</TableCell>
+                      <TableCell className="text-right align-top font-bold text-destructive">{formatCurrency(item.totalDeductions)}</TableCell>
+                      <TableCell className={`text-right align-top font-bold ${balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                         {formatCurrency(balance)}
                       </TableCell>
                     </TableRow>
