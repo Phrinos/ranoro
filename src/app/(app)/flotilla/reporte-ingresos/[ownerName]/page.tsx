@@ -33,10 +33,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { formatCurrency } from "@/lib/utils";
 import Link from "next/link";
 import { useToast } from "@/hooks/use-toast";
-import { generateOwnerReportData } from '../actions'; // Import new function name
+import { generateOwnerReportData } from '../actions';
 import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
-import { db as publicDb } from '@/lib/firebasePublic.js'; // Import public DB
-import { doc, setDoc } from 'firebase/firestore'; // Import firestore functions
+import { db } from '@/lib/firebaseClient.js'; // Correct import for authenticated client
+import { doc, setDoc } from 'firebase/firestore'; 
 
 const ReportContent = React.forwardRef<HTMLDivElement, { report: PublicOwnerReport }>(({ report }, ref) => {
   const workshopInfo = report.workshopInfo || { name: 'Taller', logoUrl: '/ranoro-logo.png' };
@@ -203,12 +203,12 @@ export default function OwnerIncomeDetailPage() {
       const finalReport = result.report;
       
       try {
-        // 2. Client saves the public document.
-        if (publicDb) {
-            const publicDocRef = doc(publicDb, 'publicOwnerReports', finalReport.publicId);
+        // 2. Client saves the public document using the authenticated client.
+        if (db) {
+            const publicDocRef = doc(db, 'publicOwnerReports', finalReport.publicId);
             await setDoc(publicDocRef, sanitizeObjectForFirestore(finalReport), { merge: true });
         } else {
-            throw new Error("Public DB client is not available.");
+            throw new Error("Cliente de DB no está disponible.");
         }
         
         // 3. Client updates the private history.
@@ -227,7 +227,7 @@ export default function OwnerIncomeDetailPage() {
   
       } catch (e) {
          console.error("Error saving report to DBs:", e);
-         toast({ title: "Error al Guardar", description: `No se pudo guardar el reporte en la base de datos. ${e instanceof Error ? e.message : ''}`, variant: "destructive" });
+         toast({ title: "Error al Guardar en Base de Datos", description: `No se pudo guardar el reporte. ${e instanceof Error ? e.message : ''}`, variant: "destructive" });
       }
       
     } else {
