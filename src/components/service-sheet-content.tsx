@@ -1,7 +1,8 @@
 
+
 "use client";
 
-import type { ServiceRecord, Vehicle, User, WorkshopInfo, SafetyInspection, SafetyCheckStatus } from '@/types';
+import type { ServiceRecord, Vehicle, User, WorkshopInfo, SafetyInspection, SafetyCheckStatus, PhotoReportItem } from '@/types';
 import { format, parseISO, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
 import React, { useEffect, useState } from 'react';
@@ -223,7 +224,8 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
     
     const fuelColor = getFuelColorClass(fuelPercentage);
     
-    const showChecklist = !!service.safetyInspection && service.serviceType !== 'Cambio de Aceite';
+    const showChecklist = !!service.safetyInspection;
+    const showPhotoReport = !!service.photoReports && service.photoReports.length > 0;
 
     const ServiceOrderContent = (
       <div className="flex flex-col min-h-[10in]">
@@ -399,21 +401,50 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
             vehicle={vehicle}
         />
     ) : null;
+    
+    const PhotoReportContent = showPhotoReport ? (
+        <div className="mt-4 print:mt-0">
+             <header className="mb-4 pb-2 border-b-2 border-black">
+                <div className="flex justify-between items-center">
+                    <h1 className="text-lg font-bold">REPORTE FOTOGRÁFICO</h1>
+                    <p className="font-mono text-xs">Folio de Servicio: <span className="font-semibold">{service.id}</span></p>
+                </div>
+             </header>
+             <div className="space-y-4">
+                 {service.photoReports!.map(reportItem => (
+                    <div key={reportItem.id} className="break-inside-avoid border-b pb-4 last:border-none">
+                        <div className="border-2 border-black p-1 inline-block">
+                           <Image src={reportItem.photoDataUrl} alt={reportItem.description} width={700} height={525} objectFit="contain" />
+                        </div>
+                        <p className="mt-2 text-sm font-semibold text-center">{reportItem.description}</p>
+                    </div>
+                 ))}
+             </div>
+        </div>
+    ) : null;
 
     return (
       <div ref={ref} data-format="letter" className="font-sans bg-white text-black text-sm">
         {/* For Screen View */}
         <div className="print:hidden p-0 sm:p-2 md:p-4 shadow-lg">
           <Tabs defaultValue="order" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
+            <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="order">Orden de Servicio</TabsTrigger>
-              <TabsTrigger value="checklist" disabled={!showChecklist}>Revisión de Seguridad</TabsTrigger>
+              <TabsTrigger value="checklist" disabled={!showChecklist}>Revisión</TabsTrigger>
+              <TabsTrigger value="photoreport" disabled={!showPhotoReport}>Reporte Foto</TabsTrigger>
             </TabsList>
             <TabsContent value="order" className="mt-4">{ServiceOrderContent}</TabsContent>
             <TabsContent value="checklist" className="mt-4">
               {showChecklist ? SafetyChecklistContent : (
                 <div className="text-center p-8 text-muted-foreground">
-                  La revisión de seguridad no es necesaria para este tipo de servicio.
+                  La revisión de seguridad no es aplicable a este servicio.
+                </div>
+              )}
+            </TabsContent>
+            <TabsContent value="photoreport" className="mt-4">
+               {showPhotoReport ? PhotoReportContent : (
+                <div className="text-center p-8 text-muted-foreground">
+                  No hay fotos en este reporte.
                 </div>
               )}
             </TabsContent>
@@ -429,6 +460,12 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
             <>
               <div style={{ pageBreakBefore: 'always' }} />
               <div className="p-4 md:p-8">{SafetyChecklistContent}</div>
+            </>
+          )}
+          {showPhotoReport && (
+             <>
+              <div style={{ pageBreakBefore: 'always' }} />
+              <div className="p-4 md:p-8">{PhotoReportContent}</div>
             </>
           )}
         </div>

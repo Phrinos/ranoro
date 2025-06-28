@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -20,11 +21,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription} from '@/components/ui/card';
-import { CalendarIcon, PlusCircle, Search, Trash2, AlertCircle, Car as CarIcon, Clock, DollarSign, PackagePlus, BrainCircuit, Loader2, Printer, Plus, Minus, FileText, Signature, MessageSquare, Ban, ShieldQuestion, Wrench, Wallet, CreditCard, Send, WalletCards, ArrowRightLeft, Tag, FileCheck, Check, ShieldCheck, Copy } from "lucide-react";
+import { CalendarIcon, PlusCircle, Search, Trash2, AlertCircle, Car as CarIcon, Clock, DollarSign, PackagePlus, BrainCircuit, Loader2, Printer, Plus, Minus, FileText, Signature, MessageSquare, Ban, ShieldQuestion, Wrench, Wallet, CreditCard, Send, WalletCards, ArrowRightLeft, Tag, FileCheck, Check, ShieldCheck, Copy, Camera } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format, parseISO, setHours, setMinutes, isValid, startOfDay, addDays } from 'date-fns';
 import { es } from 'date-fns/locale';
-import type { ServiceRecord, Vehicle, Technician, InventoryItem, ServiceSupply, QuoteRecord, InventoryCategory, Supplier, User, WorkshopInfo, ServiceItem, SafetyInspection, PaymentMethod, SafetyCheckStatus } from "@/types";
+import type { ServiceRecord, Vehicle, Technician, InventoryItem, ServiceSupply, QuoteRecord, InventoryCategory, Supplier, User, WorkshopInfo, ServiceItem, SafetyInspection, PaymentMethod, SafetyCheckStatus, PhotoReportItem } from "@/types";
 import React, { useEffect, useState, useMemo, useCallback, useRef } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { VehicleDialog } from "../../vehiculos/components/vehicle-dialog";
@@ -82,6 +83,12 @@ const serviceItemSchema = z.object({
 });
 
 const safetyCheckStatusSchema = z.enum(['ok', 'atencion', 'inmediata', 'na']).default('na');
+
+const photoReportItemSchema = z.object({
+  id: z.string(),
+  photoDataUrl: z.string().url("URL de la foto no válida."),
+  description: z.string().min(3, "La descripción debe tener al menos 3 caracteres."),
+});
 
 const safetyInspectionSchema = z.object({
   // Luces
@@ -166,6 +173,7 @@ const serviceFormSchemaBase = z.object({
     date: z.string(),
     mileage: z.number().optional(),
   }).optional(),
+  photoReports: z.array(photoReportItemSchema).optional(),
 }).refine(data => {
     if (data.status && data.status !== 'Cotizacion' && !data.serviceDate) {
         return false;
@@ -269,6 +277,7 @@ export function ServiceForm({
   const [isEnhancingText, setIsEnhancingText] = useState<string | null>(null);
   const [isTicketPreviewOpen, setIsTicketPreviewOpen] = useState(false);
   const ticketContentRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const form = useForm<ServiceFormValues>({
     resolver: zodResolver(serviceFormSchemaBase),
@@ -298,6 +307,7 @@ export function ServiceForm({
         cardFolio: (initialData as ServiceRecord)?.cardFolio || '',
         transferFolio: (initialData as ServiceRecord)?.transferFolio || '',
         nextServiceInfo: (initialData as ServiceRecord)?.nextServiceInfo,
+        photoReports: (initialData as ServiceRecord)?.photoReports || [],
     }
   });
   
@@ -314,6 +324,11 @@ export function ServiceForm({
     name: "serviceItems",
   });
   
+  const { fields: photoReportFields, append: appendPhotoReport, remove: removePhotoReport } = useFieldArray({
+    control: form.control,
+    name: "photoReports",
+  });
+
   const watchedServiceItems = useWatch({ control, name: "serviceItems" });
 
   const quoteForViewing = useMemo(() => {
@@ -454,6 +469,7 @@ export function ServiceForm({
             cardFolio: (data as ServiceRecord)?.cardFolio || '',
             transferFolio: (initialData as ServiceRecord)?.transferFolio || '',
             nextServiceInfo: (data as ServiceRecord)?.nextServiceInfo,
+            photoReports: (data as ServiceRecord)?.photoReports || [],
         };
 
         form.reset(dataToReset);
@@ -529,6 +545,10 @@ export function ServiceForm({
         return false;
     }
     return true;
+  }, [mode, watchedStatus]);
+  
+  const showReportTab = useMemo(() => {
+    return mode === 'service' && watchedStatus !== 'Agendado' && watchedStatus !== 'Cotizacion';
   }, [mode, watchedStatus]);
 
 
@@ -978,6 +998,27 @@ export function ServiceForm({
     }
   };
 
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (!files) return;
+
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        appendPhotoReport({
+          id: `photo_${Date.now()}_${i}`,
+          photoDataUrl: reader.result as string,
+          description: '',
+        });
+      };
+      reader.readAsDataURL(file);
+    }
+    // Reset file input to allow selecting the same file again
+    if(fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+
   const [cancellationReason, setCancellationReason] = useState('');
   const [isCancelAlertOpen, setIsCancelAlertOpen] = useState(false);
 
@@ -1037,6 +1078,13 @@ export function ServiceForm({
                           <ShieldCheck className="h-4 w-4 shrink-0"/>
                           <span className="hidden sm:inline">Revision</span>
                           <span className="sm:hidden">Revision</span>
+                      </TabsTrigger>
+                  )}
+                  {showReportTab && (
+                      <TabsTrigger value="reporte" className="text-sm sm:text-base data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none flex items-center gap-2 py-2 px-3 sm:px-4">
+                          <Camera className="h-4 w-4 shrink-0"/>
+                          <span className="hidden sm:inline">Reporte</span>
+                          <span className="sm:hidden">Reporte</span>
                       </TabsTrigger>
                   )}
                 </TabsList>
@@ -1406,6 +1454,67 @@ export function ServiceForm({
                     isEnhancingText={isEnhancingText}
                     handleEnhanceText={handleEnhanceText}
                   />
+              </TabsContent>
+            )}
+            {showReportTab && (
+              <TabsContent value="reporte" className="space-y-6 mt-0">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Reporte Fotográfico</CardTitle>
+                    <CardDescription>Añade fotos para documentar el estado del vehículo o las reparaciones realizadas.</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {photoReportFields.map((field, index) => (
+                        <Card key={field.id} className="overflow-hidden">
+                          <CardContent className="p-2">
+                             <div className="relative aspect-video w-full bg-muted rounded-md mb-2">
+                                <Image src={field.photoDataUrl} layout="fill" objectFit="cover" alt={`Foto ${index + 1}`} />
+                                {!isReadOnly && (
+                                  <Button type="button" variant="destructive" size="icon" className="absolute top-1 right-1 h-7 w-7" onClick={() => removePhotoReport(index)}>
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                )}
+                             </div>
+                             <FormField
+                                control={form.control}
+                                name={`photoReports.${index}.description`}
+                                render={({ field: descField }) => (
+                                    <FormItem>
+                                        <FormControl>
+                                            <Input
+                                                placeholder="Descripción de la foto..."
+                                                disabled={isReadOnly}
+                                                {...descField}
+                                                onChange={(e) => descField.onChange(capitalizeWords(e.target.value))}
+                                            />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                              />
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                     {!isReadOnly && (
+                        <div className="mt-4">
+                            <input
+                                type="file"
+                                ref={fileInputRef}
+                                onChange={handleFileUpload}
+                                accept="image/*"
+                                multiple
+                                className="hidden"
+                            />
+                            <Button type="button" variant="outline" onClick={() => fileInputRef.current?.click()}>
+                                <Camera className="mr-2 h-4 w-4" />
+                                Añadir Fotos
+                            </Button>
+                        </div>
+                    )}
+                  </CardContent>
+                </Card>
               </TabsContent>
             )}
           </Tabs>

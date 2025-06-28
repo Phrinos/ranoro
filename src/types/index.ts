@@ -127,6 +127,12 @@ export interface SafetyInspection {
   technicianSignature?: string; 
 }
 
+export interface PhotoReportItem {
+  id: string;
+  photoDataUrl: string;
+  description: string;
+}
+
 export interface ServiceRecord {
   id: string;
   publicId?: string; // Unique, random ID for public sharing
@@ -169,6 +175,7 @@ export interface ServiceRecord {
     date: string; // ISO String
     mileage?: number;
   };
+  photoReports?: PhotoReportItem[];
 }
 
 export interface Technician {

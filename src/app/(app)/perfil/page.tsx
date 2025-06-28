@@ -15,7 +15,8 @@ import type { User } from '@/types';
 import { Save, Signature } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { getAuth, onAuthStateChanged, updatePassword, reauthenticateWithCredential, EmailAuthProvider } from 'firebase/auth';
-import { auth } from '@root/lib/firebaseClient.js';
+import { auth, storage } from '@root/lib/firebaseClient.js';
+import { getStorage, ref, uploadString, getDownloadURL } from 'firebase/storage';
 import { placeholderUsers, persistToFirestore, AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
 import { SignatureDialog } from '@/app/(app)/servicios/components/signature-dialog';
 import Image from 'next/image';
@@ -128,6 +129,23 @@ export default function PerfilPage() {
       signatureDataUrl: data.signatureDataUrl || undefined,
     };
     
+    // --- New Signature Upload Logic ---
+    if (data.signatureDataUrl && data.signatureDataUrl.startsWith('data:image')) {
+        if (!storage) {
+            toast({ title: "Error de Almacenamiento", description: "Firebase Storage no está configurado.", variant: "destructive" });
+            return;
+        }
+        try {
+            const signatureRef = ref(storage, `user-signatures/${currentUser.id}.png`);
+            await uploadString(signatureRef, data.signatureDataUrl, 'data_url');
+            const downloadURL = await getDownloadURL(signatureRef);
+            updatedUser.signatureDataUrl = downloadURL;
+        } catch (storageError) {
+            console.error("Error uploading signature:", storageError);
+            toast({ title: "Error de Subida", description: "No se pudo guardar la firma en la nube.", variant: "destructive" });
+        }
+    }
+    
     placeholderUsers[userIndex] = updatedUser; 
 
     try {
@@ -144,7 +162,7 @@ export default function PerfilPage() {
             ...form.getValues(),
             name: data.name,
             phone: data.phone || '',
-            signatureDataUrl: data.signatureDataUrl || '',
+            signatureDataUrl: updatedUser.signatureDataUrl || '', // Use the new URL
             newPassword: '',
             confirmNewPassword: '',
             currentPassword: ''
