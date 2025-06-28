@@ -35,7 +35,7 @@ import Link from "next/link";
 import { useToast } from "@/hooks/use-toast";
 import { generateAndShareOwnerReport } from '../actions';
 import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
-import { db } from '@root/lib/firebaseClient.js'; // Use the main authenticated client
+import { db } from '@root/lib/firebaseClient.js';
 import { doc, setDoc } from 'firebase/firestore';
 
 
@@ -188,7 +188,8 @@ export default function OwnerIncomeDetailPage() {
     
     const storedWorkshopInfo = typeof window !== 'undefined' ? localStorage.getItem('workshopTicketInfo') : null;
     const workshopInfo: WorkshopInfo | undefined = storedWorkshopInfo ? JSON.parse(storedWorkshopInfo) : undefined;
-
+  
+    // The server action now ONLY calculates the report object
     const result = await generateAndShareOwnerReport({
       ownerName: ownerName,
       forDateISO: selectedDate.toISOString(),
@@ -198,16 +199,18 @@ export default function OwnerIncomeDetailPage() {
       allServiceRecords: placeholderServiceRecords,
       allVehicleExpenses: placeholderVehicleExpenses,
     });
-
+  
     if (result.success && result.report) {
       if (!db) {
         toast({ title: "Error de Base de Datos", description: "La conexión a Firestore no está disponible.", variant: "destructive" });
         setIsSharing(false);
         return;
       }
-
+  
       try {
-        // 1. Save the public document using the AUTHENTICATED client
+        // The client (which is authenticated) will now write to both locations
+  
+        // 1. Save the public document
         const publicDocRef = doc(db, 'publicOwnerReports', result.report.publicId);
         await setDoc(publicDocRef, sanitizeObjectForFirestore(result.report), { merge: true });
         
@@ -223,13 +226,14 @@ export default function OwnerIncomeDetailPage() {
         
         // 3. Persist the updated placeholder array to the main private document
         await persistToFirestore(['publicOwnerReports']);
-
+  
         // 4. Update UI
         setReportToShare(result.report);
         setIsShareDialogOpen(true);
-
+        toast({ title: "Reporte Generado", description: "El reporte público se ha creado y guardado." });
+  
       } catch (e) {
-         console.error("Error saving public report from client:", e);
+         console.error("Error saving report from client:", e);
          toast({ title: "Error al Guardar", description: "No se pudo guardar el reporte en la base de datos.", variant: "destructive" });
       }
       
