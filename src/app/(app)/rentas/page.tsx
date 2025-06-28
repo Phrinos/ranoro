@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, Printer, DollarSign, ListCollapse, AlertTriangle } from "lucide-react";
+import { Search, Printer, DollarSign, ListCollapse, AlertTriangle, ChevronLeft, ChevronRight } from "lucide-react";
 import { useToast } from '@/hooks/use-toast';
 import {
   placeholderDrivers,
@@ -23,7 +23,7 @@ import { OwnerWithdrawalDialog, type OwnerWithdrawalFormValues } from './compone
 import { VehicleExpenseDialog, type VehicleExpenseFormValues } from './components/vehicle-expense-dialog';
 import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
 import { RentalReceiptContent } from './components/rental-receipt-content';
-import { isToday, parseISO, format, isValid, compareDesc, differenceInCalendarDays, startOfToday, isAfter } from 'date-fns';
+import { isToday, parseISO, format, isValid, compareDesc, differenceInCalendarDays, startOfToday, isAfter, subMonths, addMonths, startOfMonth, endOfMonth, isWithinInterval } from 'date-fns';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { es } from 'date-fns/locale';
@@ -34,6 +34,7 @@ export default function RentasPage() {
   const [version, setVersion] = useState(0);
   const [hydrated, setHydrated] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedDate, setSelectedDate] = useState(new Date());
 
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
   const [isWithdrawalDialogOpen, setIsWithdrawalDialogOpen] = useState(false);
@@ -66,6 +67,16 @@ export default function RentasPage() {
   const formatCurrency = (amount: number) => {
     return `$${amount.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   };
+  
+  const handlePreviousMonth = () => setSelectedDate(subMonths(selectedDate, 1));
+  const handleNextMonth = () => setSelectedDate(addMonths(selectedDate, 1));
+
+  const selectedMonthRange = useMemo(() => {
+    const start = startOfMonth(selectedDate);
+    const end = endOfMonth(selectedDate);
+    return { start, end };
+  }, [selectedDate]);
+
 
   const indebtedDrivers = useMemo(() => {
     if (!hydrated) return [];
@@ -111,7 +122,12 @@ export default function RentasPage() {
   }, [hydrated, version]);
 
   const filteredPayments = useMemo(() => {
-    let list = [...payments].sort((a,b) => compareDesc(parseISO(a.paymentDate), parseISO(b.paymentDate)));
+    const { start, end } = selectedMonthRange;
+    let list = [...payments].filter(p => {
+        const pDate = parseISO(p.paymentDate);
+        return isValid(pDate) && isWithinInterval(pDate, { start, end });
+    }).sort((a,b) => compareDesc(parseISO(a.paymentDate), parseISO(b.paymentDate)));
+
     if (!searchTerm.trim()) return list;
     const lowerSearch = searchTerm.toLowerCase();
     return list.filter(payment =>
@@ -119,27 +135,37 @@ export default function RentasPage() {
       payment.vehicleLicensePlate.toLowerCase().includes(lowerSearch) ||
       payment.id.toLowerCase().includes(lowerSearch)
     );
-  }, [payments, searchTerm]);
+  }, [payments, searchTerm, selectedMonthRange]);
 
   const filteredWithdrawals = useMemo(() => {
-    let list = [...withdrawals].sort((a,b) => compareDesc(parseISO(a.date), parseISO(b.date)));
+    const { start, end } = selectedMonthRange;
+    let list = [...withdrawals].filter(w => {
+        const wDate = parseISO(w.date);
+        return isValid(wDate) && isWithinInterval(wDate, { start, end });
+    }).sort((a,b) => compareDesc(parseISO(a.date), parseISO(b.date)));
+
     if (!searchTerm.trim()) return list;
     const lowerSearch = searchTerm.toLowerCase();
     return list.filter(w =>
       w.ownerName.toLowerCase().includes(lowerSearch) ||
       (w.reason && w.reason.toLowerCase().includes(lowerSearch))
     );
-  }, [withdrawals, searchTerm]);
+  }, [withdrawals, searchTerm, selectedMonthRange]);
 
   const filteredVehicleExpenses = useMemo(() => {
-    let list = [...vehicleExpenses].sort((a, b) => compareDesc(parseISO(a.date), parseISO(b.date)));
+    const { start, end } = selectedMonthRange;
+    let list = [...vehicleExpenses].filter(e => {
+        const eDate = parseISO(e.date);
+        return isValid(eDate) && isWithinInterval(eDate, { start, end });
+    }).sort((a, b) => compareDesc(parseISO(a.date), parseISO(b.date)));
+    
     if (!searchTerm.trim()) return list;
     const lowerSearch = searchTerm.toLowerCase();
     return list.filter(e =>
         e.vehicleLicensePlate.toLowerCase().includes(lowerSearch) ||
         e.description.toLowerCase().includes(lowerSearch)
     );
-  }, [vehicleExpenses, searchTerm]);
+  }, [vehicleExpenses, searchTerm, selectedMonthRange]);
 
   const uniqueOwners = useMemo(() => {
     const owners = new Set<string>();
@@ -272,15 +298,29 @@ export default function RentasPage() {
           </CardContent>
       </Card>
       
-      <div className="mb-6 relative">
-        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-        <Input
-          type="search"
-          placeholder="Buscar transacción..."
-          className="w-full rounded-lg bg-card pl-8 md:w-1/3"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-        />
+      <div className="flex flex-col sm:flex-row items-center gap-4 mb-6">
+        {/* Month Selector */}
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="icon" onClick={handlePreviousMonth}>
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+          <span className="font-semibold text-center w-36">{format(selectedDate, "MMMM yyyy", { locale: es })}</span>
+          <Button variant="outline" size="icon" onClick={handleNextMonth}>
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        </div>
+
+        {/* Search Bar */}
+        <div className="relative flex-grow w-full sm:w-auto">
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input
+            type="search"
+            placeholder="Buscar en el mes seleccionado..."
+            className="w-full rounded-lg bg-card pl-8"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
       </div>
 
       <Tabs defaultValue="pagos" className="w-full">
@@ -436,3 +476,4 @@ export default function RentasPage() {
     </>
   );
 }
+
