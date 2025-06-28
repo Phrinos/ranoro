@@ -845,6 +845,9 @@ export function ServiceForm({
         setSelectedVehicle(vehicle);
         setVehicleLicensePlateSearch(vehicle.licensePlate);
         form.setValue('vehicleId', String(vehicle.id), { shouldValidate: true });
+        if (vehicle.isFleetVehicle && vehicle.currentMileage) {
+          form.setValue('mileage', vehicle.currentMileage, { shouldDirty: true });
+        }
         setVehicleNotFound(false);
         setVehicleSearchResults([]);
         const vehicleServices = defaultServiceRecords.filter(s => s.vehicleId === vehicle.id).sort((a, b) => new Date(b.serviceDate).getTime() - new Date(a.serviceDate).getTime());
@@ -2144,4 +2147,5 @@ const SafetyCheckRow = ({ name, label, control, isReadOnly }: { name: string; la
     </div>
   );
 };
+
 

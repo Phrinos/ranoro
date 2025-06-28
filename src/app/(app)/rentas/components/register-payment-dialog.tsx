@@ -13,16 +13,18 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { Driver, Vehicle } from "@/types";
 import { DollarSign } from 'lucide-react';
+import { subDays, isBefore, parseISO } from 'date-fns';
 
 const paymentSchema = z.object({
   driverId: z.string().min(1, "Debe seleccionar un conductor."),
   amount: z.coerce.number().min(0.01, "El monto debe ser mayor a cero."),
+  mileage: z.coerce.number().int("El kilometraje debe ser un número entero.").min(0, "El kilometraje no puede ser negativo.").optional(),
 });
 
 type PaymentFormValues = z.infer<typeof paymentSchema>;
@@ -32,7 +34,7 @@ interface RegisterPaymentDialogProps {
   onOpenChange: (isOpen: boolean) => void;
   drivers: Driver[];
   vehicles: Vehicle[];
-  onSave: (driverId: string, amount: number) => void;
+  onSave: (driverId: string, amount: number, mileage?: number) => void;
 }
 
 export function RegisterPaymentDialog({
@@ -46,22 +48,50 @@ export function RegisterPaymentDialog({
     resolver: zodResolver(paymentSchema),
   });
   
+  const [needsMileageUpdate, setNeedsMileageUpdate] = useState(false);
+  const [vehicleForPayment, setVehicleForPayment] = useState<Vehicle | null>(null);
+  
   const selectedDriverId = form.watch('driverId');
   
   useEffect(() => {
     if (selectedDriverId) {
       const driver = drivers.find(d => d.id === selectedDriverId);
       const vehicle = vehicles.find(v => v.id === driver?.assignedVehicleId);
-      if (vehicle?.dailyRentalCost) {
-        form.setValue('amount', vehicle.dailyRentalCost);
+      setVehicleForPayment(vehicle || null);
+
+      if (vehicle) {
+        if (vehicle.dailyRentalCost) {
+          form.setValue('amount', vehicle.dailyRentalCost);
+        }
+        
+        const sevenDaysAgo = subDays(new Date(), 7);
+        const lastUpdate = vehicle.lastMileageUpdate ? parseISO(vehicle.lastMileageUpdate) : null;
+        const showMileageField = !lastUpdate || isBefore(lastUpdate, sevenDaysAgo);
+        
+        setNeedsMileageUpdate(showMileageField);
+        
+        if (showMileageField) {
+          form.setValue('mileage', vehicle.currentMileage || undefined);
+          form.trigger('mileage'); // Re-validate
+        } else {
+          form.setValue('mileage', undefined);
+        }
+      } else {
+        setNeedsMileageUpdate(false);
       }
     } else {
-        form.reset({ driverId: '', amount: undefined });
+      form.reset({ driverId: '', amount: undefined, mileage: undefined });
+      setNeedsMileageUpdate(false);
+      setVehicleForPayment(null);
     }
   }, [selectedDriverId, drivers, vehicles, form]);
 
   const handleSubmit = (values: PaymentFormValues) => {
-    onSave(values.driverId, values.amount);
+    if (needsMileageUpdate && (values.mileage === undefined || values.mileage === null)) {
+      form.setError("mileage", { type: "manual", message: "El kilometraje es obligatorio esta semana." });
+      return;
+    }
+    onSave(values.driverId, values.amount, values.mileage);
   };
 
   return (
@@ -110,6 +140,21 @@ export function RegisterPaymentDialog({
                   <FormMessage />
                 </FormItem>
               )}
+            />
+            {needsMileageUpdate && (
+              <FormField
+                control={form.control}
+                name="mileage"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Kilometraje Actual (Obligatorio)</FormLabel>
+                    <FormControl>
+                      <Input type="number" {...field} value={field.value ?? ''} placeholder="Ej: 125000" />
+                    </FormControl>
+                    <FormDescription>Se requiere actualizar el kilometraje (última vez hace > 7 días).</FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
             />
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
