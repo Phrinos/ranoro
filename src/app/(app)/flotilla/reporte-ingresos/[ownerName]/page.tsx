@@ -12,6 +12,7 @@ import {
   placeholderServiceRecords,
   placeholderVehicleExpenses,
   placeholderPublicOwnerReports,
+  persistToFirestore,
 } from '@/lib/placeholder-data';
 import type { PublicOwnerReport, Vehicle, RentalPayment, ServiceRecord, WorkshopInfo, VehicleMonthlyReport, VehicleExpense } from '@/types';
 import {
@@ -193,22 +194,24 @@ export default function OwnerIncomeDetailPage() {
       allRentalPayments: placeholderRentalPayments,
       allServiceRecords: placeholderServiceRecords,
       allVehicleExpenses: placeholderVehicleExpenses,
-      allPublicOwnerReports: placeholderPublicOwnerReports,
     });
 
     if (result.success && result.report) {
       setReportToShare(result.report);
       setIsShareDialogOpen(true);
 
-      // Manually update the client-side placeholder data to stay in sync
-      const existingReportIndex = placeholderPublicOwnerReports.findIndex(r => r.ownerName === result.report!.ownerName);
-      if (existingReportIndex > -1) {
-        placeholderPublicOwnerReports[existingReportIndex] = result.report;
+      // Client-side logic to update the main data array
+      const reportIndex = placeholderPublicOwnerReports.findIndex(
+        r => r.publicId === result.report!.publicId
+      );
+      if (reportIndex > -1) {
+        placeholderPublicOwnerReports[reportIndex] = result.report;
       } else {
         placeholderPublicOwnerReports.push(result.report);
       }
-      // This event tells other components to refresh their data from the placeholders
-      window.dispatchEvent(new CustomEvent('databaseUpdated'));
+      
+      // Persist the updated array to the main database document FROM THE CLIENT
+      await persistToFirestore(['publicOwnerReports']);
       
     } else {
       toast({
