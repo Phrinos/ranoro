@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useMemo, useEffect, useRef } from "react";
@@ -12,6 +13,7 @@ import {
   placeholderVehicleExpenses,
   placeholderPublicOwnerReports,
   persistToFirestore,
+  sanitizeObjectForFirestore,
 } from '@/lib/placeholder-data';
 import type { PublicOwnerReport, Vehicle, RentalPayment, ServiceRecord, WorkshopInfo, VehicleMonthlyReport, VehicleExpense } from '@/types';
 import {
@@ -31,8 +33,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { formatCurrency } from "@/lib/utils";
 import Link from "next/link";
 import { useToast } from "@/hooks/use-toast";
-import { generateAndSaveOwnerReport } from '../actions';
+import { generateOwnerReportData } from '../actions';
 import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
+import { db } from '@root/lib/firebaseClient.js';
+import { doc, setDoc } from 'firebase/firestore';
 
 
 const ReportContent = React.forwardRef<HTMLDivElement, { report: PublicOwnerReport }>(({ report }, ref) => {
@@ -186,8 +190,8 @@ export default function OwnerIncomeDetailPage() {
     const workshopInfo: WorkshopInfo | undefined = storedWorkshopInfo ? JSON.parse(storedWorkshopInfo) : undefined;
   
     try {
-      // 1. Call server action to calculate AND save the public document.
-      const result = await generateAndSaveOwnerReport({
+      // 1. Call the server action to get the calculated report data.
+      const result = await generateOwnerReportData({
         ownerName: ownerName,
         forDateISO: selectedDate.toISOString(),
         workshopInfo: workshopInfo,
@@ -197,27 +201,35 @@ export default function OwnerIncomeDetailPage() {
         allVehicleExpenses: placeholderVehicleExpenses,
       });
 
-      if (result.success && result.report) {
-        const finalReport = result.report;
-        
-        // 2. Client updates its local state and the private database document.
-        const reportIndex = placeholderPublicOwnerReports.findIndex(r => r.publicId === finalReport.publicId);
-        if (reportIndex > -1) {
-          placeholderPublicOwnerReports[reportIndex] = finalReport;
-        } else {
-          placeholderPublicOwnerReports.push(finalReport);
-        }
-        await persistToFirestore(['publicOwnerReports']);
-  
-        // 3. Update UI.
-        setReportToShare(finalReport);
-        setIsShareDialogOpen(true);
-        toast({ title: "Reporte Generado y Compartido", description: "El enlace público está listo." });
-  
-      } else {
-        throw new Error(result.error || "No se pudo generar el enlace para compartir.");
+      if (!result.success || !result.report) {
+        throw new Error(result.error || "La acción del servidor no pudo calcular el reporte.");
+      }
+
+      const finalReport = result.report;
+
+      // 2. Client writes to public and private DBs.
+      if (!db) {
+        throw new Error("Cliente de base de datos no está disponible. No se puede guardar.");
       }
       
+      // A. Write to public collection
+      const publicDocRef = doc(db, 'publicOwnerReports', finalReport.publicId);
+      await setDoc(publicDocRef, sanitizeObjectForFirestore(finalReport), { merge: true });
+
+      // B. Update local placeholder and persist to private collection
+      const reportIndex = placeholderPublicOwnerReports.findIndex(r => r.publicId === finalReport.publicId);
+      if (reportIndex > -1) {
+        placeholderPublicOwnerReports[reportIndex] = finalReport;
+      } else {
+        placeholderPublicOwnerReports.push(finalReport);
+      }
+      await persistToFirestore(['publicOwnerReports']);
+  
+      // 3. Update UI.
+      setReportToShare(finalReport);
+      setIsShareDialogOpen(true);
+      toast({ title: "Reporte Generado y Compartido", description: "El enlace público está listo." });
+  
     } catch (e) {
        console.error("Error sharing report:", e);
        toast({ title: "Error al Generar Reporte", description: `No se pudo generar el reporte. ${e instanceof Error ? e.message : ''}`, variant: "destructive" });
