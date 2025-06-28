@@ -116,11 +116,12 @@ export default function OwnerIncomeDetailPage() {
     const prevMonthStart = startOfMonth(subMonths(selectedDate, 1));
     const prevMonthEnd = endOfMonth(subMonths(selectedDate, 1));
 
-    // Get all payments for this owner's vehicles, across all time
+    // Optimization: Pre-filter all records for the owner's vehicles and for the relevant months
+    const ownerVehicleIds = new Set(ownerVehicles.map(v => v.id));
     const ownerVehiclePlates = new Set(ownerVehicles.map(v => v.licensePlate));
+
     const allOwnerPayments = placeholderRentalPayments.filter(p => ownerVehiclePlates.has(p.vehicleLicensePlate));
     
-    // Filter payments for the current and previous month
     const currentMonthOwnerPayments = allOwnerPayments.filter(p => {
         const pDate = parseISO(p.paymentDate);
         return isValid(pDate) && isWithinInterval(pDate, { start: monthStart, end: monthEnd });
@@ -130,26 +131,31 @@ export default function OwnerIncomeDetailPage() {
         return isValid(pDate) && isWithinInterval(pDate, { start: prevMonthStart, end: prevMonthEnd });
     });
     
-    // Calculate total incomes for summary cards
+    const currentMonthServices = placeholderServiceRecords.filter(s => {
+        if (!ownerVehicleIds.has(s.vehicleId)) return false;
+        const sDate = parseISO(s.serviceDate);
+        return isValid(sDate) && isWithinInterval(sDate, { start: monthStart, end: monthEnd });
+    });
+
+    const currentMonthExpenses = placeholderVehicleExpenses.filter(e => {
+        if (!ownerVehicleIds.has(e.vehicleId)) return false;
+        const eDate = parseISO(e.date);
+        return isValid(eDate) && isWithinInterval(eDate, { start: monthStart, end: monthEnd });
+    });
+
+    // --- Aggregation ---
     const currentMonthIncome = currentMonthOwnerPayments.reduce((sum, p) => sum + p.amount, 0);
     const prevMonthIncome = prevMonthOwnerPayments.reduce((sum, p) => sum + p.amount, 0);
     
-    // Calculate detailed report for the table
     const report: VehicleMonthlyReport[] = ownerVehicles.map(vehicle => {
       const vehiclePaymentsInMonth = currentMonthOwnerPayments.filter(p => p.vehicleLicensePlate === vehicle.licensePlate);
       const rentalIncome = vehiclePaymentsInMonth.reduce((sum, p) => sum + p.amount, 0);
       const daysRented = vehiclePaymentsInMonth.reduce((sum, p) => sum + p.daysCovered, 0);
       
-      const vehicleServices = placeholderServiceRecords.filter(s => {
-          const sDate = parseISO(s.serviceDate);
-          return s.vehicleId === vehicle.id && isValid(sDate) && isWithinInterval(sDate, { start: monthStart, end: monthEnd });
-      });
+      const vehicleServices = currentMonthServices.filter(s => s.vehicleId === vehicle.id);
       const maintenanceCostsFromServices = vehicleServices.reduce((sum, s) => sum + s.totalCost, 0);
 
-      const vehicleExpensesInMonth = placeholderVehicleExpenses.filter(e => {
-        const eDate = parseISO(e.date);
-        return e.vehicleId === vehicle.id && isValid(eDate) && isWithinInterval(eDate, { start: monthStart, end: monthEnd });
-      });
+      const vehicleExpensesInMonth = currentMonthExpenses.filter(e => e.vehicleId === vehicle.id);
       const costsFromVehicleExpenses = vehicleExpensesInMonth.reduce((sum, e) => sum + e.amount, 0);
 
       const totalMaintenanceCosts = maintenanceCostsFromServices + costsFromVehicleExpenses;
@@ -345,3 +351,5 @@ export default function OwnerIncomeDetailPage() {
     </>
   );
 }
+
+    
