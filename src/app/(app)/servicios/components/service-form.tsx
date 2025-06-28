@@ -62,7 +62,7 @@ import { AddSupplyDialog } from './add-supply-dialog';
 import { QuoteContent } from '@/components/quote-content';
 import { SignatureDialog } from './signature-dialog';
 import { TicketContent } from '@/components/ticket-content';
-import { capitalizeWords, formatCurrency } from '@/lib/utils';
+import { capitalizeWords, formatCurrency, capitalizeSentences } from '@/lib/utils';
 
 
 const supplySchema = z.object({
@@ -845,10 +845,11 @@ export function ServiceForm({
     toast({ title: "Función no disponible", description: "La sugerencia de precios con IA se está adaptando al nuevo formato." });
   };
   
-  const handleEnhanceText = async (fieldName: 'notes' | 'vehicleConditions' | 'safetyInspection.inspectionNotes') => {
+  const handleEnhanceText = async (fieldName: 'notes' | 'vehicleConditions' | 'customerItems' | 'safetyInspection.inspectionNotes') => {
     const contextMap = {
       'notes': 'Notas Adicionales del Servicio',
       'vehicleConditions': 'Condiciones del Vehículo (al recibir)',
+      'customerItems': 'Pertenencias del Cliente',
       'safetyInspection.inspectionNotes': 'Observaciones de la Inspección de Seguridad'
     };
 
@@ -1192,7 +1193,7 @@ export function ServiceForm({
                                             </Button>
                                         )}
                                     </FormLabel>
-                                    <FormControl><Textarea {...field} disabled={isReadOnly} className="min-h-[100px]"/></FormControl>
+                                    <FormControl><Textarea {...field} disabled={isReadOnly} className="min-h-[100px]" onChange={(e) => field.onChange(capitalizeSentences(e.target.value))}/></FormControl>
                                 </FormItem>
                             )}
                           />
@@ -1377,7 +1378,7 @@ export function ServiceForm({
                                           </Button>
                                       )}
                                   </FormLabel>
-                                  <FormControl><Textarea placeholder="Ej: Rayón en puerta del conductor, llanta trasera derecha baja, etc." {...field} disabled={isReadOnly} /></FormControl>
+                                  <FormControl><Textarea placeholder="Ej: Rayón en puerta del conductor, llanta trasera derecha baja, etc." {...field} disabled={isReadOnly} onChange={(e) => field.onChange(capitalizeSentences(e.target.value))}/></FormControl>
                               </FormItem>
                           )}
                         />
@@ -1385,7 +1386,7 @@ export function ServiceForm({
                     <CardContent className="space-y-4">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <FormField control={form.control} name="fuelLevel" render={({ field }) => (<FormItem><FormLabel>Nivel de Combustible</FormLabel><Select onValueChange={field.onChange} value={field.value} disabled={isReadOnly}><FormControl><SelectTrigger><SelectValue placeholder="Seleccionar nivel..." /></SelectTrigger></FormControl><SelectContent><SelectItem value="Vacío">Vacío</SelectItem><SelectItem value="1/8">1/8</SelectItem><SelectItem value="1/4">1/4"></SelectItem><SelectItem value="3/8">3/8</SelectItem><SelectItem value="1/2">1/2</SelectItem><SelectItem value="5/8">5/8</SelectItem><SelectItem value="3/4">3/4</SelectItem><SelectItem value="7/8">7/8</SelectItem><SelectItem value="Lleno">Lleno</SelectItem></SelectContent></Select></FormItem>)}/>
-                            <FormField control={form.control} name="customerItems" render={({ field }) => (<FormItem><FormLabel>Pertenencias del Cliente (Opcional)</FormLabel><FormControl><Textarea placeholder="Ej: Gato, llanta de refacción, cargador de celular en la guantera, etc." {...field} disabled={isReadOnly} /></FormControl></FormItem>)}/>
+                            <FormField control={form.control} name="customerItems" render={({ field }) => (<FormItem><FormLabel>Pertenencias del Cliente (Opcional)</FormLabel><FormControl><Textarea placeholder="Ej: Gato, llanta de refacción, cargador de celular en la guantera, etc." {...field} disabled={isReadOnly} onChange={(e) => field.onChange(capitalizeSentences(e.target.value))}/></FormControl></FormItem>)}/>
                         </div>
                         <div className="pt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div><Label>Firma de Recepción</Label><div className="mt-2 p-2 h-24 border rounded-md bg-muted/50 flex items-center justify-center">{customerSignatureReception ? (<Image src={customerSignatureReception} alt="Firma de recepción" width={150} height={75} style={{objectFit: 'contain'}}/>) : (<span className="text-sm text-muted-foreground">Pendiente de firma del cliente</span>)}</div></div>
@@ -1758,8 +1759,10 @@ const SafetyChecklist = ({ control, isReadOnly, onSignatureClick, signatureDataU
   onSignatureClick: () => void;
   signatureDataUrl?: string;
   isEnhancingText: string | null;
-  handleEnhanceText: (fieldName: 'notes' | 'vehicleConditions' | 'safetyInspection.inspectionNotes') => void;
+  handleEnhanceText: (fieldName: 'notes' | 'vehicleConditions' | 'customerItems' | 'safetyInspection.inspectionNotes') => void;
 }) => {
+  const { getValues, setValue } = useFormContext<ServiceFormValues>();
+
   return (
     <Card>
       <CardHeader>
@@ -1810,6 +1813,7 @@ const SafetyChecklist = ({ control, isReadOnly, onSignatureClick, signatureDataU
                             className="min-h-[100px]"
                             disabled={isReadOnly}
                             {...field}
+                            onChange={(e) => field.onChange(capitalizeSentences(e.target.value))}
                         />
                     </FormControl>
                 </FormItem>
@@ -1877,11 +1881,3 @@ const SafetyCheckRow = ({ name, label, control, isReadOnly }: { name: string; la
     </div>
   );
 };
-
-    
-
-
-
-
-
-    

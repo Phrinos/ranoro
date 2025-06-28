@@ -19,6 +19,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import type { Technician } from "@/types";
 import { DollarSign } from "lucide-react";
+import { capitalizeSentences } from "@/lib/utils";
 
 const technicianFormSchema = z.object({
   name: z.string().min(3, "El nombre debe tener al menos 3 caracteres."),
@@ -200,7 +201,7 @@ export function TechnicianForm({ initialData, onSubmit, onClose }: TechnicianFor
             <FormItem>
               <FormLabel>Notas (Opcional)</FormLabel>
               <FormControl>
-                <Textarea placeholder="Notas adicionales sobre el miembro del staff..." {...field} />
+                <Textarea placeholder="Notas adicionales sobre el miembro del staff..." {...field} onChange={(e) => field.onChange(capitalizeSentences(e.target.value))} />
               </FormControl>
               <FormMessage />
             </FormItem>

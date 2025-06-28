@@ -17,7 +17,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { Supplier } from "@/types";
-import { capitalizeWords } from "@/lib/utils";
+import { capitalizeWords, capitalizeSentences } from "@/lib/utils";
 
 const taxRegimeOptions = [
   "601 REGIMEN GENERAL DE LEY PERSONAS MORALES",
@@ -112,7 +112,7 @@ export function SupplierForm({ initialData, onSubmit, onClose }: SupplierFormPro
               <FormItem>
                 <FormLabel>Persona de Contacto (Opcional)</FormLabel>
                 <FormControl>
-                  <Input placeholder="Ej: Juan Pérez" {...field} />
+                  <Input placeholder="Ej: Juan Pérez" {...field} onChange={(e) => field.onChange(capitalizeWords(e.target.value))} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -152,7 +152,7 @@ export function SupplierForm({ initialData, onSubmit, onClose }: SupplierFormPro
             <FormItem>
               <FormLabel>Dirección (Opcional)</FormLabel>
               <FormControl>
-                <Textarea placeholder="Ej: Calle Falsa 123, Ciudad, Provincia" {...field} />
+                <Textarea placeholder="Ej: Calle Falsa 123, Ciudad, Provincia" {...field} onChange={(e) => field.onChange(capitalizeWords(e.target.value))}/>
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -222,7 +222,7 @@ export function SupplierForm({ initialData, onSubmit, onClose }: SupplierFormPro
               <FormItem>
                 <FormLabel>Nota de Deuda (Opcional)</FormLabel>
                 <FormControl>
-                  <Input placeholder="Ej: Factura #123 pendiente" {...field} />
+                  <Input placeholder="Ej: Factura #123 pendiente" {...field} onChange={(e) => field.onChange(capitalizeSentences(e.target.value))}/>
                 </FormControl>
                 <FormMessage />
               </FormItem>
