@@ -1,40 +1,43 @@
 rules_version = '2';
+
 service cloud.firestore {
   match /databases/{database}/documents {
-  
-    // Main private database document
-    // Only authenticated users can read/write
+    
+    // The main database document is private.
+    // Only authenticated users (employees) can read or write to it.
     match /database/main {
       allow read, write: if request.auth != null;
     }
 
-    // Public quotes are read-only for everyone, writable by authenticated users
+    // publicQuotes are world-readable for sharing, but not writable from the client.
     match /publicQuotes/{quoteId} {
       allow read: if true;
-      allow write: if request.auth != null;
+      allow create, update, delete: if false; 
     }
     
-    // Public owner reports are read-only for everyone, writable by authenticated users
+    // publicOwnerReports are world-readable for sharing, but not writable from the client.
     match /publicOwnerReports/{reportId} {
       allow read: if true;
-      allow write: if request.auth != null;
+      allow create, update, delete: if false;
     }
-
-    // Public services can be read by anyone,
-    // written to by authenticated users,
-    // and partially updated (signatures) by unauthenticated users (customers)
+    
+    // publicServices are world-readable.
     match /publicServices/{serviceId} {
       allow read: if true;
       
-      // Authenticated users (employees) can do anything
-      allow write: if request.auth != null;
-      
-      // Customers (unauthenticated) can only update signature-related fields
-      allow update: if request.auth == null &&
-                     request.resource.data.diff(resource.data).affectedKeys()
-                       .hasAny(['customerSignatureReception', 'customerSignatureDelivery', 'receptionSignatureViewed', 'deliverySignatureViewed']) &&
-                     request.resource.data.diff(resource.data).affectedKeys()
-                       .difference(['customerSignatureReception', 'customerSignatureDelivery', 'receptionSignatureViewed', 'deliverySignatureViewed']).size() == 0;
+      // Allow *anyone* (unauthenticated customers) to update ONLY the signature fields.
+      // This is crucial for the public signing page to work.
+      allow update: if request.resource.data.diff(resource.data).affectedKeys()
+                      .hasOnly(['customerSignatureReception', 'customerSignatureDelivery', 'receptionSignatureViewed', 'deliverySignatureViewed']);
+                      
+      // Disallow create/delete from client
+      allow create, delete: if false;
+    }
+
+    // By default, deny access to any other collection/document path.
+    // This is a security best practice.
+    match /{document=**} {
+      allow read, write: if false;
     }
   }
 }
