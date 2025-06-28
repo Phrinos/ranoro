@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect } from 'react';
@@ -19,7 +18,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { Driver, Vehicle } from "@/types";
 import { DollarSign } from 'lucide-react';
-import { subDays, isBefore, parseISO } from 'date-fns';
+import { subDays, isBefore, parseISO, isValid } from 'date-fns';
 
 const paymentSchema = z.object({
   driverId: z.string().min(1, "Debe seleccionar un conductor."),
@@ -46,10 +45,14 @@ export function RegisterPaymentDialog({
 }: RegisterPaymentDialogProps) {
   const form = useForm<PaymentFormValues>({
     resolver: zodResolver(paymentSchema),
+    defaultValues: {
+      driverId: '',
+      amount: undefined,
+      mileage: undefined
+    }
   });
-  
+
   const [needsMileageUpdate, setNeedsMileageUpdate] = useState(false);
-  const [vehicleForPayment, setVehicleForPayment] = useState<Vehicle | null>(null);
   
   const selectedDriverId = form.watch('driverId');
   
@@ -57,8 +60,7 @@ export function RegisterPaymentDialog({
     if (selectedDriverId) {
       const driver = drivers.find(d => d.id === selectedDriverId);
       const vehicle = vehicles.find(v => v.id === driver?.assignedVehicleId);
-      setVehicleForPayment(vehicle || null);
-
+      
       if (vehicle) {
         if (vehicle.dailyRentalCost) {
           form.setValue('amount', vehicle.dailyRentalCost);
@@ -66,29 +68,29 @@ export function RegisterPaymentDialog({
         
         const sevenDaysAgo = subDays(new Date(), 7);
         const lastUpdate = vehicle.lastMileageUpdate ? parseISO(vehicle.lastMileageUpdate) : null;
-        const showMileageField = !lastUpdate || isBefore(lastUpdate, sevenDaysAgo);
+        
+        const showMileageField = !lastUpdate || (isValid(lastUpdate) && isBefore(lastUpdate, sevenDaysAgo));
         
         setNeedsMileageUpdate(showMileageField);
         
         if (showMileageField) {
           form.setValue('mileage', vehicle.currentMileage || undefined);
-          form.trigger('mileage'); // Re-validate
         } else {
-          form.setValue('mileage', undefined);
+          form.resetField('mileage');
         }
       } else {
         setNeedsMileageUpdate(false);
+        form.resetField('mileage');
       }
     } else {
       form.reset({ driverId: '', amount: undefined, mileage: undefined });
       setNeedsMileageUpdate(false);
-      setVehicleForPayment(null);
     }
   }, [selectedDriverId, drivers, vehicles, form]);
 
   const handleSubmit = (values: PaymentFormValues) => {
-    if (needsMileageUpdate && (values.mileage === undefined || values.mileage === null)) {
-      form.setError("mileage", { type: "manual", message: "El kilometraje es obligatorio esta semana." });
+    if (needsMileageUpdate && (values.mileage === undefined || values.mileage === null || values.mileage < 0)) {
+      form.setError("mileage", { type: "manual", message: "El kilometraje es obligatorio y debe ser un número positivo." });
       return;
     }
     onSave(values.driverId, values.amount, values.mileage);
