@@ -34,24 +34,35 @@ const ReportContent = React.forwardRef<HTMLDivElement, { report: PublicOwnerRepo
       <main>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8 text-center">
           <Card><CardHeader><CardTitle className="text-sm font-medium">Ingreso por Renta</CardTitle><CardDescription className="text-2xl font-bold">{formatCurrency(report.totalRentalIncome)}</CardDescription></CardHeader></Card>
-          <Card><CardHeader><CardTitle className="text-sm font-medium">Costos y Deducciones</CardTitle><CardDescription className="text-2xl font-bold text-destructive">{formatCurrency(report.totalMaintenanceCosts)}</CardDescription></CardHeader></Card>
+          <Card><CardHeader><CardTitle className="text-sm font-medium">Costos y Deducciones</CardTitle><CardDescription className="text-2xl font-bold text-destructive">{formatCurrency(report.totalDeductions)}</CardDescription></CardHeader></Card>
           <Card><CardHeader><CardTitle className="text-sm font-medium">Balance Neto</CardTitle><CardDescription className={`text-2xl font-bold ${report.totalNetBalance >= 0 ? 'text-green-600' : 'text-red-600'}`}>{formatCurrency(report.totalNetBalance)}</CardDescription></CardHeader></Card>
         </div>
 
         <h2 className="text-xl font-semibold mb-4">Desglose por Vehículo</h2>
         <div className="overflow-x-auto">
           <Table>
-            <TableHeader><TableRow><TableHead>Vehículo</TableHead><TableHead className="text-center">Días Rentados</TableHead><TableHead className="text-right">Ingresos</TableHead><TableHead className="text-right">Costos y Deducc.</TableHead><TableHead className="text-right">Balance</TableHead></TableRow></TableHeader>
+            <TableHeader><TableRow><TableHead className="font-bold">Vehículo y Desglose de Deducciones</TableHead><TableHead className="text-right font-bold">Ingreso Renta</TableHead><TableHead className="text-right font-bold">Total Deduc.</TableHead><TableHead className="text-right font-bold">Balance</TableHead></TableRow></TableHeader>
             <TableBody>
               {report.detailedReport.map(item => {
-                const balance = item.rentalIncome - item.maintenanceCosts;
+                const balance = item.rentalIncome - item.totalDeductions;
                 return (
                   <TableRow key={item.vehicleId}>
-                    <TableCell className="font-medium">{item.vehicleInfo}</TableCell>
-                    <TableCell className="text-center">{item.daysRented.toFixed(2)}</TableCell>
-                    <TableCell className="text-right">{formatCurrency(item.rentalIncome)}</TableCell>
-                    <TableCell className="text-right text-destructive">{formatCurrency(item.maintenanceCosts)}</TableCell>
-                    <TableCell className={`text-right font-bold ${balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>{formatCurrency(balance)}</TableCell>
+                    <TableCell className="font-medium align-top">
+                      <p className="font-semibold text-base">{item.vehicleInfo}</p>
+                       <div className="text-xs text-gray-600 mt-1 pl-2 border-l-2 space-y-0.5">
+                          <div className="flex justify-between"><span>Ranoro (Mantenimiento):</span><span>{formatCurrency(item.maintenanceAndExpensesCost)}</span></div>
+                          {item.services && item.services.length > 0 && item.services.map(s => (
+                              <div key={s.id} className="flex justify-between pl-2">
+                                <span className="truncate pr-2">- {s.description || 'Servicio'}</span>
+                                <span>{formatCurrency(s.totalCost)}</span>
+                              </div>
+                          ))}
+                          <div className="flex justify-between"><span>Administración (GPS, Admin, Seguro):</span><span>{formatCurrency(item.administrationCost)}</span></div>
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-right align-top">{formatCurrency(item.rentalIncome)}</TableCell>
+                    <TableCell className="text-right font-bold align-top text-destructive">{formatCurrency(item.totalDeductions)}</TableCell>
+                    <TableCell className={`text-right font-bold align-top ${balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>{formatCurrency(balance)}</TableCell>
                   </TableRow>
                 )
               })}
@@ -157,3 +168,4 @@ export default function PublicOwnerReportPage() {
     </div>
   );
 }
+
