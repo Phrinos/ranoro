@@ -1094,6 +1094,55 @@ export function ServiceForm({
     return [];
   }, [mode, initialDataQuote]);
 
+  const handleShareService = useCallback(async (service: ServiceRecord | null) => {
+    if (!service) return;
+
+    if (!service.publicId) {
+      toast({
+        title: 'Enlace no disponible',
+        description: 'Guarde el servicio primero para generar un enlace.',
+        variant: 'default',
+      });
+      return;
+    }
+
+    const vehicleForAction = localVehicles.find((v) => v.id === service.vehicleId);
+    if (!vehicleForAction) {
+      toast({
+        title: 'Faltan Datos',
+        description: 'No se encontró el vehículo asociado.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    const shareUrl = `${window.location.origin}/s/${service.publicId}`;
+    const message = `Hola, ${
+      vehicleForAction.ownerName || 'Cliente'
+    }:\n\nTe invitamos a consultar la hoja de servicio de tu ${
+      vehicleForAction.make
+    } ${vehicleForAction.model} ${
+      vehicleForAction.year
+    }. Puedes revisarla en el siguiente enlace:\n\n${shareUrl}\n\n¡Gracias por confiar en Ranoro!`;
+
+    navigator.clipboard
+      .writeText(message)
+      .then(() => {
+        toast({
+          title: 'Mensaje Copiado',
+          description:
+            'El mensaje para WhatsApp ha sido copiado a tu portapapeles.',
+        });
+      })
+      .catch((err) => {
+        console.error('Could not copy text: ', err);
+        toast({
+          title: 'Error al Copiar',
+          variant: 'destructive',
+        });
+      });
+  }, [localVehicles, toast]);
+
   return (
     <>
       <Form {...form}>
@@ -1719,7 +1768,7 @@ export function ServiceForm({
           title="Hoja de Servicio"
           onDialogClose={() => setServiceForSheet(null)}
           dialogContentClassName="printable-quote-dialog"
-          footerActions={<><Button type="button" onClick={() => {if (serviceForSheet?.publicId) {const shareUrl = `${window.location.origin}/s/${serviceForSheet.publicId}`; navigator.clipboard.writeText(shareUrl).then(() => {toast({ title: 'Enlace copiado', description: 'El enlace a la hoja de servicio ha sido copiado.' });});} else {toast({ title: 'Error', description: 'Guarde el servicio para generar un enlace.', variant: 'destructive' });}}} variant="outline"><MessageSquare className="mr-2 h-4 w-4" /> Copiar Enlace</Button><Button onClick={() => window.print()}><Printer className="mr-2 h-4 w-4" /> Imprimir Hoja</Button></>}
+          footerActions={<><Button type="button" onClick={() => handleShareService(serviceForSheet)} variant="outline"><MessageSquare className="mr-2 h-4 w-4" /> Copiar para WhatsApp</Button><Button onClick={() => window.print()}><Printer className="mr-2 h-4 w-4" /> Imprimir Hoja</Button></>}
       >
           {serviceForSheet && (
               <ServiceSheetContent service={serviceForSheet} vehicle={localVehicles.find(v => v.id === serviceForSheet.vehicleId)} workshopInfo={workshopInfo as WorkshopInfo} />
