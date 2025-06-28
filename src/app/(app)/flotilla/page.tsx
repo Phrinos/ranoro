@@ -66,7 +66,12 @@ export default function FlotillaPage() {
     return vehicles;
   }, [fleetVehicles, searchTerm, sortAZ]);
 
-  const handleAddVehicleToFleet = async (vehicleId: string, dailyRentalCost: number) => {
+  const handleAddVehicleToFleet = async (vehicleId: string, costs: { 
+      dailyRentalCost: number;
+      gpsMonthlyCost: number;
+      adminMonthlyCost: number;
+      insuranceMonthlyCost: number;
+  }) => {
     const vehicleIndex = placeholderVehicles.findIndex(v => v.id === vehicleId);
     if (vehicleIndex === -1) {
       toast({ title: "Error", description: "Vehículo no encontrado.", variant: "destructive" });
@@ -74,7 +79,10 @@ export default function FlotillaPage() {
     }
     
     placeholderVehicles[vehicleIndex].isFleetVehicle = true;
-    placeholderVehicles[vehicleIndex].dailyRentalCost = dailyRentalCost;
+    placeholderVehicles[vehicleIndex].dailyRentalCost = costs.dailyRentalCost;
+    placeholderVehicles[vehicleIndex].gpsMonthlyCost = costs.gpsMonthlyCost;
+    placeholderVehicles[vehicleIndex].adminMonthlyCost = costs.adminMonthlyCost;
+    placeholderVehicles[vehicleIndex].insuranceMonthlyCost = costs.insuranceMonthlyCost;
 
     await persistToFirestore(['vehicles']);
     setVersion(v => v + 1);

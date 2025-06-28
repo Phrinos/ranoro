@@ -17,7 +17,9 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import type { Vehicle } from "@/types";
 import { useEffect } from "react";
-import { capitalizeWords, capitalizeSentences } from "@/lib/utils";
+import { capitalizeWords } from "@/lib/utils";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { DollarSign } from "lucide-react";
 
 const vehicleFormSchema = z.object({
   make: z.string().min(2, "La marca debe tener al menos 2 caracteres."),
@@ -25,14 +27,18 @@ const vehicleFormSchema = z.object({
   year: z.coerce.number().min(1900, "El año debe ser posterior a 1900.").max(2040, `El año no puede ser mayor a 2040.`),
   vin: z.string().length(17, "El VIN debe tener 17 caracteres.").optional().or(z.literal('')),
   licensePlate: z.string().min(1, "La placa no puede estar vacía. Ingrese 'SINPLACA' si es necesario."),
-  color: z.string().optional(), // Added
+  color: z.string().optional(),
   ownerName: z.string().min(2, "El nombre del propietario es obligatorio."),
   ownerPhone: z.string().min(7, "Ingrese un número de teléfono válido."),
   ownerEmail: z.string().email("Ingrese un correo electrónico válido.").optional().or(z.literal('')),
-  notes: z.string().optional(), // Added
+  notes: z.string().optional(),
+  dailyRentalCost: z.coerce.number().optional(),
+  gpsMonthlyCost: z.coerce.number().optional(),
+  adminMonthlyCost: z.coerce.number().optional(),
+  insuranceMonthlyCost: z.coerce.number().optional(),
 });
 
-export type VehicleFormValues = z.infer<typeof vehicleFormSchema>; // Export type
+export type VehicleFormValues = z.infer<typeof vehicleFormSchema>;
 
 interface VehicleFormProps {
   initialData?: Partial<Vehicle> | null;
@@ -48,8 +54,12 @@ export function VehicleForm({ initialData, onSubmit, onClose }: VehicleFormProps
       ...initialData,
       ownerPhone: initialData.ownerPhone || "",
       ownerEmail: initialData.ownerEmail || "",
-      color: initialData.color || "", // Added
-      notes: initialData.notes || "", // Added
+      color: initialData.color || "",
+      notes: initialData.notes || "",
+      dailyRentalCost: initialData.dailyRentalCost ?? undefined,
+      gpsMonthlyCost: initialData.gpsMonthlyCost ?? undefined,
+      adminMonthlyCost: initialData.adminMonthlyCost ?? undefined,
+      insuranceMonthlyCost: initialData.insuranceMonthlyCost ?? undefined,
     }
     : {
       make: "",
@@ -57,11 +67,15 @@ export function VehicleForm({ initialData, onSubmit, onClose }: VehicleFormProps
       year: undefined,
       vin: "",
       licensePlate: "",
-      color: "", // Added
+      color: "",
       ownerName: "",
       ownerPhone: "",
       ownerEmail: "",
-      notes: "", // Added
+      notes: "",
+      dailyRentalCost: undefined,
+      gpsMonthlyCost: undefined,
+      adminMonthlyCost: undefined,
+      insuranceMonthlyCost: undefined,
     },
   });
 
@@ -217,6 +231,24 @@ export function VehicleForm({ initialData, onSubmit, onClose }: VehicleFormProps
               </FormItem>
             )}
           />
+        
+        {initialData?.isFleetVehicle && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Costos de Flotilla</CardTitle>
+              <CardDescription>Establece los costos de renta y deducciones para este vehículo de la flotilla.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <FormField control={form.control} name="dailyRentalCost" render={({ field }) => ( <FormItem><FormLabel>Costo de Renta Diario</FormLabel><FormControl><div className="relative"><DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" /><Input type="number" step="0.01" placeholder="250.00" {...field} value={field.value ?? ''} className="pl-8" /></div></FormControl><FormMessage/></FormItem> )}/>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                 <FormField control={form.control} name="gpsMonthlyCost" render={({ field }) => ( <FormItem><FormLabel>Deducción GPS (Mensual)</FormLabel><FormControl><div className="relative"><DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" /><Input type="number" step="0.01" placeholder="150.00" {...field} value={field.value ?? ''} className="pl-8" /></div></FormControl><FormMessage/></FormItem> )}/>
+                 <FormField control={form.control} name="adminMonthlyCost" render={({ field }) => ( <FormItem><FormLabel>Deducción Admin (Mensual)</FormLabel><FormControl><div className="relative"><DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" /><Input type="number" step="0.01" placeholder="200.00" {...field} value={field.value ?? ''} className="pl-8" /></div></FormControl><FormMessage/></FormItem> )}/>
+                 <FormField control={form.control} name="insuranceMonthlyCost" render={({ field }) => ( <FormItem><FormLabel>Deducción Seguro (Mensual)</FormLabel><FormControl><div className="relative"><DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" /><Input type="number" step="0.01" placeholder="250.00" {...field} value={field.value ?? ''} className="pl-8" /></div></FormControl><FormMessage/></FormItem> )}/>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         <div className="flex justify-end gap-2 pt-4">
           <Button type="button" variant="outline" onClick={onClose}>
             Cancelar
