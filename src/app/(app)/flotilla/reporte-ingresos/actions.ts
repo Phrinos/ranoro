@@ -15,10 +15,10 @@ export interface ReportGenerationInput {
 }
 
 
-// This is now a synchronous function that just performs calculations.
-export function generateOwnerReportData(
+// This is now an async function that just performs calculations.
+export async function generateOwnerReportData(
   input: ReportGenerationInput
-): { success: boolean; report?: PublicOwnerReport; error?: string; } {
+): Promise<{ success: boolean; report?: PublicOwnerReport; error?: string; }> {
   try {
     const { ownerName, forDateISO, workshopInfo, allVehicles, allRentalPayments, allServiceRecords, allVehicleExpenses } = input;
     
