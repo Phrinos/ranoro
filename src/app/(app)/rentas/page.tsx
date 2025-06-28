@@ -249,19 +249,6 @@ export default function RentasPage() {
       <PageHeader
         title="Pago de Rentas"
         description="Lleva el control de los pagos y retiros de la flotilla."
-        actions={
-          <div className="flex flex-wrap gap-2">
-            <Button variant="outline" onClick={() => setIsExpenseDialogOpen(true)}>
-              <ListCollapse className="mr-2 h-4 w-4" /> Registrar Gasto de Vehículo
-            </Button>
-            <Button variant="outline" onClick={() => setIsWithdrawalDialogOpen(true)}>
-              <DollarSign className="mr-2 h-4 w-4" /> Registrar Retiro
-            </Button>
-            <Button onClick={() => setIsPaymentDialogOpen(true)}>
-              Registrar Pago
-            </Button>
-          </div>
-        }
       />
 
       <Card className="mb-6 border-orange-500/50 bg-orange-50 dark:bg-orange-900/30">
@@ -298,28 +285,42 @@ export default function RentasPage() {
           </CardContent>
       </Card>
       
-      <div className="flex flex-col sm:flex-row items-center gap-4 mb-6">
-        {/* Month Selector */}
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="icon" onClick={handlePreviousMonth}>
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
-          <span className="font-semibold text-center w-36">{format(selectedDate, "MMMM yyyy", { locale: es })}</span>
-          <Button variant="outline" size="icon" onClick={handleNextMonth}>
-            <ChevronRight className="h-4 w-4" />
-          </Button>
+      <div className="flex flex-col gap-4 mb-6">
+        <div className="flex flex-wrap gap-2 justify-end">
+            <Button variant="outline" onClick={() => setIsExpenseDialogOpen(true)}>
+              <ListCollapse className="mr-2 h-4 w-4" /> Registrar Gasto de Vehículo
+            </Button>
+            <Button variant="outline" onClick={() => setIsWithdrawalDialogOpen(true)}>
+              <DollarSign className="mr-2 h-4 w-4" /> Registrar Retiro
+            </Button>
+            <Button onClick={() => setIsPaymentDialogOpen(true)}>
+              Registrar Pago
+            </Button>
         </div>
 
-        {/* Search Bar */}
-        <div className="relative flex-grow w-full sm:w-auto">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            type="search"
-            placeholder="Buscar en el mes seleccionado..."
-            className="w-full rounded-lg bg-card pl-8"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
+        <div className="flex flex-col sm:flex-row items-center gap-4">
+          {/* Month Selector */}
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="icon" onClick={handlePreviousMonth}>
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <span className="font-semibold text-center w-36">{format(selectedDate, "MMMM yyyy", { locale: es })}</span>
+            <Button variant="outline" size="icon" onClick={handleNextMonth}>
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+
+          {/* Search Bar */}
+          <div className="relative flex-grow w-full sm:w-auto">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              type="search"
+              placeholder="Buscar en el mes seleccionado..."
+              className="w-full rounded-lg bg-card pl-8"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
         </div>
       </div>
 
@@ -476,4 +477,3 @@ export default function RentasPage() {
     </>
   );
 }
-
