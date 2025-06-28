@@ -1,47 +1,40 @@
-
 rules_version = '2';
-
 service cloud.firestore {
   match /databases/{database}/documents {
   
-    // Private database document containing all app data
+    // Main private database document
+    // Only authenticated users can read/write
     match /database/main {
       allow read, write: if request.auth != null;
     }
 
-    // Publicly accessible quotes collection
+    // Public quotes are read-only for everyone, writable by authenticated users
     match /publicQuotes/{quoteId} {
-      // Anyone can read a public quote if they have the link
-      allow get: if true;
-      
-      // Allow authenticated users (staff) to create or update the public doc
-      allow create, update: if request.auth != null;
-      
-      // Deny listing or deleting from the client
-      allow list, delete: if false;
+      allow read: if true;
+      allow write: if request.auth != null;
     }
     
-    // Publicly accessible service sheets collection
+    // Public owner reports are read-only for everyone, writable by authenticated users
+    match /publicOwnerReports/{reportId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+
+    // Public services can be read by anyone,
+    // written to by authenticated users,
+    // and partially updated (signatures) by unauthenticated users (customers)
     match /publicServices/{serviceId} {
-      // Anyone with the link can read the service sheet
-      allow get: if true;
+      allow read: if true;
       
-      // Authenticated users (staff) can create or update the service sheet
-      allow create, update: if request.auth != null;
-                      
-      // Unauthenticated users (customers) can ONLY update the signature fields.
-      // This rule is OR'd with the one above, allowing this specific public action.
-      allow update: if request.auth == null && 
-                      request.resource.data.diff(resource.data).affectedKeys()
-                      .hasOnly(['customerSignatureReception', 'receptionSignatureViewed', 'customerSignatureDelivery', 'deliverySignatureViewed']);
-                      
-      // Deny listing or deleting from the client
-      allow list, delete: if false;
-    }
-    
-    // By default, deny access to any other collections/documents
-    match /{document=**} {
-      allow read, write: if false;
+      // Authenticated users (employees) can do anything
+      allow write: if request.auth != null;
+      
+      // Customers (unauthenticated) can only update signature-related fields
+      allow update: if request.auth == null &&
+                     request.resource.data.diff(resource.data).affectedKeys()
+                       .hasAny(['customerSignatureReception', 'customerSignatureDelivery', 'receptionSignatureViewed', 'deliverySignatureViewed']) &&
+                     request.resource.data.diff(resource.data).affectedKeys()
+                       .difference(['customerSignatureReception', 'customerSignatureDelivery', 'receptionSignatureViewed', 'deliverySignatureViewed']).size() == 0;
     }
   }
 }
