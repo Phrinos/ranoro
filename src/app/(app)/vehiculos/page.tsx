@@ -43,7 +43,7 @@ export default function VehiculosPage() {
   const vehiclesWithLastService = useMemo(() => {
     if (!hydrated) return [];
     return placeholderVehicles.map(v => {
-      const history = placeholderServiceRecords.filter(s => s.vehicleId === v.id);
+      const history = placeholderServiceRecords.filter(s => s.vehicleId === v.id && s.status !== 'Cancelado');
       let lastServiceDate: string | undefined = undefined;
       if (history.length > 0) {
         // Sort valid dates to the top, then sort by date descending to find the latest

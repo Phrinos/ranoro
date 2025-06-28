@@ -47,7 +47,7 @@ export default function VehicleDetailPage() {
     setVehicle(foundVehicle || null);
 
     if (foundVehicle) {
-      const vehicleServices = placeholderServiceRecords.filter(s => s.vehicleId === foundVehicle.id)
+      const vehicleServices = placeholderServiceRecords.filter(s => s.vehicleId === foundVehicle.id && s.status !== 'Cancelado')
         .sort((a, b) => parseISO(b.serviceDate).getTime() - parseISO(a.serviceDate).getTime());
       setServices(vehicleServices);
     }
