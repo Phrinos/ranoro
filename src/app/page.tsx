@@ -1,4 +1,3 @@
-
 "use client";
 
 import Link from 'next/link';
@@ -85,9 +84,8 @@ export default function LandingPage() {
           <Image
             src="/ranoro1.jpg"
             alt="Taller mecánico profesional"
-            layout="fill"
-            objectFit="cover"
-            className="absolute z-0 opacity-20"
+            fill
+            className="absolute z-0 opacity-20 object-cover"
           />
           <div className="relative z-10 flex h-full flex-col items-center justify-center text-center px-4">
             <h1 className="text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl font-headline">
