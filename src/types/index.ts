@@ -33,6 +33,9 @@ export interface Vehicle {
   lastServiceDate?: string; 
   isFleetVehicle?: boolean;
   dailyRentalCost?: number;
+  gpsMonthlyCost?: number;
+  adminMonthlyCost?: number;
+  insuranceMonthlyCost?: number;
   fineCheckHistory?: {
     date: string; // ISO String
     checkedBy: string; // User name

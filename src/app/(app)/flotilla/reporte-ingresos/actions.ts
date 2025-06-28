@@ -65,6 +65,9 @@ export async function generateAndShareOwnerReport(
       const costsFromVehicleExpenses = vehicleExpensesInMonth.reduce((sum, e) => sum + e.amount, 0);
 
       const totalMaintenanceCosts = maintenanceCostsFromServices + costsFromVehicleExpenses;
+      
+      const totalDeductions = (vehicle.gpsMonthlyCost || 0) + (vehicle.adminMonthlyCost || 0) + (vehicle.insuranceMonthlyCost || 0);
+      const finalCostsAndDeductions = totalMaintenanceCosts + totalDeductions;
 
 
       return {
@@ -72,7 +75,7 @@ export async function generateAndShareOwnerReport(
         vehicleInfo: `${vehicle.make} ${vehicle.model} (${vehicle.licensePlate})`,
         daysRented,
         rentalIncome,
-        maintenanceCosts: totalMaintenanceCosts,
+        maintenanceCosts: finalCostsAndDeductions,
       };
     });
 

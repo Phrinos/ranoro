@@ -11,7 +11,7 @@ import {
 } from '@/lib/placeholder-data';
 import type { Vehicle, ServiceRecord, QuoteRecord, VehiclePaperwork } from '@/types';
 import { PageHeader } from '@/components/page-header';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { ShieldAlert, Edit, Car, DollarSign, ShieldCheck, ArrowLeft, Trash2, PlusCircle, CheckCircle, Circle, Gauge } from 'lucide-react';
@@ -36,7 +36,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { PaperworkDialog } from '../components/paperwork-dialog';
 import type { PaperworkFormValues } from '../components/paperwork-form';
-import { cn } from '@/lib/utils';
+import { cn, formatCurrency } from '@/lib/utils';
 
 interface GroupedServices {
   [monthYearKey: string]: { // key is "YYYY-MM"
@@ -254,7 +254,7 @@ export default function FleetVehicleDetailPage() {
           <TabsTrigger value="paperwork">Trámites</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="details">
+        <TabsContent value="details" className="space-y-6">
           <Card>
             <CardHeader>
               <CardTitle>Información del Vehículo</CardTitle>
@@ -265,10 +265,6 @@ export default function FleetVehicleDetailPage() {
                   <p className="font-medium text-muted-foreground flex items-center gap-2"><Car className="h-4 w-4" />Vehículo</p>
                   <p className="font-semibold text-base">{vehicle.make} {vehicle.model} ({vehicle.year})</p>
                   <p>Placa: {vehicle.licensePlate}</p>
-                </div>
-                <div className="space-y-1">
-                  <p className="font-medium text-muted-foreground flex items-center gap-2"><DollarSign className="h-4 w-4" />Renta Diaria</p>
-                  <p className="font-semibold text-base">${(vehicle.dailyRentalCost || 0).toFixed(2)}</p>
                 </div>
                  <div className="space-y-1">
                   <p className="font-medium text-muted-foreground flex items-center gap-2"><Gauge className="h-4 w-4" />Kilometraje Actual</p>
@@ -283,6 +279,36 @@ export default function FleetVehicleDetailPage() {
                   <p className="font-medium text-muted-foreground">Notas</p>
                   <p className="whitespace-pre-wrap">{vehicle.notes || 'Sin notas.'}</p>
                 </div>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle>Costos y Deducciones Fijas</CardTitle>
+              <Button asChild variant="outline" size="sm">
+                <Link href={`/vehiculos/${vehicle.id}`}>
+                  <Edit className="mr-2 h-4 w-4" />
+                  Editar
+                </Link>
+              </Button>
+            </CardHeader>
+            <CardContent className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 text-center">
+              <div className="p-2 bg-muted/50 rounded-md">
+                <p className="text-xs font-medium text-muted-foreground">RENTA DIARIA</p>
+                <p className="text-lg font-bold">{formatCurrency(vehicle.dailyRentalCost)}</p>
+              </div>
+              <div className="p-2 bg-muted/50 rounded-md">
+                <p className="text-xs font-medium text-muted-foreground">GPS (MENSUAL)</p>
+                <p className="text-lg font-bold">{formatCurrency(vehicle.gpsMonthlyCost)}</p>
+              </div>
+              <div className="p-2 bg-muted/50 rounded-md">
+                <p className="text-xs font-medium text-muted-foreground">ADMIN (MENSUAL)</p>
+                <p className="text-lg font-bold">{formatCurrency(vehicle.adminMonthlyCost)}</p>
+              </div>
+              <div className="p-2 bg-muted/50 rounded-md">
+                <p className="text-xs font-medium text-muted-foreground">SEGURO (MENSUAL)</p>
+                <p className="text-lg font-bold">{formatCurrency(vehicle.insuranceMonthlyCost)}</p>
               </div>
             </CardContent>
           </Card>

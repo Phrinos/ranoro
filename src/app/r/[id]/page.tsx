@@ -34,14 +34,14 @@ const ReportContent = React.forwardRef<HTMLDivElement, { report: PublicOwnerRepo
       <main>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8 text-center">
           <Card><CardHeader><CardTitle className="text-sm font-medium">Ingreso por Renta</CardTitle><CardDescription className="text-2xl font-bold">{formatCurrency(report.totalRentalIncome)}</CardDescription></CardHeader></Card>
-          <Card><CardHeader><CardTitle className="text-sm font-medium">Costos de Mantenimiento</CardTitle><CardDescription className="text-2xl font-bold text-destructive">{formatCurrency(report.totalMaintenanceCosts)}</CardDescription></CardHeader></Card>
+          <Card><CardHeader><CardTitle className="text-sm font-medium">Costos y Deducciones</CardTitle><CardDescription className="text-2xl font-bold text-destructive">{formatCurrency(report.totalMaintenanceCosts)}</CardDescription></CardHeader></Card>
           <Card><CardHeader><CardTitle className="text-sm font-medium">Balance Neto</CardTitle><CardDescription className={`text-2xl font-bold ${report.totalNetBalance >= 0 ? 'text-green-600' : 'text-red-600'}`}>{formatCurrency(report.totalNetBalance)}</CardDescription></CardHeader></Card>
         </div>
 
         <h2 className="text-xl font-semibold mb-4">Desglose por Vehículo</h2>
         <div className="overflow-x-auto">
           <Table>
-            <TableHeader><TableRow><TableHead>Vehículo</TableHead><TableHead className="text-center">Días Rentados</TableHead><TableHead className="text-right">Ingresos</TableHead><TableHead className="text-right">Mantenimiento</TableHead><TableHead className="text-right">Balance</TableHead></TableRow></TableHeader>
+            <TableHeader><TableRow><TableHead>Vehículo</TableHead><TableHead className="text-center">Días Rentados</TableHead><TableHead className="text-right">Ingresos</TableHead><TableHead className="text-right">Costos y Deducc.</TableHead><TableHead className="text-right">Balance</TableHead></TableRow></TableHeader>
             <TableBody>
               {report.detailedReport.map(item => {
                 const balance = item.rentalIncome - item.maintenanceCosts;
