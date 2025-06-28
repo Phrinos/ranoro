@@ -163,7 +163,7 @@ export default function PublicServiceSheetPage() {
                     <CardTitle>Hoja de Servicio: {service.id}</CardTitle>
                     <CardDescription>Revise los detalles y firme digitalmente si es necesario.</CardDescription>
                 </div>
-                 <div className="flex flex-wrap gap-2">
+                 <div className="flex flex-wrap gap-2 justify-end">
                     {showSignReception && (
                       <Button onClick={() => handleOpenSignatureDialog('reception')}>
                         <Signature className="mr-2 h-4 w-4"/> Firmar Recepción
