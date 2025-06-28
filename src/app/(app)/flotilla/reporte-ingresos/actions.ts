@@ -4,6 +4,9 @@
 import type { PublicOwnerReport, VehicleMonthlyReport, WorkshopInfo, Vehicle, RentalPayment, ServiceRecord, VehicleExpense } from '@/types';
 import { format, parseISO, startOfMonth, endOfMonth, isWithinInterval, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { db } from '@/lib/firebasePublic.js';
+import { doc, setDoc } from 'firebase/firestore';
+import { sanitizeObjectForFirestore } from '@/lib/placeholder-data';
 
 export interface ReportGenerationInput {
   ownerName: string;
@@ -19,12 +22,13 @@ export interface ReportGenerationInput {
 export async function generateAndShareOwnerReport(
   input: ReportGenerationInput
 ): Promise<{ success: boolean; report?: PublicOwnerReport; error?: string; }> {
-  // This server action is now PURELY for computation. It does NOT interact with any database.
-  // It receives all necessary data from the client, computes the report, and returns the object.
-  // The authenticated client is responsible for all database write operations.
   try {
     const { ownerName, forDateISO, workshopInfo, allVehicles, allRentalPayments, allServiceRecords, allVehicleExpenses } = input;
     
+    if (!db) {
+        throw new Error('La conexión a la base de datos pública no está disponible.');
+    }
+
     const reportDate = new Date();
     const reportForDate = parseISO(forDateISO);
     const reportMonth = format(reportForDate, "MMMM 'de' yyyy", { locale: es });
@@ -88,7 +92,10 @@ export async function generateAndShareOwnerReport(
       workshopInfo,
     };
     
-    // Return the computed object to the client. The client will handle saving.
+    // Server action writes to public collection using the public db client
+    const publicDocRef = doc(db, 'publicOwnerReports', newPublicReport.publicId);
+    await setDoc(publicDocRef, sanitizeObjectForFirestore(newPublicReport), { merge: true });
+
     return { success: true, report: newPublicReport };
 
   } catch (e) {
