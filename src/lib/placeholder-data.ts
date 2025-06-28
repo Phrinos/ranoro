@@ -288,6 +288,29 @@ export async function hydrateFromFirestore() {
     console.warn('Could not read from Firestore. This might be due to Firestore rules. The app will proceed with in-memory data for this session.');
   }
 
+  // --- ONE-TIME DATA MIGRATION: Assign completed services to a specific technician ---
+  const technicianToAssign = placeholderTechnicians.find(t => t.name === 'Guillermo Martinez Lozano');
+  if (technicianToAssign) {
+    let servicesUpdatedCount = 0;
+    placeholderServiceRecords.forEach(service => {
+      if (service.status === 'Completado') {
+        // Update only if it's not already assigned to him
+        if(service.technicianId !== technicianToAssign.id) {
+          service.technicianId = technicianToAssign.id;
+          service.technicianName = technicianToAssign.name;
+          servicesUpdatedCount++;
+        }
+      }
+    });
+    if (servicesUpdatedCount > 0) {
+        console.log(`[MIGRATION] Assigned ${servicesUpdatedCount} completed services to ${technicianToAssign.name}.`);
+        changesMade = true;
+    }
+  } else {
+      console.warn("[MIGRATION SKIPPED] Could not find technician 'Guillermo Martinez Lozano'.");
+  }
+
+
   // --- DATA INTEGRITY CHECKS ---
   if (!placeholderUsers.some((u) => u.id === defaultSuperAdmin.id)) {
     placeholderUsers.unshift(defaultSuperAdmin);
