@@ -33,7 +33,7 @@ const PRIVATE_APP_NAME = "firebase-private-app";
 // 2. Crear/obtener la app de Firebase
 //-------------------------------------------
 // Solo inicializa Firebase si las credenciales son válidas.
-if (firebaseConfig.apiKey && !firebaseConfig.apiKey.startsWith("TU_")) {
+if (firebaseConfig.apiKey && firebaseConfig.apiKey !== "AIzaSyA_ot6L0zgglc1tC0BounxYIvj7y8048Sg_REPLACE_ME") {
   try {
     // Intenta obtener la app si ya existe
     const privateApp = getApp(PRIVATE_APP_NAME);
