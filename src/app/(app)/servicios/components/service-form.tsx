@@ -460,7 +460,9 @@ export function ServiceForm({
             description: (data as any).description || "",
             notes: data.notes || "",
             technicianId: (data as ServiceRecord)?.technicianId || (data as QuoteRecord)?.preparedByTechnicianId || undefined,
-            status: mode === 'service' ? ((data as ServiceRecord)?.status || 'Agendado') : 'Cotizacion',
+            status: mode === 'service' 
+                ? (isConverting ? 'Reparando' : ((data as ServiceRecord)?.status || 'Agendado')) 
+                : 'Cotizacion',
             serviceType: (data as ServiceRecord)?.serviceType || (data as QuoteRecord)?.serviceType || 'Servicio General',
             vehicleConditions: (data as ServiceRecord)?.vehicleConditions || "",
             fuelLevel: (data as ServiceRecord)?.fuelLevel || undefined,
@@ -1005,7 +1007,7 @@ export function ServiceForm({
         }, 'image/png');
     } catch (e) {
         console.error("html2canvas error:", e);
-        toast({ title: "Error de Captura", description: "No se pudo generar la imagen.", variant: "destructive" });
+        toast({ title: "Error de Captura", description: "No se pudo generar la imagen del ticket.", variant: "destructive" });
     }
   };
 
@@ -1021,7 +1023,6 @@ export function ServiceForm({
       return;
     }
   
-    const newPhotoUrls: string[] = [];
     const optimizationPromises: Promise<string>[] = [];
   
     for (let i = 0; i < files.length; i++) {
@@ -1030,6 +1031,7 @@ export function ServiceForm({
   
     try {
       const optimizedDataUrls = await Promise.all(optimizationPromises);
+      const newPhotoUrls: string[] = [];
   
       for (const dataUrl of optimizedDataUrls) {
         if (storage) {
@@ -1115,8 +1117,8 @@ export function ServiceForm({
                   {showReportTab && (
                       <TabsTrigger value="reporte" className="text-sm sm:text-base data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none flex items-center gap-2 py-2 px-3 sm:px-4">
                           <Camera className="h-4 w-4 shrink-0"/>
-                          <span className="hidden sm:inline">Reporte</span>
-                          <span className="sm:hidden">Reporte</span>
+                          <span className="hidden sm:inline">Reporte Fotográfico</span>
+                          <span className="sm:hidden">Fotos</span>
                       </TabsTrigger>
                   )}
                   {showReceptionTab && (
