@@ -13,6 +13,7 @@ import {
   placeholderVehicleExpenses,
   placeholderPublicOwnerReports,
   persistToFirestore,
+  sanitizeObjectForFirestore, // Import sanitizer
 } from '@/lib/placeholder-data';
 import type { PublicOwnerReport, Vehicle, RentalPayment, ServiceRecord, WorkshopInfo, VehicleMonthlyReport, VehicleExpense } from '@/types';
 import {
@@ -32,8 +33,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { formatCurrency } from "@/lib/utils";
 import Link from "next/link";
 import { useToast } from "@/hooks/use-toast";
-import { generateAndShareOwnerReport } from '../actions';
+import { generateOwnerReportData } from '../actions'; // Import new function name
 import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
+import { db as publicDb } from '@/lib/firebasePublic.js'; // Import public DB
+import { doc, setDoc } from 'firebase/firestore'; // Import firestore functions
 
 const ReportContent = React.forwardRef<HTMLDivElement, { report: PublicOwnerReport }>(({ report }, ref) => {
   const workshopInfo = report.workshopInfo || { name: 'Taller', logoUrl: '/ranoro-logo.png' };
@@ -185,8 +188,8 @@ export default function OwnerIncomeDetailPage() {
     const storedWorkshopInfo = typeof window !== 'undefined' ? localStorage.getItem('workshopTicketInfo') : null;
     const workshopInfo: WorkshopInfo | undefined = storedWorkshopInfo ? JSON.parse(storedWorkshopInfo) : undefined;
   
-    // The server action now generates AND saves the public document.
-    const result = await generateAndShareOwnerReport({
+    // 1. Calculate the report data using the server action.
+    const result = generateOwnerReportData({
       ownerName: ownerName,
       forDateISO: selectedDate.toISOString(),
       workshopInfo: workshopInfo,
@@ -197,31 +200,34 @@ export default function OwnerIncomeDetailPage() {
     });
   
     if (result.success && result.report) {
-      // The server action already handled the public part.
-      // The client just needs to update its local state and private db record.
+      const finalReport = result.report;
+      
       try {
-        // Update the local placeholder array
-        const reportIndex = placeholderPublicOwnerReports.findIndex(
-          r => r.publicId === result.report!.publicId
-        );
-        if (reportIndex > -1) {
-          placeholderPublicOwnerReports[reportIndex] = result.report;
+        // 2. Client saves the public document.
+        if (publicDb) {
+            const publicDocRef = doc(publicDb, 'publicOwnerReports', finalReport.publicId);
+            await setDoc(publicDocRef, sanitizeObjectForFirestore(finalReport), { merge: true });
         } else {
-          placeholderPublicOwnerReports.push(result.report);
+            throw new Error("Public DB client is not available.");
         }
         
-        // Persist the updated placeholder array to the main private document.
-        // This uses the authenticated firebaseClient via persistToFirestore.
+        // 3. Client updates the private history.
+        const reportIndex = placeholderPublicOwnerReports.findIndex(r => r.publicId === finalReport.publicId);
+        if (reportIndex > -1) {
+          placeholderPublicOwnerReports[reportIndex] = finalReport;
+        } else {
+          placeholderPublicOwnerReports.push(finalReport);
+        }
         await persistToFirestore(['publicOwnerReports']);
   
-        // Update UI
-        setReportToShare(result.report);
+        // 4. Update UI.
+        setReportToShare(finalReport);
         setIsShareDialogOpen(true);
         toast({ title: "Reporte Generado y Compartido", description: "El enlace público está listo." });
   
       } catch (e) {
-         console.error("Error persisting report to private DB:", e);
-         toast({ title: "Error al Guardar Historial", description: "El enlace público se creó, pero no se pudo guardar en el historial interno.", variant: "destructive" });
+         console.error("Error saving report to DBs:", e);
+         toast({ title: "Error al Guardar", description: `No se pudo guardar el reporte en la base de datos. ${e instanceof Error ? e.message : ''}`, variant: "destructive" });
       }
       
     } else {

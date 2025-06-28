@@ -1,12 +1,8 @@
-
 'use server';
 
 import type { PublicOwnerReport, VehicleMonthlyReport, WorkshopInfo, Vehicle, RentalPayment, ServiceRecord, VehicleExpense } from '@/types';
 import { format, parseISO, startOfMonth, endOfMonth, isWithinInterval, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { db } from '@/lib/firebasePublic.js';
-import { doc, setDoc } from 'firebase/firestore';
-import { sanitizeObjectForFirestore } from '@/lib/placeholder-data';
 
 export interface ReportGenerationInput {
   ownerName: string;
@@ -19,16 +15,13 @@ export interface ReportGenerationInput {
 }
 
 
-export async function generateAndShareOwnerReport(
+// This is now a synchronous function that just performs calculations.
+export function generateOwnerReportData(
   input: ReportGenerationInput
-): Promise<{ success: boolean; report?: PublicOwnerReport; error?: string; }> {
+): { success: boolean; report?: PublicOwnerReport; error?: string; } {
   try {
     const { ownerName, forDateISO, workshopInfo, allVehicles, allRentalPayments, allServiceRecords, allVehicleExpenses } = input;
     
-    if (!db) {
-        throw new Error('La conexión a la base de datos pública no está disponible.');
-    }
-
     const reportDate = new Date();
     const reportForDate = parseISO(forDateISO);
     const reportMonth = format(reportForDate, "MMMM 'de' yyyy", { locale: es });
@@ -80,7 +73,7 @@ export async function generateAndShareOwnerReport(
     const monthId = format(reportForDate, "yyyy-MM");
     const publicId = `${safeOwnerName}-${monthId}`;
     
-    const newPublicReport: PublicOwnerReport = {
+    const publicReportObject: PublicOwnerReport = {
       publicId,
       ownerName,
       generatedDate: reportDate.toISOString(),
@@ -92,14 +85,10 @@ export async function generateAndShareOwnerReport(
       workshopInfo,
     };
     
-    // Server action writes to public collection using the public db client
-    const publicDocRef = doc(db, 'publicOwnerReports', newPublicReport.publicId);
-    await setDoc(publicDocRef, sanitizeObjectForFirestore(newPublicReport), { merge: true });
-
-    return { success: true, report: newPublicReport };
+    return { success: true, report: publicReportObject };
 
   } catch (e) {
-    console.error("Error generating public owner report data:", e);
+    console.error("Error generating owner report data:", e);
     const errorMessage = e instanceof Error ? e.message : 'No se pudo generar el reporte.';
     return { success: false, error: errorMessage };
   }

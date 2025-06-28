@@ -17,7 +17,7 @@ const firebaseConfig = {
 let db = null;
 const PUBLIC_APP_NAME = "firebase-public-app";
 
-if (firebaseConfig.apiKey && !firebaseConfig.apiKey.startsWith("TU_")) {
+if (firebaseConfig.apiKey && firebaseConfig.apiKey !== "AIzaSyA_ot6L0zgglc1tC0BounxYIvj7y8048Sg_REPLACE_ME") {
   try {
     // Intenta obtener la app pública si ya existe
     const publicApp = getApp(PUBLIC_APP_NAME);
