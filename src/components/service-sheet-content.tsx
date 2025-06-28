@@ -407,7 +407,7 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
              </header>
              <div className="space-y-4">
                  {service.photoReports!.map(reportItem => (
-                    <div key={reportItem.id} className="break-inside-avoid border-t pt-4 first:border-t-0">
+                    <div key={reportItem.id} className="break-inside-avoid border-b pb-4 last:border-none">
                         <p className="mb-2 text-sm">
                             <span className="font-bold">Fecha:</span> {format(parseISO(reportItem.date), "dd/MM/yyyy HH:mm", { locale: es })}
                             <br/>
@@ -467,7 +467,12 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
           {showChecklist && (
             <>
               <div style={{ pageBreakBefore: 'always' }} />
-              <div className="p-4 md:p-8">{SafetyChecklistDisplay}</div>
+              <div className="p-4 md:p-8"><SafetyChecklistDisplay 
+                inspection={service.safetyInspection!}
+                workshopInfo={effectiveWorkshopInfo}
+                service={service}
+                vehicle={vehicle}
+              /></div>
             </>
           )}
           {showPhotoReport && (
