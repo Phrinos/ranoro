@@ -753,6 +753,7 @@ export function ServiceForm({
       serviceData.taxAmount = finalTaxAmount;
       serviceData.totalSuppliesCost = totalSuppliesWorkshopCost;
       serviceData.serviceProfit = finalProfit;
+      serviceData.serviceAdvisorId = currentUser.id;
       serviceData.serviceAdvisorName = currentUser.name;
       
       if (currentUser.signatureDataUrl) serviceData.serviceAdvisorSignatureDataUrl = currentUser.signatureDataUrl;

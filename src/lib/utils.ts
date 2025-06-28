@@ -18,7 +18,8 @@ export const formatCurrency = (amount: number | undefined) => {
  */
 export const capitalizeWords = (str: string) => {
   if (!str) return '';
-  return str.replace(/\b\w/g, char => char.toUpperCase());
+  // Convert the whole string to lowercase first, then capitalize each word.
+  return str.toLowerCase().replace(/\b\w/g, char => char.toUpperCase());
 };
 
 /**
