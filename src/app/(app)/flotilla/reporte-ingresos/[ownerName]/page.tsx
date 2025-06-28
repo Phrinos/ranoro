@@ -13,6 +13,7 @@ import {
   placeholderVehicleExpenses,
   placeholderPublicOwnerReports,
   persistToFirestore,
+  sanitizeObjectForFirestore, // Import sanitizer
 } from '@/lib/placeholder-data';
 import type { PublicOwnerReport, Vehicle, RentalPayment, ServiceRecord, WorkshopInfo, VehicleMonthlyReport, VehicleExpense } from '@/types';
 import {
@@ -34,6 +35,8 @@ import Link from "next/link";
 import { useToast } from "@/hooks/use-toast";
 import { generateAndShareOwnerReport } from '../actions';
 import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
+import { db } from '@root/lib/firebaseClient.js'; // Use main authenticated db
+import { doc, setDoc } from 'firebase/firestore'; // Import firestore functions
 
 
 const ReportContent = React.forwardRef<HTMLDivElement, { report: PublicOwnerReport }>(({ report }, ref) => {
@@ -197,21 +200,38 @@ export default function OwnerIncomeDetailPage() {
     });
 
     if (result.success && result.report) {
-      setReportToShare(result.report);
-      setIsShareDialogOpen(true);
-
-      // Client-side logic to update the main data array
-      const reportIndex = placeholderPublicOwnerReports.findIndex(
-        r => r.publicId === result.report!.publicId
-      );
-      if (reportIndex > -1) {
-        placeholderPublicOwnerReports[reportIndex] = result.report;
-      } else {
-        placeholderPublicOwnerReports.push(result.report);
+      if (!db) {
+        toast({ title: "Error de Base de Datos", description: "La conexión a Firestore no está disponible.", variant: "destructive" });
+        setIsSharing(false);
+        return;
       }
-      
-      // Persist the updated array to the main database document FROM THE CLIENT
-      await persistToFirestore(['publicOwnerReports']);
+
+      try {
+        // 1. Save the public document from the client
+        const publicDocRef = doc(db, 'publicOwnerReports', result.report.publicId);
+        await setDoc(publicDocRef, sanitizeObjectForFirestore(result.report), { merge: true });
+        
+        // 2. Update the local placeholder array
+        const reportIndex = placeholderPublicOwnerReports.findIndex(
+          r => r.publicId === result.report!.publicId
+        );
+        if (reportIndex > -1) {
+          placeholderPublicOwnerReports[reportIndex] = result.report;
+        } else {
+          placeholderPublicOwnerReports.push(result.report);
+        }
+        
+        // 3. Persist the updated placeholder array to the main private document
+        await persistToFirestore(['publicOwnerReports']);
+
+        // 4. Update UI
+        setReportToShare(result.report);
+        setIsShareDialogOpen(true);
+
+      } catch (e) {
+         console.error("Error saving public report from client:", e);
+         toast({ title: "Error al Guardar", description: "No se pudo guardar el reporte en la base de datos.", variant: "destructive" });
+      }
       
     } else {
       toast({
