@@ -145,8 +145,8 @@ export default function LoginPage() {
           )}
         </CardContent>
         <CardFooter className="flex flex-col items-center justify-center text-center text-xs text-muted-foreground">
-          <p>Sistema de Administración de Taller</p>
-          <p>Diseñado y Desarrollado por Arturo Valdelamar</p>
+          <p className="font-semibold">Sistema de Administración de Talleres Ranoro®</p>
+          <p>Diseñado y Desarrollado por Arturo Valdelamar 4493930914</p>
         </CardFooter>
       </Card>
     </div>

@@ -178,6 +178,10 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
                   <p className="print-block hidden pt-2">Impreso el: {formattedPrintDate}</p>
               </div>
           </div>
+          <div className="text-center mt-6 pt-4 border-t border-gray-200">
+            <p className="text-xs font-semibold">Sistema de Administración de Talleres Ranoro®</p>
+            <p className="text-xs text-muted-foreground">Diseñado y Desarrollado por Arturo Valdelamar 4493930914</p>
+          </div>
         </footer>
       </div>
     );
