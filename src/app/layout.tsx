@@ -8,7 +8,7 @@ const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
   title: 'Ranoro - Gestión de Taller',
-  description: 'Aplicación para la gestión eficiente de talleres mecánicos by Firebase Studio',
+  description: 'Aplicación para la gestión eficiente de talleres mecánicos by Arturo Valdelamar',
 };
 
 export default function RootLayout({
