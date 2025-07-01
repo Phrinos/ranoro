@@ -13,7 +13,7 @@ import { Search, ListFilter, CalendarIcon as CalendarDateIcon, FileText, DollarS
 import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
 import { QuoteContent } from '@/components/quote-content';
 import { placeholderQuotes, placeholderVehicles, placeholderTechnicians, placeholderServiceRecords, placeholderInventory, persistToFirestore } from "@/lib/placeholder-data"; 
-import type { QuoteRecord, Vehicle, User, ServiceRecord, Technician, InventoryItem, WorkshopInfo } from "@/types"; 
+import type { QuoteRecord, Vehicle, ServiceRecord, Technician, InventoryItem, WorkshopInfo } from "@/types"; 
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { format, parseISO, compareAsc, compareDesc, isWithinInterval, isValid, startOfDay, endOfDay } from "date-fns";
@@ -22,7 +22,7 @@ import type { DateRange } from "react-day-picker";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { ServiceDialog } from "../../servicios/components/service-dialog";
-import { doc, setDoc, deleteDoc } from 'firebase/firestore';
+import { doc, deleteDoc } from 'firebase/firestore';
 import { db } from '@root/lib/firebaseClient.js';
 import { Badge } from "@/components/ui/badge";
 import {
@@ -67,7 +67,7 @@ export default function HistorialCotizacionesPage() {
   const [isServiceDialogOpen, setIsServiceDialogOpen] = useState(false);
   const [editingService, setEditingService] = useState<ServiceRecord | null>(null);
   
-  const [workshopInfo, setWorkshopInfo] = useState<WorkshopInfo | {}>({});
+  const [workshopInfo, setWorkshopInfo] = useState<WorkshopInfo | undefined>(undefined);
   const quoteContentRef = useRef<HTMLDivElement>(null);
 
 
@@ -191,16 +191,6 @@ export default function HistorialCotizacionesPage() {
     }
     setQuoteToConvert(quote);
     setIsGenerateServiceDialogOpen(true);
-  }, [toast]);
-  
-  const handleEditService = useCallback((serviceId: string) => {
-    const serviceToEdit = placeholderServiceRecords.find(s => s.id === serviceId);
-    if (serviceToEdit) {
-        setEditingService(serviceToEdit);
-        setIsServiceDialogOpen(true);
-    } else {
-        toast({ title: "Error", description: "No se pudo encontrar el servicio correspondiente.", variant: "destructive" });
-    }
   }, [toast]);
 
   const handleSaveEditedQuote = useCallback(async (data: ServiceRecord | QuoteRecord) => {

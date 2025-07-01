@@ -67,7 +67,6 @@ import {
 } from "date-fns";
 import { es } from 'date-fns/locale';
 import type { DateRange } from "react-day-picker";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
@@ -86,7 +85,6 @@ type SaleSortOption =
 // ==================== Componente ====================
 
 export default function POSPage() {
-  const router = useRouter();
   const { toast } = useToast();
   
   // Forzar re–renderes cuando las colecciones placeholder cambian
@@ -172,7 +170,7 @@ export default function POSPage() {
     });
 
     return list;
-  }, [searchTerm, dateRange, sortOption, paymentMethodFilter, version, hydrated]);
+  }, [searchTerm, dateRange, sortOption, paymentMethodFilter, hydrated]);
 
   // -------------------- Datos resumidos --------------------
 

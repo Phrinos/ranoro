@@ -8,7 +8,6 @@ import { BrainCircuit, Loader2, PackageSearch, AlertTriangle, CheckCircle, Shopp
 import { useToast } from '@/hooks/use-toast';
 import { analyzeInventory, type InventoryRecommendation } from '@/ai/flows/inventory-analysis-flow';
 import { placeholderInventory, placeholderServiceRecords } from '@/lib/placeholder-data';
-import type { InventoryItem, ServiceRecord } from '@/types';
 
 export default function AnalisisInventarioPage() {
   const [isLoading, setIsLoading] = useState(false);
@@ -81,7 +80,7 @@ export default function AnalisisInventarioPage() {
                 <PackageSearch className="h-16 w-16 text-muted-foreground mb-4"/>
                 <CardTitle className="text-xl">Listo para analizar</CardTitle>
                 <CardDescription className="mt-2 max-w-md mx-auto">
-                    Haz clic en el botón "Analizar Inventario" para que la inteligencia artificial revise tu stock actual y el historial de uso para generar recomendaciones de compra.
+                    Haz clic en el botón &quot;Analizar Inventario&quot; para que la inteligencia artificial revise tu stock actual y el historial de uso para generar recomendaciones de compra.
                 </CardDescription>
             </Card>
         )}

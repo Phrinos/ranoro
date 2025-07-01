@@ -5,8 +5,6 @@
 // Keeping it here as a placeholder for removal, or it can be deleted.
 // For now, I'll empty its content as its functionality is moved.
 
-import React from 'react';
-
 export function PurchaseEntryDialog() {
   // This component is no longer used. Its functionality has been split into
   // PurchaseItemSelectionDialog.tsx and PurchaseDetailsEntryDialog.tsx

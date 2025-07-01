@@ -22,14 +22,13 @@ const nextConfig = {
       },
     ],
   },
-  webpack: (config, { isServer }) => {
-    // Fix for a build error with Handlebars, a dependency of Genkit.
-    // Webpack doesn't support `require.extensions`, which Handlebars uses.
-    if (isServer) {
-      config.externals.push('handlebars');
-    }
-    return config;
-  },
+  allowedDevOrigins: [
+    "https://3000-firebase-studio-1750318222114.cluster-hf4yr35cmnbd4vhbxvfvc6cp5q.cloudworkstations.dev",
+    "https://3001-firebase-studio-1750318222114.cluster-hf4yr35cmnbd4vhbxvfvc6cp5q.cloudworkstations.dev",
+    "https://3002-firebase-studio-1750318222114.cluster-hf4yr35cmnbd4vhbxvfvc6cp5q.cloudworkstations.dev",
+    "https://9000-firebase-studio-1750318222114.cluster-hf4yr35cmnbd4vhbxvfvc6cp5q.cloudworkstations.dev",
+    "https://9002-firebase-studio-1750318222114.cluster-hf4yr35cmnbd4vhbxvfvc6cp5q.cloudworkstations.dev"
+  ],
 };
 
 module.exports = nextConfig;

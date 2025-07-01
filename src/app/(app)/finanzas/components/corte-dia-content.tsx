@@ -1,7 +1,6 @@
 
 "use client";
 
-import type { SaleReceipt, ServiceRecord } from '@/types';
 import { format, parseISO, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
 import React, { useEffect, useState } from 'react';
@@ -82,7 +81,7 @@ export function CorteDiaContent({ reportData, previewWorkshopInfo }: CorteDiaCon
         <h1 className="text-lg font-bold">{workshopInfo.name}</h1>
         <p>{workshopInfo.addressLine1}</p>
         {workshopInfo.addressLine2 && <p>{workshopInfo.addressLine2}</p>}
-        <p>{workshopInfo.cityState}</p>
+        {workshopInfo.cityState && <p>{workshopInfo.cityState}</p>}
         <p>Tel: {workshopInfo.phone}</p>
       </div>
 

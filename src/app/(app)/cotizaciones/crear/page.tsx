@@ -8,7 +8,6 @@ import { PrintTicketDialog } from "@/components/ui/print-ticket-dialog";
 import { QuoteContent } from "@/components/quote-content";
 import {
   placeholderVehicles,
-  placeholderTechnicians,
   placeholderInventory,
   placeholderQuotes,
   persistToFirestore
@@ -16,11 +15,7 @@ import {
 import type {
   QuoteRecord,
   Vehicle,
-  Technician,
   ServiceRecord,
-  User,
-  InventoryItem,
-  WorkshopInfo,
 } from "@/types";
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";

@@ -109,7 +109,7 @@ export function PurchaseItemSelectionDialog({
            {searchTerm && (
              <Button variant="outline" onClick={handleCreate} className="w-full mt-2">
                 <PackagePlus className="mr-2 h-4 w-4" />
-                Crear Nuevo Artículo con "{searchTerm}"
+                Crear Nuevo Artículo con &quot;{searchTerm}&quot;
             </Button>
            )}
         </div>

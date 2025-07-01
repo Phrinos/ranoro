@@ -6,7 +6,7 @@ import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
-import { PlusCircle, Search, Trash2, Edit, Car, Wrench, Clock, DollarSign } from "lucide-react";
+import { PlusCircle, Search, Trash2, Edit, Car } from "lucide-react";
 import { useToast } from '@/hooks/use-toast';
 import { persistToFirestore, placeholderVehiclePriceLists } from '@/lib/placeholder-data';
 import type { VehiclePriceList } from '@/types';
@@ -15,7 +15,6 @@ import type { PriceListFormValues } from './components/price-list-form';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Separator } from '@/components/ui/separator';
 
 export default function PriceListPage() {
   const [priceLists, setPriceLists] = useState<VehiclePriceList[]>(placeholderVehiclePriceLists);
@@ -156,7 +155,7 @@ export default function PriceListPage() {
                     <AlertDialogHeader>
                       <AlertDialogTitle>¿Eliminar esta lista de precios?</AlertDialogTitle>
                       <AlertDialogDescription>
-                        Esta acción no se puede deshacer. Se eliminará permanentemente la lista de precios para "{record.make} {record.model}".
+                        Esta acción no se puede deshacer. Se eliminará permanentemente la lista de precios para &quot;{record.make} {record.model}&quot;.
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>

@@ -3,7 +3,7 @@
 
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Edit, Trash2, Clock, CheckCircle, Wrench, CalendarCheck } from "lucide-react";
+import { PlusCircle, Edit, Trash2, Clock, CheckCircle, Wrench, CalendarCheck, Share2 } from "lucide-react";
 import { ServiceDialog } from "./components/service-dialog";
 import { placeholderServiceRecords, placeholderVehicles, placeholderTechnicians, placeholderInventory } from "@/lib/placeholder-data";
 import type { ServiceRecord, Vehicle, Technician, QuoteRecord } from "@/types";
@@ -15,6 +15,43 @@ import { useRouter } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { nanoid } from 'nanoid';
+import { doc, setDoc } from 'firebase/firestore';
+import { db } from '@/lib/firebasePublic';
+
+
+async function createPublicService(service: ServiceRecord, vehicle: Vehicle | undefined): Promise<string> {
+  const publicId = `srv_${nanoid(15)}`;
+  if (!db) {
+    throw new Error("La conexión con la base de datos no está configurada.");
+  }
+  if (!vehicle) {
+    throw new Error("No se encontró el vehículo asociado a este servicio.");
+  }
+  
+  const publicDocRef = doc(db, 'publicServices', publicId);
+
+  // Create a specific public-facing data object
+  const publicData = {
+    ...service,
+    vehicle: { // Embed necessary vehicle info
+      make: vehicle.make,
+      model: vehicle.model,
+      year: vehicle.year,
+      color: vehicle.color,
+      licensePlate: vehicle.licensePlate,
+      vin: vehicle.vin,
+    },
+    // Ensure you are not leaking any sensitive internal data
+    internalNotes: '', 
+    costBreakdown: {},
+  };
+
+
+  await setDoc(publicDocRef, publicData);
+  return publicId;
+}
+
 
 export default function ServiciosPage() {
   const { toast } = useToast();
@@ -33,6 +70,30 @@ export default function ServiciosPage() {
     setTechniciansState(placeholderTechnicians);
     setInventoryItemsState(placeholderInventory);
   }, []);
+
+  const handleShareService = async (service: ServiceRecord) => {
+    try {
+      const vehicle = vehicles.find(v => v.id === service.vehicleId);
+      const publicId = await createPublicService(service, vehicle);
+      const publicUrl = `${window.location.origin}/s/${publicId}`;
+      
+      navigator.clipboard.writeText(publicUrl);
+      
+      toast({
+        title: "Enlace Compartido",
+        description: "El enlace a la hoja de servicio ha sido copiado al portapapeles.",
+      });
+
+    } catch (error) {
+      console.error("Error al compartir el servicio:", error);
+      toast({
+        title: "Error al Compartir",
+        description: "No se pudo crear el enlace para compartir. Por favor, intente de nuevo.",
+        variant: "destructive",
+      });
+    }
+  };
+
   
   const handleOpenDialog = (service: ServiceRecord | null = null) => {
     setEditingService(service);
@@ -193,6 +254,9 @@ export default function ServiciosPage() {
                             <div className="flex">
                                 <Button variant="ghost" size="icon" onClick={() => handleOpenDialog(service)} title="Editar Servicio">
                                     <Edit className="h-4 w-4" />
+                                </Button>
+                                <Button variant="ghost" size="icon" onClick={() => handleShareService(service)} title="Compartir Enlace">
+                                    <Share2 className="h-4 w-4" />
                                 </Button>
                                 <AlertDialog>
                                     <AlertDialogTrigger asChild>

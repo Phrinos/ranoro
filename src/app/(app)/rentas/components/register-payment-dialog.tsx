@@ -125,7 +125,7 @@ export function RegisterPaymentDialog({
             <div className="space-y-2">
                 <Label htmlFor="mileage-input">Kilometraje Actual (Obligatorio)</Label>
                 <Input id="mileage-input" type="number" value={mileage} onChange={(e) => setMileage(e.target.value === '' ? '' : Number(e.target.value))} placeholder="Ej: 125000" />
-                <p className="text-sm text-muted-foreground">Se requiere actualizar el kilometraje (última vez hace > 7 días).</p>
+                <p className="text-sm text-muted-foreground">Se requiere actualizar el kilometraje (última vez hace  7 días).</p>
             </div>
           )}
         </div>

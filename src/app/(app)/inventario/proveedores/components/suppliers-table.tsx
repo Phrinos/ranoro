@@ -80,7 +80,7 @@ export const SuppliersTable = React.memo(({ suppliers, onEdit, onDelete }: Suppl
                     <AlertDialogHeader>
                       <AlertDialogTitle>¿Eliminar Proveedor?</AlertDialogTitle>
                       <AlertDialogDescription>
-                        ¿Estás seguro de que quieres eliminar al proveedor "{supplier.name}"? Esta acción no se puede deshacer.
+                        ¿Estás seguro de que quieres eliminar al proveedor &quot;{supplier.name}&quot;? Esta acción no se puede deshacer.
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>

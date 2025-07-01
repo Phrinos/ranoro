@@ -2,12 +2,12 @@
 
 import { useParams, useRouter } from 'next/navigation';
 import { placeholderInventory, placeholderCategories, placeholderSuppliers, persistToFirestore, placeholderServiceRecords, placeholderSales } from '@/lib/placeholder-data';
-import type { InventoryItem, ServiceRecord, SaleReceipt } from '@/types';
+import type { InventoryItem } from '@/types';
 import { PageHeader } from '@/components/page-header';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { Archive, Edit, ShieldAlert, Package, Server, History, ArrowRight } from 'lucide-react';
+import { Archive, Edit, ShieldAlert, Package, Server, ArrowRight } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
@@ -83,7 +83,7 @@ export default function InventoryItemDetailPage() {
         const allMovements = [...serviceExits, ...saleExits].sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime());
         setHistory(allMovements);
     }
-  }, [itemId]);
+  }, [itemId, item]);
 
   const handleSaveEditedItem = async (formData: InventoryItemFormValues) => {
     if (!item) return;

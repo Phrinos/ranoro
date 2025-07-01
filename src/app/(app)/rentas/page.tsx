@@ -17,13 +17,13 @@ import {
   persistToFirestore,
   hydrateReady,
 } from '@/lib/placeholder-data';
-import type { Driver, Vehicle, RentalPayment, OwnerWithdrawal, VehicleExpense } from '@/types';
+import type { RentalPayment, OwnerWithdrawal, VehicleExpense } from '@/types';
 import { RegisterPaymentDialog } from './components/register-payment-dialog';
 import { OwnerWithdrawalDialog, type OwnerWithdrawalFormValues } from './components/owner-withdrawal-dialog';
 import { VehicleExpenseDialog, type VehicleExpenseFormValues } from './components/vehicle-expense-dialog';
 import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
 import { RentalReceiptContent } from './components/rental-receipt-content';
-import { isToday, parseISO, format, isValid, compareDesc, differenceInCalendarDays, startOfToday, isAfter, subMonths, addMonths, startOfMonth, endOfMonth, isWithinInterval, compareAsc } from 'date-fns';
+import { parseISO, format, isValid, compareDesc, differenceInCalendarDays, startOfToday, isAfter, subMonths, addMonths, startOfMonth, endOfMonth, isWithinInterval, compareAsc } from 'date-fns';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { es } from 'date-fns/locale';
@@ -123,12 +123,12 @@ export default function RentasPage() {
       })
       .filter((d): d is NonNullable<typeof d> => d !== null)
       .sort((a, b) => b.daysOwed - a.daysOwed); // Sort by most days owed
-  }, [hydrated, version]);
+  }, [hydrated]);
   
   const overduePaperwork = useMemo(() => {
     if (!hydrated) return [];
     const today = startOfToday();
-    const alerts: any[] = [];
+    const alerts: { vehicleId: string; vehicleLicensePlate: string; paperworkId: string; paperworkName: string; dueDate: string; }[] = [];
 
     placeholderVehicles
       .filter(v => v.isFleetVehicle && v.paperwork)
@@ -148,12 +148,12 @@ export default function RentasPage() {
       });
     
     return alerts.sort((a,b) => compareAsc(parseISO(a.dueDate), parseISO(b.dueDate)));
-  }, [hydrated, version]);
+  }, [hydrated]);
 
 
   const filteredPayments = useMemo(() => {
     const { start, end } = selectedMonthRange;
-    let list = [...payments].filter(p => {
+    const list = [...payments].filter(p => {
         const pDate = parseISO(p.paymentDate);
         return isValid(pDate) && isWithinInterval(pDate, { start, end });
     }).sort((a,b) => compareDesc(parseISO(a.paymentDate), parseISO(b.paymentDate)));
@@ -169,7 +169,7 @@ export default function RentasPage() {
 
   const filteredWithdrawals = useMemo(() => {
     const { start, end } = selectedMonthRange;
-    let list = [...withdrawals].filter(w => {
+    const list = [...withdrawals].filter(w => {
         const wDate = parseISO(w.date);
         return isValid(wDate) && isWithinInterval(wDate, { start, end });
     }).sort((a,b) => compareDesc(parseISO(a.date), parseISO(b.date)));
@@ -184,7 +184,7 @@ export default function RentasPage() {
 
   const filteredVehicleExpenses = useMemo(() => {
     const { start, end } = selectedMonthRange;
-    let list = [...vehicleExpenses].filter(e => {
+    const list = [...vehicleExpenses].filter(e => {
         const eDate = parseISO(e.date);
         return isValid(eDate) && isWithinInterval(eDate, { start, end });
     }).sort((a, b) => compareDesc(parseISO(a.date), parseISO(b.date)));

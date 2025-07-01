@@ -9,7 +9,7 @@ import { PlusCircle, Search, DollarSign, ShoppingCart, ListFilter } from "lucide
 import { DropdownMenu, DropdownMenuContent, DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useToast } from '@/hooks/use-toast';
 import { placeholderSuppliers, placeholderServiceRecords, placeholderInventory, persistToFirestore } from '@/lib/placeholder-data';
-import type { Supplier, InventoryItem } from '@/types';
+import type { Supplier } from '@/types';
 import { SupplierDialog } from './components/supplier-dialog';
 import { SuppliersTable } from './components/suppliers-table';
 import type { SupplierFormValues } from './components/supplier-form';
@@ -189,7 +189,7 @@ export default function ProveedoresPage() {
         <CardHeader>
           <CardTitle>Lista de Proveedores</CardTitle>
           <CardDescription>
-            Visualiza, edita y elimina proveedores. La columna 'Deuda' muestra el monto pendiente.
+            Visualiza, edita y elimina proveedores. La columna &apos;Deuda&apos; muestra el monto pendiente.
           </CardDescription>
            <div className="pt-4 flex flex-col sm:flex-row items-center justify-between gap-2 w-full">
                 <div className="relative flex-1 sm:flex-initial w-full sm:w-auto">
