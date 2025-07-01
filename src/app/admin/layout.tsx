@@ -1,4 +1,3 @@
-
 "use client";
 
 import Link from 'next/link';
@@ -7,7 +6,7 @@ import { ArrowLeft, ShieldCheck, Loader2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { onAuthStateChanged, signOut } from 'firebase/auth'; 
-import { auth } from '@root/lib/firebaseClient.js';
+import { auth } from '@/lib/firebaseClient.js';
 import { hydrateFromFirestore, AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
 import { useToast } from '@/hooks/use-toast';
 import type { User } from '@/types';

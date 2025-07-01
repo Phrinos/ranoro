@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -9,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from '@/hooks/use-toast';
 import { signInWithEmailAndPassword } from 'firebase/auth';
-import { auth } from '@root/lib/firebaseClient.js';
+import { auth } from '@/lib/firebaseClient.js';
 import { AlertCircle, TestTube2 } from 'lucide-react';
 import { defaultSuperAdmin, AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
 import Link from 'next/link';

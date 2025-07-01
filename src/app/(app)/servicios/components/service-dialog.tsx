@@ -15,7 +15,7 @@ import { ServiceForm } from "./service-form";
 import type { ServiceRecord, Vehicle, Technician, InventoryItem, QuoteRecord } from "@/types";
 import { useToast } from "@/hooks/use-toast"; 
 import { persistToFirestore, placeholderServiceRecords } from '@/lib/placeholder-data';
-import { db } from '@/lib/firebasePublic.js';
+import { db } from '@/lib/firebaseClient.js';
 import { doc, getDoc } from 'firebase/firestore';
 
 
