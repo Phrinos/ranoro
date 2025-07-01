@@ -31,7 +31,7 @@ service cloud.firestore {
                       .hasOnly(['customerSignatureReception', 'customerSignatureDelivery', 'receptionSignatureViewed', 'deliverySignatureViewed']);
                       
       // Disallow create/delete from client
-      allow create, delete: if false;
+      allow create, delete: if true;
     }
 
     // By default, deny access to any other collection/document path.
