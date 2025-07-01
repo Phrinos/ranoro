@@ -41,7 +41,7 @@ import {
   endOfDay,
 } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { db } from '@root/lib/firebaseClient.js';
+import { db } from '@/lib/firebaseClient.js';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 
 export const IVA_RATE = 0.16;

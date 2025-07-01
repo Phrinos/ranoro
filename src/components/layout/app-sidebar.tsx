@@ -43,7 +43,7 @@ import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import type { User, ServiceRecord, AppRole } from "@/types";
 import { signOut } from "firebase/auth"; // Firebase
-import { auth } from "@root/lib/firebaseClient.js"; // Firebase
+import { auth } from "@/lib/firebaseClient.js"; // Firebase
 import { placeholderServiceRecords, placeholderAppRoles } from "@/lib/placeholder-data";
 import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
