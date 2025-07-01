@@ -35,7 +35,7 @@ export const capitalizeWords = (str: string): string => {
  */
 export const capitalizeSentences = (str: string): string => {
     if (!str) return '';
-    let processedStr = str.trim();
+    let processedStr = str; // Do not trim, to allow spaces between words
     if (!processedStr) return '';
 
     // First, convert the entire string to lowercase to handle the all-caps issue.
@@ -105,3 +105,4 @@ export const optimizeImage = (file: File, maxWidth: number, quality: number = 0.
 
 
     
+
