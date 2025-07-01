@@ -3,7 +3,7 @@
 
 import Link from "next/link";
 import React from "react";
-import Image from "next/image";
+import Image from "next/legacy/image";
 import {
   Sidebar,
   SidebarContent,
@@ -148,17 +148,8 @@ export function AppSidebar() {
             alt="Ranoro Logo"
             width={100}
             height={32}
-            className="group-data-[collapsible=icon]:hidden dark:invert"
+            className="dark:invert"
             data-ai-hint="ranoro logo"
-            priority
-          />
-          <Image
-            src="/ranoro-logo.png"
-            alt="Ranoro Logo Icon"
-            width={28}
-            height={28}
-            className="hidden group-data-[collapsible=icon]:block dark:invert"
-            data-ai-hint="ranoro logo icon"
             priority
           />
         </Link>

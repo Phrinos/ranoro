@@ -2,7 +2,7 @@
 "use client";
 
 import Link from 'next/link';
-import Image from 'next/image';
+import Image from "next/legacy/image";
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Menu, UserCircle, Car, Settings, LifeBuoy, LogOut, Wrench, Users, BarChart2, FileText, ShoppingCart, Truck, Tags, DollarSign, UserPlus, ShieldAlert } from 'lucide-react';

@@ -58,7 +58,7 @@ export function ViewSaleDialog({ open, onOpenChange, sale, onCancelSale }: ViewS
         <DialogHeader>
           <DialogTitle>Detalle de Venta: {sale.id}</DialogTitle>
           <DialogDescription>
-            Realizada el {formattedDate}.
+            Información detallada de la venta realizada el {formattedDate}.
           </DialogDescription>
         </DialogHeader>
         <div className="py-4 space-y-4">
@@ -130,7 +130,7 @@ export function ViewSaleDialog({ open, onOpenChange, sale, onCancelSale }: ViewS
                     <AlertDialogHeader>
                         <AlertDialogTitle>¿Está seguro de cancelar esta venta?</AlertDialogTitle>
                         <AlertDialogDescription>
-                            Esta acción no se puede deshacer. El stock de los artículos vendidos será restaurado al inventario.
+                            Esta acción no se puede deshacer. El stock de los artículos vendidos será restaurado al inventario. Se requiere un motivo para la cancelación.
                         </AlertDialogDescription>
                         <div className="mt-4">
                           <Label htmlFor="cancellation-reason" className="text-left font-semibold">Motivo de la cancelación (obligatorio)</Label>

@@ -19,7 +19,7 @@ import { auth, storage } from '@root/lib/firebaseClient.js';
 import { ref, uploadString, getDownloadURL } from 'firebase/storage';
 import { placeholderUsers, persistToFirestore, AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
 import { SignatureDialog } from '@/app/(app)/servicios/components/signature-dialog';
-import Image from 'next/image';
+import Image from "next/legacy/image";
 
 
 const profileSchema = z.object({

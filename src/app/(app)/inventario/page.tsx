@@ -14,7 +14,7 @@ import { PurchaseItemSelectionDialog } from "./components/purchase-item-selectio
 import { PurchaseDetailsEntryDialog, type PurchaseDetailsFormValues } from "./components/purchase-details-entry-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import Image from "next/image";
+import Image from "next/legacy/image";
 
 type InventorySortOption = 
   | "stock_status_name_asc" // Default: Low stock first, then by name A-Z

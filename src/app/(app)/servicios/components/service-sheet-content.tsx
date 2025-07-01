@@ -7,7 +7,7 @@ import { format, parseISO, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
 import React, { useEffect, useState } from 'react';
 import { cn } from "@/lib/utils";
-import Image from 'next/image';
+import Image from "next/legacy/image";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Check } from 'lucide-react';
