@@ -8,51 +8,34 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { PriceListForm, type PriceListFormValues } from "./price-list-form";
+import { PriceListForm } from "./price-list-form";
 import type { VehiclePriceList } from "@/types";
-import { useToast } from "@/hooks/use-toast";
+import type { PriceListFormValues } from "./price-list-form";
 
 interface PriceListDialogProps {
-  record?: VehiclePriceList | null;
-  onSave: (data: PriceListFormValues) => Promise<void>;
   open: boolean;
   onOpenChange: (isOpen: boolean) => void;
+  onSave: (data: PriceListFormValues) => void;
+  record?: VehiclePriceList | null;
 }
 
-export function PriceListDialog({ 
-  record, 
-  onSave,
-  open,
-  onOpenChange 
-}: PriceListDialogProps) {
-  const { toast } = useToast();
-
-  const handleSubmit = async (values: PriceListFormValues) => {
-    try {
-      await onSave(values);
-    } catch (error) {
-      console.error("Error saving vehicle price list:", error);
-      toast({
-        title: "Error al guardar",
-        description: "No se pudo guardar la lista de precios. Intente de nuevo.",
-        variant: "destructive",
-      });
-    }
-  };
+export function PriceListDialog({ open, onOpenChange, onSave, record }: PriceListDialogProps) {
+  const dialogTitle = record ? "Editar Lista de Precios" : "Nueva Lista de Precios";
+  const dialogDescription = record
+    ? `Actualiza la información para ${record.make} ${record.model}.`
+    : "Define los servicios y precios estandarizados para un nuevo modelo de vehículo.";
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-4xl flex flex-col max-h-[90vh]">
-        <DialogHeader className="flex-shrink-0">
-          <DialogTitle>{record ? "Editar Lista de Precios" : "Nueva Lista de Precios por Vehículo"}</DialogTitle>
-          <DialogDescription>
-            {record ? `Actualiza los detalles para ${record.make} ${record.model}.` : "Completa la información del vehículo y añade los servicios estandarizados."}
-          </DialogDescription>
+      <DialogContent className="sm:max-w-4xl max-h-[90vh] flex flex-col">
+        <DialogHeader>
+          <DialogTitle>{dialogTitle}</DialogTitle>
+          <DialogDescription>{dialogDescription}</DialogDescription>
         </DialogHeader>
         <div className="flex-grow overflow-y-auto -mx-6 px-6">
           <PriceListForm
             initialData={record}
-            onSubmit={handleSubmit}
+            onSubmit={onSave}
             onClose={() => onOpenChange(false)}
           />
         </div>

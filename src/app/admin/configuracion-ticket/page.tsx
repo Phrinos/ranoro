@@ -102,10 +102,10 @@ export default function ConfiguracionTicketPage() {
   const onSubmit = (data: TicketForm) => {
     try {
       localStorage.setItem(LOCALSTORAGE_KEY, JSON.stringify(data));
-      toast({ title: "Configuración guardada", description: "Se actualizó la información del ticket" });
+      toast({ title: "Configuración guardada", description: "Se actualizó la información del ticket", duration: 3000 });
       setPreviewInfo(data);
     } catch {
-      toast({ title: "Error al guardar", description: "No se pudo escribir en localStorage", variant: "destructive" });
+      toast({ title: "Error al guardar", description: "No se pudo escribir en localStorage", variant: "destructive", duration: 3000 });
     }
   };
 

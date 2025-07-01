@@ -51,7 +51,7 @@ export default function MigracionDatosPage() {
     const file = event.target.files?.[0];
     if (file) {
       if (!file.name.endsWith('.xlsx')) {
-        toast({ title: "Archivo no válido", description: "Por favor, seleccione un archivo con formato .xlsx", variant: "destructive" });
+        toast({ title: "Archivo no válido", description: "Por favor, seleccione un archivo con formato .xlsx", variant: "destructive", duration: 3000 });
         resetState();
         return;
       }
@@ -75,7 +75,7 @@ export default function MigracionDatosPage() {
 
         } catch (err) {
             console.error("Error reading XLSX file:", err);
-            toast({ title: "Error al leer archivo", description: "El archivo podría estar corrupto o en un formato no soportado.", variant: "destructive" });
+            toast({ title: "Error al leer archivo", description: "El archivo podría estar corrupto o en un formato no soportado.", variant: "destructive", duration: 3000 });
             resetState();
         }
       };
@@ -104,7 +104,7 @@ export default function MigracionDatosPage() {
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!fileContent) {
-      toast({ title: "No hay datos para importar", description: "Por favor, seleccione un archivo y una hoja.", variant: "destructive" });
+      toast({ title: "No hay datos para importar", description: "Por favor, seleccione un archivo y una hoja.", variant: "destructive", duration: 3000 });
       return;
     }
 
@@ -131,7 +131,7 @@ export default function MigracionDatosPage() {
         });
         await persistToFirestore(['vehicles']);
         setMigrationResult({ type: 'vehicles', vehicles: result.vehicles, vehiclesAdded: vehiclesAddedCount });
-        toast({ title: "Migración de Vehículos Completada", description: `Se procesaron ${vehiclesAddedCount} vehículos.` });
+        toast({ title: "Migración de Vehículos Completada", description: `Se procesaron ${vehiclesAddedCount} vehículos.`, duration: 3000 });
       } else if (activeTab === 'productos') {
         const result = await migrateProducts({ csvContent: fileContent });
         let productsAddedCount = 0;
@@ -161,7 +161,7 @@ export default function MigracionDatosPage() {
         
         await persistToFirestore(['inventory', 'categories', 'suppliers']);
         setMigrationResult({ type: 'products', products: result.products, productsAdded: productsAddedCount });
-        toast({ title: "Migración de Productos Completada", description: `Se procesaron ${productsAddedCount} productos.` });
+        toast({ title: "Migración de Productos Completada", description: `Se procesaron ${productsAddedCount} productos.`, duration: 3000 });
       } else { // 'ia' tab
         const result = await migrateData({ csvContent: fileContent });
         let vehiclesAddedCount = 0;
@@ -205,13 +205,13 @@ export default function MigracionDatosPage() {
         
         await persistToFirestore(['vehicles', 'serviceRecords']);
         setMigrationResult({ ...result, vehiclesAdded: vehiclesAddedCount, servicesAdded: servicesAddedCount, type: 'generic' });
-        toast({ title: "Migración Completada", description: `Se procesaron ${vehiclesAddedCount} vehículos y ${servicesAddedCount} servicios.` });
+        toast({ title: "Migración Completada", description: `Se procesaron ${vehiclesAddedCount} vehículos y ${servicesAddedCount} servicios.`, duration: 3000 });
       }
 
     } catch (e) {
       console.error(e);
       setError("La IA no pudo procesar el archivo. Revisa el formato e inténtalo de nuevo.");
-      toast({ title: "Error de Migración", description: "Hubo un problema al procesar el archivo con la IA.", variant: "destructive" });
+      toast({ title: "Error de Migración", description: "Hubo un problema al procesar el archivo con la IA.", variant: "destructive", duration: 3000 });
     } finally {
       setIsUploading(false);
     }

@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -85,7 +84,7 @@ export default function LoginPage() {
             width={250} 
             height={80} 
             priority
-            className="mx-auto"
+            className="mx-auto h-auto"
             data-ai-hint="ranoro logo"
           />
         </Link>
