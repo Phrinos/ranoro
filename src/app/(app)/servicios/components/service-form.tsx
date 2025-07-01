@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -57,7 +56,7 @@ import { ServiceSheetContent } from '@/components/service-sheet-content';
 import { Checkbox } from "@/components/ui/checkbox";
 import Image from "next/legacy/image";
 import { doc, setDoc, getDoc } from 'firebase/firestore';
-import { db, storage } from '@root/lib/firebaseClient.js';
+import { db, storage } from '../../../../lib/firebaseClient';
 import { getStorage, ref, uploadString, getDownloadURL } from 'firebase/storage';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AddSupplyDialog } from './add-supply-dialog';
@@ -1029,39 +1028,38 @@ export function ServiceForm({
       return;
     }
   
-    const optimizationPromises: Promise<string>[] = [];
-  
+    const uploadPromises: Promise<string>[] = [];
+    
+    // Create an array of optimization and upload promises
     for (let i = 0; i < files.length; i++) {
-      optimizationPromises.push(optimizeImage(files[i], 1280));
+        const file = files[i];
+        uploadPromises.push(
+            optimizeImage(file, 1280) // 1. Optimize
+                .then(dataUrl => { // 2. Upload
+                    if (storage) {
+                        const serviceId = getValues('id') || `temp_${Date.now()}`;
+                        const photoRef = ref(storage, `service-photos/${serviceId}/${Date.now()}_${Math.random()}.jpg`);
+                        return uploadString(photoRef, dataUrl, 'data_url').then(snapshot => getDownloadURL(snapshot.ref));
+                    }
+                    return dataUrl; // Fallback to data URL
+                })
+        );
     }
   
     try {
-      const optimizedDataUrls = await Promise.all(optimizationPromises);
-      const newPhotoUrls: string[] = [];
+        const newPhotoUrls = await Promise.all(uploadPromises);
   
-      for (const dataUrl of optimizedDataUrls) {
-        if (storage) {
-          const serviceId = getValues('id') || `temp_${Date.now()}`;
-          const photoRef = ref(storage, `service-photos/${serviceId}/${Date.now()}_${Math.random()}.jpg`);
-          await uploadString(photoRef, dataUrl, 'data_url');
-          const downloadURL = await getDownloadURL(photoRef);
-          newPhotoUrls.push(downloadURL);
-        } else {
-          newPhotoUrls.push(dataUrl); // Fallback to data URL if storage is not configured
-        }
-      }
-  
-      updatePhotoReport(activeReportIndex, {
-        ...currentReport,
-        photos: [...currentReport.photos, ...newPhotoUrls],
-      });
+        updatePhotoReport(activeReportIndex, {
+            ...currentReport,
+            photos: [...currentReport.photos, ...newPhotoUrls],
+        });
   
     } catch (e) {
-      console.error("Error processing or uploading images:", e);
-      toast({ title: "Error al Subir Fotos", description: "No se pudieron procesar o subir las imágenes.", variant: "destructive" });
+        console.error("Error processing or uploading images:", e);
+        toast({ title: "Error al Subir Fotos", description: "No se pudieron procesar o subir las imágenes.", variant: "destructive" });
     } finally {
-      setActiveReportIndex(null);
-      if (fileInputRef.current) fileInputRef.current.value = "";
+        setActiveReportIndex(null);
+        if (fileInputRef.current) fileInputRef.current.value = "";
     }
   };
 
@@ -1102,14 +1100,10 @@ export function ServiceForm({
 
   const handleShareService = useCallback(async (service: ServiceRecord | null) => {
     if (!service) return;
-
+    
     if (!service.publicId) {
-      toast({
-        title: 'Enlace no disponible',
-        description: 'Guarde el servicio primero para generar un enlace.',
-        variant: 'default',
-      });
-      return;
+        toast({ title: "Enlace no disponible", description: "Guarde el servicio primero para generar un enlace.", variant: "default" });
+        return;
     }
 
     const vehicleForAction = localVehicles.find((v) => v.id === service.vehicleId);
@@ -1400,7 +1394,7 @@ export function ServiceForm({
                                             </Button>
                                         )}
                                     </FormLabel>
-                                    <FormControl><Textarea {...field} disabled={isReadOnly} className="min-h-[100px]" /></FormControl>
+                                    <FormControl><Textarea {...field} onChange={(e) => field.onChange(capitalizeSentences(e.target.value))} disabled={isReadOnly} className="min-h-[100px]" /></FormControl>
                                 </FormItem>
                             )}
                           />
@@ -2149,3 +2143,6 @@ const SafetyCheckRow = ({ name, label, control, isReadOnly }: { name: string; la
 
 
 
+
+
+    

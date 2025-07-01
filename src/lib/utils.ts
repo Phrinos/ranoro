@@ -1,4 +1,5 @@
 
+
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
 
@@ -13,27 +14,43 @@ export const formatCurrency = (amount: number | undefined) => {
 
 /**
  * Capitalizes the first letter of each word in a string.
+ * This version converts the string to lowercase first to handle mixed-case and all-caps inputs consistently.
+ * e.g., "servicio de motor" -> "Servicio De Motor", "IPHONE" -> "Iphone"
  * @param str The input string.
  * @returns The capitalized string.
  */
-export const capitalizeWords = (str: string) => {
+export const capitalizeWords = (str: string): string => {
   if (!str) return '';
-  // Convert the whole string to lowercase first, then capitalize each word.
   return str.toLowerCase().replace(/\b\w/g, char => char.toUpperCase());
 };
 
+
 /**
- * Capitalizes the first letter of the first word in a string.
+ * Capitalizes the first letter of sentences in a string.
+ * It ensures the first letter is always capitalized and normalizes all-caps text.
+ * e.g., "hola mundo. esta es una prueba." -> "Hola mundo. Esta es una prueba."
+ * e.g., "HOLA MUNDO." -> "Hola mundo."
  * @param str The input string.
  * @returns The capitalized string.
  */
-export const capitalizeSentences = (str: string) => {
+export const capitalizeSentences = (str: string): string => {
     if (!str) return '';
     let processedStr = str.trim();
-    // Capitalize the very first letter of the whole string
+    if (!processedStr) return '';
+
+    // First, convert the entire string to lowercase to handle the all-caps issue.
+    processedStr = processedStr.toLowerCase();
+    
+    // Capitalize the very first letter of the whole string.
     processedStr = processedStr.charAt(0).toUpperCase() + processedStr.slice(1);
-    // Capitalize the letter after each period and one or more spaces
-    processedStr = processedStr.replace(/(\.\s+)([a-z])/g, (_match, p1, p2) => p1 + p2.toUpperCase());
+    
+    // Capitalize the letter that follows a sentence-ending punctuation mark and whitespace.
+    // The `g` flag ensures it replaces all occurrences.
+    // The `u` flag helps with unicode characters.
+    processedStr = processedStr.replace(/([.?!]\s+)(\p{L})/gu, (match, p1, p2) => {
+      return p1 + p2.toUpperCase();
+    });
+
     return processedStr;
 };
 
@@ -85,3 +102,6 @@ export const optimizeImage = (file: File, maxWidth: number, quality: number = 0.
     reader.readAsDataURL(file);
   });
 };
+
+
+    
