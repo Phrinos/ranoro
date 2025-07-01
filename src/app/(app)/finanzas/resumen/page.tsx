@@ -15,9 +15,8 @@ import {
   placeholderInventory, 
   placeholderAdministrativeStaff,
   calculateSaleProfit,
-  IVA_RATE, 
 } from "@/lib/placeholder-data";
-import type { SaleReceipt, ServiceRecord, Technician, MonthlyFixedExpense, InventoryItem, AdministrativeStaff } from "@/types";
+import type { MonthlyFixedExpense, InventoryItem } from "@/types";
 import {
   format,
   parseISO,
@@ -28,7 +27,6 @@ import {
   addMonths,
   isValid,
   getYear,
-  getMonth,
 } from "date-fns";
 import { es } from 'date-fns/locale';
 import { CalendarIcon, ChevronLeft, ChevronRight, DollarSign, TrendingUp, TrendingDown, Landmark, Users, Info, Pencil, BadgeCent } from "lucide-react";
@@ -37,7 +35,7 @@ import { FixedExpensesDialog } from "../components/fixed-expenses-dialog";
 
 export default function ResumenFinancieroPage() {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-  const [inventory, setInventory] = useState<InventoryItem[]>(placeholderInventory); 
+  const [inventory] = useState<InventoryItem[]>(placeholderInventory); 
   const [currentFixedExpenses, setCurrentFixedExpenses] = useState<MonthlyFixedExpense[]>(placeholderFixedMonthlyExpenses);
   const [isExpensesDialogOpen, setIsExpensesDialogOpen] = useState(false);
 
@@ -103,7 +101,7 @@ export default function ResumenFinancieroPage() {
     const totalCostOfGoodsFromServices = completedServicesThisMonth.reduce((sum, service) => sum + (service.totalSuppliesCost || 0), 0);
     const totalCostOfGoods = totalCostOfGoodsFromSales + totalCostOfGoodsFromServices;
 
-    const totalProfitFromSales = salesThisMonth.reduce((sum, sale) => sum + calculateSaleProfit(sale, inventory), 0);
+    const totalProfitFromSales = salesThisMonth.reduce((sum, sale) => sum + calculateSaleProfit(sale, inventory, 0.16), 0);
     const totalProfitFromServices = completedServicesThisMonth.reduce((sum, service) => sum + (service.serviceProfit || 0), 0);
     const totalOperationalProfit = totalProfitFromSales + totalProfitFromServices;
     

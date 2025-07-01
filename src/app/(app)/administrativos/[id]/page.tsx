@@ -29,16 +29,16 @@ import {
 
 export default function AdministrativeStaffDetailPage() {
   const params = useParams();
-  if (!params || !params.id) {
- return <div>Error: ID de staff no proporcionado.</div>;
-  }
-  const staffId = params.id as string; 
-  
   const { toast } = useToast();
   const router = useRouter();
-
+  
   const [staffMember, setStaffMember] = useState<AdministrativeStaff | null | undefined>(undefined);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+
+  if (!params || !params.id) {
+    return <div>Error: ID de staff no proporcionado.</div>;
+  }
+  const staffId = params.id as string; 
 
   useEffect(() => {
     const foundStaff = placeholderAdministrativeStaff.find(s => s.id === staffId);
@@ -185,7 +185,7 @@ export default function AdministrativeStaffDetailPage() {
                 <AlertDialogHeader>
                 <AlertDialogTitle>¿Estás seguro de archivar este registro de staff?</AlertDialogTitle>
                 <AlertDialogDescription>
-                    Esta acción marcará el registro de {staffMember.name} como archivado y lo ocultará de las listas principales. Podrás recuperarlo desde la vista de "Archivados".
+                    Esta acción marcará el registro de {staffMember.name} como archivado y lo ocultará de las listas principales. Podrás recuperarlo desde la vista de &quot;Archivados&quot;.
                 </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
@@ -193,7 +193,7 @@ export default function AdministrativeStaffDetailPage() {
                 <AlertDialogAction onClick={handleArchiveStaff} className="bg-destructive hover:bg-destructive/90">
                     Sí, Archivar
                 </AlertDialogAction>
-                </AlertDialogFooter>
+                </Footer>
             </AlertDialogContent>
             </AlertDialog>
             <Button variant="outline" onClick={() => setIsEditDialogOpen(true)}>

@@ -11,9 +11,9 @@ import { useRouter } from 'next/navigation';
 import { AddVehicleToFleetDialog } from "./components/add-vehicle-to-fleet-dialog";
 import { FineCheckDialog } from "./components/fine-check-dialog";
 import { placeholderVehicles, persistToFirestore, hydrateReady, AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
-import type { Vehicle, User } from '@/types';
+import type { User } from '@/types';
 import { useToast } from "@/hooks/use-toast";
-import { subDays, isBefore, formatDistanceToNow, isToday } from 'date-fns';
+import { subDays, isBefore, formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
 
 const FINE_CHECK_INTERVAL_DAYS = 15;
@@ -45,7 +45,7 @@ export default function FlotillaPage() {
   const allVehicles = useMemo(() => {
     if (!hydrated) return [];
     return [...placeholderVehicles];
-  }, [version, hydrated]);
+  }, [hydrated]);
 
   const fleetVehicles = useMemo(() => allVehicles.filter(v => v.isFleetVehicle), [allVehicles]);
   const nonFleetVehicles = useMemo(() => allVehicles.filter(v => !v.isFleetVehicle), [allVehicles]);
@@ -131,9 +131,6 @@ export default function FlotillaPage() {
     return isBefore(lastFineCheckDate, dueDate);
   }, [lastFineCheckDate]);
   
-  const lastCheckDateFormatted = lastFineCheckDate ? `Última revisión ${formatDistanceToNow(lastFineCheckDate, { locale: es, addSuffix: true })}` : "Aún no se ha realizado la primera revisión.";
-
-
   return (
     <>
       <PageHeader

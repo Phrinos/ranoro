@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/accordion";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
-  LayoutDashboard, Wrench, Car, FileText, Receipt, Package, DollarSign, Users, Settings, BrainCircuit, BookOpen, UserCog, Briefcase
+  LayoutDashboard, Wrench, FileText, Receipt, Package, DollarSign, Users, Settings, BookOpen
 } from "lucide-react";
 import React from 'react';
 
@@ -54,7 +54,7 @@ const manualSections = [
              <ul className="list-disc pl-5 mt-1">
                 <li><strong>Recepción de Unidad:</strong> Registra datos del vehículo, kilometraje, y observaciones sobre su estado (rayones, golpes) y nivel de combustible.</li>
                 <li><strong>Insumos:</strong> Añade refacciones y mano de obra. La IA puede sugerirte un precio final competitivo y rentable para el servicio completo.</li>
-                <li><strong>Impresión:</strong> Puedes imprimir una "Hoja de Servicio" para control interno en el taller o un "Comprobante de Servicio" para el cliente al finalizar.</li>
+                <li><strong>Impresión:</strong> Puedes imprimir una &quot;Hoja de Servicio&quot; para control interno en el taller o un &quot;Comprobante de Servicio&quot; para el cliente al finalizar.</li>
             </ul>
           </li>
         </ul>
@@ -69,7 +69,7 @@ const manualSections = [
             <p>Genera presupuestos profesionales y da seguimiento a tus oportunidades de venta. Este módulo es clave para formalizar tus ofertas y aumentar tu tasa de conversión.</p>
             <ul className="list-disc pl-5 mt-2 space-y-2">
                 <li><strong>Crear Cotización con IA:</strong> El sistema es capaz de generar una cotización completa (insumos, mano de obra y precio final) basándose en una simple descripción y el historial de trabajos similares realizados en tu taller.</li>
-                <li><strong>Historial y Seguimiento:</strong> Visualiza todas las cotizaciones con su estado ("Pendiente" o "Ingresado"). Las tarjetas de resumen te muestran el total de cotizaciones, cuántas se han concretado y el valor total que representan.</li>
+                <li><strong>Historial y Seguimiento:</strong> Visualiza todas las cotizaciones con su estado (&quot;Pendiente&quot; o &quot;Ingresado&quot;). Las tarjetas de resumen te muestran el total de cotizaciones, cuántas se han concretado y el valor total que representan.</li>
                 <li><strong>Convertir a Servicio:</strong> Con un solo clic, convierte una cotización aprobada en una Orden de Servicio, transfiriendo automáticamente toda la información y evitando la recaptura.</li>
                 <li><strong>Compartir con el Cliente:</strong> Cada cotización genera un PDF profesional y un enlace público que puedes compartir fácilmente por WhatsApp o correo electrónico.</li>
             </ul>
@@ -97,7 +97,7 @@ const manualSections = [
       <>
         <p>El corazón de tu operación. Un control preciso de tu inventario te ahorra tiempo y dinero.</p>
         <ul className="list-disc pl-5 mt-2 space-y-2">
-          <li><strong>Productos y Servicios:</strong> El sistema distingue entre productos físicos (con control de stock, como filtros o aceite) y servicios (sin control de stock, como "Mano de Obra Mecánica").</li>
+          <li><strong>Productos y Servicios:</strong> El sistema distingue entre productos físicos (con control de stock, como filtros o aceite) y servicios (sin control de stock, como &quot;Mano de Obra Mecánica&quot;).</li>
           <li><strong>Análisis de Inventario con IA:</strong> Esta función revisa tu historial de consumo, tu stock actual y los umbrales de stock bajo para darte recomendaciones inteligentes sobre qué artículos necesitas reordenar y en qué cantidad, optimizando tus compras.</li>
           <li><strong>Ingreso de Compras:</strong> Un flujo sencillo para registrar la llegada de nuevos productos. Busca un artículo existente o crea uno nuevo, introduce la cantidad comprada y actualiza sus precios de costo y venta en un solo paso.</li>
           <li><strong>Gestión Centralizada:</strong> Administra categorías y proveedores para mantener todo tu inventario organizado y accesible.</li>
@@ -113,7 +113,7 @@ const manualSections = [
       <>
         <p>Toma el control de la salud financiera de tu taller con reportes claros y poderosos.</p>
         <ul className="list-disc pl-5 mt-2 space-y-2">
-          <li><strong>Reporte de Operaciones:</strong> Es tu herramienta para el día a día. Filtra todas las transacciones (ventas y servicios) por fecha para realizar tu "Corte de Caja" de manera rápida y precisa.</li>
+          <li><strong>Reporte de Operaciones:</strong> Es tu herramienta para el día a día. Filtra todas las transacciones (ventas y servicios) por fecha para realizar tu &quot;Corte de Caja&quot; de manera rápida y precisa.</li>
           <li><strong>Resumen Financiero Mensual:</strong> La vista estratégica de tu negocio. Analiza tus ingresos, costos de insumos, gastos fijos y sueldos para obtener la ganancia neta real de cada mes. Este reporte es crucial para entender la rentabilidad y tomar decisiones a largo plazo.</li>
            <li><strong>Cálculo de Comisiones:</strong> El sistema calcula automáticamente las comisiones potenciales de tu personal, pero solo las aplica en el resumen financiero si el taller ha sido rentable ese mes (es decir, si la ganancia bruta supera los gastos fijos).</li>
           <li><strong>Gestión de Gastos Fijos:</strong> Registra tus gastos recurrentes (renta, luz, internet, etc.) para que se incluyan automáticamente en los cálculos de rentabilidad, dándote una visión financiera completa.</li>
@@ -143,7 +143,7 @@ const manualSections = [
             <p>Configuraciones avanzadas para adaptar la plataforma a tus necesidades (acceso restringido a roles de administrador).</p>
             <ul className="list-disc pl-5 mt-2 space-y-2">
                 <li><strong>Gestión de Usuarios:</strong> Crea, edita o elimina las cuentas de usuario. La creación de la cuenta de correo y contraseña se hace en la consola de Firebase para mayor seguridad.</li>
-                <li><strong>Roles y Permisos:</strong> Define qué puede hacer cada tipo de usuario. Crea roles personalizados (ej. "Recepcionista") y asígnale permisos específicos para cada módulo del sistema (ej. "Crear Servicios" pero no "Ver Reporte Financiero").</li>
+                <li><strong>Roles y Permisos:</strong> Define qué puede hacer cada tipo de usuario. Crea roles personalizados (ej. &quot;Recepcionista&quot;) y asígnale permisos específicos para cada módulo del sistema (ej. &quot;Crear Servicios&quot; pero no &quot;Ver Reporte Financiero&quot;).</li>
                 <li><strong>Migración de Datos con IA:</strong> Para una puesta en marcha rápida, puedes importar tu historial de clientes y servicios desde un archivo Excel. La IA se encarga de leer, interpretar y estructurar los datos correctamente en el sistema.</li>
                 <li><strong>Configuración de Ticket:</strong> Personaliza la información que aparece en los tickets y cotizaciones impresas, como el nombre, la dirección, el teléfono y el logo de tu taller.</li>
             </ul>

@@ -3,10 +3,10 @@
 
 import React, { useEffect, useState, useCallback, useRef } from "react";
 import dynamic from "next/dynamic";
-import { format, parseISO, isToday, isValid, isSameDay } from "date-fns";
+import { parseISO, isToday, isValid, isSameDay } from "date-fns";
 import { PageHeader } from "@/components/page-header";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { placeholderServiceRecords, placeholderInventory, placeholderSales, calculateSaleProfit, placeholderTechnicians, persistToFirestore, placeholderVehicles } from "@/lib/placeholder-data";
+import { placeholderServiceRecords, placeholderInventory, placeholderSales, calculateSaleProfit, placeholderTechnicians } from "@/lib/placeholder-data";
 import type { User, CapacityAnalysisOutput, PurchaseRecommendation } from "@/types";
 import { BrainCircuit, Loader2, ShoppingCart, AlertTriangle, Printer, Wrench, DollarSign, PackageSearch, CheckCircle } from "lucide-react"; 
 import { useToast } from "@/hooks/use-toast";
@@ -111,7 +111,7 @@ export default function DashboardPage() {
     const revenueFromSales = salesToday.reduce((sum, s) => sum + s.totalAmount, 0);
     const revenueFromServices = servicesCompletedToday.reduce((sum, s) => sum + s.totalCost, 0);
     
-    const profitFromSales = salesToday.reduce((sum, s) => sum + calculateSaleProfit(s, placeholderInventory), 0);
+    const profitFromSales = salesToday.reduce((sum, s) => sum + calculateSaleProfit(s, placeholderInventory, 0.16), 0);
     const profitFromServices = servicesCompletedToday.reduce((sum, s) => sum + (s.serviceProfit || 0), 0);
 
     setKpiData({
@@ -169,6 +169,7 @@ export default function DashboardPage() {
                 totalRequiredHours: 0,
                 totalAvailableHours: totalAvailable,
                 recommendation: "Taller disponible",
+                capacityPercentage: 100,
             });
             setIsCapacityLoading(false);
             return;
@@ -200,7 +201,6 @@ export default function DashboardPage() {
     setPurchaseRecommendations(null);
 
     try {
-      const today = new Date();
       const servicesForToday = placeholderServiceRecords.filter(s => {
         const serviceDay = parseISO(s.serviceDate);
         return isValid(serviceDay) && isToday(serviceDay) && s.status !== 'Completado' && s.status !== 'Cancelado';

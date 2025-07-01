@@ -6,12 +6,9 @@ import type {
   InventoryItem,
   DashboardMetrics,
   SaleReceipt,
-  ServiceSupply,
   TechnicianMonthlyPerformance,
   InventoryCategory,
   Supplier,
-  SaleItem,
-  PaymentMethod,
   AppRole,
   QuoteRecord,
   MonthlyFixedExpense,
@@ -19,20 +16,13 @@ import type {
   User,
 } from '@/types';
 import {
-  format,
   subMonths,
-  addDays,
-  getYear,
-  getMonth,
-  setHours,
-  setMinutes,
   subDays,
   startOfMonth,
   endOfMonth,
   startOfDay,
   endOfDay,
 } from 'date-fns';
-import { es } from 'date-fns/locale';
 import { db } from '@root/lib/firebaseClient.js';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 

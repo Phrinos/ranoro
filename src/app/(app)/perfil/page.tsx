@@ -14,9 +14,9 @@ import { useToast } from '@/hooks/use-toast';
 import type { User } from '@/types';
 import { Save, Signature } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { getAuth, onAuthStateChanged, updatePassword, reauthenticateWithCredential, EmailAuthProvider } from 'firebase/auth';
+import { onAuthStateChanged, updatePassword, reauthenticateWithCredential, EmailAuthProvider } from 'firebase/auth';
 import { auth, storage } from '@root/lib/firebaseClient.js';
-import { getStorage, ref, uploadString, getDownloadURL } from 'firebase/storage';
+import { ref, uploadString, getDownloadURL } from 'firebase/storage';
 import { placeholderUsers, persistToFirestore, AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
 import { SignatureDialog } from '@/app/(app)/servicios/components/signature-dialog';
 import Image from 'next/image';
@@ -103,13 +103,16 @@ export default function PerfilPage() {
         await reauthenticateWithCredential(user, credential);
         await updatePassword(user, data.newPassword);
         toast({ title: "Contraseña Actualizada", description: "Tu contraseña ha sido cambiada exitosamente." });
-      } catch (error: any) {
+      } catch (error) {
         console.error("Password update error:", error);
         let message = "Ocurrió un error al cambiar la contraseña.";
-        if (error.code === 'auth/wrong-password') {
-            message = "La contraseña actual es incorrecta.";
-        } else if (error.code === 'auth/too-many-requests') {
-            message = 'Demasiados intentos fallidos. Inténtalo más tarde.';
+        if (error instanceof Error && 'code' in error) {
+            const firebaseError = error as { code: string };
+            if (firebaseError.code === 'auth/wrong-password') {
+                message = "La contraseña actual es incorrecta.";
+            } else if (firebaseError.code === 'auth/too-many-requests') {
+                message = 'Demasiados intentos fallidos. Inténtalo más tarde.';
+            }
         }
         toast({ title: "Error de Contraseña", description: message, variant: "destructive" });
         return;

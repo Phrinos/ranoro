@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import React, { useState } from 'react';
@@ -13,8 +12,6 @@ import {
 } from "@/components/ui/dialog";
 import { PosForm } from "./pos-form";
 import type { InventoryItem, SaleReceipt } from "@/types"; 
-import { useToast } from "@/hooks/use-toast";
-import { useRouter } from 'next/navigation';
 
 interface PosDialogProps {
   trigger?: React.ReactNode;

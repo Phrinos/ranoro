@@ -19,7 +19,6 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import type { AdministrativeStaff } from "@/types";
 import { DollarSign } from "lucide-react";
-import { capitalizeSentences } from "@/lib/utils";
 
 const administrativeStaffFormSchema = z.object({
   name: z.string().min(3, "El nombre debe tener al menos 3 caracteres."),

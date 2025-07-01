@@ -1,14 +1,14 @@
 
 "use client";
 
-import { useState, useMemo, useEffect, useRef } from 'react';
+import { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { PlusCircle, Trash2, Edit, Search } from "lucide-react";
 import { useToast } from '@/hooks/use-toast';
 import { placeholderCategories, placeholderInventory, persistToFirestore } from '@/lib/placeholder-data';
-import type { InventoryCategory, InventoryItem } from '@/types';
+import type { InventoryCategory } from '@/types';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -27,7 +27,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import {
@@ -160,7 +159,7 @@ export default function CategoriasInventarioPage() {
             <div>
                 <CardTitle>Lista de Categorías</CardTitle>
                 <CardDescription>
-                    Visualiza, edita y elimina categorías. La columna 'Productos' muestra cuántos artículos pertenecen a cada categoría.
+                    Visualiza, edita y elimina categorías. La columna &apos;Productos&apos; muestra cuántos artículos pertenecen a cada categoría.
                 </CardDescription>
             </div>
              <div className="flex justify-between items-center w-full">
@@ -211,7 +210,7 @@ export default function CategoriasInventarioPage() {
                               <AlertDialogHeader>
                                 <AlertDialogTitle>¿Eliminar Categoría?</AlertDialogTitle>
                                 <AlertDialogDescription>
-                                  ¿Estás seguro de que quieres eliminar la categoría "{categoryToDelete.name}"? 
+                                  ¿Estás seguro de que quieres eliminar la categoría &quot;{categoryToDelete.name}&quot;? 
                                   Esta acción no se puede deshacer. Los productos en esta categoría no serán eliminados pero quedarán sin categoría.
                                 </AlertDialogDescription>
                               </AlertDialogHeader>

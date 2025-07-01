@@ -9,7 +9,7 @@ import { PlusCircle, ListFilter, Search, Users, DollarSign, CalendarIcon as Cale
 import { AdministrativeStaffTable } from "./components/administrative-staff-table";
 import { AdministrativeStaffDialog } from "./components/administrative-staff-dialog";
 import { placeholderAdministrativeStaff, placeholderServiceRecords, persistToFirestore } from "@/lib/placeholder-data";
-import type { AdministrativeStaff, ServiceRecord } from "@/types";
+import type { AdministrativeStaff } from "@/types";
 import type { AdministrativeStaffFormValues } from "./components/administrative-staff-form";
 import { useToast } from "@/hooks/use-toast";
 import { parseISO, compareAsc, compareDesc, format, isValid, startOfMonth, endOfMonth, isWithinInterval, startOfDay, endOfDay } from 'date-fns';
@@ -116,8 +116,8 @@ export default function AdministrativosPage() {
         return []; // Return empty array on server and initial client render to prevent hydration error
     }
 
-    let dateFrom = startOfDay(filterDateRange.from);
-    let dateTo = filterDateRange.to ? endOfDay(filterDateRange.to) : endOfDay(filterDateRange.from);
+    const dateFrom = startOfDay(filterDateRange.from);
+    const dateTo = filterDateRange.to ? endOfDay(filterDateRange.to) : endOfDay(filterDateRange.from);
 
     const completedServicesInRange = placeholderServiceRecords.filter(service => {
         if (service.status !== 'Completado') return false;

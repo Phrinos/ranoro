@@ -2,7 +2,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm, useFieldArray, Controller } from "react-hook-form";
+import { useForm, useFieldArray } from "react-hook-form";
 import * as z from "zod";
 import { Button } from "@/components/ui/button";
 import {
@@ -12,14 +12,13 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-  FormDescription,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { PlusCircle, Trash2, Receipt, Search, PackagePlus, Wallet, CreditCard, Send, WalletCards, ArrowRightLeft, Plus, Minus } from "lucide-react";
-import type { InventoryItem, SaleItem, PaymentMethod, SaleReceipt } from "@/types";
+import type { InventoryItem, PaymentMethod, SaleReceipt } from "@/types";
 import { useToast } from "@/hooks/use-toast";
 import React, { useState, useEffect } from "react";
 import { placeholderSales, placeholderInventory, placeholderCategories, placeholderSuppliers, persistToFirestore } from "@/lib/placeholder-data";
@@ -118,7 +117,7 @@ export function PosForm({ inventoryItems: parentInventoryItems, onSaleComplete, 
     },
   });
 
-  const { fields, append, remove, update } = useFieldArray({
+  const { fields, append, remove } = useFieldArray({
     control: form.control,
     name: "items",
   });
@@ -158,14 +157,6 @@ export function PosForm({ inventoryItems: parentInventoryItems, onSaleComplete, 
     setTotalState(newTotalAmount);
   }, [watchedItems, IVA_RATE, form]);
 
-
-  const handleOpenAddItemDialog = () => {
-    setSelectedInventoryItemForDialog(null);
-    setAddItemSearchTerm('');
-    setAddItemQuantity(1);
-    setFilteredInventoryForDialog(currentInventoryItems.filter(item => item.isService || item.quantity > 0).slice(0,10));
-    setIsAddItemDialogOpen(true);
-  };
 
   const onSubmit = (values: POSFormValues) => {
     const newSaleId = `SALE-${Date.now().toString(36).toUpperCase()}`;
@@ -583,7 +574,7 @@ export function PosForm({ inventoryItems: parentInventoryItems, onSaleComplete, 
                 )}
                 {addItemSearchTerm && filteredInventoryForDialog.length === 0 && !selectedInventoryItemForDialog && (
                     <div className="text-center py-2 text-sm text-muted-foreground">
-                        <p>No se encontró el ítem "{addItemSearchTerm}".</p>
+                        <p>No se encontró el ítem &quot;{addItemSearchTerm}&quot;.</p>
                         <Button variant="link" size="sm" onClick={handleOpenCreateNewItemDialog} className="text-primary">
                             <PackagePlus className="mr-2 h-4 w-4"/>Crear Nuevo Ítem
                         </Button>

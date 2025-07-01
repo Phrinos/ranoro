@@ -3,10 +3,7 @@
 
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { PlusCircle, Printer, ShoppingCartIcon, AlertTriangle, PackageCheck, DollarSign, Search, ListFilter, Server } from "lucide-react";
+import { PlusCircle, Printer, ShoppingCartIcon, AlertTriangle, PackageCheck, DollarSign, Server } from "lucide-react";
 import { InventoryTable } from "./components/inventory-table";
 import { InventoryItemDialog } from "./components/inventory-item-dialog";
 import { placeholderInventory, placeholderCategories, placeholderSuppliers, persistToFirestore } from "@/lib/placeholder-data";
@@ -17,6 +14,7 @@ import { PurchaseItemSelectionDialog } from "./components/purchase-item-selectio
 import { PurchaseDetailsEntryDialog, type PurchaseDetailsFormValues } from "./components/purchase-details-entry-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import Image from "next/image";
 
 type InventorySortOption = 
   | "stock_status_name_asc" // Default: Low stock first, then by name A-Z
@@ -40,9 +38,9 @@ export default function InventarioPage() {
   const [searchTermForNewItemPurchase, setSearchTermForNewItemPurchase] = useState('');
 
 
-  const [searchTerm, setSearchTerm] = useState("");
-  const [selectedCategoryFilter, setSelectedCategoryFilter] = useState("all");
-  const [sortOption, setSortOption] = useState<InventorySortOption>("stock_status_name_asc");
+  const [searchTerm] = useState("");
+  const [selectedCategoryFilter] = useState("all");
+  const [sortOption] = useState<InventorySortOption>("stock_status_name_asc");
 
   useEffect(() => {
     const handleDatabaseUpdate = () => setVersion(v => v + 1);
@@ -190,11 +188,6 @@ export default function InventarioPage() {
     };
   }, [inventoryItems]);
 
-  const uniqueCategoriesForFilter = useMemo(() => {
-    const categories = new Set(inventoryItems.map(item => item.category).filter(Boolean) as string[]);
-    return ["all", ...Array.from(categories)];
-  }, [inventoryItems]);
-
   const filteredAndSortedInventoryItems = useMemo(() => {
     let itemsToDisplay = [...inventoryItems];
 
@@ -316,7 +309,7 @@ export default function InventarioPage() {
 
         <div className="hidden print:block mb-6">
           <div className="flex justify-between items-center mb-4">
-            <img src="/ranoro-logo.png" alt="Ranoro Logo" className="h-12" data-ai-hint="ranoro logo" />
+            <Image src="/ranoro-logo.png" alt="Ranoro Logo" width={48} height={48} className="h-12 w-auto" data-ai-hint="ranoro logo" />
             <div className="text-right">
               <h1 className="text-xl font-bold">Lista de Inventario</h1>
               <p>{new Date().toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' })}</p>

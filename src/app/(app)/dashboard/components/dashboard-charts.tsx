@@ -2,17 +2,35 @@
 "use client"
 
 import * as React from "react"
-import { Line, LineChart, Pie, PieChart, CartesianGrid, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer } from "recharts"
+import { Line, LineChart, Pie, PieChart, CartesianGrid, XAxis, YAxis, Legend } from "recharts"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart"
 import { placeholderServiceRecords, placeholderSales, calculateSaleProfit, placeholderInventory } from "@/lib/placeholder-data"
-import { subMonths, format, startOfMonth, endOfMonth, isWithinInterval, parseISO } from "date-fns"
+import { subMonths, format, parseISO } from "date-fns"
 import { es } from "date-fns/locale"
 
+interface MonthlyChartData {
+    month: string;
+    revenue: number;
+    profit: number;
+}
+
+interface ServiceTypeChartData {
+    name: string;
+    value: number;
+    fill: string;
+}
+
+interface RevenueSourceChartData {
+    source: string;
+    value: number;
+    fill: string;
+}
+
 export function DashboardCharts() {
-  const [monthlyChartData, setMonthlyChartData] = React.useState<any[]>([]);
-  const [serviceTypeChartData, setServiceTypeChartData] = React.useState<any[]>([]);
-  const [revenueSourceChartData, setRevenueSourceChartData] = React.useState<any[]>([]);
+  const [monthlyChartData, setMonthlyChartData] = React.useState<MonthlyChartData[]>([]);
+  const [serviceTypeChartData, setServiceTypeChartData] = React.useState<ServiceTypeChartData[]>([]);
+  const [revenueSourceChartData, setRevenueSourceChartData] = React.useState<RevenueSourceChartData[]>([]);
 
   React.useEffect(() => {
     // Process data for monthly performance chart
@@ -43,7 +61,7 @@ export function DashboardCharts() {
         const monthKey = format(date, "yyyy-MM");
         if (monthlyData[monthKey]) {
             monthlyData[monthKey].revenue += sale.totalAmount;
-            monthlyData[monthKey].profit += calculateSaleProfit(sale, placeholderInventory);
+            monthlyData[monthKey].profit += calculateSaleProfit(sale, placeholderInventory, 0.16);
         }
     });
 
@@ -79,7 +97,7 @@ export function DashboardCharts() {
 
   }, []);
   
-  const formatCurrency = (value: any) => `$${new Intl.NumberFormat('es-MX').format(value)}`;
+  const formatCurrency = (value: number) => `$${new Intl.NumberFormat('es-MX').format(value)}`;
   
   const monthlyChartConfig = {
     revenue: {
@@ -116,7 +134,7 @@ export function DashboardCharts() {
               <CartesianGrid vertical={false} />
               <XAxis dataKey="month" tickLine={false} axisLine={false} tickMargin={8} />
               <YAxis tickLine={false} axisLine={false} tickMargin={8} tickFormatter={(value) => `$${new Intl.NumberFormat('es-MX', {notation: "compact", compactDisplay: "short"}).format(value)}`} />
-              <ChartTooltip cursor={false} content={<ChartTooltipContent formatter={formatCurrency} />} />
+              <ChartTooltip cursor={false} content={<ChartTooltipContent formatter={formatCurrency as (value: unknown) => string} />} />
               <Legend />
               <Line dataKey="revenue" type="monotone" stroke="var(--color-revenue)" strokeWidth={2} dot={{ r: 4 }} activeDot={{ r: 6 }} name="Ingresos" />
               <Line dataKey="profit" type="monotone" stroke="var(--color-profit)" strokeWidth={2} dot={{ r: 4 }} activeDot={{ r: 6 }} name="Ganancia" />
@@ -160,7 +178,7 @@ export function DashboardCharts() {
           <CardContent className="flex-1 flex items-center justify-center pb-4">
               <ChartContainer config={revenueSourceChartConfig} className="mx-auto aspect-square max-h-[250px]">
                   <PieChart>
-                      <ChartTooltip content={<ChartTooltipContent hideLabel formatter={formatCurrency} />} />
+                      <ChartTooltip content={<ChartTooltipContent hideLabel formatter={formatCurrency as (value: unknown) => string} />} />
                       <Pie data={revenueSourceChartData} dataKey="value" nameKey="source" innerRadius={50} />
                       <Legend content={({ payload }) => (
                         <ul className="grid gap-2 text-sm mt-4">

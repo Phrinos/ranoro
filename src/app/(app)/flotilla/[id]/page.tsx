@@ -11,12 +11,11 @@ import {
 } from '@/lib/placeholder-data';
 import type { Vehicle, ServiceRecord, QuoteRecord, VehiclePaperwork } from '@/types';
 import { PageHeader } from '@/components/page-header';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { ShieldAlert, Edit, Car, DollarSign, ShieldCheck, ArrowLeft, Trash2, PlusCircle, CheckCircle, Circle, Gauge } from 'lucide-react';
+import { ShieldAlert, Edit, Car, ArrowLeft, Trash2, PlusCircle, CheckCircle, Circle, Gauge } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
 import { format, parseISO, compareAsc, isValid, isPast } from 'date-fns';
 import { es } from 'date-fns/locale';
 import Link from 'next/link';
@@ -327,19 +326,19 @@ export default function FleetVehicleDetailPage() {
             <CardContent className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 text-center">
               <div className="p-2 bg-muted/50 rounded-md">
                 <p className="text-xs font-medium text-muted-foreground">RENTA DIARIA</p>
-                <p className="text-lg font-bold">{formatCurrency(vehicle.dailyRentalCost)}</p>
+                <p className="text-lg font-bold">{formatCurrency(vehicle.dailyRentalCost || 0)}</p>
               </div>
               <div className="p-2 bg-muted/50 rounded-md">
                 <p className="text-xs font-medium text-muted-foreground">GPS (MENSUAL)</p>
-                <p className="text-lg font-bold">{formatCurrency(vehicle.gpsMonthlyCost)}</p>
+                <p className="text-lg font-bold">{formatCurrency(vehicle.gpsMonthlyCost || 0)}</p>
               </div>
               <div className="p-2 bg-muted/50 rounded-md">
                 <p className="text-xs font-medium text-muted-foreground">ADMIN (MENSUAL)</p>
-                <p className="text-lg font-bold">{formatCurrency(vehicle.adminMonthlyCost)}</p>
+                <p className="text-lg font-bold">{formatCurrency(vehicle.adminMonthlyCost || 0)}</p>
               </div>
               <div className="p-2 bg-muted/50 rounded-md">
                 <p className="text-xs font-medium text-muted-foreground">SEGURO (MENSUAL)</p>
-                <p className="text-lg font-bold">{formatCurrency(vehicle.insuranceMonthlyCost)}</p>
+                <p className="text-lg font-bold">{formatCurrency(vehicle.insuranceMonthlyCost || 0)}</p>
               </div>
             </CardContent>
           </Card>

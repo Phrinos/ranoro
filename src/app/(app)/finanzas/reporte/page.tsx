@@ -1,7 +1,6 @@
 
 "use client";
 
-import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -9,9 +8,9 @@ import { Calendar } from "@/components/ui/calendar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Search, ListFilter, CalendarIcon as CalendarDateIcon, DollarSign, LineChart, ShoppingCart, Wrench, TrendingUp, Activity, Printer } from "lucide-react";
-import { placeholderSales, placeholderServiceRecords, placeholderInventory, getCurrentMonthRange, getLastMonthRange, getTodayRange, calculateSaleProfit, IVA_RATE } from "@/lib/placeholder-data";
-import type { SaleReceipt, ServiceRecord, FinancialOperation, InventoryItem, PaymentMethod } from "@/types";
+import { Search, ListFilter, CalendarIcon as CalendarDateIcon, DollarSign, Activity, Printer } from "lucide-react";
+import { placeholderSales, placeholderServiceRecords, placeholderInventory, getCurrentMonthRange, getLastMonthRange, getTodayRange, calculateSaleProfit } from "@/lib/placeholder-data";
+import type { SaleReceipt, ServiceRecord, FinancialOperation, InventoryItem } from "@/types";
 import { useState, useEffect, useMemo } from "react";
 import { format, parseISO, compareAsc, compareDesc, isWithinInterval, isValid, startOfDay, endOfDay, isSameDay } from "date-fns";
 import { es } from 'date-fns/locale';
@@ -51,9 +50,9 @@ interface SummaryData {
 }
 
 export default function FinancialReportPage() {
-  const [allSales, setAllSales] = useState<SaleReceipt[]>(placeholderSales);
-  const [allServices, setAllServices] = useState<ServiceRecord[]>(placeholderServiceRecords);
-  const [inventory, setInventory] = useState<InventoryItem[]>(placeholderInventory);
+  const [allSales] = useState<SaleReceipt[]>(placeholderSales);
+  const [allServices] = useState<ServiceRecord[]>(placeholderServiceRecords);
+  const [inventory] = useState<InventoryItem[]>(placeholderInventory);
   
   const [searchTerm, setSearchTerm] = useState("");
   const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
@@ -79,7 +78,7 @@ export default function FinancialReportPage() {
       type: 'Venta',
       description: `Venta a ${sale.customerName || 'Cliente Mostrador'} - ${sale.items.length} artículo(s)`,
       totalAmount: sale.totalAmount, 
-      profit: calculateSaleProfit(sale, inventory),
+      profit: calculateSaleProfit(sale, inventory, 0.16),
       originalObject: sale,
     }));
 

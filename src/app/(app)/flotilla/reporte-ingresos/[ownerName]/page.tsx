@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useState, useMemo, useEffect, useRef } from "react";
+import React, { useState, useMemo, useRef } from "react";
 import { useParams, useRouter } from 'next/navigation';
 import { PageHeader } from "@/components/page-header";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -11,11 +11,8 @@ import {
   placeholderRentalPayments,
   placeholderServiceRecords,
   placeholderVehicleExpenses,
-  placeholderPublicOwnerReports,
-  persistToFirestore,
-  sanitizeObjectForFirestore,
 } from '@/lib/placeholder-data';
-import type { PublicOwnerReport, Vehicle, RentalPayment, ServiceRecord, WorkshopInfo, VehicleMonthlyReport, VehicleExpense } from '@/types';
+import type { PublicOwnerReport, WorkshopInfo, VehicleMonthlyReport } from '@/types';
 import {
   format,
   parseISO,
@@ -25,15 +22,15 @@ import {
   subMonths,
   addMonths,
   isValid,
-  getDaysInMonth,
 } from "date-fns";
 import { es } from 'date-fns/locale';
-import { ChevronLeft, ChevronRight, DollarSign, Wrench, Calendar, ArrowLeft, Share2, Loader2, Copy, Download } from "lucide-react";
+import { ChevronLeft, ChevronRight, DollarSign, Calendar, ArrowLeft, Loader2, Copy, Download } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { formatCurrency } from "@/lib/utils";
 import Link from "next/link";
 import { useToast } from "@/hooks/use-toast";
 import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
+import Image from "next/image";
 
 
 const ReportContent = React.forwardRef<HTMLDivElement, { report: PublicOwnerReport }>(({ report }, ref) => {
@@ -42,7 +39,7 @@ const ReportContent = React.forwardRef<HTMLDivElement, { report: PublicOwnerRepo
   return (
     <div ref={ref} className="p-8 font-sans bg-white text-black" data-format="letter">
       <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 border-b-2 border-black pb-4">
-        <img src={workshopInfo.logoUrl} alt={`${workshopInfo.name} Logo`} className="h-16 mb-4 sm:mb-0" data-ai-hint="workshop logo" />
+        <Image src={workshopInfo.logoUrl} alt={`${workshopInfo.name} Logo`} width={64} height={64} className="h-16 w-auto mb-4 sm:mb-0" data-ai-hint="workshop logo" />
         <div className="text-left sm:text-right">
           <h1 className="text-2xl font-bold">Reporte de Ingresos de Flotilla</h1>
           <p className="text-sm">Propietario: <span className="font-semibold">{report.ownerName}</span></p>
@@ -391,4 +388,3 @@ export default function OwnerIncomeDetailPage() {
     </>
   );
 }
-

@@ -12,6 +12,12 @@ import { Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import type { User } from '@/types';
 
+declare global {
+  interface Window {
+    __APP_HYDRATED__?: boolean;
+  }
+}
+
 export default function AppLayout({
   children,
 }: {
@@ -30,7 +36,7 @@ export default function AppLayout({
       setIsHydrating(false); // Skip hydration from firestore as it would fail
       const mockUser = placeholderUsers.find(u => u.role === 'Superadmin') || defaultSuperAdmin;
       localStorage.setItem(AUTH_USER_LOCALSTORAGE_KEY, JSON.stringify(mockUser));
-      (window as any).__APP_HYDRATED__ = true; // Manually set hydration flag
+      window.__APP_HYDRATED__ = true; // Manually set hydration flag
       return; // Exit the effect
     }
 

@@ -16,7 +16,7 @@ import {
   FormDescription,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import type { InventoryItem, InventoryCategory, Supplier } from "@/types";
+import type { InventoryCategory, Supplier } from "@/types";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { DollarSign } from "lucide-react";

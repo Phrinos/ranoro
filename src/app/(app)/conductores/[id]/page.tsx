@@ -5,13 +5,12 @@ import { useParams, useRouter } from 'next/navigation';
 import { 
   placeholderDrivers, 
   placeholderVehicles,
-  placeholderServiceRecords,
   placeholderRentalPayments,
   persistToFirestore 
 } from '@/lib/placeholder-data';
-import type { Driver, Vehicle, RentalPayment } from '@/types';
+import type { Driver, RentalPayment } from '@/types';
 import { PageHeader } from '@/components/page-header';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { ShieldAlert, Edit, User, Phone, Home, FileText, Upload, AlertTriangle, Car, DollarSign, Printer, ArrowLeft, PlusCircle } from 'lucide-react';
@@ -23,7 +22,6 @@ import { DriverDialog } from '../components/driver-dialog';
 import type { DriverFormValues } from '../components/driver-form';
 import { useToast } from '@/hooks/use-toast';
 import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
 import { formatCurrency } from '@/lib/utils';
 import { format, parseISO, differenceInCalendarDays, startOfToday, isAfter } from 'date-fns';
 import { es } from 'date-fns/locale';

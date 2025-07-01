@@ -6,8 +6,8 @@ import { PageHeader } from "@/components/page-header";
 import { PosDialog } from "../components/pos-dialog";
 import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
 import { TicketContent } from '@/components/ticket-content';
-import { placeholderInventory, placeholderSales } from "@/lib/placeholder-data"; // Added placeholderSales for ID generation
-import type { SaleReceipt, Vehicle, Technician, InventoryItem, WorkshopInfo } from '@/types'; 
+import { placeholderInventory } from "@/lib/placeholder-data"; 
+import type { SaleReceipt, InventoryItem, WorkshopInfo } from '@/types'; 
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
@@ -23,7 +23,7 @@ export default function NuevaVentaPage() {
   const [currentInventoryItems, setCurrentInventoryItems] = useState<InventoryItem[]>(placeholderInventory); 
   const [dialogStep, setDialogStep] = useState<DialogStep>('pos');
   const [currentSaleForTicket, setCurrentSaleForTicket] = useState<SaleReceipt | null>(null);
-  const [workshopInfo, setWorkshopInfo] = useState<WorkshopInfo | {}>({});
+  const [workshopInfo, setWorkshopInfo] = useState<WorkshopInfo | undefined>(undefined);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
