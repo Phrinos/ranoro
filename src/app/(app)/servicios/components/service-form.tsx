@@ -55,7 +55,7 @@ import { enhanceText } from '@/ai/flows/text-enhancement-flow';
 import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
 import { ServiceSheetContent } from '@/components/service-sheet-content';
 import { Checkbox } from "@/components/ui/checkbox";
-import Image from 'next/image';
+import Image from "next/legacy/image";
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { db, storage } from '@root/lib/firebaseClient.js';
 import { getStorage, ref, uploadString, getDownloadURL } from 'firebase/storage';

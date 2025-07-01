@@ -1,7 +1,7 @@
 "use client";
 
 import Link from 'next/link';
-import Image from 'next/image';
+import Image from "next/legacy/image";
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Car, Wrench, BrainCircuit, Users, ShieldCheck, Drill, GitCommitHorizontal, CircleDotDashed, Truck, CheckCircle, MessageSquare } from 'lucide-react';
@@ -55,7 +55,7 @@ export default function LandingPage() {
               width={120}
               height={40}
               priority
-              className="dark:invert h-auto"
+              className="dark:invert"
               data-ai-hint="ranoro logo"
             />
           </Link>
@@ -85,7 +85,7 @@ export default function LandingPage() {
           <Image
             src="/ranoro1.jpg"
             alt="Taller mecánico profesional"
-            fill
+            layout="fill"
             priority
             className="absolute z-0 opacity-20 object-cover"
           />

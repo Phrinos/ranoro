@@ -217,7 +217,7 @@ export default function DashboardPage() {
         inventoryItems: placeholderInventory.map(i => ({ id: i.id, name: i.name, quantity: i.quantity, supplier: i.supplier })),
         serviceHistory: placeholderServiceRecords.map(s => ({
             description: s.description,
-            suppliesUsed: s.suppliesUsed.map(sup => ({ supplyName: sup.supplyName || placeholderInventory.find(i => i.id === sup.supplyId)?.name || 'Unknown' }))
+            suppliesUsed: (s.suppliesUsed || []).map(sup => ({ supplyName: sup.supplyName || placeholderInventory.find(i => i.id === sup.supplyId)?.name || 'Unknown' }))
         }))
       };
 
@@ -254,7 +254,7 @@ export default function DashboardPage() {
 
       const servicesForAI = placeholderServiceRecords.map(service => ({
         serviceDate: service.serviceDate,
-        suppliesUsed: service.suppliesUsed.map(supply => ({
+        suppliesUsed: (service.suppliesUsed || []).map(supply => ({
           supplyId: supply.supplyId,
           quantity: supply.quantity,
         })),

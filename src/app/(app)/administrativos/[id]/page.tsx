@@ -175,26 +175,26 @@ export default function AdministrativeStaffDetailPage() {
         </Button>
         <div className="flex gap-2">
             <AlertDialog>
-            <AlertDialogTrigger asChild>
-                <Button variant="destructive" >
-                <Archive className="mr-2 h-4 w-4" />
-                Archivar Miembro del Staff
-                </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-                <AlertDialogHeader>
-                <AlertDialogTitle>¿Estás seguro de archivar este registro de staff?</AlertDialogTitle>
-                <AlertDialogDescription>
-                    Esta acción marcará el registro de {staffMember.name} como archivado y lo ocultará de las listas principales. Podrás recuperarlo desde la vista de &quot;Archivados&quot;.
-                </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                <AlertDialogAction onClick={handleArchiveStaff} className="bg-destructive hover:bg-destructive/90">
-                    Sí, Archivar
-                </AlertDialogAction>
-                </Footer>
-            </AlertDialogContent>
+              <AlertDialogTrigger asChild>
+                  <Button variant="destructive" >
+                  <Archive className="mr-2 h-4 w-4" />
+                  Archivar Miembro del Staff
+                  </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                  <AlertDialogHeader>
+                  <AlertDialogTitle>¿Estás seguro de archivar este registro de staff?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                      Esta acción marcará el registro de {staffMember.name} como archivado y lo ocultará de las listas principales. Podrás recuperarlo desde la vista de &quot;Archivados&quot;.
+                  </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleArchiveStaff} className="bg-destructive hover:bg-destructive/90">
+                      Sí, Archivar
+                  </AlertDialogAction>
+                  </AlertDialogFooter>
+              </AlertDialogContent>
             </AlertDialog>
             <Button variant="outline" onClick={() => setIsEditDialogOpen(true)}>
             <Edit className="mr-2 h-4 w-4" />
