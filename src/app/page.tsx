@@ -54,7 +54,8 @@ export default function LandingPage() {
               alt="Ranoro Logo"
               width={120}
               height={40}
-              className="dark:invert"
+              priority
+              className="dark:invert h-auto"
               data-ai-hint="ranoro logo"
             />
           </Link>
@@ -85,6 +86,7 @@ export default function LandingPage() {
             src="/ranoro1.jpg"
             alt="Taller mecánico profesional"
             fill
+            priority
             className="absolute z-0 opacity-20 object-cover"
           />
           <div className="relative z-10 flex h-full flex-col items-center justify-center text-center px-4">

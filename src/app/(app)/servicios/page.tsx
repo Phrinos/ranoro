@@ -3,80 +3,143 @@
 
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Edit, Trash2, Clock, CheckCircle, Wrench, CalendarCheck, Share2 } from "lucide-react";
+import { PlusCircle, Edit, Trash2, Clock, CheckCircle, Wrench, CalendarCheck, Share2, Loader2 } from "lucide-react";
 import { ServiceDialog } from "./components/service-dialog";
-import { placeholderServiceRecords, placeholderVehicles, placeholderTechnicians, placeholderInventory } from "@/lib/placeholder-data";
-import type { ServiceRecord, Vehicle, Technician, QuoteRecord } from "@/types";
-import { useState, useEffect, useMemo } from "react";
+import type { ServiceRecord, Vehicle, Technician, QuoteRecord, InventoryItem } from "@/types";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { isValid, parseISO, compareDesc, compareAsc, format } from "date-fns";
+import { isValid, parseISO, compareDesc } from "date-fns";
 import { es } from 'date-fns/locale';
 import { useRouter } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { collection, onSnapshot, doc, setDoc, deleteDoc, query, orderBy, limit, startAfter, getDocs, DocumentData } from 'firebase/firestore';
+import { db } from '@/lib/firebaseClient';
 import { nanoid } from 'nanoid';
-import { doc, setDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebasePublic';
+import { format } from 'date-fns';
 
+const PAGE_SIZE = 15; // Load 15 services at a time
 
 async function createPublicService(service: ServiceRecord, vehicle: Vehicle | undefined): Promise<string> {
-  const publicId = `srv_${nanoid(15)}`;
-  if (!db) {
-    throw new Error("La conexión con la base de datos no está configurada.");
-  }
-  if (!vehicle) {
-    throw new Error("No se encontró el vehículo asociado a este servicio.");
-  }
+  const publicId = service.publicId || `srv_${nanoid(15)}`;
+  if (!db) throw new Error("La conexión con la base de datos no está configurada.");
+  if (!vehicle) throw new Error("No se encontró el vehículo asociado a este servicio.");
   
   const publicDocRef = doc(db, 'publicServices', publicId);
-
-  // Create a specific public-facing data object
-  const publicData = {
-    ...service,
-    vehicle: { // Embed necessary vehicle info
-      make: vehicle.make,
-      model: vehicle.model,
-      year: vehicle.year,
-      color: vehicle.color,
-      licensePlate: vehicle.licensePlate,
-      vin: vehicle.vin,
-    },
-    // Ensure you are not leaking any sensitive internal data
-    internalNotes: '', 
-    costBreakdown: {},
-  };
-
-
+  const publicData = { ...service, vehicle };
   await setDoc(publicDocRef, publicData);
   return publicId;
 }
 
-
 export default function ServiciosPage() {
   const { toast } = useToast();
-  const router = useRouter();
-  const [services, setServices] = useState<ServiceRecord[]>(placeholderServiceRecords);
-  const [vehicles, setVehicles] = useState<Vehicle[]>(placeholderVehicles); 
-  const [technicians, setTechniciansState] = useState(placeholderTechnicians); 
-  const [inventoryItems, setInventoryItemsState] = useState(placeholderInventory); 
   
+  // States for holding data from Firestore
+  const [services, setServices] = useState<ServiceRecord[]>([]);
+  const [vehicles, setVehicles] = useState<Vehicle[]>([]); 
+  const [technicians, setTechnicians] = useState<Technician[]>([]); 
+  const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]); 
+  
+  // State for pagination
+  const [lastVisible, setLastVisible] = useState<DocumentData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [hasMore, setHasMore] = useState(true);
+  const loaderRef = useRef(null);
+
   const [isServiceDialogOpen, setIsServiceDialogOpen] = useState(false);
   const [editingService, setEditingService] = useState<ServiceRecord | null>(null);
 
+  // Real-time listener for secondary data (vehicles, techs, inventory)
   useEffect(() => {
-    setServices(placeholderServiceRecords);
-    setVehicles(placeholderVehicles);
-    setTechniciansState(placeholderTechnicians);
-    setInventoryItemsState(placeholderInventory);
+    if (!db) return;
+    const collectionsToListen = [
+        { name: 'vehicles', setter: setVehicles },
+        { name: 'technicians', setter: setTechnicians },
+        { name: 'inventory', setter: setInventoryItems },
+    ];
+    
+    const unsubscribes = collectionsToListen.map(({ name, setter }) => 
+        onSnapshot(collection(db, name), (snapshot) => {
+            setter(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as any)));
+        }, (error) => console.error(`Error al escuchar ${name}: `, error))
+    );
+    return () => unsubscribes.forEach(unsub => unsub());
   }, []);
+
+  // Real-time listener for the FIRST PAGE of services
+  useEffect(() => {
+    if (!db) return;
+    setLoading(true);
+    const q = query(collection(db, "serviceRecords"), orderBy("serviceDate", "desc"), limit(PAGE_SIZE));
+    
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const initialServices = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ServiceRecord));
+      setServices(initialServices);
+      setLastVisible(snapshot.docs[snapshot.docs.length - 1]);
+      setHasMore(snapshot.docs.length === PAGE_SIZE);
+      setLoading(false);
+    }, (error) => {
+      console.error("Error al cargar servicios iniciales: ", error);
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, []);
+  
+  // Function to load more services for pagination
+  const loadMoreServices = useCallback(async () => {
+    if (!hasMore || loading || !lastVisible) return;
+    
+    setLoading(true);
+    const q = query(
+      collection(db, "serviceRecords"),
+      orderBy("serviceDate", "desc"),
+      startAfter(lastVisible),
+      limit(PAGE_SIZE)
+    );
+
+    const documentSnapshots = await getDocs(q);
+    const newServices = documentSnapshots.docs.map(doc => ({ id: doc.id, ...doc.data() } as ServiceRecord));
+    
+    setServices(prev => [...prev, ...newServices]);
+    setLastVisible(documentSnapshots.docs[documentSnapshots.docs.length - 1]);
+    setHasMore(documentSnapshots.docs.length === PAGE_SIZE);
+    setLoading(false);
+  }, [lastVisible, hasMore, loading]);
+
+  // Intersection Observer for infinite scrolling
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          loadMoreServices();
+        }
+      },
+      { threshold: 1.0 }
+    );
+
+    if (loaderRef.current) {
+      observer.observe(loaderRef.current);
+    }
+
+    return () => {
+      if (loaderRef.current) {
+        observer.unobserve(loaderRef.current);
+      }
+    };
+  }, [loadMoreServices]);
+
 
   const handleShareService = async (service: ServiceRecord) => {
     try {
       const vehicle = vehicles.find(v => v.id === service.vehicleId);
       const publicId = await createPublicService(service, vehicle);
-      const publicUrl = `${window.location.origin}/s/${publicId}`;
       
+      const serviceDocRef = doc(db, 'serviceRecords', service.id!);
+      await setDoc(serviceDocRef, { publicId }, { merge: true });
+
+      const publicUrl = `${window.location.origin}/s/${publicId}`;
       navigator.clipboard.writeText(publicUrl);
       
       toast({
@@ -88,75 +151,49 @@ export default function ServiciosPage() {
       console.error("Error al compartir el servicio:", error);
       toast({
         title: "Error al Compartir",
-        description: "No se pudo crear el enlace para compartir. Por favor, intente de nuevo.",
+        description: `No se pudo crear el enlace. ${error instanceof Error ? error.message : ''}`,
         variant: "destructive",
       });
     }
   };
 
-  
   const handleOpenDialog = (service: ServiceRecord | null = null) => {
     setEditingService(service);
     setIsServiceDialogOpen(true);
   };
 
   const handleSaveService = async (data: ServiceRecord | QuoteRecord) => {
-     if (!('status' in data)) { // Ensure it's a ServiceRecord
-        toast({ title: "Error de tipo", description: "Se intentó guardar una cotización como servicio.", variant: "destructive" });
-        return; 
-    }
-    const serviceData = data as ServiceRecord;
+    if (!db) return toast({ title: "Error de base de datos", variant: "destructive" });
+    if (!('status' in data)) return toast({ title: "Error de tipo", description: "Se intentó guardar una cotización como servicio.", variant: "destructive" });
 
-    if (editingService) {
-      const updatedService = { ...editingService, ...serviceData };
-      setServices(services.map(s => s.id === updatedService.id ? updatedService : s));
-      const pIndex = placeholderServiceRecords.findIndex(s => s.id === updatedService.id);
-      if (pIndex !== -1) placeholderServiceRecords[pIndex] = updatedService;
-      
+    const serviceData = data as ServiceRecord;
+    const isNew = !serviceData.id;
+    const docId = serviceData.id || nanoid();
+    
+    try {
+      await setDoc(doc(db, "serviceRecords", docId), { ...serviceData, id: docId }, { merge: true });
       toast({
-        title: "Servicio Actualizado",
-        description: `El servicio ${updatedService.id} ha sido actualizado.`,
+        title: isNew ? "Servicio Creado" : "Servicio Actualizado",
+        description: `El servicio para ${vehicles.find(v => v.id === serviceData.vehicleId)?.licensePlate} ha sido guardado.`,
       });
-    } else {
-      const newService: ServiceRecord = {
-        ...serviceData,
-        id: `S${String(services.length + 1).padStart(3, '0')}${Date.now().toString().slice(-3)}`,
-      };
-      setServices(prev => [...prev, newService]);
-      placeholderServiceRecords.push(newService);
-      toast({
-        title: "Servicio Creado",
-        description: `El nuevo servicio para ${vehicles.find(v => v.id === newService.vehicleId)?.licensePlate} ha sido registrado.`,
-      });
+    } catch (error) {
+      console.error("Error guardando servicio: ", error);
+      toast({ title: "Error al Guardar", variant: "destructive" });
     }
 
     setIsServiceDialogOpen(false);
     setEditingService(null);
   };
 
-
-  const handleDeleteService = (serviceId: string) => {
-    const serviceToDelete = services.find(s => s.id === serviceId);
-    setServices(prevServices => prevServices.filter(s => s.id !== serviceId));
-     const pIndex = placeholderServiceRecords.findIndex(s => s.id === serviceId);
-    if (pIndex !== -1) {
-        placeholderServiceRecords.splice(pIndex, 1);
+  const handleDeleteService = async (serviceId: string) => {
+    if (!db) return toast({ title: "Error de base de datos", variant: "destructive" });
+    try {
+      await deleteDoc(doc(db, "serviceRecords", serviceId));
+      toast({ title: "Servicio Eliminado", description: `El servicio con ID ${serviceId} ha sido eliminado.` });
+    } catch (error) {
+      console.error("Error eliminando servicio: ", error);
+      toast({ title: "Error al Eliminar", variant: "destructive" });
     }
-    toast({
-      title: "Servicio Eliminado",
-      description: `El servicio con ID ${serviceId} (${serviceToDelete?.description}) ha sido eliminado.`,
-    });
-  };
-  
-  const handleVehicleCreated = (newVehicle: Vehicle) => {
-    setVehicles(prev => {
-      if (prev.find(v => v.id === newVehicle.id)) return prev;
-      const updatedList = [...prev, newVehicle];
-      if(!placeholderVehicles.find(v => v.id === newVehicle.id)) {
-        placeholderVehicles.push(newVehicle);
-      }
-      return updatedList;
-    });
   };
 
   const sortedServicesForList = useMemo(() => {
@@ -165,18 +202,16 @@ export default function ServiciosPage() {
       const statusAVal = statusOrder[a.status as keyof typeof statusOrder] || 5;
       const statusBVal = statusOrder[b.status as keyof typeof statusOrder] || 5;
 
-      if (statusAVal !== statusBVal) {
-        return statusAVal - statusBVal;
-      }
+      if (statusAVal !== statusBVal) return statusAVal - statusBVal;
       
-      const dateA = parseISO(a.serviceDate);
-      const dateB = parseISO(b.serviceDate);
+      const dateA = a.serviceDate ? parseISO(a.serviceDate) : new Date(0);
+      const dateB = b.serviceDate ? parseISO(b.serviceDate) : new Date(0);
 
       if (isValid(dateA) && isValid(dateB)) {
          const dateComparison = compareDesc(dateA, dateB);
          if (dateComparison !== 0) return dateComparison;
       }
-      return a.id.localeCompare(b.id); // Fallback
+      return (b.id || "").localeCompare(a.id || "");
     });
   }, [services]);
 
@@ -190,11 +225,20 @@ export default function ServiciosPage() {
     }
   };
 
-
   return (
     <>
+      <PageHeader
+        title="Lista de Servicios"
+        description="Visualiza, crea y actualiza las órdenes de servicio en tiempo real."
+        actions={
+            <Button onClick={() => handleOpenDialog()}>
+                <PlusCircle className="mr-2 h-4 w-4" />
+                Nuevo Servicio
+            </Button>
+        }
+      />
       <div className="space-y-4">
-        {sortedServicesForList.length > 0 ? sortedServicesForList.map(service => {
+        {sortedServicesForList.map(service => {
               const vehicle = vehicles.find(v => v.id === service.vehicleId);
               const technician = technicians.find(t => t.id === service.technicianId);
               
@@ -211,16 +255,15 @@ export default function ServiciosPage() {
                         <div className="w-48 shrink-0 flex flex-col justify-center items-start text-left pl-6">
                             <p className="text-xs text-muted-foreground">ID Servicio</p>
                             <p className="font-semibold text-lg text-foreground">
-                                {service.id}
+                                {service.id?.substring(0, 8)}...
                             </p>
                             <p className="text-xs text-muted-foreground mt-2">Costo</p>
                             <p className="font-bold text-2xl text-foreground">
-                                ${service.totalCost.toLocaleString('es-ES')}
+                                ${service.totalCost?.toLocaleString('es-ES') || '0'}
                             </p>
                         </div>
                         
                         <div className="flex-grow border-l border-r p-4 space-y-3">
-                            {/* Top line */}
                             <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2 text-sm text-muted-foreground">
                                 <div className="flex items-center gap-1.5" title="Hora de Recepción">
                                     {(service.status === 'Reparando' || service.status === 'Completado') ? <CheckCircle className="h-4 w-4 text-green-600" /> : <Clock className="h-4 w-4" />}
@@ -235,7 +278,6 @@ export default function ServiciosPage() {
                                     <span>Entrega: {formattedDelivery}</span>
                                 </div>
                             </div>
-                             {/* Bottom part */}
                             <div className="mt-4 flex items-center gap-4">
                                 <div className="flex-grow">
                                     <h4 className="font-semibold text-base">
@@ -248,7 +290,6 @@ export default function ServiciosPage() {
                             </div>
                         </div>
 
-                        {/* Actions Column */}
                         <div className="w-48 shrink-0 flex flex-col items-center justify-center p-4 gap-y-2">
                              <Badge variant={getStatusVariant(service.status)} className="w-full justify-center text-center">{service.status}</Badge>
                             <div className="flex">
@@ -267,18 +308,11 @@ export default function ServiciosPage() {
                                     <AlertDialogContent>
                                     <AlertDialogHeader>
                                         <AlertDialogTitle>¿Eliminar Servicio?</AlertDialogTitle>
-                                        <AlertDialogDescription>
-                                        Esta acción no se puede deshacer. ¿Seguro que quieres eliminar este servicio?
-                                        </AlertDialogDescription>
+                                        <AlertDialogDescription>Esta acción no se puede deshacer. ¿Seguro que quieres eliminar este servicio?</AlertDialogDescription>
                                     </AlertDialogHeader>
                                     <AlertDialogFooter>
                                         <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                        <AlertDialogAction
-                                        onClick={() => handleDeleteService(service.id)}
-                                        className="bg-destructive hover:bg-destructive/90"
-                                        >
-                                        Sí, Eliminar
-                                        </AlertDialogAction>
+                                        <AlertDialogAction onClick={() => handleDeleteService(service.id!)} className="bg-destructive hover:bg-destructive/90">Sí, Eliminar</AlertDialogAction>
                                     </AlertDialogFooter>
                                     </AlertDialogContent>
                                 </AlertDialog>
@@ -288,20 +322,11 @@ export default function ServiciosPage() {
                   </CardContent>
                 </Card>
               );
-            }) : <p className="text-muted-foreground text-center py-8">No hay órdenes de servicio registradas.</p>}
-      </div>
-
-      <div className="mt-6">
-        <PageHeader
-          title="Lista de Servicios"
-          description="Visualiza, crea y actualiza las órdenes de servicio."
-          actions={
-              <Button onClick={() => handleOpenDialog()}>
-                  <PlusCircle className="mr-2 h-4 w-4" />
-                  Nuevo Servicio
-              </Button>
-          }
-        />
+            })}
+        <div ref={loaderRef} className="flex justify-center items-center p-4">
+            {loading && <Loader2 className="h-8 w-8 animate-spin text-primary" />}
+            {!loading && !hasMore && <p className="text-muted-foreground">Fin de los resultados.</p>}
+        </div>
       </div>
       
       {isServiceDialogOpen && (
@@ -313,7 +338,10 @@ export default function ServiciosPage() {
           technicians={technicians}
           inventoryItems={inventoryItems}
           onSave={handleSaveService}
-          onVehicleCreated={handleVehicleCreated}
+          onVehicleCreated={(newVehicle) => {
+              if (!db) return;
+              setDoc(doc(db, 'vehicles', newVehicle.id), newVehicle);
+          }}
           mode="service"
         />
       )}

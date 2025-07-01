@@ -105,6 +105,7 @@ export function PosForm({ inventoryItems: parentInventoryItems, onSaleComplete, 
   const [isNewInventoryItemDialogOpen, setIsNewInventoryItemDialogOpen] = useState(false);
   const [newItemInitialData, setNewItemInitialData] = useState<Partial<InventoryItemFormValues> | null>(null);
 
+  const handleOpenAddItemDialog = () => setIsAddItemDialogOpen(true);
 
   const form = useForm<POSFormValues>({
     resolver: zodResolver(posFormSchema),
