@@ -4,7 +4,7 @@
 //-------------------------------------------
 
 // Importa lo esencial de Firebase v9+ (modular)
-import { initializeApp, getApp, getApps } from 'firebase/app';
+import { initializeApp, getApps } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
 import { getStorage } from 'firebase/storage';
 import { getFirestore } from 'firebase/firestore';
@@ -24,29 +24,26 @@ const firebaseConfig = {
 
 
 // --- Variables para exportar ---
+let app;
 let auth = null;
 let storage = null;
 let db = null;
-const PRIVATE_APP_NAME = "firebase-private-app";
 
 //-------------------------------------------
 // 2. Crear/obtener la app de Firebase
 //-------------------------------------------
 // Solo inicializa Firebase si las credenciales son válidas.
 if (firebaseConfig.apiKey && firebaseConfig.apiKey !== "AIzaSyA_ot6L0zgglc1tC0BounxYIvj7y8048Sg_REPLACE_ME") {
-  try {
-    // Intenta obtener la app si ya existe
-    const privateApp = getApp(PRIVATE_APP_NAME);
-    auth = getAuth(privateApp);
-    storage = getStorage(privateApp);
-    db = getFirestore(privateApp);
-  } catch (e) {
-    // Si no existe, inicialízala
-    const privateApp = initializeApp(firebaseConfig, PRIVATE_APP_NAME);
-    auth = getAuth(privateApp);
-    storage = getStorage(privateApp);
-    db = getFirestore(privateApp);
+  // Evita reinicializar en el entorno de desarrollo de Next.js
+  if (!getApps().length) {
+    app = initializeApp(firebaseConfig);
+  } else {
+    app = getApps()[0];
   }
+  
+  auth = getAuth(app);
+  storage = getStorage(app);
+  db = getFirestore(app);
 } else {
     // Muestra una advertencia clara en la consola del navegador si las credenciales no están configuradas.
     if (typeof window !== 'undefined') {
