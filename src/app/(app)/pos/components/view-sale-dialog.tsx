@@ -132,11 +132,11 @@ export function ViewSaleDialog({ open, onOpenChange, sale, onCancelSale }: ViewS
                         <AlertDialogDescription>
                             Esta acción no se puede deshacer. El stock de los artículos vendidos será restaurado al inventario. Se requiere un motivo para la cancelación.
                         </AlertDialogDescription>
-                        <div className="mt-4">
-                          <Label htmlFor="cancellation-reason" className="text-left font-semibold">Motivo de la cancelación (obligatorio)</Label>
-                          <Textarea id="cancellation-reason" value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Ej: Error en el cobro, el cliente se arrepintió..." className="mt-2" />
-                        </div>
                     </AlertDialogHeader>
+                    <div className="mt-4">
+                      <Label htmlFor="cancellation-reason" className="text-left font-semibold">Motivo de la cancelación (obligatorio)</Label>
+                      <Textarea id="cancellation-reason" value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Ej: Error en el cobro, el cliente se arrepintió..." className="mt-2" />
+                    </div>
                     <AlertDialogFooter>
                         <AlertDialogCancel onClick={() => setReason('')}>No</AlertDialogCancel>
                         <AlertDialogAction onClick={() => onCancelSale(sale.id, reason)} disabled={!reason.trim()} className="bg-destructive hover:bg-destructive/90">
