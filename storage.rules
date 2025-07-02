@@ -2,14 +2,16 @@ rules_version = '2';
 
 service firebase.storage {
   match /b/{bucket}/o {
-    // Allow public read on all files, which is necessary for displaying
-    // images via URL in the app and on public links.
-    match /{allPaths=**} {
-      allow read;
-      
-      // Only allow authenticated users to write (upload, update, delete) files.
-      // This is a broad but secure rule for this application's needs.
-      allow write: if request.auth != null;
+    // Allow authorized users to upload their service photos.
+    // The path includes the service ID to keep photos organized.
+    match /service-photos/{serviceId}/{allPaths=**} {
+      allow read, write: if request.auth != null;
+    }
+
+    // Allow authorized users to upload their signatures.
+    match /user-signatures/{userId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && request.auth.uid == userId;
     }
   }
 }
