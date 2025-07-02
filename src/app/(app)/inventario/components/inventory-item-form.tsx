@@ -32,7 +32,7 @@ const inventoryItemFormSchema = z.object({
   unitPrice: z.coerce.number().min(0, "El precio de compra no puede ser negativo.").optional(),
   sellingPrice: z.coerce.number().min(0, "El precio de venta no puede ser negativo.").optional(),
   lowStockThreshold: z.coerce.number().int().min(0, "El umbral de stock bajo no puede ser negativo."),
-  unitType: z.enum(['units', 'ml', 'liters']).default('units').optional(),
+  unitType: z.enum(['units', 'ml', 'liters']).default('units'),
   category: z.string().min(1, "La categoría es obligatoria."),
   supplier: z.string().min(1, "El proveedor es obligatorio."),
   rendimiento: z.coerce.number().int().min(0, "El rendimiento debe ser un número positivo.").optional(),
@@ -69,6 +69,7 @@ export function InventoryItemForm({ initialData, onSubmit, onClose, categories, 
     resolver: zodResolver(inventoryItemFormSchema),
     defaultValues: initialData ? {
         ...initialData,
+        unitType: initialData.unitType || 'units',
         rendimiento: 'rendimiento' in initialData ? initialData.rendimiento : undefined
     } : {
       name: "",

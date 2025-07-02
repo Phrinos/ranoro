@@ -25,13 +25,20 @@ service cloud.firestore {
     match /publicServices/{serviceId} {
       allow read: if true;
       
-      // Allow *anyone* (unauthenticated customers) to update ONLY the signature fields.
-      // This is crucial for the public signing page to work.
-      allow update: if request.resource.data.diff(resource.data).affectedKeys()
-                      .hasOnly(['customerSignatureReception', 'customerSignatureDelivery', 'receptionSignatureViewed', 'deliverySignatureViewed']);
+      // Allow authenticated users to perform any update.
+      // Allow unauthenticated customers to update ONLY signature fields.
+      allow update: if request.auth != null || 
+                      (request.resource.data.diff(resource.data).affectedKeys()
+                      .hasOnly(['customerSignatureReception', 'customerSignatureDelivery', 'receptionSignatureViewed', 'deliverySignatureViewed']));
                       
-      // Disallow create/delete from client
+      // Allow create/delete only for authenticated users.
       allow create, delete: if request.auth != null;
+    }
+    
+    // Rule for the new public_documents collection
+    match /public_documents/{documentId} {
+      allow read: if true;
+      allow create, update, delete: if request.auth != null;
     }
 
     // By default, deny access to any other collection/document path.
