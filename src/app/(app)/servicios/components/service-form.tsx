@@ -293,9 +293,6 @@ export function ServiceForm({
   const [isTicketPreviewOpen, setIsTicketPreviewOpen] = useState(false);
   const ticketContentRef = useRef<HTMLDivElement>(null);
   
-  // --- Photo Upload State ---
-  const [isUploadingGlobal, setIsUploadingGlobal] = useState(false);
-
 
   const form = useForm<ServiceFormValues>({
     resolver: zodResolver(serviceFormSchemaBase),
@@ -1564,9 +1561,7 @@ export function ServiceForm({
                                 reportIndex={index}
                                 serviceId={getValues('id') || `temp_${Date.now()}`}
                                 photosLength={field.photos.length}
-                                disabled={isReadOnly || isUploadingGlobal}
-                                onUploadStart={() => setIsUploadingGlobal(true)}
-                                onUploadEnd={() => setIsUploadingGlobal(false)}
+                                disabled={isReadOnly}
                                 onUploadComplete={(reportIndex, downloadURL) => {
                                     const freshReportState = getValues(`photoReports.${reportIndex}`);
                                     updatePhotoReport(reportIndex, {
@@ -1578,7 +1573,7 @@ export function ServiceForm({
                         </Card>
                     ))}
                     {!isReadOnly && (
-                      <Button type="button" variant="secondary" onClick={() => appendPhotoReport({ id: `rep_${Date.now()}`, date: new Date().toISOString(), description: '', photos: [] })} disabled={isUploadingGlobal}>
+                      <Button type="button" variant="secondary" onClick={() => appendPhotoReport({ id: `rep_${Date.now()}`, date: new Date().toISOString(), description: '', photos: [] })}>
                         <PlusCircle className="mr-2 h-4 w-4" /> Añadir Nuevo Reporte
                       </Button>
                     )}
@@ -2074,3 +2069,4 @@ const SafetyCheckRow = ({ name, label, control, isReadOnly }: { name: string; la
 
 
     
+

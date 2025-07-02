@@ -1,3 +1,4 @@
+
 "use client";
 
 import { Button } from "@/components/ui/button";
@@ -12,8 +13,6 @@ interface PhotoUploaderProps {
   reportIndex: number;
   serviceId: string;
   onUploadComplete: (reportIndex: number, downloadURL: string) => void;
-  onUploadStart: () => void;
-  onUploadEnd: () => void;
   photosLength: number;
   disabled?: boolean;
 }
@@ -22,8 +21,6 @@ export function PhotoUploader({
     reportIndex, 
     serviceId, 
     onUploadComplete, 
-    onUploadStart,
-    onUploadEnd,
     photosLength,
     disabled 
 }: PhotoUploaderProps) {
@@ -34,8 +31,7 @@ export function PhotoUploader({
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     
-    // Reset the input value to allow re-selection of the same file
-    if(fileInputRef.current) {
+    if (fileInputRef.current) {
         fileInputRef.current.value = '';
     }
 
@@ -47,7 +43,6 @@ export function PhotoUploader({
     }
 
     setIsUploading(true);
-    onUploadStart();
     
     try {
       toast({ title: 'Procesando imagen...', description: `Optimizando ${file.name}...` });
@@ -84,9 +79,10 @@ export function PhotoUploader({
       });
     } finally {
       setIsUploading(false);
-      onUploadEnd();
     }
   };
+
+  const isDisabled = disabled || isUploading || photosLength >= 3;
 
   return (
     <>
@@ -96,7 +92,7 @@ export function PhotoUploader({
         size="sm"
         className="mt-2"
         onClick={() => fileInputRef.current?.click()}
-        disabled={disabled || isUploading}
+        disabled={isDisabled}
       >
         {isUploading ? (
           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
