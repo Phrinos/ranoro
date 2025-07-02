@@ -35,7 +35,18 @@ const nextConfig = {
         ]
       }
     ]
-  }
+  },
+  webpack: (config, { isServer }) => {
+    // Exclude `handlebars` from server-side bundling to prevent webpack errors.
+    // Genkit's dependency `dotprompt` uses `handlebars` in a way that's not
+    // fully compatible with Next.js's server-side webpack configuration.
+    if (isServer) {
+      config.externals.push({
+        'handlebars': 'commonjs handlebars',
+      });
+    }
+    return config;
+  },
 };
 
 module.exports = nextConfig;
