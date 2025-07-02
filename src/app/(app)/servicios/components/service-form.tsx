@@ -56,7 +56,7 @@ import { ServiceSheetContent } from '@/components/service-sheet-content';
 import { Checkbox } from "@/components/ui/checkbox";
 import Image from "next/legacy/image";
 import { doc, setDoc, getDoc } from 'firebase/firestore';
-import { db, storage } from '../../../../lib/firebaseClient';
+import { db, storage } from '../../../../lib/firebaseClient.js';
 import { getStorage, ref, uploadString, getDownloadURL } from 'firebase/storage';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AddSupplyDialog } from './add-supply-dialog';
@@ -1020,30 +1020,39 @@ export function ServiceForm({
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
-    if (!files || activeReportIndex === null) return;
+
+    if (!files || files.length === 0 || activeReportIndex === null) {
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      setActiveReportIndex(null);
+      return;
+    }
   
     const currentReport = getValues(`photoReports.${activeReportIndex}`);
-    if (!currentReport) return;
+    if (!currentReport) {
+      toast({ title: "Error Interno", description: "No se encontró el grupo de reporte activo.", variant: "destructive" });
+      return;
+    }
   
     if (currentReport.photos.length + files.length > 3) {
       toast({ title: "Límite Excedido", description: "No puede subir más de 3 fotos por reporte.", variant: "destructive" });
       return;
     }
+
+    toast({ title: "Procesando imágenes...", description: "Por favor espere." });
   
     const uploadPromises: Promise<string>[] = [];
     
-    // Create an array of optimization and upload promises
     for (let i = 0; i < files.length; i++) {
         const file = files[i];
         uploadPromises.push(
-            optimizeImage(file, 1280) // 1. Optimize
-                .then(dataUrl => { // 2. Upload
+            optimizeImage(file, 1280)
+                .then(dataUrl => {
                     if (storage) {
                         const serviceId = getValues('id') || `temp_${Date.now()}`;
                         const photoRef = ref(storage, `service-photos/${serviceId}/${Date.now()}_${Math.random()}.jpg`);
                         return uploadString(photoRef, dataUrl, 'data_url').then(snapshot => getDownloadURL(snapshot.ref));
                     }
-                    return dataUrl; // Fallback to data URL
+                    return dataUrl;
                 })
         );
     }
@@ -1055,6 +1064,8 @@ export function ServiceForm({
             ...currentReport,
             photos: [...currentReport.photos, ...newPhotoUrls],
         });
+
+        toast({ title: "Fotos añadidas", description: "Las imágenes se han añadido al reporte." });
   
     } catch (e) {
         console.error("Error processing or uploading images:", e);
