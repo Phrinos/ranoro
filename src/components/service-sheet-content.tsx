@@ -398,32 +398,43 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
     );
 
     const PhotoReportContent = showPhotoReport ? (
-        <div className="mt-4 print:mt-0">
-             <header className="mb-4 pb-2 border-b-2 border-black">
-                <div className="flex justify-between items-center">
-                    <h1 className="text-lg font-bold">REPORTE FOTOGRÁFICO</h1>
-                    <p className="font-mono text-xs">Folio de Servicio: <span className="font-semibold">{service.id}</span></p>
-                </div>
-             </header>
-             <div className="space-y-4">
-                 {service.photoReports!.map(reportItem => (
-                    <div key={reportItem.id} className="break-inside-avoid border-b pb-4 last:border-none">
-                        <p className="mb-2 text-sm">
-                            <span className="font-bold">Fecha:</span> {format(parseISO(reportItem.date), "dd/MM/yyyy HH:mm", { locale: es })}
-                            <br/>
-                            <span className="font-bold">Descripción:</span> {reportItem.description}
-                        </p>
-                        <div className="grid grid-cols-2 gap-2">
-                           {reportItem.photos.map((photoUrl, photoIndex) => (
-                             <div key={photoIndex} className="relative aspect-video w-full bg-gray-100 rounded-md overflow-hidden">
-                               <Image src={photoUrl} alt={`Foto ${photoIndex + 1}`} layout="fill" objectFit="contain" data-ai-hint="car damage photo"/>
-                             </div>
-                           ))}
-                        </div>
+      <div className="mt-4 print:mt-0">
+        <header className="mb-4 pb-2 border-b-2 border-black">
+          <div className="flex justify-between items-center">
+            <h1 className="text-lg font-bold">REPORTE FOTOGRÁFICO</h1>
+            <p className="font-mono text-xs">
+              Folio de Servicio:{" "}
+              <span className="font-semibold">{service.id}</span>
+            </p>
+          </div>
+        </header>
+        <div className="space-y-4">
+          {service.photoReports!.map((reportItem) => (
+            <div key={reportItem.id} className="break-inside-avoid border-b pb-4 last:border-none">
+                <p className="mb-2 text-sm">
+                    <span className="font-bold">Fecha:</span>{" "}
+                    {format(parseISO(reportItem.date), "dd/MM/yyyy HH:mm", { locale: es })}
+                    <br />
+                    <span className="font-bold">Descripción:</span>{" "}
+                    {reportItem.description}
+                </p>
+                <div className="grid grid-cols-2 gap-2">
+                {reportItem.photos.map((photoUrl, photoIndex) => (
+                    <div key={photoIndex} className="relative aspect-video w-full bg-gray-100 rounded-md overflow-hidden">
+                    <Image
+                        src={photoUrl}
+                        alt={`Foto ${photoIndex + 1}`}
+                        layout="fill"
+                        objectFit="contain"
+                        data-ai-hint="car damage photo"
+                    />
                     </div>
-                 ))}
-             </div>
+                ))}
+                </div>
+            </div>
+          ))}
         </div>
+      </div>
     ) : null;
 
     return (
