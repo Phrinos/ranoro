@@ -363,7 +363,7 @@ export function ServiceForm({
         const costPerUnit = item?.unitPrice || supply.unitPrice || 0;
         return sum + (costPerUnit * supply.quantity);
     }, 0) || 0;
-    const calculatedServiceProfit = calculatedTotalCost - calculatedTotalSuppliesCost;
+    const calculatedServiceProfit = calculatedTotalCost - calculatedTotalSuppliesWorkshopCost;
     return {
       totalCost: calculatedTotalCost,
       totalSuppliesWorkshopCost: calculatedTotalSuppliesCost,
@@ -977,69 +977,51 @@ export function ServiceForm({
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     if (activeReportIndex === null) return;
-  
     const files = event.target.files;
     if (!files || files.length === 0) {
       if (fileInputRef.current) fileInputRef.current.value = '';
       setActiveReportIndex(null);
       return;
     }
-  
+
     const currentReport = getValues(`photoReports.${activeReportIndex}`);
-    if (!currentReport) {
-      toast({
-        title: 'Error Interno',
-        description: 'No se encontró el grupo de reporte activo.',
-        variant: 'destructive',
-      });
+    if (!currentReport || (currentReport.photos.length + files.length > 3)) {
+      toast({ title: 'Límite Excedido', description: 'No puede subir más de 3 fotos por reporte.', variant: 'destructive' });
       if (fileInputRef.current) fileInputRef.current.value = '';
       setActiveReportIndex(null);
       return;
     }
-  
-    if (currentReport.photos.length + files.length > 3) {
-      toast({
-        title: 'Límite Excedido',
-        description: 'No puede subir más de 3 fotos por reporte.',
-        variant: 'destructive',
-      });
-      if (fileInputRef.current) fileInputRef.current.value = '';
-      setActiveReportIndex(null);
-      return;
+
+    if (!storage) {
+        toast({ title: 'Error de Configuración', description: 'El almacenamiento de archivos no está disponible.', variant: 'destructive' });
+        return;
     }
-  
-    toast({
-      title: 'Procesando imágenes...',
-      description: `Subiendo ${files.length} imagen(es). Por favor espere.`,
+
+    toast({ title: 'Procesando imágenes...', description: `Subiendo ${files.length} imagen(es). Por favor espere.` });
+
+    const uploadTasks = Array.from(files).map(async (file) => {
+      try {
+        const optimizedDataUrl = await optimizeImage(file, 1280);
+        const serviceId = getValues('id') || `temp_${Date.now()}`;
+        const photoName = `${Date.now()}_${Math.random().toString(36).substring(2, 9)}.jpg`;
+        const photoRef = ref(storage, `service-photos/${serviceId}/${photoName}`);
+        await uploadString(photoRef, optimizedDataUrl, 'data_url');
+        const downloadURL = await getDownloadURL(photoRef);
+        return { status: 'fulfilled', value: downloadURL };
+      } catch (error) {
+        console.error('Error in one upload task:', error);
+        return { status: 'rejected', reason: error };
+      }
     });
-  
-    const uploadPromises = Array.from(files).map((file) =>
-      optimizeImage(file, 1280)
-        .then(async (optimizedDataUrl) => {
-          if (!storage) {
-            return optimizedDataUrl; // Use data URL if no storage
-          }
-          const serviceId = getValues('id') || `temp_${Date.now()}`;
-          const photoName = `${Date.now()}_${Math.random()
-            .toString(36)
-            .substring(2, 9)}.jpg`;
-          const photoRef = ref(
-            storage,
-            `service-photos/${serviceId}/${photoName}`
-          );
-          await uploadString(photoRef, optimizedDataUrl, 'data_url');
-          return getDownloadURL(photoRef);
-        })
-    );
-  
-    const results = await Promise.allSettled(uploadPromises);
-  
+
+    const results = await Promise.all(uploadTasks);
+    
     const successfulUploads = results
       .filter((result) => result.status === 'fulfilled')
-      .map((result) => (result as PromiseFulfilledResult<string>).value);
-  
-    const failedUploads = results.filter((result) => result.status === 'rejected');
-  
+      .map((result) => (result as { status: 'fulfilled', value: string }).value);
+    
+    const failedCount = results.length - successfulUploads.length;
+
     if (successfulUploads.length > 0) {
       const freshReportState = getValues(`photoReports.${activeReportIndex}`);
       updatePhotoReport(activeReportIndex, {
@@ -1047,21 +1029,20 @@ export function ServiceForm({
         photos: [...freshReportState.photos, ...successfulUploads],
       });
       toast({
-        title: 'Fotos añadidas',
+        title: 'Carga Completada',
         description: `Se añadieron ${successfulUploads.length} de ${files.length} imágenes.`,
+        variant: 'default',
       });
     }
-  
-    if (failedUploads.length > 0) {
-      console.error('Failed uploads:', failedUploads);
+
+    if (failedCount > 0) {
       toast({
-        title: 'Error al subir',
-        description: `${failedUploads.length} foto(s) no se pudieron subir.`,
+        title: 'Error en la Carga',
+        description: `${failedCount} foto(s) no se pudieron subir. Por favor, intente de nuevo.`,
         variant: 'destructive',
       });
     }
-  
-    // Reset after everything
+
     setActiveReportIndex(null);
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
@@ -2150,6 +2131,7 @@ const SafetyCheckRow = ({ name, label, control, isReadOnly }: { name: string; la
 
     
     
+
 
 
 
