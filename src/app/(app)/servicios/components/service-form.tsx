@@ -224,7 +224,7 @@ interface ServiceFormProps {
   onSubmit: (data: ServiceRecord | QuoteRecord) => Promise<void>;
   onClose: () => void;
   isReadOnly?: boolean;
-  onVehicleCreated?: (newVehicle: Vehicle) => void;
+  onVehicleCreated?: (newVehicle: Vehicle) => void; 
   mode?: 'service' | 'quote';
   onInventoryItemCreatedFromService?: (newItem: InventoryItem) => void; // Optional: To notify parent of new items
   onDelete?: (id: string) => void;
@@ -348,6 +348,14 @@ export function ServiceForm({
     control: form.control,
     name: "photoReports",
   });
+  
+  const handlePhotoUploadComplete = useCallback((reportIndex: number, downloadURL: string) => {
+    const freshReportState = getValues(`photoReports.${reportIndex}`);
+    updatePhotoReport(reportIndex, {
+      ...freshReportState,
+      photos: [...freshReportState.photos, downloadURL],
+    });
+  }, [getValues, updatePhotoReport]);
 
   const watchedServiceItems = useWatch({ control, name: "serviceItems" });
 
@@ -1567,13 +1575,7 @@ export function ServiceForm({
                                 serviceId={stableServiceId}
                                 photosLength={field.photos.length}
                                 disabled={isReadOnly}
-                                onUploadComplete={(reportIndex, downloadURL) => {
-                                    const freshReportState = getValues(`photoReports.${reportIndex}`);
-                                    updatePhotoReport(reportIndex, {
-                                    ...freshReportState,
-                                    photos: [...freshReportState.photos, downloadURL],
-                                    });
-                                }}
+                                onUploadComplete={handlePhotoUploadComplete}
                             />
                         </Card>
                     ))}
