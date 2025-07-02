@@ -63,7 +63,7 @@ import { QuoteContent } from '@/components/quote-content';
 import { SignatureDialog } from './signature-dialog';
 import { TicketContent } from '@/components/ticket-content';
 import { capitalizeWords, formatCurrency, capitalizeSentences, optimizeImage } from '@/lib/utils';
-import { savePublicDocument } from '@/lib/public-document';
+import { savePublicDocument as savePublicDocumentAction } from "@/app/s/[id]/actions";
 
 
 const supplySchema = z.object({
@@ -295,8 +295,7 @@ export function ServiceForm({
   // --- Photo Upload State ---
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isUploading, setIsUploading] = useState(false);
-  const [activeReportIndex, setActiveReportIndex] = useState<number | null>(null); // For UI state
-  const activeReportIndexRef = useRef<number | null>(null); // For logic in event handlers
+  const activeReportIndexRef = useRef<number | null>(null);
 
 
   const form = useForm<ServiceFormValues>({
@@ -362,16 +361,16 @@ export function ServiceForm({
   // Real-time calculation of costs and profit
   const { totalCost, totalSuppliesWorkshopCost, serviceProfit } = useMemo(() => {
     const calculatedTotalCost = watchedServiceItems?.reduce((sum, item) => sum + (Number(item.price) || 0), 0) || 0;
-    const calculatedTotalSuppliesWorkshopCost = watchedServiceItems?.flatMap(item => item.suppliesUsed).reduce((sum, supply) => {
+    const calculatedWorkshopCost = watchedServiceItems?.flatMap(item => item.suppliesUsed).reduce((sum, supply) => {
         const item = currentInventoryItems.find(i => i.id === supply.supplyId);
         const costPerUnit = item?.unitPrice || supply.unitPrice || 0;
         return sum + (costPerUnit * supply.quantity);
     }, 0) || 0;
-    const calculatedServiceProfit = calculatedTotalCost - calculatedTotalSuppliesWorkshopCost;
+    const calculatedProfit = calculatedTotalCost - calculatedWorkshopCost;
     return {
       totalCost: calculatedTotalCost,
-      totalSuppliesWorkshopCost: calculatedTotalSuppliesWorkshopCost,
-      serviceProfit: calculatedServiceProfit,
+      totalSuppliesWorkshopCost: calculatedWorkshopCost,
+      serviceProfit: calculatedProfit,
     };
   }, [watchedServiceItems, currentInventoryItems]);
 
@@ -755,7 +754,11 @@ export function ServiceForm({
       if (currentUser.signatureDataUrl) serviceData.serviceAdvisorSignatureDataUrl = currentUser.signatureDataUrl;
       if (workshopInfo && Object.keys(workshopInfo).length > 0) serviceData.workshopInfo = workshopInfo as WorkshopInfo;
 
-      await savePublicDocument('service', serviceData as ServiceRecord, selectedVehicle, workshopInfo);
+      try {
+        await savePublicDocumentAction('publicServices', serviceData.publicId!, serviceData);
+      } catch (e) {
+        toast({ title: 'Error al Guardar Público', description: `No se pudo guardar la hoja de servicio pública. ${e instanceof Error ? e.message : ''}`, variant: 'destructive'});
+      }
       await onSubmit(serviceData as ServiceRecord);
 
     } else { // mode === 'quote'
@@ -783,7 +786,11 @@ export function ServiceForm({
       if (values.mileage) quoteData.mileage = values.mileage;
       if (workshopInfo && Object.keys(workshopInfo).length > 0) quoteData.workshopInfo = workshopInfo as WorkshopInfo;
       
-      await savePublicDocument('quote', quoteData as QuoteRecord, selectedVehicle, workshopInfo);
+      try {
+        await savePublicDocumentAction('publicQuotes', quoteData.publicId!, quoteData);
+      } catch (e) {
+        toast({ title: 'Error al Guardar Público', description: `No se pudo guardar la cotización pública. ${e instanceof Error ? e.message : ''}`, variant: 'destructive'});
+      }
       await onSubmit(quoteData as QuoteRecord);
     }
   };
@@ -981,93 +988,82 @@ export function ServiceForm({
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const reportIndex = activeReportIndexRef.current;
-
+  
+    // Always clear the input value to allow re-selection of the same file
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  
     if (reportIndex === null) {
       console.error("Upload triggered without an active report index.");
       return;
     }
-
-    const files = event.target.files;
-
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
-
-    if (!files || files.length === 0) {
-      setActiveReportIndex(null);
+  
+    const file = event.target.files?.[0];
+  
+    if (!file) {
+      // User cancelled the file dialog
+      activeReportIndexRef.current = null;
       return;
     }
-
+  
     const currentReport = getValues(`photoReports.${reportIndex}`);
-    if (!currentReport || (currentReport.photos.length + files.length > 3)) {
+    if (!currentReport || currentReport.photos.length >= 3) {
       toast({ title: 'Límite Excedido', description: 'No puede subir más de 3 fotos por reporte.', variant: 'destructive' });
-      setActiveReportIndex(null);
+      activeReportIndexRef.current = null;
       return;
     }
-
+  
     if (!storage) {
       toast({ title: 'Error de Configuración', description: 'El almacenamiento de archivos no está disponible.', variant: 'destructive' });
-      setActiveReportIndex(null);
+      activeReportIndexRef.current = null;
       return;
     }
-
+  
     setIsUploading(true);
-    const uploadedUrls: string[] = [];
-    const failedFiles: string[] = [];
-
-    for (const file of Array.from(files)) {
-      try {
-        toast({ title: 'Procesando...', description: `Optimizando ${file.name}`, duration: 2000 });
-        const optimizedDataUrl = await optimizeImage(file, 1280);
-        
-        toast({ title: 'Subiendo...', description: `Enviando ${file.name} a la nube...`, duration: 3000 });
-        const serviceId = getValues('id') || `temp_${Date.now()}`;
-        const photoName = `${Date.now()}_${Math.random().toString(36).substring(2, 9)}.jpg`;
-        const photoRef = ref(storage, `service-photos/${serviceId}/${photoName}`);
-        
-        await uploadString(photoRef, optimizedDataUrl, 'data_url');
-        const downloadURL = await getDownloadURL(photoRef);
-        uploadedUrls.push(downloadURL);
-      } catch (error) {
-        console.error(`Error al subir ${file.name}:`, error);
-        let errorMessage = "Error desconocido.";
-        if (error instanceof Error) {
-            if (error.message.includes('storage/unauthorized')) {
-                errorMessage = "Permiso denegado.";
-            } else if (error.message.includes('storage/object-not-found')) {
-                errorMessage = "Ruta de almacenamiento no encontrada.";
-            } else {
-                errorMessage = error.message;
-            }
-        }
-        failedFiles.push(`${file.name} (${errorMessage})`);
-      }
-    }
-
-    if (uploadedUrls.length > 0) {
+    toast({ title: 'Procesando imagen...', description: `Optimizando ${file.name}...` });
+  
+    try {
+      const optimizedDataUrl = await optimizeImage(file, 1280);
+      
+      toast({ title: 'Subiendo a la nube...', description: `Enviando ${file.name}...` });
+      
+      const serviceId = getValues('id') || `temp_${Date.now()}`;
+      const photoName = `${Date.now()}_${file.name.replace(/\s+/g, '_')}`;
+      const photoRef = ref(storage, `service-photos/${serviceId}/${photoName}`);
+      
+      await uploadString(photoRef, optimizedDataUrl, 'data_url');
+      const downloadURL = await getDownloadURL(photoRef);
+      
       const freshReportState = getValues(`photoReports.${reportIndex}`);
       updatePhotoReport(reportIndex, {
         ...freshReportState,
-        photos: [...freshReportState.photos, ...uploadedUrls],
+        photos: [...freshReportState.photos, downloadURL],
       });
+      
       toast({
-        title: 'Carga Completada',
-        description: `Se añadieron ${uploadedUrls.length} imagen(es).`,
+        title: '¡Éxito!',
+        description: `Se añadió la imagen a tu reporte.`,
       });
-    }
-
-    if (failedFiles.length > 0) {
+  
+    } catch (error) {
+      console.error(`Error al subir ${file.name}:`, error);
+      let errorMessage = "Ocurrió un error desconocido al subir la imagen.";
+      if (error instanceof Error) {
+        errorMessage = error.message.includes('storage/unauthorized')
+          ? "Permiso denegado. Revisa las reglas de seguridad de Firebase Storage."
+          : `Error: ${error.message}`;
+      }
       toast({
-        title: 'Error en la Carga',
-        description: `No se pudieron subir: ${failedFiles.join(', ')}`,
+        title: `Error al subir ${file.name}`,
+        description: errorMessage,
         variant: 'destructive',
         duration: 8000,
       });
+    } finally {
+      setIsUploading(false);
+      activeReportIndexRef.current = null;
     }
-
-    setIsUploading(false);
-    setActiveReportIndex(null);
-    activeReportIndexRef.current = null;
   };
 
 
@@ -1652,13 +1648,12 @@ export function ServiceForm({
                                     size="sm"
                                     className="mt-2"
                                     onClick={() => {
-                                        setActiveReportIndex(index);
                                         activeReportIndexRef.current = index;
                                         fileInputRef.current?.click();
                                     }}
                                     disabled={isUploading}
                                 >
-                                    {isUploading && activeReportIndex === index ? (
+                                    {isUploading && activeReportIndexRef.current === index ? (
                                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                                     ) : (
                                         <Camera className="mr-2 h-4 w-4" />
@@ -1673,7 +1668,7 @@ export function ServiceForm({
                         <PlusCircle className="mr-2 h-4 w-4" /> Añadir Nuevo Reporte
                       </Button>
                     )}
-                    <input type="file" ref={fileInputRef} onChange={handleFileUpload} accept="image/*" multiple className="hidden" />
+                    <input type="file" ref={fileInputRef} onChange={handleFileUpload} accept="image/*" className="hidden" />
                   </CardContent>
                 </Card>
               </TabsContent>
@@ -2163,3 +2158,6 @@ const SafetyCheckRow = ({ name, label, control, isReadOnly }: { name: string; la
     </div>
   );
 };
+
+
+    
