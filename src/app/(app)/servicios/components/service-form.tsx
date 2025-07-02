@@ -38,7 +38,6 @@ import {
     placeholderServiceRecords as defaultServiceRecords, 
     persistToFirestore, 
     AUTH_USER_LOCALSTORAGE_KEY,
-    sanitizeObjectForFirestore
 } from '@/lib/placeholder-data';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription as DialogDesc, DialogFooter } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
@@ -55,7 +54,7 @@ import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
 import { ServiceSheetContent } from '@/components/service-sheet-content';
 import { Checkbox } from "@/components/ui/checkbox";
 import Image from "next/legacy/image";
-import { doc, setDoc, getDoc } from 'firebase/firestore';
+import { doc, getDoc } from 'firebase/firestore';
 import { db, storage } from '../../../../lib/firebaseClient.js';
 import { getStorage, ref, uploadString, getDownloadURL } from 'firebase/storage';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -64,6 +63,7 @@ import { QuoteContent } from '@/components/quote-content';
 import { SignatureDialog } from './signature-dialog';
 import { TicketContent } from '@/components/ticket-content';
 import { capitalizeWords, formatCurrency, capitalizeSentences, optimizeImage } from '@/lib/utils';
+import { savePublicDocument } from '@/lib/public-document';
 
 
 const supplySchema = z.object({
@@ -619,49 +619,6 @@ export function ServiceForm({
     }
   };
 
-  const savePublicDocument = async (
-    type: 'quote' | 'service',
-    data: QuoteRecord | ServiceRecord,
-    vehicle: Vehicle | null
-  ) => {
-    if (!db) {
-      console.error("Public save failed: Firebase (db) no está configurado en lib/firebaseClient.js");
-       toast({
-        title: "Configuración Incompleta",
-        description: "La base de datos (Firebase) no está configurada. No se pudo crear el documento público.",
-        variant: "destructive",
-        duration: 10000,
-      });
-      return;
-    }
-
-    if (!data.publicId || !vehicle) {
-      console.warn(`Public save skipped: Missing publicId or vehicle data.`);
-      return;
-    }
-
-    const collectionName = type === 'quote' ? 'publicQuotes' : 'publicServices';
-    const publicDocRef = doc(db, collectionName, data.publicId);
-    
-    const fullPublicData = sanitizeObjectForFirestore({
-        ...data,
-        vehicle,
-        workshopInfo,
-    });
-    
-    try {
-      await setDoc(publicDocRef, fullPublicData, { merge: true });
-      console.log(`Public ${type} document ${data.publicId} saved successfully.`);
-    } catch (e) {
-      console.error(`Failed to save public ${type} document:`, e);
-      toast({
-        title: "Error de Sincronización",
-        description: `No se pudo guardar el documento público. El enlace compartido podría no funcionar. Error: ${e instanceof Error ? e.message : String(e)}`,
-        variant: "destructive",
-      });
-    }
-  };
-
   const handleFormSubmit = async (values: ServiceFormValues) => {
     if (isReadOnly) {
         onClose();
@@ -794,7 +751,7 @@ export function ServiceForm({
       if (currentUser.signatureDataUrl) serviceData.serviceAdvisorSignatureDataUrl = currentUser.signatureDataUrl;
       if (workshopInfo && Object.keys(workshopInfo).length > 0) serviceData.workshopInfo = workshopInfo as WorkshopInfo;
 
-      await savePublicDocument('service', serviceData as ServiceRecord, selectedVehicle);
+      await savePublicDocument('service', serviceData as ServiceRecord, selectedVehicle, workshopInfo);
       await onSubmit(serviceData as ServiceRecord);
 
     } else { // mode === 'quote'
@@ -822,7 +779,7 @@ export function ServiceForm({
       if (values.mileage) quoteData.mileage = values.mileage;
       if (workshopInfo && Object.keys(workshopInfo).length > 0) quoteData.workshopInfo = workshopInfo as WorkshopInfo;
       
-      await savePublicDocument('quote', quoteData as QuoteRecord, selectedVehicle);
+      await savePublicDocument('quote', quoteData as QuoteRecord, selectedVehicle, workshopInfo);
       await onSubmit(quoteData as QuoteRecord);
     }
   };
@@ -2193,5 +2150,6 @@ const SafetyCheckRow = ({ name, label, control, isReadOnly }: { name: string; la
 
     
     
+
 
 
