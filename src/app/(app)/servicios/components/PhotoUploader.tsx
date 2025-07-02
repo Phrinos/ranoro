@@ -31,6 +31,7 @@ export function PhotoUploader({
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     
+    // Reset the input so the same file can be selected again if needed
     if (fileInputRef.current) {
         fileInputRef.current.value = '';
     }
