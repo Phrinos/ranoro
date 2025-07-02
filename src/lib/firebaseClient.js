@@ -1,7 +1,6 @@
-
 // lib/firebaseClient.js
 //-------------------------------------------
-// Inicializa Firebase solo una vez
+// Inicializa Firebase solo una vez de forma segura
 //-------------------------------------------
 
 // Importa lo esencial de Firebase v9+ (modular)
@@ -13,7 +12,6 @@ import { getFirestore } from 'firebase/firestore';
 //-------------------------------------------
 // 1. Configuración del proyecto
 //-------------------------------------------
-// Se utilizan las credenciales del proyecto de Firebase.
 const firebaseConfig = {
   apiKey: "AIzaSyA_ot6L0zgglc1tC0BounxYIvj7y8048Sg",
   authDomain: "ranoro-jm8l0.firebaseapp.com",
@@ -31,18 +29,27 @@ let storage = null;
 let db = null;
 
 //-------------------------------------------
-// 2. Crear/obtener la app de Firebase
+// 2. Crear/obtener la app de Firebase de forma segura
 //-------------------------------------------
-// Solo inicializa Firebase si las credenciales son válidas.
-if (!getApps().length) {
-  app = initializeApp(firebaseConfig);
-} else {
-  app = getApps()[0];
-}
+// Solo inicializa Firebase si las credenciales son válidas y no es un placeholder.
+if (firebaseConfig.apiKey && firebaseConfig.apiKey.startsWith("AIza")) {
+  if (!getApps().length) {
+    app = initializeApp(firebaseConfig);
+  } else {
+    app = getApps()[0];
+  }
+  
+  // Asigna las instancias de servicio solo si la app se inicializó correctamente
+  auth = getAuth(app);
+  storage = getStorage(app);
+  db = getFirestore(app);
 
-auth = getAuth(app);
-storage = getStorage(app);
-db = getFirestore(app);
+} else if (typeof window !== 'undefined') {
+  // Muestra una advertencia si se está en el navegador y la configuración no es válida.
+  console.warn(
+    "MODO DEMO: La conexión a Firebase no está disponible. La aplicación usará datos locales."
+  );
+}
 
 //-------------------------------------------
 // 3. Exportar instancias (que podrían ser null si no hay configuración)
