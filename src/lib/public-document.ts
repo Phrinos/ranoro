@@ -1,4 +1,3 @@
-
 import { savePublicDocument as savePublicDocumentAction } from "@/app/s/[id]/actions";
 import { sanitizeObjectForFirestore } from '@/lib/placeholder-data';
 import type { QuoteRecord, ServiceRecord, Vehicle, WorkshopInfo } from "@/types";
