@@ -17,19 +17,17 @@ interface AddSupplyDialogProps {
   open: boolean;
   onOpenChange: (isOpen: boolean) => void;
   inventoryItems: InventoryItem[];
-  onAddSupply: (supply: ServiceSupply, sellingPriceToApply?: number) => void;
+  onAddSupply: (supply: ServiceSupply) => void;
 }
 
 export function AddSupplyDialog({ open, onOpenChange, inventoryItems, onAddSupply }: AddSupplyDialogProps) {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState('inventory');
   
-  // State for inventory search
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedInventoryItem, setSelectedInventoryItem] = useState<InventoryItem | null>(null);
   const [inventoryQuantity, setInventoryQuantity] = useState(1);
   
-  // State for manual entry
   const [manualName, setManualName] = useState('');
   const [manualQuantity, setManualQuantity] = useState(1);
   const [manualCost, setManualCost] = useState<number | undefined>(undefined);
@@ -85,7 +83,7 @@ export function AddSupplyDialog({ open, onOpenChange, inventoryItems, onAddSuppl
       supplyName: selectedInventoryItem.name,
       quantity: inventoryQuantity,
       unitPrice: selectedInventoryItem.unitPrice,
-      isService: selectedInventoryItem.isService,
+      sellingPrice: selectedInventoryItem.sellingPrice,
       unitType: selectedInventoryItem.unitType,
     });
     onOpenChange(false);
@@ -101,9 +99,9 @@ export function AddSupplyDialog({ open, onOpenChange, inventoryItems, onAddSuppl
       supplyName: manualName.trim(),
       quantity: manualQuantity,
       unitPrice: manualCost,
-      isService: false,
+      sellingPrice: manualSellingPrice,
       unitType: 'units',
-    }, manualSellingPrice);
+    });
     onOpenChange(false);
   };
 
@@ -147,7 +145,7 @@ export function AddSupplyDialog({ open, onOpenChange, inventoryItems, onAddSuppl
                           <div>
                             <p className="font-medium">{item.name}</p>
                             <p className="text-xs text-muted-foreground">
-                              Stock: {item.quantity} | Costo: ${item.unitPrice.toFixed(2)}
+                              Stock: {item.quantity} | Costo: {formatCurrency(item.unitPrice)} | Venta: {formatCurrency(item.sellingPrice)}
                             </p>
                           </div>
                         </Button>

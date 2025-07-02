@@ -1,5 +1,4 @@
 
-
 export interface WorkshopInfo {
   name: string;
   phone: string;
@@ -94,16 +93,17 @@ export interface VehicleExpense {
 
 export interface ServiceSupply {
   supplyId: string; 
-  supplyName?: string; 
+  supplyName: string; 
   quantity: number;
-  unitPrice?: number;
+  unitPrice: number; // Costo para el taller
+  sellingPrice?: number; // Precio de venta al cliente (opcional)
   unitType?: 'units' | 'ml' | 'liters';
 }
 
 export interface ServiceItem {
   id: string;
   name: string;
-  price: number;
+  price: number; // Costo de la mano de obra
   suppliesUsed: ServiceSupply[];
 }
 
