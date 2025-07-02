@@ -263,6 +263,10 @@ export function ServiceForm({
   const isConvertingQuote = mode === 'service' && !initialDataService && !!initialDataQuote;
   const initialData = isConvertingQuote ? initialDataQuote : (mode === 'service' ? initialDataService : initialDataQuote);
   const initialVehicleIdentifier = initialData?.vehicleIdentifier;
+  
+  const [stableServiceId] = useState(
+    initialData?.id || `temp_${Date.now().toString(36)}`
+  );
 
   const [vehicleLicensePlateSearch, setVehicleLicensePlateSearch] = useState(initialVehicleIdentifier || "");
   const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
@@ -357,15 +361,15 @@ export function ServiceForm({
   // Real-time calculation of costs and profit
   const { totalCost, totalSuppliesWorkshopCost, serviceProfit } = useMemo(() => {
     const calculatedTotalCost = watchedServiceItems?.reduce((sum, item) => sum + (Number(item.price) || 0), 0) || 0;
-    const calculatedWorkshopCost = watchedServiceItems?.flatMap(item => item.suppliesUsed).reduce((sum, supply) => {
+    const workshopCost = watchedServiceItems?.flatMap(item => item.suppliesUsed).reduce((sum, supply) => {
         const item = currentInventoryItems.find(i => i.id === supply.supplyId);
         const costPerUnit = item?.unitPrice || supply.unitPrice || 0;
         return sum + (costPerUnit * supply.quantity);
     }, 0) || 0;
-    const calculatedProfit = calculatedTotalCost - calculatedWorkshopCost;
+    const calculatedProfit = calculatedTotalCost - workshopCost;
     return {
       totalCost: calculatedTotalCost,
-      totalSuppliesWorkshopCost: calculatedWorkshopCost,
+      totalSuppliesWorkshopCost: workshopCost,
       serviceProfit: calculatedProfit,
     };
   }, [watchedServiceItems, currentInventoryItems]);
@@ -1559,7 +1563,7 @@ export function ServiceForm({
                             </div>
                             <PhotoUploader
                                 reportIndex={index}
-                                serviceId={getValues('id') || `temp_${Date.now()}`}
+                                serviceId={stableServiceId}
                                 photosLength={field.photos.length}
                                 disabled={isReadOnly}
                                 onUploadComplete={(reportIndex, downloadURL) => {
@@ -2066,7 +2070,3 @@ const SafetyCheckRow = ({ name, label, control, isReadOnly }: { name: string; la
     </div>
   );
 };
-
-
-    
-
