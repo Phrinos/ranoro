@@ -358,15 +358,15 @@ export function ServiceForm({
   // Real-time calculation of costs and profit
   const { totalCost, totalSuppliesWorkshopCost, serviceProfit } = useMemo(() => {
     const calculatedTotalCost = watchedServiceItems?.reduce((sum, item) => sum + (Number(item.price) || 0), 0) || 0;
-    const calculatedTotalSuppliesCost = watchedServiceItems?.flatMap(item => item.suppliesUsed).reduce((sum, supply) => {
+    const calculatedTotalSuppliesWorkshopCost = watchedServiceItems?.flatMap(item => item.suppliesUsed).reduce((sum, supply) => {
         const item = currentInventoryItems.find(i => i.id === supply.supplyId);
         const costPerUnit = item?.unitPrice || supply.unitPrice || 0;
         return sum + (costPerUnit * supply.quantity);
     }, 0) || 0;
-    const calculatedServiceProfit = calculatedTotalCost - calculatedTotalSuppliesCost;
+    const calculatedServiceProfit = calculatedTotalCost - calculatedTotalSuppliesWorkshopCost;
     return {
       totalCost: calculatedTotalCost,
-      totalSuppliesWorkshopCost: calculatedTotalSuppliesCost,
+      totalSuppliesWorkshopCost: calculatedTotalSuppliesWorkshopCost,
       serviceProfit: calculatedServiceProfit,
     };
   }, [watchedServiceItems, currentInventoryItems]);
@@ -979,7 +979,6 @@ export function ServiceForm({
     if (activeReportIndex === null) return;
     const files = event.target.files;
     
-    // Reset file input to allow re-selection of the same file
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -1003,26 +1002,47 @@ export function ServiceForm({
     }
 
     toast({ title: 'Procesando imágenes...', description: `Subiendo ${files.length} imagen(es). Por favor espere.` });
+    
+    const uploadPromises = Array.from(files).map(async (file) => {
+        try {
+            const optimizedDataUrl = await optimizeImage(file, 1280);
+            const serviceId = getValues('id') || `temp_${Date.now()}`;
+            const photoName = `${Date.now()}_${Math.random().toString(36).substring(2, 9)}.jpg`;
+            const photoRef = ref(storage, `service-photos/${serviceId}/${photoName}`);
+            
+            await uploadString(photoRef, optimizedDataUrl, 'data_url');
+            const downloadURL = await getDownloadURL(photoRef);
+            return { status: 'fulfilled', value: downloadURL, file };
+        } catch (error) {
+            console.error(`Error uploading file ${file.name}:`, error);
+            let errorMessage = "Error desconocido.";
+            if (error instanceof Error && 'code' in error) {
+                const firebaseError = error as { code: string; message: string };
+                switch (firebaseError.code) {
+                    case 'storage/unauthorized':
+                        errorMessage = "Permiso denegado. Revise las reglas de seguridad de Firebase Storage.";
+                        break;
+                    case 'storage/canceled':
+                        errorMessage = "Carga cancelada.";
+                        break;
+                    case 'storage/unknown':
+                        errorMessage = "Ocurrió un error desconocido en el servidor de almacenamiento.";
+                        break;
+                    default:
+                        errorMessage = firebaseError.message;
+                }
+            }
+            return { status: 'rejected', reason: errorMessage, file };
+        }
+    });
 
-    const successfulUrls: string[] = [];
-    const failedFiles: string[] = [];
-
-    for (const file of Array.from(files)) {
-      try {
-        const optimizedDataUrl = await optimizeImage(file, 1280);
-        const serviceId = getValues('id') || `temp_${Date.now()}`;
-        const photoName = `${Date.now()}_${Math.random().toString(36).substring(2, 9)}.jpg`;
-        const photoRef = ref(storage, `service-photos/${serviceId}/${photoName}`);
-        
-        await uploadString(photoRef, optimizedDataUrl, 'data_url');
-        const downloadURL = await getDownloadURL(photoRef);
-        successfulUrls.push(downloadURL);
-      } catch (error) {
-        console.error(`Error uploading file ${file.name}:`, error);
-        failedFiles.push(file.name);
-      }
-    }
-
+    const results = await Promise.allSettled(uploadPromises);
+    const successfulUrls = results
+      .filter((r): r is PromiseFulfilledResult<{value: string}> => r.status === 'fulfilled')
+      .map(r => r.value.value);
+    
+    const failedUploads = results.filter((r): r is PromiseRejectedResult => r.status === 'rejected');
+    
     if (successfulUrls.length > 0) {
       const freshReportState = getValues(`photoReports.${activeReportIndex}`);
       updatePhotoReport(activeReportIndex, {
@@ -1032,14 +1052,15 @@ export function ServiceForm({
       toast({
         title: 'Carga Completada',
         description: `Se añadieron ${successfulUrls.length} de ${files.length} imágenes.`,
-        variant: 'default',
       });
     }
 
-    if (failedFiles.length > 0) {
+    if (failedUploads.length > 0) {
+      const firstErrorReason = failedUploads[0].reason;
+      const errorMessage = typeof firstErrorReason === 'string' ? firstErrorReason : "Una o más imágenes no se pudieron subir.";
       toast({
         title: 'Error en la Carga',
-        description: `Las siguientes fotos no se pudieron subir: ${failedFiles.join(', ')}.`,
+        description: errorMessage,
         variant: 'destructive',
       });
     }
