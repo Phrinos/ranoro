@@ -291,9 +291,12 @@ export function ServiceForm({
   const [isEnhancingText, setIsEnhancingText] = useState<string | null>(null);
   const [isTicketPreviewOpen, setIsTicketPreviewOpen] = useState(false);
   const ticketContentRef = useRef<HTMLDivElement>(null);
+  
+  // --- Photo Upload State ---
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [activeReportIndex, setActiveReportIndex] = useState<number | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [activeReportIndex, setActiveReportIndex] = useState<number | null>(null); // For UI state
+  const activeReportIndexRef = useRef<number | null>(null); // For logic in event handlers
 
 
   const form = useForm<ServiceFormValues>({
@@ -977,29 +980,35 @@ export function ServiceForm({
   };
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    if (activeReportIndex === null) return;
+    const reportIndex = activeReportIndexRef.current;
+
+    if (reportIndex === null) {
+      console.error("Upload triggered without an active report index.");
+      return;
+    }
+
     const files = event.target.files;
 
     if (fileInputRef.current) {
-        fileInputRef.current.value = '';
+      fileInputRef.current.value = '';
     }
 
     if (!files || files.length === 0) {
-        setActiveReportIndex(null);
-        return;
+      setActiveReportIndex(null);
+      return;
     }
 
-    const currentReport = getValues(`photoReports.${activeReportIndex}`);
+    const currentReport = getValues(`photoReports.${reportIndex}`);
     if (!currentReport || (currentReport.photos.length + files.length > 3)) {
-        toast({ title: 'Límite Excedido', description: 'No puede subir más de 3 fotos por reporte.', variant: 'destructive' });
-        setActiveReportIndex(null);
-        return;
+      toast({ title: 'Límite Excedido', description: 'No puede subir más de 3 fotos por reporte.', variant: 'destructive' });
+      setActiveReportIndex(null);
+      return;
     }
 
     if (!storage) {
-        toast({ title: 'Error de Configuración', description: 'El almacenamiento de archivos no está disponible.', variant: 'destructive' });
-        setActiveReportIndex(null);
-        return;
+      toast({ title: 'Error de Configuración', description: 'El almacenamiento de archivos no está disponible.', variant: 'destructive' });
+      setActiveReportIndex(null);
+      return;
     }
 
     setIsUploading(true);
@@ -1007,56 +1016,59 @@ export function ServiceForm({
     const failedFiles: string[] = [];
 
     for (const file of Array.from(files)) {
-        try {
-            toast({ title: 'Procesando imagen...', description: `Optimizando ${file.name}...`, duration: 2000 });
-            const optimizedDataUrl = await optimizeImage(file, 1280);
-            
-            toast({ title: 'Subiendo imagen...', description: `Enviando ${file.name} a la nube...`, duration: 3000 });
-            const serviceId = getValues('id') || `temp_${Date.now()}`;
-            const photoName = `${Date.now()}_${Math.random().toString(36).substring(2, 9)}.jpg`;
-            const photoRef = ref(storage, `service-photos/${serviceId}/${photoName}`);
-            
-            await uploadString(photoRef, optimizedDataUrl, 'data_url');
-            const downloadURL = await getDownloadURL(photoRef);
-            uploadedUrls.push(downloadURL);
-        } catch (error) {
-            console.error(`Error uploading file ${file.name}:`, error);
-            let errorMessage = "Error desconocido al subir.";
-             if (error instanceof Error) {
-                if (error.message.includes('storage/unauthorized')) {
-                    errorMessage = "Permiso denegado. Revise las reglas de seguridad.";
-                } else if (error.message.includes('storage/object-not-found')) {
-                    errorMessage = "No se encontró la ruta de almacenamiento.";
-                }
-             }
-            failedFiles.push(`${file.name} (${errorMessage})`);
+      try {
+        toast({ title: 'Procesando...', description: `Optimizando ${file.name}`, duration: 2000 });
+        const optimizedDataUrl = await optimizeImage(file, 1280);
+        
+        toast({ title: 'Subiendo...', description: `Enviando ${file.name} a la nube...`, duration: 3000 });
+        const serviceId = getValues('id') || `temp_${Date.now()}`;
+        const photoName = `${Date.now()}_${Math.random().toString(36).substring(2, 9)}.jpg`;
+        const photoRef = ref(storage, `service-photos/${serviceId}/${photoName}`);
+        
+        await uploadString(photoRef, optimizedDataUrl, 'data_url');
+        const downloadURL = await getDownloadURL(photoRef);
+        uploadedUrls.push(downloadURL);
+      } catch (error) {
+        console.error(`Error al subir ${file.name}:`, error);
+        let errorMessage = "Error desconocido.";
+        if (error instanceof Error) {
+            if (error.message.includes('storage/unauthorized')) {
+                errorMessage = "Permiso denegado.";
+            } else if (error.message.includes('storage/object-not-found')) {
+                errorMessage = "Ruta de almacenamiento no encontrada.";
+            } else {
+                errorMessage = error.message;
+            }
         }
+        failedFiles.push(`${file.name} (${errorMessage})`);
+      }
     }
 
     if (uploadedUrls.length > 0) {
-        const freshReportState = getValues(`photoReports.${activeReportIndex}`);
-        updatePhotoReport(activeReportIndex, {
-            ...freshReportState,
-            photos: [...freshReportState.photos, ...uploadedUrls],
-        });
-        toast({
-            title: 'Carga Completada',
-            description: `Se añadieron ${uploadedUrls.length} imagen(es).`,
-        });
+      const freshReportState = getValues(`photoReports.${reportIndex}`);
+      updatePhotoReport(reportIndex, {
+        ...freshReportState,
+        photos: [...freshReportState.photos, ...uploadedUrls],
+      });
+      toast({
+        title: 'Carga Completada',
+        description: `Se añadieron ${uploadedUrls.length} imagen(es).`,
+      });
     }
 
     if (failedFiles.length > 0) {
-        toast({
-            title: 'Error en la Carga',
-            description: `No se pudieron subir las siguientes imágenes: ${failedFiles.join(', ')}`,
-            variant: 'destructive',
-            duration: 8000
-        });
+      toast({
+        title: 'Error en la Carga',
+        description: `No se pudieron subir: ${failedFiles.join(', ')}`,
+        variant: 'destructive',
+        duration: 8000,
+      });
     }
 
     setIsUploading(false);
     setActiveReportIndex(null);
-};
+    activeReportIndexRef.current = null;
+  };
 
 
   const [cancellationReason, setCancellationReason] = useState('');
@@ -1641,6 +1653,7 @@ export function ServiceForm({
                                     className="mt-2"
                                     onClick={() => {
                                         setActiveReportIndex(index);
+                                        activeReportIndexRef.current = index;
                                         fileInputRef.current?.click();
                                     }}
                                     disabled={isUploading}
