@@ -13,7 +13,7 @@ import { Separator } from '@/components/ui/separator';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { signOut, onAuthStateChanged } from 'firebase/auth';
-import { auth, db } from '@root/lib/firebaseClient.js';
+import { auth, db } from '@/lib/firebaseClient.js';
 import { useEffect, useState } from 'react';
 import type { User } from 'firebase/auth';
 import type { User as RanoroUser } from '@/types';

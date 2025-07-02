@@ -23,7 +23,7 @@ import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { ServiceDialog } from "../../servicios/components/service-dialog";
 import { doc, deleteDoc } from 'firebase/firestore';
-import { db } from '@root/lib/firebaseClient.js';
+import { db } from '@/lib/firebaseClient.js';
 import { Badge } from "@/components/ui/badge";
 import {
   AlertDialog,

@@ -12,13 +12,13 @@ service cloud.firestore {
     // publicQuotes are world-readable for sharing, but not writable from the client.
     match /publicQuotes/{quoteId} {
       allow read: if true;
-      allow create, update, delete: if false; 
+      allow create, update, delete: if request.auth != null; 
     }
     
     // publicOwnerReports are world-readable for sharing, but not writable from the client.
     match /publicOwnerReports/{reportId} {
       allow read: if true;
-      allow create, update, delete: if false;
+      allow create, update, delete: if request.auth != null;
     }
     
     // publicServices are world-readable.
@@ -31,7 +31,7 @@ service cloud.firestore {
                       .hasOnly(['customerSignatureReception', 'customerSignatureDelivery', 'receptionSignatureViewed', 'deliverySignatureViewed']);
                       
       // Disallow create/delete from client
-      allow create, delete: if true;
+      allow create, delete: if request.auth != null;
     }
 
     // By default, deny access to any other collection/document path.
