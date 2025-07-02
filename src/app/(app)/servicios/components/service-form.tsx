@@ -55,7 +55,7 @@ import { ServiceSheetContent } from '@/components/service-sheet-content';
 import { Checkbox } from "@/components/ui/checkbox";
 import Image from "next/legacy/image";
 import { doc, getDoc } from 'firebase/firestore';
-import { db, storage } from '../../../../lib/firebaseClient.js';
+import { db } from '../../../../lib/firebaseClient.js';
 import { getStorage, ref, uploadString, getDownloadURL } from 'firebase/storage';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AddSupplyDialog } from './add-supply-dialog';
@@ -64,6 +64,7 @@ import { SignatureDialog } from './signature-dialog';
 import { TicketContent } from '@/components/ticket-content';
 import { capitalizeWords, formatCurrency, capitalizeSentences, optimizeImage } from '@/lib/utils';
 import { savePublicDocument as savePublicDocumentAction } from "@/app/s/[id]/actions";
+import { PhotoUploader } from "./PhotoUploader";
 
 
 const supplySchema = z.object({
@@ -293,9 +294,7 @@ export function ServiceForm({
   const ticketContentRef = useRef<HTMLDivElement>(null);
   
   // --- Photo Upload State ---
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const [isUploading, setIsUploading] = useState(false);
-  const activeReportIndexRef = useRef<number | null>(null);
+  const [isUploadingGlobal, setIsUploadingGlobal] = useState(false);
 
 
   const form = useForm<ServiceFormValues>({
@@ -986,86 +985,6 @@ export function ServiceForm({
     }
   };
 
-  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const reportIndex = activeReportIndexRef.current;
-  
-    // Always clear the input value to allow re-selection of the same file
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
-  
-    if (reportIndex === null) {
-      console.error("Upload triggered without an active report index.");
-      return;
-    }
-  
-    const file = event.target.files?.[0];
-  
-    if (!file) {
-      // User cancelled the file dialog
-      activeReportIndexRef.current = null;
-      return;
-    }
-  
-    const currentReport = getValues(`photoReports.${reportIndex}`);
-    if (!currentReport || currentReport.photos.length >= 3) {
-      toast({ title: 'Límite Excedido', description: 'No puede subir más de 3 fotos por reporte.', variant: 'destructive' });
-      activeReportIndexRef.current = null;
-      return;
-    }
-  
-    if (!storage) {
-      toast({ title: 'Error de Configuración', description: 'El almacenamiento de archivos no está disponible.', variant: 'destructive' });
-      activeReportIndexRef.current = null;
-      return;
-    }
-  
-    setIsUploading(true);
-    toast({ title: 'Procesando imagen...', description: `Optimizando ${file.name}...` });
-  
-    try {
-      const optimizedDataUrl = await optimizeImage(file, 1280);
-      
-      toast({ title: 'Subiendo a la nube...', description: `Enviando ${file.name}...` });
-      
-      const serviceId = getValues('id') || `temp_${Date.now()}`;
-      const photoName = `${Date.now()}_${file.name.replace(/\s+/g, '_')}`;
-      const photoRef = ref(storage, `service-photos/${serviceId}/${photoName}`);
-      
-      await uploadString(photoRef, optimizedDataUrl, 'data_url');
-      const downloadURL = await getDownloadURL(photoRef);
-      
-      const freshReportState = getValues(`photoReports.${reportIndex}`);
-      updatePhotoReport(reportIndex, {
-        ...freshReportState,
-        photos: [...freshReportState.photos, downloadURL],
-      });
-      
-      toast({
-        title: '¡Éxito!',
-        description: `Se añadió la imagen a tu reporte.`,
-      });
-  
-    } catch (error) {
-      console.error(`Error al subir ${file.name}:`, error);
-      let errorMessage = "Ocurrió un error desconocido al subir la imagen.";
-      if (error instanceof Error) {
-        errorMessage = error.message.includes('storage/unauthorized')
-          ? "Permiso denegado. Revisa las reglas de seguridad de Firebase Storage."
-          : `Error: ${error.message}`;
-      }
-      toast({
-        title: `Error al subir ${file.name}`,
-        description: errorMessage,
-        variant: 'destructive',
-        duration: 8000,
-      });
-    } finally {
-      setIsUploading(false);
-      activeReportIndexRef.current = null;
-    }
-  };
-
 
   const [cancellationReason, setCancellationReason] = useState('');
   const [isCancelAlertOpen, setIsCancelAlertOpen] = useState(false);
@@ -1641,34 +1560,28 @@ export function ServiceForm({
                                     </div>
                                 ))}
                             </div>
-                             {!isReadOnly && field.photos.length < 3 && (
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    size="sm"
-                                    className="mt-2"
-                                    onClick={() => {
-                                        activeReportIndexRef.current = index;
-                                        fileInputRef.current?.click();
-                                    }}
-                                    disabled={isUploading}
-                                >
-                                    {isUploading && activeReportIndexRef.current === index ? (
-                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                    ) : (
-                                        <Camera className="mr-2 h-4 w-4" />
-                                    )}
-                                    Añadir Foto ({field.photos.length}/3)
-                                </Button>
-                            )}
+                            <PhotoUploader
+                                reportIndex={index}
+                                serviceId={getValues('id') || `temp_${Date.now()}`}
+                                photosLength={field.photos.length}
+                                disabled={isReadOnly || isUploadingGlobal}
+                                onUploadStart={() => setIsUploadingGlobal(true)}
+                                onUploadEnd={() => setIsUploadingGlobal(false)}
+                                onUploadComplete={(reportIndex, downloadURL) => {
+                                    const freshReportState = getValues(`photoReports.${reportIndex}`);
+                                    updatePhotoReport(reportIndex, {
+                                    ...freshReportState,
+                                    photos: [...freshReportState.photos, downloadURL],
+                                    });
+                                }}
+                            />
                         </Card>
                     ))}
                     {!isReadOnly && (
-                      <Button type="button" variant="secondary" onClick={() => appendPhotoReport({ id: `rep_${Date.now()}`, date: new Date().toISOString(), description: '', photos: [] })} disabled={isUploading}>
+                      <Button type="button" variant="secondary" onClick={() => appendPhotoReport({ id: `rep_${Date.now()}`, date: new Date().toISOString(), description: '', photos: [] })} disabled={isUploadingGlobal}>
                         <PlusCircle className="mr-2 h-4 w-4" /> Añadir Nuevo Reporte
                       </Button>
                     )}
-                    <input type="file" ref={fileInputRef} onChange={handleFileUpload} accept="image/*" className="hidden" />
                   </CardContent>
                 </Card>
               </TabsContent>
