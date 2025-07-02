@@ -64,6 +64,9 @@ export const capitalizeSentences = (str: string): string => {
  */
 export const optimizeImage = (file: File, maxWidth: number, quality: number = 0.8): Promise<string> => {
   return new Promise((resolve, reject) => {
+    if (!file.type.startsWith('image/')) {
+        return reject(new Error('El archivo no es una imagen.'));
+    }
     const reader = new FileReader();
     reader.onload = (event) => {
       if (!event.target?.result) {
@@ -105,4 +108,5 @@ export const optimizeImage = (file: File, maxWidth: number, quality: number = 0.
 
 
     
+
 

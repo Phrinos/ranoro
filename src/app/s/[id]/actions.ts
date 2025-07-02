@@ -14,7 +14,7 @@ export async function savePublicDocument(
   }
   try {
     await adminDb.collection(collection).doc(id).set(data, { merge: true });
-    return { success: true };
+    return { success: true, publicId: id };
   } catch (error) {
     console.error("Failed to save public document:", error);
     const errorMessage = error instanceof Error ? error.message : 'Error desconocido.';
