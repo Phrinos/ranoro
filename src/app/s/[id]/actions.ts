@@ -8,12 +8,17 @@ export async function savePublicDocument(
   id: string,
   data: any
 ) {
+  if (!adminDb) {
+    console.error("Admin DB not initialized. Cannot save public document.");
+    return { success: false, error: "La conexión con el servidor no está configurada." };
+  }
   try {
     await adminDb.collection(collection).doc(id).set(data, { merge: true });
     return { success: true };
   } catch (error) {
     console.error("Failed to save public document:", error);
-    return { success: false, error: "Failed to save document." };
+    const errorMessage = error instanceof Error ? error.message : 'Error desconocido.';
+    return { success: false, error: `No se pudo guardar el documento público. Error: ${errorMessage}` };
   }
 }
 
