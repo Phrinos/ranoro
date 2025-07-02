@@ -363,7 +363,7 @@ export function ServiceForm({
         const costPerUnit = item?.unitPrice || supply.unitPrice || 0;
         return sum + (costPerUnit * supply.quantity);
     }, 0) || 0;
-    const calculatedServiceProfit = calculatedTotalCost - calculatedTotalSuppliesWorkshopCost;
+    const calculatedServiceProfit = calculatedTotalCost - calculatedTotalSuppliesCost;
     return {
       totalCost: calculatedTotalCost,
       totalSuppliesWorkshopCost: calculatedTotalSuppliesCost,
@@ -2131,6 +2131,7 @@ const SafetyCheckRow = ({ name, label, control, isReadOnly }: { name: string; la
 
     
     
+
 
 
 
