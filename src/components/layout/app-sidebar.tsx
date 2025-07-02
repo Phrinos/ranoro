@@ -143,27 +143,13 @@ export function AppSidebar() {
           href="/dashboard"
           className="flex items-center justify-center text-lg font-semibold text-sidebar-foreground hover:text-sidebar-primary transition-colors h-full"
         >
-          <svg
-            viewBox="0 0 250 80"
-            xmlns="http://www.w3.org/2000/svg"
-            className="h-8 w-auto"
-          >
-            <path
-              d="M23.7,56.2H11.5V23.8h12.2c3.5,0,6.5,0.9,8.9,2.8c2.4,1.9,3.6,4.5,3.6,7.9c0,2.3-0.6,4.4-1.9,6.2s-3.1,3.1-5.3,4.1l9.6,11.4H35.8L27,45.3H23.7V56.2z M23.7,39.9h7.4c1.7,0,3-0.5,4-1.4c1-0.9,1.5-2.2,1.5-3.8c0-1.7-0.5-3-1.5-3.9c-1-0.9-2.3-1.4-4-1.4h-7.4V39.9z"
-              className="fill-primary"
-            />
-            <text
-              x="60"
-              y="52"
-              fontFamily="Inter, sans-serif"
-              fontSize="40"
-              fontWeight="800"
-              letterSpacing="-1.5"
-              className="fill-sidebar-foreground"
-            >
-              RANORO
-            </text>
-          </svg>
+          <Image
+            src="/ranoro-logo.png"
+            alt="Ranoro Logo"
+            width={96}
+            height={32}
+            className="dark:invert h-auto"
+          />
         </Link>
       </SidebarHeader>
       <SidebarContent className="p-0">
