@@ -7,7 +7,7 @@ import { optimizeImage } from "@/lib/utils";
 import { storage } from "@/lib/firebaseClient";
 import { ref, uploadString, getDownloadURL } from "firebase/storage";
 import { Loader2, Camera } from "lucide-react";
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useEffect } from "react";
 
 interface PhotoUploaderProps {
   reportIndex: number;
@@ -27,11 +27,18 @@ export function PhotoUploader({
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const isMounted = useRef(true);
+
+  useEffect(() => {
+    isMounted.current = true;
+    return () => {
+      isMounted.current = false;
+    };
+  }, []);
 
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     
-    // Reset the input so the same file can be selected again if needed
     if (fileInputRef.current) {
         fileInputRef.current.value = '';
     }
@@ -43,7 +50,9 @@ export function PhotoUploader({
       return;
     }
 
-    setIsUploading(true);
+    if (isMounted.current) {
+      setIsUploading(true);
+    }
     
     try {
       toast({ title: 'Procesando imagen...', description: `Optimizando ${file.name}...` });
@@ -57,7 +66,9 @@ export function PhotoUploader({
       await uploadString(photoRef, optimizedDataUrl, 'data_url');
       const downloadURL = await getDownloadURL(photoRef);
       
-      onUploadComplete(reportIndex, downloadURL);
+      if (isMounted.current) {
+        onUploadComplete(reportIndex, downloadURL);
+      }
       
       toast({
         title: '¡Éxito!',
@@ -79,7 +90,9 @@ export function PhotoUploader({
         duration: 8000,
       });
     } finally {
-      setIsUploading(false);
+      if (isMounted.current) {
+        setIsUploading(false);
+      }
     }
   };
 
