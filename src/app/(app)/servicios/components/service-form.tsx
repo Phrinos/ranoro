@@ -434,7 +434,9 @@ export function ServiceForm({
                 ...item,
                 suppliesUsed: item.suppliesUsed.map(supply => ({
                     ...supply,
-                    unitPrice: currentInventoryItems.find(i => i.id === supply.supplyId)?.unitPrice || 0,
+                    // Use the price from the saved supply record if it exists (for manual items),
+                    // otherwise, look up the current price from inventory. Default to 0 if not found.
+                    unitPrice: supply.unitPrice ?? currentInventoryItems.find(i => i.id === supply.supplyId)?.unitPrice ?? 0,
                 }))
             }));
         }
@@ -2145,4 +2147,5 @@ const SafetyCheckRow = ({ name, label, control, isReadOnly }: { name: string; la
 
 
 
+    
     
