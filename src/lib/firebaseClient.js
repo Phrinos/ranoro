@@ -16,7 +16,7 @@ const firebaseConfig = {
   apiKey: "AIzaSyA_ot6L0zgglc1tC0BounxYIvj7y8048Sg",
   authDomain: "ranoro-jm8l0.firebaseapp.com",
   projectId: "ranoro-jm8l0",
-  storageBucket: "ranoro-jm8l0.appspot.com",
+  storageBucket: "ranoro-jm8l0.firebasestorage.app",
   messagingSenderId: "290934350177",
   appId: "1:290934350177:web:2365c77eaca4bb0d906520",
 };
