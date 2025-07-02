@@ -293,6 +293,7 @@ export function ServiceForm({
   const ticketContentRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [activeReportIndex, setActiveReportIndex] = useState<number | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
 
 
   const form = useForm<ServiceFormValues>({
@@ -978,21 +979,21 @@ export function ServiceForm({
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     if (activeReportIndex === null) return;
     const files = event.target.files;
-    
+
     if (fileInputRef.current) {
-      fileInputRef.current.value = '';
+        fileInputRef.current.value = '';
     }
 
     if (!files || files.length === 0) {
-      setActiveReportIndex(null);
-      return;
+        setActiveReportIndex(null);
+        return;
     }
 
     const currentReport = getValues(`photoReports.${activeReportIndex}`);
     if (!currentReport || (currentReport.photos.length + files.length > 3)) {
-      toast({ title: 'Límite Excedido', description: 'No puede subir más de 3 fotos por reporte.', variant: 'destructive' });
-      setActiveReportIndex(null);
-      return;
+        toast({ title: 'Límite Excedido', description: 'No puede subir más de 3 fotos por reporte.', variant: 'destructive' });
+        setActiveReportIndex(null);
+        return;
     }
 
     if (!storage) {
@@ -1001,72 +1002,61 @@ export function ServiceForm({
         return;
     }
 
-    toast({ title: 'Procesando imágenes...', description: `Subiendo ${files.length} imagen(es). Por favor espere.` });
-    
-    const uploadPromises = Array.from(files).map(async (file) => {
+    setIsUploading(true);
+    const uploadedUrls: string[] = [];
+    const failedFiles: string[] = [];
+
+    for (const file of Array.from(files)) {
         try {
+            toast({ title: 'Procesando imagen...', description: `Optimizando ${file.name}...`, duration: 2000 });
             const optimizedDataUrl = await optimizeImage(file, 1280);
+            
+            toast({ title: 'Subiendo imagen...', description: `Enviando ${file.name} a la nube...`, duration: 3000 });
             const serviceId = getValues('id') || `temp_${Date.now()}`;
             const photoName = `${Date.now()}_${Math.random().toString(36).substring(2, 9)}.jpg`;
             const photoRef = ref(storage, `service-photos/${serviceId}/${photoName}`);
             
             await uploadString(photoRef, optimizedDataUrl, 'data_url');
             const downloadURL = await getDownloadURL(photoRef);
-            return { status: 'fulfilled', value: downloadURL, file };
+            uploadedUrls.push(downloadURL);
         } catch (error) {
             console.error(`Error uploading file ${file.name}:`, error);
-            let errorMessage = "Error desconocido.";
-            if (error instanceof Error && 'code' in error) {
-                const firebaseError = error as { code: string; message: string };
-                switch (firebaseError.code) {
-                    case 'storage/unauthorized':
-                        errorMessage = "Permiso denegado. Revise las reglas de seguridad de Firebase Storage.";
-                        break;
-                    case 'storage/canceled':
-                        errorMessage = "Carga cancelada.";
-                        break;
-                    case 'storage/unknown':
-                        errorMessage = "Ocurrió un error desconocido en el servidor de almacenamiento.";
-                        break;
-                    default:
-                        errorMessage = firebaseError.message;
+            let errorMessage = "Error desconocido al subir.";
+             if (error instanceof Error) {
+                if (error.message.includes('storage/unauthorized')) {
+                    errorMessage = "Permiso denegado. Revise las reglas de seguridad.";
+                } else if (error.message.includes('storage/object-not-found')) {
+                    errorMessage = "No se encontró la ruta de almacenamiento.";
                 }
-            }
-            return { status: 'rejected', reason: errorMessage, file };
+             }
+            failedFiles.push(`${file.name} (${errorMessage})`);
         }
-    });
-
-    const results = await Promise.allSettled(uploadPromises);
-    const successfulUrls = results
-      .filter((r): r is PromiseFulfilledResult<{value: string}> => r.status === 'fulfilled')
-      .map(r => r.value.value);
-    
-    const failedUploads = results.filter((r): r is PromiseRejectedResult => r.status === 'rejected');
-    
-    if (successfulUrls.length > 0) {
-      const freshReportState = getValues(`photoReports.${activeReportIndex}`);
-      updatePhotoReport(activeReportIndex, {
-        ...freshReportState,
-        photos: [...freshReportState.photos, ...successfulUrls],
-      });
-      toast({
-        title: 'Carga Completada',
-        description: `Se añadieron ${successfulUrls.length} de ${files.length} imágenes.`,
-      });
     }
 
-    if (failedUploads.length > 0) {
-      const firstErrorReason = failedUploads[0].reason;
-      const errorMessage = typeof firstErrorReason === 'string' ? firstErrorReason : "Una o más imágenes no se pudieron subir.";
-      toast({
-        title: 'Error en la Carga',
-        description: errorMessage,
-        variant: 'destructive',
-      });
+    if (uploadedUrls.length > 0) {
+        const freshReportState = getValues(`photoReports.${activeReportIndex}`);
+        updatePhotoReport(activeReportIndex, {
+            ...freshReportState,
+            photos: [...freshReportState.photos, ...uploadedUrls],
+        });
+        toast({
+            title: 'Carga Completada',
+            description: `Se añadieron ${uploadedUrls.length} imagen(es).`,
+        });
     }
 
+    if (failedFiles.length > 0) {
+        toast({
+            title: 'Error en la Carga',
+            description: `No se pudieron subir las siguientes imágenes: ${failedFiles.join(', ')}`,
+            variant: 'destructive',
+            duration: 8000
+        });
+    }
+
+    setIsUploading(false);
     setActiveReportIndex(null);
-  };
+};
 
 
   const [cancellationReason, setCancellationReason] = useState('');
@@ -1644,14 +1634,29 @@ export function ServiceForm({
                                 ))}
                             </div>
                              {!isReadOnly && field.photos.length < 3 && (
-                                <Button type="button" variant="outline" size="sm" className="mt-2" onClick={() => { setActiveReportIndex(index); fileInputRef.current?.click(); }}>
-                                    <Camera className="mr-2 h-4 w-4" />Añadir Foto ({field.photos.length}/3)
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    className="mt-2"
+                                    onClick={() => {
+                                        setActiveReportIndex(index);
+                                        fileInputRef.current?.click();
+                                    }}
+                                    disabled={isUploading}
+                                >
+                                    {isUploading && activeReportIndex === index ? (
+                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                    ) : (
+                                        <Camera className="mr-2 h-4 w-4" />
+                                    )}
+                                    Añadir Foto ({field.photos.length}/3)
                                 </Button>
                             )}
                         </Card>
                     ))}
                     {!isReadOnly && (
-                      <Button type="button" variant="secondary" onClick={() => appendPhotoReport({ id: `rep_${Date.now()}`, date: new Date().toISOString(), description: '', photos: [] })}>
+                      <Button type="button" variant="secondary" onClick={() => appendPhotoReport({ id: `rep_${Date.now()}`, date: new Date().toISOString(), description: '', photos: [] })} disabled={isUploading}>
                         <PlusCircle className="mr-2 h-4 w-4" /> Añadir Nuevo Reporte
                       </Button>
                     )}
