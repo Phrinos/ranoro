@@ -225,6 +225,18 @@ export default function FinancialReportPage() {
       return filtered;
   }, [aggregatedInventory, inventorySearchTerm, inventorySortOption]);
 
+  const inventorySummaryData = useMemo(() => {
+    const distinctItemsSold = filteredAndSortedInventory.length;
+    const totalUnitsSold = filteredAndSortedInventory.reduce((sum, item) => sum + item.totalQuantity, 0);
+    const totalRevenueFromItems = filteredAndSortedInventory.reduce((sum, item) => sum + item.totalRevenue, 0);
+
+    return {
+        distinctItemsSold,
+        totalUnitsSold,
+        totalRevenueFromItems,
+    };
+  }, [filteredAndSortedInventory]);
+
   
   const [summaryData, setSummaryData] = useState<SummaryData | null>(null);
 
@@ -545,4 +557,3 @@ export default function FinancialReportPage() {
     </>
   );
 }
-
