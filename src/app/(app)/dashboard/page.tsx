@@ -356,7 +356,9 @@ export default function DashboardPage() {
         </Card>
       </div>
       
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+      <DashboardCharts />
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
         <Card className="shadow-lg">
           <CardHeader className="flex flex-row items-center justify-between gap-4">
             <div>
@@ -455,8 +457,6 @@ export default function DashboardPage() {
             </CardContent>
             </Card>
       </div>
-      
-      <DashboardCharts />
 
       {purchaseRecommendations && (
         <PrintTicketDialog
