@@ -1077,25 +1077,21 @@ export function ServiceForm({
     return `${lastService.mileage ? `${lastService.mileage.toLocaleString('es-ES')} km - ` : ''}${format(date, "dd MMM yyyy", { locale: es })} - ${description}`;
   }, [lastService]);
 
-  const handleDownloadImage = async () => {
+  const handleDownloadImage = () => {
     if (!viewingImageUrl) return;
     try {
-        const response = await fetch(viewingImageUrl);
-        if (!response.ok) throw new Error('Network response was not ok');
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.style.display = 'none';
-        a.href = url;
-        a.download = `evidencia-${initialData?.id || 'ranoro'}-${Date.now()}.jpg`;
-        document.body.appendChild(a);
-        a.click();
-        window.URL.revokeObjectURL(url);
-        a.remove();
-        toast({ title: "Imagen Descargada", description: "La imagen se ha guardado en tu dispositivo." });
+      window.open(viewingImageUrl, '_blank')?.focus();
+      toast({
+        title: "Abriendo Imagen",
+        description: "La imagen se abrió en una nueva pestaña. Puedes guardarla desde ahí.",
+      });
     } catch (err) {
-        console.error("Error downloading image:", err);
-        toast({ title: "Error de Descarga", description: "No se pudo descargar la imagen.", variant: "destructive"});
+      console.error("Error opening image:", err);
+      toast({
+        title: "Error al Abrir",
+        description: "No se pudo abrir la imagen en una nueva pestaña.",
+        variant: "destructive"
+      });
     }
   };
 
@@ -1766,18 +1762,18 @@ export function ServiceForm({
       
       <Dialog open={isImageViewerOpen} onOpenChange={setIsImageViewerOpen}>
         <DialogContent className="max-w-4xl p-2">
-            <DialogHeader>
+            <DialogHeader className="print:hidden">
               <DialogTitle>Vista Previa de Imagen</DialogTitle>
-              <DialogDesc>
+              <DialogDescription>
                 Visualizando la imagen de evidencia. Puede descargarla si lo necesita.
-              </DialogDesc>
+              </DialogDescription>
             </DialogHeader>
             <div className="relative aspect-video w-full">
                 {viewingImageUrl && (
                     <Image src={viewingImageUrl} alt="Vista ampliada de evidencia" layout="fill" objectFit="contain" />
                 )}
             </div>
-            <DialogFooter className="mt-2">
+            <DialogFooter className="mt-2 print:hidden">
                 <Button onClick={handleDownloadImage}>
                     <Download className="mr-2 h-4 w-4"/>Descargar Imagen
                 </Button>
