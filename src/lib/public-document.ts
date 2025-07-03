@@ -1,4 +1,3 @@
-
 import { savePublicDocument as savePublicDocumentAction } from "@/app/s/[id]/actions";
 import { sanitizeObjectForFirestore } from '@/lib/placeholder-data';
 import type { QuoteRecord, ServiceRecord, Vehicle, WorkshopInfo } from "@/types";
@@ -9,9 +8,15 @@ export const savePublicDocument = async (
   vehicle: Vehicle | null,
   workshopInfo: WorkshopInfo | {}
 ): Promise<{ success: boolean; error?: string }> => {
-  if (!data.publicId || !vehicle) {
-    console.warn(`Public save skipped: Missing publicId or vehicle data.`);
-    return { success: true };
+  if (!data.publicId) {
+    const errorMsg = 'Documento no tiene ID público para guardar.';
+    console.warn(`Public save skipped: ${errorMsg}`);
+    return { success: false, error: errorMsg };
+  }
+   if (!vehicle) {
+    const errorMsg = 'No se ha seleccionado un vehículo para el documento público.';
+    console.warn(`Public save skipped: ${errorMsg}`);
+    return { success: false, error: errorMsg };
   }
 
   const collectionName = type === 'quote' ? 'publicQuotes' : 'publicServices';
