@@ -71,7 +71,7 @@ export default function LandingPage() {
         </div>
       </header>
 
-      <main>
+      <main className="pb-32">
         {/* Hero Section */}
         <section className="relative h-[60vh] min-h-[400px] w-full">
           <Image
@@ -244,15 +244,15 @@ export default function LandingPage() {
       </main>
 
       {/* Footer */}
-      <footer className="border-t bg-sidebar-background text-sidebar-foreground">
-        <div className="container mx-auto flex flex-col items-center justify-between gap-4 px-4 py-8 md:flex-row md:px-6">
+      <footer className="fixed bottom-0 left-0 right-0 z-50 border-t bg-black text-white">
+        <div className="container mx-auto flex flex-col items-center justify-between gap-4 px-4 py-4 md:flex-row md:px-6">
           <div className="text-center md:text-left">
             <p className="text-sm font-semibold">Sistema de Administración de Talleres Ranoro®</p>
-            <p className="text-sm text-muted-foreground">Diseñado y Desarrollado por Arturo Valdelamar 4493930914</p>
+            <p className="text-xs text-white/70">Diseñado y Desarrollado por Arturo Valdelamar | 449-393-0914</p>
           </div>
           <div className="text-center md:text-right">
              <Button variant="secondary" asChild>
-                <Link href="/login">Acceso</Link>
+                <Link href="/login">Acceso al Sistema</Link>
              </Button>
           </div>
         </div>
