@@ -374,9 +374,9 @@ export default function RentasPage() {
 
       <Tabs defaultValue="pagos" className="w-full">
         <TabsList className="grid w-full grid-cols-1 sm:grid-cols-3 mb-6 bg-white">
-          <TabsTrigger value="pagos">Pagos de Renta</TabsTrigger>
-          <TabsTrigger value="retiros">Retiros de Propietarios</TabsTrigger>
-          <TabsTrigger value="gastos">Gastos de Vehículos</TabsTrigger>
+          <TabsTrigger value="pagos" className="data-[state=active]:bg-slate-800 data-[state=active]:text-white">Pagos de Renta</TabsTrigger>
+          <TabsTrigger value="retiros" className="data-[state=active]:bg-slate-800 data-[state=active]:text-white">Retiros de Propietarios</TabsTrigger>
+          <TabsTrigger value="gastos" className="data-[state=active]:bg-slate-800 data-[state=active]:text-white">Gastos de Vehículos</TabsTrigger>
         </TabsList>
 
         <TabsContent value="pagos">
