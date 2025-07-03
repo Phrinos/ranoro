@@ -433,7 +433,7 @@ export default function POSPage() {
               {dateRange?.from ? (
                 dateRange.to ? (
                   <>
-                    {format(dateRange.from, "LLL dd, y", { locale: es })} - {" "}
+                    {format(dateRange.from, "LLL dd, y", { locale: es })} -{" "}
                     {format(dateRange.to, "LLL dd, y", { locale: es })}
                   </>
                 ) : (
@@ -462,7 +462,7 @@ export default function POSPage() {
           <DropdownMenuTrigger asChild>
             <Button variant="outline" className="min-w-[150px] flex-1 sm:flex-initial bg-white">
               <ListFilter className="mr-2 h-4 w-4" />
-              Organizar
+              Ordenar por
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
