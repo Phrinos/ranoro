@@ -16,7 +16,7 @@ import { signOut, onAuthStateChanged } from 'firebase/auth';
 import { auth, db } from '@/lib/firebaseClient.js';
 import { useEffect, useState } from 'react';
 import type { User } from 'firebase/auth';
-import type { User as RanoroUser } from '@/types';
+import type { RanoroUser } from '@/types';
 import { doc, getDoc } from 'firebase/firestore';
 
 
@@ -112,6 +112,7 @@ export function AppHeader() {
                     width={120}
                     height={40}
                     className="dark:invert h-auto"
+                    data-ai-hint="ranoro logo"
                   />
                 </Link>
               </div>
@@ -124,9 +125,10 @@ export function AppHeader() {
               <Image
                 src="/ranoro-logo.png"
                 alt="Ranoro Logo"
-                width={100}
-                height={35}
+                width={120}
+                height={40}
                 className="dark:invert h-auto"
+                data-ai-hint="ranoro logo"
               />
             </Link>
             <nav className="flex items-center space-x-1">

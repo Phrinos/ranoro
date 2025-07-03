@@ -12,6 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '@/lib/firebaseClient.js';
 import Link from 'next/link';
+import { LogIn } from 'lucide-react';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -81,7 +82,7 @@ export default function LoginPage() {
       </div>
       <Card className="w-full max-w-sm shadow-xl">
         <CardHeader className="space-y-1 text-center">
-          <CardTitle className="text-2xl font-bold font-headline">Bienvenido a Ranoro</CardTitle>
+          <CardTitle className="text-2xl font-bold font-headline">Bienvenido de Nuevo</CardTitle>
           <CardDescription>Usa tus credenciales para ingresar al sistema.</CardDescription>
         </CardHeader>
         <CardContent>
@@ -111,12 +112,13 @@ export default function LoginPage() {
                 />
               </div>
               {error && <p className="text-sm text-destructive">{error}</p>}
-              <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? 'Ingresando...' : 'Ingresar'}
+              <Button type="submit" className="w-full" size="lg" disabled={isLoading}>
+                 <LogIn className="mr-2 h-4 w-4" />
+                {isLoading ? 'Ingresando...' : 'Ingresar al Sistema'}
               </Button>
             </form>
         </CardContent>
-        <CardFooter className="flex flex-col items-center justify-center text-center text-xs text-muted-foreground">
+        <CardFooter className="flex flex-col items-center justify-center text-center text-xs text-muted-foreground p-4">
           <p className="font-semibold">Sistema de Administración de Talleres Ranoro®</p>
           <p>Diseñado y Desarrollado por Arturo Valdelamar 4493930914</p>
         </CardFooter>
