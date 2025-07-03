@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { PlusCircle, ListFilter, Search, Users, DollarSign, CalendarIcon as CalendarDateIcon, BadgeCent, Archive } from "lucide-react";
 import { AdministrativeStaffTable } from "./components/administrative-staff-table";
 import { AdministrativeStaffDialog } from "./components/administrative-staff-dialog";
-import { placeholderAdministrativeStaff, placeholderServiceRecords, persistToFirestore } from "@/lib/placeholder-data";
+import { placeholderAdministrativeStaff, placeholderServiceRecords, persistToFirestore, IVA_RATE } from "@/lib/placeholder-data";
 import type { AdministrativeStaff } from "@/types";
 import type { AdministrativeStaffFormValues } from "./components/administrative-staff-form";
 import { useToast } from "@/hooks/use-toast";
@@ -120,13 +120,18 @@ export default function AdministrativosPage() {
     const dateTo = filterDateRange.to ? endOfDay(filterDateRange.to) : endOfDay(filterDateRange.from);
 
     const completedServicesInRange = placeholderServiceRecords.filter(service => {
-        if (service.status !== 'Completado') return false;
-        const serviceDate = parseISO(service.serviceDate);
+        if (service.status !== 'Completado' || !service.deliveryDateTime) return false;
+        const serviceDate = parseISO(service.deliveryDateTime);
         if (!isValid(serviceDate)) return false;
         return isWithinInterval(serviceDate, { start: dateFrom, end: dateTo });
     });
 
-    const totalProfitFromCompletedServicesInRange = completedServicesInRange.reduce((sum, s) => sum + (s.serviceProfit || 0), 0);
+    const totalProfitFromCompletedServicesInRange = completedServicesInRange.reduce((sum, s) => {
+        const revenueExclTax = (s.totalCost || 0) / (1 + IVA_RATE);
+        const costOfSupplies = s.totalSuppliesCost || 0;
+        const profit = revenueExclTax - costOfSupplies;
+        return sum + (isFinite(profit) ? profit : 0);
+    }, 0);
 
     const activeStaff = staffList.filter(s => !s.isArchived);
 

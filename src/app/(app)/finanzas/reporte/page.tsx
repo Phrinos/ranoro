@@ -9,7 +9,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuLabel, DropdownMenuRadio
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Search, ListFilter, CalendarIcon as CalendarDateIcon, DollarSign, Activity, Printer } from "lucide-react";
-import { placeholderSales, placeholderServiceRecords, placeholderInventory, getCurrentMonthRange, getLastMonthRange, getTodayRange, calculateSaleProfit } from "@/lib/placeholder-data";
+import { placeholderSales, placeholderServiceRecords, placeholderInventory, getCurrentMonthRange, getLastMonthRange, getTodayRange, calculateSaleProfit, IVA_RATE } from "@/lib/placeholder-data";
 import type { SaleReceipt, ServiceRecord, FinancialOperation, InventoryItem } from "@/types";
 import { useState, useEffect, useMemo } from "react";
 import { format, parseISO, compareAsc, compareDesc, isWithinInterval, isValid, startOfDay, endOfDay, isSameDay } from "date-fns";
@@ -78,19 +78,25 @@ export default function FinancialReportPage() {
       type: 'Venta',
       description: `Venta a ${sale.customerName || 'Cliente Mostrador'} - ${sale.items.length} artículo(s)`,
       totalAmount: sale.totalAmount, 
-      profit: calculateSaleProfit(sale, inventory, 0.16),
+      profit: calculateSaleProfit(sale, inventory),
       originalObject: sale,
     }));
 
-    const serviceOperations: FinancialOperation[] = allServices.map(service => ({
-      id: service.id,
-      date: service.serviceDate,
-      type: getServiceTypeForReport(service),
-      description: service.description,
-      totalAmount: service.totalCost, 
-      profit: service.serviceProfit || 0, 
-      originalObject: service,
-    }));
+    const serviceOperations: FinancialOperation[] = allServices.map(service => {
+      const revenueExclTax = (service.totalCost || 0) / (1 + IVA_RATE);
+      const costOfSupplies = service.totalSuppliesCost || 0;
+      const profit = revenueExclTax - costOfSupplies;
+
+      return {
+        id: service.id,
+        date: service.serviceDate,
+        type: getServiceTypeForReport(service),
+        description: service.description,
+        totalAmount: service.totalCost, 
+        profit: isFinite(profit) ? profit : 0, 
+        originalObject: service,
+      }
+    });
 
     return [...salesOperations, ...serviceOperations];
   }, [allSales, allServices, inventory]);

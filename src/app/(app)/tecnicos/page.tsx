@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { PlusCircle, ListFilter, TrendingUp, DollarSign as DollarSignIcon, CalendarIcon as CalendarDateIcon, BadgeCent, Users, Search, Archive } from "lucide-react";
 import { TechniciansTable } from "./components/technicians-table";
 import { TechnicianDialog } from "./components/technician-dialog";
-import { placeholderTechnicians, placeholderServiceRecords, persistToFirestore } from "@/lib/placeholder-data";
+import { placeholderTechnicians, placeholderServiceRecords, persistToFirestore, IVA_RATE } from "@/lib/placeholder-data";
 import type { Technician, ServiceRecord } from "@/types";
 import type { TechnicianFormValues } from "./components/technician-form";
 import { parseISO, compareAsc, compareDesc, startOfMonth, endOfMonth, isWithinInterval, format, isValid, startOfDay, endOfDay } from 'date-fns';
@@ -87,14 +87,27 @@ export default function TecnicosPage() {
       const techServices = placeholderServiceRecords.filter(service => {
         if (service.technicianId !== tech.id) return false;
         if (service.status !== 'Completado') return false; // Only count completed services for commission
-        const serviceDate = parseISO(service.serviceDate);
+        const serviceDate = parseISO(service.deliveryDateTime || service.serviceDate); // use delivery date
         if (!isValid(serviceDate)) return false;
         return isWithinInterval(serviceDate, { start: dateFrom, end: dateTo });
       });
 
       const totalRevenue = techServices.reduce((sum, s) => sum + s.totalCost, 0);
-      const totalProfit = techServices.reduce((sum, s) => sum + (s.serviceProfit || 0), 0);
-      const totalCommissionEarned = techServices.reduce((sum, s) => sum + (s.serviceProfit || 0) * (tech.commissionRate || 0), 0);
+
+      const totalProfit = techServices.reduce((sum, s) => {
+          const revenueExclTax = (s.totalCost || 0) / (1 + IVA_RATE);
+          const costOfSupplies = s.totalSuppliesCost || 0;
+          const profit = revenueExclTax - costOfSupplies;
+          return sum + (isFinite(profit) ? profit : 0);
+      }, 0);
+      
+      const totalCommissionEarned = techServices.reduce((sum, s) => {
+          const revenueExclTax = (s.totalCost || 0) / (1 + IVA_RATE);
+          const costOfSupplies = s.totalSuppliesCost || 0;
+          const profit = revenueExclTax - costOfSupplies;
+          const commission = (isFinite(profit) ? profit : 0) * (tech.commissionRate || 0);
+          return sum + commission;
+      }, 0);
       
       return {
         technicianId: tech.id,
