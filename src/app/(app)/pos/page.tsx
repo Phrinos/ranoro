@@ -195,18 +195,29 @@ export default function POSPage() {
     // Artículo más vendido
     let mostSoldItem: { name: string; quantity: number } | null = null;
     if (totalSalesCount > 0) {
-      const counter: Record<string, number> = {};
+      const counter: Record<string, { name: string; quantity: number }> = {};
       active.forEach((sale) => {
         sale.items.forEach((it) => {
-          counter[it.itemName] = (counter[it.itemName] || 0) + it.quantity;
+          // Use item ID as the key to avoid name collisions
+          if (!counter[it.inventoryItemId]) {
+            counter[it.inventoryItemId] = { name: it.itemName, quantity: 0 };
+          }
+          counter[it.inventoryItemId].quantity += it.quantity;
         });
       });
-      let max = 0;
-      for (const name in counter) {
-        if (counter[name] > max) {
-          max = counter[name];
-          mostSoldItem = { name, quantity: max };
+
+      let maxQuantity = 0;
+      let topItemId: string | null = null;
+
+      for (const itemId in counter) {
+        if (counter[itemId].quantity > maxQuantity) {
+          maxQuantity = counter[itemId].quantity;
+          topItemId = itemId;
         }
+      }
+
+      if (topItemId) {
+        mostSoldItem = counter[topItemId];
       }
     }
 
@@ -450,7 +461,7 @@ export default function POSPage() {
           <DropdownMenuTrigger asChild>
             <Button variant="outline" className="min-w-[150px] flex-1 sm:flex-initial bg-white">
               <ListFilter className="mr-2 h-4 w-4" />
-              Ordenar
+              Organizar
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
