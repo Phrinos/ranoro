@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { usePathname } from 'next/navigation';
@@ -33,7 +34,8 @@ import {
   BarChartHorizontal,
   Database,
   BookOpen,
-  Truck
+  Truck,
+  Wallet
 } from 'lucide-react';
 import type { User, AppRole } from '@/types';
 import { placeholderAppRoles, AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
@@ -97,6 +99,13 @@ const BASE_NAV_STRUCTURE: ReadonlyArray<Omit<NavigationEntry, 'isActive'>> = [
     label: 'Punto de Venta', 
     path: '/pos',
     icon: Receipt, 
+    groupTag: "Mi PDV",
+    permissions: ['pos:create_sale']
+  },
+  {
+    label: 'Caja', 
+    path: '/pos/caja', 
+    icon: Wallet, 
     groupTag: "Mi PDV",
     permissions: ['pos:create_sale']
   },
@@ -241,7 +250,7 @@ const useNavigation = (): NavigationEntry[] => {
       isActive = true;
     }
 
-     if (entry.path === '/pos' && pathname.startsWith('/pos/nuevo')) {
+     if (entry.path === '/pos' && (pathname.startsWith('/pos/nuevo') || pathname.startsWith('/pos/caja'))) {
       isActive = true;
     }
     

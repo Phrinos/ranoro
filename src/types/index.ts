@@ -1,4 +1,5 @@
 
+
 export interface WorkshopInfo {
   name: string;
   phone: string;
@@ -376,6 +377,24 @@ export interface MonthlyFixedExpense {
   name: string;
   amount: number;
 }
+
+export interface CashDrawerTransaction {
+  id: string;
+  date: string; // ISO String
+  type: 'Entrada' | 'Salida';
+  amount: number;
+  concept: string;
+  userId: string;
+  userName: string;
+}
+
+export interface InitialCashBalance {
+  date: string; // ISO String for when it was set
+  amount: number;
+  userId: string;
+  userName:string;
+}
+
 
 export interface PurchaseRecommendation {
   supplier: string;
