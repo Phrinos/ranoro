@@ -81,13 +81,23 @@ export default function HistorialServiciosPage() {
     setInventoryItemsState(placeholderInventory);
   }, []);
 
+  const safeParseISO = useCallback((date: string | Date | undefined): Date => {
+    if (!date) return new Date(0); // Treat null/undefined as a very old date for sorting
+    if (date instanceof Date) return date;
+    if (typeof date === 'string') {
+        const parsed = parseISO(date);
+        return isValid(parsed) ? parsed : new Date(0);
+    }
+    return new Date(0); // Fallback for other types
+  }, []);
+
   const filteredAndSortedServices = useMemo(() => {
     let filtered = [...allServices].filter(s => s.status === 'Reparando' || s.status === 'Completado' || s.status === 'Cancelado');
 
     if (dateRange?.from) {
       filtered = filtered.filter(service => {
-        const serviceDate = parseISO(service.serviceDate);
-        if (!isValid(serviceDate)) return false;
+        const serviceDate = safeParseISO(service.serviceDate);
+        if (serviceDate.getTime() === 0) return false; // Filter out invalid dates
         const from = startOfDay(dateRange.from!);
         const to = dateRange.to ? endOfDay(dateRange.to) : endOfDay(dateRange.from!);
         return isWithinInterval(serviceDate, { start: from, end: to });
@@ -119,13 +129,13 @@ export default function HistorialServiciosPage() {
 
       switch (sortOption) {
         case "serviceDate_asc": 
-          return compareAsc(parseISO(a.serviceDate), parseISO(b.serviceDate));
+          return compareAsc(safeParseISO(a.serviceDate), safeParseISO(b.serviceDate));
         case "deliveryDate_asc":
           if (!a.deliveryDateTime) return 1; if (!b.deliveryDateTime) return -1;
-          return compareAsc(parseISO(a.deliveryDateTime), parseISO(b.deliveryDateTime));
+          return compareAsc(safeParseISO(a.deliveryDateTime), safeParseISO(b.deliveryDateTime));
         case "deliveryDate_desc":
           if (!a.deliveryDateTime) return 1; if (!b.deliveryDateTime) return -1;
-          return compareDesc(parseISO(a.deliveryDateTime), parseISO(b.deliveryDateTime));
+          return compareDesc(safeParseISO(a.deliveryDateTime), safeParseISO(b.deliveryDateTime));
         case "plate_asc": return (vehicleA?.licensePlate || '').localeCompare(vehicleB?.licensePlate || '');
         case "plate_desc": return (vehicleB?.licensePlate || '').localeCompare(a.licensePlate || '');
         case "price_asc": return a.totalCost - b.totalCost;
@@ -141,14 +151,14 @@ export default function HistorialServiciosPage() {
           if (statusAVal !== statusBVal) {
             return statusAVal - statusBVal;
           }
-          const dateComparison = compareDesc(parseISO(a.serviceDate), parseISO(b.serviceDate));
+          const dateComparison = compareDesc(safeParseISO(a.serviceDate), safeParseISO(b.serviceDate));
           if (dateComparison !== 0) return dateComparison;
           return a.id.localeCompare(b.id); 
         }
       }
     });
     return filtered;
-  }, [allServices, vehicles, technicians, searchTerm, dateRange, sortOption]);
+  }, [allServices, vehicles, technicians, searchTerm, dateRange, sortOption, safeParseISO]);
   
   const getServiceDescriptionText = (service: ServiceRecord) => {
     if (service.serviceItems && service.serviceItems.length > 0) {
@@ -563,8 +573,8 @@ ${shareUrl}
                   <div className="flex flex-col md:flex-row text-sm">
                     <div className="p-4 flex flex-col justify-center items-center text-center w-full md:w-48 flex-shrink-0">
                         <p className="text-xs text-gray-500">Folio: {service.id}</p>
-                        <p className="text-lg font-semibold text-foreground">{format(parseISO(service.serviceDate), "dd MMM yyyy", { locale: es })}</p>
-                        <p className="text-xs text-muted-foreground">Entrega: {service.deliveryDateTime ? format(parseISO(service.deliveryDateTime), "dd MMM, HH:mm") : 'N/A'}</p>
+                        <p className="text-lg font-semibold text-foreground">{format(safeParseISO(service.serviceDate), "dd MMM yyyy", { locale: es })}</p>
+                        <p className="text-xs text-muted-foreground">Entrega: {service.deliveryDateTime ? format(safeParseISO(service.deliveryDateTime), "dd MMM, HH:mm") : 'N/A'}</p>
                     </div>
 
                     <Separator orientation="vertical" className="hidden md:block h-auto"/>
