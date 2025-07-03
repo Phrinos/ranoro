@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useState, useRef } from 'react';
@@ -6,12 +7,15 @@ import { ServiceSheetContent } from '@/components/service-sheet-content';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import type { ServiceRecord, Vehicle, WorkshopInfo } from '@/types';
-import { ShieldAlert, Download, Loader2, Signature } from 'lucide-react';
+import { ShieldAlert, Download, Loader2, Signature, Eye } from 'lucide-react';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
 import { SignatureDialog } from '@/app/(app)/servicios/components/signature-dialog';
 import { getDoc, doc, setDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebasePublic.js';
+import Image from "next/legacy/image";
+import { Dialog, DialogContent, DialogFooter } from "@/components/ui/dialog";
+
 
 export default function PublicServiceSheetPage() {
   const params = useParams();
@@ -26,6 +30,10 @@ export default function PublicServiceSheetPage() {
 
   const [isSigning, setIsSigning] = useState(false);
   const [signatureType, setSignatureType] = useState<'reception' | 'delivery' | null>(null);
+
+  // State for image viewer
+  const [isImageViewerOpen, setIsImageViewerOpen] = useState(false);
+  const [viewingImageUrl, setViewingImageUrl] = useState<string | null>(null);
 
   useEffect(() => {
     if (!publicId) {
@@ -96,6 +104,28 @@ export default function PublicServiceSheetPage() {
   const handleOpenSignatureDialog = (type: 'reception' | 'delivery') => {
     setSignatureType(type);
   };
+  
+  const handleDownloadImage = async () => {
+    if (!viewingImageUrl) return;
+    try {
+        const response = await fetch(viewingImageUrl);
+        if (!response.ok) throw new Error('Network response was not ok');
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.style.display = 'none';
+        a.href = url;
+        a.download = `evidencia-${service?.id || 'ranoro'}-${Date.now()}.jpg`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        a.remove();
+        toast({ title: "Imagen Descargada", description: "La imagen se ha guardado en tu dispositivo." });
+    } catch (err) {
+        console.error("Error downloading image:", err);
+        toast({ title: "Error de Descarga", description: "No se pudo descargar la imagen.", variant: "destructive"});
+    }
+  };
 
   const handleSaveSignature = async (signatureDataUrl: string) => {
     if (!signatureType || !publicId) return;
@@ -118,6 +148,11 @@ export default function PublicServiceSheetPage() {
     } finally {
       setIsSigning(false);
     }
+  };
+
+  const handleViewImage = (url: string) => {
+    setViewingImageUrl(url);
+    setIsImageViewerOpen(true);
   };
 
   if (service === undefined) {
@@ -194,6 +229,7 @@ export default function PublicServiceSheetPage() {
           service={service} 
           vehicle={vehicle} 
           workshopInfo={workshopInfo || undefined} 
+          onViewImage={handleViewImage}
         />
       </div>
       <SignatureDialog
@@ -201,6 +237,20 @@ export default function PublicServiceSheetPage() {
         onOpenChange={(isOpen) => !isOpen && setSignatureType(null)}
         onSave={handleSaveSignature}
       />
+      <Dialog open={isImageViewerOpen} onOpenChange={setIsImageViewerOpen}>
+        <DialogContent className="max-w-4xl p-2">
+            <div className="relative aspect-video w-full">
+                {viewingImageUrl && (
+                    <Image src={viewingImageUrl} alt="Vista ampliada de evidencia" layout="fill" objectFit="contain" />
+                )}
+            </div>
+            <DialogFooter className="mt-2">
+                <Button onClick={handleDownloadImage}>
+                    <Download className="mr-2 h-4 w-4"/>Descargar Imagen
+                </Button>
+            </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
