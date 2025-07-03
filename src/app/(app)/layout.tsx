@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useState } from 'react';
@@ -28,15 +29,14 @@ export default function AppLayout({
   const [isHydrating, setIsHydrating] = useState(true);
 
   useEffect(() => {
-    // If Firebase is not configured, run in a mock authenticated mode for local dev
+    // This check is crucial for Firebase to work. If it's not configured, nothing will work.
     if (!auth) {
-      console.warn("Firebase no está configurado. Ejecutando en modo de desarrollo sin autenticación real.");
-      setAuthStatus('authenticated');
-      setIsHydrating(false); // Skip hydration from firestore as it would fail
-      const mockUser = placeholderUsers.find(u => u.role === 'Superadmin') || defaultSuperAdmin;
-      localStorage.setItem(AUTH_USER_LOCALSTORAGE_KEY, JSON.stringify(mockUser));
-      window.__APP_HYDRATED__ = true; // Manually set hydration flag
-      return; // Exit the effect
+      console.error("Firebase no está configurado. La aplicación no puede funcionar. Revisa tu archivo firebaseClient.js");
+      toast({ title: "Error Crítico de Configuración", description: "La conexión con Firebase no está disponible.", variant: "destructive", duration: Infinity });
+      setAuthStatus('unauthenticated'); // Prevent infinite loading
+      setIsHydrating(false);
+      // Don't route here, as it might cause loops. Let the component render a message or fail.
+      return; 
     }
 
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
