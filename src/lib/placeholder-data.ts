@@ -1,4 +1,5 @@
 
+
 import type {
   Vehicle,
   ServiceRecord,
@@ -24,6 +25,8 @@ import type {
   OwnerWithdrawal,
   VehicleExpense,
   VehiclePaperwork,
+  CashDrawerTransaction,
+  InitialCashBalance,
 } from '@/types';
 import {
   format,
@@ -123,8 +126,11 @@ export let placeholderQuotes: QuoteRecord[] = [];
 // --- VENTAS (POS) ---
 export let placeholderSales: SaleReceipt[] = [];
 
-// --- GASTOS FIJOS ---
+// --- GASTOS FIJOS Y CAJA ---
 export let placeholderFixedMonthlyExpenses: MonthlyFixedExpense[] = [];
+export let placeholderCashDrawerTransactions: CashDrawerTransaction[] = [];
+export let placeholderInitialCashBalance: InitialCashBalance | null = null;
+
 
 // --- LISTA DE PRECIOS ---
 export let placeholderVehiclePriceLists: VehiclePriceList[] = [];
@@ -160,6 +166,8 @@ const DATA_ARRAYS = {
   quotes: placeholderQuotes,
   sales: placeholderSales,
   fixedExpenses: placeholderFixedMonthlyExpenses,
+  cashDrawerTransactions: placeholderCashDrawerTransactions,
+  initialCashBalance: placeholderInitialCashBalance,
   technicianPerformance: placeholderTechnicianMonthlyPerformance,
   appRoles: placeholderAppRoles,
   vehiclePriceLists: placeholderVehiclePriceLists,
@@ -233,14 +241,21 @@ export async function hydrateFromFirestore() {
       console.log('Firestore document found. Hydrating from snapshot.');
       const firestoreData = docSnap.data();
       for (const key in DATA_ARRAYS) {
-        if (firestoreData[key] && Array.isArray(firestoreData[key])) {
-          const targetArray = DATA_ARRAYS[key as DataKey];
-          targetArray.splice(0, targetArray.length, ...firestoreData[key]);
+        if (firestoreData[key]) {
+           const targetArray = DATA_ARRAYS[key as DataKey];
+           // Handle single object persistence (for initialCashBalance)
+           if (!Array.isArray(targetArray)) {
+              if (key === 'initialCashBalance') {
+                 placeholderInitialCashBalance = firestoreData[key];
+              }
+           } else if (Array.isArray(firestoreData[key])) {
+              targetArray.splice(0, targetArray.length, ...firestoreData[key]);
+           }
         }
       }
     } else {
       // Document doesn't exist. Check if any local arrays have data from a previous session.
-      const hasLocalData = Object.values(DATA_ARRAYS).some((arr) => arr.length > 0);
+      const hasLocalData = Object.values(DATA_ARRAYS).some((arr) => Array.isArray(arr) && arr.length > 0);
 
       if (hasLocalData) {
         console.warn('No database document found, but local data exists. Persisting local data to new document to prevent loss.');
@@ -364,10 +379,10 @@ export async function persistToFirestore(keysToUpdate?: DataKey[]) {
 
   console.log(`Persisting granular data to Firestore for keys: ${keys.join(', ')}`);
 
-  const dataToPersist: { [key in DataKey]?: any[] } = {} as any;
+  const dataToPersist: { [key in DataKey]?: any } = {} as any;
 
   for (const key of keys) {
-    if (DATA_ARRAYS[key]) {
+    if (DATA_ARRAYS[key] !== undefined) {
       dataToPersist[key] = DATA_ARRAYS[key];
     }
   }
