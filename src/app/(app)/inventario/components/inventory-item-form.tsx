@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useEffect } from 'react';
@@ -99,8 +98,7 @@ export function InventoryItemForm({ initialData, onSubmit, onClose, categories, 
   useEffect(() => {
     if (unitPrice !== undefined && unitPrice >= 0) {
       const markup = 1.20; // 20% markup
-      const taxRate = 1.16; // 16% IVA
-      const newSellingPrice = unitPrice * markup * taxRate;
+      const newSellingPrice = unitPrice * markup;
       const roundedSellingPrice = parseFloat(newSellingPrice.toFixed(2));
       setValue('sellingPrice', roundedSellingPrice, { shouldValidate: true });
     }
@@ -325,7 +323,7 @@ export function InventoryItemForm({ initialData, onSubmit, onClose, categories, 
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>
-                        {unitTypeWatch === 'ml' ? 'Precio de Venta (por ml, IVA Inc.)' : unitTypeWatch === 'liters' ? 'Precio de Venta (por L, IVA Inc.)' : 'Precio de Venta (por unidad, IVA Inc.)'}
+                        {unitTypeWatch === 'ml' ? 'Precio de Venta (por ml)' : unitTypeWatch === 'liters' ? 'Precio de Venta (por L)' : 'Precio de Venta (por unidad)'}
                       </FormLabel>
                       <FormControl>
                         <div className="relative">
@@ -333,7 +331,7 @@ export function InventoryItemForm({ initialData, onSubmit, onClose, categories, 
                           <Input type="number" step="0.01" placeholder="15.99" {...field} value={field.value ?? ''} className="pl-8" />
                         </div>
                       </FormControl>
-                      <FormDescription>Calculado automáticamente con 20% de ganancia + 16% de IVA sobre el costo. Puede modificarlo.</FormDescription>
+                      <FormDescription>Calculado automáticamente con 20% de ganancia sobre el costo. Puede modificarlo.</FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
