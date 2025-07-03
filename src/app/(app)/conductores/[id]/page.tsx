@@ -9,7 +9,6 @@ import {
   persistToFirestore 
 } from '@/lib/placeholder-data';
 import type { Driver, RentalPayment } from '@/types';
-import { PageHeader } from '@/components/page-header';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -242,13 +241,18 @@ export default function DriverDetailPage() {
   return (
     <>
     <div className="container mx-auto py-8">
-      <PageHeader
-        title={driver.name}
-        description={`ID Conductor: ${driver.id}`}
-        actions={
-            <Button variant="outline" onClick={() => router.back()}><ArrowLeft className="mr-2 h-4 w-4"/> Volver</Button>
-        }
-      />
+      <div className="mb-6 flex items-center justify-start gap-4">
+        <Button variant="outline" size="icon" className="h-10 w-10 bg-white" onClick={() => router.back()}>
+          <ArrowLeft className="h-5 w-5" />
+          <span className="sr-only">Volver</span>
+        </Button>
+        <div className="grid gap-1">
+          <h1 className="text-2xl font-bold tracking-tight md:text-3xl font-headline">
+            {driver.name}
+          </h1>
+          <p className="text-muted-foreground">ID Conductor: {driver.id}</p>
+        </div>
+      </div>
 
       <Tabs defaultValue="details" className="w-full">
         <TabsList className="grid w-full grid-cols-1 sm:grid-cols-3 bg-white">
