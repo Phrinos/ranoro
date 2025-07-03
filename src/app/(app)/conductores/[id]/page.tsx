@@ -143,7 +143,7 @@ export default function DriverDetailPage() {
       const updatedDriver = {
         ...driver,
         documents: {
-          ...driver.documents,
+          ...(driver.documents || {}),
           [uploadingDocType]: downloadURL,
         },
       };
