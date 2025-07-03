@@ -3,7 +3,7 @@
 
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Printer, ShoppingCartIcon, AlertTriangle, PackageCheck, DollarSign, Server } from "lucide-react";
+import { PlusCircle, Printer, ShoppingCartIcon, AlertTriangle, PackageCheck, DollarSign, Server, Search, ListFilter } from "lucide-react";
 import { InventoryTable } from "./components/inventory-table";
 import { InventoryItemDialog } from "./components/inventory-item-dialog";
 import { placeholderInventory, placeholderCategories, placeholderSuppliers, persistToFirestore } from "@/lib/placeholder-data";
@@ -15,6 +15,8 @@ import { PurchaseDetailsEntryDialog, type PurchaseDetailsFormValues } from "./co
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Image from "next/legacy/image";
+import { Input } from "@/components/ui/input";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 type InventorySortOption = 
   | "stock_status_name_asc" // Default: Low stock first, then by name A-Z
@@ -38,9 +40,9 @@ export default function InventarioPage() {
   const [searchTermForNewItemPurchase, setSearchTermForNewItemPurchase] = useState('');
 
 
-  const [searchTerm] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategoryFilter] = useState("all");
-  const [sortOption] = useState<InventorySortOption>("stock_status_name_asc");
+  const [sortOption, setSortOption] = useState<InventorySortOption>("stock_status_name_asc");
 
   useEffect(() => {
     const handleDatabaseUpdate = () => setVersion(v => v + 1);
@@ -333,7 +335,7 @@ export default function InventarioPage() {
 
         <div className="print:hidden">
           <PageHeader
-            title="Productos y Servicios"
+            title="Lista de Productos"
             description="Administra productos, servicios, niveles de stock y registra compras."
             actions={
               <div className="flex flex-wrap gap-2">
@@ -347,11 +349,47 @@ export default function InventarioPage() {
                 </Button>
                 <Button onClick={() => { setIsCreatingItemForPurchaseFlow(false); setIsNewItemDialogOpen(true); }}>
                   <PlusCircle className="mr-2 h-4 w-4" />
-                  Nuevo Producto/Servicio
+                  Nuevo
                 </Button>
               </div>
             }
           />
+        </div>
+        
+         <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:flex-wrap gap-4 print:hidden">
+            <div className="relative flex-1 min-w-[200px] sm:min-w-[300px]">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                    type="search"
+                    placeholder="Buscar por nombre o SKU..."
+                    className="w-full rounded-lg bg-card pl-8"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                />
+            </div>
+            <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="min-w-[150px] flex-1 sm:flex-initial bg-card">
+                <ListFilter className="mr-2 h-4 w-4" />
+                Ordenar
+                </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+                <DropdownMenuLabel>Ordenar por</DropdownMenuLabel>
+                <DropdownMenuRadioGroup value={sortOption} onValueChange={(value) => setSortOption(value as InventorySortOption)}>
+                <DropdownMenuRadioItem value="stock_status_name_asc">Estado de Stock</DropdownMenuRadioItem>
+                <DropdownMenuRadioItem value="name_asc">Nombre (A-Z)</DropdownMenuRadioItem>
+                <DropdownMenuRadioItem value="name_desc">Nombre (Z-A)</DropdownMenuRadioItem>
+                <DropdownMenuRadioItem value="sku_asc">SKU (A-Z)</DropdownMenuRadioItem>
+                <DropdownMenuRadioItem value="sku_desc">SKU (Z-A)</DropdownMenuRadioItem>
+                <DropdownMenuRadioItem value="quantity_asc">Cantidad (Menor a Mayor)</DropdownMenuRadioItem>
+                <DropdownMenuRadioItem value="quantity_desc">Cantidad (Mayor a Menor)</DropdownMenuRadioItem>
+                <DropdownMenuRadioItem value="price_desc">Precio (Mayor a Menor)</DropdownMenuRadioItem>
+                <DropdownMenuRadioItem value="price_asc">Precio (Menor a Mayor)</DropdownMenuRadioItem>
+                <DropdownMenuRadioItem value="type_asc">Tipo (Producto/Servicio)</DropdownMenuRadioItem>
+                </DropdownMenuRadioGroup>
+            </DropdownMenuContent>
+            </DropdownMenu>
         </div>
         
         <div className="overflow-x-auto">
@@ -393,3 +431,4 @@ export default function InventarioPage() {
     </>
   );
 }
+
