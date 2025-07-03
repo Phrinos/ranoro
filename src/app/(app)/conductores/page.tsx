@@ -73,11 +73,15 @@ export default function ConductoresPage() {
     setEditingDriver(null);
   }, [editingDriver, drivers, toast]);
 
-  const getVehicleInfo = (vehicleId?: string): string => {
-    if (!vehicleId) return 'N/A';
+  const getVehicleInfo = (vehicleId?: string) => {
+    if (!vehicleId) return <span className="text-muted-foreground">N/A</span>;
     const vehicle = placeholderVehicles.find(v => v.id === vehicleId);
-    if (!vehicle) return 'Vehículo no encontrado';
-    return `${vehicle.licensePlate} - ${vehicle.make} ${vehicle.model} ${vehicle.year} ${vehicle.color || ''}`.trim();
+    if (!vehicle) return <span className="text-destructive">Vehículo no encontrado</span>;
+    return (
+        <span>
+            <span className="font-semibold">{vehicle.licensePlate}</span> - {vehicle.make} {vehicle.model} {vehicle.year} {vehicle.color || ''}
+        </span>
+    );
   };
 
   return (
@@ -98,7 +102,7 @@ export default function ConductoresPage() {
           <Input
             type="search"
             placeholder="Buscar por nombre o teléfono..."
-            className="w-full rounded-lg bg-card pl-8 sm:w-[300px] lg:w-1/2"
+            className="w-full rounded-lg bg-card pl-8 sm:w-full lg:w-2/3"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
@@ -122,17 +126,17 @@ export default function ConductoresPage() {
 
       <div className="rounded-lg border shadow-sm overflow-x-auto">
         <Table>
-          <TableHeader>
+          <TableHeader className="bg-slate-800">
             <TableRow>
-              <TableHead>Nombre</TableHead>
-              <TableHead>Teléfono</TableHead>
-              <TableHead>Vehículo Asignado</TableHead>
+              <TableHead className="text-white">Nombre</TableHead>
+              <TableHead className="text-white">Teléfono</TableHead>
+              <TableHead className="text-white">Vehículo Asignado</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {filteredAndSortedDrivers.length > 0 ? filteredAndSortedDrivers.map(driver => (
               <TableRow key={driver.id} className="cursor-pointer" onClick={() => router.push(`/conductores/${driver.id}`)}>
-                <TableCell className="font-medium">{driver.name}</TableCell>
+                <TableCell className="font-semibold">{driver.name}</TableCell>
                 <TableCell>{driver.phone}</TableCell>
                 <TableCell>{getVehicleInfo(driver.assignedVehicleId)}</TableCell>
               </TableRow>
