@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Menu, UserCircle, Car, Settings, LifeBuoy, LogOut, Wrench, Users, BarChart2, FileText, ShoppingCart, Truck, Tags, DollarSign, UserPlus, ShieldAlert } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
-import { useMobile } from '@/hooks/use-mobile';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { useNavigation } from '@/hooks/use-navigation';
 import { Separator } from '@/components/ui/separator';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -22,7 +22,7 @@ import { doc, getDoc } from 'firebase/firestore';
 
 export function AppHeader() {
   const pathname = usePathname();
-  const isMobile = useMobile();
+  const isMobile = useIsMobile();
   const { navigation, adminNavigation } = useNavigation();
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const router = useRouter();
@@ -110,7 +110,7 @@ export function AppHeader() {
                     src="/ranoro-logo.png"
                     alt="Ranoro Logo"
                     width={120}
-                    height={40}
+                    height={30}
                     className="dark:invert h-auto"
                     data-ai-hint="ranoro logo"
                   />
@@ -126,7 +126,7 @@ export function AppHeader() {
                 src="/ranoro-logo.png"
                 alt="Ranoro Logo"
                 width={120}
-                height={40}
+                height={30}
                 className="dark:invert h-auto"
                 data-ai-hint="ranoro logo"
               />

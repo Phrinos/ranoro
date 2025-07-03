@@ -70,7 +70,7 @@ export default function LoginPage() {
             src="/ranoro-logo.png"
             alt="Ranoro Logo"
             width={240}
-            height={80}
+            height={60}
             className="dark:invert h-auto mx-auto"
             priority
             data-ai-hint="ranoro logo"
@@ -80,7 +80,7 @@ export default function LoginPage() {
           ¡Tu taller en una App!
         </p>
       </div>
-      <Card className="w-full max-w-sm shadow-xl">
+      <Card className="w-full max-w-md shadow-2xl">
         <CardHeader className="space-y-1 text-center">
           <CardTitle className="text-2xl font-bold font-headline">Bienvenido de Nuevo</CardTitle>
           <CardDescription>Usa tus credenciales para ingresar al sistema.</CardDescription>
@@ -120,7 +120,7 @@ export default function LoginPage() {
         </CardContent>
         <CardFooter className="flex flex-col items-center justify-center text-center text-xs text-muted-foreground p-4">
           <p className="font-semibold">Sistema de Administración de Talleres Ranoro®</p>
-          <p>Diseñado y Desarrollado por Arturo Valdelamar 4493930914</p>
+          <p>Diseñado y Desarrollado por Arturo Valdelamar | 449-393-0914</p>
         </CardFooter>
       </Card>
     </div>

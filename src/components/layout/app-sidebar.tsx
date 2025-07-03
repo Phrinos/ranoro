@@ -148,7 +148,7 @@ export function AppSidebar() {
             src="/ranoro-logo.png"
             alt="Ranoro Logo"
             width={120}
-            height={40}
+            height={30}
             className="dark:invert object-contain"
             data-ai-hint="ranoro logo"
           />
