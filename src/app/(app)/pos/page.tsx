@@ -204,8 +204,10 @@ export default function POSPage() {
         sale.items.forEach((it) => {
           // Use item ID as the key to avoid name collisions
           if (!counter[it.inventoryItemId]) {
-            // Use item ID as the key to avoid name collisions
-            counter[it.inventoryItemId] = { name: it.itemName, quantity: 0 };
+            // Find the item in the main inventory to get its "name", not "itemName" (which might be a SKU)
+            const inventoryItem = placeholderInventory.find(inv => inv.id === it.inventoryItemId);
+            const displayName = inventoryItem?.name || it.itemName;
+            counter[it.inventoryItemId] = { name: displayName, quantity: 0 };
           }
           counter[it.inventoryItemId].quantity += it.quantity;
         });
@@ -402,7 +404,7 @@ export default function POSPage() {
       </div>
 
       <PageHeader
-        title="Punto de Venta"
+        title="PDV"
         description="Consulta, filtra y ordena todas las ventas de mostrador."
       />
 

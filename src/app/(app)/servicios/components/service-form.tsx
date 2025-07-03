@@ -62,7 +62,7 @@ import { QuoteContent } from '@/components/quote-content';
 import { SignatureDialog } from './signature-dialog';
 import { TicketContent } from '@/components/ticket-content';
 import { capitalizeWords, formatCurrency, capitalizeSentences, optimizeImage } from '@/lib/utils';
-import { savePublicDocument as savePublicDocumentAction } from "@/app/s/[id]/actions";
+import { savePublicDocument } from "@/lib/public-document";
 import { PhotoUploader } from "./PhotoUploader";
 import { ServiceItemCard } from './ServiceItemCard';
 import { SafetyChecklist } from './SafetyChecklist';
@@ -766,7 +766,7 @@ export function ServiceForm({
       if (workshopInfo && Object.keys(workshopInfo).length > 0) serviceData.workshopInfo = workshopInfo as WorkshopInfo;
 
       try {
-        await savePublicDocumentAction('publicServices', serviceData.publicId!, serviceData);
+        await savePublicDocument('service', serviceData as ServiceRecord, selectedVehicle, workshopInfo);
       } catch (e) {
         toast({ title: 'Error al Guardar Público', description: `No se pudo guardar la hoja de servicio pública. ${e instanceof Error ? e.message : ''}`, variant: 'destructive'});
       }
@@ -798,7 +798,7 @@ export function ServiceForm({
       if (workshopInfo && Object.keys(workshopInfo).length > 0) quoteData.workshopInfo = workshopInfo as WorkshopInfo;
       
       try {
-        await savePublicDocumentAction('publicQuotes', quoteData.publicId!, quoteData);
+        await savePublicDocument('quote', quoteData as QuoteRecord, selectedVehicle, workshopInfo);
       } catch (e) {
         toast({ title: 'Error al Guardar Público', description: `No se pudo guardar la cotización pública. ${e instanceof Error ? e.message : ''}`, variant: 'destructive'});
       }
