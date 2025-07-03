@@ -1,9 +1,10 @@
+
 "use client";
 
 import Link from 'next/link';
 import Image from "next/legacy/image";
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Car, Wrench, BrainCircuit, Users, ShieldCheck, Drill, GitCommitHorizontal, CircleDotDashed, Truck, CheckCircle, MessageSquare } from 'lucide-react';
 
 const services = [
@@ -55,6 +56,8 @@ export default function LandingPage() {
               width={120}
               height={40}
               className="dark:invert h-auto"
+              priority
+              data-ai-hint="ranoro logo"
             />
           </Link>
           <nav className="hidden md:flex items-center gap-2">
@@ -76,13 +79,15 @@ export default function LandingPage() {
             alt="Taller mecánico profesional"
             layout="fill"
             priority
-            className="absolute z-0 opacity-20 object-cover"
+            className="absolute z-0 object-cover"
+            data-ai-hint="mechanic garage"
           />
-          <div className="relative z-10 flex h-full flex-col items-center justify-center text-center px-4">
+          <div className="absolute inset-0 bg-black/60 z-0" />
+          <div className="relative z-10 flex h-full flex-col items-center justify-center text-center px-4 text-white">
             <h1 className="text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl font-headline">
               Confianza y Calidad para tu Vehículo
             </h1>
-            <p className="mt-4 max-w-2xl text-lg text-muted-foreground">
+            <p className="mt-4 max-w-2xl text-lg text-white/80">
               En Ranoro, combinamos técnicos expertos, tecnología de punta y refacciones de calidad para ofrecerte el mejor servicio automotriz.
             </p>
             <div className="mt-8 flex flex-col sm:flex-row gap-4">
@@ -96,7 +101,7 @@ export default function LandingPage() {
                   Agendar Cita por WhatsApp
                 </a>
               </Button>
-              <Button size="lg" variant="outline" asChild>
+              <Button size="lg" variant="secondary" asChild>
                 <Link href="#servicios">Ver Servicios</Link>
               </Button>
             </div>
@@ -114,7 +119,7 @@ export default function LandingPage() {
             </div>
             <div className="mt-12 grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
               {services.map((service, index) => (
-                <Card key={index} className="text-center shadow-lg hover:shadow-xl transition-shadow duration-300">
+                <Card key={index} className="text-center shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
                   <CardHeader>
                     <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
                       {service.icon}
@@ -225,11 +230,12 @@ export default function LandingPage() {
               </div>
               <div className="flex justify-center">
                 <Image
-                  src="/ranoro2.jpg"
+                  src="/ranoro1.jpg"
                   alt="Servicio a flotillas"
                   width={600}
                   height={400}
-                  className="rounded-lg shadow-xl"
+                  className="rounded-lg shadow-xl object-cover"
+                  data-ai-hint="trucks fleet"
                 />
               </div>
             </div>
@@ -238,14 +244,14 @@ export default function LandingPage() {
       </main>
 
       {/* Footer */}
-      <footer className="border-t bg-background">
+      <footer className="border-t bg-sidebar-background text-sidebar-foreground">
         <div className="container mx-auto flex flex-col items-center justify-between gap-4 px-4 py-8 md:flex-row md:px-6">
           <div className="text-center md:text-left">
             <p className="text-sm font-semibold">Sistema de Administración de Talleres Ranoro®</p>
             <p className="text-sm text-muted-foreground">Diseñado y Desarrollado por Arturo Valdelamar 4493930914</p>
           </div>
           <div className="text-center md:text-right">
-             <Button variant="outline" asChild>
+             <Button variant="secondary" asChild>
                 <Link href="/login">Acceso</Link>
              </Button>
           </div>
