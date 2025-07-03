@@ -772,11 +772,11 @@ export function ServiceForm({
       if (currentUser.signatureDataUrl) serviceData.serviceAdvisorSignatureDataUrl = currentUser.signatureDataUrl;
       if (workshopInfo && Object.keys(workshopInfo).length > 0) serviceData.workshopInfo = workshopInfo as WorkshopInfo;
 
-      try {
-        await savePublicDocument('service', serviceData as ServiceRecord, selectedVehicle, workshopInfo);
-      } catch (e) {
-        toast({ title: 'Error al Guardar Público', description: `No se pudo guardar la hoja de servicio pública. ${e instanceof Error ? e.message : ''}`, variant: 'destructive'});
+      const publicSaveResult = await savePublicDocument('service', serviceData as ServiceRecord, selectedVehicle, workshopInfo);
+      if (!publicSaveResult.success) {
+        toast({ title: 'Error al Guardar Público', description: publicSaveResult.error || 'No se pudo guardar la hoja de servicio pública.', variant: 'destructive' });
       }
+
       await onSubmit(serviceData as ServiceRecord);
 
     } else { // mode === 'quote'
@@ -804,11 +804,11 @@ export function ServiceForm({
       if (values.mileage) quoteData.mileage = values.mileage;
       if (workshopInfo && Object.keys(workshopInfo).length > 0) quoteData.workshopInfo = workshopInfo as WorkshopInfo;
       
-      try {
-        await savePublicDocument('quote', quoteData as QuoteRecord, selectedVehicle, workshopInfo);
-      } catch (e) {
-        toast({ title: 'Error al Guardar Público', description: `No se pudo guardar la cotización pública. ${e instanceof Error ? e.message : ''}`, variant: 'destructive'});
+      const publicQuoteSaveResult = await savePublicDocument('quote', quoteData as QuoteRecord, selectedVehicle, workshopInfo);
+      if (!publicQuoteSaveResult.success) {
+        toast({ title: 'Error al Guardar Público', description: publicQuoteSaveResult.error || 'No se pudo guardar la cotización pública.', variant: 'destructive' });
       }
+      
       await onSubmit(quoteData as QuoteRecord);
     }
   };
@@ -1094,7 +1094,7 @@ export function ServiceForm({
   }, [localVehicles, toast]);
 
   const lastServiceDateFormatted = useMemo(() => {
-    if (!lastService || !lastService.serviceDate) return 'No tiene historial de servicios.';
+    if (!lastService) return 'No tiene historial de servicios.';
     
     // new Date() can handle both ISO strings and Date objects, which is more robust.
     const date = new Date(lastService.serviceDate);
