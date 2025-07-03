@@ -95,16 +95,12 @@ export default function TecnicosPage() {
       const totalRevenue = techServices.reduce((sum, s) => sum + s.totalCost, 0);
 
       const totalProfit = techServices.reduce((sum, s) => {
-          const revenueExclTax = (s.totalCost || 0) / (1 + IVA_RATE);
-          const costOfSupplies = s.totalSuppliesCost || 0;
-          const profit = revenueExclTax - costOfSupplies;
+          const profit = s.serviceProfit ?? ((s.totalCost || 0) - (s.totalSuppliesCost || 0));
           return sum + (isFinite(profit) ? profit : 0);
       }, 0);
       
       const totalCommissionEarned = techServices.reduce((sum, s) => {
-          const revenueExclTax = (s.totalCost || 0) / (1 + IVA_RATE);
-          const costOfSupplies = s.totalSuppliesCost || 0;
-          const profit = revenueExclTax - costOfSupplies;
+          const profit = s.serviceProfit ?? ((s.totalCost || 0) - (s.totalSuppliesCost || 0));
           const commission = (isFinite(profit) ? profit : 0) * (tech.commissionRate || 0);
           return sum + commission;
       }, 0);

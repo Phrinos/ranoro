@@ -56,10 +56,8 @@ export function DashboardCharts() {
             // Revenue is the total amount paid by the customer.
             monthlyData[monthKey].revenue += service.totalCost;
             
-            // Profit is revenue (before tax) minus cost of supplies.
-            const revenueExclTax = service.totalCost / (1 + IVA_RATE);
-            const costOfSupplies = service.totalSuppliesCost || 0;
-            const profit = revenueExclTax - costOfSupplies;
+            // Profit is revenue minus cost of supplies.
+            const profit = (service.totalCost || 0) - (service.totalSuppliesCost || 0);
             monthlyData[monthKey].profit += isFinite(profit) ? profit : 0;
         }
     });
@@ -166,12 +164,12 @@ export function DashboardCharts() {
           </CardHeader>
           <CardContent className="flex-1 flex items-center justify-center pb-4">
             <div className="h-[250px] w-full">
-              <ChartContainer config={serviceTypeChartConfig} className="mx-auto aspect-square">
+              <ChartContainer config={serviceTypeChartConfig} className="mx-auto">
                 <PieChart>
                   <ChartTooltip content={<ChartTooltipContent hideLabel />} />
                   <Pie data={serviceTypeChartData} dataKey="value" nameKey="name" innerRadius={50} />
                   <Legend content={({ payload }) => (
-                    <ul className="grid gap-2 text-sm mt-4">
+                    <ul className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-sm mt-2">
                       {payload?.map((item, index) => (
                         <li key={index} className="flex items-center gap-2">
                           <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: item.color }} />
@@ -190,16 +188,16 @@ export function DashboardCharts() {
         <Card className="flex flex-col">
           <CardHeader>
             <CardTitle>Fuentes de Ingreso</CardTitle>
-            <CardDescription>Comparativo de ingresos por servicios vs. ventas POS.</CardDescription>
+            <CardDescription>Servicios vs Venta POS</CardDescription>
           </CardHeader>
           <CardContent className="flex-1 flex items-center justify-center pb-4">
             <div className="h-[250px] w-full">
-              <ChartContainer config={revenueSourceChartConfig} className="mx-auto aspect-square">
+              <ChartContainer config={revenueSourceChartConfig} className="mx-auto">
                   <PieChart>
                       <ChartTooltip content={<ChartTooltipContent hideLabel formatter={formatCurrency as (value: unknown) => string} />} />
                       <Pie data={revenueSourceChartData} dataKey="value" nameKey="source" innerRadius={50} />
                       <Legend content={({ payload }) => (
-                        <ul className="grid gap-2 text-sm mt-4">
+                        <ul className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-sm mt-2">
                           {payload?.map((item, index) => (
                             <li key={index} className="flex items-center gap-2">
                               <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: item.color }} />

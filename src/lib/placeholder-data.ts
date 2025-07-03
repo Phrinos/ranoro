@@ -420,18 +420,17 @@ export const getYesterdayRange = () => {
 };
 
 /**
- * Calcula la ganancia de un ticket de venta con mayor resiliencia.
- * - Usa Map para lookup rápido.
- * - Si el inventario aún no está cargado, cae en valores almacenados en el propio saleItem.
+ * Calculates the profit of a POS sale.
+ * Profit = Total Sale Amount - Total Cost of Goods Sold.
  */
 export const calculateSaleProfit = (
   sale: SaleReceipt,
-  inventory: InventoryItem[],
+  inventory: InventoryItem[]
 ): number => {
   if (!sale?.items?.length) return 0;
 
   const inventoryMap = new Map<string, InventoryItem>(
-    inventory.map((i) => [i.id, i]),
+    inventory.map((i) => [i.id, i])
   );
 
   let totalCost = 0;
@@ -439,19 +438,20 @@ export const calculateSaleProfit = (
   for (const saleItem of sale.items) {
     const inventoryItem = inventoryMap.get(saleItem.inventoryItemId);
 
-    // Only calculate cost for non-service items that exist in inventory
     if (inventoryItem && !inventoryItem.isService) {
-        const costPricePerUnit = Number(String(inventoryItem.unitPrice ?? '0').replace(',', '.'));
-        const quantitySold = Number(String(saleItem.quantity ?? '0').replace(',', '.'));
-        if (isFinite(costPricePerUnit) && isFinite(quantitySold)) {
-            totalCost += costPricePerUnit * quantitySold;
-        }
+      const costPricePerUnit = Number(
+        String(inventoryItem.unitPrice ?? '0').replace(',', '.')
+      );
+      const quantitySold = Number(
+        String(saleItem.quantity ?? '0').replace(',', '.')
+      );
+      if (isFinite(costPricePerUnit) && isFinite(quantitySold)) {
+        totalCost += costPricePerUnit * quantitySold;
+      }
     }
   }
   
-  // Correct Profit is revenue (before tax) minus cost of goods.
-  const revenueExclTax = sale.totalAmount / (1 + IVA_RATE);
-  const profit = revenueExclTax - totalCost;
+  const profit = sale.totalAmount - totalCost;
   
   return isFinite(profit) ? profit : 0;
 };

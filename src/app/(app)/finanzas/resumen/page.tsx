@@ -104,9 +104,7 @@ export default function ResumenFinancieroPage() {
 
     const totalProfitFromSales = salesThisMonth.reduce((sum, sale) => sum + calculateSaleProfit(sale, inventory), 0);
     const totalProfitFromServices = completedServicesThisMonth.reduce((sum, service) => {
-        const revenueExclTax = (service.totalCost || 0) / (1 + IVA_RATE);
-        const costOfSupplies = service.totalSuppliesCost || 0;
-        const profit = revenueExclTax - costOfSupplies;
+        const profit = service.serviceProfit ?? ((service.totalCost || 0) - (service.totalSuppliesCost || 0));
         return sum + (isFinite(profit) ? profit : 0);
     }, 0);
     const totalOperationalProfit = totalProfitFromSales + totalProfitFromServices;
@@ -124,19 +122,11 @@ export default function ResumenFinancieroPage() {
     if (isWorkshopProfitableAfterFixedCosts) {
       placeholderTechnicians.forEach(tech => {
         const techServicesThisMonth = completedServicesThisMonth.filter(s => s.technicianId === tech.id);
-        const techProfit = techServicesThisMonth.reduce((sum, s) => {
-          const revenueExclTax = (s.totalCost || 0) / (1 + IVA_RATE);
-          const costOfSupplies = s.totalSuppliesCost || 0;
-          return sum + ((revenueExclTax - costOfSupplies) || 0);
-        }, 0);
+        const techProfit = techServicesThisMonth.reduce((sum, s) => sum + (s.serviceProfit || 0), 0);
         totalTechnicianCommissionsMonth += techProfit * (tech.commissionRate || 0);
       });
 
-      const totalProfitFromAllCompletedServicesInMonth = completedServicesThisMonth.reduce((sum, s) => {
-          const revenueExclTax = (s.totalCost || 0) / (1 + IVA_RATE);
-          const costOfSupplies = s.totalSuppliesCost || 0;
-          return sum + ((revenueExclTax - costOfSupplies) || 0);
-      }, 0);
+      const totalProfitFromAllCompletedServicesInMonth = completedServicesThisMonth.reduce((sum, s) => sum + (s.serviceProfit || 0), 0);
 
       placeholderAdministrativeStaff.forEach(adminStaff => {
         totalAdministrativeCommissionsMonth += totalProfitFromAllCompletedServicesInMonth * (adminStaff.commissionRate || 0);
