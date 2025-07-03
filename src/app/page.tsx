@@ -54,7 +54,7 @@ export default function LandingPage() {
               src="/ranoro-logo.png"
               alt="Ranoro Logo"
               width={120}
-              height={40}
+              height={30}
               className="dark:invert h-auto"
               priority
               data-ai-hint="ranoro logo"
@@ -63,6 +63,9 @@ export default function LandingPage() {
           <nav className="hidden md:flex items-center gap-2">
             <Button variant="ghost" asChild>
               <Link href="#servicios">Servicios</Link>
+            </Button>
+             <Button variant="ghost" asChild>
+              <Link href="#afinacion">Afinaciones</Link>
             </Button>
             <Button variant="ghost" asChild>
               <Link href="#flotillas">Flotillas</Link>
@@ -171,20 +174,14 @@ export default function LandingPage() {
                 </CardHeader>
                 <CardContent className="flex-grow">
                    <ul className="space-y-3 text-left text-muted-foreground">
-                    <li className="flex items-start gap-3"><CheckCircle className="h-5 w-5 text-green-500 mt-0.5 shrink-0" /><span>Cambio de aceite de motor</span></li>
-                    <li className="flex items-start gap-3"><CheckCircle className="h-5 w-5 text-green-500 mt-0.5 shrink-0" /><span>Cambio de filtro de aire</span></li>
-                    <li className="flex items-start gap-3"><CheckCircle className="h-5 w-5 text-green-500 mt-0.5 shrink-0" /><span>Cambio de filtro de gasolina</span></li>
-                    <li className="flex items-start gap-3"><CheckCircle className="h-5 w-5 text-green-500 mt-0.5 shrink-0" /><span>Cambio de filtro de aceite</span></li>
-                    <li className="flex items-start gap-3"><CheckCircle className="h-5 w-5 text-green-500 mt-0.5 shrink-0" /><span>Cambio de bujías</span></li>
-                    <li className="flex items-start gap-3"><CheckCircle className="h-5 w-5 text-green-500 mt-0.5 shrink-0" /><span>Lavado de inyectores con laboratorio y ultrasonido</span></li>
-                    <li className="flex items-start gap-3"><CheckCircle className="h-5 w-5 text-green-500 mt-0.5 shrink-0" /><span>Lavado de cuerpo de aceleración no electrónico y válvula IAC</span></li>
-                    <li className="flex items-start gap-3"><CheckCircle className="h-5 w-5 text-green-500 mt-0.5 shrink-0" /><span>Calibración, rotación y alineación de llantas</span></li>
-                    <li className="flex items-start gap-3"><CheckCircle className="h-5 w-5 text-green-500 mt-0.5 shrink-0" /><span>Lavado de motor</span></li>
-                    <li className="flex items-start gap-3"><CheckCircle className="h-5 w-5 text-green-500 mt-0.5 shrink-0" /><span>Lavado y aspirado de vehículo</span></li>
-                    <li className="flex items-start gap-3"><CheckCircle className="h-5 w-5 text-green-500 mt-0.5 shrink-0" /><span>Diagnostico por Computadora</span></li>
-                    <li className="flex items-start gap-3"><CheckCircle className="h-5 w-5 text-green-500 mt-0.5 shrink-0" /><span>Revisión y relleno de niveles hasta 500ml.</span></li>
-                    <li className="flex items-start gap-3"><CheckCircle className="h-5 w-5 text-green-500 mt-0.5 shrink-0" /><span>Revisión de puntos de seguridad</span></li>
-                    <li className="flex items-start gap-3"><CheckCircle className="h-5 w-5 text-green-500 mt-0.5 shrink-0" /><span>Transporte de Cortesia</span></li>
+                    <li className="font-semibold text-foreground">Incluye todo lo de la Afinación Clásica, y además:</li>
+                    <li className="flex items-start gap-3"><CheckCircle className="h-5 w-5 text-green-500 mt-0.5 shrink-0" /><span>Lavado de inyectores con <strong>laboratorio y ultrasonido</strong>.</span></li>
+                    <li className="flex items-start gap-3"><CheckCircle className="h-5 w-5 text-green-500 mt-0.5 shrink-0" /><span>Lavado de cuerpo de aceleración electrónico y válvula IAC.</span></li>
+                    <li className="flex items-start gap-3"><CheckCircle className="h-5 w-5 text-green-500 mt-0.5 shrink-0" /><span>Calibración, rotación y alineación de llantas.</span></li>
+                    <li className="flex items-start gap-3"><CheckCircle className="h-5 w-5 text-green-500 mt-0.5 shrink-0" /><span>Lavado de motor y aspirado de vehículo.</span></li>
+                    <li className="flex items-start gap-3"><CheckCircle className="h-5 w-5 text-green-500 mt-0.5 shrink-0" /><span>Diagnóstico por Computadora.</span></li>
+                    <li className="flex items-start gap-3"><CheckCircle className="h-5 w-5 text-green-500 mt-0.5 shrink-0" /><span>Revisión de puntos de seguridad.</span></li>
+                    <li className="flex items-start gap-3"><CheckCircle className="h-5 w-5 text-green-500 mt-0.5 shrink-0" /><span>Transporte de Cortesía.</span></li>
                   </ul>
                 </CardContent>
               </Card>
