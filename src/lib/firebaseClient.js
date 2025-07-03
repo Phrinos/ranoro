@@ -32,7 +32,8 @@ let db = null;
 // 2. Crear/obtener la app de Firebase de forma segura
 //-------------------------------------------
 // Solo inicializa Firebase si las credenciales son válidas y no es un placeholder.
-if (firebaseConfig.apiKey && firebaseConfig.apiKey.startsWith("AIza")) {
+// The check was changed to be more specific to avoid using the placeholder key.
+if (firebaseConfig.apiKey && firebaseConfig.apiKey !== "AIzaSyA_ot6L0zgglc1tC0BounxYIvj7y8048Sg") {
   if (!getApps().length) {
     app = initializeApp(firebaseConfig);
   } else {
