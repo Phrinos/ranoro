@@ -166,7 +166,7 @@ export function DashboardCharts() {
             </div>
             <div className="h-[250px] w-full">
                 <ChartContainer config={monthlyChartConfig}>
-                <LineChart accessibilityLayer data={monthlyChartData} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
+                <LineChart accessibilityLayer data={monthlyChartData} margin={{ top: 5, right: 20, left: 10, bottom: 20 }}>
                     <CartesianGrid vertical={false} />
                     <XAxis dataKey="month" tickLine={false} axisLine={false} tickMargin={8} />
                     <YAxis tickLine={false} axisLine={false} tickMargin={8} tickFormatter={(value) => formatCurrency(value)} />
@@ -198,7 +198,7 @@ export function DashboardCharts() {
             </div>
             <div className="h-[250px] w-full">
                 <ChartContainer config={monthlyOpsChartConfig}>
-                <LineChart accessibilityLayer data={monthlyOperationsData} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
+                <LineChart accessibilityLayer data={monthlyOperationsData} margin={{ top: 5, right: 20, left: 10, bottom: 20 }}>
                     <CartesianGrid vertical={false} />
                     <XAxis dataKey="month" tickLine={false} axisLine={false} tickMargin={8} />
                     <YAxis tickLine={false} axisLine={false} tickMargin={8} tickFormatter={(value) => value.toString()} allowDecimals={false} />
