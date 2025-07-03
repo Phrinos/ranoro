@@ -1,3 +1,4 @@
+
 "use client";
 
 import { PageHeader } from "@/components/page-header";
@@ -76,6 +77,15 @@ export default function AgendaServiciosPage() {
   const [cancellationReason, setCancellationReason] = useState('');
   const [workshopInfo, setWorkshopInfo] = useState<WorkshopInfo | {}>({});
 
+  const safeParseISO = useCallback((date: string | Date | undefined): Date => {
+    if (!date) return new Date(0); // An invalid date that can be checked with `isValid`
+    if (date instanceof Date) return date;
+    if (typeof date === 'string') {
+        const parsed = parseISO(date);
+        return parsed;
+    }
+    return new Date(0);
+  }, []);
 
   const handleServiceUpdated = useCallback(async (data: ServiceRecord) => {
     // The form now handles public doc saving. We just update local state.
@@ -149,13 +159,12 @@ export default function AgendaServiciosPage() {
   }, [allServices, vehicles, techniciansState, searchTerm]);
 
   const todayServicesForCapacity = useMemo(() => {
-      const today = new Date();
       return allServices.filter(service => {
           if (service.status === 'Completado' || service.status === 'Cancelado') return false;
-          const serviceDate = parseISO(service.serviceDate);
+          const serviceDate = safeParseISO(service.serviceDate);
           return isValid(serviceDate) && isToday(serviceDate);
       });
-  }, [allServices]);
+  }, [allServices, safeParseISO]);
 
   useEffect(() => {
       const runAnalysis = async () => {
@@ -207,7 +216,7 @@ export default function AgendaServiciosPage() {
 
     for (const service of allServices) {
       if (!service.serviceDate || service.status !== 'Agendado') continue;
-      const serviceDate = parseISO(service.serviceDate);
+      const serviceDate = safeParseISO(service.serviceDate);
       if (isValid(serviceDate)) {
         if (isToday(serviceDate)) {
           todayCount++;
@@ -217,7 +226,7 @@ export default function AgendaServiciosPage() {
       }
     }
     return { todayCount, tomorrowCount };
-  }, [allServices]);
+  }, [allServices, safeParseISO]);
 
   const handleOpenEditDialog = (service: ServiceRecord) => {
     setEditingService(service);
@@ -468,9 +477,11 @@ ${shareUrl}
 
   const groupServicesByDate = (servicesToGroup: ServiceRecord[]): GroupedServices => {
     return servicesToGroup
-      .sort((a, b) => compareAsc(parseISO(a.serviceDate), parseISO(b.serviceDate)))
+      .sort((a, b) => compareAsc(safeParseISO(a.serviceDate), safeParseISO(b.serviceDate)))
       .reduce((acc: GroupedServices, service) => {
-        const dateKey = format(parseISO(service.serviceDate), 'yyyy-MM-dd');
+        const serviceDate = safeParseISO(service.serviceDate);
+        if (!isValid(serviceDate)) return acc;
+        const dateKey = format(serviceDate, 'yyyy-MM-dd');
         if (!acc[dateKey]) {
           acc[dateKey] = [];
         }
@@ -479,7 +490,7 @@ ${shareUrl}
       }, {});
   };
 
-  const groupedFutureServices = useMemo(() => groupServicesByDate(filteredServices), [filteredServices]);
+  const groupedFutureServices = useMemo(() => groupServicesByDate(filteredServices), [filteredServices, safeParseISO]);
   
   const getServiceDescriptionText = (service: ServiceRecord) => {
     if (service.serviceItems && service.serviceItems.length > 0) {
@@ -530,13 +541,14 @@ ${shareUrl}
                 {dayServices.map(service => {
                   const vehicle = vehicles.find(v => v.id === service.vehicleId);
                   const originalQuote = placeholderQuotes.find(q => q.serviceId === service.id);
+                  const serviceDate = safeParseISO(service.serviceDate);
 
                   return (
                     <Card key={service.id} className="shadow-sm overflow-hidden">
                       <CardContent className="p-0">
                         <div className="flex flex-col md:flex-row text-sm">
                             <div className="p-4 flex flex-col justify-center items-center text-center w-full md:w-48 flex-shrink-0">
-                                <p className="text-4xl lg:text-5xl font-semibold text-foreground">{format(parseISO(service.serviceDate), "HH:mm", { locale: es })}</p>
+                                <p className="text-4xl lg:text-5xl font-semibold text-foreground">{isValid(serviceDate) ? format(serviceDate, "HH:mm", { locale: es }) : 'N/A'}</p>
                                 <p className="text-xs text-muted-foreground mt-1">Folio: {service.id}</p>
                             </div>
                           
