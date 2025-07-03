@@ -1566,7 +1566,7 @@ export function ServiceForm({
                             <div className="grid grid-cols-3 gap-2 mt-2">
                                 {field.photos.map((photoUrl, photoIndex) => (
                                     <div key={photoIndex} className="relative aspect-video w-full bg-muted rounded-md">
-                                        <Image src={photoUrl} fill style={{objectFit:"cover"}} alt={`Foto ${photoIndex + 1} del reporte ${index + 1}`} />
+                                        <Image src={photoUrl} layout="fill" objectFit="cover" alt={`Foto ${photoIndex + 1} del reporte ${index + 1}`} />
                                     </div>
                                 ))}
                             </div>
