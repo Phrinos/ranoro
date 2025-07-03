@@ -68,12 +68,12 @@ export let placeholderSuppliers: Supplier[] = [
 // ===          INVENTARIO               ===
 // =======================================
 export let placeholderInventory: InventoryItem[] = [
-  { id: 'PROD001', name: 'Aceite Sintético 5W-30', brand: 'Mobil 1', sku: 'MOB-5W30-S', quantity: 50, unitPrice: 150, sellingPrice: 220, supplier: 'Refaccionaria GDL', lowStockThreshold: 10, category: 'Aceites y Lubricantes', unitType: 'liters' },
-  { id: 'PROD002', name: 'Filtro de Aceite', brand: 'Gonher', sku: 'GON-FO-123', quantity: 30, unitPrice: 80, sellingPrice: 150, supplier: 'AutoZone Aguascalientes', lowStockThreshold: 5, category: 'Filtros', unitType: 'units' },
-  { id: 'PROD003', name: 'Juego de Balatas Delanteras', brand: 'Brembo', sku: 'BRE-BLK-456', quantity: 15, unitPrice: 600, sellingPrice: 950, supplier: 'Refaccionaria GDL', lowStockThreshold: 3, category: 'Frenos', unitType: 'units' },
-  { id: 'PROD004', name: 'Limpiaparabrisas 22"', brand: 'Bosch', sku: 'BOS-WPR-22', quantity: 25, unitPrice: 120, sellingPrice: 200, supplier: 'AutoZone Aguascalientes', lowStockThreshold: 10, category: 'Eléctrico', unitType: 'units' },
-  { id: 'PROD005', name: 'Amortiguador Delantero', brand: 'Monroe', sku: 'MON-SHK-789', quantity: 8, unitPrice: 800, sellingPrice: 1200, supplier: 'Partes y Motores de Aguascalientes', lowStockThreshold: 2, category: 'Suspensión', unitType: 'units' },
-  { id: 'SERV001', name: 'Mano de Obra Mecánica', brand: 'Ranoro', sku: 'SERV-MO-GEN', quantity: 0, unitPrice: 250, sellingPrice: 350, supplier: 'N/A', lowStockThreshold: 0, category: 'Servicios', isService: true },
+  { id: 'PROD001', name: 'Aceite Sintético 5W-30', brand: 'Mobil 1', sku: 'MOB-5W30-S', quantity: 50, unitPrice: 150, sellingPrice: 180, supplier: 'Refaccionaria GDL', lowStockThreshold: 10, category: 'Aceites y Lubricantes', unitType: 'liters' },
+  { id: 'PROD002', name: 'Filtro de Aceite', brand: 'Gonher', sku: 'GON-FO-123', quantity: 30, unitPrice: 80, sellingPrice: 96, supplier: 'AutoZone Aguascalientes', lowStockThreshold: 5, category: 'Filtros', unitType: 'units' },
+  { id: 'PROD003', name: 'Juego de Balatas Delanteras', brand: 'Brembo', sku: 'BRE-BLK-456', quantity: 15, unitPrice: 600, sellingPrice: 720, supplier: 'Refaccionaria GDL', lowStockThreshold: 3, category: 'Frenos', unitType: 'units' },
+  { id: 'PROD004', name: 'Limpiaparabrisas 22"', brand: 'Bosch', sku: 'BOS-WPR-22', quantity: 25, unitPrice: 120, sellingPrice: 144, supplier: 'AutoZone Aguascalientes', lowStockThreshold: 10, category: 'Eléctrico', unitType: 'units' },
+  { id: 'PROD005', name: 'Amortiguador Delantero', brand: 'Monroe', sku: 'MON-SHK-789', quantity: 8, unitPrice: 800, sellingPrice: 960, supplier: 'Partes y Motores de Aguascalientes', lowStockThreshold: 2, category: 'Suspensión', unitType: 'units' },
+  { id: 'SERV001', name: 'Mano de Obra Mecánica', brand: 'Ranoro', sku: 'SERV-MO-GEN', quantity: 0, unitPrice: 250, sellingPrice: 300, supplier: 'N/A', lowStockThreshold: 0, category: 'Servicios', isService: true },
 ];
 
 // =======================================
@@ -198,7 +198,7 @@ export let placeholderServiceRecords: ServiceRecord[] = [
     mileage: 15000,
     serviceAdvisorId: 'user_superadmin',
     serviceAdvisorName: 'Arturo Valdelamar'
-  },
+  }
 ];
 
 // --- COTIZACIONES ---
