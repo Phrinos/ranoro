@@ -723,7 +723,7 @@ export function ServiceForm({
         try {
           const deliveryDate = serviceData.deliveryDateTime ? new Date(serviceData.deliveryDateTime) : new Date();
           if (isValid(deliveryDate)) {
-            const nextServiceDate = addDays(deliveryDate, 365);
+            const nextServiceDate = addDays(deliveryDate, 183);
             let nextServiceMileage: number | undefined;
             const mileageValue = values.mileage;
             if (typeof mileageValue === 'number' && isFinite(mileageValue) && mileageValue > 0) {
@@ -1081,10 +1081,6 @@ export function ServiceForm({
     if (!viewingImageUrl) return;
     try {
       window.open(viewingImageUrl, '_blank')?.focus();
-      toast({
-        title: "Abriendo Imagen",
-        description: "La imagen se abrió en una nueva pestaña. Puedes guardarla desde ahí.",
-      });
     } catch (err) {
       console.error("Error opening image:", err);
       toast({
