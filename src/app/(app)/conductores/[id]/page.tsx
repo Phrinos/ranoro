@@ -140,23 +140,29 @@ export default function DriverDetailPage() {
       await uploadString(storageRef, optimizedDataUrl, 'data_url');
       const downloadURL = await getDownloadURL(storageRef);
 
+      const driverIndex = placeholderDrivers.findIndex(d => d.id === driver.id);
+      if (driverIndex === -1) {
+        throw new Error("No se pudo encontrar el conductor para actualizar.");
+      }
+      
+      // Create a new driver object from the one in the main array
       const updatedDriver = {
-        ...driver,
+        ...placeholderDrivers[driverIndex],
         documents: {
-          ...(driver.documents || {}),
+          ...(placeholderDrivers[driverIndex].documents || {}),
           [uploadingDocType]: downloadURL,
         },
       };
       
-      setDriver(updatedDriver);
-
-      const driverIndex = placeholderDrivers.findIndex(d => d.id === driver.id);
-      if (driverIndex > -1) {
-        placeholderDrivers[driverIndex] = updatedDriver;
-      }
-
+      // Replace the object in the main array
+      placeholderDrivers[driverIndex] = updatedDriver;
+      
+      // Persist the changes
       await persistToFirestore(['drivers']);
       
+      // Update the local state to trigger a re-render
+      setDriver(updatedDriver);
+
       toast({
         title: '¡Documento Subido!',
         description: `El documento se ha guardado correctamente.`,
@@ -166,7 +172,7 @@ export default function DriverDetailPage() {
       console.error("Error al subir documento:", err);
       toast({
         title: 'Error de Subida',
-        description: 'No se pudo guardar el documento. Inténtelo de nuevo.',
+        description: `No se pudo guardar el documento. ${err instanceof Error ? err.message : ''}`,
         variant: 'destructive',
       });
     } finally {
