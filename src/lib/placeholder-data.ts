@@ -1,5 +1,4 @@
 
-
 import type {
   Vehicle,
   ServiceRecord,
@@ -219,13 +218,6 @@ export function sanitizeObjectForFirestore(obj: any): any {
  */
 export async function hydrateFromFirestore() {
   if (typeof window === 'undefined' || (window as any).__APP_HYDRATED__) {
-    return;
-  }
-
-  if (!db) {
-    console.warn('Hydration skipped: Firebase not configured. App running in demo mode.');
-    (window as any).__APP_HYDRATED__ = true;
-    resolveHydration?.();
     return;
   }
 

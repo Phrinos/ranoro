@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from "next/legacy/image";
 import { Button } from "@/components/ui/button";
@@ -11,8 +11,6 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { useToast } from '@/hooks/use-toast';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '@/lib/firebaseClient.js';
-import { AlertCircle, TestTube2 } from 'lucide-react';
-import { defaultSuperAdmin, AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
 import Link from 'next/link';
 
 export default function LoginPage() {
@@ -22,26 +20,14 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [isFirebaseConfigured, setIsFirebaseConfigured] = useState(true);
-
-  useEffect(() => {
-    if (typeof window !== 'undefined' && !auth) {
-      setIsFirebaseConfigured(false);
-    }
-  }, []);
-
-  const handleDemoLogin = () => {
-    localStorage.setItem(AUTH_USER_LOCALSTORAGE_KEY, JSON.stringify(defaultSuperAdmin));
-    toast({
-      title: 'Modo Demo Activado',
-      description: 'Has iniciado sesión como Superadmin. No se guardarán datos en la nube.',
-    });
-    router.push('/dashboard');
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!isFirebaseConfigured) return;
+    if (!auth) {
+        setError("La configuración de Firebase no está disponible. No se puede iniciar sesión.");
+        toast({ title: "Error de Configuración", description: "No se pudo conectar con el servicio de autenticación.", variant: "destructive" });
+        return;
+    }
 
     setIsLoading(true);
     setError('');
@@ -86,6 +72,7 @@ export default function LoginPage() {
             height={80}
             className="dark:invert h-auto mx-auto"
             priority
+            data-ai-hint="ranoro logo"
           />
         </Link>
         <p className="mt-3 text-lg font-medium text-foreground">
@@ -98,19 +85,6 @@ export default function LoginPage() {
           <CardDescription>Usa tus credenciales para ingresar al sistema.</CardDescription>
         </CardHeader>
         <CardContent>
-          {!isFirebaseConfigured ? (
-             <div className="space-y-4">
-              <div className="text-center text-destructive bg-destructive/10 p-4 rounded-md flex flex-col items-center gap-2">
-                <AlertCircle className="h-6 w-6" />
-                <p className="font-bold">Firebase no configurado</p>
-                <p className="text-sm mt-1">La aplicación se ejecutará en Modo Demo.</p>
-              </div>
-              <Button onClick={handleDemoLogin} className="w-full">
-                  <TestTube2 className="mr-2 h-4 w-4" />
-                  Ingresar en Modo Demo
-              </Button>
-            </div>
-          ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="email">Correo Electrónico</Label>
@@ -141,7 +115,6 @@ export default function LoginPage() {
                 {isLoading ? 'Ingresando...' : 'Ingresar'}
               </Button>
             </form>
-          )}
         </CardContent>
         <CardFooter className="flex flex-col items-center justify-center text-center text-xs text-muted-foreground">
           <p className="font-semibold">Sistema de Administración de Talleres Ranoro®</p>

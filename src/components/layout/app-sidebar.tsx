@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from "next/link";
@@ -93,33 +94,21 @@ export function AppSidebar() {
     return new Set(userRole?.permissions || []);
   }, [currentUser, roles]);
 
-  const handleLogout = () => {
-    if (auth) {
-      signOut(auth).then(() => {
-        if (typeof window !== "undefined") {
-          localStorage.removeItem("authUser");
-        }
-        toast({
-          title: "Sesión Cerrada",
-          description: "Has cerrado sesión exitosamente.",
-        });
-        setCurrentUser(null);
-        router.push("/login");
-      }).catch((error) => {
-         console.error("Logout Error:", error);
-         toast({ title: "Error al cerrar sesión", variant: "destructive" });
-      });
-    } else {
-      // Handle demo mode logout
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
       if (typeof window !== "undefined") {
         localStorage.removeItem("authUser");
       }
       toast({
-        title: "Sesión Cerrada (Modo Demo)",
+        title: "Sesión Cerrada",
         description: "Has cerrado sesión exitosamente.",
       });
       setCurrentUser(null);
       router.push("/login");
+    } catch (error) {
+       console.error("Logout Error:", error);
+       toast({ title: "Error al cerrar sesión", variant: "destructive" });
     }
   };
 
@@ -161,6 +150,7 @@ export function AppSidebar() {
             width={96}
             height={32}
             className="dark:invert h-auto"
+            data-ai-hint="ranoro logo"
           />
         </Link>
       </SidebarHeader>
