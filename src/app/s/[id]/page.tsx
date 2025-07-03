@@ -11,7 +11,7 @@ import { ShieldAlert, Printer, Loader2, Signature, Eye, Download } from 'lucide-
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
 import { SignatureDialog } from '@/app/(app)/servicios/components/signature-dialog';
-import { getDoc, doc, setDoc } from 'firebase/firestore';
+import { doc, setDoc, onSnapshot } from 'firebase/firestore';
 import { db } from '@/lib/firebasePublic.js';
 import Image from "next/legacy/image";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -48,41 +48,40 @@ export default function PublicServiceSheetPage() {
         setService(null);
         return;
     }
-
-    const fetchPublicService = async () => {
-      try {
-        const serviceRef = doc(db, 'publicServices', publicId);
-        const docSnap = await getDoc(serviceRef);
-
-        if (docSnap.exists()) {
-          const data = docSnap.data();
-          const processDates = (obj: any) => {
-            for (const key in obj) {
-              if (obj[key] && typeof obj[key].toDate === 'function') {
-                obj[key] = obj[key].toDate().toISOString();
-              } else if (typeof obj[key] === 'object' && obj[key] !== null) {
-                processDates(obj[key]);
-              }
+    
+    const serviceRef = doc(db, 'publicServices', publicId);
+    
+    const unsubscribe = onSnapshot(serviceRef, (docSnap) => {
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        const processDates = (obj: any) => {
+          for (const key in obj) {
+            if (obj[key] && typeof obj[key].toDate === 'function') {
+              obj[key] = obj[key].toDate().toISOString();
+            } else if (typeof obj[key] === 'object' && obj[key] !== null) {
+              processDates(obj[key]);
             }
-          };
-          processDates(data);
+          }
+        };
+        processDates(data);
 
-          const serviceData = data as ServiceRecord & { vehicle?: Vehicle };
-          setService(serviceData);
-          setVehicle(serviceData.vehicle || null);
-          setWorkshopInfo(serviceData.workshopInfo || null);
-        } else {
-          setError(`La hoja de servicio con ID "${publicId}" no se encontró. Pudo haber sido eliminada o el enlace es incorrecto.`);
-          setService(null);
-        }
-      } catch (err) {
-        console.error("Error fetching public service sheet:", err);
-        setError("Ocurrió un error al intentar cargar la hoja de servicio desde la base de datos. Por favor, intente más tarde.");
+        const serviceData = data as ServiceRecord & { vehicle?: Vehicle };
+        setService(serviceData);
+        setVehicle(serviceData.vehicle || null);
+        setWorkshopInfo(serviceData.workshopInfo || null);
+        setError(null);
+      } else {
+        setError(`La hoja de servicio con ID "${publicId}" no se encontró. Pudo haber sido eliminada o el enlace es incorrecto.`);
         setService(null);
       }
-    };
+    }, (err) => {
+      console.error("Error with real-time listener:", err);
+      setError("Ocurrió un error al intentar cargar la hoja de servicio desde la base de datos. Por favor, intente más tarde.");
+      setService(null);
+    });
 
-    fetchPublicService();
+    // Cleanup listener on component unmount
+    return () => unsubscribe();
   }, [publicId]);
 
   const handleOpenSignatureDialog = (type: 'reception' | 'delivery') => {
@@ -93,10 +92,6 @@ export default function PublicServiceSheetPage() {
     if (!viewingImageUrl) return;
     try {
       window.open(viewingImageUrl, '_blank')?.focus();
-      toast({
-        title: "Abriendo Imagen",
-        description: "La imagen se abrió en una nueva pestaña. Puedes guardarla desde ahí.",
-      });
     } catch (err) {
       console.error("Error opening image:", err);
       toast({
@@ -121,7 +116,7 @@ export default function PublicServiceSheetPage() {
 
       toast({ title: "Firma Guardada", description: "Su firma ha sido guardada exitosamente." });
       setSignatureType(null);
-      window.location.reload(); 
+      // No need to reload, onSnapshot will handle the update.
       
     } catch (error) {
       toast({ title: "Error al Guardar", description: `No se pudo guardar la firma. ${error instanceof Error ? error.message : ''}`, variant: "destructive" });
@@ -227,7 +222,7 @@ export default function PublicServiceSheetPage() {
             </DialogHeader>
             <div className="relative aspect-video w-full">
                 {viewingImageUrl && (
-                    <Image src={viewingImageUrl} alt="Vista ampliada de evidencia" layout="fill" objectFit="contain" />
+                    <img src={viewingImageUrl} alt="Vista ampliada de evidencia" style={{ objectFit: 'contain', width: '100%', height: '100%' }} crossOrigin="anonymous" />
                 )}
             </div>
             <DialogFooter className="mt-2 print:hidden">
