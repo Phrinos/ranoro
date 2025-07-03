@@ -36,15 +36,6 @@ export function ServiceItemCard({ serviceIndex, control, removeServiceItem, isRe
     
     const handleAddSupply = (supply: ServiceSupply) => {
         append(supply);
-        
-        // If a manual item with a selling price is added, add its price to the service item's total price
-        // Only do this in quote mode to avoid overriding service prices
-        if (mode === 'quote' && supply.sellingPrice !== undefined) {
-            const currentItemPrice = getValues(`serviceItems.${serviceIndex}.price`) || 0;
-            const priceToAdd = supply.sellingPrice * supply.quantity;
-            setValue(`serviceItems.${serviceIndex}.price`, currentItemPrice + priceToAdd, { shouldDirty: true });
-        }
-        
         setIsAddSupplyDialogOpen(false);
     };
 
