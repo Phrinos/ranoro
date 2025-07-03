@@ -104,7 +104,7 @@ export default function HistorialCotizacionesPage() {
 
 
   const filteredAndSortedQuotes = useMemo(() => {
-    let filtered = [...allQuotes]; // Show all quotes, not just ones without a serviceId
+    let filtered = [...allQuotes].filter(q => !q.serviceId); // Only show quotes that have NOT been converted
 
     if (dateRange?.from) {
       filtered = filtered.filter(quote => {
@@ -211,10 +211,7 @@ export default function HistorialCotizacionesPage() {
       
       setAllQuotes([...placeholderQuotes]);
       await persistToFirestore(['serviceRecords', 'quotes']);
-      toast({
-        title: "Servicio Generado desde Cotización",
-        description: `Se creó el nuevo servicio ${serviceToSave.id}.`
-      });
+      // Toast message is now handled by the form
       
     } else { // It's just a regular quote update
       const editedQuote = data as QuoteRecord;
@@ -223,12 +220,12 @@ export default function HistorialCotizacionesPage() {
           placeholderQuotes[quoteIndex] = editedQuote;
           setAllQuotes([...placeholderQuotes]);
           await persistToFirestore(['quotes']);
-          toast({ title: "Cotización Actualizada", description: `La cotización ${editedQuote.id} se actualizó correctamente.` });
+          // Toast message is now handled by the form
       }
     }
     setIsEditQuoteDialogOpen(false);
     setSelectedQuoteForEdit(null);
-  }, [toast, selectedQuoteForEdit]);
+  }, [selectedQuoteForEdit]);
   
   const handleSaveServiceFromQuote = useCallback(async (data: ServiceRecord | QuoteRecord) => {
       const newService = data as ServiceRecord;

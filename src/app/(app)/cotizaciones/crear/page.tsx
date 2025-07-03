@@ -61,20 +61,20 @@ export default function NuevaCotizacionPage() {
   -------------------------------------------------- */
   const handleQuoteCreated = async (data: ServiceRecord | QuoteRecord) => {
     if (!("estimatedTotalCost" in data)) {
-      toast({
-        title: "Error de tipo",
-        description: "Se esperaba un registro de cotización.",
-        variant: "destructive",
-      });
+      // This case should ideally not be hit with the new logic, but serves as a safeguard.
       return;
     }
     
     const newQuote = data as QuoteRecord;
 
-    // The form now handles saving the public document.
-    // This function just handles local data and UI transitions.
-    placeholderQuotes.unshift(newQuote);
-    await persistToFirestore(['quotes']);
+    // The form now handles the main toast notifications.
+    // This handler's job is to update local state for the UI and persist.
+    // Note: The form's onSubmit already includes persistence logic via its own call.
+    // To avoid duplication, we ensure this only adds to the local array for immediate UI update.
+    if (!placeholderQuotes.find(q => q.id === newQuote.id)) {
+      placeholderQuotes.unshift(newQuote);
+      await persistToFirestore(['quotes']);
+    }
 
     setCurrentQuoteForPdf(newQuote);
     setCurrentVehicleForPdf(

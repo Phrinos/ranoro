@@ -195,7 +195,6 @@ export default function HistorialServiciosPage() {
 
   const handleUpdateService = useCallback(async (data: ServiceRecord | QuoteRecord) => {
     if (!('status' in data)) {
-        toast({ title: "Error de tipo", description: "Se esperaba un registro de servicio para actualizar.", variant: "destructive" });
         return;
     }
     const updatedService = data as ServiceRecord;
@@ -209,10 +208,7 @@ export default function HistorialServiciosPage() {
     }
     await persistToFirestore(['serviceRecords']);
     
-    toast({
-      title: "Servicio Actualizado",
-      description: `El servicio ${updatedService.id} ha sido actualizado.`,
-    });
+    // Toast is now handled by the form
 
     if (updatedService.status === 'Completado') {
       setCurrentServiceForTicket(updatedService);

@@ -56,25 +56,20 @@ export default function NuevoServicioPage() {
 
   const handleSaveNewService = async (data: ServiceRecord | QuoteRecord) => {
     if (!('status' in data)) {
-      toast({
-        title: "Error de Tipo",
-        description: "Se esperaba un registro de servicio.",
-        variant: "destructive",
-      });
+      // This should not happen with the current logic
       return;
     }
     const newService = data as ServiceRecord;
     
-    placeholderServiceRecords.push(newService); 
-    await persistToFirestore(['serviceRecords']);
+    // The form now handles the main toast notifications.
+    // This handler only needs to persist the data if it's new.
+    if (!placeholderServiceRecords.find(s => s.id === newService.id)) {
+        placeholderServiceRecords.push(newService); 
+        await persistToFirestore(['serviceRecords']);
+    }
     
     const vehicle = vehicles.find(v => v.id === newService.vehicleId);
     const technician = technicians.find(t => t.id === newService.technicianId);
-
-    toast({
-      title: "Servicio Creado",
-      description: `El nuevo servicio para ${vehicle?.licensePlate} ha sido registrado.`,
-    });
     
     setCurrentServiceForTicket(newService);
     setCurrentVehicle(vehicle || null);
