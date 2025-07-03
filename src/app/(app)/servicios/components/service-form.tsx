@@ -72,6 +72,7 @@ const supplySchema = z.object({
   supplyId: z.string().min(1, "Seleccione un insumo"),
   quantity: z.coerce.number().min(0.001, "La cantidad debe ser mayor a 0"),
   unitPrice: z.coerce.number().optional(),
+  sellingPrice: z.coerce.number().optional(),
   supplyName: z.string().optional(),
   isService: z.boolean().optional(),
   unitType: z.enum(['units', 'ml', 'liters']).optional(),
@@ -438,11 +439,11 @@ export function ServiceForm({
         if ('serviceItems' in data && Array.isArray(data.serviceItems)) {
             serviceItemsData = data.serviceItems.map(item => ({
                 ...item,
-                suppliesUsed: item.suppliesUsed.map(supply => ({
+                price: item.price ?? 0, // Ensure price is a number
+                suppliesUsed: (item.suppliesUsed || []).map(supply => ({
                     ...supply,
-                    // Use the price from the saved supply record if it exists (for manual items),
-                    // otherwise, look up the current price from inventory. Default to 0 if not found.
                     unitPrice: supply.unitPrice ?? currentInventoryItems.find(i => i.id === supply.supplyId)?.unitPrice ?? 0,
+                    sellingPrice: supply.sellingPrice ?? currentInventoryItems.find(i => i.id === supply.supplyId)?.sellingPrice ?? 0,
                 }))
             }));
         }
@@ -680,11 +681,15 @@ export function ServiceForm({
     const compositeDescription = values.serviceItems.map(item => item.name).join(', ') || 'Servicio';
     
     const isConvertingQuoteToService = mode === 'quote' && values.status && values.status !== 'Cotizacion';
+    const isNewRecord = !values.id;
+    const recordType = mode === 'service' || isConvertingQuoteToService ? 'service' : 'quote';
 
-    if (mode === 'service' || isConvertingQuoteToService) {
-      const serviceData: Partial<ServiceRecord> = {
+    let dataToSave: ServiceRecord | QuoteRecord;
+
+    if (recordType === 'service') {
+      const serviceData: ServiceRecord = {
         ...values,
-        id: initialData?.id || `SER_${Date.now().toString(36)}`,
+        id: values.id || `SER_${Date.now().toString(36)}`,
         publicId: values.publicId || `srv_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 9)}`,
         vehicleId: vehicleIdToSave,
         description: compositeDescription,
@@ -692,124 +697,83 @@ export function ServiceForm({
         status: values.status || 'Agendado',
         totalCost: totalCost,
         serviceItems: values.serviceItems,
+        serviceDate: values.serviceDate ? values.serviceDate.toISOString() : new Date().toISOString(),
+        deliveryDateTime: values.deliveryDateTime ? values.deliveryDateTime.toISOString() : undefined,
+        vehicleIdentifier: selectedVehicle?.licensePlate || values.vehicleLicensePlateSearch || 'N/A',
+        technicianName: technicians.find(t => t.id === values.technicianId)?.name || 'N/A',
+        subTotal: finalSubTotal,
+        taxAmount: finalTaxAmount,
+        totalSuppliesCost: totalSuppliesWorkshopCost,
+        serviceProfit: finalProfit,
+        serviceAdvisorId: currentUser.id,
+        serviceAdvisorName: currentUser.name,
+        serviceAdvisorSignatureDataUrl: currentUser.signatureDataUrl,
+        workshopInfo: (workshopInfo && Object.keys(workshopInfo).length > 0) ? workshopInfo as WorkshopInfo : undefined,
       };
-
-      // Handle reception date (serviceDate)
-      if (values.serviceDate) {
-          serviceData.serviceDate = values.serviceDate.toISOString();
-      } else if (values.status === 'Reparando') {
-          // Fallback if entering workshop via form status change
-          serviceData.serviceDate = new Date().toISOString();
-      }
-
-      // Handle delivery date (deliveryDateTime)
-      if (values.deliveryDateTime) {
-          serviceData.deliveryDateTime = values.deliveryDateTime.toISOString();
-      } else if (values.status === 'Completado') {
-          // Fallback if status is completed but date is missing.
-          serviceData.deliveryDateTime = new Date().toISOString();
-      }
       
       if (values.status === 'Completado') {
-        serviceData.paymentMethod = values.paymentMethod;
-        serviceData.cardFolio = values.cardFolio;
-        serviceData.transferFolio = values.transferFolio;
-
         try {
           const deliveryDate = serviceData.deliveryDateTime ? new Date(serviceData.deliveryDateTime) : new Date();
-          
           if (isValid(deliveryDate)) {
             const nextServiceDate = addDays(deliveryDate, 365);
             let nextServiceMileage: number | undefined;
-      
             const mileageValue = values.mileage;
             if (typeof mileageValue === 'number' && isFinite(mileageValue) && mileageValue > 0) {
-              const oilSupplies = values.serviceItems
-                .flatMap(item => item.suppliesUsed)
-                .map(supply => currentInventoryItems.find(i => i.id === supply.supplyId))
-                .filter(Boolean);
-              
-              const rendimientos = oilSupplies
-                .filter(item => 
-                  item && item.category?.toLowerCase().includes('aceite') && 
-                  typeof item.rendimiento === 'number' && 
-                  item.rendimiento > 0
-                )
-                .map(item => item!.rendimiento as number);
-      
+              const oilSupplies = values.serviceItems.flatMap(item => item.suppliesUsed).map(supply => currentInventoryItems.find(i => i.id === supply.supplyId)).filter(Boolean);
+              const rendimientos = oilSupplies.filter(item => item && item.category?.toLowerCase().includes('aceite') && typeof item.rendimiento === 'number' && item.rendimiento > 0).map(item => item!.rendimiento as number);
               if (rendimientos.length > 0) {
                 const lowestRendimiento = Math.min(...rendimientos);
-                if (isFinite(lowestRendimiento)) {
-                  nextServiceMileage = mileageValue + lowestRendimiento;
-                }
+                if (isFinite(lowestRendimiento)) nextServiceMileage = mileageValue + lowestRendimiento;
               }
             }
-            
-            const nextInfo: { date: string; mileage?: number } = {
-                date: nextServiceDate.toISOString(),
-            };
-            if (typeof nextServiceMileage === 'number' && isFinite(nextServiceMileage)) {
-                nextInfo.mileage = nextServiceMileage;
-            }
-            serviceData.nextServiceInfo = nextInfo;
-          } else {
-             console.warn("Could not calculate nextServiceInfo due to invalid delivery date.");
+            serviceData.nextServiceInfo = { date: nextServiceDate.toISOString(), mileage: nextServiceMileage };
           }
-        } catch (e) {
-          console.error("Error during nextServiceInfo calculation:", e);
-        }
+        } catch (e) { console.error("Error calculating nextServiceInfo:", e); }
       }
-      
-      serviceData.vehicleIdentifier = selectedVehicle?.licensePlate || values.vehicleLicensePlateSearch || 'N/A';
-      serviceData.technicianName = technicians.find(t => t.id === values.technicianId)?.name || 'N/A';
-      serviceData.subTotal = finalSubTotal;
-      serviceData.taxAmount = finalTaxAmount;
-      serviceData.totalSuppliesCost = totalSuppliesWorkshopCost;
-      serviceData.serviceProfit = finalProfit;
-      serviceData.serviceAdvisorId = currentUser.id;
-      serviceData.serviceAdvisorName = currentUser.name;
-      
-      if (currentUser.signatureDataUrl) serviceData.serviceAdvisorSignatureDataUrl = currentUser.signatureDataUrl;
-      if (workshopInfo && Object.keys(workshopInfo).length > 0) serviceData.workshopInfo = workshopInfo as WorkshopInfo;
-
-      const publicSaveResult = await savePublicDocument('service', serviceData as ServiceRecord, selectedVehicle, workshopInfo);
-      if (!publicSaveResult.success) {
-        toast({ title: 'Error al Guardar Público', description: publicSaveResult.error || 'No se pudo guardar la hoja de servicio pública.', variant: 'destructive' });
-      }
-
-      await onSubmit(serviceData as ServiceRecord);
-
-    } else { // mode === 'quote'
-      const quoteData: Partial<QuoteRecord> = {
-        id: (initialDataQuote as QuoteRecord)?.id || `COT_${Date.now().toString(36)}`,
-        publicId: (initialDataQuote as QuoteRecord)?.publicId || `cot_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 9)}`,
+      dataToSave = serviceData;
+    } else { // Quote mode
+      const quoteData: QuoteRecord = {
+        ...values,
+        id: values.id || `COT_${Date.now().toString(36)}`,
+        publicId: values.publicId || `cot_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 9)}`,
         quoteDate: new Date().toISOString(),
         vehicleId: vehicleIdToSave,
         description: compositeDescription,
         serviceItems: values.serviceItems,
-        status: 'Cotizacion', // Always Cotizacion if not converting
+        status: 'Cotizacion',
         serviceType: values.serviceType || 'Servicio General',
+        vehicleIdentifier: selectedVehicle?.licensePlate || values.vehicleLicensePlateSearch || 'N/A',
+        preparedByTechnicianId: currentUser.id,
+        preparedByTechnicianName: currentUser.name,
+        estimatedTotalCost: totalCost,
+        estimatedSubTotal: finalSubTotal,
+        estimatedTaxAmount: finalTaxAmount,
+        estimatedTotalSuppliesCost: totalSuppliesWorkshopCost,
+        estimatedProfit: finalProfit,
+        workshopInfo: (workshopInfo && Object.keys(workshopInfo).length > 0) ? workshopInfo as WorkshopInfo : undefined,
       };
-      
-      quoteData.vehicleIdentifier = selectedVehicle?.licensePlate || values.vehicleLicensePlateSearch || 'N/A';
-      quoteData.preparedByTechnicianId = currentUser.id;
-      quoteData.preparedByTechnicianName = currentUser.name;
-      quoteData.estimatedTotalCost = totalCost;
-      quoteData.estimatedSubTotal = finalSubTotal;
-      quoteData.estimatedTaxAmount = finalTaxAmount;
-      quoteData.estimatedTotalSuppliesCost = totalSuppliesWorkshopCost;
-      quoteData.estimatedProfit = finalProfit;
-      
-      if (values.notes) quoteData.notes = values.notes;
-      if (values.mileage) quoteData.mileage = values.mileage;
-      if (workshopInfo && Object.keys(workshopInfo).length > 0) quoteData.workshopInfo = workshopInfo as WorkshopInfo;
-      
-      const publicQuoteSaveResult = await savePublicDocument('quote', quoteData as QuoteRecord, selectedVehicle, workshopInfo);
-      if (!publicQuoteSaveResult.success) {
-        toast({ title: 'Error al Guardar Público', description: publicQuoteSaveResult.error || 'No se pudo guardar la cotización pública.', variant: 'destructive' });
-      }
-      
-      await onSubmit(quoteData as QuoteRecord);
+      dataToSave = quoteData;
+    }
+    
+    // Call public save before local persistence
+    const publicSaveResult = await savePublicDocument(recordType, dataToSave, selectedVehicle, workshopInfo);
+
+    await onSubmit(dataToSave);
+    onClose();
+
+    // Show a single, consolidated toast message
+    if (publicSaveResult.success) {
+      toast({
+        title: `${isNewRecord ? 'Creado' : 'Actualizado'} con Éxito`,
+        description: `El documento ${dataToSave.id} se ha guardado correctamente.`,
+      });
+    } else {
+      toast({
+        title: "Guardado con Advertencia",
+        description: `Se guardó localmente, pero no se pudo crear/actualizar el enlace público. ${publicSaveResult.error || ''}`,
+        variant: "default",
+        duration: 8000,
+      });
     }
   };
   
