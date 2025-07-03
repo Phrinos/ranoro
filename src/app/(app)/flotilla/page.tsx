@@ -5,19 +5,25 @@ import { useState, useMemo, useEffect, useCallback } from 'react';
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { PlusCircle, Search, ArrowDownAZ, ShieldCheck } from "lucide-react";
+import { PlusCircle, Search, ListFilter, ShieldCheck } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useRouter } from 'next/navigation';
 import { AddVehicleToFleetDialog } from "./components/add-vehicle-to-fleet-dialog";
 import { FineCheckDialog } from "./components/fine-check-dialog";
 import { placeholderVehicles, persistToFirestore, hydrateReady, AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
-import type { User } from '@/types';
+import type { User, Vehicle } from '@/types';
 import { useToast } from "@/hooks/use-toast";
 import { subDays, isBefore, formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
 
 const FINE_CHECK_INTERVAL_DAYS = 15;
 const FINE_CHECK_STORAGE_KEY = 'fleetFineLastCheckDate';
+
+type FlotillaSortOption = 
+  | "plate_asc" | "plate_desc"
+  | "owner_asc" | "owner_desc"
+  | "rent_asc" | "rent_desc";
 
 export default function FlotillaPage() {
   const { toast } = useToast();
@@ -27,7 +33,7 @@ export default function FlotillaPage() {
   const [isAddVehicleDialogOpen, setIsAddVehicleDialogOpen] = useState(false);
   const [isFineCheckDialogOpen, setIsFineCheckDialogOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
-  const [sortAZ, setSortAZ] = useState(false);
+  const [sortOption, setSortOption] = useState<FlotillaSortOption>("plate_asc");
 
   const [lastFineCheckDate, setLastFineCheckDate] = useState<Date | null>(null);
 
@@ -51,7 +57,7 @@ export default function FlotillaPage() {
   const nonFleetVehicles = useMemo(() => allVehicles.filter(v => !v.isFleetVehicle), [allVehicles]);
 
   const filteredFleetVehicles = useMemo(() => {
-    let vehicles = fleetVehicles;
+    let vehicles = [...fleetVehicles];
     if (searchTerm) {
       vehicles = vehicles.filter(vehicle =>
         vehicle.licensePlate.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -60,11 +66,27 @@ export default function FlotillaPage() {
         vehicle.ownerName.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
-    if (sortAZ) {
-      vehicles = [...vehicles].sort((a, b) => a.licensePlate.localeCompare(b.licensePlate));
-    }
+    
+    vehicles.sort((a, b) => {
+      switch(sortOption) {
+        case 'plate_desc':
+          return b.licensePlate.localeCompare(a.licensePlate);
+        case 'owner_asc':
+          return a.ownerName.localeCompare(b.ownerName);
+        case 'owner_desc':
+          return b.ownerName.localeCompare(a.ownerName);
+        case 'rent_asc':
+          return (a.dailyRentalCost || 0) - (b.dailyRentalCost || 0);
+        case 'rent_desc':
+          return (b.dailyRentalCost || 0) - (a.dailyRentalCost || 0);
+        case 'plate_asc':
+        default:
+          return a.licensePlate.localeCompare(b.licensePlate);
+      }
+    });
+
     return vehicles;
-  }, [fleetVehicles, searchTerm, sortAZ]);
+  }, [fleetVehicles, searchTerm, sortOption]);
 
   const handleAddVehicleToFleet = async (vehicleId: string, costs: { 
       dailyRentalCost: number;
@@ -161,10 +183,25 @@ export default function FlotillaPage() {
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
-        <Button onClick={() => setSortAZ(s => !s)} variant="outline" className="sm:w-auto">
-          <ArrowDownAZ className="mr-2 h-4 w-4" />
-          Ordenar A-Z {sortAZ && '(Activado)'}
-        </Button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" className="sm:w-auto bg-white">
+              <ListFilter className="mr-2 h-4 w-4" />
+              Ordenar
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuLabel>Ordenar por</DropdownMenuLabel>
+            <DropdownMenuRadioGroup value={sortOption} onValueChange={(value) => setSortOption(value as FlotillaSortOption)}>
+              <DropdownMenuRadioItem value="plate_asc">Placa (A-Z)</DropdownMenuRadioItem>
+              <DropdownMenuRadioItem value="plate_desc">Placa (Z-A)</DropdownMenuRadioItem>
+              <DropdownMenuRadioItem value="owner_asc">Propietario (A-Z)</DropdownMenuRadioItem>
+              <DropdownMenuRadioItem value="owner_desc">Propietario (Z-A)</DropdownMenuRadioItem>
+              <DropdownMenuRadioItem value="rent_desc">Renta (Mayor a Menor)</DropdownMenuRadioItem>
+              <DropdownMenuRadioItem value="rent_asc">Renta (Menor a Mayor)</DropdownMenuRadioItem>
+            </DropdownMenuRadioGroup>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       <div className="rounded-lg border shadow-sm overflow-x-auto">
@@ -173,6 +210,7 @@ export default function FlotillaPage() {
             <TableRow>
               <TableHead>Placa</TableHead>
               <TableHead>Vehículo</TableHead>
+              <TableHead>Color</TableHead>
               <TableHead>Propietario</TableHead>
               <TableHead className="text-right">Renta Diaria</TableHead>
             </TableRow>
@@ -181,12 +219,13 @@ export default function FlotillaPage() {
             {filteredFleetVehicles.length > 0 ? filteredFleetVehicles.map(vehicle => (
               <TableRow key={vehicle.id} className="cursor-pointer hover:bg-muted/50" onClick={() => router.push(`/flotilla/${vehicle.id}`)}>
                 <TableCell className="font-medium">{vehicle.licensePlate}</TableCell>
-                <TableCell>{vehicle.make} {vehicle.model} ({vehicle.year})</TableCell>
+                <TableCell>{vehicle.make} {vehicle.model} {vehicle.year}</TableCell>
+                <TableCell>{vehicle.color || 'N/A'}</TableCell>
                 <TableCell>{vehicle.ownerName}</TableCell>
                 <TableCell className="text-right font-semibold">${(vehicle.dailyRentalCost || 0).toFixed(2)}</TableCell>
               </TableRow>
             )) : (
-              <TableRow><TableCell colSpan={4} className="h-24 text-center">No hay vehículos en la flotilla.</TableCell></TableRow>
+              <TableRow><TableCell colSpan={5} className="h-24 text-center">No hay vehículos en la flotilla.</TableCell></TableRow>
             )}
           </TableBody>
         </Table>
