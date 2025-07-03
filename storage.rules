@@ -1,10 +1,14 @@
+
 rules_version = '2';
 
 service firebase.storage {
   match /b/{bucket}/o {
-    // Allow read and write access to all paths for any authenticated user.
+    // WARNING: TEMPORARY DEBUGGING RULE. This is not secure.
+    // This rule allows any client (authenticated or not) to read and write.
+    // This is to determine if the "unauthorized" error is due to authentication
+    // issues or a CORS configuration problem on the Google Cloud bucket itself.
     match /{allPaths=**} {
-      allow read, write: if request.auth != null;
+      allow read, write: if true;
     }
   }
 }
