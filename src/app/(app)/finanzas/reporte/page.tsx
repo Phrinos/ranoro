@@ -83,9 +83,7 @@ export default function FinancialReportPage() {
     }));
 
     const serviceOperations: FinancialOperation[] = allServices.map(service => {
-      const revenueExclTax = (service.totalCost || 0) / (1 + IVA_RATE);
-      const costOfSupplies = service.totalSuppliesCost || 0;
-      const profit = revenueExclTax - costOfSupplies;
+      const profit = service.serviceProfit ?? ((service.totalCost || 0) - (service.totalSuppliesCost || 0));
 
       return {
         id: service.id,
