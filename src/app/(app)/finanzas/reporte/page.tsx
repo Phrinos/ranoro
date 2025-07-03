@@ -1,6 +1,7 @@
 
 "use client";
 
+import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -290,53 +291,10 @@ export default function FinancialReportPage() {
 
   return (
     <>
-      <div className="mb-6 grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Ops. del Día</CardTitle>
-            <Activity className="h-5 w-5 text-blue-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold font-headline">{summaryData?.operationsTodayCount ?? 0}</div>
-             <p className="text-xs text-muted-foreground">
-                {summaryData?.salesTodayCount ?? 0} Ventas, {summaryData?.servicesTodayCount ?? 0} Servicios
-             </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Resultados del Día</CardTitle>
-            <DollarSign className="h-5 w-5 text-green-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold font-headline">{formatCurrency(summaryData?.totalGeneratedToday ?? 0)}</div>
-             <p className="text-xs text-muted-foreground">
-                Ganancia: {formatCurrency(summaryData?.totalProfitToday ?? 0)}
-             </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">{summaryData?.currentMonthFormatted ?? "..."}</CardTitle>
-            <DollarSign className="h-5 w-5 text-purple-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold font-headline">{formatCurrency(summaryData?.totalGeneratedCurrentMonth ?? 0)}</div>
-            <p className="text-xs text-muted-foreground">Ganancia: {formatCurrency(summaryData?.profitCurrentMonth ?? 0)}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">{summaryData?.lastMonthFormatted ?? "..."}</CardTitle>
-            <DollarSign className="h-5 w-5 text-gray-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold font-headline">{formatCurrency(summaryData?.totalGeneratedLastMonth ?? 0)}</div>
-             <p className="text-xs text-muted-foreground">Ganancia: {formatCurrency(summaryData?.profitLastMonth ?? 0)}</p>
-          </CardContent>
-        </Card>
-      </div>
-      
+      <PageHeader
+        title="Reportes"
+        description="Analiza el rendimiento detallado de tus operaciones y la salida de inventario en rangos de fechas específicos."
+      />
        <div className="flex items-center gap-2 flex-wrap mb-4">
             <Button variant="secondary" onClick={setDateToToday}>Hoy</Button>
             <Button variant="secondary" onClick={setDateToThisWeek}>Esta Semana</Button>
@@ -385,10 +343,56 @@ export default function FinancialReportPage() {
             <TabsTrigger value="inventario">Reporte de Inventario</TabsTrigger>
         </TabsList>
         <TabsContent value="operaciones" className="mt-4">
+            <div className="mb-6 grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+                <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium text-muted-foreground">Ops. del Día</CardTitle>
+                    <Activity className="h-5 w-5 text-blue-500" />
+                </CardHeader>
+                <CardContent>
+                    <div className="text-2xl font-bold font-headline">{summaryData?.operationsTodayCount ?? 0}</div>
+                    <p className="text-xs text-muted-foreground">
+                        {summaryData?.salesTodayCount ?? 0} Ventas, {summaryData?.servicesTodayCount ?? 0} Servicios
+                    </p>
+                </CardContent>
+                </Card>
+                <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium text-muted-foreground">Resultados del Día</CardTitle>
+                    <DollarSign className="h-5 w-5 text-green-500" />
+                </CardHeader>
+                <CardContent>
+                    <div className="text-2xl font-bold font-headline">{formatCurrency(summaryData?.totalGeneratedToday ?? 0)}</div>
+                    <p className="text-xs text-muted-foreground">
+                        Ganancia: {formatCurrency(summaryData?.totalProfitToday ?? 0)}
+                    </p>
+                </CardContent>
+                </Card>
+                <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium text-muted-foreground">{summaryData?.currentMonthFormatted ?? "..."}</CardTitle>
+                    <DollarSign className="h-5 w-5 text-purple-500" />
+                </CardHeader>
+                <CardContent>
+                    <div className="text-2xl font-bold font-headline">{formatCurrency(summaryData?.totalGeneratedCurrentMonth ?? 0)}</div>
+                    <p className="text-xs text-muted-foreground">Ganancia: {formatCurrency(summaryData?.profitCurrentMonth ?? 0)}</p>
+                </CardContent>
+                </Card>
+                <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium text-muted-foreground">{summaryData?.lastMonthFormatted ?? "..."}</CardTitle>
+                    <DollarSign className="h-5 w-5 text-gray-500" />
+                </CardHeader>
+                <CardContent>
+                    <div className="text-2xl font-bold font-headline">{formatCurrency(summaryData?.totalGeneratedLastMonth ?? 0)}</div>
+                    <p className="text-xs text-muted-foreground">Ganancia: {formatCurrency(summaryData?.profitLastMonth ?? 0)}</p>
+                </CardContent>
+                </Card>
+            </div>
             <Card>
                 <CardHeader>
                     <div className="flex flex-col sm:flex-row items-center justify-between gap-2">
-                        <CardTitle>Reporte de Operaciones</CardTitle>
+                        <CardTitle>Detalle de Operaciones</CardTitle>
                     </div>
                     <div className="pt-4 space-y-4">
                         <div className="flex flex-col sm:flex-row items-center gap-4">
@@ -489,7 +493,7 @@ export default function FinancialReportPage() {
             <Card>
                 <CardHeader>
                     <div className="flex flex-col sm:flex-row items-center justify-between gap-2">
-                        <CardTitle>Reporte de Salidas de Inventario</CardTitle>
+                        <CardTitle>Detalle de Salidas de Inventario</CardTitle>
                     </div>
                     <div className="pt-4 flex flex-col sm:flex-row items-center gap-4">
                         <div className="relative flex-1 w-full">
