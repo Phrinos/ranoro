@@ -41,6 +41,7 @@ export default function DriverDetailPage() {
   const router = useRouter();
   const contractContentRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const isMounted = useRef(true);
 
   const [driver, setDriver] = useState<Driver | null | undefined>(undefined);
   const [driverPayments, setDriverPayments] = useState<RentalPayment[]>([]);
@@ -49,6 +50,11 @@ export default function DriverDetailPage() {
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
   const [uploadingDocType, setUploadingDocType] = useState<DocType | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+
+  useEffect(() => {
+    isMounted.current = true;
+    return () => { isMounted.current = false; };
+  }, []);
 
   useEffect(() => {
     const foundDriver = placeholderDrivers.find(d => d.id === driverId);
@@ -119,10 +125,18 @@ export default function DriverDetailPage() {
 
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (!file || !uploadingDocType || !driver) {
-      return;
+    if (event.target) {
+      event.target.value = ""; // Reset input immediately
     }
     
+    if (!file || !uploadingDocType) return;
+    
+    const currentDriverId = driver?.id;
+    if (!currentDriverId) {
+      toast({ title: 'Error', description: 'No se ha seleccionado un conductor válido.', variant: 'destructive' });
+      return;
+    }
+
     if (!storage) {
       toast({ title: 'Error', description: 'El almacenamiento de archivos no está configurado.', variant: 'destructive' });
       return;
@@ -131,21 +145,20 @@ export default function DriverDetailPage() {
     setIsUploading(true);
     
     try {
-      toast({ title: 'Procesando imagen...', description: 'Optimizando imagen para subirla...' });
+      toast({ title: 'Procesando imagen...', description: `Optimizando ${file.name}...` });
       const optimizedDataUrl = await optimizeImage(file, 800);
 
-      toast({ title: 'Subiendo...', description: 'Guardando el documento en la nube...' });
-      const storageRef = ref(storage, `driver-documents/${driver.id}/${uploadingDocType}-${Date.now()}.jpg`);
+      toast({ title: 'Subiendo...', description: `Guardando el documento en la nube...` });
+      const storageRef = ref(storage, `driver-documents/${currentDriverId}/${uploadingDocType}-${Date.now()}.jpg`);
       
       await uploadString(storageRef, optimizedDataUrl, 'data_url');
       const downloadURL = await getDownloadURL(storageRef);
 
-      const driverIndex = placeholderDrivers.findIndex(d => d.id === driver.id);
+      const driverIndex = placeholderDrivers.findIndex(d => d.id === currentDriverId);
       if (driverIndex === -1) {
-        throw new Error("No se pudo encontrar el conductor para actualizar.");
+        throw new Error("No se pudo encontrar el conductor para actualizar después de la subida.");
       }
       
-      // Create a new driver object from the one in the main array
       const updatedDriver = {
         ...placeholderDrivers[driverIndex],
         documents: {
@@ -154,14 +167,12 @@ export default function DriverDetailPage() {
         },
       };
       
-      // Replace the object in the main array
       placeholderDrivers[driverIndex] = updatedDriver;
-      
-      // Persist the changes
       await persistToFirestore(['drivers']);
       
-      // Update the local state to trigger a re-render
-      setDriver(updatedDriver);
+      if (isMounted.current) {
+        setDriver(updatedDriver);
+      }
 
       toast({
         title: '¡Documento Subido!',
@@ -172,13 +183,14 @@ export default function DriverDetailPage() {
       console.error("Error al subir documento:", err);
       toast({
         title: 'Error de Subida',
-        description: `No se pudo guardar el documento. ${err instanceof Error ? err.message : ''}`,
+        description: `No se pudo guardar el documento. ${err instanceof Error ? err.message : 'Error desconocido.'}`,
         variant: 'destructive',
       });
     } finally {
-      setIsUploading(false);
-      setUploadingDocType(null);
-      if(fileInputRef.current) fileInputRef.current.value = '';
+      if (isMounted.current) {
+        setIsUploading(false);
+        setUploadingDocType(null);
+      }
     }
   };
 
