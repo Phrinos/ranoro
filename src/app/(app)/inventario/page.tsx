@@ -371,7 +371,7 @@ export default function InventarioPage() {
             <DropdownMenuTrigger asChild>
                 <Button variant="outline" className="min-w-[150px] flex-1 sm:flex-initial bg-card">
                 <ListFilter className="mr-2 h-4 w-4" />
-                Ordenar
+                Ordenar por
                 </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
@@ -431,4 +431,3 @@ export default function InventarioPage() {
     </>
   );
 }
-
