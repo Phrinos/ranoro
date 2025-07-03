@@ -14,6 +14,7 @@ import type { DriverFormValues } from './components/driver-form';
 import { useRouter } from 'next/navigation';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { formatCurrency } from '@/lib/utils';
 
 type DriverSortOption = 'name_asc' | 'name_desc';
 
@@ -97,12 +98,12 @@ export default function ConductoresPage() {
         }
       />
       <div className="mb-6 flex flex-col sm:flex-row items-center gap-4">
-        <div className="relative flex-grow">
+        <div className="relative w-full sm:flex-grow">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
             type="search"
             placeholder="Buscar por nombre o teléfono..."
-            className="w-full rounded-lg bg-card pl-8 sm:w-full lg:w-2/3"
+            className="w-full rounded-lg bg-card pl-8 sm:w-full"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
@@ -131,6 +132,7 @@ export default function ConductoresPage() {
               <TableHead className="text-white">Nombre</TableHead>
               <TableHead className="text-white">Teléfono</TableHead>
               <TableHead className="text-white">Vehículo Asignado</TableHead>
+              <TableHead className="text-white text-right">Depósito</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -139,9 +141,10 @@ export default function ConductoresPage() {
                 <TableCell className="font-semibold">{driver.name}</TableCell>
                 <TableCell>{driver.phone}</TableCell>
                 <TableCell>{getVehicleInfo(driver.assignedVehicleId)}</TableCell>
+                <TableCell className="text-right">{driver.depositAmount ? formatCurrency(driver.depositAmount) : 'N/A'}</TableCell>
               </TableRow>
             )) : (
-              <TableRow><TableCell colSpan={3} className="text-center h-24">No se encontraron conductores.</TableCell></TableRow>
+              <TableRow><TableCell colSpan={4} className="text-center h-24">No se encontraron conductores.</TableCell></TableRow>
             )}
           </TableBody>
         </Table>
