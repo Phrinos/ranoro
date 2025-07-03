@@ -266,7 +266,7 @@ export default function MigracionDatosPage() {
                     <div className="space-y-4">
                       <div className="text-center text-green-700 bg-green-100 p-4 rounded-lg"><p>¡Proceso Completado! Se añadieron <span className="font-bold">{migrationResult.vehiclesAdded}</span> vehículos nuevos.</p></div>
                       <div className="rounded-md border max-h-96 overflow-y-auto">
-                        <Table><TableHeader><TableRow><TableHead>Vehículo</TableHead><TableHead>Propietario</TableHead></TableRow></TableHeader>
+                        <Table><TableHeader className="bg-black"><TableRow><TableHead className="text-white">Vehículo</TableHead><TableHead className="text-white">Propietario</TableHead></TableRow></TableHeader>
                           <TableBody>{migrationResult.vehicles.map((v, i) => (<TableRow key={`v-${i}`}><TableCell>{v.make} {v.model} ({v.year})</TableCell><TableCell>{v.ownerName}</TableCell></TableRow>))}</TableBody>
                         </Table>
                       </div>
@@ -283,7 +283,7 @@ export default function MigracionDatosPage() {
                     <div className="space-y-4">
                       <div className="text-center text-green-700 bg-green-100 p-4 rounded-lg"><p>¡Proceso Completado! Se añadieron <span className="font-bold">{migrationResult.productsAdded}</span> productos nuevos.</p></div>
                       <div className="rounded-md border max-h-96 overflow-y-auto">
-                        <Table><TableHeader><TableRow><TableHead>Nombre</TableHead><TableHead>SKU</TableHead><TableHead className="text-right">Cantidad</TableHead><TableHead className="text-right">Costo</TableHead><TableHead className="text-right">Venta</TableHead></TableRow></TableHeader>
+                        <Table><TableHeader className="bg-black"><TableRow><TableHead className="text-white">Nombre</TableHead><TableHead className="text-white">SKU</TableHead><TableHead className="text-right text-white">Cantidad</TableHead><TableHead className="text-right text-white">Costo</TableHead><TableHead className="text-right text-white">Venta</TableHead></TableRow></TableHeader>
                           <TableBody>{migrationResult.products.map((p, i) => (<TableRow key={`p-${i}`}><TableCell>{p.name}</TableCell><TableCell>{p.sku}</TableCell><TableCell className="text-right">{p.quantity}</TableCell><TableCell className="text-right">{formatCurrency(p.unitPrice)}</TableCell><TableCell className="text-right">{formatCurrency(p.sellingPrice)}</TableCell></TableRow>))}</TableBody>
                         </Table>
                       </div>
@@ -308,12 +308,12 @@ export default function MigracionDatosPage() {
                                   </TabsList>
                                   <TabsContent value="vehicles">
                                       <div className="rounded-md border max-h-96 overflow-y-auto">
-                                          <Table><TableHeader><TableRow><TableHead>Placa</TableHead><TableHead>Vehículo</TableHead><TableHead>Propietario</TableHead></TableRow></TableHeader><TableBody>{migrationResult.vehicles.map((v, i) => (<TableRow key={`v-${i}`}><TableCell>{v.licensePlate}</TableCell><TableCell>{v.make} {v.model} ({v.year})</TableCell><TableCell>{v.ownerName}</TableCell></TableRow>))}</TableBody></Table>
+                                          <Table><TableHeader className="bg-black"><TableRow><TableHead className="text-white">Placa</TableHead><TableHead className="text-white">Vehículo</TableHead><TableHead className="text-white">Propietario</TableHead></TableRow></TableHeader><TableBody>{migrationResult.vehicles.map((v, i) => (<TableRow key={`v-${i}`}><TableCell>{v.licensePlate}</TableCell><TableCell>{v.make} {v.model} ({v.year})</TableCell><TableCell>{v.ownerName}</TableCell></TableRow>))}</TableBody></Table>
                                       </div>
                                   </TabsContent>
                                   <TabsContent value="services">
                                       <div className="rounded-md border max-h-96 overflow-y-auto">
-                                          <Table><TableHeader><TableRow><TableHead>Fecha</TableHead><TableHead>Placa</TableHead><TableHead>Descripción</TableHead><TableHead className="text-right">Costo</TableHead></TableRow></TableHeader><TableBody>{migrationResult.services.map((s, i) => (<TableRow key={`s-${i}`}><TableCell>{format(parseISO(s.serviceDate), "dd MMM yyyy", { locale: es })}</TableCell><TableCell>{s.vehicleLicensePlate}</TableCell><TableCell>{s.description}</TableCell><TableCell className="text-right">{formatCurrency(s.totalCost)}</TableCell></TableRow>))}</TableBody></Table>
+                                          <Table><TableHeader className="bg-black"><TableRow><TableHead className="text-white">Fecha</TableHead><TableHead className="text-white">Placa</TableHead><TableHead className="text-white">Descripción</TableHead><TableHead className="text-right text-white">Costo</TableHead></TableRow></TableHeader><TableBody>{migrationResult.services.map((s, i) => (<TableRow key={`s-${i}`}><TableCell>{format(parseISO(s.serviceDate), "dd MMM yyyy", { locale: es })}</TableCell><TableCell>{s.vehicleLicensePlate}</TableCell><TableCell>{s.description}</TableCell><TableCell className="text-right">{formatCurrency(s.totalCost)}</TableCell></TableRow>))}</TableBody></Table>
                                       </div>
                                   </TabsContent>
                               </Tabs>

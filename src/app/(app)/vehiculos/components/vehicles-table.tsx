@@ -33,15 +33,15 @@ export const VehiclesTable = React.memo(({ vehicles: initialVehicles }: Vehicles
   return (
     <div className="rounded-lg border shadow-sm overflow-x-auto">
       <Table>
-        <TableHeader className="bg-white">
+        <TableHeader className="bg-black">
           <TableRow>
-            <TableHead className="font-bold">Placa</TableHead>
-            <TableHead className="font-bold">Marca</TableHead>
-            <TableHead className="font-bold">Modelo</TableHead>
-            <TableHead className="font-bold">Año</TableHead>
-            <TableHead className="font-bold">Propietario</TableHead>
-            <TableHead className="font-bold">Teléfono</TableHead>
-            <TableHead className="font-bold">Último Servicio</TableHead>
+            <TableHead className="font-bold text-white">Placa</TableHead>
+            <TableHead className="font-bold text-white">Marca</TableHead>
+            <TableHead className="font-bold text-white">Modelo</TableHead>
+            <TableHead className="font-bold text-white">Año</TableHead>
+            <TableHead className="font-bold text-white">Propietario</TableHead>
+            <TableHead className="font-bold text-white">Teléfono</TableHead>
+            <TableHead className="font-bold text-white">Último Servicio</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>

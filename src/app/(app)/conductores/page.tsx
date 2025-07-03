@@ -112,7 +112,7 @@ export default function ConductoresPage() {
             <DropdownMenuTrigger asChild>
                 <Button variant="outline" className="w-full sm:w-auto bg-white">
                 <ListFilter className="mr-2 h-4 w-4" />
-                Organizar Tabla
+                Organizar
                 </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
@@ -127,7 +127,7 @@ export default function ConductoresPage() {
 
       <div className="rounded-lg border shadow-sm overflow-x-auto">
         <Table>
-          <TableHeader className="bg-slate-800">
+          <TableHeader className="bg-black">
             <TableRow>
               <TableHead className="text-white">Nombre</TableHead>
               <TableHead className="text-white">Teléfono</TableHead>

@@ -255,7 +255,7 @@ export default function DriverDetailPage() {
       </div>
 
       <Tabs defaultValue="details" className="w-full">
-        <TabsList className="grid w-full grid-cols-1 sm:grid-cols-3">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="details" className="font-bold data-[state=active]:bg-slate-800 data-[state=active]:text-white">Detalles</TabsTrigger>
           <TabsTrigger value="documents" className="font-bold data-[state=active]:bg-slate-800 data-[state=active]:text-white">Documentos</TabsTrigger>
           <TabsTrigger value="payments" className="font-bold data-[state=active]:bg-slate-800 data-[state=active]:text-white">Pagos</TabsTrigger>
@@ -399,11 +399,11 @@ export default function DriverDetailPage() {
               {driverPayments.length > 0 ? (
                 <div className="rounded-md border overflow-x-auto">
                   <Table>
-                    <TableHeader><TableRow>
-                      <TableHead>Folio de Pago</TableHead>
-                      <TableHead>Fecha</TableHead>
-                      <TableHead className="text-right">Días Cubiertos</TableHead>
-                      <TableHead className="text-right">Monto</TableHead>
+                    <TableHeader className="bg-black"><TableRow>
+                      <TableHead className="text-white">Folio de Pago</TableHead>
+                      <TableHead className="text-white">Fecha</TableHead>
+                      <TableHead className="text-right text-white">Días Cubiertos</TableHead>
+                      <TableHead className="text-right text-white">Monto</TableHead>
                     </TableRow></TableHeader>
                     <TableBody>
                       {driverPayments.map(payment => (

@@ -32,15 +32,15 @@ export const InventoryTable = React.memo(({ items }: InventoryTableProps) => {
   return (
     <div className="rounded-lg border shadow-sm overflow-x-auto">
       <Table>
-        <TableHeader className="bg-white">
+        <TableHeader className="bg-black">
           <TableRow>
-            <TableHead className="font-bold">Categoría</TableHead>
-            <TableHead className="font-bold">Marca</TableHead>
-            <TableHead className="font-bold">Nombre</TableHead>
-            <TableHead className="text-right font-bold">Cantidad</TableHead>
-            <TableHead className="text-right font-bold">Costo</TableHead>
-            <TableHead className="text-right font-bold">Precio</TableHead>
-            <TableHead className="font-bold print:hidden">Stock</TableHead>
+            <TableHead className="font-bold text-white">Categoría</TableHead>
+            <TableHead className="font-bold text-white">Marca</TableHead>
+            <TableHead className="font-bold text-white">Nombre</TableHead>
+            <TableHead className="text-right font-bold text-white">Cantidad</TableHead>
+            <TableHead className="text-right font-bold text-white">Costo</TableHead>
+            <TableHead className="text-right font-bold text-white">Precio</TableHead>
+            <TableHead className="font-bold print:hidden text-white">Stock</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
