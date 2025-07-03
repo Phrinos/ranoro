@@ -15,6 +15,7 @@ import {
   SidebarGroup,
   SidebarGroupLabel,
   SidebarGroupContent,
+  useSidebar, // Import useSidebar hook
 } from "@/components/ui/sidebar";
 import useNavigation, { type NavigationEntry } from "@/hooks/use-navigation";
 import { Button } from "@/components/ui/button";
@@ -52,6 +53,8 @@ export function AppSidebar() {
   const navItems = useNavigation();
   const router = useRouter();
   const { toast } = useToast();
+  const { isMobile, setOpenMobile } = useSidebar(); // Get sidebar context
+
   const [currentUser, setCurrentUser] = React.useState<User | null>(null);
   const [roles, setRoles] = React.useState<AppRole[]>([]);
   const [newSignatureServices, setNewSignatureServices] = React.useState<ServiceRecord[]>([]);
@@ -172,7 +175,7 @@ export function AppSidebar() {
                       tooltipLabel={entry.label}
                       tooltipClassName="group-data-[collapsible=icon]:block hidden"
                     >
-                      <Link href={entry.path}>
+                      <Link href={entry.path} onClick={() => { if(isMobile) setOpenMobile(false) }}>
                         {React.createElement(entry.icon as any)}
                         <span className="group-data-[collapsible=icon]:hidden">
                           {entry.label}
