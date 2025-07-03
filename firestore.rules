@@ -3,23 +3,23 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     
-    // The main data document. Only authenticated users can access it.
-    match /database/main {
-      allow read, write: if request.auth != null;
-    }
-
-    // Public quotes can be read by anyone with the link.
-    // Only authenticated users (app users) can create or update them.
+    // Allow public access to shared documents
     match /publicQuotes/{quoteId} {
       allow read: if true;
+      allow write: if false; // Quotes are read-only once created
+    }
+
+    match /publicServices/{serviceId} {
+      allow read: if true;
+      // Allow unauthenticated users (clients) to update ONLY the signature fields.
+      allow update: if request.resource.data.diff(resource.data).affectedKeys().hasOnly(['customerSignatureReception', 'customerSignatureDelivery']);
+      // Allow authenticated app users to create or fully overwrite the document.
       allow write: if request.auth != null;
     }
 
-    // Public service sheets can be read by anyone with the link.
-    // Only authenticated users can create or update them.
-    match /publicServices/{serviceId} {
-      allow read: if true;
-      allow write: if request.auth != null;
+    // Default authenticated access for all other collections
+    match /{document=**} {
+      allow read, write: if request.auth != null;
     }
   }
 }
