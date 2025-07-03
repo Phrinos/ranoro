@@ -354,21 +354,28 @@ export function ServiceForm({
     ) || null;
   }, [mode, initialData]);
 
-  // Real-time calculation of costs and profit
   const { totalCost, totalSuppliesWorkshopCost, serviceProfit } = useMemo(() => {
-    const calculatedTotalCost = watchedServiceItems?.reduce((sum, item) => sum + (Number(item.price) || 0), 0) || 0;
-    const workshopCost = watchedServiceItems?.flatMap(item => item.suppliesUsed).reduce((sum, supply) => {
-        const item = currentInventoryItems.find(i => i.id === supply.supplyId);
-        const costPerUnit = item?.unitPrice || supply.unitPrice || 0;
-        return sum + (costPerUnit * supply.quantity);
-    }, 0) || 0;
+    let calculatedTotalCost = 0;
+    let workshopCost = 0;
+
+    for (const item of watchedServiceItems) {
+        calculatedTotalCost += Number(item.price) || 0;
+        if (item.suppliesUsed) {
+            for (const supply of item.suppliesUsed) {
+                const inventoryItem = currentInventoryItems.find(i => i.id === supply.supplyId);
+                const costPerUnit = inventoryItem?.unitPrice ?? supply.unitPrice ?? 0;
+                workshopCost += (costPerUnit * supply.quantity);
+            }
+        }
+    }
     const calculatedProfit = calculatedTotalCost - workshopCost;
+
     return {
       totalCost: calculatedTotalCost,
       totalSuppliesWorkshopCost: workshopCost,
       serviceProfit: calculatedProfit,
     };
-  }, [watchedServiceItems, currentInventoryItems]);
+}, [watchedServiceItems, currentInventoryItems]);
 
 
   const refreshCurrentUser = useCallback(() => {
@@ -1086,6 +1093,18 @@ export function ServiceForm({
       });
   }, [localVehicles, toast]);
 
+  const lastServiceDateFormatted = useMemo(() => {
+    if (!lastService || !lastService.serviceDate) return 'No tiene historial de servicios.';
+    
+    // new Date() can handle both ISO strings and Date objects, which is more robust.
+    const date = new Date(lastService.serviceDate);
+
+    if (!isValid(date)) return 'Fecha inválida.';
+    
+    const description = lastService.description || '';
+    return `${lastService.mileage ? `${lastService.mileage.toLocaleString('es-ES')} km - ` : ''}${format(date, "dd MMM yyyy", { locale: es })} - ${description}`;
+  }, [lastService]);
+
   return (
     <>
       <Form {...form}>
@@ -1263,7 +1282,7 @@ export function ServiceForm({
                       <div className="p-3 border rounded-md bg-amber-50 dark:bg-amber-950/50 text-sm space-y-1">
                         <p className="font-semibold">{selectedVehicle.licensePlate} - {selectedVehicle.make} {selectedVehicle.model} {selectedVehicle.year}</p>
                         <p>Propietario: {selectedVehicle.ownerName} - {selectedVehicle.ownerPhone}</p>
-                        <p>Últ. Servicio: {lastService ? `${lastService.mileage ? `${lastService.mileage.toLocaleString('es-ES')} km - ` : ''}${format(parseISO(lastService.serviceDate), "dd MMM yyyy", { locale: es })} - ${lastService.description}` : 'No tiene historial de servicios.'}</p>
+                        <p>Últ. Servicio: {lastServiceDateFormatted}</p>
                       </div>
                     )}
                     {vehicleNotFound && !selectedVehicle && !isReadOnly && (<div className="p-3 border border-orange-500 rounded-md bg-orange-50 dark:bg-orange-900/30 dark:text-orange-300 text-sm flex flex-col sm:flex-row items-center justify-between gap-2"><div className="flex items-center gap-2"><AlertCircle className="h-5 w-5 shrink-0"/><p>Vehículo con placa "{vehicleLicensePlateSearch}" no encontrado.</p></div><Button type="button" size="sm" variant="outline" onClick={() => {setNewVehicleInitialData({ licensePlate: vehicleLicensePlateSearch }); setIsVehicleDialogOpen(true);}} className="w-full sm:w-auto"><CarIcon className="mr-2 h-4 w-4"/> Registrar Nuevo Vehículo</Button></div>)}
