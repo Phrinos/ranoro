@@ -1764,13 +1764,13 @@ export function ServiceForm({
         <DialogContent className="max-w-4xl p-2">
             <DialogHeader className="print:hidden">
               <DialogTitle>Vista Previa de Imagen</DialogTitle>
-              <DialogDescription>
+              <DialogDesc>
                 Visualizando la imagen de evidencia. Puede descargarla si lo necesita.
-              </DialogDescription>
+              </DialogDesc>
             </DialogHeader>
             <div className="relative aspect-video w-full">
                 {viewingImageUrl && (
-                    <Image src={viewingImageUrl} alt="Vista ampliada de evidencia" layout="fill" objectFit="contain" />
+                    <img src={viewingImageUrl} alt="Vista ampliada de evidencia" style={{ objectFit: 'contain', width: '100%', height: '100%' }} crossOrigin="anonymous" />
                 )}
             </div>
             <DialogFooter className="mt-2 print:hidden">
