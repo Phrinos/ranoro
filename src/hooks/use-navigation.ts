@@ -110,7 +110,7 @@ const BASE_NAV_STRUCTURE: ReadonlyArray<Omit<NavigationEntry, 'isActive'>> = [
     permissions: ['pos:create_sale']
   },
   { 
-    label: 'Informe de Ventas', 
+    label: 'Reportes', 
     path: '/finanzas/reporte',
     icon: LineChart,
     groupTag: "Mi PDV",
