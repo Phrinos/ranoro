@@ -20,7 +20,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription} from '@/components/ui/card';
-import { CalendarIcon, PlusCircle, Search, Trash2, AlertCircle, Car as CarIcon, Clock, DollarSign, PackagePlus, BrainCircuit, Loader2, Printer, Plus, Minus, FileText, Signature, MessageSquare, Ban, ShieldQuestion, Wrench, Wallet, CreditCard, Send, WalletCards, ArrowRightLeft, Tag, FileCheck, Check, ShieldCheck, Copy, Camera } from "lucide-react";
+import { CalendarIcon, PlusCircle, Search, Trash2, AlertCircle, Car as CarIcon, Clock, DollarSign, PackagePlus, BrainCircuit, Loader2, Printer, Plus, Minus, FileText, Signature, MessageSquare, Ban, ShieldQuestion, Wrench, Wallet, CreditCard, Send, WalletCards, ArrowRightLeft, Tag, FileCheck, Check, ShieldCheck, Copy, Camera, Eye } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format, parseISO, setHours, setMinutes, isValid, startOfDay, addDays } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -286,6 +286,9 @@ export function ServiceForm({
   const [isTicketPreviewOpen, setIsTicketPreviewOpen] = useState(false);
   const ticketContentRef = useRef<HTMLDivElement>(null);
   
+  const [viewingImageUrl, setViewingImageUrl] = useState<string | null>(null);
+  const [isImageViewerOpen, setIsImageViewerOpen] = useState(false);
+  
 
   const form = useForm<ServiceFormValues>({
     resolver: zodResolver(serviceFormSchemaBase),
@@ -344,6 +347,11 @@ export function ServiceForm({
       photos: [...freshReportState.photos, downloadURL],
     });
   }, [getValues, updatePhotoReport]);
+  
+  const handleViewImage = (url: string) => {
+    setViewingImageUrl(url);
+    setIsImageViewerOpen(true);
+  };
 
   const watchedServiceItems = useWatch({ control, name: "serviceItems" });
 
@@ -1559,9 +1567,12 @@ export function ServiceForm({
                             />
                             <div className="grid grid-cols-3 gap-2 mt-2">
                                 {field.photos.map((photoUrl, photoIndex) => (
-                                    <div key={photoIndex} className="relative aspect-video w-full bg-muted rounded-md">
-                                        <Image src={photoUrl} layout="fill" objectFit="cover" alt={`Foto ${photoIndex + 1} del reporte ${index + 1}`} />
-                                    </div>
+                                    <button type="button" key={photoIndex} className="relative aspect-video w-full bg-muted rounded-md overflow-hidden group" onClick={() => handleViewImage(photoUrl)}>
+                                        <Image src={photoUrl} layout="fill" objectFit="cover" alt={`Foto ${photoIndex + 1} del reporte ${index + 1}`} className="transition-transform duration-300 group-hover:scale-105" />
+                                        <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity group-hover:opacity-100">
+                                            <Eye className="h-8 w-8 text-white" />
+                                        </div>
+                                    </button>
                                 ))}
                             </div>
                             <PhotoUploader
@@ -1594,6 +1605,7 @@ export function ServiceForm({
                     handleEnhanceText={handleEnhanceText}
                     serviceId={stableServiceId}
                     onPhotoUploaded={handleChecklistPhotoUpload}
+                    onViewImage={handleViewImage}
                   />
               </TabsContent>
             )}
@@ -1729,6 +1741,16 @@ export function ServiceForm({
             technician={technicians.find(t => t.id === form.getValues('technicianId'))}
         />
       </PrintTicketDialog>
+      
+      <Dialog open={isImageViewerOpen} onOpenChange={setIsImageViewerOpen}>
+        <DialogContent className="max-w-4xl p-2">
+            <div className="relative aspect-video w-full">
+                {viewingImageUrl && (
+                    <Image src={viewingImageUrl} alt="Vista ampliada de evidencia" layout="fill" objectFit="contain" />
+                )}
+            </div>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

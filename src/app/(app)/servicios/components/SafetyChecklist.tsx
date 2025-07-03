@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from "@/components/ui/button";
 import { FormField, FormItem, FormLabel, FormControl } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
-import { Check, Signature, BrainCircuit, Loader2, Camera, Trash2 } from "lucide-react";
+import { Check, Signature, BrainCircuit, Loader2, Camera, Trash2, Eye } from "lucide-react";
 import type { ServiceFormValues } from "./service-form";
 import type { SafetyInspection, SafetyCheckStatus, SafetyCheckValue } from '@/types';
 import { cn } from "@/lib/utils";
@@ -61,7 +61,14 @@ const inspectionGroups = [
   ]},
 ];
 
-const ChecklistItemPhotoUploader = ({ itemName, serviceId, onUpload, photos, isReadOnly }: { itemName: string, serviceId: string, onUpload: (itemName: string, url: string) => void, photos: string[], isReadOnly?: boolean }) => {
+const ChecklistItemPhotoUploader = ({ itemName, serviceId, onUpload, photos, isReadOnly, onViewImage }: { 
+    itemName: string, 
+    serviceId: string, 
+    onUpload: (itemName: string, url: string) => void, 
+    photos: string[], 
+    isReadOnly?: boolean,
+    onViewImage: (url: string) => void 
+}) => {
     const { toast } = useToast();
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [isUploading, setIsUploading] = useState(false);
@@ -91,9 +98,17 @@ const ChecklistItemPhotoUploader = ({ itemName, serviceId, onUpload, photos, isR
         <div className="space-y-2">
             <div className="grid grid-cols-2 gap-2">
                 {photos.map((url, index) => (
-                    <div key={index} className="relative aspect-video bg-muted rounded-md">
-                        <Image src={url} alt={`Foto ${index + 1}`} layout="fill" objectFit="cover" />
-                    </div>
+                    <button
+                        type="button"
+                        key={index}
+                        className="relative aspect-video w-full bg-muted rounded-md overflow-hidden group"
+                        onClick={() => onViewImage(url)}
+                    >
+                        <Image src={url} alt={`Foto ${index + 1}`} layout="fill" objectFit="cover" className="transition-transform duration-300 group-hover:scale-105"/>
+                         <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity group-hover:opacity-100">
+                            <Eye className="h-6 w-6 text-white" />
+                        </div>
+                    </button>
                 ))}
             </div>
             {!isReadOnly && photos.length < 2 && (
@@ -110,7 +125,15 @@ const ChecklistItemPhotoUploader = ({ itemName, serviceId, onUpload, photos, isR
 };
 
 
-const SafetyCheckRow = ({ name, label, control, isReadOnly, serviceId, onPhotoUploaded }: { name: string; label: string; control: Control<ServiceFormValues>; isReadOnly?: boolean; serviceId: string; onPhotoUploaded: (itemName: string, url: string) => void; }) => {
+const SafetyCheckRow = ({ name, label, control, isReadOnly, serviceId, onPhotoUploaded, onViewImage }: { 
+    name: string; 
+    label: string; 
+    control: Control<ServiceFormValues>; 
+    isReadOnly?: boolean; 
+    serviceId: string; 
+    onPhotoUploaded: (itemName: string, url: string) => void;
+    onViewImage: (url: string) => void;
+}) => {
   return (
     <Controller
       name={name as any}
@@ -152,6 +175,7 @@ const SafetyCheckRow = ({ name, label, control, isReadOnly, serviceId, onPhotoUp
                 serviceId={serviceId}
                 photos={field.value?.photos || []}
                 onUpload={onPhotoUploaded}
+                onViewImage={onViewImage}
                 isReadOnly={isReadOnly}
               />
             </div>
@@ -163,7 +187,7 @@ const SafetyCheckRow = ({ name, label, control, isReadOnly, serviceId, onPhotoUp
 };
 
 
-export const SafetyChecklist = ({ control, isReadOnly, onSignatureClick, signatureDataUrl, isEnhancingText, handleEnhanceText, serviceId, onPhotoUploaded }: { 
+export const SafetyChecklist = ({ control, isReadOnly, onSignatureClick, signatureDataUrl, isEnhancingText, handleEnhanceText, serviceId, onPhotoUploaded, onViewImage }: { 
   control: Control<ServiceFormValues>; 
   isReadOnly?: boolean; 
   onSignatureClick: () => void;
@@ -172,6 +196,7 @@ export const SafetyChecklist = ({ control, isReadOnly, onSignatureClick, signatu
   handleEnhanceText: (fieldName: 'notes' | 'vehicleConditions' | 'customerItems' | 'safetyInspection.inspectionNotes' | `photoReports.${number}.description`) => void;
   serviceId: string;
   onPhotoUploaded: (itemName: string, url: string) => void;
+  onViewImage: (url: string) => void;
 }) => {
   return (
     <Card>
@@ -205,6 +230,7 @@ export const SafetyChecklist = ({ control, isReadOnly, onSignatureClick, signatu
                     isReadOnly={isReadOnly} 
                     serviceId={serviceId}
                     onPhotoUploaded={onPhotoUploaded}
+                    onViewImage={onViewImage}
                   />
                 ))}
               </div>
