@@ -79,22 +79,23 @@ export function DashboardCharts() {
     setMonthlyChartData(Object.values(monthlyData));
     
     // Process data for service type chart
-    const serviceTypeCounts: { [key: string]: number } = {
-      'Servicio General': 0,
-      'Cambio de Aceite': 0,
-      'Pintura': 0,
-    };
+    const serviceTypeCounts: { [key: string]: number } = {};
     placeholderServiceRecords.forEach(service => {
         const type = service.serviceType || 'Servicio General';
-        if (serviceTypeCounts.hasOwnProperty(type)) {
-            serviceTypeCounts[type]++;
-        }
+        serviceTypeCounts[type] = (serviceTypeCounts[type] || 0) + 1;
     });
-    setServiceTypeChartData([
-        { name: "General", value: serviceTypeCounts['Servicio General'], fill: "hsl(var(--chart-1))" },
-        { name: "Aceite", value: serviceTypeCounts['Cambio de Aceite'], fill: "hsl(var(--chart-2))" },
-        { name: "Pintura", value: serviceTypeCounts['Pintura'], fill: "hsl(var(--chart-3))" }
-    ]);
+
+    const serviceTypeColors: Record<string, string> = {
+        'Servicio General': "hsl(var(--chart-1))",
+        'Cambio de Aceite': "hsl(var(--chart-2))",
+        'Pintura': "hsl(var(--chart-3))",
+    };
+    
+    setServiceTypeChartData(Object.entries(serviceTypeCounts).map(([name, value], index) => ({
+      name,
+      value,
+      fill: serviceTypeColors[name] || `hsl(var(--chart-${(index % 5) + 1}))`
+    })));
     
     // Process data for revenue source chart
     const totalServiceRevenue = placeholderServiceRecords
@@ -108,7 +109,7 @@ export function DashboardCharts() {
 
   }, []);
   
-  const formatCurrency = (value: number) => `$${new Intl.NumberFormat('es-MX').format(value)}`;
+  const formatCurrency = (value: number) => `$${new Intl.NumberFormat('es-MX', {notation: "compact", compactDisplay: "short"}).format(value)}`;
   
   const monthlyChartConfig = {
     revenue: {
@@ -121,38 +122,46 @@ export function DashboardCharts() {
     },
   } satisfies ChartConfig;
   
-  const serviceTypeChartConfig = {
-      General: { label: "General", color: "hsl(var(--chart-1))" },
-      Aceite: { label: "Cambio de Aceite", color: "hsl(var(--chart-2))" },
-      Pintura: { label: "Pintura", color: "hsl(var(--chart-3))" },
-  } satisfies ChartConfig;
+  const serviceTypeChartConfig = serviceTypeChartData.reduce((acc, { name, fill }) => {
+    acc[name] = { label: name, color: fill };
+    return acc;
+  }, {} as ChartConfig);
 
   const revenueSourceChartConfig = {
-    Servicios: { label: 'Servicios', color: "hsl(var(--chart-1))" },
+    'Servicios': { label: 'Servicios', color: "hsl(var(--chart-1))" },
     'Ventas POS': { label: 'Ventas POS', color: "hsl(var(--chart-2))" },
   } satisfies ChartConfig
 
   return (
     <div className="grid gap-6 sm:grid-cols-1 lg:grid-cols-2">
-      <Card>
+      <Card className="lg:col-span-2">
         <CardHeader>
           <CardTitle>Ingresos vs. Ganancia (Últimos 6 Meses)</CardTitle>
           <CardDescription>Evolución mensual de ingresos brutos y ganancia neta.</CardDescription>
         </CardHeader>
-        <CardContent>
-          <div className="h-[250px]">
-            <ChartContainer config={monthlyChartConfig}>
-              <LineChart accessibilityLayer data={monthlyChartData} margin={{ left: 12, right: 12, top: 5 }}>
-                <CartesianGrid vertical={false} />
-                <XAxis dataKey="month" tickLine={false} axisLine={false} tickMargin={8} />
-                <YAxis tickLine={false} axisLine={false} tickMargin={8} tickFormatter={(value) => `$${new Intl.NumberFormat('es-MX', {notation: "compact", compactDisplay: "short"}).format(value)}`} />
-                <ChartTooltip cursor={false} content={<ChartTooltipContent formatter={formatCurrency as (value: unknown) => string} />} />
-                <Legend />
-                <Line dataKey="revenue" type="monotone" stroke="var(--color-revenue)" strokeWidth={2} dot={{ r: 4 }} activeDot={{ r: 6 }} name="Ingresos" />
-                <Line dataKey="profit" type="monotone" stroke="var(--color-profit)" strokeWidth={2} dot={{ r: 4 }} activeDot={{ r: 6 }} name="Ganancia" />
-              </LineChart>
-            </ChartContainer>
-          </div>
+        <CardContent className="space-y-4">
+            <div className="flex w-full items-center justify-center gap-x-8 gap-y-2 text-sm text-muted-foreground flex-wrap">
+                <div className="flex items-center gap-2">
+                  <div className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: "var(--color-revenue)" }} />
+                  <div className="font-medium">Ingresos</div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: "var(--color-profit)" }} />
+                  <div className="font-medium">Ganancia</div>
+                </div>
+            </div>
+            <div className="h-[350px] w-full">
+                <ChartContainer config={monthlyChartConfig}>
+                <LineChart accessibilityLayer data={monthlyChartData} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
+                    <CartesianGrid vertical={false} />
+                    <XAxis dataKey="month" tickLine={false} axisLine={false} tickMargin={8} />
+                    <YAxis tickLine={false} axisLine={false} tickMargin={8} tickFormatter={(value) => formatCurrency(value)} />
+                    <ChartTooltip cursor={false} content={<ChartTooltipContent formatter={(value) => typeof value === 'number' ? formatCurrency(value) : value} />} />
+                    <Line dataKey="revenue" type="monotone" stroke="var(--color-revenue)" strokeWidth={3} dot={{ r: 5 }} activeDot={{ r: 7 }} name="Ingresos" />
+                    <Line dataKey="profit" type="monotone" stroke="var(--color-profit)" strokeWidth={3} dot={{ r: 5 }} activeDot={{ r: 7 }} name="Ganancia" />
+                </LineChart>
+                </ChartContainer>
+            </div>
         </CardContent>
       </Card>
       
@@ -160,25 +169,25 @@ export function DashboardCharts() {
         <Card className="flex flex-col">
           <CardHeader>
             <CardTitle>Tipo de Servicios</CardTitle>
-            <CardDescription>Tipos de servicios más comunes.</CardDescription>
+            <CardDescription>Distribución de los servicios realizados.</CardDescription>
           </CardHeader>
-          <CardContent className="flex-1 flex items-center justify-center pb-4">
-            <div className="h-[250px] w-full">
-              <ChartContainer config={serviceTypeChartConfig} className="mx-auto">
+          <CardContent className="flex flex-1 flex-col items-center justify-between p-4 pt-0">
+            <div className="flex w-full items-center justify-center gap-x-4 gap-y-1 text-sm text-muted-foreground flex-wrap mb-4">
+              {Object.entries(serviceTypeChartConfig).map(([key, config]) => {
+                const item = serviceTypeChartData.find(d => d.name === config.label);
+                return (
+                  <div key={key} className="flex items-center gap-2">
+                    <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: config.color }} />
+                    <span className="font-medium">{config.label} ({item?.value || 0})</span>
+                  </div>
+                )
+              })}
+            </div>
+            <div className="h-[200px] w-full">
+              <ChartContainer config={serviceTypeChartConfig} className="mx-auto aspect-square h-full">
                 <PieChart>
-                  <ChartTooltip content={<ChartTooltipContent hideLabel />} />
-                  <Pie data={serviceTypeChartData} dataKey="value" nameKey="name" innerRadius={50} />
-                  <Legend content={({ payload }) => (
-                    <ul className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-sm mt-2">
-                      {payload?.map((item, index) => (
-                        <li key={index} className="flex items-center gap-2">
-                          <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: item.color }} />
-                          <span className="text-muted-foreground">{item.value}</span>
-                          <span className="font-medium">({item.payload.value})</span>
-                        </li>
-                      ))}
-                    </ul>
-                  )} />
+                  <ChartTooltip content={<ChartTooltipContent nameKey="name" hideLabel />} />
+                  <Pie data={serviceTypeChartData} dataKey="value" nameKey="name" innerRadius={40} strokeWidth={2} />
                 </PieChart>
               </ChartContainer>
             </div>
@@ -188,25 +197,25 @@ export function DashboardCharts() {
         <Card className="flex flex-col">
           <CardHeader>
             <CardTitle>Fuentes de Ingreso</CardTitle>
-            <CardDescription>Servicios vs Venta POS</CardDescription>
+            <CardDescription>Comparativa entre servicios y ventas de mostrador.</CardDescription>
           </CardHeader>
-          <CardContent className="flex-1 flex items-center justify-center pb-4">
-            <div className="h-[250px] w-full">
-              <ChartContainer config={revenueSourceChartConfig} className="mx-auto">
+          <CardContent className="flex flex-1 flex-col items-center justify-between p-4 pt-0">
+            <div className="flex w-full items-center justify-center gap-x-4 gap-y-1 text-sm text-muted-foreground flex-wrap mb-4">
+              {Object.entries(revenueSourceChartConfig).map(([key, config]) => {
+                const item = revenueSourceChartData.find(d => d.source === config.label);
+                return (
+                  <div key={key} className="flex items-center gap-2">
+                    <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: config.color }} />
+                    <span className="font-medium">{config.label} ({formatCurrency(item?.value || 0)})</span>
+                  </div>
+                )
+              })}
+            </div>
+            <div className="h-[200px] w-full">
+              <ChartContainer config={revenueSourceChartConfig} className="mx-auto aspect-square h-full">
                   <PieChart>
-                      <ChartTooltip content={<ChartTooltipContent hideLabel formatter={formatCurrency as (value: unknown) => string} />} />
-                      <Pie data={revenueSourceChartData} dataKey="value" nameKey="source" innerRadius={50} />
-                      <Legend content={({ payload }) => (
-                        <ul className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-sm mt-2">
-                          {payload?.map((item, index) => (
-                            <li key={index} className="flex items-center gap-2">
-                              <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: item.color }} />
-                              <span className="text-muted-foreground">{item.value}</span>
-                              <span className="font-medium">{formatCurrency(item.payload.value)}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      )} />
+                      <ChartTooltip content={<ChartTooltipContent nameKey="source" hideLabel formatter={(value) => typeof value === 'number' ? formatCurrency(value) : value.toString()}/>} />
+                      <Pie data={revenueSourceChartData} dataKey="value" nameKey="source" innerRadius={40} strokeWidth={2} />
                   </PieChart>
               </ChartContainer>
             </div>
