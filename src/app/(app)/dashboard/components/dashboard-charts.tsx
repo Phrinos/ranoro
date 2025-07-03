@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -152,7 +153,7 @@ export function DashboardCharts() {
           <CardTitle>Ingresos vs. Ganancia (Últimos 6 Meses)</CardTitle>
           <CardDescription>Evolución mensual de ingresos brutos y ganancia neta.</CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-4 pt-0">
             <div className="flex w-full items-center justify-center gap-x-8 gap-y-2 text-sm text-muted-foreground flex-wrap mb-4">
                 <div className="flex items-center gap-2">
                   <div className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: "var(--color-revenue)" }} />
@@ -184,7 +185,7 @@ export function DashboardCharts() {
           <CardTitle>Servicios vs. Ventas (Últimos 6 Meses)</CardTitle>
           <CardDescription>Volumen de operaciones completadas mensualmente.</CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-4 pt-0">
             <div className="flex w-full items-center justify-center gap-x-8 gap-y-2 text-sm text-muted-foreground flex-wrap mb-4">
                 <div className="flex items-center gap-2">
                   <div className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: "var(--color-services)" }} />
