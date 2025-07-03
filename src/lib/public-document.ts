@@ -1,4 +1,5 @@
-import { savePublicDocument as savePublicDocumentAction } from "@/app/s/[id]/actions";
+import { db } from '@/lib/firebaseClient.js';
+import { doc, setDoc } from 'firebase/firestore';
 import { sanitizeObjectForFirestore } from '@/lib/placeholder-data';
 import type { QuoteRecord, ServiceRecord, Vehicle, WorkshopInfo } from "@/types";
 
@@ -18,6 +19,11 @@ export const savePublicDocument = async (
     console.warn(`Public save skipped: ${errorMsg}`);
     return { success: false, error: errorMsg };
   }
+  if (!db) {
+      const errorMsg = "La conexión con la base de datos no está configurada.";
+      console.error(`Public save failed: ${errorMsg}`);
+      return { success: false, error: errorMsg };
+  }
 
   const collectionName = type === 'quote' ? 'publicQuotes' : 'publicServices';
 
@@ -28,19 +34,15 @@ export const savePublicDocument = async (
   });
 
   try {
-    const result = await savePublicDocumentAction(collectionName, data.publicId, fullPublicData);
-    if (!result.success) {
-      const isAuthError = result.error?.includes('Could not refresh access token');
-      const errorMessage = isAuthError
-        ? "No se pudo autenticar con el servidor. El enlace para compartir podría no funcionar. Contacta al administrador."
-        : (result.error || "Ocurrió un error desconocido al guardar el documento público.");
-      return { success: false, error: errorMessage };
-    }
-    console.log(`Public ${type} document ${data.publicId} saved successfully.`);
+    const publicDocRef = doc(db, collectionName, data.publicId);
+    await setDoc(publicDocRef, fullPublicData, { merge: true });
+    
+    console.log(`Public ${type} document ${data.publicId} saved successfully via client SDK.`);
     return { success: true };
   } catch (e) {
-    const errorMessage = `Fallo en la comunicación con el servidor. Error: ${e instanceof Error ? e.message : String(e)}`;
+    const errorMessage = `Fallo al guardar documento público. Error: ${e instanceof Error ? e.message : String(e)}`;
     console.error(`Failed to save public ${type} document:`, e);
+    // This error will be a Firestore permission error if rules are wrong.
     return { success: false, error: errorMessage };
   }
 };
