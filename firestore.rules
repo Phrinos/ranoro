@@ -3,48 +3,23 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     
-    // The main database document is private.
-    // Only authenticated users (employees) can read or write to it.
+    // The main data document. Only authenticated users can access it.
     match /database/main {
       allow read, write: if request.auth != null;
     }
 
-    // publicQuotes are world-readable for sharing, but not writable from the client.
+    // Public quotes can be read by anyone with the link.
+    // Only authenticated users (app users) can create or update them.
     match /publicQuotes/{quoteId} {
       allow read: if true;
-      allow create, update, delete: if request.auth != null; 
-    }
-    
-    // publicOwnerReports are world-readable for sharing, but not writable from the client.
-    match /publicOwnerReports/{reportId} {
-      allow read: if true;
-      allow create, update, delete: if request.auth != null;
-    }
-    
-    // publicServices are world-readable.
-    match /publicServices/{serviceId} {
-      allow read: if true;
-      
-      // Allow authenticated users to perform any update.
-      // Allow unauthenticated customers to update ONLY signature fields.
-      allow update: if request.auth != null || 
-                      (request.resource.data.diff(resource.data).affectedKeys()
-                      .hasOnly(['customerSignatureReception', 'customerSignatureDelivery', 'receptionSignatureViewed', 'deliverySignatureViewed']));
-                      
-      // Allow create/delete only for authenticated users.
-      allow create, delete: if request.auth != null;
-    }
-    
-    // Rule for the new public_documents collection
-    match /public_documents/{documentId} {
-      allow read: if true;
-      allow create, update, delete: if request.auth != null;
+      allow write: if request.auth != null;
     }
 
-    // By default, deny access to any other collection/document path.
-    // This is a security best practice.
-    match /{document=**} {
-      allow read, write: if false;
+    // Public service sheets can be read by anyone with the link.
+    // Only authenticated users can create or update them.
+    match /publicServices/{serviceId} {
+      allow read: if true;
+      allow write: if request.auth != null;
     }
   }
 }
