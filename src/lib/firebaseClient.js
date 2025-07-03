@@ -1,58 +1,40 @@
-
 // lib/firebaseClient.js
-//-------------------------------------------
-// Inicializa Firebase solo una vez de forma segura
-//-------------------------------------------
+// ---------------------------------------------------
+// Inicializa Firebase de forma segura (v9 modular)
+// ---------------------------------------------------
+import { initializeApp, getApps, getApp } from "firebase/app";
+import { getFirestore } from "firebase/firestore";
+import { getStorage } from "firebase/storage";
+import { getAuth } from "firebase/auth";
 
-// Importa lo esencial de Firebase v9+ (modular)
-import { initializeApp, getApps } from 'firebase/app';
-import { getAuth } from 'firebase/auth';
-import { getStorage } from 'firebase/storage';
-import { getFirestore } from 'firebase/firestore';
-
-//-------------------------------------------
-// 1. Configuración del proyecto
-//-------------------------------------------
+// ---------------------------------------------------
+// 1. Configuración mediante variables de entorno
+//    (añádelas en .env.local)
+// ---------------------------------------------------
 const firebaseConfig = {
-  apiKey: "AIzaSyA_ot6L0zgglc1tC0BounxYIvj7y8048Sg",
-  authDomain: "ranoro-jm8l0.firebaseapp.com",
-  projectId: "ranoro-jm8l0",
-  storageBucket: "ranoro-jm8l0.appspot.com",
-  messagingSenderId: "290934350177",
-  appId: "1:290934350177:web:2365c77eaca4bb0d906520",
+  apiKey: process.env.NEXT_PUBLIC_FB_API_KEY ?? "AIzaSyA_ot6L0zgglc1tC0BounxYIvj7y8048Sg",
+  authDomain: process.env.NEXT_PUBLIC_FB_AUTH_DOMAIN ?? "ranoro-jm8l0.firebaseapp.com",
+  databaseURL: process.env.NEXT_PUBLIC_FB_DB_URL ?? "https://ranoro-jm8l0-default-rtdb.firebaseio.com",
+  projectId: process.env.NEXT_PUBLIC_FB_PROJECT_ID ?? "ranoro-jm8l0",
+  storageBucket: process.env.NEXT_PUBLIC_FB_STORAGE_BUCKET ?? "ranoro-jm8l0.appspot.com", // ← ⚠️ asegúrate que termina en .appspot.com
+  messagingSenderId: process.env.NEXT_PUBLIC_FB_SENDER_ID ?? "290934350177",
+  appId: process.env.NEXT_PUBLIC_FB_APP_ID ?? "1:290934350177:web:2365c77eaca4bb0d906520",
 };
 
+// ---------------------------------------------------
+// 2. Inicializa la app solo una vez
+// ---------------------------------------------------
+const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
 
-// --- Variables para exportar ---
-let app;
-let auth = null;
-let storage = null;
-let db = null;
+// ---------------------------------------------------
+// 3. Servicios comunes (Firestore y Storage)
+// ---------------------------------------------------
+export const db = getFirestore(app);
+export const storage = getStorage(app);
 
-//-------------------------------------------
-// 2. Crear/obtener la app de Firebase de forma segura
-//-------------------------------------------
-// Solo inicializa Firebase si las credenciales son válidas y no es un placeholder.
-// The check was changed to be more specific to avoid using the placeholder key.
-if (firebaseConfig.apiKey && firebaseConfig.apiKey !== "AIzaSyA_ot6L0zgglc1tC0BounxYIvj7y8048Sg_REPLACE_ME") {
-  if (!getApps().length) {
-    app = initializeApp(firebaseConfig);
-  } else {
-    app = getApps()[0];
-  }
-  
-  // Asigna las instancias de servicio solo si la app se inicializó correctamente
-  auth = getAuth(app);
-  storage = getStorage(app);
-  db = getFirestore(app);
+// Auth solo en cliente (evita cargar en SSR)
+export const auth =
+  typeof window !== "undefined" ? getAuth(app) : null;
 
-} else if (typeof window !== 'undefined') {
-  console.error(
-    "ERROR CRÍTICO: Las credenciales de Firebase no están configuradas. La aplicación no podrá funcionar correctamente."
-  );
-}
-
-//-------------------------------------------
-// 3. Exportar instancias (que podrían ser null si no hay configuración)
-//-------------------------------------------
-export { auth, storage, db };
+// Exporta la app por si la necesitas en otras libs
+export { app };
