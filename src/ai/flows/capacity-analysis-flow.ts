@@ -19,7 +19,7 @@ const TechnicianInputSchema = z.object({
 
 const ServiceHistoryItemSchema = z.object({
   description: z.string().describe("The description of a past service."),
-  serviceDate: z.string().describe("The start date and time of the service in ISO format."),
+  serviceDate: z.string().optional().describe("The start date and time of the service in ISO format."),
   deliveryDateTime: z.string().optional().describe("The end date and time of the service in ISO format."),
 });
 
