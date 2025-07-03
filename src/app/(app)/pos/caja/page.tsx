@@ -17,7 +17,7 @@ import {
   AUTH_USER_LOCALSTORAGE_KEY
 } from "@/lib/placeholder-data";
 import type { SaleReceipt, ServiceRecord, CashDrawerTransaction, InitialCashBalance, User } from '@/types';
-import { format, parseISO, startOfDay, endOfDay, isWithinInterval, startOfWeek, endOfWeek, isValid } from "date-fns";
+import { format, parseISO, startOfDay, endOfDay, isWithinInterval, startOfWeek, endOfWeek, isValid, startOfMonth, endOfMonth } from "date-fns";
 import { es } from 'date-fns/locale';
 import type { DateRange } from "react-day-picker";
 import { CalendarIcon, DollarSign, ArrowUpCircle, ArrowDownCircle, Coins, Receipt, Wrench, BarChart2, Printer, Wallet } from 'lucide-react';
@@ -180,12 +180,27 @@ export default function CajaPage() {
 
   const setDateToToday = () => setDateRange({ from: startOfDay(new Date()), to: endOfDay(new Date()) });
   const setDateToThisWeek = () => setDateRange({ from: startOfWeek(new Date(), { weekStartsOn: 1 }), to: endOfWeek(new Date(), { weekStartsOn: 1 }) });
+  const setDateToThisMonth = () => setDateRange({ from: startOfMonth(new Date()), to: endOfMonth(new Date()) });
 
   return (
     <>
-      <PageHeader title="Control de Caja" description="Visualiza y gestiona el flujo de efectivo diario." />
+      <PageHeader
+        title="Control de Caja"
+        description="Visualiza y gestiona el flujo de efectivo diario."
+        actions={
+            <div className="flex gap-2">
+                <Button variant="outline" onClick={() => setIsInitialBalanceDialogOpen(true)}>Saldo Inicial</Button>
+                <Button onClick={() => setIsCorteDialogOpen(true)}><Printer className="mr-2 h-4 w-4"/> Corte de Caja</Button>
+            </div>
+        }
+      />
 
       <div className="mb-6 flex flex-col sm:flex-row gap-4">
+        <div className="flex gap-2">
+            <Button variant="secondary" onClick={setDateToToday}>Hoy</Button>
+            <Button variant="secondary" onClick={setDateToThisWeek}>Esta Semana</Button>
+            <Button variant="secondary" onClick={setDateToThisMonth}>Este Mes</Button>
+        </div>
         <Popover>
             <PopoverTrigger asChild>
               <Button variant="outline" className={cn("w-full sm:w-auto justify-start text-left font-normal", !dateRange && "text-muted-foreground")}>
@@ -195,14 +210,6 @@ export default function CajaPage() {
             </PopoverTrigger>
             <PopoverContent className="w-auto p-0"><Calendar initialFocus mode="range" defaultMonth={dateRange?.from} selected={dateRange} onSelect={setDateRange} numberOfMonths={2} locale={es}/></PopoverContent>
         </Popover>
-        <div className="flex gap-2">
-            <Button variant="secondary" onClick={setDateToToday}>Hoy</Button>
-            <Button variant="secondary" onClick={setDateToThisWeek}>Esta Semana</Button>
-        </div>
-        <div className="sm:ml-auto flex gap-2">
-            <Button variant="outline" onClick={() => setIsInitialBalanceDialogOpen(true)}>Saldo Inicial</Button>
-            <Button onClick={() => setIsCorteDialogOpen(true)}><Printer className="mr-2 h-4 w-4"/> Corte de Caja</Button>
-        </div>
       </div>
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
