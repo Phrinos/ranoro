@@ -262,7 +262,7 @@ export default function CajaPage() {
 
 function CashTransactionForm({ type, onSubmit }: { type: 'Entrada' | 'Salida', onSubmit: (type: 'Entrada' | 'Salida', values: CashTransactionFormValues) => void }) {
   const form = useForm<CashTransactionFormValues>({ resolver: zodResolver(cashTransactionSchema) });
-  const { register, handleSubmit, formState: { errors }, reset } = form;
+  const { handleSubmit, reset } = form;
 
   const onFormSubmit = (data: CashTransactionFormValues) => {
     onSubmit(type, data);
@@ -270,14 +270,16 @@ function CashTransactionForm({ type, onSubmit }: { type: 'Entrada' | 'Salida', o
   };
 
   return (
-    <form onSubmit={handleSubmit(onFormSubmit)} className="space-y-4">
-      <FormField control={form.control} name="concept" render={({field}) => (
-          <FormItem><FormLabel>Concepto</FormLabel><FormControl><Textarea placeholder={type === 'Entrada' ? 'Ej: Fondo de caja' : 'Ej: Compra de insumos'} {...field}/></FormControl><FormMessage/></FormItem>
-      )}/>
-      <FormField control={form.control} name="amount" render={({field}) => (
-          <FormItem><FormLabel>Monto</FormLabel><FormControl><Input type="number" placeholder="0.00" {...field} /></FormControl><FormMessage /></FormItem>
-      )}/>
-      <Button type="submit" className="w-full">Registrar {type}</Button>
-    </form>
+    <Form {...form}>
+      <form onSubmit={handleSubmit(onFormSubmit)} className="space-y-4">
+        <FormField control={form.control} name="concept" render={({field}) => (
+            <FormItem><FormLabel>Concepto</FormLabel><FormControl><Textarea placeholder={type === 'Entrada' ? 'Ej: Fondo de caja' : 'Ej: Compra de insumos'} {...field}/></FormControl><FormMessage/></FormItem>
+        )}/>
+        <FormField control={form.control} name="amount" render={({field}) => (
+            <FormItem><FormLabel>Monto</FormLabel><FormControl><Input type="number" placeholder="0.00" {...field} /></FormControl><FormMessage /></FormItem>
+        )}/>
+        <Button type="submit" className="w-full">Registrar {type}</Button>
+      </form>
+    </Form>
   )
 }
