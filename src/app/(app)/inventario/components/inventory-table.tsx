@@ -34,12 +34,12 @@ export const InventoryTable = React.memo(({ items }: InventoryTableProps) => {
       <Table>
         <TableHeader className="bg-white">
           <TableRow>
-            <TableHead className="font-bold print:hidden">Código</TableHead>
             <TableHead className="font-bold">Categoría</TableHead>
+            <TableHead className="font-bold">Marca</TableHead>
             <TableHead className="font-bold">Nombre</TableHead>
             <TableHead className="text-right font-bold">Cantidad</TableHead>
             <TableHead className="text-right font-bold">Costo</TableHead>
-            <TableHead className="text-right font-bold">Precio Venta</TableHead>
+            <TableHead className="text-right font-bold">Precio</TableHead>
             <TableHead className="font-bold print:hidden">Stock</TableHead>
           </TableRow>
         </TableHeader>
@@ -50,8 +50,8 @@ export const InventoryTable = React.memo(({ items }: InventoryTableProps) => {
               onClick={() => handleRowClick(item.id)}
               className={`cursor-pointer hover:bg-muted/50 ${!item.isService && item.quantity <= item.lowStockThreshold ? "bg-orange-50 dark:bg-orange-900/30" : ""}`}
             >
-              <TableCell className="font-medium print:hidden">{item.sku}</TableCell>
               <TableCell>{item.category}</TableCell>
+              <TableCell>{item.brand || 'N/A'}</TableCell>
               <TableCell>{item.name}</TableCell>
               <TableCell className="text-right">
                 {item.isService ? (
