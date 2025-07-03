@@ -51,24 +51,68 @@ export const IVA_RATE = 0.16;
 // =======================================
 // ===          CATEGORÍAS Y PROVEEDORES ===
 // =======================================
-export let placeholderCategories: InventoryCategory[] = [];
-export let placeholderSuppliers: Supplier[] = [];
+export let placeholderCategories: InventoryCategory[] = [
+    { id: 'CAT001', name: 'Filtros' },
+    { id: 'CAT002', name: 'Aceites y Lubricantes' },
+    { id: 'CAT003', name: 'Frenos' },
+    { id: 'CAT004', name: 'Suspensión' },
+    { id: 'CAT005', name: 'Eléctrico' },
+];
+export let placeholderSuppliers: Supplier[] = [
+    { id: 'SUP001', name: 'Refaccionaria GDL', contactPerson: 'Juan Hernandez', phone: '333-123-4567', email: 'ventas@refaccionariagdl.com' },
+    { id: 'SUP002', name: 'AutoZone Aguascalientes', contactPerson: 'Sofia Ramirez', phone: '449-987-6543', email: 'gerencia.ags@autozone.com' },
+    { id: 'SUP003', name: 'Partes y Motores de Aguascalientes', debtAmount: 2500, debtNote: 'Factura #F-9870' },
+];
 
 // =======================================
 // ===          INVENTARIO               ===
 // =======================================
-export let placeholderInventory: InventoryItem[] = [];
+export let placeholderInventory: InventoryItem[] = [
+  { id: 'PROD001', name: 'Aceite Sintético 5W-30', brand: 'Mobil 1', sku: 'MOB-5W30-S', quantity: 50, unitPrice: 150, sellingPrice: 220, supplier: 'Refaccionaria GDL', lowStockThreshold: 10, category: 'Aceites y Lubricantes', unitType: 'liters' },
+  { id: 'PROD002', name: 'Filtro de Aceite', brand: 'Gonher', sku: 'GON-FO-123', quantity: 30, unitPrice: 80, sellingPrice: 150, supplier: 'AutoZone Aguascalientes', lowStockThreshold: 5, category: 'Filtros', unitType: 'units' },
+  { id: 'PROD003', name: 'Juego de Balatas Delanteras', brand: 'Brembo', sku: 'BRE-BLK-456', quantity: 15, unitPrice: 600, sellingPrice: 950, supplier: 'Refaccionaria GDL', lowStockThreshold: 3, category: 'Frenos', unitType: 'units' },
+  { id: 'PROD004', name: 'Limpiaparabrisas 22"', brand: 'Bosch', sku: 'BOS-WPR-22', quantity: 25, unitPrice: 120, sellingPrice: 200, supplier: 'AutoZone Aguascalientes', lowStockThreshold: 10, category: 'Eléctrico', unitType: 'units' },
+  { id: 'PROD005', name: 'Amortiguador Delantero', brand: 'Monroe', sku: 'MON-SHK-789', quantity: 8, unitPrice: 800, sellingPrice: 1200, supplier: 'Partes y Motores de Aguascalientes', lowStockThreshold: 2, category: 'Suspensión', unitType: 'units' },
+  { id: 'SERV001', name: 'Mano de Obra Mecánica', brand: 'Ranoro', sku: 'SERV-MO-GEN', quantity: 0, unitPrice: 250, sellingPrice: 350, supplier: 'N/A', lowStockThreshold: 0, category: 'Servicios', isService: true },
+];
 
 // =======================================
 // ===          VEHÍCULOS                ===
 // =======================================
-export let placeholderVehicles: Vehicle[] = [];
+export let placeholderVehicles: Vehicle[] = [
+  {
+    id: 'VEH002',
+    make: 'Honda',
+    model: 'CR-V',
+    year: 2019,
+    ownerName: 'Ana García',
+    ownerPhone: '4492345678',
+    licensePlate: 'BBB456B'
+  },
+  {
+    id: 'VEH003',
+    make: 'Ford',
+    model: 'Lobo',
+    year: 2022,
+    ownerName: 'Carlos Martinez',
+    ownerPhone: '4493456789',
+    licensePlate: 'CCC789C',
+    isFleetVehicle: true,
+    dailyRentalCost: 450,
+  }
+];
 
 // =======================================
 // ===          PERSONAL                 ===
 // =======================================
-export let placeholderTechnicians: Technician[] = [];
-export let placeholderAdministrativeStaff: AdministrativeStaff[] = [];
+export let placeholderTechnicians: Technician[] = [
+    { id: 'T001', name: 'Carlos Rodriguez', area: 'Mecánica General', specialty: 'Motores', isArchived: false, commissionRate: 0.05, monthlySalary: 12000, standardHoursPerDay: 8 },
+    { id: 'T002', name: 'Ricardo Gomez', area: 'Eléctrico', specialty: 'Diagnóstico Electrónico', isArchived: false, commissionRate: 0.07, monthlySalary: 14000, standardHoursPerDay: 8  },
+];
+export let placeholderAdministrativeStaff: AdministrativeStaff[] = [
+    { id: 'ADM001', name: 'Laura Mendez', roleOrArea: 'Gerente', isArchived: false, monthlySalary: 20000, commissionRate: 0.01 },
+    { id: 'ADM002', name: 'Sofía Castro', roleOrArea: 'Recepción', isArchived: false, monthlySalary: 9000 },
+];
 export let placeholderDrivers: Driver[] = [];
 export let placeholderRentalPayments: RentalPayment[] = [];
 export let placeholderOwnerWithdrawals: OwnerWithdrawal[] = [];
@@ -118,18 +162,77 @@ export let placeholderAppRoles: AppRole[] = [];
 // =======================================
 
 // --- SERVICIOS ---
-export let placeholderServiceRecords: ServiceRecord[] = [];
+export let placeholderServiceRecords: ServiceRecord[] = [
+  {
+    id: 'SER002',
+    vehicleId: 'VEH002',
+    vehicleIdentifier: 'BBB456B',
+    serviceDate: subDays(new Date(), 5).toISOString(),
+    description: 'Diagnóstico de sistema eléctrico.',
+    technicianId: 'T002',
+    technicianName: 'Ricardo Gomez',
+    serviceItems: [],
+    suppliesUsed: [
+      { supplyId: 'SERV001', supplyName: 'Mano de Obra Mecánica', quantity: 2, unitPrice: 250, sellingPrice: 350 },
+    ],
+    totalCost: 1200,
+    totalSuppliesCost: 500,
+    serviceProfit: 700,
+    status: 'Reparando',
+    mileage: 89000,
+    serviceAdvisorId: 'user_superadmin',
+    serviceAdvisorName: 'Arturo Valdelamar'
+  },
+  {
+    id: 'SER003',
+    vehicleId: 'VEH003',
+    vehicleIdentifier: 'CCC789C',
+    serviceDate: new Date().toISOString(),
+    description: 'Mantenimiento preventivo flotilla.',
+    technicianId: 'T001',
+    technicianName: 'Carlos Rodriguez',
+    serviceItems: [],
+    suppliesUsed: [],
+    totalCost: 1800,
+    status: 'Agendado',
+    mileage: 15000,
+    serviceAdvisorId: 'user_superadmin',
+    serviceAdvisorName: 'Arturo Valdelamar'
+  },
+];
 
 // --- COTIZACIONES ---
 export let placeholderQuotes: QuoteRecord[] = [];
 
 // --- VENTAS (POS) ---
-export let placeholderSales: SaleReceipt[] = [];
+export let placeholderSales: SaleReceipt[] = [
+    {
+      id: 'SALE001',
+      saleDate: subDays(new Date(), 1).toISOString(),
+      items: [
+        { inventoryItemId: 'PROD004', itemName:'Limpiaparabrisas 22"', quantity: 2, unitPrice: 200, totalPrice: 400 },
+      ],
+      subTotal: 344.83,
+      tax: 55.17,
+      totalAmount: 400,
+      paymentMethod: 'Tarjeta',
+      customerName: 'Cliente Mostrador',
+      status: 'Completado'
+    },
+];
 
 // --- GASTOS FIJOS Y CAJA ---
 export let placeholderFixedMonthlyExpenses: MonthlyFixedExpense[] = [];
-export let placeholderCashDrawerTransactions: CashDrawerTransaction[] = [];
-export let placeholderInitialCashBalance: InitialCashBalance | null = null;
+export let placeholderCashDrawerTransactions: CashDrawerTransaction[] = [
+    { id: 'trx_1', date: new Date().toISOString(), type: 'Entrada', amount: 500, concept: 'Fondo de caja inicial', userId: 'user_superadmin', userName: 'Arturo Valdelamar' },
+    { id: 'trx_2', date: new Date().toISOString(), type: 'Salida', amount: 150, concept: 'Compra de garrafón de agua', userId: 'user_superadmin', userName: 'Arturo Valdelamar' }
+];
+export let placeholderInitialCashBalance: InitialCashBalance | null = {
+    date: new Date().toISOString(),
+    amount: 500,
+    userId: 'user_superadmin',
+    userName: 'Arturo Valdelamar'
+};
 
 
 // --- LISTA DE PRECIOS ---
