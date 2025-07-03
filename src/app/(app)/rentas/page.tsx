@@ -347,10 +347,10 @@ export default function RentasPage() {
         description="Lleva el control de los pagos y retiros de la flotilla."
         actions={
           <div className="flex flex-col sm:flex-row gap-2">
-            <Button variant="outline" onClick={() => setIsExpenseDialogOpen(true)}>
+            <Button variant="outline" onClick={() => setIsExpenseDialogOpen(true)} className="bg-white">
               <ListCollapse className="mr-2 h-4 w-4" /> Registrar Gasto de Vehículo
             </Button>
-            <Button variant="outline" onClick={() => setIsWithdrawalDialogOpen(true)}>
+            <Button variant="outline" onClick={() => setIsWithdrawalDialogOpen(true)} className="bg-white">
               <DollarSign className="mr-2 h-4 w-4" /> Registrar Retiro
             </Button>
             <Button onClick={() => setIsPaymentDialogOpen(true)}>
@@ -362,9 +362,9 @@ export default function RentasPage() {
       
       <div className="flex flex-col sm:flex-row items-center gap-4 mb-6">
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="icon" onClick={handlePreviousMonth}><ChevronLeft className="h-4 w-4" /></Button>
+          <Button variant="outline" size="icon" onClick={handlePreviousMonth} className="bg-white"><ChevronLeft className="h-4 w-4" /></Button>
           <span className="font-semibold text-center w-36">{format(selectedDate, "MMMM yyyy", { locale: es })}</span>
-          <Button variant="outline" size="icon" onClick={handleNextMonth}><ChevronRight className="h-4 w-4" /></Button>
+          <Button variant="outline" size="icon" onClick={handleNextMonth} className="bg-white"><ChevronRight className="h-4 w-4" /></Button>
         </div>
         <div className="relative flex-grow w-full sm:w-auto">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -373,7 +373,7 @@ export default function RentasPage() {
       </div>
 
       <Tabs defaultValue="pagos" className="w-full">
-        <TabsList className="grid w-full grid-cols-1 sm:grid-cols-3 mb-6">
+        <TabsList className="grid w-full grid-cols-1 sm:grid-cols-3 mb-6 bg-white">
           <TabsTrigger value="pagos">Pagos de Renta</TabsTrigger>
           <TabsTrigger value="retiros">Retiros de Propietarios</TabsTrigger>
           <TabsTrigger value="gastos">Gastos de Vehículos</TabsTrigger>
