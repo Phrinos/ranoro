@@ -110,51 +110,42 @@ export interface ServiceItem {
 
 export type SafetyCheckStatus = 'ok' | 'atencion' | 'inmediata' | 'na';
 
+export interface SafetyCheckValue {
+  status: SafetyCheckStatus;
+  photos: string[];
+}
+
 export interface SafetyInspection {
-  // Luces
-  luces_altas_bajas_niebla?: SafetyCheckStatus;
-  luces_cuartos?: SafetyCheckStatus;
-  luces_direccionales?: SafetyCheckStatus;
-  luces_frenos_reversa?: SafetyCheckStatus;
-  luces_interiores?: SafetyCheckStatus;
-  
-  // Fugas y Niveles
-  fugas_refrigerante?: SafetyCheckStatus;
-  fugas_limpiaparabrisas?: SafetyCheckStatus;
-  fugas_frenos_embrague?: SafetyCheckStatus;
-  fugas_transmision?: SafetyCheckStatus;
-  fugas_direccion_hidraulica?: SafetyCheckStatus;
-  
-  // Carrocería
-  carroceria_cristales_espejos?: SafetyCheckStatus;
-  carroceria_puertas_cofre?: SafetyCheckStatus;
-  carroceria_asientos_tablero?: SafetyCheckStatus;
-  carroceria_plumas?: SafetyCheckStatus;
-  
-  // Llantas (Estado y Presión)
-  llantas_delanteras_traseras?: SafetyCheckStatus;
-  llantas_refaccion?: SafetyCheckStatus;
-  
-  // Suspensión y Dirección
-  suspension_rotulas?: SafetyCheckStatus;
-  suspension_amortiguadores?: SafetyCheckStatus;
-  suspension_caja_direccion?: SafetyCheckStatus;
-  suspension_terminales?: SafetyCheckStatus;
-  
-  // Frenos
-  frenos_discos_delanteros?: SafetyCheckStatus;
-  frenos_discos_traseros?: SafetyCheckStatus;
-  
-  // Otros
-  otros_tuberia_escape?: SafetyCheckStatus;
-  otros_soportes_motor?: SafetyCheckStatus;
-  otros_claxon?: SafetyCheckStatus;
-  otros_inspeccion_sdb?: SafetyCheckStatus;
-  
-  // Global notes and signature for the inspection
+  luces_altas_bajas_niebla?: SafetyCheckValue;
+  luces_cuartos?: SafetyCheckValue;
+  luces_direccionales?: SafetyCheckValue;
+  luces_frenos_reversa?: SafetyCheckValue;
+  luces_interiores?: SafetyCheckValue;
+  fugas_refrigerante?: SafetyCheckValue;
+  fugas_limpiaparabrisas?: SafetyCheckValue;
+  fugas_frenos_embrague?: SafetyCheckValue;
+  fugas_transmision?: SafetyCheckValue;
+  fugas_direccion_hidraulica?: SafetyCheckValue;
+  carroceria_cristales_espejos?: SafetyCheckValue;
+  carroceria_puertas_cofre?: SafetyCheckValue;
+  carroceria_asientos_tablero?: SafetyCheckValue;
+  carroceria_plumas?: SafetyCheckValue;
+  suspension_rotulas?: SafetyCheckValue;
+  suspension_amortiguadores?: SafetyCheckValue;
+  suspension_caja_direccion?: SafetyCheckValue;
+  suspension_terminales?: SafetyCheckValue;
+  llantas_delanteras_traseras?: SafetyCheckValue;
+  llantas_refaccion?: SafetyCheckValue;
+  frenos_discos_delanteros?: SafetyCheckValue;
+  frenos_discos_traseros?: SafetyCheckValue;
+  otros_tuberia_escape?: SafetyCheckValue;
+  otros_soportes_motor?: SafetyCheckValue;
+  otros_claxon?: SafetyCheckValue;
+  otros_inspeccion_sdb?: SafetyCheckValue;
   inspectionNotes?: string;
   technicianSignature?: string; 
 }
+
 
 export interface PhotoReportGroup {
   id: string;
