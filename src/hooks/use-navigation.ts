@@ -92,14 +92,23 @@ const BASE_NAV_STRUCTURE: ReadonlyArray<Omit<NavigationEntry, 'isActive'>> = [
     permissions: ['services:edit']
   },
   
-  // Mi Inventario
+  // Mi PDV
   {
     label: 'Punto de Venta', 
     path: '/pos',
     icon: Receipt, 
-    groupTag: "Mi Inventario",
+    groupTag: "Mi PDV",
     permissions: ['pos:create_sale']
   },
+  { 
+    label: 'Informe de Ventas', 
+    path: '/finanzas/reporte',
+    icon: LineChart,
+    groupTag: "Mi PDV",
+    permissions: ['finances:view_report']
+  },
+  
+  // Mi Inventario
   { label: 'Productos', path: '/inventario', icon: Package, groupTag: "Mi Inventario", permissions: ['inventory:view'] },
   { label: 'Categorías', path: '/inventario/categorias', icon: Shapes, groupTag: "Mi Inventario", permissions: ['inventory:manage'] },
   { label: 'Proveedores', path: '/inventario/proveedores', icon: Building, groupTag: "Mi Inventario", permissions: ['inventory:manage'] },
@@ -136,13 +145,6 @@ const BASE_NAV_STRUCTURE: ReadonlyArray<Omit<NavigationEntry, 'isActive'>> = [
 
   // Mi Oficina
   {
-    label: 'Informe de Ventas', 
-    path: '/finanzas/reporte',
-    icon: LineChart,
-    groupTag: "Mi Oficina",
-    permissions: ['finances:view_report']
-  },
-  {
     label: 'Resumen Financiero', 
     path: '/finanzas/resumen',
     icon: BarChart3, 
@@ -165,7 +167,7 @@ const BASE_NAV_STRUCTURE: ReadonlyArray<Omit<NavigationEntry, 'isActive'>> = [
   },
 ];
 
-const DESIRED_GROUP_ORDER = ["Mi Taller", "Mi Inventario", "Mi Flotilla", "Mi Oficina"];
+const DESIRED_GROUP_ORDER = ["Mi Taller", "Mi PDV", "Mi Inventario", "Mi Flotilla", "Mi Oficina"];
 
 
 const useNavigation = (): NavigationEntry[] => {
