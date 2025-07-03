@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -139,7 +140,7 @@ export function DashboardCharts() {
           <CardDescription>Evolución mensual de ingresos brutos y ganancia neta.</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="h-[250px] w-full">
+          <div className="h-[250px]">
             <ChartContainer config={monthlyChartConfig}>
               <LineChart accessibilityLayer data={monthlyChartData} margin={{ left: 12, right: 12, top: 5 }}>
                 <CartesianGrid vertical={false} />
@@ -158,7 +159,7 @@ export function DashboardCharts() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card className="flex flex-col">
           <CardHeader>
-            <CardTitle>Distribución de Servicios</CardTitle>
+            <CardTitle>Tipo de Servicios</CardTitle>
             <CardDescription>Tipos de servicios más comunes.</CardDescription>
           </CardHeader>
           <CardContent className="flex-1 flex items-center justify-center pb-4">
