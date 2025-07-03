@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils";
 import Image from "next/legacy/image";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Check } from 'lucide-react';
+import { Check, Eye } from 'lucide-react';
 
 const initialWorkshopInfo: WorkshopInfo = {
   name: "RANORO",
@@ -85,12 +85,14 @@ const SafetyChecklistDisplay = ({
   inspection,
   workshopInfo,
   service,
-  vehicle
+  vehicle,
+  onViewImage
 }: {
   inspection: SafetyInspection;
   workshopInfo: WorkshopInfo;
   service: ServiceRecord;
   vehicle?: Vehicle;
+  onViewImage: (url: string) => void;
 }) => {
     const serviceDateInput = service.serviceDate;
     let serviceDate: Date;
@@ -152,9 +154,17 @@ const SafetyChecklistDisplay = ({
                                         {checkItem && checkItem.photos && checkItem.photos.length > 0 && (
                                             <div className="grid grid-cols-2 gap-1 mt-1 pl-4">
                                                 {checkItem.photos.map((photoUrl, pIndex) => (
-                                                    <div key={pIndex} className="relative aspect-[4/3] w-full bg-gray-100 rounded overflow-hidden border">
-                                                        <Image src={photoUrl} alt={`Evidencia para ${item.label}`} layout="fill" objectFit="cover" />
-                                                    </div>
+                                                     <button
+                                                        type="button"
+                                                        onClick={() => onViewImage(photoUrl)}
+                                                        key={pIndex} 
+                                                        className="relative aspect-video w-full bg-gray-100 rounded overflow-hidden border group"
+                                                    >
+                                                        <Image src={photoUrl} alt={`Evidencia para ${item.label}`} layout="fill" objectFit="cover" className="transition-transform duration-300 group-hover:scale-105"/>
+                                                        <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity group-hover:opacity-100">
+                                                            <Eye className="h-6 w-6 text-white" />
+                                                        </div>
+                                                    </button>
                                                 ))}
                                             </div>
                                         )}
@@ -189,10 +199,11 @@ interface ServiceSheetContentProps {
   service: ServiceRecord;
   vehicle?: Vehicle;
   workshopInfo?: WorkshopInfo;
+  onViewImage?: (url: string) => void;
 }
 
 export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheetContentProps>(
-  ({ service, vehicle, workshopInfo: workshopInfoProp }, ref) => {
+  ({ service, vehicle, workshopInfo: workshopInfoProp, onViewImage }, ref) => {
     const effectiveWorkshopInfo = { ...initialWorkshopInfo, ...workshopInfoProp };
     
     const formatCurrency = (amount: number | undefined) => {
@@ -428,17 +439,26 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
                     <span className="font-bold">Descripción:</span>{" "}
                     {reportItem.description}
                 </p>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-2 gap-2 mt-2">
                 {reportItem.photos.map((photoUrl, photoIndex) => (
-                    <div key={photoIndex} className="relative aspect-video w-full bg-gray-100 rounded-md overflow-hidden border">
-                    <Image
-                        src={photoUrl}
-                        alt={`Foto ${photoIndex + 1}`}
-                        layout="fill"
-                        objectFit="contain"
-                        data-ai-hint="car damage photo"
-                    />
-                    </div>
+                    <button
+                        type="button"
+                        onClick={() => onViewImage && onViewImage(photoUrl)}
+                        key={photoIndex} 
+                        className="relative aspect-video w-full bg-gray-100 rounded-md overflow-hidden border group"
+                    >
+                        <Image
+                            src={photoUrl}
+                            alt={`Foto ${photoIndex + 1}`}
+                            layout="fill"
+                            objectFit="cover"
+                            className="transition-transform duration-300 group-hover:scale-105"
+                            data-ai-hint="car damage photo"
+                        />
+                         <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity group-hover:opacity-100">
+                            <Eye className="h-8 w-8 text-white" />
+                        </div>
+                    </button>
                 ))}
                 </div>
             </div>
@@ -464,6 +484,7 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
                 workshopInfo={effectiveWorkshopInfo}
                 service={service}
                 vehicle={vehicle}
+                onViewImage={onViewImage || (() => {})}
               /> : (
                 <div className="text-center p-8 text-muted-foreground">
                   La revisión de seguridad no es aplicable a este servicio.
@@ -493,6 +514,7 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
                 workshopInfo={effectiveWorkshopInfo}
                 service={service}
                 vehicle={vehicle}
+                onViewImage={onViewImage || (() => {})}
               /></div>
             </>
           )}
