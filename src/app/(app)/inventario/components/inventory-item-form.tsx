@@ -25,6 +25,7 @@ import { capitalizeWords } from '@/lib/utils';
 
 const inventoryItemFormSchema = z.object({
   name: z.string().min(3, "El nombre del producto debe tener al menos 3 caracteres."),
+  brand: z.string().optional(),
   sku: z.string().optional(),
   description: z.string().optional(),
   isService: z.boolean().default(false).optional(),
@@ -73,6 +74,7 @@ export function InventoryItemForm({ initialData, onSubmit, onClose, categories, 
         rendimiento: 'rendimiento' in initialData ? initialData.rendimiento : undefined
     } : {
       name: "",
+      brand: "",
       sku: "",
       description: "",
       isService: false,
@@ -183,16 +185,27 @@ export function InventoryItemForm({ initialData, onSubmit, onClose, categories, 
               />
               <FormField
                 control={form.control}
-                name="sku"
+                name="brand"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Código / SKU (Opcional)</FormLabel>
-                    <FormControl><Input placeholder="Ej: FA-XYZ-001" {...field} onChange={(e) => field.onChange(e.target.value.toUpperCase())} /></FormControl>
+                    <FormLabel>Marca (Opcional)</FormLabel>
+                    <FormControl><Input placeholder="Ej: Gonher" {...field} onChange={(e) => field.onChange(capitalizeWords(e.target.value))} /></FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
             </div>
+            <FormField
+              control={form.control}
+              name="sku"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Código / SKU (Opcional)</FormLabel>
+                  <FormControl><Input placeholder="Ej: FA-XYZ-001" {...field} onChange={(e) => field.onChange(e.target.value.toUpperCase())} /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
             <FormField
               control={form.control}
               name="description"

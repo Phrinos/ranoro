@@ -248,6 +248,7 @@ export interface TechnicianMonthlyPerformance {
 export interface InventoryItem {
   id: string;
   name: string;
+  brand?: string;
   sku: string; 
   description?: string;
   quantity: number;
