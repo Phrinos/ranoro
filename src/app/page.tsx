@@ -1,4 +1,3 @@
-
 "use client";
 
 import Link from 'next/link';
@@ -65,16 +64,7 @@ export default function LandingPage() {
             <Button variant="ghost" asChild>
               <Link href="#flotillas">Flotillas</Link>
             </Button>
-             <Button variant="ghost" asChild>
-              <Link href="/login">Acceso Empleados</Link>
-            </Button>
           </nav>
-          {/* Mobile Floating Login Button */}
-          <Button asChild size="icon" className="md:hidden fixed top-4 right-4 z-50 h-12 w-12 rounded-full shadow-lg">
-            <Link href="/login" aria-label="Acceso Empleados">
-                <Users className="h-6 w-6" />
-            </Link>
-          </Button>
         </div>
       </header>
 
@@ -253,6 +243,11 @@ export default function LandingPage() {
           <div className="text-center md:text-left">
             <p className="text-sm font-semibold">Sistema de Administración de Talleres Ranoro®</p>
             <p className="text-sm text-muted-foreground">Diseñado y Desarrollado por Arturo Valdelamar 4493930914</p>
+          </div>
+          <div className="text-center md:text-right">
+             <Button variant="outline" asChild>
+                <Link href="/login">Acceso</Link>
+             </Button>
           </div>
         </div>
       </footer>
