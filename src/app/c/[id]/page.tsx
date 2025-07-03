@@ -7,7 +7,7 @@ import { QuoteContent } from '@/components/quote-content';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import type { QuoteRecord, Vehicle, WorkshopInfo } from '@/types';
-import { ShieldAlert, Download, Loader2 } from 'lucide-react';
+import { ShieldAlert, Printer, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
 import { getDoc, doc } from 'firebase/firestore';
@@ -68,35 +68,6 @@ export default function PublicQuoteViewPage() {
 
     fetchPublicQuote();
   }, [quoteId]);
-
-  const handleDownloadPDF = async () => {
-    if (!quoteContentRef.current || !quote) return;
-    const html2pdf = (await import('html2pdf.js')).default;
-    const element = quoteContentRef.current;
-    const pdfFileName = `Cotizacion-${quote.id}.pdf`;
-    const opt = {
-      margin: 7.5,
-      filename: pdfFileName,
-      image: { type: 'jpeg', quality: 0.98 },
-      html2canvas:  { scale: 2, useCORS: true, letterRendering: true },
-      jsPDF:        { unit: 'mm', format: 'letter', orientation: 'portrait' }
-    };
-    toast({ title: "Generando PDF...", description: `Se está preparando ${pdfFileName}.` });
-    html2pdf().from(element).set(opt).save().then(() => {
-        toast({
-          title: "PDF Descargado",
-          description: "El archivo se ha guardado exitosamente.",
-          duration: 2000,
-        });
-      }).catch((err: any) => {
-        toast({
-          title: "Error al generar PDF",
-          description: "Ocurrió un problema al crear el archivo.",
-          variant: "destructive",
-        });
-        console.error("PDF generation error:", err);
-      });
-  };
   
 
   if (quote === undefined) {
@@ -146,10 +117,10 @@ export default function PublicQuoteViewPage() {
             <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div>
                     <CardTitle>Vista Pública de Cotización: {quote.id}</CardTitle>
-                    <CardDescription>Esta es una vista previa de la cotización. Puede descargarla.</CardDescription>
+                    <CardDescription>Esta es una vista previa de la cotización. Puede imprimirla o guardarla como PDF.</CardDescription>
                 </div>
                  <div className="flex gap-2 flex-wrap justify-end">
-                    <Button onClick={handleDownloadPDF}><Download className="mr-2 h-4 w-4"/> Descargar PDF</Button>
+                    <Button onClick={() => window.print()}><Printer className="mr-2 h-4 w-4"/> Imprimir Cotización</Button>
                  </div>
             </CardHeader>
         </Card>

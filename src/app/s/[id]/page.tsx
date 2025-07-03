@@ -7,7 +7,7 @@ import { ServiceSheetContent } from '@/components/service-sheet-content';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import type { ServiceRecord, Vehicle, WorkshopInfo } from '@/types';
-import { ShieldAlert, Download, Loader2, Signature, Eye } from 'lucide-react';
+import { ShieldAlert, Printer, Loader2, Signature, Eye, Download } from 'lucide-react';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
 import { SignatureDialog } from '@/app/(app)/servicios/components/signature-dialog';
@@ -84,22 +84,6 @@ export default function PublicServiceSheetPage() {
 
     fetchPublicService();
   }, [publicId]);
-
-  const handleDownloadPDF = async () => {
-    if (!serviceSheetRef.current || !service) return;
-    const html2pdf = (await import('html2pdf.js')).default;
-    const element = serviceSheetRef.current;
-    const pdfFileName = `HojaDeServicio-${service.id}.pdf`;
-    const opt = {
-      margin: 5,
-      filename: pdfFileName,
-      image: { type: 'jpeg', quality: 0.98 },
-      html2canvas:  { scale: 2, useCORS: true, letterRendering: true },
-      jsPDF:        { unit: 'mm', format: 'letter', orientation: 'portrait' }
-    };
-    toast({ title: "Generando PDF...", description: `Se está preparando ${pdfFileName}.` });
-    html2pdf().from(element).set(opt).save();
-  };
 
   const handleOpenSignatureDialog = (type: 'reception' | 'delivery') => {
     setSignatureType(type);
@@ -215,7 +199,7 @@ export default function PublicServiceSheetPage() {
                  Firmar Entrega
               </Button>
             )}
-            <Button variant="outline" onClick={handleDownloadPDF}><Download className="mr-2 h-4 w-4"/> Descargar PDF</Button>
+            <Button variant="outline" onClick={() => window.print()}><Printer className="mr-2 h-4 w-4"/> Imprimir Hoja</Button>
           </div>
         </CardHeader>
       </Card>
