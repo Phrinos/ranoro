@@ -28,7 +28,7 @@ const inventoryItemFormSchema = z.object({
   sku: z.string().optional(),
   description: z.string().optional(),
   isService: z.boolean().default(false).optional(),
-  quantity: z.coerce.number().int().min(0, "La cantidad no puede ser negativa."),
+  quantity: z.coerce.number().int().min(0, "La cantidad no puede ser negativa.").optional(),
   unitPrice: z.coerce.number().min(0, "El precio de compra no puede ser negativo.").optional(),
   sellingPrice: z.coerce.number().min(0, "El precio de venta no puede ser negativo.").optional(),
   lowStockThreshold: z.coerce.number().int().min(0, "El umbral de stock bajo no puede ser negativo."),
@@ -76,9 +76,9 @@ export function InventoryItemForm({ initialData, onSubmit, onClose, categories, 
       sku: "",
       description: "",
       isService: false,
-      quantity: 0,
-      unitPrice: 0,
-      sellingPrice: 0,
+      quantity: undefined,
+      unitPrice: undefined,
+      sellingPrice: undefined,
       lowStockThreshold: 5,
       unitType: 'units',
       category: categories.length > 0 ? categories[0].name : "", 
@@ -100,7 +100,7 @@ export function InventoryItemForm({ initialData, onSubmit, onClose, categories, 
   const handleFormSubmit = async (values: InventoryItemFormValues) => {
     const submissionValues = {
       ...values,
-      quantity: values.isService ? 0 : values.quantity,
+      quantity: values.isService ? 0 : values.quantity || 0,
       lowStockThreshold: values.isService ? 0 : values.lowStockThreshold,
       unitPrice: values.unitPrice || 0,
       sellingPrice: values.sellingPrice || 0,
@@ -187,7 +187,7 @@ export function InventoryItemForm({ initialData, onSubmit, onClose, categories, 
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Código / SKU (Opcional)</FormLabel>
-                    <FormControl><Input placeholder="Ej: FA-XYZ-001" {...field} /></FormControl>
+                    <FormControl><Input placeholder="Ej: FA-XYZ-001" {...field} onChange={(e) => field.onChange(e.target.value.toUpperCase())} /></FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
