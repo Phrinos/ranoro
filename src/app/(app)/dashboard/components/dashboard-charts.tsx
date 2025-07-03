@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -15,6 +14,13 @@ interface MonthlyChartData {
     profit: number;
 }
 
+// New interface for the second chart
+interface MonthlyOperationsData {
+    month: string;
+    services: number;
+    sales: number;
+}
+
 interface ServiceTypeChartData {
     name: string;
     value: number;
@@ -29,36 +35,42 @@ interface RevenueSourceChartData {
 
 export function DashboardCharts() {
   const [monthlyChartData, setMonthlyChartData] = React.useState<MonthlyChartData[]>([]);
+  const [monthlyOperationsData, setMonthlyOperationsData] = React.useState<MonthlyOperationsData[]>([]); // New state
   const [serviceTypeChartData, setServiceTypeChartData] = React.useState<ServiceTypeChartData[]>([]);
   const [revenueSourceChartData, setRevenueSourceChartData] = React.useState<RevenueSourceChartData[]>([]);
 
   React.useEffect(() => {
-    // Process data for monthly performance chart
     const now = new Date();
+    
+    // --- Data for Chart 1: Ingresos vs Ganancia ---
     const monthlyData: { [key: string]: { month: string, revenue: number, profit: number } } = {};
+
+    // --- Data for Chart 2: Servicios vs Ventas ---
+    const monthlyOpsData: { [key: string]: { month: string, services: number, sales: number } } = {};
+
     for (let i = 5; i >= 0; i--) {
         const date = subMonths(now, i);
         const monthKey = format(date, "yyyy-MM");
-        monthlyData[monthKey] = {
-            month: format(date, "MMM", { locale: es }),
-            revenue: 0,
-            profit: 0
-        };
+        const monthLabel = format(date, "MMM", { locale: es });
+        
+        monthlyData[monthKey] = { month: monthLabel, revenue: 0, profit: 0 };
+        monthlyOpsData[monthKey] = { month: monthLabel, services: 0, sales: 0 };
     }
 
     placeholderServiceRecords.forEach(service => {
-        if (service.status !== 'Completado' || !service.totalCost) return;
+        if (service.status !== 'Completado') return;
         const date = parseISO(service.deliveryDateTime || service.serviceDate);
         if(!isValid(date)) return;
         
         const monthKey = format(date, "yyyy-MM");
         if (monthlyData[monthKey]) {
-            // Revenue is the total amount paid by the customer.
-            monthlyData[monthKey].revenue += service.totalCost;
-            
-            // Profit is revenue minus cost of supplies.
+            // Chart 1 data
+            monthlyData[monthKey].revenue += service.totalCost || 0;
             const profit = (service.totalCost || 0) - (service.totalSuppliesCost || 0);
             monthlyData[monthKey].profit += isFinite(profit) ? profit : 0;
+            
+            // Chart 2 data
+            monthlyOpsData[monthKey].services += 1;
         }
     });
 
@@ -68,17 +80,19 @@ export function DashboardCharts() {
         
         const monthKey = format(date, "yyyy-MM");
         if (monthlyData[monthKey]) {
-            // Revenue is the total amount paid by the customer.
+            // Chart 1 data
             monthlyData[monthKey].revenue += sale.totalAmount;
-            
-            // Profit calculation is now correct in the helper function
             monthlyData[monthKey].profit += calculateSaleProfit(sale, placeholderInventory);
+            
+            // Chart 2 data
+            monthlyOpsData[monthKey].sales += 1;
         }
     });
 
     setMonthlyChartData(Object.values(monthlyData));
+    setMonthlyOperationsData(Object.values(monthlyOpsData)); // Set new state
     
-    // Process data for service type chart
+    // --- Data for Pie Charts ---
     const serviceTypeCounts: { [key: string]: number } = {};
     placeholderServiceRecords.forEach(service => {
         const type = service.serviceType || 'Servicio General';
@@ -97,10 +111,9 @@ export function DashboardCharts() {
       fill: serviceTypeColors[name] || `hsl(var(--chart-${(index % 5) + 1}))`
     })));
     
-    // Process data for revenue source chart
     const totalServiceRevenue = placeholderServiceRecords
         .filter(s => s.status === 'Completado')
-        .reduce((sum, s) => sum + s.totalCost, 0);
+        .reduce((sum, s) => sum + (s.totalCost || 0), 0);
     const totalPosRevenue = placeholderSales.reduce((sum, s) => sum + s.totalAmount, 0);
     setRevenueSourceChartData([
         { source: 'Servicios', value: totalServiceRevenue, fill: 'hsl(var(--chart-1))' },
@@ -112,14 +125,14 @@ export function DashboardCharts() {
   const formatCurrency = (value: number) => `$${new Intl.NumberFormat('es-MX', {notation: "compact", compactDisplay: "short"}).format(value)}`;
   
   const monthlyChartConfig = {
-    revenue: {
-      label: "Ingresos",
-      color: "hsl(var(--chart-1))",
-    },
-    profit: {
-      label: "Ganancia",
-      color: "hsl(var(--chart-2))",
-    },
+    revenue: { label: "Ingresos", color: "hsl(var(--chart-1))" },
+    profit: { label: "Ganancia", color: "hsl(var(--chart-2))" },
+  } satisfies ChartConfig;
+
+  // New chart config
+  const monthlyOpsChartConfig = {
+    services: { label: "Servicios", color: "hsl(var(--chart-1))" },
+    sales: { label: "Ventas", color: "hsl(var(--chart-2))" },
   } satisfies ChartConfig;
   
   const serviceTypeChartConfig = serviceTypeChartData.reduce((acc, { name, fill }) => {
@@ -139,8 +152,8 @@ export function DashboardCharts() {
           <CardTitle>Ingresos vs. Ganancia (Últimos 6 Meses)</CardTitle>
           <CardDescription>Evolución mensual de ingresos brutos y ganancia neta.</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-            <div className="flex w-full items-center justify-center gap-x-8 gap-y-2 text-sm text-muted-foreground flex-wrap">
+        <CardContent>
+            <div className="flex w-full items-center justify-center gap-x-8 gap-y-2 text-sm text-muted-foreground flex-wrap mb-4">
                 <div className="flex items-center gap-2">
                   <div className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: "var(--color-revenue)" }} />
                   <div className="font-medium">Ingresos</div>
@@ -150,7 +163,7 @@ export function DashboardCharts() {
                   <div className="font-medium">Ganancia</div>
                 </div>
             </div>
-            <div className="h-[350px] w-full">
+            <div className="h-[250px] w-full">
                 <ChartContainer config={monthlyChartConfig}>
                 <LineChart accessibilityLayer data={monthlyChartData} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
                     <CartesianGrid vertical={false} />
@@ -165,7 +178,39 @@ export function DashboardCharts() {
         </CardContent>
       </Card>
       
-      <div className="grid grid-cols-1 gap-6">
+      {/* New Chart */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Servicios vs. Ventas (Últimos 6 Meses)</CardTitle>
+          <CardDescription>Volumen de operaciones completadas mensualmente.</CardDescription>
+        </CardHeader>
+        <CardContent>
+            <div className="flex w-full items-center justify-center gap-x-8 gap-y-2 text-sm text-muted-foreground flex-wrap mb-4">
+                <div className="flex items-center gap-2">
+                  <div className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: "var(--color-services)" }} />
+                  <div className="font-medium">Servicios</div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: "var(--color-sales)" }} />
+                  <div className="font-medium">Ventas</div>
+                </div>
+            </div>
+            <div className="h-[250px] w-full">
+                <ChartContainer config={monthlyOpsChartConfig}>
+                <LineChart accessibilityLayer data={monthlyOperationsData} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
+                    <CartesianGrid vertical={false} />
+                    <XAxis dataKey="month" tickLine={false} axisLine={false} tickMargin={8} />
+                    <YAxis tickLine={false} axisLine={false} tickMargin={8} tickFormatter={(value) => value.toString()} allowDecimals={false} />
+                    <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
+                    <Line dataKey="services" type="monotone" stroke="var(--color-services)" strokeWidth={3} dot={{ r: 5 }} activeDot={{ r: 7 }} name="Servicios" />
+                    <Line dataKey="sales" type="monotone" stroke="var(--color-sales)" strokeWidth={3} dot={{ r: 5 }} activeDot={{ r: 7 }} name="Ventas" />
+                </LineChart>
+                </ChartContainer>
+            </div>
+        </CardContent>
+      </Card>
+
+      <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card className="flex flex-col">
           <CardHeader>
             <CardTitle>Tipo de Servicios</CardTitle>
@@ -183,11 +228,11 @@ export function DashboardCharts() {
                 )
               })}
             </div>
-            <div className="h-[200px] w-full">
+            <div className="h-[150px] w-full">
               <ChartContainer config={serviceTypeChartConfig} className="mx-auto aspect-square h-full">
                 <PieChart>
                   <ChartTooltip content={<ChartTooltipContent nameKey="name" hideLabel />} />
-                  <Pie data={serviceTypeChartData} dataKey="value" nameKey="name" innerRadius={40} strokeWidth={2} />
+                  <Pie data={serviceTypeChartData} dataKey="value" nameKey="name" innerRadius={30} strokeWidth={2} />
                 </PieChart>
               </ChartContainer>
             </div>
@@ -211,11 +256,11 @@ export function DashboardCharts() {
                 )
               })}
             </div>
-            <div className="h-[200px] w-full">
+            <div className="h-[150px] w-full">
               <ChartContainer config={revenueSourceChartConfig} className="mx-auto aspect-square h-full">
                   <PieChart>
                       <ChartTooltip content={<ChartTooltipContent nameKey="source" hideLabel formatter={(value) => typeof value === 'number' ? formatCurrency(value) : value.toString()}/>} />
-                      <Pie data={revenueSourceChartData} dataKey="value" nameKey="source" innerRadius={40} strokeWidth={2} />
+                      <Pie data={revenueSourceChartData} dataKey="value" nameKey="source" innerRadius={30} strokeWidth={2} />
                   </PieChart>
               </ChartContainer>
             </div>
