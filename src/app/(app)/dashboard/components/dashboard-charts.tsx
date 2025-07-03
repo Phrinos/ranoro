@@ -221,7 +221,7 @@ export function DashboardCharts() {
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart
                     data={monthlyChartData}
-                    margin={{ top: 5, right: 10, left: 0, bottom: 5 }}
+                    margin={{ top: 5, right: 10, left: 0, bottom: 10 }}
                   >
                     <CartesianGrid vertical={false} />
                     <XAxis
@@ -295,7 +295,7 @@ export function DashboardCharts() {
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart
                     data={monthlyOperationsData}
-                    margin={{ top: 5, right: 10, left: 0, bottom: 5 }}
+                    margin={{ top: 5, right: 10, left: 0, bottom: 10 }}
                   >
                     <CartesianGrid vertical={false} />
                     <XAxis
