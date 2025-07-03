@@ -14,7 +14,7 @@ import { SignatureDialog } from '@/app/(app)/servicios/components/signature-dial
 import { getDoc, doc, setDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebasePublic.js';
 import Image from "next/legacy/image";
-import { Dialog, DialogContent, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 
 export default function PublicServiceSheetPage() {
@@ -239,12 +239,18 @@ export default function PublicServiceSheetPage() {
       />
       <Dialog open={isImageViewerOpen} onOpenChange={setIsImageViewerOpen}>
         <DialogContent className="max-w-4xl p-2">
+            <DialogHeader className="print:hidden">
+              <DialogTitle>Vista Previa de Imagen</DialogTitle>
+              <CardDescription>
+                Visualizando imagen de evidencia. Puede descargar una copia.
+              </CardDescription>
+            </DialogHeader>
             <div className="relative aspect-video w-full">
                 {viewingImageUrl && (
                     <Image src={viewingImageUrl} alt="Vista ampliada de evidencia" layout="fill" objectFit="contain" />
                 )}
             </div>
-            <DialogFooter className="mt-2">
+            <DialogFooter className="mt-2 print:hidden">
                 <Button onClick={handleDownloadImage}>
                     <Download className="mr-2 h-4 w-4"/>Descargar Imagen
                 </Button>

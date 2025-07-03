@@ -20,7 +20,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription} from '@/components/ui/card';
-import { CalendarIcon, PlusCircle, Search, Trash2, AlertCircle, Car as CarIcon, Clock, DollarSign, PackagePlus, BrainCircuit, Loader2, Printer, Plus, Minus, FileText, Signature, MessageSquare, Ban, ShieldQuestion, Wrench, Wallet, CreditCard, Send, WalletCards, ArrowRightLeft, Tag, FileCheck, Check, ShieldCheck, Copy, Camera, Eye } from "lucide-react";
+import { CalendarIcon, PlusCircle, Search, Trash2, AlertCircle, Car as CarIcon, Clock, DollarSign, PackagePlus, BrainCircuit, Loader2, Printer, Plus, Minus, FileText, Signature, MessageSquare, Ban, ShieldQuestion, Wrench, Wallet, CreditCard, Send, WalletCards, ArrowRightLeft, Tag, FileCheck, Check, ShieldCheck, Copy, Camera, Eye, Download } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format, parseISO, setHours, setMinutes, isValid, startOfDay, addDays } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -1077,6 +1077,28 @@ export function ServiceForm({
     return `${lastService.mileage ? `${lastService.mileage.toLocaleString('es-ES')} km - ` : ''}${format(date, "dd MMM yyyy", { locale: es })} - ${description}`;
   }, [lastService]);
 
+  const handleDownloadImage = async () => {
+    if (!viewingImageUrl) return;
+    try {
+        const response = await fetch(viewingImageUrl);
+        if (!response.ok) throw new Error('Network response was not ok');
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.style.display = 'none';
+        a.href = url;
+        a.download = `evidencia-${initialData?.id || 'ranoro'}-${Date.now()}.jpg`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        a.remove();
+        toast({ title: "Imagen Descargada", description: "La imagen se ha guardado en tu dispositivo." });
+    } catch (err) {
+        console.error("Error downloading image:", err);
+        toast({ title: "Error de Descarga", description: "No se pudo descargar la imagen.", variant: "destructive"});
+    }
+  };
+
   return (
     <>
       <Form {...form}>
@@ -1744,11 +1766,22 @@ export function ServiceForm({
       
       <Dialog open={isImageViewerOpen} onOpenChange={setIsImageViewerOpen}>
         <DialogContent className="max-w-4xl p-2">
+            <DialogHeader>
+              <DialogTitle>Vista Previa de Imagen</DialogTitle>
+              <DialogDesc>
+                Visualizando la imagen de evidencia. Puede descargarla si lo necesita.
+              </DialogDesc>
+            </DialogHeader>
             <div className="relative aspect-video w-full">
                 {viewingImageUrl && (
                     <Image src={viewingImageUrl} alt="Vista ampliada de evidencia" layout="fill" objectFit="contain" />
                 )}
             </div>
+            <DialogFooter className="mt-2">
+                <Button onClick={handleDownloadImage}>
+                    <Download className="mr-2 h-4 w-4"/>Descargar Imagen
+                </Button>
+            </DialogFooter>
         </DialogContent>
       </Dialog>
     </>
