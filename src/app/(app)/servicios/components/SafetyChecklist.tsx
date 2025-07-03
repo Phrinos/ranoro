@@ -1,17 +1,21 @@
 
 "use client";
 
-import React from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useFormContext, Controller, type Control } from "react-hook-form";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from "@/components/ui/button";
 import { FormField, FormItem, FormLabel, FormControl } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
-import { Check, Signature, BrainCircuit, Loader2 } from "lucide-react";
+import { Check, Signature, BrainCircuit, Loader2, Camera, Trash2 } from "lucide-react";
 import type { ServiceFormValues } from "./service-form";
-import type { SafetyInspection, SafetyCheckStatus } from '@/types';
+import type { SafetyInspection, SafetyCheckStatus, SafetyCheckValue } from '@/types';
 import { cn } from "@/lib/utils";
 import Image from "next/legacy/image";
+import { useToast } from "@/hooks/use-toast";
+import { optimizeImage } from "@/lib/utils";
+import { storage } from "@/lib/firebaseClient";
+import { ref, uploadString, getDownloadURL } from "firebase/storage";
 
 
 const inspectionGroups = [
@@ -57,59 +61,123 @@ const inspectionGroups = [
   ]},
 ];
 
-const SafetyCheckRow = ({ name, label, control, isReadOnly }: { name: string; label: string; control: Control<ServiceFormValues>; isReadOnly?: boolean; }) => {
+const ChecklistItemPhotoUploader = ({ itemName, serviceId, onUpload, photos, isReadOnly }: { itemName: string, serviceId: string, onUpload: (itemName: string, url: string) => void, photos: string[], isReadOnly?: boolean }) => {
+    const { toast } = useToast();
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    const [isUploading, setIsUploading] = useState(false);
+
+    const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (fileInputRef.current) fileInputRef.current.value = '';
+        if (!file) return;
+
+        setIsUploading(true);
+        try {
+            const optimizedUrl = await optimizeImage(file, 800);
+            const storageRef = ref(storage, `service-photos/${serviceId}/checklist/${itemName}/${Date.now()}.jpg`);
+            await uploadString(storageRef, optimizedUrl, 'data_url');
+            const downloadURL = await getDownloadURL(storageRef);
+            onUpload(itemName, downloadURL);
+            toast({ title: 'Foto subida', description: 'La foto se ha añadido a la inspección.' });
+        } catch (error) {
+            console.error("Error uploading photo:", error);
+            toast({ title: 'Error al subir foto', variant: 'destructive' });
+        } finally {
+            setIsUploading(false);
+        }
+    };
+
+    return (
+        <div className="space-y-2">
+            <div className="grid grid-cols-2 gap-2">
+                {photos.map((url, index) => (
+                    <div key={index} className="relative aspect-video bg-muted rounded-md">
+                        <Image src={url} alt={`Foto ${index + 1}`} layout="fill" objectFit="cover" />
+                    </div>
+                ))}
+            </div>
+            {!isReadOnly && photos.length < 2 && (
+                 <>
+                    <Button type="button" variant="outline" size="sm" onClick={() => fileInputRef.current?.click()} disabled={isUploading}>
+                        {isUploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Camera className="mr-2 h-4 w-4" />}
+                        Añadir Foto ({photos.length}/2)
+                    </Button>
+                    <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/*" className="hidden" />
+                 </>
+            )}
+        </div>
+    );
+};
+
+
+const SafetyCheckRow = ({ name, label, control, isReadOnly, serviceId, onPhotoUploaded }: { name: string; label: string; control: Control<ServiceFormValues>; isReadOnly?: boolean; serviceId: string; onPhotoUploaded: (itemName: string, url: string) => void; }) => {
   return (
-    <div className="flex items-center justify-between py-2 border-b last:border-none">
-      <span className="text-sm font-medium pr-4">{label}</span>
-      <Controller
-        name={name as any}
-        control={control}
-        defaultValue="na"
-        render={({ field }) => (
-          <div className="flex gap-2">
-            {[
-              { value: 'inmediata', color: 'bg-red-500', title: 'Requiere Reparación Inmediata' },
-              { value: 'atencion', color: 'bg-yellow-400', title: 'Requiere Atención' },
-              { value: 'ok', color: 'bg-green-500', title: 'Bien' },
-            ].map(status => (
-              <button
-                type="button"
-                key={status.value}
-                title={status.title}
-                onClick={() => !isReadOnly && field.onChange(status.value)}
-                disabled={isReadOnly}
-                className={cn(
-                  "h-7 w-7 rounded-full border-2 transition-all",
-                  field.value === status.value ? 'border-black dark:border-white scale-110' : 'border-transparent opacity-50',
-                  isReadOnly ? 'cursor-not-allowed' : 'cursor-pointer hover:opacity-100'
-                )}
-              >
-                <div className={cn("h-full w-full rounded-full flex items-center justify-center", status.color)}>
-                    {field.value === status.value && <Check className="h-4 w-4 text-white" />}
-                </div>
-              </button>
-            ))}
+    <Controller
+      name={name as any}
+      control={control}
+      defaultValue={{ status: 'na', photos: [] }}
+      render={({ field }) => (
+        <div className="py-2 border-b last:border-none">
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-medium pr-4">{label}</span>
+            <div className="flex gap-2">
+              {[
+                { value: 'inmediata', color: 'bg-red-500', title: 'Requiere Reparación Inmediata' },
+                { value: 'atencion', color: 'bg-yellow-400', title: 'Requiere Atención' },
+                { value: 'ok', color: 'bg-green-500', title: 'Bien' },
+              ].map(status => (
+                <button
+                  type="button"
+                  key={status.value}
+                  title={status.title}
+                  onClick={() => !isReadOnly && field.onChange({ ...(field.value || { photos: [] }), status: status.value })}
+                  disabled={isReadOnly}
+                  className={cn(
+                    "h-7 w-7 rounded-full border-2 transition-all",
+                    field.value?.status === status.value ? 'border-black dark:border-white scale-110' : 'border-transparent opacity-50',
+                    isReadOnly ? 'cursor-not-allowed' : 'cursor-pointer hover:opacity-100'
+                  )}
+                >
+                  <div className={cn("h-full w-full rounded-full flex items-center justify-center", status.color)}>
+                      {field.value?.status === status.value && <Check className="h-4 w-4 text-white" />}
+                  </div>
+                </button>
+              ))}
+            </div>
           </div>
-        )}
-      />
-    </div>
+          {(field.value?.status === 'atencion' || field.value?.status === 'inmediata') && (
+            <div className="pl-4 mt-2">
+              <ChecklistItemPhotoUploader
+                itemName={name.split('.').pop()!}
+                serviceId={serviceId}
+                photos={field.value?.photos || []}
+                onUpload={onPhotoUploaded}
+                isReadOnly={isReadOnly}
+              />
+            </div>
+          )}
+        </div>
+      )}
+    />
   );
 };
 
 
-export const SafetyChecklist = ({ control, isReadOnly, onSignatureClick, signatureDataUrl, isEnhancingText, handleEnhanceText }: { 
+export const SafetyChecklist = ({ control, isReadOnly, onSignatureClick, signatureDataUrl, isEnhancingText, handleEnhanceText, serviceId, onPhotoUploaded }: { 
   control: Control<ServiceFormValues>; 
   isReadOnly?: boolean; 
   onSignatureClick: () => void;
   signatureDataUrl?: string;
   isEnhancingText: string | null;
   handleEnhanceText: (fieldName: 'notes' | 'vehicleConditions' | 'customerItems' | 'safetyInspection.inspectionNotes' | `photoReports.${number}.description`) => void;
+  serviceId: string;
+  onPhotoUploaded: (itemName: string, url: string) => void;
 }) => {
   return (
     <Card>
       <CardHeader>
         <CardTitle>Checklist de Puntos de Seguridad</CardTitle>
-        <CardDescription>Documenta el estado de los componentes clave.</CardDescription>
+        <CardDescription>Documenta el estado de los componentes clave. Si un punto requiere atención, podrás adjuntar fotos.</CardDescription>
         <div className="flex flex-wrap gap-x-4 gap-y-2 pt-2 text-sm">
           <div className="flex items-center gap-2">
             <div className="h-4 w-4 rounded-full bg-green-500" /><span>Bien</span>
@@ -118,7 +186,7 @@ export const SafetyChecklist = ({ control, isReadOnly, onSignatureClick, signatu
             <div className="h-4 w-4 rounded-full bg-yellow-400" /><span>Requiere Atención</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="h-4 w-4 rounded-full bg-red-500" /><span>Requiere Reparación Inmediata</span>
+            <div className="h-4 w-4 rounded-full bg-red-500" /><span>Reparación Inmediata</span>
           </div>
         </div>
       </CardHeader>
@@ -129,7 +197,15 @@ export const SafetyChecklist = ({ control, isReadOnly, onSignatureClick, signatu
               <h4 className="font-bold text-base mb-2 border-b-2 border-primary pb-1">{group.title}</h4>
               <div className="space-y-1">
                 {group.items.map(item => (
-                  <SafetyCheckRow key={item.name} name={item.name} label={item.label} control={control} isReadOnly={isReadOnly} />
+                  <SafetyCheckRow 
+                    key={item.name} 
+                    name={item.name} 
+                    label={item.label} 
+                    control={control} 
+                    isReadOnly={isReadOnly} 
+                    serviceId={serviceId}
+                    onPhotoUploaded={onPhotoUploaded}
+                  />
                 ))}
               </div>
             </div>

@@ -24,7 +24,7 @@ import { CalendarIcon, PlusCircle, Search, Trash2, AlertCircle, Car as CarIcon, 
 import { cn } from "@/lib/utils";
 import { format, parseISO, setHours, setMinutes, isValid, startOfDay, addDays } from 'date-fns';
 import { es } from 'date-fns/locale';
-import type { ServiceRecord, Vehicle, Technician, InventoryItem, ServiceSupply, QuoteRecord, InventoryCategory, Supplier, User, WorkshopInfo, ServiceItem, SafetyInspection, PaymentMethod, SafetyCheckStatus, PhotoReportGroup } from "@/types";
+import type { ServiceRecord, Vehicle, Technician, InventoryItem, ServiceSupply, QuoteRecord, InventoryCategory, Supplier, User, WorkshopInfo, ServiceItem, SafetyInspection, PaymentMethod, SafetyCheckStatus, PhotoReportGroup, SafetyCheckValue } from "@/types";
 import React, { useEffect, useState, useMemo, useCallback, useRef } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { VehicleDialog } from "../../vehiculos/components/vehicle-dialog";
@@ -84,8 +84,6 @@ const serviceItemSchema = z.object({
   suppliesUsed: z.array(supplySchema),
 });
 
-const safetyCheckStatusSchema = z.enum(['ok', 'atencion', 'inmediata', 'na']).default('na');
-
 const photoReportGroupSchema = z.object({
   id: z.string(),
   date: z.string(),
@@ -93,52 +91,41 @@ const photoReportGroupSchema = z.object({
   photos: z.array(z.string().url("URL de foto inválida.")).max(3, "No más de 3 fotos por reporte."),
 });
 
+const safetyCheckValueSchema = z.object({
+  status: z.enum(['ok', 'atencion', 'inmediata', 'na']).default('na'),
+  photos: z.array(z.string().url()).default([]),
+});
 
 const safetyInspectionSchema = z.object({
-  // Luces
-  luces_altas_bajas_niebla: safetyCheckStatusSchema.optional(),
-  luces_cuartos: safetyCheckStatusSchema.optional(),
-  luces_direccionales: safetyCheckStatusSchema.optional(),
-  luces_frenos_reversa: safetyCheckStatusSchema.optional(),
-  luces_interiores: safetyCheckStatusSchema.optional(),
-  
-  // Fugas y Niveles
-  fugas_refrigerante: safetyCheckStatusSchema.optional(),
-  fugas_limpiaparabrisas: safetyCheckStatusSchema.optional(),
-  fugas_frenos_embrague: safetyCheckStatusSchema.optional(),
-  fugas_transmision: safetyCheckStatusSchema.optional(),
-  fugas_direccion_hidraulica: safetyCheckStatusSchema.optional(),
-  
-  // Carrocería
-  carroceria_cristales_espejos: safetyCheckStatusSchema.optional(),
-  carroceria_puertas_cofre: safetyCheckStatusSchema.optional(),
-  carroceria_asientos_tablero: safetyCheckStatusSchema.optional(),
-  carroceria_plumas: safetyCheckStatusSchema.optional(),
-  
-  // Suspensión y Dirección
-  suspension_rotulas: safetyCheckStatusSchema.optional(),
-  suspension_amortiguadores: safetyCheckStatusSchema.optional(),
-  suspension_caja_direccion: safetyCheckStatusSchema.optional(),
-  suspension_terminales: safetyCheckStatusSchema.optional(),
-
-  // Llantas (Estado y Presión)
-  llantas_delanteras_traseras: safetyCheckStatusSchema.optional(),
-  llantas_refaccion: safetyCheckStatusSchema.optional(),
-  
-  // Frenos
-  frenos_discos_delanteros: safetyCheckStatusSchema.optional(),
-  frenos_discos_traseros: safetyCheckStatusSchema.optional(),
-  
-  // Otros
-  otros_tuberia_escape: safetyCheckStatusSchema.optional(),
-  otros_soportes_motor: safetyCheckStatusSchema.optional(),
-  otros_claxon: safetyCheckStatusSchema.optional(),
-  otros_inspeccion_sdb: safetyCheckStatusSchema.optional(),
-  
-  // Global notes and signature for the inspection
+  luces_altas_bajas_niebla: safetyCheckValueSchema.optional(),
+  luces_cuartos: safetyCheckValueSchema.optional(),
+  luces_direccionales: safetyCheckValueSchema.optional(),
+  luces_frenos_reversa: safetyCheckValueSchema.optional(),
+  luces_interiores: safetyCheckValueSchema.optional(),
+  fugas_refrigerante: safetyCheckValueSchema.optional(),
+  fugas_limpiaparabrisas: safetyCheckValueSchema.optional(),
+  fugas_frenos_embrague: safetyCheckValueSchema.optional(),
+  fugas_transmision: safetyCheckValueSchema.optional(),
+  fugas_direccion_hidraulica: safetyCheckValueSchema.optional(),
+  carroceria_cristales_espejos: safetyCheckValueSchema.optional(),
+  carroceria_puertas_cofre: safetyCheckValueSchema.optional(),
+  carroceria_asientos_tablero: safetyCheckValueSchema.optional(),
+  carroceria_plumas: safetyCheckValueSchema.optional(),
+  suspension_rotulas: safetyCheckValueSchema.optional(),
+  suspension_amortiguadores: safetyCheckValueSchema.optional(),
+  suspension_caja_direccion: safetyCheckValueSchema.optional(),
+  suspension_terminales: safetyCheckValueSchema.optional(),
+  llantas_delanteras_traseras: safetyCheckValueSchema.optional(),
+  llantas_refaccion: safetyCheckValueSchema.optional(),
+  frenos_discos_delanteros: safetyCheckValueSchema.optional(),
+  frenos_discos_traseros: safetyCheckValueSchema.optional(),
+  otros_tuberia_escape: safetyCheckValueSchema.optional(),
+  otros_soportes_motor: safetyCheckValueSchema.optional(),
+  otros_claxon: safetyCheckValueSchema.optional(),
+  otros_inspeccion_sdb: safetyCheckValueSchema.optional(),
   inspectionNotes: z.string().optional(),
-  technicianSignature: z.string().optional(), 
-});
+  technicianSignature: z.string().optional(),
+}).optional();
 
 
 const paymentMethods: [PaymentMethod, ...PaymentMethod[]] = [
@@ -474,6 +461,21 @@ export function ServiceForm({
                 if (isValid(parsed)) parsedDeliveryDate = parsed;
             }
         }
+        
+        // Convert old safetyInspection data format to new one
+        const safetyInspectionData: any = {};
+        if (data.safetyInspection) {
+            for (const key in data.safetyInspection) {
+                const value = (data.safetyInspection as any)[key];
+                if (typeof value === 'string' && key !== 'inspectionNotes' && key !== 'technicianSignature') {
+                    // This is the old format (e.g., "ok"), convert it
+                    safetyInspectionData[key] = { status: value, photos: [] };
+                } else {
+                    // This is either the new format or a string field like notes/signature
+                    safetyInspectionData[key] = value;
+                }
+            }
+        }
 
         const dataToReset: Partial<ServiceFormValues> = {
             id: data.id,
@@ -496,7 +498,7 @@ export function ServiceForm({
             customerSignatureReception: (data as ServiceRecord)?.customerSignatureReception || undefined,
             customerSignatureDelivery: (data as ServiceRecord)?.customerSignatureDelivery || undefined,
             serviceItems: serviceItemsData,
-            safetyInspection: (data as ServiceRecord)?.safetyInspection || {},
+            safetyInspection: safetyInspectionData,
             paymentMethod: (data as ServiceRecord)?.paymentMethod || 'Efectivo',
             cardFolio: (data as ServiceRecord)?.cardFolio || '',
             transferFolio: (initialData as ServiceRecord)?.transferFolio || '',
@@ -890,6 +892,15 @@ export function ServiceForm({
         setIsEnhancingText(null);
     }
   };
+  
+  const handleChecklistPhotoUpload = useCallback((itemName: string, url: string) => {
+    const path = `safetyInspection.${itemName}` as const;
+    const currentItemValue = getValues(path) || { status: 'na', photos: [] };
+    const updatedPhotos = [...(currentItemValue.photos || []), url];
+
+    setValue(path, { ...currentItemValue, photos: updatedPhotos }, { shouldDirty: true });
+  }, [getValues, setValue]);
+
 
   const handleGenerateQuoteWithAI = async () => {
     setIsGeneratingQuote(true);
@@ -1598,6 +1609,8 @@ export function ServiceForm({
                     signatureDataUrl={technicianSignature}
                     isEnhancingText={isEnhancingText}
                     handleEnhanceText={handleEnhanceText}
+                    serviceId={stableServiceId}
+                    onPhotoUploaded={handleChecklistPhotoUpload}
                   />
               </TabsContent>
             )}

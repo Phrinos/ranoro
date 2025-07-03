@@ -23,55 +23,55 @@ const initialWorkshopInfo: WorkshopInfo = {
 
 const inspectionGroups = [
   { title: "LUCES", items: [
-    { name: "safetyInspection.luces_altas_bajas_niebla", label: "1. ALTAS, BAJAS Y NIEBLA" },
-    { name: "safetyInspection.luces_cuartos", label: "2. CUARTOS DELANTEROS, TRASEROS Y LATERALES" },
-    { name: "safetyInspection.luces_direccionales", label: "3. DIRECCIONALES E INTERMITENTES" },
-    { name: "safetyInspection.luces_frenos_reversa", label: "4. FRENOS Y REVERSA" },
-    { name: "safetyInspection.luces_interiores", label: "5. INTERIORES" },
+    { name: "luces_altas_bajas_niebla", label: "1. ALTAS, BAJAS Y NIEBLA" },
+    { name: "luces_cuartos", label: "2. CUARTOS DELANTEROS, TRASEROS Y LATERALES" },
+    { name: "luces_direccionales", label: "3. DIRECCIONALES E INTERMITENTES" },
+    { name: "luces_frenos_reversa", label: "4. FRENOS Y REVERSA" },
+    { name: "luces_interiores", label: "5. INTERIORES" },
   ]},
   { title: "FUGAS Y NIVELES", items: [
-    { name: "safetyInspection.fugas_refrigerante", label: "6. REFRIGERANTE" },
-    { name: "safetyInspection.fugas_limpiaparabrisas", label: "7. LIMPIAPARABRISAS" },
-    { name: "safetyInspection.fugas_frenos_embrague", label: "8. FRENOS Y EMBRAGUE" },
-    { name: "safetyInspection.fugas_transmision", label: "9. TRANSMISIÓN Y TRANSEJE" },
-    { name: "safetyInspection.fugas_direccion_hidraulica", label: "10. DIRECCIÓN HIDRÁULICA" },
+    { name: "fugas_refrigerante", label: "6. REFRIGERANTE" },
+    { name: "fugas_limpiaparabrisas", label: "7. LIMPIAPARABRISAS" },
+    { name: "fugas_frenos_embrague", label: "8. FRENOS Y EMBRAGUE" },
+    { name: "fugas_transmision", label: "9. TRANSMISIÓN Y TRANSEJE" },
+    { name: "fugas_direccion_hidraulica", label: "10. DIRECCIÓN HIDRÁULICA" },
   ]},
   { title: "CARROCERÍA", items: [
-    { name: "safetyInspection.carroceria_cristales_espejos", label: "11. CRISTALES / ESPEJOS" },
-    { name: "safetyInspection.carroceria_puertas_cofre", label: "12. PUERTAS / COFRE / CAJUELA / SALPICADERA" },
-    { name: "safetyInspection.carroceria_asientos_tablero", label: "13. ASIENTOS / TABLERO / CONSOLA" },
-    { name: "safetyInspection.carroceria_plumas", label: "14. PLUMAS LIMPIAPARABRISAS" },
+    { name: "carroceria_cristales_espejos", label: "11. CRISTALES / ESPEJOS" },
+    { name: "carroceria_puertas_cofre", label: "12. PUERTAS / COFRE / CAJUELA / SALPICADERA" },
+    { name: "carroceria_asientos_tablero", label: "13. ASIENTOS / TABLERO / CONSOLA" },
+    { name: "carroceria_plumas", label: "14. PLUMAS LIMPIAPARABRISAS" },
   ]},
   { title: "SUSPENSIÓN Y DIRECCIÓN", items: [
-    { name: "safetyInspection.suspension_rotulas", label: "15. RÓTULAS Y GUARDAPOLVOS" },
-    { name: "safetyInspection.suspension_amortiguadores", label: "16. AMORTIGUADORES" },
-    { name: "safetyInspection.suspension_caja_direccion", label: "17. CAJA DE DIRECCIÓN" },
-    { name: "safetyInspection.suspension_terminales", label: "18. TERMINALES DE DIRECCIÓN" },
+    { name: "suspension_rotulas", label: "15. RÓTULAS Y GUARDAPOLVOS" },
+    { name: "suspension_amortiguadores", label: "16. AMORTIGUADORES" },
+    { name: "suspension_caja_direccion", label: "17. CAJA DE DIRECCIÓN" },
+    { name: "suspension_terminales", label: "18. TERMINALES DE DIRECCIÓN" },
   ]},
   { title: "LLANTAS (ESTADO Y PRESIÓN)", items: [
-    { name: "safetyInspection.llantas_delanteras_traseras", label: "19. DELANTERAS / TRASERAS" },
-    { name: "safetyInspection.llantas_refaccion", label: "20. REFACCIÓN" },
+    { name: "llantas_delanteras_traseras", label: "19. DELANTERAS / TRASERAS" },
+    { name: "llantas_refaccion", label: "20. REFACCIÓN" },
   ]},
   { title: "FRENOS", items: [
-    { name: "safetyInspection.frenos_discos_delanteros", label: "21. DISCOS / BALATAS DELANTERAS" },
-    { name: "safetyInspection.frenos_discos_traseros", label: "22. DISCOS / BALATAS TRASERAS" },
+    { name: "frenos_discos_delanteros", label: "21. DISCOS / BALATAS DELANTERAS" },
+    { name: "frenos_discos_traseros", label: "22. DISCOS / BALATAS TRASERAS" },
   ]},
   { title: "OTROS", items: [
-    { name: "safetyInspection.otros_tuberia_escape", label: "23. TUBERÍA DE ESCAPE" },
-    { name: "safetyInspection.otros_soportes_motor", label: "24. SOPORTES DE MOTOR" },
-    { name: "safetyInspection.otros_claxon", label: "25. CLAXON" },
-    { name: "safetyInspection.otros_inspeccion_sdb", label: "26. INSPECCIÓN DE SDB" },
+    { name: "otros_tuberia_escape", label: "23. TUBERÍA DE ESCAPE" },
+    { name: "otros_soportes_motor", label: "24. SOPORTES DE MOTOR" },
+    { name: "otros_claxon", label: "25. CLAXON" },
+    { name: "otros_inspeccion_sdb", label: "26. INSPECCIÓN DE SDB" },
   ]},
 ];
 
-const StatusIndicator = ({ status }: { status: SafetyCheckStatus }) => {
+const StatusIndicator = ({ status }: { status?: SafetyCheckStatus }) => {
   const statusInfo = {
     ok: { label: "Bien", color: "bg-green-500", textColor: "text-green-700" },
     atencion: { label: "Atención", color: "bg-yellow-400", textColor: "text-yellow-700" },
     inmediata: { label: "Inmediata", color: "bg-red-500", textColor: "text-red-700" },
     na: { label: "N/A", color: "bg-gray-300", textColor: "text-gray-500" },
   };
-  const currentStatus = statusInfo[status] || statusInfo.na;
+  const currentStatus = statusInfo[status || 'na'] || statusInfo.na;
 
   return (
     <div className="flex items-center gap-2">
@@ -138,16 +138,26 @@ const SafetyChecklistDisplay = ({
             </header>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
                 {inspectionGroups.map(group => (
-                    <div key={group.title}>
+                    <div key={group.title} className="break-inside-avoid">
                         <h4 className="font-bold text-base mb-2 border-b-2 border-black pb-1">{group.title}</h4>
                         <div className="space-y-1">
                             {group.items.map(item => {
-                                const statusKey = item.name.split('.')[1] as keyof SafetyInspection;
-                                const status = (inspection[statusKey] as SafetyCheckStatus) || 'na';
+                                const checkItem = inspection[item.name as keyof Omit<SafetyInspection, 'inspectionNotes' | 'technicianSignature'>];
                                 return (
-                                    <div key={item.name} className="flex justify-between items-center text-sm py-1 border-b border-dashed last:border-none">
-                                        <span className="pr-4">{item.label}</span>
-                                        <StatusIndicator status={status} />
+                                    <div key={item.name} className="py-1 border-b border-dashed last:border-none">
+                                        <div className="flex justify-between items-center text-sm">
+                                            <span className="pr-4">{item.label}</span>
+                                            <StatusIndicator status={checkItem?.status} />
+                                        </div>
+                                        {checkItem && checkItem.photos && checkItem.photos.length > 0 && (
+                                            <div className="grid grid-cols-2 gap-1 mt-1 pl-4">
+                                                {checkItem.photos.map((photoUrl, pIndex) => (
+                                                    <div key={pIndex} className="relative aspect-[4/3] w-full bg-gray-100 rounded overflow-hidden border">
+                                                        <Image src={photoUrl} alt={`Evidencia para ${item.label}`} layout="fill" objectFit="cover" />
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
                                     </div>
                                 );
                             })}
@@ -156,7 +166,7 @@ const SafetyChecklistDisplay = ({
                 ))}
             </div>
             {inspection.inspectionNotes && (
-                <div className="mt-6 border-t pt-4">
+                <div className="mt-6 border-t pt-4 break-before-page">
                     <h4 className="font-bold text-base mb-2">Observaciones Generales de la Inspección:</h4>
                     <p className="text-sm whitespace-pre-wrap p-2 bg-gray-50 rounded-md border">{inspection.inspectionNotes}</p>
                 </div>
@@ -224,7 +234,7 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
     
     const fuelColor = getFuelColorClass(fuelPercentage);
     
-    const showChecklist = !!service.safetyInspection;
+    const showChecklist = !!service.safetyInspection && Object.keys(service.safetyInspection).some(k => k !== 'inspectionNotes' && k !== 'technicianSignature');
     const showPhotoReport = !!service.photoReports && service.photoReports.length > 0;
 
     const ServiceOrderContent = (
@@ -420,7 +430,7 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
                 </p>
                 <div className="grid grid-cols-2 gap-2">
                 {reportItem.photos.map((photoUrl, photoIndex) => (
-                    <div key={photoIndex} className="relative aspect-video w-full bg-gray-100 rounded-md overflow-hidden">
+                    <div key={photoIndex} className="relative aspect-video w-full bg-gray-100 rounded-md overflow-hidden border">
                     <Image
                         src={photoUrl}
                         alt={`Foto ${photoIndex + 1}`}
