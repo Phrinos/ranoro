@@ -46,6 +46,10 @@ export default function PublicQuoteViewPage() {
 
         if (docSnap.exists()) {
           const data = docSnap.data();
+          // Convert Firestore Timestamps to ISO strings for date-fns
+          if (data.quoteDate && typeof data.quoteDate.toDate === 'function') {
+            data.quoteDate = data.quoteDate.toDate().toISOString();
+          }
           const quoteData = data as QuoteRecord & { vehicle?: Vehicle };
           setQuote(quoteData);
           setVehicle(quoteData.vehicle || null);
