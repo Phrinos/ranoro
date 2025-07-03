@@ -151,7 +151,7 @@ export default function InventoryItemDetailPage() {
   return (
     <div className="container mx-auto py-8">
       <PageHeader
-        title={`${item.name} (Código: ${item.sku})`}
+        title={`${item.brand ? `${item.brand} - ` : ''}${item.name} (Código: ${item.sku})`}
         description={`ID Ítem: ${item.id}`}
       />
 
@@ -189,7 +189,7 @@ export default function InventoryItemDetailPage() {
                 <Separator/>
                 
                 <div className="space-y-1">
-                    <p className="text-xl font-bold">{item.name}</p>
+                    <p className="text-xl font-bold">{item.brand ? `${item.brand} - ` : ''}{item.name}</p>
                     <p className="text-sm text-muted-foreground">{item.description || 'Sin descripción.'}</p>
                     {item.rendimiento && <p className="text-sm"><span className="font-semibold">Rendimiento:</span> {item.rendimiento.toLocaleString('es-ES')} km</p>}
                 </div>
