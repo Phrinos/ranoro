@@ -64,6 +64,10 @@ import {
   isValid,
   startOfDay,
   endOfDay,
+  startOfWeek,
+  endOfWeek,
+  startOfMonth,
+  endOfMonth,
 } from "date-fns";
 import { es } from 'date-fns/locale';
 import type { DateRange } from "react-day-picker";
@@ -235,6 +239,11 @@ export default function POSPage() {
     "Efectivo+Transferencia",
     "Tarjeta+Transferencia",
   ];
+  
+  const setDateToToday = () => setDateRange({ from: startOfDay(new Date()), to: endOfDay(new Date()) });
+  const setDateToThisWeek = () => setDateRange({ from: startOfWeek(new Date(), { weekStartsOn: 1 }), to: endOfWeek(new Date(), { weekStartsOn: 1 }) });
+  const setDateToThisMonth = () => setDateRange({ from: startOfMonth(new Date()), to: endOfMonth(new Date()) });
+
 
   const handleReprintSale = useCallback((sale: SaleReceipt) => {
     setSelectedSaleForReprint(sale);
@@ -406,104 +415,107 @@ export default function POSPage() {
       />
 
       {/* ---- Filtros ---- */}
-      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:flex-wrap">
-        {/* Búsqueda */}
-        <div className="relative flex-1 min-w-[200px] sm:min-w-[300px]">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            type="search"
-            placeholder="Buscar por ID, cliente, artículo..."
-            className="w-full rounded-lg bg-white pl-8"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
+      <div className="mb-6 space-y-4">
+        <div className="flex flex-col sm:flex-row items-center gap-4">
+            <div className="flex gap-2">
+                <Button variant="secondary" onClick={setDateToToday}>Hoy</Button>
+                <Button variant="secondary" onClick={setDateToThisWeek}>Esta Semana</Button>
+                <Button variant="secondary" onClick={setDateToThisMonth}>Este Mes</Button>
+            </div>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant={"outline"}
+                  className={cn(
+                    "w-full sm:w-auto justify-start text-left font-normal",
+                    !dateRange && "text-muted-foreground"
+                  )}
+                >
+                  <CalendarDateIcon className="mr-2 h-4 w-4" />
+                  {dateRange?.from ? (
+                    dateRange.to ? (
+                      <>
+                        {format(dateRange.from, "LLL dd, y", { locale: es })} -{" "}
+                        {format(dateRange.to, "LLL dd, y", { locale: es })}
+                      </>
+                    ) : (
+                      format(dateRange.from, "LLL dd, y", { locale: es })
+                    )
+                  ) : (
+                    <span>Seleccione rango</span>
+                  )}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  initialFocus
+                  mode="range"
+                  defaultMonth={dateRange?.from}
+                  selected={dateRange}
+                  onSelect={setDateRange}
+                  numberOfMonths={2}
+                  locale={es}
+                />
+              </PopoverContent>
+            </Popover>
         </div>
-
-        {/* Rango de fechas */}
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button
-              variant="outline"
-              className={cn(
-                "min-w-[240px] justify-start text-left font-normal flex-1 sm:flex-initial bg-white",
-                !dateRange && "text-muted-foreground"
-              )}
-            >
-              <CalendarDateIcon className="mr-2 h-4 w-4" />
-              {dateRange?.from ? (
-                dateRange.to ? (
-                  <>
-                    {format(dateRange.from, "LLL dd, y", { locale: es })} -{" "}
-                    {format(dateRange.to, "LLL dd, y", { locale: es })}
-                  </>
-                ) : (
-                  format(dateRange.from, "LLL dd, y", { locale: es })
-                )
-              ) : (
-                <span>Seleccione rango de fechas</span>
-              )}
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-auto p-0" align="start">
-            <Calendar
-              initialFocus
-              mode="range"
-              defaultMonth={dateRange?.from}
-              selected={dateRange}
-              onSelect={setDateRange}
-              numberOfMonths={2}
-              locale={es}
-            />
-          </PopoverContent>
-        </Popover>
-
-        {/* Ordenar */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" className="min-w-[150px] flex-1 sm:flex-initial bg-white">
-              <ListFilter className="mr-2 h-4 w-4" />
-              Ordenar por
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuLabel>Ordenar por</DropdownMenuLabel>
-            <DropdownMenuRadioGroup
-              value={sortOption}
-              onValueChange={(v) => setSortOption(v as SaleSortOption)}
-            >
-              <DropdownMenuRadioItem value="date_desc">Fecha (Más Reciente)</DropdownMenuRadioItem>
-              <DropdownMenuRadioItem value="date_asc">Fecha (Más Antiguo)</DropdownMenuRadioItem>
-              <DropdownMenuRadioItem value="total_desc">Monto Total (Mayor a Menor)</DropdownMenuRadioItem>
-              <DropdownMenuRadioItem value="total_asc">Monto Total (Menor a Mayor)</DropdownMenuRadioItem>
-              <DropdownMenuRadioItem value="customer_asc">Cliente (A-Z)</DropdownMenuRadioItem>
-              <DropdownMenuRadioItem value="customer_desc">Cliente (Z-A)</DropdownMenuRadioItem>
-            </DropdownMenuRadioGroup>
-          </DropdownMenuContent>
-        </DropdownMenu>
-
-        {/* Método de pago */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" className="min-w-[180px] flex-1 sm:flex-initial bg-white">
-              <FilterIcon className="mr-2 h-4 w-4" />
-              Filtrar Pago
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuLabel>Método de Pago</DropdownMenuLabel>
-            <DropdownMenuRadioGroup
-              value={paymentMethodFilter}
-              onValueChange={(v) => setPaymentMethodFilter(v as PaymentMethod | "all")}
-            >
-              {paymentMethodsForFilter.map((m) => (
-                <DropdownMenuRadioItem key={m} value={m}>
-                  {m === "all" ? "Todos" : m}
-                </DropdownMenuRadioItem>
-              ))}
-            </DropdownMenuRadioGroup>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <div className="flex flex-col sm:flex-row items-center gap-4">
+            <div className="relative flex-1 w-full">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                type="search"
+                placeholder="Buscar por ID, cliente, artículo..."
+                className="w-full rounded-lg bg-white pl-8"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="w-full sm:w-auto bg-white">
+                  <ListFilter className="mr-2 h-4 w-4" />
+                  Ordenar por
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuLabel>Ordenar por</DropdownMenuLabel>
+                <DropdownMenuRadioGroup
+                  value={sortOption}
+                  onValueChange={(v) => setSortOption(v as SaleSortOption)}
+                >
+                  <DropdownMenuRadioItem value="date_desc">Fecha (Más Reciente)</DropdownMenuRadioItem>
+                  <DropdownMenuRadioItem value="date_asc">Fecha (Más Antiguo)</DropdownMenuRadioItem>
+                  <DropdownMenuRadioItem value="total_desc">Monto Total (Mayor a Menor)</DropdownMenuRadioItem>
+                  <DropdownMenuRadioItem value="total_asc">Monto Total (Menor a Mayor)</DropdownMenuRadioItem>
+                  <DropdownMenuRadioItem value="customer_asc">Cliente (A-Z)</DropdownMenuRadioItem>
+                  <DropdownMenuRadioItem value="customer_desc">Cliente (Z-A)</DropdownMenuRadioItem>
+                </DropdownMenuRadioGroup>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="w-full sm:w-auto bg-white">
+                  <FilterIcon className="mr-2 h-4 w-4" />
+                  Filtrar Pago
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuLabel>Método de Pago</DropdownMenuLabel>
+                <DropdownMenuRadioGroup
+                  value={paymentMethodFilter}
+                  onValueChange={(v) => setPaymentMethodFilter(v as PaymentMethod | "all")}
+                >
+                  {paymentMethodsForFilter.map((m) => (
+                    <DropdownMenuRadioItem key={m} value={m}>
+                      {m === "all" ? "Todos" : m}
+                    </DropdownMenuRadioItem>
+                  ))}
+                </DropdownMenuRadioGroup>
+              </DropdownMenuContent>
+            </DropdownMenu>
+        </div>
       </div>
+
 
       {/* ---- Tabla ---- */}
       <SalesTable
