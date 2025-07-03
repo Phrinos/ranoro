@@ -5,8 +5,8 @@ import * as React from "react"
 import { Line, LineChart, Pie, PieChart, CartesianGrid, XAxis, YAxis, Legend } from "recharts"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart"
-import { placeholderServiceRecords, placeholderSales, calculateSaleProfit, placeholderInventory } from "@/lib/placeholder-data"
-import { subMonths, format, parseISO } from "date-fns"
+import { placeholderServiceRecords, placeholderSales, calculateSaleProfit, placeholderInventory, IVA_RATE } from "@/lib/placeholder-data"
+import { subMonths, format, parseISO, isValid } from "date-fns"
 import { es } from "date-fns/locale"
 
 interface MonthlyChartData {
@@ -47,21 +47,34 @@ export function DashboardCharts() {
     }
 
     placeholderServiceRecords.forEach(service => {
-        if (service.status !== 'Completado') return;
+        if (service.status !== 'Completado' || !service.totalCost) return;
         const date = parseISO(service.deliveryDateTime || service.serviceDate);
+        if(!isValid(date)) return;
+        
         const monthKey = format(date, "yyyy-MM");
         if (monthlyData[monthKey]) {
+            // Revenue is the total amount paid by the customer.
             monthlyData[monthKey].revenue += service.totalCost;
-            monthlyData[monthKey].profit += service.serviceProfit || 0;
+            
+            // Profit is revenue (before tax) minus cost of supplies.
+            const revenueExclTax = service.totalCost / (1 + IVA_RATE);
+            const costOfSupplies = service.totalSuppliesCost || 0;
+            const profit = revenueExclTax - costOfSupplies;
+            monthlyData[monthKey].profit += isFinite(profit) ? profit : 0;
         }
     });
 
     placeholderSales.forEach(sale => {
         const date = parseISO(sale.saleDate);
+        if(!isValid(date)) return;
+        
         const monthKey = format(date, "yyyy-MM");
         if (monthlyData[monthKey]) {
+            // Revenue is the total amount paid by the customer.
             monthlyData[monthKey].revenue += sale.totalAmount;
-            monthlyData[monthKey].profit += calculateSaleProfit(sale, placeholderInventory, 0.16);
+            
+            // Profit calculation is now correct in the helper function
+            monthlyData[monthKey].profit += calculateSaleProfit(sale, placeholderInventory);
         }
     });
 

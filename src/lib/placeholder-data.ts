@@ -449,8 +449,9 @@ export const calculateSaleProfit = (
     }
   }
   
-  // La ganancia es el total (con IVA) menos el costo de los productos.
-  const profit = sale.totalAmount - totalCost;
+  // Correct Profit is revenue (before tax) minus cost of goods.
+  const revenueExclTax = sale.totalAmount / (1 + IVA_RATE);
+  const profit = revenueExclTax - totalCost;
   
   return isFinite(profit) ? profit : 0;
 };
