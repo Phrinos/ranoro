@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useParams, useRouter } from 'next/navigation';
@@ -151,8 +152,8 @@ export default function InventoryItemDetailPage() {
   return (
     <div className="container mx-auto py-8">
       <PageHeader
-        title={`${item.brand ? `${item.brand} - ` : ''}${item.name} (Código: ${item.sku})`}
-        description={`ID Ítem: ${item.id}`}
+        title={item.name}
+        description={`Marca: ${item.brand || 'N/A'} | SKU: ${item.sku || 'N/A'} | ID: ${item.id}`}
       />
 
       <Tabs defaultValue="details" className="w-full">
@@ -174,61 +175,76 @@ export default function InventoryItemDetailPage() {
                   Editar
                 </Button>
               </CardHeader>
-              <CardContent className="space-y-4 text-sm">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2">
-                    <div>
-                        <p className="text-xs font-medium text-muted-foreground">Categoría</p>
-                        <p className="font-semibold">{item.category}</p>
-                    </div>
-                    <div>
-                        <p className="text-xs font-medium text-muted-foreground">Proveedor</p>
-                        <p className="font-semibold">{item.supplier}</p>
-                    </div>
-                </div>
-                
-                <Separator/>
-                
-                <div className="space-y-1">
-                    <p className="text-xl font-bold">{item.brand ? `${item.brand} - ` : ''}{item.name}</p>
-                    <p className="text-sm text-muted-foreground">{item.description || 'Sin descripción.'}</p>
-                    {item.rendimiento && <p className="text-sm"><span className="font-semibold">Rendimiento:</span> {item.rendimiento.toLocaleString('es-ES')} km</p>}
-                </div>
-                
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-2 text-sm pt-2">
+              <CardContent className="space-y-6">
                   <div>
-                      <p className="font-medium text-muted-foreground">Costo Unitario (Taller)</p>
-                      <p>${item.unitPrice.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                      <p className="text-sm font-medium text-muted-foreground">Nombre del Producto/Servicio</p>
+                      <h2 className="text-2xl font-bold">{item.name}</h2>
                   </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
+                      <div>
+                          <p className="text-sm font-medium text-muted-foreground">Marca</p>
+                          <p className="font-semibold">{item.brand || 'N/A'}</p>
+                      </div>
+                      <div>
+                          <p className="text-sm font-medium text-muted-foreground">SKU / Código</p>
+                          <p className="font-semibold">{item.sku || 'N/A'}</p>
+                      </div>
+                  </div>
+
                   <div>
-                      <p className="font-medium text-muted-foreground">Precio de Venta (Cliente)</p>
-                      <p>${item.sellingPrice.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                      <p className="text-sm font-medium text-muted-foreground">Descripción</p>
+                      <p className="text-base text-foreground whitespace-pre-wrap mt-1">{item.description || 'Sin descripción.'}</p>
                   </div>
-                   <div>
-                      <p className="font-medium text-muted-foreground">Tipo</p>
-                      <p>{item.isService ? 'Servicio' : 'Producto'}</p>
+                  
+                  {item.rendimiento && (
+                      <div>
+                          <p className="text-sm font-medium text-muted-foreground">Rendimiento</p>
+                          <p className="font-semibold">{item.rendimiento.toLocaleString('es-ES')} km</p>
+                      </div>
+                  )}
+
+                  <Separator />
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
+                      <div>
+                          <p className="text-sm font-medium text-muted-foreground">Categoría</p>
+                          <p className="font-semibold">{item.category}</p>
+                      </div>
+                      <div>
+                          <p className="text-sm font-medium text-muted-foreground">Proveedor</p>
+                          <p className="font-semibold">{item.supplier}</p>
+                      </div>
                   </div>
-                </div>
-
-                <Separator/>
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-x-8 gap-y-2 text-sm">
-                    <div>
-                        <p className="font-medium text-muted-foreground">Código (SKU)</p>
-                        <p className="font-semibold">{item.sku || 'N/A'}</p>
-                    </div>
-                    {!item.isService && (
-                        <>
-                            <div>
-                                <p className="font-medium text-muted-foreground">Cantidad en Stock</p>
-                                <p className="font-semibold">{item.quantity}</p>
-                            </div>
-                            <div>
-                                <p className="font-medium text-muted-foreground">Umbral de Stock Bajo</p>
-                                <p className="font-semibold">{item.lowStockThreshold}</p>
-                            </div>
-                        </>
-                    )}
-                </div>
+                  
+                  <Separator />
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-x-8 gap-y-4">
+                      <div>
+                          <p className="text-sm font-medium text-muted-foreground">Costo (Taller)</p>
+                          <p className="font-semibold">${item.unitPrice.toLocaleString('es-ES', { minimumFractionDigits: 2 })}</p>
+                      </div>
+                      <div>
+                          <p className="text-sm font-medium text-muted-foreground">Precio Venta (Cliente)</p>
+                          <p className="font-semibold">${item.sellingPrice.toLocaleString('es-ES', { minimumFractionDigits: 2 })}</p>
+                      </div>
+                      <div>
+                          <p className="text-sm font-medium text-muted-foreground">Tipo</p>
+                          <p className="font-semibold">{item.isService ? 'Servicio' : 'Producto'}</p>
+                      </div>
+                      {!item.isService && (
+                          <>
+                              <div>
+                                  <p className="text-sm font-medium text-muted-foreground">Stock Actual</p>
+                                  <p className="font-semibold">{item.quantity}</p>
+                              </div>
+                              <div>
+                                  <p className="text-sm font-medium text-muted-foreground">Stock Bajo</p>
+                                  <p className="font-semibold">{item.lowStockThreshold}</p>
+                              </div>
+                          </>
+                      )}
+                  </div>
               </CardContent>
             </Card>
           </div>
