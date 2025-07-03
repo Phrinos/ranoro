@@ -20,11 +20,21 @@ interface ServiceCalendarProps {
 
 export function ServiceCalendar({ services, vehicles, technicians, onServiceClick }: ServiceCalendarProps) {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
+  
+  const safeParseISO = React.useCallback((date: string | Date | undefined): Date => {
+    if (!date) return new Date(0);
+    if (date instanceof Date) return date;
+    if (typeof date === 'string') {
+        const parsed = parseISO(date);
+        return parsed;
+    }
+    return new Date(0);
+  }, []);
 
   const eventsByDate = useMemo(() => {
     const map = new Map<string, ServiceRecord[]>();
     services.forEach(service => {
-      const serviceDate = parseISO(service.serviceDate);
+      const serviceDate = safeParseISO(service.serviceDate);
       if (isValid(serviceDate)) {
         const dateKey = format(serviceDate, 'yyyy-MM-dd');
         if (!map.has(dateKey)) {
@@ -34,7 +44,7 @@ export function ServiceCalendar({ services, vehicles, technicians, onServiceClic
       }
     });
     return map;
-  }, [services]);
+  }, [services, safeParseISO]);
 
   const selectedDayServices = useMemo(() => {
     if (!selectedDate) return [];
@@ -82,10 +92,10 @@ export function ServiceCalendar({ services, vehicles, technicians, onServiceClic
         </h2>
         {selectedDayServices.length > 0 ? (
           <div className="space-y-4">
-            {selectedDayServices.sort((a,b) => compareAsc(parseISO(a.serviceDate), parseISO(b.serviceDate))).map(service => {
+            {selectedDayServices.sort((a,b) => compareAsc(safeParseISO(a.serviceDate), safeParseISO(b.serviceDate))).map(service => {
               const vehicle = vehicles.find(v => v.id === service.vehicleId);
               const technician = technicians.find(t => t.id === service.technicianId);
-              const serviceDateObj = parseISO(service.serviceDate);
+              const serviceDateObj = safeParseISO(service.serviceDate);
               return (
                 <Card key={service.id} className="cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => onServiceClick(service)}>
                   <CardContent className="p-4 flex items-center justify-between gap-4">
