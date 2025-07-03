@@ -33,15 +33,15 @@ export const AdministrativeStaffTable = React.memo(({ staffList }: Administrativ
   return (
     <div className="rounded-lg border shadow-sm overflow-x-auto">
       <Table>
-        <TableHeader className="bg-white">
+        <TableHeader className="bg-black">
           <TableRow>
-            <TableHead className="font-bold">ID</TableHead>
-            <TableHead className="font-bold">Nombre</TableHead>
-            <TableHead className="font-bold">Rol/Área</TableHead>
-            <TableHead className="font-bold">Teléfono</TableHead>
-            <TableHead className="font-bold">Fecha Contratación</TableHead>
-            <TableHead className="text-right font-bold">Sueldo Mensual</TableHead>
-            <TableHead className="font-bold">Notas</TableHead>
+            <TableHead className="font-bold text-white">ID</TableHead>
+            <TableHead className="font-bold text-white">Nombre</TableHead>
+            <TableHead className="font-bold text-white">Rol/Área</TableHead>
+            <TableHead className="font-bold text-white">Teléfono</TableHead>
+            <TableHead className="font-bold text-white">Fecha Contratación</TableHead>
+            <TableHead className="text-right font-bold text-white">Sueldo Mensual</TableHead>
+            <TableHead className="font-bold text-white">Notas</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>

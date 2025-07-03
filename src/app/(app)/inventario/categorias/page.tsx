@@ -183,11 +183,11 @@ export default function CategoriasInventarioPage() {
           {filteredCategories.length > 0 ? (
             <div className="rounded-md border">
               <Table>
-                <TableHeader className="bg-white">
+                <TableHeader className="bg-black">
                   <TableRow>
-                    <TableHead className="font-bold">Nombre de la Categoría</TableHead>
-                    <TableHead className="text-right font-bold">Productos</TableHead>
-                    <TableHead className="text-right font-bold">Acciones</TableHead>
+                    <TableHead className="font-bold text-white">Nombre de la Categoría</TableHead>
+                    <TableHead className="text-right font-bold text-white">Productos</TableHead>
+                    <TableHead className="text-right font-bold text-white">Acciones</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>

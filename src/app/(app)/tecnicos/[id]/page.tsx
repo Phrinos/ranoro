@@ -227,13 +227,13 @@ export default function TechnicianDetailPage() {
               {performance.length > 0 ? (
                 <div className="rounded-md border">
                 <Table>
-                  <TableHeader>
+                  <TableHeader className="bg-black">
                     <TableRow>
-                      <TableHead>Mes</TableHead>
-                      <TableHead className="text-right">Nº Servicios</TableHead>
-                      <TableHead className="text-right">Ingresos Generados</TableHead>
-                      <TableHead className="text-right">Ganancia</TableHead>
-                      <TableHead className="text-right">Penalizaciones</TableHead>
+                      <TableHead className="text-white">Mes</TableHead>
+                      <TableHead className="text-right text-white">Nº Servicios</TableHead>
+                      <TableHead className="text-right text-white">Ingresos Generados</TableHead>
+                      <TableHead className="text-right text-white">Ganancia</TableHead>
+                      <TableHead className="text-right text-white">Penalizaciones</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>

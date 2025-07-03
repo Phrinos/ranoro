@@ -162,11 +162,11 @@ export default function RolesPage() {
           {filteredRoles.length > 0 ? (
             <div className="overflow-x-auto rounded-md border">
             <Table>
-              <TableHeader>
+              <TableHeader className="bg-black">
                 <TableRow>
-                  <TableHead>Nombre del Rol</TableHead>
-                  <TableHead>Permisos Asignados</TableHead>
-                  <TableHead className="text-right">Acciones</TableHead>
+                  <TableHead className="text-white">Nombre del Rol</TableHead>
+                  <TableHead className="text-white">Permisos Asignados</TableHead>
+                  <TableHead className="text-right text-white">Acciones</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>

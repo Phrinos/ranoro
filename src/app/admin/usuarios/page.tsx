@@ -300,13 +300,13 @@ export default function UsuariosPage() {
           {filteredUsers.length > 0 ? (
             <div className="overflow-x-auto rounded-md border">
             <Table>
-              <TableHeader>
+              <TableHeader className="bg-black">
                 <TableRow>
-                  <TableHead>Nombre</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Teléfono</TableHead>
-                  <TableHead>Rol</TableHead>
-                  <TableHead className="text-right">Acciones</TableHead>
+                  <TableHead className="text-white">Nombre</TableHead>
+                  <TableHead className="text-white">Email</TableHead>
+                  <TableHead className="text-white">Teléfono</TableHead>
+                  <TableHead className="text-white">Rol</TableHead>
+                  <TableHead className="text-right text-white">Acciones</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>

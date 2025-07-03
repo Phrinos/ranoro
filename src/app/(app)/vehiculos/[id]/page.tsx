@@ -295,14 +295,14 @@ export default function VehicleDetailPage() {
               {services.length > 0 ? (
                 <div className="rounded-md border">
                 <Table>
-                  <TableHeader>
+                  <TableHeader className="bg-black">
                     <TableRow>
-                      <TableHead>Fecha</TableHead>
-                      <TableHead>Kilometraje</TableHead>
-                      <TableHead>Descripción</TableHead>
-                      <TableHead>Técnico</TableHead>
-                      <TableHead className="text-right">Costo Total</TableHead>
-                      <TableHead>Estado</TableHead>
+                      <TableHead className="text-white">Fecha</TableHead>
+                      <TableHead className="text-white">Kilometraje</TableHead>
+                      <TableHead className="text-white">Descripción</TableHead>
+                      <TableHead className="text-white">Técnico</TableHead>
+                      <TableHead className="text-right text-white">Costo Total</TableHead>
+                      <TableHead className="text-white">Estado</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>

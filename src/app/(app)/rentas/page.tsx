@@ -385,7 +385,7 @@ export default function RentasPage() {
             <CardContent>
               <div className="rounded-lg border shadow-sm overflow-x-auto">
                 <Table>
-                  <TableHeader><TableRow><TableHead>Fecha</TableHead><TableHead>Conductor</TableHead><TableHead>Vehículo</TableHead><TableHead className="text-right">Monto</TableHead></TableRow></TableHeader>
+                  <TableHeader className="bg-black"><TableRow><TableHead className="text-white">Fecha</TableHead><TableHead className="text-white">Conductor</TableHead><TableHead className="text-white">Vehículo</TableHead><TableHead className="text-right text-white">Monto</TableHead></TableRow></TableHeader>
                   <TableBody>
                     {filteredPayments.length > 0 ? filteredPayments.map(p => (
                       <TableRow key={p.id}><TableCell>{format(parseISO(p.paymentDate), "dd MMM, HH:mm", {locale: es})}</TableCell><TableCell>{p.driverName}</TableCell><TableCell>{p.vehicleLicensePlate}</TableCell><TableCell className="text-right font-semibold">{formatCurrency(p.amount)}</TableCell></TableRow>
@@ -403,7 +403,7 @@ export default function RentasPage() {
             <CardContent>
               <div className="rounded-lg border shadow-sm overflow-x-auto">
                 <Table>
-                  <TableHeader><TableRow><TableHead>Fecha</TableHead><TableHead>Propietario</TableHead><TableHead>Motivo</TableHead><TableHead className="text-right">Monto</TableHead></TableRow></TableHeader>
+                  <TableHeader className="bg-black"><TableRow><TableHead className="text-white">Fecha</TableHead><TableHead className="text-white">Propietario</TableHead><TableHead className="text-white">Motivo</TableHead><TableHead className="text-right text-white">Monto</TableHead></TableRow></TableHeader>
                   <TableBody>
                     {filteredWithdrawals.length > 0 ? filteredWithdrawals.map(w => (
                       <TableRow key={w.id}><TableCell>{format(parseISO(w.date), "dd MMM, HH:mm", {locale: es})}</TableCell><TableCell>{w.ownerName}</TableCell><TableCell>{w.reason || 'N/A'}</TableCell><TableCell className="text-right font-semibold text-destructive">{formatCurrency(w.amount)}</TableCell></TableRow>
@@ -421,7 +421,7 @@ export default function RentasPage() {
             <CardContent>
               <div className="rounded-lg border shadow-sm overflow-x-auto">
                 <Table>
-                  <TableHeader><TableRow><TableHead>Fecha</TableHead><TableHead>Vehículo</TableHead><TableHead>Descripción</TableHead><TableHead className="text-right">Monto</TableHead></TableRow></TableHeader>
+                  <TableHeader className="bg-black"><TableRow><TableHead className="text-white">Fecha</TableHead><TableHead className="text-white">Vehículo</TableHead><TableHead className="text-white">Descripción</TableHead><TableHead className="text-right text-white">Monto</TableHead></TableRow></TableHeader>
                   <TableBody>
                     {filteredVehicleExpenses.length > 0 ? filteredVehicleExpenses.map(e => (
                       <TableRow key={e.id}><TableCell>{format(parseISO(e.date), "dd MMM, HH:mm", {locale: es})}</TableCell><TableCell>{e.vehicleLicensePlate}</TableCell><TableCell>{e.description}</TableCell><TableCell className="text-right font-semibold text-destructive">{formatCurrency(e.amount)}</TableCell></TableRow>

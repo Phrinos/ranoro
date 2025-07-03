@@ -15,7 +15,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { ShieldAlert, Edit, Car, ArrowLeft, Trash2, PlusCircle, CheckCircle, Circle, Gauge } from 'lucide-react';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { format, parseISO, compareAsc, isValid, isPast } from 'date-fns';
 import { es } from 'date-fns/locale';
 import Link from 'next/link';
@@ -360,7 +360,7 @@ export default function FleetVehicleDetailPage() {
                 <CardContent>
                   <div className="rounded-md border overflow-x-auto">
                     <Table>
-                      <TableHeader><TableRow><TableHead>Fecha</TableHead><TableHead>Kilometraje</TableHead><TableHead>Servicio</TableHead><TableHead className="text-right">Costo</TableHead></TableRow></TableHeader>
+                      <TableHeader className="bg-black"><TableRow><TableHead className="text-white">Fecha</TableHead><TableHead className="text-white">Kilometraje</TableHead><TableHead className="text-white">Servicio</TableHead><TableHead className="text-right text-white">Costo</TableHead></TableRow></TableHeader>
                       <TableBody>
                         {monthData.services.sort((a, b) => compareAsc(parseISO(a.serviceDate), parseISO(b.serviceDate))).map(service => (
                           <TableRow key={service.id} onClick={() => handleOpenService(service)} className="cursor-pointer">
@@ -388,7 +388,7 @@ export default function FleetVehicleDetailPage() {
                     {(vehicle.fineCheckHistory && vehicle.fineCheckHistory.length > 0) ? (
                         <div className="rounded-md border overflow-x-auto">
                             <Table>
-                                <TableHeader><TableRow><TableHead>Fecha de Revisión</TableHead><TableHead>Revisado por</TableHead></TableRow></TableHeader>
+                                <TableHeader className="bg-black"><TableRow><TableHead className="text-white">Fecha de Revisión</TableHead><TableHead className="text-white">Revisado por</TableHead></TableRow></TableHeader>
                                 <TableBody>
                                     {vehicle.fineCheckHistory.sort((a,b) => parseISO(b.date).getTime() - parseISO(a.date).getTime()).map((check, index) => (
                                         <TableRow key={index}>
@@ -421,12 +421,12 @@ export default function FleetVehicleDetailPage() {
               {vehicle.paperwork && vehicle.paperwork.length > 0 ? (
                 <div className="rounded-md border overflow-x-auto">
                   <Table>
-                    <TableHeader>
+                    <TableHeader className="bg-black">
                       <TableRow>
-                        <TableHead>Estado</TableHead>
-                        <TableHead>Trámite</TableHead>
-                        <TableHead>Fecha de Vencimiento</TableHead>
-                        <TableHead className="text-right">Acciones</TableHead>
+                        <TableHead className="text-white">Estado</TableHead>
+                        <TableHead className="text-white">Trámite</TableHead>
+                        <TableHead className="text-white">Fecha de Vencimiento</TableHead>
+                        <TableHead className="text-right text-white">Acciones</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>

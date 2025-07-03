@@ -60,16 +60,16 @@ export const SalesTable = React.memo(({ sales, onReprintTicket, inventoryItems, 
   return (
     <div className="rounded-lg border shadow-sm overflow-x-auto">
       <Table>
-        <TableHeader className="bg-white">
+        <TableHeader className="bg-black">
           <TableRow>
-            <TableHead className="font-bold">ID Venta</TableHead>
-            <TableHead className="font-bold">Fecha</TableHead>
-            <TableHead className="font-bold">Cliente</TableHead>
-            <TableHead className="font-bold"># Artículos</TableHead>
-            <TableHead className="font-bold">Método Pago</TableHead>
-            <TableHead className="text-right font-bold">Total</TableHead>
-            <TableHead className="text-right font-bold">Ganancia</TableHead>
-            <TableHead className="text-right font-bold">Acciones</TableHead>
+            <TableHead className="font-bold text-white">ID Venta</TableHead>
+            <TableHead className="font-bold text-white">Fecha</TableHead>
+            <TableHead className="font-bold text-white">Cliente</TableHead>
+            <TableHead className="font-bold text-white"># Artículos</TableHead>
+            <TableHead className="font-bold text-white">Método Pago</TableHead>
+            <TableHead className="text-right font-bold text-white">Total</TableHead>
+            <TableHead className="text-right font-bold text-white">Ganancia</TableHead>
+            <TableHead className="text-right font-bold text-white">Acciones</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>

@@ -40,15 +40,15 @@ export const SuppliersTable = React.memo(({ suppliers, onEdit, onDelete }: Suppl
   return (
     <div className="rounded-lg border shadow-sm overflow-x-auto">
       <Table>
-        <TableHeader className="bg-white">
+        <TableHeader className="bg-black">
           <TableRow>
-            <TableHead className="font-bold">Nombre</TableHead>
-            <TableHead className="font-bold">Contacto</TableHead>
-            <TableHead className="font-bold">Teléfono</TableHead>
-            <TableHead className="font-bold">RFC</TableHead>
-            <TableHead className="text-right font-bold">Deuda</TableHead>
-            <TableHead className="font-bold">Nota Deuda</TableHead>
-            <TableHead className="text-right font-bold">Acciones</TableHead>
+            <TableHead className="font-bold text-white">Nombre</TableHead>
+            <TableHead className="font-bold text-white">Contacto</TableHead>
+            <TableHead className="font-bold text-white">Teléfono</TableHead>
+            <TableHead className="font-bold text-white">RFC</TableHead>
+            <TableHead className="text-right font-bold text-white">Deuda</TableHead>
+            <TableHead className="font-bold text-white">Nota Deuda</TableHead>
+            <TableHead className="text-right font-bold text-white">Acciones</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>

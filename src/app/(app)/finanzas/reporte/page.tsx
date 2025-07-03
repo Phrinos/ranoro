@@ -345,7 +345,7 @@ export default function FinancialReportPage() {
                         <DropdownMenuTrigger asChild>
                             <Button variant="outline" className="min-w-[150px] w-full sm:w-auto flex-1 sm:flex-initial bg-white">
                             <ListFilter className="mr-2 h-4 w-4" />
-                            Ordenar
+                            Organizar
                             </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
@@ -367,14 +367,14 @@ export default function FinancialReportPage() {
             {filteredAndSortedOperations.length > 0 ? (
                 <div className="rounded-md border">
                     <Table>
-                        <TableHeader>
+                        <TableHeader className="bg-black">
                         <TableRow>
-                            <TableHead className="font-bold">Fecha</TableHead>
-                            <TableHead className="font-bold">Tipo</TableHead>
-                            <TableHead className="font-bold">ID Operación</TableHead>
-                            <TableHead className="font-bold">Descripción / Cliente / Vehículo</TableHead>
-                            <TableHead className="text-right font-bold">Monto Total (IVA Inc.)</TableHead>
-                            <TableHead className="text-right font-bold">Ganancia</TableHead>
+                            <TableHead className="font-bold text-white">Fecha</TableHead>
+                            <TableHead className="font-bold text-white">Tipo</TableHead>
+                            <TableHead className="font-bold text-white">ID Operación</TableHead>
+                            <TableHead className="font-bold text-white">Descripción / Cliente / Vehículo</TableHead>
+                            <TableHead className="text-right font-bold text-white">Monto Total (IVA Inc.)</TableHead>
+                            <TableHead className="text-right font-bold text-white">Ganancia</TableHead>
                         </TableRow>
                         </TableHeader>
                         <TableBody>

@@ -187,7 +187,7 @@ export default function FlotillaPage() {
           <DropdownMenuTrigger asChild>
             <Button variant="outline" className="sm:w-auto bg-white">
               <ListFilter className="mr-2 h-4 w-4" />
-              Ordenar
+              Organizar
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
@@ -206,13 +206,13 @@ export default function FlotillaPage() {
 
       <div className="rounded-lg border shadow-sm overflow-x-auto">
         <Table>
-          <TableHeader>
+          <TableHeader className="bg-black">
             <TableRow>
-              <TableHead>Placa</TableHead>
-              <TableHead>Vehículo</TableHead>
-              <TableHead>Color</TableHead>
-              <TableHead>Propietario</TableHead>
-              <TableHead className="text-right">Renta Diaria</TableHead>
+              <TableHead className="text-white">Placa</TableHead>
+              <TableHead className="text-white">Vehículo</TableHead>
+              <TableHead className="text-white">Color</TableHead>
+              <TableHead className="text-white">Propietario</TableHead>
+              <TableHead className="text-right text-white">Renta Diaria</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
