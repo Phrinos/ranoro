@@ -16,7 +16,7 @@ const firebaseConfig = {
   authDomain: process.env.NEXT_PUBLIC_FB_AUTH_DOMAIN ?? "ranoro-jm8l0.firebaseapp.com",
   databaseURL: process.env.NEXT_PUBLIC_FB_DB_URL ?? "https://ranoro-jm8l0-default-rtdb.firebaseio.com",
   projectId: process.env.NEXT_PUBLIC_FB_PROJECT_ID ?? "ranoro-jm8l0",
-  storageBucket: process.env.NEXT_PUBLIC_FB_STORAGE_BUCKET ?? "ranoro-jm8l0.appspot.com", // ← ⚠️ asegúrate que termina en .appspot.com
+  storageBucket: process.env.NEXT_PUBLIC_FB_STORAGE_BUCKET ?? "ranoro-jm8l0.firebasestorage.app", // Correct domain for Firebase Storage
   messagingSenderId: process.env.NEXT_PUBLIC_FB_SENDER_ID ?? "290934350177",
   appId: process.env.NEXT_PUBLIC_FB_APP_ID ?? "1:290934350177:web:2365c77eaca4bb0d906520",
 };
