@@ -10,9 +10,16 @@ let adminDb: admin.firestore.Firestore;
 // Check if the app is already initialized to prevent errors in hot-reloading environments
 if (!admin.apps.length) {
   try {
-    // initializeApp will automatically use GOOGLE_APPLICATION_CREDENTIALS
-    // environment variable if it's set.
-    admin.initializeApp();
+    // Explicitly providing the projectId can sometimes help in complex environments.
+    const projectId = process.env.GCLOUD_PROJECT;
+    
+    if (projectId) {
+        console.log(`Initializing Firebase Admin SDK for project: ${projectId}`);
+        admin.initializeApp({ projectId });
+    } else {
+        console.log("Initializing Firebase Admin SDK using default credentials (no GCLOUD_PROJECT found).");
+        admin.initializeApp();
+    }
   } catch (error) {
     console.error('Firebase Admin SDK initialization failed:', error);
   }
