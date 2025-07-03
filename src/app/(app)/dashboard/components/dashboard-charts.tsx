@@ -134,7 +134,7 @@ export function DashboardCharts() {
 
   return (
     <div className="grid gap-6 sm:grid-cols-1 lg:grid-cols-2">
-      <Card className="lg:col-span-2">
+      <Card>
         <CardHeader>
           <CardTitle>Ingresos vs. Ganancia (Últimos 6 Meses)</CardTitle>
           <CardDescription>Evolución mensual de ingresos brutos y ganancia neta.</CardDescription>
@@ -165,7 +165,7 @@ export function DashboardCharts() {
         </CardContent>
       </Card>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 gap-6">
         <Card className="flex flex-col">
           <CardHeader>
             <CardTitle>Tipo de Servicios</CardTitle>
