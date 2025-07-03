@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useEffect } from 'react';
@@ -25,7 +24,7 @@ import { capitalizeWords } from '@/lib/utils';
 
 const inventoryItemFormSchema = z.object({
   name: z.string().min(3, "El nombre del producto debe tener al menos 3 caracteres."),
-  brand: z.string().optional(),
+  brand: z.string().min(2, "La marca es obligatoria."),
   sku: z.string().optional(),
   description: z.string().optional(),
   isService: z.boolean().default(false).optional(),
@@ -174,22 +173,22 @@ export function InventoryItemForm({ initialData, onSubmit, onClose, categories, 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField
                 control={form.control}
-                name="name"
+                name="brand"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Nombre del Producto/Servicio</FormLabel>
-                    <FormControl><Input placeholder="Ej: Filtro de Aceite XYZ" {...field} onChange={(e) => field.onChange(capitalizeWords(e.target.value))} /></FormControl>
+                    <FormLabel>Marca</FormLabel>
+                    <FormControl><Input placeholder="Ej: Gonher" {...field} onChange={(e) => field.onChange(capitalizeWords(e.target.value))} /></FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
               <FormField
                 control={form.control}
-                name="brand"
+                name="name"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Marca (Opcional)</FormLabel>
-                    <FormControl><Input placeholder="Ej: Gonher" {...field} onChange={(e) => field.onChange(capitalizeWords(e.target.value))} /></FormControl>
+                    <FormLabel>Nombre del Producto/Servicio</FormLabel>
+                    <FormControl><Input placeholder="Ej: Filtro de Aceite XYZ" {...field} onChange={(e) => field.onChange(capitalizeWords(e.target.value))} /></FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
