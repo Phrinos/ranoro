@@ -100,7 +100,7 @@ export default function DashboardPage() {
     
     const repairingServices = placeholderServiceRecords.filter(s => s.status === 'Reparando');
     const scheduledTodayServices = placeholderServiceRecords.filter(s => {
-      if (s.status !== 'Agendado') return false;
+      if (s.status !== 'Agendado' || !s.serviceDate || typeof s.serviceDate !== 'string') return false;
       const serviceDay = parseISO(s.serviceDate);
       return isValid(serviceDay) && isToday(serviceDay);
     });
@@ -156,6 +156,7 @@ export default function DashboardPage() {
       setCapacityError(null);
       try {
         const servicesForToday = placeholderServiceRecords.filter(s => {
+          if (!s.serviceDate || typeof s.serviceDate !== 'string') return false;
           const serviceDay = parseISO(s.serviceDate);
           return isValid(serviceDay) && isToday(serviceDay) && s.status !== 'Completado' && s.status !== 'Cancelado';
         });
@@ -169,17 +170,19 @@ export default function DashboardPage() {
                 totalRequiredHours: 0,
                 totalAvailableHours: totalAvailable,
                 recommendation: "Taller disponible",
-                capacityPercentage: 100,
+                capacityPercentage: 0,
             });
             setIsCapacityLoading(false);
             return;
         }
 
         const result = await analyzeWorkshopCapacity({
-            servicesForDay: servicesForToday.map(s => ({ description: s.description })),
+            servicesForDay: servicesForToday.map(s => ({ description: s.description || '' })),
             technicians: placeholderTechnicians.filter(t => !t.isArchived).map(t => ({ id: t.id, standardHoursPerDay: t.standardHoursPerDay || 8 })),
-            serviceHistory: placeholderServiceRecords.map(s => ({
-                description: s.description,
+            serviceHistory: placeholderServiceRecords
+              .filter(s => s.serviceDate && typeof s.serviceDate === 'string')
+              .map(s => ({
+                description: s.description || '',
                 serviceDate: s.serviceDate,
                 deliveryDateTime: s.deliveryDateTime,
             })),
@@ -202,6 +205,7 @@ export default function DashboardPage() {
 
     try {
       const servicesForToday = placeholderServiceRecords.filter(s => {
+        if (!s.serviceDate || typeof s.serviceDate !== 'string') return false;
         const serviceDay = parseISO(s.serviceDate);
         return isValid(serviceDay) && isToday(serviceDay) && s.status !== 'Completado' && s.status !== 'Cancelado';
       });
@@ -213,10 +217,10 @@ export default function DashboardPage() {
       }
       
       const input = {
-        scheduledServices: servicesForToday.map(s => ({ id: s.id, description: s.description })),
+        scheduledServices: servicesForToday.map(s => ({ id: s.id, description: s.description || '' })),
         inventoryItems: placeholderInventory.map(i => ({ id: i.id, name: i.name, quantity: i.quantity, supplier: i.supplier })),
         serviceHistory: placeholderServiceRecords.map(s => ({
-            description: s.description,
+            description: s.description || '',
             suppliesUsed: (s.suppliesUsed || []).map(sup => ({ supplyName: sup.supplyName || placeholderInventory.find(i => i.id === sup.supplyId)?.name || 'Unknown' }))
         }))
       };
