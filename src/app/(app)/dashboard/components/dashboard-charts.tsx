@@ -189,270 +189,272 @@ export function DashboardCharts() {
   };
 
   return (
-    <div className="grid gap-6 sm:grid-cols-1 lg:grid-cols-2">
-      {/* CHART 1 */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Ingresos vs. Ganancia (Últimos 6 Meses)</CardTitle>
-          <CardDescription>
-            Evolución mensual de ingresos brutos y ganancia neta.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="p-4 pt-0">
-          <div className="flex w-full items-center justify-center gap-x-8 gap-y-2 text-sm text-muted-foreground flex-wrap mb-4">
-            <div className="flex items-center gap-2">
-              <span
-                className="h-2.5 w-2.5 rounded-full"
-                style={{ backgroundColor: "var(--color-revenue)" }}
-              />
-              <span className="font-medium">Ingresos</span>
+    <>
+      <div className="grid gap-6 sm:grid-cols-1 lg:grid-cols-2">
+        {/* CHART 1 */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Ingresos vs. Ganancia</CardTitle>
+            <CardDescription>
+              Evolución mensual de ingresos brutos y ganancia neta.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="p-4 pt-0">
+            <div className="flex w-full items-center justify-center gap-x-8 gap-y-2 text-sm text-muted-foreground flex-wrap mb-4">
+              <div className="flex items-center gap-2">
+                <span
+                  className="h-2.5 w-2.5 rounded-full"
+                  style={{ backgroundColor: "var(--color-revenue)" }}
+                />
+                <span className="font-medium">Ingresos</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span
+                  className="h-2.5 w-2.5 rounded-full"
+                  style={{ backgroundColor: "var(--color-profit)" }}
+                />
+                <span className="font-medium">Ganancia</span>
+              </div>
             </div>
-            <div className="flex items-center gap-2">
-              <span
-                className="h-2.5 w-2.5 rounded-full"
-                style={{ backgroundColor: "var(--color-profit)" }}
-              />
-              <span className="font-medium">Ganancia</span>
-            </div>
-          </div>
-          <div className="h-[250px] w-full">
-            <ChartContainer config={monthlyChartConfig}>
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart
-                  data={monthlyChartData}
-                  margin={{ top: 5, right: 10, left: 0, bottom: 0 }}
-                >
-                  <CartesianGrid vertical={false} />
-                  <XAxis
-                    dataKey="month"
-                    tickLine={false}
-                    axisLine={false}
-                    tickMargin={8}
+            <div className="h-[300px] w-full">
+              <ChartContainer config={monthlyChartConfig}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart
+                    data={monthlyChartData}
+                    margin={{ top: 5, right: 10, left: 0, bottom: 5 }}
+                  >
+                    <CartesianGrid vertical={false} />
+                    <XAxis
+                      dataKey="month"
+                      tickLine={false}
+                      axisLine={false}
+                      tickMargin={8}
                     />
-                  <YAxis
-                    tickLine={false}
-                    axisLine={false}
-                    tickMargin={8}
-                    tickFormatter={(v) => formatCurrency(Number(v))}
-                  />
-                  <ChartTooltip
-                    cursor={false}
-                    content={<ChartTooltipContent formatter={formatCurrency} />}
-                  />
-                  <Line
-                    dataKey="revenue"
-                    type="monotone"
-                    stroke="var(--color-revenue)"
-                    strokeWidth={3}
-                    dot={{ r: 4 }}
-                    activeDot={{ r: 6 }}
-                    name="Ingresos"
-                  />
-                  <Line
-                    dataKey="profit"
-                    type="monotone"
-                    stroke="var(--color-profit)"
-                    strokeWidth={3}
-                    dot={{ r: 4 }}
-                    activeDot={{ r: 6 }}
-                    name="Ganancia"
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </ChartContainer>
-          </div>
-        </CardContent>
-      </Card>
+                    <YAxis
+                      tickLine={false}
+                      axisLine={false}
+                      tickMargin={8}
+                      tickFormatter={(v) => formatCurrency(Number(v))}
+                    />
+                    <ChartTooltip
+                      cursor={false}
+                      content={<ChartTooltipContent formatter={formatCurrency} />}
+                    />
+                    <Line
+                      dataKey="revenue"
+                      type="monotone"
+                      stroke="var(--color-revenue)"
+                      strokeWidth={3}
+                      dot={{ r: 4 }}
+                      activeDot={{ r: 6 }}
+                      name="Ingresos"
+                    />
+                    <Line
+                      dataKey="profit"
+                      type="monotone"
+                      stroke="var(--color-profit)"
+                      strokeWidth={3}
+                      dot={{ r: 4 }}
+                      activeDot={{ r: 6 }}
+                      name="Ganancia"
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </ChartContainer>
+            </div>
+          </CardContent>
+        </Card>
 
-      {/* CHART 2 */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Servicios vs. Ventas (Últimos 6 Meses)</CardTitle>
-          <CardDescription>
-            Volumen de operaciones mensuales.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="p-4 pt-0">
-           <div className="flex w-full items-center justify-center gap-x-8 gap-y-2 text-sm text-muted-foreground flex-wrap mb-4">
-            <div className="flex items-center gap-2">
-              <span
-                className="h-2.5 w-2.5 rounded-full"
-                style={{ backgroundColor: "var(--color-services)" }}
-              />
-              <span className="font-medium">Servicios</span>
+        {/* CHART 2 */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Servicios vs. Ventas</CardTitle>
+            <CardDescription>
+              Volumen de operaciones mensuales.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="p-4 pt-0">
+            <div className="flex w-full items-center justify-center gap-x-8 gap-y-2 text-sm text-muted-foreground flex-wrap mb-4">
+              <div className="flex items-center gap-2">
+                <span
+                  className="h-2.5 w-2.5 rounded-full"
+                  style={{ backgroundColor: "var(--color-services)" }}
+                />
+                <span className="font-medium">Servicios</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span
+                  className="h-2.5 w-2.5 rounded-full"
+                  style={{ backgroundColor: "var(--color-sales)" }}
+                />
+                <span className="font-medium">Ventas</span>
+              </div>
             </div>
-            <div className="flex items-center gap-2">
-              <span
-                className="h-2.5 w-2.5 rounded-full"
-                style={{ backgroundColor: "var(--color-sales)" }}
-              />
-              <span className="font-medium">Ventas</span>
+            <div className="h-[300px] w-full">
+              <ChartContainer config={monthlyOpsChartConfig}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart
+                    data={monthlyOperationsData}
+                    margin={{ top: 5, right: 10, left: 0, bottom: 5 }}
+                  >
+                    <CartesianGrid vertical={false} />
+                    <XAxis
+                      dataKey="month"
+                      tickLine={false}
+                      axisLine={false}
+                      tickMargin={8}
+                    />
+                    <YAxis
+                      tickLine={false}
+                      axisLine={false}
+                      tickMargin={8}
+                      tickFormatter={(v) => formatNumber(Number(v))}
+                    />
+                    <ChartTooltip
+                      cursor={false}
+                      content={<ChartTooltipContent formatter={formatNumber} />}
+                    />
+                    <Line
+                      dataKey="services"
+                      type="monotone"
+                      stroke="var(--color-services)"
+                      strokeWidth={3}
+                      dot={{ r: 4 }}
+                      activeDot={{ r: 6 }}
+                      name="Servicios"
+                    />
+                    <Line
+                      dataKey="sales"
+                      type="monotone"
+                      stroke="var(--color-sales)"
+                      strokeWidth={3}
+                      dot={{ r: 4 }}
+                      activeDot={{ r: 6 }}
+                      name="Ventas"
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </ChartContainer>
             </div>
-          </div>
-          <div className="h-[250px] w-full">
-            <ChartContainer config={monthlyOpsChartConfig}>
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart
-                  data={monthlyOperationsData}
-                  margin={{ top: 5, right: 10, left: 0, bottom: 0 }}
-                >
-                  <CartesianGrid vertical={false} />
-                  <XAxis
-                    dataKey="month"
-                    tickLine={false}
-                    axisLine={false}
-                    tickMargin={8}
-                  />
-                   <YAxis
-                    tickLine={false}
-                    axisLine={false}
-                    tickMargin={8}
-                    tickFormatter={(v) => formatNumber(Number(v))}
-                  />
-                  <ChartTooltip
-                    cursor={false}
-                    content={<ChartTooltipContent formatter={formatNumber}/>}
-                  />
-                  <Line
-                    dataKey="services"
-                    type="monotone"
-                    stroke="var(--color-services)"
-                    strokeWidth={3}
-                    dot={{ r: 4 }}
-                    activeDot={{ r: 6 }}
-                    name="Servicios"
-                  />
-                  <Line
-                    dataKey="sales"
-                    type="monotone"
-                    stroke="var(--color-sales)"
-                    strokeWidth={3}
-                    dot={{ r: 4 }}
-                    activeDot={{ r: 6 }}
-                    name="Ventas"
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </ChartContainer>
-          </div>
-        </CardContent>
-      </Card>
-      
+          </CardContent>
+        </Card>
+      </div>
+
       {/* PIE CHARTS ROW */}
       <div className="grid gap-6 sm:grid-cols-1 lg:grid-cols-2">
-          {/* PIE CHART 1 */}
-          <Card className="flex flex-col">
-            <CardHeader>
-              <CardTitle>Distribución de Tipos de Servicio</CardTitle>
-              <CardDescription>
-                Servicios más comunes (histórico).
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="flex-1 pb-0">
-              <ChartContainer
-                config={serviceTypeChartConfig}
-                className="mx-auto aspect-square max-h-[250px]"
-              >
-                <PieChart>
-                  <ChartTooltip content={<ChartTooltipContent hideLabel />} />
-                  <Pie
-                    data={serviceTypeChartData}
-                    dataKey="value"
-                    nameKey="name"
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={60}
-                    strokeWidth={5}
-                    labelLine={false}
-                    label={({
-                      cy,
-                      midAngle,
-                      innerRadius,
-                      outerRadius,
-                      percent,
-                    }) => {
-                      const RADIAN = Math.PI / 180;
-                      const radius =
-                        innerRadius + (outerRadius - innerRadius) * 0.5;
-                      const x = cy + radius * Math.cos(-midAngle * RADIAN);
-                      const y = cy + radius * Math.sin(-midAngle * RADIAN);
-                      return (
-                        <text
-                          x={x}
-                          y={y}
-                          fill="white"
-                          textAnchor={x > cy ? "start" : "end"}
-                          dominantBaseline="central"
-                          className="text-xs font-bold"
-                        >
-                          {(percent * 100).toFixed(0)}%
-                        </text>
-                      );
-                    }}
+        {/* PIE CHART 1 */}
+        <Card className="flex flex-col">
+          <CardHeader>
+            <CardTitle>Distribución de Tipos de Servicio</CardTitle>
+            <CardDescription>
+              Servicios más comunes (histórico).
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="flex-1 pb-0">
+            <ChartContainer
+              config={serviceTypeChartConfig}
+              className="mx-auto aspect-square max-h-[250px]"
+            >
+              <PieChart>
+                <ChartTooltip content={<ChartTooltipContent hideLabel />} />
+                <Pie
+                  data={serviceTypeChartData}
+                  dataKey="value"
+                  nameKey="name"
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={60}
+                  strokeWidth={5}
+                  labelLine={false}
+                  label={({
+                    cy,
+                    midAngle,
+                    innerRadius,
+                    outerRadius,
+                    percent,
+                  }) => {
+                    const RADIAN = Math.PI / 180;
+                    const radius =
+                      innerRadius + (outerRadius - innerRadius) * 0.5;
+                    const x = cy + radius * Math.cos(-midAngle * RADIAN);
+                    const y = cy + radius * Math.sin(-midAngle * RADIAN);
+                    return (
+                      <text
+                        x={x}
+                        y={y}
+                        fill="white"
+                        textAnchor={x > cy ? "start" : "end"}
+                        dominantBaseline="central"
+                        className="text-xs font-bold"
+                      >
+                        {(percent * 100).toFixed(0)}%
+                      </text>
+                    );
+                  }}
+                />
+              </PieChart>
+            </ChartContainer>
+          </CardContent>
+          <CardContent className="flex justify-center p-4">
+            <div className="flex w-full items-center justify-center gap-x-6 gap-y-2 text-sm text-muted-foreground flex-wrap">
+              {serviceTypeChartData.map((item) => (
+                <div key={item.name} className="flex items-center gap-2">
+                  <span
+                    className="h-2.5 w-2.5 rounded-full"
+                    style={{ backgroundColor: item.fill }}
                   />
-                </PieChart>
-              </ChartContainer>
-            </CardContent>
-            <CardContent className="flex justify-center p-4">
-               <div className="flex w-full items-center justify-center gap-x-6 gap-y-2 text-sm text-muted-foreground flex-wrap">
-                  {serviceTypeChartData.map((item) => (
-                    <div key={item.name} className="flex items-center gap-2">
-                      <span
-                        className="h-2.5 w-2.5 rounded-full"
-                        style={{ backgroundColor: item.fill }}
-                      />
-                      <span className="font-medium">{item.name}</span>
-                    </div>
-                  ))}
-              </div>
-            </CardContent>
-          </Card>
-          
-          {/* PIE CHART 2 */}
-          <Card className="flex flex-col">
-            <CardHeader>
-              <CardTitle>Fuentes de Ingresos (Histórico)</CardTitle>
-              <CardDescription>
-                Comparativa de ingresos por servicios vs. ventas de mostrador.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="flex-1 pb-0">
-              <ChartContainer
-                config={revenueSourceChartConfig}
-                className="mx-auto aspect-square max-h-[250px]"
-              >
-                <PieChart>
-                  <ChartTooltip
-                    cursor={false}
-                    content={<ChartTooltipContent hideLabel formatter={formatCurrency} />}
+                  <span className="font-medium">{item.name}</span>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* PIE CHART 2 */}
+        <Card className="flex flex-col">
+          <CardHeader>
+            <CardTitle>Fuentes de Ingresos (Histórico)</CardTitle>
+            <CardDescription>
+              Comparativa de ingresos por servicios vs. ventas de mostrador.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="flex-1 pb-0">
+            <ChartContainer
+              config={revenueSourceChartConfig}
+              className="mx-auto aspect-square max-h-[250px]"
+            >
+              <PieChart>
+                <ChartTooltip
+                  cursor={false}
+                  content={<ChartTooltipContent hideLabel formatter={formatCurrency} />}
+                />
+                <Pie
+                  data={revenueSourceChartData}
+                  dataKey="value"
+                  nameKey="source"
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={60}
+                  strokeWidth={5}
+                />
+              </PieChart>
+            </ChartContainer>
+          </CardContent>
+          <CardContent className="flex justify-center p-4">
+            <div className="flex w-full items-center justify-center gap-x-6 gap-y-2 text-sm text-muted-foreground flex-wrap">
+              {revenueSourceChartData.map((item) => (
+                <div key={item.source} className="flex items-center gap-2">
+                  <span
+                    className="h-2.5 w-2.5 rounded-full"
+                    style={{ backgroundColor: item.fill }}
                   />
-                  <Pie
-                    data={revenueSourceChartData}
-                    dataKey="value"
-                    nameKey="source"
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={60}
-                    strokeWidth={5}
-                  />
-                </PieChart>
-              </ChartContainer>
-            </CardContent>
-            <CardContent className="flex justify-center p-4">
-              <div className="flex w-full items-center justify-center gap-x-6 gap-y-2 text-sm text-muted-foreground flex-wrap">
-                  {revenueSourceChartData.map((item) => (
-                    <div key={item.source} className="flex items-center gap-2">
-                      <span
-                        className="h-2.5 w-2.5 rounded-full"
-                        style={{ backgroundColor: item.fill }}
-                      />
-                      <span className="font-medium">{item.source}</span>
-                    </div>
-                  ))}
-              </div>
-            </CardContent>
-          </Card>
+                  <span className="font-medium">{item.source}</span>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
       </div>
-    </div>
+    </>
   );
 }
