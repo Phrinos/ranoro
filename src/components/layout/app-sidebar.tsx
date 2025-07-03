@@ -1,4 +1,3 @@
-
 "use client";
 
 import Link from "next/link";
@@ -95,20 +94,33 @@ export function AppSidebar() {
   }, [currentUser, roles]);
 
   const handleLogout = () => {
-    signOut(auth).then(() => {
+    if (auth) {
+      signOut(auth).then(() => {
+        if (typeof window !== "undefined") {
+          localStorage.removeItem("authUser");
+        }
+        toast({
+          title: "Sesión Cerrada",
+          description: "Has cerrado sesión exitosamente.",
+        });
+        setCurrentUser(null);
+        router.push("/login");
+      }).catch((error) => {
+         console.error("Logout Error:", error);
+         toast({ title: "Error al cerrar sesión", variant: "destructive" });
+      });
+    } else {
+      // Handle demo mode logout
       if (typeof window !== "undefined") {
         localStorage.removeItem("authUser");
       }
       toast({
-        title: "Sesión Cerrada",
+        title: "Sesión Cerrada (Modo Demo)",
         description: "Has cerrado sesión exitosamente.",
       });
       setCurrentUser(null);
       router.push("/login");
-    }).catch((error) => {
-       console.error("Logout Error:", error);
-       toast({ title: "Error al cerrar sesión", variant: "destructive" });
-    });
+    }
   };
 
   const groupedByTag = React.useMemo(() => {
