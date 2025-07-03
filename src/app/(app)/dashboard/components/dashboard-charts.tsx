@@ -216,52 +216,48 @@ export function DashboardCharts() {
                 <span className="font-medium">Ganancia</span>
               </div>
             </div>
-            <div className="h-[300px] w-full">
-              <ChartContainer config={monthlyChartConfig}>
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart
-                    data={monthlyChartData}
-                    margin={{ top: 5, right: 10, left: 0, bottom: 10 }}
-                  >
-                    <CartesianGrid vertical={false} />
-                    <XAxis
-                      dataKey="month"
-                      tickLine={false}
-                      axisLine={false}
-                      tickMargin={8}
-                    />
-                    <YAxis
-                      tickLine={false}
-                      axisLine={false}
-                      tickMargin={8}
-                      tickFormatter={(v) => formatCurrency(Number(v))}
-                    />
-                    <ChartTooltip
-                      cursor={false}
-                      content={<ChartTooltipContent formatter={formatCurrency} />}
-                    />
-                    <Line
-                      dataKey="revenue"
-                      type="monotone"
-                      stroke="var(--color-revenue)"
-                      strokeWidth={3}
-                      dot={{ r: 4 }}
-                      activeDot={{ r: 6 }}
-                      name="Ingresos"
-                    />
-                    <Line
-                      dataKey="profit"
-                      type="monotone"
-                      stroke="var(--color-profit)"
-                      strokeWidth={3}
-                      dot={{ r: 4 }}
-                      activeDot={{ r: 6 }}
-                      name="Ganancia"
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              </ChartContainer>
-            </div>
+            <ChartContainer config={monthlyChartConfig} className="h-[300px] w-full">
+                <LineChart
+                  data={monthlyChartData}
+                  margin={{ top: 5, right: 10, left: 0, bottom: 10 }}
+                >
+                  <CartesianGrid vertical={false} />
+                  <XAxis
+                    dataKey="month"
+                    tickLine={false}
+                    axisLine={false}
+                    tickMargin={8}
+                  />
+                  <YAxis
+                    tickLine={false}
+                    axisLine={false}
+                    tickMargin={8}
+                    tickFormatter={(v) => formatCurrency(Number(v))}
+                  />
+                  <ChartTooltip
+                    cursor={false}
+                    content={<ChartTooltipContent formatter={formatCurrency} />}
+                  />
+                  <Line
+                    dataKey="revenue"
+                    type="monotone"
+                    stroke="var(--color-revenue)"
+                    strokeWidth={3}
+                    dot={{ r: 4 }}
+                    activeDot={{ r: 6 }}
+                    name="Ingresos"
+                  />
+                  <Line
+                    dataKey="profit"
+                    type="monotone"
+                    stroke="var(--color-profit)"
+                    strokeWidth={3}
+                    dot={{ r: 4 }}
+                    activeDot={{ r: 6 }}
+                    name="Ganancia"
+                  />
+                </LineChart>
+            </ChartContainer>
           </CardContent>
         </Card>
 
@@ -290,52 +286,48 @@ export function DashboardCharts() {
                 <span className="font-medium">Ventas</span>
               </div>
             </div>
-            <div className="h-[300px] w-full">
-              <ChartContainer config={monthlyOpsChartConfig}>
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart
-                    data={monthlyOperationsData}
-                    margin={{ top: 5, right: 10, left: 0, bottom: 10 }}
-                  >
-                    <CartesianGrid vertical={false} />
-                    <XAxis
-                      dataKey="month"
-                      tickLine={false}
-                      axisLine={false}
-                      tickMargin={8}
-                    />
-                    <YAxis
-                      tickLine={false}
-                      axisLine={false}
-                      tickMargin={8}
-                      tickFormatter={(v) => formatNumber(Number(v))}
-                    />
-                    <ChartTooltip
-                      cursor={false}
-                      content={<ChartTooltipContent formatter={formatNumber} />}
-                    />
-                    <Line
-                      dataKey="services"
-                      type="monotone"
-                      stroke="var(--color-services)"
-                      strokeWidth={3}
-                      dot={{ r: 4 }}
-                      activeDot={{ r: 6 }}
-                      name="Servicios"
-                    />
-                    <Line
-                      dataKey="sales"
-                      type="monotone"
-                      stroke="var(--color-sales)"
-                      strokeWidth={3}
-                      dot={{ r: 4 }}
-                      activeDot={{ r: 6 }}
-                      name="Ventas"
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              </ChartContainer>
-            </div>
+            <ChartContainer config={monthlyOpsChartConfig} className="h-[300px] w-full">
+                <LineChart
+                  data={monthlyOperationsData}
+                  margin={{ top: 5, right: 10, left: 0, bottom: 10 }}
+                >
+                  <CartesianGrid vertical={false} />
+                  <XAxis
+                    dataKey="month"
+                    tickLine={false}
+                    axisLine={false}
+                    tickMargin={8}
+                  />
+                  <YAxis
+                    tickLine={false}
+                    axisLine={false}
+                    tickMargin={8}
+                    tickFormatter={(v) => formatNumber(Number(v))}
+                  />
+                  <ChartTooltip
+                    cursor={false}
+                    content={<ChartTooltipContent formatter={formatNumber} />}
+                  />
+                  <Line
+                    dataKey="services"
+                    type="monotone"
+                    stroke="var(--color-services)"
+                    strokeWidth={3}
+                    dot={{ r: 4 }}
+                    activeDot={{ r: 6 }}
+                    name="Servicios"
+                  />
+                  <Line
+                    dataKey="sales"
+                    type="monotone"
+                    stroke="var(--color-sales)"
+                    strokeWidth={3}
+                    dot={{ r: 4 }}
+                    activeDot={{ r: 6 }}
+                    name="Ventas"
+                  />
+                </LineChart>
+            </ChartContainer>
           </CardContent>
         </Card>
       </div>
