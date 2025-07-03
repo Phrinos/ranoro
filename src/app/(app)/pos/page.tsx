@@ -404,60 +404,60 @@ export default function POSPage() {
       <PageHeader
         title="Punto de Venta"
         description="Consulta, filtra y ordena todas las ventas de mostrador."
-        actions={
-          <Button asChild>
-            <Link href="/pos/nuevo">
-              <PlusCircle className="mr-2 h-4 w-4" />
-              Nueva Venta
-            </Link>
-          </Button>
-        }
       />
 
       {/* ---- Filtros ---- */}
       <div className="mb-6 space-y-4">
-        <div className="flex flex-col sm:flex-row items-center gap-4">
-            <div className="flex gap-2">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="flex items-center gap-2 flex-wrap">
                 <Button variant="secondary" onClick={setDateToToday}>Hoy</Button>
                 <Button variant="secondary" onClick={setDateToThisWeek}>Esta Semana</Button>
                 <Button variant="secondary" onClick={setDateToThisMonth}>Este Mes</Button>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant={"outline"}
+                      className={cn(
+                        "w-full sm:w-auto justify-start text-left font-normal",
+                        !dateRange && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarDateIcon className="mr-2 h-4 w-4" />
+                      {dateRange?.from ? (
+                        dateRange.to ? (
+                          <>
+                            {format(dateRange.from, "LLL dd, y", { locale: es })} -{" "}
+                            {format(dateRange.to, "LLL dd, y", { locale: es })}
+                          </>
+                        ) : (
+                          format(dateRange.from, "LLL dd, y", { locale: es })
+                        )
+                      ) : (
+                        <span>Seleccione rango</span>
+                      )}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      initialFocus
+                      mode="range"
+                      defaultMonth={dateRange?.from}
+                      selected={dateRange}
+                      onSelect={setDateRange}
+                      numberOfMonths={2}
+                      locale={es}
+                    />
+                  </PopoverContent>
+                </Popover>
             </div>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant={"outline"}
-                  className={cn(
-                    "w-full sm:w-auto justify-start text-left font-normal",
-                    !dateRange && "text-muted-foreground"
-                  )}
-                >
-                  <CalendarDateIcon className="mr-2 h-4 w-4" />
-                  {dateRange?.from ? (
-                    dateRange.to ? (
-                      <>
-                        {format(dateRange.from, "LLL dd, y", { locale: es })} -{" "}
-                        {format(dateRange.to, "LLL dd, y", { locale: es })}
-                      </>
-                    ) : (
-                      format(dateRange.from, "LLL dd, y", { locale: es })
-                    )
-                  ) : (
-                    <span>Seleccione rango</span>
-                  )}
+             <div className="flex items-center">
+                <Button asChild>
+                    <Link href="/pos/nuevo">
+                        <PlusCircle className="mr-2 h-4 w-4" />
+                        Nueva Venta
+                    </Link>
                 </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar
-                  initialFocus
-                  mode="range"
-                  defaultMonth={dateRange?.from}
-                  selected={dateRange}
-                  onSelect={setDateRange}
-                  numberOfMonths={2}
-                  locale={es}
-                />
-              </PopoverContent>
-            </Popover>
+            </div>
         </div>
         <div className="flex flex-col sm:flex-row items-center gap-4">
             <div className="relative flex-1 w-full">
