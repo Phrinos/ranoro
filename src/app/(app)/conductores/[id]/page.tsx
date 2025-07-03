@@ -142,7 +142,9 @@ export default function DriverDetailPage() {
       return;
     }
 
-    setIsUploading(true);
+    if (isMounted.current) {
+        setIsUploading(true);
+    }
     
     try {
       toast({ title: 'Procesando imagen...', description: `Optimizando ${file.name}...` });
@@ -159,10 +161,12 @@ export default function DriverDetailPage() {
         throw new Error("No se pudo encontrar el conductor para actualizar después de la subida.");
       }
       
-      const updatedDriver = {
-        ...placeholderDrivers[driverIndex],
+      const currentDriverData = placeholderDrivers[driverIndex];
+
+      const updatedDriver: Driver = {
+        ...currentDriverData,
         documents: {
-          ...(placeholderDrivers[driverIndex].documents || {}),
+          ...(currentDriverData.documents || {}),
           [uploadingDocType]: downloadURL,
         },
       };
@@ -247,7 +251,7 @@ export default function DriverDetailPage() {
       />
 
       <Tabs defaultValue="details" className="w-full">
-        <TabsList className="grid w-full grid-cols-1 sm:grid-cols-3 md:w-1/2 bg-white">
+        <TabsList className="grid w-full grid-cols-1 sm:grid-cols-3 bg-white">
           <TabsTrigger value="details" className="font-bold data-[state=active]:bg-slate-800 data-[state=active]:text-white">Detalles</TabsTrigger>
           <TabsTrigger value="documents" className="font-bold data-[state=active]:bg-slate-800 data-[state=active]:text-white">Documentos</TabsTrigger>
           <TabsTrigger value="payments" className="font-bold data-[state=active]:bg-slate-800 data-[state=active]:text-white">Pagos</TabsTrigger>
