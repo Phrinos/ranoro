@@ -13,7 +13,7 @@ import { PageHeader } from '@/components/page-header';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { ShieldAlert, Edit, User, Phone, Home, FileText, Upload, AlertTriangle, Car, DollarSign, Printer, ArrowLeft, PlusCircle } from 'lucide-react';
+import { ShieldAlert, Edit, User, Phone, Home, FileText, Upload, AlertTriangle, Car, DollarSign, Printer, ArrowLeft, PlusCircle, Loader2 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import Link from 'next/link';
@@ -22,13 +22,17 @@ import { DriverDialog } from '../components/driver-dialog';
 import type { DriverFormValues } from '../components/driver-form';
 import { useToast } from '@/hooks/use-toast';
 import { Label } from '@/components/ui/label';
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency, optimizeImage } from '@/lib/utils';
 import { format, parseISO, differenceInCalendarDays, startOfToday, isAfter } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
 import { ContractContent } from '../components/contract-content';
 import Image from "next/legacy/image";
 import { RegisterPaymentDialog } from '../components/register-payment-dialog';
+import { ref, uploadString, getDownloadURL } from "firebase/storage";
+import { storage } from '@/lib/firebaseClient';
+
+type DocType = 'ineUrl' | 'licenseUrl' | 'proofOfAddressUrl' | 'promissoryNoteUrl';
 
 export default function DriverDetailPage() {
   const params = useParams();
@@ -36,12 +40,15 @@ export default function DriverDetailPage() {
   const { toast } = useToast();
   const router = useRouter();
   const contractContentRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [driver, setDriver] = useState<Driver | null | undefined>(undefined);
   const [driverPayments, setDriverPayments] = useState<RentalPayment[]>([]);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isContractDialogOpen, setIsContractDialogOpen] = useState(false);
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
+  const [uploadingDocType, setUploadingDocType] = useState<DocType | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
 
   useEffect(() => {
     const foundDriver = placeholderDrivers.find(d => d.id === driverId);
@@ -110,25 +117,63 @@ export default function DriverDetailPage() {
     toast({ title: "Vehículo Asignado", description: "Se ha asignado el nuevo vehículo al conductor." });
   }
 
-  const handleUploadDocument = async (docType: 'ineUrl' | 'licenseUrl' | 'proofOfAddressUrl' | 'promissoryNoteUrl') => {
-    if (!driver) return;
-    // In a real app, this would open a file dialog and upload to a storage service.
-    // For this prototype, we'll just assign a placeholder URL.
-    const placeholderUrl = "https://placehold.co/400x250.png";
-    const updatedDriver = {
-      ...driver,
-      documents: {
-        ...driver.documents,
-        [docType]: placeholderUrl,
-      },
-    };
-    setDriver(updatedDriver);
+  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !uploadingDocType || !driver) {
+      return;
+    }
+    
+    if (!storage) {
+      toast({ title: 'Error', description: 'El almacenamiento de archivos no está configurado.', variant: 'destructive' });
+      return;
+    }
 
-    const dIndex = placeholderDrivers.findIndex(d => d.id === driverId);
-    if (dIndex > -1) placeholderDrivers[dIndex] = updatedDriver;
+    setIsUploading(true);
+    
+    try {
+      toast({ title: 'Procesando imagen...', description: 'Optimizando imagen para subirla...' });
+      const optimizedDataUrl = await optimizeImage(file, 800);
 
-    await persistToFirestore(['drivers']);
-    toast({ title: "Documento Simulado", description: "Se ha asignado una imagen de marcador de posición." });
+      toast({ title: 'Subiendo...', description: 'Guardando el documento en la nube...' });
+      const storageRef = ref(storage, `driver-documents/${driver.id}/${uploadingDocType}-${Date.now()}.jpg`);
+      
+      await uploadString(storageRef, optimizedDataUrl, 'data_url');
+      const downloadURL = await getDownloadURL(storageRef);
+
+      const updatedDriver = {
+        ...driver,
+        documents: {
+          ...driver.documents,
+          [uploadingDocType]: downloadURL,
+        },
+      };
+      
+      setDriver(updatedDriver);
+
+      const driverIndex = placeholderDrivers.findIndex(d => d.id === driver.id);
+      if (driverIndex > -1) {
+        placeholderDrivers[driverIndex] = updatedDriver;
+      }
+
+      await persistToFirestore(['drivers']);
+      
+      toast({
+        title: '¡Documento Subido!',
+        description: `El documento se ha guardado correctamente.`,
+      });
+
+    } catch (err) {
+      console.error("Error al subir documento:", err);
+      toast({
+        title: 'Error de Subida',
+        description: 'No se pudo guardar el documento. Inténtelo de nuevo.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsUploading(false);
+      setUploadingDocType(null);
+      if(fileInputRef.current) fileInputRef.current.value = '';
+    }
   };
 
   const handleRegisterPayment = async (details: { amount: number; daysCovered: number; }) => {
@@ -184,10 +229,10 @@ export default function DriverDetailPage() {
       />
 
       <Tabs defaultValue="details" className="w-full">
-        <TabsList className="grid w-full grid-cols-1 sm:grid-cols-3 md:w-1/2">
-          <TabsTrigger value="details">Detalles</TabsTrigger>
-          <TabsTrigger value="documents">Documentos</TabsTrigger>
-          <TabsTrigger value="payments">Pagos</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-1 sm:grid-cols-3 md:w-1/2 bg-white">
+          <TabsTrigger value="details" className="font-bold data-[state=active]:bg-slate-800 data-[state=active]:text-white">Detalles</TabsTrigger>
+          <TabsTrigger value="documents" className="font-bold data-[state=active]:bg-slate-800 data-[state=active]:text-white">Documentos</TabsTrigger>
+          <TabsTrigger value="payments" className="font-bold data-[state=active]:bg-slate-800 data-[state=active]:text-white">Pagos</TabsTrigger>
         </TabsList>
 
         <TabsContent value="details">
@@ -288,8 +333,25 @@ export default function DriverDetailPage() {
                         <p className="text-sm text-muted-foreground">Sin documento</p>
                       )}
                     </div>
-                    <Button variant="outline" className="w-full" onClick={() => handleUploadDocument(type as keyof Driver['documents'])}>
-                      <Upload className="mr-2 h-4 w-4"/> {driver.documents?.[type as keyof Driver['documents']] ? "Reemplazar" : "Subir Documento"}
+                     <Button
+                        variant="outline"
+                        className="w-full"
+                        onClick={() => {
+                            setUploadingDocType(type as DocType);
+                            fileInputRef.current?.click();
+                        }}
+                        disabled={isUploading}
+                    >
+                        {isUploading && uploadingDocType === type ? (
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        ) : (
+                            <Upload className="mr-2 h-4 w-4" />
+                        )}
+                        {isUploading && uploadingDocType === type
+                            ? "Subiendo..."
+                            : driver.documents?.[type as keyof Driver['documents']]
+                            ? "Reemplazar"
+                            : "Subir Documento"}
                     </Button>
                   </CardContent>
                 </Card>
@@ -334,6 +396,8 @@ export default function DriverDetailPage() {
           </Card>
         </TabsContent>
       </Tabs>
+      
+      <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/*" className="hidden" />
 
       <DriverDialog
         open={isEditDialogOpen}
