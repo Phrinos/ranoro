@@ -200,6 +200,7 @@ export default function POSPage() {
         sale.items.forEach((it) => {
           // Use item ID as the key to avoid name collisions
           if (!counter[it.inventoryItemId]) {
+            // Use item ID as the key to avoid name collisions
             counter[it.inventoryItemId] = { name: it.itemName, quantity: 0 };
           }
           counter[it.inventoryItemId].quantity += it.quantity;
@@ -222,7 +223,7 @@ export default function POSPage() {
     }
 
     return { totalSalesCount, totalRevenue, mostSoldItem, totalProfit };
-  }, [filteredAndSortedSales, hydrated]);
+  }, [filteredAndSortedSales, hydrated, placeholderInventory]);
 
   // -------------------- Handlers --------------------
 
