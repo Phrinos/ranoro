@@ -5,33 +5,50 @@ import { useState, useMemo, useCallback } from 'react';
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { PlusCircle, Search, Edit, Trash2 } from "lucide-react";
+import { PlusCircle, Search, ListFilter } from "lucide-react";
 import { useToast } from '@/hooks/use-toast';
 import { persistToFirestore, placeholderDrivers, placeholderVehicles } from '@/lib/placeholder-data';
 import type { Driver } from '@/types';
 import { DriverDialog } from './components/driver-dialog';
 import type { DriverFormValues } from './components/driver-form';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useRouter } from 'next/navigation';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+
+type DriverSortOption = 'name_asc' | 'name_desc';
 
 export default function ConductoresPage() {
   const [drivers, setDrivers] = useState<Driver[]>(placeholderDrivers);
   const [searchTerm, setSearchTerm] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingDriver, setEditingDriver] = useState<Driver | null>(null);
-  const [driverToDelete, setDriverToDelete] = useState<Driver | null>(null);
+  const [sortOption, setSortOption] = useState<DriverSortOption>('name_asc');
   const { toast } = useToast();
   const router = useRouter();
 
-  const filteredDrivers = useMemo(() => {
-    if (!searchTerm.trim()) return drivers;
-    const lowerSearch = searchTerm.toLowerCase();
-    return drivers.filter(driver =>
-      driver.name.toLowerCase().includes(lowerSearch) ||
-      driver.phone.toLowerCase().includes(lowerSearch)
-    );
-  }, [drivers, searchTerm]);
+  const filteredAndSortedDrivers = useMemo(() => {
+    let itemsToDisplay = [...drivers];
+    
+    if (searchTerm.trim()) {
+        const lowerSearch = searchTerm.toLowerCase();
+        itemsToDisplay = itemsToDisplay.filter(driver =>
+        driver.name.toLowerCase().includes(lowerSearch) ||
+        driver.phone.toLowerCase().includes(lowerSearch)
+      );
+    }
+
+    itemsToDisplay.sort((a, b) => {
+        switch (sortOption) {
+            case 'name_desc':
+                return b.name.localeCompare(a.name);
+            case 'name_asc':
+            default:
+                return a.name.localeCompare(b.name);
+        }
+    });
+
+    return itemsToDisplay;
+  }, [drivers, searchTerm, sortOption]);
 
   const handleOpenDialog = useCallback((driver: Driver | null = null) => {
     setEditingDriver(driver);
@@ -53,23 +70,14 @@ export default function ConductoresPage() {
     placeholderDrivers.splice(0, placeholderDrivers.length, ...updatedList);
     await persistToFirestore(['drivers']);
     setIsDialogOpen(false);
+    setEditingDriver(null);
   }, [editingDriver, drivers, toast]);
 
-  const handleDeleteDriver = useCallback(async (driverId: string) => {
-    const driver = drivers.find(d => d.id === driverId);
-    if (!driver) return;
-    const updatedList = drivers.filter(d => d.id !== driverId);
-    setDrivers(updatedList);
-    placeholderDrivers.splice(0, placeholderDrivers.length, ...updatedList);
-    await persistToFirestore(['drivers']);
-    toast({ title: "Conductor Eliminado", description: `Se ha eliminado a ${driver.name}.`, variant: "destructive" });
-    setDriverToDelete(null);
-  }, [drivers, toast]);
-
-  const getVehicleLicensePlate = (vehicleId?: string): string => {
+  const getVehicleInfo = (vehicleId?: string): string => {
     if (!vehicleId) return 'N/A';
     const vehicle = placeholderVehicles.find(v => v.id === vehicleId);
-    return vehicle ? vehicle.licensePlate : 'Vehículo no encontrado';
+    if (!vehicle) return 'Vehículo no encontrado';
+    return `${vehicle.licensePlate} - ${vehicle.make} ${vehicle.model} ${vehicle.year} ${vehicle.color || ''}`.trim();
   };
 
   return (
@@ -84,15 +92,32 @@ export default function ConductoresPage() {
           </Button>
         }
       />
-      <div className="mb-6 relative">
-        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-        <Input
-          type="search"
-          placeholder="Buscar por nombre o teléfono..."
-          className="w-full rounded-lg bg-card pl-8 md:w-1/3"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-        />
+      <div className="mb-6 flex flex-col sm:flex-row items-center gap-4">
+        <div className="relative flex-grow">
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input
+            type="search"
+            placeholder="Buscar por nombre o teléfono..."
+            className="w-full rounded-lg bg-card pl-8 sm:w-[300px] lg:w-1/2"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
+        <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="w-full sm:w-auto bg-white">
+                <ListFilter className="mr-2 h-4 w-4" />
+                Organizar Tabla
+                </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+                <DropdownMenuLabel>Ordenar por</DropdownMenuLabel>
+                <DropdownMenuRadioGroup value={sortOption} onValueChange={(value) => setSortOption(value as DriverSortOption)}>
+                <DropdownMenuRadioItem value="name_asc">Nombre (A-Z)</DropdownMenuRadioItem>
+                <DropdownMenuRadioItem value="name_desc">Nombre (Z-A)</DropdownMenuRadioItem>
+                </DropdownMenuRadioGroup>
+            </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       <div className="rounded-lg border shadow-sm overflow-x-auto">
@@ -102,49 +127,17 @@ export default function ConductoresPage() {
               <TableHead>Nombre</TableHead>
               <TableHead>Teléfono</TableHead>
               <TableHead>Vehículo Asignado</TableHead>
-              <TableHead className="text-right">Acciones</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredDrivers.length > 0 ? filteredDrivers.map(driver => (
+            {filteredAndSortedDrivers.length > 0 ? filteredAndSortedDrivers.map(driver => (
               <TableRow key={driver.id} className="cursor-pointer" onClick={() => router.push(`/conductores/${driver.id}`)}>
                 <TableCell className="font-medium">{driver.name}</TableCell>
                 <TableCell>{driver.phone}</TableCell>
-                <TableCell>{getVehicleLicensePlate(driver.assignedVehicleId)}</TableCell>
-                <TableCell className="text-right">
-                  <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); handleOpenDialog(driver); }} className="mr-2">
-                    <Edit className="h-4 w-4" />
-                  </Button>
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); setDriverToDelete(driver); }}>
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
-                    </AlertDialogTrigger>
-                    {driverToDelete?.id === driver.id && (
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>¿Eliminar Conductor?</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            Esta acción no se puede deshacer. ¿Seguro que quieres eliminar a {driverToDelete.name}?
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel onClick={(e) => { e.stopPropagation(); setDriverToDelete(null); }}>Cancelar</AlertDialogCancel>
-                          <AlertDialogAction
-                            onClick={(e) => { e.stopPropagation(); handleDeleteDriver(driver.id); }}
-                            className="bg-destructive hover:bg-destructive/90"
-                          >
-                            Sí, Eliminar
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    )}
-                  </AlertDialog>
-                </TableCell>
+                <TableCell>{getVehicleInfo(driver.assignedVehicleId)}</TableCell>
               </TableRow>
             )) : (
-              <TableRow><TableCell colSpan={4} className="text-center h-24">No se encontraron conductores.</TableCell></TableRow>
+              <TableRow><TableCell colSpan={3} className="text-center h-24">No se encontraron conductores.</TableCell></TableRow>
             )}
           </TableBody>
         </Table>

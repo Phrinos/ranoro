@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import type { Driver } from "@/types";
 import { DollarSign } from "lucide-react";
+import { capitalizeWords } from "@/lib/utils";
 
 const driverFormSchema = z.object({
   name: z.string().min(3, "El nombre debe tener al menos 3 caracteres."),
@@ -54,7 +55,7 @@ export function DriverForm({ initialData, onSubmit, onClose }: DriverFormProps) 
           render={({ field }) => (
             <FormItem>
               <FormLabel>Nombre Completo</FormLabel>
-              <FormControl><Input placeholder="Ej: Juan Pérez" {...field} /></FormControl>
+              <FormControl><Input placeholder="Ej: Juan Pérez" {...field} onChange={(e) => field.onChange(capitalizeWords(e.target.value))} /></FormControl>
               <FormMessage />
             </FormItem>
           )}
