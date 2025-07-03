@@ -8,17 +8,19 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Search, ListFilter, CalendarIcon as CalendarDateIcon, DollarSign, Activity, Package, TrendingUp } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Search, ListFilter, CalendarIcon as CalendarDateIcon, DollarSign, Activity, Package, TrendingUp, Trash2 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { placeholderSales, placeholderServiceRecords, placeholderInventory, getCurrentMonthRange, getLastMonthRange, getTodayRange, calculateSaleProfit, IVA_RATE } from "@/lib/placeholder-data";
+import { placeholderSales, placeholderServiceRecords, placeholderInventory, getCurrentMonthRange, getLastMonthRange, getTodayRange, calculateSaleProfit, IVA_RATE, persistToFirestore } from "@/lib/placeholder-data";
 import type { SaleReceipt, ServiceRecord, FinancialOperation, InventoryItem } from "@/types";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { format, parseISO, compareAsc, compareDesc, isWithinInterval, isValid, startOfDay, endOfDay, isSameDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from "date-fns";
 import { es } from 'date-fns/locale';
 import type { DateRange } from "react-day-picker";
 import { cn } from "@/lib/utils";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { useToast } from "@/hooks/use-toast";
 
 
 type OperationSortOption = 
@@ -57,10 +59,20 @@ interface AggregatedInventoryItem {
 
 
 export default function FinancialReportPage() {
-  const [allSales] = useState<SaleReceipt[]>(placeholderSales);
-  const [allServices] = useState<ServiceRecord[]>(placeholderServiceRecords);
-  const [inventory] = useState<InventoryItem[]>(placeholderInventory);
+  const { toast } = useToast();
+  const [version, setVersion] = useState(0); // Used to force re-render on data change
   
+  const [allSales, setAllSales] = useState<SaleReceipt[]>([]);
+  const [allServices, setAllServices] = useState<ServiceRecord[]>([]);
+  const [inventory, setInventory] = useState<InventoryItem[]>([]);
+
+  useEffect(() => {
+    // Sync local state with global placeholder data
+    setAllSales([...placeholderSales]);
+    setAllServices([...placeholderServiceRecords]);
+    setInventory([...placeholderInventory]);
+  }, [version]); // Re-sync when version changes
+
   // State for Operations Report
   const [searchTerm, setSearchTerm] = useState("");
   const [sortOption, setSortOption] = useState<OperationSortOption>("date_desc");
@@ -284,6 +296,52 @@ export default function FinancialReportPage() {
   const setDateToThisWeek = () => setDateRange({ from: startOfWeek(new Date(), { weekStartsOn: 1 }), to: endOfWeek(new Date(), { weekStartsOn: 1 }) });
   const setDateToThisMonth = () => setDateRange({ from: startOfMonth(new Date()), to: endOfMonth(new Date()) });
 
+  const handleDeleteOperation = async (opId: string, opType: FinancialOperation['type']) => {
+    let keysToPersist: Array<any> = [];
+    let message = "";
+
+    if (opType === 'Venta') {
+        const saleIndex = placeholderSales.findIndex(s => s.id === opId);
+        if (saleIndex > -1) {
+            const sale = placeholderSales[saleIndex];
+            sale.items.forEach(item => {
+                const invItemIndex = placeholderInventory.findIndex(i => i.id === item.inventoryItemId);
+                if (invItemIndex > -1 && !placeholderInventory[invItemIndex].isService) {
+                    placeholderInventory[invItemIndex].quantity += item.quantity;
+                }
+            });
+            
+            placeholderSales.splice(saleIndex, 1);
+            keysToPersist = ['sales', 'inventory'];
+            message = `La venta ${opId} ha sido eliminada y el stock restaurado.`;
+        }
+    } else { // Service types
+        const serviceIndex = placeholderServiceRecords.findIndex(s => s.id === opId);
+        if (serviceIndex > -1) {
+            const service = placeholderServiceRecords[serviceIndex];
+            service.serviceItems?.forEach(item => {
+                item.suppliesUsed?.forEach(supply => {
+                    const invItemIndex = placeholderInventory.findIndex(i => i.id === supply.supplyId);
+                    if (invItemIndex > -1 && !placeholderInventory[invItemIndex].isService) {
+                        placeholderInventory[invItemIndex].quantity += supply.quantity;
+                    }
+                });
+            });
+            
+            placeholderServiceRecords.splice(serviceIndex, 1);
+            keysToPersist = ['serviceRecords', 'inventory'];
+            message = `El servicio ${opId} ha sido eliminado y el stock restaurado.`;
+        }
+    }
+
+    if (keysToPersist.length > 0) {
+        await persistToFirestore(keysToPersist);
+        setVersion(v => v + 1); // Force a re-render
+        toast({ title: "Operación Eliminada", description: message });
+    } else {
+        toast({ title: "Error", description: "No se encontró la operación para eliminar.", variant: "destructive" });
+    }
+  };
 
   const formatCurrency = (amount: number) => {
     return `$${amount.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -343,7 +401,7 @@ export default function FinancialReportPage() {
             <TabsTrigger value="inventario">Reporte de Inventario</TabsTrigger>
         </TabsList>
         <TabsContent value="operaciones" className="mt-4">
-            <div className="mb-6 grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+             <div className="mb-6 grid gap-6 md:grid-cols-2 lg:grid-cols-4">
                 <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium text-muted-foreground">Ops. del Día</CardTitle>
@@ -391,9 +449,7 @@ export default function FinancialReportPage() {
             </div>
             <Card>
                 <CardHeader>
-                    <div className="flex flex-col sm:flex-row items-center justify-between gap-2">
-                        <CardTitle>Detalle de Operaciones</CardTitle>
-                    </div>
+                    <CardTitle>Detalle de Operaciones</CardTitle>
                     <div className="pt-4 space-y-4">
                         <div className="flex flex-col sm:flex-row items-center gap-4">
                             <div className="relative flex-1 w-full">
@@ -452,27 +508,54 @@ export default function FinancialReportPage() {
                                     <TableHead className="font-bold text-white">Descripción / Cliente / Vehículo</TableHead>
                                     <TableHead className="text-right font-bold text-white">Monto Total (IVA Inc.)</TableHead>
                                     <TableHead className="text-right font-bold text-white">Ganancia</TableHead>
+                                    <TableHead className="text-right font-bold text-white">Acciones</TableHead>
                                 </TableRow>
                                 </TableHeader>
                                 <TableBody>
                                 {filteredAndSortedOperations.map((op) => (
                                     <TableRow key={`${op.type}-${op.id}`}>
-                                    <TableCell>{format(parseISO(op.date), "dd MMM yyyy, HH:mm", { locale: es })}</TableCell>
-                                    <TableCell>
-                                        <span className={`px-2 py-1 text-xs rounded-full font-medium ${
-                                            op.type === 'Venta' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300' : 
-                                            op.type === 'Servicio' ? 'bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300' :
-                                            op.type === 'Pintura' ? 'bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300' :
-                                            'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300'
-                                        }`}>{op.type}</span>
-                                    </TableCell>
-                                    <TableCell className="font-medium">{op.id}</TableCell>
-                                    <TableCell>
-                                        {op.type === 'Venta' ? (op.originalObject as SaleReceipt).customerName || 'Cliente Mostrador' : (op.originalObject as ServiceRecord).vehicleIdentifier || 'N/A'}
-                                        <p className="text-xs text-muted-foreground">{op.description}</p>
-                                    </TableCell>
-                                    <TableCell className="text-right">{formatCurrency(op.totalAmount)}</TableCell>
-                                    <TableCell className="text-right">{formatCurrency(op.profit)}</TableCell>
+                                      <TableCell>{format(parseISO(op.date), "dd MMM yyyy, HH:mm", { locale: es })}</TableCell>
+                                      <TableCell>
+                                          <span className={`px-2 py-1 text-xs rounded-full font-medium ${
+                                              op.type === 'Venta' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300' : 
+                                              op.type === 'Servicio' ? 'bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300' :
+                                              op.type === 'Pintura' ? 'bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300' :
+                                              'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300'
+                                          }`}>{op.type}</span>
+                                      </TableCell>
+                                      <TableCell className="font-medium">{op.id}</TableCell>
+                                      <TableCell>
+                                          {op.type === 'Venta' ? (op.originalObject as SaleReceipt).customerName || 'Cliente Mostrador' : (op.originalObject as ServiceRecord).vehicleIdentifier || 'N/A'}
+                                          <p className="text-xs text-muted-foreground">{op.description}</p>
+                                      </TableCell>
+                                      <TableCell className="text-right">{formatCurrency(op.totalAmount)}</TableCell>
+                                      <TableCell className="text-right">{formatCurrency(op.profit)}</TableCell>
+                                      <TableCell className="text-right">
+                                        <AlertDialog>
+                                          <AlertDialogTrigger asChild>
+                                            <Button variant="ghost" size="icon" title="Eliminar Operación">
+                                              <Trash2 className="h-4 w-4 text-destructive" />
+                                            </Button>
+                                          </AlertDialogTrigger>
+                                          <AlertDialogContent>
+                                            <AlertDialogHeader>
+                                              <AlertDialogTitle>¿Eliminar esta operación?</AlertDialogTitle>
+                                              <AlertDialogDescription>
+                                                Esta acción eliminará permanentemente la operación {op.id} y restaurará el stock de los productos involucrados. Esta acción no se puede deshacer.
+                                              </AlertDialogDescription>
+                                            </AlertDialogHeader>
+                                            <AlertDialogFooter>
+                                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                              <AlertDialogAction
+                                                onClick={() => handleDeleteOperation(op.id, op.type)}
+                                                className="bg-destructive hover:bg-destructive/90"
+                                              >
+                                                Sí, Eliminar
+                                              </AlertDialogAction>
+                                            </AlertDialogFooter>
+                                          </AlertDialogContent>
+                                        </AlertDialog>
+                                      </TableCell>
                                     </TableRow>
                                 ))}
                                 </TableBody>
@@ -492,9 +575,7 @@ export default function FinancialReportPage() {
             </div>
             <Card>
                 <CardHeader>
-                    <div className="flex flex-col sm:flex-row items-center justify-between gap-2">
-                        <CardTitle>Detalle de Salidas de Inventario</CardTitle>
-                    </div>
+                    <CardTitle>Detalle de Salidas de Inventario</CardTitle>
                     <div className="pt-4 flex flex-col sm:flex-row items-center gap-4">
                         <div className="relative flex-1 w-full">
                         <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -561,3 +642,4 @@ export default function FinancialReportPage() {
     </>
   );
 }
+
