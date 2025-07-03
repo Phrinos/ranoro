@@ -109,7 +109,7 @@ export function VehicleForm({ initialData, onSubmit, onClose }: VehicleFormProps
                   <FormItem>
                     <FormLabel>Marca</FormLabel>
                     <FormControl>
-                      <Input placeholder="Ej: Toyota" {...field} />
+                      <Input placeholder="Ej: Toyota" {...field} onChange={(e) => field.onChange(capitalizeWords(e.target.value))} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -122,7 +122,7 @@ export function VehicleForm({ initialData, onSubmit, onClose }: VehicleFormProps
                   <FormItem>
                     <FormLabel>Modelo</FormLabel>
                     <FormControl>
-                      <Input placeholder="Ej: Corolla" {...field} />
+                      <Input placeholder="Ej: Corolla" {...field} onChange={(e) => field.onChange(capitalizeWords(e.target.value))} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -163,7 +163,7 @@ export function VehicleForm({ initialData, onSubmit, onClose }: VehicleFormProps
                   <FormItem>
                     <FormLabel>Color (Opcional)</FormLabel>
                     <FormControl>
-                      <Input placeholder="Ej: Rojo" {...field} />
+                      <Input placeholder="Ej: Rojo" {...field} onChange={(e) => field.onChange(capitalizeWords(e.target.value))} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
