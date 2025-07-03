@@ -8,17 +8,16 @@ import { Calendar } from "@/components/ui/calendar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Search, ListFilter, CalendarIcon as CalendarDateIcon, DollarSign, Activity, Printer } from "lucide-react";
+import { Search, ListFilter, CalendarIcon as CalendarDateIcon, DollarSign, Activity } from "lucide-react";
 import { placeholderSales, placeholderServiceRecords, placeholderInventory, getCurrentMonthRange, getLastMonthRange, getTodayRange, calculateSaleProfit, IVA_RATE } from "@/lib/placeholder-data";
 import type { SaleReceipt, ServiceRecord, FinancialOperation, InventoryItem } from "@/types";
 import { useState, useEffect, useMemo } from "react";
-import { format, parseISO, compareAsc, compareDesc, isWithinInterval, isValid, startOfDay, endOfDay, isSameDay } from "date-fns";
+import { format, parseISO, compareAsc, compareDesc, isWithinInterval, isValid, startOfDay, endOfDay, isSameDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from "date-fns";
 import { es } from 'date-fns/locale';
 import type { DateRange } from "react-day-picker";
 import { cn } from "@/lib/utils";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
-import { CorteDiaContent } from '../components/corte-dia-content';
+
 
 type OperationSortOption = 
   | "date_desc" | "date_asc"
@@ -26,14 +25,6 @@ type OperationSortOption =
   | "profit_desc" | "profit_asc";
 
 type OperationTypeFilter = "all" | "Venta" | "Servicio" | "C. Aceite" | "Pintura";
-
-interface CorteDiaData {
-  date: string;
-  salesByPaymentMethod: Record<string, number>;
-  totalSales: number;
-  totalCompletedServices: number;
-  grandTotal: number;
-}
 
 interface SummaryData {
   operationsTodayCount: number;
@@ -58,9 +49,6 @@ export default function FinancialReportPage() {
   const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
   const [sortOption, setSortOption] = useState<OperationSortOption>("date_desc");
   const [operationTypeFilter, setOperationTypeFilter] = useState<OperationTypeFilter>("all");
-
-  const [isCorteDiaDialogOpen, setIsCorteDiaDialogOpen] = useState(false);
-  const [corteDiaData, setCorteDiaData] = useState<CorteDiaData | null>(null);
 
   const getServiceTypeForReport = (service: ServiceRecord): 'Servicio' | 'C. Aceite' | 'Pintura' => {
       if (service.serviceType === 'Cambio de Aceite') return 'C. Aceite';
@@ -181,41 +169,11 @@ export default function FinancialReportPage() {
       lastMonthFormatted: format(lastMonthDateRange.from, "MMMM yyyy", { locale: es }),
     });
   }, [combinedOperations]);
+  
+  const setDateToToday = () => setDateRange({ from: startOfDay(new Date()), to: endOfDay(new Date()) });
+  const setDateToThisWeek = () => setDateRange({ from: startOfWeek(new Date(), { weekStartsOn: 1 }), to: endOfWeek(new Date(), { weekStartsOn: 1 }) });
+  const setDateToThisMonth = () => setDateRange({ from: startOfMonth(new Date()), to: endOfMonth(new Date()) });
 
-
-  const handleGenerateCorteDia = () => {
-    const todayRange = getTodayRange();
-    const salesToday = allSales.filter(sale => {
-      const saleDate = parseISO(sale.saleDate);
-      return isValid(saleDate) && isSameDay(saleDate, todayRange.from);
-    });
-
-    const servicesTodayCompleted = allServices.filter(service => {
-      const serviceDate = parseISO(service.serviceDate); // Assuming serviceDate is when it's considered "for the day"
-      return isValid(serviceDate) && isSameDay(serviceDate, todayRange.from) && service.status === 'Completado';
-    });
-
-    const salesByPaymentMethod: Record<string, number> = {};
-    let totalSalesAmount = 0;
-
-    salesToday.forEach(sale => {
-      const method = sale.paymentMethod || 'Desconocido';
-      salesByPaymentMethod[method] = (salesByPaymentMethod[method] || 0) + sale.totalAmount;
-      totalSalesAmount += sale.totalAmount;
-    });
-
-    const totalCompletedServicesAmount = servicesTodayCompleted.reduce((sum, service) => sum + service.totalCost, 0);
-    const grandTotal = totalSalesAmount + totalCompletedServicesAmount;
-
-    setCorteDiaData({
-      date: todayRange.from.toISOString(),
-      salesByPaymentMethod,
-      totalSales: totalSalesAmount,
-      totalCompletedServices: totalCompletedServicesAmount,
-      grandTotal,
-    });
-    setIsCorteDiaDialogOpen(true);
-  };
 
   const formatCurrency = (amount: number) => {
     return `$${amount.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -274,12 +232,51 @@ export default function FinancialReportPage() {
         <CardHeader>
             <div className="flex flex-col sm:flex-row items-center justify-between gap-2">
                 <CardTitle>Detalle de Operaciones</CardTitle>
-                 <Button onClick={handleGenerateCorteDia} className="bg-blue-200 text-blue-800 hover:bg-blue-300 dark:bg-blue-800 dark:text-blue-200 dark:hover:bg-blue-700">
-                    <Printer className="mr-2 h-4 w-4" />
-                    Realizar Corte del Día
-                </Button>
             </div>
             <div className="pt-4 space-y-4">
+                <div className="flex flex-col sm:flex-row items-center gap-4">
+                    <div className="flex items-center gap-2 flex-wrap">
+                        <Button variant="secondary" onClick={setDateToToday}>Hoy</Button>
+                        <Button variant="secondary" onClick={setDateToThisWeek}>Esta Semana</Button>
+                        <Button variant="secondary" onClick={setDateToThisMonth}>Este Mes</Button>
+                        <Popover>
+                            <PopoverTrigger asChild>
+                                <Button
+                                variant={"outline"}
+                                className={cn(
+                                    "w-full sm:w-auto justify-start text-left font-normal",
+                                    !dateRange && "text-muted-foreground"
+                                )}
+                                >
+                                <CalendarDateIcon className="mr-2 h-4 w-4" />
+                                {dateRange?.from ? (
+                                    dateRange.to ? (
+                                    <>
+                                        {format(dateRange.from, "LLL dd, y", { locale: es })} -{" "}
+                                        {format(dateRange.to, "LLL dd, y", { locale: es })}
+                                    </>
+                                    ) : (
+                                    format(dateRange.from, "LLL dd, y", { locale: es })
+                                    )
+                                ) : (
+                                    <span>Seleccione rango</span>
+                                )}
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0" align="start">
+                                <Calendar
+                                initialFocus
+                                mode="range"
+                                defaultMonth={dateRange?.from}
+                                selected={dateRange}
+                                onSelect={setDateRange}
+                                numberOfMonths={2}
+                                locale={es}
+                                />
+                            </PopoverContent>
+                        </Popover>
+                    </div>
+                </div>
                 <div className="flex flex-col sm:flex-row items-center gap-4">
                     <div className="relative flex-1 w-full">
                       <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -291,44 +288,6 @@ export default function FinancialReportPage() {
                         onChange={(e) => setSearchTerm(e.target.value)}
                       />
                     </div>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant={"outline"}
-                          className={cn(
-                            "w-full sm:w-auto sm:min-w-[240px] justify-start text-left font-normal flex-1 sm:flex-initial bg-white",
-                            !dateRange && "text-muted-foreground"
-                          )}
-                        >
-                          <CalendarDateIcon className="mr-2 h-4 w-4" />
-                          {dateRange?.from ? (
-                            dateRange.to ? (
-                              <>
-                                {format(dateRange.from, "LLL dd, y", { locale: es })} -{" "}
-                                {format(dateRange.to, "LLL dd, y", { locale: es })}
-                              </>
-                            ) : (
-                              format(dateRange.from, "LLL dd, y", { locale: es })
-                            )
-                          ) : (
-                            <span>Seleccione rango de fechas</span>
-                          )}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          initialFocus
-                          mode="range"
-                          defaultMonth={dateRange?.from}
-                          selected={dateRange}
-                          onSelect={setDateRange}
-                          numberOfMonths={2}
-                          locale={es}
-                        />
-                      </PopoverContent>
-                    </Popover>
-                </div>
-                <div className="flex flex-col sm:flex-row items-center gap-4">
                     <Select value={operationTypeFilter} onValueChange={(value) => setOperationTypeFilter(value as OperationTypeFilter)}>
                         <SelectTrigger className="w-full sm:w-auto min-w-[180px] flex-1 sm:flex-initial bg-white">
                             <SelectValue placeholder="Filtrar por tipo" />
@@ -409,17 +368,7 @@ export default function FinancialReportPage() {
         </CardContent>
       </Card>
       
-      {isCorteDiaDialogOpen && corteDiaData && (
-        <PrintTicketDialog
-          open={isCorteDiaDialogOpen}
-          onOpenChange={setIsCorteDiaDialogOpen}
-          title="Corte del Día"
-          dialogContentClassName="printable-ticket-dialog" 
-          onDialogClose={() => setCorteDiaData(null)}
-        >
-          <CorteDiaContent reportData={corteDiaData} />
-        </PrintTicketDialog>
-      )}
     </>
   );
 }
+
