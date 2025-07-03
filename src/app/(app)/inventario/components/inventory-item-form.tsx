@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect } from 'react';
@@ -88,9 +89,22 @@ export function InventoryItemForm({ initialData, onSubmit, onClose, categories, 
     },
   });
 
+  const { watch, setValue } = form;
+  const unitPrice = watch("unitPrice");
+
   const isServiceWatch = form.watch("isService");
   const unitTypeWatch = form.watch("unitType");
   const categoryWatch = form.watch("category");
+
+  useEffect(() => {
+    if (unitPrice !== undefined && unitPrice >= 0) {
+      const markup = 1.20; // 20% markup
+      const taxRate = 1.16; // 16% IVA
+      const newSellingPrice = unitPrice * markup * taxRate;
+      const roundedSellingPrice = parseFloat(newSellingPrice.toFixed(2));
+      setValue('sellingPrice', roundedSellingPrice, { shouldValidate: true });
+    }
+  }, [unitPrice, setValue]);
   
   useEffect(() => {
     if (isServiceWatch) {
@@ -319,6 +333,7 @@ export function InventoryItemForm({ initialData, onSubmit, onClose, categories, 
                           <Input type="number" step="0.01" placeholder="15.99" {...field} value={field.value ?? ''} className="pl-8" />
                         </div>
                       </FormControl>
+                      <FormDescription>Calculado automáticamente con 20% de ganancia + 16% de IVA sobre el costo. Puede modificarlo.</FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
