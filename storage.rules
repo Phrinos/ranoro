@@ -2,16 +2,12 @@ rules_version = '2';
 
 service firebase.storage {
   match /b/{bucket}/o {
-    // Allow authorized users to upload their service photos.
-    // The path includes the service ID to keep photos organized.
-    match /service-photos/{serviceId}/{allPaths=**} {
-      allow read, write: if request.auth != null;
-    }
-
-    // Allow authorized users to upload their signatures.
-    match /user-signatures/{userId} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null && request.auth.uid == userId;
+    // Regla de depuración: Permite la lectura y escritura a todos los usuarios,
+    // incluyendo los no autenticados. Esto es para confirmar si el problema
+    // de subida está relacionado con las reglas de seguridad.
+    // ESTA REGLA NO ES SEGURA PARA PRODUCCIÓN.
+    match /{allPaths=**} {
+      allow read, write: if true;
     }
   }
 }
