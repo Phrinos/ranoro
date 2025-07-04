@@ -88,8 +88,8 @@ export default function FinancialReportPage() {
   const getServiceTypeForReport = (service: ServiceRecord): 'Servicio' | 'C. Aceite' | 'Pintura' => {
       if (service.serviceType === 'Cambio de Aceite') return 'C. Aceite';
       if (service.serviceType === 'Pintura') return 'Pintura';
-      if (service.description.toLowerCase().includes('cambio de aceite')) return 'C. Aceite';
-      if (service.description.toLowerCase().includes('pintura')) return 'Pintura';
+      if (service.description?.toLowerCase().includes('cambio de aceite')) return 'C. Aceite';
+      if (service.description?.toLowerCase().includes('pintura')) return 'Pintura';
       return 'Servicio';
   };
 
@@ -111,7 +111,7 @@ export default function FinancialReportPage() {
         id: service.id,
         date: service.serviceDate,
         type: getServiceTypeForReport(service),
-        description: service.description,
+        description: service.description || '',
         totalAmount: service.totalCost, 
         profit: isFinite(profit) ? profit : 0, 
         originalObject: service,
@@ -127,6 +127,7 @@ export default function FinancialReportPage() {
 
     if (dateRange?.from) {
       filtered = filtered.filter(op => {
+        if (!op.date) return false;
         const opDate = parseISO(op.date);
         if (!isValid(opDate)) return false;
         const from = startOfDay(dateRange.from!);
@@ -150,14 +151,17 @@ export default function FinancialReportPage() {
     }
 
     filtered.sort((a, b) => {
+      const dateA = a.date ? parseISO(a.date) : new Date(0);
+      const dateB = b.date ? parseISO(b.date) : new Date(0);
+      
       switch (sortOption) {
-        case "date_asc": return compareAsc(parseISO(a.date), parseISO(b.date));
-        case "date_desc": return compareDesc(parseISO(a.date), parseISO(b.date));
+        case "date_asc": return compareAsc(dateA, dateB);
+        case "date_desc": return compareDesc(dateA, dateB);
         case "amount_asc": return a.totalAmount - b.totalAmount;
         case "amount_desc": return b.totalAmount - a.totalAmount;
         case "profit_asc": return a.profit - b.profit;
         case "profit_desc": return b.profit - a.profit;
-        default: return compareDesc(parseISO(a.date), parseISO(b.date));
+        default: return compareDesc(dateA, dateB);
       }
     });
     return filtered;
@@ -190,6 +194,7 @@ export default function FinancialReportPage() {
     };
 
     allSales.forEach(sale => {
+        if (!sale.saleDate) return;
         const saleDate = parseISO(sale.saleDate);
         if (sale.status === 'Completado' && isValid(saleDate) && isWithinInterval(saleDate, { start, end })) {
             sale.items.forEach(item => {
@@ -199,6 +204,7 @@ export default function FinancialReportPage() {
     });
 
     allServices.forEach(service => {
+        if (!service.serviceDate) return;
         const serviceDate = service.deliveryDateTime ? parseISO(service.deliveryDateTime) : parseISO(service.serviceDate);
         if (service.status === 'Completado' && isValid(serviceDate) && isWithinInterval(serviceDate, { start, end })) {
             service.serviceItems?.forEach(serviceItem => {
@@ -259,15 +265,18 @@ export default function FinancialReportPage() {
     const lastMonthDateRange = getLastMonthRange(); 
 
     const opsToday = combinedOperations.filter(op => {
+        if (!op.date) return false;
         const opDate = parseISO(op.date);
         return isValid(opDate) && isSameDay(opDate, todayRange.from);
     });
     
     const opsCurrentMonth = combinedOperations.filter(op => {
+        if (!op.date) return false;
         const opDate = parseISO(op.date);
         return isValid(opDate) && isWithinInterval(opDate, { start: currentMonthDateRange.from, end: currentMonthDateRange.to });
     });
     const opsLastMonth = combinedOperations.filter(op => {
+        if (!op.date) return false;
         const opDate = parseISO(op.date);
         return isValid(opDate) && isWithinInterval(opDate, { start: lastMonthDateRange.from, end: lastMonthDateRange.to });
     });
@@ -514,7 +523,7 @@ export default function FinancialReportPage() {
                                 <TableBody>
                                 {filteredAndSortedOperations.map((op) => (
                                     <TableRow key={`${op.type}-${op.id}`}>
-                                      <TableCell>{format(parseISO(op.date), "dd MMM yyyy, HH:mm", { locale: es })}</TableCell>
+                                      <TableCell>{op.date ? format(parseISO(op.date), "dd MMM yyyy, HH:mm", { locale: es }) : 'N/A'}</TableCell>
                                       <TableCell>
                                           <span className={`px-2 py-1 text-xs rounded-full font-medium ${
                                               op.type === 'Venta' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300' : 
@@ -642,4 +651,3 @@ export default function FinancialReportPage() {
     </>
   );
 }
-
