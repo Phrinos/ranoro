@@ -91,7 +91,9 @@ export default function CajaPage() {
     });
 
     const servicesInRange = placeholderServiceRecords.filter(s => {
-        const sDate = s.deliveryDateTime ? parseISO(s.deliveryDateTime) : parseISO(s.serviceDate);
+        const dateToParse = s.deliveryDateTime || s.serviceDate;
+        if (!dateToParse) return false; // Fix: Guard against undefined dates
+        const sDate = parseISO(dateToParse);
         return s.status === 'Completado' && isValid(sDate) && isWithinInterval(sDate, { start, end });
     });
     
