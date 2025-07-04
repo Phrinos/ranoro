@@ -13,7 +13,7 @@ import type { Supplier } from '@/types';
 import { SupplierDialog } from './components/supplier-dialog';
 import { SuppliersTable } from './components/suppliers-table';
 import type { SupplierFormValues } from './components/supplier-form';
-import { subMonths, startOfMonth, endOfMonth, isWithinInterval, parseISO, format } from 'date-fns';
+import { subMonths, startOfMonth, endOfMonth, isWithinInterval, parseISO, format, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
 
 type SupplierSortOption = 
@@ -35,8 +35,11 @@ export default function ProveedoresPage() {
     const supplierPurchaseQuantity: Record<string, { name: string, quantity: number }> = {};
 
     placeholderServiceRecords.forEach(service => {
+      if (!service.serviceDate) return; // FIX: Guard clause for missing date
+
       const serviceDate = parseISO(service.serviceDate);
-      if (isWithinInterval(serviceDate, { start: lastMonthStart, end: lastMonthEnd })) {
+      // FIX: Also check if date is valid after parsing
+      if (isValid(serviceDate) && isWithinInterval(serviceDate, { start: lastMonthStart, end: lastMonthEnd })) {
         if (service.suppliesUsed && Array.isArray(service.suppliesUsed)) {
           service.suppliesUsed.forEach(part => {
             const inventoryItem = placeholderInventory.find(item => item.id === part.supplyId);
