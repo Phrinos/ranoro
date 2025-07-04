@@ -157,10 +157,10 @@ export default function FinancialReportPage() {
       switch (sortOption) {
         case "date_asc": return compareAsc(dateA, dateB);
         case "date_desc": return compareDesc(dateA, dateB);
-        case "amount_asc": return a.totalAmount - b.totalAmount;
-        case "amount_desc": return b.totalAmount - a.totalAmount;
-        case "profit_asc": return a.profit - b.profit;
-        case "profit_desc": return b.profit - a.profit;
+        case "amount_asc": return (a.totalAmount || 0) - (b.totalAmount || 0);
+        case "amount_desc": return (b.totalAmount || 0) - (a.totalAmount || 0);
+        case "profit_asc": return (a.profit || 0) - (b.profit || 0);
+        case "profit_desc": return (b.profit || 0) - (a.profit || 0);
         default: return compareDesc(dateA, dateB);
       }
     });
@@ -283,8 +283,8 @@ export default function FinancialReportPage() {
 
     const salesTodayCount = opsToday.filter(op => op.type === 'Venta').length;
     const servicesTodayCount = opsToday.filter(op => op.type !== 'Venta').length;
-    const totalGeneratedToday = opsToday.reduce((sum, op) => sum + op.totalAmount, 0);
-    const totalProfitToday = opsToday.reduce((sum, op) => sum + op.profit, 0);
+    const totalGeneratedToday = opsToday.reduce((sum, op) => sum + (op.totalAmount || 0), 0);
+    const totalProfitToday = opsToday.reduce((sum, op) => sum + (op.profit || 0), 0);
 
     setSummaryData({
       operationsTodayCount: opsToday.length,
@@ -292,10 +292,10 @@ export default function FinancialReportPage() {
       servicesTodayCount,
       totalGeneratedToday,
       totalProfitToday,
-      totalGeneratedCurrentMonth: opsCurrentMonth.reduce((sum, op) => sum + op.totalAmount, 0),
-      profitCurrentMonth: opsCurrentMonth.reduce((sum, op) => sum + op.profit, 0),
-      totalGeneratedLastMonth: opsLastMonth.reduce((sum, op) => sum + op.totalAmount, 0),
-      profitLastMonth: opsLastMonth.reduce((sum, op) => sum + op.profit, 0),
+      totalGeneratedCurrentMonth: opsCurrentMonth.reduce((sum, op) => sum + (op.totalAmount || 0), 0),
+      profitCurrentMonth: opsCurrentMonth.reduce((sum, op) => sum + (op.profit || 0), 0),
+      totalGeneratedLastMonth: opsLastMonth.reduce((sum, op) => sum + (op.totalAmount || 0), 0),
+      profitLastMonth: opsLastMonth.reduce((sum, op) => sum + (op.profit || 0), 0),
       currentMonthFormatted: format(currentMonthDateRange.from, "MMMM yyyy", { locale: es }),
       lastMonthFormatted: format(lastMonthDateRange.from, "MMMM yyyy", { locale: es }),
     });
@@ -352,7 +352,8 @@ export default function FinancialReportPage() {
     }
   };
 
-  const formatCurrency = (amount: number) => {
+  const formatCurrency = (amount?: number) => {
+    if (typeof amount !== 'number' || isNaN(amount)) return '$0.00';
     return `$${amount.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   };
 
