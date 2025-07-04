@@ -81,6 +81,7 @@ export default function ResumenFinancieroPage() {
     });
 
     const servicesThisMonth = placeholderServiceRecords.filter(service => {
+      if (!service.serviceDate) return false;
       const serviceDate = parseISO(service.serviceDate);
       return isValid(serviceDate) && isWithinInterval(serviceDate, { start: currentMonthStart, end: currentMonthEnd });
     });
