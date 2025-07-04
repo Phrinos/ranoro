@@ -518,7 +518,6 @@ export default function FinancialReportPage() {
                                     <TableHead className="font-bold text-white">Descripción / Cliente / Vehículo</TableHead>
                                     <TableHead className="text-right font-bold text-white">Monto Total (IVA Inc.)</TableHead>
                                     <TableHead className="text-right font-bold text-white">Ganancia</TableHead>
-                                    <TableHead className="text-right font-bold text-white">Acciones</TableHead>
                                 </TableRow>
                                 </TableHeader>
                                 <TableBody>
@@ -540,32 +539,6 @@ export default function FinancialReportPage() {
                                       </TableCell>
                                       <TableCell className="text-right">{formatCurrency(op.totalAmount)}</TableCell>
                                       <TableCell className="text-right">{formatCurrency(op.profit)}</TableCell>
-                                      <TableCell className="text-right">
-                                        <AlertDialog>
-                                          <AlertDialogTrigger asChild>
-                                            <Button variant="ghost" size="icon" title="Eliminar Operación">
-                                              <Trash2 className="h-4 w-4 text-destructive" />
-                                            </Button>
-                                          </AlertDialogTrigger>
-                                          <AlertDialogContent>
-                                            <AlertDialogHeader>
-                                              <AlertDialogTitle>¿Eliminar esta operación?</AlertDialogTitle>
-                                              <AlertDialogDescription>
-                                                Esta acción eliminará permanentemente la operación {op.id} y restaurará el stock de los productos involucrados. Esta acción no se puede deshacer.
-                                              </AlertDialogDescription>
-                                            </AlertDialogHeader>
-                                            <AlertDialogFooter>
-                                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                              <AlertDialogAction
-                                                onClick={() => handleDeleteOperation(op.id, op.type)}
-                                                className="bg-destructive hover:bg-destructive/90"
-                                              >
-                                                Sí, Eliminar
-                                              </AlertDialogAction>
-                                            </AlertDialogFooter>
-                                          </AlertDialogContent>
-                                        </AlertDialog>
-                                      </TableCell>
                                     </TableRow>
                                 ))}
                                 </TableBody>
