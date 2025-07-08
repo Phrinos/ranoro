@@ -1,4 +1,3 @@
-
 "use client";
 
 import { usePathname } from 'next/navigation';
@@ -93,51 +92,34 @@ const BASE_NAV_STRUCTURE: ReadonlyArray<Omit<NavigationEntry, 'isActive'>> = [
     permissions: ['services:edit']
   },
   
-  // Mi PDV
+  // Operaciones
   {
     label: 'Nueva Venta',
     path: '/pos/nuevo',
     icon: PlusCircle,
-    groupTag: "Mi PDV",
+    groupTag: "Operaciones",
     permissions: ['pos:create_sale']
   },
   {
     label: 'Punto de Venta',
     path: '/pos',
-    icon: Receipt, 
-    groupTag: "Mi PDV",
-    permissions: ['pos:create_sale', 'finances:view_report']
+    icon: Receipt,
+    groupTag: "Operaciones",
+    permissions: ['pos:create_sale', 'pos:view_sales']
   },
-  
-  // Mi Inventario
-  { label: 'Inventario', path: '/inventario', icon: Package, groupTag: "Mi Inventario", permissions: ['inventory:view'] },
+  { 
+    label: 'Inventario', 
+    path: '/inventario', 
+    icon: Package, 
+    groupTag: "Operaciones", 
+    permissions: ['inventory:view'] 
+  },
   
   // Mi Flotilla
   {
-    label: 'Principal',
-    path: '/rentas',
-    icon: ClipboardList,
-    groupTag: "Mi Flotilla",
-    permissions: ['fleet:manage']
-  },
-  {
-    label: 'Coches Flotilla',
+    label: 'Flotilla',
     path: '/flotilla',
     icon: Truck,
-    groupTag: "Mi Flotilla",
-    permissions: ['fleet:manage']
-  },
-  {
-    label: 'Conductores',
-    path: '/conductores',
-    icon: Users,
-    groupTag: "Mi Flotilla",
-    permissions: ['fleet:manage']
-  },
-  {
-    label: 'Reporte de Ingresos',
-    path: '/flotilla/reporte-ingresos',
-    icon: BarChart3,
     groupTag: "Mi Flotilla",
     permissions: ['fleet:manage']
   },
@@ -166,7 +148,7 @@ const BASE_NAV_STRUCTURE: ReadonlyArray<Omit<NavigationEntry, 'isActive'>> = [
   },
 ];
 
-const DESIRED_GROUP_ORDER = ["Mi Taller", "Mi PDV", "Mi Inventario", "Mi Flotilla", "Mi Oficina"];
+const DESIRED_GROUP_ORDER = ["Mi Taller", "Operaciones", "Mi Flotilla", "Mi Oficina"];
 
 
 const useNavigation = (): NavigationEntry[] => {
@@ -263,13 +245,7 @@ const useNavigation = (): NavigationEntry[] => {
         isActive = true;
     }
 
-    if (entry.path === '/flotilla' && pathname.startsWith('/flotilla')) {
-        isActive = true;
-    }
-    if (entry.path === '/conductores' && pathname.startsWith('/conductores')) {
-        isActive = true;
-    }
-    if (entry.path === '/rentas' && pathname.startsWith('/rentas')) {
+    if (entry.path === '/flotilla' && (pathname.startsWith('/flotilla') || pathname.startsWith('/conductores') || pathname.startsWith('/rentas'))) {
         isActive = true;
     }
 
