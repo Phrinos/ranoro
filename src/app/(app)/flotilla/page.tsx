@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useMemo, useEffect, useCallback, Suspense, useRef } from 'react';
@@ -182,9 +183,9 @@ function FlotillaPageComponent() {
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 mb-6">
           <TabsTrigger value="informe" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Informe</TabsTrigger>
-          <TabsTrigger value="vehiculos" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Vehículos</TabsTrigger>
-          <TabsTrigger value="conductores" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Conductores</TabsTrigger>
           <TabsTrigger value="reportes" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Reportes</TabsTrigger>
+          <TabsTrigger value="conductores" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Conductores</TabsTrigger>
+          <TabsTrigger value="vehiculos" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Vehículos</TabsTrigger>
         </TabsList>
         <TabsContent value="informe" className="space-y-6">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -220,12 +221,11 @@ function FlotillaPageComponent() {
               </Card>
           </div>
         </TabsContent>
-        <TabsContent value="vehiculos" className="space-y-6">
+        <TabsContent value="reportes" className="space-y-6">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-              <div><h2 className="text-2xl font-semibold tracking-tight">Vehículos de la Flotilla</h2><p className="text-muted-foreground">Gestiona los vehículos que forman parte de tu flotilla.</p></div>
-              <div className="flex flex-col sm:flex-row gap-2"><Button variant="secondary" onClick={() => setIsFineCheckDialogOpen(true)}><ShieldCheck className="mr-2 h-4 w-4" />Revisar Multas</Button><Button onClick={() => setIsAddVehicleDialogOpen(true)}><PlusCircle className="mr-2 h-4 w-4" />Añadir Vehículo</Button></div>
+              <div><h2 className="text-2xl font-semibold tracking-tight">Reporte de Ingresos de Flotilla</h2><p className="text-muted-foreground">Seleccione un propietario para ver el detalle de ingresos de sus vehículos.</p></div>
           </div>
-          <Card><CardHeader><Input type="search" placeholder="Buscar por placa, marca, modelo o propietario..." className="w-full sm:w-1/2 lg:w-1/3" value={searchTermVehicles} onChange={e => setSearchTermVehicles(e.target.value)} /></CardHeader><CardContent><Table><TableHeader><TableRow><TableHead>Placa</TableHead><TableHead>Vehículo</TableHead><TableHead>Color</TableHead><TableHead>Propietario</TableHead><TableHead className="text-right">Renta Diaria</TableHead></TableRow></TableHeader><TableBody>{filteredFleetVehicles.length > 0 ? filteredFleetVehicles.map(v => (<TableRow key={v.id} className="cursor-pointer hover:bg-muted/50" onClick={() => router.push(`/flotilla/${v.id}`)}><TableCell className="font-medium">{v.licensePlate}</TableCell><TableCell>{v.make} {v.model} {v.year}</TableCell><TableCell>{v.color || 'N/A'}</TableCell><TableCell>{v.ownerName}</TableCell><TableCell className="text-right font-semibold">${(v.dailyRentalCost || 0).toFixed(2)}</TableCell></TableRow>)) : <TableRow><TableCell colSpan={5} className="h-24 text-center">No hay vehículos en la flotilla.</TableCell></TableRow>}</TableBody></Table></CardContent></Card>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">{uniqueOwners.map(owner => (<Link key={owner} href={`/flotilla/reporte-ingresos/${encodeURIComponent(owner)}`} passHref><Card className="hover:bg-muted hover:border-primary/50 transition-all shadow-sm"><CardContent className="p-4 flex items-center justify-between"><div className="flex items-center gap-3"><User className="h-5 w-5 text-muted-foreground" /><span className="font-semibold">{owner}</span></div><ChevronRight className="h-5 w-5 text-muted-foreground" /></CardContent></Card></Link>))}</div>
         </TabsContent>
         <TabsContent value="conductores" className="space-y-6">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -234,11 +234,12 @@ function FlotillaPageComponent() {
           </div>
           <Card><CardHeader><Input type="search" placeholder="Buscar por nombre o teléfono..." className="w-full sm:w-1/2 lg:w-1/3" value={searchTermDrivers} onChange={e => setSearchTermDrivers(e.target.value)} /></CardHeader><CardContent><Table><TableHeader><TableRow><TableHead>Nombre</TableHead><TableHead>Teléfono</TableHead><TableHead>Vehículo Asignado</TableHead><TableHead className="text-right">Depósito</TableHead></TableRow></TableHeader><TableBody>{filteredDrivers.length > 0 ? filteredDrivers.map(driver => (<TableRow key={driver.id} className="cursor-pointer" onClick={() => router.push(`/conductores/${driver.id}`)}><TableCell className="font-semibold">{driver.name}</TableCell><TableCell>{driver.phone}</TableCell><TableCell>{allVehicles.find(v => v.id === driver.assignedVehicleId)?.licensePlate || 'N/A'}</TableCell><TableCell className="text-right">{driver.depositAmount ? formatCurrency(driver.depositAmount) : 'N/A'}</TableCell></TableRow>)) : <TableRow><TableCell colSpan={4} className="h-24 text-center">No se encontraron conductores.</TableCell></TableRow>}</TableBody></Table></CardContent></Card>
         </TabsContent>
-        <TabsContent value="reportes" className="space-y-6">
+        <TabsContent value="vehiculos" className="space-y-6">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-              <div><h2 className="text-2xl font-semibold tracking-tight">Reporte de Ingresos de Flotilla</h2><p className="text-muted-foreground">Seleccione un propietario para ver el detalle de ingresos de sus vehículos.</p></div>
+              <div><h2 className="text-2xl font-semibold tracking-tight">Vehículos de la Flotilla</h2><p className="text-muted-foreground">Gestiona los vehículos que forman parte de tu flotilla.</p></div>
+              <div className="flex flex-col sm:flex-row gap-2"><Button variant="secondary" onClick={() => setIsFineCheckDialogOpen(true)}><ShieldCheck className="mr-2 h-4 w-4" />Revisar Multas</Button><Button onClick={() => setIsAddVehicleDialogOpen(true)}><PlusCircle className="mr-2 h-4 w-4" />Añadir Vehículo</Button></div>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">{uniqueOwners.map(owner => (<Link key={owner} href={`/flotilla/reporte-ingresos/${encodeURIComponent(owner)}`} passHref><Card className="hover:bg-muted hover:border-primary/50 transition-all shadow-sm"><CardContent className="p-4 flex items-center justify-between"><div className="flex items-center gap-3"><User className="h-5 w-5 text-muted-foreground" /><span className="font-semibold">{owner}</span></div><ChevronRight className="h-5 w-5 text-muted-foreground" /></CardContent></Card></Link>))}</div>
+          <Card><CardHeader><Input type="search" placeholder="Buscar por placa, marca, modelo o propietario..." className="w-full sm:w-1/2 lg:w-1/3" value={searchTermVehicles} onChange={e => setSearchTermVehicles(e.target.value)} /></CardHeader><CardContent><Table><TableHeader><TableRow><TableHead>Placa</TableHead><TableHead>Vehículo</TableHead><TableHead>Color</TableHead><TableHead>Propietario</TableHead><TableHead className="text-right">Renta Diaria</TableHead></TableRow></TableHeader><TableBody>{filteredFleetVehicles.length > 0 ? filteredFleetVehicles.map(v => (<TableRow key={v.id} className="cursor-pointer hover:bg-muted/50" onClick={() => router.push(`/flotilla/${v.id}`)}><TableCell className="font-medium">{v.licensePlate}</TableCell><TableCell>{v.make} {v.model} {v.year}</TableCell><TableCell>{v.color || 'N/A'}</TableCell><TableCell>{v.ownerName}</TableCell><TableCell className="text-right font-semibold">${(v.dailyRentalCost || 0).toFixed(2)}</TableCell></TableRow>)) : <TableRow><TableCell colSpan={5} className="h-24 text-center">No hay vehículos en la flotilla.</TableCell></TableRow>}</TableBody></Table></CardContent></Card>
         </TabsContent>
       </Tabs>
       <AddVehicleToFleetDialog open={isAddVehicleDialogOpen} onOpenChange={setIsAddVehicleDialogOpen} vehicles={nonFleetVehicles} onAddVehicle={handleAddVehicleToFleet} />
