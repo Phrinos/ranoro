@@ -24,8 +24,8 @@ import { useToast } from "@/hooks/use-toast";
 import { ViewSaleDialog } from "./components/view-sale-dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CorteDiaContent } from './caja/components/corte-caja-content';
-import { Dialog, DialogContent as DialogPrimitiveContent, DialogDescription as DialogPrimitiveDescription, DialogHeader as DialogPrimitiveHeader, DialogTitle as DialogPrimitiveTitle, DialogFooter as DialogPrimitiveFooter } from "@/components/ui/dialog";
-import { Form, FormControl as FormPrimitiveControl, FormField as FormPrimitiveField, FormItem as FormPrimitiveItem, FormLabel as FormPrimitiveLabel, FormMessage as FormPrimitiveMessage } from "@/components/ui/form";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -194,6 +194,13 @@ function PosPageComponent() {
         
         {/* ==================== VENTAS TAB ==================== */}
         <TabsContent value="ventas" className="space-y-6">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div>
+                    <h2 className="text-2xl font-semibold tracking-tight">Historial de Ventas</h2>
+                    <p className="text-muted-foreground">Consulta, filtra y reimprime tickets de venta.</p>
+                </div>
+                <Button asChild><Link href="/pos/nuevo"><PlusCircle className="mr-2 h-4 w-4" />Nueva Venta</Link></Button>
+            </div>
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                 <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Ventas en Periodo</CardTitle><Receipt className="h-4 w-4 text-muted-foreground"/></CardHeader><CardContent><div className="text-2xl font-bold">{ventasSummaryData.totalSalesCount}</div><p className="text-xs text-muted-foreground">Ventas completadas en el rango</p></CardContent></Card>
                 <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Ingresos y Ganancia</CardTitle><DollarSign className="h-4 w-4 text-muted-foreground"/></CardHeader><CardContent><div className="text-2xl font-bold">{formatCurrency(ventasSummaryData.totalRevenue)}</div><p className="text-xs text-muted-foreground">Ganancia: {formatCurrency(ventasSummaryData.totalProfit)}</p></CardContent></Card>
@@ -202,13 +209,6 @@ function PosPageComponent() {
             
             <Card>
                 <CardHeader>
-                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                        <div>
-                            <CardTitle>Historial de Ventas de Mostrador</CardTitle>
-                            <CardDescription>Consulta, filtra y reimprime tickets de venta.</CardDescription>
-                        </div>
-                        <Button asChild><Link href="/pos/nuevo"><PlusCircle className="mr-2 h-4 w-4" />Nueva Venta</Link></Button>
-                    </div>
                     <div className="pt-4 space-y-4">
                         <div className="flex flex-col sm:flex-row items-center gap-4">
                             <div className="relative flex-1 w-full"><Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" /><Input type="search" placeholder="Buscar por ID, cliente, artículo..." className="w-full rounded-lg bg-white pl-8" value={ventasSearchTerm} onChange={(e) => setVentasSearchTerm(e.target.value)} /></div>
@@ -226,6 +226,12 @@ function PosPageComponent() {
 
         {/* ==================== CAJA TAB ==================== */}
         <TabsContent value="caja" className="space-y-6">
+             <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div>
+                    <h2 className="text-2xl font-semibold tracking-tight">Gestión de Caja</h2>
+                    <p className="text-muted-foreground">Controla el flujo de efectivo y genera cortes de caja diarios.</p>
+                </div>
+            </div>
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
                 <Card className="lg:col-span-2"><CardHeader><CardTitle className="flex items-center gap-2"><Wallet/>Cajón de Dinero</CardTitle></CardHeader><CardContent className="space-y-2 text-lg"><div className="flex justify-between"><span>Saldo Inicial:</span> <span className="font-medium">{formatCurrency(cajaSummaryData.initialBalance)}</span></div><div className="flex justify-between text-green-600"><span>(+) Ventas en Efectivo:</span> <span className="font-medium">{formatCurrency(cajaSummaryData.totalCashSales)}</span></div><div className="flex justify-between text-green-600"><span>(+) Entradas de Efectivo:</span> <span className="font-medium">{formatCurrency(cajaSummaryData.totalCashIn)}</span></div><div className="flex justify-between text-red-600"><span>(-) Salidas de Efectivo:</span> <span className="font-medium">{formatCurrency(cajaSummaryData.totalCashOut)}</span></div><div className="flex justify-between text-xl font-bold border-t pt-2 mt-2"><span>Saldo Final Esperado:</span> <span>{formatCurrency(cajaSummaryData.finalCashBalance)}</span></div></CardContent></Card>
                 <Card><CardHeader><CardTitle className="flex items-center gap-2"><Coins/>Ventas por Método</CardTitle></CardHeader><CardContent className="space-y-1 text-sm">{Object.entries(cajaSummaryData.salesByPaymentMethod).map(([method, total]) => (<div key={method} className="flex justify-between"><span>{method}:</span><span className="font-medium">{formatCurrency(total)}</span></div>))}</CardContent></Card>
@@ -253,6 +259,12 @@ function PosPageComponent() {
         
         {/* ==================== REPORTES TAB ==================== */}
         <TabsContent value="reportes" className="space-y-6">
+             <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div>
+                    <h2 className="text-2xl font-semibold tracking-tight">Reportes de Operaciones e Inventario</h2>
+                    <p className="text-muted-foreground">Analiza el detalle de tus ventas, servicios y el movimiento de tus productos.</p>
+                </div>
+            </div>
             <Tabs defaultValue="operaciones" className="w-full">
                 <TabsList className="grid w-full grid-cols-2">
                     <TabsTrigger value="operaciones">Reporte de Operaciones</TabsTrigger>
@@ -281,7 +293,13 @@ function PosPageComponent() {
       {/* Dialogs */}
       {isReprintDialogOpen && selectedSaleForReprint && ( <PrintTicketDialog open={isReprintDialogOpen} onOpenChange={setIsReprintDialogOpen} title="Reimprimir Ticket" footerActions={<><Button variant="outline" onClick={handleCopyAsImage}><Copy className="mr-2 h-4 w-4"/>Copiar</Button><Button onClick={() => window.print()}><Printer className="mr-2 h-4 w-4"/>Imprimir</Button></>}><TicketContent ref={ticketContentRef} sale={selectedSaleForReprint} /></PrintTicketDialog>)}
       {isViewDialogOpen && selectedSale && (<ViewSaleDialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen} sale={selectedSale} onCancelSale={handleCancelSale} />)}
-      <DialogPrimitiveContent open={isInitialBalanceDialogOpen} onOpenChange={setIsInitialBalanceDialogOpen}><DialogPrimitiveHeader><DialogPrimitiveTitle>Saldo Inicial de Caja</DialogPrimitiveTitle></DialogPrimitiveHeader><div className="py-4"><Input type="number" placeholder="500.00" value={initialBalanceAmount} onChange={(e) => setInitialBalanceAmount(Number(e.target.value))}/></div><DialogPrimitiveFooter><Button onClick={handleSetInitialBalance}>Guardar</Button></DialogPrimitiveFooter></DialogPrimitiveContent>
+      <Dialog open={isInitialBalanceDialogOpen} onOpenChange={setIsInitialBalanceDialogOpen}>
+        <DialogContent>
+            <DialogHeader><DialogTitle>Saldo Inicial de Caja</DialogTitle></DialogHeader>
+            <div className="py-4"><Input type="number" placeholder="500.00" value={initialBalanceAmount} onChange={(e) => setInitialBalanceAmount(Number(e.target.value))}/></div>
+            <DialogFooter><Button onClick={handleSetInitialBalance}>Guardar</Button></DialogFooter>
+        </DialogContent>
+      </Dialog>
       <PrintTicketDialog open={isCorteDialogOpen} onOpenChange={setIsCorteDialogOpen} title="Corte de Caja"><CorteDiaContent reportData={cajaSummaryData} date={dateRange?.from || new Date()} transactions={[]}/></PrintTicketDialog>
     </>
   );
@@ -291,7 +309,7 @@ function CashTransactionForm({ type, onSubmit }: { type: 'Entrada' | 'Salida', o
   const form = useForm<CashTransactionFormValues>({ resolver: zodResolver(cashTransactionSchema) });
   const { handleSubmit, reset } = form;
   const onFormSubmit = (data: CashTransactionFormValues) => { onSubmit(type, data); reset(); };
-  return ( <Form {...form}><form onSubmit={handleSubmit(onFormSubmit)} className="space-y-4"><FormPrimitiveField control={form.control} name="concept" render={({field}) => (<FormPrimitiveItem><FormPrimitiveLabel>Concepto</FormPrimitiveLabel><FormPrimitiveControl><Textarea placeholder={type === 'Entrada' ? 'Fondo de caja' : 'Compra de insumos'} {...field}/></FormPrimitiveControl><FormPrimitiveMessage/></FormPrimitiveItem>)}/> <FormPrimitiveField control={form.control} name="amount" render={({field}) => (<FormPrimitiveItem><FormPrimitiveLabel>Monto</FormPrimitiveLabel><FormPrimitiveControl><Input type="number" placeholder="0.00" {...field} /></FormPrimitiveControl><FormPrimitiveMessage /></FormPrimitiveItem>)}/> <Button type="submit" className="w-full">Registrar {type}</Button></form></Form> )
+  return ( <Form {...form}><form onSubmit={handleSubmit(onFormSubmit)} className="space-y-4"><FormField control={form.control} name="concept" render={({field}) => (<FormItem><FormLabel>Concepto</FormLabel><FormControl><Textarea placeholder={type === 'Entrada' ? 'Fondo de caja' : 'Compra de insumos'} {...field}/></FormControl><FormMessage/></FormItem>)}/> <FormField control={form.control} name="amount" render={({field}) => (<FormItem><FormLabel>Monto</FormLabel><FormControl><Input type="number" placeholder="0.00" {...field} /></FormControl><FormMessage /></FormItem>)}/> <Button type="submit" className="w-full">Registrar {type}</Button></form></Form> )
 }
 
 export default function POSPageWrapper() {
