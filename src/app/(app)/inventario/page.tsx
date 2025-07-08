@@ -4,7 +4,7 @@
 import { useState, useMemo, useEffect, useCallback, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Printer, ShoppingCart, AlertTriangle, PackageCheck, DollarSign, Server, Search, ListFilter, Shapes, Building, BrainCircuit, Package, Trash2, Edit, PackageSearch } from "lucide-react";
+import { PlusCircle, Printer, ShoppingCart, AlertTriangle, PackageCheck, DollarSign, Server, Search, ListFilter, Shapes, Building, BrainCircuit, Package, Trash2, Edit } from "lucide-react";
 import { InventoryTable } from "./components/inventory-table";
 import { InventoryItemDialog } from "./components/inventory-item-dialog";
 import { placeholderInventory, placeholderCategories, placeholderSuppliers, persistToFirestore, placeholderServiceRecords, hydrateReady } from "@/lib/placeholder-data";
@@ -319,11 +319,11 @@ function InventarioPageComponent() {
       
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-2 md:grid-cols-5 mb-6">
-          <TabsTrigger value="informe">Informe</TabsTrigger>
-          <TabsTrigger value="productos">Productos y Servicios</TabsTrigger>
-          <TabsTrigger value="categorias">Categorías</TabsTrigger>
-          <TabsTrigger value="proveedores">Proveedores</TabsTrigger>
-          <TabsTrigger value="analisis">Análisis IA</TabsTrigger>
+          <TabsTrigger value="informe" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Informe</TabsTrigger>
+          <TabsTrigger value="productos" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Productos y Servicios</TabsTrigger>
+          <TabsTrigger value="categorias" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Categorías</TabsTrigger>
+          <TabsTrigger value="proveedores" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Proveedores</TabsTrigger>
+          <TabsTrigger value="analisis" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Análisis IA</TabsTrigger>
         </TabsList>
         
         {/* Informe Tab */}
@@ -342,50 +342,50 @@ function InventarioPageComponent() {
         </TabsContent>
 
         {/* Productos Tab */}
-        <TabsContent value="productos">
+        <TabsContent value="productos" className="mt-6 space-y-4">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div>
+                    <h2 className="text-2xl font-semibold tracking-tight">Lista de Productos y Servicios</h2>
+                    <p className="text-muted-foreground">Administra productos, servicios, niveles de stock y registra compras.</p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                    <Button onClick={handleOpenPurchaseItemSelection} variant="outline" className="bg-input text-foreground"><ShoppingCart className="mr-2 h-4 w-4" />Ingresar Compra</Button>
+                    <Button onClick={() => { setIsCreatingItemForPurchaseFlow(false); setIsNewItemDialogOpen(true); }}><PlusCircle className="mr-2 h-4 w-4" />Nuevo</Button>
+                </div>
+            </div>
+
+            <div className="flex flex-col sm:flex-row sm:items-center sm:flex-wrap gap-4">
+                <div className="relative flex-1 min-w-[200px] sm:min-w-[300px]">
+                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input type="search" placeholder="Buscar por nombre o SKU..." className="w-full rounded-lg bg-card pl-8" value={searchTermProducts} onChange={(e) => setSearchTermProducts(e.target.value)} />
+                </div>
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild><Button variant="outline" className="min-w-[150px] flex-1 sm:flex-initial bg-card"><ListFilter className="mr-2 h-4 w-4" />Ordenar por</Button></DropdownMenuTrigger>
+                    <DropdownMenuContent align="end"><DropdownMenuLabel>Ordenar por</DropdownMenuLabel><DropdownMenuRadioGroup value={sortOptionProducts} onValueChange={(value) => setSortOptionProducts(value as InventorySortOption)}><DropdownMenuRadioItem value="stock_status_name_asc">Estado de Stock</DropdownMenuRadioItem><DropdownMenuRadioItem value="name_asc">Nombre (A-Z)</DropdownMenuRadioItem><DropdownMenuRadioItem value="name_desc">Nombre (Z-A)</DropdownMenuRadioItem><DropdownMenuRadioItem value="quantity_desc">Cantidad (Mayor a Menor)</DropdownMenuRadioItem><DropdownMenuRadioItem value="quantity_asc">Cantidad (Menor a Mayor)</DropdownMenuRadioItem><DropdownMenuRadioItem value="price_desc">Precio (Mayor a Menor)</DropdownMenuRadioItem><DropdownMenuRadioItem value="price_asc">Precio (Menor a Mayor)</DropdownMenuRadioItem><DropdownMenuRadioItem value="type_asc">Tipo (Producto/Servicio)</DropdownMenuRadioItem></DropdownMenuRadioGroup></DropdownMenuContent>
+                </DropdownMenu>
+            </div>
+            
             <Card>
-                <CardHeader>
-                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                        <div>
-                            <CardTitle>Lista de Productos y Servicios</CardTitle>
-                            <CardDescription>Administra productos, servicios, niveles de stock y registra compras.</CardDescription>
-                        </div>
-                        <div className="flex flex-wrap gap-2">
-                            <Button onClick={handleOpenPurchaseItemSelection} variant="outline" className="bg-input text-foreground"><ShoppingCart className="mr-2 h-4 w-4" />Ingresar Compra</Button>
-                            <Button onClick={() => { setIsCreatingItemForPurchaseFlow(false); setIsNewItemDialogOpen(true); }}><PlusCircle className="mr-2 h-4 w-4" />Nuevo</Button>
-                        </div>
-                    </div>
-                </CardHeader>
-                <CardContent>
-                    <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:flex-wrap gap-4">
-                        <div className="relative flex-1 min-w-[200px] sm:min-w-[300px]">
-                            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                            <Input type="search" placeholder="Buscar por nombre o SKU..." className="w-full rounded-lg bg-card pl-8" value={searchTermProducts} onChange={(e) => setSearchTermProducts(e.target.value)} />
-                        </div>
-                        <DropdownMenu>
-                            <DropdownMenuTrigger asChild><Button variant="outline" className="min-w-[150px] flex-1 sm:flex-initial bg-card"><ListFilter className="mr-2 h-4 w-4" />Ordenar por</Button></DropdownMenuTrigger>
-                            <DropdownMenuContent align="end"><DropdownMenuLabel>Ordenar por</DropdownMenuLabel><DropdownMenuRadioGroup value={sortOptionProducts} onValueChange={(value) => setSortOptionProducts(value as InventorySortOption)}><DropdownMenuRadioItem value="stock_status_name_asc">Estado de Stock</DropdownMenuRadioItem><DropdownMenuRadioItem value="name_asc">Nombre (A-Z)</DropdownMenuRadioItem><DropdownMenuRadioItem value="name_desc">Nombre (Z-A)</DropdownMenuRadioItem><DropdownMenuRadioItem value="quantity_desc">Cantidad (Mayor a Menor)</DropdownMenuRadioItem><DropdownMenuRadioItem value="quantity_asc">Cantidad (Menor a Mayor)</DropdownMenuRadioItem><DropdownMenuRadioItem value="price_desc">Precio (Mayor a Menor)</DropdownMenuRadioItem><DropdownMenuRadioItem value="price_asc">Precio (Menor a Mayor)</DropdownMenuRadioItem><DropdownMenuRadioItem value="type_asc">Tipo (Producto/Servicio)</DropdownMenuRadioItem></DropdownMenuRadioGroup></DropdownMenuContent>
-                        </DropdownMenu>
-                    </div>
+                <CardContent className="pt-6">
                     <InventoryTable items={filteredAndSortedInventoryItems} />
                 </CardContent>
             </Card>
         </TabsContent>
 
         {/* Categorías Tab */}
-        <TabsContent value="categorias">
-             <Card>
-                <CardHeader>
-                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                        <div>
-                            <CardTitle>Lista de Categorías</CardTitle>
-                            <CardDescription>Visualiza, edita y elimina categorías.</CardDescription>
-                        </div>
-                        <Button onClick={handleOpenAddCategoryDialog}><PlusCircle className="mr-2 h-4 w-4" />Nueva Categoría</Button>
-                    </div>
-                </CardHeader>
-                <CardContent>
-                    <div className="mb-4 relative sm:w-1/3"><Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" /><Input type="search" placeholder="Buscar categorías..." className="pl-8 bg-background" value={searchTermCategories} onChange={(e) => setSearchTermCategories(e.target.value)} /></div>
+        <TabsContent value="categorias" className="mt-6 space-y-4">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div>
+                    <h2 className="text-2xl font-semibold tracking-tight">Lista de Categorías</h2>
+                    <p className="text-muted-foreground">Visualiza, edita y elimina categorías.</p>
+                </div>
+                <Button onClick={handleOpenAddCategoryDialog}><PlusCircle className="mr-2 h-4 w-4" />Nueva Categoría</Button>
+            </div>
+
+            <div className="relative sm:w-1/3"><Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" /><Input type="search" placeholder="Buscar categorías..." className="pl-8 bg-background" value={searchTermCategories} onChange={(e) => setSearchTermCategories(e.target.value)} /></div>
+            
+            <Card>
+                <CardContent className="p-0">
                     {filteredCategories.length > 0 ? (
                         <div className="rounded-md border"><Table><TableHeader className="bg-black"><TableRow><TableHead className="text-white">Nombre de la Categoría</TableHead><TableHead className="text-right text-white">Productos</TableHead><TableHead className="text-right text-white">Acciones</TableHead></TableRow></TableHeader><TableBody>{filteredCategories.map((category) => (<TableRow key={category.id}><TableCell className="font-medium">{category.name}</TableCell><TableCell className="text-right">{categoryProductCounts[category.id] || 0}</TableCell><TableCell className="text-right"><Button variant="ghost" size="icon" onClick={() => handleOpenEditCategoryDialog(category)} className="mr-2"><Edit className="h-4 w-4" /></Button><AlertDialog><AlertDialogTrigger asChild><Button variant="ghost" size="icon" onClick={() => setCategoryToDelete(category)}><Trash2 className="h-4 w-4 text-destructive" /></Button></AlertDialogTrigger>{categoryToDelete?.id === category.id && ( <AlertDialogContent><AlertDialogHeader><AlertDialogTitle>¿Eliminar Categoría?</AlertDialogTitle><AlertDialogDescription>¿Estás seguro de que quieres eliminar la categoría &quot;{categoryToDelete.name}&quot;? Esta acción no se puede deshacer.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel onClick={() => setCategoryToDelete(null)}>Cancelar</AlertDialogCancel><AlertDialogAction onClick={handleDeleteCategory} className="bg-destructive hover:bg-destructive/90">Sí, Eliminar</AlertDialogAction></AlertDialogFooter></AlertDialogContent>)}</AlertDialog></TableCell></TableRow>))}</TableBody></Table></div>
                     ) : (<p className="text-muted-foreground text-center py-4">{searchTermCategories ? "No se encontraron categorías." : "No hay categorías registradas."}</p>)}
@@ -394,43 +394,42 @@ function InventarioPageComponent() {
         </TabsContent>
         
         {/* Proveedores Tab */}
-        <TabsContent value="proveedores">
-             <Card>
-                <CardHeader>
-                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                        <div>
-                            <CardTitle>Lista de Proveedores</CardTitle>
-                            <CardDescription>Visualiza, edita y elimina proveedores.</CardDescription>
-                        </div>
-                        <Button onClick={() => handleOpenSupplierDialog()}><PlusCircle className="mr-2 h-4 w-4" />Nuevo Proveedor</Button>
-                    </div>
-                </CardHeader>
-                <CardContent>
-                    <div className="flex flex-col sm:flex-row items-center justify-between gap-2 w-full mb-4">
-                        <div className="relative flex-1 sm:flex-initial w-full sm:w-auto"><Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" /><Input type="search" placeholder="Buscar proveedores..." className="pl-8 w-full sm:w-[250px] lg:w-[300px] bg-background" value={searchTermSuppliers} onChange={(e) => setSearchTermSuppliers(e.target.value)} /></div>
-                        <div className="flex items-center gap-2 w-full sm:w-auto">
-                            <DropdownMenu><DropdownMenuTrigger asChild><Button variant="outline" className="w-full sm:w-auto bg-background"><ListFilter className="mr-2 h-4 w-4" />Ordenar</Button></DropdownMenuTrigger><DropdownMenuContent align="end"><DropdownMenuLabel>Ordenar por</DropdownMenuLabel><DropdownMenuRadioGroup value={sortOptionSuppliers} onValueChange={(value) => setSortOptionSuppliers(value as SupplierSortOption)}><DropdownMenuRadioItem value="name_asc">Nombre (A-Z)</DropdownMenuRadioItem><DropdownMenuRadioItem value="name_desc">Nombre (Z-A)</DropdownMenuRadioItem><DropdownMenuRadioItem value="debt_desc">Deuda (Mayor a Menor)</DropdownMenuRadioItem><DropdownMenuRadioItem value="debt_asc">Deuda (Menor a Mayor)</DropdownMenuRadioItem></DropdownMenuRadioGroup></DropdownMenuContent></DropdownMenu>
-                        </div>
-                    </div>
+        <TabsContent value="proveedores" className="mt-6 space-y-4">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div>
+                    <h2 className="text-2xl font-semibold tracking-tight">Lista de Proveedores</h2>
+                    <p className="text-muted-foreground">Visualiza, edita y elimina proveedores.</p>
+                </div>
+                <Button onClick={() => handleOpenSupplierDialog()}><PlusCircle className="mr-2 h-4 w-4" />Nuevo Proveedor</Button>
+            </div>
+            
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-2 w-full">
+                <div className="relative flex-1 sm:flex-initial w-full sm:w-auto"><Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" /><Input type="search" placeholder="Buscar proveedores..." className="pl-8 w-full sm:w-[250px] lg:w-[300px] bg-background" value={searchTermSuppliers} onChange={(e) => setSearchTermSuppliers(e.target.value)} /></div>
+                <div className="flex items-center gap-2 w-full sm:w-auto">
+                    <DropdownMenu><DropdownMenuTrigger asChild><Button variant="outline" className="w-full sm:w-auto bg-background"><ListFilter className="mr-2 h-4 w-4" />Ordenar</Button></DropdownMenuTrigger><DropdownMenuContent align="end"><DropdownMenuLabel>Ordenar por</DropdownMenuLabel><DropdownMenuRadioGroup value={sortOptionSuppliers} onValueChange={(value) => setSortOptionSuppliers(value as SupplierSortOption)}><DropdownMenuRadioItem value="name_asc">Nombre (A-Z)</DropdownMenuRadioItem><DropdownMenuRadioItem value="name_desc">Nombre (Z-A)</DropdownMenuRadioItem><DropdownMenuRadioItem value="debt_desc">Deuda (Mayor a Menor)</DropdownMenuRadioItem><DropdownMenuRadioItem value="debt_asc">Deuda (Menor a Mayor)</DropdownMenuRadioItem></DropdownMenuRadioGroup></DropdownMenuContent></DropdownMenu>
+                </div>
+            </div>
+
+            <Card>
+                <CardContent className="p-0">
                     <SuppliersTable suppliers={filteredAndSortedSuppliers} onEdit={handleOpenSupplierDialog} onDelete={handleDeleteSupplier} />
                 </CardContent>
             </Card>
         </TabsContent>
         
         {/* Análisis IA Tab */}
-        <TabsContent value="analisis">
+        <TabsContent value="analisis" className="mt-6 space-y-4">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div>
+                    <h2 className="text-2xl font-semibold tracking-tight">Análisis de Inventario con IA</h2>
+                    <p className="text-muted-foreground">Obtén recomendaciones inteligentes sobre qué y cuándo reordenar.</p>
+                </div>
+                <Button onClick={handleRunAnalysis} disabled={isAnalysisLoading}>{isAnalysisLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <BrainCircuit className="mr-2 h-4 w-4" />}{isAnalysisLoading ? "Analizando..." : "Analizar Inventario"}</Button>
+            </div>
+            
             <Card>
-                <CardHeader>
-                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                        <div>
-                            <CardTitle>Análisis de Inventario con IA</CardTitle>
-                            <CardDescription>Obtén recomendaciones inteligentes sobre qué y cuándo reordenar.</CardDescription>
-                        </div>
-                        <Button onClick={handleRunAnalysis} disabled={isAnalysisLoading}>{isAnalysisLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <BrainCircuit className="mr-2 h-4 w-4" />}{isAnalysisLoading ? "Analizando..." : "Analizar Inventario"}</Button>
-                    </div>
-                </CardHeader>
-                <CardContent>
-                    {!analysisResult && !isAnalysisLoading && !analysisError && (<Card className="flex flex-col items-center justify-center text-center p-12 border-dashed"><PackageSearch className="h-16 w-16 text-muted-foreground mb-4"/><CardTitle className="text-xl">Listo para analizar</CardTitle><CardDescription className="mt-2 max-w-md mx-auto">Haz clic en &quot;Analizar Inventario&quot; para que la IA revise tu stock y uso para generar recomendaciones.</CardDescription></Card>)}
+                <CardContent className="pt-6">
+                    {!analysisResult && !isAnalysisLoading && !analysisError && (<Card className="flex flex-col items-center justify-center text-center p-12 border-dashed"><Package className="h-16 w-16 text-muted-foreground mb-4"/><CardTitle className="text-xl">Listo para analizar</CardTitle><CardDescription className="mt-2 max-w-md mx-auto">Haz clic en &quot;Analizar Inventario&quot; para que la IA revise tu stock y uso para generar recomendaciones.</CardDescription></Card>)}
                     {isAnalysisLoading && (<Card className="flex flex-col items-center justify-center text-center p-12 border-dashed"><Loader2 className="h-16 w-16 text-primary animate-spin mb-4"/><CardTitle className="text-xl">Procesando...</CardTitle><CardDescription className="mt-2 max-w-md mx-auto">La IA está calculando las tasas de consumo. Esto puede tomar un momento.</CardDescription></Card>)}
                     {analysisError && (<Card className="flex flex-col items-center justify-center text-center p-12 border-destructive bg-destructive/10 text-destructive-foreground"><AlertTriangle className="h-16 w-16 mb-4"/><CardTitle className="text-xl">Ocurrió un Error</CardTitle><CardDescription className="mt-2 text-destructive-foreground/80">{analysisError}</CardDescription></Card>)}
                     {analysisResult && (<div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">{analysisResult.length === 0 && (<div className="lg:col-span-3"><Card className="flex flex-col items-center justify-center text-center p-12 bg-green-50/50 border-green-200"><CheckCircle className="h-16 w-16 text-green-600 mb-4"/><CardTitle className="text-xl text-green-800">¡Todo en orden!</CardTitle><CardDescription className="mt-2 text-green-700">La IA ha revisado tu inventario y no se requieren compras inmediatas.</CardDescription></Card></div>)}{analysisResult.map((rec) => (<Card key={rec.itemId} className="shadow-lg"><CardHeader><CardTitle className="flex items-center gap-3"><AlertTriangle className="h-6 w-6 text-orange-500" />{rec.itemName}</CardTitle><CardDescription>{rec.recommendation}</CardDescription></CardHeader><CardContent className="space-y-3"><p className="text-sm text-muted-foreground">{rec.reasoning}</p><div className="flex justify-between items-center bg-muted/50 p-3 rounded-md"><span className="font-medium text-sm">Sugerencia de compra:</span><span className="font-bold text-lg text-primary flex items-center gap-2"><ShoppingCart className="h-5 w-5"/>{rec.suggestedReorderQuantity}</span></div></CardContent></Card>))}</div>)}
