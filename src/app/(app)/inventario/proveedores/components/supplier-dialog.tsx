@@ -1,5 +1,3 @@
-
-
 "use client";
 
 import React, { useState } from 'react';
@@ -55,23 +53,21 @@ export function SupplierDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       {trigger && !isControlled && <DialogTrigger asChild onClick={() => onOpenChange(true)}>{trigger}</DialogTrigger>}
-      {open && (
-        <DialogContent className="sm:max-w-lg flex flex-col max-h-[90vh]">
-          <DialogHeader className="flex-shrink-0">
-            <DialogTitle>{supplier ? "Editar Proveedor" : "Nuevo Proveedor"}</DialogTitle>
-            <DialogDescription>
-              {supplier ? "Actualiza los detalles del proveedor." : "Completa la información para un nuevo proveedor."}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="flex-grow overflow-y-auto -mx-6 px-6">
-            <SupplierForm
-              initialData={supplier}
-              onSubmit={handleSubmit}
-              onClose={() => onOpenChange(false)}
-            />
-          </div>
-        </DialogContent>
-      )}
+      <DialogContent className="sm:max-w-lg flex flex-col max-h-[90vh]">
+        <DialogHeader className="flex-shrink-0">
+          <DialogTitle>{supplier ? "Editar Proveedor" : "Nuevo Proveedor"}</DialogTitle>
+          <DialogDescription>
+            {supplier ? "Actualiza los detalles del proveedor." : "Completa la información para un nuevo proveedor."}
+          </DialogDescription>
+        </DialogHeader>
+        <div className="flex-grow overflow-y-auto -mx-6 px-6">
+          <SupplierForm
+            initialData={supplier}
+            onSubmit={handleSubmit}
+            onClose={() => onOpenChange(false)}
+          />
+        </div>
+      </DialogContent>
     </Dialog>
   );
 }

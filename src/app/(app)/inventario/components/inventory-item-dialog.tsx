@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState } from 'react';
@@ -86,25 +85,23 @@ export function InventoryItemDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
        {trigger && !isControlled && <DialogTrigger asChild onClick={() => onOpenChange(true)}>{trigger}</DialogTrigger>}
-      {open && (
-        <DialogContent className="sm:max-w-2xl flex flex-col max-h-[90vh]">
-          <DialogHeader className="flex-shrink-0">
-            <DialogTitle>{isEditing ? "Editar Producto de Inventario" : "Nuevo Producto de Inventario"}</DialogTitle>
-            <DialogDescription>
-              {isEditing ? "Actualiza los detalles del producto." : "Completa la información para un nuevo producto en el inventario."}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="flex-grow overflow-y-auto -mx-6 px-6">
-            <InventoryItemForm
-              initialData={initialFormData as InventoryItem | null} 
-              onSubmit={handleSubmit}
-              onClose={() => onOpenChange(false)}
-              categories={categoriesToUse}
-              suppliers={suppliersToUse} 
-            />
-          </div>
-        </DialogContent>
-      )}
+      <DialogContent className="sm:max-w-2xl flex flex-col max-h-[90vh]">
+        <DialogHeader className="flex-shrink-0">
+          <DialogTitle>{isEditing ? "Editar Producto de Inventario" : "Nuevo Producto de Inventario"}</DialogTitle>
+          <DialogDescription>
+            {isEditing ? "Actualiza los detalles del producto." : "Completa la información para un nuevo producto en el inventario."}
+          </DialogDescription>
+        </DialogHeader>
+        <div className="flex-grow overflow-y-auto -mx-6 px-6">
+          <InventoryItemForm
+            initialData={initialFormData as InventoryItem | null} 
+            onSubmit={handleSubmit}
+            onClose={() => onOpenChange(false)}
+            categories={categoriesToUse}
+            suppliers={suppliersToUse} 
+          />
+        </div>
+      </DialogContent>
     </Dialog>
   );
 }
