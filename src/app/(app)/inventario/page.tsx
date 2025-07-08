@@ -4,7 +4,7 @@
 import { useState, useMemo, useEffect, useCallback, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Printer, ShoppingCart, AlertTriangle, PackageCheck, DollarSign, Server, Search, ListFilter, Shapes, Building, BrainCircuit, Package, Trash2, Edit } from "lucide-react";
+import { PlusCircle, Printer, ShoppingCart, AlertTriangle, PackageCheck, DollarSign, Server, Search, ListFilter, Shapes, Building, BrainCircuit, Package, Trash2, Edit, PackageSearch } from "lucide-react";
 import { InventoryTable } from "./components/inventory-table";
 import { InventoryItemDialog } from "./components/inventory-item-dialog";
 import { placeholderInventory, placeholderCategories, placeholderSuppliers, persistToFirestore, placeholderServiceRecords, hydrateReady } from "@/lib/placeholder-data";
@@ -302,7 +302,8 @@ function InventarioPageComponent() {
       setAnalysisResult(result.recommendations);
       toast({ title: "Análisis Completado", description: `La IA ha generado ${result.recommendations.length} recomendaciones.` });
     } catch (e) {
-      console.error(e); setError("La IA no pudo completar el análisis.");
+      console.error(e);
+      setAnalysisError("La IA no pudo completar el análisis.");
       toast({ title: "Error de Análisis", variant: "destructive" });
     } finally {
       setIsAnalysisLoading(false);
