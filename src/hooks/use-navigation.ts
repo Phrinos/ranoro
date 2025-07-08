@@ -118,10 +118,8 @@ const BASE_NAV_STRUCTURE: ReadonlyArray<Omit<NavigationEntry, 'isActive'>> = [
   },
   
   // Mi Inventario
-  { label: 'Productos', path: '/inventario', icon: Package, groupTag: "Mi Inventario", permissions: ['inventory:view'] },
-  { label: 'Categorías', path: '/inventario/categorias', icon: Shapes, groupTag: "Mi Inventario", permissions: ['inventory:manage'] },
-  { label: 'Proveedores', path: '/inventario/proveedores', icon: Building, groupTag: "Mi Inventario", permissions: ['inventory:manage'] },
-
+  { label: 'Inventario', path: '/inventario', icon: Package, groupTag: "Mi Inventario", permissions: ['inventory:view'] },
+  
   // Mi Flotilla
   {
     label: 'Principal',
