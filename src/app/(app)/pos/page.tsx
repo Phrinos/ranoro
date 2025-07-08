@@ -176,6 +176,25 @@ function PosPageComponent() {
   const setDateToThisWeek = () => setDateRange({ from: startOfWeek(new Date(), { weekStartsOn: 1 }), to: endOfWeek(new Date(), { weekStartsOn: 1 }) });
   const setDateToThisMonth = () => setDateRange({ from: startOfMonth(new Date()), to: endOfMonth(new Date()) });
   
+  const dateFilterComponent = (
+    <div className="flex items-center gap-2 flex-wrap justify-start sm:justify-end">
+      <Button variant="outline" size="sm" onClick={setDateToToday}>Hoy</Button>
+      <Button variant="outline" size="sm" onClick={setDateToThisWeek}>Esta Semana</Button>
+      <Button variant="outline" size="sm" onClick={setDateToThisMonth}>Este Mes</Button>
+      <Popover>
+        <PopoverTrigger asChild>
+          <Button variant={"outline"} className={cn("w-full sm:w-[240px] justify-start text-left font-normal", !dateRange && "text-muted-foreground")}>
+            <CalendarDateIcon className="mr-2 h-4 w-4" />
+            {dateRange?.from ? (dateRange.to ? (`${format(dateRange.from, "LLL dd, y", { locale: es })} - ${format(dateRange.to, "LLL dd, y", { locale: es })}`) : format(dateRange.from, "LLL dd, y", { locale: es })) : (<span>Seleccione rango</span>)}
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-auto p-0" align="end">
+          <Calendar initialFocus mode="range" defaultMonth={dateRange?.from} selected={dateRange} onSelect={setDateRange} numberOfMonths={2} locale={es} />
+        </PopoverContent>
+      </Popover>
+    </div>
+  );
+
   if (!hydrated) { return <div className="flex h-[50vh] w-full items-center justify-center"><p className="text-lg ml-4">Cargando datos...</p></div>; }
   
   return (
@@ -183,26 +202,6 @@ function PosPageComponent() {
       <div className="bg-primary text-primary-foreground rounded-lg p-6 mb-6">
         <h1 className="text-3xl font-bold tracking-tight">Punto de Venta</h1>
         <p className="text-primary-foreground/80 mt-1">Registra ventas, gestiona tu caja y analiza el rendimiento de tus operaciones.</p>
-      </div>
-      
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-6">
-          <div></div>
-          <div className="flex items-center gap-2 flex-wrap justify-end">
-              <Button variant="outline" size="sm" onClick={setDateToToday}>Hoy</Button>
-              <Button variant="outline" size="sm" onClick={setDateToThisWeek}>Esta Semana</Button>
-              <Button variant="outline" size="sm" onClick={setDateToThisMonth}>Este Mes</Button>
-              <Popover>
-                  <PopoverTrigger asChild>
-                      <Button variant="outline" className={cn("w-[240px] justify-start text-left font-normal", !dateRange && "text-muted-foreground")}>
-                          <CalendarDateIcon className="mr-2 h-4 w-4" />
-                          {dateRange?.from ? (dateRange.to ? (`${format(dateRange.from, "LLL dd, y", {locale:es})} - ${format(dateRange.to, "LLL dd, y", {locale:es})}`) : format(dateRange.from, "LLL dd, y", {locale:es})) : (<span>Seleccione rango</span>)}
-                      </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="end">
-                      <Calendar initialFocus mode="range" defaultMonth={dateRange?.from} selected={dateRange} onSelect={setDateRange} numberOfMonths={2} locale={es}/>
-                  </PopoverContent>
-              </Popover>
-          </div>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -214,11 +213,14 @@ function PosPageComponent() {
         </TabsList>
 
         <TabsContent value="informe" className="space-y-6">
-           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div>
                     <h2 className="text-2xl font-semibold tracking-tight">Informe del Punto de Venta</h2>
                     <p className="text-muted-foreground">Resumen de ventas y ganancias para el período seleccionado.</p>
                 </div>
+            </div>
+            <div className="flex items-center gap-2 flex-wrap justify-start sm:justify-end">
+              {dateFilterComponent}
             </div>
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                 <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Ventas en Periodo</CardTitle><Receipt className="h-4 w-4 text-muted-foreground"/></CardHeader><CardContent><div className="text-2xl font-bold">{ventasSummaryData.totalSalesCount}</div><p className="text-xs text-muted-foreground">Ventas completadas en el rango</p></CardContent></Card>
@@ -227,23 +229,24 @@ function PosPageComponent() {
             </div>
         </TabsContent>
         
-        {/* ==================== VENTAS TAB ==================== */}
         <TabsContent value="ventas" className="space-y-6">
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div>
                     <h2 className="text-2xl font-semibold tracking-tight">Historial de Ventas</h2>
                     <p className="text-muted-foreground">Consulta, filtra y reimprime tickets de venta.</p>
                 </div>
                 <Button asChild><Link href="/pos/nuevo"><PlusCircle className="mr-2 h-4 w-4" />Nueva Venta</Link></Button>
             </div>
-            
+            <div className="flex items-center gap-2 flex-wrap justify-start sm:justify-end">
+              {dateFilterComponent}
+            </div>
             <Card>
                 <CardHeader>
-                    <div className="space-y-4">
-                        <div className="flex flex-col sm:flex-row items-center gap-4">
-                            <div className="relative flex-1 w-full"><Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" /><Input type="search" placeholder="Buscar por ID, cliente, artículo..." className="w-full rounded-lg bg-white pl-8" value={ventasSearchTerm} onChange={(e) => setVentasSearchTerm(e.target.value)} /></div>
-                            <DropdownMenu><DropdownMenuTrigger asChild><Button variant="outline" className="w-full sm:w-auto bg-white"><ListFilter className="mr-2 h-4 w-4" />Ordenar</Button></DropdownMenuTrigger><DropdownMenuContent align="end"><DropdownMenuLabel>Ordenar por</DropdownMenuLabel><DropdownMenuRadioGroup value={ventasSortOption} onValueChange={(v) => setVentasSortOption(v as SaleSortOption)}><DropdownMenuRadioItem value="date_desc">Más Reciente</DropdownMenuRadioItem><DropdownMenuRadioItem value="date_asc">Más Antiguo</DropdownMenuRadioItem></DropdownMenuRadioGroup></DropdownMenuContent></DropdownMenu>
-                            <DropdownMenu><DropdownMenuTrigger asChild><Button variant="outline" className="w-full sm:w-auto bg-white"><Filter className="mr-2 h-4 w-4" />Pago</Button></DropdownMenuTrigger><DropdownMenuContent align="end"><DropdownMenuLabel>Método de Pago</DropdownMenuLabel><DropdownMenuRadioGroup value={ventasPaymentMethodFilter} onValueChange={(v) => setVentasPaymentMethodFilter(v as PaymentMethod | 'all')}><DropdownMenuRadioItem value="all">Todos</DropdownMenuRadioItem><DropdownMenuRadioItem value="Efectivo">Efectivo</DropdownMenuRadioItem><DropdownMenuRadioItem value="Tarjeta">Tarjeta</DropdownMenuRadioItem></DropdownMenuRadioGroup></DropdownMenuContent></DropdownMenu>
+                    <div className="flex flex-col sm:flex-row items-center gap-4 flex-wrap">
+                        <div className="relative flex-1 w-full min-w-[200px] sm:min-w-[300px]"><Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" /><Input type="search" placeholder="Buscar por ID, cliente, artículo..." className="w-full rounded-lg bg-white pl-8" value={ventasSearchTerm} onChange={(e) => setVentasSearchTerm(e.target.value)} /></div>
+                        <div className="flex items-center gap-2">
+                            <DropdownMenu><DropdownMenuTrigger asChild><Button variant="outline" className="w-full sm:w-auto bg-white"><ListFilter className="mr-2 h-4 w-4" />Ordenar</Button></DropdownMenuTrigger><DropdownMenuContent align="end"><DropdownMenuLabel>Ordenar por</DropdownMenuLabel><DropdownMenuRadioGroup value={ventasSortOption} onValueChange={(v) => setVentasSortOption(v as SaleSortOption)}><DropdownMenuRadioItem value="date_desc">Más Reciente</DropdownMenuRadioItem><DropdownMenuRadioItem value="date_asc">Más Antiguo</DropdownMenuRadioItem></DropdownMenuContent></DropdownMenu>
+                            <DropdownMenu><DropdownMenuTrigger asChild><Button variant="outline" className="w-full sm:w-auto bg-white"><Filter className="mr-2 h-4 w-4" />Pago</Button></DropdownMenuTrigger><DropdownMenuContent align="end"><DropdownMenuLabel>Método de Pago</DropdownMenuLabel><DropdownMenuRadioGroup value={ventasPaymentMethodFilter} onValueChange={(v) => setVentasPaymentMethodFilter(v as PaymentMethod | 'all')}><DropdownMenuRadioItem value="all">Todos</DropdownMenuRadioItem><DropdownMenuRadioItem value="Efectivo">Efectivo</DropdownMenuRadioItem><DropdownMenuRadioItem value="Tarjeta">Tarjeta</DropdownMenuRadioItem></DropdownMenuContent></DropdownMenu>
                         </div>
                     </div>
                 </CardHeader>
@@ -253,13 +256,15 @@ function PosPageComponent() {
             </Card>
         </TabsContent>
 
-        {/* ==================== CAJA TAB ==================== */}
         <TabsContent value="caja" className="space-y-6">
-             <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div>
                     <h2 className="text-2xl font-semibold tracking-tight">Gestión de Caja</h2>
                     <p className="text-muted-foreground">Controla el flujo de efectivo y genera cortes de caja diarios.</p>
                 </div>
+            </div>
+            <div className="flex items-center gap-2 flex-wrap justify-start sm:justify-end">
+              {dateFilterComponent}
             </div>
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
                 <Card className="lg:col-span-2"><CardHeader><CardTitle className="flex items-center gap-2"><Wallet/>Cajón de Dinero</CardTitle></CardHeader><CardContent className="space-y-2 text-lg"><div className="flex justify-between"><span>Saldo Inicial:</span> <span className="font-medium">{formatCurrency(cajaSummaryData.initialBalance)}</span></div><div className="flex justify-between text-green-600"><span>(+) Ventas en Efectivo:</span> <span className="font-medium">{formatCurrency(cajaSummaryData.totalCashSales)}</span></div><div className="flex justify-between text-green-600"><span>(+) Entradas de Efectivo:</span> <span className="font-medium">{formatCurrency(cajaSummaryData.totalCashIn)}</span></div><div className="flex justify-between text-red-600"><span>(-) Salidas de Efectivo:</span> <span className="font-medium">{formatCurrency(cajaSummaryData.totalCashOut)}</span></div><div className="flex justify-between text-xl font-bold border-t pt-2 mt-2"><span>Saldo Final Esperado:</span> <span>{formatCurrency(cajaSummaryData.finalCashBalance)}</span></div></CardContent></Card>
@@ -286,13 +291,15 @@ function PosPageComponent() {
             </Card>
         </TabsContent>
         
-        {/* ==================== REPORTES TAB ==================== */}
         <TabsContent value="reportes" className="space-y-6">
-             <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div>
                     <h2 className="text-2xl font-semibold tracking-tight">Reportes de Operaciones e Inventario</h2>
                     <p className="text-muted-foreground">Analiza el detalle de tus ventas, servicios y el movimiento de tus productos.</p>
                 </div>
+            </div>
+            <div className="flex items-center gap-2 flex-wrap justify-start sm:justify-end">
+              {dateFilterComponent}
             </div>
             <Tabs defaultValue="operaciones" className="w-full">
                 <TabsList className="grid w-full grid-cols-2">
@@ -348,6 +355,5 @@ export default function POSPageWrapper() {
         </Suspense>
     )
 }
-
 
     
