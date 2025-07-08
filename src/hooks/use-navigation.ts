@@ -303,5 +303,3 @@ const useNavigation = (): NavigationEntry[] => {
 };
 
 export default useNavigation;
-
-    
