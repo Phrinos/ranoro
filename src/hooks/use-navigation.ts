@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { usePathname } from 'next/navigation';
@@ -96,25 +95,11 @@ const BASE_NAV_STRUCTURE: ReadonlyArray<Omit<NavigationEntry, 'isActive'>> = [
   
   // Mi PDV
   {
-    label: 'Punto de Venta', 
+    label: 'Ventas y Reportes', 
     path: '/pos',
     icon: Receipt, 
     groupTag: "Mi PDV",
-    permissions: ['pos:create_sale']
-  },
-  {
-    label: 'Caja', 
-    path: '/pos/caja', 
-    icon: Wallet, 
-    groupTag: "Mi PDV",
-    permissions: ['pos:create_sale']
-  },
-  { 
-    label: 'Reportes', 
-    path: '/finanzas/reporte',
-    icon: LineChart,
-    groupTag: "Mi PDV",
-    permissions: ['finances:view_report']
+    permissions: ['pos:create_sale', 'finances:view_report']
   },
   
   // Mi Inventario
@@ -248,7 +233,7 @@ const useNavigation = (): NavigationEntry[] => {
       isActive = true;
     }
 
-     if (entry.path === '/pos' && (pathname.startsWith('/pos/nuevo') || pathname.startsWith('/pos/caja'))) {
+     if (entry.path === '/pos' && pathname.startsWith('/pos')) {
       isActive = true;
     }
     
