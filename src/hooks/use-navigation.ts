@@ -95,6 +95,13 @@ const BASE_NAV_STRUCTURE: ReadonlyArray<Omit<NavigationEntry, 'isActive'>> = [
   
   // Mi PDV
   {
+    label: 'Nueva Venta',
+    path: '/pos/nuevo',
+    icon: PlusCircle,
+    groupTag: "Mi PDV",
+    permissions: ['pos:create_sale']
+  },
+  {
     label: 'Punto de Venta',
     path: '/pos',
     icon: Receipt, 
@@ -296,3 +303,5 @@ const useNavigation = (): NavigationEntry[] => {
 };
 
 export default useNavigation;
+
+    

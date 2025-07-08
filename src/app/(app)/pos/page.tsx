@@ -184,6 +184,26 @@ function PosPageComponent() {
         <h1 className="text-3xl font-bold tracking-tight">Punto de Venta</h1>
         <p className="text-primary-foreground/80 mt-1">Registra ventas, gestiona tu caja y analiza el rendimiento de tus operaciones.</p>
       </div>
+      
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-6">
+          <div></div>
+          <div className="flex items-center gap-2 flex-wrap justify-end">
+              <Button variant="outline" size="sm" onClick={setDateToToday}>Hoy</Button>
+              <Button variant="outline" size="sm" onClick={setDateToThisWeek}>Esta Semana</Button>
+              <Button variant="outline" size="sm" onClick={setDateToThisMonth}>Este Mes</Button>
+              <Popover>
+                  <PopoverTrigger asChild>
+                      <Button variant="outline" className={cn("w-[240px] justify-start text-left font-normal", !dateRange && "text-muted-foreground")}>
+                          <CalendarDateIcon className="mr-2 h-4 w-4" />
+                          {dateRange?.from ? (dateRange.to ? (`${format(dateRange.from, "LLL dd, y", {locale:es})} - ${format(dateRange.to, "LLL dd, y", {locale:es})}`) : format(dateRange.from, "LLL dd, y", {locale:es})) : (<span>Seleccione rango</span>)}
+                      </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="end">
+                      <Calendar initialFocus mode="range" defaultMonth={dateRange?.from} selected={dateRange} onSelect={setDateRange} numberOfMonths={2} locale={es}/>
+                  </PopoverContent>
+              </Popover>
+          </div>
+      </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-4 mb-6">
@@ -198,14 +218,6 @@ function PosPageComponent() {
                 <div>
                     <h2 className="text-2xl font-semibold tracking-tight">Informe del Punto de Venta</h2>
                     <p className="text-muted-foreground">Resumen de ventas y ganancias para el período seleccionado.</p>
-                </div>
-                <div className="flex items-center gap-2">
-                    <Popover><PopoverTrigger asChild><Button variant="outline" className={cn("w-[240px] justify-start text-left font-normal", !dateRange && "text-muted-foreground")}><CalendarDateIcon className="mr-2 h-4 w-4" />{dateRange?.from ? (dateRange.to ? (`${format(dateRange.from, "LLL dd, y", {locale:es})} - ${format(dateRange.to, "LLL dd, y", {locale:es})}`) : format(dateRange.from, "LLL dd, y", {locale:es})) : (<span>Seleccione rango</span>)}</Button></PopoverTrigger><PopoverContent className="w-auto p-0" align="end"><Calendar initialFocus mode="range" defaultMonth={dateRange?.from} selected={dateRange} onSelect={setDateRange} numberOfMonths={2} locale={es}/></PopoverContent></Popover>
-                    <div className="hidden sm:flex items-center gap-2">
-                        <Button variant="outline" size="sm" onClick={setDateToToday}>Hoy</Button>
-                        <Button variant="outline" size="sm" onClick={setDateToThisWeek}>Semana</Button>
-                        <Button variant="outline" size="sm" onClick={setDateToThisMonth}>Mes</Button>
-                    </div>
                 </div>
             </div>
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -336,3 +348,6 @@ export default function POSPageWrapper() {
         </Suspense>
     )
 }
+
+
+    
