@@ -21,7 +21,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { subMonths, startOfMonth, endOfMonth, isWithinInterval, parseISO, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Dialog, DialogContent as DialogContentCat, DialogFooter as DialogFooterCat, DialogHeader as DialogHeaderCat, DialogTitle as DialogTitleCat, DialogDescription as DialogDescriptionCat } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { capitalizeWords } from '@/lib/utils';
@@ -443,7 +443,26 @@ function InventarioPageComponent() {
       <InventoryItemDialog open={isNewItemDialogOpen} onOpenChange={setIsNewItemDialogOpen} item={isCreatingItemForPurchaseFlow ? { sku: searchTermForNewItemPurchase, name: searchTermForNewItemPurchase, isService: false } : null} onSave={handleSaveNewItem} categories={categories} suppliers={suppliers} />
       <PurchaseItemSelectionDialog open={isPurchaseItemSelectionDialogOpen} onOpenChange={setIsPurchaseItemSelectionDialogOpen} inventoryItems={inventoryItems} onItemSelected={handleItemSelectedForPurchase} onCreateNew={handleCreateNewItemForPurchase} />
       {selectedItemForPurchase && !selectedItemForPurchase.isService && (<PurchaseDetailsEntryDialog open={isPurchaseDetailsEntryDialogOpen} onOpenChange={setIsPurchaseDetailsEntryDialogOpen} item={selectedItemForPurchase} onSave={handleSavePurchaseDetails} onClose={() => { setIsPurchaseDetailsEntryDialogOpen(false); setSelectedItemForPurchase(null); }} /> )}
-      <DialogContentCat open={isCategoryDialogOpen} onOpenChange={setIsCategoryDialogOpen} className="sm:max-w-[425px]"><form onSubmit={handleSaveCategory}><DialogHeaderCat><DialogTitleCat>{editingCategory ? 'Editar Categoría' : 'Nueva Categoría'}</DialogTitleCat><DialogDescriptionCat>{editingCategory ? 'Modifica el nombre de la categoría.' : 'Ingresa el nombre para la nueva categoría.'}</DialogDescriptionCat></DialogHeaderCat><div className="grid gap-4 py-4"><div className="grid grid-cols-4 items-center gap-4"><Label htmlFor="category-name" className="text-right">Nombre</Label><Input id="category-name" value={currentCategoryName} onChange={(e) => setCurrentCategoryName(capitalizeWords(e.target.value))} className="col-span-3" placeholder="Ej: Aceites" /></div></div><DialogFooterCat><Button type="button" variant="outline" onClick={() => setIsCategoryDialogOpen(false)}>Cancelar</Button><Button type="submit">{editingCategory ? 'Guardar Cambios' : 'Crear Categoría'}</Button></DialogFooterCat></form></DialogContentCat>
+      <Dialog open={isCategoryDialogOpen} onOpenChange={setIsCategoryDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <form onSubmit={handleSaveCategory}>
+            <DialogHeader>
+              <DialogTitle>{editingCategory ? 'Editar Categoría' : 'Nueva Categoría'}</DialogTitle>
+              <DialogDescription>{editingCategory ? 'Modifica el nombre de la categoría.' : 'Ingresa el nombre para la nueva categoría.'}</DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="category-name" className="text-right">Nombre</Label>
+                <Input id="category-name" value={currentCategoryName} onChange={(e) => setCurrentCategoryName(capitalizeWords(e.target.value))} className="col-span-3" placeholder="Ej: Aceites" />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setIsCategoryDialogOpen(false)}>Cancelar</Button>
+              <Button type="submit">{editingCategory ? 'Guardar Cambios' : 'Crear Categoría'}</Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
       <SupplierDialog open={isSupplierDialogOpen} onOpenChange={setIsSupplierDialogOpen} supplier={editingSupplier} onSave={handleSaveSupplier} />
     </>
   );
