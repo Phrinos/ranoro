@@ -95,7 +95,7 @@ const BASE_NAV_STRUCTURE: ReadonlyArray<Omit<NavigationEntry, 'isActive'>> = [
   
   // Mi PDV
   {
-    label: 'Ventas y Reportes', 
+    label: 'Punto de Venta',
     path: '/pos',
     icon: Receipt, 
     groupTag: "Mi PDV",
