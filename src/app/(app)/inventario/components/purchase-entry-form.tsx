@@ -7,14 +7,6 @@
 
 export function PurchaseEntryForm() {
   // This component is no longer used. Its functionality is now part of 
-  // PurchaseDetailsEntryDialog.tsx (for details) and the search/creation logic 
-  // is in PurchaseItemSelectionDialog.tsx and InventarioPage.tsx.
+  // RegisterPurchaseDialog.tsx.
   return null;
 }
-
-export type PurchaseEntryFormValues = { // Keep type for compatibility if referenced elsewhere during refactor
-  sku: string;
-  quantity: number;
-  purchasePrice: number;
-  // Potentially add sellingPrice if it was intended to be part of a unified form
-};

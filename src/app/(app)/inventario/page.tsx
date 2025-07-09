@@ -10,16 +10,12 @@ import { InventoryItemDialog } from "./components/inventory-item-dialog";
 import { placeholderInventory, placeholderCategories, placeholderSuppliers, persistToFirestore, placeholderServiceRecords, hydrateReady } from "@/lib/placeholder-data";
 import type { InventoryItem, InventoryCategory, Supplier } from "@/types";
 import type { InventoryItemFormValues } from "./components/inventory-item-form";
-import { PurchaseItemSelectionDialog } from "./components/purchase-item-selection-dialog";
-import { PurchaseDetailsEntryDialog, type PurchaseDetailsFormValues } from "./components/purchase-details-entry-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import Image from "next/legacy/image";
 import { Input } from "@/components/ui/input";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { subMonths, startOfMonth, endOfMonth, isWithinInterval, parseISO, isValid } from 'date-fns';
-import { es } from 'date-fns/locale';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
@@ -30,7 +26,8 @@ import { SupplierDialog } from './proveedores/components/supplier-dialog';
 import type { SupplierFormValues } from './proveedores/components/supplier-form';
 import { analyzeInventory, type InventoryRecommendation } from '@/ai/flows/inventory-analysis-flow';
 import { Loader2, CheckCircle } from "lucide-react";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { RegisterPurchaseDialog } from './components/register-purchase-dialog';
+import type { PurchaseFormValues } from './components/register-purchase-dialog';
 
 
 type InventorySortOption = 
@@ -134,55 +131,8 @@ function InventarioPageComponent() {
   }, [inventoryItems, suppliers, hydrated, version]);
 
   // ======== PRODUCTOS TAB STATE & LOGIC ========
-  const [isNewItemDialogOpen, setIsNewItemDialogOpen] = useState(false);
-  const [isPurchaseItemSelectionDialogOpen, setIsPurchaseItemSelectionDialogOpen] = useState(false);
-  const [isPurchaseDetailsEntryDialogOpen, setIsPurchaseDetailsEntryDialogOpen] = useState(false);
-  const [selectedItemForPurchase, setSelectedItemForPurchase] = useState<InventoryItem | null>(null);
-  const [isCreatingItemForPurchaseFlow, setIsCreatingItemForPurchaseFlow] = useState(false);
-  const [newlyCreatedItemForPurchase, setNewlyCreatedItemForPurchase] = useState<InventoryItem | null>(null);
-  const [searchTermForNewItemPurchase, setSearchTermForNewItemPurchase] = useState('');
   const [searchTermProducts, setSearchTermProducts] = useState("");
   const [sortOptionProducts, setSortOptionProducts] = useState<InventorySortOption>("stock_status_name_asc");
-
-  const handleSaveNewItem = useCallback(async (data: InventoryItemFormValues) => {
-    const newItem: InventoryItem = { id: `PROD_${Date.now().toString(36)}`, ...data, isService: data.isService || false, quantity: data.isService ? 0 : Number(data.quantity), lowStockThreshold: data.isService ? 0 : Number(data.lowStockThreshold), unitPrice: Number(data.unitPrice) || 0, sellingPrice: Number(data.sellingPrice) || 0, };
-    placeholderInventory.push(newItem);
-    await persistToFirestore(['inventory']);
-    toast({ title: "Producto/Servicio Creado", description: `El ítem ${newItem.name} ha sido agregado al inventario.` });
-    setIsNewItemDialogOpen(false);
-    if (isCreatingItemForPurchaseFlow) { setNewlyCreatedItemForPurchase(newItem); setIsCreatingItemForPurchaseFlow(false); }
-  }, [isCreatingItemForPurchaseFlow, toast]);
-
-  useEffect(() => {
-    if (newlyCreatedItemForPurchase) {
-      setSelectedItemForPurchase(newlyCreatedItemForPurchase);
-      if (newlyCreatedItemForPurchase.isService) toast({ title: "Servicio Creado", description: `${newlyCreatedItemForPurchase.name} ha sido creado. No requiere ingreso de compra.` });
-      else setIsPurchaseDetailsEntryDialogOpen(true);
-      setNewlyCreatedItemForPurchase(null);
-    }
-  }, [newlyCreatedItemForPurchase, toast]);
-
-  const handleOpenPurchaseItemSelection = useCallback(() => { setSelectedItemForPurchase(null); setIsPurchaseItemSelectionDialogOpen(true); }, []);
-  const handleItemSelectedForPurchase = useCallback((item: InventoryItem) => {
-    setSelectedItemForPurchase(item);
-    setIsPurchaseItemSelectionDialogOpen(false);
-    if (item.isService) { toast({ title: "Es un Servicio", description: `${item.name} es un servicio y no requiere ingreso de compra de stock.`, variant: "default" }); setSelectedItemForPurchase(null); }
-    else { setIsPurchaseDetailsEntryDialogOpen(true); }
-  }, [toast]);
-  const handleCreateNewItemForPurchase = useCallback((searchTerm: string) => { setIsCreatingItemForPurchaseFlow(true); setSearchTermForNewItemPurchase(searchTerm); setIsPurchaseItemSelectionDialogOpen(false); setIsNewItemDialogOpen(true); }, []);
-  const handleSavePurchaseDetails = useCallback(async (details: PurchaseDetailsFormValues) => {
-    if (!selectedItemForPurchase || selectedItemForPurchase.isService) { toast({ title: "Error", description: "No hay un artículo de stock seleccionado para la compra o es un servicio.", variant: "destructive" }); return; }
-    const itemIndex = placeholderInventory.findIndex(item => item.id === selectedItemForPurchase.id);
-    if (itemIndex === -1) { toast({ title: "Error", description: `El artículo ${selectedItemForPurchase.name} no se encontró para actualizar.`, variant: "destructive" }); return; }
-    const updatedItem = { ...placeholderInventory[itemIndex], quantity: placeholderInventory[itemIndex].quantity + details.quantityPurchased, unitPrice: details.newCostPrice, sellingPrice: details.newSellingPrice, };
-    placeholderInventory[itemIndex] = updatedItem;
-    await persistToFirestore(['inventory']);
-    toast({ title: "Compra Registrada", description: `Se actualizó el stock, costo y precio de venta para ${updatedItem.name}.` });
-    setIsPurchaseDetailsEntryDialogOpen(false);
-    setSelectedItemForPurchase(null);
-  }, [selectedItemForPurchase, toast]);
-
-  const handlePrintInventory = () => window.print();
 
   const filteredAndSortedInventoryItems = useMemo(() => {
     let itemsToDisplay = [...inventoryItems];
@@ -320,6 +270,58 @@ function InventarioPageComponent() {
     }
   }, [inventoryItems, toast]);
 
+  // ======== NEW PURCHASE FLOW ========
+  const [isRegisterPurchaseOpen, setIsRegisterPurchaseOpen] = useState(false);
+
+  const handleSavePurchase = useCallback(async (data: PurchaseFormValues) => {
+    // 1. Update supplier's debt
+    if (data.supplierId && data.invoiceTotal && data.invoiceTotal > 0) {
+      const supplierIndex = placeholderSuppliers.findIndex(s => s.id === data.supplierId);
+      if (supplierIndex > -1) {
+        const currentDebt = placeholderSuppliers[supplierIndex].debtAmount || 0;
+        placeholderSuppliers[supplierIndex].debtAmount = currentDebt + data.invoiceTotal;
+      }
+    }
+    
+    // 2. Update inventory items' quantity and prices
+    data.items.forEach(purchasedItem => {
+      const inventoryIndex = placeholderInventory.findIndex(i => i.id === purchasedItem.inventoryItemId);
+      if (inventoryIndex > -1) {
+        const item = placeholderInventory[inventoryIndex];
+        item.quantity += purchasedItem.quantity;
+        item.unitPrice = purchasedItem.unitPrice;
+        // Auto-update selling price with 20% markup, can be adjusted
+        const markup = 1.20; 
+        item.sellingPrice = parseFloat((purchasedItem.unitPrice * markup).toFixed(2));
+      }
+    });
+
+    // 3. Persist changes
+    await persistToFirestore(['suppliers', 'inventory']);
+    
+    toast({ title: "Compra Registrada", description: "El inventario y la deuda del proveedor han sido actualizados." });
+    setIsRegisterPurchaseOpen(false);
+    
+  }, [toast]);
+  
+  const handleInventoryItemCreated = useCallback(async (itemData: InventoryItemFormValues): Promise<InventoryItem> => {
+      const newItem: InventoryItem = {
+          id: `PROD_${Date.now().toString(36)}`,
+          ...itemData,
+          isService: itemData.isService || false,
+          quantity: 0, // Stock is added via the purchase quantity
+          lowStockThreshold: itemData.lowStockThreshold === undefined ? 5 : itemData.lowStockThreshold,
+          unitPrice: itemData.unitPrice || 0,
+          sellingPrice: itemData.sellingPrice || 0,
+      };
+      placeholderInventory.push(newItem);
+      await persistToFirestore(['inventory']);
+      toast({ title: "Producto Creado", description: `"${newItem.name}" ha sido agregado al inventario. Ahora puede añadirlo a la compra.` });
+      setVersion(v => v + 1); // Force re-render to update inventoryItems state everywhere
+      return newItem;
+  }, [toast]);
+
+
   return (
     <>
       <div className="bg-primary text-primary-foreground rounded-lg p-6 mb-6">
@@ -338,6 +340,12 @@ function InventarioPageComponent() {
         
         <TabsContent value="informe" className="space-y-6">
           <div className="space-y-2">
+            <h2 className="text-2xl font-semibold tracking-tight">Acciones Rápidas</h2>
+          </div>
+          <Button className="w-full h-12 text-base" onClick={() => setIsRegisterPurchaseOpen(true)}>
+            <ShoppingCart className="mr-2 h-5 w-5" /> Ingresar Compra de Mercancía
+          </Button>
+          <div className="space-y-2 pt-4">
             <h2 className="text-2xl font-semibold tracking-tight">Resumen de Inventario</h2>
           </div>
           <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
@@ -356,21 +364,17 @@ function InventarioPageComponent() {
         <TabsContent value="productos" className="mt-6 space-y-4">
             <div className="space-y-2">
                 <h2 className="text-2xl font-semibold tracking-tight">Lista de Productos y Servicios</h2>
-                <p className="text-muted-foreground">Administra productos, servicios, niveles de stock y registra compras.</p>
+                <p className="text-muted-foreground">Administra productos, servicios y niveles de stock. Las compras se registran desde el informe.</p>
             </div>
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div className="relative flex-1 min-w-[200px] sm:min-w-[300px]">
                     <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                     <Input type="search" placeholder="Buscar por nombre o SKU..." className="w-full rounded-lg bg-card pl-8" value={searchTermProducts} onChange={(e) => setSearchTermProducts(e.target.value)} />
                 </div>
-                <div className="flex flex-wrap gap-2">
-                    <Button onClick={handleOpenPurchaseItemSelection} variant="outline" className="bg-input text-foreground"><ShoppingCart className="mr-2 h-4 w-4" />Ingresar Compra</Button>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild><Button variant="outline" className="min-w-[150px] flex-1 sm:flex-initial bg-card"><ListFilter className="mr-2 h-4 w-4" />Ordenar por</Button></DropdownMenuTrigger>
-                      <DropdownMenuContent align="end"><DropdownMenuLabel>Ordenar por</DropdownMenuLabel><DropdownMenuRadioGroup value={sortOptionProducts} onValueChange={(value) => setSortOptionProducts(value as InventorySortOption)}><DropdownMenuRadioItem value="stock_status_name_asc">Estado de Stock</DropdownMenuRadioItem><DropdownMenuRadioItem value="name_asc">Nombre (A-Z)</DropdownMenuRadioItem><DropdownMenuRadioItem value="name_desc">Nombre (Z-A)</DropdownMenuRadioItem><DropdownMenuRadioItem value="quantity_desc">Cantidad (Mayor a Menor)</DropdownMenuRadioItem><DropdownMenuRadioItem value="quantity_asc">Cantidad (Menor a Mayor)</DropdownMenuRadioItem><DropdownMenuRadioItem value="price_desc">Precio (Mayor a Menor)</DropdownMenuRadioItem><DropdownMenuRadioItem value="price_asc">Precio (Menor a Mayor)</DropdownMenuRadioItem><DropdownMenuRadioItem value="type_asc">Tipo (Producto/Servicio)</DropdownMenuRadioItem></DropdownMenuRadioGroup></DropdownMenuContent>
-                    </DropdownMenu>
-                    <Button onClick={() => { setIsCreatingItemForPurchaseFlow(false); setIsNewItemDialogOpen(true); }}><PlusCircle className="mr-2 h-4 w-4" />Nuevo</Button>
-                </div>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild><Button variant="outline" className="min-w-[150px] flex-1 sm:flex-initial bg-card"><ListFilter className="mr-2 h-4 w-4" />Ordenar por</Button></DropdownMenuTrigger>
+                  <DropdownMenuContent align="end"><DropdownMenuLabel>Ordenar por</DropdownMenuLabel><DropdownMenuRadioGroup value={sortOptionProducts} onValueChange={(value) => setSortOptionProducts(value as InventorySortOption)}><DropdownMenuRadioItem value="stock_status_name_asc">Estado de Stock</DropdownMenuRadioItem><DropdownMenuRadioItem value="name_asc">Nombre (A-Z)</DropdownMenuRadioItem><DropdownMenuRadioItem value="name_desc">Nombre (Z-A)</DropdownMenuRadioItem><DropdownMenuRadioItem value="quantity_desc">Cantidad (Mayor a Menor)</DropdownMenuRadioItem><DropdownMenuRadioItem value="quantity_asc">Cantidad (Menor a Mayor)</DropdownMenuRadioItem><DropdownMenuRadioItem value="price_desc">Precio (Mayor a Menor)</DropdownMenuRadioItem><DropdownMenuRadioItem value="price_asc">Precio (Menor a Mayor)</DropdownMenuRadioItem><DropdownMenuRadioItem value="type_asc">Tipo (Producto/Servicio)</DropdownMenuRadioItem></DropdownMenuRadioGroup></DropdownMenuContent>
+                </DropdownMenu>
             </div>
             <Card>
                 <CardContent className="pt-6">
@@ -433,9 +437,15 @@ function InventarioPageComponent() {
       </Tabs>
       
       {/* DIALOGS (SHARED) */}
-      <InventoryItemDialog open={isNewItemDialogOpen} onOpenChange={setIsNewItemDialogOpen} item={isCreatingItemForPurchaseFlow ? { sku: searchTermForNewItemPurchase, name: searchTermForNewItemPurchase, isService: false } : null} onSave={handleSaveNewItem} categories={categories} suppliers={suppliers} />
-      <PurchaseItemSelectionDialog open={isPurchaseItemSelectionDialogOpen} onOpenChange={setIsPurchaseItemSelectionDialogOpen} inventoryItems={inventoryItems} onItemSelected={handleItemSelectedForPurchase} onCreateNew={handleCreateNewItemForPurchase} />
-      {selectedItemForPurchase && !selectedItemForPurchase.isService && (<PurchaseDetailsEntryDialog open={isPurchaseDetailsEntryDialogOpen} onOpenChange={setIsPurchaseDetailsEntryDialogOpen} item={selectedItemForPurchase} onSave={handleSavePurchaseDetails} onClose={() => { setIsPurchaseDetailsEntryDialogOpen(false); setSelectedItemForPurchase(null); }} /> )}
+      <RegisterPurchaseDialog
+        open={isRegisterPurchaseOpen}
+        onOpenChange={setIsRegisterPurchaseOpen}
+        suppliers={suppliers}
+        inventoryItems={inventoryItems}
+        onSave={handleSavePurchase}
+        onInventoryItemCreated={handleInventoryItemCreated}
+        categories={categories}
+      />
       <Dialog open={isCategoryDialogOpen} onOpenChange={setIsCategoryDialogOpen}><DialogContent className="sm:max-w-[425px]"><form onSubmit={handleSaveCategory}><DialogHeader><DialogTitle>{editingCategory ? 'Editar Categoría' : 'Nueva Categoría'}</DialogTitle><DialogDescription>{editingCategory ? 'Modifica el nombre de la categoría.' : 'Ingresa el nombre para la nueva categoría.'}</DialogDescription></DialogHeader><div className="grid gap-4 py-4"><div className="grid grid-cols-4 items-center gap-4"><Label htmlFor="category-name" className="text-right">Nombre</Label><Input id="category-name" value={currentCategoryName} onChange={(e) => setCurrentCategoryName(capitalizeWords(e.target.value))} className="col-span-3" placeholder="Ej: Aceites" /></div></div><DialogFooter><Button type="button" variant="outline" onClick={() => setIsCategoryDialogOpen(false)}>Cancelar</Button><Button type="submit">{editingCategory ? 'Guardar Cambios' : 'Crear Categoría'}</Button></DialogFooter></form></DialogContent></Dialog>
       <SupplierDialog open={isSupplierDialogOpen} onOpenChange={setIsSupplierDialogOpen} supplier={editingSupplier} onSave={handleSaveSupplier} />
     </>
@@ -450,4 +460,3 @@ export default function InventarioPage() {
         </Suspense>
     )
 }
-
