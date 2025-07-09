@@ -10,8 +10,9 @@ import { cn } from "@/lib/utils";
 import Image from "next/image";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Check, Eye } from 'lucide-react';
+import { Check, Eye, Signature, Loader2 } from 'lucide-react';
 import { QuoteContent } from '@/components/quote-content';
+import { Button } from '@/components/ui/button';
 
 const initialWorkshopInfo: WorkshopInfo = {
   name: "RANORO",
@@ -113,7 +114,7 @@ const SafetyChecklistDisplay = ({
         <div className="mt-4 print:mt-0">
             <header className="mb-4 pb-2 border-b-2 border-black">
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
-                    <img src={workshopInfo.logoUrl} alt={`${workshopInfo.name} Logo`} className="h-10 sm:h-12" data-ai-hint="workshop logo"/>
+                    <img src={workshopInfo.logoUrl} alt={`${workshopInfo.name} Logo`} style={{ width: '150px', height: 'auto' }} data-ai-hint="workshop logo"/>
                     <div className="text-left sm:text-right">
                     <h1 className="text-base sm:text-lg font-bold">REVISIÓN DE PUNTOS DE SEGURIDAD</h1>
                     <p className="font-mono text-xs">Folio de Servicio: <span className="font-semibold">{service.id}</span></p>
@@ -205,53 +206,17 @@ interface ServiceSheetContentProps {
   vehicle?: Vehicle;
   workshopInfo?: WorkshopInfo;
   onViewImage?: (url: string) => void;
+  isPublicView?: boolean;
+  showSignReception?: boolean;
+  showSignDelivery?: boolean;
+  onSignClick?: (type: 'reception' | 'delivery') => void;
+  isSigning?: boolean;
 }
 
 export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheetContentProps>(
-  ({ service, quote, vehicle, workshopInfo: workshopInfoProp, onViewImage }, ref) => {
+  ({ service, quote, vehicle, workshopInfo: workshopInfoProp, onViewImage, isPublicView, showSignReception, showSignDelivery, onSignClick, isSigning }, ref) => {
     const effectiveWorkshopInfo = { ...initialWorkshopInfo, ...workshopInfoProp };
     const quoteContentRef = React.useRef<HTMLDivElement>(null);
-    
-    // NEW LOGIC: If status is quote or scheduled, only show the quote view.
-    if (service && (service.status === 'Cotizacion' || service.status === 'Agendado')) {
-      const quoteToShow = quote || {
-        // Create a quote-like object from the service if no explicit quote exists.
-        id: service.id,
-        publicId: service.publicId,
-        quoteDate: service.quoteDate || service.serviceDate,
-        vehicleId: service.vehicleId,
-        vehicleIdentifier: service.vehicleIdentifier,
-        description: service.description,
-        preparedByTechnicianId: service.serviceAdvisorId,
-        preparedByTechnicianName: service.serviceAdvisorName,
-        preparedByTechnicianSignatureDataUrl: service.serviceAdvisorSignatureDataUrl,
-        serviceItems: service.serviceItems,
-        estimatedTotalCost: service.totalCost,
-        estimatedSubTotal: service.subTotal,
-        estimatedTaxAmount: service.taxAmount,
-        estimatedTotalSuppliesCost: service.totalSuppliesCost,
-        estimatedProfit: service.serviceProfit,
-        notes: service.notes,
-        mileage: service.mileage,
-        serviceType: service.serviceType,
-        workshopInfo: service.workshopInfo,
-        status: 'Cotizacion'
-      };
-
-      return (
-        <div ref={ref} data-format="letter" className="font-sans bg-white text-black text-sm shadow-lg print:shadow-none">
-          {/* This wrapper ensures it's printable and styled correctly */}
-          <div className="p-0 sm:p-2 md:p-4">
-             <QuoteContent
-              ref={quoteContentRef}
-              quote={quoteToShow as QuoteRecord}
-              vehicle={vehicle}
-              workshopInfo={effectiveWorkshopInfo}
-            />
-          </div>
-        </div>
-      );
-    }
     
     const formatCurrency = (amount: number | undefined) => {
         if (amount === undefined) return '$0.00';
@@ -293,7 +258,7 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
       <div className="flex flex-col min-h-[10in]">
         <header className="mb-4 pb-2 border-b-2 border-black">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
-            <img src={effectiveWorkshopInfo.logoUrl} alt={`${effectiveWorkshopInfo.name} Logo`} className="h-12 sm:h-16" data-ai-hint="workshop logo"/>
+            <img src={effectiveWorkshopInfo.logoUrl} alt={`${effectiveWorkshopInfo.name} Logo`} style={{ width: '150px', height: 'auto' }} data-ai-hint="workshop logo"/>
             <div className="text-left sm:text-right">
               <h1 className="text-lg sm:text-xl font-bold">ORDEN DE SERVICIO</h1>
               <p className="font-mono text-sm sm:text-base">Folio: <span className="font-bold">{service.id}</span></p>
@@ -407,12 +372,20 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
                   <h3 className="font-bold uppercase text-center text-sm">AUTORIZO QUE SE REALICEN ESTOS SERVICIOS</h3>
                   {service.customerSignatureReception ? (
                       <div className="w-full h-full flex items-center justify-center">
-                          <Image src={service.customerSignatureReception} alt="Firma del cliente" width={200} height={100} style={{objectFit: 'contain'}} />
+                          <img src={service.customerSignatureReception} alt="Firma del cliente" style={{objectFit: 'contain', width: '200px', height: '100px'}} crossOrigin="anonymous" />
                       </div>
                   ) : (
-                      <div className="border-t-2 border-black mt-auto pt-1 text-center w-full">
-                          <p className="text-xs font-semibold">{vehicle?.ownerName?.toUpperCase() || '________________________________'}</p>
-                      </div>
+                    <div className="flex flex-col items-center justify-end flex-grow w-full">
+                        {isPublicView && showSignReception && onSignClick && (
+                            <Button onClick={() => onSignClick('reception')} disabled={isSigning} className="mb-2">
+                            {isSigning ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Signature className="mr-2 h-4 w-4"/>}
+                            Firmar Aquí
+                            </Button>
+                        )}
+                        <div className="border-t-2 border-black mt-auto pt-1 text-center w-full">
+                            <p className="text-xs font-semibold">{vehicle?.ownerName?.toUpperCase() || '________________________________'}</p>
+                        </div>
+                    </div>
                   )}
               </div>
             )}
@@ -434,12 +407,19 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
                     </div>
                 </div>
                 <div className="min-h-[130px] flex flex-col justify-end">
-                   <div className="h-full flex-grow flex items-center justify-center">
+                   <div className="h-full flex-grow flex flex-col items-center justify-center">
                        {service.customerSignatureDelivery ? (
-                         <div className="relative w-full h-full">
+                         <div className="relative w-48 h-24">
                            <Image src={service.customerSignatureDelivery} alt="Firma de conformidad" layout="fill" objectFit="contain" />
                          </div>
-                       ) : null}
+                       ) : (
+                         isPublicView && showSignDelivery && onSignClick && (
+                            <Button onClick={() => onSignClick('delivery')} disabled={isSigning} className="mb-2 bg-green-600 hover:bg-green-700">
+                                {isSigning ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Signature className="mr-2 h-4 w-4"/>}
+                                Firmar de Conformidad
+                            </Button>
+                         )
+                       )}
                    </div>
                    <div className="border-t-2 border-black pt-1 w-full text-center mt-auto">
                        <p className="font-bold">RECIBO DE CONFORMIDAD: {vehicle?.ownerName?.toUpperCase() || '________________________________'}</p>

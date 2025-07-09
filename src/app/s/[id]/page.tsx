@@ -202,18 +202,6 @@ export default function PublicServiceSheetPage() {
             <CardDescription>Revise los detalles y firme digitalmente si es necesario.</CardDescription>
           </div>
           <div className="flex flex-wrap gap-2 justify-end">
-            {showSignReception && (
-              <Button onClick={() => handleOpenSignatureDialog('reception')} disabled={isSigning}>
-                {isSigning ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Signature className="mr-2 h-4 w-4"/>}
-                 Firmar Recepción
-              </Button>
-            )}
-            {showSignDelivery && (
-              <Button onClick={() => handleOpenSignatureDialog('delivery')} className="bg-green-600 hover:bg-green-700" disabled={isSigning}>
-                {isSigning ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Signature className="mr-2 h-4 w-4"/>}
-                 Firmar Entrega
-              </Button>
-            )}
             <Button variant="outline" onClick={() => window.print()}><Printer className="mr-2 h-4 w-4"/> Imprimir Hoja</Button>
           </div>
         </CardHeader>
@@ -226,6 +214,11 @@ export default function PublicServiceSheetPage() {
           vehicle={vehicle} 
           workshopInfo={workshopInfo || undefined} 
           onViewImage={handleViewImage}
+          isPublicView={true}
+          showSignReception={showSignReception}
+          showSignDelivery={showSignDelivery}
+          onSignClick={handleOpenSignatureDialog}
+          isSigning={isSigning}
         />
       </div>
       <SignatureDialog
