@@ -297,13 +297,17 @@ function InventarioPageComponent() {
     setIsAnalysisLoading(true); setAnalysisError(null); setAnalysisResult(null);
     try {
       const inventoryForAI = inventoryItems.map(item => ({ id: item.id, name: item.name, quantity: item.quantity, lowStockThreshold: item.lowStockThreshold }));
-      const servicesForAI = placeholderServiceRecords.map(service => ({
+      
+      const servicesForAI = placeholderServiceRecords
+        .filter(service => service.serviceDate && typeof service.serviceDate === 'string') // Filter out records without a valid date
+        .map(service => ({
         serviceDate: service.serviceDate,
         suppliesUsed: (service.serviceItems || []).flatMap(item => item.suppliesUsed || []).map(supply => ({
           supplyId: supply.supplyId,
           quantity: supply.quantity,
         })),
       }));
+
       const result = await analyzeInventory({ inventoryItems: inventoryForAI, serviceRecords: servicesForAI });
       setAnalysisResult(result.recommendations);
       toast({ title: "Análisis Completado", description: `La IA ha generado ${result.recommendations.length} recomendaciones.` });
@@ -446,3 +450,4 @@ export default function InventarioPage() {
         </Suspense>
     )
 }
+
