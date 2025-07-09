@@ -2,18 +2,30 @@
 
 export interface WorkshopInfo {
   name: string;
+  nameBold?: boolean;
+  headerFontSize?: number;
   phone: string;
+  phoneBold?: boolean;
   addressLine1: string;
+  addressLine1Bold?: boolean;
   addressLine2?: string;
+  addressLine2Bold?: boolean;
   cityState: string;
+  cityStateBold?: boolean;
   logoUrl: string;
   logoWidth?: number;
-  fontSize?: number;
+  bodyFontSize?: number;
+  itemsFontSize?: number;
+  totalsFontSize?: number;
+  footerFontSize?: number;
   blankLinesTop?: number;
   blankLinesBottom?: number;
   footerLine1?: string;
+  footerLine1Bold?: boolean;
   footerLine2?: string;
+  footerLine2Bold?: boolean;
   fixedFooterText?: string;
+  fixedFooterTextBold?: boolean;
 }
 
 export interface VehiclePaperwork {
