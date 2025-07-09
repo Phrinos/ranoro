@@ -170,58 +170,58 @@ function ReportesPageComponent() {
                     <TabsTrigger value="operaciones" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Reporte de Operaciones</TabsTrigger>
                     <TabsTrigger value="inventario" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Reporte de Inventario</TabsTrigger>
                 </TabsList>
-                <TabsContent value="operaciones" className="mt-6">
+                <TabsContent value="operaciones" className="mt-6 space-y-4">
+                    <div>
+                        <h2 className="text-2xl font-semibold tracking-tight">Detalle de Operaciones</h2>
+                        <p className="text-muted-foreground">Ventas y servicios completados en el período seleccionado.</p>
+                    </div>
+                    <div className="flex flex-col sm:flex-row items-center gap-4">
+                        <div className="relative flex-1 w-full">
+                            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                            <Input type="search" placeholder="Buscar por ID o descripción..." className="w-full rounded-lg bg-background pl-8" value={reporteOpSearchTerm} onChange={(e) => setReporteOpSearchTerm(e.target.value)} />
+                        </div>
+                        <div className="flex items-center gap-2 w-full sm:w-auto flex-wrap">
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant="outline" className="flex-1 sm:flex-initial">
+                                        <ListFilter className="mr-2 h-4 w-4" />
+                                        <span>Tipo: {reporteOpTypeFilter === 'all' ? 'Todos' : reporteOpTypeFilter}</span>
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                    <DropdownMenuLabel>Filtrar por Tipo</DropdownMenuLabel>
+                                    <DropdownMenuRadioGroup value={reporteOpTypeFilter} onValueChange={(v) => setReporteOpTypeFilter(v as OperationTypeFilter)}>
+                                        <DropdownMenuRadioItem value="all">Todos</DropdownMenuRadioItem>
+                                        <DropdownMenuRadioItem value="Venta">Venta</DropdownMenuRadioItem>
+                                        <DropdownMenuRadioItem value="Servicio General">Servicio General</DropdownMenuRadioItem>
+                                        <DropdownMenuRadioItem value="Cambio de Aceite">Cambio de Aceite</DropdownMenuRadioItem>
+                                        <DropdownMenuRadioItem value="Pintura">Pintura</DropdownMenuRadioItem>
+                                    </DropdownMenuRadioGroup>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant="outline" className="flex-1 sm:flex-initial">
+                                        <ListFilter className="mr-2 h-4 w-4" />
+                                        <span>Ordenar por</span>
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                    <DropdownMenuLabel>Ordenar por</DropdownMenuLabel>
+                                    <DropdownMenuRadioGroup value={reporteOpSortOption} onValueChange={setReporteOpSortOption}>
+                                        <DropdownMenuRadioItem value="date_desc">Fecha (Más Reciente)</DropdownMenuRadioItem>
+                                        <DropdownMenuRadioItem value="date_asc">Fecha (Más Antiguo)</DropdownMenuRadioItem>
+                                        <DropdownMenuRadioItem value="amount_desc">Monto (Mayor a Menor)</DropdownMenuRadioItem>
+                                        <DropdownMenuRadioItem value="amount_asc">Monto (Menor a Mayor)</DropdownMenuRadioItem>
+                                        <DropdownMenuRadioItem value="profit_desc">Ganancia (Mayor a Menor)</DropdownMenuRadioItem>
+                                        <DropdownMenuRadioItem value="profit_asc">Ganancia (Menor a Mayor)</DropdownMenuRadioItem>
+                                    </DropdownMenuRadioGroup>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                        </div>
+                    </div>
                     <Card>
-                        <CardHeader>
-                            <CardTitle>Detalle de Operaciones</CardTitle>
-                            <CardDescription>Ventas y servicios completados en el período seleccionado.</CardDescription>
-                            <div className="flex flex-col sm:flex-row items-center gap-4 pt-4">
-                                <div className="relative flex-1 w-full">
-                                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                                    <Input type="search" placeholder="Buscar por ID o descripción..." className="w-full rounded-lg bg-background pl-8" value={reporteOpSearchTerm} onChange={(e) => setReporteOpSearchTerm(e.target.value)} />
-                                </div>
-                                <div className="flex items-center gap-2 w-full sm:w-auto flex-wrap">
-                                    <DropdownMenu>
-                                        <DropdownMenuTrigger asChild>
-                                            <Button variant="outline" className="flex-1 sm:flex-initial">
-                                                <ListFilter className="mr-2 h-4 w-4" />
-                                                <span>Tipo: {reporteOpTypeFilter === 'all' ? 'Todos' : reporteOpTypeFilter}</span>
-                                            </Button>
-                                        </DropdownMenuTrigger>
-                                        <DropdownMenuContent align="end">
-                                            <DropdownMenuLabel>Filtrar por Tipo</DropdownMenuLabel>
-                                            <DropdownMenuRadioGroup value={reporteOpTypeFilter} onValueChange={(v) => setReporteOpTypeFilter(v as OperationTypeFilter)}>
-                                                <DropdownMenuRadioItem value="all">Todos</DropdownMenuRadioItem>
-                                                <DropdownMenuRadioItem value="Venta">Venta</DropdownMenuRadioItem>
-                                                <DropdownMenuRadioItem value="Servicio General">Servicio General</DropdownMenuRadioItem>
-                                                <DropdownMenuRadioItem value="Cambio de Aceite">Cambio de Aceite</DropdownMenuRadioItem>
-                                                <DropdownMenuRadioItem value="Pintura">Pintura</DropdownMenuRadioItem>
-                                            </DropdownMenuRadioGroup>
-                                        </DropdownMenuContent>
-                                    </DropdownMenu>
-                                    <DropdownMenu>
-                                        <DropdownMenuTrigger asChild>
-                                            <Button variant="outline" className="flex-1 sm:flex-initial">
-                                                <ListFilter className="mr-2 h-4 w-4" />
-                                                <span>Ordenar por</span>
-                                            </Button>
-                                        </DropdownMenuTrigger>
-                                        <DropdownMenuContent align="end">
-                                            <DropdownMenuLabel>Ordenar por</DropdownMenuLabel>
-                                            <DropdownMenuRadioGroup value={reporteOpSortOption} onValueChange={setReporteOpSortOption}>
-                                                <DropdownMenuRadioItem value="date_desc">Fecha (Más Reciente)</DropdownMenuRadioItem>
-                                                <DropdownMenuRadioItem value="date_asc">Fecha (Más Antiguo)</DropdownMenuRadioItem>
-                                                <DropdownMenuRadioItem value="amount_desc">Monto (Mayor a Menor)</DropdownMenuRadioItem>
-                                                <DropdownMenuRadioItem value="amount_asc">Monto (Menor a Mayor)</DropdownMenuRadioItem>
-                                                <DropdownMenuRadioItem value="profit_desc">Ganancia (Mayor a Menor)</DropdownMenuRadioItem>
-                                                <DropdownMenuRadioItem value="profit_asc">Ganancia (Menor a Mayor)</DropdownMenuRadioItem>
-                                            </DropdownMenuRadioGroup>
-                                        </DropdownMenuContent>
-                                    </DropdownMenu>
-                                </div>
-                            </div>
-                        </CardHeader>
-                        <CardContent>
+                        <CardContent className="pt-6">
                             <div className="rounded-md border overflow-x-auto">
                                 <Table>
                                     <TableHeader className="bg-black">
@@ -265,40 +265,40 @@ function ReportesPageComponent() {
                         </CardContent>
                     </Card>
                 </TabsContent>
-                <TabsContent value="inventario" className="mt-6">
+                <TabsContent value="inventario" className="mt-6 space-y-4">
+                     <div>
+                        <h2 className="text-2xl font-semibold tracking-tight">Detalle de Salidas de Inventario</h2>
+                        <p className="text-muted-foreground">Productos y refacciones vendidos o utilizados en servicios en el período seleccionado.</p>
+                    </div>
+                    <div className="flex flex-col sm:flex-row items-center gap-4">
+                        <div className="relative flex-1 w-full">
+                            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                            <Input type="search" placeholder="Buscar por nombre o SKU..." className="w-full rounded-lg bg-background pl-8" value={reporteInvSearchTerm} onChange={(e) => setReporteInvSearchTerm(e.target.value)} />
+                        </div>
+                        <div className="flex items-center gap-2 w-full sm:w-auto flex-wrap">
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant="outline" className="flex-1 sm:flex-initial">
+                                        <ListFilter className="mr-2 h-4 w-4" />
+                                        <span>Ordenar por</span>
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                    <DropdownMenuLabel>Ordenar por</DropdownMenuLabel>
+                                    <DropdownMenuRadioGroup value={reporteInvSortOption} onValueChange={setReporteInvSortOption}>
+                                        <DropdownMenuRadioItem value="quantity_desc">Unidades (Mayor a Menor)</DropdownMenuRadioItem>
+                                        <DropdownMenuRadioItem value="quantity_asc">Unidades (Menor a Mayor)</DropdownMenuRadioItem>
+                                        <DropdownMenuRadioItem value="revenue_desc">Ingreso (Mayor a Menor)</DropdownMenuRadioItem>
+                                        <DropdownMenuRadioItem value="revenue_asc">Ingreso (Menor a Mayor)</DropdownMenuRadioItem>
+                                        <DropdownMenuRadioItem value="name_asc">Nombre (A-Z)</DropdownMenuRadioItem>
+                                        <DropdownMenuRadioItem value="name_desc">Nombre (Z-A)</DropdownMenuRadioItem>
+                                    </DropdownMenuRadioGroup>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                        </div>
+                    </div>
                     <Card>
-                        <CardHeader>
-                            <CardTitle>Detalle de Salidas de Inventario</CardTitle>
-                            <CardDescription>Productos y refacciones vendidos o utilizados en servicios en el período seleccionado.</CardDescription>
-                            <div className="flex flex-col sm:flex-row items-center gap-4 pt-4">
-                                <div className="relative flex-1 w-full">
-                                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                                    <Input type="search" placeholder="Buscar por nombre o SKU..." className="w-full rounded-lg bg-background pl-8" value={reporteInvSearchTerm} onChange={(e) => setReporteInvSearchTerm(e.target.value)} />
-                                </div>
-                                <div className="flex items-center gap-2 w-full sm:w-auto flex-wrap">
-                                    <DropdownMenu>
-                                        <DropdownMenuTrigger asChild>
-                                            <Button variant="outline" className="flex-1 sm:flex-initial">
-                                                <ListFilter className="mr-2 h-4 w-4" />
-                                                <span>Ordenar por</span>
-                                            </Button>
-                                        </DropdownMenuTrigger>
-                                        <DropdownMenuContent align="end">
-                                            <DropdownMenuLabel>Ordenar por</DropdownMenuLabel>
-                                            <DropdownMenuRadioGroup value={reporteInvSortOption} onValueChange={setReporteInvSortOption}>
-                                                <DropdownMenuRadioItem value="quantity_desc">Unidades (Mayor a Menor)</DropdownMenuRadioItem>
-                                                <DropdownMenuRadioItem value="quantity_asc">Unidades (Menor a Mayor)</DropdownMenuRadioItem>
-                                                <DropdownMenuRadioItem value="revenue_desc">Ingreso (Mayor a Menor)</DropdownMenuRadioItem>
-                                                <DropdownMenuRadioItem value="revenue_asc">Ingreso (Menor a Mayor)</DropdownMenuRadioItem>
-                                                <DropdownMenuRadioItem value="name_asc">Nombre (A-Z)</DropdownMenuRadioItem>
-                                                <DropdownMenuRadioItem value="name_desc">Nombre (Z-A)</DropdownMenuRadioItem>
-                                            </DropdownMenuRadioGroup>
-                                        </DropdownMenuContent>
-                                    </DropdownMenu>
-                                </div>
-                            </div>
-                        </CardHeader>
-                        <CardContent>
+                        <CardContent className="pt-6">
                             <div className="rounded-md border overflow-x-auto">
                                 <Table>
                                     <TableHeader className="bg-black">
