@@ -24,7 +24,7 @@ export default function NuevoServicioPage() {
   
   const [vehicles, setVehicles] = useState<Vehicle[]>(placeholderVehicles);
   const technicians = placeholderTechnicians; 
-  const inventoryItems = placeholderInventory; 
+  const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>(placeholderInventory);
 
   const [dialogStep, setDialogStep] = useState<DialogStep>('service');
   const [currentServiceForTicket, setCurrentServiceForTicket] = useState<ServiceRecord | null>(null);
@@ -40,6 +40,7 @@ export default function NuevoServicioPage() {
 
     const handleDatabaseUpdate = () => {
       setVehicles([...placeholderVehicles]);
+      setInventoryItems([...placeholderInventory]);
     };
     window.addEventListener('databaseUpdated', handleDatabaseUpdate);
 
@@ -152,10 +153,13 @@ ${shareUrl}
 
 
   const handleVehicleCreated = (newVehicle: Vehicle) => {
-    // This function is now simpler. The 'databaseUpdated' event will handle
-    // refreshing the state from the placeholder array.
     setVehicles(prev => [...prev, newVehicle]);
   };
+  
+  const handleInventoryItemCreated = (newItem: InventoryItem) => {
+    setInventoryItems(prev => [...prev, newItem]);
+  };
+
 
   return (
     <>
@@ -175,6 +179,7 @@ ${shareUrl}
           inventoryItems={inventoryItems}
           onSave={handleSaveNewService}
           onVehicleCreated={handleVehicleCreated}
+          onInventoryItemCreatedFromService={handleInventoryItemCreated}
           mode="service"
         />
       )}
