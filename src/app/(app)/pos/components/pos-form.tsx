@@ -160,7 +160,7 @@ export function PosForm({ inventoryItems: parentInventoryItems, onSaleComplete, 
 
 
   const onSubmit = (values: POSFormValues) => {
-    const newSaleId = `SALE-${Date.now().toString(36).toUpperCase()}`;
+    const newSaleId = (Date.now().toString(36) + Math.random().toString(36).substring(2, 9)).toUpperCase();
 
     const newSaleTotalAmount = values.items.reduce((sum, item) => sum + (item.totalPrice || 0), 0);
     const newSaleSubTotal = newSaleTotalAmount / (1 + IVA_RATE);
