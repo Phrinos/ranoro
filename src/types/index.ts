@@ -11,6 +11,9 @@ export interface WorkshopInfo {
   fontSize?: number;
   blankLinesTop?: number;
   blankLinesBottom?: number;
+  footerLine1?: string;
+  footerLine2?: string;
+  fixedFooterText?: string;
 }
 
 export interface VehiclePaperwork {

@@ -14,7 +14,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import type { User, SaleReceipt, AppRole, WorkshopInfo } from '@/types';
-import { Save, Signature, BookOpen, LayoutDashboard, Wrench, FileText, Receipt, Package, DollarSign, Users, Settings, Eye, Printer } from 'lucide-react';
+import { Save, Signature, BookOpen, LayoutDashboard, Wrench, FileText, Receipt, Package, DollarSign, Users, Settings, Eye, Printer, UserCircle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { onAuthStateChanged, updatePassword, reauthenticateWithCredential, EmailAuthProvider } from 'firebase/auth';
 import { auth, storage } from '@/lib/firebaseClient.js';
@@ -25,6 +25,7 @@ import Image from "next/legacy/image";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { TicketContent } from "@/components/ticket-content";
 import { Slider } from "@/components/ui/slider";
+import { Textarea } from "@/components/ui/textarea";
 
 
 // --- Schema and content from /perfil ---
@@ -190,6 +191,9 @@ const defaultWorkshopInfo: WorkshopInfo = {
   fontSize: 10,
   blankLinesTop: 0,
   blankLinesBottom: 0,
+  footerLine1: "¡Gracias por su preferencia!",
+  footerLine2: "Para dudas o aclaraciones, no dude en contactarnos.",
+  fixedFooterText: "Sistema de Administración de Talleres Ranoro®\nDiseñado y Desarrollado por Arturo Valdelamar",
 };
 
 const ticketSchema = z.object({
@@ -203,6 +207,9 @@ const ticketSchema = z.object({
   fontSize: z.coerce.number().min(8).max(16).optional(),
   blankLinesTop: z.coerce.number().min(0).max(10).int().optional(),
   blankLinesBottom: z.coerce.number().min(0).max(10).int().optional(),
+  footerLine1: z.string().optional(),
+  footerLine2: z.string().optional(),
+  fixedFooterText: z.string().optional(),
 });
 
 type TicketForm = z.infer<typeof ticketSchema>;
@@ -257,7 +264,6 @@ function ConfiguracionTicketPageContent() {
     const printWindow = window.open('', '_blank');
     if (printWindow) {
       printWindow.document.write('<html><head><title>Imprimir Ticket</title>');
-      // You can link to your app's stylesheet or add styles directly
       printWindow.document.write('<style>@media print { body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } .printable-content { margin: 0; padding: 0; } }</style>');
       printWindow.document.write('</head><body>');
       const printableContent = document.getElementById('ticket-preview-printable');
@@ -271,104 +277,67 @@ function ConfiguracionTicketPageContent() {
     }
   };
 
-  const labels: Record<keyof TicketForm, string> = {
-    name: "Nombre del Taller",
-    phone: "Teléfono",
-    addressLine1: "Dirección (Línea 1)",
-    addressLine2: "Dirección (Línea 2 opcional)",
-    cityState: "Ciudad, Estado y C.P.",
-    logoUrl: "URL del Logo (PNG/JPG)",
-    logoWidth: "Ancho del Logo (px)",
-    fontSize: "Tamaño de Fuente (px)",
-    blankLinesTop: "Líneas en Blanco (Arriba)",
-    blankLinesBottom: "Líneas en Blanco (Abajo)",
-  };
-
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-        {/* Columna de Formulario */}
         <div className="lg:col-span-1">
-            <Card className="shadow-lg">
-                <CardHeader>
-                <CardTitle>Personalizar Ticket</CardTitle>
-                <CardDescription>Ajusta la apariencia de tus tickets impresos.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                <Form {...form}>
-                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                        {(['name', 'phone', 'addressLine1', 'addressLine2', 'cityState', 'logoUrl'] as (keyof TicketForm)[]).map((fieldName) => (
-                           <FormField
-                            key={fieldName}
-                            control={form.control}
-                            name={fieldName}
-                            render={({ field }) => (
-                                <FormItem>
-                                <FormLabel>{labels[fieldName]}</FormLabel>
-                                <FormControl>
-                                    <Input {...field} />
-                                </FormControl>
-                                <FormMessage />
-                                </FormItem>
-                            )}
-                            />
-                        ))}
-                        <FormField
-                            control={form.control}
-                            name="logoWidth"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>{labels.logoWidth}: {field.value || defaultWorkshopInfo.logoWidth}px</FormLabel>
-                                    <FormControl>
-                                       <Slider defaultValue={[defaultWorkshopInfo.logoWidth || 120]} value={[field.value || defaultWorkshopInfo.logoWidth || 120]} onValueChange={(value) => field.onChange(value[0])} min={40} max={250} step={5} />
-                                    </FormControl>
-                                </FormItem>
-                            )}
-                        />
-                        <FormField
-                            control={form.control}
-                            name="fontSize"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>{labels.fontSize}: {field.value || defaultWorkshopInfo.fontSize}px</FormLabel>
-                                    <FormControl>
-                                       <Slider defaultValue={[defaultWorkshopInfo.fontSize || 10]} value={[field.value || defaultWorkshopInfo.fontSize || 10]} onValueChange={(value) => field.onChange(value[0])} min={8} max={16} step={1} />
-                                    </FormControl>
-                                </FormItem>
-                            )}
-                        />
-                        <div className="grid grid-cols-2 gap-4">
-                             <FormField
-                                control={form.control}
-                                name="blankLinesTop"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>{labels.blankLinesTop}</FormLabel>
-                                        <FormControl><Input type="number" min={0} max={10} {...field} value={field.value || 0} /></FormControl>
-                                    </FormItem>
-                                )}
-                            />
-                             <FormField
-                                control={form.control}
-                                name="blankLinesBottom"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>{labels.blankLinesBottom}</FormLabel>
-                                        <FormControl><Input type="number" min={0} max={10} {...field} value={field.value || 0}/></FormControl>
-                                    </FormItem>
-                                )}
-                            />
-                        </div>
+            <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                    <Card>
+                        <CardHeader><CardTitle>Encabezado y Logo</CardTitle></CardHeader>
+                        <CardContent className="space-y-4">
+                            <FormField control={form.control} name="blankLinesTop" render={({ field }) => (<FormItem><FormLabel>Líneas en Blanco (Arriba)</FormLabel><FormControl><Input type="number" min={0} max={10} {...field} value={field.value || 0} /></FormControl></FormItem>)}/>
+                            <FormField control={form.control} name="logoUrl" render={({ field }) => (<FormItem><FormLabel>URL del Logo</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
+                            <FormField control={form.control} name="logoWidth" render={({ field }) => (<FormItem><FormLabel>Ancho del Logo: {field.value || defaultWorkshopInfo.logoWidth}px</FormLabel><FormControl><Slider defaultValue={[defaultWorkshopInfo.logoWidth || 120]} value={[field.value || defaultWorkshopInfo.logoWidth || 120]} onValueChange={(value) => field.onChange(value[0])} min={40} max={250} step={5} /></FormControl></FormItem>)}/>
+                        </CardContent>
+                    </Card>
 
-                        <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
-                        <Save className="mr-2 h-4 w-4" /> {form.formState.isSubmitting ? "Guardando…" : "Guardar Cambios"}
-                        </Button>
-                    </form>
-                </Form>
-                </CardContent>
-            </Card>
+                    <Card>
+                        <CardHeader><CardTitle>Información del Negocio</CardTitle></CardHeader>
+                        <CardContent className="space-y-4">
+                            <FormField control={form.control} name="name" render={({ field }) => (<FormItem><FormLabel>Nombre del Taller</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
+                            <FormField control={form.control} name="phone" render={({ field }) => (<FormItem><FormLabel>Teléfono</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
+                            <FormField control={form.control} name="addressLine1" render={({ field }) => (<FormItem><FormLabel>Dirección (Línea 1)</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
+                            <FormField control={form.control} name="addressLine2" render={({ field }) => (<FormItem><FormLabel>Dirección (Línea 2)</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
+                            <FormField control={form.control} name="cityState" render={({ field }) => (<FormItem><FormLabel>Ciudad, Estado, C.P.</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
+                        </CardContent>
+                    </Card>
+
+                    <Card>
+                        <CardHeader><CardTitle>Estilo del Texto</CardTitle></CardHeader>
+                        <CardContent>
+                            <FormField control={form.control} name="fontSize" render={({ field }) => (<FormItem><FormLabel>Tamaño de Fuente: {field.value || defaultWorkshopInfo.fontSize}px</FormLabel><FormControl><Slider defaultValue={[defaultWorkshopInfo.fontSize || 10]} value={[field.value || defaultWorkshopInfo.fontSize || 10]} onValueChange={(value) => field.onChange(value[0])} min={8} max={16} step={1} /></FormControl></FormItem>)}/>
+                        </CardContent>
+                    </Card>
+                    
+                    <Card>
+                        <CardHeader><CardTitle>Mensajes de Pie de Página</CardTitle></CardHeader>
+                        <CardContent className="space-y-4">
+                            <FormField control={form.control} name="footerLine1" render={({ field }) => (<FormItem><FormLabel>Línea de Agradecimiento</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)}/>
+                            <FormField control={form.control} name="footerLine2" render={({ field }) => (<FormItem><FormLabel>Línea de Contacto</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)}/>
+                        </CardContent>
+                    </Card>
+                    
+                    <Card>
+                        <CardHeader><CardTitle>Pie de Ticket Fijo</CardTitle></CardHeader>
+                        <CardContent>
+                            <FormField control={form.control} name="fixedFooterText" render={({ field }) => (<FormItem><FormLabel>Texto Final</FormLabel><FormControl><Textarea {...field} rows={3} /></FormControl></FormItem>)}/>
+                        </CardContent>
+                    </Card>
+
+                    <Card>
+                        <CardHeader><CardTitle>Espaciado Final</CardTitle></CardHeader>
+                        <CardContent>
+                            <FormField control={form.control} name="blankLinesBottom" render={({ field }) => (<FormItem><FormLabel>Líneas en Blanco (Abajo)</FormLabel><FormControl><Input type="number" min={0} max={10} {...field} value={field.value || 0}/></FormControl></FormItem>)}/>
+                        </CardContent>
+                    </Card>
+
+                    <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
+                    <Save className="mr-2 h-4 w-4" /> {form.formState.isSubmitting ? "Guardando…" : "Guardar Cambios"}
+                    </Button>
+                </form>
+            </Form>
         </div>
 
-        {/* Columna de Vista Previa */}
         <div className="lg:col-span-2">
              <Card className="shadow-lg sticky top-24">
                 <CardHeader className="flex flex-row items-center justify-between">
@@ -433,10 +402,10 @@ function OpcionesPageComponent() {
         
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 mb-6">
-                <TabsTrigger value="perfil" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Mi Perfil</TabsTrigger>
-                <TabsTrigger value="manual" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Manual de Usuario</TabsTrigger>
+                <TabsTrigger value="perfil" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground flex items-center gap-2"><UserCircle className="h-5 w-5"/>Mi Perfil</TabsTrigger>
+                <TabsTrigger value="manual" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground flex items-center gap-2"><BookOpen className="h-5 w-5"/>Manual de Usuario</TabsTrigger>
                 {userPermissions.has('ticket_config:manage') && (
-                    <TabsTrigger value="ticket" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Configurar Ticket</TabsTrigger>
+                    <TabsTrigger value="ticket" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground flex items-center gap-2"><Settings className="h-5 w-5"/>Configurar Ticket</TabsTrigger>
                 )}
             </TabsList>
             <TabsContent value="perfil" className="mt-0">

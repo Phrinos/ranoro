@@ -13,7 +13,10 @@ const initialWorkshopInfo: WorkshopInfo = {
   addressLine1: "Av. de la Convencion de 1914 No. 1421",
   addressLine2: "Jardines de la Concepcion, C.P. 20267",
   cityState: "Aguascalientes, Ags.",
-  logoUrl: "/ranoro-logo.png" 
+  logoUrl: "/ranoro-logo.png",
+  footerLine1: "¡Gracias por su preferencia!",
+  footerLine2: "Para dudas o aclaraciones, no dude en contactarnos.",
+  fixedFooterText: "Sistema de Administración de Talleres Ranoro®\nDiseñado y Desarrollado por Arturo Valdelamar",
 };
 
 
@@ -171,17 +174,16 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
               </p>
               </div>
               <div className="text-left space-y-1 leading-snug">
-                  <p className="font-semibold">¡Gracias por confiar en Ranoro!</p>
-                  <p>
-                  Valoramos sinceramente la oportunidad de atender su vehículo. Nos comprometemos a brindarle un servicio honesto, transparente y de la más alta calidad. Si tiene alguna pregunta, contáctenos, estaremos encantados de ayudarle.
-                  </p>
+                  <p className="font-semibold">{effectiveWorkshopInfo.footerLine1}</p>
+                  <p>{effectiveWorkshopInfo.footerLine2}</p>
                   <p className="print-block hidden pt-2">Impreso el: {formattedPrintDate}</p>
               </div>
           </div>
-          <div className="text-center mt-6 pt-4 border-t border-gray-200">
-            <p className="text-xs font-semibold">Sistema de Administración de Talleres Ranoro®</p>
-            <p className="text-xs text-muted-foreground">Diseñado y Desarrollado por Arturo Valdelamar 4493930914</p>
-          </div>
+          {effectiveWorkshopInfo.fixedFooterText && (
+             <div className="text-center mt-6 pt-4 border-t border-gray-200">
+                <p className="text-xs text-muted-foreground whitespace-pre-wrap">{effectiveWorkshopInfo.fixedFooterText}</p>
+            </div>
+          )}
         </footer>
       </div>
     );
