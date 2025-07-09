@@ -189,6 +189,10 @@ function HistorialCotizacionesPageComponent() {
     toast({ title: "Cotización Eliminada", description: `La cotización ${quoteId} ha sido eliminada.` });
   }, [toast]);
 
+  const handleSaveQuote = useCallback(async (data: QuoteRecord) => {
+    setIsFormDialogOpen(false);
+  }, []);
+
 
   return (
     <>
@@ -220,6 +224,7 @@ function HistorialCotizacionesPageComponent() {
             inventoryItems={inventoryItems} 
             onDelete={handleDeleteQuote} 
             mode="quote" 
+            onSave={handleSaveQuote}
         />
       )}
       

@@ -13,7 +13,7 @@ import {
 import { ServiceForm } from "./service-form";
 import type { ServiceRecord, Vehicle, Technician, InventoryItem, QuoteRecord } from "@/types";
 import { useToast } from "@/hooks/use-toast"; 
-import { persistToFirestore, placeholderServiceRecords } from '@/lib/placeholder-data';
+import { persistToFirestore, placeholderServiceRecords, logAudit } from '@/lib/placeholder-data';
 import { db } from '@/lib/firebaseClient.js';
 import { doc, getDoc } from 'firebase/firestore';
 
@@ -25,7 +25,7 @@ interface ServiceDialogProps {
   vehicles: Vehicle[]; 
   technicians: Technician[]; 
   inventoryItems: InventoryItem[]; 
-  onSave: (data: ServiceRecord | QuoteRecord) => Promise<void>; 
+  onSave?: (data: ServiceRecord | QuoteRecord) => Promise<void>; 
   isReadOnly?: boolean; 
   open?: boolean; 
   onOpenChange?: (isOpen: boolean) => void; 
@@ -33,6 +33,7 @@ interface ServiceDialogProps {
   mode?: 'service' | 'quote'; // New mode prop
   onDelete?: (id: string) => void; // For quote deletion
   onCancelService?: (serviceId: string, reason: string) => void;
+  onViewQuoteRequest?: (serviceId: string) => void;
 }
 
 export function ServiceDialog({ 
@@ -50,6 +51,7 @@ export function ServiceDialog({
   mode = 'service', // Default to service mode
   onDelete,
   onCancelService,
+  onViewQuoteRequest,
 }: ServiceDialogProps) {
   const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
   const { toast } = useToast();
@@ -81,14 +83,48 @@ export function ServiceDialog({
     }
   }, [open, service, mode]);
 
-  const handleSubmit = async (formData: ServiceRecord | QuoteRecord) => { 
+  const internalOnSave = async (formData: ServiceRecord | QuoteRecord) => {
     if (isReadOnly) {
-      if (onOpenChange) onOpenChange(false);
-      else setUncontrolledOpen(false);
+      onOpenChange(false);
       return;
     }
+
     try {
-      await onSave(formData); 
+      const isNew = !formData.id;
+      const recordId = formData.id || `doc_${Date.now().toString(36)}`;
+      
+      const recordToSave: ServiceRecord = { 
+        ...formData,
+        id: recordId,
+        quoteDate: formData.status === 'Cotizacion' ? (formData.quoteDate || new Date()).toISOString() : (formData.quoteDate ? new Date(formData.quoteDate).toISOString() : undefined),
+        serviceDate: formData.status !== 'Cotizacion' ? (formData.serviceDate || new Date()).toISOString() : (formData.serviceDate ? new Date(formData.serviceDate).toISOString() : undefined),
+      } as ServiceRecord;
+
+      const recordIndex = placeholderServiceRecords.findIndex(q => q.id === recordId);
+      
+      if (recordIndex > -1) {
+        placeholderServiceRecords[recordIndex] = recordToSave;
+      } else {
+        placeholderServiceRecords.push(recordToSave);
+      }
+      
+      const actionType = isNew ? 'Crear' : 'Editar';
+      const entityType = recordToSave.status === 'Cotizacion' ? 'Cotización' : 'Servicio';
+      const description = `${isNew ? 'Creó' : 'Actualizó'} la ${entityType.toLowerCase()} #${recordId} para el vehículo ${recordToSave.vehicleIdentifier}.`;
+      
+      await logAudit(actionType, description, { entityType, entityId: recordId });
+      await persistToFirestore(['serviceRecords', 'auditLogs']);
+
+      toast({
+        title: `${entityType} ${isNew ? 'creada' : 'actualizada'}`,
+        description: `Se han guardado los cambios para ${recordId}.`,
+      });
+
+      if (onSave) {
+        await onSave(recordToSave);
+      }
+      
+      onOpenChange(false);
     } catch (error) {
       console.error(`Error saving ${mode} from dialog:`, error);
       toast({
@@ -111,10 +147,6 @@ export function ServiceDialog({
       ? (mode === 'quote' ? "Actualiza los detalles de la cotización." : "Actualiza los detalles de la orden de servicio.")
       : (mode === 'quote' ? "Completa la información para una nueva cotización." : "Completa la información para una nueva orden de servicio."));
       
-  const initialDataForForm = mode === 'service' 
-    ? service 
-    : { ...quote, status: 'Cotizacion' };
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       {trigger && !isControlled && <DialogTrigger asChild onClick={() => onOpenChange(true)}>{trigger}</DialogTrigger>}
@@ -126,21 +158,21 @@ export function ServiceDialog({
         <div className="flex-grow overflow-y-auto -mx-6 px-6 print:overflow-visible">
           <ServiceForm
             initialDataService={mode === 'service' ? service : null}
-            initialDataQuote={mode === 'quote' ? initialDataForForm as QuoteRecord : null}
+            initialDataQuote={quote || (mode === 'quote' ? (service as any) : null)}
             vehicles={vehicles} 
             technicians={technicians}
             inventoryItems={inventoryItems}
-            onSubmit={handleSubmit}
-            onClose={() => { if (onOpenChange) onOpenChange(false); else setUncontrolledOpen(false); }}
+            onSubmit={internalOnSave}
+            onClose={() => onOpenChange(false)}
             isReadOnly={isReadOnly}
             onVehicleCreated={onVehicleCreated} 
             mode={mode}
             onDelete={onDelete}
             onCancelService={onCancelService}
+            onViewQuoteRequest={onViewQuoteRequest}
           />
         </div>
       </DialogContent>
     </Dialog>
   );
 }
-

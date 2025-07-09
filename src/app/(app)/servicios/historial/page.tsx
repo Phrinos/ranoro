@@ -165,8 +165,12 @@ function HistorialServiciosPageComponent() {
     const totalProfit = servicesForSummary.reduce((sum, s) => sum + (s.serviceProfit || 0), 0);
     return { totalServices, totalRevenue, totalProfit };
   }, [historicalServices, allServices, dateRange]);
+  
+  const handleSaveService = useCallback(async (data: QuoteRecord | ServiceRecord) => {
+      // The ServiceDialog now handles persistence. We just need to close the dialog.
+      setIsEditDialogOpen(false);
+  }, []);
 
-  const handleUpdateService = useCallback(async (data: ServiceRecord) => { /* ... */ }, []);
   const handleCancelService = useCallback(async (serviceId: string, reason: string) => { /* ... */ }, []);
   const handleVehicleCreated = useCallback((newVehicle: Vehicle) => { /* ... */ }, []);
   const handleReprintService = useCallback((service: ServiceRecord) => { /* ... */ }, []);
@@ -199,7 +203,7 @@ function HistorialServiciosPageComponent() {
           </TabsContent>
       </Tabs>
       
-      {editingService && (
+      {isEditDialogOpen && (
         <ServiceDialog
           open={isEditDialogOpen}
           onOpenChange={setIsEditDialogOpen}
@@ -210,6 +214,7 @@ function HistorialServiciosPageComponent() {
           onVehicleCreated={handleVehicleCreated}
           onCancelService={handleCancelService}
           mode="service"
+          onSave={handleSaveService}
         />
       )}
     </>
