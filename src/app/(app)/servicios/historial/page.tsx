@@ -13,7 +13,7 @@ import { Separator } from "@/components/ui/separator";
 import { Search, ListFilter, CalendarIcon as CalendarDateIcon, DollarSign, TrendingUp, Car as CarIcon, Wrench, PlusCircle, Printer, MessageSquare, Copy, Eye, FileCheck, Edit, Ban } from "lucide-react";
 import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
 import { TicketContent } from '@/components/ticket-content';
-import { placeholderServiceRecords, placeholderVehicles, placeholderTechnicians, placeholderInventory, persistToFirestore, AUTH_USER_LOCALSTORAGE_KEY, placeholderQuotes } from "@/lib/placeholder-data";
+import { placeholderServiceRecords, placeholderVehicles, placeholderTechnicians, placeholderInventory, persistToFirestore, AUTH_USER_LOCALSTORAGE_KEY } from "@/lib/placeholder-data";
 import type { ServiceRecord, Vehicle, Technician, InventoryItem, QuoteRecord, WorkshopInfo, User } from "@/types";
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { useToast } from "@/hooks/use-toast";
@@ -58,7 +58,7 @@ export default function HistorialServiciosPage() {
   
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [serviceForSheet, setServiceForSheet] = useState<ServiceRecord | null>(null);
-  const [quoteForPreview, setQuoteForPreview] = useState<QuoteRecord | null>(null);
+  const [quoteForPreview, setQuoteForPreview] = useState<ServiceRecord | null>(null);
   
   const [editingService, setEditingService] = useState<ServiceRecord | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -115,7 +115,7 @@ export default function HistorialServiciosPage() {
             vehicle.ownerName.toLowerCase().includes(lowerSearchTerm)
           )) ||
           (technician && technician.name.toLowerCase().includes(lowerSearchTerm)) ||
-          service.description.toLowerCase().includes(lowerSearchTerm)
+          (service.description && service.description.toLowerCase().includes(lowerSearchTerm))
         );
       });
     }
@@ -141,7 +141,7 @@ export default function HistorialServiciosPage() {
         case "status_desc": return b.status.localeCompare(a.status);
         case "serviceDate_desc":
         default: {
-          const statusOrder: Record<ServiceRecord['status'], number> = { "Reparando": 1, "En Espera de Refacciones": 2, "Completado": 3, "Entregado": 4, "Cancelado": 5, "Agendado": 6, "Cotizacion": 7 };
+          const statusOrder: Record<ServiceRecord['status'], number> = { "Reparando": 1, "Completado": 2, "Entregado": 3, "Cancelado": 4, "Agendado": 5, "Cotizacion": 6 };
           const statusAVal = statusOrder[a.status] || 99;
           const statusBVal = statusOrder[b.status] || 99;
 
@@ -161,7 +161,7 @@ export default function HistorialServiciosPage() {
     if (service.serviceItems && service.serviceItems.length > 0) {
       return service.serviceItems.map(item => item.name).join(', ');
     }
-    return service.description || '';
+    return service.description;
   };
 
   const summaryData = useMemo(() => {
@@ -190,30 +190,26 @@ export default function HistorialServiciosPage() {
     return { totalServices, totalRevenue, totalProfit, mostCommonVehicle };
   }, [filteredAndSortedServices, vehicles]);
 
-  const handleUpdateService = useCallback(async (data: ServiceRecord | QuoteRecord) => {
-    if (!('status' in data)) {
-        return;
-    }
-    const updatedService = data as ServiceRecord;
-
+  const handleUpdateService = useCallback(async (data: ServiceRecord) => {
     setAllServices(prevServices => 
-        prevServices.map(s => s.id === updatedService.id ? updatedService : s)
+        prevServices.map(s => s.id === data.id ? data : s)
     );
-    const pIndex = placeholderServiceRecords.findIndex(s => s.id === updatedService.id);
+    const pIndex = placeholderServiceRecords.findIndex(s => s.id === data.id);
     if (pIndex !== -1) {
-        placeholderServiceRecords[pIndex] = updatedService;
+        placeholderServiceRecords[pIndex] = data;
     }
     await persistToFirestore(['serviceRecords']);
     
     // Toast is now handled by the form
 
-    if (updatedService.status === 'Completado') {
-      setCurrentServiceForTicket(updatedService);
-      setCurrentVehicleForTicket(vehicles.find(v => v.id === updatedService.vehicleId) || null);
-      setCurrentTechnicianForTicket(technicians.find(t => t.id === updatedService.technicianId) || null);
+    if (data.status === 'Completado') {
+      setCurrentServiceForTicket(data);
+      setCurrentVehicleForTicket(vehicles.find(v => v.id === data.vehicleId) || null);
+      setCurrentTechnicianForTicket(technicians.find(t => t.id === data.technicianId) || null);
       setShowPrintTicketDialog(true);
     }
-  }, [inventoryItems, technicians, vehicles, toast]);
+    setIsEditDialogOpen(false);
+  }, [vehicles, technicians, toast]);
 
   const handleCancelService = useCallback(async (serviceId: string, reason: string) => {
     const authUserString = localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY);
@@ -246,7 +242,7 @@ export default function HistorialServiciosPage() {
     // Restore inventory
     if (serviceToCancel.serviceItems && serviceToCancel.serviceItems.length > 0) {
       serviceToCancel.serviceItems.forEach(item => {
-        item.suppliesUsed.forEach(supply => {
+        (item.suppliesUsed || []).forEach(supply => {
           const invIndex = placeholderInventory.findIndex(i => i.id === supply.supplyId);
           if (invIndex > -1 && !placeholderInventory[invIndex].isService) {
             placeholderInventory[invIndex].quantity += supply.quantity;
@@ -367,10 +363,10 @@ export default function HistorialServiciosPage() {
       };
     }
     
-    const originalQuote = placeholderQuotes.find(q => q.serviceId === service.id);
-
+    // Since QuoteRecord is gone, we don't need to find it.
+    // If we want to show quote info, it must be on the service record itself.
     setServiceForSheet(serviceToDisplay);
-    setQuoteForPreview(originalQuote || null);
+    setQuoteForPreview(null);
     setIsSheetOpen(true);
   }, [toast]);
 
@@ -421,7 +417,6 @@ ${shareUrl}
       case "Cancelado": return "destructive"; 
       case "Agendado": return "default";
       case "Cotizacion": return "outline";
-      case "En Espera de Refacciones": return "waiting";
       case "Entregado": return "delivered";
       default: return "default";
     }

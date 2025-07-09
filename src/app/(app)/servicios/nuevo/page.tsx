@@ -8,7 +8,7 @@ import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
 import { TicketContent } from '@/components/ticket-content';
 import { ServiceSheetContent } from '@/components/service-sheet-content';
 import { placeholderVehicles, placeholderTechnicians, placeholderInventory, placeholderServiceRecords, persistToFirestore } from "@/lib/placeholder-data";
-import type { ServiceRecord, Vehicle, Technician, QuoteRecord, InventoryItem, WorkshopInfo } from "@/types";
+import type { ServiceRecord, Vehicle, Technician, InventoryItem, WorkshopInfo } from "@/types";
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
@@ -55,28 +55,22 @@ export default function NuevoServicioPage() {
     }
   }, [dialogStep, router]);
 
-  const handleSaveNewService = async (data: ServiceRecord | QuoteRecord) => {
-    if (!('status' in data)) {
-      // This should not happen with the current logic
-      return;
-    }
-    const newService = data as ServiceRecord;
-    
+  const handleSaveNewService = async (data: ServiceRecord) => {
     // The form now handles the main toast notifications.
     // This handler only needs to persist the data if it's new.
-    if (!placeholderServiceRecords.find(s => s.id === newService.id)) {
-        placeholderServiceRecords.push(newService); 
+    if (!placeholderServiceRecords.find(s => s.id === data.id)) {
+        placeholderServiceRecords.push(data); 
         await persistToFirestore(['serviceRecords']);
     }
     
-    const vehicle = vehicles.find(v => v.id === newService.vehicleId);
-    const technician = technicians.find(t => t.id === newService.technicianId);
+    const vehicle = vehicles.find(v => v.id === data.vehicleId);
+    const technician = technicians.find(t => t.id === data.technicianId);
     
-    setCurrentServiceForTicket(newService);
+    setCurrentServiceForTicket(data);
     setCurrentVehicle(vehicle || null);
     setCurrentTechnician(technician || null);
 
-    if (newService.status === 'Completado') {
+    if (data.status === 'Completado') {
       setDialogStep('print');
     } else {
       setDialogStep('sheet'); 
@@ -177,7 +171,7 @@ ${shareUrl}
           vehicles={vehicles}
           technicians={technicians}
           inventoryItems={inventoryItems}
-          onSave={handleSaveNewService}
+          onSave={(data) => handleSaveNewService(data as ServiceRecord)}
           onVehicleCreated={handleVehicleCreated}
           onInventoryItemCreatedFromService={handleInventoryItemCreated}
           mode="service"

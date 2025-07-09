@@ -15,7 +15,7 @@ import { isToday, parseISO, isValid } from 'date-fns';
 import { cn } from '@/lib/utils';
 
 
-type KanbanColumnId = 'Agendado' | 'En Espera de Refacciones' | 'Reparando' | 'Completado' | 'Entregado';
+type KanbanColumnId = 'Agendado' | 'Reparando' | 'Completado';
 
 interface KanbanColumn {
   id: KanbanColumnId;
@@ -82,10 +82,8 @@ function KanbanCard({
 
 const columnStyles: Record<KanbanColumnId, { bg: string; title: string }> = {
   'Agendado': { bg: 'bg-blue-50 dark:bg-blue-900/30', title: 'text-blue-800 dark:text-blue-200' },
-  'En Espera de Refacciones': { bg: 'bg-orange-50 dark:bg-orange-900/30', title: 'text-orange-800 dark:text-orange-200' },
   'Reparando': { bg: 'bg-yellow-50 dark:bg-yellow-900/30', title: 'text-yellow-800 dark:text-yellow-200' },
   'Completado': { bg: 'bg-green-50 dark:bg-green-900/30', title: 'text-green-800 dark:text-green-200' },
-  'Entregado': { bg: 'bg-gray-100 dark:bg-gray-800', title: 'text-gray-800 dark:text-gray-200' },
 };
 
 export default function TableroPage() {
@@ -122,27 +120,25 @@ export default function TableroPage() {
     }
   }, [hydrated, version]);
 
-  const columnOrder: KanbanColumnId[] = ['Agendado', 'En Espera de Refacciones', 'Reparando', 'Completado', 'Entregado'];
+  const columnOrder: KanbanColumnId[] = ['Agendado', 'Reparando', 'Completado'];
   
   const kanbanColumns = useMemo((): KanbanColumn[] => {
     const columns: Record<KanbanColumnId, KanbanColumn> = {
       'Agendado': { id: 'Agendado', title: 'Agenda', services: [] },
-      'En Espera de Refacciones': { id: 'En Espera de Refacciones', title: 'Espera Refacciones', services: [] },
       'Reparando': { id: 'Reparando', title: 'En Reparación', services: [] },
       'Completado': { id: 'Completado', title: 'Completado (Hoy)', services: [] },
-      'Entregado': { id: 'Entregado', title: 'Entregado', services: [] },
     };
 
     services.forEach(service => {
       const status = service.status as KanbanColumnId;
       if (columns[status]) {
-        // Special filter for "Completado" column
+        // Special filter for "Completado" column to only show today's
         if (status === 'Completado') {
           const deliveryDate = service.deliveryDateTime ? parseISO(service.deliveryDateTime) : null;
           if (deliveryDate && isValid(deliveryDate) && isToday(deliveryDate)) {
             columns[status].services.push(service);
           }
-        } else if (status !== 'Entregado') { // Don't show "Entregado" for now
+        } else {
           columns[status].services.push(service);
         }
       }
@@ -156,8 +152,7 @@ export default function TableroPage() {
         });
     }
     
-    // For the final display, filter out the "Entregado" column
-    return columnOrder.filter(id => id !== 'Entregado').map(id => columns[id]);
+    return columnOrder.map(id => columns[id]);
   }, [services]);
 
   const handleCardClick = (service: ServiceRecord) => {
@@ -202,22 +197,19 @@ export default function TableroPage() {
     }
   };
 
-  const handleSaveService = async (data: ServiceRecord | QuoteRecord) => {
-    if (!('status' in data)) return;
-    const updatedService = data as ServiceRecord;
-    
-    const serviceIndex = placeholderServiceRecords.findIndex(s => s.id === updatedService.id);
+  const handleSaveService = async (data: ServiceRecord) => {
+    const serviceIndex = placeholderServiceRecords.findIndex(s => s.id === data.id);
     if (serviceIndex > -1) {
-      placeholderServiceRecords[serviceIndex] = updatedService;
+      placeholderServiceRecords[serviceIndex] = data;
     } else {
-      placeholderServiceRecords.push(updatedService);
+      placeholderServiceRecords.push(data);
     }
     
     await persistToFirestore(['serviceRecords']);
     
     toast({
       title: "Servicio Actualizado",
-      description: `El estado del servicio ${updatedService.id} ha sido actualizado.`,
+      description: `El estado del servicio ${data.id} ha sido actualizado.`,
     });
     setIsServiceDialogOpen(false);
   };
@@ -258,7 +250,7 @@ export default function TableroPage() {
                         onClick={() => handleCardClick(service)}
                         onMove={(direction) => handleMoveService(service.id, direction)}
                         isFirst={colIndex === 0}
-                        isLast={colIndex === columnOrder.length - 2} // -2 because Entregado is filtered out
+                        isLast={colIndex === columnOrder.length - 1}
                       />
                     ))}
                   </CardContent>
@@ -275,7 +267,7 @@ export default function TableroPage() {
           vehicles={vehicles}
           technicians={technicians}
           inventoryItems={inventoryItems}
-          onSave={handleSaveService}
+          onSave={handleSaveService as (data: ServiceRecord | QuoteRecord) => Promise<void>}
           mode="service"
         />
       )}
