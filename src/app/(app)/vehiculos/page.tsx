@@ -331,10 +331,10 @@ function PrecotizacionesPageContent() {
         {filteredRecords.length > 0 ? filteredRecords.map(record => (
           <Card key={record.id} className="overflow-hidden">
              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4 border-b bg-muted/30">
-                <div>
-                    <CardTitle className="text-xl font-bold">{record.make}</CardTitle>
-                    <CardDescription className="text-base">{record.model}</CardDescription>
-                    <p className="text-sm text-muted-foreground pt-1">{formatYearRange(record.years)}</p>
+                <div className="flex items-baseline gap-x-3">
+                  <h3 className="text-lg font-semibold text-foreground">{record.make}</h3>
+                  <p className="text-lg font-semibold text-muted-foreground">{record.model}</p>
+                  <p className="text-lg font-semibold text-muted-foreground/80">({formatYearRange(record.years)})</p>
                 </div>
                 <div className="flex items-center gap-2">
                     <Badge>{record.services.length} servicio(s)</Badge>
