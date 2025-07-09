@@ -217,7 +217,6 @@ interface ServiceFormProps {
   onInventoryItemCreatedFromService?: (newItem: InventoryItem) => void; // Optional: To notify parent of new items
   onDelete?: (id: string) => void;
   onCancelService?: (serviceId: string, reason: string) => void;
-  onViewQuoteRequest?: (serviceId: string) => void;
 }
 
 const IVA_RATE = 0.16;
@@ -246,7 +245,6 @@ export function ServiceForm({
   onInventoryItemCreatedFromService,
   onDelete,
   onCancelService,
-  onViewQuoteRequest,
 }: ServiceFormProps) {
   const { toast } = useToast();
   
@@ -1168,14 +1166,9 @@ export function ServiceForm({
                 </TabsList>
               </div>
               <div className="flex gap-2 self-end sm:self-center">
-                  {quoteForViewing && onViewQuoteRequest && initialData?.id && (
-                      <Button type="button" onClick={() => onViewQuoteRequest(initialData.id)} variant="ghost" size="icon" className="bg-card" title="Ver Cotización Original">
-                          <FileText className="h-5 w-5 text-purple-600" />
-                      </Button>
-                  )}
                   {mode === 'service' && !isReadOnly && (watchedStatus === 'Reparando' || watchedStatus === 'Completado') && (
-                      <Button type="button" onClick={handlePrintSheet} variant="ghost" size="icon" className="bg-card" title="Ver Hoja de Servicio">
-                        <FileCheck className="h-5 w-5" />
+                      <Button type="button" onClick={handlePrintSheet} variant="ghost" size="icon" className="bg-card" title="Vista Previa">
+                        <Eye className="h-5 w-5" />
                       </Button>
                   )}
               </div>
@@ -1762,7 +1755,7 @@ export function ServiceForm({
       <PrintTicketDialog
           open={isSheetOpen}
           onOpenChange={setIsSheetOpen}
-          title="Hoja de Servicio"
+          title="Vista Previa"
           onDialogClose={() => setServiceForSheet(null)}
           dialogContentClassName="printable-quote-dialog"
           footerActions={<><Button type="button" onClick={() => handleShareService(serviceForSheet)} variant="outline"><MessageSquare className="mr-2 h-4 w-4" /> Copiar para WhatsApp</Button><Button onClick={() => window.print()}><Printer className="mr-2 h-4 w-4" /> Imprimir Hoja</Button></>}
@@ -1819,5 +1812,3 @@ export function ServiceForm({
     </>
   );
 }
-
-    
