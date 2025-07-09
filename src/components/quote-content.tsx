@@ -5,8 +5,7 @@ import type { QuoteRecord, Vehicle, Technician, WorkshopInfo } from '@/types';
 import { format, parseISO, isValid, addDays } from 'date-fns';
 import { es } from 'date-fns/locale';
 import React, { useEffect, useState } from 'react';
-import { cn } from "@/lib/utils";
-import Image from "next/legacy/image";
+import { cn, capitalizeWords } from "@/lib/utils";
 import { Card, CardContent } from '@/components/ui/card';
 
 const initialWorkshopInfo: WorkshopInfo = {
@@ -56,12 +55,13 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
       >
         <header className="mb-4 pb-2 border-b-2 border-black">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <img 
+             <img 
               src={effectiveWorkshopInfo.logoUrl} 
               alt={`${effectiveWorkshopInfo.name} Logo`} 
               style={{ width: '150px', height: 'auto' }} 
               className="sm:w-[180px]"
               data-ai-hint="workshop logo"
+              crossOrigin="anonymous"
             />
             <h2 className="text-2xl sm:text-3xl font-semibold text-primary text-left sm:text-right w-full sm:w-auto">COTIZACIÓN</h2>
           </div>
@@ -85,7 +85,7 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
           <section className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-2">
               <div className="bg-gray-50 p-3 rounded-md border border-gray-200">
               <h3 className="font-semibold text-sm text-gray-700 mb-1 border-b pb-1">Cliente:</h3>
-              <div className="space-y-1 leading-tight pt-1 text-xs sm:text-sm">
+              <div className="space-y-1 leading-tight pt-1 text-sm">
                   <div className="font-bold">{vehicle?.ownerName || ''}</div>
                   {vehicle?.ownerPhone && <div>{vehicle.ownerPhone}</div>}
                   {vehicle?.ownerEmail && <div>{vehicle.ownerEmail}</div>}
@@ -93,7 +93,7 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
               </div>
               <div className="bg-gray-50 p-3 rounded-md border border-gray-200">
                 <h3 className="font-semibold text-sm text-gray-700 mb-1 border-b pb-1">Vehículo:</h3>
-                <div className="space-y-1 leading-tight pt-1 text-xs sm:text-sm">
+                <div className="space-y-1 leading-tight pt-1 text-sm">
                     <div>
                         <span className="font-bold">{vehicle ? `${vehicle.make} ${vehicle.model} ${vehicle.year}` : (quote.vehicleIdentifier || '').replace(vehicle?.licensePlate || '', '')} </span>
                         <span className="font-bold">{vehicle?.licensePlate || 'N/A'}</span>
@@ -120,7 +120,7 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
                                   <span className="font-bold">{formatCurrency(item.price)}</span>
                               </div>
                               {item.suppliesUsed && item.suppliesUsed.length > 0 && (
-                                  <p className="text-xs text-gray-500 pl-4 mt-1">
+                                  <p className="text-sm text-gray-500 pl-4 mt-1">
                                       Insumos: {item.suppliesUsed.map(s => `${s.quantity}x ${s.supplyName}`).join(', ')}
                                   </p>
                               )}
@@ -156,7 +156,7 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
               {quote.notes && (
                 <section className="w-full text-left pt-4 border-t border-dashed">
                   <h4 className="font-semibold text-sm text-gray-700 mb-1">Notas Adicionales:</h4>
-                  <p className="text-xs text-gray-600 whitespace-pre-wrap">{quote.notes}</p>
+                  <p className="text-sm text-gray-600 whitespace-pre-wrap">{quote.notes}</p>
                 </section>
               )}
             </CardContent>
@@ -164,23 +164,25 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
           
           <Card className="mt-4 mb-4 border-gray-200">
             <CardContent className="p-4 flex flex-col sm:flex-row justify-between min-h-[120px]">
-                <div className="text-left text-xs">
+                <div className="text-left text-sm">
                     <p className="font-semibold">{effectiveWorkshopInfo.footerLine1}</p>
                     <p>{effectiveWorkshopInfo.footerLine2}</p>
                 </div>
                 <div className="text-right flex flex-col items-end justify-end mt-4 sm:mt-0">
                     {quote.preparedByTechnicianSignatureDataUrl && (
-                        <div className="h-16 w-40 mb-1 relative">
-                             <img 
+                         <div className="flex justify-center items-center h-16 w-40 mb-1">
+                            <img 
                                 src={quote.preparedByTechnicianSignatureDataUrl} 
                                 alt="Firma del asesor" 
-                                style={{ objectFit: 'contain', width: '100%', height: '100%' }}
+                                style={{ maxHeight: '100%', maxWidth: '100%', objectFit: 'contain' }}
                                 crossOrigin="anonymous"
                             />
                         </div>
                     )}
                     <div className="border-t-2 border-gray-300/30 pt-1 w-56 text-center">
-                        <p className="text-xs font-bold">ASESOR: {quote.preparedByTechnicianName?.toUpperCase() || '________________________________'}</p>
+                        <p className="text-sm font-bold">
+                           ASESOR: {capitalizeWords(quote.preparedByTechnicianName?.toLowerCase() || '') || '________________________________'}
+                        </p>
                     </div>
                 </div>
             </CardContent>
@@ -188,8 +190,8 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
         </main>
         
         <footer className="mt-auto">
-          <section className="pt-4 border-t border-gray-200">
-            <h4 className="font-semibold text-xs text-gray-700 mb-1">Términos y Condiciones:</h4>
+          <section className="pt-4">
+            <h4 className="font-semibold text-sm text-gray-700 mb-1">Términos y Condiciones:</h4>
             <p className="text-xs text-gray-600 leading-snug">
                 {`Precios en MXN. Esta cotización es válida hasta el ${validityDate}. `}
                 No incluye trabajos o materiales que no estén especificados explícitamente en la presente cotización. Los precios aquí detallados están sujetos a cambios sin previo aviso en caso de variaciones en los costos de los insumos proporcionados por nuestros proveedores, los cuales están fuera de nuestro control.
@@ -209,4 +211,3 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
 );
 
 QuoteContent.displayName = "QuoteContent";
-
