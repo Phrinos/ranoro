@@ -166,17 +166,17 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
           <Card className="mt-4 mb-4 border-gray-200">
             <CardContent className="p-4 flex flex-col sm:flex-row justify-between min-h-[120px] text-sm">
                 <div className="text-left">
-                    <p className="font-semibold">{effectiveWorkshopInfo.footerLine1}</p>
-                    <p>{effectiveWorkshopInfo.footerLine2}</p>
+                    <p className="font-semibold">¡Gracias por su preferencia!</p>
+                    <p>Para dudas o aclaraciones, no dude en contactarnos.</p>
                 </div>
                 <div className="text-right flex flex-col items-end justify-end mt-4 sm:mt-0">
-                    <div className="relative flex justify-center items-center h-16 w-40 mb-1">
+                    <div className="flex justify-center items-center h-16 w-40 mb-1">
                         {quote.preparedByTechnicianSignatureDataUrl && (
-                           <Image 
+                           <img
                                 src={quote.preparedByTechnicianSignatureDataUrl} 
                                 alt="Firma del asesor"
-                                layout="fill"
-                                objectFit="contain"
+                                style={{ maxHeight: '100%', maxWidth: '100%', objectFit: 'contain' }}
+                                crossOrigin="anonymous"
                             />
                         )}
                     </div>
