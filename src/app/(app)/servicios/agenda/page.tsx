@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { PlusCircle, List, Calendar as CalendarIcon, FileCheck, Eye, Loader2, Edit } from "lucide-react";
 import { ServiceDialog } from "../components/service-dialog";
 import type { ServiceRecord, Vehicle, Technician, QuoteRecord, InventoryItem, CapacityAnalysisOutput } from "@/types";
-import { useState, useEffect, useMemo, useCallback, Suspense } from "react";
+import React, { useState, useEffect, useMemo, useCallback, Suspense } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { format, parseISO, isToday, isTomorrow, compareAsc, isValid, startOfDay, endOfDay } from "date-fns";
 import { es } from 'date-fns/locale';
@@ -21,55 +21,52 @@ import { ServiceCalendar } from '../components/service-calendar';
 import { analyzeWorkshopCapacity } from '@/ai/flows/capacity-analysis-flow';
 import { Badge } from "@/components/ui/badge";
 import { cn } from '@/lib/utils';
+import { StatusTracker } from "../components/StatusTracker";
 
 
-// Helper to track the lifecycle status of a service/quote
-const StatusTracker = ({ status }: { status: ServiceRecord['status'] | 'Cotizacion' }) => {
-  const states = [
-    { id: 'COTI', label: 'Cotización', statuses: ['Cotizacion'] },
-    { id: 'AGEN', label: 'Agendado', statuses: ['Agendado'] },
-    { id: 'SERV', label: 'En Servicio', statuses: ['Reparando', 'En Espera de Refacciones'] },
-    { id: 'COMP', label: 'Completado', statuses: ['Completado', 'Entregado'] },
-  ];
-  
-  const getRank = (s: string) => {
-    if (s === 'Cotizacion') return 0;
-    if (s === 'Agendado') return 1;
-    if (s === 'Reparando' || s === 'En Espera de Refacciones') return 2;
-    if (s === 'Completado' || s === 'Entregado') return 3;
-    return -1; // For cancelled or other states
+const ServiceAppointmentCard = React.memo(({ service, vehicles, onEdit }: { service: ServiceRecord, vehicles: Vehicle[], onEdit: () => void }) => {
+  const vehicle = vehicles.find(v => v.id === service.vehicleId);
+  const getServiceDescriptionText = (service: ServiceRecord) => {
+    if (service.serviceItems && service.serviceItems.length > 0) {
+      return service.serviceItems.map(item => item.name).join(', ');
+    }
+    return service.description || 'Servicio sin descripción';
   };
-  
-  const currentRank = getRank(status);
 
   return (
-    <div className="flex items-center justify-center space-x-1 my-1 w-full">
-      {states.map((state, index) => {
-        const isActive = currentRank >= index;
-        
-        return (
-          <React.Fragment key={state.id}>
-            {index > 0 && (
-              <div className={cn("h-0.5 w-2 flex-grow rounded-full", isActive ? "bg-green-500" : "bg-muted")} />
-            )}
-            <div
-              title={state.label}
-              className={cn(
-                "flex h-6 w-8 items-center justify-center rounded-md border text-[10px] font-bold transition-colors",
-                isActive
-                  ? "border-green-500 bg-green-500/10 text-green-600"
-                  : "border-muted-foreground/20 bg-muted/50 text-muted-foreground/60"
-              )}
-            >
-              {state.id}
-            </div>
-          </React.Fragment>
-        );
-      })}
-    </div>
+    <Card className="shadow-sm overflow-hidden mb-4">
+      <CardContent className="p-0">
+        <div className="flex flex-col md:flex-row text-sm">
+          <div className="p-4 flex flex-col justify-start items-start text-left w-full md:w-48 flex-shrink-0">
+              <p className="font-semibold text-lg text-foreground">{format(parseISO(service.serviceDate), "dd MMM yyyy", { locale: es })}</p>
+              <p className="text-muted-foreground text-xs mt-1">Folio: {service.id}</p>
+              <StatusTracker status={service.status} />
+          </div>
+          <div className="p-4 flex flex-col justify-center flex-grow space-y-2 text-left border-y md:border-y-0 md:border-x">
+              <p className="font-bold text-2xl text-black">{vehicle ? `${vehicle.licensePlate} - ${vehicle.make} ${vehicle.model}` : 'N/A'}</p>
+              <p className="text-sm text-foreground">
+                  <span className="font-semibold">{service.serviceType}:</span> {getServiceDescriptionText(service)}
+              </p>
+          </div>
+          <div className="p-4 flex flex-col justify-center items-center text-center w-full md:w-48 flex-shrink-0">
+              <p className="text-xs text-muted-foreground">Hora de Cita</p>
+              <p className="font-bold text-2xl text-black">{format(parseISO(service.serviceDate), "HH:mm", { locale: es })}</p>
+          </div>
+          <div className="p-4 flex flex-col justify-center items-center text-center border-t md:border-t-0 md:border-l w-full md:w-56 flex-shrink-0 space-y-2">
+              <Badge variant={service.status === 'Reparando' ? 'secondary' : 'default'} className="w-full justify-center text-center text-sm">{service.status}</Badge>
+              <p className="text-xs text-muted-foreground">Asesor: {service.serviceAdvisorName || 'N/A'}</p>
+              <div className="flex justify-center items-center gap-1">
+                  <Button variant="ghost" size="icon" onClick={onEdit} title="Ver/Editar Servicio">
+                      <Eye className="h-4 w-4" />
+                  </Button>
+              </div>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   );
-};
-
+});
+ServiceAppointmentCard.displayName = 'ServiceAppointmentCard';
 
 function AgendaPageComponent() {
   const { toast } = useToast();
@@ -250,50 +247,6 @@ function AgendaPageComponent() {
     </>
   );
 }
-
-const ServiceAppointmentCard = ({ service, vehicles, onEdit }: { service: ServiceRecord, vehicles: Vehicle[], onEdit: () => void }) => {
-  const vehicle = vehicles.find(v => v.id === service.vehicleId);
-  const getServiceDescriptionText = (service: ServiceRecord) => {
-    if (service.serviceItems && service.serviceItems.length > 0) {
-      return service.serviceItems.map(item => item.name).join(', ');
-    }
-    return service.description || 'Servicio sin descripción';
-  };
-
-  return (
-    <Card className="shadow-sm overflow-hidden mb-4">
-      <CardContent className="p-0">
-        <div className="flex flex-col md:flex-row text-sm">
-          <div className="p-4 flex flex-col justify-center items-center text-center w-full md:w-48 flex-shrink-0">
-              <p className="font-semibold text-lg text-foreground">{format(parseISO(service.serviceDate), "dd MMM yyyy", { locale: es })}</p>
-              <p className="text-muted-foreground text-xs mt-1">Folio: {service.id}</p>
-              <StatusTracker status={service.status} />
-          </div>
-          <div className="p-4 flex flex-col justify-center flex-grow space-y-2 text-left border-y md:border-y-0 md:border-x">
-              <p className="font-bold text-2xl text-black">{vehicle ? `${vehicle.licensePlate} - ${vehicle.make} ${vehicle.model}` : 'N/A'}</p>
-              <p className="text-sm text-foreground">
-                  <span className="font-semibold">{service.serviceType}:</span> {getServiceDescriptionText(service)}
-              </p>
-          </div>
-          <div className="p-4 flex flex-col justify-center items-center text-center w-full md:w-48 flex-shrink-0">
-              <p className="text-xs text-muted-foreground">Hora de Cita</p>
-              <p className="font-bold text-2xl text-black">{format(parseISO(service.serviceDate), "HH:mm", { locale: es })}</p>
-          </div>
-          <div className="p-4 flex flex-col justify-center items-center text-center border-t md:border-t-0 md:border-l w-full md:w-56 flex-shrink-0 space-y-2">
-              <Badge variant={service.status === 'Reparando' ? 'secondary' : 'default'} className="w-full justify-center text-center text-sm">{service.status}</Badge>
-              <p className="text-xs text-muted-foreground">Asesor: {service.serviceAdvisorName || 'N/A'}</p>
-              <div className="flex justify-center items-center gap-1">
-                  <Button variant="ghost" size="icon" onClick={onEdit} title="Ver/Editar Servicio">
-                      <Eye className="h-4 w-4" />
-                  </Button>
-              </div>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  );
-};
-
 
 export default function AgendaPageWrapper() {
   return (

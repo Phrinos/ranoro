@@ -15,7 +15,7 @@ import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
 import { TicketContent } from '@/components/ticket-content';
 import { placeholderServiceRecords, placeholderVehicles, placeholderTechnicians, placeholderInventory, persistToFirestore, AUTH_USER_LOCALSTORAGE_KEY } from "@/lib/placeholder-data";
 import type { ServiceRecord, Vehicle, Technician, InventoryItem, QuoteRecord, WorkshopInfo, User } from "@/types";
-import { useState, useEffect, useMemo, useRef, useCallback, Suspense } from "react";
+import React, { useState, useEffect, useMemo, useRef, useCallback, Suspense } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { format, parseISO, compareAsc, compareDesc, isWithinInterval, isValid, startOfDay, endOfDay, isToday } from "date-fns";
 import { es } from 'date-fns/locale';
@@ -29,6 +29,7 @@ import { db } from '@/lib/firebasePublic.js';
 import { Badge } from "@/components/ui/badge";
 import { ServiceDialog } from "../components/service-dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { StatusTracker } from "../components/StatusTracker";
 
 
 type ServiceSortOption = 
@@ -39,55 +40,7 @@ type ServiceSortOption =
   | "status_asc" | "status_desc";
 
 
-// Helper to track the lifecycle status of a service/quote
-const StatusTracker = ({ status }: { status: ServiceRecord['status'] | 'Cotizacion' }) => {
-  const states = [
-    { id: 'COTI', label: 'Cotización', statuses: ['Cotizacion'] },
-    { id: 'AGEN', label: 'Agendado', statuses: ['Agendado'] },
-    { id: 'SERV', label: 'En Servicio', statuses: ['Reparando', 'En Espera de Refacciones'] },
-    { id: 'COMP', label: 'Completado', statuses: ['Completado', 'Entregado'] },
-  ];
-  
-  const getRank = (s: string) => {
-    if (s === 'Cotizacion') return 0;
-    if (s === 'Agendado') return 1;
-    if (s === 'Reparando' || s === 'En Espera de Refacciones') return 2;
-    if (s === 'Completado' || s === 'Entregado') return 3;
-    return -1; // For cancelled or other states
-  };
-  
-  const currentRank = getRank(status);
-
-  return (
-    <div className="flex items-center justify-center space-x-1 my-1 w-full">
-      {states.map((state, index) => {
-        const isActive = currentRank >= index;
-        
-        return (
-          <React.Fragment key={state.id}>
-            {index > 0 && (
-              <div className={cn("h-0.5 w-2 flex-grow rounded-full", isActive ? "bg-green-500" : "bg-muted")} />
-            )}
-            <div
-              title={state.label}
-              className={cn(
-                "flex h-6 w-8 items-center justify-center rounded-md border text-[10px] font-bold transition-colors",
-                isActive
-                  ? "border-green-500 bg-green-500/10 text-green-600"
-                  : "border-muted-foreground/20 bg-muted/50 text-muted-foreground/60"
-              )}
-            >
-              {state.id}
-            </div>
-          </React.Fragment>
-        );
-      })}
-    </div>
-  );
-};
-
-
-const ServiceList = ({ services, vehicles, onEdit, onReprint, onView }: {
+const ServiceList = React.memo(({ services, vehicles, onEdit, onReprint, onView }: {
   services: ServiceRecord[],
   vehicles: Vehicle[],
   onEdit: (service: ServiceRecord) => void,
@@ -123,12 +76,12 @@ const ServiceList = ({ services, vehicles, onEdit, onReprint, onView }: {
             <Card key={service.id} className="shadow-sm overflow-hidden">
               <CardContent className="p-0">
                 <div className="flex flex-col md:flex-row text-sm">
-                  <div className="p-4 flex flex-col justify-center items-center text-center w-full md:w-48 flex-shrink-0">
+                  <div className="p-4 flex flex-col justify-start items-start text-left w-full md:w-48 flex-shrink-0">
                       <p className="font-semibold text-lg text-foreground">{format(safeParseISO(service.serviceDate), "dd MMM yyyy", { locale: es })}</p>
                       <p className="text-muted-foreground text-xs mt-1">Folio: {service.id}</p>
                       <StatusTracker status={service.status} />
                   </div>
-                  <div className="p-4 flex flex-col justify-center flex-grow space-y-2 border-y md:border-y-0 md:border-x">
+                  <div className="p-4 flex flex-col justify-center flex-grow space-y-2 text-left border-y md:border-y-0 md:border-x">
                       <p className="font-bold text-2xl text-black">{vehicle ? `${vehicle.licensePlate} - ${vehicle.make} ${vehicle.model}` : 'N/A'}</p>
                       <p className="text-sm text-foreground"><span className="font-semibold">{service.serviceType}:</span> {getServiceDescriptionText(service)}</p>
                   </div>
@@ -158,13 +111,14 @@ const ServiceList = ({ services, vehicles, onEdit, onReprint, onView }: {
       )}
     </div>
   );
-};
+});
+ServiceList.displayName = 'ServiceList';
 
 
 function HistorialServiciosPageComponent() {
   const { toast } = useToast();
   const searchParams = useSearchParams();
-  const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'resumen');
+  const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'activos');
   
   const [allServices, setAllServices] = useState<ServiceRecord[]>(placeholderServiceRecords);
   const [vehicles, setVehicles] = useState<Vehicle[]>(placeholderVehicles); 
@@ -227,19 +181,10 @@ function HistorialServiciosPageComponent() {
       </div>
       
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-3 mb-6">
-              <TabsTrigger value="resumen" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Resumen</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-2 mb-6">
               <TabsTrigger value="activos" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Servicios Activos</TabsTrigger>
               <TabsTrigger value="historial" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Historial</TabsTrigger>
           </TabsList>
-          
-          <TabsContent value="resumen" className="mt-0 space-y-6">
-            <div className="grid gap-6 md:grid-cols-3">
-              <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Total de Servicios</CardTitle><Wrench className="h-5 w-5 text-blue-500" /></CardHeader><CardContent><div className="text-2xl font-bold font-headline">{summaryData.totalServices}</div><p className="text-xs text-muted-foreground">En el período seleccionado</p></CardContent></Card>
-              <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Ingresos y Ganancia</CardTitle><DollarSign className="h-5 w-5 text-green-500" /></CardHeader><CardContent><div className="text-2xl font-bold font-headline">{formatCurrency(summaryData.totalRevenue)}</div><p className="text-xs text-muted-foreground">Ganancia total: {formatCurrency(summaryData.totalProfit)}</p></CardContent></Card>
-              <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Vehículo Más Común</CardTitle><CarIcon className="h-5 w-5 text-orange-500" /></CardHeader><CardContent><div className="text-lg font-bold font-headline truncate">N/A</div><p className="text-xs text-muted-foreground">En el período seleccionado</p></CardContent></Card>
-            </div>
-          </TabsContent>
           
           <TabsContent value="activos" className="mt-0 space-y-4">
               <ServiceList services={activeServices} vehicles={vehicles} onEdit={(s) => {setEditingService(s); setIsEditDialogOpen(true);}} onReprint={handleReprintService} onView={handleShowPreview}/>

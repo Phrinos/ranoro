@@ -26,6 +26,7 @@ import { Badge } from "@/components/ui/badge";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { ServiceSheetContent } from "@/components/service-sheet-content";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { StatusTracker } from "../../servicios/components/StatusTracker";
 
 
 type QuoteSortOption = 
@@ -34,52 +35,86 @@ type QuoteSortOption =
   | "vehicle_asc" | "vehicle_desc";
 
 
-// Helper to track the lifecycle status of a service/quote
-const StatusTracker = ({ status }: { status: ServiceRecord['status'] | 'Cotizacion' }) => {
-  const states = [
-    { id: 'COTI', label: 'Cotización', statuses: ['Cotizacion'] },
-    { id: 'AGEN', label: 'Agendado', statuses: ['Agendado'] },
-    { id: 'SERV', label: 'En Servicio', statuses: ['Reparando', 'En Espera de Refacciones'] },
-    { id: 'COMP', label: 'Completado', statuses: ['Completado', 'Entregado'] },
-  ];
+const QuoteList = React.memo(({ quotes, vehicles, onEditQuote, onGenerateService, onViewQuote, onDeleteQuote }: { 
+    quotes: QuoteRecord[], 
+    vehicles: Vehicle[], 
+    onEditQuote: (quote: QuoteRecord) => void,
+    onGenerateService: (quote: QuoteRecord) => void,
+    onViewQuote: (quote: QuoteRecord) => void,
+    onDeleteQuote: (quoteId: string) => void,
+}) => {
   
-  const getRank = (s: string) => {
-    if (s === 'Cotizacion') return 0;
-    if (s === 'Agendado') return 1;
-    if (s === 'Reparando' || s === 'En Espera de Refacciones') return 2;
-    if (s === 'Completado' || s === 'Entregado') return 3;
-    return -1; // For cancelled or other states
+  const getStatusVariant = (status: ServiceRecord['status']): "default" | "secondary" | "outline" | "destructive" | "success" | "waiting" | "delivered" => {
+      switch (status) {
+        case "Completado": return "success"; 
+        case "Reparando": return "secondary"; 
+        case "Cancelado": return "destructive"; 
+        case "Agendado": return "default";
+        case "En Espera de Refacciones": return "waiting";
+        case "Entregado": return "delivered";
+        case "Cotizacion": return "outline";
+        default: return "default";
+      }
   };
   
-  const currentRank = getRank(status);
+  const getServiceDescriptionText = (quote: QuoteRecord) => {
+    if (quote.serviceItems && quote.serviceItems.length > 0) {
+      return quote.serviceItems.map(item => item.name).join(', ');
+    }
+    return quote.description || 'Sin descripción';
+  };
 
   return (
-    <div className="flex items-center justify-center space-x-1 my-1 w-full">
-      {states.map((state, index) => {
-        const isActive = currentRank >= index;
-        
-        return (
-          <React.Fragment key={state.id}>
-            {index > 0 && (
-              <div className={cn("h-0.5 w-2 flex-grow rounded-full", isActive ? "bg-green-500" : "bg-muted")} />
-            )}
-            <div
-              title={state.label}
-              className={cn(
-                "flex h-6 w-8 items-center justify-center rounded-md border text-[10px] font-bold transition-colors",
-                isActive
-                  ? "border-green-500 bg-green-500/10 text-green-600"
-                  : "border-muted-foreground/20 bg-muted/50 text-muted-foreground/60"
-              )}
-            >
-              {state.id}
-            </div>
-          </React.Fragment>
-        );
-      })}
+    <div className="space-y-4">
+      {quotes.length > 0 ? (
+        quotes.map(quote => {
+          const vehicle = vehicles.find(v => v.id === quote.vehicleId);
+          const service = quote.serviceId ? placeholderServiceRecords.find(s => s.id === quote.serviceId) : null;
+          const status = service ? service.status : 'Cotizacion';
+
+          return (
+            <Card key={quote.id} className="shadow-sm overflow-hidden">
+              <CardContent className="p-0">
+                <div className="flex flex-col md:flex-row">
+                   <div className="p-4 flex flex-col justify-start items-start text-left w-full md:w-48 flex-shrink-0">
+                      <p className="font-semibold text-lg text-foreground">{format(parseISO(quote.quoteDate ?? new Date().toISOString()), "dd MMM yyyy", { locale: es })}</p>
+                      <p className="text-muted-foreground text-xs mt-1">Folio: {quote.id}</p>
+                      <StatusTracker status={status} />
+                    </div>
+                    <div className="p-4 flex flex-col justify-center flex-grow space-y-2 text-left border-y md:border-y-0 md:border-x">
+                      <p className="text-sm text-muted-foreground">{vehicle?.ownerName} - {vehicle?.ownerPhone}</p>
+                      <p className="font-bold text-2xl text-black">{vehicle ? `${vehicle.licensePlate} - ${vehicle.make} ${vehicle.model} ${vehicle.year}` : 'N/A'}</p>
+                      <p className="text-sm text-foreground">
+                        <span className="font-semibold">{quote.serviceType}:</span> {getServiceDescriptionText(quote)}
+                      </p>
+                    </div>
+                    <div className="p-4 flex flex-col justify-center items-center text-center w-full md:w-48 flex-shrink-0">
+                      <p className="text-xs text-muted-foreground">Costo Estimado</p>
+                      <p className="font-bold text-2xl text-black">{formatCurrency(quote.totalCost ?? quote.estimatedTotalCost)}</p>
+                      <p className="text-xs text-green-600 font-medium mt-1">
+                        Ganancia: {formatCurrency(quote.serviceProfit ?? quote.estimatedProfit)}
+                      </p>
+                    </div>
+                    <div className="p-4 flex flex-col justify-center items-center text-center border-t md:border-t-0 md:border-l w-full md:w-56 flex-shrink-0 space-y-2">
+                        <Badge variant={getStatusVariant(status)} className="w-full justify-center text-center text-sm">{status}</Badge>
+                        <p className="text-xs text-muted-foreground">Asesor: {quote.preparedByTechnicianName || 'N/A'}</p>
+                        <div className="flex justify-center items-center gap-1">
+                          <Button variant="ghost" size="icon" onClick={() => onViewQuote(quote)} title="Vista Previa"><Eye className="h-4 w-4" /></Button>
+                          <Button variant="ghost" size="icon" onClick={() => onEditQuote(quote)} title="Editar Cotización"><Edit className="h-4 w-4" /></Button>
+                        </div>
+                    </div>
+                </div>
+              </CardContent>
+            </Card>
+          )
+        })
+      ) : (
+        <div className="text-center py-10 border-2 border-dashed rounded-lg text-muted-foreground">No hay cotizaciones que coincidan con los filtros.</div>
+      )}
     </div>
   );
-};
+});
+QuoteList.displayName = 'QuoteList';
 
 
 function HistorialCotizacionesPageComponent() {
@@ -125,10 +160,12 @@ function HistorialCotizacionesPageComponent() {
     }
     
     filtered.sort((a, b) => {
+      const totalA = a.totalCost ?? a.estimatedTotalCost ?? 0;
+      const totalB = b.totalCost ?? b.estimatedTotalCost ?? 0;
       switch (sortOption) {
         case "date_asc": return compareAsc(parseISO(a.quoteDate ?? ""), parseISO(b.quoteDate ?? ""));
-        case "total_asc": return (a.totalCost || 0) - (b.totalCost || 0);
-        case "total_desc": return (b.totalCost || 0) - (a.totalCost || 0);
+        case "total_asc": return totalA - totalB;
+        case "total_desc": return totalB - totalA;
         case "vehicle_asc": return (a.vehicleIdentifier || '').localeCompare(b.vehicleIdentifier || '');
         case "vehicle_desc": return (b.vehicleIdentifier || '').localeCompare(a.vehicleIdentifier || '');
         case "date_desc": default: return compareDesc(parseISO(a.quoteDate ?? ""), parseISO(b.quoteDate ?? ""));
@@ -136,87 +173,6 @@ function HistorialCotizacionesPageComponent() {
     });
     return filtered;
   }, [allQuotes, searchTerm, sortOption]);
-  
-  // Helper component for the list of quotes to avoid code repetition
-  const QuoteList = ({ quotes, vehicles, onEditQuote, onGenerateService, onViewQuote, onDeleteQuote }: { 
-      quotes: QuoteRecord[], 
-      vehicles: Vehicle[], 
-      onEditQuote: (quote: QuoteRecord) => void,
-      onGenerateService: (quote: QuoteRecord) => void,
-      onViewQuote: (quote: QuoteRecord) => void,
-      onDeleteQuote: (quoteId: string) => void,
-  }) => {
-    
-    const getStatusVariant = (status: ServiceRecord['status']): "default" | "secondary" | "outline" | "destructive" | "success" | "waiting" | "delivered" => {
-        switch (status) {
-          case "Completado": return "success"; 
-          case "Reparando": return "secondary"; 
-          case "Cancelado": return "destructive"; 
-          case "Agendado": return "default";
-          case "En Espera de Refacciones": return "waiting";
-          case "Entregado": return "delivered";
-          case "Cotizacion": return "outline";
-          default: return "default";
-        }
-    };
-    
-    const getServiceDescriptionText = (quote: QuoteRecord) => {
-      if (quote.serviceItems && quote.serviceItems.length > 0) {
-        return quote.serviceItems.map(item => item.name).join(', ');
-      }
-      return quote.description || 'Sin descripción';
-    };
-
-    return (
-      <div className="space-y-4">
-        {quotes.length > 0 ? (
-          quotes.map(quote => {
-            const vehicle = vehicles.find(v => v.id === quote.vehicleId);
-            const service = quote.serviceId ? placeholderServiceRecords.find(s => s.id === quote.serviceId) : null;
-            const status = service ? service.status : 'Cotizacion';
-
-            return (
-              <Card key={quote.id} className="shadow-sm overflow-hidden">
-                <CardContent className="p-0">
-                  <div className="flex flex-col md:flex-row">
-                     <div className="p-4 flex flex-col justify-center items-start text-left w-full md:w-48 flex-shrink-0">
-                        <p className="font-semibold text-lg text-foreground">{format(parseISO(quote.quoteDate!), "dd MMM yyyy", { locale: es })}</p>
-                        <p className="text-muted-foreground text-xs mt-1">Folio: {quote.id}</p>
-                        <StatusTracker status={status} />
-                      </div>
-                      <div className="p-4 flex flex-col justify-center flex-grow space-y-2 text-left border-y md:border-y-0 md:border-x">
-                        <p className="text-sm text-muted-foreground">{vehicle?.ownerName} - {vehicle?.ownerPhone}</p>
-                        <p className="font-bold text-2xl text-black">{vehicle ? `${vehicle.licensePlate} - ${vehicle.make} ${vehicle.model} ${vehicle.year}` : 'N/A'}</p>
-                        <p className="text-sm text-foreground">
-                          <span className="font-semibold">{quote.serviceType}:</span> {getServiceDescriptionText(quote)}
-                        </p>
-                      </div>
-                      <div className="p-4 flex flex-col justify-center items-center text-center w-full md:w-48 flex-shrink-0">
-                        <p className="text-xs text-muted-foreground">Costo Estimado</p>
-                        <p className="font-bold text-2xl text-black">{formatCurrency(quote.totalCost)}</p>
-                        <p className="text-xs text-green-600 font-medium mt-1">
-                          Ganancia: {formatCurrency(quote.serviceProfit)}
-                        </p>
-                      </div>
-                      <div className="p-4 flex flex-col justify-center items-center text-center border-t md:border-t-0 md:border-l w-full md:w-56 flex-shrink-0 space-y-2">
-                          <Badge variant={getStatusVariant(status)} className="w-full justify-center text-center text-sm">{status}</Badge>
-                          <p className="text-xs text-muted-foreground">Asesor: {quote.preparedByTechnicianName || 'N/A'}</p>
-                          <div className="flex justify-center items-center gap-1">
-                            <Button variant="ghost" size="icon" onClick={() => onViewQuote(quote)} title="Vista Previa"><Eye className="h-4 w-4" /></Button>
-                            <Button variant="ghost" size="icon" onClick={() => onEditQuote(quote)} title="Editar Cotización"><Edit className="h-4 w-4" /></Button>
-                          </div>
-                      </div>
-                  </div>
-                </CardContent>
-              </Card>
-            )
-          })
-        ) : (
-          <div className="text-center py-10 border-2 border-dashed rounded-lg text-muted-foreground">No hay cotizaciones que coincidan con los filtros.</div>
-        )}
-      </div>
-    );
-  };
 
   const handleViewQuote = useCallback((quote: QuoteRecord) => { /* Logic to show quote preview */ }, []);
   const handleEditQuote = useCallback((quote: QuoteRecord) => { setSelectedQuoteForEdit(quote); setIsEditQuoteDialogOpen(true); }, []);
@@ -236,7 +192,14 @@ function HistorialCotizacionesPageComponent() {
           <div className="relative flex-1 min-w-[200px] sm:min-w-[300px]"><Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" /><Input type="search" placeholder="Buscar por folio o vehículo..." className="w-full rounded-lg bg-card pl-8" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} /></div>
           <DropdownMenu><DropdownMenuTrigger asChild><Button variant="outline" className="min-w-[150px] flex-1 sm:flex-initial bg-card"><ListFilter className="mr-2 h-4 w-4" />Ordenar</Button></DropdownMenuTrigger><DropdownMenuContent align="end"><DropdownMenuLabel>Ordenar por</DropdownMenuLabel><DropdownMenuRadioGroup value={sortOption} onValueChange={(value) => setSortOption(value as QuoteSortOption)}><DropdownMenuRadioItem value="date_desc">Fecha (Más Reciente)</DropdownMenuRadioItem><DropdownMenuRadioItem value="date_asc">Fecha (Más Antiguo)</DropdownMenuRadioItem><DropdownMenuRadioItem value="total_desc">Monto Total (Mayor a Menor)</DropdownMenuRadioItem><DropdownMenuRadioItem value="total_asc">Monto Total (Menor a Mayor)</DropdownMenuRadioItem></DropdownMenuRadioGroup></DropdownMenuContent></DropdownMenu>
         </div>
-        <QuoteList quotes={activeQuotes} vehicles={vehicles} onEditQuote={handleEditQuote} onDeleteQuote={handleDeleteQuote} onGenerateService={handleGenerateService} onViewQuote={handleViewQuote} />
+        <QuoteList
+          quotes={activeQuotes}
+          vehicles={vehicles}
+          onEditQuote={handleEditQuote}
+          onDeleteQuote={handleDeleteQuote}
+          onGenerateService={handleGenerateService}
+          onViewQuote={handleViewQuote}
+        />
       </div>
 
       {/* Dialogs */}
