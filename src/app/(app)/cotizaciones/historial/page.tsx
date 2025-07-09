@@ -12,11 +12,12 @@ import { Search, ListFilter, FileText, Eye, Edit } from "lucide-react";
 import { placeholderQuotes, placeholderVehicles, placeholderTechnicians, placeholderServiceRecords, placeholderInventory, persistToFirestore } from "@/lib/placeholder-data"; 
 import type { QuoteRecord, Vehicle, ServiceRecord, Technician, InventoryItem, WorkshopInfo } from "@/types"; 
 import { useToast } from "@/hooks/use-toast";
-import { format, parseISO, compareAsc, compareDesc } from "date-fns";
+import { format, parseISO, compareAsc, compareDesc, isBefore, addDays } from "date-fns";
 import { es } from 'date-fns/locale';
 import { cn, formatCurrency } from "@/lib/utils";
 import { ServiceDialog } from "../../servicios/components/service-dialog";
 import { StatusTracker } from "../../servicios/components/StatusTracker";
+import { Badge } from "@/components/ui/badge";
 
 
 type QuoteSortOption = 
@@ -40,6 +41,20 @@ const QuoteList = React.memo(({ quotes, vehicles, onEditQuote, onGenerateService
     }
     return quote.description || 'Sin descripción';
   };
+  
+  const getQuoteStatus = (quote: QuoteRecord): { label: string; variant: "success" | "blue" | "secondary" } => {
+    const quoteDate = parseISO(quote.quoteDate ?? new Date().toISOString());
+    const expirationDate = addDays(quoteDate, 15);
+
+    if (quote.serviceId) {
+      return { label: 'Procesada', variant: 'blue' };
+    }
+    if (isBefore(new Date(), expirationDate)) {
+      return { label: 'Vigente', variant: 'success' };
+    }
+    return { label: 'Archivada', variant: 'secondary' };
+  };
+
 
   return (
     <div className="space-y-4">
@@ -48,6 +63,7 @@ const QuoteList = React.memo(({ quotes, vehicles, onEditQuote, onGenerateService
           const vehicle = vehicles.find(v => v.id === quote.vehicleId);
           const service = quote.serviceId ? placeholderServiceRecords.find(s => s.id === quote.serviceId) : null;
           const status = service ? service.status : 'Cotizacion';
+          const quoteStatus = getQuoteStatus(quote);
 
           return (
             <Card key={quote.id} className="shadow-sm overflow-hidden">
@@ -65,14 +81,15 @@ const QuoteList = React.memo(({ quotes, vehicles, onEditQuote, onGenerateService
                         <span className="font-semibold">{quote.serviceType}:</span> {getServiceDescriptionText(quote)}
                       </p>
                     </div>
-                    <div className="p-4 flex flex-col justify-center items-center text-center w-full md:w-48 flex-shrink-0">
+                    <div className="p-3 flex flex-col justify-center items-center text-center w-full md:w-48 flex-shrink-0">
                       <p className="text-xs text-muted-foreground">Costo Estimado</p>
-                      <p className="font-bold text-2xl text-black">{formatCurrency(quote.totalCost ?? quote.estimatedTotalCost)}</p>
-                      <p className="text-xs text-green-600 font-medium mt-1">
+                      <p className="font-bold text-xl text-black">{formatCurrency(quote.totalCost ?? quote.estimatedTotalCost)}</p>
+                      <p className="text-xs text-green-600 font-medium">
                         Ganancia: {formatCurrency(quote.serviceProfit ?? quote.estimatedProfit)}
                       </p>
                     </div>
                     <div className="p-4 flex flex-col justify-center items-center text-center border-t md:border-t-0 md:border-l w-full md:w-56 flex-shrink-0 space-y-2">
+                        <Badge variant={quoteStatus.variant} className="mb-1">{quoteStatus.label}</Badge>
                         <p className="text-xs text-muted-foreground">Asesor: {quote.preparedByTechnicianName || 'N/A'}</p>
                         <div className="flex justify-center items-center gap-1">
                           <Button variant="ghost" size="icon" onClick={() => onViewQuote(quote)} title="Vista Previa"><Eye className="h-4 w-4" /></Button>
@@ -161,14 +178,23 @@ function HistorialCotizacionesPageComponent() {
     // This logic handles both creating and updating quotes.
     const isEditing = !!data.id;
     const quoteData = data as QuoteRecord;
+    
+    // Use the correct property for cost
+    const cost = quoteData.totalCost ?? (quoteData as any).estimatedTotalCost ?? 0;
 
     if (isEditing) {
         const index = placeholderQuotes.findIndex(q => q.id === quoteData.id);
         if (index > -1) {
-            placeholderQuotes[index] = quoteData;
+            placeholderQuotes[index] = {
+              ...quoteData,
+              totalCost: cost,
+            };
         }
     } else {
-        placeholderQuotes.push(quoteData);
+        placeholderQuotes.push({
+            ...quoteData,
+            totalCost: cost,
+        });
     }
 
     await persistToFirestore(['quotes']);
