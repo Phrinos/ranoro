@@ -53,8 +53,36 @@ function ResumenFinancieroPageComponent() {
     }, []);
 
     const financialSummary = useMemo(() => {
+        const emptyState = { 
+            monthYearLabel: "Cargando...", 
+            totalOperationalIncome: 0, 
+            totalIncomeFromSales: 0, 
+            totalIncomeFromServices: 0,
+            totalIncomeFromServiciosGenerales: 0,
+            totalIncomeFromCambioAceite: 0,
+            totalIncomeFromPintura: 0,
+            totalProfitFromSales: 0, 
+            totalProfitFromServices: 0,
+            totalProfitFromServiciosGenerales: 0,
+            totalProfitFromCambioAceite: 0,
+            totalProfitFromPintura: 0,
+            totalCostOfGoods: 0, 
+            totalOperationalProfit: 0, 
+            totalSalaries: 0, 
+            totalTechnicianSalaries: 0, 
+            totalAdministrativeSalaries: 0, 
+            fixedExpenses: [], 
+            totalFixedExpenses: 0, 
+            totalMonthlyExpenses: 0, 
+            totalTechnicianCommissions: 0, 
+            totalAdministrativeCommissions: 0, 
+            totalExpenses: 0, 
+            netProfit: 0, 
+            isProfitableForCommissions: false 
+        };
+
         if (!dateRange?.from) {
-          return { monthYearLabel: "Cargando...", totalOperationalIncome: 0, totalIncomeFromSales: 0, totalIncomeFromServices: 0, totalProfitFromSales: 0, totalProfitFromServices: 0, totalCostOfGoods: 0, totalOperationalProfit: 0, totalSalaries: 0, totalTechnicianSalaries: 0, totalAdministrativeSalaries: 0, fixedExpenses: [], totalFixedExpenses: 0, totalMonthlyExpenses: 0, totalTechnicianCommissions: 0, totalAdministrativeCommissions: 0, totalExpenses: 0, netProfit: 0, isProfitableForCommissions: false };
+          return emptyState;
         }
         
         const from = startOfDay(dateRange.from);
@@ -64,31 +92,42 @@ function ResumenFinancieroPageComponent() {
         const completedServicesInRange = placeholderServiceRecords.filter(s => s.status === 'Completado' && s.deliveryDateTime && isValid(parseISO(s.deliveryDateTime)) && isWithinInterval(parseISO(s.deliveryDateTime), { start: from, end: to }));
 
         const totalIncomeFromSales = salesInRange.reduce((sum, sale) => sum + sale.totalAmount, 0);
-        const totalIncomeFromServices = completedServicesInRange.reduce((sum, service) => sum + service.totalCost, 0);
-        const totalOperationalIncome = totalIncomeFromSales + totalIncomeFromServices;
-
         const totalProfitFromSales = salesInRange.reduce((sum, sale) => sum + calculateSaleProfit(sale, placeholderInventory), 0);
-        const totalProfitFromServices = completedServicesInRange.reduce((sum, service) => sum + (service.serviceProfit || 0), 0);
+        
+        // Detailed service breakdown
+        const servicesGenerales = completedServicesInRange.filter(s => s.serviceType === 'Servicio General' || !s.serviceType);
+        const servicesAceite = completedServicesInRange.filter(s => s.serviceType === 'Cambio de Aceite');
+        const servicesPintura = completedServicesInRange.filter(s => s.serviceType === 'Pintura');
+
+        const totalIncomeFromServiciosGenerales = servicesGenerales.reduce((sum, s) => sum + s.totalCost, 0);
+        const totalIncomeFromCambioAceite = servicesAceite.reduce((sum, s) => sum + s.totalCost, 0);
+        const totalIncomeFromPintura = servicesPintura.reduce((sum, s) => sum + s.totalCost, 0);
+        
+        const totalProfitFromServiciosGenerales = servicesGenerales.reduce((sum, s) => sum + (s.serviceProfit || 0), 0);
+        const totalProfitFromCambioAceite = servicesAceite.reduce((sum, s) => sum + (s.serviceProfit || 0), 0);
+        const totalProfitFromPintura = servicesPintura.reduce((sum, s) => sum + (s.serviceProfit || 0), 0);
+
+        const totalIncomeFromServices = totalIncomeFromServiciosGenerales + totalIncomeFromCambioAceite + totalIncomeFromPintura;
+        const totalProfitFromServices = totalProfitFromServiciosGenerales + totalProfitFromCambioAceite + totalProfitFromPintura;
+
+        const totalOperationalIncome = totalIncomeFromSales + totalIncomeFromServices;
         const totalOperationalProfit = totalProfitFromSales + totalProfitFromServices;
 
         const totalCostOfGoodsFromSales = salesInRange.reduce((totalCost, sale) => totalCost + sale.items.reduce((cost, saleItem) => cost + ((placeholderInventory.find(inv => inv.id === saleItem.inventoryItemId)?.unitPrice || 0) * saleItem.quantity), 0), 0);
         const totalCostOfGoodsFromServices = completedServicesInRange.reduce((sum, service) => sum + (service.totalSuppliesCost || 0), 0);
         const totalCostOfGoods = totalCostOfGoodsFromSales + totalCostOfGoodsFromServices;
 
-        // Total fixed expenses (salaries + other fixed costs)
         const totalTechnicianSalaries = placeholderTechnicians.reduce((sum, tech) => sum + (tech.monthlySalary || 0), 0);
         const totalAdministrativeSalaries = placeholderAdministrativeStaff.reduce((sum, staff) => sum + (staff.monthlySalary || 0), 0);
         const totalBaseSalaries = totalTechnicianSalaries + totalAdministrativeSalaries;
         const totalFixedExpensesFromState = currentFixedExpenses.reduce((sum, expense) => sum + expense.amount, 0);
         const totalMonthlyExpenses = totalBaseSalaries + totalFixedExpensesFromState;
         
-        // Commissions are only calculated if operational profit covers all monthly expenses.
         let totalTechnicianCommissions = 0;
         let totalAdministrativeCommissions = 0;
         const isProfitableForCommissions = totalOperationalProfit > totalMonthlyExpenses;
         
         if (isProfitableForCommissions) {
-          // If profitable, calculate commissions on the respective profits.
           placeholderTechnicians.forEach(tech => {
             totalTechnicianCommissions += completedServicesInRange
                 .filter(s => s.technicianId === tech.id)
@@ -101,7 +140,6 @@ function ResumenFinancieroPageComponent() {
           });
         }
         
-        // Final total expenses include base salaries, fixed expenses, and any calculated commissions.
         const totalExpenses = totalMonthlyExpenses + totalTechnicianCommissions + totalAdministrativeCommissions;
         const netProfit = totalOperationalProfit - totalExpenses;
 
@@ -112,7 +150,10 @@ function ResumenFinancieroPageComponent() {
         return { 
             monthYearLabel: dateLabel, 
             totalOperationalIncome, totalIncomeFromSales, totalIncomeFromServices, 
-            totalProfitFromSales, totalProfitFromServices, totalCostOfGoods, totalOperationalProfit, 
+            totalIncomeFromServiciosGenerales, totalIncomeFromCambioAceite, totalIncomeFromPintura,
+            totalProfitFromSales, totalProfitFromServices, 
+            totalProfitFromServiciosGenerales, totalProfitFromCambioAceite, totalProfitFromPintura,
+            totalCostOfGoods, totalOperationalProfit, 
             totalSalaries: totalBaseSalaries, totalTechnicianSalaries, totalAdministrativeSalaries, 
             fixedExpenses: currentFixedExpenses, totalFixedExpenses: totalFixedExpensesFromState, 
             totalMonthlyExpenses,
@@ -120,7 +161,7 @@ function ResumenFinancieroPageComponent() {
             totalExpenses, netProfit, 
             isProfitableForCommissions
         };
-    }, [dateRange, currentFixedExpenses, version]);
+    }, [dateRange, currentFixedExpenses, version, hydrated]);
     
     if (!hydrated) { return <div className="text-center py-10">Cargando reporte...</div>; }
     
@@ -176,14 +217,30 @@ function ResumenFinancieroPageComponent() {
                             <CardTitle className="text-xl flex items-center gap-2"><TrendingUp className="h-6 w-6 text-green-500" />Ingresos y Ganancia Bruta</CardTitle>
                             <CardDescription>Operaciones de {financialSummary.monthYearLabel}</CardDescription>
                         </CardHeader>
-                        <CardContent className="space-y-3 text-base">
-                            <div className="flex justify-between items-center"><span className="text-muted-foreground">Ingreso por Ventas (POS):</span><span className="font-semibold">{formatCurrency(financialSummary.totalIncomeFromSales)}</span></div>
-                            <div className="flex justify-between items-center"><span className="text-muted-foreground">Ingreso por Servicios:</span><span className="font-semibold">{formatCurrency(financialSummary.totalIncomeFromServices)}</span></div>
-                            <hr className="my-1 border-dashed"/>
-                            <div className="flex justify-between items-center"><span className="text-muted-foreground">Ganancia por Ventas:</span><span className="font-semibold text-green-600">{formatCurrency(financialSummary.totalProfitFromSales)}</span></div>
-                            <div className="flex justify-between items-center"><span className="text-muted-foreground">Ganancia por Servicios:</span><span className="font-semibold text-green-600">{formatCurrency(financialSummary.totalProfitFromServices)}</span></div>
-                            <hr className="my-1 border-border/50"/>
-                            <div className="flex justify-between items-center"><span className="text-foreground font-medium">Ganancia Bruta Operativa:</span><span className="font-semibold text-lg text-green-600">{formatCurrency(financialSummary.totalOperationalProfit)}</span></div>
+                        <CardContent className="space-y-4 text-base">
+                            <div className="font-semibold text-lg">Ventas (POS)</div>
+                            <div className="pl-4 space-y-1">
+                                <div className="flex justify-between items-center"><span className="text-muted-foreground">Ingreso por Ventas:</span><span className="font-semibold">{formatCurrency(financialSummary.totalIncomeFromSales)}</span></div>
+                                <div className="flex justify-between items-center"><span className="text-muted-foreground">Ganancia por Ventas:</span><span className="font-semibold text-green-600">{formatCurrency(financialSummary.totalProfitFromSales)}</span></div>
+                            </div>
+                            
+                            <div className="font-semibold text-lg pt-2 border-t">Servicios</div>
+                             <div className="pl-4 space-y-1">
+                                <div className="flex justify-between items-center"><span className="text-muted-foreground">Ingreso (Servicios Generales):</span><span className="font-semibold">{formatCurrency(financialSummary.totalIncomeFromServiciosGenerales)}</span></div>
+                                <div className="flex justify-between items-center"><span className="text-muted-foreground">Ingreso (Cambio de Aceite):</span><span className="font-semibold">{formatCurrency(financialSummary.totalIncomeFromCambioAceite)}</span></div>
+                                <div className="flex justify-between items-center"><span className="text-muted-foreground">Ingreso (Pintura):</span><span className="font-semibold">{formatCurrency(financialSummary.totalIncomeFromPintura)}</span></div>
+                            </div>
+                             <div className="pl-4 space-y-1 pt-2 border-t border-dashed">
+                                 <div className="flex justify-between items-center"><span className="text-muted-foreground">Ganancia (Servicios Generales):</span><span className="font-semibold text-green-600">{formatCurrency(financialSummary.totalProfitFromServiciosGenerales)}</span></div>
+                                <div className="flex justify-between items-center"><span className="text-muted-foreground">Ganancia (Cambio de Aceite):</span><span className="font-semibold text-green-600">{formatCurrency(financialSummary.totalProfitFromCambioAceite)}</span></div>
+                                <div className="flex justify-between items-center"><span className="text-muted-foreground">Ganancia (Pintura):</span><span className="font-semibold text-green-600">{formatCurrency(financialSummary.totalProfitFromPintura)}</span></div>
+                            </div>
+
+                            <hr className="my-2 border-border/50"/>
+                            <div className="flex justify-between items-center font-bold text-lg pt-2">
+                                <span className="text-foreground">Ganancia Bruta Operativa Total:</span>
+                                <span className="font-semibold text-xl text-green-600">{formatCurrency(financialSummary.totalOperationalProfit)}</span>
+                            </div>
                         </CardContent>
                     </Card>
                 </TabsContent>
