@@ -7,7 +7,6 @@ import { es } from 'date-fns/locale';
 import React from 'react';
 import { cn, capitalizeWords } from "@/lib/utils";
 import { Card, CardContent } from '@/components/ui/card';
-import Image from "next/legacy/image";
 
 const initialWorkshopInfo: WorkshopInfo = {
   name: "RANORO",
@@ -59,8 +58,7 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
              <img 
               src={effectiveWorkshopInfo.logoUrl} 
               alt={`${effectiveWorkshopInfo.name} Logo`} 
-              style={{ width: '150px', height: 'auto' }} 
-              className="sm:w-[180px]"
+              style={{ width: '150px', height: 'auto' }}
               data-ai-hint="workshop logo"
               crossOrigin="anonymous"
             />
@@ -104,10 +102,10 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
           </section>
 
           <Card className="mt-4 mb-4 border-2 border-gray-200 overflow-hidden">
-            <h3 className="font-semibold text-sm text-white bg-gray-700 p-2" style={{ fontSize: '14px' }}>TRABAJOS A REALIZAR (Precios con IVA)</h3>
+            <h3 className="font-semibold text-white bg-gray-700 p-2" style={{ fontSize: '14px' }}>TRABAJOS A REALIZAR (Precios con IVA)</h3>
             <CardContent className="p-4 space-y-4">
               <section>
-                <div className="space-y-2 pt-2 text-sm" style={{ fontSize: '14px' }}>
+                <div className="space-y-2 pt-2" style={{ fontSize: '14px' }}>
                   {quote.serviceItems && quote.serviceItems.length > 0 ? (
                       quote.serviceItems.map((item, index) => (
                           <div key={index} className="pb-2 border-b border-dashed last:border-b-0">
@@ -151,7 +149,7 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
               
               {quote.notes && (
                 <section className="w-full text-left pt-4 border-t border-dashed" style={{ fontSize: '14px' }}>
-                  <h4 className="font-semibold text-sm text-gray-700 mb-1">Notas Adicionales:</h4>
+                  <h4 className="font-semibold text-gray-700 mb-1">Notas Adicionales:</h4>
                   <p className="whitespace-pre-wrap">{quote.notes}</p>
                 </section>
               )}
@@ -176,7 +174,7 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
                         )}
                     </div>
                     <div className="border-t-2 border-gray-300/30 pt-1 w-56 text-center">
-                        <p className="text-sm font-bold">
+                        <p className="font-bold">
                            ASESOR: {capitalizeWords((quote.preparedByTechnicianName || '').toLowerCase()) || '________________________________'}
                         </p>
                     </div>
@@ -186,7 +184,7 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
         </main>
         
         <footer className="mt-auto">
-          <section className="pt-4 border-t border-gray-200" style={{paddingTop: '1rem', paddingBottom: '0'}}>
+          <section className="pt-4" style={{paddingBottom: '0'}}>
             <h4 className="font-semibold text-sm text-gray-700 mb-1">Términos y Condiciones:</h4>
             <p className="text-xs text-gray-600 leading-snug">
                 {`Precios en MXN. Esta cotización es válida hasta el ${validityDate}. `}
