@@ -53,13 +53,6 @@ export interface NavigationEntry {
 
 const BASE_NAV_STRUCTURE: ReadonlyArray<Omit<NavigationEntry, 'isActive'>> = [
   // Mi Taller
-  {
-    label: 'Panel Principal',
-    path: '/dashboard',
-    icon: LayoutDashboard,
-    groupTag: "Mi Taller",
-    permissions: ['dashboard:view']
-  },
   { 
     label: 'Vehículos', 
     path: '/vehiculos', 
