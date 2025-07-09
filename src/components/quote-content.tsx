@@ -170,11 +170,11 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
                 </div>
                 <div className="text-right flex flex-col items-end justify-end mt-4 sm:mt-0">
                     {quote.preparedByTechnicianSignatureDataUrl && (
-                        <div className="h-16 w-40 relative mb-1">
-                            <Image src={quote.preparedByTechnicianSignatureDataUrl} alt="Firma del asesor" layout="fill" objectFit="contain" />
+                        <div className="h-16 w-40 mb-1">
+                           <img src={quote.preparedByTechnicianSignatureDataUrl} alt="Firma del asesor" style={{ objectFit: 'contain', width: '100%', height: '100%' }}/>
                         </div>
                     )}
-                    <div className="border-t-2 border-gray-300 pt-1 w-56 text-center">
+                    <div className="border-t-2 border-gray-300/70 pt-1 w-56 text-center">
                         <p className="text-xs font-bold">ASESOR: {quote.preparedByTechnicianName?.toUpperCase() || '________________________________'}</p>
                     </div>
                 </div>
@@ -183,14 +183,14 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
         </main>
         
         <footer className="mt-auto pt-4">
-          <div className="text-xs text-gray-600 mt-2">
-            <h4 className="font-semibold text-gray-700 mb-1">Términos y Condiciones:</h4>
-            <p className="leading-snug">
+          <section className="mt-6 pt-4 border-t border-gray-200/80">
+            <h4 className="font-semibold text-xs text-gray-700 mb-1">Términos y Condiciones:</h4>
+            <p className="text-xs text-gray-600 leading-snug">
                 {`Precios en MXN. Esta cotización es válida hasta el ${validityDate}. `}
                 No incluye trabajos o materiales que no estén especificados explícitamente en la presente cotización. Los precios aquí detallados están sujetos a cambios sin previo aviso en caso de variaciones en los costos de los insumos proporcionados por nuestros proveedores, los cuales están fuera de nuestro control.
             </p>
             <div className="print-block hidden pt-2">Impreso el: {formattedPrintDate}</div>
-          </div>
+          </section>
           
           {effectiveWorkshopInfo.fixedFooterText && (
              <div className="text-center mt-6 pt-4 border-t border-gray-200">
