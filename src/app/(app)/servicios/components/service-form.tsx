@@ -791,6 +791,7 @@ export function ServiceForm({
         vehicleIdentifier: selectedVehicle?.licensePlate || values.vehicleLicensePlateSearch || 'N/A',
         preparedByTechnicianId: currentUser.id,
         preparedByTechnicianName: currentUser.name,
+        preparedByTechnicianSignatureDataUrl: currentUser.signatureDataUrl,
         estimatedTotalCost: totalCost,
         estimatedSubTotal: finalSubTotal,
         estimatedTaxAmount: finalTaxAmount,
@@ -1798,9 +1799,9 @@ export function ServiceForm({
         <DialogContent className="max-w-4xl p-2">
             <DialogHeader className="print:hidden">
               <DialogTitle>Vista Previa de Imagen</DialogTitle>
-              <DialogDesc>
+              <DialogDescription>
                 Visualizando la imagen de evidencia. Puede descargarla si lo necesita.
-              </DialogDesc>
+              </DialogDescription>
             </DialogHeader>
             <div className="relative aspect-video w-full">
                 {viewingImageUrl && (

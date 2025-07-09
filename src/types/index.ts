@@ -333,6 +333,7 @@ export interface QuoteRecord {
   description?: string;
   preparedByTechnicianId?: string; // Who prepared the quote
   preparedByTechnicianName?: string;
+  preparedByTechnicianSignatureDataUrl?: string;
   serviceItems: ServiceItem[]; // A quote is composed of one or more service items
   estimatedTotalCost?: number; // Final, tax-inclusive estimated price for the customer
   estimatedSubTotal?: number;

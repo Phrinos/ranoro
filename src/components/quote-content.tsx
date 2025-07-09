@@ -6,6 +6,7 @@ import { format, parseISO, isValid, addDays } from 'date-fns';
 import { es } from 'date-fns/locale';
 import React, { useEffect, useState } from 'react';
 import { cn } from "@/lib/utils";
+import Image from "next/legacy/image";
 
 const initialWorkshopInfo: WorkshopInfo = {
   name: "RANORO",
@@ -16,7 +17,7 @@ const initialWorkshopInfo: WorkshopInfo = {
   logoUrl: "/ranoro-logo.png",
   footerLine1: "¡Gracias por su preferencia!",
   footerLine2: "Para dudas o aclaraciones, no dude en contactarnos.",
-  fixedFooterText: "Sistema de Administración de Talleres Ranoro®\nDiseñado y Desarrollado por Arturo Valdelamar",
+  fixedFooterText: "© 2024 Ranoro®\nSistema de Administracion de Talleres\nTodos los derechos reservados - Diseñado y Desarrollado por Arturo Valdelamar +524493930914",
 };
 
 
@@ -163,12 +164,22 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
                   <p className="text-xs text-gray-600 whitespace-pre-wrap">{quote.notes}</p>
               </div>
           )}
+          
+          <div className="text-center mt-8 pt-4">
+              {quote.preparedByTechnicianSignatureDataUrl && (
+                  <div className="h-24 w-full max-w-[200px] relative inline-block">
+                      <Image src={quote.preparedByTechnicianSignatureDataUrl} alt="Firma del asesor" layout="fill" objectFit="contain" />
+                  </div>
+              )}
+              <div className="border-t-2 border-black mt-2 pt-1 w-64 text-center inline-block">
+                  <p className="text-xs font-bold">ASESOR: {quote.preparedByTechnicianName?.toUpperCase() || '________________________________'}</p>
+              </div>
+          </div>
 
           <div className="text-xs text-gray-600 mt-6 border-t border-gray-300 pt-4">
               <div className="mb-4">
               <h4 className="font-semibold text-gray-700 mb-1">Términos y Condiciones:</h4>
               <p className="leading-snug">
-                  {`Cotización realizada por: ${quote.preparedByTechnicianName || 'N/A'}. `}
                   {`Precios en MXN. Esta cotización es válida hasta el ${validityDate}. `}
                   No incluye trabajos o materiales que no estén especificados explícitamente en la presente cotización. Los precios aquí detallados están sujetos a cambios sin previo aviso en caso de variaciones en los costos de los insumos proporcionados por nuestros proveedores, los cuales están fuera de nuestro control.
               </p>
