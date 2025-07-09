@@ -61,15 +61,15 @@ const StatusTracker = ({ status }: { status: ServiceRecord['status'] | 'Cotizaci
         return (
           <React.Fragment key={state.id}>
             {index > 0 && (
-              <div className={cn("h-0.5 w-2 flex-grow rounded-full", isActive ? "bg-primary" : "bg-muted")} />
+              <div className={cn("h-0.5 w-2 flex-grow rounded-full", isActive ? "bg-green-500" : "bg-muted")} />
             )}
             <div
               title={state.label}
               className={cn(
                 "flex h-6 w-8 items-center justify-center rounded-md border text-[10px] font-bold transition-colors",
                 isActive
-                  ? "border-primary/50 bg-primary/10 text-primary"
-                  : "border-muted-foreground/30 bg-muted text-muted-foreground"
+                  ? "border-green-500 bg-green-500/10 text-green-600"
+                  : "border-muted-foreground/20 bg-muted/50 text-muted-foreground/60"
               )}
             >
               {state.id}
@@ -157,6 +157,19 @@ function HistorialCotizacionesPageComponent() {
       onDeleteQuote: (quoteId: string) => void,
   }) => {
     
+    const getStatusVariant = (status: ServiceRecord['status']): "default" | "secondary" | "outline" | "destructive" | "success" | "waiting" | "delivered" => {
+        switch (status) {
+          case "Completado": return "success"; 
+          case "Reparando": return "secondary"; 
+          case "Cancelado": return "destructive"; 
+          case "Agendado": return "default";
+          case "En Espera de Refacciones": return "waiting";
+          case "Entregado": return "delivered";
+          case "Cotizacion": return "outline";
+          default: return "default";
+        }
+    };
+    
     const getQuoteDescriptionText = (quote: QuoteRecord) => {
       if (quote.serviceItems && quote.serviceItems.length > 0) {
         return quote.serviceItems.map(item => item.name).join(', ');
@@ -177,8 +190,8 @@ function HistorialCotizacionesPageComponent() {
                 <CardContent className="p-0">
                   <div className="flex flex-col md:flex-row">
                      <div className="p-4 flex flex-col justify-center items-center text-center w-full md:w-48 flex-shrink-0">
-                        <Badge variant="outline" className="w-full justify-center text-center text-sm mb-2">Cotizacion</Badge>
-                        <p className="text-muted-foreground text-xs">Folio: {quote.id}</p>
+                        <StatusTracker status={status} />
+                        <p className="text-muted-foreground text-xs mt-2">Folio: {quote.id}</p>
                         <p className="font-semibold text-lg text-foreground">{format(parseISO(quote.quoteDate!), "dd MMM yyyy", { locale: es })}</p>
                       </div>
                       <div className="p-4 flex flex-col justify-center flex-grow space-y-2 text-left border-y md:border-y-0 md:border-x">
@@ -196,7 +209,7 @@ function HistorialCotizacionesPageComponent() {
                         </p>
                       </div>
                       <div className="p-4 flex flex-col justify-center items-center text-center border-t md:border-t-0 md:border-l w-full md:w-56 flex-shrink-0 space-y-2">
-                          <StatusTracker status={status} />
+                          <Badge variant={getStatusVariant(status)} className="w-full justify-center text-center text-sm">{status}</Badge>
                           <p className="text-xs text-muted-foreground">Asesor: {quote.preparedByTechnicianName || 'N/A'}</p>
                           <div className="flex justify-center items-center gap-1">
                             <Button variant="ghost" size="icon" onClick={() => onViewQuote(quote)} title="Vista Previa"><Eye className="h-4 w-4" /></Button>
