@@ -479,8 +479,9 @@ export async function hydrateFromFirestore() {
  * @param keysToUpdate An array of keys corresponding to the data arrays to be updated.
  */
 export async function persistToFirestore(keysToUpdate?: DataKey[]) {
-  // DEVELOPMENT ONLY: Disable Firestore writes to prevent data overwrites.
-  if (true) { // Set to false to re-enable persistence
+  // DEV MODE: Disable Firestore writes by setting this to `true`.
+  const DEV_MODE_SKIP_PERSISTENCE = true;
+  if (DEV_MODE_SKIP_PERSISTENCE) { 
       console.log(`[DEV MODE] Persist to Firestore skipped for keys: ${keysToUpdate?.join(', ')}`);
       if (typeof window !== 'undefined') {
           // Dispatch event to keep local UI consistent with in-memory changes
@@ -489,7 +490,7 @@ export async function persistToFirestore(keysToUpdate?: DataKey[]) {
       return;
   }
 
-  // The code below is now disabled.
+  // The code below is now disabled in dev mode.
   if (!db) {
     console.warn('Persist skipped: Firebase not configured.');
     return;
