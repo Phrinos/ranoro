@@ -28,6 +28,7 @@ import type { DateRange } from "react-day-picker";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
 
 type OperationTypeFilter = "all" | "Venta" | "Servicio" | "C. Aceite" | "Pintura";
 
@@ -94,6 +95,16 @@ function ReportesPageComponent() {
         return list;
     }, [aggregatedInventory, reporteInvSearchTerm]);
 
+    const getOperationTypeVariant = (type: string) => {
+        switch (type) {
+            case 'Venta': return 'secondary';
+            case 'Servicio General': return 'default';
+            case 'Cambio de Aceite': return 'blue';
+            case 'Pintura': return 'purple';
+            default: return 'outline';
+        }
+    };
+
 
     if (!hydrated) { return <div className="text-center py-10">Cargando reportes...</div>; }
     
@@ -132,6 +143,7 @@ function ReportesPageComponent() {
                                             <TableHead className="text-white">Descripción</TableHead>
                                             <TableHead className="text-right text-white">Monto</TableHead>
                                             <TableHead className="text-right text-white">Ganancia</TableHead>
+                                            <TableHead className="text-right text-white">Método Pago</TableHead>
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
@@ -139,16 +151,17 @@ function ReportesPageComponent() {
                                             filteredAndSortedOperations.map(op => (
                                                 <TableRow key={`${op.type}-${op.id}`}>
                                                     <TableCell>{op.date ? format(parseISO(op.date), "dd MMM yy, HH:mm", { locale: es }) : 'N/A'}</TableCell>
-                                                    <TableCell>{op.type}</TableCell>
+                                                    <TableCell><Badge variant={getOperationTypeVariant(op.type)}>{op.type}</Badge></TableCell>
                                                     <TableCell>{op.id}</TableCell>
                                                     <TableCell className="max-w-xs truncate">{op.description}</TableCell>
-                                                    <TableCell className="text-right">{formatCurrency(op.totalAmount)}</TableCell>
-                                                    <TableCell className="text-right">{formatCurrency(op.profit)}</TableCell>
+                                                    <TableCell className="text-right font-semibold">{formatCurrency(op.totalAmount)}</TableCell>
+                                                    <TableCell className="text-right font-semibold">{formatCurrency(op.profit)}</TableCell>
+                                                    <TableCell className="text-right">{(op.originalObject as any).paymentMethod || 'N/A'}</TableCell>
                                                 </TableRow>
                                             ))
                                         ) : (
                                             <TableRow>
-                                                <TableCell colSpan={6}>
+                                                <TableCell colSpan={7}>
                                                     <div className="flex flex-col items-center justify-center py-10 text-center text-muted-foreground">
                                                         <LineChart className="h-12 w-12 mb-2" />
                                                         <h3 className="text-lg font-semibold text-foreground">Sin Operaciones</h3>
