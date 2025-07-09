@@ -15,7 +15,7 @@ import type { VehicleFormValues } from "./components/vehicle-form";
 import { useToast } from "@/hooks/use-toast";
 import { useState, useMemo, useEffect, useCallback, Suspense } from "react";
 import { useSearchParams } from 'next/navigation';
-import { Card, CardContent, CardHeader, CardTitle, CardFooter, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { subMonths, parseISO, isBefore, compareAsc, compareDesc, isValid } from 'date-fns';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
@@ -24,6 +24,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { PriceListDialog } from '../precios/components/price-list-dialog';
 import type { PriceListFormValues } from '../precios/components/price-list-form';
 import { Edit, Trash2 } from 'lucide-react';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 
 // --- START CONTENT FOR RESUMEN ---
@@ -278,7 +279,6 @@ function PrecotizacionesPageContent() {
 
     for (let i = 1; i < sortedYears.length; i++) {
         if (sortedYears[i] !== sortedYears[i - 1] + 1) {
-            // End of a consecutive range
             const rangeEnd = sortedYears[i - 1];
             if (rangeStart === rangeEnd) {
                 ranges.push(String(rangeStart));
@@ -292,7 +292,6 @@ function PrecotizacionesPageContent() {
         }
     }
     
-    // Add the last range
     const lastYear = sortedYears[sortedYears.length - 1];
     if (rangeStart === lastYear) {
       ranges.push(String(rangeStart));
@@ -328,63 +327,66 @@ function PrecotizacionesPageContent() {
           />
         </div>
       
-      <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+      <div className="space-y-4">
         {filteredRecords.length > 0 ? filteredRecords.map(record => (
-          <Card key={record.id} className="flex flex-col">
-            <CardHeader>
-              <div className="flex justify-between items-start">
-                  <CardTitle className="text-lg flex items-center gap-2">
-                    <Car className="h-5 w-5 text-primary" />
-                    {record.make} {record.model}
-                  </CardTitle>
-                  <Badge variant="outline" className="font-mono">{formatYearRange(record.years)}</Badge>
-              </div>
-              <CardDescription>
-                  {record.services.length} servicio(s) estandarizado(s) para este modelo.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-2 flex-grow">
-              <h4 className="font-semibold text-sm mb-2">Servicios Disponibles:</h4>
-              <ScrollArea className="h-40 pr-3">
-                <div className="space-y-3">
-                    {record.services.map((service) => (
-                        <div key={service.id} className="text-sm p-2 border rounded-md bg-muted/50">
-                            <div className="flex justify-between items-center">
-                                <span className="font-medium text-foreground">{service.serviceName}</span>
-                                <span className="font-bold text-primary">{formatCurrency(service.customerPrice)}</span>
-                            </div>
-                            <p className="text-xs text-muted-foreground mt-1 truncate" title={service.description}>{service.description}</p>
-                        </div>
-                    ))}
+          <Card key={record.id} className="overflow-hidden">
+             <div className="flex flex-col md:flex-row">
+                <div className="p-4 bg-muted/50 md:w-60 flex-shrink-0 flex flex-col justify-between">
+                    <div>
+                        <h3 className="text-lg font-bold flex items-center gap-2"><Car className="h-5 w-5 text-primary"/>{record.make} {record.model}</h3>
+                        <p className="text-sm text-muted-foreground mt-1">{formatYearRange(record.years)}</p>
+                    </div>
+                    <div className="mt-4">
+                        <Badge>{record.services.length} servicio(s)</Badge>
+                    </div>
                 </div>
-              </ScrollArea>
-            </CardContent>
-            <CardFooter className="flex justify-end gap-2 bg-muted/50 p-3 mt-auto">
-              <Button variant="ghost" size="icon" onClick={() => handleOpenDialog(record)}>
-                <Edit className="h-4 w-4"/>
-              </Button>
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive/90">
-                    <Trash2 className="h-4 w-4"/>
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>¿Eliminar esta precotización?</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        Esta acción no se puede deshacer. Se eliminará permanentemente la precotización para &quot;{record.make} {record.model}&quot;.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                      <AlertDialogAction onClick={() => handleDeleteRecord(record.id)} className="bg-destructive hover:bg-destructive/90">
-                        Sí, Eliminar
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-              </AlertDialog>
-            </CardFooter>
+                <div className="flex-grow p-4">
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead className="w-2/5">Servicio</TableHead>
+                                <TableHead>Descripción</TableHead>
+                                <TableHead className="text-right">Precio Cliente</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {record.services.map((service) => (
+                                <TableRow key={service.id}>
+                                    <TableCell className="font-medium">{service.serviceName}</TableCell>
+                                    <TableCell className="text-xs text-muted-foreground">{service.description}</TableCell>
+                                    <TableCell className="text-right font-semibold">{formatCurrency(service.customerPrice)}</TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                </div>
+                <div className="p-4 bg-muted/50 flex flex-col items-center justify-center gap-2 border-l">
+                    <Button variant="outline" size="sm" className="w-full" onClick={() => handleOpenDialog(record)}>
+                        <Edit className="mr-2 h-4 w-4"/> Editar
+                    </Button>
+                    <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                            <Button variant="destructive" size="sm" className="w-full">
+                                <Trash2 className="mr-2 h-4 w-4"/> Eliminar
+                            </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                            <AlertDialogHeader>
+                            <AlertDialogTitle>¿Eliminar esta precotización?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                                Esta acción no se puede deshacer. Se eliminará permanentemente la precotización para &quot;{record.make} {record.model}&quot;.
+                            </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                            <AlertDialogAction onClick={() => handleDeleteRecord(record.id)} className="bg-destructive hover:bg-destructive/90">
+                                Sí, Eliminar
+                            </AlertDialogAction>
+                            </AlertDialogFooter>
+                        </AlertDialogContent>
+                    </AlertDialog>
+                </div>
+             </div>
           </Card>
         )) : (
           <div className="col-span-full text-center py-12 text-muted-foreground">
@@ -583,3 +585,6 @@ export default function VehiculosPageWrapper() {
         </Suspense>
     );
 }
+
+
+    
