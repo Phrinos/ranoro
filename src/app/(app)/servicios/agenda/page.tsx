@@ -2,12 +2,12 @@
 
 "use client";
 
+import React, { useState, useEffect, useMemo, useCallback, Suspense } from "react";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { PlusCircle, List, Calendar as CalendarIcon, FileCheck, Eye, Loader2, Edit } from "lucide-react";
 import { ServiceDialog } from "../components/service-dialog";
 import type { ServiceRecord, Vehicle, Technician, QuoteRecord, InventoryItem, CapacityAnalysisOutput } from "@/types";
-import React, { useState, useEffect, useMemo, useCallback, Suspense } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { format, parseISO, isToday, isTomorrow, compareAsc, isValid, startOfDay, endOfDay } from "date-fns";
 import { es } from 'date-fns/locale';
@@ -37,7 +37,7 @@ const ServiceAppointmentCard = React.memo(({ service, vehicles, onEdit }: { serv
     <Card className="shadow-sm overflow-hidden mb-4">
       <CardContent className="p-0">
         <div className="flex flex-col md:flex-row text-sm">
-          <div className="p-4 flex flex-col justify-start items-start text-left w-full md:w-48 flex-shrink-0">
+          <div className="p-4 flex flex-col justify-center items-center text-center w-full md:w-48 flex-shrink-0">
               <p className="font-semibold text-xl text-foreground">{format(parseISO(service.serviceDate), "dd MMM yyyy", { locale: es })}</p>
               <p className="text-muted-foreground text-xs mt-1">Folio: {service.id}</p>
               <StatusTracker status={service.status} />
@@ -53,7 +53,6 @@ const ServiceAppointmentCard = React.memo(({ service, vehicles, onEdit }: { serv
               <p className="font-bold text-2xl text-black">{format(parseISO(service.serviceDate), "HH:mm", { locale: es })}</p>
           </div>
           <div className="p-4 flex flex-col justify-center items-center text-center border-t md:border-t-0 md:border-l w-full md:w-56 flex-shrink-0 space-y-2">
-              <Badge variant={service.status === 'Reparando' ? 'secondary' : 'default'} className="w-full justify-center text-center text-sm">{service.status}</Badge>
               <p className="text-xs text-muted-foreground">Asesor: {service.serviceAdvisorName || 'N/A'}</p>
               <div className="flex justify-center items-center gap-1">
                   <Button variant="ghost" size="icon" onClick={onEdit} title="Ver/Editar Servicio">

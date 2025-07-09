@@ -1,31 +1,21 @@
 
 "use client";
 
+import React, { useState, useEffect, useMemo, useRef, useCallback, Suspense } from "react";
+import { useSearchParams } from 'next/navigation';
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Search, ListFilter, CalendarIcon as CalendarDateIcon, FileText, DollarSign, Wrench, Ban, Edit, Eye, MessageSquare, Copy, Download } from "lucide-react";
-import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
+import { Search, ListFilter, FileText, Eye, Edit } from "lucide-react";
 import { placeholderQuotes, placeholderVehicles, placeholderTechnicians, placeholderServiceRecords, placeholderInventory, persistToFirestore } from "@/lib/placeholder-data"; 
 import type { QuoteRecord, Vehicle, ServiceRecord, Technician, InventoryItem, WorkshopInfo } from "@/types"; 
-import React, { useState, useEffect, useMemo, useRef, useCallback, Suspense } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { format, parseISO, compareAsc, compareDesc, isWithinInterval, isValid, startOfDay, endOfDay, addDays, isAfter, isBefore } from "date-fns";
+import { format, parseISO, compareAsc, compareDesc } from "date-fns";
 import { es } from 'date-fns/locale';
-import type { DateRange } from "react-day-picker";
-import { useSearchParams } from 'next/navigation';
 import { cn, formatCurrency } from "@/lib/utils";
 import { ServiceDialog } from "../../servicios/components/service-dialog";
-import { doc, deleteDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebaseClient.js';
-import { Badge } from "@/components/ui/badge";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { ServiceSheetContent } from "@/components/service-sheet-content";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { StatusTracker } from "../../servicios/components/StatusTracker";
 
 
@@ -43,19 +33,6 @@ const QuoteList = React.memo(({ quotes, vehicles, onEditQuote, onGenerateService
     onViewQuote: (quote: QuoteRecord) => void,
     onDeleteQuote: (quoteId: string) => void,
 }) => {
-  
-  const getStatusVariant = (status: ServiceRecord['status']): "default" | "secondary" | "outline" | "destructive" | "success" | "waiting" | "delivered" => {
-      switch (status) {
-        case "Completado": return "success"; 
-        case "Reparando": return "secondary"; 
-        case "Cancelado": return "destructive"; 
-        case "Agendado": return "default";
-        case "En Espera de Refacciones": return "waiting";
-        case "Entregado": return "delivered";
-        case "Cotizacion": return "outline";
-        default: return "default";
-      }
-  };
   
   const getServiceDescriptionText = (quote: QuoteRecord) => {
     if (quote.serviceItems && quote.serviceItems.length > 0) {
@@ -76,7 +53,7 @@ const QuoteList = React.memo(({ quotes, vehicles, onEditQuote, onGenerateService
             <Card key={quote.id} className="shadow-sm overflow-hidden">
               <CardContent className="p-0">
                 <div className="flex flex-col md:flex-row">
-                   <div className="p-4 flex flex-col justify-start items-start text-left w-full md:w-48 flex-shrink-0">
+                   <div className="p-4 flex flex-col justify-center items-center text-center w-full md:w-48 flex-shrink-0">
                       <p className="font-semibold text-xl text-foreground">{format(parseISO(quote.quoteDate ?? new Date().toISOString()), "dd MMM yyyy", { locale: es })}</p>
                       <p className="text-muted-foreground text-xs mt-1">Folio: {quote.id}</p>
                       <StatusTracker status={status} />
@@ -96,7 +73,6 @@ const QuoteList = React.memo(({ quotes, vehicles, onEditQuote, onGenerateService
                       </p>
                     </div>
                     <div className="p-4 flex flex-col justify-center items-center text-center border-t md:border-t-0 md:border-l w-full md:w-56 flex-shrink-0 space-y-2">
-                        <Badge variant={getStatusVariant(status)} className="w-full justify-center text-center text-sm">{status}</Badge>
                         <p className="text-xs text-muted-foreground">Asesor: {quote.preparedByTechnicianName || 'N/A'}</p>
                         <div className="flex justify-center items-center gap-1">
                           <Button variant="ghost" size="icon" onClick={() => onViewQuote(quote)} title="Vista Previa"><Eye className="h-4 w-4" /></Button>
@@ -162,13 +138,16 @@ function HistorialCotizacionesPageComponent() {
     filtered.sort((a, b) => {
       const totalA = a.totalCost ?? a.estimatedTotalCost ?? 0;
       const totalB = b.totalCost ?? b.estimatedTotalCost ?? 0;
+      const dateA = a.quoteDate ? parseISO(a.quoteDate) : new Date(0);
+      const dateB = b.quoteDate ? parseISO(b.quoteDate) : new Date(0);
+
       switch (sortOption) {
-        case "date_asc": return compareAsc(parseISO(a.quoteDate ?? ""), parseISO(b.quoteDate ?? ""));
+        case "date_asc": return compareAsc(dateA, dateB);
         case "total_asc": return totalA - totalB;
-        case "total_desc": return totalB - a.totalCost;
+        case "total_desc": return totalB - totalA;
         case "vehicle_asc": return (a.vehicleIdentifier || '').localeCompare(b.vehicleIdentifier || '');
         case "vehicle_desc": return (b.vehicleIdentifier || '').localeCompare(a.vehicleIdentifier || '');
-        case "date_desc": default: return compareDesc(parseISO(a.quoteDate ?? ""), parseISO(b.quoteDate ?? ""));
+        case "date_desc": default: return compareDesc(dateA, dateB);
       }
     });
     return filtered;
@@ -178,7 +157,27 @@ function HistorialCotizacionesPageComponent() {
   const handleEditQuote = useCallback((quote: QuoteRecord) => { setSelectedQuoteForEdit(quote); setIsEditQuoteDialogOpen(true); }, []);
   const handleDeleteQuote = useCallback(async (quoteId: string) => { /* ... delete logic ... */ }, []);
   const handleGenerateService = useCallback((quote: QuoteRecord) => { /* ... convert to service logic ... */ }, []);
-  const handleSaveQuote = useCallback(async (data: QuoteRecord | ServiceRecord) => { /* ... save logic ... */ }, []);
+  const handleSaveQuote = useCallback(async (data: QuoteRecord | ServiceRecord) => { 
+    // This logic handles both creating and updating quotes.
+    const isEditing = !!data.id;
+    const quoteData = data as QuoteRecord;
+
+    if (isEditing) {
+        const index = placeholderQuotes.findIndex(q => q.id === quoteData.id);
+        if (index > -1) {
+            placeholderQuotes[index] = quoteData;
+        }
+    } else {
+        placeholderQuotes.push(quoteData);
+    }
+
+    await persistToFirestore(['quotes']);
+    setIsEditQuoteDialogOpen(false);
+    toast({
+        title: `Cotización ${isEditing ? 'Actualizada' : 'Creada'}`,
+        description: `Se guardaron los cambios para ${quoteData.id}.`,
+    });
+  }, [toast]);
 
   return (
     <>
