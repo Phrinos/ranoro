@@ -291,9 +291,9 @@ function PosPageComponent() {
       </div>
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-3 mb-6">
-          <TabsTrigger value="informe" className="data-[state=active]:bg-card data-[state=active]:text-card-foreground">Informe</TabsTrigger>
-          <TabsTrigger value="ventas" className="data-[state=active]:bg-card data-[state=active]:text-card-foreground">Ventas</TabsTrigger>
-          <TabsTrigger value="caja" className="data-[state=active]:bg-card data-[state=active]:text-card-foreground">Caja</TabsTrigger>
+          <TabsTrigger value="informe" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Informe</TabsTrigger>
+          <TabsTrigger value="ventas" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Ventas</TabsTrigger>
+          <TabsTrigger value="caja" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Caja</TabsTrigger>
         </TabsList>
         <TabsContent value="informe" className="space-y-6">
             <div className="space-y-2">
@@ -389,5 +389,7 @@ export default function POSPageWrapper() {
         </Suspense>
     )
 }
+
+    
 
     
