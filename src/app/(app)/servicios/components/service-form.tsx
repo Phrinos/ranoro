@@ -230,6 +230,7 @@ const paymentMethodIcons: Record<PaymentMethod, React.ElementType> = {
   "Tarjeta+Transferencia": ArrowRightLeft,
 };
 
+const generateUniqueId = () => (Date.now().toString(36) + Math.random().toString(36).slice(2, 9)).toUpperCase();
 
 export function ServiceForm({
   initialDataService,
@@ -735,8 +736,8 @@ export function ServiceForm({
     if (recordType === 'service') {
       const serviceData: ServiceRecord = {
         ...values,
-        id: values.id || `SER_${Date.now().toString(36)}`,
-        publicId: values.publicId || `srv_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 9)}`,
+        id: values.id || generateUniqueId(),
+        publicId: values.publicId || `srv_${(Date.now().toString(36) + Math.random().toString(36).slice(2, 9)).toLowerCase()}`,
         vehicleId: vehicleIdToSave,
         description: compositeDescription,
         technicianId: values.technicianId || '',
@@ -780,8 +781,8 @@ export function ServiceForm({
     } else { // Quote mode
       const quoteData: QuoteRecord = {
         ...values,
-        id: values.id || `COT_${Date.now().toString(36)}`,
-        publicId: values.publicId || `cot_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 9)}`,
+        id: values.id || generateUniqueId(),
+        publicId: values.publicId || `cot_${(Date.now().toString(36) + Math.random().toString(36).slice(2, 9)).toLowerCase()}`,
         quoteDate: new Date().toISOString(),
         vehicleId: vehicleIdToSave,
         description: compositeDescription,
@@ -1650,7 +1651,7 @@ export function ServiceForm({
             {showReceptionTab && (
               <TabsContent value="seguridad" className="space-y-6 mt-0">
                   <SafetyChecklist 
-                    control={form.control} 
+                    control={control} 
                     isReadOnly={isReadOnly} 
                     onSignatureClick={() => setIsTechSignatureDialogOpen(true)} 
                     signatureDataUrl={technicianSignature}

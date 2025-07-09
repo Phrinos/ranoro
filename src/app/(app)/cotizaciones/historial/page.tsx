@@ -200,7 +200,10 @@ export default function HistorialCotizacionesPage() {
       const originalQuote = selectedQuoteForEdit;
       if (!originalQuote) return;
 
-      const serviceToSave: ServiceRecord = { ...newService, id: `SER_${Date.now().toString(36)}` };
+      // The new service ID should be the same as the original quote ID.
+      // The `data` object coming from the form already contains this ID.
+      const serviceToSave: ServiceRecord = { ...newService };
+      
       placeholderServiceRecords.push(serviceToSave);
 
       // Find original quote and link it to the new service
@@ -231,19 +234,20 @@ export default function HistorialCotizacionesPage() {
       const newService = data as ServiceRecord;
       if (!quoteToConvert) return;
 
-      const newServiceId = `SER_${Date.now().toString(36)}`;
-      const serviceToSave: ServiceRecord = { ...newService, id: newServiceId };
+      // The ID from the `data` (which comes from the form) is already the quote's ID.
+      // We don't need to generate a new one.
+      const serviceToSave: ServiceRecord = { ...newService };
       placeholderServiceRecords.push(serviceToSave);
 
       const quoteIndex = placeholderQuotes.findIndex(q => q.id === quoteToConvert.id);
       if (quoteIndex !== -1) {
-          placeholderQuotes[quoteIndex].serviceId = newServiceId;
+          placeholderQuotes[quoteIndex].serviceId = serviceToSave.id;
           setAllQuotes([...placeholderQuotes]);
       }
       
       await persistToFirestore(['serviceRecords', 'quotes']);
       
-      toast({ title: "Servicio Generado", description: `Se creó el servicio ${newServiceId} desde la cotización.` });
+      toast({ title: "Servicio Generado", description: `Se creó el servicio ${serviceToSave.id} desde la cotización.` });
       setIsGenerateServiceDialogOpen(false);
   }, [toast, quoteToConvert]);
 

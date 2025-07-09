@@ -305,7 +305,7 @@ export default function InventoryItemDetailPage() {
                                         </TableCell>
                                         <TableCell>
                                             <Link 
-                                                href={move.relatedId.startsWith('SER') ? `/servicios/historial?id=${move.relatedId}` : `/pos?id=${move.relatedId}`} 
+                                                href={move.type === 'Salida por Venta' ? `/pos?id=${move.relatedId}` : `/servicios/historial?id=${move.relatedId}`}
                                                 className="text-primary hover:underline flex items-center gap-1"
                                             >
                                                 {move.relatedId} <ArrowRight className="h-3 w-3"/>
