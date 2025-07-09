@@ -243,15 +243,13 @@ export default function TableroPage() {
             return (
               <div key={column.id} className="w-72 flex-shrink-0">
                 <Card className={cn("h-full min-h-[40rem]", columnStyle.bg)}>
-                  <CardHeader className="p-0">
-                    <div className="bg-black text-white p-4">
-                      <CardTitle className={cn("text-base font-semibold flex justify-between items-center")}>
-                        <span>{column.title}</span>
-                        <Badge variant="secondary" className="bg-white/60 text-black">{column.services.length}</Badge>
-                      </CardTitle>
-                    </div>
+                  <CardHeader>
+                    <CardTitle className={cn("text-base font-semibold flex justify-between items-center", columnStyle.title)}>
+                      <span>{column.title}</span>
+                      <Badge variant="secondary">{column.services.length}</Badge>
+                    </CardTitle>
                   </CardHeader>
-                  <CardContent className="p-4 pt-4 h-full">
+                  <CardContent className="p-4 pt-0 h-full">
                     {column.services.map(service => (
                       <KanbanCard
                         key={service.id}
