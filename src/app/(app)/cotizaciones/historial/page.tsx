@@ -13,9 +13,9 @@ import { Search, ListFilter, CalendarIcon as CalendarDateIcon, FileText, DollarS
 import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
 import { placeholderQuotes, placeholderVehicles, placeholderTechnicians, placeholderServiceRecords, placeholderInventory, persistToFirestore } from "@/lib/placeholder-data"; 
 import type { QuoteRecord, Vehicle, ServiceRecord, Technician, InventoryItem, WorkshopInfo } from "@/types"; 
-import { useState, useEffect, useMemo, useRef, useCallback, Suspense } from "react";
+import React, { useState, useEffect, useMemo, useRef, useCallback, Suspense } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { format, parseISO, compareAsc, compareDesc, isWithinInterval, isValid, startOfDay, endOfDay, addDays, isAfter } from "date-fns";
+import { format, parseISO, compareAsc, compareDesc, isWithinInterval, isValid, startOfDay, endOfDay, addDays, isAfter, isBefore } from "date-fns";
 import { es } from 'date-fns/locale';
 import type { DateRange } from "react-day-picker";
 import { useSearchParams } from 'next/navigation';
@@ -35,77 +35,49 @@ type QuoteSortOption =
   | "vehicle_asc" | "vehicle_desc";
 
 
-// Helper component for the list of quotes to avoid code repetition
-const QuoteList = ({ quotes, vehicles, onEditQuote, onGenerateService, onViewQuote, onDeleteQuote }: { 
-    quotes: QuoteRecord[], 
-    vehicles: Vehicle[], 
-    onEditQuote: (quote: QuoteRecord) => void,
-    onGenerateService: (quote: QuoteRecord) => void,
-    onViewQuote: (quote: QuoteRecord) => void,
-    onDeleteQuote: (quoteId: string) => void,
-}) => {
+// Helper to track the lifecycle status of a service/quote
+const StatusTracker = ({ status }: { status: ServiceRecord['status'] | 'Cotizacion' }) => {
+  const states = [
+    { id: 'COTI', label: 'Cotización', statuses: ['Cotizacion'] },
+    { id: 'AGEN', label: 'Agendado', statuses: ['Agendado'] },
+    { id: 'SERV', label: 'En Servicio', statuses: ['Reparando', 'En Espera de Refacciones'] },
+    { id: 'COMP', label: 'Completado', statuses: ['Completado', 'Entregado'] },
+  ];
   
-  const getQuoteDescriptionText = (quote: QuoteRecord) => {
-    if (quote.serviceItems && quote.serviceItems.length > 0) {
-      return quote.serviceItems.map(item => item.name).join(', ');
-    }
-    return quote.description || 'Sin descripción';
+  const getRank = (s: string) => {
+    if (s === 'Cotizacion') return 0;
+    if (s === 'Agendado') return 1;
+    if (s === 'Reparando' || s === 'En Espera de Refacciones') return 2;
+    if (s === 'Completado' || s === 'Entregado') return 3;
+    return -1; // For cancelled or other states
   };
   
-  const getStatusVariant = (status: ServiceRecord['status'] | 'Cotizacion'): "default" | "secondary" | "outline" | "destructive" | "success" | "lightRed" | "waiting" | "delivered" => {
-    switch (status) {
-      case "Completado": return "success"; case "Reparando": return "secondary"; case "Cancelado": return "destructive";
-      case "Agendado": return "lightRed"; case "Cotizacion": return "outline";
-      case "En Espera de Refacciones": return "waiting"; case "Entregado": return "delivered";
-      default: return "default";
-    }
-  };
+  const currentRank = getRank(status);
 
   return (
-    <div className="space-y-4">
-      {quotes.length > 0 ? (
-        quotes.map(quote => {
-          const vehicle = vehicles.find(v => v.id === quote.vehicleId);
-          const service = quote.serviceId ? placeholderServiceRecords.find(s => s.id === quote.serviceId) : null;
-          const status = service ? service.status : 'Cotizacion';
-
-          return (
-            <Card key={quote.id} className="shadow-sm overflow-hidden">
-              <CardContent className="p-0">
-                <div className="flex flex-col md:flex-row">
-                   <div className="p-4 flex flex-col justify-center items-center text-center w-full md:w-48 flex-shrink-0">
-                      <Badge variant={getStatusVariant(status)} className="w-full justify-center text-center text-sm mb-2">{status}</Badge>
-                      <p className="text-muted-foreground text-xs">Folio: {quote.id}</p>
-                      <p className="font-semibold text-lg text-foreground">{format(parseISO(quote.quoteDate!), "dd MMM yyyy", { locale: es })}</p>
-                    </div>
-                    <div className="p-4 flex flex-col justify-center flex-grow space-y-2 text-left border-y md:border-y-0 md:border-x">
-                      <p className="text-sm text-muted-foreground">{vehicle?.ownerName} - {vehicle?.ownerPhone}</p>
-                      <p className="font-bold text-2xl text-black">{vehicle ? `${vehicle.licensePlate} - ${vehicle.make} ${vehicle.model} ${vehicle.year}` : 'N/A'}</p>
-                      <p className="text-sm text-foreground">
-                        <span className="font-semibold">{quote.serviceType}:</span> {getQuoteDescriptionText(quote)}
-                      </p>
-                    </div>
-                    <div className="p-4 flex flex-col justify-center items-center text-center w-full md:w-48 flex-shrink-0">
-                      <p className="text-xs text-muted-foreground">Costo Estimado</p>
-                      <p className="font-bold text-2xl text-black">{formatCurrency(quote.estimatedTotalCost)}</p>
-                    </div>
-                    <div className="p-4 flex flex-col justify-center items-center text-center border-t md:border-t-0 md:border-l w-full md:w-56 flex-shrink-0 space-y-2">
-                        <p className="text-xs text-muted-foreground mt-4">Asesor: {quote.preparedByTechnicianName || 'N/A'}</p>
-                        <div className="flex justify-center items-center gap-1">
-                          <Button variant="ghost" size="icon" onClick={() => onViewQuote(quote)} title="Vista Previa"><Eye className="h-4 w-4" /></Button>
-                          <Button variant="ghost" size="icon" onClick={() => onEditQuote(quote)} title="Editar Cotización"><Edit className="h-4 w-4" /></Button>
-                          <Button variant="ghost" size="icon" onClick={() => onGenerateService(quote)} title="Generar Servicio" className="text-blue-600 hover:text-blue-700"><Wrench className="h-4 w-4" /></Button>
-                          <AlertDialog><AlertDialogTrigger asChild><Button variant="ghost" size="icon" title="Cancelar Cotización" disabled={!!quote.serviceId}><Ban className="h-4 w-4 text-destructive" /></Button></AlertDialogTrigger><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>¿Cancelar esta cotización?</AlertDialogTitle><AlertDialogDescription>Esta acción no se puede deshacer y eliminará permanentemente la cotización {quote.id}.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>No</AlertDialogCancel><AlertDialogAction onClick={() => onDeleteQuote(quote.id)} className="bg-destructive hover:bg-destructive/90">Sí, Cancelar</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog>
-                        </div>
-                    </div>
-                </div>
-              </CardContent>
-            </Card>
-          )
-        })
-      ) : (
-        <div className="text-center py-10 border-2 border-dashed rounded-lg text-muted-foreground">No hay cotizaciones que coincidan con los filtros.</div>
-      )}
+    <div className="flex items-center justify-center space-x-1 my-1 w-full">
+      {states.map((state, index) => {
+        const isActive = currentRank >= index;
+        
+        return (
+          <React.Fragment key={state.id}>
+            {index > 0 && (
+              <div className={cn("h-0.5 w-2 flex-grow rounded-full", isActive ? "bg-primary" : "bg-muted")} />
+            )}
+            <div
+              title={state.label}
+              className={cn(
+                "flex h-6 w-8 items-center justify-center rounded-md border text-[10px] font-bold transition-colors",
+                isActive
+                  ? "border-primary/50 bg-primary/10 text-primary"
+                  : "border-muted-foreground/30 bg-muted text-muted-foreground"
+              )}
+            >
+              {state.id}
+            </div>
+          </React.Fragment>
+        );
+      })}
     </div>
   );
 };
@@ -122,7 +94,6 @@ function HistorialCotizacionesPageComponent() {
   const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'resumen');
   const [searchTerm, setSearchTerm] = useState("");
-  const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
   const [sortOption, setSortOption] = useState<QuoteSortOption>("date_desc"); 
 
   const [isEditQuoteDialogOpen, setIsEditQuoteDialogOpen] = useState(false);
@@ -146,6 +117,7 @@ function HistorialCotizacionesPageComponent() {
   }, []);
   
   const activeQuotes = useMemo(() => {
+    // Show all quotes, no longer filtered by "vigentes"
     let filtered = allQuotes.filter(quote => quote.status === 'Cotizacion');
 
     if (searchTerm) {
@@ -159,8 +131,8 @@ function HistorialCotizacionesPageComponent() {
     filtered.sort((a, b) => {
       switch (sortOption) {
         case "date_asc": return compareAsc(parseISO(a.quoteDate ?? ""), parseISO(b.quoteDate ?? ""));
-        case "total_asc": return (a.estimatedTotalCost || 0) - (b.estimatedTotalCost || 0);
-        case "total_desc": return (b.estimatedTotalCost || 0) - (a.estimatedTotalCost || 0);
+        case "total_asc": return (a.totalCost || 0) - (b.totalCost || 0);
+        case "total_desc": return (b.totalCost || 0) - (a.totalCost || 0);
         case "vehicle_asc": return (a.vehicleIdentifier || '').localeCompare(b.vehicleIdentifier || '');
         case "vehicle_desc": return (b.vehicleIdentifier || '').localeCompare(a.vehicleIdentifier || '');
         case "date_desc": default: return compareDesc(parseISO(a.quoteDate ?? ""), parseISO(b.quoteDate ?? ""));
@@ -172,9 +144,88 @@ function HistorialCotizacionesPageComponent() {
   const summaryData = useMemo(() => {
     const quotesForSummary = allQuotes.filter(q => q.status === 'Cotizacion');
     const totalQuotesCount = quotesForSummary.length;
-    const totalEstimatedValue = quotesForSummary.reduce((sum, q) => sum + (q.estimatedTotalCost || 0), 0);
+    const totalEstimatedValue = quotesForSummary.reduce((sum, q) => sum + (q.totalCost || 0), 0);
     return { totalQuotesCount, totalEstimatedValue };
   }, [allQuotes]);
+  
+  // Helper component for the list of quotes to avoid code repetition
+  const QuoteList = ({ quotes, vehicles, onEditQuote, onGenerateService, onViewQuote, onDeleteQuote }: { 
+      quotes: QuoteRecord[], 
+      vehicles: Vehicle[], 
+      onEditQuote: (quote: QuoteRecord) => void,
+      onGenerateService: (quote: QuoteRecord) => void,
+      onViewQuote: (quote: QuoteRecord) => void,
+      onDeleteQuote: (quoteId: string) => void,
+  }) => {
+    
+    const getQuoteDescriptionText = (quote: QuoteRecord) => {
+      if (quote.serviceItems && quote.serviceItems.length > 0) {
+        return quote.serviceItems.map(item => item.name).join(', ');
+      }
+      return quote.description || 'Sin descripción';
+    };
+    
+    const getStatusVariant = (status: ServiceRecord['status'] | 'Cotizacion'): "default" | "secondary" | "outline" | "destructive" | "success" | "lightRed" | "waiting" | "delivered" => {
+      switch (status) {
+        case "Completado": return "success"; case "Reparando": return "secondary"; case "Cancelado": return "destructive";
+        case "Agendado": return "lightRed"; case "Cotizacion": return "outline";
+        case "En Espera de Refacciones": return "waiting"; case "Entregado": return "delivered";
+        default: return "default";
+      }
+    };
+
+    return (
+      <div className="space-y-4">
+        {quotes.length > 0 ? (
+          quotes.map(quote => {
+            const vehicle = vehicles.find(v => v.id === quote.vehicleId);
+            const service = quote.serviceId ? placeholderServiceRecords.find(s => s.id === quote.serviceId) : null;
+            const status = service ? service.status : 'Cotizacion';
+
+            return (
+              <Card key={quote.id} className="shadow-sm overflow-hidden">
+                <CardContent className="p-0">
+                  <div className="flex flex-col md:flex-row">
+                     <div className="p-4 flex flex-col justify-center items-center text-center w-full md:w-48 flex-shrink-0">
+                        <Badge variant={getStatusVariant(status)} className="w-full justify-center text-center text-sm mb-2">{status}</Badge>
+                        <p className="text-muted-foreground text-xs">Folio: {quote.id}</p>
+                        <p className="font-semibold text-lg text-foreground">{format(parseISO(quote.quoteDate!), "dd MMM yyyy", { locale: es })}</p>
+                      </div>
+                      <div className="p-4 flex flex-col justify-center flex-grow space-y-2 text-left border-y md:border-y-0 md:border-x">
+                        <p className="text-sm text-muted-foreground">{vehicle?.ownerName} - {vehicle?.ownerPhone}</p>
+                        <p className="font-bold text-2xl text-black">{vehicle ? `${vehicle.licensePlate} - ${vehicle.make} ${vehicle.model} ${vehicle.year}` : 'N/A'}</p>
+                        <p className="text-sm text-foreground">
+                          <span className="font-semibold">{quote.serviceType}:</span> {getQuoteDescriptionText(quote)}
+                        </p>
+                      </div>
+                      <div className="p-4 flex flex-col justify-center items-center text-center w-full md:w-48 flex-shrink-0">
+                        <p className="text-xs text-muted-foreground">Costo Estimado</p>
+                        <p className="font-bold text-2xl text-black">{formatCurrency(quote.totalCost)}</p>
+                        <p className="text-xs text-green-600 font-medium mt-1">
+                          Ganancia: {formatCurrency(quote.serviceProfit)}
+                        </p>
+                      </div>
+                      <div className="p-4 flex flex-col justify-center items-center text-center border-t md:border-t-0 md:border-l w-full md:w-56 flex-shrink-0 space-y-2">
+                          <StatusTracker status={status} />
+                          <p className="text-xs text-muted-foreground">Asesor: {quote.preparedByTechnicianName || 'N/A'}</p>
+                          <div className="flex justify-center items-center gap-1">
+                            <Button variant="ghost" size="icon" onClick={() => onViewQuote(quote)} title="Vista Previa"><Eye className="h-4 w-4" /></Button>
+                            <Button variant="ghost" size="icon" onClick={() => onEditQuote(quote)} title="Editar Cotización"><Edit className="h-4 w-4" /></Button>
+                            <Button variant="ghost" size="icon" onClick={() => onGenerateService(quote)} title="Generar Servicio" className="text-blue-600 hover:text-blue-700"><Wrench className="h-4 w-4" /></Button>
+                            <AlertDialog><AlertDialogTrigger asChild><Button variant="ghost" size="icon" title="Cancelar Cotización" disabled={!!quote.serviceId}><Ban className="h-4 w-4 text-destructive" /></Button></AlertDialogTrigger><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>¿Cancelar esta cotización?</AlertDialogTitle><AlertDialogDescription>Esta acción no se puede deshacer y eliminará permanentemente la cotización {quote.id}.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>No</AlertDialogCancel><AlertDialogAction onClick={() => onDeleteQuote(quote.id)} className="bg-destructive hover:bg-destructive/90">Sí, Cancelar</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog>
+                          </div>
+                      </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )
+          })
+        ) : (
+          <div className="text-center py-10 border-2 border-dashed rounded-lg text-muted-foreground">No hay cotizaciones que coincidan con los filtros.</div>
+        )}
+      </div>
+    );
+  };
 
   const handleViewQuote = useCallback((quote: QuoteRecord) => { /* Logic to show quote preview */ }, []);
   const handleEditQuote = useCallback((quote: QuoteRecord) => { setSelectedQuoteForEdit(quote); setIsEditQuoteDialogOpen(true); }, []);
@@ -225,3 +276,5 @@ function HistorialCotizacionesPageComponent() {
 export default function HistorialCotizacionesPageWrapper() {
     return (<Suspense fallback={<div>Cargando...</div>}><HistorialCotizacionesPageComponent /></Suspense>)
 }
+
+```
