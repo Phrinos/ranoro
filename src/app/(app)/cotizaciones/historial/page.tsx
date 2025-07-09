@@ -44,12 +44,15 @@ const QuoteList = React.memo(({ quotes, vehicles, onEditQuote, onViewQuote }: {
   };
   
   const getQuoteStatus = (quote: QuoteRecord): { label: string; variant: "success" | "blue" | "secondary" } => {
-    const quoteDate = parseISO(quote.quoteDate ?? new Date().toISOString());
-    const expirationDate = addDays(quoteDate, 15);
-
     if (quote.status !== 'Cotizacion') {
       return { label: 'Procesada', variant: 'blue' };
     }
+    const quoteDate = parseISO(quote.quoteDate ?? new Date().toISOString());
+    if (!isValid(quoteDate)) {
+        return { label: 'Archivada', variant: 'secondary' };
+    }
+    const expirationDate = addDays(quoteDate, 15);
+    
     if (isBefore(new Date(), expirationDate)) {
       return { label: 'Vigente', variant: 'success' };
     }
@@ -84,9 +87,11 @@ const QuoteList = React.memo(({ quotes, vehicles, onEditQuote, onViewQuote }: {
                     <div className="p-3 flex flex-col justify-center items-center text-center w-full md:w-48 flex-shrink-0">
                       <p className="text-xs text-muted-foreground">Costo Estimado</p>
                       <p className="font-bold text-xl text-black">{formatCurrency(quote.totalCost)}</p>
-                      <p className="text-xs text-green-600 font-medium">
-                        Ganancia: {formatCurrency(quote.serviceProfit)}
-                      </p>
+                       {!!quote.serviceProfit && (
+                        <p className="text-xs text-green-600 font-medium">
+                            Ganancia: {formatCurrency(quote.serviceProfit)}
+                        </p>
+                       )}
                     </div>
                     <div className="p-4 flex flex-col justify-center items-center text-center border-t md:border-t-0 md:border-l w-full md:w-56 flex-shrink-0 space-y-2">
                         <Badge variant={quoteStatusInfo.variant} className="mb-1">{quoteStatusInfo.label}</Badge>
@@ -142,7 +147,9 @@ function HistorialCotizacionesPageComponent() {
   }, []);
   
   const activeQuotes = useMemo(() => {
-    let filtered = allServices.filter(service => service.status === 'Cotizacion');
+    // A record is considered a "quote" for this page if its status is Cotizacion,
+    // OR if its status has changed but it was originally a quote (and has a quoteDate).
+    let filtered = allServices.filter(service => service.status === 'Cotizacion' || service.quoteDate);
 
     if (searchTerm) {
       const lowerSearchTerm = searchTerm.toLowerCase();
@@ -161,7 +168,7 @@ function HistorialCotizacionesPageComponent() {
       switch (sortOption) {
         case "date_asc": return compareAsc(dateA, dateB);
         case "total_asc": return totalA - totalB;
-        case "total_desc": return totalB - a.totalCost;
+        case "total_desc": return totalB - totalA;
         case "vehicle_asc": return (a.vehicleIdentifier || '').localeCompare(b.vehicleIdentifier || '');
         case "vehicle_desc": return (b.vehicleIdentifier || '').localeCompare(a.vehicleIdentifier || '');
         case "date_desc": default: return compareDesc(dateA, dateB);
@@ -189,8 +196,8 @@ function HistorialCotizacionesPageComponent() {
     toast({ title: "Cotización Eliminada", description: `La cotización ${quoteId} ha sido eliminada.` });
   }, [toast]);
 
-  const handleSaveQuote = useCallback(async (data: QuoteRecord) => {
-    setIsFormDialogOpen(false);
+  const handleSaveQuote = useCallback(async (data: QuoteRecord | ServiceRecord) => {
+      setIsFormDialogOpen(false);
   }, []);
 
 
