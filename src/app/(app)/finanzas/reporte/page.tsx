@@ -178,12 +178,12 @@ function ReportesPageComponent() {
                     <div className="flex flex-col sm:flex-row items-center gap-4">
                         <div className="relative flex-1 w-full">
                             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                            <Input type="search" placeholder="Buscar por ID o descripción..." className="w-full rounded-lg bg-background pl-8" value={reporteOpSearchTerm} onChange={(e) => setReporteOpSearchTerm(e.target.value)} />
+                            <Input type="search" placeholder="Buscar por ID o descripción..." className="w-full rounded-lg bg-card pl-8" value={reporteOpSearchTerm} onChange={(e) => setReporteOpSearchTerm(e.target.value)} />
                         </div>
                         <div className="flex items-center gap-2 w-full sm:w-auto flex-wrap">
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
-                                    <Button variant="outline" className="flex-1 sm:flex-initial">
+                                    <Button variant="outline" className="flex-1 sm:flex-initial bg-card">
                                         <ListFilter className="mr-2 h-4 w-4" />
                                         <span>Tipo: {reporteOpTypeFilter === 'all' ? 'Todos' : reporteOpTypeFilter}</span>
                                     </Button>
@@ -201,7 +201,7 @@ function ReportesPageComponent() {
                             </DropdownMenu>
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
-                                    <Button variant="outline" className="flex-1 sm:flex-initial">
+                                    <Button variant="outline" className="flex-1 sm:flex-initial bg-card">
                                         <ListFilter className="mr-2 h-4 w-4" />
                                         <span>Ordenar por</span>
                                     </Button>
@@ -273,12 +273,12 @@ function ReportesPageComponent() {
                     <div className="flex flex-col sm:flex-row items-center gap-4">
                         <div className="relative flex-1 w-full">
                             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                            <Input type="search" placeholder="Buscar por nombre o SKU..." className="w-full rounded-lg bg-background pl-8" value={reporteInvSearchTerm} onChange={(e) => setReporteInvSearchTerm(e.target.value)} />
+                            <Input type="search" placeholder="Buscar por nombre o SKU..." className="w-full rounded-lg bg-card pl-8" value={reporteInvSearchTerm} onChange={(e) => setReporteInvSearchTerm(e.target.value)} />
                         </div>
                         <div className="flex items-center gap-2 w-full sm:w-auto flex-wrap">
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
-                                    <Button variant="outline" className="flex-1 sm:flex-initial">
+                                    <Button variant="outline" className="flex-1 sm:flex-initial bg-card">
                                         <ListFilter className="mr-2 h-4 w-4" />
                                         <span>Ordenar por</span>
                                     </Button>
@@ -348,3 +348,4 @@ export default function ReportesPageWrapper() {
         </Suspense>
     );
 }
+
