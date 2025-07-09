@@ -1,5 +1,3 @@
-
-
 import type {
   Vehicle,
   ServiceRecord,
@@ -171,9 +169,15 @@ export let placeholderServiceRecords: ServiceRecord[] = [
     description: 'Diagnóstico de sistema eléctrico.',
     technicianId: 'T002',
     technicianName: 'Ricardo Gomez',
-    serviceItems: [],
-    suppliesUsed: [
-      { supplyId: 'SERV001', supplyName: 'Mano de Obra Mecánica', quantity: 2, unitPrice: 250, sellingPrice: 350 },
+    serviceItems: [
+      {
+        id: 'item_ser002_1',
+        name: 'Diagnóstico de sistema eléctrico.',
+        price: 1200,
+        suppliesUsed: [
+          { supplyId: 'SERV001', supplyName: 'Mano de Obra Mecánica', quantity: 2, unitPrice: 250, sellingPrice: 350 },
+        ]
+      }
     ],
     totalCost: 1200,
     totalSuppliesCost: 500,
@@ -191,8 +195,14 @@ export let placeholderServiceRecords: ServiceRecord[] = [
     description: 'Mantenimiento preventivo flotilla.',
     technicianId: 'T001',
     technicianName: 'Carlos Rodriguez',
-    serviceItems: [],
-    suppliesUsed: [],
+    serviceItems: [
+        {
+            id: 'item_ser003_1',
+            name: 'Mantenimiento preventivo flotilla.',
+            price: 1800,
+            suppliesUsed: []
+        }
+    ],
     totalCost: 1800,
     status: 'Agendado',
     mileage: 15000,
@@ -575,18 +585,21 @@ export const enrichServiceForPrinting = (
   service: ServiceRecord,
   inventory: InventoryItem[],
 ): ServiceRecord => {
-  if (!service || !service.suppliesUsed) return service;
+  if (!service || !service.serviceItems) return service;
 
-  const enrichedSupplies = service.suppliesUsed.map((supply) => {
-    const inventoryItem = inventory.find((item) => item.id === supply.supplyId);
-    return {
-      ...supply,
-      unitPrice: inventoryItem?.sellingPrice ?? supply.unitPrice ?? 0,
-    };
+  const enrichedServiceItems = service.serviceItems.map(item => {
+    const enrichedSupplies = (item.suppliesUsed || []).map((supply) => {
+      const inventoryItem = inventory.find((invItem) => invItem.id === supply.supplyId);
+      return {
+        ...supply,
+        unitPrice: inventoryItem?.sellingPrice ?? supply.unitPrice ?? 0,
+      };
+    });
+    return { ...item, suppliesUsed: enrichedSupplies };
   });
 
   return {
     ...service,
-    suppliesUsed: enrichedSupplies,
+    serviceItems: enrichedServiceItems,
   };
 };

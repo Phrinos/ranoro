@@ -115,7 +115,7 @@ function InventarioPageComponent() {
     placeholderServiceRecords.forEach(service => {
         if (!service.serviceDate || !isValid(parseISO(service.serviceDate))) return;
         if (isWithinInterval(parseISO(service.serviceDate), { start: lastMonthStart, end: lastMonthEnd })) {
-            service.suppliesUsed?.forEach(part => {
+            (service.serviceItems || []).flatMap(item => item.suppliesUsed || []).forEach(part => {
                 const inventoryItem = placeholderInventory.find(item => item.id === part.supplyId);
                 if (inventoryItem?.supplier) {
                     const supplierName = inventoryItem.supplier;
@@ -131,7 +131,7 @@ function InventarioPageComponent() {
     }
 
     return { totalInventoryCost: cost, totalInventorySellingPrice: sellingPriceValue, lowStockItemsCount: lowStock, productsCount: products, servicesCount: services, totalDebtWithSuppliers: debt, topSupplierLastMonth: topSupplier };
-  }, [inventoryItems, suppliers, hydrated]);
+  }, [inventoryItems, suppliers, hydrated, version]);
 
   // ======== PRODUCTOS TAB STATE & LOGIC ========
   const [isNewItemDialogOpen, setIsNewItemDialogOpen] = useState(false);
@@ -297,7 +297,13 @@ function InventarioPageComponent() {
     setIsAnalysisLoading(true); setAnalysisError(null); setAnalysisResult(null);
     try {
       const inventoryForAI = inventoryItems.map(item => ({ id: item.id, name: item.name, quantity: item.quantity, lowStockThreshold: item.lowStockThreshold }));
-      const servicesForAI = placeholderServiceRecords.map(service => ({ serviceDate: service.serviceDate, suppliesUsed: service.suppliesUsed.map(supply => ({ supplyId: supply.supplyId, quantity: supply.quantity }))}));
+      const servicesForAI = placeholderServiceRecords.map(service => ({
+        serviceDate: service.serviceDate,
+        suppliesUsed: (service.serviceItems || []).flatMap(item => item.suppliesUsed || []).map(supply => ({
+          supplyId: supply.supplyId,
+          quantity: supply.quantity,
+        })),
+      }));
       const result = await analyzeInventory({ inventoryItems: inventoryForAI, serviceRecords: servicesForAI });
       setAnalysisResult(result.recommendations);
       toast({ title: "Análisis Completado", description: `La IA ha generado ${result.recommendations.length} recomendaciones.` });
@@ -326,112 +332,96 @@ function InventarioPageComponent() {
           <TabsTrigger value="analisis" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Análisis IA</TabsTrigger>
         </TabsList>
         
-        {/* Informe Tab */}
         <TabsContent value="informe" className="space-y-6">
-          <h2 className="text-2xl font-semibold tracking-tight">Resumen de Inventario</h2>
+          <div className="space-y-2">
+            <h2 className="text-2xl font-semibold tracking-tight">Resumen de Inventario</h2>
+          </div>
           <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
             <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Costo Total del Inventario</CardTitle><DollarSign className="h-4 w-4 text-green-500" /></CardHeader><CardContent><div className="text-2xl font-bold">${totalInventoryCost.toLocaleString('es-ES')}</div><p className="text-xs text-muted-foreground">Valor de venta: ${totalInventorySellingPrice.toLocaleString('es-ES')}</p></CardContent></Card>
             <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Productos con Stock Bajo</CardTitle><AlertTriangle className="h-4 w-4 text-orange-500" /></CardHeader><CardContent><div className="text-2xl font-bold">{lowStockItemsCount}</div><p className="text-xs text-muted-foreground">Requieren atención o reposición.</p></CardContent></Card>
             <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Ítems Registrados</CardTitle><Package className="h-4 w-4 text-blue-500" /></CardHeader><CardContent><div className="text-2xl font-bold">{productsCount + servicesCount}</div><p className="text-xs text-muted-foreground">{productsCount} Productos y {servicesCount} Servicios.</p></CardContent></Card>
           </div>
-          <h2 className="text-2xl font-semibold tracking-tight pt-4">Resumen de Proveedores</h2>
+          <div className="space-y-2 pt-4">
+            <h2 className="text-2xl font-semibold tracking-tight">Resumen de Proveedores</h2>
+          </div>
           <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
             <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Deuda Total con Proveedores</CardTitle><DollarSign className="h-4 w-4 text-red-500" /></CardHeader><CardContent><div className="text-2xl font-bold">${totalDebtWithSuppliers.toLocaleString('es-ES', { minimumFractionDigits: 2 })}</div><p className="text-xs text-muted-foreground">Suma de todas las deudas pendientes.</p></CardContent></Card>
             <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Top Compras (Mes Pasado)</CardTitle><ShoppingCart className="h-4 w-4 text-blue-500" /></CardHeader><CardContent>{topSupplierLastMonth ? (<><div className="text-xl font-bold">{topSupplierLastMonth.name}</div><p className="text-xs text-muted-foreground">{topSupplierLastMonth.quantity} unidades suministradas.</p></>) : (<p className="text-muted-foreground">No se registraron compras.</p>)}</CardContent></Card>
           </div>
         </TabsContent>
-
-        {/* Productos Tab */}
         <TabsContent value="productos" className="mt-6 space-y-4">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                <div>
-                    <h2 className="text-2xl font-semibold tracking-tight">Lista de Productos y Servicios</h2>
-                    <p className="text-muted-foreground">Administra productos, servicios, niveles de stock y registra compras.</p>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                    <Button onClick={handleOpenPurchaseItemSelection} variant="outline" className="bg-input text-foreground"><ShoppingCart className="mr-2 h-4 w-4" />Ingresar Compra</Button>
-                    <Button onClick={() => { setIsCreatingItemForPurchaseFlow(false); setIsNewItemDialogOpen(true); }}><PlusCircle className="mr-2 h-4 w-4" />Nuevo</Button>
-                </div>
+            <div className="space-y-2">
+                <h2 className="text-2xl font-semibold tracking-tight">Lista de Productos y Servicios</h2>
+                <p className="text-muted-foreground">Administra productos, servicios, niveles de stock y registra compras.</p>
             </div>
-
-            <div className="flex flex-col sm:flex-row sm:items-center sm:flex-wrap gap-4">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div className="relative flex-1 min-w-[200px] sm:min-w-[300px]">
                     <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                     <Input type="search" placeholder="Buscar por nombre o SKU..." className="w-full rounded-lg bg-card pl-8" value={searchTermProducts} onChange={(e) => setSearchTermProducts(e.target.value)} />
                 </div>
-                <DropdownMenu>
-                    <DropdownMenuTrigger asChild><Button variant="outline" className="min-w-[150px] flex-1 sm:flex-initial bg-card"><ListFilter className="mr-2 h-4 w-4" />Ordenar por</Button></DropdownMenuTrigger>
-                    <DropdownMenuContent align="end"><DropdownMenuLabel>Ordenar por</DropdownMenuLabel><DropdownMenuRadioGroup value={sortOptionProducts} onValueChange={(value) => setSortOptionProducts(value as InventorySortOption)}><DropdownMenuRadioItem value="stock_status_name_asc">Estado de Stock</DropdownMenuRadioItem><DropdownMenuRadioItem value="name_asc">Nombre (A-Z)</DropdownMenuRadioItem><DropdownMenuRadioItem value="name_desc">Nombre (Z-A)</DropdownMenuRadioItem><DropdownMenuRadioItem value="quantity_desc">Cantidad (Mayor a Menor)</DropdownMenuRadioItem><DropdownMenuRadioItem value="quantity_asc">Cantidad (Menor a Mayor)</DropdownMenuRadioItem><DropdownMenuRadioItem value="price_desc">Precio (Mayor a Menor)</DropdownMenuRadioItem><DropdownMenuRadioItem value="price_asc">Precio (Menor a Mayor)</DropdownMenuRadioItem><DropdownMenuRadioItem value="type_asc">Tipo (Producto/Servicio)</DropdownMenuRadioItem></DropdownMenuRadioGroup></DropdownMenuContent>
-                </DropdownMenu>
+                <div className="flex flex-wrap gap-2">
+                    <Button onClick={handleOpenPurchaseItemSelection} variant="outline" className="bg-input text-foreground"><ShoppingCart className="mr-2 h-4 w-4" />Ingresar Compra</Button>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild><Button variant="outline" className="min-w-[150px] flex-1 sm:flex-initial bg-card"><ListFilter className="mr-2 h-4 w-4" />Ordenar por</Button></DropdownMenuTrigger>
+                      <DropdownMenuContent align="end"><DropdownMenuLabel>Ordenar por</DropdownMenuLabel><DropdownMenuRadioGroup value={sortOptionProducts} onValueChange={(value) => setSortOptionProducts(value as InventorySortOption)}><DropdownMenuRadioItem value="stock_status_name_asc">Estado de Stock</DropdownMenuRadioItem><DropdownMenuRadioItem value="name_asc">Nombre (A-Z)</DropdownMenuRadioItem><DropdownMenuRadioItem value="name_desc">Nombre (Z-A)</DropdownMenuRadioItem><DropdownMenuRadioItem value="quantity_desc">Cantidad (Mayor a Menor)</DropdownMenuRadioItem><DropdownMenuRadioItem value="quantity_asc">Cantidad (Menor a Mayor)</DropdownMenuRadioItem><DropdownMenuRadioItem value="price_desc">Precio (Mayor a Menor)</DropdownMenuRadioItem><DropdownMenuRadioItem value="price_asc">Precio (Menor a Mayor)</DropdownMenuRadioItem><DropdownMenuRadioItem value="type_asc">Tipo (Producto/Servicio)</DropdownMenuRadioItem></DropdownMenuRadioGroup></DropdownMenuContent>
+                    </DropdownMenu>
+                    <Button onClick={() => { setIsCreatingItemForPurchaseFlow(false); setIsNewItemDialogOpen(true); }}><PlusCircle className="mr-2 h-4 w-4" />Nuevo</Button>
+                </div>
             </div>
-            
             <Card>
                 <CardContent className="pt-6">
                     <InventoryTable items={filteredAndSortedInventoryItems} />
                 </CardContent>
             </Card>
         </TabsContent>
-
-        {/* Categorías Tab */}
         <TabsContent value="categorias" className="mt-6 space-y-4">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                <div>
-                    <h2 className="text-2xl font-semibold tracking-tight">Lista de Categorías</h2>
-                    <p className="text-muted-foreground">Visualiza, edita y elimina categorías.</p>
-                </div>
+            <div className="space-y-2">
+                <h2 className="text-2xl font-semibold tracking-tight">Lista de Categorías</h2>
+                <p className="text-muted-foreground">Visualiza, edita y elimina categorías.</p>
+            </div>
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div className="relative sm:w-1/3"><Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" /><Input type="search" placeholder="Buscar categorías..." className="pl-8 bg-background" value={searchTermCategories} onChange={(e) => setSearchTermCategories(e.target.value)} /></div>
                 <Button onClick={handleOpenAddCategoryDialog}><PlusCircle className="mr-2 h-4 w-4" />Nueva Categoría</Button>
             </div>
-
-            <div className="relative sm:w-1/3"><Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" /><Input type="search" placeholder="Buscar categorías..." className="pl-8 bg-background" value={searchTermCategories} onChange={(e) => setSearchTermCategories(e.target.value)} /></div>
-            
             <Card>
                 <CardContent className="p-0">
                     {filteredCategories.length > 0 ? (
-                        <div className="rounded-md border"><Table><TableHeader className="bg-black"><TableRow><TableHead className="text-white">Nombre de la Categoría</TableHead><TableHead className="text-right text-white">Productos</TableHead><TableHead className="text-right text-white">Acciones</TableHead></TableRow></TableHeader><TableBody>{filteredCategories.map((category) => (<TableRow key={category.id}><TableCell className="font-medium">{category.name}</TableCell><TableCell className="text-right">{categoryProductCounts[category.id] || 0}</TableCell><TableCell className="text-right"><Button variant="ghost" size="icon" onClick={() => handleOpenEditCategoryDialog(category)} className="mr-2"><Edit className="h-4 w-4" /></Button><AlertDialog><AlertDialogTrigger asChild><Button variant="ghost" size="icon" onClick={() => setCategoryToDelete(category)}><Trash2 className="h-4 w-4 text-destructive" /></Button></AlertDialogTrigger>{categoryToDelete?.id === category.id && ( <AlertDialogContent><AlertDialogHeader><AlertDialogTitle>¿Eliminar Categoría?</AlertDialogTitle><AlertDialogDescription>¿Estás seguro de que quieres eliminar la categoría &quot;{categoryToDelete.name}&quot;? Esta acción no se puede deshacer.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel onClick={() => setCategoryToDelete(null)}>Cancelar</AlertDialogCancel><AlertDialogAction onClick={handleDeleteCategory} className="bg-destructive hover:bg-destructive/90">Sí, Eliminar</AlertDialogAction></AlertDialogFooter></AlertDialogContent>)}</AlertDialog></TableCell></TableRow>))}</TableBody></Table></div>
+                        <div className="rounded-md border"><Table><TableHeader className="bg-black"><TableRow><TableHead className="text-white">Nombre de la Categoría</TableHead><TableHead className="text-right text-white">Productos</TableHead><TableHead className="text-right text-white">Acciones</TableHead></TableRow></TableHeader><TableBody>{filteredCategories.map((category) => (<TableRow key={category.id}><TableCell className="font-medium">{category.name}</TableCell><TableCell className="text-right">{categoryProductCounts[category.id] || 0}</TableCell><TableCell className="text-right"><Button variant="ghost" size="icon" onClick={() => handleOpenEditCategoryDialog(category)} className="mr-2"><Edit className="h-4 w-4" /></Button><AlertDialog open={categoryToDelete?.id === category.id} onOpenChange={(open) => !open && setCategoryToDelete(null)}><AlertDialogTrigger asChild><Button variant="ghost" size="icon" onClick={() => setCategoryToDelete(category)}><Trash2 className="h-4 w-4 text-destructive" /></Button></AlertDialogTrigger><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>¿Eliminar Categoría?</AlertDialogTitle><AlertDialogDescription>¿Estás seguro de que quieres eliminar la categoría &quot;{categoryToDelete?.name}&quot;? Esta acción no se puede deshacer.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Cancelar</AlertDialogCancel><AlertDialogAction onClick={handleDeleteCategory} className="bg-destructive hover:bg-destructive/90">Sí, Eliminar</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog></TableCell></TableRow>))}</TableBody></Table></div>
                     ) : (<p className="text-muted-foreground text-center py-4">{searchTermCategories ? "No se encontraron categorías." : "No hay categorías registradas."}</p>)}
                 </CardContent>
             </Card>
         </TabsContent>
-        
-        {/* Proveedores Tab */}
         <TabsContent value="proveedores" className="mt-6 space-y-4">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                <div>
-                    <h2 className="text-2xl font-semibold tracking-tight">Lista de Proveedores</h2>
-                    <p className="text-muted-foreground">Visualiza, edita y elimina proveedores.</p>
-                </div>
-                <Button onClick={() => handleOpenSupplierDialog()}><PlusCircle className="mr-2 h-4 w-4" />Nuevo Proveedor</Button>
+            <div className="space-y-2">
+                <h2 className="text-2xl font-semibold tracking-tight">Lista de Proveedores</h2>
+                <p className="text-muted-foreground">Visualiza, edita y elimina proveedores.</p>
             </div>
-            
             <div className="flex flex-col sm:flex-row items-center justify-between gap-2 w-full">
                 <div className="relative flex-1 sm:flex-initial w-full sm:w-auto"><Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" /><Input type="search" placeholder="Buscar proveedores..." className="pl-8 w-full sm:w-[250px] lg:w-[300px] bg-background" value={searchTermSuppliers} onChange={(e) => setSearchTermSuppliers(e.target.value)} /></div>
                 <div className="flex items-center gap-2 w-full sm:w-auto">
                     <DropdownMenu><DropdownMenuTrigger asChild><Button variant="outline" className="w-full sm:w-auto bg-background"><ListFilter className="mr-2 h-4 w-4" />Ordenar</Button></DropdownMenuTrigger><DropdownMenuContent align="end"><DropdownMenuLabel>Ordenar por</DropdownMenuLabel><DropdownMenuRadioGroup value={sortOptionSuppliers} onValueChange={(value) => setSortOptionSuppliers(value as SupplierSortOption)}><DropdownMenuRadioItem value="name_asc">Nombre (A-Z)</DropdownMenuRadioItem><DropdownMenuRadioItem value="name_desc">Nombre (Z-A)</DropdownMenuRadioItem><DropdownMenuRadioItem value="debt_desc">Deuda (Mayor a Menor)</DropdownMenuRadioItem><DropdownMenuRadioItem value="debt_asc">Deuda (Menor a Mayor)</DropdownMenuRadioItem></DropdownMenuRadioGroup></DropdownMenuContent></DropdownMenu>
+                    <Button onClick={() => handleOpenSupplierDialog()}><PlusCircle className="mr-2 h-4 w-4" />Nuevo Proveedor</Button>
                 </div>
             </div>
-
             <Card>
                 <CardContent className="p-0">
                     <SuppliersTable suppliers={filteredAndSortedSuppliers} onEdit={handleOpenSupplierDialog} onDelete={handleDeleteSupplier} />
                 </CardContent>
             </Card>
         </TabsContent>
-        
-        {/* Análisis IA Tab */}
         <TabsContent value="analisis" className="mt-6 space-y-4">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                <div>
-                    <h2 className="text-2xl font-semibold tracking-tight">Análisis de Inventario con IA</h2>
-                    <p className="text-muted-foreground">Obtén recomendaciones inteligentes sobre qué y cuándo reordenar.</p>
-                </div>
+            <div className="space-y-2">
+                <h2 className="text-2xl font-semibold tracking-tight">Análisis de Inventario con IA</h2>
+                <p className="text-muted-foreground">Obtén recomendaciones inteligentes sobre qué y cuándo reordenar.</p>
+            </div>
+             <div className="flex justify-end">
                 <Button onClick={handleRunAnalysis} disabled={isAnalysisLoading}>{isAnalysisLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <BrainCircuit className="mr-2 h-4 w-4" />}{isAnalysisLoading ? "Analizando..." : "Analizar Inventario"}</Button>
             </div>
-            
             <Card>
                 <CardContent className="pt-6">
-                    {!analysisResult && !isAnalysisLoading && !analysisError && (<Card className="flex flex-col items-center justify-center text-center p-12 border-dashed"><Package className="h-16 w-16 text-muted-foreground mb-4"/><CardTitle className="text-xl">Listo para analizar</CardTitle><CardDescription className="mt-2 max-w-md mx-auto">Haz clic en &quot;Analizar Inventario&quot; para que la IA revise tu stock y uso para generar recomendaciones.</CardDescription></Card>)}
+                    {!analysisResult && !isAnalysisLoading && !analysisError && (<Card className="flex flex-col items-center justify-center text-center p-12 border-dashed"><PackageCheck className="h-16 w-16 text-muted-foreground mb-4"/><CardTitle className="text-xl">Listo para analizar</CardTitle><CardDescription className="mt-2 max-w-md mx-auto">Haz clic en &quot;Analizar Inventario&quot; para que la IA revise tu stock y uso para generar recomendaciones.</CardDescription></Card>)}
                     {isAnalysisLoading && (<Card className="flex flex-col items-center justify-center text-center p-12 border-dashed"><Loader2 className="h-16 w-16 text-primary animate-spin mb-4"/><CardTitle className="text-xl">Procesando...</CardTitle><CardDescription className="mt-2 max-w-md mx-auto">La IA está calculando las tasas de consumo. Esto puede tomar un momento.</CardDescription></Card>)}
-                    {analysisError && (<Card className="flex flex-col items-center justify-center text-center p-12 border-destructive bg-destructive/10 text-destructive-foreground"><AlertTriangle className="h-16 w-16 mb-4"/><CardTitle className="text-xl">Ocurrió un Error</CardTitle><CardDescription className="mt-2 text-destructive-foreground/80">{analysisError}</CardDescription></Card>)}
+                    {analysisError && (<Card className="flex flex-col items-center justify-center text-center p-12 border-destructive bg-destructive/10 text-destructive-foreground"><AlertTriangle className="h-12 w-12 mb-4"/><CardTitle className="text-xl">Ocurrió un Error</CardTitle><CardDescription className="mt-2 text-destructive-foreground/80">{analysisError}</CardDescription></Card>)}
                     {analysisResult && (<div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">{analysisResult.length === 0 && (<div className="lg:col-span-3"><Card className="flex flex-col items-center justify-center text-center p-12 bg-green-50/50 border-green-200"><CheckCircle className="h-16 w-16 text-green-600 mb-4"/><CardTitle className="text-xl text-green-800">¡Todo en orden!</CardTitle><CardDescription className="mt-2 text-green-700">La IA ha revisado tu inventario y no se requieren compras inmediatas.</CardDescription></Card></div>)}{analysisResult.map((rec) => (<Card key={rec.itemId} className="shadow-lg"><CardHeader><CardTitle className="flex items-center gap-3"><AlertTriangle className="h-6 w-6 text-orange-500" />{rec.itemName}</CardTitle><CardDescription>{rec.recommendation}</CardDescription></CardHeader><CardContent className="space-y-3"><p className="text-sm text-muted-foreground">{rec.reasoning}</p><div className="flex justify-between items-center bg-muted/50 p-3 rounded-md"><span className="font-medium text-sm">Sugerencia de compra:</span><span className="font-bold text-lg text-primary flex items-center gap-2"><ShoppingCart className="h-5 w-5"/>{rec.suggestedReorderQuantity}</span></div></CardContent></Card>))}</div>)}
                 </CardContent>
             </Card>
@@ -442,26 +432,7 @@ function InventarioPageComponent() {
       <InventoryItemDialog open={isNewItemDialogOpen} onOpenChange={setIsNewItemDialogOpen} item={isCreatingItemForPurchaseFlow ? { sku: searchTermForNewItemPurchase, name: searchTermForNewItemPurchase, isService: false } : null} onSave={handleSaveNewItem} categories={categories} suppliers={suppliers} />
       <PurchaseItemSelectionDialog open={isPurchaseItemSelectionDialogOpen} onOpenChange={setIsPurchaseItemSelectionDialogOpen} inventoryItems={inventoryItems} onItemSelected={handleItemSelectedForPurchase} onCreateNew={handleCreateNewItemForPurchase} />
       {selectedItemForPurchase && !selectedItemForPurchase.isService && (<PurchaseDetailsEntryDialog open={isPurchaseDetailsEntryDialogOpen} onOpenChange={setIsPurchaseDetailsEntryDialogOpen} item={selectedItemForPurchase} onSave={handleSavePurchaseDetails} onClose={() => { setIsPurchaseDetailsEntryDialogOpen(false); setSelectedItemForPurchase(null); }} /> )}
-      <Dialog open={isCategoryDialogOpen} onOpenChange={setIsCategoryDialogOpen}>
-        <DialogContent className="sm:max-w-[425px]">
-          <form onSubmit={handleSaveCategory}>
-            <DialogHeader>
-              <DialogTitle>{editingCategory ? 'Editar Categoría' : 'Nueva Categoría'}</DialogTitle>
-              <DialogDescription>{editingCategory ? 'Modifica el nombre de la categoría.' : 'Ingresa el nombre para la nueva categoría.'}</DialogDescription>
-            </DialogHeader>
-            <div className="grid gap-4 py-4">
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="category-name" className="text-right">Nombre</Label>
-                <Input id="category-name" value={currentCategoryName} onChange={(e) => setCurrentCategoryName(capitalizeWords(e.target.value))} className="col-span-3" placeholder="Ej: Aceites" />
-              </div>
-            </div>
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setIsCategoryDialogOpen(false)}>Cancelar</Button>
-              <Button type="submit">{editingCategory ? 'Guardar Cambios' : 'Crear Categoría'}</Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
+      <Dialog open={isCategoryDialogOpen} onOpenChange={setIsCategoryDialogOpen}><DialogContent className="sm:max-w-[425px]"><form onSubmit={handleSaveCategory}><DialogHeader><DialogTitle>{editingCategory ? 'Editar Categoría' : 'Nueva Categoría'}</DialogTitle><DialogDescription>{editingCategory ? 'Modifica el nombre de la categoría.' : 'Ingresa el nombre para la nueva categoría.'}</DialogDescription></DialogHeader><div className="grid gap-4 py-4"><div className="grid grid-cols-4 items-center gap-4"><Label htmlFor="category-name" className="text-right">Nombre</Label><Input id="category-name" value={currentCategoryName} onChange={(e) => setCurrentCategoryName(capitalizeWords(e.target.value))} className="col-span-3" placeholder="Ej: Aceites" /></div></div><DialogFooter><Button type="button" variant="outline" onClick={() => setIsCategoryDialogOpen(false)}>Cancelar</Button><Button type="submit">{editingCategory ? 'Guardar Cambios' : 'Crear Categoría'}</Button></DialogFooter></form></DialogContent></Dialog>
       <SupplierDialog open={isSupplierDialogOpen} onOpenChange={setIsSupplierDialogOpen} supplier={editingSupplier} onSave={handleSaveSupplier} />
     </>
   );
