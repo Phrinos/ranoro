@@ -694,7 +694,7 @@ export function ServiceForm({
         (item.suppliesUsed || []).forEach(supply => {
           const inventoryItemIndex = placeholderInventory.findIndex(invItem => invItem.id === supply.supplyId);
 
-          if (inventoryItemIndex !== -1 && !placeholderInventory[inventoryItemIndex].isService) {
+          if (inventoryItemIndex !== -1 && !placeholderInventory[inventoryItemIndex].isService) { // Only deduct stock for non-service items
             const inventoryItem = placeholderInventory[inventoryItemIndex];
             const quantityToDeduct = supply.quantity || 0;
 
@@ -1800,9 +1800,9 @@ export function ServiceForm({
         <DialogContent className="max-w-4xl p-2">
             <DialogHeader className="print:hidden">
               <DialogTitle>Vista Previa de Imagen</DialogTitle>
-              <DialogDescription>
+              <DialogDesc>
                 Visualizando la imagen de evidencia. Puede descargarla si lo necesita.
-              </DialogDescription>
+              </DialogDesc>
             </DialogHeader>
             <div className="relative aspect-video w-full">
                 {viewingImageUrl && (

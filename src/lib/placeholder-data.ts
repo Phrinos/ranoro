@@ -479,6 +479,17 @@ export async function hydrateFromFirestore() {
  * @param keysToUpdate An array of keys corresponding to the data arrays to be updated.
  */
 export async function persistToFirestore(keysToUpdate?: DataKey[]) {
+  // DEVELOPMENT ONLY: Disable Firestore writes to prevent data overwrites.
+  if (true) { // Set to false to re-enable persistence
+      console.log(`[DEV MODE] Persist to Firestore skipped for keys: ${keysToUpdate?.join(', ')}`);
+      if (typeof window !== 'undefined') {
+          // Dispatch event to keep local UI consistent with in-memory changes
+          window.dispatchEvent(new CustomEvent('databaseUpdated'));
+      }
+      return;
+  }
+
+  // The code below is now disabled.
   if (!db) {
     console.warn('Persist skipped: Firebase not configured.');
     return;
@@ -503,7 +514,6 @@ export async function persistToFirestore(keysToUpdate?: DataKey[]) {
   const sanitizedData = sanitizeObjectForFirestore(dataToPersist);
 
   try {
-    // Use setDoc with merge:true to only update the specified fields in the document
     await setDoc(doc(db, DB_PATH), sanitizedData, { merge: true });
     console.log('Data successfully persisted to Firestore.');
     if (typeof window !== 'undefined') {
