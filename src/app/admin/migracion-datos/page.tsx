@@ -6,7 +6,7 @@ import { Suspense } from 'react';
 
 function Redirector() {
     // Redirect to the new unified page with the correct tab and subtab selected
-    redirect('/opciones?tab=administracion&subtab=migracion');
+    redirect('/administracion?tab=migracion');
     return null;
 }
 

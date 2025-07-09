@@ -5,12 +5,11 @@ import { redirect } from 'next/navigation';
 import { Suspense } from 'react';
 
 function Redirector() {
-    // Redirect to the new unified page with the correct tab and subtab selected
-    redirect('/administracion?tab=usuarios');
+    redirect('/administracion');
     return null;
 }
 
-export default function UsuariosRedirectPage() {
+export default function AdminRedirectPage() {
     return (
         <Suspense fallback={<div>Redireccionando...</div>}>
             <Redirector />
