@@ -181,14 +181,53 @@ export function AppSidebar() {
           </SidebarGroup>
         ))}
       </SidebarContent>
-      <SidebarFooter className="mt-auto border-t border-sidebar-border px-6 py-2 flex flex-row items-center justify-between">
+      <SidebarFooter className="mt-auto border-t border-sidebar-border p-2 flex flex-col gap-1">
+        {/* Notification Area */}
+        <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+                <Button
+                    variant="ghost"
+                    className="h-auto w-full justify-start gap-2 py-2 text-left text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground group-data-[collapsible=icon]:h-10 group-data-[collapsible=icon]:w-10 group-data-[collapsible=icon]:justify-center relative"
+                    title="Notificaciones"
+                >
+                    <Bell className="h-5 w-5" />
+                    <span className="group-data-[collapsible=icon]:hidden text-sm font-medium">
+                        {newSignatureServices.length > 0 ? `${newSignatureServices.length} Nuevas` : 'Notificaciones'}
+                    </span>
+                     {newSignatureServices.length > 0 && (
+                        <span className="hidden group-data-[collapsible=icon]:flex absolute top-1 right-1 h-4 w-4 items-center justify-center rounded-full bg-red-500 text-white text-[10px]">
+                            {newSignatureServices.length}
+                        </span>
+                    )}
+                </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" side="top" className="mb-1 w-72">
+                <DropdownMenuLabel>Notificaciones de Firma</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {newSignatureServices.length > 0 ? (
+                    newSignatureServices.map(service => (
+                        <DropdownMenuItem key={service.id} onSelect={() => router.push(`/servicios/historial`)}>
+                            <div className="flex flex-col">
+                                <span className="font-medium">Nueva firma para {service.vehicleIdentifier}</span>
+                                <span className="text-xs text-muted-foreground">{service.description}</span>
+                                <span className="text-xs text-muted-foreground">{format(parseISO(service.serviceDate), "dd MMM yyyy", { locale: es })}</span>
+                            </div>
+                        </DropdownMenuItem>
+                    ))
+                ) : (
+                    <DropdownMenuItem disabled>No hay firmas nuevas</DropdownMenuItem>
+                )}
+            </DropdownMenuContent>
+        </DropdownMenu>
+
+        {/* User Area */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button
               variant="ghost"
               className="h-auto w-full justify-start gap-2 py-2 text-left text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground group-data-[collapsible=icon]:h-12 group-data-[collapsible=icon]:w-12 group-data-[collapsible=icon]:justify-center"
             >
-              <Avatar className="hidden h-8 w-8 group-data-[collapsible=icon]:block">
+              <Avatar className="h-8 w-8">
                   <AvatarFallback>{currentUser?.name?.[0]?.toUpperCase() || 'U'}</AvatarFallback>
               </Avatar>
               <div className="group-data-[collapsible=icon]:hidden flex flex-col items-start">
@@ -215,36 +254,6 @@ export function AppSidebar() {
               <span className="text-destructive">Cerrar Sesión</span>
             </DropdownMenuItem>
           </DropdownMenuContent>
-        </DropdownMenu>
-         <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="justify-center text-sidebar-foreground relative hover:bg-sidebar-accent hover:text-sidebar-accent-foreground shrink-0 w-8 h-8 p-0">
-                    <Bell className="h-7 w-7"/>
-                    {newSignatureServices.length > 0 && (
-                        <span className="absolute top-1 right-1 flex h-2.5 w-2.5">
-                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500"></span>
-                        </span>
-                    )}
-                </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" side="top" className="mb-1 w-72">
-                <DropdownMenuLabel>Notificaciones de Firma</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                {newSignatureServices.length > 0 ? (
-                    newSignatureServices.map(service => (
-                        <DropdownMenuItem key={service.id} onSelect={() => router.push(`/vehiculos/${service.vehicleId}`)}>
-                            <div className="flex flex-col">
-                                <span className="font-medium">Nueva firma para {service.vehicleIdentifier}</span>
-                                <span className="text-xs text-muted-foreground">{service.description}</span>
-                                <span className="text-xs text-muted-foreground">{format(parseISO(service.serviceDate), "dd MMM yyyy", { locale: es })}</span>
-                            </div>
-                        </DropdownMenuItem>
-                    ))
-                ) : (
-                    <DropdownMenuItem disabled>No hay firmas nuevas</DropdownMenuItem>
-                )}
-            </DropdownMenuContent>
         </DropdownMenu>
       </SidebarFooter>
     </Sidebar>
