@@ -29,11 +29,11 @@ const AnalyzeInventoryInputSchema = z.object({
 export type AnalyzeInventoryInput = z.infer<typeof AnalyzeInventoryInputSchema>;
 
 const InventoryRecommendationSchema = z.object({
-    itemId: z.string().describe("The ID of the inventory item."),
-    itemName: z.string().describe("The name of the inventory item."),
-    recommendation: z.string().describe("A clear recommendation, e.g., 'Reordenar ahora', 'Stock saludable', 'Nivel de stock crítico'."),
-    reasoning: z.string().describe("A brief explanation for the recommendation, citing usage rate and current stock level."),
-    suggestedReorderQuantity: z.number().int().describe("A suggested quantity to reorder to maintain healthy stock levels."),
+    itemId: z.string().describe("El ID del artículo de inventario."),
+    itemName: z.string().describe("El nombre del artículo de inventario."),
+    recommendation: z.string().describe("Una recomendación clara, p. ej., 'Reordenar ahora', 'Stock saludable', 'Nivel de stock crítico'."),
+    reasoning: z.string().describe("Una breve explicación para la recomendación, citando la tasa de uso y el nivel de stock actual."),
+    suggestedReorderQuantity: z.number().int().describe("Una cantidad de recompra sugerida para mantener niveles de stock saludables."),
 });
 export type InventoryRecommendation = z.infer<typeof InventoryRecommendationSchema>;
 
@@ -50,20 +50,20 @@ const analyzeInventoryPrompt = ai.definePrompt({
   name: 'analyzeInventoryPrompt',
   input: { schema: AnalyzeInventoryInputSchema },
   output: { schema: AnalyzeInventoryOutputSchema },
-  prompt: `You are an expert inventory manager for an auto repair shop. Your task is to analyze the current inventory and its historical usage to provide actionable reordering recommendations.
+  prompt: `Eres un experto gestor de inventario para un taller mecánico. Tu tarea es analizar el inventario actual y su uso histórico para proporcionar recomendaciones de reabastecimiento accionables.
 
-**Instructions:**
-1.  For each item in the inventory, calculate its average monthly consumption based on the \`serviceRecords\`.
-2.  Compare the current \`quantity\` with the \`lowStockThreshold\` and the calculated consumption rate.
-3.  Generate a recommendation ONLY for items that are at or below their low stock threshold, or are predicted to run out within the next month. For all other items, do not generate a recommendation.
-4.  For each recommendation, provide a suggested reorder quantity. A good rule of thumb is to order enough for 2-3 months of consumption.
-5.  Provide a clear, concise reasoning for each recommendation.
+**Instrucciones:**
+1.  Para cada artículo en el inventario, calcula su consumo mensual promedio basándote en los \`serviceRecords\`.
+2.  Compara la \`quantity\` (cantidad) actual con el \`lowStockThreshold\` (umbral de stock bajo) y la tasa de consumo calculada.
+3.  Genera una recomendación SOLAMENTE para los artículos que están en o por debajo de su umbral de stock bajo, o que se prevé que se agoten en el próximo mes. Para todos los demás artículos, no generes una recomendación.
+4.  Para cada recomendación, proporciona una cantidad de recompra sugerida. Una buena regla general es pedir lo suficiente para 2-3 meses de consumo.
+5.  Proporciona un razonamiento claro y conciso para cada recomendación.
 
-**Data Provided:**
-- Current Inventory: A list of items with their current quantity and low stock threshold.
-- Service History: A list of services showing which parts were used and when.
+**Datos Proporcionados:**
+- Inventario Actual: Una lista de artículos con su cantidad actual y umbral de stock bajo.
+- Historial de Servicios: Una lista de servicios que muestra qué piezas se usaron y cuándo.
 
-Analyze the provided data and return your recommendations in the specified JSON format.
+Analiza los datos proporcionados y devuelve tus recomendaciones en el formato JSON especificado.
 `,
 });
 
