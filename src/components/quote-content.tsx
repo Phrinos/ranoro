@@ -7,6 +7,7 @@ import { es } from 'date-fns/locale';
 import React, { useEffect, useState } from 'react';
 import { cn } from "@/lib/utils";
 import Image from "next/legacy/image";
+import { Card, CardContent } from '@/components/ui/card';
 
 const initialWorkshopInfo: WorkshopInfo = {
   name: "RANORO",
@@ -17,7 +18,7 @@ const initialWorkshopInfo: WorkshopInfo = {
   logoUrl: "/ranoro-logo.png",
   footerLine1: "¡Gracias por su preferencia!",
   footerLine2: "Para dudas o aclaraciones, no dude en contactarnos.",
-  fixedFooterText: "© 2024 Ranoro®\nSistema de Administracion de Talleres\nTodos los derechos reservados - Diseñado y Desarrollado por Arturo Valdelamar +524493930914",
+  fixedFooterText: "© 2025 Ranoro® Sistema de Administracion de Talleres\nTodos los derechos reservados - Diseñado y Desarrollado por Arturo Valdelamar +524493930914",
 };
 
 
@@ -32,8 +33,6 @@ const IVA_RATE = 0.16;
 
 export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
   ({ quote, vehicle, preparedByTechnician, workshopInfo: workshopInfoProp }, ref) => {
-    // Directly use the prop if available, otherwise use the initial default.
-    // This removes the need for useState and useEffect for workshopInfo.
     const effectiveWorkshopInfo = { ...initialWorkshopInfo, ...workshopInfoProp };
 
     const now = new Date();
@@ -55,8 +54,7 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
         data-format="letter"
         className="font-sans bg-white text-black shadow-lg mx-auto p-4 md:p-8 text-sm flex flex-col"
       >
-        <header className="mb-4 border-b border-gray-300 pb-4">
-          {/* Top Row: Logo and Title */}
+        <header className="mb-4 pb-2 border-b-2 border-black">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <img 
               src={effectiveWorkshopInfo.logoUrl} 
@@ -68,7 +66,6 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
             <h2 className="text-2xl sm:text-3xl font-semibold text-primary text-left sm:text-right w-full sm:w-auto">COTIZACIÓN</h2>
           </div>
 
-          {/* Bottom Row: Address and Details */}
           <div className="flex flex-col sm:flex-row justify-between items-start mt-4 text-xs gap-4">
             <div className="space-y-0 leading-tight">
               <div className="font-bold text-sm mb-1">{effectiveWorkshopInfo.name}</div>
@@ -84,7 +81,6 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
           </div>
         </header>
 
-        {/* Main content area */}
         <main className="flex-grow">
           <section className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-2">
               <div className="bg-gray-50 p-3 rounded-md border border-gray-200">
@@ -111,13 +107,15 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
               </div>
           </section>
 
-          <section className="mt-4 mb-4">
-              <h3 className="font-semibold text-base text-gray-700 mb-2 border-b pb-1">TRABAJOS A REALIZAR (Precios con IVA)</h3>
-              <div className="space-y-2 pt-2">
+          <Card className="mt-4 mb-4 border-2 border-gray-200">
+            <CardContent className="p-4 space-y-4">
+              <section>
+                <h3 className="font-semibold text-base text-gray-700 mb-2 border-b pb-1">TRABAJOS A REALIZAR (Precios con IVA)</h3>
+                <div className="space-y-2 pt-2">
                   {quote.serviceItems && quote.serviceItems.length > 0 ? (
                       quote.serviceItems.map((item, index) => (
                           <div key={index} className="pb-2 border-b border-dashed last:border-b-0">
-                              <div className="flex justify-between items-center text-sm sm:text-base">
+                              <div className="flex justify-between items-center text-sm">
                                   <span className="font-bold">{item.name}</span>
                                   <span className="font-bold">{formatCurrency(item.price)}</span>
                               </div>
@@ -131,65 +129,67 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
                   ) : (
                       <p className="text-gray-500 italic">No se especificaron trabajos en esta cotización.</p>
                   )}
-              </div>
-          </section>
-        </main>
+                </div>
+              </section>
 
-        {/* Footer section that will be pushed to the bottom */}
-        <footer className="mt-auto pt-4">
-          <section className="flex flex-col sm:flex-row justify-end">
-              <div className="w-full sm:max-w-xs md:max-w-sm space-y-2 text-sm sm:text-base">
-                  {quote.estimatedSubTotal !== undefined && (
-                      <div className="flex justify-between">
-                          <span>Subtotal:</span>
-                          <span className="font-medium">{formatCurrency(quote.estimatedSubTotal)}</span>
+              <section className="flex flex-col sm:flex-row justify-end pt-4 border-t border-dashed">
+                  <div className="w-full sm:max-w-xs md:max-w-sm space-y-1 text-sm">
+                      {quote.estimatedSubTotal !== undefined && (
+                          <div className="flex justify-between">
+                              <span>Subtotal:</span>
+                              <span className="font-medium">{formatCurrency(quote.estimatedSubTotal)}</span>
+                          </div>
+                      )}
+                      {quote.estimatedTaxAmount !== undefined && (
+                          <div className="flex justify-between">
+                              <span>IVA ({(IVA_RATE * 100).toFixed(0)}%):</span>
+                              <span className="font-medium">{formatCurrency(quote.estimatedTaxAmount)}</span>
+                          </div>
+                      )}
+                      <div className="flex justify-between font-bold pt-1 mt-1 border-t border-gray-300">
+                          <span>Total Estimado:</span>
+                          <span>{formatCurrency(quote.estimatedTotalCost)}</span>
                       </div>
-                  )}
-                  {quote.estimatedTaxAmount !== undefined && (
-                      <div className="flex justify-between">
-                          <span>IVA ({(IVA_RATE * 100).toFixed(0)}%):</span>
-                          <span className="font-medium">{formatCurrency(quote.estimatedTaxAmount)}</span>
-                      </div>
-                  )}
-                  <div className="flex justify-between text-lg sm:text-xl font-bold border-t-2 pt-2 mt-2 border-gray-300 text-primary">
-                      <span>Total Estimado:</span>
-                      <span>{formatCurrency(quote.estimatedTotalCost)}</span>
                   </div>
-              </div>
-          </section>
-          
-          {quote.notes && (
-              <div className="w-full text-left mt-4 border-t border-dashed pt-2">
+              </section>
+              
+              {quote.notes && (
+                <section className="w-full text-left pt-4 border-t border-dashed">
                   <h4 className="font-semibold text-sm text-gray-700 mb-1">Notas Adicionales:</h4>
                   <p className="text-xs text-gray-600 whitespace-pre-wrap">{quote.notes}</p>
-              </div>
-          )}
+                </section>
+              )}
+            </CardContent>
+          </Card>
           
-          <div className="text-center mt-8 pt-4">
+          <Card className="mt-4 mb-4 border-gray-200">
+            <CardContent className="p-4 text-center">
               {quote.preparedByTechnicianSignatureDataUrl && (
-                  <div className="h-24 w-full max-w-[200px] relative inline-block">
-                      <Image src={quote.preparedByTechnicianSignatureDataUrl} alt="Firma del asesor" layout="fill" objectFit="contain" />
-                  </div>
+                <div className="h-24 w-full max-w-[200px] relative inline-block">
+                  <Image src={quote.preparedByTechnicianSignatureDataUrl} alt="Firma del asesor" layout="fill" objectFit="contain" />
+                </div>
               )}
               <div className="border-t-2 border-black mt-2 pt-1 w-64 text-center inline-block">
-                  <p className="text-xs font-bold">ASESOR: {quote.preparedByTechnicianName?.toUpperCase() || '________________________________'}</p>
+                <p className="text-xs font-bold">ASESOR: {quote.preparedByTechnicianName?.toUpperCase() || '________________________________'}</p>
               </div>
-          </div>
-
+              <div className="mt-4 text-xs">
+                <p className="font-semibold">{effectiveWorkshopInfo.footerLine1}</p>
+                <p>{effectiveWorkshopInfo.footerLine2}</p>
+              </div>
+            </CardContent>
+          </Card>
+        </main>
+        
+        <footer className="mt-auto pt-4">
           <div className="text-xs text-gray-600 mt-6 border-t border-gray-300 pt-4">
-              <div className="mb-4">
-              <h4 className="font-semibold text-gray-700 mb-1">Términos y Condiciones:</h4>
-              <p className="leading-snug">
-                  {`Precios en MXN. Esta cotización es válida hasta el ${validityDate}. `}
-                  No incluye trabajos o materiales que no estén especificados explícitamente en la presente cotización. Los precios aquí detallados están sujetos a cambios sin previo aviso en caso de variaciones en los costos de los insumos proporcionados por nuestros proveedores, los cuales están fuera de nuestro control.
-              </p>
-              </div>
-              <div className="text-left space-y-1 leading-snug">
-                  <p className="font-semibold">{effectiveWorkshopInfo.footerLine1}</p>
-                  <p>{effectiveWorkshopInfo.footerLine2}</p>
-                  <p className="print-block hidden pt-2">Impreso el: {formattedPrintDate}</p>
-              </div>
+            <h4 className="font-semibold text-gray-700 mb-1">Términos y Condiciones:</h4>
+            <p className="leading-snug">
+                {`Precios en MXN. Esta cotización es válida hasta el ${validityDate}. `}
+                No incluye trabajos o materiales que no estén especificados explícitamente en la presente cotización. Los precios aquí detallados están sujetos a cambios sin previo aviso en caso de variaciones en los costos de los insumos proporcionados por nuestros proveedores, los cuales están fuera de nuestro control.
+            </p>
+            <div className="print-block hidden pt-2">Impreso el: {formattedPrintDate}</div>
           </div>
+          
           {effectiveWorkshopInfo.fixedFooterText && (
              <div className="text-center mt-6 pt-4 border-t border-gray-200">
                 <p className="text-xs text-muted-foreground whitespace-pre-wrap">{effectiveWorkshopInfo.fixedFooterText}</p>
