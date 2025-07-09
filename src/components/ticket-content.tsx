@@ -17,6 +17,9 @@ const initialWorkshopInfo: WorkshopInfo = {
   fontSize: 10,
   blankLinesTop: 0,
   blankLinesBottom: 0,
+  footerLine1: "¡Gracias por su preferencia!",
+  footerLine2: "Para dudas o aclaraciones, no dude en contactarnos.",
+  fixedFooterText: "Sistema de Administración de Talleres Ranoro®\nDiseñado y Desarrollado por Arturo Valdelamar",
 };
 
 interface TicketContentProps {
@@ -29,12 +32,10 @@ interface TicketContentProps {
 
 export const TicketContent = React.forwardRef<HTMLDivElement, TicketContentProps>(
   ({ sale, service, vehicle, technician, previewWorkshopInfo }, ref) => {
-    // Directly use the prop if available, otherwise use the initial default.
     const workshopInfo = { ...initialWorkshopInfo, ...previewWorkshopInfo };
-    const { logoWidth, fontSize, blankLinesTop, blankLinesBottom } = workshopInfo;
+    const { logoWidth, fontSize, blankLinesTop, blankLinesBottom, footerLine1, footerLine2, fixedFooterText } = workshopInfo;
 
     const operation = sale || service;
-    const operationType = sale ? 'Venta' : 'Servicio';
     const operationId = sale?.id || service?.id;
     
     const operationDateInput = sale?.saleDate || service?.serviceDate;
@@ -78,7 +79,7 @@ export const TicketContent = React.forwardRef<HTMLDivElement, TicketContentProps
         className="font-mono bg-white text-black px-2 py-4 max-w-[300px] mx-auto leading-tight print:max-w-full print:p-0"
         style={{ fontSize: fontSize ? `${fontSize}px` : '10px' }}
       >
-        {Array.from({ length: blankLinesTop || 0 }).map((_, i) => <div key={`top-${i}`} style={{ height: `${fontSize || 10}px` }}></div>)}
+        {Array.from({ length: blankLinesTop || 0 }).map((_, i) => <div key={`top-${i}`} style={{ height: `${fontSize || 10}px` }}>&nbsp;</div>)}
 
         <div className="text-center mb-1 space-y-0 leading-tight">
           <img 
@@ -110,7 +111,6 @@ export const TicketContent = React.forwardRef<HTMLDivElement, TicketContentProps
         <div className="font-semibold text-center my-1">DETALLE</div>
         
         <div className="py-0.5 space-y-1">
-          {/* For POS Sales */}
           {items.map((item, idx) => {
               const unitPrice = 'unitPrice' in item ? (item.unitPrice || 0) : 0;
               const totalPrice = ('totalPrice' in item && item.totalPrice) ? item.totalPrice : (unitPrice * item.quantity);
@@ -125,8 +125,6 @@ export const TicketContent = React.forwardRef<HTMLDivElement, TicketContentProps
                   </div>
               )
           })}
-
-          {/* For Service Orders */}
           {serviceItems.map((item, idx) => (
             <div key={`service-${idx}`}>
               <div className="flex justify-between font-semibold">
@@ -189,11 +187,20 @@ export const TicketContent = React.forwardRef<HTMLDivElement, TicketContentProps
         {renderDashedLine()}
 
         <div className="text-center mt-1 space-y-0">
-            <div className="font-semibold">¡Gracias por su preferencia!</div>
-            <div>Para dudas o aclaraciones, no dude en contactarnos.</div>
+            <div className="font-semibold">{footerLine1}</div>
+            <div>{footerLine2}</div>
         </div>
 
-        {Array.from({ length: blankLinesBottom || 0 }).map((_, i) => <div key={`bottom-${i}`} style={{ height: `${fontSize || 10}px` }}></div>)}
+        {fixedFooterText && (
+          <>
+            {renderDashedLine()}
+            <div className="text-center mt-1 text-[8px] whitespace-pre-wrap">
+              {fixedFooterText}
+            </div>
+          </>
+        )}
+
+        {Array.from({ length: blankLinesBottom || 0 }).map((_, i) => <div key={`bottom-${i}`} style={{ height: `${fontSize || 10}px` }}>&nbsp;</div>)}
       </div>
     );
   }

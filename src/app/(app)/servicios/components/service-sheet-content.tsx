@@ -2,7 +2,7 @@
 
 "use client";
 
-import type { ServiceRecord, Vehicle, User, WorkshopInfo, SafetyInspection, SafetyCheckStatus, PhotoReportItem } from '@/types';
+import type { ServiceRecord, Vehicle, User, WorkshopInfo, SafetyInspection, SafetyCheckStatus, PhotoReportGroup } from '@/types';
 import { format, parseISO, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
 import React, { useEffect, useState } from 'react';
@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils";
 import Image from "next/legacy/image";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Check } from 'lucide-react';
+import { Check, Eye } from 'lucide-react';
 
 const initialWorkshopInfo: WorkshopInfo = {
   name: "RANORO",
@@ -18,60 +18,63 @@ const initialWorkshopInfo: WorkshopInfo = {
   addressLine1: "Av. de la Convencion de 1914 No. 1421",
   addressLine2: "Jardines de la Concepcion, C.P. 20267",
   cityState: "Aguascalientes, Ags.",
-  logoUrl: "/ranoro-logo.png" 
+  logoUrl: "/ranoro-logo.png",
+  footerLine1: "¡Gracias por su preferencia!",
+  footerLine2: "Para dudas o aclaraciones, no dude en contactarnos.",
+  fixedFooterText: "Sistema de Administración de Talleres Ranoro®\nDiseñado y Desarrollado por Arturo Valdelamar",
 };
 
 const inspectionGroups = [
   { title: "LUCES", items: [
-    { name: "safetyInspection.luces_altas_bajas_niebla", label: "1. ALTAS, BAJAS Y NIEBLA" },
-    { name: "safetyInspection.luces_cuartos", label: "2. CUARTOS DELANTEROS, TRASEROS Y LATERALES" },
-    { name: "safetyInspection.luces_direccionales", label: "3. DIRECCIONALES E INTERMITENTES" },
-    { name: "safetyInspection.luces_frenos_reversa", label: "4. FRENOS Y REVERSA" },
-    { name: "safetyInspection.luces_interiores", label: "5. INTERIORES" },
+    { name: "luces_altas_bajas_niebla", label: "1. ALTAS, BAJAS Y NIEBLA" },
+    { name: "luces_cuartos", label: "2. CUARTOS DELANTEROS, TRASEROS Y LATERALES" },
+    { name: "luces_direccionales", label: "3. DIRECCIONALES E INTERMITENTES" },
+    { name: "luces_frenos_reversa", label: "4. FRENOS Y REVERSA" },
+    { name: "luces_interiores", label: "5. INTERIORES" },
   ]},
   { title: "FUGAS Y NIVELES", items: [
-    { name: "safetyInspection.fugas_refrigerante", label: "6. REFRIGERANTE" },
-    { name: "safetyInspection.fugas_limpiaparabrisas", label: "7. LIMPIAPARABRISAS" },
-    { name: "safetyInspection.fugas_frenos_embrague", label: "8. FRENOS Y EMBRAGUE" },
-    { name: "safetyInspection.fugas_transmision", label: "9. TRANSMISIÓN Y TRANSEJE" },
-    { name: "safetyInspection.fugas_direccion_hidraulica", label: "10. DIRECCIÓN HIDRÁULICA" },
+    { name: "fugas_refrigerante", label: "6. REFRIGERANTE" },
+    { name: "fugas_limpiaparabrisas", label: "7. LIMPIAPARABRISAS" },
+    { name: "fugas_frenos_embrague", label: "8. FRENOS Y EMBRAGUE" },
+    { name: "fugas_transmision", label: "9. TRANSMISIÓN Y TRANSEJE" },
+    { name: "fugas_direccion_hidraulica", label: "10. DIRECCIÓN HIDRÁULICA" },
   ]},
   { title: "CARROCERÍA", items: [
-    { name: "safetyInspection.carroceria_cristales_espejos", label: "11. CRISTALES / ESPEJOS" },
-    { name: "safetyInspection.carroceria_puertas_cofre", label: "12. PUERTAS / COFRE / CAJUELA / SALPICADERA" },
-    { name: "safetyInspection.carroceria_asientos_tablero", label: "13. ASIENTOS / TABLERO / CONSOLA" },
-    { name: "safetyInspection.carroceria_plumas", label: "14. PLUMAS LIMPIAPARABRISAS" },
+    { name: "carroceria_cristales_espejos", label: "11. CRISTALES / ESPEJOS" },
+    { name: "carroceria_puertas_cofre", label: "12. PUERTAS / COFRE / CAJUELA / SALPICADERA" },
+    { name: "carroceria_asientos_tablero", label: "13. ASIENTOS / TABLERO / CONSOLA" },
+    { name: "carroceria_plumas", label: "14. PLUMAS LIMPIAPARABRISAS" },
   ]},
   { title: "SUSPENSIÓN Y DIRECCIÓN", items: [
-    { name: "safetyInspection.suspension_rotulas", label: "15. RÓTULAS Y GUARDAPOLVOS" },
-    { name: "safetyInspection.suspension_amortiguadores", label: "16. AMORTIGUADORES" },
-    { name: "safetyInspection.suspension_caja_direccion", label: "17. CAJA DE DIRECCIÓN" },
-    { name: "safetyInspection.suspension_terminales", label: "18. TERMINALES DE DIRECCIÓN" },
+    { name: "suspension_rotulas", label: "15. RÓTULAS Y GUARDAPOLVOS" },
+    { name: "suspension_amortiguadores", label: "16. AMORTIGUADORES" },
+    { name: "suspension_caja_direccion", label: "17. CAJA DE DIRECCIÓN" },
+    { name: "suspension_terminales", label: "18. TERMINALES DE DIRECCIÓN" },
   ]},
   { title: "LLANTAS (ESTADO Y PRESIÓN)", items: [
-    { name: "safetyInspection.llantas_delanteras_traseras", label: "19. DELANTERAS / TRASERAS" },
-    { name: "safetyInspection.llantas_refaccion", label: "20. REFACCIÓN" },
+    { name: "llantas_delanteras_traseras", label: "19. DELANTERAS / TRASERAS" },
+    { name: "llantas_refaccion", label: "20. REFACCIÓN" },
   ]},
   { title: "FRENOS", items: [
-    { name: "safetyInspection.frenos_discos_delanteros", label: "21. DISCOS / BALATAS DELANTERAS" },
-    { name: "safetyInspection.frenos_discos_traseros", label: "22. DISCOS / BALATAS TRASERAS" },
+    { name: "frenos_discos_delanteros", label: "21. DISCOS / BALATAS DELANTERAS" },
+    { name: "frenos_discos_traseros", label: "22. DISCOS / BALATAS TRASERAS" },
   ]},
   { title: "OTROS", items: [
-    { name: "safetyInspection.otros_tuberia_escape", label: "23. TUBERÍA DE ESCAPE" },
-    { name: "safetyInspection.otros_soportes_motor", label: "24. SOPORTES DE MOTOR" },
-    { name: "safetyInspection.otros_claxon", label: "25. CLAXON" },
-    { name: "safetyInspection.otros_inspeccion_sdb", label: "26. INSPECCIÓN DE SDB" },
+    { name: "otros_tuberia_escape", label: "23. TUBERÍA DE ESCAPE" },
+    { name: "otros_soportes_motor", label: "24. SOPORTES DE MOTOR" },
+    { name: "otros_claxon", label: "25. CLAXON" },
+    { name: "otros_inspeccion_sdb", label: "26. INSPECCIÓN DE SDB" },
   ]},
 ];
 
-const StatusIndicator = ({ status }: { status: SafetyCheckStatus }) => {
+const StatusIndicator = ({ status }: { status?: SafetyCheckStatus }) => {
   const statusInfo = {
     ok: { label: "Bien", color: "bg-green-500", textColor: "text-green-700" },
     atencion: { label: "Atención", color: "bg-yellow-400", textColor: "text-yellow-700" },
     inmediata: { label: "Inmediata", color: "bg-red-500", textColor: "text-red-700" },
     na: { label: "N/A", color: "bg-gray-300", textColor: "text-gray-500" },
   };
-  const currentStatus = statusInfo[status] || statusInfo.na;
+  const currentStatus = statusInfo[status || 'na'] || statusInfo.na;
 
   return (
     <div className="flex items-center gap-2">
@@ -85,12 +88,14 @@ const SafetyChecklistDisplay = ({
   inspection,
   workshopInfo,
   service,
-  vehicle
+  vehicle,
+  onViewImage
 }: {
   inspection: SafetyInspection;
   workshopInfo: WorkshopInfo;
   service: ServiceRecord;
   vehicle?: Vehicle;
+  onViewImage: (url: string) => void;
 }) => {
     const serviceDateInput = service.serviceDate;
     let serviceDate: Date;
@@ -138,16 +143,34 @@ const SafetyChecklistDisplay = ({
             </header>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
                 {inspectionGroups.map(group => (
-                    <div key={group.title}>
+                    <div key={group.title} className="break-inside-avoid">
                         <h4 className="font-bold text-base mb-2 border-b-2 border-black pb-1">{group.title}</h4>
                         <div className="space-y-1">
                             {group.items.map(item => {
-                                const statusKey = item.name.split('.')[1] as keyof SafetyInspection;
-                                const status = (inspection[statusKey] as SafetyCheckStatus) || 'na';
+                                const checkItem = inspection[item.name as keyof Omit<SafetyInspection, 'inspectionNotes' | 'technicianSignature'>];
                                 return (
-                                    <div key={item.name} className="flex justify-between items-center text-sm py-1 border-b border-dashed last:border-none">
-                                        <span className="pr-4">{item.label}</span>
-                                        <StatusIndicator status={status} />
+                                    <div key={item.name} className="py-1 border-b border-dashed last:border-none">
+                                        <div className="flex justify-between items-center text-sm">
+                                            <span className="pr-4">{item.label}</span>
+                                            <StatusIndicator status={checkItem?.status} />
+                                        </div>
+                                        {checkItem && checkItem.photos && checkItem.photos.length > 0 && (
+                                            <div className="grid grid-cols-2 gap-1 mt-1 pl-4">
+                                                {checkItem.photos.map((photoUrl, pIndex) => (
+                                                     <button
+                                                        type="button"
+                                                        onClick={() => onViewImage && onViewImage(photoUrl)}
+                                                        key={pIndex} 
+                                                        className="relative aspect-video w-full bg-gray-100 rounded overflow-hidden border group"
+                                                    >
+                                                        <Image src={photoUrl} alt={`Evidencia para ${item.label}`} layout="fill" objectFit="cover" className="transition-transform duration-300 group-hover:scale-105"/>
+                                                        <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity group-hover:opacity-100">
+                                                            <Eye className="h-6 w-6 text-white" />
+                                                        </div>
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        )}
                                     </div>
                                 );
                             })}
@@ -156,7 +179,7 @@ const SafetyChecklistDisplay = ({
                 ))}
             </div>
             {inspection.inspectionNotes && (
-                <div className="mt-6 border-t pt-4">
+                <div className="mt-6 border-t pt-4 break-before-page">
                     <h4 className="font-bold text-base mb-2">Observaciones Generales de la Inspección:</h4>
                     <p className="text-sm whitespace-pre-wrap p-2 bg-gray-50 rounded-md border">{inspection.inspectionNotes}</p>
                 </div>
@@ -179,10 +202,11 @@ interface ServiceSheetContentProps {
   service: ServiceRecord;
   vehicle?: Vehicle;
   workshopInfo?: WorkshopInfo;
+  onViewImage?: (url: string) => void;
 }
 
 export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheetContentProps>(
-  ({ service, vehicle, workshopInfo: workshopInfoProp }, ref) => {
+  ({ service, vehicle, workshopInfo: workshopInfoProp, onViewImage }, ref) => {
     const effectiveWorkshopInfo = { ...initialWorkshopInfo, ...workshopInfoProp };
     
     const formatCurrency = (amount: number | undefined) => {
@@ -224,7 +248,7 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
     
     const fuelColor = getFuelColorClass(fuelPercentage);
     
-    const showChecklist = !!service.safetyInspection;
+    const showChecklist = !!service.safetyInspection && Object.keys(service.safetyInspection).some(k => k !== 'inspectionNotes' && k !== 'technicianSignature');
     const showPhotoReport = !!service.photoReports && service.photoReports.length > 0;
 
     const ServiceOrderContent = (
@@ -361,7 +385,7 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
            <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 text-center mb-4">
                <div className="pt-2 min-h-[80px] flex flex-col justify-between">
                     <div className="h-14 flex-grow flex items-center justify-center">
-                        {service.serviceAdvisorSignatureDataUrl && service.serviceAdvisorSignatureDataUrl.startsWith('data:image') && (
+                        {service.serviceAdvisorSignatureDataUrl && (
                             <div className="relative w-full h-full max-w-[200px]">
                                 <Image src={service.serviceAdvisorSignatureDataUrl} alt="Firma del asesor" layout="fill" objectFit="contain" />
                             </div>
@@ -389,29 +413,62 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
                     <span className="font-bold">TERMINOS Y CONDICIONES:</span> 1. En virtud de este contrato, Servicio Ranoro presta el servicio de reparación y/o mantenimiento al Cliente (Consumidor), del vehículo cuyas características se detallan en este contrato. 2. El Cliente expresa ser el dueño del vehículo y/o estar facultado para autorizar la reparación y/o mantenimiento del vehículo descrito en el presente contrato, por lo que acepta las condiciones y términos bajo los cuales se realizará la prestación del servicio descrita en dicho contrato. Asimismo, es sabedor de las posibles consecuencias que puede sufrir el vehículo con motivo de su reparación y/o mantenimiento y se responsabiliza de las mismas. 3. El consumidor acepta haber tenido a la vista los precios por mano de obra, partes y/o refacciones a emplear en las operaciones a efectuar por parte de Ranoro, y cuyas refacciones son nuevas y apropiadas para el funcionamiento del vehiculo. 4. Las condiciones generales del vehículo materia de reparación y/o mantenimiento, son señalados en el carátula del presente contrato. 5. Se otorga con garantía por un plazo de 90 días en mano de obra contados a partir de la entrega del vehículo. Para la garantía en partes, piezas, refacciones y accesorios, Ranoro transmitirá la otorgada por el fabricante y/o proveedor. la garantía deberá hacerse válida en las instalaciones de RANORO siempre y cuando no se haya efectuado una reparación por un tercero. El tiempo que dure la reparación y/o mantenimiento del vehículo, bajo la protección de la garantía, no es computable dentro del plazo de la misma. De igual forma, los gastos en que incurra el Cliente para hacer válida la garantía en un domicilio diverso al de Ranoro, deberán ser cubiertos por éste. 6. Ranoro será el responsable por las descomposturas, daños o pérdidas parciales o totales imputables a él mientras el vehículo se encuentre bajo su resguardo para llevar a cabo la prestación del servicio de reparación y/o mantenimiento, o como consecuencia de la prestación del servicio, o bien, en el cumplimiento de la garantía, de acuerdo a lo establecido en el presente contrato. Asimismo, el Cliente autoriza a Ranoro a usar el vehículo para efectos de prueba o verificación de las operaciones a realizar o realizadas. El Cliente libera a Ranoro de cualquier responsabilidad que hubiere surgido o pudiera surgir con relación al origen, propiedad o posesión del vehículo. 7. En caso de que el consumidor cancele la operación, está obligado a pagar de manera inmediata y previa a la entrega del vehículo, el importe de las operaciones efectuadas y partes y/o refacciones colocadas o adquiridas hasta el retiro del mismo. 8. El Consumidor deberá recoger el vehículo, no mas de 24 horas posteriores de haberse notificado, ya sea por teléfono, mensaje o aplicación móvil que el vehículo se encuentra listo, en caso contrario, se obliga a pagar a Ranoro, la cantidad de $300.00 (Trescientos pesos 00/100 M.N.) por concepto de almacenaje del vehículo por cada día que transcurra. Transcurrido un plazo de 15 días naturales a partir de la fecha señalada para la entrega del vehículo, y el Cliente no acuda a recoger el mismo, Ranoro sin responsabilidad alguna, pondrá a disposición de la autoridad correspondiente dicho vehículo. Sin perjuicio de lo anterior, Ranoro podrá realizar el cobro correspondiente por concepto de almacenaje. 9. Ranoro se obliga a expedir la factura o comprobante de pago por las operacionès efectuadas, en la cual se especificarán los precios por mano de obra, refacciones, materiales y accesorios empleados, asi como la garantía que en su caso se otorgue, conforme al artículo 62 de la Ley Federal de Protección al Consumidor.10. Ranoro se obliga a no ceder o transmitir a terceros, con fines mercadotécnicos o publicitarios, los datos e información proporcionada por el consumidor con motivo del presente contrato. 11. Las partes están de acuerdo en someterse a la competencia de la Procuraduría Federal del Consumidor en la vía administrativa para resolver cualquier controversia que se suscite sobre la interpretación o cumplimiento de los términos y condiciones del presente contrato y de las disposiciones de la Ley Federal de Protección al Consumidor, la Norma Oficial Mexicana NOM-17li-SCFI-2007, Prácticas comerciales-Elementos de información para la prestación de servicios en general y cualquier otra disposición aplicable, sin perjuicio del derecho que tienen las partes de someterse a la jurisdicción de los Tribunales competentes del estado de Aguascalientes, renunciando las partes expresamente a cualquier otra jurisdicción que pudiera corresponderles por razón de sus domicilios futuros. 12. El Cliente y Ranoro aceptan la realización de la prestación del servicio de reparación y/o mantenimiento, en los términos establecidos en este contrato, y sabedores de su alcance legal lo firman por duplicado.13. El Cliente y Ranoro aceptan la utilización de aplicaciones móviles (iOS-ANDROID) para enviar, recibir y en su caso aceptar información de trabajos adicionales que se han de realizar a los originalmente contratados por el Consumidor, así como autorizar los mismos por los medios tecnológicos con que se cuente.
                 </p>
            </section>
+           {effectiveWorkshopInfo.fixedFooterText && (
+            <div className="text-center mt-6 pt-4 border-t border-gray-200">
+              <p className="text-xs text-muted-foreground whitespace-pre-wrap">{effectiveWorkshopInfo.fixedFooterText}</p>
+            </div>
+          )}
         </footer>
       </div>
     );
 
     const PhotoReportContent = showPhotoReport ? (
-        <div className="mt-4 print:mt-0">
-             <header className="mb-4 pb-2 border-b-2 border-black">
-                <div className="flex justify-between items-center">
-                    <h1 className="text-lg font-bold">REPORTE FOTOGRÁFICO</h1>
-                    <p className="font-mono text-xs">Folio de Servicio: <span className="font-semibold">{service.id}</span></p>
-                </div>
-             </header>
-             <div className="space-y-4">
-                 {service.photoReports!.map(reportItem => (
-                    <div key={reportItem.id} className="break-inside-avoid border-b pb-4 last:border-none">
-                        <div className="border-2 border-black p-1 inline-block">
-                           <Image src={reportItem.photoDataUrl} alt={reportItem.description} width={700} height={525} style={{objectFit: 'contain'}} />
+      <div className="mt-4 print:mt-0">
+        <header className="mb-4 pb-2 border-b-2 border-black">
+          <div className="flex justify-between items-center">
+            <h1 className="text-lg font-bold">REPORTE FOTOGRÁFICO</h1>
+            <p className="font-mono text-xs">
+              Folio de Servicio:{" "}
+              <span className="font-semibold">{service.id}</span>
+            </p>
+          </div>
+        </header>
+        <div className="space-y-4">
+          {service.photoReports!.map((reportItem) => (
+            <div key={reportItem.id} className="break-inside-avoid border-b pb-4 last:border-none">
+                <p className="mb-2 text-sm">
+                    <span className="font-bold">Fecha:</span>{" "}
+                    {format(parseISO(reportItem.date), "dd/MM/yyyy HH:mm", { locale: es })}
+                    <br />
+                    <span className="font-bold">Descripción:</span>{" "}
+                    {reportItem.description}
+                </p>
+                <div className="grid grid-cols-2 gap-2 mt-2">
+                {reportItem.photos.map((photoUrl, photoIndex) => (
+                    <button
+                        type="button"
+                        onClick={() => onViewImage && onViewImage(photoUrl)}
+                        key={photoIndex} 
+                        className="relative aspect-video w-full bg-gray-100 rounded-md overflow-hidden border group"
+                    >
+                        <Image
+                            src={photoUrl}
+                            alt={`Foto ${photoIndex + 1}`}
+                            layout="fill"
+                            objectFit="cover"
+                            className="transition-transform duration-300 group-hover:scale-105"
+                            data-ai-hint="car damage photo"
+                        />
+                         <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity group-hover:opacity-100">
+                            <Eye className="h-8 w-8 text-white" />
                         </div>
-                        <p className="mt-2 text-sm font-semibold text-center">{reportItem.description}</p>
-                    </div>
-                 ))}
-             </div>
+                    </button>
+                ))}
+                </div>
+            </div>
+          ))}
         </div>
+      </div>
     ) : null;
 
     return (
@@ -421,26 +478,27 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
           <Tabs defaultValue="order" className="w-full">
             <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="order">Orden de Servicio</TabsTrigger>
-              <TabsTrigger value="photoreport" disabled={!showPhotoReport}>Reporte Foto</TabsTrigger>
               <TabsTrigger value="checklist" disabled={!showChecklist}>Revisión</TabsTrigger>
+              <TabsTrigger value="photoreport" disabled={!showPhotoReport}>Reporte Foto</TabsTrigger>
             </TabsList>
             <TabsContent value="order" className="mt-4">{ServiceOrderContent}</TabsContent>
-            <TabsContent value="photoreport" className="mt-4">
-               {showPhotoReport ? PhotoReportContent : (
-                <div className="text-center p-8 text-muted-foreground">
-                  No hay fotos en este reporte.
-                </div>
-              )}
-            </TabsContent>
             <TabsContent value="checklist" className="mt-4">
               {showChecklist ? <SafetyChecklistDisplay 
                 inspection={service.safetyInspection!}
                 workshopInfo={effectiveWorkshopInfo}
                 service={service}
                 vehicle={vehicle}
+                onViewImage={onViewImage || (() => {})}
               /> : (
                 <div className="text-center p-8 text-muted-foreground">
                   La revisión de seguridad no es aplicable a este servicio.
+                </div>
+              )}
+            </TabsContent>
+            <TabsContent value="photoreport" className="mt-4">
+               {showPhotoReport ? PhotoReportContent : (
+                <div className="text-center p-8 text-muted-foreground">
+                  No hay fotos en este reporte.
                 </div>
               )}
             </TabsContent>
@@ -452,12 +510,6 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
           <div className="p-4 md:p-8">
             {ServiceOrderContent}
           </div>
-          {showPhotoReport && (
-             <>
-              <div style={{ pageBreakBefore: 'always' }} />
-              <div className="p-4 md:p-8">{PhotoReportContent}</div>
-            </>
-          )}
           {showChecklist && (
             <>
               <div style={{ pageBreakBefore: 'always' }} />
@@ -466,7 +518,14 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
                 workshopInfo={effectiveWorkshopInfo}
                 service={service}
                 vehicle={vehicle}
+                onViewImage={onViewImage || (() => {})}
               /></div>
+            </>
+          )}
+          {showPhotoReport && (
+             <>
+              <div style={{ pageBreakBefore: 'always' }} />
+              <div className="p-4 md:p-8">{PhotoReportContent}</div>
             </>
           )}
         </div>
