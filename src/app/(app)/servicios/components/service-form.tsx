@@ -53,8 +53,8 @@ import { enhanceText } from '@/ai/flows/text-enhancement-flow';
 import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
 import { ServiceSheetContent } from '@/components/service-sheet-content';
 import { Checkbox } from "@/components/ui/checkbox";
-import Image from "next/legacy/image";
-import { doc, getDoc } from 'firebase/firestore';
+import Image from "next/image";
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { db } from '../../../../lib/firebaseClient.js';
 import { getStorage, ref, uploadString, getDownloadURL } from 'firebase/storage';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -725,8 +725,7 @@ export function ServiceForm({
     const finalProfit = totalCost - totalSuppliesWorkshopCost;
     const compositeDescription = values.serviceItems.map(item => item.name).join(', ') || 'Servicio';
     
-    const isConvertingQuoteToService = mode === 'quote' && values.status && values.status !== 'Cotizacion';
-    const isNewRecord = !values.id;
+    const isConvertingQuoteToService = mode === 'service' && !!initialDataQuote?.id;
     const recordType = mode === 'service' || isConvertingQuoteToService ? 'service' : 'quote';
 
     let dataToSave: ServiceRecord | QuoteRecord;
@@ -804,23 +803,25 @@ export function ServiceForm({
     // Call public save before local persistence
     const publicSaveResult = await savePublicDocument(recordType, dataToSave, selectedVehicle, workshopInfo);
 
-    await onSubmit(dataToSave);
-    onClose();
-
-    // Show a single, consolidated toast message
-    if (publicSaveResult.success) {
-      toast({
-        title: `${isNewRecord ? 'Creado' : 'Actualizado'} con Éxito`,
-        description: `El documento ${dataToSave.id} se ha guardado correctamente.`,
-      });
-    } else {
-      toast({
-        title: "Guardado con Advertencia",
-        description: `Se guardó localmente, pero no se pudo crear/actualizar el enlace público. ${publicSaveResult.error || ''}`,
-        variant: "default",
-        duration: 8000,
-      });
+    if (publicSaveResult.success && isConvertingQuoteToService && initialDataQuote?.publicId) {
+      try {
+          if (db) {
+              const publicQuoteRef = doc(db, 'publicQuotes', initialDataQuote.publicId);
+              await setDoc(publicQuoteRef, { serviceId: dataToSave.id }, { merge: true });
+          }
+      } catch (e) {
+          console.error("Failed to link public quote to service:", e);
+      }
     }
+    
+    await onSubmit(dataToSave); // This handles the main local persistence and UI update
+    
+    toast({
+      title: `${isConvertingQuoteToService || !initialData?.id ? 'Creado' : 'Actualizado'} con Éxito`,
+      description: `El documento ${dataToSave.id} se ha guardado.`,
+    });
+    
+    onClose();
   };
   
   const handlePrintSheet = useCallback(async () => {
@@ -1571,8 +1572,8 @@ export function ServiceForm({
                             <FormField control={form.control} name="customerItems" render={({ field }) => (<FormItem><FormLabel>Pertenencias del Cliente (Opcional)</FormLabel><FormControl><Textarea placeholder="Ej: Gato, llanta de refacción, cargador de celular en la guantera, etc." {...field} disabled={isReadOnly} /></FormControl></FormItem>)}/>
                         </div>
                         <div className="pt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div><Label>Firma de Recepción</Label><div className="mt-2 p-2 h-24 border rounded-md bg-muted/50 flex items-center justify-center">{customerSignatureReception ? (<Image src={customerSignatureReception} alt="Firma de recepción" width={150} height={75} style={{objectFit: 'contain'}}/>) : (<span className="text-sm text-muted-foreground">Pendiente de firma del cliente</span>)}</div></div>
-                            <div><Label>Firma de Entrega</Label><div className="mt-2 p-2 h-24 border rounded-md bg-muted/50 flex items-center justify-center">{customerSignatureDelivery ? (<Image src={customerSignatureDelivery} alt="Firma de entrega" width={150} height={75} style={{objectFit: 'contain'}}/>) : (<span className="text-sm text-muted-foreground">Pendiente de firma del cliente</span>)}</div></div>
+                            <div><Label>Firma de Recepción</Label><div className="mt-2 p-2 h-24 border rounded-md bg-muted/50 flex items-center justify-center">{customerSignatureReception ? (<img src={customerSignatureReception} alt="Firma de recepción" style={{objectFit: 'contain', width: '150px', height: '75px'}}/>) : (<span className="text-sm text-muted-foreground">Pendiente de firma del cliente</span>)}</div></div>
+                            <div><Label>Firma de Entrega</Label><div className="mt-2 p-2 h-24 border rounded-md bg-muted/50 flex items-center justify-center">{customerSignatureDelivery ? (<img src={customerSignatureDelivery} alt="Firma de entrega" style={{objectFit: 'contain', width: '150px', height: '75px'}}/>) : (<span className="text-sm text-muted-foreground">Pendiente de firma del cliente</span>)}</div></div>
                         </div>
                     </CardContent>
                   </Card>

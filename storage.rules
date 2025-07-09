@@ -1,14 +1,15 @@
+
 rules_version = '2';
 
 service firebase.storage {
   match /b/{bucket}/o {
     // Allow public read access to all files.
-    // This is useful for public assets like profile pictures or shared documents.
-    // For more secure applications, you would want more restrictive rules.
+    // This is useful for public links to images (signatures, logos, etc.).
+    // For a production app, you might want more specific rules,
+    // e.g., match /b/{bucket}/o/public/{allPaths=**} {
     match /{allPaths=**} {
       allow read;
-      // Only authenticated users can write files.
-      allow write: if request.auth != null;
+      allow write: if request.auth != null; // Only authenticated users can write.
     }
   }
 }
