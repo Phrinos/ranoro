@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState, useEffect, useRef } from 'react';
@@ -17,7 +18,7 @@ import { Printer, Copy, MessageSquare } from 'lucide-react';
 type DialogStep = 'service' | 'print' | 'sheet' | 'closed';
 
 export default function NuevoServicioPage() {
-  const { toast } = useToast();
+  const { toast } = useToast(); 
   const router = useRouter();
   const ticketContentRef = useRef<HTMLDivElement>(null);
   const serviceSheetRef = useRef<HTMLDivElement>(null);
@@ -56,12 +57,15 @@ export default function NuevoServicioPage() {
   }, [dialogStep, router]);
 
   const handleSaveNewService = async (data: ServiceRecord) => {
-    // The form now handles the main toast notifications.
-    // This handler only needs to persist the data if it's new.
-    if (!placeholderServiceRecords.find(s => s.id === data.id)) {
-        placeholderServiceRecords.push(data); 
-        await persistToFirestore(['serviceRecords']);
+    // Check if the record already exists to avoid duplicates
+    const recordIndex = placeholderServiceRecords.findIndex(s => s.id === data.id);
+    if (recordIndex > -1) {
+      placeholderServiceRecords[recordIndex] = data; // Update
+    } else {
+      placeholderServiceRecords.push(data); // Add new
     }
+    
+    await persistToFirestore(['serviceRecords']);
     
     const vehicle = vehicles.find(v => v.id === data.vehicleId);
     const technician = technicians.find(t => t.id === data.technicianId);
@@ -72,8 +76,11 @@ export default function NuevoServicioPage() {
 
     if (data.status === 'Completado') {
       setDialogStep('print');
-    } else {
+    } else if (data.status !== 'Cotizacion') {
       setDialogStep('sheet'); 
+    } else {
+      // If it's just a quote, close and go back
+      handleDialogClose();
     }
   };
 
@@ -95,7 +102,7 @@ export default function NuevoServicioPage() {
         const canvas = await html2canvas(ref.current, {
             useCORS: true,
             backgroundColor: '#ffffff',
-            scale: 2.5,
+            scale: 2.5, 
         });
         canvas.toBlob(async (blob) => {
             if (blob) {
@@ -158,8 +165,8 @@ ${shareUrl}
   return (
     <>
       <PageHeader
-        title="Registrar Nuevo Servicio"
-        description="Complete los detalles para la nueva orden de servicio."
+        title="Nuevo Registro"
+        description="Crear una nueva cotización o una orden de servicio."
       />
       {dialogStep === 'service' && (
         <ServiceDialog
