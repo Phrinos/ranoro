@@ -313,7 +313,7 @@ export default function HistorialServiciosPage() {
                     toast({ title: "Error de Copiado", description: "Tu navegador no pudo copiar la imagen. Intenta imprimir.", variant: "destructive" });
                 }
             } else {
-                 toast({ title: "Error de Conversión", description: "No se pudo convertir el ticket a imagen.", variant: "destructive" });
+                 toast({ title: "Error de Conversión", description: "No se pudo convertir a imagen.", variant: "destructive" });
             }
         }, 'image/png');
     } catch (e) {
@@ -609,7 +609,11 @@ ${shareUrl}
             )
           })
         ) : (
-          <p className="text-muted-foreground text-center py-8">No hay servicios que coincidan con los filtros.</p>
+          <div className="flex flex-col items-center justify-center py-10 text-center text-muted-foreground border-2 border-dashed rounded-lg">
+            <Search className="h-12 w-12 mb-2" />
+            <h3 className="text-lg font-semibold text-foreground">No se encontraron servicios</h3>
+            <p className="text-sm">Intente cambiar su búsqueda o el rango de fechas.</p>
+          </div>
         )}
       </div>
 

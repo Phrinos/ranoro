@@ -21,7 +21,7 @@ import {
   startOfDay, endOfDay, startOfWeek, endOfWeek, compareDesc, startOfMonth, endOfMonth
 } from "date-fns";
 import { es } from 'date-fns/locale';
-import { CalendarIcon, Search } from "lucide-react";
+import { CalendarIcon, Search, LineChart, PackageSearch } from "lucide-react";
 import { cn, formatCurrency } from "@/lib/utils";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { DateRange } from "react-day-picker";
@@ -119,10 +119,95 @@ function ReportesPageComponent() {
                     <TabsTrigger value="inventario" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Reporte de Inventario</TabsTrigger>
                 </TabsList>
                 <TabsContent value="operaciones" className="mt-6">
-                    <Card><CardHeader><CardTitle>Detalle de Operaciones</CardTitle><CardDescription>Ventas y servicios completados en el período seleccionado.</CardDescription></CardHeader><CardContent><Table><TableHeader><TableRow><TableHead>Fecha</TableHead><TableHead>Tipo</TableHead><TableHead>ID</TableHead><TableHead>Descripción</TableHead><TableHead className="text-right">Monto</TableHead><TableHead className="text-right">Ganancia</TableHead></TableRow></TableHeader><TableBody>{filteredAndSortedOperations.map(op => (<TableRow key={`${op.type}-${op.id}`}><TableCell>{op.date ? format(parseISO(op.date), "dd MMM yy, HH:mm", { locale: es }) : 'N/A'}</TableCell><TableCell>{op.type}</TableCell><TableCell>{op.id}</TableCell><TableCell className="max-w-xs truncate">{op.description}</TableCell><TableCell className="text-right">{formatCurrency(op.totalAmount)}</TableCell><TableCell className="text-right">{formatCurrency(op.profit)}</TableCell></TableRow>))}</TableBody></Table></CardContent></Card>
+                    <Card>
+                        <CardHeader><CardTitle>Detalle de Operaciones</CardTitle><CardDescription>Ventas y servicios completados en el período seleccionado.</CardDescription></CardHeader>
+                        <CardContent>
+                            <div className="rounded-md border overflow-x-auto">
+                                <Table>
+                                    <TableHeader className="bg-black">
+                                        <TableRow>
+                                            <TableHead className="text-white">Fecha</TableHead>
+                                            <TableHead className="text-white">Tipo</TableHead>
+                                            <TableHead className="text-white">ID</TableHead>
+                                            <TableHead className="text-white">Descripción</TableHead>
+                                            <TableHead className="text-right text-white">Monto</TableHead>
+                                            <TableHead className="text-right text-white">Ganancia</TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {filteredAndSortedOperations.length > 0 ? (
+                                            filteredAndSortedOperations.map(op => (
+                                                <TableRow key={`${op.type}-${op.id}`}>
+                                                    <TableCell>{op.date ? format(parseISO(op.date), "dd MMM yy, HH:mm", { locale: es }) : 'N/A'}</TableCell>
+                                                    <TableCell>{op.type}</TableCell>
+                                                    <TableCell>{op.id}</TableCell>
+                                                    <TableCell className="max-w-xs truncate">{op.description}</TableCell>
+                                                    <TableCell className="text-right">{formatCurrency(op.totalAmount)}</TableCell>
+                                                    <TableCell className="text-right">{formatCurrency(op.profit)}</TableCell>
+                                                </TableRow>
+                                            ))
+                                        ) : (
+                                            <TableRow>
+                                                <TableCell colSpan={6}>
+                                                    <div className="flex flex-col items-center justify-center py-10 text-center text-muted-foreground">
+                                                        <LineChart className="h-12 w-12 mb-2" />
+                                                        <h3 className="text-lg font-semibold text-foreground">Sin Operaciones</h3>
+                                                        <p className="text-sm">No se encontraron ventas o servicios en el período seleccionado.</p>
+                                                    </div>
+                                                </TableCell>
+                                            </TableRow>
+                                        )}
+                                    </TableBody>
+                                </Table>
+                            </div>
+                        </CardContent>
+                    </Card>
                 </TabsContent>
                 <TabsContent value="inventario" className="mt-6">
-                    <Card><CardHeader><div className="relative flex-1 min-w-[200px] sm:min-w-[300px]"><Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" /><Input type="search" placeholder="Buscar por nombre o SKU..." className="w-full rounded-lg bg-card pl-8" value={reporteInvSearchTerm} onChange={(e) => setReporteInvSearchTerm(e.target.value)} /></div></CardHeader><CardContent><Table><TableHeader><TableRow><TableHead>SKU</TableHead><TableHead>Producto</TableHead><TableHead className="text-right">Unidades</TableHead><TableHead className="text-right">Ingreso Generado</TableHead></TableRow></TableHeader><TableBody>{filteredAndSortedInventory.map(item => (<TableRow key={item.itemId}><TableCell>{item.sku}</TableCell><TableCell>{item.name}</TableCell><TableCell className="text-right">{item.totalQuantity}</TableCell><TableCell className="text-right">{formatCurrency(item.totalRevenue)}</TableCell></TableRow>))}</TableBody></Table></CardContent></Card>
+                    <Card>
+                        <CardHeader>
+                            <div className="relative flex-1 min-w-[200px] sm:min-w-[300px]">
+                                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                                <Input type="search" placeholder="Buscar por nombre o SKU..." className="w-full rounded-lg bg-card pl-8" value={reporteInvSearchTerm} onChange={(e) => setReporteInvSearchTerm(e.target.value)} />
+                            </div>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="rounded-md border overflow-x-auto">
+                                <Table>
+                                    <TableHeader className="bg-black">
+                                        <TableRow>
+                                            <TableHead className="text-white">SKU</TableHead>
+                                            <TableHead className="text-white">Producto</TableHead>
+                                            <TableHead className="text-right text-white">Unidades</TableHead>
+                                            <TableHead className="text-right text-white">Ingreso Generado</TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {filteredAndSortedInventory.length > 0 ? (
+                                            filteredAndSortedInventory.map(item => (
+                                                <TableRow key={item.itemId}>
+                                                    <TableCell>{item.sku}</TableCell>
+                                                    <TableCell>{item.name}</TableCell>
+                                                    <TableCell className="text-right">{item.totalQuantity}</TableCell>
+                                                    <TableCell className="text-right">{formatCurrency(item.totalRevenue)}</TableCell>
+                                                </TableRow>
+                                            ))
+                                        ) : (
+                                            <TableRow>
+                                                <TableCell colSpan={4}>
+                                                    <div className="flex flex-col items-center justify-center py-10 text-center text-muted-foreground">
+                                                        <PackageSearch className="h-12 w-12 mb-2" />
+                                                        <h3 className="text-lg font-semibold text-foreground">Sin Movimientos de Inventario</h3>
+                                                        <p className="text-sm">No se vendieron productos en el período seleccionado.</p>
+                                                    </div>
+                                                </TableCell>
+                                            </TableRow>
+                                        )}
+                                    </TableBody>
+                                </Table>
+                            </div>
+                        </CardContent>
+                    </Card>
                 </TabsContent>
             </Tabs>
         </>

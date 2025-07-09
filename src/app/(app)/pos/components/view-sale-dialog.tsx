@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from "react";
@@ -83,7 +84,7 @@ export function ViewSaleDialog({ open, onOpenChange, sale, onCancelSale }: ViewS
           <div className="rounded-md border">
             <Table>
               <TableHeader>
-                <TableRow>
+                <TableRow className="bg-muted">
                   <TableHead>Artículo</TableHead>
                   <TableHead className="text-center">Cant.</TableHead>
                   <TableHead className="text-right">Total</TableHead>

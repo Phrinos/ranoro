@@ -17,7 +17,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { PlusCircle, Trash2, Receipt, Search, PackagePlus, Wallet, CreditCard, Send, WalletCards, ArrowRightLeft, Plus, Minus } from "lucide-react";
+import { PlusCircle, Trash2, Receipt, Search, PackagePlus, Wallet, CreditCard, Send, WalletCards, ArrowRightLeft, Plus, Minus, ShoppingCart } from "lucide-react";
 import type { InventoryItem, PaymentMethod, SaleReceipt } from "@/types";
 import { useToast } from "@/hooks/use-toast";
 import React, { useState, useEffect } from "react";
@@ -409,8 +409,9 @@ export function PosForm({ inventoryItems: parentInventoryItems, onSaleComplete, 
                     ))}
                     </div>
                 ) : (
-                    <div className="flex items-center justify-center h-24 text-muted-foreground">
-                    ningun articulo añadido
+                    <div className="flex flex-col items-center justify-center h-24 text-center text-muted-foreground border-2 border-dashed rounded-lg">
+                        <ShoppingCart className="h-8 w-8 mb-2" />
+                        <p className="text-sm font-medium">Ningún artículo añadido</p>
                     </div>
                 )}
                 </ScrollArea>
@@ -639,7 +640,3 @@ export function PosForm({ inventoryItems: parentInventoryItems, onSaleComplete, 
     </>
   );
 }
-
-    
-
-    

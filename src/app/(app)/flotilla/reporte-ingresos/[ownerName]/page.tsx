@@ -55,14 +55,14 @@ const ReportContent = React.forwardRef<HTMLDivElement, { report: PublicOwnerRepo
         </div>
 
         <h2 className="text-xl font-semibold mb-4">Desglose por Vehículo</h2>
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto rounded-md border">
           <Table>
-              <TableHeader>
+              <TableHeader className="bg-black">
                 <TableRow>
-                  <TableHead className="font-bold">Vehículo y Desglose de Deducciones</TableHead>
-                  <TableHead className="text-right font-bold">Ingreso Renta</TableHead>
-                  <TableHead className="text-right font-bold">Total Deduc.</TableHead>
-                  <TableHead className="text-right font-bold">Balance</TableHead>
+                  <TableHead className="font-bold text-white">Vehículo y Desglose de Deducciones</TableHead>
+                  <TableHead className="text-right font-bold text-white">Ingreso Renta</TableHead>
+                  <TableHead className="text-right font-bold text-white">Total Deduc.</TableHead>
+                  <TableHead className="text-right font-bold text-white">Balance</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -322,12 +322,12 @@ export default function OwnerIncomeDetailPage() {
         <CardContent>
           <div className="rounded-lg border shadow-sm overflow-x-auto">
             <Table>
-              <TableHeader>
+              <TableHeader className="bg-black">
                 <TableRow>
-                  <TableHead className="font-bold">Vehículo</TableHead>
-                  <TableHead className="text-right font-bold">Ingresos por Renta</TableHead>
-                  <TableHead className="text-right font-bold">Costos y Deducc.</TableHead>
-                  <TableHead className="text-right font-bold">Balance Neto</TableHead>
+                  <TableHead className="font-bold text-white">Vehículo</TableHead>
+                  <TableHead className="text-right font-bold text-white">Ingresos por Renta</TableHead>
+                  <TableHead className="text-right font-bold text-white">Costos y Deducc.</TableHead>
+                  <TableHead className="text-right font-bold text-white">Balance Neto</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>

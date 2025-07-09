@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Edit, Trash2 } from "lucide-react";
+import { Edit, Trash2, Building } from "lucide-react";
 import type { Supplier } from "@/types";
 import {
   AlertDialog,
@@ -34,7 +34,13 @@ interface SuppliersTableProps {
 
 export const SuppliersTable = React.memo(({ suppliers, onEdit, onDelete }: SuppliersTableProps) => {
   if (!suppliers.length) {
-    return <p className="text-muted-foreground text-center py-8">No hay proveedores registrados.</p>;
+    return (
+        <div className="flex flex-col items-center justify-center py-10 text-center text-muted-foreground border-2 border-dashed rounded-lg">
+            <Building className="h-12 w-12 mb-2" />
+            <h3 className="text-lg font-semibold text-foreground">No hay proveedores registrados</h3>
+            <p className="text-sm">Cuando se agregue un nuevo proveedor, aparecerá aquí.</p>
+        </div>
+    );
   }
 
   return (

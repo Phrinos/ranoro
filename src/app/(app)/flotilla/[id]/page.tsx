@@ -14,7 +14,7 @@ import { PageHeader } from '@/components/page-header';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { ShieldAlert, Edit, Car, ArrowLeft, Trash2, PlusCircle, CheckCircle, Circle, Gauge } from 'lucide-react';
+import { ShieldAlert, Edit, Car, ArrowLeft, Trash2, PlusCircle, CheckCircle, Circle, Gauge, Wrench, FileText } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { format, parseISO, compareAsc, isValid, isPast } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -345,7 +345,7 @@ export default function FleetVehicleDetailPage() {
         </TabsContent>
         
         <TabsContent value="maintenances">
-          {Object.entries(groupedServices).length > 0 ? (
+          {Object.keys(groupedServices).length > 0 ? (
             Object.entries(groupedServices).sort((a,b) => b[0].localeCompare(a[0])).map(([key, monthData]) => (
               <Card key={key} className="mb-6">
                 <CardHeader>
@@ -377,7 +377,11 @@ export default function FleetVehicleDetailPage() {
               </Card>
             ))
           ) : (
-            <p className="text-muted-foreground text-center py-8">No hay mantenimientos registrados para este vehículo.</p>
+            <div className="flex flex-col items-center justify-center py-10 text-center text-muted-foreground border-2 border-dashed rounded-lg">
+                <Wrench className="h-12 w-12 mb-2" />
+                <h3 className="text-lg font-semibold text-foreground">Sin Historial de Mantenimiento</h3>
+                <p className="text-sm">No se han registrado servicios para este vehículo.</p>
+            </div>
           )}
         </TabsContent>
 
@@ -400,7 +404,11 @@ export default function FleetVehicleDetailPage() {
                             </Table>
                         </div>
                     ) : (
-                        <p className="text-muted-foreground text-center py-8">No hay registros de revisión de multas para este vehículo.</p>
+                        <div className="flex flex-col items-center justify-center py-10 text-center text-muted-foreground border-2 border-dashed rounded-lg">
+                            <ShieldAlert className="h-12 w-12 mb-2" />
+                            <h3 className="text-lg font-semibold text-foreground">Sin Registros de Revisión</h3>
+                            <p className="text-sm">No se ha verificado el estado de multas para este vehículo.</p>
+                        </div>
                     )}
                 </CardContent>
             </Card>
@@ -457,7 +465,11 @@ export default function FleetVehicleDetailPage() {
                   </Table>
                 </div>
               ) : (
-                <p className="text-muted-foreground text-center py-8">No hay trámites registrados para este vehículo.</p>
+                <div className="flex flex-col items-center justify-center py-10 text-center text-muted-foreground border-2 border-dashed rounded-lg">
+                    <FileText className="h-12 w-12 mb-2" />
+                    <h3 className="text-lg font-semibold text-foreground">Sin Trámites Registrados</h3>
+                    <p className="text-sm">Añada trámites como verificaciones, tenencias, etc.</p>
+                </div>
               )}
             </CardContent>
           </Card>

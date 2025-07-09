@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import type { InventoryItem } from "@/types";
+import { PackageSearch } from "lucide-react";
 
 interface InventoryTableProps {
   items: InventoryItem[];
@@ -26,7 +27,13 @@ export const InventoryTable = React.memo(({ items }: InventoryTableProps) => {
   };
   
   if (!items.length) {
-    return <p className="text-muted-foreground text-center py-8">No hay productos o servicios en el inventario.</p>;
+    return (
+        <div className="flex flex-col items-center justify-center py-10 text-center text-muted-foreground border-2 border-dashed rounded-lg">
+            <PackageSearch className="h-12 w-12 mb-2" />
+            <h3 className="text-lg font-semibold text-foreground">No se encontraron productos</h3>
+            <p className="text-sm">Intente cambiar su búsqueda o agregue un nuevo producto.</p>
+        </div>
+    );
   }
 
   return (

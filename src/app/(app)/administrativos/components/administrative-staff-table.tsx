@@ -14,6 +14,7 @@ import {
 import type { AdministrativeStaff } from "@/types";
 import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { Users } from 'lucide-react';
 
 interface AdministrativeStaffTableProps {
   staffList: AdministrativeStaff[];
@@ -27,7 +28,13 @@ export const AdministrativeStaffTable = React.memo(({ staffList }: Administrativ
   };
 
   if (!staffList.length) {
-    return <p className="text-muted-foreground text-center py-8">No hay personal administrativo registrado.</p>;
+    return (
+        <div className="flex flex-col items-center justify-center py-10 text-center text-muted-foreground border-2 border-dashed rounded-lg">
+            <Users className="h-12 w-12 mb-2" />
+            <h3 className="text-lg font-semibold text-foreground">No hay personal administrativo registrado</h3>
+            <p className="text-sm">Cuando se agregue nuevo personal, aparecerá aquí.</p>
+        </div>
+    );
   }
 
   return (

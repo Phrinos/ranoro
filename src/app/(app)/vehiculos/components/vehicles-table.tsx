@@ -14,6 +14,7 @@ import {
 import type { Vehicle } from "@/types";
 import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { Car } from "lucide-react";
 
 interface VehiclesTableProps {
   vehicles: Vehicle[];
@@ -27,7 +28,13 @@ export const VehiclesTable = React.memo(({ vehicles: initialVehicles }: Vehicles
   };
 
   if (!initialVehicles.length) {
-    return <p className="text-muted-foreground text-center py-8">No hay vehículos registrados o que coincidan con los filtros.</p>;
+    return (
+        <div className="flex flex-col items-center justify-center py-10 text-center text-muted-foreground border-2 border-dashed rounded-lg">
+            <Car className="h-12 w-12 mb-2" />
+            <h3 className="text-lg font-semibold text-foreground">No se encontraron vehículos</h3>
+            <p className="text-sm">Intente cambiar su búsqueda o agregue un nuevo vehículo.</p>
+        </div>
+    );
   }
 
   return (
