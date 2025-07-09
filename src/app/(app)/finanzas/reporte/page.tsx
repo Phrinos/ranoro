@@ -18,10 +18,10 @@ import {
   parseISO,
   isWithinInterval,
   isValid,
-  startOfDay, endOfDay, startOfWeek, endOfWeek, compareDesc, startOfMonth, endOfMonth
+  startOfDay, endOfDay, startOfWeek, endOfWeek, compareDesc, startOfMonth, endOfMonth, compareAsc
 } from "date-fns";
 import { es } from 'date-fns/locale';
-import { CalendarIcon, Search, LineChart, PackageSearch } from "lucide-react";
+import { CalendarIcon, Search, LineChart, PackageSearch, ListFilter } from "lucide-react";
 import { cn, formatCurrency } from "@/lib/utils";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { DateRange } from "react-day-picker";
@@ -29,8 +29,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
-type OperationTypeFilter = "all" | "Venta" | "Servicio" | "C. Aceite" | "Pintura";
+type OperationTypeFilter = "all" | "Venta" | "Servicio General" | "C. Aceite" | "Pintura";
 
 function ReportesPageComponent() {
     const searchParams = useSearchParams();
@@ -43,6 +44,7 @@ function ReportesPageComponent() {
     const [reporteOpSearchTerm, setReporteOpSearchTerm] = useState("");
     const [reporteOpTypeFilter, setReporteOpTypeFilter] = useState<OperationTypeFilter>("all");
     const [reporteInvSearchTerm, setReporteInvSearchTerm] = useState("");
+    const [reporteOpSortOption, setReporteOpSortOption] = useState<string>("date_desc");
 
     useEffect(() => {
         hydrateReady.then(() => setHydrated(true));
@@ -58,7 +60,7 @@ function ReportesPageComponent() {
     const combinedOperations = useMemo((): FinancialOperation[] => {
         if (!hydrated) return [];
         const saleOperations: FinancialOperation[] = placeholderSales.filter(s => s.status !== 'Cancelado').map(sale => ({ id: sale.id, date: sale.saleDate, type: 'Venta', description: sale.items.map(i => i.itemName).join(', '), totalAmount: sale.totalAmount, profit: 0, originalObject: sale }));
-        const serviceOperations: FinancialOperation[] = placeholderServiceRecords.filter(s => s.status === 'Completado').map(service => ({ id: service.id, date: service.deliveryDateTime || service.serviceDate, type: service.serviceType || 'Servicio', description: service.description || (service.serviceItems || []).map(i => i.name).join(', '), totalAmount: service.totalCost, profit: service.serviceProfit || 0, originalObject: service }));
+        const serviceOperations: FinancialOperation[] = placeholderServiceRecords.filter(s => s.status === 'Completado').map(service => ({ id: service.id, date: service.deliveryDateTime || service.serviceDate, type: service.serviceType || 'Servicio General', description: service.description || (service.serviceItems || []).map(i => i.name).join(', '), totalAmount: service.totalCost, profit: service.serviceProfit || 0, originalObject: service }));
         return [...saleOperations, ...serviceOperations];
     }, [hydrated, version]);
     
@@ -67,11 +69,30 @@ function ReportesPageComponent() {
         const from = startOfDay(dateRange.from);
         const to = dateRange.to ? endOfDay(dateRange.to) : endOfDay(dateRange.from);
         let list = combinedOperations.filter(op => op.date && isValid(parseISO(op.date)) && isWithinInterval(parseISO(op.date), { start: from, end: to }));
-        if (reporteOpTypeFilter !== 'all') { /* ... filtering logic ... */ }
+        if (reporteOpTypeFilter !== 'all') {
+             list = list.filter(op => op.type === reporteOpTypeFilter);
+        }
         if (reporteOpSearchTerm) { list = list.filter(op => op.id.toLowerCase().includes(reporteOpSearchTerm.toLowerCase()) || op.description.toLowerCase().includes(reporteOpSearchTerm.toLowerCase())); }
-        list.sort((a,b) => compareDesc(parseISO(a.date!), parseISO(b.date!)));
+        
+        list.sort((a,b) => {
+            switch (reporteOpSortOption) {
+                case 'date_asc':
+                    return compareAsc(parseISO(a.date!), parseISO(b.date!));
+                case 'amount_desc':
+                    return b.totalAmount - a.totalAmount;
+                case 'amount_asc':
+                    return a.totalAmount - b.totalAmount;
+                case 'profit_desc':
+                    return b.profit - a.profit;
+                case 'profit_asc':
+                    return a.profit - b.profit;
+                case 'date_desc':
+                default:
+                    return compareDesc(parseISO(a.date!), parseISO(b.date!));
+            }
+        });
         return list;
-    }, [combinedOperations, dateRange, reporteOpSearchTerm, reporteOpTypeFilter, hydrated]);
+    }, [combinedOperations, dateRange, reporteOpSearchTerm, reporteOpTypeFilter, hydrated, reporteOpSortOption]);
 
     const aggregatedInventory = useMemo((): AggregatedInventoryItem[] => {
         if (!hydrated || !dateRange?.from) return [];
@@ -131,7 +152,55 @@ function ReportesPageComponent() {
                 </TabsList>
                 <TabsContent value="operaciones" className="mt-6">
                     <Card>
-                        <CardHeader><CardTitle>Detalle de Operaciones</CardTitle><CardDescription>Ventas y servicios completados en el período seleccionado.</CardDescription></CardHeader>
+                        <CardHeader>
+                            <CardTitle>Detalle de Operaciones</CardTitle>
+                            <CardDescription>Ventas y servicios completados en el período seleccionado.</CardDescription>
+                            <div className="flex flex-col sm:flex-row items-center gap-4 pt-4">
+                                <div className="relative flex-1 w-full">
+                                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                                    <Input type="search" placeholder="Buscar por ID o descripción..." className="w-full rounded-lg bg-background pl-8" value={reporteOpSearchTerm} onChange={(e) => setReporteOpSearchTerm(e.target.value)} />
+                                </div>
+                                <div className="flex items-center gap-2 w-full sm:w-auto flex-wrap">
+                                    <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                            <Button variant="outline" className="flex-1 sm:flex-initial">
+                                                <ListFilter className="mr-2 h-4 w-4" />
+                                                <span>Tipo: {reporteOpTypeFilter === 'all' ? 'Todos' : reporteOpTypeFilter}</span>
+                                            </Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent align="end">
+                                            <DropdownMenuLabel>Filtrar por Tipo</DropdownMenuLabel>
+                                            <DropdownMenuRadioGroup value={reporteOpTypeFilter} onValueChange={(v) => setReporteOpTypeFilter(v as OperationTypeFilter)}>
+                                                <DropdownMenuRadioItem value="all">Todos</DropdownMenuRadioItem>
+                                                <DropdownMenuRadioItem value="Venta">Venta</DropdownMenuRadioItem>
+                                                <DropdownMenuRadioItem value="Servicio General">Servicio General</DropdownMenuRadioItem>
+                                                <DropdownMenuRadioItem value="Cambio de Aceite">Cambio de Aceite</DropdownMenuRadioItem>
+                                                <DropdownMenuRadioItem value="Pintura">Pintura</DropdownMenuRadioItem>
+                                            </DropdownMenuRadioGroup>
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
+                                    <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                            <Button variant="outline" className="flex-1 sm:flex-initial">
+                                                <ListFilter className="mr-2 h-4 w-4" />
+                                                <span>Ordenar por</span>
+                                            </Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent align="end">
+                                            <DropdownMenuLabel>Ordenar por</DropdownMenuLabel>
+                                            <DropdownMenuRadioGroup value={reporteOpSortOption} onValueChange={setReporteOpSortOption}>
+                                                <DropdownMenuRadioItem value="date_desc">Fecha (Más Reciente)</DropdownMenuRadioItem>
+                                                <DropdownMenuRadioItem value="date_asc">Fecha (Más Antiguo)</DropdownMenuRadioItem>
+                                                <DropdownMenuRadioItem value="amount_desc">Monto (Mayor a Menor)</DropdownMenuRadioItem>
+                                                <DropdownMenuRadioItem value="amount_asc">Monto (Menor a Mayor)</DropdownMenuRadioItem>
+                                                <DropdownMenuRadioItem value="profit_desc">Ganancia (Mayor a Menor)</DropdownMenuRadioItem>
+                                                <DropdownMenuRadioItem value="profit_asc">Ganancia (Menor a Mayor)</DropdownMenuRadioItem>
+                                            </DropdownMenuRadioGroup>
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
+                                </div>
+                            </div>
+                        </CardHeader>
                         <CardContent>
                             <div className="rounded-md border overflow-x-auto">
                                 <Table>

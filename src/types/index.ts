@@ -337,7 +337,7 @@ export interface DashboardMetrics {
 export interface FinancialOperation {
   id: string;
   date: string;
-  type: 'Venta' | 'Servicio' | 'C. Aceite' | 'Pintura';
+  type: 'Venta' | 'Servicio General' | 'Cambio de Aceite' | 'Pintura';
   description: string; 
   totalAmount: number; // This is the final, tax-inclusive amount
   profit: number;
