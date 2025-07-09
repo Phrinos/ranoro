@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { PageHeader } from "@/components/page-header";
@@ -93,13 +94,15 @@ export default function HistorialCotizacionesPage() {
     return quote.description || 'Sin descripción';
   };
   
-  const getStatusVariant = (status: ServiceRecord['status'] | 'Cotizacion'): "default" | "secondary" | "outline" | "destructive" | "success" | "lightRed" => {
+  const getStatusVariant = (status: ServiceRecord['status'] | 'Cotizacion'): "default" | "secondary" | "outline" | "destructive" | "success" | "lightRed" | "waiting" | "delivered" => {
     switch (status) {
       case "Completado": return "success";
       case "Reparando": return "secondary";
       case "Cancelado": return "destructive";
       case "Agendado": return "lightRed";
       case "Cotizacion": return "outline";
+      case "En Espera de Refacciones": return "waiting";
+      case "Entregado": return "delivered";
       default: return "default";
     }
   };

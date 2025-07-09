@@ -19,6 +19,10 @@ const badgeVariants = cva(
           "text-foreground",
         success: // For "Completado" and "Efectivo" - green
           "border-transparent bg-green-600 text-primary-foreground hover:bg-green-600/80",
+        waiting: // For "En Espera de Refacciones"
+          "border-transparent bg-orange-500 text-white hover:bg-orange-500/80",
+        delivered: // For "Entregado"
+          "border-transparent bg-gray-500 text-white hover:bg-gray-500/80 dark:bg-gray-600",
         purple: // For "Tarjeta"
           "border-transparent bg-purple-500 text-white hover:bg-purple-500/80 dark:bg-purple-600 dark:hover:bg-purple-600/80",
         blue: // For "Transferencia"

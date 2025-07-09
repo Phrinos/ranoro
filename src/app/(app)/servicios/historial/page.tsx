@@ -89,7 +89,7 @@ export default function HistorialServiciosPage() {
   }, []);
 
   const filteredAndSortedServices = useMemo(() => {
-    let filtered = [...allServices].filter(s => s.status === 'Reparando' || s.status === 'Completado' || s.status === 'Cancelado');
+    let filtered = [...allServices].filter(s => s.status !== 'Agendado' && s.status !== 'Cotizacion');
 
     if (dateRange?.from) {
       filtered = filtered.filter(service => {
@@ -141,9 +141,9 @@ export default function HistorialServiciosPage() {
         case "status_desc": return b.status.localeCompare(a.status);
         case "serviceDate_desc":
         default: {
-          const statusOrder = { "Reparando": 1, "Completado": 2, "Cancelado": 3 };
-          const statusAVal = statusOrder[a.status as keyof typeof statusOrder] || 4;
-          const statusBVal = statusOrder[b.status as keyof typeof statusOrder] || 4;
+          const statusOrder: Record<ServiceRecord['status'], number> = { "Reparando": 1, "En Espera de Refacciones": 2, "Completado": 3, "Entregado": 4, "Cancelado": 5, "Agendado": 6, "Cotizacion": 7 };
+          const statusAVal = statusOrder[a.status] || 99;
+          const statusBVal = statusOrder[b.status] || 99;
 
           if (statusAVal !== statusBVal) {
             return statusAVal - statusBVal;
@@ -414,13 +414,15 @@ ${shareUrl}
     return `$${amount.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   };
   
-  const getStatusVariant = (status: ServiceRecord['status']): "default" | "secondary" | "outline" | "destructive" | "success" => {
+  const getStatusVariant = (status: ServiceRecord['status']): "default" | "secondary" | "outline" | "destructive" | "success" | "waiting" | "delivered" => {
     switch (status) {
       case "Completado": return "success"; 
       case "Reparando": return "secondary"; 
       case "Cancelado": return "destructive"; 
       case "Agendado": return "default";
       case "Cotizacion": return "outline";
+      case "En Espera de Refacciones": return "waiting";
+      case "Entregado": return "delivered";
       default: return "default";
     }
   };
