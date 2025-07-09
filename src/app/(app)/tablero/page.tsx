@@ -233,21 +233,23 @@ export default function TableroPage() {
 
   return (
     <>
-      <PageHeader
-        title="Tablero Kanban de Servicios"
-        description="Visualiza y gestiona el flujo de trabajo de tu taller."
-      />
+      <div className="bg-primary text-primary-foreground rounded-lg p-6 mb-6">
+        <h1 className="text-3xl font-bold tracking-tight">Tablero Kanban de Servicios</h1>
+        <p className="text-primary-foreground/80 mt-1">Visualiza y gestiona el flujo de trabajo de tu taller.</p>
+      </div>
       <div className="flex gap-4 overflow-x-auto pb-4">
         {kanbanColumns.map((column, colIndex) => {
             const columnStyle = columnStyles[column.id];
             return (
               <div key={column.id} className="w-72 flex-shrink-0">
-                <Card className={cn("h-full", columnStyle.bg)}>
-                  <CardHeader className="p-4 border-b">
-                    <CardTitle className={cn("text-base font-semibold flex justify-between items-center", columnStyle.title)}>
-                      <span>{column.title}</span>
-                      <Badge variant="secondary" className="bg-white/60 text-black">{column.services.length}</Badge>
-                    </CardTitle>
+                <Card className={cn("h-full min-h-[40rem]", columnStyle.bg)}>
+                  <CardHeader className="p-0">
+                    <div className="bg-black text-white p-4">
+                      <CardTitle className={cn("text-base font-semibold flex justify-between items-center")}>
+                        <span>{column.title}</span>
+                        <Badge variant="secondary" className="bg-white/60 text-black">{column.services.length}</Badge>
+                      </CardTitle>
+                    </div>
                   </CardHeader>
                   <CardContent className="p-4 pt-4 h-full">
                     {column.services.map(service => (
@@ -258,7 +260,7 @@ export default function TableroPage() {
                         onClick={() => handleCardClick(service)}
                         onMove={(direction) => handleMoveService(service.id, direction)}
                         isFirst={colIndex === 0}
-                        isLast={colIndex === columnOrder.length - 1}
+                        isLast={colIndex === columnOrder.length - 2} // -2 because Entregado is filtered out
                       />
                     ))}
                   </CardContent>
@@ -282,5 +284,3 @@ export default function TableroPage() {
     </>
   );
 }
-
-    
