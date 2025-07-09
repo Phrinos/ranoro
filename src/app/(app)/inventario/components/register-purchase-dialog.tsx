@@ -1,4 +1,3 @@
-
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -20,7 +19,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { ScrollArea } from "@/components/ui/scroll-area";
 import type { InventoryItem, InventoryCategory, Supplier } from "@/types";
 import type { InventoryItemFormValues } from "./inventory-item-form";
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { PurchaseItemSelectionDialog } from "./purchase-item-selection-dialog";
 import { InventoryItemDialog } from "./inventory-item-dialog";
