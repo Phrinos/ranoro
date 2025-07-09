@@ -85,34 +85,29 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
         <main className="flex-grow">
           <section className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-2">
               <div className="rounded-md border border-gray-700 overflow-hidden">
-                <h3 className="font-semibold text-sm text-white bg-gray-700 p-2">Cliente:</h3>
-                <div className="space-y-1 leading-tight p-3 bg-gray-50 text-sm">
-                  <div className="font-bold">{vehicle?.ownerName || ''}</div>
-                  {vehicle?.ownerPhone && <div>{vehicle.ownerPhone}</div>}
-                  {vehicle?.ownerEmail && <div>{vehicle.ownerEmail}</div>}
+                <h3 className="font-semibold text-sm text-white bg-gray-700 p-2">Datos del Cliente:</h3>
+                <div className="space-y-0.5 p-3 bg-gray-50 text-sm">
+                  <p><span className="font-semibold">Nombre:</span> <span className="font-bold">{vehicle?.ownerName?.toUpperCase() || ''}</span></p>
+                  <p><span className="font-semibold">Teléfono:</span> <span className="font-bold">{vehicle?.ownerPhone || ''}</span></p>
+                  {vehicle?.ownerEmail && <p><span className="font-semibold">Email:</span> <span className="font-bold">{vehicle.ownerEmail}</span></p>}
                 </div>
               </div>
               <div className="rounded-md border border-gray-700 overflow-hidden">
-                <h3 className="font-semibold text-sm text-white bg-gray-700 p-2">Vehículo:</h3>
-                <div className="space-y-1 leading-tight p-3 bg-gray-50 text-sm">
-                    <div>
-                        <span className="font-bold">{vehicle ? `${vehicle.make} ${vehicle.model} ${vehicle.year}` : (quote.vehicleIdentifier || '').replace(vehicle?.licensePlate || '', '')} </span>
-                        <span className="font-bold">{vehicle?.licensePlate || 'N/A'}</span>
-                    </div>
-                    {quote.mileage !== undefined && (
-                        <div>
-                            Kilometraje: <span className="font-bold">{quote.mileage.toLocaleString('es-ES')} km</span>
-                        </div>
-                    )}
+                <h3 className="font-semibold text-sm text-white bg-gray-700 p-2">Datos del Vehículo:</h3>
+                <div className="space-y-0.5 p-3 bg-gray-50 text-sm">
+                    <p><span className="font-semibold">Vehículo:</span> <span className="font-bold">{vehicle ? `${vehicle.year} ${vehicle.make} ${vehicle.model}` : 'N/A'}</span></p>
+                    <p><span className="font-semibold">Placas:</span> <span className="font-bold">{vehicle?.licensePlate || 'N/A'}</span></p>
+                    {vehicle?.color && <p><span className="font-semibold">Color:</span> <span className="font-bold">{vehicle.color}</span></p>}
+                    {quote.mileage !== undefined && <p><span className="font-semibold">Kilometraje:</span> <span className="font-bold">{quote.mileage.toLocaleString('es-ES')} km</span></p>}
                 </div>
               </div>
           </section>
 
           <Card className="mt-4 mb-4 border-2 border-gray-200 overflow-hidden">
-            <h3 className="font-semibold text-sm text-white bg-gray-700 p-2">TRABAJOS A REALIZAR (Precios con IVA)</h3>
+            <h3 className="font-semibold text-sm text-white bg-gray-700 p-2" style={{ fontSize: '14px' }}>TRABAJOS A REALIZAR (Precios con IVA)</h3>
             <CardContent className="p-4 space-y-4">
               <section>
-                <div className="space-y-2 pt-2 text-sm">
+                <div className="space-y-2 pt-2 text-sm" style={{ fontSize: '14px' }}>
                   {quote.serviceItems && quote.serviceItems.length > 0 ? (
                       quote.serviceItems.map((item, index) => (
                           <div key={index} className="pb-2 border-b border-dashed last:border-b-0">
@@ -155,22 +150,22 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
               </section>
               
               {quote.notes && (
-                <section className="w-full text-left pt-4 border-t border-dashed">
+                <section className="w-full text-left pt-4 border-t border-dashed" style={{ fontSize: '14px' }}>
                   <h4 className="font-semibold text-sm text-gray-700 mb-1">Notas Adicionales:</h4>
-                  <p className="whitespace-pre-wrap text-sm">{quote.notes}</p>
+                  <p className="whitespace-pre-wrap">{quote.notes}</p>
                 </section>
               )}
             </CardContent>
           </Card>
           
           <Card className="mt-4 mb-4 border-gray-200">
-            <CardContent className="p-4 flex flex-col sm:flex-row justify-between min-h-[120px] text-sm">
+            <CardContent className="p-4 flex flex-col sm:flex-row justify-between min-h-[120px]" style={{ fontSize: '14px' }}>
                 <div className="text-left">
                     <p className="font-semibold">¡Gracias por su preferencia!</p>
                     <p>Para dudas o aclaraciones, no dude en contactarnos.</p>
                 </div>
                 <div className="text-right flex flex-col items-end justify-end mt-4 sm:mt-0">
-                    <div className="flex justify-center items-center h-16 w-40 mb-1">
+                    <div className="relative flex justify-center items-center h-16 w-40 mb-1">
                         {quote.preparedByTechnicianSignatureDataUrl && (
                            <img
                                 src={quote.preparedByTechnicianSignatureDataUrl} 
@@ -191,7 +186,7 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
         </main>
         
         <footer className="mt-auto">
-          <section className="pt-4">
+          <section className="pt-4 border-t border-gray-200" style={{paddingTop: '1rem', paddingBottom: '0'}}>
             <h4 className="font-semibold text-sm text-gray-700 mb-1">Términos y Condiciones:</h4>
             <p className="text-xs text-gray-600 leading-snug">
                 {`Precios en MXN. Esta cotización es válida hasta el ${validityDate}. `}
