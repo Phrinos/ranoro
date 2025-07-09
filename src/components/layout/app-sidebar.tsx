@@ -198,7 +198,7 @@ export function AppSidebar() {
             >
               <UserCircle className="h-4 w-4" />
               <span className="group-data-[collapsible=icon]:hidden">
-                Mi Cuenta
+                {currentUser?.name || "Mi Cuenta"}
               </span>
             </Button>
           </DropdownMenuTrigger>
@@ -211,18 +211,8 @@ export function AppSidebar() {
               {currentUser?.name || "Mi Cuenta"}
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => router.push("/perfil")}>
-              <UserCog className="mr-2 h-4 w-4" />
-              <span>Mi Perfil</span>
-            </DropdownMenuItem>
-             <DropdownMenuItem onClick={() => router.push("/manual")}>
-              <BookOpen className="mr-2 h-4 w-4" />
-              <span>Manual de Usuario</span>
-            </DropdownMenuItem>
-
             {(userPermissions.has('users:manage') || userPermissions.has('roles:manage') || userPermissions.has('ticket_config:manage')) && (
               <>
-                <DropdownMenuSeparator />
                 <DropdownMenuGroup>
                   <DropdownMenuLabel>Administración</DropdownMenuLabel>
                   {userPermissions.has('users:manage') && (
@@ -250,10 +240,10 @@ export function AppSidebar() {
                   </DropdownMenuItem>
                   )}
                 </DropdownMenuGroup>
+                <DropdownMenuSeparator />
               </>
             )}
 
-            <DropdownMenuSeparator />
             <DropdownMenuItem onClick={handleLogout}>
               <LogOut className="mr-2 h-4 w-4 text-destructive" />
               <span className="text-destructive">Cerrar Sesión</span>
