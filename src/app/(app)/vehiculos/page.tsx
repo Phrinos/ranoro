@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { PageHeader } from "@/components/page-header";
@@ -268,8 +269,40 @@ function PrecotizacionesPageContent() {
   
   const formatYearRange = (years: number[]): string => {
     if (!years || years.length === 0) return 'N/A';
+    
     const sortedYears = [...years].sort((a, b) => a - b);
-    return sortedYears.join(', ');
+    if (sortedYears.length === 1) return String(sortedYears[0]);
+    
+    const ranges: string[] = [];
+    let rangeStart = sortedYears[0];
+
+    for (let i = 1; i < sortedYears.length; i++) {
+        if (sortedYears[i] !== sortedYears[i - 1] + 1) {
+            // End of a consecutive range
+            const rangeEnd = sortedYears[i - 1];
+            if (rangeStart === rangeEnd) {
+                ranges.push(String(rangeStart));
+            } else if (rangeEnd === rangeStart + 1) {
+                ranges.push(String(rangeStart), String(rangeEnd));
+            }
+            else {
+                ranges.push(`${rangeStart} - ${rangeEnd}`);
+            }
+            rangeStart = sortedYears[i];
+        }
+    }
+    
+    // Add the last range
+    const lastYear = sortedYears[sortedYears.length - 1];
+    if (rangeStart === lastYear) {
+      ranges.push(String(rangeStart));
+    } else if (lastYear === rangeStart + 1) {
+      ranges.push(String(rangeStart), String(lastYear));
+    } else {
+      ranges.push(`${rangeStart} - ${lastYear}`);
+    }
+
+    return ranges.join(', ');
   };
 
   return (
