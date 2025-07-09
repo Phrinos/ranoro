@@ -133,30 +133,29 @@ function UsuariosPageContent({ currentUser }: { currentUser: User | null }) {
 
   return (
     <div className="space-y-6">
+        <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
+            <div>
+                <h2 className="text-2xl font-bold tracking-tight">Lista de Usuarios</h2>
+                <p className="text-muted-foreground">Usuarios registrados en el sistema.</p>
+            </div>
+            <Button onClick={() => handleOpenForm()}>
+                <PlusCircle className="mr-2 h-4 w-4" /> Nuevo Usuario
+            </Button>
+        </div>
+        
+        <div className="relative">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              type="search"
+              placeholder="Buscar por nombre o email..."
+              className="w-full rounded-lg bg-background pl-8 md:w-1/2"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+        </div>
+        
         <Card>
-            <CardHeader className="flex flex-row items-start justify-between">
-                <div>
-                    <CardTitle>Lista de Usuarios</CardTitle>
-                    <CardDescription>Usuarios registrados en el sistema.</CardDescription>
-                </div>
-                 <Button onClick={() => handleOpenForm()}>
-                    <PlusCircle className="mr-2 h-4 w-4" /> Nuevo Usuario
-                </Button>
-            </CardHeader>
-            <CardContent>
-                <div className="mb-4">
-                  <div className="relative">
-                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      type="search"
-                      placeholder="Buscar por nombre o email..."
-                      className="w-full rounded-lg bg-background pl-8 md:w-1/3 lg:w-1/4"
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                    />
-                  </div>
-                </div>
-                {/* User Table JSX */}
+            <CardContent className="pt-6">
                 {filteredUsers.length > 0 ? (
                   <div className="overflow-x-auto rounded-md border">
                   <Table>
@@ -249,24 +248,27 @@ function RolesPageContent() {
 
     return (
         <div className="space-y-6">
+            <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
+                <div>
+                    <h2 className="text-2xl font-bold tracking-tight">Lista de Roles</h2>
+                    <p className="text-muted-foreground">Roles definidos en el sistema.</p>
+                </div>
+                <Button onClick={() => handleOpenForm()}><PlusCircle className="mr-2 h-4 w-4" /> Nuevo Rol</Button>
+            </div>
+            
+            <div className="relative">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                    type="search"
+                    placeholder="Buscar por nombre de rol..."
+                    className="w-full rounded-lg bg-background pl-8 md:w-1/2"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                />
+            </div>
+
             <Card>
-                <CardHeader className="flex flex-row items-start justify-between">
-                    <div><CardTitle>Lista de Roles</CardTitle><CardDescription>Roles definidos en el sistema.</CardDescription></div>
-                    <Button onClick={() => handleOpenForm()}><PlusCircle className="mr-2 h-4 w-4" /> Nuevo Rol</Button>
-                </CardHeader>
-                <CardContent>
-                    <div className="mb-4">
-                        <div className="relative">
-                            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                            <Input
-                                type="search"
-                                placeholder="Buscar por nombre de rol..."
-                                className="w-full rounded-lg bg-background pl-8 md:w-1/3"
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                            />
-                        </div>
-                    </div>
+                <CardContent className="pt-6">
                     {filteredRoles.length > 0 ? (
                         <div className="overflow-x-auto rounded-md border">
                             <Table>
