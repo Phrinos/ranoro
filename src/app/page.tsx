@@ -244,8 +244,7 @@ export default function LandingPage() {
       <footer className="fixed bottom-0 left-0 right-0 z-50 border-t bg-black text-white">
         <div className="container mx-auto flex flex-col items-center justify-between gap-4 px-4 py-4 md:flex-row md:px-6">
           <div className="text-center md:text-left">
-             <p className="text-xs text-white/70 whitespace-pre-wrap">© 2024 Ranoro®
-Sistema de Administracion de Talleres
+             <p className="text-xs text-white/70 whitespace-pre-wrap">© 2025 Ranoro® Sistema de Administracion de Talleres
 Todos los derechos reservados - Diseñado y Desarrollado por Arturo Valdelamar +524493930914</p>
           </div>
           <div className="text-center md:text-right">
