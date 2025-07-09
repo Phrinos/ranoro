@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { PageHeader } from "@/components/page-header";
@@ -204,17 +205,15 @@ const ServiceAppointmentCard = ({ service, vehicles, onEdit }: { service: Servic
   const vehicle = vehicles.find(v => v.id === service.vehicleId);
   return (
     <div className="flex items-center justify-between p-3 rounded-md hover:bg-muted/50 border-b last:border-b-0">
-      <div className="flex-grow">
+      <div className="w-32 shrink-0 text-center">
+          <Badge variant={service.status === 'Reparando' ? 'secondary' : 'default'} className="w-full justify-center text-center text-sm mb-2">{service.status}</Badge>
+          <p className="text-lg font-bold">{format(parseISO(service.serviceDate), "HH:mm", { locale: es })}</p>
+      </div>
+      <div className="flex-grow px-4">
         <p className="font-semibold text-base">{vehicle ? `${vehicle.make} ${vehicle.model} (${vehicle.licensePlate})` : 'Vehículo no encontrado'}</p>
         <p className="text-sm text-muted-foreground">{service.description}</p>
       </div>
-      <div className="flex items-center gap-4 ml-4">
-        <div className="text-right">
-            <p className="text-lg font-bold">{format(parseISO(service.serviceDate), "HH:mm", { locale: es })}</p>
-            <Badge variant={service.status === 'Reparando' ? 'secondary' : 'default'} className="mt-1">{service.status}</Badge>
-        </div>
-        <Button variant="ghost" size="icon" onClick={onEdit}><Eye className="h-5 w-5"/></Button>
-      </div>
+      <Button variant="ghost" size="icon" onClick={onEdit}><Eye className="h-5 w-5"/></Button>
     </div>
   );
 };
