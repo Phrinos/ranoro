@@ -211,7 +211,7 @@ export function AppSidebar() {
               {currentUser?.name || "Mi Cuenta"}
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            {(userPermissions.has('users:manage') || userPermissions.has('roles:manage') || userPermissions.has('ticket_config:manage')) && (
+            {(userPermissions.has('users:manage') || userPermissions.has('roles:manage')) && (
               <>
                 <DropdownMenuGroup>
                   <DropdownMenuLabel>Administración</DropdownMenuLabel>
@@ -232,12 +232,6 @@ export function AppSidebar() {
                       <DatabaseZap className="mr-2 h-4 w-4" />
                       <span>Migración de Datos</span>
                     </DropdownMenuItem>
-                  )}
-                  {userPermissions.has('ticket_config:manage') && (
-                   <DropdownMenuItem onClick={() => router.push('/admin/configuracion-ticket')}>
-                    <Settings className="mr-2 h-4 w-4" />
-                    <span>Configurar Ticket</span>
-                  </DropdownMenuItem>
                   )}
                 </DropdownMenuGroup>
                 <DropdownMenuSeparator />
