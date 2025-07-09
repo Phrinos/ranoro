@@ -12,7 +12,7 @@ import type { Driver, RentalPayment } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { ShieldAlert, Edit, User, Phone, Home, FileText, Upload, AlertTriangle, Car, DollarSign, Printer, ArrowLeft, PlusCircle, Loader2 } from 'lucide-react';
+import { ShieldAlert, Edit, User, Phone, Home, FileText, Upload, AlertTriangle, Car, DollarSign, Printer, ArrowLeft, PlusCircle, Loader2, FileX, Receipt } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import Link from 'next/link';
@@ -256,9 +256,9 @@ export default function DriverDetailPage() {
 
       <Tabs defaultValue="details" className="w-full">
         <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="details" className="font-bold data-[state=active]:bg-slate-800 data-[state=active]:text-white">Detalles</TabsTrigger>
-          <TabsTrigger value="documents" className="font-bold data-[state=active]:bg-slate-800 data-[state=active]:text-white">Documentos</TabsTrigger>
-          <TabsTrigger value="payments" className="font-bold data-[state=active]:bg-slate-800 data-[state=active]:text-white">Pagos</TabsTrigger>
+          <TabsTrigger value="details" className="font-bold data-[state=active]:bg-primary data-[state=active]:text-white">Detalles</TabsTrigger>
+          <TabsTrigger value="documents" className="font-bold data-[state=active]:bg-primary data-[state=active]:text-white">Documentos</TabsTrigger>
+          <TabsTrigger value="payments" className="font-bold data-[state=active]:bg-primary data-[state=active]:text-white">Pagos</TabsTrigger>
         </TabsList>
 
         <TabsContent value="details">
@@ -356,7 +356,10 @@ export default function DriverDetailPage() {
                       {driver.documents?.[type as keyof Driver['documents']] ? (
                         <Image src={driver.documents[type as keyof Driver['documents']]!} alt={label} width={200} height={125} className="object-contain" data-ai-hint="document photo"/>
                       ) : (
-                        <p className="text-sm text-muted-foreground">Sin documento</p>
+                        <div className="flex flex-col items-center gap-2 text-muted-foreground">
+                            <FileX className="h-8 w-8" />
+                            <p className="text-sm">Sin documento</p>
+                        </div>
                       )}
                     </div>
                      <Button
@@ -417,7 +420,13 @@ export default function DriverDetailPage() {
                     </TableBody>
                   </Table>
                 </div>
-              ) : <p className="text-muted-foreground text-center py-8">No hay pagos registrados para este conductor.</p>}
+              ) : (
+                <div className="flex flex-col items-center justify-center py-10 text-center text-muted-foreground border-2 border-dashed rounded-lg">
+                    <Receipt className="h-12 w-12 mb-2" />
+                    <h3 className="text-lg font-semibold text-foreground">No hay pagos registrados</h3>
+                    <p className="text-sm">Cuando se registre un pago para este conductor, aparecerá aquí.</p>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>

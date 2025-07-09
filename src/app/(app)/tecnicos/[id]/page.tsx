@@ -7,7 +7,7 @@ import type { Technician, TechnicianMonthlyPerformance } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { Archive, Edit, ShieldAlert, User, Phone, CalendarDays, DollarSign, Percent, StickyNote, ArrowLeft } from 'lucide-react';
+import { Archive, Edit, ShieldAlert, User, Phone, CalendarDays, DollarSign, Percent, StickyNote, ArrowLeft, BarChart3 } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
@@ -250,7 +250,11 @@ export default function TechnicianDetailPage() {
                 </Table>
                 </div>
               ) : (
-                <p className="text-muted-foreground">No hay historial de rendimiento para este miembro del staff.</p>
+                <div className="flex flex-col items-center justify-center py-10 text-center text-muted-foreground border-2 border-dashed rounded-lg">
+                    <BarChart3 className="h-12 w-12 mb-2" />
+                    <h3 className="text-lg font-semibold text-foreground">Sin Historial de Rendimiento</h3>
+                    <p className="text-sm">No se ha registrado rendimiento para este técnico.</p>
+                </div>
               )}
             </CardContent>
           </Card>

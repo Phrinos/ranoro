@@ -14,6 +14,7 @@ import {
 import type { Technician } from "@/types";
 import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { Users } from 'lucide-react';
 
 interface TechniciansTableProps {
   technicians: Technician[];
@@ -27,7 +28,13 @@ export const TechniciansTable = React.memo(({ technicians: initialTechnicians }:
   };
 
   if (!initialTechnicians.length) {
-    return <p className="text-muted-foreground text-center py-8">No hay técnicos registrados.</p>;
+    return (
+        <div className="flex flex-col items-center justify-center py-10 text-center text-muted-foreground border-2 border-dashed rounded-lg">
+            <Users className="h-12 w-12 mb-2" />
+            <h3 className="text-lg font-semibold text-foreground">No hay técnicos registrados</h3>
+            <p className="text-sm">Cuando se agregue un nuevo técnico, aparecerá aquí.</p>
+        </div>
+    );
   }
 
   return (

@@ -180,7 +180,13 @@ function UsuariosPageContent({ currentUser }: { currentUser: User | null }) {
                     </TableBody>
                   </Table>
                   </div>
-                ) : <p className="text-muted-foreground text-center py-4">No se encontraron usuarios.</p>}
+                ) : (
+                    <div className="flex flex-col items-center justify-center py-10 text-center text-muted-foreground border-2 border-dashed rounded-lg">
+                        <Users className="h-12 w-12 mb-2" />
+                        <h3 className="text-lg font-semibold text-foreground">No se encontraron usuarios</h3>
+                        <p className="text-sm">Intente cambiar su búsqueda o agregue un nuevo usuario.</p>
+                    </div>
+                )}
             </CardContent>
         </Card>
 
@@ -249,8 +255,49 @@ function RolesPageContent() {
                     <Button onClick={() => handleOpenForm()}><PlusCircle className="mr-2 h-4 w-4" /> Nuevo Rol</Button>
                 </CardHeader>
                 <CardContent>
-                    <div className="mb-4"><Input type="search" placeholder="Buscar por nombre de rol..." className="w-full md:w-1/3" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} /></div>
-                    {/* Role Table JSX */}
+                    <div className="mb-4">
+                        <div className="relative">
+                            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                            <Input
+                                type="search"
+                                placeholder="Buscar por nombre de rol..."
+                                className="w-full rounded-lg bg-background pl-8 md:w-1/3"
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                            />
+                        </div>
+                    </div>
+                    {filteredRoles.length > 0 ? (
+                        <div className="overflow-x-auto rounded-md border">
+                            <Table>
+                                <TableHeader className="bg-black">
+                                    <TableRow>
+                                        <TableHead className="text-white">Nombre del Rol</TableHead>
+                                        <TableHead className="text-white">Permisos</TableHead>
+                                        <TableHead className="text-right text-white">Acciones</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {filteredRoles.map(role => (
+                                        <TableRow key={role.id}>
+                                            <TableCell className="font-medium">{role.name}</TableCell>
+                                            <TableCell className="text-muted-foreground">{role.permissions.length} permisos activos</TableCell>
+                                            <TableCell className="text-right">
+                                                <Button variant="ghost" size="icon" onClick={() => handleOpenForm(role)} className="mr-2"><Edit className="h-4 w-4" /></Button>
+                                                <Button variant="ghost" size="icon"><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        </div>
+                    ) : (
+                        <div className="flex flex-col items-center justify-center py-10 text-center text-muted-foreground border-2 border-dashed rounded-lg">
+                            <Shield className="h-12 w-12 mb-2" />
+                            <h3 className="text-lg font-semibold text-foreground">No se encontraron roles</h3>
+                            <p className="text-sm">Intente cambiar su búsqueda o agregue un nuevo rol.</p>
+                        </div>
+                    )}
                 </CardContent>
             </Card>
             {isFormOpen && (
