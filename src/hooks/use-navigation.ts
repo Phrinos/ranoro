@@ -114,6 +114,13 @@ const BASE_NAV_STRUCTURE: ReadonlyArray<Omit<NavigationEntry, 'isActive'>> = [
   
   // Mi Flotilla
   {
+    label: 'Registrar Pago',
+    path: '/rentas',
+    icon: DollarSign,
+    groupTag: "Mi Flotilla",
+    permissions: ['fleet:manage']
+  },
+  {
     label: 'Flotilla',
     path: '/flotilla',
     icon: Truck,
@@ -232,9 +239,12 @@ const useNavigation = (): NavigationEntry[] => {
     if (entry.path === '/finanzas/resumen' && pathname.startsWith('/finanzas')) isActive = true;
     if (entry.path === '/administracion' && (pathname.startsWith('/administracion') || pathname.startsWith('/admin'))) isActive = true;
     if (entry.path === '/flotilla' && (pathname.startsWith('/flotilla') || pathname.startsWith('/conductores') || pathname.startsWith('/rentas'))) isActive = true;
+    if (entry.path === '/rentas' && pathname.startsWith('/rentas')) isActive = true;
     
     // Deactivate 'Finanzas' if 'Reportes' is active
     if (entry.path === '/finanzas/resumen' && pathname.startsWith('/finanzas/reporte')) isActive = false;
+    // Deactivate 'Flotilla' if 'Rentas' is active
+    if (entry.path === '/flotilla' && pathname.startsWith('/rentas')) isActive = false;
 
 
     return { ...entry, isActive };
