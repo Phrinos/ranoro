@@ -264,12 +264,12 @@ function PosPageComponent() {
   
   const dateFilterComponent = (
     <div className="flex items-center gap-2 flex-wrap justify-start sm:justify-end">
-      <Button variant="outline" size="sm" onClick={setDateToToday}>Hoy</Button>
-      <Button variant="outline" size="sm" onClick={setDateToThisWeek}>Esta Semana</Button>
-      <Button variant="outline" size="sm" onClick={setDateToThisMonth}>Este Mes</Button>
+      <Button variant="outline" size="sm" onClick={setDateToToday} className="bg-card">Hoy</Button>
+      <Button variant="outline" size="sm" onClick={setDateToThisWeek} className="bg-card">Esta Semana</Button>
+      <Button variant="outline" size="sm" onClick={setDateToThisMonth} className="bg-card">Este Mes</Button>
       <Popover>
         <PopoverTrigger asChild>
-          <Button variant={"outline"} className={cn("w-full sm:w-[240px] justify-start text-left font-normal", !dateRange && "text-muted-foreground")}>
+          <Button variant={"outline"} className={cn("w-full sm:w-[240px] justify-start text-left font-normal bg-card", !dateRange && "text-muted-foreground")}>
             <CalendarDateIcon className="mr-2 h-4 w-4" />
             {dateRange?.from ? (dateRange.to ? (`${format(dateRange.from, "LLL dd, y", { locale: es })} - ${format(dateRange.to, "LLL dd, y", { locale: es })}`) : format(dateRange.from, "LLL dd, y", { locale: es })) : (<span>Seleccione rango</span>)}
           </Button>
@@ -291,9 +291,9 @@ function PosPageComponent() {
       </div>
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-3 mb-6">
-          <TabsTrigger value="informe" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Informe</TabsTrigger>
-          <TabsTrigger value="ventas" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Ventas</TabsTrigger>
-          <TabsTrigger value="caja" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Caja</TabsTrigger>
+          <TabsTrigger value="informe" className="data-[state=active]:bg-card data-[state=active]:text-card-foreground">Informe</TabsTrigger>
+          <TabsTrigger value="ventas" className="data-[state=active]:bg-card data-[state=active]:text-card-foreground">Ventas</TabsTrigger>
+          <TabsTrigger value="caja" className="data-[state=active]:bg-card data-[state=active]:text-card-foreground">Caja</TabsTrigger>
         </TabsList>
         <TabsContent value="informe" className="space-y-6">
             <div className="space-y-2">
