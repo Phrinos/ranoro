@@ -81,13 +81,6 @@ const BASE_NAV_STRUCTURE: ReadonlyArray<Omit<NavigationEntry, 'isActive'>> = [
     groupTag: "Mi Taller",
     permissions: ['services:view_history']
   },
-  {
-    label: 'Lista de Precios',
-    path: '/precios',
-    icon: Database,
-    groupTag: "Mi Taller",
-    permissions: ['services:edit']
-  },
   
   // Operaciones
   {
@@ -231,6 +224,7 @@ const useNavigation = (): NavigationEntry[] => {
 
 
     // Specific overrides to group related pages under one active nav item
+    if (entry.path === '/vehiculos' && (pathname.startsWith('/vehiculos') || pathname.startsWith('/precios'))) isActive = true;
     if (entry.path === '/cotizaciones' && pathname.startsWith('/cotizaciones')) isActive = true;
     if (entry.path === '/inventario' && pathname.startsWith('/inventario')) isActive = true;
     if (entry.path === '/pos' && pathname.startsWith('/pos')) isActive = true;
