@@ -62,42 +62,21 @@ const BASE_NAV_STRUCTURE: ReadonlyArray<Omit<NavigationEntry, 'isActive'>> = [
     permissions: ['dashboard:view']
   },
   { 
+    label: 'Servicios', 
+    path: '/servicios', 
+    icon: Wrench, 
+    groupTag: "Mi Taller",
+    permissions: ['services:create', 'services:view_history']
+  },
+  { 
     label: 'Vehículos', 
     path: '/vehiculos', 
     icon: Car, 
     groupTag: "Mi Taller",
     permissions: ['vehicles:manage']
   },
-  {
-    label: 'Cotizaciones', 
-    path: '/cotizaciones', 
-    icon: FileText, 
-    groupTag: "Mi Taller",
-    permissions: ['services:create']
-  },
-  { 
-    label: 'Agenda de Servicios', 
-    path: '/servicios/agenda', 
-    icon: CalendarClock, 
-    groupTag: "Mi Taller",
-    permissions: ['services:view_history']
-  },
-  { 
-    label: 'Historial de Servicios', 
-    path: '/servicios/historial', 
-    icon: Wrench, 
-    groupTag: "Mi Taller",
-    permissions: ['services:view_history']
-  },
   
   // Operaciones
-  {
-    label: 'Nueva Venta',
-    path: '/pos/nuevo',
-    icon: PlusCircle,
-    groupTag: "Operaciones",
-    permissions: ['pos:create_sale']
-  },
   {
     label: 'Punto de Venta',
     path: '/pos',
@@ -115,7 +94,7 @@ const BASE_NAV_STRUCTURE: ReadonlyArray<Omit<NavigationEntry, 'isActive'>> = [
   
   // Mi Flotilla
   {
-    label: 'Registrar Pago',
+    label: 'Rentas',
     path: '/rentas',
     icon: DollarSign,
     groupTag: "Mi Flotilla",
@@ -225,16 +204,9 @@ const useNavigation = (): NavigationEntry[] => {
         }
     }
     
-    // Correctly activate "Servicios" when on "Agenda" or "Historial"
-    if ((entry.path === '/servicios/agenda' || entry.path === '/servicios/historial') && pathname.startsWith('/servicios')) {
-        isActive = pathname === entry.path;
-    }
-
-
     // Specific overrides to group related pages under one active nav item
+    if (entry.path === '/servicios' && pathname.startsWith('/servicios')) isActive = true;
     if (entry.path === '/vehiculos' && (pathname.startsWith('/vehiculos') || pathname.startsWith('/precios'))) isActive = true;
-    if (entry.path === '/cotizaciones' && pathname.startsWith('/cotizaciones')) isActive = true;
-    if (entry.path === '/inventario' && pathname.startsWith('/inventario')) isActive = true;
     if (entry.path === '/pos' && pathname.startsWith('/pos')) isActive = true;
     if (entry.path === '/personal' && (pathname.startsWith('/personal') || pathname.startsWith('/tecnicos') || pathname.startsWith('/administrativos'))) isActive = true;
     if (entry.path === '/opciones' && (pathname.startsWith('/opciones') || pathname.startsWith('/perfil') || pathname.startsWith('/manual') || pathname.startsWith('/admin/configuracion-ticket'))) isActive = true;
