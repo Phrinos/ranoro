@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { PageHeader } from "@/components/page-header";
@@ -164,15 +163,6 @@ function HistorialCotizacionesPageComponent() {
       }
       return quote.description || 'Sin descripción';
     };
-    
-    const getStatusVariant = (status: ServiceRecord['status'] | 'Cotizacion'): "default" | "secondary" | "outline" | "destructive" | "success" | "lightRed" | "waiting" | "delivered" => {
-      switch (status) {
-        case "Completado": return "success"; case "Reparando": return "secondary"; case "Cancelado": return "destructive";
-        case "Agendado": return "lightRed"; case "Cotizacion": return "outline";
-        case "En Espera de Refacciones": return "waiting"; case "Entregado": return "delivered";
-        default: return "default";
-      }
-    };
 
     return (
       <div className="space-y-4">
@@ -187,7 +177,7 @@ function HistorialCotizacionesPageComponent() {
                 <CardContent className="p-0">
                   <div className="flex flex-col md:flex-row">
                      <div className="p-4 flex flex-col justify-center items-center text-center w-full md:w-48 flex-shrink-0">
-                        <Badge variant={getStatusVariant(status)} className="w-full justify-center text-center text-sm mb-2">{status}</Badge>
+                        <Badge variant="outline" className="w-full justify-center text-center text-sm mb-2">Cotizacion</Badge>
                         <p className="text-muted-foreground text-xs">Folio: {quote.id}</p>
                         <p className="font-semibold text-lg text-foreground">{format(parseISO(quote.quoteDate!), "dd MMM yyyy", { locale: es })}</p>
                       </div>
@@ -276,5 +266,3 @@ function HistorialCotizacionesPageComponent() {
 export default function HistorialCotizacionesPageWrapper() {
     return (<Suspense fallback={<div>Cargando...</div>}><HistorialCotizacionesPageComponent /></Suspense>)
 }
-
-```
