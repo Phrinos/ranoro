@@ -171,7 +171,7 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
                 <div className="text-right flex flex-col items-end justify-end mt-4 sm:mt-0">
                     {quote.preparedByTechnicianSignatureDataUrl && (
                         <div className="h-16 w-40 mb-1 relative">
-                            <img 
+                             <img 
                                 src={quote.preparedByTechnicianSignatureDataUrl} 
                                 alt="Firma del asesor" 
                                 style={{ objectFit: 'contain', width: '100%', height: '100%' }}
@@ -179,7 +179,7 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
                             />
                         </div>
                     )}
-                    <div className="border-t-2 border-gray-300/70 pt-1 w-56 text-center">
+                    <div className="border-t-2 border-gray-300/30 pt-1 w-56 text-center">
                         <p className="text-xs font-bold">ASESOR: {quote.preparedByTechnicianName?.toUpperCase() || '________________________________'}</p>
                     </div>
                 </div>
@@ -188,7 +188,7 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
         </main>
         
         <footer className="mt-auto pt-4">
-          <section className="mt-6 pt-4 border-t border-gray-200/80">
+          <section className="mt-6 pt-4">
             <h4 className="font-semibold text-xs text-gray-700 mb-1">Términos y Condiciones:</h4>
             <p className="text-xs text-gray-600 leading-snug">
                 {`Precios en MXN. Esta cotización es válida hasta el ${validityDate}. `}
