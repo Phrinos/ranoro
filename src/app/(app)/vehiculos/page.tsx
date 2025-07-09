@@ -2,29 +2,27 @@
 
 "use client";
 
-import { PageHeader } from "@/components/page-header";
+import { useState, useMemo, useEffect, useCallback, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { PlusCircle, Search, CalendarX, AlertTriangle, Archive, ListFilter, Filter, Car, Loader2, Database, Users, Truck, TrendingUp } from "lucide-react";
+import { PlusCircle, Search, CalendarX, AlertTriangle, ListFilter, Filter, Car, Loader2, Database, Users, Truck, TrendingUp, Edit, Trash2 } from "lucide-react";
 import { VehiclesTable } from "./components/vehicles-table";
 import { VehicleDialog } from "./components/vehicle-dialog";
 import { placeholderVehicles, placeholderServiceRecords, persistToFirestore, hydrateReady, placeholderVehiclePriceLists } from "@/lib/placeholder-data";
 import type { Vehicle, VehiclePriceList } from "@/types";
 import type { VehicleFormValues } from "./components/vehicle-form";
 import { useToast } from "@/hooks/use-toast";
-import { useState, useMemo, useEffect, useCallback, Suspense } from "react";
-import { useSearchParams } from 'next/navigation';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { subMonths, parseISO, isBefore, compareAsc, compareDesc, isValid } from 'date-fns';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { PriceListDialog } from '../precios/components/price-list-dialog';
 import type { PriceListFormValues } from '../precios/components/price-list-form';
-import { Edit, Trash2 } from 'lucide-react';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { formatCurrency } from '@/lib/utils';
 
 
 // --- START CONTENT FOR RESUMEN ---
@@ -113,7 +111,7 @@ function ResumenVehiculosPageComponent({ summaryData, onNewVehicleClick }: {
 }
 
 // --- START CONTENT FOR LISTA DE VEHICULOS ---
-function ListaVehiculosPageContent({ vehicles, onNewVehicleClick, onArchiveClick }) {
+function ListaVehiculosPageContent({ vehicles }: { vehicles: Vehicle[] }) {
   const [searchTerm, setSearchTerm] = useState("");
   const [activityFilter, setActivityFilter] = useState("all");
   const [sortOption, setSortOption] = useState<string>("date_asc");
@@ -204,13 +202,19 @@ function ListaVehiculosPageContent({ vehicles, onNewVehicleClick, onArchiveClick
 }
 
 
-// --- START CONTENT FOR LISTA DE PRECIOS / PRECOTIZACIONES ---
-function PrecotizacionesPageContent() {
-  const [priceLists, setPriceLists] = useState<VehiclePriceList[]>(placeholderVehiclePriceLists);
+// --- START CONTENT FOR PRECOTIZACIONES ---
+function PrecotizacionesPageContent({ 
+  priceLists, 
+  onSave, 
+  onDelete,
+  onOpenDialog
+}: {
+  priceLists: VehiclePriceList[];
+  onSave: (data: PriceListFormValues) => Promise<void>;
+  onDelete: (id: string) => Promise<void>;
+  onOpenDialog: (record?: VehiclePriceList) => void;
+}) {
   const [searchTerm, setSearchTerm] = useState('');
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingRecord, setEditingRecord] = useState<VehiclePriceList | null>(null);
-  const { toast } = useToast();
 
   const filteredRecords = useMemo(() => {
     if (!searchTerm.trim()) return priceLists;
@@ -221,52 +225,6 @@ function PrecotizacionesPageContent() {
       record.years.some(year => String(year).includes(lowerSearch))
     );
   }, [priceLists, searchTerm]);
-
-  const handleOpenDialog = useCallback((record: VehiclePriceList | null = null) => {
-    setEditingRecord(record);
-    setIsDialogOpen(true);
-  }, []);
-
-  const handleSaveRecord = useCallback(async (formData: PriceListFormValues) => {
-    let updatedList: VehiclePriceList[];
-
-    if (editingRecord) {
-      updatedList = priceLists.map(rec => 
-        rec.id === editingRecord.id ? { ...editingRecord, ...formData } : rec
-      );
-      toast({ title: "Precotización Actualizada", description: `La lista para ${formData.make} ${formData.model} ha sido actualizada.` });
-    } else {
-      const newRecord: VehiclePriceList = {
-        id: `VPL_${Date.now().toString(36)}`,
-        ...formData,
-      };
-      updatedList = [...priceLists, newRecord];
-      toast({ title: "Precotización Creada", description: `Se ha añadido la lista para ${formData.make} ${formData.model}.` });
-    }
-
-    setPriceLists(updatedList);
-    placeholderVehiclePriceLists.splice(0, placeholderVehiclePriceLists.length, ...updatedList);
-    await persistToFirestore(['vehiclePriceLists']);
-    setIsDialogOpen(false);
-  }, [editingRecord, priceLists, toast]);
-  
-  const handleDeleteRecord = useCallback(async (recordId: string) => {
-    const recordToDelete = priceLists.find(r => r.id === recordId);
-    if (!recordToDelete) return;
-
-    const updatedList = priceLists.filter(rec => rec.id !== recordId);
-    setPriceLists(updatedList);
-    placeholderVehiclePriceLists.splice(0, placeholderVehiclePriceLists.length, ...updatedList);
-    await persistToFirestore(['vehiclePriceLists']);
-
-    toast({
-      title: "Registro Eliminado",
-      description: `La precotización para "${recordToDelete.make} ${recordToDelete.model}" ha sido eliminada.`,
-      variant: 'destructive',
-    });
-  }, [priceLists, toast]);
-  
-  const formatCurrency = (amount: number) => `$${amount.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   
   const formatYearRange = (years: number[]): string => {
     if (!years || years.length === 0) return 'N/A';
@@ -282,10 +240,7 @@ function PrecotizacionesPageContent() {
             const rangeEnd = sortedYears[i - 1];
             if (rangeStart === rangeEnd) {
                 ranges.push(String(rangeStart));
-            } else if (rangeEnd === rangeStart + 1) {
-                ranges.push(String(rangeStart), String(rangeEnd));
-            }
-            else {
+            } else {
                 ranges.push(`${rangeStart} - ${rangeEnd}`);
             }
             rangeStart = sortedYears[i];
@@ -295,8 +250,6 @@ function PrecotizacionesPageContent() {
     const lastYear = sortedYears[sortedYears.length - 1];
     if (rangeStart === lastYear) {
       ranges.push(String(rangeStart));
-    } else if (lastYear === rangeStart + 1) {
-      ranges.push(String(rangeStart), String(lastYear));
     } else {
       ranges.push(`${rangeStart} - ${lastYear}`);
     }
@@ -311,7 +264,7 @@ function PrecotizacionesPageContent() {
           <h2 className="text-2xl font-semibold tracking-tight">Precotizaciones por Vehículo</h2>
           <p className="text-muted-foreground">Base de datos de servicios y precios para agilizar cotizaciones.</p>
         </div>
-        <Button onClick={() => handleOpenDialog()}>
+        <Button onClick={() => onOpenDialog()}>
           <PlusCircle className="mr-2 h-4 w-4" />
           Nueva Precotización
         </Button>
@@ -333,12 +286,12 @@ function PrecotizacionesPageContent() {
              <CardHeader className="flex flex-row items-center justify-between space-y-0 py-3 px-4 border-b bg-card">
                 <div className="flex items-baseline gap-x-3">
                   <p className="text-lg text-muted-foreground">{record.make}</p>
-                  <p className="text-lg font-semibold text-foreground">{record.model}</p>
-                  <p className="text-lg font-semibold text-foreground">{formatYearRange(record.years)}</p>
+                  <p className="text-xl font-semibold text-foreground">{record.model}</p>
+                  <p className="text-xl font-semibold text-foreground">{formatYearRange(record.years)}</p>
                 </div>
                 <div className="flex items-center gap-2">
                     <Badge>{record.services.length} servicio(s)</Badge>
-                    <Button variant="ghost" size="icon" onClick={() => handleOpenDialog(record)}><Edit className="h-4 w-4"/></Button>
+                    <Button variant="ghost" size="icon" onClick={() => onOpenDialog(record)}><Edit className="h-4 w-4"/></Button>
                     <AlertDialog>
                         <AlertDialogTrigger asChild>
                             <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive"><Trash2 className="h-4 w-4"/></Button>
@@ -352,7 +305,7 @@ function PrecotizacionesPageContent() {
                             </AlertDialogHeader>
                             <AlertDialogFooter>
                             <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                            <AlertDialogAction onClick={() => handleDeleteRecord(record.id)} className="bg-destructive hover:bg-destructive/90">
+                            <AlertDialogAction onClick={() => onDelete(record.id)} className="bg-destructive hover:bg-destructive/90">
                                 Sí, Eliminar
                             </AlertDialogAction>
                             </AlertDialogFooter>
@@ -389,186 +342,203 @@ function PrecotizacionesPageContent() {
           </div>
         )}
       </div>
-
-      <PriceListDialog
-        open={isDialogOpen}
-        onOpenChange={setIsDialogOpen}
-        onSave={handleSaveRecord}
-        record={editingRecord}
-      />
     </div>
-  )
-}
-// --- END CONTENT FOR PRECOTIZACIONES ---
-
-
-function VehiculosPageComponent() {
-  const searchParams = useSearchParams();
-  const defaultTab = searchParams.get('tab') || 'resumen';
-  const { toast } = useToast();
-  const [version, setVersion] = useState(0);
-  const [hydrated, setHydrated] = useState(false);
-  const [activeTab, setActiveTab] = useState(defaultTab);
-  const [isNewVehicleDialogOpen, setIsNewVehicleDialogOpen] = useState(false);
-  
-  useEffect(() => {
-    hydrateReady.then(() => setHydrated(true));
-    const forceUpdate = () => setVersion(v => v + 1);
-    window.addEventListener('databaseUpdated', forceUpdate);
-    return () => window.removeEventListener('databaseUpdated', forceUpdate);
-  }, []);
-
-  const vehiclesWithLastService = useMemo(() => {
-    if (!hydrated) return [];
-    return placeholderVehicles.map(v => {
-      const history = placeholderServiceRecords.filter(s => s.vehicleId === v.id && s.status !== 'Cancelado');
-      let lastServiceDate: string | undefined = undefined;
-      if (history.length > 0) {
-        const sortedHistory = [...history].sort((a, b) => {
-            const dateA = a.serviceDate ? parseISO(a.serviceDate) : null;
-            const dateB = b.serviceDate ? parseISO(b.serviceDate) : null;
-            if (isValid(dateA) && !isValid(dateB)) return -1;
-            if (!isValid(dateA) && isValid(dateB)) return 1;
-            if (!isValid(dateA) && !isValid(dateB)) return 0;
-            return compareDesc(dateA!, dateB!);
-        });
-        if (sortedHistory[0]?.serviceDate && isValid(parseISO(sortedHistory[0].serviceDate))) {
-          lastServiceDate = sortedHistory[0].serviceDate;
-        }
-      }
-      return { ...v, serviceHistory: history, lastServiceDate: lastServiceDate };
-    });
-  }, [version, hydrated]);
-
-  const summaryData = useMemo(() => {
-    if (!hydrated) {
-      return {
-        totalVehiclesCount: 0,
-        inactive6MonthsCount: 0,
-        inactive12MonthsCount: 0,
-        uniqueOwnersCount: 0,
-        fleetVehiclesCount: 0,
-        mostCommonVehicle: "N/A",
-      };
-    }
-
-    const now = new Date();
-    const sixMonthsAgo = subMonths(now, 6);
-    const twelveMonthsAgo = subMonths(now, 12);
-    let count6 = 0;
-    let count12 = 0;
-
-    vehiclesWithLastService.forEach(v => {
-      if (!v.lastServiceDate) {
-        count6++;
-        count12++;
-      } else {
-        const lastService = parseISO(v.lastServiceDate);
-        if (!isValid(lastService)) return;
-        if (isBefore(lastService, sixMonthsAgo)) count6++;
-        if (isBefore(lastService, twelveMonthsAgo)) count12++;
-      }
-    });
-    
-    const uniqueOwnersCount = new Set(vehiclesWithLastService.map(v => v.ownerName)).size;
-    const fleetVehiclesCount = vehiclesWithLastService.filter(v => v.isFleetVehicle).length;
-    
-    const vehicleCounts = vehiclesWithLastService.reduce((acc, v) => {
-        const key = `${v.make} ${v.model}`;
-        acc[key] = (acc[key] || 0) + 1;
-        return acc;
-    }, {} as Record<string, number>);
-
-    let mostCommonVehicle = "N/A";
-    if (vehiclesWithLastService.length > 0) {
-        const topEntry = Object.entries(vehicleCounts).reduce((a, b) => a[1] > b[1] ? a : b, ['', 0]);
-        if (topEntry[0]) {
-            mostCommonVehicle = topEntry[0];
-        }
-    }
-
-    return {
-      totalVehiclesCount: vehiclesWithLastService.length,
-      inactive6MonthsCount: count6,
-      inactive12MonthsCount: count12,
-      uniqueOwnersCount,
-      fleetVehiclesCount,
-      mostCommonVehicle,
-    };
-  }, [vehiclesWithLastService, hydrated]);
-
-
-  const handleSaveVehicle = async (data: VehicleFormValues) => {
-    const newVehicleData: Omit<Vehicle, 'id' | 'serviceHistory' | 'lastServiceDate'> = {
-      ...data,
-      year: Number(data.year),
-    };
-    const newVehicle: Vehicle = {
-      id: `VEH_${Date.now().toString(36)}`,
-      ...newVehicleData,
-      serviceHistory: [],
-    };
-    placeholderVehicles.push(newVehicle);
-    await persistToFirestore(['vehicles']);
-    toast({ title: "Vehículo Creado", description: `El vehículo ${newVehicle.make} ${newVehicle.model} ha sido agregado.` });
-    setIsNewVehicleDialogOpen(false);
-  };
-
-  const handleShowArchived = () => {
-    toast({
-      title: "Función Próximamente",
-      description: "La visualización de vehículos archivados estará disponible en una futura actualización.",
-    });
-  };
-
-  if (!hydrated) {
-    return (
-      <div className="flex h-[50vh] w-full items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin" />
-        <p className="text-lg ml-4">Cargando vehículos...</p>
-      </div>
-    );
-  }
-
-  return (
-    <>
-      <div className="bg-primary text-primary-foreground rounded-lg p-6 mb-6">
-          <h1 className="text-3xl font-bold tracking-tight">Gestión de Vehículos</h1>
-          <p className="text-primary-foreground/80 mt-1">Administra la información, historial y precios de tus vehículos.</p>
-      </div>
-      
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-3 mb-6">
-            <TabsTrigger value="resumen" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Resumen</TabsTrigger>
-            <TabsTrigger value="vehiculos" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Vehículos</TabsTrigger>
-            <TabsTrigger value="precotizaciones" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Precotizaciones</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="resumen" className="mt-6">
-            <ResumenVehiculosPageComponent summaryData={summaryData} onNewVehicleClick={() => setIsNewVehicleDialogOpen(true)} />
-        </TabsContent>
-
-        <TabsContent value="vehiculos" className="mt-0">
-            <ListaVehiculosPageContent 
-                vehicles={vehiclesWithLastService} 
-                onNewVehicleClick={() => setIsNewVehicleDialogOpen(true)}
-                onArchiveClick={handleShowArchived}
-            />
-        </TabsContent>
-
-        <TabsContent value="precotizaciones" className="mt-6">
-            <PrecotizacionesPageContent />
-        </TabsContent>
-      </Tabs>
-      
-      <VehicleDialog
-        open={isNewVehicleDialogOpen}
-        onOpenChange={setIsNewVehicleDialogOpen}
-        onSave={handleSaveVehicle}
-        vehicle={null} 
-      />
-    </>
   );
+}
+
+// --- MAIN PAGE COMPONENT ---
+function VehiculosPageComponent() {
+    const searchParams = useSearchParams();
+    const defaultTab = searchParams.get('tab') || 'resumen';
+    const { toast } = useToast();
+    const [version, setVersion] = useState(0);
+    const [hydrated, setHydrated] = useState(false);
+    const [activeTab, setActiveTab] = useState(defaultTab);
+    
+    // State for dialogs
+    const [isVehicleDialogOpen, setIsVehicleDialogOpen] = useState(false);
+    const [isPriceListDialogOpen, setIsPriceListDialogOpen] = useState(false);
+    const [editingPriceRecord, setEditingPriceRecord] = useState<VehiclePriceList | null>(null);
+    
+    // State for data
+    const [allVehicles, setAllVehicles] = useState<Vehicle[]>([]);
+    const [priceLists, setPriceLists] = useState<VehiclePriceList[]>([]);
+  
+    useEffect(() => {
+      const handleDatabaseUpdate = () => setVersion(v => v + 1);
+      hydrateReady.then(() => {
+        setAllVehicles([...placeholderVehicles]);
+        setPriceLists([...placeholderVehiclePriceLists]);
+        setHydrated(true);
+      });
+      window.addEventListener('databaseUpdated', handleDatabaseUpdate);
+      return () => window.removeEventListener('databaseUpdated', handleDatabaseUpdate);
+    }, []);
+
+    useEffect(() => {
+        if(hydrated) {
+            setAllVehicles([...placeholderVehicles]);
+            setPriceLists([...placeholderVehiclePriceLists]);
+        }
+    }, [version, hydrated]);
+
+    const vehiclesWithLastService = useMemo(() => {
+        return allVehicles.map(v => {
+            const history = placeholderServiceRecords.filter(s => s.vehicleId === v.id && s.status !== 'Cancelado');
+            let lastServiceDate: string | undefined = undefined;
+            if (history.length > 0) {
+                const sortedHistory = [...history].sort((a, b) => {
+                    const dateA = a.serviceDate ? parseISO(a.serviceDate) : null;
+                    const dateB = b.serviceDate ? parseISO(b.serviceDate) : null;
+                    if (isValid(dateA) && !isValid(dateB)) return -1;
+                    if (!isValid(dateA) && isValid(dateB)) return 1;
+                    if (!isValid(dateA) && !isValid(dateB)) return 0;
+                    return compareDesc(dateA!, dateB!);
+                });
+                if (sortedHistory[0]?.serviceDate && isValid(parseISO(sortedHistory[0].serviceDate))) {
+                    lastServiceDate = sortedHistory[0].serviceDate;
+                }
+            }
+            return { ...v, serviceHistory: history, lastServiceDate: lastServiceDate };
+        });
+    }, [allVehicles]);
+
+    const summaryData = useMemo(() => {
+        const now = new Date();
+        const sixMonthsAgo = subMonths(now, 6);
+        const twelveMonthsAgo = subMonths(now, 12);
+        let count6 = 0; let count12 = 0;
+
+        vehiclesWithLastService.forEach(v => {
+            if (!v.lastServiceDate) {
+                count6++; count12++;
+            } else {
+                const lastService = parseISO(v.lastServiceDate);
+                if (!isValid(lastService)) return;
+                if (isBefore(lastService, sixMonthsAgo)) count6++;
+                if (isBefore(lastService, twelveMonthsAgo)) count12++;
+            }
+        });
+        
+        const vehicleCounts = vehiclesWithLastService.reduce((acc, v) => {
+            const key = `${v.make} ${v.model}`;
+            acc[key] = (acc[key] || 0) + 1;
+            return acc;
+        }, {} as Record<string, number>);
+
+        const topEntry = Object.entries(vehicleCounts).reduce((a, b) => a[1] > b[1] ? a : b, ['', 0]);
+
+        return {
+            totalVehiclesCount: vehiclesWithLastService.length,
+            inactive6MonthsCount: count6,
+            inactive12MonthsCount: count12,
+            uniqueOwnersCount: new Set(vehiclesWithLastService.map(v => v.ownerName)).size,
+            fleetVehiclesCount: vehiclesWithLastService.filter(v => v.isFleetVehicle).length,
+            mostCommonVehicle: topEntry[0] || "N/A",
+        };
+    }, [vehiclesWithLastService]);
+
+    const handleSaveVehicle = useCallback(async (data: VehicleFormValues) => {
+        const newVehicleData: Omit<Vehicle, 'id' | 'serviceHistory' | 'lastServiceDate'> = {
+            ...data, year: Number(data.year),
+        };
+        const newVehicle: Vehicle = {
+            id: `VEH_${Date.now().toString(36)}`, ...newVehicleData, serviceHistory: [],
+        };
+        placeholderVehicles.push(newVehicle);
+        await persistToFirestore(['vehicles']);
+        toast({ title: "Vehículo Creado", description: `Se ha agregado ${newVehicle.make} ${newVehicle.model}.` });
+        setIsVehicleDialogOpen(false);
+    }, [toast]);
+
+    const handleOpenPriceListDialog = useCallback((record: VehiclePriceList | null = null) => {
+        setEditingPriceRecord(record);
+        setIsPriceListDialogOpen(true);
+    }, []);
+
+    const handleSavePriceListRecord = useCallback(async (formData: PriceListFormValues) => {
+        let isEditing = !!editingPriceRecord;
+        if (isEditing) {
+            const index = placeholderVehiclePriceLists.findIndex(r => r.id === editingPriceRecord!.id);
+            if (index > -1) {
+                placeholderVehiclePriceLists[index] = { ...editingPriceRecord!, ...formData };
+            }
+        } else {
+            const newRecord: VehiclePriceList = { id: `VPL_${Date.now().toString(36)}`, ...formData };
+            placeholderVehiclePriceLists.push(newRecord);
+        }
+        await persistToFirestore(['vehiclePriceLists']);
+        toast({ title: `Precotización ${isEditing ? 'Actualizada' : 'Creada'}`, description: `Se ha guardado la lista para ${formData.make} ${formData.model}.` });
+        setIsPriceListDialogOpen(false);
+    }, [editingPriceRecord, toast]);
+    
+    const handleDeletePriceListRecord = useCallback(async (recordId: string) => {
+        const recordToDelete = placeholderVehiclePriceLists.find(r => r.id === recordId);
+        if (!recordToDelete) return;
+        const index = placeholderVehiclePriceLists.findIndex(r => r.id === recordId);
+        if (index > -1) {
+            placeholderVehiclePriceLists.splice(index, 1);
+            await persistToFirestore(['vehiclePriceLists']);
+            toast({ title: "Registro Eliminado", variant: 'destructive' });
+        }
+    }, []);
+
+    if (!hydrated) {
+        return (
+            <div className="flex h-[50vh] w-full items-center justify-center">
+                <Loader2 className="h-8 w-8 animate-spin" />
+                <p className="text-lg ml-4">Cargando vehículos...</p>
+            </div>
+        );
+    }
+
+    return (
+        <>
+            <div className="bg-primary text-primary-foreground rounded-lg p-6 mb-6">
+                <h1 className="text-3xl font-bold tracking-tight">Gestión de Vehículos</h1>
+                <p className="text-primary-foreground/80 mt-1">Administra la información, historial y precios de tus vehículos.</p>
+            </div>
+            
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                <TabsList className="grid w-full grid-cols-3 mb-6">
+                    <TabsTrigger value="resumen" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Resumen</TabsTrigger>
+                    <TabsTrigger value="vehiculos" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Vehículos</TabsTrigger>
+                    <TabsTrigger value="precotizaciones" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Precotizaciones</TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="resumen" className="mt-6">
+                    <ResumenVehiculosPageComponent summaryData={summaryData} onNewVehicleClick={() => setIsVehicleDialogOpen(true)} />
+                </TabsContent>
+
+                <TabsContent value="vehiculos" className="mt-0">
+                    <ListaVehiculosPageContent vehicles={vehiclesWithLastService} />
+                </TabsContent>
+
+                <TabsContent value="precotizaciones" className="mt-6">
+                    <PrecotizacionesPageContent
+                        priceLists={priceLists}
+                        onSave={handleSavePriceListRecord}
+                        onDelete={handleDeletePriceListRecord}
+                        onOpenDialog={handleOpenPriceListDialog}
+                    />
+                </TabsContent>
+            </Tabs>
+            
+            <VehicleDialog
+                open={isVehicleDialogOpen}
+                onOpenChange={setIsVehicleDialogOpen}
+                onSave={handleSaveVehicle}
+                vehicle={null} 
+            />
+            
+            <PriceListDialog
+                open={isPriceListDialogOpen}
+                onOpenChange={setIsPriceListDialogOpen}
+                onSave={handleSavePriceListRecord}
+                record={editingPriceRecord}
+            />
+        </>
+    );
 }
 
 export default function VehiculosPageWrapper() {
@@ -578,7 +548,4 @@ export default function VehiculosPageWrapper() {
         </Suspense>
     );
 }
-
-
-    
 
