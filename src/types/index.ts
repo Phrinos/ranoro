@@ -179,31 +179,30 @@ export interface ServiceRecord {
   publicId?: string; // Unique, random ID for public sharing
   vehicleId: string;
   vehicleIdentifier?: string;
-  serviceDate: string; 
+  serviceDate: string; // Date of service or quote
   serviceType?: 'Servicio General' | 'Cambio de Aceite' | 'Pintura';
   description?: string;
   technicianId: string;
   technicianName?: string;
   serviceItems: ServiceItem[];
-  subTotal?: number; // Pre-tax amount
-  taxAmount?: number; // IVA amount
-  totalCost: number; // Final, tax-inclusive price. For services, this is the "Costo del Servicio (IVA incluido)"
-  totalSuppliesCost?: number; // Cost of supplies to the workshop (pre-tax)
-  serviceProfit?: number; // Profit: totalCost - totalSuppliesCost
-  status: 'Cotizacion' | 'Agendado' | 'En Espera de Refacciones' | 'Reparando' | 'Completado' | 'Entregado' | 'Cancelado';
+  subTotal: number; 
+  taxAmount: number;
+  totalCost: number; // Final, tax-inclusive price for services OR estimated price for quotes
+  totalSuppliesCost: number; 
+  serviceProfit: number; 
+  status: 'Cotizacion' | 'Agendado' | 'Reparando' | 'Completado' | 'Entregado' | 'Cancelado';
   cancellationReason?: string;
   cancelledBy?: string;
   notes?: string;
   mileage?: number;
   deliveryDateTime?: string; 
-  quoteDate?: string;
   vehicleConditions?: string;
   fuelLevel?: string;
   customerItems?: string;
-  safetyInspection?: SafetyInspection; // Added for safety checklist
+  safetyInspection?: SafetyInspection;
   serviceAdvisorId?: string;
   serviceAdvisorName?: string;
-  serviceAdvisorSignatureDataUrl?: string; // Added for public sheet
+  serviceAdvisorSignatureDataUrl?: string; 
   customerSignatureReception?: string;
   customerSignatureDelivery?: string;
   receptionSignatureViewed?: boolean;
@@ -323,29 +322,9 @@ export interface SaleReceipt {
   cancelledBy?: string;
 }
 
-export interface QuoteRecord {
-  id: string;
-  publicId?: string; // Unique, random ID for public sharing
-  serviceDate?: string; 
-  quoteDate?: string;
-  vehicleId?: string; // Optional if quote is generic initially
-  vehicleIdentifier?: string;
-  description?: string;
-  preparedByTechnicianId?: string; // Who prepared the quote
-  preparedByTechnicianName?: string;
-  preparedByTechnicianSignatureDataUrl?: string;
-  serviceItems: ServiceItem[]; // A quote is composed of one or more service items
-  estimatedTotalCost?: number; // Final, tax-inclusive estimated price for the customer
-  estimatedSubTotal?: number;
-  estimatedTaxAmount?: number;
-  estimatedTotalSuppliesCost?: number; // Cost of supplies to the workshop (pre-tax) for this quote
-  estimatedProfit?: number; // Profit: estimatedTotalCost - estimatedTotalSuppliesCost
-  notes?: string; // For validity, terms, etc.
-  mileage?: number; // Current mileage at time of quote
-  serviceType?: 'Servicio General' | 'Pintura' | 'Cambio de Aceite';
-  serviceId?: string; // ID of the service record if this quote was converted
-  workshopInfo?: WorkshopInfo;
-}
+// QuoteRecord is now deprecated and merged into ServiceRecord.
+// A ServiceRecord with status: 'Cotizacion' is a quote.
+export type QuoteRecord = ServiceRecord;
 
 
 export interface DashboardMetrics {
