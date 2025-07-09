@@ -34,7 +34,7 @@ const IVA_RATE = 0.16;
 export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
   ({ quote, vehicle, preparedByTechnician, workshopInfo: workshopInfoProp }, ref) => {
     const effectiveWorkshopInfo = { ...initialWorkshopInfo, ...workshopInfoProp };
-
+    
     const now = new Date();
     const formattedPrintDate = format(now, "dd 'de' MMMM 'de' yyyy, HH:mm:ss", { locale: es });
     const quoteDate = parseISO(quote.quoteDate ?? "");
@@ -52,7 +52,7 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
       <div 
         ref={ref}
         data-format="letter"
-        className="font-sans bg-white text-black shadow-lg mx-auto p-4 md:p-8 text-sm flex flex-col"
+        className="font-sans bg-white text-black shadow-lg mx-auto p-4 md:p-8 text-sm flex flex-col print:shadow-none"
       >
         <header className="mb-4 pb-2 border-b-2 border-black">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -170,8 +170,13 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
                 </div>
                 <div className="text-right flex flex-col items-end justify-end mt-4 sm:mt-0">
                     {quote.preparedByTechnicianSignatureDataUrl && (
-                        <div className="h-16 w-40 mb-1">
-                           <img src={quote.preparedByTechnicianSignatureDataUrl} alt="Firma del asesor" style={{ objectFit: 'contain', width: '100%', height: '100%' }}/>
+                        <div className="h-16 w-40 mb-1 relative">
+                            <img 
+                                src={quote.preparedByTechnicianSignatureDataUrl} 
+                                alt="Firma del asesor" 
+                                style={{ objectFit: 'contain', width: '100%', height: '100%' }}
+                                crossOrigin="anonymous"
+                            />
                         </div>
                     )}
                     <div className="border-t-2 border-gray-300/70 pt-1 w-56 text-center">
