@@ -126,15 +126,6 @@ const BASE_NAV_STRUCTURE: ReadonlyArray<Omit<NavigationEntry, 'isActive'>> = [
     permissions: ['fleet:manage']
   },
 
-  // Staff
-  { 
-    label: 'Personal', 
-    path: '/personal', 
-    icon: Users, 
-    groupTag: "Staff",
-    permissions: ['technicians:manage']
-  },
-
   // Finanzas
   {
     label: 'Resumen Financiero', 
@@ -151,10 +142,17 @@ const BASE_NAV_STRUCTURE: ReadonlyArray<Omit<NavigationEntry, 'isActive'>> = [
     icon: Settings,
     groupTag: "Opciones",
     permissions: ['dashboard:view'] // All users can see options
-  }
+  },
+  { 
+    label: 'Personal', 
+    path: '/personal', 
+    icon: Users, 
+    groupTag: "Opciones",
+    permissions: ['technicians:manage']
+  },
 ];
 
-const DESIRED_GROUP_ORDER = ["Mi Taller", "Operaciones", "Mi Flotilla", "Finanzas", "Opciones", "Staff"];
+const DESIRED_GROUP_ORDER = ["Mi Taller", "Operaciones", "Mi Flotilla", "Finanzas", "Opciones"];
 
 
 const useNavigation = (): NavigationEntry[] => {
