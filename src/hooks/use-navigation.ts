@@ -38,7 +38,8 @@ import {
   UserCircle,
   Landmark,
   Shield,
-  LayoutGrid
+  LayoutGrid,
+  CalendarDays
 } from 'lucide-react';
 import type { User, AppRole } from '@/types';
 import { placeholderAppRoles, AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
@@ -62,11 +63,25 @@ const BASE_NAV_STRUCTURE: ReadonlyArray<Omit<NavigationEntry, 'isActive'>> = [
     permissions: ['dashboard:view']
   },
   { 
-    label: 'Servicios', 
-    path: '/servicios', 
-    icon: Wrench, 
+    label: 'Agenda', 
+    path: '/servicios/agenda', 
+    icon: CalendarDays, 
     groupTag: "Mi Taller",
-    permissions: ['services:create', 'services:view_history']
+    permissions: ['services:create']
+  },
+  { 
+    label: 'Cotizaciones', 
+    path: '/cotizaciones/historial', 
+    icon: FileText, 
+    groupTag: "Mi Taller",
+    permissions: ['services:create'] 
+  },
+   { 
+    label: 'Historial Servicios', 
+    path: '/servicios/historial', 
+    icon: History, 
+    groupTag: "Mi Taller",
+    permissions: ['services:view_history']
   },
   { 
     label: 'Vehículos', 
@@ -194,8 +209,6 @@ const useNavigation = (): NavigationEntry[] => {
     // Handle parent route matching for nested pages
     const isParentRoute = pathname.startsWith(`${entry.path}/`);
     if (isParentRoute) {
-        // Check if there is another more specific navigation entry that also matches.
-        // If not, this is the most specific parent, so it should be active.
         const isMoreSpecificActive = filteredNavStructure.some(otherEntry => 
             pathname.startsWith(`${otherEntry.path}/`) && otherEntry.path.length > entry.path.length
         );
@@ -205,7 +218,8 @@ const useNavigation = (): NavigationEntry[] => {
     }
     
     // Specific overrides to group related pages under one active nav item
-    if (entry.path === '/servicios' && pathname.startsWith('/servicios')) isActive = true;
+    if (entry.path === '/servicios/agenda' && pathname.startsWith('/servicios/')) isActive = true;
+    if (entry.path === '/cotizaciones/historial' && pathname.startsWith('/cotizaciones/')) isActive = true;
     if (entry.path === '/vehiculos' && (pathname.startsWith('/vehiculos') || pathname.startsWith('/precios'))) isActive = true;
     if (entry.path === '/pos' && pathname.startsWith('/pos')) isActive = true;
     if (entry.path === '/personal' && (pathname.startsWith('/personal') || pathname.startsWith('/tecnicos') || pathname.startsWith('/administrativos'))) isActive = true;
@@ -215,9 +229,9 @@ const useNavigation = (): NavigationEntry[] => {
     if (entry.path === '/flotilla' && (pathname.startsWith('/flotilla') || pathname.startsWith('/conductores') || pathname.startsWith('/rentas'))) isActive = true;
     if (entry.path === '/rentas' && pathname.startsWith('/rentas')) isActive = true;
     
-    // Deactivate 'Finanzas' if 'Reportes' is active
+    // Deactivations for clarity
+    if (entry.path === '/servicios/agenda' && (pathname.startsWith('/servicios/historial'))) isActive = false;
     if (entry.path === '/finanzas/resumen' && pathname.startsWith('/finanzas/reporte')) isActive = false;
-    // Deactivate 'Flotilla' if 'Rentas' is active
     if (entry.path === '/flotilla' && pathname.startsWith('/rentas')) isActive = false;
 
 
