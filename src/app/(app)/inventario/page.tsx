@@ -7,8 +7,8 @@ import { Button } from "@/components/ui/button";
 import { PlusCircle, Printer, ShoppingCart, AlertTriangle, PackageCheck, DollarSign, Server, Search, ListFilter, Shapes, Building, BrainCircuit, Package, Trash2, Edit } from "lucide-react";
 import { InventoryTable } from "./components/inventory-table";
 import { InventoryItemDialog } from "./components/inventory-item-dialog";
-import { placeholderInventory, placeholderCategories, placeholderSuppliers, persistToFirestore, placeholderServiceRecords, hydrateReady } from "@/lib/placeholder-data";
-import type { InventoryItem, InventoryCategory, Supplier } from "@/types";
+import { placeholderInventory, placeholderCategories, placeholderSuppliers, persistToFirestore, placeholderServiceRecords, hydrateReady, placeholderCashDrawerTransactions, AUTH_USER_LOCALSTORAGE_KEY } from "@/lib/placeholder-data";
+import type { InventoryItem, InventoryCategory, Supplier, User, CashDrawerTransaction } from "@/types";
 import type { InventoryItemFormValues } from "./components/inventory-item-form";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -20,7 +20,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { capitalizeWords } from '@/lib/utils';
+import { capitalizeWords, formatCurrency } from '@/lib/utils';
 import { SuppliersTable } from './proveedores/components/suppliers-table';
 import { SupplierDialog } from './proveedores/components/supplier-dialog';
 import type { SupplierFormValues } from './proveedores/components/supplier-form';
@@ -274,13 +274,35 @@ function InventarioPageComponent() {
   const [isRegisterPurchaseOpen, setIsRegisterPurchaseOpen] = useState(false);
 
   const handleSavePurchase = useCallback(async (data: PurchaseFormValues) => {
-    // 1. Update supplier's debt
-    if (data.supplierId && data.invoiceTotal && data.invoiceTotal > 0) {
-      const supplierIndex = placeholderSuppliers.findIndex(s => s.id === data.supplierId);
+    const keysToPersist: Array<'suppliers' | 'inventory' | 'cashDrawerTransactions'> = ['suppliers', 'inventory'];
+    const supplierIndex = placeholderSuppliers.findIndex(s => s.id === data.supplierId);
+    const supplierName = supplierIndex > -1 ? placeholderSuppliers[supplierIndex].name : 'N/A';
+
+    // 1. Update supplier's debt if payment is on credit, or create a cash transaction
+    if (data.paymentMethod === 'Crédito') {
       if (supplierIndex > -1) {
         const currentDebt = placeholderSuppliers[supplierIndex].debtAmount || 0;
         placeholderSuppliers[supplierIndex].debtAmount = currentDebt + data.invoiceTotal;
       }
+      toast({ title: "Compra a Crédito Registrada", description: `Se ha añadido ${formatCurrency(data.invoiceTotal)} a la deuda con ${supplierName}.` });
+    } else if (data.paymentMethod === 'Efectivo') {
+      const authUserString = localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY);
+      const currentUser: User | null = authUserString ? JSON.parse(authUserString) : null;
+      const newTransaction: CashDrawerTransaction = {
+        id: `trx_${Date.now()}`,
+        date: new Date().toISOString(),
+        type: 'Salida',
+        amount: data.invoiceTotal,
+        concept: `Compra a ${supplierName} (Factura)`,
+        userId: currentUser?.id || 'system',
+        userName: currentUser?.name || 'Sistema',
+      };
+      placeholderCashDrawerTransactions.push(newTransaction);
+      keysToPersist.push('cashDrawerTransactions');
+      toast({ title: "Compra en Efectivo Registrada", description: `Se registró una salida de caja por ${formatCurrency(data.invoiceTotal)}.` });
+    } else {
+        // For Tarjeta or Transferencia
+        toast({ title: "Compra Registrada", description: `Se registró una compra a ${supplierName} por ${formatCurrency(data.invoiceTotal)} pagada con ${data.paymentMethod}.` });
     }
     
     // 2. Update inventory items' quantity and prices
@@ -297,9 +319,8 @@ function InventarioPageComponent() {
     });
 
     // 3. Persist changes
-    await persistToFirestore(['suppliers', 'inventory']);
+    await persistToFirestore(keysToPersist);
     
-    toast({ title: "Compra Registrada", description: "El inventario y la deuda del proveedor han sido actualizados." });
     setIsRegisterPurchaseOpen(false);
     
   }, [toast]);
