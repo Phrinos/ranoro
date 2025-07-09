@@ -9,7 +9,8 @@ import { placeholderServiceRecords, placeholderVehicles, placeholderTechnicians,
 import type { ServiceRecord, Vehicle, Technician, InventoryItem, QuoteRecord } from '@/types';
 import { ServiceDialog } from '../servicios/components/service-dialog';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Eye, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 type KanbanColumnId = 'Agendado' | 'En Espera de Refacciones' | 'Reparando' | 'Completado' | 'Entregado';
 
@@ -19,7 +20,21 @@ interface KanbanColumn {
   services: ServiceRecord[];
 }
 
-function KanbanCard({ service, vehicle, onClick }: { service: ServiceRecord, vehicle?: Vehicle, onClick: () => void }) {
+function KanbanCard({ 
+  service, 
+  vehicle, 
+  onClick, 
+  onMove, 
+  isFirst, 
+  isLast 
+}: { 
+  service: ServiceRecord, 
+  vehicle?: Vehicle, 
+  onClick: () => void, 
+  onMove: (direction: 'left' | 'right') => void, 
+  isFirst: boolean, 
+  isLast: boolean 
+}) {
   const getServiceDescriptionText = (service: ServiceRecord) => {
     if (service.serviceItems && service.serviceItems.length > 0) {
       return service.serviceItems.map(item => item.name).join(', ');
@@ -28,14 +43,35 @@ function KanbanCard({ service, vehicle, onClick }: { service: ServiceRecord, veh
   };
   
   return (
-    <Card className="mb-4 cursor-pointer hover:bg-muted/50 transition-colors" onClick={onClick}>
-      <CardContent className="p-3">
-        <p className="font-bold text-sm">{vehicle ? `${vehicle.licensePlate}` : service.vehicleIdentifier}</p>
-        <p className="text-xs text-muted-foreground">{vehicle ? `${vehicle.make} ${vehicle.model} ${vehicle.year}` : 'Vehículo no encontrado'}</p>
-        <p className="text-xs font-semibold mt-2">{service.serviceType || 'Servicio General'}</p>
-        <p className="text-xs text-muted-foreground truncate" title={getServiceDescriptionText(service)}>
-            {getServiceDescriptionText(service)}
-        </p>
+    <Card className="mb-4 group shadow-sm hover:shadow-md transition-shadow">
+      <CardContent className="p-3 relative">
+        <div className="absolute top-1 right-1 flex">
+           <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
+              onClick={onClick}
+              title="Ver/Editar Servicio"
+            >
+              <Eye className="h-4 w-4" />
+            </Button>
+        </div>
+        <div className="pr-8">
+            <p className="font-bold text-sm">{vehicle ? `${vehicle.licensePlate}` : service.vehicleIdentifier}</p>
+            <p className="text-xs text-muted-foreground">{vehicle ? `${vehicle.make} ${vehicle.model} ${vehicle.year}` : 'Vehículo no encontrado'}</p>
+            <p className="text-xs font-semibold mt-2">{service.serviceType || 'Servicio General'}</p>
+            <p className="text-xs text-muted-foreground truncate" title={getServiceDescriptionText(service)}>
+                {getServiceDescriptionText(service)}
+            </p>
+        </div>
+        <div className="flex justify-between items-center mt-2 border-t pt-2">
+            <Button variant="outline" size="icon" className="h-6 w-6" disabled={isFirst} onClick={() => onMove('left')}>
+                <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <Button variant="outline" size="icon" className="h-6 w-6" disabled={isLast} onClick={() => onMove('right')}>
+                <ChevronRight className="h-4 w-4" />
+            </Button>
+        </div>
       </CardContent>
     </Card>
   );
@@ -75,8 +111,9 @@ export default function TableroPage() {
     }
   }, [hydrated, version]);
 
+  const columnOrder: KanbanColumnId[] = ['Agendado', 'En Espera de Refacciones', 'Reparando', 'Completado', 'Entregado'];
+  
   const kanbanColumns = useMemo((): KanbanColumn[] => {
-    const columnOrder: KanbanColumnId[] = ['Agendado', 'En Espera de Refacciones', 'Reparando', 'Completado', 'Entregado'];
     const columns: Record<KanbanColumnId, KanbanColumn> = {
       'Agendado': { id: 'Agendado', title: 'Agenda', services: [] },
       'En Espera de Refacciones': { id: 'En Espera de Refacciones', title: 'Espera Refacciones', services: [] },
@@ -92,6 +129,14 @@ export default function TableroPage() {
       }
     });
 
+    for (const colId in columns) {
+        columns[colId as KanbanColumnId].services.sort((a, b) => {
+            const dateA = a.serviceDate ? new Date(a.serviceDate).getTime() : 0;
+            const dateB = b.serviceDate ? new Date(b.serviceDate).getTime() : 0;
+            return dateA - dateB; // Oldest first
+        });
+    }
+
     return columnOrder.map(id => columns[id]);
   }, [services]);
 
@@ -100,6 +145,40 @@ export default function TableroPage() {
     setIsServiceDialogOpen(true);
   };
   
+  const handleMoveService = async (serviceId: string, direction: 'left' | 'right') => {
+    const serviceIndex = placeholderServiceRecords.findIndex(s => s.id === serviceId);
+    if (serviceIndex === -1) return;
+
+    const currentStatus = placeholderServiceRecords[serviceIndex].status as KanbanColumnId;
+    const currentIndex = columnOrder.indexOf(currentStatus);
+    
+    let newIndex;
+    if (direction === 'left') {
+        newIndex = Math.max(0, currentIndex - 1);
+    } else {
+        newIndex = Math.min(columnOrder.length - 1, currentIndex + 1);
+    }
+
+    if (newIndex !== currentIndex) {
+        const newStatus = columnOrder[newIndex];
+        
+        // Optimistic UI update
+        const updatedServices = services.map(s => 
+          s.id === serviceId ? { ...s, status: newStatus } : s
+        );
+        setServices(updatedServices);
+
+        // Update master data and persist
+        placeholderServiceRecords[serviceIndex].status = newStatus;
+        await persistToFirestore(['serviceRecords']);
+        
+        toast({
+            title: 'Servicio Movido',
+            description: `El servicio ahora está en "${newStatus}".`
+        });
+    }
+  };
+
   const handleSaveService = async (data: ServiceRecord | QuoteRecord) => {
     if (!('status' in data)) return;
     const updatedService = data as ServiceRecord;
@@ -136,7 +215,7 @@ export default function TableroPage() {
         description="Visualiza y gestiona el flujo de trabajo de tu taller."
       />
       <div className="flex gap-4 overflow-x-auto pb-4">
-        {kanbanColumns.map(column => (
+        {kanbanColumns.map((column, colIndex) => (
           <div key={column.id} className="w-72 flex-shrink-0">
             <Card className="h-full bg-muted">
               <CardHeader className="p-4">
@@ -152,6 +231,9 @@ export default function TableroPage() {
                     service={service}
                     vehicle={vehicles.find(v => v.id === service.vehicleId)}
                     onClick={() => handleCardClick(service)}
+                    onMove={(direction) => handleMoveService(service.id, direction)}
+                    isFirst={colIndex === 0}
+                    isLast={colIndex === columnOrder.length - 1}
                   />
                 ))}
               </CardContent>
@@ -174,4 +256,3 @@ export default function TableroPage() {
     </>
   );
 }
-
