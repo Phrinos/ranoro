@@ -36,6 +36,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { ServiceSheetContent } from "@/components/service-sheet-content";
 
 
 type QuoteSortOption = 
@@ -55,9 +56,6 @@ export default function HistorialCotizacionesPage() {
   const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
   const [sortOption, setSortOption] = useState<QuoteSortOption>("date_desc"); 
 
-  const [isViewQuoteDialogOpen, setIsViewQuoteDialogOpen] = useState(false);
-  const [selectedQuoteForView, setSelectedQuoteForView] = useState<QuoteRecord | null>(null);
-  
   const [isEditQuoteDialogOpen, setIsEditQuoteDialogOpen] = useState(false);
   const [selectedQuoteForEdit, setSelectedQuoteForEdit] = useState<QuoteRecord | null>(null);
 
@@ -69,6 +67,10 @@ export default function HistorialCotizacionesPage() {
   
   const [workshopInfo, setWorkshopInfo] = useState<WorkshopInfo | undefined>(undefined);
   const quoteContentRef = useRef<HTMLDivElement>(null);
+  
+  const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const [serviceForSheet, setServiceForSheet] = useState<ServiceRecord | null>(null);
+  const [quoteForPreview, setQuoteForPreview] = useState<QuoteRecord | null>(null);
 
 
   useEffect(() => {
@@ -151,8 +153,28 @@ export default function HistorialCotizacionesPage() {
 
 
   const handleViewQuote = useCallback((quote: QuoteRecord) => {
-    setSelectedQuoteForView(quote);
-    setIsViewQuoteDialogOpen(true);
+    const dummyService: ServiceRecord = {
+      id: quote.id,
+      publicId: quote.publicId,
+      vehicleId: quote.vehicleId || '',
+      serviceDate: quote.quoteDate || new Date().toISOString(),
+      description: quote.description,
+      technicianId: quote.preparedByTechnicianId || '',
+      technicianName: quote.preparedByTechnicianName,
+      serviceItems: quote.serviceItems || [],
+      totalCost: quote.estimatedTotalCost || 0,
+      totalSuppliesCost: quote.estimatedTotalSuppliesCost,
+      serviceProfit: quote.estimatedProfit,
+      status: 'Cotizacion',
+      serviceAdvisorId: quote.preparedByTechnicianId,
+      serviceAdvisorName: quote.preparedByTechnicianName,
+      serviceAdvisorSignatureDataUrl: quote.preparedByTechnicianSignatureDataUrl,
+      workshopInfo: quote.workshopInfo,
+    };
+    
+    setServiceForSheet(dummyService);
+    setQuoteForPreview(quote);
+    setIsSheetOpen(true);
   }, []);
   
   const handleEditQuote = useCallback((quote: QuoteRecord) => {
@@ -561,32 +583,36 @@ Quedamos a sus ordenes y a la espera de poder atender su vehiculo. Gracias por c
       </div>
 
 
-      {isViewQuoteDialogOpen && selectedQuoteForView && (
+      {isSheetOpen && serviceForSheet && (
         <PrintTicketDialog
-          open={isViewQuoteDialogOpen}
-          onOpenChange={setIsViewQuoteDialogOpen}
+          open={isSheetOpen}
+          onOpenChange={setIsSheetOpen}
           title="Vista Previa"
           dialogContentClassName="printable-quote-dialog"
-          onDialogClose={() => setSelectedQuoteForView(null)}
+          onDialogClose={() => {
+            setServiceForSheet(null);
+            setQuoteForPreview(null);
+          }}
           footerActions={
             <>
-              <Button variant="outline" onClick={() => handleSendWhatsApp(selectedQuoteForView)}>
+              <Button variant="outline" onClick={() => handleSendWhatsApp(quoteForPreview)}>
                 <MessageSquare className="mr-2 h-4 w-4" /> Copiar para WhatsApp
               </Button>
               <Button variant="outline" onClick={handleCopyAsImage}>
                 <Copy className="mr-2 h-4 w-4" /> Copiar Imagen
               </Button>
-              <Button onClick={() => generateAndDownloadPdf(selectedQuoteForView)}>
+              <Button onClick={() => generateAndDownloadPdf(quoteForPreview)}>
                  <Download className="mr-2 h-4 w-4" /> Descargar PDF
               </Button>
             </>
           }
         >
-          <QuoteContent 
+          <ServiceSheetContent
             ref={quoteContentRef}
-            quote={selectedQuoteForView} 
-            vehicle={vehicles.find(v => v.id === selectedQuoteForView.vehicleId) || undefined}
-            workshopInfo={selectedQuoteForView.workshopInfo}
+            service={serviceForSheet}
+            quote={quoteForPreview || undefined}
+            vehicle={vehicles.find(v => v.id === serviceForSheet.vehicleId)}
+            workshopInfo={serviceForSheet.workshopInfo}
           />
         </PrintTicketDialog>
       )}
