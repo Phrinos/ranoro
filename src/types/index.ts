@@ -190,7 +190,7 @@ export interface ServiceRecord {
   totalCost: number; // Final, tax-inclusive price. For services, this is the "Costo del Servicio (IVA incluido)"
   totalSuppliesCost?: number; // Cost of supplies to the workshop (pre-tax)
   serviceProfit?: number; // Profit: totalCost - totalSuppliesCost
-  status: 'Cotizacion' | 'Agendado' | 'Reparando' | 'Completado' | 'Cancelado';
+  status: 'Cotizacion' | 'Agendado' | 'En Espera de Refacciones' | 'Reparando' | 'Completado' | 'Entregado' | 'Cancelado';
   cancellationReason?: string;
   cancelledBy?: string;
   notes?: string;
@@ -490,4 +490,17 @@ export interface AuditLog {
   description: string;
   entityType?: 'Usuario' | 'Rol' | 'Servicio' | 'Cotización' | 'Producto' | 'Categoría' | 'Proveedor' | 'Venta' | 'Vehículo' | 'Conductor' | 'Pago' | 'Gasto' | 'Compra';
   entityId?: string;
+}
+
+export interface CapacityAnalysisInput {
+  servicesForDay: { description: string }[];
+  technicians: { id: string; standardHoursPerDay: number }[];
+  serviceHistory: { description: string; serviceDate?: string; deliveryDateTime?: string }[];
+}
+
+export interface CapacityAnalysisOutput {
+  totalRequiredHours: number;
+  totalAvailableHours: number;
+  capacityPercentage: number;
+  recommendation: string;
 }

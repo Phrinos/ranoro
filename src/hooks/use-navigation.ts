@@ -37,7 +37,8 @@ import {
   Wallet,
   UserCircle,
   Landmark,
-  Shield
+  Shield,
+  LayoutGrid
 } from 'lucide-react';
 import type { User, AppRole } from '@/types';
 import { placeholderAppRoles, AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
@@ -53,6 +54,13 @@ export interface NavigationEntry {
 
 const BASE_NAV_STRUCTURE: ReadonlyArray<Omit<NavigationEntry, 'isActive'>> = [
   // Mi Taller
+  { 
+    label: 'Tablero', 
+    path: '/tablero', 
+    icon: LayoutGrid, 
+    groupTag: "Mi Taller",
+    permissions: ['dashboard:view']
+  },
   { 
     label: 'Vehículos', 
     path: '/vehiculos', 

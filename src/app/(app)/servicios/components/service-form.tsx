@@ -149,7 +149,7 @@ const serviceFormSchemaBase = z.object({
   notes: z.string().optional(),
   technicianId: z.string().optional(),
   serviceItems: z.array(serviceItemSchema).min(1, "Debe agregar al menos un ítem de servicio."),
-  status: z.enum(["Cotizacion", "Agendado", "Reparando", "Completado", "Cancelado"]).optional(),
+  status: z.enum(["Cotizacion", "Agendado", "En Espera de Refacciones", "Reparando", "Completado", "Entregado", "Cancelado"]).optional(),
   serviceType: z.enum(["Servicio General", "Cambio de Aceite", "Pintura"]).optional(),
   deliveryDateTime: z.date({ invalid_type_error: "La fecha de entrega no es válida." }).optional(),
   vehicleConditions: z.string().optional(),
@@ -191,7 +191,7 @@ const serviceFormSchemaBase = z.object({
   message: "El folio de la transferencia es obligatorio para este método de pago.",
   path: ["transferFolio"],
 }).refine(data => {
-    if (data.status === 'Reparando' && !data.technicianId) {
+    if ((data.status === 'Reparando' || data.status === 'En Espera de Refacciones') && !data.technicianId) {
         return false;
     }
     return true;
@@ -1050,11 +1050,12 @@ export function ServiceForm({
   const showStatusFields = mode === 'service' || (mode === 'quote' && !!initialData?.id);
   
   const statusOptions = useMemo(() => {
+    const baseServiceOptions = ["Agendado", "En Espera de Refacciones", "Reparando", "Completado"];
     if (mode === 'quote' && initialDataQuote?.id) {
-      return ["Cotizacion", "Agendado", "Reparando"];
+      return ["Cotizacion", ...baseServiceOptions];
     }
     if (mode === 'service') {
-        return ["Agendado", "Reparando", "Completado"];
+        return baseServiceOptions;
     }
     return [];
   }, [mode, initialDataQuote]);
@@ -1193,7 +1194,7 @@ export function ServiceForm({
                             render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>Estado</FormLabel>
-                                    <Select onValueChange={field.onChange} value={field.value} disabled={isReadOnly || watchedStatus === 'Completado'}>
+                                    <Select onValueChange={field.onChange} value={field.value} disabled={isReadOnly || watchedStatus === 'Completado' || watchedStatus === 'Entregado'}>
                                         <FormControl>
                                             <SelectTrigger className="font-bold">
                                                 <SelectValue placeholder="Seleccione un estado" />
@@ -1334,7 +1335,7 @@ export function ServiceForm({
               
               <div className={cn("grid gap-6 items-start", watchedStatus === 'Completado' ? "grid-cols-1 md:grid-cols-2" : "grid-cols-1")}>
                   <div className="space-y-6">
-                      {(watchedStatus === 'Reparando' || watchedStatus === 'Completado') && mode === 'service' && (
+                      {(watchedStatus === 'Reparando' || watchedStatus === 'En Espera de Refacciones' || watchedStatus === 'Completado') && mode === 'service' && (
                          <Card>
                             <CardHeader><CardTitle className="text-lg">Técnico Asignado</CardTitle></CardHeader>
                             <CardContent>
