@@ -1,10 +1,11 @@
+
 "use client";
 
 import { redirect } from 'next/navigation';
 import { Suspense } from 'react';
 
 function Redirector() {
-    redirect('/vehiculos?tab=precios');
+    redirect('/vehiculos?tab=precotizaciones');
     return null;
 }
 
