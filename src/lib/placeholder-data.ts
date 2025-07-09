@@ -215,7 +215,8 @@ export let placeholderServiceRecords: ServiceRecord[] = [
     status: 'Reparando',
     mileage: 89000,
     serviceAdvisorId: 'user_superadmin',
-    serviceAdvisorName: 'Arturo Valdelamar'
+    serviceAdvisorName: 'Arturo Valdelamar',
+    appointmentStatus: 'Confirmada',
   },
   {
     id: 'SER003',
@@ -237,7 +238,8 @@ export let placeholderServiceRecords: ServiceRecord[] = [
     status: 'Agendado',
     mileage: 15000,
     serviceAdvisorId: 'user_superadmin',
-    serviceAdvisorName: 'Arturo Valdelamar'
+    serviceAdvisorName: 'Arturo Valdelamar',
+    appointmentStatus: 'Creada',
   }
 ];
 

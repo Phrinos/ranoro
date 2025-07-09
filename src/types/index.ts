@@ -216,6 +216,7 @@ export interface ServiceRecord {
     mileage?: number;
   };
   photoReports?: PhotoReportGroup[];
+  appointmentStatus?: 'Creada' | 'Confirmada';
 }
 
 export interface Technician {
