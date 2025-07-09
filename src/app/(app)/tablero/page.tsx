@@ -189,7 +189,13 @@ export default function TableroPage() {
         if(newStatus === 'Completado') {
             placeholderServiceRecords[serviceIndex].deliveryDateTime = new Date().toISOString();
         }
-        await persistToFirestore(['serviceRecords']);
+        
+        await logAudit(
+          'Editar',
+          `Movió el servicio #${serviceId} de "${currentStatus}" a "${newStatus}".`,
+          { entityType: 'Servicio', entityId: serviceId }
+        );
+        await persistToFirestore(['serviceRecords', 'auditLogs']);
         
         toast({
             title: 'Servicio Movido',
@@ -198,23 +204,10 @@ export default function TableroPage() {
     }
   };
   
-  const handleSaveService = async (data: ServiceRecord | QuoteRecord) => {
-    const serviceData = data as ServiceRecord;
-    const recordIndex = placeholderServiceRecords.findIndex(s => s.id === serviceData.id);
-    
-    if (recordIndex > -1) {
-      placeholderServiceRecords[recordIndex] = serviceData;
-    } else {
-      placeholderServiceRecords.push(serviceData);
-    }
-    
-    await persistToFirestore(['serviceRecords']);
-    toast({
-      title: "Servicio Actualizado",
-      description: `Se han guardado los cambios para ${serviceData.id}.`,
-    });
-    
+  const handleSaveService = async () => {
     setIsServiceDialogOpen(false);
+    // The ServiceDialog now handles persistence, we just need to re-sync local state
+    setVersion(v => v + 1);
   };
 
   if (!hydrated) {

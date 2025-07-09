@@ -8,8 +8,8 @@ import { ServiceDialog } from "../components/service-dialog";
 import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
 import { TicketContent } from '@/components/ticket-content';
 import { ServiceSheetContent } from '@/components/service-sheet-content';
-import { placeholderVehicles, placeholderTechnicians, placeholderInventory, placeholderServiceRecords, persistToFirestore } from "@/lib/placeholder-data";
-import type { ServiceRecord, Vehicle, Technician, InventoryItem, WorkshopInfo } from "@/types";
+import { placeholderVehicles, placeholderTechnicians, placeholderInventory, placeholderServiceRecords, persistToFirestore } from "@/lib/placeholder-data"; 
+import type { ServiceRecord, Vehicle, Technician, InventoryItem, WorkshopInfo } from '@/types'; 
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
@@ -143,11 +143,10 @@ ${shareUrl}
 
 
   const handleVehicleCreated = (newVehicle: Vehicle) => {
+    // This function will be called by ServiceDialog when a vehicle is created
+    // We update the local state to make the new vehicle available immediately
     setVehicles(prev => [...prev, newVehicle]);
-  };
-  
-  const handleInventoryItemCreated = (newItem: InventoryItem) => {
-    setInventoryItems(prev => [...prev, newItem]);
+    // The dialog itself will handle persisting the new vehicle to the database
   };
 
 
@@ -159,15 +158,19 @@ ${shareUrl}
       />
       {dialogStep === 'service' && (
         <ServiceDialog
-          open={true}
-          onOpenChange={(isOpen) => {
-             if (!isOpen) handleDialogClose();
+          open={true} 
+          onOpenChange={(isOpen) => { 
+            if (!isOpen) handleDialogClose();
           }}
           service={null} 
           vehicles={vehicles}
           technicians={technicians}
           inventoryItems={inventoryItems}
-          onSave={(data) => handleSaveNewService(data as ServiceRecord)}
+          onSave={(data) => {
+            // ServiceDialog now handles persistence, we just need to react
+            handleSaveNewService(data as ServiceRecord);
+            return Promise.resolve(); // Fulfill the promise
+          }}
           onVehicleCreated={handleVehicleCreated}
           mode="service"
         />

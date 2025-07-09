@@ -203,6 +203,11 @@ function AgendaPageComponent() {
       });
     }
   }, [toast]);
+  
+  const handleSaveService = useCallback(async (data: QuoteRecord | ServiceRecord) => {
+      // The ServiceDialog now handles persistence. We just need to close the dialog.
+      setIsServiceDialogOpen(false);
+  }, []);
 
   if (!hydrated) {
     return <div className="text-center py-10">Cargando datos...</div>;
@@ -265,6 +270,7 @@ function AgendaPageComponent() {
           onVehicleCreated={handleVehicleCreated}
           onCancelService={handleCancelService}
           mode="service"
+          onSave={handleSaveService}
         />
       )}
     </>
