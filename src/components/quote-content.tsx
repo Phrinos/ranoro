@@ -4,9 +4,10 @@
 import type { QuoteRecord, Vehicle, Technician, WorkshopInfo } from '@/types';
 import { format, parseISO, isValid, addDays } from 'date-fns';
 import { es } from 'date-fns/locale';
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { cn, capitalizeWords } from "@/lib/utils";
 import { Card, CardContent } from '@/components/ui/card';
+import Image from "next/legacy/image";
 
 const initialWorkshopInfo: WorkshopInfo = {
   name: "RANORO",
@@ -163,19 +164,19 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
           </Card>
           
           <Card className="mt-4 mb-4 border-gray-200">
-            <CardContent className="p-4 flex flex-col sm:flex-row justify-between min-h-[120px]">
-                <div className="text-left text-sm">
+            <CardContent className="p-4 flex flex-col sm:flex-row justify-between min-h-[120px] text-sm">
+                <div className="text-left">
                     <p className="font-semibold">{effectiveWorkshopInfo.footerLine1}</p>
                     <p>{effectiveWorkshopInfo.footerLine2}</p>
                 </div>
                 <div className="text-right flex flex-col items-end justify-end mt-4 sm:mt-0">
-                    <div className="flex justify-center items-center h-16 w-40 mb-1">
+                    <div className="relative flex justify-center items-center h-16 w-40 mb-1">
                         {quote.preparedByTechnicianSignatureDataUrl && (
-                           <img 
+                           <Image 
                                 src={quote.preparedByTechnicianSignatureDataUrl} 
-                                alt="Firma del asesor" 
-                                style={{ maxHeight: '100%', maxWidth: '100%', objectFit: 'contain' }}
-                                crossOrigin="anonymous"
+                                alt="Firma del asesor"
+                                layout="fill"
+                                objectFit="contain"
                             />
                         )}
                     </div>
@@ -190,7 +191,7 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
         </main>
         
         <footer className="mt-auto">
-          <section className="pt-4 border-t border-gray-300">
+          <section className="pt-4">
             <h4 className="font-semibold text-sm text-gray-700 mb-1">Términos y Condiciones:</h4>
             <p className="text-xs text-gray-600 leading-snug">
                 {`Precios en MXN. Esta cotización es válida hasta el ${validityDate}. `}
@@ -211,6 +212,3 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
 );
 
 QuoteContent.displayName = "QuoteContent";
-
-
-    
