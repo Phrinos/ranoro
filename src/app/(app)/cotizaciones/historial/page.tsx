@@ -90,8 +90,6 @@ function HistorialCotizacionesPageComponent() {
   const [workshopInfo, setWorkshopInfo] = useState<WorkshopInfo | undefined>(undefined);
   const { toast } = useToast();
   
-  const searchParams = useSearchParams();
-  const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'resumen');
   const [searchTerm, setSearchTerm] = useState("");
   const [sortOption, setSortOption] = useState<QuoteSortOption>("date_desc"); 
 
@@ -139,13 +137,6 @@ function HistorialCotizacionesPageComponent() {
     return filtered;
   }, [allQuotes, searchTerm, sortOption]);
   
-  const summaryData = useMemo(() => {
-    const quotesForSummary = allQuotes.filter(q => q.status === 'Cotizacion');
-    const totalQuotesCount = quotesForSummary.length;
-    const totalEstimatedValue = quotesForSummary.reduce((sum, q) => sum + (q.totalCost || 0), 0);
-    return { totalQuotesCount, totalEstimatedValue };
-  }, [allQuotes]);
-  
   // Helper component for the list of quotes to avoid code repetition
   const QuoteList = ({ quotes, vehicles, onEditQuote, onGenerateService, onViewQuote, onDeleteQuote }: { 
       quotes: QuoteRecord[], 
@@ -169,7 +160,7 @@ function HistorialCotizacionesPageComponent() {
         }
     };
     
-    const getQuoteDescriptionText = (quote: QuoteRecord) => {
+    const getServiceDescriptionText = (quote: QuoteRecord) => {
       if (quote.serviceItems && quote.serviceItems.length > 0) {
         return quote.serviceItems.map(item => item.name).join(', ');
       }
@@ -188,7 +179,7 @@ function HistorialCotizacionesPageComponent() {
               <Card key={quote.id} className="shadow-sm overflow-hidden">
                 <CardContent className="p-0">
                   <div className="flex flex-col md:flex-row">
-                     <div className="p-4 flex flex-col justify-center items-center text-center w-full md:w-48 flex-shrink-0">
+                     <div className="p-4 flex flex-col justify-center items-start text-left w-full md:w-48 flex-shrink-0">
                         <p className="font-semibold text-lg text-foreground">{format(parseISO(quote.quoteDate!), "dd MMM yyyy", { locale: es })}</p>
                         <p className="text-muted-foreground text-xs mt-1">Folio: {quote.id}</p>
                         <StatusTracker status={status} />
@@ -197,7 +188,7 @@ function HistorialCotizacionesPageComponent() {
                         <p className="text-sm text-muted-foreground">{vehicle?.ownerName} - {vehicle?.ownerPhone}</p>
                         <p className="font-bold text-2xl text-black">{vehicle ? `${vehicle.licensePlate} - ${vehicle.make} ${vehicle.model} ${vehicle.year}` : 'N/A'}</p>
                         <p className="text-sm text-foreground">
-                          <span className="font-semibold">{quote.serviceType}:</span> {getQuoteDescriptionText(quote)}
+                          <span className="font-semibold">{quote.serviceType}:</span> {getServiceDescriptionText(quote)}
                         </p>
                       </div>
                       <div className="p-4 flex flex-col justify-center items-center text-center w-full md:w-48 flex-shrink-0">
@@ -239,28 +230,14 @@ function HistorialCotizacionesPageComponent() {
           <h1 className="text-3xl font-bold tracking-tight">Gestión de Cotizaciones</h1>
           <p className="text-primary-foreground/80 mt-1">Consulta, filtra y da seguimiento a todas las cotizaciones generadas.</p>
       </div>
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-2 mb-6">
-            <TabsTrigger value="resumen" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Resumen</TabsTrigger>
-            <TabsTrigger value="cotizaciones" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Cotizaciones</TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="resumen" className="mt-0 space-y-6">
-           <div className="grid gap-6 md:grid-cols-2">
-            <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Total de Cotizaciones Pendientes</CardTitle><FileText className="h-5 w-5 text-blue-500" /></CardHeader><CardContent><div className="text-2xl font-bold font-headline">{summaryData.totalQuotesCount}</div><p className="text-xs text-muted-foreground">Solo cotizaciones sin convertir a servicio.</p></CardContent></Card>
-            <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Valor Estimado (Pendientes)</CardTitle><DollarSign className="h-5 w-5 text-purple-500" /></CardHeader><CardContent><div className="text-2xl font-bold font-headline">{formatCurrency(summaryData.totalEstimatedValue)}</div><p className="text-xs text-muted-foreground">De las cotizaciones pendientes.</p></CardContent></Card>
-          </div>
-        </TabsContent>
-        
-        <TabsContent value="cotizaciones" className="mt-0 space-y-4">
-           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:flex-wrap">
-            <div className="relative flex-1 min-w-[200px] sm:min-w-[300px]"><Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" /><Input type="search" placeholder="Buscar por folio o vehículo..." className="w-full rounded-lg bg-card pl-8" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} /></div>
-            <DropdownMenu><DropdownMenuTrigger asChild><Button variant="outline" className="min-w-[150px] flex-1 sm:flex-initial bg-card"><ListFilter className="mr-2 h-4 w-4" />Ordenar</Button></DropdownMenuTrigger><DropdownMenuContent align="end"><DropdownMenuLabel>Ordenar por</DropdownMenuLabel><DropdownMenuRadioGroup value={sortOption} onValueChange={(value) => setSortOption(value as QuoteSortOption)}><DropdownMenuRadioItem value="date_desc">Fecha (Más Reciente)</DropdownMenuRadioItem><DropdownMenuRadioItem value="date_asc">Fecha (Más Antiguo)</DropdownMenuRadioItem><DropdownMenuRadioItem value="total_desc">Monto Total (Mayor a Menor)</DropdownMenuRadioItem><DropdownMenuRadioItem value="total_asc">Monto Total (Menor a Mayor)</DropdownMenuRadioItem></DropdownMenuRadioGroup></DropdownMenuContent></DropdownMenu>
-          </div>
-          <QuoteList quotes={activeQuotes} vehicles={vehicles} onEditQuote={handleEditQuote} onDeleteQuote={handleDeleteQuote} onGenerateService={handleGenerateService} onViewQuote={handleViewQuote} />
-        </TabsContent>
-
-      </Tabs>
+      
+      <div className="space-y-4">
+         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:flex-wrap">
+          <div className="relative flex-1 min-w-[200px] sm:min-w-[300px]"><Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" /><Input type="search" placeholder="Buscar por folio o vehículo..." className="w-full rounded-lg bg-card pl-8" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} /></div>
+          <DropdownMenu><DropdownMenuTrigger asChild><Button variant="outline" className="min-w-[150px] flex-1 sm:flex-initial bg-card"><ListFilter className="mr-2 h-4 w-4" />Ordenar</Button></DropdownMenuTrigger><DropdownMenuContent align="end"><DropdownMenuLabel>Ordenar por</DropdownMenuLabel><DropdownMenuRadioGroup value={sortOption} onValueChange={(value) => setSortOption(value as QuoteSortOption)}><DropdownMenuRadioItem value="date_desc">Fecha (Más Reciente)</DropdownMenuRadioItem><DropdownMenuRadioItem value="date_asc">Fecha (Más Antiguo)</DropdownMenuRadioItem><DropdownMenuRadioItem value="total_desc">Monto Total (Mayor a Menor)</DropdownMenuRadioItem><DropdownMenuRadioItem value="total_asc">Monto Total (Menor a Mayor)</DropdownMenuRadioItem></DropdownMenuRadioGroup></DropdownMenuContent></DropdownMenu>
+        </div>
+        <QuoteList quotes={activeQuotes} vehicles={vehicles} onEditQuote={handleEditQuote} onDeleteQuote={handleDeleteQuote} onGenerateService={handleGenerateService} onViewQuote={handleViewQuote} />
+      </div>
 
       {/* Dialogs */}
       {isEditQuoteDialogOpen && selectedQuoteForEdit && (
