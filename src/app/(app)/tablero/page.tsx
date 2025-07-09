@@ -5,7 +5,7 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { PageHeader } from '@/components/page-header';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { placeholderServiceRecords, placeholderVehicles, placeholderTechnicians, placeholderInventory, persistToFirestore, hydrateReady } from '@/lib/placeholder-data';
+import { placeholderServiceRecords, placeholderVehicles, placeholderTechnicians, placeholderInventory, persistToFirestore, hydrateReady, logAudit } from '@/lib/placeholder-data';
 import type { ServiceRecord, Vehicle, Technician, InventoryItem, QuoteRecord } from '@/types';
 import { ServiceDialog } from '../servicios/components/service-dialog';
 import { useToast } from '@/hooks/use-toast';
@@ -197,6 +197,25 @@ export default function TableroPage() {
         });
     }
   };
+  
+  const handleSaveService = async (data: ServiceRecord | QuoteRecord) => {
+    const serviceData = data as ServiceRecord;
+    const recordIndex = placeholderServiceRecords.findIndex(s => s.id === serviceData.id);
+    
+    if (recordIndex > -1) {
+      placeholderServiceRecords[recordIndex] = serviceData;
+    } else {
+      placeholderServiceRecords.push(serviceData);
+    }
+    
+    await persistToFirestore(['serviceRecords']);
+    toast({
+      title: "Servicio Actualizado",
+      description: `Se han guardado los cambios para ${serviceData.id}.`,
+    });
+    
+    setIsServiceDialogOpen(false);
+  };
 
   if (!hydrated) {
     return (
@@ -260,6 +279,7 @@ export default function TableroPage() {
           technicians={technicians}
           inventoryItems={inventoryItems}
           mode="service"
+          onSave={handleSaveService}
         />
       )}
     </>
