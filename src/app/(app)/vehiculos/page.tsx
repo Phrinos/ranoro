@@ -330,11 +330,11 @@ function PrecotizacionesPageContent() {
       <div className="space-y-4">
         {filteredRecords.length > 0 ? filteredRecords.map(record => (
           <Card key={record.id} className="overflow-hidden">
-             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4 border-b bg-muted/30">
+             <CardHeader className="flex flex-row items-center justify-between space-y-0 py-3 px-4 border-b bg-card">
                 <div className="flex items-baseline gap-x-3">
-                  <h3 className="text-lg font-semibold text-foreground">{record.make}</h3>
-                  <p className="text-lg font-semibold text-muted-foreground">{record.model}</p>
-                  <p className="text-lg font-semibold text-muted-foreground/80">({formatYearRange(record.years)})</p>
+                  <p className="text-lg text-muted-foreground">{record.make}</p>
+                  <p className="text-lg font-semibold text-foreground">{record.model}</p>
+                  <p className="text-lg font-semibold text-foreground">{formatYearRange(record.years)}</p>
                 </div>
                 <div className="flex items-center gap-2">
                     <Badge>{record.services.length} servicio(s)</Badge>
@@ -360,7 +360,7 @@ function PrecotizacionesPageContent() {
                     </AlertDialog>
                 </div>
             </CardHeader>
-            <CardContent className="p-0">
+            <CardContent className="p-0 bg-muted/30">
                 <Table>
                     <TableHeader>
                         <TableRow>
@@ -581,3 +581,4 @@ export default function VehiculosPageWrapper() {
 
 
     
+
