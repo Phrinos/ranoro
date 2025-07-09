@@ -23,7 +23,8 @@ const nextConfig = {
     ],
   },
   dev: {
-    allowedDevOrigins: ['https://3000-firebase-studio-1750318222114.cluster-hf4yr35cmnbd4vhbxvfvc6cp5q.cloudworkstations.dev'],
+    // This allows connections from the cloud workstation that hosts the IDE
+    allowedDevOrigins: ['https://*.cloudworkstations.dev'],
   },
 
   async headers() {
