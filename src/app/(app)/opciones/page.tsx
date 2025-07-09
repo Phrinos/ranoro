@@ -14,7 +14,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import type { User, SaleReceipt, AppRole, WorkshopInfo } from '@/types';
-import { Save, Signature, BookOpen, LayoutDashboard, Wrench, FileText, Receipt, Package, DollarSign, Users, Settings, Eye, Printer, UserCircle } from 'lucide-react';
+import { Save, Signature, BookOpen, LayoutDashboard, Wrench, FileText, Receipt, Package, DollarSign, Users, Settings, Eye, Printer, UserCircle, Upload, Loader2, Bold } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { onAuthStateChanged, updatePassword, reauthenticateWithCredential, EmailAuthProvider } from 'firebase/auth';
 import { auth, storage } from '@/lib/firebaseClient.js';
@@ -26,6 +26,8 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { TicketContent } from "@/components/ticket-content";
 import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
+import { optimizeImage } from "@/lib/utils";
 
 
 // --- Schema and content from /perfil ---
@@ -181,35 +183,43 @@ function ManualUsuarioPageContent() {
 const LOCALSTORAGE_KEY = "workshopTicketInfo";
 
 const defaultWorkshopInfo: WorkshopInfo = {
-  name: "RANORO",
-  phone: "4491425323",
-  addressLine1: "Av. de la Convención de 1914 No. 1421",
-  addressLine2: "Jardines de la Concepción, C.P. 20267",
-  cityState: "Aguascalientes, Ags.",
+  name: "RANORO", nameBold: true,
+  phone: "4491425323", phoneBold: false,
+  addressLine1: "Av. de la Convencion de 1914 No. 1421", addressLine1Bold: false,
+  addressLine2: "Jardines de la Concepcion, C.P. 20267", addressLine2Bold: false,
+  cityState: "Aguascalientes, Ags.", cityStateBold: false,
   logoUrl: "/ranoro-logo.png",
   logoWidth: 120,
-  fontSize: 10,
+  headerFontSize: 10,
+  bodyFontSize: 10,
+  itemsFontSize: 10,
+  totalsFontSize: 10,
+  footerFontSize: 10,
   blankLinesTop: 0,
   blankLinesBottom: 0,
-  footerLine1: "¡Gracias por su preferencia!",
-  footerLine2: "Para dudas o aclaraciones, no dude en contactarnos.",
-  fixedFooterText: "Sistema de Administración de Talleres Ranoro®\nDiseñado y Desarrollado por Arturo Valdelamar",
+  footerLine1: "¡Gracias por su preferencia!", footerLine1Bold: true,
+  footerLine2: "Para dudas o aclaraciones, no dude en contactarnos.", footerLine2Bold: false,
+  fixedFooterText: "Sistema de Administración de Talleres Ranoro®\nDiseñado y Desarrollado por Arturo Valdelamar", fixedFooterTextBold: false,
 };
 
 const ticketSchema = z.object({
-  name: z.string().min(1, "El nombre es obligatorio"),
-  phone: z.string().min(7, "Mínimo 7 dígitos"),
-  addressLine1: z.string().min(5),
-  addressLine2: z.string().optional(),
-  cityState: z.string().min(3),
-  logoUrl: z.string().url("Ingresa una URL válida"),
+  name: z.string().min(1, "El nombre es obligatorio"), nameBold: z.boolean().optional(),
+  phone: z.string().min(7, "Mínimo 7 dígitos"), phoneBold: z.boolean().optional(),
+  addressLine1: z.string().min(5), addressLine1Bold: z.boolean().optional(),
+  addressLine2: z.string().optional(), addressLine2Bold: z.boolean().optional(),
+  cityState: z.string().min(3), cityStateBold: z.boolean().optional(),
+  logoUrl: z.string().url("Ingresa una URL válida o sube una imagen."),
   logoWidth: z.coerce.number().min(20).max(300).optional(),
-  fontSize: z.coerce.number().min(8).max(16).optional(),
+  headerFontSize: z.coerce.number().min(8).max(16).optional(),
+  bodyFontSize: z.coerce.number().min(8).max(16).optional(),
+  itemsFontSize: z.coerce.number().min(8).max(16).optional(),
+  totalsFontSize: z.coerce.number().min(8).max(16).optional(),
+  footerFontSize: z.coerce.number().min(8).max(16).optional(),
   blankLinesTop: z.coerce.number().min(0).max(10).int().optional(),
   blankLinesBottom: z.coerce.number().min(0).max(10).int().optional(),
-  footerLine1: z.string().optional(),
-  footerLine2: z.string().optional(),
-  fixedFooterText: z.string().optional(),
+  footerLine1: z.string().optional(), footerLine1Bold: z.boolean().optional(),
+  footerLine2: z.string().optional(), footerLine2Bold: z.boolean().optional(),
+  fixedFooterText: z.string().optional(), fixedFooterTextBold: z.boolean().optional(),
 });
 
 type TicketForm = z.infer<typeof ticketSchema>;
@@ -228,9 +238,40 @@ const sampleSale: SaleReceipt = {
   customerName: "Cliente Demo",
 };
 
+// Helper component for a form field with a bold checkbox
+const TextFieldWithBoldness = ({ name, label, control, isTextarea = false }: { name: keyof TicketForm; label: string; control: any; isTextarea?: boolean }) => (
+    <FormField
+        control={control}
+        name={name}
+        render={({ field }) => (
+            <FormItem>
+                <FormLabel>{label}</FormLabel>
+                <div className="flex items-center gap-2">
+                    <FormControl>
+                        {isTextarea ? <Textarea {...field} /> : <Input {...field} />}
+                    </FormControl>
+                    <FormField
+                        control={control}
+                        name={`${name}Bold`}
+                        render={({ field: boldField }) => (
+                            <FormItem className="flex items-center space-x-1.5 space-y-0" title="Negrita">
+                                <FormControl><Checkbox checked={boldField.value} onCheckedChange={boldField.onChange} /></FormControl>
+                                <Bold className="h-4 w-4" />
+                            </FormItem>
+                        )}
+                    />
+                </div>
+                 <FormMessage />
+            </FormItem>
+        )}
+    />
+);
+
 function ConfiguracionTicketPageContent() {
   const { toast } = useToast();
   const ticketContentRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isUploading, setIsUploading] = useState(false);
 
   const form = useForm<TicketForm>({
     resolver: zodResolver(ticketSchema),
@@ -277,6 +318,33 @@ function ConfiguracionTicketPageContent() {
     }
   };
 
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (!storage) {
+        toast({ title: "Error de Configuración", description: "Firebase Storage no está disponible.", variant: "destructive" });
+        return;
+    }
+    
+    setIsUploading(true);
+    toast({ title: 'Subiendo imagen...', description: 'Por favor, espere.' });
+
+    try {
+      const optimizedDataUrl = await optimizeImage(file, 300, 0.9);
+      const storageRef = ref(storage, `workshop-logos/logo-${Date.now()}.png`);
+      await uploadString(storageRef, optimizedDataUrl, 'data_url');
+      const downloadURL = await getDownloadURL(storageRef);
+      form.setValue('logoUrl', downloadURL, { shouldDirty: true });
+      toast({ title: '¡Logo actualizado!', description: 'La nueva imagen se ha cargado correctamente.' });
+    } catch (error) {
+        console.error("Error al subir logo:", error);
+        toast({ title: 'Error al subir', description: 'No se pudo guardar la imagen del logo.', variant: 'destructive' });
+    } finally {
+        setIsUploading(false);
+    }
+  };
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
         <div className="lg:col-span-1">
@@ -286,41 +354,47 @@ function ConfiguracionTicketPageContent() {
                         <CardHeader><CardTitle>Encabezado y Logo</CardTitle></CardHeader>
                         <CardContent className="space-y-4">
                             <FormField control={form.control} name="blankLinesTop" render={({ field }) => (<FormItem><FormLabel>Líneas en Blanco (Arriba)</FormLabel><FormControl><Input type="number" min={0} max={10} {...field} value={field.value || 0} /></FormControl></FormItem>)}/>
-                            <FormField control={form.control} name="logoUrl" render={({ field }) => (<FormItem><FormLabel>URL del Logo</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
-                            <FormField control={form.control} name="logoWidth" render={({ field }) => (<FormItem><FormLabel>Ancho del Logo: {field.value || defaultWorkshopInfo.logoWidth}px</FormLabel><FormControl><Slider defaultValue={[defaultWorkshopInfo.logoWidth || 120]} value={[field.value || defaultWorkshopInfo.logoWidth || 120]} onValueChange={(value) => field.onChange(value[0])} min={40} max={250} step={5} /></FormControl></FormItem>)}/>
+                            <FormItem>
+                                <FormLabel>Subir Logo</FormLabel>
+                                <Button type="button" variant="outline" className="w-full" onClick={() => fileInputRef.current?.click()} disabled={isUploading}>
+                                    {isUploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Upload className="mr-2 h-4 w-4" />}
+                                    {isUploading ? "Subiendo..." : "Seleccionar Imagen"}
+                                </Button>
+                                <input type="file" ref={fileInputRef} className="hidden" accept="image/png, image/jpeg, image/webp" onChange={handleImageUpload} />
+                                <FormDescription>El logo actual se mostrará en la vista previa.</FormDescription>
+                            </FormItem>
+                            <FormField control={form.control} name="logoWidth" render={({ field }) => (<FormItem><FormLabel>Ancho del Logo: {field.value || defaultWorkshopInfo.logoWidth}px</FormLabel><FormControl><Slider value={[field.value || defaultWorkshopInfo.logoWidth || 120]} onValueChange={(value) => field.onChange(value[0])} min={40} max={250} step={5} /></FormControl></FormItem>)}/>
+                             <FormField control={form.control} name="headerFontSize" render={({ field }) => (<FormItem><FormLabel>Tamaño Fuente (Encabezado): {field.value || defaultWorkshopInfo.headerFontSize}px</FormLabel><FormControl><Slider value={[field.value || defaultWorkshopInfo.headerFontSize || 10]} onValueChange={(value) => field.onChange(value[0])} min={8} max={16} step={1} /></FormControl></FormItem>)}/>
                         </CardContent>
                     </Card>
 
                     <Card>
                         <CardHeader><CardTitle>Información del Negocio</CardTitle></CardHeader>
                         <CardContent className="space-y-4">
-                            <FormField control={form.control} name="name" render={({ field }) => (<FormItem><FormLabel>Nombre del Taller</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
-                            <FormField control={form.control} name="phone" render={({ field }) => (<FormItem><FormLabel>Teléfono</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
-                            <FormField control={form.control} name="addressLine1" render={({ field }) => (<FormItem><FormLabel>Dirección (Línea 1)</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
-                            <FormField control={form.control} name="addressLine2" render={({ field }) => (<FormItem><FormLabel>Dirección (Línea 2)</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
-                            <FormField control={form.control} name="cityState" render={({ field }) => (<FormItem><FormLabel>Ciudad, Estado, C.P.</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
+                            <TextFieldWithBoldness name="name" label="Nombre del Taller" control={form.control} />
+                            <TextFieldWithBoldness name="phone" label="Teléfono" control={form.control} />
+                            <TextFieldWithBoldness name="addressLine1" label="Dirección (Línea 1)" control={form.control} />
+                            <TextFieldWithBoldness name="addressLine2" label="Dirección (Línea 2)" control={form.control} />
+                            <TextFieldWithBoldness name="cityState" label="Ciudad, Estado, C.P." control={form.control} />
                         </CardContent>
                     </Card>
 
                     <Card>
-                        <CardHeader><CardTitle>Estilo del Texto</CardTitle></CardHeader>
-                        <CardContent>
-                            <FormField control={form.control} name="fontSize" render={({ field }) => (<FormItem><FormLabel>Tamaño de Fuente: {field.value || defaultWorkshopInfo.fontSize}px</FormLabel><FormControl><Slider defaultValue={[defaultWorkshopInfo.fontSize || 10]} value={[field.value || defaultWorkshopInfo.fontSize || 10]} onValueChange={(value) => field.onChange(value[0])} min={8} max={16} step={1} /></FormControl></FormItem>)}/>
+                        <CardHeader><CardTitle>Estilo del Texto del Ticket</CardTitle></CardHeader>
+                        <CardContent className="space-y-4">
+                           <FormField control={form.control} name="bodyFontSize" render={({ field }) => (<FormItem><FormLabel>Tamaño Fuente (Cuerpo): {field.value || defaultWorkshopInfo.bodyFontSize}px</FormLabel><FormControl><Slider value={[field.value || defaultWorkshopInfo.bodyFontSize || 10]} onValueChange={(value) => field.onChange(value[0])} min={8} max={16} step={1} /></FormControl></FormItem>)}/>
+                           <FormField control={form.control} name="itemsFontSize" render={({ field }) => (<FormItem><FormLabel>Tamaño Fuente (Artículos): {field.value || defaultWorkshopInfo.itemsFontSize}px</FormLabel><FormControl><Slider value={[field.value || defaultWorkshopInfo.itemsFontSize || 10]} onValueChange={(value) => field.onChange(value[0])} min={8} max={16} step={1} /></FormControl></FormItem>)}/>
+                           <FormField control={form.control} name="totalsFontSize" render={({ field }) => (<FormItem><FormLabel>Tamaño Fuente (Totales): {field.value || defaultWorkshopInfo.totalsFontSize}px</FormLabel><FormControl><Slider value={[field.value || defaultWorkshopInfo.totalsFontSize || 10]} onValueChange={(value) => field.onChange(value[0])} min={8} max={16} step={1} /></FormControl></FormItem>)}/>
                         </CardContent>
                     </Card>
                     
                     <Card>
                         <CardHeader><CardTitle>Mensajes de Pie de Página</CardTitle></CardHeader>
                         <CardContent className="space-y-4">
-                            <FormField control={form.control} name="footerLine1" render={({ field }) => (<FormItem><FormLabel>Línea de Agradecimiento</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)}/>
-                            <FormField control={form.control} name="footerLine2" render={({ field }) => (<FormItem><FormLabel>Línea de Contacto</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)}/>
-                        </CardContent>
-                    </Card>
-                    
-                    <Card>
-                        <CardHeader><CardTitle>Pie de Ticket Fijo</CardTitle></CardHeader>
-                        <CardContent>
-                            <FormField control={form.control} name="fixedFooterText" render={({ field }) => (<FormItem><FormLabel>Texto Final</FormLabel><FormControl><Textarea {...field} rows={3} /></FormControl></FormItem>)}/>
+                            <TextFieldWithBoldness name="footerLine1" label="Línea de Agradecimiento" control={form.control} />
+                            <TextFieldWithBoldness name="footerLine2" label="Línea de Contacto" control={form.control} />
+                            <TextFieldWithBoldness name="fixedFooterText" label="Texto Final" control={form.control} isTextarea />
+                            <FormField control={form.control} name="footerFontSize" render={({ field }) => (<FormItem><FormLabel>Tamaño Fuente (Pie): {field.value || defaultWorkshopInfo.footerFontSize}px</FormLabel><FormControl><Slider value={[field.value || defaultWorkshopInfo.footerFontSize || 10]} onValueChange={(value) => field.onChange(value[0])} min={8} max={16} step={1} /></FormControl></FormItem>)}/>
                         </CardContent>
                     </Card>
 

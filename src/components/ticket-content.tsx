@@ -5,6 +5,7 @@ import type { SaleReceipt, ServiceRecord, Vehicle, Technician, ServiceItem, Work
 import { format, parseISO, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
 import React from 'react';
+import { cn } from "@/lib/utils";
 
 const initialWorkshopInfo: WorkshopInfo = {
   name: "RANORO",
@@ -14,7 +15,11 @@ const initialWorkshopInfo: WorkshopInfo = {
   cityState: "Aguascalientes, Ags.",
   logoUrl: "/ranoro-logo.png",
   logoWidth: 120,
-  fontSize: 10,
+  headerFontSize: 10,
+  bodyFontSize: 10,
+  itemsFontSize: 10,
+  totalsFontSize: 10,
+  footerFontSize: 10,
   blankLinesTop: 0,
   blankLinesBottom: 0,
   footerLine1: "¡Gracias por su preferencia!",
@@ -33,7 +38,14 @@ interface TicketContentProps {
 export const TicketContent = React.forwardRef<HTMLDivElement, TicketContentProps>(
   ({ sale, service, vehicle, technician, previewWorkshopInfo }, ref) => {
     const workshopInfo = { ...initialWorkshopInfo, ...previewWorkshopInfo };
-    const { logoWidth, fontSize, blankLinesTop, blankLinesBottom, footerLine1, footerLine2, fixedFooterText } = workshopInfo;
+    const { 
+        logoWidth, blankLinesTop, blankLinesBottom, 
+        headerFontSize, bodyFontSize, itemsFontSize, totalsFontSize, footerFontSize,
+        name, nameBold, phone, phoneBold, addressLine1, addressLine1Bold,
+        addressLine2, addressLine2Bold, cityState, cityStateBold,
+        footerLine1, footerLine1Bold, footerLine2, footerLine2Bold,
+        fixedFooterText, fixedFooterTextBold
+    } = workshopInfo;
 
     const operation = sale || service;
     const operationId = sale?.id || service?.id;
@@ -77,9 +89,8 @@ export const TicketContent = React.forwardRef<HTMLDivElement, TicketContentProps
         ref={ref}
         data-format="receipt"
         className="font-mono bg-white text-black px-2 py-4 max-w-[300px] mx-auto leading-tight print:max-w-full print:p-0"
-        style={{ fontSize: fontSize ? `${fontSize}px` : '10px' }}
       >
-        {Array.from({ length: blankLinesTop || 0 }).map((_, i) => <div key={`top-${i}`} style={{ height: `${fontSize || 10}px` }}>&nbsp;</div>)}
+        {Array.from({ length: blankLinesTop || 0 }).map((_, i) => <div key={`top-${i}`} style={{ height: `10px` }}>&nbsp;</div>)}
 
         <div className="text-center mb-1 space-y-0 leading-tight">
           <img 
@@ -89,28 +100,32 @@ export const TicketContent = React.forwardRef<HTMLDivElement, TicketContentProps
             style={{ width: logoWidth ? `${logoWidth}px` : '120px' }}
             data-ai-hint="workshop logo"
           />
-          <div className="font-semibold">{workshopInfo.name}</div>
-          <div>{workshopInfo.addressLine1}</div>
-          {workshopInfo.addressLine2 && <div>{workshopInfo.addressLine2}</div>}
-          <div>{workshopInfo.cityState}</div>
-          <div>Tel: {workshopInfo.phone}</div>
+          <div style={{ fontSize: `${headerFontSize}px` }}>
+              <p className={cn({"font-bold": nameBold})}>{name}</p>
+              <p className={cn({"font-bold": addressLine1Bold})}>{addressLine1}</p>
+              {addressLine2 && <p className={cn({"font-bold": addressLine2Bold})}>{addressLine2}</p>}
+              <p className={cn({"font-bold": cityStateBold})}>{cityState}</p>
+              <p className={cn({"font-bold": phoneBold})}>Tel: {phone}</p>
+          </div>
         </div>
 
         {renderDashedLine()}
         
-        <div>Fecha: {formattedDateTime}</div>
-        <div>Folio: {operationId}</div>
-        {vehicle && <div>Vehículo: {vehicle.make} {vehicle.model} ({vehicle.licensePlate})</div>}
-        {sale?.customerName && <div>Cliente: {sale.customerName}</div>}
-        {!sale?.customerName && vehicle && <div>Cliente: {vehicle.ownerName}</div>}
-        {service?.serviceAdvisorName && <div>Asesor: {service.serviceAdvisorName}</div>}
-        {technician && <div>Técnico: {technician.name}</div>}
+        <div style={{ fontSize: `${bodyFontSize}px` }}>
+            <div>Fecha: {formattedDateTime}</div>
+            <div>Folio: {operationId}</div>
+            {vehicle && <div>Vehículo: {vehicle.make} {vehicle.model} ({vehicle.licensePlate})</div>}
+            {sale?.customerName && <div>Cliente: {sale.customerName}</div>}
+            {!sale?.customerName && vehicle && <div>Cliente: {vehicle.ownerName}</div>}
+            {service?.serviceAdvisorName && <div>Asesor: {service.serviceAdvisorName}</div>}
+            {technician && <div>Técnico: {technician.name}</div>}
+        </div>
         
         {renderDashedLine()}
 
-        <div className="font-semibold text-center my-1">DETALLE</div>
+        <div className="font-semibold text-center my-1" style={{ fontSize: `${bodyFontSize}px` }}>DETALLE</div>
         
-        <div className="py-0.5 space-y-1">
+        <div className="py-0.5 space-y-1" style={{ fontSize: `${itemsFontSize}px` }}>
           {items.map((item, idx) => {
               const unitPrice = 'unitPrice' in item ? (item.unitPrice || 0) : 0;
               const totalPrice = ('totalPrice' in item && item.totalPrice) ? item.totalPrice : (unitPrice * item.quantity);
@@ -143,23 +158,26 @@ export const TicketContent = React.forwardRef<HTMLDivElement, TicketContentProps
 
         {renderDashedLine()}
 
-        <div className="space-y-0 mt-1">
+        <div className="space-y-0 mt-1" style={{ fontSize: `${totalsFontSize}px` }}>
             {renderLine("Subtotal:", formatCurrency(subTotal))}
             {renderLine(`IVA:`, formatCurrency(tax))}
-            {renderLine("TOTAL:", formatCurrency(totalAmount), true)}
+            <div className={cn("flex justify-between", {"font-bold": true})}>
+                <span>TOTAL:</span>
+                <span>{formatCurrency(totalAmount)}</span>
+            </div>
         </div>
         
         {sale?.paymentMethod && (
             <>
                 {renderDashedLine()}
-                <div className="text-center">Pagado con: {sale.paymentMethod}</div>
+                <div className="text-center" style={{ fontSize: `${bodyFontSize}px` }}>Pagado con: {sale.paymentMethod}</div>
             </>
         )}
 
         {service?.notes && (
             <>
                 {renderDashedLine()}
-                <div className="mt-1">
+                <div className="mt-1" style={{ fontSize: `${bodyFontSize}px` }}>
                   <div className="font-semibold text-center">NOTAS:</div>
                   <p className="whitespace-pre-wrap text-left">{service.notes}</p>
                 </div>
@@ -169,7 +187,7 @@ export const TicketContent = React.forwardRef<HTMLDivElement, TicketContentProps
         {service?.nextServiceInfo && (
           <>
               {renderDashedLine()}
-              <div className="mt-1 text-center">
+              <div className="mt-1 text-center" style={{ fontSize: `${bodyFontSize}px` }}>
                 <div className="font-semibold">PRÓXIMO SERVICIO</div>
                 <p className="text-xs">
                     {format(parseISO(service.nextServiceInfo.date), "dd MMMM yyyy", { locale: es })}
@@ -186,21 +204,21 @@ export const TicketContent = React.forwardRef<HTMLDivElement, TicketContentProps
 
         {renderDashedLine()}
 
-        <div className="text-center mt-1 space-y-0">
-            <div className="font-semibold">{footerLine1}</div>
-            <div>{footerLine2}</div>
+        <div className="text-center mt-1 space-y-0" style={{ fontSize: `${footerFontSize}px` }}>
+            <div className={cn({ "font-bold": footerLine1Bold })}>{footerLine1}</div>
+            <div className={cn({ "font-bold": footerLine2Bold })}>{footerLine2}</div>
         </div>
 
         {fixedFooterText && (
           <>
             {renderDashedLine()}
-            <div className="text-center mt-1 text-[8px] whitespace-pre-wrap">
-              {fixedFooterText}
+            <div className="text-center mt-1 text-[8px] whitespace-pre-wrap" style={{ fontSize: `${footerFontSize ? footerFontSize - 2 : 8}px` }}>
+              <p className={cn({ "font-bold": fixedFooterTextBold })}>{fixedFooterText}</p>
             </div>
           </>
         )}
 
-        {Array.from({ length: blankLinesBottom || 0 }).map((_, i) => <div key={`bottom-${i}`} style={{ height: `${fontSize || 10}px` }}>&nbsp;</div>)}
+        {Array.from({ length: blankLinesBottom || 0 }).map((_, i) => <div key={`bottom-${i}`} style={{ height: `10px` }}>&nbsp;</div>)}
       </div>
     );
   }
