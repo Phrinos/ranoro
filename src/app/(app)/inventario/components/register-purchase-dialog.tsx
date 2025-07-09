@@ -17,7 +17,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import type { InventoryItem, InventoryCategory, Supplier } from "@/types";
+import type { InventoryItem, InventoryCategory, Supplier, PaymentMethod } from "@/types";
 import type { InventoryItemFormValues } from "./inventory-item-form";
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useToast } from "@/hooks/use-toast";
@@ -33,9 +33,17 @@ const purchaseItemSchema = z.object({
   unitPrice: z.coerce.number().min(0, "Costo >= 0"),
 });
 
+const purchasePaymentMethods: ['Efectivo', 'Tarjeta', 'Transferencia', 'Crédito'] = [
+  'Efectivo',
+  'Tarjeta',
+  'Transferencia',
+  'Crédito',
+];
+
 const purchaseFormSchema = z.object({
   supplierId: z.string().min(1, "Debe seleccionar un proveedor."),
-  invoiceTotal: z.coerce.number().optional(),
+  invoiceTotal: z.coerce.number().min(0.01, "El total de la factura debe ser mayor a cero."),
+  paymentMethod: z.enum(purchasePaymentMethods, { required_error: "Debe seleccionar un método de pago." }),
   items: z.array(purchaseItemSchema).min(1, "Debe agregar al menos un artículo a la compra."),
 });
 
@@ -127,7 +135,7 @@ export function RegisterPurchaseDialog({
           </DialogHeader>
           <Form {...form}>
             <form onSubmit={handleSubmit(onSave)} className="flex-grow overflow-hidden flex flex-col gap-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 px-1">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 px-1">
                     <FormField
                         control={control}
                         name="supplierId"
@@ -149,13 +157,29 @@ export function RegisterPurchaseDialog({
                         name="invoiceTotal"
                         render={({ field }) => (
                             <FormItem>
-                                <FormLabel>Total de Factura (Opcional)</FormLabel>
+                                <FormLabel>Total de Factura</FormLabel>
                                 <FormControl>
                                     <div className="relative">
                                         <DollarSign className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                                        <Input type="number" placeholder="Monto para registrar deuda" {...field} value={field.value ?? ''} className="pl-8"/>
+                                        <Input type="number" placeholder="Monto total de la factura" {...field} value={field.value ?? ''} className="pl-8"/>
                                     </div>
                                 </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                     <FormField
+                        control={control}
+                        name="paymentMethod"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Método de Pago</FormLabel>
+                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                    <FormControl><SelectTrigger><SelectValue placeholder="Seleccione un método"/></SelectTrigger></FormControl>
+                                    <SelectContent>
+                                        {purchasePaymentMethods.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                                    </SelectContent>
+                                </Select>
                                 <FormMessage />
                             </FormItem>
                         )}
