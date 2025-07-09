@@ -9,10 +9,11 @@ import { placeholderServiceRecords, placeholderVehicles, placeholderTechnicians,
 import type { ServiceRecord, Vehicle, Technician, InventoryItem, QuoteRecord } from '@/types';
 import { ServiceDialog } from '../servicios/components/service-dialog';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Eye, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Loader2, Eye, ChevronLeft, ChevronRight, PlusCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { isToday, parseISO, isValid } from 'date-fns';
 import { cn } from '@/lib/utils';
+import Link from 'next/link';
 
 
 type KanbanColumnId = 'Agendado' | 'Reparando' | 'Completado';
@@ -225,10 +226,18 @@ export default function TableroPage() {
 
   return (
     <>
-      <div className="bg-primary text-primary-foreground rounded-lg p-6 mb-6">
-        <h1 className="text-3xl font-bold tracking-tight">Tablero Kanban de Servicios</h1>
-        <p className="text-primary-foreground/80 mt-1">Visualiza y gestiona el flujo de trabajo de tu taller.</p>
-      </div>
+      <PageHeader
+        title="Tablero Kanban de Servicios"
+        description="Visualiza y gestiona el flujo de trabajo de tu taller."
+        actions={
+          <Button asChild>
+            <Link href="/servicios/nuevo">
+              <PlusCircle className="mr-2 h-4 w-4" />
+              Nuevo Servicio
+            </Link>
+          </Button>
+        }
+      />
       <div className="flex gap-4 overflow-x-auto pb-4">
         {kanbanColumns.map((column, colIndex) => {
             const columnStyle = columnStyles[column.id];
