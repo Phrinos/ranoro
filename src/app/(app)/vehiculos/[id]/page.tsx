@@ -48,7 +48,11 @@ export default function VehicleDetailPage() {
 
     if (foundVehicle) {
       const vehicleServices = placeholderServiceRecords.filter(s => s.vehicleId === foundVehicle.id && s.status !== 'Cancelado')
-        .sort((a, b) => parseISO(b.serviceDate).getTime() - parseISO(a.serviceDate).getTime());
+        .sort((a, b) => {
+           const dateA = a.serviceDate ? parseISO(a.serviceDate) : new Date(0);
+           const dateB = b.serviceDate ? parseISO(b.serviceDate) : new Date(0);
+           return dateB.getTime() - dateA.getTime();
+        });
       setServices(vehicleServices);
     }
     
@@ -207,7 +211,7 @@ export default function VehicleDetailPage() {
   return (
     <div className="container mx-auto py-8">
       <PageHeader
-        title={`${vehicle.licensePlate} - ${vehicle.make} ${vehicle.model} ${vehicle.year}`}
+        title={`${vehicle.licensePlate} - ${vehicle.make} ${vehicle.model}`}
         description={`ID Vehículo: ${vehicle.id}`}
       />
 
@@ -306,16 +310,22 @@ export default function VehicleDetailPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {services.map(service => (
-                      <TableRow key={service.id} onClick={() => handleServiceRowClick(service)} className="cursor-pointer hover:bg-muted/50">
-                        <TableCell>{format(parseISO(service.serviceDate), "dd MMM yyyy, HH:mm", { locale: es })}</TableCell>
-                        <TableCell>{service.mileage ? `${service.mileage.toLocaleString('es-ES')} km` : 'N/A'}</TableCell>
-                        <TableCell>{getServiceDescriptionText(service)}</TableCell>
-                        <TableCell>{technicians.find(t => t.id === service.technicianId)?.name || service.technicianId}</TableCell>
-                        <TableCell className="text-right">${service.totalCost.toLocaleString('es-ES', { minimumFractionDigits: 2 })}</TableCell>
-                        <TableCell><Badge variant={getStatusVariant(service.status)}>{service.status}</Badge></TableCell>
-                      </TableRow>
-                    ))}
+                    {services.map(service => {
+                        const serviceDate = service.serviceDate ? parseISO(service.serviceDate) : null;
+                        const formattedDate = serviceDate && isValid(serviceDate) 
+                            ? format(serviceDate, "dd MMM yyyy, HH:mm", { locale: es }) 
+                            : 'N/A';
+                        return (
+                          <TableRow key={service.id} onClick={() => handleServiceRowClick(service)} className="cursor-pointer hover:bg-muted/50">
+                            <TableCell>{formattedDate}</TableCell>
+                            <TableCell>{service.mileage ? `${service.mileage.toLocaleString('es-ES')} km` : 'N/A'}</TableCell>
+                            <TableCell>{getServiceDescriptionText(service)}</TableCell>
+                            <TableCell>{technicians.find(t => t.id === service.technicianId)?.name || service.technicianId}</TableCell>
+                            <TableCell className="text-right">${service.totalCost.toLocaleString('es-ES', { minimumFractionDigits: 2 })}</TableCell>
+                            <TableCell><Badge variant={getStatusVariant(service.status)}>{service.status}</Badge></TableCell>
+                          </TableRow>
+                        );
+                    })}
                   </TableBody>
                 </Table>
                 </div>
