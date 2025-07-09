@@ -34,7 +34,6 @@ interface ServiceDialogProps {
   mode?: 'service' | 'quote'; // New mode prop
   onDelete?: (id: string) => void; // For quote deletion
   onCancelService?: (serviceId: string, reason: string) => void;
-  onViewQuoteRequest?: (serviceId: string) => void;
 }
 
 export function ServiceDialog({ 
@@ -52,7 +51,6 @@ export function ServiceDialog({
   mode = 'service', // Default to service mode
   onDelete,
   onCancelService,
-  onViewQuoteRequest,
 }: ServiceDialogProps) {
   const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
   const { toast } = useToast();
@@ -137,7 +135,6 @@ export function ServiceDialog({
               mode={mode}
               onDelete={onDelete}
               onCancelService={onCancelService}
-              onViewQuoteRequest={onViewQuoteRequest}
             />
           </div>
         </DialogContent>
