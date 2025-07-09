@@ -74,6 +74,7 @@ const QuoteList = ({ quotes, vehicles, onEditQuote, onGenerateService, onViewQuo
               <CardContent className="p-0">
                 <div className="flex flex-col md:flex-row">
                    <div className="p-4 flex flex-col justify-center items-center text-center w-full md:w-48 flex-shrink-0">
+                      <Badge variant={getStatusVariant(status)} className="w-full justify-center text-center text-sm mb-2">{status}</Badge>
                       <p className="text-muted-foreground text-xs">Folio: {quote.id}</p>
                       <p className="font-semibold text-lg text-foreground">{format(parseISO(quote.quoteDate!), "dd MMM yyyy", { locale: es })}</p>
                     </div>
@@ -89,8 +90,7 @@ const QuoteList = ({ quotes, vehicles, onEditQuote, onGenerateService, onViewQuo
                       <p className="font-bold text-2xl text-black">{formatCurrency(quote.estimatedTotalCost)}</p>
                     </div>
                     <div className="p-4 flex flex-col justify-center items-center text-center border-t md:border-t-0 md:border-l w-full md:w-56 flex-shrink-0 space-y-2">
-                        <Badge variant={getStatusVariant(status)} className="w-full justify-center text-center text-sm">{status}</Badge>
-                         <p className="text-xs text-muted-foreground mt-4">Asesor: {quote.preparedByTechnicianName || 'N/A'}</p>
+                        <p className="text-xs text-muted-foreground mt-4">Asesor: {quote.preparedByTechnicianName || 'N/A'}</p>
                         <div className="flex justify-center items-center gap-1">
                           <Button variant="ghost" size="icon" onClick={() => onViewQuote(quote)} title="Vista Previa"><Eye className="h-4 w-4" /></Button>
                           <Button variant="ghost" size="icon" onClick={() => onEditQuote(quote)} title="Editar Cotización"><Edit className="h-4 w-4" /></Button>
@@ -145,17 +145,8 @@ function HistorialCotizacionesPageComponent() {
     }
   }, []);
   
-  const historicalQuotes = useMemo(() => {
-    let filtered = [...allQuotes];
-    if (dateRange?.from) {
-      filtered = filtered.filter(quote => {
-        const quoteDate = parseISO(quote.quoteDate ?? "");
-        if (!isValid(quoteDate)) return false;
-        const from = startOfDay(dateRange.from!);
-        const to = dateRange.to ? endOfDay(dateRange.to) : endOfDay(dateRange.from!);
-        return isWithinInterval(quoteDate, { start: from, end: to });
-      });
-    }
+  const activeQuotes = useMemo(() => {
+    let filtered = allQuotes.filter(quote => quote.status === 'Cotizacion');
 
     if (searchTerm) {
       const lowerSearchTerm = searchTerm.toLowerCase();
@@ -176,24 +167,12 @@ function HistorialCotizacionesPageComponent() {
       }
     });
     return filtered;
-  }, [allQuotes, searchTerm, dateRange, sortOption]);
+  }, [allQuotes, searchTerm, sortOption]);
   
-  const vigentesQuotes = useMemo(() => {
-    const today = new Date();
-    return allQuotes.filter(quote => {
-      if (quote.status !== 'Cotizacion') return false;
-      const quoteDate = parseISO(quote.quoteDate ?? "");
-      if (!isValid(quoteDate)) return false;
-      const expirationDate = addDays(quoteDate, 15);
-      return isAfter(expirationDate, today);
-    });
-  }, [allQuotes]);
-
-
   const summaryData = useMemo(() => {
-    const activeQuotes = allQuotes.filter(q => q.status === 'Cotizacion');
-    const totalQuotesCount = activeQuotes.length;
-    const totalEstimatedValue = activeQuotes.reduce((sum, q) => sum + (q.estimatedTotalCost || 0), 0);
+    const quotesForSummary = allQuotes.filter(q => q.status === 'Cotizacion');
+    const totalQuotesCount = quotesForSummary.length;
+    const totalEstimatedValue = quotesForSummary.reduce((sum, q) => sum + (q.estimatedTotalCost || 0), 0);
     return { totalQuotesCount, totalEstimatedValue };
   }, [allQuotes]);
 
@@ -210,10 +189,9 @@ function HistorialCotizacionesPageComponent() {
           <p className="text-primary-foreground/80 mt-1">Consulta, filtra y da seguimiento a todas las cotizaciones generadas.</p>
       </div>
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-3 mb-6">
+        <TabsList className="grid w-full grid-cols-2 mb-6">
             <TabsTrigger value="resumen" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Resumen</TabsTrigger>
-            <TabsTrigger value="vigentes" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Vigentes</TabsTrigger>
-            <TabsTrigger value="historial" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Historial</TabsTrigger>
+            <TabsTrigger value="cotizaciones" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Cotizaciones</TabsTrigger>
         </TabsList>
         
         <TabsContent value="resumen" className="mt-0 space-y-6">
@@ -223,18 +201,14 @@ function HistorialCotizacionesPageComponent() {
           </div>
         </TabsContent>
         
-        <TabsContent value="vigentes" className="mt-0 space-y-4">
-          <QuoteList quotes={vigentesQuotes} vehicles={vehicles} onEditQuote={handleEditQuote} onDeleteQuote={handleDeleteQuote} onGenerateService={handleGenerateService} onViewQuote={handleViewQuote} />
-        </TabsContent>
-
-        <TabsContent value="historial" className="mt-0 space-y-4">
+        <TabsContent value="cotizaciones" className="mt-0 space-y-4">
            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:flex-wrap">
             <div className="relative flex-1 min-w-[200px] sm:min-w-[300px]"><Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" /><Input type="search" placeholder="Buscar por folio o vehículo..." className="w-full rounded-lg bg-card pl-8" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} /></div>
-            <Popover><PopoverTrigger asChild><Button variant={"outline"} className={cn("min-w-[240px] justify-start text-left font-normal flex-1 sm:flex-initial bg-card", !dateRange && "text-muted-foreground")}><CalendarDateIcon className="mr-2 h-4 w-4" />{dateRange?.from ? (dateRange.to ? (`${format(dateRange.from, "LLL dd, y")} - ${format(dateRange.to, "LLL dd, y")}`) : format(dateRange.from, "LLL dd, y")) : (<span>Seleccione rango de fechas</span>)}</Button></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar initialFocus mode="range" defaultMonth={dateRange?.from} selected={dateRange} onSelect={setDateRange} numberOfMonths={2} locale={es} /></PopoverContent></Popover>
             <DropdownMenu><DropdownMenuTrigger asChild><Button variant="outline" className="min-w-[150px] flex-1 sm:flex-initial bg-card"><ListFilter className="mr-2 h-4 w-4" />Ordenar</Button></DropdownMenuTrigger><DropdownMenuContent align="end"><DropdownMenuLabel>Ordenar por</DropdownMenuLabel><DropdownMenuRadioGroup value={sortOption} onValueChange={(value) => setSortOption(value as QuoteSortOption)}><DropdownMenuRadioItem value="date_desc">Fecha (Más Reciente)</DropdownMenuRadioItem><DropdownMenuRadioItem value="date_asc">Fecha (Más Antiguo)</DropdownMenuRadioItem><DropdownMenuRadioItem value="total_desc">Monto Total (Mayor a Menor)</DropdownMenuRadioItem><DropdownMenuRadioItem value="total_asc">Monto Total (Menor a Mayor)</DropdownMenuRadioItem></DropdownMenuRadioGroup></DropdownMenuContent></DropdownMenu>
           </div>
-          <QuoteList quotes={historicalQuotes} vehicles={vehicles} onEditQuote={handleEditQuote} onDeleteQuote={handleDeleteQuote} onGenerateService={handleGenerateService} onViewQuote={handleViewQuote}/>
+          <QuoteList quotes={activeQuotes} vehicles={vehicles} onEditQuote={handleEditQuote} onDeleteQuote={handleDeleteQuote} onGenerateService={handleGenerateService} onViewQuote={handleViewQuote} />
         </TabsContent>
+
       </Tabs>
 
       {/* Dialogs */}
@@ -251,5 +225,3 @@ function HistorialCotizacionesPageComponent() {
 export default function HistorialCotizacionesPageWrapper() {
     return (<Suspense fallback={<div>Cargando...</div>}><HistorialCotizacionesPageComponent /></Suspense>)
 }
-
-
