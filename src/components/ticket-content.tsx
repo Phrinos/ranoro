@@ -12,7 +12,11 @@ const initialWorkshopInfo: WorkshopInfo = {
   addressLine1: "Av. de la Convencion de 1914 No. 1421",
   addressLine2: "Jardines de la Concepcion, C.P. 20267",
   cityState: "Aguascalientes, Ags.",
-  logoUrl: "/ranoro-logo.png"
+  logoUrl: "/ranoro-logo.png",
+  logoWidth: 120,
+  fontSize: 10,
+  blankLinesTop: 0,
+  blankLinesBottom: 0,
 };
 
 interface TicketContentProps {
@@ -27,6 +31,7 @@ export const TicketContent = React.forwardRef<HTMLDivElement, TicketContentProps
   ({ sale, service, vehicle, technician, previewWorkshopInfo }, ref) => {
     // Directly use the prop if available, otherwise use the initial default.
     const workshopInfo = { ...initialWorkshopInfo, ...previewWorkshopInfo };
+    const { logoWidth, fontSize, blankLinesTop, blankLinesBottom } = workshopInfo;
 
     const operation = sale || service;
     const operationType = sale ? 'Venta' : 'Servicio';
@@ -70,10 +75,19 @@ export const TicketContent = React.forwardRef<HTMLDivElement, TicketContentProps
       <div 
         ref={ref}
         data-format="receipt"
-        className="font-mono bg-white text-black px-2 py-4 max-w-[300px] mx-auto text-[10px] leading-tight print:max-w-full print:text-[9px] print:p-0"
+        className="font-mono bg-white text-black px-2 py-4 max-w-[300px] mx-auto leading-tight print:max-w-full print:p-0"
+        style={{ fontSize: fontSize ? `${fontSize}px` : '10px' }}
       >
+        {Array.from({ length: blankLinesTop || 0 }).map((_, i) => <div key={`top-${i}`} style={{ height: `${fontSize || 10}px` }}></div>)}
+
         <div className="text-center mb-1 space-y-0 leading-tight">
-          <img src={workshopInfo.logoUrl} alt="Logo" className="w-32 mx-auto mb-1" data-ai-hint="workshop logo"/>
+          <img 
+            src={workshopInfo.logoUrl} 
+            alt="Logo" 
+            className="mx-auto mb-1" 
+            style={{ width: logoWidth ? `${logoWidth}px` : '120px' }}
+            data-ai-hint="workshop logo"
+          />
           <div className="font-semibold">{workshopInfo.name}</div>
           <div>{workshopInfo.addressLine1}</div>
           {workshopInfo.addressLine2 && <div>{workshopInfo.addressLine2}</div>}
@@ -178,6 +192,8 @@ export const TicketContent = React.forwardRef<HTMLDivElement, TicketContentProps
             <div className="font-semibold">¡Gracias por su preferencia!</div>
             <div>Para dudas o aclaraciones, no dude en contactarnos.</div>
         </div>
+
+        {Array.from({ length: blankLinesBottom || 0 }).map((_, i) => <div key={`bottom-${i}`} style={{ height: `${fontSize || 10}px` }}></div>)}
       </div>
     );
   }
