@@ -198,7 +198,7 @@ function PersonalPageComponent() {
                 </div>
                 <Popover>
                     <PopoverTrigger asChild>
-                        <Button variant={"outline"} className={cn("w-full sm:w-[280px] justify-start text-left font-normal",!filterDateRange && "text-muted-foreground")}>
+                        <Button variant={"outline"} className={cn("w-full sm:w-[280px] justify-start text-left font-normal bg-card",!filterDateRange && "text-muted-foreground")}>
                             <CalendarDateIcon className="mr-2 h-4 w-4" />
                             {filterDateRange?.from ? (filterDateRange.to ? (`${format(filterDateRange.from, "LLL dd, y", { locale: es })} - ${format(filterDateRange.to, "LLL dd, y", { locale: es })}`) : format(filterDateRange.from, "LLL dd, y", { locale: es })) : (<span>Seleccione rango</span>)}
                         </Button>
@@ -208,7 +208,7 @@ function PersonalPageComponent() {
                     </PopoverContent>
                 </Popover>
             </div>
-
+            
             <Card>
                 <CardHeader>
                     <CardTitle>Rendimiento Individual</CardTitle>
@@ -311,3 +311,5 @@ function PersonalPageComponent() {
 export default function PersonalPageWrapper() {
     return (<Suspense fallback={<div>Cargando...</div>}><PersonalPageComponent /></Suspense>)
 }
+
+    
