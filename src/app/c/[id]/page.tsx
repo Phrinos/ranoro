@@ -124,7 +124,7 @@ export default function PublicQuoteViewPage() {
                  </div>
             </CardHeader>
         </Card>
-      <div id="printable-area" className="bg-white mx-auto shadow-2xl">
+      <div id="printable-area" className="bg-white mx-auto shadow-2xl print:shadow-none">
          <QuoteContent 
             ref={quoteContentRef} 
             quote={quote} 
