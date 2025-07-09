@@ -144,41 +144,89 @@ function ResumenFinancieroPageComponent() {
                 </div>
             </div>
 
-            <div className="space-y-6">
-              <Card className="mb-8 bg-card shadow-lg"><CardHeader><CardTitle className="text-xl flex items-center gap-2"><DollarSign className="h-6 w-6 text-primary" />Resumen del Periodo</CardTitle><CardDescription>Cálculos de rentabilidad para {financialSummary.monthYearLabel}</CardDescription></CardHeader><CardContent className="space-y-3 text-base"><div className="flex justify-between items-center"><span className="text-muted-foreground">Ingresos Operativos Totales:</span><span className="font-semibold text-lg text-green-600">{formatCurrency(financialSummary.totalOperationalIncome)}</span></div><div className="flex justify-between items-center"><span className="text-muted-foreground">(-) Costo Total de Insumos:</span><span className="font-semibold text-lg text-orange-500">-{formatCurrency(financialSummary.totalCostOfGoods)}</span></div><hr className="my-1 border-dashed"/><div className="flex justify-between items-center font-bold text-xl pt-2"><span className="text-foreground">(=) Ganancia Bruta Operativa:</span><span className="font-semibold text-xl text-green-600">{formatCurrency(financialSummary.totalOperationalProfit)}</span></div><p className="text-xs text-muted-foreground pt-2">El Resultado Neto final se calcula comparando la Ganancia Bruta con los Gastos Mensuales fijos. Los gastos no se prorratean por día.</p></CardContent></Card>
-              <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-2">
-                  <Card><CardHeader><CardTitle className="text-xl flex items-center gap-2"><TrendingUp className="h-6 w-6 text-green-500" />Ingresos y Ganancia Bruta</CardTitle><CardDescription>Operaciones de {financialSummary.monthYearLabel}</CardDescription></CardHeader><CardContent className="space-y-3 text-base"><div className="flex justify-between items-center"><span className="text-muted-foreground">Ingreso por Ventas (POS):</span><span className="font-semibold">{formatCurrency(financialSummary.totalIncomeFromSales)}</span></div><div className="flex justify-between items-center"><span className="text-muted-foreground">Ingreso por Servicios:</span><span className="font-semibold">{formatCurrency(financialSummary.totalIncomeFromServices)}</span></div><hr className="my-1 border-dashed"/><div className="flex justify-between items-center"><span className="text-muted-foreground">Ganancia por Ventas:</span><span className="font-semibold text-green-600">{formatCurrency(financialSummary.totalProfitFromSales)}</span></div><div className="flex justify-between items-center"><span className="text-muted-foreground">Ganancia por Servicios:</span><span className="font-semibold text-green-600">{formatCurrency(financialSummary.totalProfitFromServices)}</span></div><hr className="my-1 border-border/50"/><div className="flex justify-between items-center"><span className="text-foreground font-medium">Ganancia Bruta Operativa:</span><span className="font-semibold text-lg text-green-600">{formatCurrency(financialSummary.totalOperationalProfit)}</span></div></CardContent></Card>
-                  <Card><CardHeader><div className="flex items-center justify-between"><CardTitle className="text-xl flex items-center gap-2"><TrendingDown className="h-6 w-6 text-red-500" />Gastos, Sueldos y Comisiones</CardTitle><Button variant="outline" size="sm" onClick={() => setIsExpensesDialogOpen(true)}><Pencil className="mr-2 h-4 w-4" />Editar</Button></div><CardDescription>Costos operativos de {financialSummary.monthYearLabel}</CardDescription></CardHeader>
-                    <CardContent className="space-y-3 text-base">
-                        <div className="flex justify-between items-center"><span className="text-muted-foreground flex items-center gap-1"><Users className="h-4 w-4"/>Sueldos Base (Técnicos):</span><span className="font-semibold">{formatCurrency(financialSummary.totalTechnicianSalaries)}</span></div>
-                        <div className="flex justify-between items-center"><span className="text-muted-foreground flex items-center gap-1"><Users className="h-4 w-4"/>Sueldos Base (Admin.):</span><span className="font-semibold">{formatCurrency(financialSummary.totalAdministrativeSalaries)}</span></div>
-                        {financialSummary.fixedExpenses.map(expense => (<div key={expense.id} className="flex justify-between items-center"><span className="text-muted-foreground flex items-center gap-1"><Landmark className="h-4 w-4"/>{expense.name}:</span><span className="font-semibold">{formatCurrency(expense.amount)}</span></div>))}
-                        <hr className="my-2 border-dashed" />
-                        <div className="flex justify-between items-center text-sm">
-                            <span className="text-foreground font-semibold">Total Gastos Fijos (sin comisiones):</span>
-                            <span className="font-bold">{formatCurrency(financialSummary.totalMonthlyExpenses)}</span>
-                        </div>
-                        <hr className="my-2 border-dashed" />
-                        <div className="flex justify-between items-center">
-                            <span className="text-muted-foreground flex items-center gap-1"><BadgeCent className="h-4 w-4"/>Comisiones (Técnicos):</span>
-                            <span className="font-semibold">{formatCurrency(financialSummary.totalTechnicianCommissions)}</span>
-                        </div>
-                        <div className="flex justify-between items-center">
-                            <span className="text-muted-foreground flex items-center gap-1"><BadgeCent className="h-4 w-4"/>Comisiones (Admin.):</span>
-                            <span className="font-semibold">{formatCurrency(financialSummary.totalAdministrativeCommissions)}</span>
-                        </div>
-                        <hr className="my-2 border-border/70"/>
-                        <div className="flex justify-between font-bold text-lg">
-                            <span>Total de Gastos (con comisiones):</span>
-                            <span className="text-red-600">{formatCurrency(financialSummary.totalExpenses)}</span>
-                        </div>
-                         {!financialSummary.isProfitableForCommissions && (
-                            <p className="text-xs text-center text-muted-foreground pt-2">Las comisiones no se aplican porque la ganancia bruta no cubrió el total de gastos fijos.</p>
-                        )}
-                    </CardContent>
-                  </Card>
-              </div>
-            </div>
+            <Tabs defaultValue="resumen" className="w-full">
+                <TabsList className="grid w-full grid-cols-3 mb-6">
+                    <TabsTrigger value="resumen">Resumen</TabsTrigger>
+                    <TabsTrigger value="ingresos">Ingresos</TabsTrigger>
+                    <TabsTrigger value="egresos">Egresos</TabsTrigger>
+                </TabsList>
+                
+                <TabsContent value="resumen" className="mt-0">
+                    <Card className="mb-8 bg-card shadow-lg">
+                        <CardHeader>
+                            <CardTitle className="text-xl flex items-center gap-2"><DollarSign className="h-6 w-6 text-primary" />Resumen del Periodo</CardTitle>
+                            <CardDescription>Cálculos de rentabilidad para {financialSummary.monthYearLabel}</CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-3 text-base">
+                            <div className="flex justify-between items-center"><span className="text-muted-foreground">Ingresos Operativos Totales:</span><span className="font-semibold text-lg text-green-600">{formatCurrency(financialSummary.totalOperationalIncome)}</span></div>
+                            <div className="flex justify-between items-center"><span className="text-muted-foreground">(-) Costo Total de Insumos:</span><span className="font-semibold text-lg text-orange-500">-{formatCurrency(financialSummary.totalCostOfGoods)}</span></div>
+                            <hr className="my-1 border-dashed"/>
+                            <div className="flex justify-between items-center font-bold text-xl pt-2">
+                                <span className="text-foreground">(=) Ganancia Bruta Operativa:</span>
+                                <span className="font-semibold text-xl text-green-600">{formatCurrency(financialSummary.totalOperationalProfit)}</span>
+                            </div>
+                            <p className="text-xs text-muted-foreground pt-2">El Resultado Neto final se calcula comparando la Ganancia Bruta con los Gastos Mensuales fijos. Los gastos no se prorratean por día.</p>
+                        </CardContent>
+                    </Card>
+                </TabsContent>
+                
+                <TabsContent value="ingresos" className="mt-0">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="text-xl flex items-center gap-2"><TrendingUp className="h-6 w-6 text-green-500" />Ingresos y Ganancia Bruta</CardTitle>
+                            <CardDescription>Operaciones de {financialSummary.monthYearLabel}</CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-3 text-base">
+                            <div className="flex justify-between items-center"><span className="text-muted-foreground">Ingreso por Ventas (POS):</span><span className="font-semibold">{formatCurrency(financialSummary.totalIncomeFromSales)}</span></div>
+                            <div className="flex justify-between items-center"><span className="text-muted-foreground">Ingreso por Servicios:</span><span className="font-semibold">{formatCurrency(financialSummary.totalIncomeFromServices)}</span></div>
+                            <hr className="my-1 border-dashed"/>
+                            <div className="flex justify-between items-center"><span className="text-muted-foreground">Ganancia por Ventas:</span><span className="font-semibold text-green-600">{formatCurrency(financialSummary.totalProfitFromSales)}</span></div>
+                            <div className="flex justify-between items-center"><span className="text-muted-foreground">Ganancia por Servicios:</span><span className="font-semibold text-green-600">{formatCurrency(financialSummary.totalProfitFromServices)}</span></div>
+                            <hr className="my-1 border-border/50"/>
+                            <div className="flex justify-between items-center"><span className="text-foreground font-medium">Ganancia Bruta Operativa:</span><span className="font-semibold text-lg text-green-600">{formatCurrency(financialSummary.totalOperationalProfit)}</span></div>
+                        </CardContent>
+                    </Card>
+                </TabsContent>
+                
+                <TabsContent value="egresos" className="mt-0">
+                     <Card>
+                        <CardHeader>
+                            <div className="flex items-center justify-between">
+                                <CardTitle className="text-xl flex items-center gap-2"><TrendingDown className="h-6 w-6 text-red-500" />Gastos, Sueldos y Comisiones</CardTitle>
+                                <Button variant="outline" size="sm" onClick={() => setIsExpensesDialogOpen(true)}><Pencil className="mr-2 h-4 w-4" />Editar</Button>
+                            </div>
+                            <CardDescription>Costos operativos de {financialSummary.monthYearLabel}</CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-3 text-base">
+                            <div className="flex justify-between items-center"><span className="text-muted-foreground flex items-center gap-1"><Users className="h-4 w-4"/>Sueldos Base (Técnicos):</span><span className="font-semibold">{formatCurrency(financialSummary.totalTechnicianSalaries)}</span></div>
+                            <div className="flex justify-between items-center"><span className="text-muted-foreground flex items-center gap-1"><Users className="h-4 w-4"/>Sueldos Base (Admin.):</span><span className="font-semibold">{formatCurrency(financialSummary.totalAdministrativeSalaries)}</span></div>
+                            {financialSummary.fixedExpenses.map(expense => (<div key={expense.id} className="flex justify-between items-center"><span className="text-muted-foreground flex items-center gap-1"><Landmark className="h-4 w-4"/>{expense.name}:</span><span className="font-semibold">{formatCurrency(expense.amount)}</span></div>))}
+                            <hr className="my-2 border-dashed" />
+                            <div className="flex justify-between items-center text-sm">
+                                <span className="text-foreground font-semibold">Total Gastos Fijos (sin comisiones):</span>
+                                <span className="font-bold">{formatCurrency(financialSummary.totalMonthlyExpenses)}</span>
+                            </div>
+                            <hr className="my-2 border-dashed" />
+                            <div className="flex justify-between items-center">
+                                <span className="text-muted-foreground flex items-center gap-1"><BadgeCent className="h-4 w-4"/>Comisiones (Técnicos):</span>
+                                <span className="font-semibold">{formatCurrency(financialSummary.totalTechnicianCommissions)}</span>
+                            </div>
+                            <div className="flex justify-between items-center">
+                                <span className="text-muted-foreground flex items-center gap-1"><BadgeCent className="h-4 w-4"/>Comisiones (Admin.):</span>
+                                <span className="font-semibold">{formatCurrency(financialSummary.totalAdministrativeCommissions)}</span>
+                            </div>
+                            <hr className="my-2 border-border/70"/>
+                            <div className="flex justify-between font-bold text-lg">
+                                <span>Total de Gastos (con comisiones):</span>
+                                <span className="text-red-600">{formatCurrency(financialSummary.totalExpenses)}</span>
+                            </div>
+                             {!financialSummary.isProfitableForCommissions && (
+                                <p className="text-xs text-center text-muted-foreground pt-2">Las comisiones no se aplican porque la ganancia bruta no cubrió el total de gastos fijos.</p>
+                            )}
+                        </CardContent>
+                      </Card>
+                </TabsContent>
+            </Tabs>
             
             <FixedExpensesDialog
                 open={isExpensesDialogOpen}
