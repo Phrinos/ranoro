@@ -402,6 +402,14 @@ export function ServiceForm({
         setValue('deliveryDateTime', new Date(), { shouldDirty: true });
       }
     }
+
+    // Auto-populate serviceDate when changing to Agendado
+    if (watchedStatus === 'Agendado' && initialStatus === 'Cotizacion') {
+      if (!getValues('serviceDate')) {
+        setValue('serviceDate', new Date(), { shouldDirty: true });
+      }
+    }
+
   }, [watchedStatus, getValues, setValue]);
 
   useEffect(() => {
@@ -1769,3 +1777,4 @@ export function ServiceForm({
     </>
   );
 }
+
