@@ -214,8 +214,6 @@ function HistorialCotizacionesPageComponent() {
                           <div className="flex justify-center items-center gap-1">
                             <Button variant="ghost" size="icon" onClick={() => onViewQuote(quote)} title="Vista Previa"><Eye className="h-4 w-4" /></Button>
                             <Button variant="ghost" size="icon" onClick={() => onEditQuote(quote)} title="Editar Cotización"><Edit className="h-4 w-4" /></Button>
-                            <Button variant="ghost" size="icon" onClick={() => onGenerateService(quote)} title="Generar Servicio" className="text-blue-600 hover:text-blue-700"><Wrench className="h-4 w-4" /></Button>
-                            <AlertDialog><AlertDialogTrigger asChild><Button variant="ghost" size="icon" title="Cancelar Cotización" disabled={!!quote.serviceId}><Ban className="h-4 w-4 text-destructive" /></Button></AlertDialogTrigger><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>¿Cancelar esta cotización?</AlertDialogTitle><AlertDialogDescription>Esta acción no se puede deshacer y eliminará permanentemente la cotización {quote.id}.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>No</AlertDialogCancel><AlertDialogAction onClick={() => onDeleteQuote(quote.id)} className="bg-destructive hover:bg-destructive/90">Sí, Cancelar</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog>
                           </div>
                       </div>
                   </div>
