@@ -1,3 +1,4 @@
+
 "use client";
 
 import { Suspense, useState, useEffect, useRef } from "react";
@@ -12,16 +13,18 @@ import { useToast } from '@/hooks/use-toast';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import type { User } from '@/types';
-import { Save, Signature, BookOpen, LayoutDashboard, Wrench, FileText, Receipt, Package, DollarSign, Users, Settings } from 'lucide-react';
+import type { User, SaleReceipt, AppRole } from '@/types';
+import { Save, Signature, BookOpen, LayoutDashboard, Wrench, FileText, Receipt, Package, DollarSign, Users, Settings, Eye, Printer } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { onAuthStateChanged, updatePassword, reauthenticateWithCredential, EmailAuthProvider } from 'firebase/auth';
 import { auth, storage } from '@/lib/firebaseClient.js';
 import { ref, uploadString, getDownloadURL } from 'firebase/storage';
-import { placeholderUsers, persistToFirestore, AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
+import { placeholderUsers, persistToFirestore, AUTH_USER_LOCALSTORAGE_KEY, placeholderAppRoles } from '@/lib/placeholder-data';
 import { SignatureDialog } from '@/app/(app)/servicios/components/signature-dialog';
 import Image from "next/legacy/image";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { TicketContent } from "@/components/ticket-content";
+import { PrintTicketDialog } from "@/components/ui/print-ticket-dialog";
 
 
 // --- Schema and content from /perfil ---
@@ -173,19 +176,202 @@ function ManualUsuarioPageContent() {
     );
 };
 
+// --- NEW ConfiguracionTicketPageContent ---
+const LOCALSTORAGE_KEY = "workshopTicketInfo";
+
+const defaultWorkshopInfo = {
+  name: "RANORO",
+  phone: "4491425323",
+  addressLine1: "Av. de la Convención de 1914 No. 1421",
+  addressLine2: "Jardines de la Concepción, C.P. 20267",
+  cityState: "Aguascalientes, Ags.",
+  logoUrl: "/ranoro-logo.png",
+};
+
+const ticketSchema = z.object({
+  name: z.string().min(1, "El nombre es obligatorio"),
+  phone: z.string().min(7, "Mínimo 7 dígitos"),
+  addressLine1: z.string().min(5),
+  addressLine2: z.string().optional(),
+  cityState: z.string().min(3),
+  logoUrl: z.string().url("Ingresa una URL válida"),
+});
+
+type TicketForm = z.infer<typeof ticketSchema>;
+
+const sampleSale: SaleReceipt = {
+  id: "PREVIEW-001",
+  saleDate: new Date().toISOString(),
+  items: [
+    { inventoryItemId: "X1", itemName: "Artículo demo 1", quantity: 2, unitPrice: 116, totalPrice: 232 },
+    { inventoryItemId: "X2", itemName: "Artículo demo 2", quantity: 1, unitPrice: 58, totalPrice: 58 },
+  ],
+  subTotal: (232 / 1.16) + (58 / 1.16),
+  tax: (232 - 232 / 1.16) + (58 - 58 / 1.16),
+  totalAmount: 232 + 58,
+  paymentMethod: "Efectivo",
+  customerName: "Cliente Demo",
+};
+
+function ConfiguracionTicketPageContent() {
+  const { toast } = useToast();
+  const ticketContentRef = useRef<HTMLDivElement>(null);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewInfo, setPreviewInfo] = useState<TicketForm>(defaultWorkshopInfo);
+
+  const form = useForm<TicketForm>({
+    resolver: zodResolver(ticketSchema),
+    defaultValues: defaultWorkshopInfo,
+  });
+
+  useEffect(() => {
+    const stored = typeof window !== "undefined" ? localStorage.getItem(LOCALSTORAGE_KEY) : null;
+    if (stored) {
+      try {
+        const parsed = JSON.parse(stored) as TicketForm;
+        form.reset(parsed);
+        setPreviewInfo(parsed);
+      } catch {
+        form.reset(defaultWorkshopInfo);
+      }
+    }
+  }, [form]);
+
+  const onSubmit = (data: TicketForm) => {
+    try {
+      localStorage.setItem(LOCALSTORAGE_KEY, JSON.stringify(data));
+      toast({ title: "Configuración guardada", description: "Se actualizó la información del ticket", duration: 3000 });
+      setPreviewInfo(data);
+    } catch {
+      toast({ title: "Error al guardar", description: "No se pudo escribir en localStorage", variant: "destructive", duration: 3000 });
+    }
+  };
+
+  const handlePreview = () => {
+    setPreviewInfo(form.getValues());
+    setPreviewOpen(true);
+  };
+  
+  const handlePrint = () => {
+    window.print();
+  };
+
+  const labels: Record<keyof TicketForm, string> = {
+    name: "Nombre del Taller",
+    phone: "Teléfono",
+    addressLine1: "Dirección (Línea 1)",
+    addressLine2: "Dirección (Línea 2 opcional)",
+    cityState: "Ciudad, Estado y C.P.",
+    logoUrl: "URL del Logo (PNG/JPG)",
+  };
+
+  return (
+    <>
+      <PageHeader
+        title="Configuración de Ticket"
+        description="Personaliza la información que aparece en los tickets y cotizaciones impresas."
+      />
+      <Card className="max-w-2xl mx-auto shadow-lg">
+        <CardHeader>
+          <CardTitle>Información del Taller</CardTitle>
+          <CardDescription>Estos datos se mostrarán en la cabecera de cada documento.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              {(Object.keys(labels) as (keyof TicketForm)[]).map((field) => (
+                <FormField
+                  key={field}
+                  control={form.control}
+                  name={field}
+                  render={({ field: f }) => (
+                    <FormItem>
+                      <FormLabel>{labels[field]}</FormLabel>
+                      <FormControl>
+                        <Input {...f} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              ))}
+
+              <div className="flex flex-col sm:flex-row gap-2">
+                <Button type="button" variant="outline" onClick={handlePreview} className="w-full sm:w-auto">
+                  <Eye className="mr-2 h-4 w-4" /> Vista Previa
+                </Button>
+                <Button type="submit" className="w-full sm:w-auto" disabled={form.formState.isSubmitting}>
+                  <Save className="mr-2 h-4 w-4" /> {form.formState.isSubmitting ? "Guardando…" : "Guardar"}
+                </Button>
+              </div>
+            </form>
+          </Form>
+        </CardContent>
+      </Card>
+      {previewOpen && (
+        <PrintTicketDialog 
+          open={previewOpen} 
+          onOpenChange={setPreviewOpen} 
+          title="Vista Previa de Ticket"
+          dialogContentClassName="printable-content"
+          footerActions={
+             <Button onClick={handlePrint}>
+                <Printer className="mr-2 h-4 w-4" /> Imprimir
+            </Button>
+          }
+        >
+          <TicketContent
+            ref={ticketContentRef}
+            sale={sampleSale}
+            previewWorkshopInfo={{
+              ...previewInfo,
+              addressLine2: previewInfo.addressLine2 ?? ""
+            }}
+          />
+        </PrintTicketDialog>
+      )}
+    </>
+  );
+}
+
 
 // --- Main Component ---
 function OpcionesPageComponent() {
     const searchParams = useSearchParams();
     const defaultTab = searchParams.get('tab') || 'perfil';
     const [activeTab, setActiveTab] = useState(defaultTab);
+    const [currentUser, setCurrentUser] = useState<User | null>(null);
+    const [roles, setRoles] = useState<AppRole[]>([]);
+
+    useEffect(() => {
+        if (typeof window !== "undefined") {
+            const authUserString = localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY);
+            if (authUserString) {
+                try {
+                    setCurrentUser(JSON.parse(authUserString));
+                } catch (e) {
+                    console.error("Failed to parse authUser for options page:", e);
+                }
+            }
+            setRoles(placeholderAppRoles);
+        }
+    }, []);
+
+    const userPermissions = useMemo(() => {
+        if (!currentUser || !roles.length) return new Set<string>();
+        const userRole = roles.find(r => r && r.name === currentUser.role);
+        return new Set(userRole?.permissions || []);
+    }, [currentUser, roles]);
     
     return (
         <div className="container mx-auto py-8">
              <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                <TabsList className="grid w-full grid-cols-2 mb-6">
+                <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 mb-6">
                     <TabsTrigger value="perfil">Mi Perfil</TabsTrigger>
                     <TabsTrigger value="manual">Manual de Usuario</TabsTrigger>
+                    {userPermissions.has('ticket_config:manage') && (
+                        <TabsTrigger value="ticket">Configurar Ticket</TabsTrigger>
+                    )}
                 </TabsList>
                 <TabsContent value="perfil" className="mt-0">
                     <PerfilPageContent />
@@ -193,6 +379,11 @@ function OpcionesPageComponent() {
                 <TabsContent value="manual" className="mt-0">
                     <ManualUsuarioPageContent />
                 </TabsContent>
+                {userPermissions.has('ticket_config:manage') && (
+                    <TabsContent value="ticket" className="mt-0">
+                        <ConfiguracionTicketPageContent />
+                    </TabsContent>
+                )}
             </Tabs>
         </div>
     );
