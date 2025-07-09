@@ -215,31 +215,41 @@ function ResumenFinancieroPageComponent() {
                     <Card>
                         <CardHeader>
                             <CardTitle className="text-xl flex items-center gap-2"><TrendingUp className="h-6 w-6 text-green-500" />Ingresos y Ganancia Bruta</CardTitle>
-                            <CardDescription>Operaciones de {financialSummary.monthYearLabel}</CardDescription>
+                            <CardDescription>Detalle de operaciones en el periodo de {financialSummary.monthYearLabel}</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4 text-base">
-                            <div className="font-semibold text-lg">Ventas (POS)</div>
-                            <div className="pl-4 space-y-1">
-                                <div className="flex justify-between items-center"><span className="text-muted-foreground">Ingreso por Ventas:</span><span className="font-semibold">{formatCurrency(financialSummary.totalIncomeFromSales)}</span></div>
-                                <div className="flex justify-between items-center"><span className="text-muted-foreground">Ganancia por Ventas:</span><span className="font-semibold text-green-600">{formatCurrency(financialSummary.totalProfitFromSales)}</span></div>
+                             <div className="grid grid-cols-3 gap-4 font-semibold text-sm text-muted-foreground border-b pb-2">
+                                <div className="col-span-1">Categoría</div>
+                                <div className="col-span-1 text-right">Ingresos</div>
+                                <div className="col-span-1 text-right">Ganancia</div>
                             </div>
                             
-                            <div className="font-semibold text-lg pt-2 border-t">Servicios</div>
-                             <div className="pl-4 space-y-1">
-                                <div className="flex justify-between items-center"><span className="text-muted-foreground">Ingreso (Servicios Generales):</span><span className="font-semibold">{formatCurrency(financialSummary.totalIncomeFromServiciosGenerales)}</span></div>
-                                <div className="flex justify-between items-center"><span className="text-muted-foreground">Ingreso (Cambio de Aceite):</span><span className="font-semibold">{formatCurrency(financialSummary.totalIncomeFromCambioAceite)}</span></div>
-                                <div className="flex justify-between items-center"><span className="text-muted-foreground">Ingreso (Pintura):</span><span className="font-semibold">{formatCurrency(financialSummary.totalIncomeFromPintura)}</span></div>
+                            <div className="space-y-3 text-sm">
+                                <div className="grid grid-cols-3 gap-4 items-center">
+                                    <div className="col-span-1 font-semibold">Ventas (POS)</div>
+                                    <div className="col-span-1 text-right font-medium">{formatCurrency(financialSummary.totalIncomeFromSales)}</div>
+                                    <div className="col-span-1 text-right font-medium text-green-600">{formatCurrency(financialSummary.totalProfitFromSales)}</div>
+                                </div>
+                                <div className="grid grid-cols-3 gap-4 items-center">
+                                    <div className="col-span-1 font-semibold">Servicios Generales</div>
+                                    <div className="col-span-1 text-right font-medium">{formatCurrency(financialSummary.totalIncomeFromServiciosGenerales)}</div>
+                                    <div className="col-span-1 text-right font-medium text-green-600">{formatCurrency(financialSummary.totalProfitFromServiciosGenerales)}</div>
+                                </div>
+                                <div className="grid grid-cols-3 gap-4 items-center">
+                                    <div className="col-span-1 font-semibold">Cambio de Aceite</div>
+                                    <div className="col-span-1 text-right font-medium">{formatCurrency(financialSummary.totalIncomeFromCambioAceite)}</div>
+                                    <div className="col-span-1 text-right font-medium text-green-600">{formatCurrency(financialSummary.totalProfitFromCambioAceite)}</div>
+                                </div>
+                                <div className="grid grid-cols-3 gap-4 items-center">
+                                    <div className="col-span-1 font-semibold">Pintura</div>
+                                    <div className="col-span-1 text-right font-medium">{formatCurrency(financialSummary.totalIncomeFromPintura)}</div>
+                                    <div className="col-span-1 text-right font-medium text-green-600">{formatCurrency(financialSummary.totalProfitFromPintura)}</div>
+                                </div>
                             </div>
-                             <div className="pl-4 space-y-1 pt-2 border-t border-dashed">
-                                 <div className="flex justify-between items-center"><span className="text-muted-foreground">Ganancia (Servicios Generales):</span><span className="font-semibold text-green-600">{formatCurrency(financialSummary.totalProfitFromServiciosGenerales)}</span></div>
-                                <div className="flex justify-between items-center"><span className="text-muted-foreground">Ganancia (Cambio de Aceite):</span><span className="font-semibold text-green-600">{formatCurrency(financialSummary.totalProfitFromCambioAceite)}</span></div>
-                                <div className="flex justify-between items-center"><span className="text-muted-foreground">Ganancia (Pintura):</span><span className="font-semibold text-green-600">{formatCurrency(financialSummary.totalProfitFromPintura)}</span></div>
-                            </div>
-
-                            <hr className="my-2 border-border/50"/>
-                            <div className="flex justify-between items-center font-bold text-lg pt-2">
-                                <span className="text-foreground">Ganancia Bruta Operativa Total:</span>
-                                <span className="font-semibold text-xl text-green-600">{formatCurrency(financialSummary.totalOperationalProfit)}</span>
+                            
+                            <div className="grid grid-cols-3 gap-4 items-center font-bold text-lg pt-4 border-t mt-4">
+                                <div className="col-span-2 text-right">Ganancia Bruta Operativa Total:</div>
+                                <div className="col-span-1 text-right text-xl text-green-600">{formatCurrency(financialSummary.totalOperationalProfit)}</div>
                             </div>
                         </CardContent>
                     </Card>
