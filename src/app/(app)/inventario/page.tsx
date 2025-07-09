@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { PlusCircle, Printer, ShoppingCart, AlertTriangle, PackageCheck, DollarSign, Server, Search, ListFilter, Shapes, Building, BrainCircuit, Package, Trash2, Edit } from "lucide-react";
 import { InventoryTable } from "./components/inventory-table";
 import { InventoryItemDialog } from "./components/inventory-item-dialog";
-import { placeholderInventory, placeholderCategories, placeholderSuppliers, persistToFirestore, placeholderServiceRecords, hydrateReady, placeholderCashDrawerTransactions, AUTH_USER_LOCALSTORAGE_KEY } from "@/lib/placeholder-data";
+import { placeholderInventory, placeholderCategories, placeholderSuppliers, persistToFirestore, placeholderServiceRecords, hydrateReady, placeholderCashDrawerTransactions, AUTH_USER_LOCALSTORAGE_KEY, logAudit } from "@/lib/placeholder-data";
 import type { InventoryItem, InventoryCategory, Supplier, User, CashDrawerTransaction } from "@/types";
 import type { InventoryItemFormValues } from "./components/inventory-item-form";
 import { useToast } from "@/hooks/use-toast";
@@ -174,25 +174,49 @@ function InventarioPageComponent() {
 
   const handleOpenAddCategoryDialog = useCallback(() => { setEditingCategory(null); setCurrentCategoryName(''); setIsCategoryDialogOpen(true); }, []);
   const handleOpenEditCategoryDialog = useCallback((category: InventoryCategory) => { setEditingCategory(category); setCurrentCategoryName(category.name); setIsCategoryDialogOpen(true); }, []);
+  
   const handleSaveCategory = useCallback(async (e?: React.FormEvent) => {
-    e?.preventDefault(); const categoryName = currentCategoryName.trim();
-    if (!categoryName) { toast({ title: "Nombre Vacío", variant: "destructive" }); return; }
+    e?.preventDefault();
+    const categoryName = currentCategoryName.trim();
+    if (!categoryName) {
+      toast({ title: "Nombre Vacío", variant: "destructive" });
+      return;
+    }
     const isDuplicate = categories.some(cat => cat.name.toLowerCase() === categoryName.toLowerCase() && cat.id !== editingCategory?.id);
-    if (isDuplicate) { toast({ title: "Categoría Duplicada", variant: "destructive" }); return; }
+    if (isDuplicate) {
+      toast({ title: "Categoría Duplicada", variant: "destructive" });
+      return;
+    }
+
+    const action = editingCategory ? 'Editar' : 'Crear';
+    const entityId = editingCategory ? editingCategory.id : `CAT${String(categories.length + 1).padStart(3, '0')}${Date.now().toString().slice(-3)}`;
+    const description = `Se ${editingCategory ? 'actualizó la' : 'creó la nueva'} categoría de inventario: "${categoryName}".`;
+    
     if (editingCategory) {
       const pIndex = placeholderCategories.findIndex(cat => cat.id === editingCategory.id);
       if (pIndex !== -1) placeholderCategories[pIndex].name = categoryName;
-      toast({ title: "Categoría Actualizada" });
     } else {
-      const newCategory: InventoryCategory = { id: `CAT${String(categories.length + 1).padStart(3, '0')}${Date.now().toString().slice(-3)}`, name: categoryName, };
+      const newCategory: InventoryCategory = { id: entityId, name: categoryName };
       placeholderCategories.push(newCategory);
-      toast({ title: "Categoría Agregada" });
     }
+    
+    await logAudit(action, description, { entityType: 'Categoría', entityId });
     await persistToFirestore(['categories']);
-    setIsCategoryDialogOpen(false); setEditingCategory(null); setCurrentCategoryName('');
+    toast({ title: `Categoría ${editingCategory ? 'Actualizada' : 'Agregada'}` });
+    setIsCategoryDialogOpen(false);
+    setEditingCategory(null);
+    setCurrentCategoryName('');
   }, [currentCategoryName, categories, editingCategory, toast]);
+
   const handleDeleteCategory = useCallback(async () => {
     if (!categoryToDelete) return;
+
+    await logAudit(
+      'Eliminar',
+      `Se eliminó la categoría de inventario "${categoryToDelete.name}".`,
+      { entityType: 'Categoría', entityId: categoryToDelete.id }
+    );
+    
     const pIndex = placeholderCategories.findIndex(cat => cat.id === categoryToDelete.id);
     if (pIndex !== -1) placeholderCategories.splice(pIndex, 1);
     await persistToFirestore(['categories']);
@@ -220,23 +244,41 @@ function InventarioPageComponent() {
   }, [suppliers, searchTermSuppliers, sortOptionSuppliers]);
 
   const handleOpenSupplierDialog = useCallback((supplier: Supplier | null = null) => { setEditingSupplier(supplier); setIsSupplierDialogOpen(true); }, []);
+  
   const handleSaveSupplier = useCallback(async (formData: SupplierFormValues) => {
-    if (editingSupplier) {
-      const pIndex = placeholderSuppliers.findIndex(sup => sup.id === editingSupplier.id);
+    const isEditing = !!editingSupplier;
+    const entityId = editingSupplier ? editingSupplier.id : `SUP_${Date.now().toString(36)}`;
+    const action = isEditing ? 'Editar' : 'Crear';
+    const description = `Se ${isEditing ? 'actualizó el' : 'creó el nuevo'} proveedor: "${formData.name}".`;
+
+    if (isEditing) {
+      const pIndex = placeholderSuppliers.findIndex(sup => sup.id === entityId);
       if (pIndex !== -1) placeholderSuppliers[pIndex] = { ...placeholderSuppliers[pIndex], ...formData, debtAmount: Number(formData.debtAmount) || 0 };
-      toast({ title: "Proveedor Actualizado" });
     } else {
-      const newSupplier: Supplier = { id: `SUP_${Date.now().toString(36)}`, ...formData, debtAmount: Number(formData.debtAmount) || 0, };
+      const newSupplier: Supplier = { id: entityId, ...formData, debtAmount: Number(formData.debtAmount) || 0 };
       placeholderSuppliers.push(newSupplier);
-      toast({ title: "Proveedor Agregado" });
     }
+    
+    await logAudit(action, description, { entityType: 'Proveedor', entityId });
     await persistToFirestore(['suppliers']);
-    setIsSupplierDialogOpen(false); setEditingSupplier(null);
+    toast({ title: `Proveedor ${isEditing ? 'Actualizado' : 'Agregado'}` });
+    setIsSupplierDialogOpen(false);
+    setEditingSupplier(null);
   }, [editingSupplier, toast]);
+
   const handleDeleteSupplier = useCallback(async (supplierId: string) => {
+    const supplierToDelete = suppliers.find(s => s.id === supplierId);
+    if (!supplierToDelete) return;
+
+    await logAudit(
+        'Eliminar',
+        `Se eliminó al proveedor "${supplierToDelete.name}".`,
+        { entityType: 'Proveedor', entityId: supplierId }
+    );
+    
     const pIndex = placeholderSuppliers.findIndex(sup => sup.id === supplierId);
     if (pIndex !== -1) { placeholderSuppliers.splice(pIndex, 1); await persistToFirestore(['suppliers']); toast({ title: "Proveedor Eliminado" }); }
-  }, [toast]);
+  }, [suppliers, toast]);
 
   // ======== ANÁLISIS IA TAB STATE & LOGIC ========
   const [isAnalysisLoading, setIsAnalysisLoading] = useState(false);
@@ -274,7 +316,7 @@ function InventarioPageComponent() {
   const [isRegisterPurchaseOpen, setIsRegisterPurchaseOpen] = useState(false);
 
   const handleSavePurchase = useCallback(async (data: PurchaseFormValues) => {
-    const keysToPersist: Array<'suppliers' | 'inventory' | 'cashDrawerTransactions'> = ['suppliers', 'inventory'];
+    const keysToPersist: Array<'suppliers' | 'inventory' | 'cashDrawerTransactions' | 'auditLogs'> = ['suppliers', 'inventory', 'auditLogs'];
     const supplierIndex = placeholderSuppliers.findIndex(s => s.id === data.supplierId);
     const supplierName = supplierIndex > -1 ? placeholderSuppliers[supplierIndex].name : 'N/A';
 
@@ -318,6 +360,8 @@ function InventarioPageComponent() {
       }
     });
 
+    await logAudit('Registrar', `Registró una compra al proveedor "${supplierName}" por ${formatCurrency(data.invoiceTotal)}.`, { entityType: 'Compra', entityId: data.supplierId });
+
     // 3. Persist changes
     await persistToFirestore(keysToPersist);
     
@@ -335,8 +379,15 @@ function InventarioPageComponent() {
           unitPrice: itemData.unitPrice || 0,
           sellingPrice: itemData.sellingPrice || 0,
       };
+
+      await logAudit(
+        'Crear',
+        `Creó el producto "${newItem.name}" (SKU: ${newItem.sku}) desde el diálogo de compra.`,
+        { entityType: 'Producto', entityId: newItem.id }
+      );
+      
       placeholderInventory.push(newItem);
-      await persistToFirestore(['inventory']);
+      await persistToFirestore(['inventory', 'auditLogs']);
       toast({ title: "Producto Creado", description: `"${newItem.name}" ha sido agregado al inventario. Ahora puede añadirlo a la compra.` });
       setVersion(v => v + 1); // Force re-render to update inventoryItems state everywhere
       return newItem;
@@ -392,10 +443,7 @@ function InventarioPageComponent() {
                     <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                     <Input type="search" placeholder="Buscar por nombre o SKU..." className="w-full rounded-lg bg-card pl-8" value={searchTermProducts} onChange={(e) => setSearchTermProducts(e.target.value)} />
                 </div>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild><Button variant="outline" className="min-w-[150px] flex-1 sm:flex-initial bg-card"><ListFilter className="mr-2 h-4 w-4" />Ordenar por</Button></DropdownMenuTrigger>
-                  <DropdownMenuContent align="end"><DropdownMenuLabel>Ordenar por</DropdownMenuLabel><DropdownMenuRadioGroup value={sortOptionProducts} onValueChange={(value) => setSortOptionProducts(value as InventorySortOption)}><DropdownMenuRadioItem value="stock_status_name_asc">Estado de Stock</DropdownMenuRadioItem><DropdownMenuRadioItem value="name_asc">Nombre (A-Z)</DropdownMenuRadioItem><DropdownMenuRadioItem value="name_desc">Nombre (Z-A)</DropdownMenuRadioItem><DropdownMenuRadioItem value="quantity_desc">Cantidad (Mayor a Menor)</DropdownMenuRadioItem><DropdownMenuRadioItem value="quantity_asc">Cantidad (Menor a Mayor)</DropdownMenuRadioItem><DropdownMenuRadioItem value="price_desc">Precio (Mayor a Menor)</DropdownMenuRadioItem><DropdownMenuRadioItem value="price_asc">Precio (Menor a Mayor)</DropdownMenuRadioItem><DropdownMenuRadioItem value="type_asc">Tipo (Producto/Servicio)</DropdownMenuRadioItem></DropdownMenuRadioGroup></DropdownMenuContent>
-                </DropdownMenu>
+                <DropdownMenu><DropdownMenuTrigger asChild><Button variant="outline" className="min-w-[150px] flex-1 sm:flex-initial bg-card"><ListFilter className="mr-2 h-4 w-4" />Ordenar por</Button></DropdownMenuTrigger><DropdownMenuContent align="end"><DropdownMenuLabel>Ordenar por</DropdownMenuLabel><DropdownMenuRadioGroup value={sortOptionProducts} onValueChange={(value) => setSortOptionProducts(value as InventorySortOption)}><DropdownMenuRadioItem value="stock_status_name_asc">Estado de Stock</DropdownMenuRadioItem><DropdownMenuRadioItem value="name_asc">Nombre (A-Z)</DropdownMenuRadioItem><DropdownMenuRadioItem value="name_desc">Nombre (Z-A)</DropdownMenuRadioItem><DropdownMenuRadioItem value="quantity_desc">Cantidad (Mayor a Menor)</DropdownMenuRadioItem><DropdownMenuRadioItem value="quantity_asc">Cantidad (Menor a Mayor)</DropdownMenuRadioItem><DropdownMenuRadioItem value="price_desc">Precio (Mayor a Menor)</DropdownMenuRadioItem><DropdownMenuRadioItem value="price_asc">Precio (Menor a Mayor)</DropdownMenuRadioItem><DropdownMenuRadioItem value="type_asc">Tipo (Producto/Servicio)</DropdownMenuRadioItem></DropdownMenuRadioGroup></DropdownMenuContent></DropdownMenu>
             </div>
             <Card>
                 <CardContent className="pt-6">

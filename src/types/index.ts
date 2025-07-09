@@ -480,3 +480,14 @@ export interface AggregatedInventoryItem {
   totalQuantity: number;
   totalRevenue: number;
 }
+
+export interface AuditLog {
+  id: string;
+  date: string; // ISO string
+  userId: string;
+  userName: string;
+  actionType: 'Crear' | 'Editar' | 'Eliminar' | 'Cancelar' | 'Archivar' | 'Pagar' | 'Registrar' | 'Acceso' | 'Otro';
+  description: string;
+  entityType?: 'Usuario' | 'Rol' | 'Servicio' | 'Cotización' | 'Producto' | 'Categoría' | 'Proveedor' | 'Venta' | 'Vehículo' | 'Conductor' | 'Pago' | 'Gasto' | 'Compra';
+  entityId?: string;
+}

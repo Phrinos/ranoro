@@ -13,24 +13,28 @@ import { useToast } from '@/hooks/use-toast';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import type { User, AppRole, Vehicle, ServiceRecord, InventoryItem, InventoryCategory, Supplier } from '@/types';
-import { Save, Signature, BookOpen, LayoutDashboard, Wrench, FileText, Receipt, Package, DollarSign, Users, Settings, Eye, Printer, UserCircle, Upload, Loader2, Bold, ShieldAlert, PlusCircle, Trash2, Edit, Search, ShieldQuestion, Checkbox, UploadCloud, CheckCircle, AlertTriangle, Car, BrainCircuit, Shield } from 'lucide-react';
+import type { User, AppRole, Vehicle, ServiceRecord, InventoryItem, InventoryCategory, Supplier, AuditLog } from '@/types';
+import { Save, Signature, BookOpen, LayoutDashboard, Wrench, FileText, Receipt, Package, DollarSign, Users, Settings, Eye, Printer, UserCircle, Upload, Loader2, Bold, ShieldAlert, PlusCircle, Trash2, Edit, Search, ShieldQuestion, Checkbox, UploadCloud, CheckCircle, AlertTriangle, Car, BrainCircuit, Shield, Calendar as CalendarIcon } from 'lucide-react';
 import { onAuthStateChanged, updatePassword, reauthenticateWithCredential, EmailAuthProvider } from 'firebase/auth';
 import { auth, storage, db } from '@/lib/firebaseClient.js';
 import { ref, uploadString, getDownloadURL } from 'firebase/storage';
-import { placeholderUsers, persistToFirestore, AUTH_USER_LOCALSTORAGE_KEY, placeholderAppRoles, defaultSuperAdmin, placeholderServiceRecords, migrateVehicles, migrateProducts, migrateData, placeholderVehicles, placeholderInventory, placeholderCategories, placeholderSuppliers } from '@/lib/placeholder-data';
+import { placeholderUsers, persistToFirestore, AUTH_USER_LOCALSTORAGE_KEY, placeholderAppRoles, defaultSuperAdmin, placeholderServiceRecords, migrateVehicles, migrateProducts, migrateData, placeholderVehicles, placeholderInventory, placeholderCategories, placeholderSuppliers, logAudit, placeholderAuditLogs } from '@/lib/placeholder-data';
 import { SignatureDialog } from '@/app/(app)/servicios/components/signature-dialog';
 import Image from "next/legacy/image";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { TicketContent } from "@/components/ticket-content";
 import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
-import { optimizeImage, capitalizeWords, capitalizeSentences, formatCurrency } from "@/lib/utils";
+import { optimizeImage, capitalizeWords, capitalizeSentences, formatCurrency, cn } from "@/lib/utils";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { format, parseISO } from 'date-fns';
+import { format, parseISO, compareDesc, isValid, startOfDay, endOfDay, isWithinInterval } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import type { DateRange } from 'react-day-picker';
+import { Badge } from "@/components/ui/badge";
 
 import type { ExtractedVehicle as ExtractedGenericVehicle, ExtractedService } from '@/ai/flows/data-migration-flow';
 import type { ExtractedVehicleForMigration } from '@/ai/flows/vehicle-migration-flow';
@@ -128,6 +132,14 @@ function UsuariosPageContent({ currentUser }: { currentUser: User | null }) {
   };
   
   const handleDeleteUser = async (userId: string) => {
+    const userToDelete = users.find(u => u.id === userId);
+    if (!userToDelete) return;
+
+    await logAudit(
+        'Eliminar',
+        `Eliminó al usuario "${userToDelete.name}" (Email: ${userToDelete.email}).`,
+        { entityType: 'Usuario', entityId: userId }
+    );
      // Logic for deleting user (from original /admin/usuarios page)
   };
 
@@ -148,7 +160,7 @@ function UsuariosPageContent({ currentUser }: { currentUser: User | null }) {
             <Input
               type="search"
               placeholder="Buscar por nombre o email..."
-              className="w-full rounded-lg bg-background pl-8 md:w-1/2"
+              className="w-full rounded-lg bg-background pl-8 md:w-1/2 lg:w-1/3"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -261,7 +273,7 @@ function RolesPageContent() {
                 <Input
                     type="search"
                     placeholder="Buscar por nombre de rol..."
-                    className="w-full rounded-lg bg-background pl-8 md:w-1/2"
+                    className="w-full rounded-lg bg-background pl-8 md:w-1/2 lg:w-1/3"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                 />
@@ -367,6 +379,121 @@ function MigracionPageContent() {
 //--- End Content for Migración Page ---
 
 
+//--- Start Content for Auditoria Page ---
+function AuditoriaPageContent() {
+  const [logs, setLogs] = useState<AuditLog[]>([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
+
+  useEffect(() => {
+    // This will be updated if placeholder-data changes
+    setLogs(placeholderAuditLogs);
+  }, []);
+
+  const filteredLogs = useMemo(() => {
+    let filtered = [...logs];
+    if (searchTerm) {
+      const lowerSearch = searchTerm.toLowerCase();
+      filtered = filtered.filter(log =>
+        log.userName.toLowerCase().includes(lowerSearch) ||
+        log.description.toLowerCase().includes(lowerSearch) ||
+        log.actionType.toLowerCase().includes(lowerSearch)
+      );
+    }
+    if (dateRange?.from) {
+      const from = startOfDay(dateRange.from);
+      const to = dateRange.to ? endOfDay(dateRange.to) : endOfDay(dateRange.from);
+      filtered = filtered.filter(log => {
+          const logDate = parseISO(log.date);
+          return isValid(logDate) && isWithinInterval(logDate, { start: from, end: to });
+      });
+    }
+    // Already sorted by date desc on creation, but we can re-sort to be safe
+    return filtered.sort((a,b) => compareDesc(parseISO(a.date), parseISO(b.date)));
+  }, [logs, searchTerm, dateRange]);
+
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
+        <div>
+          <h2 className="text-2xl font-bold tracking-tight">Registro de Auditoría</h2>
+          <p className="text-muted-foreground">Registro de todas las acciones importantes en el sistema.</p>
+        </div>
+      </div>
+      <div className="flex flex-col md:flex-row gap-4">
+         <div className="relative flex-1">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              type="search"
+              placeholder="Buscar por usuario, acción o descripción..."
+              className="w-full rounded-lg bg-background pl-8 md:w-full lg:w-2/3"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+        </div>
+         <Popover>
+          <PopoverTrigger asChild>
+            <Button
+              variant={"outline"}
+              className={cn("w-full md:w-[280px] justify-start text-left font-normal", !dateRange && "text-muted-foreground")}
+            >
+              <CalendarIcon className="mr-2 h-4 w-4" />
+              {dateRange?.from ? (dateRange.to ? `${format(dateRange.from, "dd LLL, y")} - ${format(dateRange.to, "dd LLL, y")}` : format(dateRange.from, "dd LLL, y")) : "Filtrar por fecha"}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0" align="end">
+            <Calendar
+              initialFocus
+              mode="range"
+              defaultMonth={dateRange?.from}
+              selected={dateRange}
+              onSelect={setDateRange}
+              numberOfMonths={2}
+              locale={es}
+            />
+          </PopoverContent>
+        </Popover>
+      </div>
+      <Card>
+        <CardContent className="pt-6">
+          <div className="overflow-x-auto rounded-md border">
+            <Table>
+              <TableHeader className="bg-black">
+                <TableRow>
+                  <TableHead className="text-white w-[180px]">Fecha</TableHead>
+                  <TableHead className="text-white w-[150px]">Usuario</TableHead>
+                  <TableHead className="text-white w-[120px]">Tipo de Acción</TableHead>
+                  <TableHead className="text-white">Descripción</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredLogs.length > 0 ? (
+                  filteredLogs.map(log => (
+                    <TableRow key={log.id}>
+                      <TableCell className="font-mono text-xs">{format(parseISO(log.date), "dd/MM/yy, HH:mm:ss", { locale: es })}</TableCell>
+                      <TableCell className="font-medium">{log.userName}</TableCell>
+                      <TableCell><Badge variant={log.actionType === 'Eliminar' || log.actionType === 'Cancelar' ? 'destructive' : 'secondary'}>{log.actionType}</Badge></TableCell>
+                      <TableCell>{log.description}</TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={4} className="h-24 text-center">
+                      No hay registros de auditoría para mostrar.
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+//--- End Content for Auditoria Page ---
+
+
 // --- Main Component ---
 function AdministracionPageComponent() {
     const searchParams = useSearchParams();
@@ -395,9 +522,10 @@ function AdministracionPageComponent() {
             </div>
             
             <Tabs value={adminTab} onValueChange={setAdminTab} className="w-full">
-                <TabsList className="grid w-full grid-cols-3 mb-6">
+                <TabsList className="grid w-full grid-cols-4 mb-6">
                     <TabsTrigger value="usuarios" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Usuarios</TabsTrigger>
                     <TabsTrigger value="roles" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Roles y Permisos</TabsTrigger>
+                    <TabsTrigger value="auditoria" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Auditoría</TabsTrigger>
                     <TabsTrigger value="migracion" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Migración de Datos</TabsTrigger>
                 </TabsList>
                 <TabsContent value="usuarios" className="mt-0">
@@ -405,6 +533,9 @@ function AdministracionPageComponent() {
                 </TabsContent>
                 <TabsContent value="roles" className="mt-0">
                     <RolesPageContent />
+                </TabsContent>
+                 <TabsContent value="auditoria" className="mt-0">
+                    <AuditoriaPageContent />
                 </TabsContent>
                 <TabsContent value="migracion" className="mt-0">
                     <MigracionPageContent />

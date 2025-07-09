@@ -1,3 +1,4 @@
+
 import type {
   Vehicle,
   ServiceRecord,
@@ -25,6 +26,7 @@ import type {
   VehiclePaperwork,
   CashDrawerTransaction,
   InitialCashBalance,
+  AuditLog,
 } from '@/types';
 import {
   format,
@@ -151,9 +153,37 @@ const ALL_AVAILABLE_PERMISSIONS = [
   { id: 'users:manage', label: 'Gestionar Usuarios (Admin)' },
   { id: 'roles:manage', label: 'Gestionar Roles y Permisos (Admin)' },
   { id: 'ticket_config:manage', label: 'Configurar Ticket (Admin)' },
+  { id: 'audits:view', label: 'Ver Auditoría de Acciones (Admin)' }
 ];
 
 export let placeholderAppRoles: AppRole[] = [];
+
+// =======================================
+// ===          AUDITORÍA                ===
+// =======================================
+export let placeholderAuditLogs: AuditLog[] = [
+  {
+    id: 'log_1',
+    date: new Date().toISOString(),
+    userId: 'user_superadmin',
+    userName: 'Arturo Valdelamar',
+    actionType: 'Crear',
+    description: 'Creó el nuevo servicio #SER003 para el vehículo CCC789C.',
+    entityType: 'Servicio',
+    entityId: 'SER003'
+  },
+  {
+    id: 'log_2',
+    date: subDays(new Date(), 1).toISOString(),
+    userId: 'user_admin',
+    userName: 'Laura Mendez',
+    actionType: 'Editar',
+    description: 'Actualizó el precio del producto "Aceite Sintético 5W-30" a $180.00.',
+    entityType: 'Producto',
+    entityId: 'PROD001'
+  }
+];
+
 
 // =======================================
 // ===          OPERACIONES              ===
@@ -289,6 +319,7 @@ const DATA_ARRAYS = {
   publicOwnerReports: placeholderPublicOwnerReports,
   ownerWithdrawals: placeholderOwnerWithdrawals,
   vehicleExpenses: placeholderVehicleExpenses,
+  auditLogs: placeholderAuditLogs,
 };
 
 type DataKey = keyof typeof DATA_ARRAYS;
@@ -528,6 +559,53 @@ export async function persistToFirestore(keysToUpdate?: DataKey[]) {
 // =======================================
 // ===          FUNCIONES HELPER         ===
 // =======================================
+
+/**
+ * Creates and persists an audit log entry.
+ */
+export async function logAudit(
+  actionType: AuditLog['actionType'],
+  description: string,
+  details: {
+    entityType?: AuditLog['entityType'];
+    entityId?: string;
+    userId?: string;
+    userName?: string;
+  } = {}
+) {
+  // Get current user from localStorage if not provided
+  let userId = details.userId;
+  let userName = details.userName;
+
+  if (!userId || !userName) {
+    try {
+      const authUserString = localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY);
+      if (authUserString) {
+        const currentUser: User = JSON.parse(authUserString);
+        userId = userId || currentUser.id;
+        userName = userName || currentUser.name;
+      }
+    } catch (e) {
+      console.error("Could not get user for audit log:", e);
+    }
+  }
+
+  const newLog: AuditLog = {
+    id: `log_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
+    date: new Date().toISOString(),
+    userId: userId || 'system',
+    userName: userName || 'Sistema',
+    actionType,
+    description,
+    entityType: details.entityType,
+    entityId: details.entityId,
+  };
+
+  placeholderAuditLogs.unshift(newLog); // Add to the beginning of the array
+  await persistToFirestore(['auditLogs']);
+}
+
+
 export const getCurrentMonthRange = () => {
   const now = new Date();
   return { from: startOfMonth(now), to: endOfMonth(now) };
