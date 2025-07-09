@@ -187,9 +187,9 @@ function ResumenFinancieroPageComponent() {
 
             <Tabs defaultValue="resumen" className="w-full">
                 <TabsList className="grid w-full grid-cols-3 mb-6">
-                    <TabsTrigger value="resumen">Resumen</TabsTrigger>
-                    <TabsTrigger value="ingresos">Ingresos</TabsTrigger>
-                    <TabsTrigger value="egresos">Egresos</TabsTrigger>
+                    <TabsTrigger value="resumen" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Resumen</TabsTrigger>
+                    <TabsTrigger value="ingresos" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Ingresos</TabsTrigger>
+                    <TabsTrigger value="egresos" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Egresos</TabsTrigger>
                 </TabsList>
                 
                  <TabsContent value="resumen" className="mt-0">

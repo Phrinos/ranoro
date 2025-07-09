@@ -62,20 +62,20 @@ const BASE_NAV_STRUCTURE: ReadonlyArray<Omit<NavigationEntry, 'isActive'>> = [
   },
   {
     label: 'Cotizaciones', 
-    path: '/cotizaciones/historial', 
+    path: '/cotizaciones', 
     icon: FileText, 
     groupTag: "Mi Taller",
     permissions: ['services:create']
   },
   { 
-    label: 'Agenda', 
+    label: 'Agenda de Servicios', 
     path: '/servicios/agenda', 
     icon: CalendarClock, 
     groupTag: "Mi Taller",
     permissions: ['services:view_history']
   },
   { 
-    label: 'Servicios', 
+    label: 'Historial de Servicios', 
     path: '/servicios/historial', 
     icon: Wrench, 
     groupTag: "Mi Taller",
@@ -203,31 +203,39 @@ const useNavigation = (): NavigationEntry[] => {
 
   const entriesWithActiveState = filteredNavStructure.map(entry => {
     let isActive = pathname === entry.path;
-
-    if (!isActive && entry.path && entry.path !== '/' && entry.path.length > 1 && pathname.startsWith(entry.path + '/')) {
-        const isMoreSpecificActiveEntry = filteredNavStructure.some(
-          otherEntry => otherEntry.path.startsWith(pathname) && otherEntry.path.length > entry.path.length && otherEntry.path !== entry.path
+    
+    // Handle parent route matching for nested pages
+    const isParentRoute = pathname.startsWith(`${entry.path}/`);
+    if (isParentRoute) {
+        // Check if there is another more specific navigation entry that also matches.
+        // If not, this is the most specific parent, so it should be active.
+        const isMoreSpecificActive = filteredNavStructure.some(otherEntry => 
+            pathname.startsWith(`${otherEntry.path}/`) && otherEntry.path.length > entry.path.length
         );
-        if (!isMoreSpecificActiveEntry) {
+        if (!isMoreSpecificActive) {
             isActive = true;
         }
     }
     
-    // Explicit overrides for parent routes
-    if (entry.path === '/cotizaciones/historial' && pathname.startsWith('/cotizaciones')) isActive = true;
-    if (entry.path === '/servicios/historial' && pathname.startsWith('/servicios')) isActive = true;
-    if (entry.path === '/servicios/agenda' && pathname.startsWith('/servicios')) isActive = true;
+    // Correctly activate "Servicios" when on "Agenda" or "Historial"
+    if ((entry.path === '/servicios/agenda' || entry.path === '/servicios/historial') && pathname.startsWith('/servicios')) {
+        isActive = pathname === entry.path;
+    }
+
+
+    // Specific overrides to group related pages under one active nav item
+    if (entry.path === '/cotizaciones' && pathname.startsWith('/cotizaciones')) isActive = true;
     if (entry.path === '/inventario' && pathname.startsWith('/inventario')) isActive = true;
     if (entry.path === '/pos' && pathname.startsWith('/pos')) isActive = true;
     if (entry.path === '/personal' && (pathname.startsWith('/personal') || pathname.startsWith('/tecnicos') || pathname.startsWith('/administrativos'))) isActive = true;
-    if (entry.path === '/opciones' && (pathname.startsWith('/opciones') || pathname.startsWith('/perfil') || pathname.startsWith('/manual'))) isActive = true;
+    if (entry.path === '/opciones' && (pathname.startsWith('/opciones') || pathname.startsWith('/perfil') || pathname.startsWith('/manual') || pathname.startsWith('/admin/configuracion-ticket'))) isActive = true;
     if (entry.path === '/finanzas/resumen' && pathname.startsWith('/finanzas')) isActive = true;
-    if (entry.path === '/finanzas/reporte' && pathname.startsWith('/finanzas')) isActive = true;
-    if (entry.path === '/administracion' && pathname.startsWith('/administracion')) isActive = true;
-    
-    // Other specific cases
-    if (entry.path === '/precios' && pathname === '/precios') isActive = true;
+    if (entry.path === '/administracion' && (pathname.startsWith('/administracion') || pathname.startsWith('/admin'))) isActive = true;
     if (entry.path === '/flotilla' && (pathname.startsWith('/flotilla') || pathname.startsWith('/conductores') || pathname.startsWith('/rentas'))) isActive = true;
+    
+    // Deactivate 'Finanzas' if 'Reportes' is active
+    if (entry.path === '/finanzas/resumen' && pathname.startsWith('/finanzas/reporte')) isActive = false;
+
 
     return { ...entry, isActive };
   });
