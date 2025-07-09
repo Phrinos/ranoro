@@ -7,6 +7,10 @@ export interface WorkshopInfo {
   addressLine2?: string;
   cityState: string;
   logoUrl: string;
+  logoWidth?: number;
+  fontSize?: number;
+  blankLinesTop?: number;
+  blankLinesBottom?: number;
 }
 
 export interface VehiclePaperwork {
@@ -451,4 +455,12 @@ export interface PublicOwnerReport {
   totalDeductions: number;
   totalNetBalance: number;
   workshopInfo?: WorkshopInfo;
+}
+
+export interface AggregatedInventoryItem {
+  itemId: string;
+  name: string;
+  sku: string;
+  totalQuantity: number;
+  totalRevenue: number;
 }

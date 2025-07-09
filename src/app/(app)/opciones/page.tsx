@@ -13,7 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import type { User, SaleReceipt, AppRole } from '@/types';
+import type { User, SaleReceipt, AppRole, WorkshopInfo } from '@/types';
 import { Save, Signature, BookOpen, LayoutDashboard, Wrench, FileText, Receipt, Package, DollarSign, Users, Settings, Eye, Printer } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { onAuthStateChanged, updatePassword, reauthenticateWithCredential, EmailAuthProvider } from 'firebase/auth';
@@ -24,7 +24,7 @@ import { SignatureDialog } from '@/app/(app)/servicios/components/signature-dial
 import Image from "next/legacy/image";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { TicketContent } from "@/components/ticket-content";
-import { PrintTicketDialog } from "@/components/ui/print-ticket-dialog";
+import { Slider } from "@/components/ui/slider";
 
 
 // --- Schema and content from /perfil ---
@@ -179,13 +179,17 @@ function ManualUsuarioPageContent() {
 // --- NEW ConfiguracionTicketPageContent ---
 const LOCALSTORAGE_KEY = "workshopTicketInfo";
 
-const defaultWorkshopInfo = {
+const defaultWorkshopInfo: WorkshopInfo = {
   name: "RANORO",
   phone: "4491425323",
   addressLine1: "Av. de la Convención de 1914 No. 1421",
   addressLine2: "Jardines de la Concepción, C.P. 20267",
   cityState: "Aguascalientes, Ags.",
   logoUrl: "/ranoro-logo.png",
+  logoWidth: 120,
+  fontSize: 10,
+  blankLinesTop: 0,
+  blankLinesBottom: 0,
 };
 
 const ticketSchema = z.object({
@@ -195,6 +199,10 @@ const ticketSchema = z.object({
   addressLine2: z.string().optional(),
   cityState: z.string().min(3),
   logoUrl: z.string().url("Ingresa una URL válida"),
+  logoWidth: z.coerce.number().min(20).max(300).optional(),
+  fontSize: z.coerce.number().min(8).max(16).optional(),
+  blankLinesTop: z.coerce.number().min(0).max(10).int().optional(),
+  blankLinesBottom: z.coerce.number().min(0).max(10).int().optional(),
 });
 
 type TicketForm = z.infer<typeof ticketSchema>;
@@ -216,13 +224,13 @@ const sampleSale: SaleReceipt = {
 function ConfiguracionTicketPageContent() {
   const { toast } = useToast();
   const ticketContentRef = useRef<HTMLDivElement>(null);
-  const [previewOpen, setPreviewOpen] = useState(false);
-  const [previewInfo, setPreviewInfo] = useState<TicketForm>(defaultWorkshopInfo);
 
   const form = useForm<TicketForm>({
     resolver: zodResolver(ticketSchema),
     defaultValues: defaultWorkshopInfo,
   });
+
+  const watchedValues = form.watch();
 
   useEffect(() => {
     const stored = typeof window !== "undefined" ? localStorage.getItem(LOCALSTORAGE_KEY) : null;
@@ -230,7 +238,6 @@ function ConfiguracionTicketPageContent() {
       try {
         const parsed = JSON.parse(stored) as TicketForm;
         form.reset(parsed);
-        setPreviewInfo(parsed);
       } catch {
         form.reset(defaultWorkshopInfo);
       }
@@ -241,19 +248,27 @@ function ConfiguracionTicketPageContent() {
     try {
       localStorage.setItem(LOCALSTORAGE_KEY, JSON.stringify(data));
       toast({ title: "Configuración guardada", description: "Se actualizó la información del ticket", duration: 3000 });
-      setPreviewInfo(data);
     } catch {
       toast({ title: "Error al guardar", description: "No se pudo escribir en localStorage", variant: "destructive", duration: 3000 });
     }
   };
-
-  const handlePreview = () => {
-    setPreviewInfo(form.getValues());
-    setPreviewOpen(true);
-  };
   
   const handlePrint = () => {
-    window.print();
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+      printWindow.document.write('<html><head><title>Imprimir Ticket</title>');
+      // You can link to your app's stylesheet or add styles directly
+      printWindow.document.write('<style>@media print { body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } .printable-content { margin: 0; padding: 0; } }</style>');
+      printWindow.document.write('</head><body>');
+      const printableContent = document.getElementById('ticket-preview-printable');
+      if (printableContent) {
+        printWindow.document.write(printableContent.innerHTML);
+      }
+      printWindow.document.write('</body></html>');
+      printWindow.document.close();
+      printWindow.focus();
+      setTimeout(() => { printWindow.print(); printWindow.close(); }, 250);
+    }
   };
 
   const labels: Record<keyof TicketForm, string> = {
@@ -263,70 +278,120 @@ function ConfiguracionTicketPageContent() {
     addressLine2: "Dirección (Línea 2 opcional)",
     cityState: "Ciudad, Estado y C.P.",
     logoUrl: "URL del Logo (PNG/JPG)",
+    logoWidth: "Ancho del Logo (px)",
+    fontSize: "Tamaño de Fuente (px)",
+    blankLinesTop: "Líneas en Blanco (Arriba)",
+    blankLinesBottom: "Líneas en Blanco (Abajo)",
   };
 
   return (
-    <>
-      <Card className="max-w-2xl mx-auto shadow-lg">
-        <CardHeader>
-          <CardTitle>Configuración de Ticket</CardTitle>
-          <CardDescription>Personaliza la información que aparece en los tickets y cotizaciones impresas.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              {(Object.keys(labels) as (keyof TicketForm)[]).map((field) => (
-                <FormField
-                  key={field}
-                  control={form.control}
-                  name={field}
-                  render={({ field: f }) => (
-                    <FormItem>
-                      <FormLabel>{labels[field]}</FormLabel>
-                      <FormControl>
-                        <Input {...f} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              ))}
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+        {/* Columna de Formulario */}
+        <div className="lg:col-span-1">
+            <Card className="shadow-lg">
+                <CardHeader>
+                <CardTitle>Personalizar Ticket</CardTitle>
+                <CardDescription>Ajusta la apariencia de tus tickets impresos.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                <Form {...form}>
+                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                        {(['name', 'phone', 'addressLine1', 'addressLine2', 'cityState', 'logoUrl'] as (keyof TicketForm)[]).map((fieldName) => (
+                           <FormField
+                            key={fieldName}
+                            control={form.control}
+                            name={fieldName}
+                            render={({ field }) => (
+                                <FormItem>
+                                <FormLabel>{labels[fieldName]}</FormLabel>
+                                <FormControl>
+                                    <Input {...field} />
+                                </FormControl>
+                                <FormMessage />
+                                </FormItem>
+                            )}
+                            />
+                        ))}
+                        <FormField
+                            control={form.control}
+                            name="logoWidth"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>{labels.logoWidth}: {field.value || defaultWorkshopInfo.logoWidth}px</FormLabel>
+                                    <FormControl>
+                                       <Slider defaultValue={[defaultWorkshopInfo.logoWidth || 120]} value={[field.value || defaultWorkshopInfo.logoWidth || 120]} onValueChange={(value) => field.onChange(value[0])} min={40} max={250} step={5} />
+                                    </FormControl>
+                                </FormItem>
+                            )}
+                        />
+                        <FormField
+                            control={form.control}
+                            name="fontSize"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>{labels.fontSize}: {field.value || defaultWorkshopInfo.fontSize}px</FormLabel>
+                                    <FormControl>
+                                       <Slider defaultValue={[defaultWorkshopInfo.fontSize || 10]} value={[field.value || defaultWorkshopInfo.fontSize || 10]} onValueChange={(value) => field.onChange(value[0])} min={8} max={16} step={1} />
+                                    </FormControl>
+                                </FormItem>
+                            )}
+                        />
+                        <div className="grid grid-cols-2 gap-4">
+                             <FormField
+                                control={form.control}
+                                name="blankLinesTop"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>{labels.blankLinesTop}</FormLabel>
+                                        <FormControl><Input type="number" min={0} max={10} {...field} value={field.value || 0} /></FormControl>
+                                    </FormItem>
+                                )}
+                            />
+                             <FormField
+                                control={form.control}
+                                name="blankLinesBottom"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>{labels.blankLinesBottom}</FormLabel>
+                                        <FormControl><Input type="number" min={0} max={10} {...field} value={field.value || 0}/></FormControl>
+                                    </FormItem>
+                                )}
+                            />
+                        </div>
 
-              <div className="flex flex-col sm:flex-row gap-2">
-                <Button type="button" variant="outline" onClick={handlePreview} className="w-full sm:w-auto">
-                  <Eye className="mr-2 h-4 w-4" /> Vista Previa
-                </Button>
-                <Button type="submit" className="w-full sm:w-auto" disabled={form.formState.isSubmitting}>
-                  <Save className="mr-2 h-4 w-4" /> {form.formState.isSubmitting ? "Guardando…" : "Guardar"}
-                </Button>
-              </div>
-            </form>
-          </Form>
-        </CardContent>
-      </Card>
-      {previewOpen && (
-        <PrintTicketDialog 
-          open={previewOpen} 
-          onOpenChange={setPreviewOpen} 
-          title="Vista Previa de Ticket"
-          dialogContentClassName="printable-content"
-          footerActions={
-             <Button onClick={handlePrint}>
-                <Printer className="mr-2 h-4 w-4" /> Imprimir
-            </Button>
-          }
-        >
-          <TicketContent
-            ref={ticketContentRef}
-            sale={sampleSale}
-            previewWorkshopInfo={{
-              ...previewInfo,
-              addressLine2: previewInfo.addressLine2 ?? ""
-            }}
-          />
-        </PrintTicketDialog>
-      )}
-    </>
+                        <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
+                        <Save className="mr-2 h-4 w-4" /> {form.formState.isSubmitting ? "Guardando…" : "Guardar Cambios"}
+                        </Button>
+                    </form>
+                </Form>
+                </CardContent>
+            </Card>
+        </div>
+
+        {/* Columna de Vista Previa */}
+        <div className="lg:col-span-2">
+             <Card className="shadow-lg sticky top-24">
+                <CardHeader className="flex flex-row items-center justify-between">
+                    <div>
+                        <CardTitle>Vista Previa del Ticket</CardTitle>
+                        <CardDescription>Así se verá tu ticket impreso.</CardDescription>
+                    </div>
+                    <Button onClick={handlePrint} variant="outline">
+                        <Printer className="mr-2 h-4 w-4"/>Imprimir
+                    </Button>
+                </CardHeader>
+                <CardContent className="bg-gray-200 dark:bg-gray-800 p-4 sm:p-8 flex justify-center overflow-auto">
+                    <div id="ticket-preview-printable" className="w-[300px] bg-white shadow-lg">
+                        <TicketContent
+                            ref={ticketContentRef}
+                            sale={sampleSale}
+                            previewWorkshopInfo={watchedValues as WorkshopInfo}
+                        />
+                    </div>
+                </CardContent>
+            </Card>
+        </div>
+    </div>
   );
 }
 
