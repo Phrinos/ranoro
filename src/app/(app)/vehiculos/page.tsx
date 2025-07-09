@@ -330,45 +330,18 @@ function PrecotizacionesPageContent() {
       <div className="space-y-4">
         {filteredRecords.length > 0 ? filteredRecords.map(record => (
           <Card key={record.id} className="overflow-hidden">
-             <div className="flex flex-col md:flex-row">
-                <div className="p-4 bg-muted/50 md:w-60 flex-shrink-0 flex flex-col justify-between">
-                    <div>
-                        <h3 className="text-lg font-bold flex items-center gap-2"><Car className="h-5 w-5 text-primary"/>{record.make} {record.model}</h3>
-                        <p className="text-sm text-muted-foreground mt-1">{formatYearRange(record.years)}</p>
-                    </div>
-                    <div className="mt-4">
-                        <Badge>{record.services.length} servicio(s)</Badge>
-                    </div>
+             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4 border-b bg-muted/30">
+                <div>
+                    <CardTitle className="text-xl font-bold">{record.make}</CardTitle>
+                    <CardDescription className="text-base">{record.model}</CardDescription>
+                    <p className="text-sm text-muted-foreground pt-1">{formatYearRange(record.years)}</p>
                 </div>
-                <div className="flex-grow p-4">
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead className="w-2/5">Servicio</TableHead>
-                                <TableHead>Descripción</TableHead>
-                                <TableHead className="text-right">Precio Cliente</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {record.services.map((service) => (
-                                <TableRow key={service.id}>
-                                    <TableCell className="font-medium">{service.serviceName}</TableCell>
-                                    <TableCell className="text-xs text-muted-foreground">{service.description}</TableCell>
-                                    <TableCell className="text-right font-semibold">{formatCurrency(service.customerPrice)}</TableCell>
-                                </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
-                </div>
-                <div className="p-4 bg-muted/50 flex flex-col items-center justify-center gap-2 border-l">
-                    <Button variant="outline" size="sm" className="w-full" onClick={() => handleOpenDialog(record)}>
-                        <Edit className="mr-2 h-4 w-4"/> Editar
-                    </Button>
+                <div className="flex items-center gap-2">
+                    <Badge>{record.services.length} servicio(s)</Badge>
+                    <Button variant="ghost" size="icon" onClick={() => handleOpenDialog(record)}><Edit className="h-4 w-4"/></Button>
                     <AlertDialog>
                         <AlertDialogTrigger asChild>
-                            <Button variant="destructive" size="sm" className="w-full">
-                                <Trash2 className="mr-2 h-4 w-4"/> Eliminar
-                            </Button>
+                            <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive"><Trash2 className="h-4 w-4"/></Button>
                         </AlertDialogTrigger>
                         <AlertDialogContent>
                             <AlertDialogHeader>
@@ -386,7 +359,27 @@ function PrecotizacionesPageContent() {
                         </AlertDialogContent>
                     </AlertDialog>
                 </div>
-             </div>
+            </CardHeader>
+            <CardContent className="p-0">
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead className="w-2/5">Servicio</TableHead>
+                            <TableHead>Descripción</TableHead>
+                            <TableHead className="text-right">Precio Cliente</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {record.services.map((service) => (
+                            <TableRow key={service.id}>
+                                <TableCell className="font-medium">{service.serviceName}</TableCell>
+                                <TableCell className="text-xs text-muted-foreground">{service.description}</TableCell>
+                                <TableCell className="text-right font-semibold">{formatCurrency(service.customerPrice)}</TableCell>
+                            </TableRow>
+                        ))}
+                    </TableBody>
+                </Table>
+            </CardContent>
           </Card>
         )) : (
           <div className="col-span-full text-center py-12 text-muted-foreground">
