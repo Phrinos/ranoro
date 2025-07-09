@@ -13,7 +13,7 @@ import { Search, ListFilter, FileText, Eye, Edit, Printer } from "lucide-react";
 import { placeholderServiceRecords, placeholderVehicles, placeholderTechnicians, placeholderInventory, persistToFirestore, AUTH_USER_LOCALSTORAGE_KEY } from "@/lib/placeholder-data"; 
 import type { QuoteRecord, Vehicle, ServiceRecord, Technician, InventoryItem, WorkshopInfo, User } from "@/types"; 
 import { useToast } from "@/hooks/use-toast";
-import { format, parseISO, compareAsc, compareDesc, isBefore, addDays } from "date-fns";
+import { format, parseISO, compareAsc, compareDesc, isBefore, addDays, isValid } from "date-fns";
 import { es } from 'date-fns/locale';
 import { cn, formatCurrency } from "@/lib/utils";
 import { ServiceDialog } from "../../servicios/components/service-dialog";
@@ -29,10 +29,10 @@ type QuoteSortOption =
   | "vehicle_asc" | "vehicle_desc";
 
 
-const QuoteList = React.memo(({ quotes, vehicles, onEditQuote, onViewQuote }: { 
+const QuoteList = React.memo(({ quotes, vehicles, onEdit, onViewQuote }: { 
     quotes: QuoteRecord[], 
     vehicles: Vehicle[], 
-    onEditQuote: (quote: QuoteRecord) => void,
+    onEdit: (quote: QuoteRecord) => void,
     onViewQuote: (quote: QuoteRecord) => void,
 }) => {
   
@@ -98,7 +98,7 @@ const QuoteList = React.memo(({ quotes, vehicles, onEditQuote, onViewQuote }: {
                         <p className="text-xs text-muted-foreground">Asesor: {quote.preparedByTechnicianName || 'N/A'}</p>
                         <div className="flex justify-center items-center gap-1">
                           <Button variant="ghost" size="icon" onClick={() => onViewQuote(quote)} title="Vista Previa"><Eye className="h-4 w-4" /></Button>
-                          <Button variant="ghost" size="icon" onClick={() => onEditQuote(quote)} title="Editar Cotización"><Edit className="h-4 w-4" /></Button>
+                          <Button variant="ghost" size="icon" onClick={() => onEdit(quote)} title="Editar Cotización"><Edit className="h-4 w-4" /></Button>
                         </div>
                     </div>
                 </div>
@@ -197,8 +197,27 @@ function HistorialCotizacionesPageComponent() {
   }, [toast]);
 
   const handleSaveQuote = useCallback(async (data: QuoteRecord | ServiceRecord) => {
-      setIsFormDialogOpen(false);
-  }, []);
+    const isNew = !data.id;
+    const recordId = data.id || `doc_${Date.now().toString(36)}`;
+    const recordToSave = { ...data, id: recordId };
+    
+    const recordIndex = placeholderServiceRecords.findIndex(q => q.id === recordId);
+    
+    if (recordIndex > -1) {
+      placeholderServiceRecords[recordIndex] = recordToSave as ServiceRecord;
+    } else {
+      placeholderServiceRecords.push(recordToSave as ServiceRecord);
+    }
+    
+    await persistToFirestore(['serviceRecords']);
+    
+    toast({
+      title: `Cotización ${isNew ? 'creada' : 'actualizada'}`,
+      description: `Se han guardado los cambios para ${recordId}.`,
+    });
+    
+    setIsFormDialogOpen(false);
+  }, [toast]);
 
 
   return (
@@ -216,7 +235,7 @@ function HistorialCotizacionesPageComponent() {
         <QuoteList
           quotes={activeQuotes}
           vehicles={vehicles}
-          onEditQuote={handleEditQuote}
+          onEdit={handleEditQuote}
           onViewQuote={handleViewQuote}
         />
       </div>
