@@ -163,25 +163,27 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
           </Card>
           
           <Card className="mt-4 mb-4 border-gray-200">
-            <CardContent className="p-4 text-center">
-              {quote.preparedByTechnicianSignatureDataUrl && (
-                <div className="h-24 w-full max-w-[200px] relative inline-block">
-                  <Image src={quote.preparedByTechnicianSignatureDataUrl} alt="Firma del asesor" layout="fill" objectFit="contain" />
+            <CardContent className="p-4 flex flex-col sm:flex-row justify-between min-h-[120px]">
+                <div className="text-left text-xs">
+                    <p className="font-semibold">{effectiveWorkshopInfo.footerLine1}</p>
+                    <p>{effectiveWorkshopInfo.footerLine2}</p>
                 </div>
-              )}
-              <div className="border-t-2 border-black mt-2 pt-1 w-64 text-center inline-block">
-                <p className="text-xs font-bold">ASESOR: {quote.preparedByTechnicianName?.toUpperCase() || '________________________________'}</p>
-              </div>
-              <div className="mt-4 text-xs">
-                <p className="font-semibold">{effectiveWorkshopInfo.footerLine1}</p>
-                <p>{effectiveWorkshopInfo.footerLine2}</p>
-              </div>
+                <div className="text-right flex flex-col items-end justify-end mt-4 sm:mt-0">
+                    {quote.preparedByTechnicianSignatureDataUrl && (
+                        <div className="h-16 w-40 relative mb-1">
+                            <Image src={quote.preparedByTechnicianSignatureDataUrl} alt="Firma del asesor" layout="fill" objectFit="contain" />
+                        </div>
+                    )}
+                    <div className="border-t-2 border-gray-300 pt-1 w-56 text-center">
+                        <p className="text-xs font-bold">ASESOR: {quote.preparedByTechnicianName?.toUpperCase() || '________________________________'}</p>
+                    </div>
+                </div>
             </CardContent>
           </Card>
         </main>
         
         <footer className="mt-auto pt-4">
-          <div className="text-xs text-gray-600 mt-6 border-t border-gray-300 pt-4">
+          <div className="text-xs text-gray-600 mt-2">
             <h4 className="font-semibold text-gray-700 mb-1">Términos y Condiciones:</h4>
             <p className="leading-snug">
                 {`Precios en MXN. Esta cotización es válida hasta el ${validityDate}. `}
