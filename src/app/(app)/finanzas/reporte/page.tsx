@@ -12,7 +12,7 @@ import {
   placeholderInventory, 
   hydrateReady,
 } from "@/lib/placeholder-data";
-import type { InventoryItem, FinancialOperation, AggregatedInventoryItem } from "@/types";
+import type { InventoryItem, FinancialOperation, AggregatedInventoryItem, PaymentMethod } from "@/types";
 import {
   format,
   parseISO,
@@ -21,7 +21,7 @@ import {
   startOfDay, endOfDay, startOfWeek, endOfWeek, compareDesc, startOfMonth, endOfMonth, compareAsc
 } from "date-fns";
 import { es } from 'date-fns/locale';
-import { CalendarIcon, Search, LineChart, PackageSearch, ListFilter } from "lucide-react";
+import { CalendarIcon, Search, LineChart, PackageSearch, ListFilter, Filter } from "lucide-react";
 import { cn, formatCurrency } from "@/lib/utils";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { DateRange } from "react-day-picker";
@@ -44,6 +44,7 @@ function ReportesPageComponent() {
     const [reporteOpSearchTerm, setReporteOpSearchTerm] = useState("");
     const [reporteOpTypeFilter, setReporteOpTypeFilter] = useState<OperationTypeFilter>("all");
     const [reporteOpSortOption, setReporteOpSortOption] = useState<string>("date_desc");
+    const [reporteOpPaymentMethodFilter, setReporteOpPaymentMethodFilter] = useState<PaymentMethod | 'all'>("all");
     
     const [reporteInvSearchTerm, setReporteInvSearchTerm] = useState("");
     const [reporteInvSortOption, setReporteInvSortOption] = useState<string>("quantity_desc");
@@ -71,9 +72,18 @@ function ReportesPageComponent() {
         const from = startOfDay(dateRange.from);
         const to = dateRange.to ? endOfDay(dateRange.to) : endOfDay(dateRange.from);
         let list = combinedOperations.filter(op => op.date && isValid(parseISO(op.date)) && isWithinInterval(parseISO(op.date), { start: from, end: to }));
+        
         if (reporteOpTypeFilter !== 'all') {
              list = list.filter(op => op.type === reporteOpTypeFilter);
         }
+        
+        if (reporteOpPaymentMethodFilter !== 'all') {
+            list = list.filter(op => {
+                const opPaymentMethod = (op.originalObject as SaleReceipt | ServiceRecord).paymentMethod;
+                return (opPaymentMethod || 'Efectivo') === reporteOpPaymentMethodFilter;
+            });
+        }
+
         if (reporteOpSearchTerm) { list = list.filter(op => op.id.toLowerCase().includes(reporteOpSearchTerm.toLowerCase()) || op.description.toLowerCase().includes(reporteOpSearchTerm.toLowerCase())); }
         
         list.sort((a,b) => {
@@ -94,7 +104,7 @@ function ReportesPageComponent() {
             }
         });
         return list;
-    }, [combinedOperations, dateRange, reporteOpSearchTerm, reporteOpTypeFilter, hydrated, reporteOpSortOption]);
+    }, [combinedOperations, dateRange, reporteOpSearchTerm, reporteOpTypeFilter, reporteOpPaymentMethodFilter, hydrated, reporteOpSortOption]);
 
     const aggregatedInventory = useMemo((): AggregatedInventoryItem[] => {
         if (!hydrated || !dateRange?.from) return [];
@@ -145,6 +155,14 @@ function ReportesPageComponent() {
             default: return 'outline';
         }
     };
+    
+    const paymentMethods: PaymentMethod[] = [
+      'Efectivo',
+      'Tarjeta',
+      'Transferencia',
+      'Efectivo+Transferencia',
+      'Tarjeta+Transferencia',
+    ];
 
 
     if (!hydrated) { return <div className="text-center py-10">Cargando reportes...</div>; }
@@ -184,7 +202,7 @@ function ReportesPageComponent() {
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
                                     <Button variant="outline" className="flex-1 sm:flex-initial bg-card">
-                                        <ListFilter className="mr-2 h-4 w-4" />
+                                        <Filter className="mr-2 h-4 w-4" />
                                         <span>Tipo: {reporteOpTypeFilter === 'all' ? 'Todos' : reporteOpTypeFilter}</span>
                                     </Button>
                                 </DropdownMenuTrigger>
@@ -196,6 +214,23 @@ function ReportesPageComponent() {
                                         <DropdownMenuRadioItem value="Servicio General">Servicio General</DropdownMenuRadioItem>
                                         <DropdownMenuRadioItem value="Cambio de Aceite">Cambio de Aceite</DropdownMenuRadioItem>
                                         <DropdownMenuRadioItem value="Pintura">Pintura</DropdownMenuRadioItem>
+                                    </DropdownMenuRadioGroup>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant="outline" className="flex-1 sm:flex-initial bg-card">
+                                        <Filter className="mr-2 h-4 w-4" />
+                                        <span>Pago: {reporteOpPaymentMethodFilter === 'all' ? 'Todos' : reporteOpPaymentMethodFilter}</span>
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                    <DropdownMenuLabel>Filtrar por Método de Pago</DropdownMenuLabel>
+                                    <DropdownMenuRadioGroup value={reporteOpPaymentMethodFilter} onValueChange={(v) => setReporteOpPaymentMethodFilter(v as PaymentMethod | 'all')}>
+                                        <DropdownMenuRadioItem value="all">Todos</DropdownMenuRadioItem>
+                                        {paymentMethods.map(method => (
+                                            <DropdownMenuRadioItem key={method} value={method}>{method}</DropdownMenuRadioItem>
+                                        ))}
                                     </DropdownMenuRadioGroup>
                                 </DropdownMenuContent>
                             </DropdownMenu>
@@ -245,7 +280,7 @@ function ReportesPageComponent() {
                                                     <TableCell className="max-w-xs truncate">{op.description}</TableCell>
                                                     <TableCell className="text-right font-semibold">{formatCurrency(op.totalAmount)}</TableCell>
                                                     <TableCell className="text-right font-semibold">{formatCurrency(op.profit)}</TableCell>
-                                                    <TableCell className="text-right">{(op.originalObject as any).paymentMethod || 'N/A'}</TableCell>
+                                                    <TableCell className="text-right">{(op.originalObject as any).paymentMethod || 'Efectivo'}</TableCell>
                                                 </TableRow>
                                             ))
                                         ) : (
@@ -349,3 +384,4 @@ export default function ReportesPageWrapper() {
     );
 }
 
+    
