@@ -192,21 +192,61 @@ function ResumenFinancieroPageComponent() {
                     <TabsTrigger value="egresos">Egresos</TabsTrigger>
                 </TabsList>
                 
-                <TabsContent value="resumen" className="mt-0">
+                 <TabsContent value="resumen" className="mt-0">
                     <Card className="mb-8 bg-card shadow-lg">
                         <CardHeader>
-                            <CardTitle className="text-xl flex items-center gap-2"><DollarSign className="h-6 w-6 text-primary" />Resumen del Periodo</CardTitle>
-                            <CardDescription>Cálculos de rentabilidad para {financialSummary.monthYearLabel}</CardDescription>
+                            <CardTitle className="text-xl flex items-center gap-2">
+                                <DollarSign className="h-6 w-6 text-primary" />
+                                Estado de Resultados
+                            </CardTitle>
+                            <CardDescription>
+                                Resumen de pérdidas y ganancias para el periodo: {financialSummary.monthYearLabel}
+                            </CardDescription>
                         </CardHeader>
-                        <CardContent className="space-y-3 text-base">
-                            <div className="flex justify-between items-center"><span className="text-muted-foreground">Ingresos Operativos Totales:</span><span className="font-semibold text-lg text-green-600">{formatCurrency(financialSummary.totalOperationalIncome)}</span></div>
-                            <div className="flex justify-between items-center"><span className="text-muted-foreground">(-) Costo Total de Insumos:</span><span className="font-semibold text-lg text-orange-500">-{formatCurrency(financialSummary.totalCostOfGoods)}</span></div>
-                            <hr className="my-1 border-dashed"/>
-                            <div className="flex justify-between items-center font-bold text-xl pt-2">
-                                <span className="text-foreground">(=) Ganancia Bruta Operativa:</span>
-                                <span className="font-semibold text-xl text-green-600">{formatCurrency(financialSummary.totalOperationalProfit)}</span>
+                        <CardContent className="space-y-4 text-base">
+                            {/* Ganancia Bruta */}
+                            <div className="space-y-2">
+                                <div className="flex justify-between items-center">
+                                    <span className="text-muted-foreground">Ingresos Operativos Totales:</span>
+                                    <span className="font-semibold text-lg">{formatCurrency(financialSummary.totalOperationalIncome)}</span>
+                                </div>
+                                <div className="flex justify-between items-center">
+                                    <span className="text-muted-foreground">(-) Costo Total de Insumos:</span>
+                                    <span className="font-semibold text-lg text-orange-500">-{formatCurrency(financialSummary.totalCostOfGoods)}</span>
+                                </div>
+                                <hr className="my-2 border-dashed"/>
+                                <div className="flex justify-between items-center font-bold text-xl pt-1">
+                                    <span className="text-foreground">(=) Ganancia Bruta Operativa:</span>
+                                    <span className="text-xl text-green-600">{formatCurrency(financialSummary.totalOperationalProfit)}</span>
+                                </div>
                             </div>
-                            <p className="text-xs text-muted-foreground pt-2">El Resultado Neto final se calcula comparando la Ganancia Bruta con los Gastos Mensuales fijos. Los gastos no se prorratean por día.</p>
+                            
+                            <hr className="my-4 border-border"/>
+                            
+                            {/* Egresos y Resultado Neto */}
+                            <div className="space-y-2">
+                                <div className="flex justify-between items-center">
+                                    <span className="text-muted-foreground">(-) Gastos Mensuales Fijos:</span>
+                                    <span className="font-semibold text-lg text-red-500">-{formatCurrency(financialSummary.totalMonthlyExpenses)}</span>
+                                </div>
+                                <div className="flex justify-between items-center">
+                                    <span className="text-muted-foreground">(-) Comisiones Variables:</span>
+                                    <span className="font-semibold text-lg text-red-500">-{formatCurrency(financialSummary.totalTechnicianCommissions + financialSummary.totalAdministrativeCommissions)}</span>
+                                </div>
+                                {!financialSummary.isProfitableForCommissions && (
+                                    <p className="text-xs text-right text-muted-foreground pt-1">Las comisiones no se aplican porque la ganancia no cubrió los gastos fijos.</p>
+                                )}
+                                <hr className="my-2 border-dashed"/>
+                                <div className="flex justify-between items-center font-bold text-2xl pt-1">
+                                    <span className="text-foreground">(=) Resultado Neto del Periodo:</span>
+                                    <span className={cn(
+                                        "text-2xl",
+                                        financialSummary.netProfit >= 0 ? "text-green-600" : "text-red-600"
+                                    )}>
+                                        {formatCurrency(financialSummary.netProfit)}
+                                    </span>
+                                </div>
+                            </div>
                         </CardContent>
                     </Card>
                 </TabsContent>
