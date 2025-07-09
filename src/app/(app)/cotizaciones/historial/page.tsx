@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React, { useState, useEffect, useMemo, useRef, useCallback, Suspense } from "react";
@@ -9,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Search, ListFilter, FileText, Eye, Edit } from "lucide-react";
-import { placeholderQuotes, placeholderVehicles, placeholderTechnicians, placeholderServiceRecords, placeholderInventory, persistToFirestore, AUTH_USER_LOCALSTORAGE_KEY } from "@/lib/placeholder-data"; 
+import { placeholderServiceRecords, placeholderVehicles, placeholderTechnicians, placeholderInventory, persistToFirestore, AUTH_USER_LOCALSTORAGE_KEY } from "@/lib/placeholder-data"; 
 import type { QuoteRecord, Vehicle, ServiceRecord, Technician, InventoryItem, WorkshopInfo, User } from "@/types"; 
 import { useToast } from "@/hooks/use-toast";
 import { format, parseISO, compareAsc, compareDesc, isBefore, addDays } from "date-fns";
@@ -26,10 +27,10 @@ type QuoteSortOption =
   | "vehicle_asc" | "vehicle_desc";
 
 
-const QuoteList = React.memo(({ quotes, vehicles, onEditQuote, onViewQuote }: { 
+const QuoteList = React.memo(({ quotes, vehicles, onEdit, onViewQuote }: { 
     quotes: QuoteRecord[], 
     vehicles: Vehicle[], 
-    onEditQuote: (quote: QuoteRecord) => void,
+    onEdit: (quote: QuoteRecord) => void,
     onViewQuote: (quote: QuoteRecord) => void,
 }) => {
   
@@ -44,7 +45,7 @@ const QuoteList = React.memo(({ quotes, vehicles, onEditQuote, onViewQuote }: {
     const quoteDate = parseISO(quote.quoteDate ?? new Date().toISOString());
     const expirationDate = addDays(quoteDate, 15);
 
-    if (quote.serviceId) {
+    if (quote.status !== 'Cotizacion') {
       return { label: 'Procesada', variant: 'blue' };
     }
     if (isBefore(new Date(), expirationDate)) {
@@ -59,9 +60,8 @@ const QuoteList = React.memo(({ quotes, vehicles, onEditQuote, onViewQuote }: {
       {quotes.length > 0 ? (
         quotes.map(quote => {
           const vehicle = vehicles.find(v => v.id === quote.vehicleId);
-          const service = quote.serviceId ? placeholderServiceRecords.find(s => s.id === quote.serviceId) : null;
-          const status = service ? service.status : 'Cotizacion';
-          const quoteStatus = getQuoteStatus(quote);
+          const status = quote.status;
+          const quoteStatusInfo = getQuoteStatus(quote);
 
           return (
             <Card key={quote.id} className="shadow-sm overflow-hidden">
@@ -81,17 +81,17 @@ const QuoteList = React.memo(({ quotes, vehicles, onEditQuote, onViewQuote }: {
                     </div>
                     <div className="p-3 flex flex-col justify-center items-center text-center w-full md:w-48 flex-shrink-0">
                       <p className="text-xs text-muted-foreground">Costo Estimado</p>
-                      <p className="font-bold text-xl text-black">{formatCurrency(quote.estimatedTotalCost ?? quote.totalCost)}</p>
+                      <p className="font-bold text-xl text-black">{formatCurrency(quote.totalCost)}</p>
                       <p className="text-xs text-green-600 font-medium">
-                        Ganancia: {formatCurrency(quote.estimatedProfit ?? quote.serviceProfit)}
+                        Ganancia: {formatCurrency(quote.serviceProfit)}
                       </p>
                     </div>
                     <div className="p-4 flex flex-col justify-center items-center text-center border-t md:border-t-0 md:border-l w-full md:w-56 flex-shrink-0 space-y-2">
-                        <Badge variant={quoteStatus.variant} className="mb-1">{quoteStatus.label}</Badge>
+                        <Badge variant={quoteStatusInfo.variant} className="mb-1">{quoteStatusInfo.label}</Badge>
                         <p className="text-xs text-muted-foreground">Asesor: {quote.preparedByTechnicianName || 'N/A'}</p>
                         <div className="flex justify-center items-center gap-1">
                           <Button variant="ghost" size="icon" onClick={() => onViewQuote(quote)} title="Vista Previa"><Eye className="h-4 w-4" /></Button>
-                          <Button variant="ghost" size="icon" onClick={() => onEditQuote(quote)} title="Editar Cotización"><Edit className="h-4 w-4" /></Button>
+                          <Button variant="ghost" size="icon" onClick={() => onEdit(quote)} title="Editar Cotización"><Edit className="h-4 w-4" /></Button>
                         </div>
                     </div>
                 </div>
@@ -109,7 +109,7 @@ QuoteList.displayName = 'QuoteList';
 
 
 function HistorialCotizacionesPageComponent() {
-  const [allQuotes, setAllQuotes] = useState<QuoteRecord[]>(placeholderQuotes);
+  const [allServices, setAllServices] = useState<ServiceRecord[]>(placeholderServiceRecords);
   const [vehicles, setVehicles] = useState<Vehicle[]>(placeholderVehicles);
   const [technicians, setTechnicians] = useState<Technician[]>(placeholderTechnicians);
   const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>(placeholderInventory);
@@ -126,7 +126,7 @@ function HistorialCotizacionesPageComponent() {
 
   useEffect(() => {
     // This effect can be used to sync with a global state or DB in the future
-    setAllQuotes(placeholderQuotes);
+    setAllServices(placeholderServiceRecords);
     setVehicles(placeholderVehicles);
     setTechnicians(placeholderTechnicians);
     setInventoryItems(placeholderInventory);
@@ -137,7 +137,7 @@ function HistorialCotizacionesPageComponent() {
   }, []);
   
   const activeQuotes = useMemo(() => {
-    let filtered = allQuotes.filter(quote => quote.status === 'Cotizacion');
+    let filtered = allServices.filter(service => service.status === 'Cotizacion');
 
     if (searchTerm) {
       const lowerSearchTerm = searchTerm.toLowerCase();
@@ -148,8 +148,8 @@ function HistorialCotizacionesPageComponent() {
     }
     
     filtered.sort((a, b) => {
-      const totalA = a.estimatedTotalCost ?? a.totalCost ?? 0;
-      const totalB = b.estimatedTotalCost ?? b.totalCost ?? 0;
+      const totalA = a.totalCost ?? 0;
+      const totalB = b.totalCost ?? 0;
       const dateA = a.quoteDate ? parseISO(a.quoteDate) : new Date(0);
       const dateB = b.quoteDate ? parseISO(b.quoteDate) : new Date(0);
 
@@ -162,8 +162,8 @@ function HistorialCotizacionesPageComponent() {
         case "date_desc": default: return compareDesc(dateA, dateB);
       }
     });
-    return filtered;
-  }, [allQuotes, searchTerm, sortOption]);
+    return filtered as QuoteRecord[];
+  }, [allServices, searchTerm, sortOption]);
 
   const handleViewQuote = useCallback((quote: QuoteRecord) => { /* Logic to show quote preview */ }, []);
   
@@ -173,66 +173,30 @@ function HistorialCotizacionesPageComponent() {
   }, []);
 
   const handleDeleteQuote = useCallback(async (quoteId: string) => { 
-    const quoteIndex = placeholderQuotes.findIndex(q => q.id === quoteId);
-    if (quoteIndex === -1) return;
-    placeholderQuotes.splice(quoteIndex, 1);
-    await persistToFirestore(['quotes']);
-    setAllQuotes([...placeholderQuotes]);
+    const recordIndex = placeholderServiceRecords.findIndex(q => q.id === quoteId);
+    if (recordIndex === -1) return;
+    placeholderServiceRecords.splice(recordIndex, 1);
+    await persistToFirestore(['serviceRecords']);
+    setAllServices([...placeholderServiceRecords]);
     toast({ title: "Cotización Eliminada", description: `La cotización ${quoteId} ha sido eliminada.` });
   }, [toast]);
   
-  const handleSaveQuote = useCallback(async (data: QuoteRecord | ServiceRecord) => {
-    const isNew = !data.id;
-    const isService = 'status' in data && data.status !== 'Cotizacion';
-
-    if (isService) {
-        // This is a conversion from Quote to Service
-        const serviceData = data as ServiceRecord;
-        const originalQuoteId = selectedQuote?.id;
-
-        if (!originalQuoteId) {
-            toast({ title: "Error", description: "No se pudo encontrar la cotización original para actualizar.", variant: "destructive" });
-            return;
-        }
-
-        const newServiceId = `SER_${Date.now().toString(36)}`;
-        const newService: ServiceRecord = { ...serviceData, id: newServiceId };
-        
-        placeholderServiceRecords.push(newService);
-
-        const quoteIndex = placeholderQuotes.findIndex(q => q.id === originalQuoteId);
-        if (quoteIndex > -1) {
-            placeholderQuotes[quoteIndex].serviceId = newServiceId;
-        }
-
-        await persistToFirestore(['serviceRecords', 'quotes']);
-        setAllQuotes([...placeholderQuotes]);
-
-        toast({ title: "Servicio Creado", description: `La cotización ${originalQuoteId} ha sido convertida al servicio ${newServiceId}.` });
-
+  const handleSaveQuote = useCallback(async (data: ServiceRecord | QuoteRecord) => {
+    const recordIndex = placeholderServiceRecords.findIndex(q => q.id === data.id);
+    
+    if (recordIndex > -1) {
+      placeholderServiceRecords[recordIndex] = data as ServiceRecord;
     } else {
-        // This is updating an existing quote
-        const quoteData = data as QuoteRecord;
-        if (isNew) {
-            const authUserString = localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY);
-            const currentUser: User | null = authUserString ? JSON.parse(authUserString) : null;
-            quoteData.id = `COT_${Date.now().toString(36)}`;
-            quoteData.preparedByTechnicianId = currentUser?.id;
-            quoteData.preparedByTechnicianName = currentUser?.name;
-            placeholderQuotes.push(quoteData);
-        } else {
-            const index = placeholderQuotes.findIndex(q => q.id === quoteData.id);
-            if (index > -1) {
-                placeholderQuotes[index] = quoteData;
-            }
-        }
-        await persistToFirestore(['quotes']);
-        setAllQuotes([...placeholderQuotes]);
-        toast({ title: `Cotización ${isNew ? 'Creada' : 'Actualizada'}`, description: `Se guardaron los cambios para ${quoteData.id}.` });
+      placeholderServiceRecords.push(data as ServiceRecord);
     }
 
+    await persistToFirestore(['serviceRecords']);
+    setAllServices([...placeholderServiceRecords]);
+
+    toast({ title: `Registro ${data.id} Actualizado` });
+
     setIsFormDialogOpen(false);
-  }, [toast, selectedQuote]);
+  }, [toast]);
 
   return (
     <>
@@ -274,4 +238,3 @@ function HistorialCotizacionesPageComponent() {
 export default function HistorialCotizacionesPageWrapper() {
     return (<Suspense fallback={<div>Cargando...</div>}><HistorialCotizacionesPageComponent /></Suspense>)
 }
-

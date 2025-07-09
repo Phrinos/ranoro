@@ -34,7 +34,6 @@ import {
     placeholderInventory, 
     placeholderCategories, 
     placeholderSuppliers, 
-    placeholderQuotes, 
     placeholderServiceRecords as defaultServiceRecords, 
     persistToFirestore, 
     AUTH_USER_LOCALSTORAGE_KEY,
@@ -42,21 +41,19 @@ import {
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription as DialogDesc, DialogFooter } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/label";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { InventoryItemDialog } from "../../inventario/components/inventory-item-dialog";
 import type { InventoryItemFormValues } from "../../inventario/components/inventory-item-form";
-import { suggestPrice, type SuggestPriceInput } from '@/ai/flows/price-suggestion-flow';
 import { suggestQuote, type QuoteSuggestionInput } from '@/ai/flows/quote-suggestion-flow';
 import { enhanceText } from '@/ai/flows/text-enhancement-flow';
 import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
 import { ServiceSheetContent } from '@/components/service-sheet-content';
 import { Checkbox } from "@/components/ui/checkbox";
 import Image from "next/image";
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../../../../lib/firebaseClient.js';
-import { getStorage, ref, uploadString, getDownloadURL } from 'firebase/storage';
+import { ref, getDownloadURL } from 'firebase/storage';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { QuoteContent } from '@/components/quote-content';
 import { SignatureDialog } from './signature-dialog';
@@ -217,7 +214,6 @@ interface ServiceFormProps {
   onInventoryItemCreatedFromService?: (newItem: InventoryItem) => void; // Optional: To notify parent of new items
   onDelete?: (id: string) => void;
   onCancelService?: (serviceId: string, reason: string) => void;
-  onViewQuoteRequest?: (serviceId: string) => void;
 }
 
 const IVA_RATE = 0.16;
@@ -246,16 +242,14 @@ export function ServiceForm({
   onInventoryItemCreatedFromService,
   onDelete,
   onCancelService,
-  onViewQuoteRequest,
 }: ServiceFormProps) {
   const { toast } = useToast();
   
-  const isConvertingQuote = mode === 'service' && !initialDataService && !!initialDataQuote;
-  const initialData = isConvertingQuote ? initialDataQuote : (mode === 'service' ? initialDataService : initialDataQuote);
+  const initialData = mode === 'service' ? initialDataService : initialDataQuote;
   const initialVehicleIdentifier = initialData?.vehicleIdentifier;
   
   const [stableServiceId] = useState(
-    initialData?.id || `temp_${Date.now().toString(36)}`
+    initialData?.id || `TEMP_${generateUniqueId()}`
   );
 
   const [vehicleLicensePlateSearch, setVehicleLicensePlateSearch] = useState(initialVehicleIdentifier || "");
@@ -270,7 +264,6 @@ export function ServiceForm({
   const [currentInventoryItems, setCurrentInventoryItems] = useState<InventoryItem[]>(inventoryItemsProp);
   const [workshopInfo, setWorkshopInfo] = useState<WorkshopInfo | {}>({});
 
-  const [isSuggestingPrice, setIsSuggestingPrice] = useState(false);
   const [isGeneratingQuote, setIsGeneratingQuote] = useState(false);
   
   const [isSheetOpen, setIsSheetOpen] = useState(false);
@@ -357,12 +350,15 @@ export function ServiceForm({
   const watchedServiceItems = useWatch({ control, name: "serviceItems" });
 
   const quoteForViewing = useMemo(() => {
-    if (!initialData) return null;
-    return placeholderQuotes.find(q => 
-        (mode === 'service' && q.serviceId === initialData.id) || 
-        (mode === 'quote' && q.id === initialData.id)
-    ) || null;
-  }, [mode, initialData]);
+    const data = (mode === 'quote' ? initialDataQuote : initialDataService);
+    if (!data) return null;
+    const isQuote = data.status === 'Cotizacion';
+    if(isQuote) return data as QuoteRecord;
+    
+    // Find the original quote if this is a service converted from a quote
+    const originalQuote = defaultServiceRecords.find(q => q.status === 'Cotizacion' && q.id === data.id);
+    return originalQuote || null;
+  }, [mode, initialDataQuote, initialDataService]);
 
   const { totalCost, totalSuppliesWorkshopCost, serviceProfit } = useMemo(() => {
     let calculatedTotalCost = 0;
@@ -427,8 +423,7 @@ export function ServiceForm({
 
   // Main effect to set form values from initialData
   useEffect(() => {
-    const isConverting = mode === 'service' && !initialDataService && !!initialDataQuote;
-    const data = isConverting ? initialDataQuote : (mode === 'service' ? initialDataService : initialDataQuote);
+    const data = mode === 'service' ? initialDataService : initialDataQuote;
     
     if (data) {
         const vehicle = localVehicles.find(v => v.id === data.vehicleId);
@@ -505,9 +500,7 @@ export function ServiceForm({
             description: (data as any).description || "",
             notes: data.notes || "",
             technicianId: (data as ServiceRecord)?.technicianId || (data as QuoteRecord)?.preparedByTechnicianId || undefined,
-            status: mode === 'service' 
-                ? (isConverting ? 'Reparando' : ((data as ServiceRecord)?.status || 'Agendado')) 
-                : 'Cotizacion',
+            status: data.status || (mode === 'quote' ? 'Cotizacion' : 'Agendado'),
             serviceType: (data as ServiceRecord)?.serviceType || (data as QuoteRecord)?.serviceType || 'Servicio General',
             vehicleConditions: (data as ServiceRecord)?.vehicleConditions || "",
             fuelLevel: (data as ServiceRecord)?.fuelLevel || undefined,
@@ -527,13 +520,16 @@ export function ServiceForm({
 
     } else {
       // Set default for new forms
-      if(mode === 'service') form.setValue('serviceDate', setHours(setMinutes(new Date(), 30), 8));
+      form.setValue('serviceDate', setHours(setMinutes(new Date(), 30), 8));
       if (mode === 'quote') {
+          form.setValue('status', 'Cotizacion');
           const authUserString = typeof window !== 'undefined' ? localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY) : null;
           const freshCurrentUser: User | null = authUserString ? JSON.parse(authUserString) : null;
           if (freshCurrentUser) {
             form.setValue('technicianId', freshCurrentUser.id);
           }
+      } else {
+          form.setValue('status', 'Agendado');
       }
       // Automatically add one service item if none exist for a new form
       if (form.getValues('serviceItems').length === 0) {
@@ -628,7 +624,7 @@ export function ServiceForm({
 
   const handleSaveNewVehicle = async (vehicleData: VehicleFormValues) => {
     const newVehicle: Vehicle = {
-      id: `VEH_${Date.now().toString(36)}`,
+      id: generateUniqueId(),
       ...vehicleData,
       year: Number(vehicleData.year),
     };
@@ -686,7 +682,7 @@ export function ServiceForm({
     
     // Logic to deduct inventory when a service is completed
     const isNowCompleted = values.status === 'Completado';
-    const wasPreviouslyCompleted = initialDataService?.status === 'Completado';
+    const wasPreviouslyCompleted = originalStatusRef.current === 'Completado';
 
     if (isNowCompleted && !wasPreviouslyCompleted) {
       let inventoryWasUpdated = false;
@@ -727,16 +723,12 @@ export function ServiceForm({
     const finalProfit = totalCost - totalSuppliesWorkshopCost;
     const compositeDescription = values.serviceItems.map(item => item.name).join(', ') || 'Servicio';
     
-    const isConvertingQuoteToService = mode === 'service' && !!initialDataQuote?.id;
-    const recordType = mode === 'service' || isConvertingQuoteToService ? 'service' : 'quote';
+    const isNew = !values.id;
 
-    let dataToSave: ServiceRecord | QuoteRecord;
-
-    if (recordType === 'service') {
-      const serviceData: ServiceRecord = {
+    const dataToSave: ServiceRecord = {
         ...values,
         id: values.id || generateUniqueId(),
-        publicId: values.publicId || `srv_${(Date.now().toString(36) + Math.random().toString(36).slice(2, 9)).toLowerCase()}`,
+        publicId: values.publicId || `s_${generateUniqueId().toLowerCase()}`,
         vehicleId: vehicleIdToSave,
         description: compositeDescription,
         technicianId: values.technicianId || '',
@@ -744,6 +736,7 @@ export function ServiceForm({
         totalCost: totalCost,
         serviceItems: values.serviceItems,
         serviceDate: values.serviceDate ? values.serviceDate.toISOString() : new Date().toISOString(),
+        quoteDate: values.quoteDate ? values.quoteDate.toISOString() : undefined,
         deliveryDateTime: values.deliveryDateTime ? values.deliveryDateTime.toISOString() : undefined,
         vehicleIdentifier: selectedVehicle?.licensePlate || values.vehicleLicensePlateSearch || 'N/A',
         technicianName: technicians.find(t => t.id === values.technicianId)?.name || 'N/A',
@@ -755,11 +748,11 @@ export function ServiceForm({
         serviceAdvisorName: currentUser.name,
         serviceAdvisorSignatureDataUrl: currentUser.signatureDataUrl,
         workshopInfo: (workshopInfo && Object.keys(workshopInfo).length > 0) ? workshopInfo as WorkshopInfo : undefined,
-      };
+    };
       
-      if (values.status === 'Completado') {
+    if (values.status === 'Completado') {
         try {
-          const deliveryDate = serviceData.deliveryDateTime ? new Date(serviceData.deliveryDateTime) : new Date();
+          const deliveryDate = dataToSave.deliveryDateTime ? new Date(dataToSave.deliveryDateTime) : new Date();
           if (isValid(deliveryDate)) {
             const nextServiceDate = addDays(deliveryDate, 183);
             let nextServiceMileage: number | undefined;
@@ -772,54 +765,18 @@ export function ServiceForm({
                 if (isFinite(lowestRendimiento)) nextServiceMileage = mileageValue + lowestRendimiento;
               }
             }
-            serviceData.nextServiceInfo = { date: nextServiceDate.toISOString(), mileage: nextServiceMileage };
+            dataToSave.nextServiceInfo = { date: nextServiceDate.toISOString(), mileage: nextServiceMileage };
           }
         } catch (e) { console.error("Error calculating nextServiceInfo:", e); }
-      }
-      dataToSave = serviceData;
-    } else { // Quote mode
-      const quoteData: QuoteRecord = {
-        ...values,
-        id: values.id || generateUniqueId(),
-        publicId: values.publicId || `cot_${(Date.now().toString(36) + Math.random().toString(36).slice(2, 9)).toLowerCase()}`,
-        quoteDate: new Date().toISOString(),
-        vehicleId: vehicleIdToSave,
-        description: compositeDescription,
-        serviceItems: values.serviceItems,
-        status: 'Cotizacion',
-        serviceType: values.serviceType || 'Servicio General',
-        vehicleIdentifier: selectedVehicle?.licensePlate || values.vehicleLicensePlateSearch || 'N/A',
-        preparedByTechnicianId: currentUser.id,
-        preparedByTechnicianName: currentUser.name,
-        preparedByTechnicianSignatureDataUrl: currentUser.signatureDataUrl,
-        estimatedTotalCost: totalCost,
-        estimatedSubTotal: finalSubTotal,
-        estimatedTaxAmount: finalTaxAmount,
-        estimatedTotalSuppliesCost: totalSuppliesWorkshopCost,
-        estimatedProfit: finalProfit,
-        workshopInfo: (workshopInfo && Object.keys(workshopInfo).length > 0) ? workshopInfo as WorkshopInfo : undefined,
-      };
-      dataToSave = quoteData;
     }
     
     // Call public save before local persistence
-    const publicSaveResult = await savePublicDocument(recordType, dataToSave, selectedVehicle, workshopInfo);
-
-    if (publicSaveResult.success && isConvertingQuoteToService && initialDataQuote?.publicId) {
-      try {
-          if (db) {
-              const publicQuoteRef = doc(db, 'publicQuotes', initialDataQuote.publicId);
-              await setDoc(publicQuoteRef, { serviceId: dataToSave.id }, { merge: true });
-          }
-      } catch (e) {
-          console.error("Failed to link public quote to service:", e);
-      }
-    }
+    await savePublicDocument('service', dataToSave, selectedVehicle, workshopInfo);
     
     await onSubmit(dataToSave); // This handles the main local persistence and UI update
     
     toast({
-      title: `${isConvertingQuoteToService || !initialData?.id ? 'Creado' : 'Actualizado'} con Éxito`,
+      title: `${isNew ? 'Creado' : 'Actualizado'} con Éxito`,
       description: `El documento ${dataToSave.id} se ha guardado.`,
     });
     
@@ -878,10 +835,6 @@ export function ServiceForm({
         setVehicleSearchResults(results);
     }, [vehicleLicensePlateSearch, localVehicles, selectedVehicle]);
 
-  const handleSuggestPrice = async (serviceItemIndex: number) => {
-    toast({ title: "Función no disponible", description: "La sugerencia de precios con IA se está adaptando al nuevo formato." });
-  };
-  
   const handleEnhanceText = async (fieldName: 'notes' | 'vehicleConditions' | 'customerItems' | 'safetyInspection.inspectionNotes' | `photoReports.${number}.description`) => {
     const contextMap: Record<string, string> = {
       'notes': 'Notas Adicionales del Servicio',
@@ -934,13 +887,13 @@ export function ServiceForm({
     }
 
     try {
-        const history = [...defaultServiceRecords, ...placeholderQuotes].map(h => ({
+        const history = defaultServiceRecords.map(h => ({
             description: h.description,
             suppliesUsed: ('serviceItems' in h ? h.serviceItems.flatMap(i => i.suppliesUsed) : []).map(s => ({
                 supplyName: s.supplyName || currentInventoryItems.find(i => i.id === s.supplyId)?.name || 'Unknown',
                 quantity: s.quantity
             })),
-            totalCost: ('totalCost' in h ? h.totalCost : h.estimatedTotalCost) || 0
+            totalCost: h.totalCost || 0
         }));
 
         const inventoryForAI = currentInventoryItems.map(i => ({
@@ -1048,26 +1001,17 @@ export function ServiceForm({
   const deleteButtonText = mode === 'quote'
     ? 'Eliminar Cotización'
     : (initialDataService?.status === 'Agendado' ? 'Cancelar Cita' : 'Cancelar Servicio');
-
-  const showStatusFields = mode === 'service' || (mode === 'quote' && !!initialData?.id);
   
   const statusOptions = useMemo(() => {
-    const isEditing = !!initialData?.id;
-    const baseServiceOptions = ["Agendado", "En Espera de Refacciones", "Reparando", "Completado"];
-
+    const allOptions = ["Cotizacion", "Agendado", "En Espera de Refacciones", "Reparando", "Completado"];
     if (mode === 'quote') {
-        return ["Cotizacion", ...baseServiceOptions];
+        return allOptions;
     }
-    
     if (mode === 'service') {
-        if (!isEditing) { // Creating a new service
-            return ["Cotizacion", ...baseServiceOptions];
-        } else { // Editing an existing service
-            return baseServiceOptions;
-        }
+        return allOptions.filter(s => s !== 'Cotizacion');
     }
     return [];
-  }, [mode, initialData]);
+  }, [mode]);
 
   const handleShareService = useCallback(async (service: ServiceRecord | null) => {
     if (!service) return;
@@ -1190,35 +1134,33 @@ export function ServiceForm({
                 <CardHeader>
                     <div className="flex justify-between items-center">
                         <CardTitle className="text-lg">
-                            {mode === 'quote' ? "Información de la Cotización" : "Información del Servicio"}
+                            Información del Documento
                         </CardTitle>
                     </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
-                      {showStatusFields && (
-                        <FormField
-                            control={form.control}
-                            name="status"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Estado</FormLabel>
-                                    <Select onValueChange={field.onChange} value={field.value} disabled={isReadOnly || watchedStatus === 'Completado' || watchedStatus === 'Entregado'}>
-                                        <FormControl>
-                                            <SelectTrigger className="font-bold">
-                                                <SelectValue placeholder="Seleccione un estado" />
-                                            </SelectTrigger>
-                                        </FormControl>
-                                        <SelectContent>
-                                            {statusOptions.map((statusVal) => (
-                                                <SelectItem key={statusVal} value={statusVal}>{statusVal}</SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                </FormItem>
-                            )}
-                        />
-                      )}
+                      <FormField
+                          control={form.control}
+                          name="status"
+                          render={({ field }) => (
+                              <FormItem>
+                                  <FormLabel>Estado</FormLabel>
+                                  <Select onValueChange={field.onChange} value={field.value} disabled={isReadOnly || watchedStatus === 'Completado' || watchedStatus === 'Entregado'}>
+                                      <FormControl>
+                                          <SelectTrigger className="font-bold">
+                                              <SelectValue placeholder="Seleccione un estado" />
+                                          </SelectTrigger>
+                                      </FormControl>
+                                      <SelectContent>
+                                          {statusOptions.map((statusVal) => (
+                                              <SelectItem key={statusVal} value={statusVal}>{statusVal}</SelectItem>
+                                          ))}
+                                      </SelectContent>
+                                  </Select>
+                              </FormItem>
+                          )}
+                      />
                       <FormField
                         control={form.control}
                         name="serviceType"
@@ -1337,6 +1279,12 @@ export function ServiceForm({
                     {!isReadOnly && (
                         <Button type="button" variant="outline" onClick={() => appendServiceItem({ id: `item_${Date.now()}`, name: '', price: undefined, suppliesUsed: [] })}>
                             <PlusCircle className="mr-2 h-4 w-4"/> Añadir Trabajo a Realizar
+                        </Button>
+                    )}
+                    {mode === 'quote' && !isReadOnly && (
+                        <Button type="button" variant="secondary" onClick={handleGenerateQuoteWithAI} disabled={isGeneratingQuote}>
+                            {isGeneratingQuote ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <BrainCircuit className="mr-2 h-4 w-4" />}
+                            Sugerir Cotización con IA
                         </Button>
                     )}
                 </CardContent>
@@ -1772,7 +1720,7 @@ export function ServiceForm({
           footerActions={<><Button type="button" onClick={() => handleShareService(serviceForSheet)} variant="outline"><MessageSquare className="mr-2 h-4 w-4" /> Copiar para WhatsApp</Button><Button onClick={() => window.print()}><Printer className="mr-2 h-4 w-4" /> Imprimir Hoja</Button></>}
       >
           {serviceForSheet && (
-              <ServiceSheetContent service={serviceForSheet} vehicle={localVehicles.find(v => v.id === serviceForSheet.vehicleId)} workshopInfo={workshopInfo as WorkshopInfo} onViewImage={handleViewImage}/>
+              <ServiceSheetContent service={serviceForSheet} quote={quoteForViewing} vehicle={localVehicles.find(v => v.id === serviceForSheet.vehicleId)} workshopInfo={workshopInfo as WorkshopInfo} onViewImage={handleViewImage}/>
           )}
       </PrintTicketDialog>
 
