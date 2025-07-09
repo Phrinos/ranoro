@@ -15,7 +15,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import Link from "next/link";
-import { placeholderServiceRecords, placeholderVehicles, placeholderTechnicians, placeholderInventory, persistToFirestore, hydrateReady } from "@/lib/placeholder-data";
+import { placeholderServiceRecords, placeholderVehicles, placeholderTechnicians, placeholderInventory, persistToFirestore, hydrateReady, logAudit } from "@/lib/placeholder-data";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ServiceCalendar } from '../components/service-calendar';
 import { analyzeWorkshopCapacity } from '@/ai/flows/capacity-analysis-flow';
@@ -105,6 +105,7 @@ function AgendaPageComponent() {
   const [isCapacityLoading, setIsCapacityLoading] = useState(false);
 
   useEffect(() => {
+    const handleDbUpdate = () => setVersion(v => v + 1);
     hydrateReady.then(() => {
       setHydrated(true);
       setAllServices([...placeholderServiceRecords]);
@@ -112,9 +113,8 @@ function AgendaPageComponent() {
       setTechnicians([...placeholderTechnicians]);
       setInventoryItems([...placeholderInventory]);
     });
-    const forceUpdate = () => setVersion(v => v + 1);
-    window.addEventListener('databaseUpdated', forceUpdate);
-    return () => window.removeEventListener('databaseUpdated', forceUpdate);
+    window.addEventListener('databaseUpdated', handleDbUpdate);
+    return () => window.removeEventListener('databaseUpdated', handleDbUpdate);
   }, []);
   
   useEffect(() => {
@@ -174,24 +174,16 @@ function AgendaPageComponent() {
     setEditingService(service);
     setIsServiceDialogOpen(true);
   }, []);
-
-  const handleUpdateService = useCallback(async (data: ServiceRecord) => {
-    const pIndex = placeholderServiceRecords.findIndex(s => s.id === data.id);
-    if (pIndex !== -1) placeholderServiceRecords[pIndex] = data;
-    else placeholderServiceRecords.push(data);
-    await persistToFirestore(['serviceRecords']);
-    setIsServiceDialogOpen(false);
-    toast({ title: "Servicio Actualizado" });
-  }, [toast]);
   
   const handleCancelService = useCallback(async (serviceId: string, reason: string) => {
     const pIndex = placeholderServiceRecords.findIndex(s => s.id === serviceId);
     if (pIndex !== -1) {
       placeholderServiceRecords[pIndex].status = 'Cancelado';
       placeholderServiceRecords[pIndex].cancellationReason = reason;
+      await logAudit('Cancelar', `Canceló el servicio #${serviceId} por: ${reason}`, { entityType: 'Servicio', entityId: serviceId });
+      await persistToFirestore(['serviceRecords', 'auditLogs']);
+      toast({ title: "Servicio Cancelado" });
     }
-    await persistToFirestore(['serviceRecords']);
-    toast({ title: "Servicio Cancelado" });
   }, [toast]);
 
   const handleVehicleCreated = useCallback(async (newVehicle: Vehicle) => {
@@ -203,7 +195,6 @@ function AgendaPageComponent() {
     const serviceIndex = placeholderServiceRecords.findIndex(s => s.id === serviceId);
     if (serviceIndex !== -1) {
       placeholderServiceRecords[serviceIndex].appointmentStatus = 'Confirmada';
-      // Optimistic UI update
       setAllServices(prev => prev.map(s => s.id === serviceId ? { ...s, appointmentStatus: 'Confirmada' } : s));
       await persistToFirestore(['serviceRecords']);
       toast({
@@ -271,7 +262,6 @@ function AgendaPageComponent() {
           vehicles={vehicles}
           technicians={technicians}
           inventoryItems={inventoryItems}
-          onSave={handleUpdateService as any}
           onVehicleCreated={handleVehicleCreated}
           onCancelService={handleCancelService}
           mode="service"

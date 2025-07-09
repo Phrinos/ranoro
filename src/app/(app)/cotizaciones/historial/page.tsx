@@ -8,7 +8,7 @@ import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Search, ListFilter, FileText, Eye, Edit, Printer } from "lucide-react";
 import { placeholderServiceRecords, placeholderVehicles, placeholderTechnicians, placeholderInventory, persistToFirestore, AUTH_USER_LOCALSTORAGE_KEY } from "@/lib/placeholder-data"; 
 import type { QuoteRecord, Vehicle, ServiceRecord, Technician, InventoryItem, WorkshopInfo, User } from "@/types"; 
@@ -188,45 +188,6 @@ function HistorialCotizacionesPageComponent() {
     setAllServices([...placeholderServiceRecords]);
     toast({ title: "Cotización Eliminada", description: `La cotización ${quoteId} ha sido eliminada.` });
   }, [toast]);
-  
-  const handleSaveQuote = useCallback(async (data: ServiceRecord | QuoteRecord) => {
-    const isNew = !data.id;
-    const recordId = data.id || `COT_${Date.now().toString(36)}`;
-    
-    const recordToSave = { 
-      ...data, 
-      id: recordId, 
-      // Ensure date is in ISO format
-      quoteDate: data.quoteDate ? new Date(data.quoteDate).toISOString() : new Date().toISOString()
-    };
-    
-    // Find if a record with this ID already exists
-    const recordIndex = placeholderServiceRecords.findIndex(q => q.id === recordId);
-    
-    if (recordToSave.status !== 'Cotizacion') {
-      // The status has been changed, so it's being converted to a service.
-      // Update the existing record's status and other fields.
-      if (recordIndex > -1) {
-        placeholderServiceRecords[recordIndex] = recordToSave as ServiceRecord;
-      } else {
-        // This case should ideally not happen if converting from an existing quote
-        placeholderServiceRecords.push(recordToSave as ServiceRecord);
-      }
-      toast({ title: `Cotización ${recordId} convertida a Servicio` });
-    } else {
-      // It's still a quote, just update it or create it
-      if (recordIndex > -1) {
-        placeholderServiceRecords[recordIndex] = recordToSave as ServiceRecord;
-      } else {
-        placeholderServiceRecords.push(recordToSave as ServiceRecord);
-      }
-       toast({ title: `Cotización ${isNew ? 'creada' : 'actualizada'}: ${recordId}` });
-    }
-
-    await persistToFirestore(['serviceRecords']);
-    setAllServices([...placeholderServiceRecords]);
-    setIsFormDialogOpen(false);
-  }, [toast]);
 
 
   return (
@@ -257,7 +218,6 @@ function HistorialCotizacionesPageComponent() {
             vehicles={vehicles} 
             technicians={technicians} 
             inventoryItems={inventoryItems} 
-            onSave={handleSaveQuote} 
             onDelete={handleDeleteQuote} 
             mode="quote" 
         />

@@ -198,23 +198,6 @@ export default function TableroPage() {
     }
   };
 
-  const handleSaveService = async (data: ServiceRecord) => {
-    const serviceIndex = placeholderServiceRecords.findIndex(s => s.id === data.id);
-    if (serviceIndex > -1) {
-      placeholderServiceRecords[serviceIndex] = data;
-    } else {
-      placeholderServiceRecords.push(data);
-    }
-    
-    await persistToFirestore(['serviceRecords']);
-    
-    toast({
-      title: "Servicio Actualizado",
-      description: `El estado del servicio ${data.id} ha sido actualizado.`,
-    });
-    setIsServiceDialogOpen(false);
-  };
-
   if (!hydrated) {
     return (
       <div className="flex h-full w-full items-center justify-center">
@@ -276,7 +259,6 @@ export default function TableroPage() {
           vehicles={vehicles}
           technicians={technicians}
           inventoryItems={inventoryItems}
-          onSave={handleSaveService as (data: ServiceRecord | QuoteRecord) => Promise<void>}
           mode="service"
         />
       )}
