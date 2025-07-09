@@ -116,7 +116,6 @@ function HistorialCotizacionesPageComponent() {
   }, []);
   
   const activeQuotes = useMemo(() => {
-    // Show all quotes, no longer filtered by "vigentes"
     let filtered = allQuotes.filter(quote => quote.status === 'Cotizacion');
 
     if (searchTerm) {
@@ -190,9 +189,9 @@ function HistorialCotizacionesPageComponent() {
                 <CardContent className="p-0">
                   <div className="flex flex-col md:flex-row">
                      <div className="p-4 flex flex-col justify-center items-center text-center w-full md:w-48 flex-shrink-0">
-                        <StatusTracker status={status} />
-                        <p className="text-muted-foreground text-xs mt-2">Folio: {quote.id}</p>
                         <p className="font-semibold text-lg text-foreground">{format(parseISO(quote.quoteDate!), "dd MMM yyyy", { locale: es })}</p>
+                        <p className="text-muted-foreground text-xs mt-1">Folio: {quote.id}</p>
+                        <StatusTracker status={status} />
                       </div>
                       <div className="p-4 flex flex-col justify-center flex-grow space-y-2 text-left border-y md:border-y-0 md:border-x">
                         <p className="text-sm text-muted-foreground">{vehicle?.ownerName} - {vehicle?.ownerPhone}</p>

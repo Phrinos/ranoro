@@ -39,6 +39,54 @@ type ServiceSortOption =
   | "status_asc" | "status_desc";
 
 
+// Helper to track the lifecycle status of a service/quote
+const StatusTracker = ({ status }: { status: ServiceRecord['status'] | 'Cotizacion' }) => {
+  const states = [
+    { id: 'COTI', label: 'Cotización', statuses: ['Cotizacion'] },
+    { id: 'AGEN', label: 'Agendado', statuses: ['Agendado'] },
+    { id: 'SERV', label: 'En Servicio', statuses: ['Reparando', 'En Espera de Refacciones'] },
+    { id: 'COMP', label: 'Completado', statuses: ['Completado', 'Entregado'] },
+  ];
+  
+  const getRank = (s: string) => {
+    if (s === 'Cotizacion') return 0;
+    if (s === 'Agendado') return 1;
+    if (s === 'Reparando' || s === 'En Espera de Refacciones') return 2;
+    if (s === 'Completado' || s === 'Entregado') return 3;
+    return -1; // For cancelled or other states
+  };
+  
+  const currentRank = getRank(status);
+
+  return (
+    <div className="flex items-center justify-center space-x-1 my-1 w-full">
+      {states.map((state, index) => {
+        const isActive = currentRank >= index;
+        
+        return (
+          <React.Fragment key={state.id}>
+            {index > 0 && (
+              <div className={cn("h-0.5 w-2 flex-grow rounded-full", isActive ? "bg-green-500" : "bg-muted")} />
+            )}
+            <div
+              title={state.label}
+              className={cn(
+                "flex h-6 w-8 items-center justify-center rounded-md border text-[10px] font-bold transition-colors",
+                isActive
+                  ? "border-green-500 bg-green-500/10 text-green-600"
+                  : "border-muted-foreground/20 bg-muted/50 text-muted-foreground/60"
+              )}
+            >
+              {state.id}
+            </div>
+          </React.Fragment>
+        );
+      })}
+    </div>
+  );
+};
+
+
 const ServiceList = ({ services, vehicles, onEdit, onReprint, onView }: {
   services: ServiceRecord[],
   vehicles: Vehicle[],
@@ -76,9 +124,9 @@ const ServiceList = ({ services, vehicles, onEdit, onReprint, onView }: {
               <CardContent className="p-0">
                 <div className="flex flex-col md:flex-row text-sm">
                   <div className="p-4 flex flex-col justify-center items-center text-center w-full md:w-48 flex-shrink-0">
-                      <Badge variant={getStatusVariant(service.status)} className="w-full justify-center text-center text-sm mb-2">{service.status}</Badge>
-                      <p className="text-xs text-gray-500">Folio: {service.id}</p>
-                      <p className="text-lg font-semibold text-foreground">{format(safeParseISO(service.serviceDate), "dd MMM yyyy", { locale: es })}</p>
+                      <p className="font-semibold text-lg text-foreground">{format(safeParseISO(service.serviceDate), "dd MMM yyyy", { locale: es })}</p>
+                      <p className="text-muted-foreground text-xs mt-1">Folio: {service.id}</p>
+                      <StatusTracker status={service.status} />
                   </div>
                   <div className="p-4 flex flex-col justify-center flex-grow space-y-2 border-y md:border-y-0 md:border-x">
                       <p className="font-bold text-2xl text-black">{vehicle ? `${vehicle.licensePlate} - ${vehicle.make} ${vehicle.model}` : 'N/A'}</p>
@@ -88,8 +136,10 @@ const ServiceList = ({ services, vehicles, onEdit, onReprint, onView }: {
                     <p className="text-xs text-muted-foreground">Costo Total</p>
                     <p className="font-bold text-2xl text-black">{formatCurrency(service.totalCost)}</p>
                   </div>
-                  <div className="p-4 flex flex-col justify-center items-center text-center border-t md:border-t-0 md:border-l w-full md:w-56 flex-shrink-0">
-                    <div className="flex justify-center items-center gap-1 mt-2">
+                  <div className="p-4 flex flex-col justify-center items-center text-center border-t md:border-t-0 md:border-l w-full md:w-56 flex-shrink-0 space-y-2">
+                    <Badge variant={getStatusVariant(service.status)} className="w-full justify-center text-center text-sm">{service.status}</Badge>
+                    <p className="text-xs text-muted-foreground">Asesor: {service.serviceAdvisorName || 'N/A'}</p>
+                    <div className="flex justify-center items-center gap-1">
                         <Button variant="ghost" size="icon" onClick={() => onView(service)} title="Vista Previa"><Eye className="h-4 w-4" /></Button>
                         <Button variant="ghost" size="icon" onClick={() => onEdit(service)} title="Editar Servicio"><Edit className="h-4 w-4" /></Button>
                         {service.status === 'Completado' && (<Button variant="ghost" size="icon" onClick={() => onReprint(service)} title="Reimprimir Comprobante"><Printer className="h-4 w-4" /></Button>)}
