@@ -154,7 +154,7 @@ const BASE_NAV_STRUCTURE: ReadonlyArray<Omit<NavigationEntry, 'isActive'>> = [
   }
 ];
 
-const DESIRED_GROUP_ORDER = ["Mi Taller", "Operaciones", "Mi Flotilla", "Staff", "Finanzas", "Opciones"];
+const DESIRED_GROUP_ORDER = ["Mi Taller", "Operaciones", "Mi Flotilla", "Finanzas", "Opciones", "Staff"];
 
 
 const useNavigation = (): NavigationEntry[] => {
