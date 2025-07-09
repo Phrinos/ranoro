@@ -52,7 +52,7 @@ export default function NuevoServicioPage() {
 
   useEffect(() => {
     if (dialogStep === 'closed') {
-      router.push('/servicios/agenda');
+      router.push('/tablero');
     }
   }, [dialogStep, router]);
 
@@ -180,7 +180,6 @@ ${shareUrl}
           inventoryItems={inventoryItems}
           onSave={(data) => handleSaveNewService(data as ServiceRecord)}
           onVehicleCreated={handleVehicleCreated}
-          onInventoryItemCreatedFromService={handleInventoryItemCreated}
           mode="service"
         />
       )}

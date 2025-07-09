@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React, { useState, useEffect, useMemo, useRef, useCallback, Suspense } from "react";
@@ -28,10 +29,10 @@ type QuoteSortOption =
   | "vehicle_asc" | "vehicle_desc";
 
 
-const QuoteList = React.memo(({ quotes, vehicles, onEdit, onViewQuote }: { 
+const QuoteList = React.memo(({ quotes, vehicles, onEditQuote, onViewQuote }: { 
     quotes: QuoteRecord[], 
     vehicles: Vehicle[], 
-    onEdit: (quote: QuoteRecord) => void,
+    onEditQuote: (quote: QuoteRecord) => void,
     onViewQuote: (quote: QuoteRecord) => void,
 }) => {
   
@@ -92,7 +93,7 @@ const QuoteList = React.memo(({ quotes, vehicles, onEdit, onViewQuote }: {
                         <p className="text-xs text-muted-foreground">Asesor: {quote.preparedByTechnicianName || 'N/A'}</p>
                         <div className="flex justify-center items-center gap-1">
                           <Button variant="ghost" size="icon" onClick={() => onViewQuote(quote)} title="Vista Previa"><Eye className="h-4 w-4" /></Button>
-                          <Button variant="ghost" size="icon" onClick={() => onEdit(quote)} title="Editar Cotización"><Edit className="h-4 w-4" /></Button>
+                          <Button variant="ghost" size="icon" onClick={() => onEditQuote(quote)} title="Editar Cotización"><Edit className="h-4 w-4" /></Button>
                         </div>
                     </div>
                 </div>
@@ -191,14 +192,20 @@ function HistorialCotizacionesPageComponent() {
   const handleSaveQuote = useCallback(async (data: ServiceRecord | QuoteRecord) => {
     const isNew = !data.id;
     const recordId = data.id || `COT_${Date.now().toString(36)}`;
-    const recordToSave = { ...data, id: recordId };
-
+    
+    const recordToSave = { 
+      ...data, 
+      id: recordId, 
+      // Ensure date is in ISO format
+      quoteDate: data.quoteDate ? new Date(data.quoteDate).toISOString() : new Date().toISOString()
+    };
+    
     // Find if a record with this ID already exists
     const recordIndex = placeholderServiceRecords.findIndex(q => q.id === recordId);
     
     if (recordToSave.status !== 'Cotizacion') {
-      // It's being converted to a service
-      // The logic here is now simpler: just update the status.
+      // The status has been changed, so it's being converted to a service.
+      // Update the existing record's status and other fields.
       if (recordIndex > -1) {
         placeholderServiceRecords[recordIndex] = recordToSave as ServiceRecord;
       } else {
@@ -207,7 +214,7 @@ function HistorialCotizacionesPageComponent() {
       }
       toast({ title: `Cotización ${recordId} convertida a Servicio` });
     } else {
-      // It's still a quote, just update it
+      // It's still a quote, just update it or create it
       if (recordIndex > -1) {
         placeholderServiceRecords[recordIndex] = recordToSave as ServiceRecord;
       } else {
@@ -237,7 +244,7 @@ function HistorialCotizacionesPageComponent() {
         <QuoteList
           quotes={activeQuotes}
           vehicles={vehicles}
-          onEdit={handleEditQuote}
+          onEditQuote={handleEditQuote}
           onViewQuote={handleViewQuote}
         />
       </div>
