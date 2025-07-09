@@ -6,14 +6,14 @@ import { useParams } from 'next/navigation';
 import { ServiceSheetContent } from '@/components/service-sheet-content';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import type { ServiceRecord, Vehicle, WorkshopInfo } from '@/types';
+import type { ServiceRecord, Vehicle, WorkshopInfo, QuoteRecord } from '@/types';
 import { ShieldAlert, Printer, Loader2, Signature, Eye, Download } from 'lucide-react';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
 import { SignatureDialog } from '@/app/(app)/servicios/components/signature-dialog';
-import { doc, setDoc, onSnapshot } from 'firebase/firestore';
+import { doc, setDoc, onSnapshot, collection, query, where, getDocs, limit } from 'firebase/firestore'; 
 import { db } from '@/lib/firebasePublic.js';
-import Image from "next/legacy/image";
+import Image from "next/image";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 
@@ -24,6 +24,7 @@ export default function PublicServiceSheetPage() {
   const serviceSheetRef = useRef<HTMLDivElement>(null);
 
   const [service, setService] = useState<ServiceRecord | null | undefined>(undefined);
+  const [quote, setQuote] = useState<QuoteRecord | null | undefined>(undefined);
   const [vehicle, setVehicle] = useState<Vehicle | null | undefined>(undefined);
   const [workshopInfo, setWorkshopInfo] = useState<WorkshopInfo | null | undefined>(undefined);
   const [error, setError] = useState<string | null>(null);
@@ -31,7 +32,6 @@ export default function PublicServiceSheetPage() {
   const [isSigning, setIsSigning] = useState(false);
   const [signatureType, setSignatureType] = useState<'reception' | 'delivery' | null>(null);
 
-  // State for image viewer
   const [isImageViewerOpen, setIsImageViewerOpen] = useState(false);
   const [viewingImageUrl, setViewingImageUrl] = useState<string | null>(null);
 
@@ -51,7 +51,7 @@ export default function PublicServiceSheetPage() {
     
     const serviceRef = doc(db, 'publicServices', publicId);
     
-    const unsubscribe = onSnapshot(serviceRef, (docSnap) => {
+    const unsubscribe = onSnapshot(serviceRef, async (docSnap) => {
       if (docSnap.exists()) {
         const data = docSnap.data();
         const processDates = (obj: any) => {
@@ -70,17 +70,38 @@ export default function PublicServiceSheetPage() {
         setVehicle(serviceData.vehicle || null);
         setWorkshopInfo(serviceData.workshopInfo || null);
         setError(null);
+
+        // --- Fetch associated quote ---
+        try {
+          const quotesCollection = collection(db, 'publicQuotes');
+          const q = query(quotesCollection, where("serviceId", "==", serviceData.id), limit(1));
+          const querySnapshot = await getDocs(q);
+
+          if (!querySnapshot.empty) {
+            const quoteDoc = querySnapshot.docs[0];
+            const quoteData = quoteDoc.data();
+            processDates(quoteData); // Also process dates for the quote
+            setQuote(quoteData as QuoteRecord);
+          } else {
+            setQuote(null); // No quote found
+          }
+        } catch (quoteError) {
+            console.error("Error fetching associated quote:", quoteError);
+            setQuote(null);
+        }
+
       } else {
         setError(`La hoja de servicio con ID "${publicId}" no se encontró. Pudo haber sido eliminada o el enlace es incorrecto.`);
         setService(null);
+        setQuote(null);
       }
     }, (err) => {
       console.error("Error with real-time listener:", err);
       setError("Ocurrió un error al intentar cargar la hoja de servicio desde la base de datos. Por favor, intente más tarde.");
       setService(null);
+      setQuote(null);
     });
 
-    // Cleanup listener on component unmount
     return () => unsubscribe();
   }, [publicId]);
 
@@ -116,7 +137,6 @@ export default function PublicServiceSheetPage() {
 
       toast({ title: "Firma Guardada", description: "Su firma ha sido guardada exitosamente." });
       setSignatureType(null);
-      // No need to reload, onSnapshot will handle the update.
       
     } catch (error) {
       toast({ title: "Error al Guardar", description: `No se pudo guardar la firma. ${error instanceof Error ? error.message : ''}`, variant: "destructive" });
@@ -201,7 +221,8 @@ export default function PublicServiceSheetPage() {
       <div className="bg-white mx-auto shadow-2xl printable-content">
         <ServiceSheetContent 
           ref={serviceSheetRef} 
-          service={service} 
+          service={service}
+          quote={quote || undefined}
           vehicle={vehicle} 
           workshopInfo={workshopInfo || undefined} 
           onViewImage={handleViewImage}
