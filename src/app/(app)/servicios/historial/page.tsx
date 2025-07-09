@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { PageHeader } from "@/components/page-header";
@@ -10,7 +9,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { Search, ListFilter, CalendarIcon as CalendarDateIcon, DollarSign, TrendingUp, Car as CarIcon, Wrench, PlusCircle, Printer, MessageSquare, Copy, Eye, FileCheck } from "lucide-react";
+import { Search, ListFilter, CalendarIcon as CalendarDateIcon, DollarSign, TrendingUp, Car as CarIcon, Wrench, PlusCircle, Printer, MessageSquare, Copy, Eye, FileCheck, Edit } from "lucide-react";
 import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
 import { TicketContent } from '@/components/ticket-content';
 import { placeholderServiceRecords, placeholderVehicles, placeholderTechnicians, placeholderInventory, persistToFirestore, AUTH_USER_LOCALSTORAGE_KEY } from "@/lib/placeholder-data";
@@ -207,7 +206,7 @@ function HistorialServiciosPageComponent() {
       </Tabs>
       
       {editingService && (
-        <ServiceDialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen} service={editingService} vehicles={vehicles} technicians={technicians} inventoryItems={inventoryItems} onSave={handleUpdateService} onVehicleCreated={handleVehicleCreated} onCancelService={handleCancelService} mode="service" />
+        <ServiceDialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen} service={editingService} vehicles={vehicles} technicians={technicians} inventoryItems={inventoryItems} onSave={handleUpdateService as any} onVehicleCreated={handleVehicleCreated} onCancelService={handleCancelService} mode="service" />
       )}
     </>
   );
