@@ -164,7 +164,7 @@ const BASE_NAV_STRUCTURE: ReadonlyArray<Omit<NavigationEntry, 'isActive'>> = [
     path: '/administracion',
     icon: Shield,
     groupTag: "Opciones",
-    permissions: ['users:manage', 'roles:manage']
+    permissions: ['users:manage', 'roles:manage', 'audits:view']
   }
 ];
 
