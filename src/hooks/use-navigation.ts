@@ -1,3 +1,4 @@
+
 "use client";
 
 import { usePathname } from 'next/navigation';
@@ -33,7 +34,8 @@ import {
   Database,
   BookOpen,
   Truck,
-  Wallet
+  Wallet,
+  UserCircle
 } from 'lucide-react';
 import type { User, AppRole } from '@/types';
 import { placeholderAppRoles, AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
@@ -124,31 +126,49 @@ const BASE_NAV_STRUCTURE: ReadonlyArray<Omit<NavigationEntry, 'isActive'>> = [
     permissions: ['fleet:manage']
   },
 
-  // Mi Oficina
-  {
-    label: 'Resumen Financiero', 
-    path: '/finanzas/resumen',
-    icon: BarChart3, 
-    groupTag: "Mi Oficina",
-    permissions: ['finances:view_report']
-  },
+  // Staff
   { 
     label: 'Staff Técnico', 
     path: '/tecnicos', 
     icon: UserCog, 
-    groupTag: "Mi Oficina",
+    groupTag: "Staff",
     permissions: ['technicians:manage']
   },
   { 
     label: 'Staff Administrativo', 
     path: '/administrativos', 
     icon: Briefcase, 
-    groupTag: "Mi Oficina",
+    groupTag: "Staff",
     permissions: ['technicians:manage'] // Reusing technician permission for all staff
   },
+
+  // Finanzas
+  {
+    label: 'Resumen Financiero', 
+    path: '/finanzas/resumen',
+    icon: BarChart3, 
+    groupTag: "Finanzas",
+    permissions: ['finances:view_report']
+  },
+
+  // Opciones
+  {
+    label: 'Mi Perfil',
+    path: '/perfil',
+    icon: UserCircle,
+    groupTag: "Opciones",
+    permissions: ['dashboard:view'] // All users should be able to see their profile
+  },
+  {
+    label: 'Manual de Usuario',
+    path: '/manual',
+    icon: BookOpen,
+    groupTag: "Opciones",
+    permissions: ['dashboard:view'] // All users should be able to see the manual
+  }
 ];
 
-const DESIRED_GROUP_ORDER = ["Mi Taller", "Operaciones", "Mi Flotilla", "Mi Oficina"];
+const DESIRED_GROUP_ORDER = ["Mi Taller", "Operaciones", "Mi Flotilla", "Staff", "Finanzas", "Opciones"];
 
 
 const useNavigation = (): NavigationEntry[] => {
@@ -244,6 +264,10 @@ const useNavigation = (): NavigationEntry[] => {
     if (entry.path === '/precios' && pathname === '/precios') {
         isActive = true;
     }
+    if (entry.path === '/perfil' && pathname === '/perfil') {
+        isActive = true;
+    }
+
 
     if (entry.path === '/flotilla' && (pathname.startsWith('/flotilla') || pathname.startsWith('/conductores') || pathname.startsWith('/rentas'))) {
         isActive = true;
