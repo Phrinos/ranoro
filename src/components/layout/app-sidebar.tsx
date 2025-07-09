@@ -45,7 +45,7 @@ import { useToast } from "@/hooks/use-toast";
 import type { User, ServiceRecord, AppRole } from "@/types";
 import { signOut } from "firebase/auth"; // Firebase
 import { auth } from "@/lib/firebaseClient.js"; // Firebase
-import { placeholderServiceRecords, placeholderAppRoles } from "@/lib/placeholder-data";
+import { placeholderServiceRecords, placeholderAppRoles, AUTH_USER_LOCALSTORAGE_KEY } from "@/lib/placeholder-data";
 import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 
@@ -56,13 +56,12 @@ export function AppSidebar() {
   const { isMobile, setOpenMobile } = useSidebar(); // Get sidebar context
 
   const [currentUser, setCurrentUser] = React.useState<User | null>(null);
-  const [roles, setRoles] = React.useState<AppRole[]>([]);
   const [newSignatureServices, setNewSignatureServices] = React.useState<ServiceRecord[]>([]);
 
   React.useEffect(() => {
     const checkNotifications = () => {
       if (typeof window !== "undefined") {
-        const authUserString = localStorage.getItem("authUser");
+        const authUserString = localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY);
         if (authUserString) {
           try {
             setCurrentUser(JSON.parse(authUserString));
@@ -78,7 +77,6 @@ export function AppSidebar() {
           (s.customerSignatureDelivery && !s.deliverySignatureViewed)
         );
         setNewSignatureServices(unreadServices);
-        setRoles(placeholderAppRoles);
       }
     };
 
@@ -91,17 +89,11 @@ export function AppSidebar() {
     };
   }, []);
 
-  const userPermissions = React.useMemo(() => {
-    if (!currentUser || !roles.length) return new Set<string>();
-    const userRole = roles.find(r => r && r.name === currentUser.role);
-    return new Set(userRole?.permissions || []);
-  }, [currentUser, roles]);
-
   const handleLogout = async () => {
     try {
       await signOut(auth);
       if (typeof window !== "undefined") {
-        localStorage.removeItem("authUser");
+        localStorage.removeItem(AUTH_USER_LOCALSTORAGE_KEY);
       }
       toast({
         title: "Sesión Cerrada",
@@ -211,33 +203,6 @@ export function AppSidebar() {
               {currentUser?.name || "Mi Cuenta"}
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            {(userPermissions.has('users:manage') || userPermissions.has('roles:manage')) && (
-              <>
-                <DropdownMenuGroup>
-                  <DropdownMenuLabel>Administración</DropdownMenuLabel>
-                  {userPermissions.has('users:manage') && (
-                    <DropdownMenuItem onClick={() => router.push('/admin/usuarios')}>
-                      <Users className="mr-2 h-4 w-4" />
-                      <span>Usuarios</span>
-                    </DropdownMenuItem>
-                  )}
-                  {userPermissions.has('roles:manage') && (
-                    <DropdownMenuItem onClick={() => router.push('/admin/roles')}>
-                      <ShieldQuestion className="mr-2 h-4 w-4" />
-                      <span>Roles y Permisos</span>
-                    </DropdownMenuItem>
-                  )}
-                  {userPermissions.has('users:manage') && (
-                    <DropdownMenuItem onClick={() => router.push('/admin/migracion-datos')}>
-                      <DatabaseZap className="mr-2 h-4 w-4" />
-                      <span>Migración de Datos</span>
-                    </DropdownMenuItem>
-                  )}
-                </DropdownMenuGroup>
-                <DropdownMenuSeparator />
-              </>
-            )}
-
             <DropdownMenuItem onClick={handleLogout}>
               <LogOut className="mr-2 h-4 w-4 text-destructive" />
               <span className="text-destructive">Cerrar Sesión</span>
