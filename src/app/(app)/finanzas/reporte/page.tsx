@@ -43,8 +43,10 @@ function ReportesPageComponent() {
 
     const [reporteOpSearchTerm, setReporteOpSearchTerm] = useState("");
     const [reporteOpTypeFilter, setReporteOpTypeFilter] = useState<OperationTypeFilter>("all");
-    const [reporteInvSearchTerm, setReporteInvSearchTerm] = useState("");
     const [reporteOpSortOption, setReporteOpSortOption] = useState<string>("date_desc");
+    
+    const [reporteInvSearchTerm, setReporteInvSearchTerm] = useState("");
+    const [reporteInvSortOption, setReporteInvSortOption] = useState<string>("quantity_desc");
 
     useEffect(() => {
         hydrateReady.then(() => setHydrated(true));
@@ -112,9 +114,27 @@ function ReportesPageComponent() {
     const filteredAndSortedInventory = useMemo(() => {
         let list = [...aggregatedInventory];
         if (reporteInvSearchTerm) { list = list.filter(item => item.name.toLowerCase().includes(reporteInvSearchTerm.toLowerCase()) || item.sku.toLowerCase().includes(reporteInvSearchTerm.toLowerCase())); }
-        list.sort((a, b) => b.totalQuantity - a.totalQuantity);
+        
+        list.sort((a, b) => {
+            switch (reporteInvSortOption) {
+                case 'quantity_asc':
+                    return a.totalQuantity - b.totalQuantity;
+                case 'revenue_desc':
+                    return b.totalRevenue - a.totalRevenue;
+                case 'revenue_asc':
+                    return a.totalRevenue - b.totalRevenue;
+                case 'name_asc':
+                    return a.name.localeCompare(b.name);
+                case 'name_desc':
+                    return b.name.localeCompare(a.name);
+                case 'quantity_desc':
+                default:
+                    return b.totalQuantity - a.totalQuantity;
+            }
+        });
+        
         return list;
-    }, [aggregatedInventory, reporteInvSearchTerm]);
+    }, [aggregatedInventory, reporteInvSearchTerm, reporteInvSortOption]);
 
     const getOperationTypeVariant = (type: string) => {
         switch (type) {
@@ -248,9 +268,34 @@ function ReportesPageComponent() {
                 <TabsContent value="inventario" className="mt-6">
                     <Card>
                         <CardHeader>
-                            <div className="relative flex-1 min-w-[200px] sm:min-w-[300px]">
-                                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                                <Input type="search" placeholder="Buscar por nombre o SKU..." className="w-full rounded-lg bg-card pl-8" value={reporteInvSearchTerm} onChange={(e) => setReporteInvSearchTerm(e.target.value)} />
+                            <CardTitle>Detalle de Salidas de Inventario</CardTitle>
+                            <CardDescription>Productos y refacciones vendidos o utilizados en servicios en el período seleccionado.</CardDescription>
+                            <div className="flex flex-col sm:flex-row items-center gap-4 pt-4">
+                                <div className="relative flex-1 w-full">
+                                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                                    <Input type="search" placeholder="Buscar por nombre o SKU..." className="w-full rounded-lg bg-background pl-8" value={reporteInvSearchTerm} onChange={(e) => setReporteInvSearchTerm(e.target.value)} />
+                                </div>
+                                <div className="flex items-center gap-2 w-full sm:w-auto flex-wrap">
+                                    <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                            <Button variant="outline" className="flex-1 sm:flex-initial">
+                                                <ListFilter className="mr-2 h-4 w-4" />
+                                                <span>Ordenar por</span>
+                                            </Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent align="end">
+                                            <DropdownMenuLabel>Ordenar por</DropdownMenuLabel>
+                                            <DropdownMenuRadioGroup value={reporteInvSortOption} onValueChange={setReporteInvSortOption}>
+                                                <DropdownMenuRadioItem value="quantity_desc">Unidades (Mayor a Menor)</DropdownMenuRadioItem>
+                                                <DropdownMenuRadioItem value="quantity_asc">Unidades (Menor a Mayor)</DropdownMenuRadioItem>
+                                                <DropdownMenuRadioItem value="revenue_desc">Ingreso (Mayor a Menor)</DropdownMenuRadioItem>
+                                                <DropdownMenuRadioItem value="revenue_asc">Ingreso (Menor a Mayor)</DropdownMenuRadioItem>
+                                                <DropdownMenuRadioItem value="name_asc">Nombre (A-Z)</DropdownMenuRadioItem>
+                                                <DropdownMenuRadioItem value="name_desc">Nombre (Z-A)</DropdownMenuRadioItem>
+                                            </DropdownMenuRadioGroup>
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
+                                </div>
                             </div>
                         </CardHeader>
                         <CardContent>
