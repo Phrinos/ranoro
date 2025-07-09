@@ -2,6 +2,7 @@
 
 "use client";
 
+import React, { useState, useEffect, useMemo, useRef, useCallback, Suspense } from "react";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,7 +16,6 @@ import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
 import { TicketContent } from '@/components/ticket-content';
 import { placeholderServiceRecords, placeholderVehicles, placeholderTechnicians, placeholderInventory, persistToFirestore, AUTH_USER_LOCALSTORAGE_KEY } from "@/lib/placeholder-data";
 import type { ServiceRecord, Vehicle, Technician, InventoryItem, QuoteRecord, WorkshopInfo, User } from "@/types";
-import React, { useState, useEffect, useMemo, useRef, useCallback, Suspense } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { format, parseISO, compareAsc, compareDesc, isWithinInterval, isValid, startOfDay, endOfDay, isToday } from "date-fns";
 import { es } from 'date-fns/locale';
@@ -76,7 +76,7 @@ const ServiceList = React.memo(({ services, vehicles, onEdit, onReprint, onView 
             <Card key={service.id} className="shadow-sm overflow-hidden">
               <CardContent className="p-0">
                 <div className="flex flex-col md:flex-row text-sm">
-                  <div className="p-4 flex flex-col justify-start items-start text-left w-full md:w-48 flex-shrink-0">
+                  <div className="p-4 flex flex-col justify-center items-center text-center w-full md:w-48 flex-shrink-0">
                       <p className="font-semibold text-xl text-foreground">{format(safeParseISO(service.serviceDate), "dd MMM yyyy", { locale: es })}</p>
                       <p className="text-muted-foreground text-xs mt-1">Folio: {service.id}</p>
                       <StatusTracker status={service.status} />
@@ -90,7 +90,6 @@ const ServiceList = React.memo(({ services, vehicles, onEdit, onReprint, onView 
                     <p className="font-bold text-2xl text-black">{formatCurrency(service.totalCost)}</p>
                   </div>
                   <div className="p-4 flex flex-col justify-center items-center text-center border-t md:border-t-0 md:border-l w-full md:w-56 flex-shrink-0 space-y-2">
-                    <Badge variant={getStatusVariant(service.status)} className="w-full justify-center text-center text-sm">{service.status}</Badge>
                     <p className="text-xs text-muted-foreground">Asesor: {service.serviceAdvisorName || 'N/A'}</p>
                     <div className="flex justify-center items-center gap-1">
                         <Button variant="ghost" size="icon" onClick={() => onView(service)} title="Vista Previa"><Eye className="h-4 w-4" /></Button>
