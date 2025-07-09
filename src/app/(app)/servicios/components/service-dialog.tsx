@@ -110,34 +110,37 @@ export function ServiceDialog({
     : (service || quote
       ? (mode === 'quote' ? "Actualiza los detalles de la cotización." : "Actualiza los detalles de la orden de servicio.")
       : (mode === 'quote' ? "Completa la información para una nueva cotización." : "Completa la información para una nueva orden de servicio."));
+      
+  const initialDataForForm = mode === 'service' 
+    ? service 
+    : { ...quote, status: 'Cotizacion' };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       {trigger && !isControlled && <DialogTrigger asChild onClick={() => onOpenChange(true)}>{trigger}</DialogTrigger>}
-      {open && (
-        <DialogContent className="sm:max-w-[600px] md:max-w-[800px] lg:max-w-[900px] xl:max-w-6xl flex flex-col max-h-[90vh] print:hidden">
-          <DialogHeader className="flex-shrink-0">
-            <DialogTitle>{dialogTitle}</DialogTitle>
-            <DialogDescription>{dialogDescription}</DialogDescription>
-          </DialogHeader>
-          <div className="flex-grow overflow-y-auto -mx-6 px-6 print:overflow-visible">
-            <ServiceForm
-              initialDataService={mode === 'service' ? service : null}
-              initialDataQuote={quote || (mode === 'quote' ? (service as any) : null)}
-              vehicles={vehicles} 
-              technicians={technicians}
-              inventoryItems={inventoryItems}
-              onSubmit={handleSubmit}
-              onClose={() => { if (onOpenChange) onOpenChange(false); else setUncontrolledOpen(false); }}
-              isReadOnly={isReadOnly}
-              onVehicleCreated={onVehicleCreated} 
-              mode={mode}
-              onDelete={onDelete}
-              onCancelService={onCancelService}
-            />
-          </div>
-        </DialogContent>
-      )}
+      <DialogContent className="sm:max-w-[600px] md:max-w-[800px] lg:max-w-[900px] xl:max-w-6xl flex flex-col max-h-[90vh] print:hidden">
+        <DialogHeader className="flex-shrink-0">
+          <DialogTitle>{dialogTitle}</DialogTitle>
+          <DialogDescription>{dialogDescription}</DialogDescription>
+        </DialogHeader>
+        <div className="flex-grow overflow-y-auto -mx-6 px-6 print:overflow-visible">
+          <ServiceForm
+            initialDataService={mode === 'service' ? service : null}
+            initialDataQuote={mode === 'quote' ? initialDataForForm as QuoteRecord : null}
+            vehicles={vehicles} 
+            technicians={technicians}
+            inventoryItems={inventoryItems}
+            onSubmit={handleSubmit}
+            onClose={() => { if (onOpenChange) onOpenChange(false); else setUncontrolledOpen(false); }}
+            isReadOnly={isReadOnly}
+            onVehicleCreated={onVehicleCreated} 
+            mode={mode}
+            onDelete={onDelete}
+            onCancelService={onCancelService}
+          />
+        </div>
+      </DialogContent>
     </Dialog>
   );
 }
+
