@@ -31,9 +31,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Label } from "@/components/ui/label";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
-// Schemas and Types
 const cashTransactionSchema = z.object({
   concept: z.string().min(3, "El concepto debe tener al menos 3 caracteres."),
   amount: z.coerce.number().min(0.01, "El monto debe ser mayor a 0."),
@@ -41,9 +39,6 @@ const cashTransactionSchema = z.object({
 type CashTransactionFormValues = z.infer<typeof cashTransactionSchema>;
 
 type SaleSortOption = "date_desc" | "date_asc" | "total_desc" | "total_asc" | "customer_asc" | "customer_desc";
-type OperationSortOption = "date_desc" | "date_asc" | "amount_desc" | "amount_asc" | "profit_desc" | "profit_asc";
-type InventoryReportSortOption = "quantity_desc" | "quantity_asc" | "revenue_desc" | "revenue_asc" | "name_asc" | "name_desc";
-type OperationTypeFilter = "all" | "Venta" | "Servicio" | "C. Aceite" | "Pintura";
 
 function CashTransactionForm({ type, onSubmit }: { type: 'Entrada' | 'Salida', onSubmit: (type: 'Entrada' | 'Salida', values: CashTransactionFormValues) => void }) {
   const form = useForm<CashTransactionFormValues>({ resolver: zodResolver(cashTransactionSchema) });
@@ -107,12 +102,6 @@ function PosPageComponent() {
   const [isInitialBalanceDialogOpen, setIsInitialBalanceDialogOpen] = useState(false);
   const [initialBalanceAmount, setInitialBalanceAmount] = useState<number | ''>('');
   const [isCorteDialogOpen, setIsCorteDialogOpen] = useState(false);
-
-  const [reporteOpSearchTerm, setReporteOpSearchTerm] = useState("");
-  const [reporteOpSortOption, setReporteOpSortOption] = useState<OperationSortOption>("date_desc");
-  const [reporteOpTypeFilter, setReporteOpTypeFilter] = useState<OperationTypeFilter>("all");
-  const [reporteInvSearchTerm, setReporteInvSearchTerm] = useState("");
-  const [reporteInvSortOption, setReporteInvSortOption] = useState<InventoryReportSortOption>("quantity_desc");
 
   useEffect(() => {
     hydrateReady.then(() => setHydrated(true));
@@ -201,124 +190,6 @@ function PosPageComponent() {
     return { initialBalance, totalCashSales, totalCashIn, totalCashOut, finalCashBalance, salesByPaymentMethod, totalSales: salesInRange.length, totalServices: servicesInRange.length };
   }, [hydrated, dateRange, version]);
   
-  const combinedOperations = useMemo((): FinancialOperation[] => {
-    if (!hydrated) return [];
-    const saleOperations: FinancialOperation[] = placeholderSales
-      .filter(s => s.status !== 'Cancelado')
-      .map(sale => ({
-      id: sale.id,
-      date: sale.saleDate,
-      type: 'Venta',
-      description: sale.items.map(i => i.itemName).join(', '),
-      totalAmount: sale.totalAmount,
-      profit: calculateSaleProfit(sale, placeholderInventory),
-      originalObject: sale,
-    }));
-    const serviceOperations: FinancialOperation[] = placeholderServiceRecords
-      .filter(s => s.status === 'Completado')
-      .map(service => ({
-      id: service.id,
-      date: service.deliveryDateTime || service.serviceDate,
-      type: service.serviceType || 'Servicio',
-      description: service.description || (service.serviceItems || []).map(i => i.name).join(', '),
-      totalAmount: service.totalCost,
-      profit: service.serviceProfit || 0,
-      originalObject: service,
-    }));
-    return [...saleOperations, ...serviceOperations];
-  }, [hydrated, version]);
-
-  const filteredAndSortedOperations = useMemo(() => {
-    if (!hydrated || !dateRange?.from) return [];
-    
-    const from = startOfDay(dateRange.from);
-    const to = dateRange.to ? endOfDay(dateRange.to) : endOfDay(dateRange.from);
-    
-    let list = combinedOperations.filter(op => {
-      if (!op.date) return false;
-      const opDate = parseISO(op.date);
-      return isValid(opDate) && isWithinInterval(opDate, { start: from, end: to });
-    });
-    
-    if (reporteOpTypeFilter !== 'all') {
-      if (reporteOpTypeFilter === 'C. Aceite') list = list.filter(op => op.type === 'Cambio de Aceite');
-      else if (reporteOpTypeFilter === 'Pintura') list = list.filter(op => op.type === 'Pintura');
-      else if (reporteOpTypeFilter === 'Venta') list = list.filter(op => op.type === 'Venta');
-      else if (reporteOpTypeFilter === 'Servicio') list = list.filter(op => op.type === 'Servicio General');
-    }
-    
-    if (reporteOpSearchTerm) {
-      const q = reporteOpSearchTerm.toLowerCase();
-      list = list.filter(op => op.id.toLowerCase().includes(q) || op.description.toLowerCase().includes(q));
-    }
-    list.sort((a,b) => compareDesc(parseISO(a.date!), parseISO(b.date!)));
-    return list;
-  }, [combinedOperations, dateRange, reporteOpSearchTerm, reporteOpTypeFilter, reporteOpSortOption, hydrated]);
-
-  const aggregatedInventory = useMemo((): AggregatedInventoryItem[] => {
-    if (!hydrated || !dateRange?.from) return [];
-    
-    const from = startOfDay(dateRange.from);
-    const to = dateRange.to ? endOfDay(dateRange.to) : endOfDay(dateRange.from);
-    
-    const allItemsSold = new Map<string, AggregatedInventoryItem>();
-    const processItem = (itemId: string, name: string, sku: string, quantity: number, revenue: number) => {
-        if (allItemsSold.has(itemId)) {
-            const existing = allItemsSold.get(itemId)!;
-            existing.totalQuantity += quantity;
-            existing.totalRevenue += revenue;
-        } else {
-            allItemsSold.set(itemId, { itemId, name, sku, totalQuantity: quantity, totalRevenue: revenue });
-        }
-    };
-    
-    placeholderSales.forEach(sale => {
-        if (sale.status === 'Cancelado') return;
-        const saleDate = parseISO(sale.saleDate);
-        if (isValid(saleDate) && isWithinInterval(saleDate, { start: from, end: to })) {
-            sale.items.forEach(item => {
-                const invItem = placeholderInventory.find(i => i.id === item.inventoryItemId);
-                if (invItem && !invItem.isService) {
-                    processItem(invItem.id, invItem.name, invItem.sku, item.quantity, item.totalPrice);
-                }
-            });
-        }
-    });
-
-    placeholderServiceRecords.forEach(service => {
-        if (service.status !== 'Completado' || !service.deliveryDateTime) return;
-        const serviceDate = parseISO(service.deliveryDateTime);
-        if (isValid(serviceDate) && isWithinInterval(serviceDate, { start: from, end: to })) {
-            (service.serviceItems || []).forEach(sItem => {
-                (sItem.suppliesUsed || []).forEach(supply => {
-                     const invItem = placeholderInventory.find(i => i.id === supply.supplyId);
-                     if(invItem && !invItem.isService){
-                         processItem(invItem.id, invItem.name, invItem.sku, supply.quantity, supply.sellingPrice ? supply.sellingPrice * supply.quantity : 0);
-                     }
-                });
-            });
-        }
-    });
-    return Array.from(allItemsSold.values());
-  }, [dateRange, hydrated, version]);
-
-  const filteredAndSortedInventory = useMemo(() => {
-    let list = [...aggregatedInventory];
-    if (reporteInvSearchTerm) {
-        const q = reporteInvSearchTerm.toLowerCase();
-        list = list.filter(item => item.name.toLowerCase().includes(q) || item.sku.toLowerCase().includes(q));
-    }
-    list.sort((a, b) => b.totalQuantity - a.totalQuantity);
-    return list;
-  }, [aggregatedInventory, reporteInvSearchTerm, reporteInvSortOption]);
-
-  const inventorySummaryData = useMemo(() => {
-    return {
-      distinctItemsSold: filteredAndSortedInventory.length,
-      totalUnitsSold: filteredAndSortedInventory.reduce((sum, item) => sum + item.totalQuantity, 0),
-      totalRevenueFromItems: filteredAndSortedInventory.reduce((sum, item) => sum + item.totalRevenue, 0),
-    };
-  }, [filteredAndSortedInventory]);
 
   const handleCancelSale = useCallback(async (saleId: string, reason: string) => {
     const saleIndex = placeholderSales.findIndex(s => s.id === saleId);
@@ -419,11 +290,10 @@ function PosPageComponent() {
         <p className="text-primary-foreground/80 mt-1">Registra ventas, gestiona tu caja y analiza el rendimiento de tus operaciones.</p>
       </div>
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-4 mb-6">
+        <TabsList className="grid w-full grid-cols-3 mb-6">
           <TabsTrigger value="informe" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Informe</TabsTrigger>
           <TabsTrigger value="ventas" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Ventas</TabsTrigger>
           <TabsTrigger value="caja" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Caja</TabsTrigger>
-          <TabsTrigger value="reportes" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Reportes</TabsTrigger>
         </TabsList>
         <TabsContent value="informe" className="space-y-6">
             <div className="space-y-2">
@@ -492,37 +362,6 @@ function PosPageComponent() {
                     <Card><CardHeader><CardTitle className="flex items-center gap-2 text-red-600"><ArrowDownCircle/>Registrar Salida</CardTitle></CardHeader><CardContent><CashTransactionForm type="Salida" onSubmit={handleAddTransaction} /></CardContent></Card>
                 </CardContent>
             </Card>
-        </TabsContent>
-        <TabsContent value="reportes" className="space-y-6">
-             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                <div>
-                    <h2 className="text-2xl font-semibold tracking-tight">Reportes de Operaciones e Inventario</h2>
-                    <p className="text-muted-foreground">Analiza el detalle de tus ventas, servicios y el movimiento de tus productos.</p>
-                </div>
-                {dateFilterComponent}
-            </div>
-            <Tabs defaultValue="operaciones" className="w-full">
-                <TabsList className="grid w-full grid-cols-2">
-                    <TabsTrigger value="operaciones">Reporte de Operaciones</TabsTrigger>
-                    <TabsTrigger value="inventario">Reporte de Inventario</TabsTrigger>
-                </TabsList>
-                <TabsContent value="operaciones" className="mt-4">
-                    <Card>
-                        <CardHeader><CardTitle>Detalle de Operaciones</CardTitle></CardHeader>
-                        <CardContent>
-                            <Table><TableHeader><TableRow><TableHead>Fecha</TableHead><TableHead>Tipo</TableHead><TableHead>ID</TableHead><TableHead>Descripción</TableHead><TableHead className="text-right">Monto</TableHead><TableHead className="text-right">Ganancia</TableHead></TableRow></TableHeader><TableBody>{filteredAndSortedOperations.map(op => (<TableRow key={`${op.type}-${op.id}`}><TableCell>{op.date ? format(parseISO(op.date), "dd MMM yyyy", { locale: es }) : 'N/A'}</TableCell><TableCell>{op.type}</TableCell><TableCell>{op.id}</TableCell><TableCell>{op.description}</TableCell><TableCell className="text-right">{formatCurrency(op.totalAmount)}</TableCell><TableCell className="text-right">{formatCurrency(op.profit)}</TableCell></TableRow>))}</TableBody></Table>
-                        </CardContent>
-                    </Card>
-                </TabsContent>
-                <TabsContent value="inventario" className="mt-4">
-                     <Card>
-                        <CardHeader><CardTitle>Detalle de Salidas de Inventario</CardTitle></CardHeader>
-                        <CardContent>
-                            <Table><TableHeader><TableRow><TableHead>SKU</TableHead><TableHead>Producto</TableHead><TableHead className="text-right">Unidades</TableHead><TableHead className="text-right">Ingreso</TableHead></TableRow></TableHeader><TableBody>{filteredAndSortedInventory.map(item => (<TableRow key={item.itemId}><TableCell>{item.sku}</TableCell><TableCell>{item.name}</TableCell><TableCell className="text-right">{item.totalQuantity}</TableCell><TableCell className="text-right">{formatCurrency(item.totalRevenue)}</TableCell></TableRow>))}</TableBody></Table>
-                        </CardContent>
-                    </Card>
-                </TabsContent>
-            </Tabs>
         </TabsContent>
       </Tabs>
       <PrintTicketDialog open={isReprintDialogOpen && !!selectedSaleForReprint} onOpenChange={setIsReprintDialogOpen} title="Reimprimir Ticket" footerActions={<><Button variant="outline" onClick={handleCopyAsImage}><Copy className="mr-2 h-4 w-4"/>Copiar</Button><Button onClick={() => window.print()}><Printer className="mr-2 h-4 w-4"/>Imprimir</Button></>}>

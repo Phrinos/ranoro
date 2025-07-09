@@ -125,16 +125,7 @@ const BASE_NAV_STRUCTURE: ReadonlyArray<Omit<NavigationEntry, 'isActive'>> = [
     groupTag: "Mi Flotilla",
     permissions: ['fleet:manage']
   },
-
-  // Finanzas
-  {
-    label: 'Resumen Financiero', 
-    path: '/finanzas/resumen',
-    icon: BarChart3, 
-    groupTag: "Finanzas",
-    permissions: ['finances:view_report']
-  },
-
+  
   // Opciones
   {
     label: 'Opciones',
@@ -150,9 +141,16 @@ const BASE_NAV_STRUCTURE: ReadonlyArray<Omit<NavigationEntry, 'isActive'>> = [
     groupTag: "Opciones",
     permissions: ['technicians:manage']
   },
+  {
+    label: 'Reportes',
+    path: '/finanzas/reporte',
+    icon: BarChartHorizontal,
+    groupTag: "Opciones",
+    permissions: ['finances:view_report']
+  },
 ];
 
-const DESIRED_GROUP_ORDER = ["Mi Taller", "Operaciones", "Mi Flotilla", "Finanzas", "Opciones"];
+const DESIRED_GROUP_ORDER = ["Mi Taller", "Operaciones", "Mi Flotilla", "Opciones"];
 
 
 const useNavigation = (): NavigationEntry[] => {
@@ -211,7 +209,7 @@ const useNavigation = (): NavigationEntry[] => {
     if (entry.path === '/inventario' && pathname.startsWith('/inventario')) isActive = true;
     if (entry.path === '/pos' && pathname.startsWith('/pos')) isActive = true;
     if (entry.path === '/personal' && (pathname.startsWith('/personal') || pathname.startsWith('/tecnicos') || pathname.startsWith('/administrativos'))) isActive = true;
-    if (entry.path === '/opciones' && (pathname.startsWith('/opciones') || pathname.startsWith('/perfil') || pathname.startsWith('/manual'))) isActive = true;
+    if (entry.path === '/opciones' && (pathname.startsWith('/opciones') || pathname.startsWith('/perfil') || pathname.startsWith('/manual') || pathname.startsWith('/finanzas/reporte'))) isActive = true;
     
     // Other specific cases
     if (entry.groupTag === "Finanzas" && pathname.startsWith('/finanzas')) isActive = true;
