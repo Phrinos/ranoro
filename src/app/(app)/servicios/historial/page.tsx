@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { PageHeader } from "@/components/page-header";
@@ -170,17 +171,16 @@ function HistorialServiciosPageComponent() {
 
   return (
     <>
-      <PageHeader
-        title="Gestión de Servicios"
-        description="Consulta, filtra y gestiona todas las órdenes de servicio del taller."
-        actions={<Button asChild><Link href="/servicios/nuevo"><PlusCircle className="mr-2 h-4 w-4" />Nuevo Servicio</Link></Button>}
-      />
+      <div className="bg-primary text-primary-foreground rounded-lg p-6 mb-6">
+          <h1 className="text-3xl font-bold tracking-tight">Gestión de Servicios</h1>
+          <p className="text-primary-foreground/80 mt-1">Consulta, filtra y gestiona todas las órdenes de servicio del taller.</p>
+      </div>
       
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full grid-cols-3 mb-6">
-              <TabsTrigger value="resumen">Resumen</TabsTrigger>
-              <TabsTrigger value="activos">Servicios Activos</TabsTrigger>
-              <TabsTrigger value="historial">Historial</TabsTrigger>
+              <TabsTrigger value="resumen" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Resumen</TabsTrigger>
+              <TabsTrigger value="activos" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Servicios Activos</TabsTrigger>
+              <TabsTrigger value="historial" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Historial</TabsTrigger>
           </TabsList>
           
           <TabsContent value="resumen" className="mt-0 space-y-6">

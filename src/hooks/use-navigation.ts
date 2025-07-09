@@ -56,11 +56,25 @@ export interface NavigationEntry {
 const BASE_NAV_STRUCTURE: ReadonlyArray<Omit<NavigationEntry, 'isActive'>> = [
   // Mi Taller
   { 
+    label: 'Nuevo Servicio', 
+    path: '/servicios/nuevo', 
+    icon: PlusCircle, 
+    groupTag: "Mi Taller",
+    permissions: ['services:create']
+  },
+  { 
     label: 'Tablero', 
     path: '/tablero', 
     icon: LayoutGrid, 
     groupTag: "Mi Taller",
     permissions: ['dashboard:view']
+  },
+  { 
+    label: 'Cotizaciones', 
+    path: '/cotizaciones/historial', 
+    icon: FileText, 
+    groupTag: "Mi Taller",
+    permissions: ['services:create'] 
   },
   { 
     label: 'Agenda', 
@@ -70,14 +84,7 @@ const BASE_NAV_STRUCTURE: ReadonlyArray<Omit<NavigationEntry, 'isActive'>> = [
     permissions: ['services:create']
   },
   { 
-    label: 'Cotizaciones', 
-    path: '/cotizaciones/historial', 
-    icon: FileText, 
-    groupTag: "Mi Taller",
-    permissions: ['services:create'] 
-  },
-   { 
-    label: 'Historial Servicios', 
+    label: 'Servicios', 
     path: '/servicios/historial', 
     icon: History, 
     groupTag: "Mi Taller",
@@ -218,7 +225,7 @@ const useNavigation = (): NavigationEntry[] => {
     }
     
     // Specific overrides to group related pages under one active nav item
-    if (entry.path === '/servicios/agenda' && pathname.startsWith('/servicios/')) isActive = true;
+    if (entry.path === '/servicios/historial' && (pathname.startsWith('/servicios/'))) isActive = true;
     if (entry.path === '/cotizaciones/historial' && pathname.startsWith('/cotizaciones/')) isActive = true;
     if (entry.path === '/vehiculos' && (pathname.startsWith('/vehiculos') || pathname.startsWith('/precios'))) isActive = true;
     if (entry.path === '/pos' && pathname.startsWith('/pos')) isActive = true;
@@ -230,7 +237,7 @@ const useNavigation = (): NavigationEntry[] => {
     if (entry.path === '/rentas' && pathname.startsWith('/rentas')) isActive = true;
     
     // Deactivations for clarity
-    if (entry.path === '/servicios/agenda' && (pathname.startsWith('/servicios/historial'))) isActive = false;
+    if (entry.path === '/servicios/historial' && (pathname.startsWith('/servicios/agenda') || pathname.startsWith('/servicios/nuevo'))) isActive = false;
     if (entry.path === '/finanzas/resumen' && pathname.startsWith('/finanzas/reporte')) isActive = false;
     if (entry.path === '/flotilla' && pathname.startsWith('/rentas')) isActive = false;
 
