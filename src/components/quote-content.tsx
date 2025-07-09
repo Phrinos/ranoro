@@ -187,8 +187,8 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
           </Card>
         </main>
         
-        <footer className="mt-auto pt-4">
-          <section className="mt-6 pt-4">
+        <footer className="mt-auto">
+          <section className="pt-4 border-t border-gray-200">
             <h4 className="font-semibold text-xs text-gray-700 mb-1">Términos y Condiciones:</h4>
             <p className="text-xs text-gray-600 leading-snug">
                 {`Precios en MXN. Esta cotización es válida hasta el ${validityDate}. `}
@@ -209,3 +209,4 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
 );
 
 QuoteContent.displayName = "QuoteContent";
+
