@@ -36,7 +36,8 @@ import {
   Truck,
   Wallet,
   UserCircle,
-  Landmark
+  Landmark,
+  Shield
 } from 'lucide-react';
 import type { User, AppRole } from '@/types';
 import { placeholderAppRoles, AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
@@ -145,19 +146,26 @@ const BASE_NAV_STRUCTURE: ReadonlyArray<Omit<NavigationEntry, 'isActive'>> = [
 
   // Opciones
   {
-    label: 'Opciones',
-    path: '/opciones',
-    icon: Settings,
-    groupTag: "Opciones",
-    permissions: ['dashboard:view'] // All users can see options
-  },
-  { 
     label: 'Personal', 
     path: '/personal', 
     icon: Users, 
     groupTag: "Opciones",
     permissions: ['technicians:manage']
   },
+  {
+    label: 'Opciones',
+    path: '/opciones',
+    icon: Settings,
+    groupTag: "Opciones",
+    permissions: ['dashboard:view'] // All users can see options
+  },
+  {
+    label: 'Administración',
+    path: '/administracion',
+    icon: Shield,
+    groupTag: "Opciones",
+    permissions: ['users:manage', 'roles:manage']
+  }
 ];
 
 const DESIRED_GROUP_ORDER = ["Mi Taller", "Operaciones", "Mi Flotilla", "Análisis", "Opciones"];
@@ -222,6 +230,7 @@ const useNavigation = (): NavigationEntry[] => {
     if (entry.path === '/opciones' && (pathname.startsWith('/opciones') || pathname.startsWith('/perfil') || pathname.startsWith('/manual'))) isActive = true;
     if (entry.path === '/finanzas/resumen' && pathname.startsWith('/finanzas')) isActive = true;
     if (entry.path === '/finanzas/reporte' && pathname.startsWith('/finanzas')) isActive = true;
+    if (entry.path === '/administracion' && pathname.startsWith('/administracion')) isActive = true;
     
     // Other specific cases
     if (entry.path === '/precios' && pathname === '/precios') isActive = true;
