@@ -321,7 +321,7 @@ export default function VehicleDetailPage() {
                             <TableCell>{service.mileage ? `${service.mileage.toLocaleString('es-ES')} km` : 'N/A'}</TableCell>
                             <TableCell>{getServiceDescriptionText(service)}</TableCell>
                             <TableCell>{technicians.find(t => t.id === service.technicianId)?.name || service.technicianId}</TableCell>
-                            <TableCell className="text-right">${service.totalCost.toLocaleString('es-ES', { minimumFractionDigits: 2 })}</TableCell>
+                            <TableCell className="text-right">${(service.totalCost || 0).toLocaleString('es-ES', { minimumFractionDigits: 2 })}</TableCell>
                             <TableCell><Badge variant={getStatusVariant(service.status)}>{service.status}</Badge></TableCell>
                           </TableRow>
                         );
