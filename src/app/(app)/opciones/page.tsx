@@ -130,8 +130,7 @@ function PerfilPageContent() {
 
   return (
     <>
-      <PageHeader title="Mi Perfil" description="Actualiza tu información personal y de acceso."/>
-      <Card className="max-w-2xl mx-auto shadow-lg"><CardHeader><CardTitle>Editar Información</CardTitle></CardHeader>
+      <Card className="max-w-2xl mx-auto shadow-lg"><CardHeader><CardTitle>Mi Perfil</CardTitle><CardDescription>Actualiza tu información personal y de acceso.</CardDescription></CardHeader>
         <CardContent>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
@@ -158,21 +157,22 @@ const manualSections = [ { title: "Panel Principal (Dashboard)", icon: LayoutDas
 
 function ManualUsuarioPageContent() {
     return (
-        <>
-            <PageHeader title="Manual de Usuario" description="Una guía completa para aprovechar al máximo todas las funciones de la plataforma Ranoro." actions={<BookOpen className="h-8 w-8 text-primary"/>} />
-            <Card><CardHeader><CardTitle>Bienvenido a Ranoro</CardTitle><CardDescription>Esta guía está diseñada para ayudarte a navegar por las principales funciones del sistema. Usa las siguientes secciones para aprender sobre cada módulo.</CardDescription></CardHeader>
-                <CardContent>
-                    <Accordion type="single" collapsible className="w-full">
-                        {manualSections.map((section, index) => (
-                            <AccordionItem value={`item-${index}`} key={index}>
-                                <AccordionTrigger className="text-lg font-semibold hover:no-underline"><div className="flex items-center gap-3"><section.icon className="h-5 w-5"/>{section.title}</div></AccordionTrigger>
-                                <AccordionContent className="prose prose-sm max-w-none text-muted-foreground pl-10">{section.content}</AccordionContent>
-                            </AccordionItem>
-                        ))}
-                    </Accordion>
-                </CardContent>
-            </Card>
-        </>
+        <Card>
+          <CardHeader>
+            <CardTitle>Manual de Usuario</CardTitle>
+            <CardDescription>Una guía completa para aprovechar al máximo todas las funciones de la plataforma Ranoro.</CardDescription>
+          </CardHeader>
+          <CardContent>
+              <Accordion type="single" collapsible className="w-full">
+                  {manualSections.map((section, index) => (
+                      <AccordionItem value={`item-${index}`} key={index}>
+                          <AccordionTrigger className="text-lg font-semibold hover:no-underline"><div className="flex items-center gap-3"><section.icon className="h-5 w-5"/>{section.title}</div></AccordionTrigger>
+                          <AccordionContent className="prose prose-sm max-w-none text-muted-foreground pl-10">{section.content}</AccordionContent>
+                      </AccordionItem>
+                  ))}
+              </Accordion>
+          </CardContent>
+        </Card>
     );
 };
 
@@ -267,14 +267,10 @@ function ConfiguracionTicketPageContent() {
 
   return (
     <>
-      <PageHeader
-        title="Configuración de Ticket"
-        description="Personaliza la información que aparece en los tickets y cotizaciones impresas."
-      />
       <Card className="max-w-2xl mx-auto shadow-lg">
         <CardHeader>
-          <CardTitle>Información del Taller</CardTitle>
-          <CardDescription>Estos datos se mostrarán en la cabecera de cada documento.</CardDescription>
+          <CardTitle>Configuración de Ticket</CardTitle>
+          <CardDescription>Personaliza la información que aparece en los tickets y cotizaciones impresas.</CardDescription>
         </CardHeader>
         <CardContent>
           <Form {...form}>
@@ -364,28 +360,33 @@ function OpcionesPageComponent() {
     }, [currentUser, roles]);
     
     return (
-        <div className="container mx-auto py-8">
-             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 mb-6">
-                    <TabsTrigger value="perfil">Mi Perfil</TabsTrigger>
-                    <TabsTrigger value="manual">Manual de Usuario</TabsTrigger>
-                    {userPermissions.has('ticket_config:manage') && (
-                        <TabsTrigger value="ticket">Configurar Ticket</TabsTrigger>
-                    )}
-                </TabsList>
-                <TabsContent value="perfil" className="mt-0">
-                    <PerfilPageContent />
-                </TabsContent>
-                <TabsContent value="manual" className="mt-0">
-                    <ManualUsuarioPageContent />
-                </TabsContent>
-                {userPermissions.has('ticket_config:manage') && (
-                    <TabsContent value="ticket" className="mt-0">
-                        <ConfiguracionTicketPageContent />
-                    </TabsContent>
-                )}
-            </Tabs>
+      <>
+        <div className="bg-primary text-primary-foreground rounded-lg p-6 mb-6">
+          <h1 className="text-3xl font-bold tracking-tight">Opciones y Configuración</h1>
+          <p className="text-primary-foreground/80 mt-1">Gestiona tu perfil, consulta el manual y ajusta la configuración del sistema.</p>
         </div>
+        
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 mb-6">
+                <TabsTrigger value="perfil" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Mi Perfil</TabsTrigger>
+                <TabsTrigger value="manual" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Manual de Usuario</TabsTrigger>
+                {userPermissions.has('ticket_config:manage') && (
+                    <TabsTrigger value="ticket" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Configurar Ticket</TabsTrigger>
+                )}
+            </TabsList>
+            <TabsContent value="perfil" className="mt-0">
+                <PerfilPageContent />
+            </TabsContent>
+            <TabsContent value="manual" className="mt-0">
+                <ManualUsuarioPageContent />
+            </TabsContent>
+            {userPermissions.has('ticket_config:manage') && (
+                <TabsContent value="ticket" className="mt-0">
+                    <ConfiguracionTicketPageContent />
+                </TabsContent>
+            )}
+        </Tabs>
+      </>
     );
 }
 
