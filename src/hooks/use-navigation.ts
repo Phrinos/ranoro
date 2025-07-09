@@ -128,18 +128,11 @@ const BASE_NAV_STRUCTURE: ReadonlyArray<Omit<NavigationEntry, 'isActive'>> = [
 
   // Staff
   { 
-    label: 'Staff Técnico', 
-    path: '/tecnicos', 
-    icon: UserCog, 
+    label: 'Personal', 
+    path: '/personal', 
+    icon: Users, 
     groupTag: "Staff",
     permissions: ['technicians:manage']
-  },
-  { 
-    label: 'Staff Administrativo', 
-    path: '/administrativos', 
-    icon: Briefcase, 
-    groupTag: "Staff",
-    permissions: ['technicians:manage'] // Reusing technician permission for all staff
   },
 
   // Finanzas
@@ -153,18 +146,11 @@ const BASE_NAV_STRUCTURE: ReadonlyArray<Omit<NavigationEntry, 'isActive'>> = [
 
   // Opciones
   {
-    label: 'Mi Perfil',
-    path: '/perfil',
-    icon: UserCircle,
+    label: 'Opciones',
+    path: '/opciones',
+    icon: Settings,
     groupTag: "Opciones",
-    permissions: ['dashboard:view'] // All users should be able to see their profile
-  },
-  {
-    label: 'Manual de Usuario',
-    path: '/manual',
-    icon: BookOpen,
-    groupTag: "Opciones",
-    permissions: ['dashboard:view'] // All users should be able to see the manual
+    permissions: ['dashboard:view'] // All users can see options
   }
 ];
 
@@ -195,7 +181,6 @@ const useNavigation = (): NavigationEntry[] => {
 
   const userPermissions = React.useMemo(() => {
     if (!currentUser || !roles.length) return new Set<string>();
-    // Defensively check if 'r' is truthy before accessing properties.
     const userRole = roles.find(r => r && r.name === currentUser.role);
     return new Set(userRole?.permissions || []);
   }, [currentUser, roles]);
@@ -221,58 +206,19 @@ const useNavigation = (): NavigationEntry[] => {
         }
     }
     
-    if (entry.path === '/cotizaciones/historial' && pathname.startsWith('/cotizaciones/nuevo')) {
-        isActive = true;
-    }
+    // Explicit overrides for parent routes
+    if (entry.path === '/cotizaciones/historial' && pathname.startsWith('/cotizaciones')) isActive = true;
+    if (entry.path === '/servicios/historial' && pathname.startsWith('/servicios')) isActive = true;
+    if (entry.path === '/servicios/agenda' && pathname.startsWith('/servicios')) isActive = true;
+    if (entry.path === '/inventario' && pathname.startsWith('/inventario')) isActive = true;
+    if (entry.path === '/pos' && pathname.startsWith('/pos')) isActive = true;
+    if (entry.path === '/personal' && (pathname.startsWith('/personal') || pathname.startsWith('/tecnicos') || pathname.startsWith('/administrativos'))) isActive = true;
+    if (entry.path === '/opciones' && (pathname.startsWith('/opciones') || pathname.startsWith('/perfil') || pathname.startsWith('/manual'))) isActive = true;
     
-    if (entry.path === '/servicios/historial' && (pathname.startsWith('/servicios/nuevo'))) {
-      isActive = true;
-    }
-    if (entry.path === '/servicios/agenda' && pathname.startsWith('/servicios/agenda')) {
-        isActive = true;
-    }
-    
-    if (entry.path === '/inventario' &&
-        (pathname.startsWith('/inventario/categorias') ||
-         pathname.startsWith('/inventario/proveedores') ||
-         pathname.startsWith('/inventario/analisis') ||
-         pathname.match(/^\/inventario\/P[0-9]+$/) || 
-         pathname.match(/^\/inventario\/[a-zA-Z0-9_-]+$/) && !pathname.includes('categorias') && !pathname.includes('proveedores') && !pathname.includes('analisis') 
-       )) {
-      isActive = true;
-    }
-
-     if (entry.path === '/pos' && pathname.startsWith('/pos')) {
-      isActive = true;
-    }
-    
-    if (entry.groupTag === "Mi Oficina" && pathname.startsWith(entry.path)) {
-        isActive = true;
-    }
-    if (entry.groupTag === "Administración" && pathname.startsWith(entry.path)) {
-        isActive = true;
-    }
-     if (entry.path === '/finanzas/reporte' && pathname === '/finanzas/reporte') {
-        isActive = true;
-    }
-    if (entry.path === '/finanzas/resumen' && pathname === '/finanzas/resumen') {
-        isActive = true;
-    }
-    if (entry.path === '/manual' && pathname === '/manual') {
-        isActive = true;
-    }
-    if (entry.path === '/precios' && pathname === '/precios') {
-        isActive = true;
-    }
-    if (entry.path === '/perfil' && pathname === '/perfil') {
-        isActive = true;
-    }
-
-
-    if (entry.path === '/flotilla' && (pathname.startsWith('/flotilla') || pathname.startsWith('/conductores') || pathname.startsWith('/rentas'))) {
-        isActive = true;
-    }
-
+    // Other specific cases
+    if (entry.groupTag === "Finanzas" && pathname.startsWith('/finanzas')) isActive = true;
+    if (entry.path === '/precios' && pathname === '/precios') isActive = true;
+    if (entry.path === '/flotilla' && (pathname.startsWith('/flotilla') || pathname.startsWith('/conductores') || pathname.startsWith('/rentas'))) isActive = true;
 
     return { ...entry, isActive };
   });
