@@ -184,10 +184,17 @@ function PersonalPageComponent() {
         </TabsList>
 
         <TabsContent value="informe" className="space-y-6">
+            <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-4">
+                <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Staff Técnico Activo</CardTitle><UserCheck className="h-5 w-5 text-blue-500" /></CardHeader><CardContent><div className="text-2xl font-bold font-headline">{totalTechnicians}</div></CardContent></Card>
+                <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Nómina Técnica (Base Mensual)</CardTitle><DollarSignIcon className="h-5 w-5 text-green-500" /></CardHeader><CardContent><div className="text-2xl font-bold font-headline">{formatCurrency(totalMonthlyTechnicianSalaries)}</div></CardContent></Card>
+                <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Staff Administrativo</CardTitle><UserCheck className="h-5 w-5 text-blue-500" /></CardHeader><CardContent><div className="text-2xl font-bold font-headline">{totalAdministrativeStaff}</div></CardContent></Card>
+                <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Nómina Admin. (Base Mensual)</CardTitle><DollarSignIcon className="h-5 w-5 text-green-500" /></CardHeader><CardContent><div className="text-2xl font-bold font-headline">{formatCurrency(totalMonthlyAdministrativeSalaries)}</div></CardContent></Card>
+            </div>
+            
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div>
-                    <h2 className="text-2xl font-semibold tracking-tight">Rendimiento del Personal</h2>
-                    <p className="text-muted-foreground">Comisiones potenciales basadas en la ganancia generada en el período.</p>
+                    <h2 className="text-2xl font-semibold tracking-tight">Análisis de Rendimiento</h2>
+                    <p className="text-muted-foreground">Filtre por fecha para ver comisiones potenciales.</p>
                 </div>
                 <Popover>
                     <PopoverTrigger asChild>
@@ -202,32 +209,50 @@ function PersonalPageComponent() {
                 </Popover>
             </div>
 
-            <Separator />
-            
-            <h3 className="text-xl font-semibold tracking-tight pt-4">Rendimiento Técnico</h3>
-            <div className="mb-6 grid gap-6 grid-cols-1 md:grid-cols-2">
-                <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Total Staff Técnico Activo</CardTitle><UserCheck className="h-5 w-5 text-blue-500" /></CardHeader><CardContent><div className="text-2xl font-bold font-headline">{totalTechnicians}</div></CardContent></Card>
-                <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Nómina Técnica (Base Mensual)</CardTitle><DollarSignIcon className="h-5 w-5 text-green-500" /></CardHeader><CardContent><div className="text-2xl font-bold font-headline">{formatCurrency(totalMonthlyTechnicianSalaries)}</div></CardContent></Card>
-            </div>
-             <Card>
-                <CardHeader>
-                    <CardTitle>Rendimiento Individual (Técnicos)</CardTitle>
-                </CardHeader>
-                <CardContent>{aggregatedTechnicianPerformance.length > 0 ? (<div className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4">{aggregatedTechnicianPerformance.map(techPerf => (<Card key={techPerf.technicianId} className="shadow-sm border"><CardHeader className="pb-3 pt-4"><CardTitle className="text-base font-medium">{techPerf.technicianName}</CardTitle></CardHeader><CardContent className="space-y-1 text-sm pb-4"><div className="flex justify-between"><span className="text-muted-foreground">Ingresos Totales:</span><span className="font-semibold">{formatCurrency(techPerf.totalRevenue)}</span></div><div className="flex justify-between"><span className="text-muted-foreground">Ganancia Total:</span><span className="font-semibold text-green-600">{formatCurrency(techPerf.totalProfit)}</span></div><div className="flex justify-between items-center"><span className="text-muted-foreground flex items-center gap-1"><BadgeCent className="h-3.5 w-3.5"/>Comisión Potencial:</span><span className="font-semibold text-blue-600">{formatCurrency(techPerf.totalCommissionEarned)}</span></div></CardContent></Card>))}</div>) : (<p className="text-muted-foreground text-center py-4">No hay datos de rendimiento para mostrar.</p>)}</CardContent>
-            </Card>
-
-            <Separator />
-
-            <h3 className="text-xl font-semibold tracking-tight pt-4">Rendimiento Administrativo</h3>
-             <div className="mb-6 grid gap-6 grid-cols-1 md:grid-cols-2">
-                <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Total Staff Administrativo</CardTitle><UserCheck className="h-5 w-5 text-blue-500" /></CardHeader><CardContent><div className="text-2xl font-bold font-headline">{totalAdministrativeStaff}</div></CardContent></Card>
-                <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Nómina Admin. (Base Mensual)</CardTitle><DollarSignIcon className="h-5 w-5 text-green-500" /></CardHeader><CardContent><div className="text-2xl font-bold font-headline">{formatCurrency(totalMonthlyAdministrativeSalaries)}</div></CardContent></Card>
-            </div>
             <Card>
                 <CardHeader>
-                    <CardTitle>Rendimiento Individual (Admin)</CardTitle>
+                    <CardTitle>Rendimiento Individual</CardTitle>
+                    <CardDescription>Comisiones potenciales basadas en la ganancia generada en el período seleccionado.</CardDescription>
                 </CardHeader>
-                <CardContent>{aggregatedAdminPerformance.length > 0 ? (<div className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4">{aggregatedAdminPerformance.map(staffPerf => (<Card key={staffPerf.staffId} className="shadow-sm border"><CardHeader className="pb-3 pt-4"><CardTitle className="text-base font-medium">{staffPerf.staffName}</CardTitle></CardHeader><CardContent className="space-y-1 text-sm pb-4"><div className="flex justify-between"><span className="text-muted-foreground">Salario Base:</span><span className="font-semibold">{formatCurrency(staffPerf.baseSalary)}</span></div><div className="flex justify-between items-center"><span className="text-muted-foreground flex items-center gap-1"><BadgeCent className="h-3.5 w-3.5"/>Comisión Potencial:</span><span className="font-semibold text-blue-600">{formatCurrency(staffPerf.commissionEarned)}</span></div><div className="flex justify-between font-bold pt-1 border-t mt-1"><span className="text-muted-foreground">Total (Potencial):</span><span className="text-green-600">{formatCurrency(staffPerf.totalEarnings)}</span></div></CardContent></Card>))}</div>) : (<p className="text-muted-foreground text-center py-4">No hay datos de rendimiento para mostrar.</p>)}</CardContent>
+                <CardContent className="space-y-6">
+                    <div>
+                        <h3 className="text-lg font-semibold tracking-tight mb-4">Personal Técnico</h3>
+                        {aggregatedTechnicianPerformance.length > 0 ? (
+                            <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
+                                {aggregatedTechnicianPerformance.map(techPerf => (
+                                    <Card key={techPerf.technicianId} className="shadow-sm border">
+                                        <CardHeader className="pb-3 pt-4"><CardTitle className="text-base font-medium">{techPerf.technicianName}</CardTitle></CardHeader>
+                                        <CardContent className="space-y-1 text-sm pb-4">
+                                            <div className="flex justify-between"><span className="text-muted-foreground">Ingresos Totales:</span><span className="font-semibold">{formatCurrency(techPerf.totalRevenue)}</span></div>
+                                            <div className="flex justify-between"><span className="text-muted-foreground">Ganancia Total:</span><span className="font-semibold text-green-600">{formatCurrency(techPerf.totalProfit)}</span></div>
+                                            <div className="flex justify-between items-center"><span className="text-muted-foreground flex items-center gap-1"><BadgeCent className="h-3.5 w-3.5"/>Comisión Potencial:</span><span className="font-semibold text-blue-600">{formatCurrency(techPerf.totalCommissionEarned)}</span></div>
+                                        </CardContent>
+                                    </Card>
+                                ))}
+                            </div>
+                        ) : (<p className="text-muted-foreground text-center py-4">No hay datos de rendimiento para mostrar para los técnicos en este período.</p>)}
+                    </div>
+                    
+                    <Separator />
+
+                    <div>
+                       <h3 className="text-lg font-semibold tracking-tight mb-4">Personal Administrativo</h3>
+                       {aggregatedAdminPerformance.length > 0 ? (
+                           <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
+                               {aggregatedAdminPerformance.map(staffPerf => (
+                                   <Card key={staffPerf.staffId} className="shadow-sm border">
+                                       <CardHeader className="pb-3 pt-4"><CardTitle className="text-base font-medium">{staffPerf.staffName}</CardTitle></CardHeader>
+                                       <CardContent className="space-y-1 text-sm pb-4">
+                                           <div className="flex justify-between"><span className="text-muted-foreground">Salario Base:</span><span className="font-semibold">{formatCurrency(staffPerf.baseSalary)}</span></div>
+                                           <div className="flex justify-between items-center"><span className="text-muted-foreground flex items-center gap-1"><BadgeCent className="h-3.5 w-3.5"/>Comisión Potencial:</span><span className="font-semibold text-blue-600">{formatCurrency(staffPerf.commissionEarned)}</span></div>
+                                           <div className="flex justify-between font-bold pt-1 border-t mt-1"><span className="text-muted-foreground">Total (Potencial):</span><span className="text-green-600">{formatCurrency(staffPerf.totalEarnings)}</span></div>
+                                       </CardContent>
+                                   </Card>
+                               ))}
+                           </div>
+                       ) : (<p className="text-muted-foreground text-center py-4">No hay datos de rendimiento para mostrar para el personal administrativo en este período.</p>)}
+                    </div>
+                </CardContent>
             </Card>
         </TabsContent>
 
