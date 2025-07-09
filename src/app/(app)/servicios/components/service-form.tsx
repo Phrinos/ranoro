@@ -1007,10 +1007,8 @@ export function ServiceForm({
     if (mode === 'quote') {
         return allOptions;
     }
-    if (mode === 'service') {
-        return allOptions.filter(s => s !== 'Cotizacion');
-    }
-    return [];
+    // If it's a new service (no initialData) or any existing service, allow all options
+    return allOptions;
   }, [mode]);
 
   const handleShareService = useCallback(async (service: ServiceRecord | null) => {
