@@ -38,7 +38,7 @@ const ServiceAppointmentCard = React.memo(({ service, vehicles, onEdit }: { serv
       <CardContent className="p-0">
         <div className="flex flex-col md:flex-row text-sm">
           <div className="p-4 flex flex-col justify-start items-start text-left w-full md:w-48 flex-shrink-0">
-              <p className="font-semibold text-lg text-foreground">{format(parseISO(service.serviceDate), "dd MMM yyyy", { locale: es })}</p>
+              <p className="font-semibold text-xl text-foreground">{format(parseISO(service.serviceDate), "dd MMM yyyy", { locale: es })}</p>
               <p className="text-muted-foreground text-xs mt-1">Folio: {service.id}</p>
               <StatusTracker status={service.status} />
           </div>
