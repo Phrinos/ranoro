@@ -217,6 +217,7 @@ interface ServiceFormProps {
   onInventoryItemCreatedFromService?: (newItem: InventoryItem) => void; // Optional: To notify parent of new items
   onDelete?: (id: string) => void;
   onCancelService?: (serviceId: string, reason: string) => void;
+  onViewQuoteRequest?: (serviceId: string) => void;
 }
 
 const IVA_RATE = 0.16;
@@ -245,6 +246,7 @@ export function ServiceForm({
   onInventoryItemCreatedFromService,
   onDelete,
   onCancelService,
+  onViewQuoteRequest,
 }: ServiceFormProps) {
   const { toast } = useToast();
   
@@ -1050,15 +1052,22 @@ export function ServiceForm({
   const showStatusFields = mode === 'service' || (mode === 'quote' && !!initialData?.id);
   
   const statusOptions = useMemo(() => {
+    const isEditing = !!initialData?.id;
     const baseServiceOptions = ["Agendado", "En Espera de Refacciones", "Reparando", "Completado"];
-    if (mode === 'quote' && initialDataQuote?.id) {
-      return ["Cotizacion", ...baseServiceOptions];
+
+    if (mode === 'quote') {
+        return ["Cotizacion", ...baseServiceOptions];
     }
+    
     if (mode === 'service') {
-        return baseServiceOptions;
+        if (!isEditing) { // Creating a new service
+            return ["Cotizacion", ...baseServiceOptions];
+        } else { // Editing an existing service
+            return baseServiceOptions;
+        }
     }
     return [];
-  }, [mode, initialDataQuote]);
+  }, [mode, initialData]);
 
   const handleShareService = useCallback(async (service: ServiceRecord | null) => {
     if (!service) return;
@@ -1763,7 +1772,7 @@ export function ServiceForm({
           footerActions={<><Button type="button" onClick={() => handleShareService(serviceForSheet)} variant="outline"><MessageSquare className="mr-2 h-4 w-4" /> Copiar para WhatsApp</Button><Button onClick={() => window.print()}><Printer className="mr-2 h-4 w-4" /> Imprimir Hoja</Button></>}
       >
           {serviceForSheet && (
-              <ServiceSheetContent service={serviceForSheet} vehicle={localVehicles.find(v => v.id === serviceForSheet.vehicleId)} workshopInfo={workshopInfo as WorkshopInfo} />
+              <ServiceSheetContent service={serviceForSheet} vehicle={localVehicles.find(v => v.id === serviceForSheet.vehicleId)} workshopInfo={workshopInfo as WorkshopInfo} onViewImage={handleViewImage}/>
           )}
       </PrintTicketDialog>
 
