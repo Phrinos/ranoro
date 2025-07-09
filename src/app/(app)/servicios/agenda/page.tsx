@@ -5,7 +5,7 @@
 import React, { useState, useEffect, useMemo, useCallback, Suspense } from "react";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, List, Calendar as CalendarIcon, FileCheck, Eye, Loader2, Edit } from "lucide-react";
+import { PlusCircle, List, Calendar as CalendarIcon, FileCheck, Eye, Loader2, Edit, CheckCircle } from "lucide-react";
 import { ServiceDialog } from "../components/service-dialog";
 import type { ServiceRecord, Vehicle, Technician, QuoteRecord, InventoryItem, CapacityAnalysisOutput } from "@/types";
 import { useToast } from "@/hooks/use-toast";
@@ -24,7 +24,12 @@ import { cn } from '@/lib/utils';
 import { StatusTracker } from "../components/StatusTracker";
 
 
-const ServiceAppointmentCard = React.memo(({ service, vehicles, onEdit }: { service: ServiceRecord, vehicles: Vehicle[], onEdit: () => void }) => {
+const ServiceAppointmentCard = React.memo(({ service, vehicles, onEdit, onConfirm }: { 
+  service: ServiceRecord, 
+  vehicles: Vehicle[], 
+  onEdit: () => void,
+  onConfirm: () => void,
+}) => {
   const vehicle = vehicles.find(v => v.id === service.vehicleId);
   const getServiceDescriptionText = (service: ServiceRecord) => {
     if (service.serviceItems && service.serviceItems.length > 0) {
@@ -32,6 +37,15 @@ const ServiceAppointmentCard = React.memo(({ service, vehicles, onEdit }: { serv
     }
     return service.description || 'Servicio sin descripción';
   };
+
+  const getAppointmentStatus = (service: ServiceRecord): { label: string; variant: "lightRed" | "success" } => {
+    if (service.appointmentStatus === 'Confirmada') {
+      return { label: 'Confirmada', variant: 'success' };
+    }
+    return { label: 'Creada', variant: 'lightRed' };
+  };
+
+  const appointmentStatus = getAppointmentStatus(service);
 
   return (
     <Card className="shadow-sm overflow-hidden mb-4">
@@ -53,8 +67,14 @@ const ServiceAppointmentCard = React.memo(({ service, vehicles, onEdit }: { serv
               <p className="font-bold text-2xl text-black">{format(parseISO(service.serviceDate), "HH:mm", { locale: es })}</p>
           </div>
           <div className="p-4 flex flex-col justify-center items-center text-center border-t md:border-t-0 md:border-l w-full md:w-56 flex-shrink-0 space-y-2">
+              <Badge variant={appointmentStatus.variant} className="mb-1">{appointmentStatus.label}</Badge>
               <p className="text-xs text-muted-foreground">Asesor: {service.serviceAdvisorName || 'N/A'}</p>
               <div className="flex justify-center items-center gap-1">
+                  {appointmentStatus.label === 'Creada' && (
+                    <Button variant="ghost" size="icon" onClick={onConfirm} title="Confirmar Cita">
+                      <CheckCircle className="h-4 w-4 text-green-600" />
+                    </Button>
+                  )}
                   <Button variant="ghost" size="icon" onClick={onEdit} title="Ver/Editar Servicio">
                       <Eye className="h-4 w-4" />
                   </Button>
@@ -178,6 +198,20 @@ function AgendaPageComponent() {
     placeholderVehicles.push(newVehicle);
     await persistToFirestore(['vehicles']);
   }, []);
+  
+  const handleConfirmAppointment = useCallback(async (serviceId: string) => {
+    const serviceIndex = placeholderServiceRecords.findIndex(s => s.id === serviceId);
+    if (serviceIndex !== -1) {
+      placeholderServiceRecords[serviceIndex].appointmentStatus = 'Confirmada';
+      // Optimistic UI update
+      setAllServices(prev => prev.map(s => s.id === serviceId ? { ...s, appointmentStatus: 'Confirmada' } : s));
+      await persistToFirestore(['serviceRecords']);
+      toast({
+        title: "Cita Confirmada",
+        description: `La cita para ${placeholderServiceRecords[serviceIndex].vehicleIdentifier} ha sido marcada como confirmada.`,
+      });
+    }
+  }, [toast]);
 
   if (!hydrated) {
     return <div className="text-center py-10">Cargando datos...</div>;
@@ -214,13 +248,13 @@ function AgendaPageComponent() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {todayServices.length > 0 ? todayServices.map(service => (<ServiceAppointmentCard key={service.id} service={service} vehicles={vehicles} onEdit={() => handleOpenServiceDialog(service)} />)) : <p className="text-muted-foreground text-center py-4">No hay citas para hoy.</p>}
+              {todayServices.length > 0 ? todayServices.map(service => (<ServiceAppointmentCard key={service.id} service={service} vehicles={vehicles} onEdit={() => handleOpenServiceDialog(service)} onConfirm={() => handleConfirmAppointment(service.id)} />)) : <p className="text-muted-foreground text-center py-4">No hay citas para hoy.</p>}
             </CardContent>
           </Card>
            <Card>
             <CardHeader><CardTitle>Citas para Mañana</CardTitle></CardHeader>
             <CardContent>
-              {tomorrowServices.length > 0 ? tomorrowServices.map(service => (<ServiceAppointmentCard key={service.id} service={service} vehicles={vehicles} onEdit={() => handleOpenServiceDialog(service)} />)) : <p className="text-muted-foreground text-center py-4">No hay citas para mañana.</p>}
+              {tomorrowServices.length > 0 ? tomorrowServices.map(service => (<ServiceAppointmentCard key={service.id} service={service} vehicles={vehicles} onEdit={() => handleOpenServiceDialog(service)} onConfirm={() => handleConfirmAppointment(service.id)} />)) : <p className="text-muted-foreground text-center py-4">No hay citas para mañana.</p>}
             </CardContent>
           </Card>
         </TabsContent>
