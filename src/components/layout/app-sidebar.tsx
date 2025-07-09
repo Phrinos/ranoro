@@ -20,8 +20,6 @@ import {
 import useNavigation, { type NavigationEntry } from "@/hooks/use-navigation";
 import { Button } from "@/components/ui/button";
 import {
-  UserCircle,
-  UserCog,
   Settings,
   LogOut,
   Users,
@@ -48,6 +46,8 @@ import { auth } from "@/lib/firebaseClient.js"; // Firebase
 import { placeholderServiceRecords, placeholderAppRoles, AUTH_USER_LOCALSTORAGE_KEY } from "@/lib/placeholder-data";
 import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+
 
 export function AppSidebar() {
   const navItems = useNavigation();
@@ -186,12 +186,19 @@ export function AppSidebar() {
           <DropdownMenuTrigger asChild>
             <Button
               variant="ghost"
-              className="justify-start gap-2 text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground group-data-[collapsible=icon]:justify-center"
+              className="h-auto w-full justify-start gap-2 py-2 text-left text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground group-data-[collapsible=icon]:h-12 group-data-[collapsible=icon]:w-12 group-data-[collapsible=icon]:justify-center"
             >
-              <UserCircle className="h-4 w-4" />
-              <span className="group-data-[collapsible=icon]:hidden">
-                {currentUser?.name || "Mi Cuenta"}
-              </span>
+              <Avatar className="hidden h-8 w-8 group-data-[collapsible=icon]:block">
+                  <AvatarFallback>{currentUser?.name?.[0]?.toUpperCase() || 'U'}</AvatarFallback>
+              </Avatar>
+              <div className="group-data-[collapsible=icon]:hidden flex flex-col items-start">
+                  <span className="text-sm font-semibold leading-none">
+                      {currentUser?.name || "Mi Cuenta"}
+                  </span>
+                  <span className="text-xs text-sidebar-foreground/80 leading-none">
+                      {currentUser?.role || 'Rol'}
+                  </span>
+              </div>
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent
