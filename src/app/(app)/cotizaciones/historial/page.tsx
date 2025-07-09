@@ -9,7 +9,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { Search, ListFilter, CalendarIcon as CalendarDateIcon, FileText, DollarSign, Wrench, PlusCircle, Download, Copy, Ban, Edit, MessageSquare } from "lucide-react";
+import { Search, ListFilter, CalendarIcon as CalendarDateIcon, FileText, DollarSign, Wrench, PlusCircle, Download, Copy, Ban, Edit, MessageSquare, Eye } from "lucide-react";
 import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
 import { QuoteContent } from '@/components/quote-content';
 import { placeholderQuotes, placeholderVehicles, placeholderTechnicians, placeholderServiceRecords, placeholderInventory, persistToFirestore } from "@/lib/placeholder-data"; 
@@ -518,8 +518,8 @@ Quedamos a sus ordenes y a la espera de poder atender su vehiculo. Gracias por c
                         </Badge>
                          <p className="text-xs text-muted-foreground mt-4">Asesor: {quote.preparedByTechnicianName || 'N/A'}</p>
                         <div className="flex justify-center items-center gap-1">
-                          <Button variant="ghost" size="icon" onClick={() => handleViewQuote(originalQuote)} title="Ver Cotización">
-                            <FileText className="h-4 w-4" />
+                          <Button variant="ghost" size="icon" onClick={() => handleViewQuote(originalQuote)} title="Vista Previa">
+                            <Eye className="h-4 w-4" />
                           </Button>
                           <Button variant="ghost" size="icon" onClick={() => handleEditQuote(originalQuote)} title="Editar Cotización">
                               <Edit className="h-4 w-4" />
@@ -565,7 +565,7 @@ Quedamos a sus ordenes y a la espera de poder atender su vehiculo. Gracias por c
         <PrintTicketDialog
           open={isViewQuoteDialogOpen}
           onOpenChange={setIsViewQuoteDialogOpen}
-          title={`Cotización: ${selectedQuoteForView.id}`}
+          title="Vista Previa"
           dialogContentClassName="printable-quote-dialog"
           onDialogClose={() => setSelectedQuoteForView(null)}
           footerActions={
