@@ -56,17 +56,7 @@ export default function NuevoServicioPage() {
     }
   }, [dialogStep, router]);
 
-  const handleSaveNewService = async (data: ServiceRecord) => {
-    // Check if the record already exists to avoid duplicates
-    const recordIndex = placeholderServiceRecords.findIndex(s => s.id === data.id);
-    if (recordIndex > -1) {
-      placeholderServiceRecords[recordIndex] = data; // Update
-    } else {
-      placeholderServiceRecords.push(data); // Add new
-    }
-    
-    await persistToFirestore(['serviceRecords']);
-    
+  const handleSaveNewService = (data: ServiceRecord) => {
     const vehicle = vehicles.find(v => v.id === data.vehicleId);
     const technician = technicians.find(t => t.id === data.technicianId);
     
@@ -79,7 +69,6 @@ export default function NuevoServicioPage() {
     } else if (data.status !== 'Cotizacion') {
       setDialogStep('sheet'); 
     } else {
-      // If it's just a quote, close and go back
       handleDialogClose();
     }
   };

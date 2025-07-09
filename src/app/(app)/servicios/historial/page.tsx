@@ -200,7 +200,17 @@ function HistorialServiciosPageComponent() {
       </Tabs>
       
       {editingService && (
-        <ServiceDialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen} service={editingService} vehicles={vehicles} technicians={technicians} inventoryItems={inventoryItems} onSave={handleUpdateService as any} onVehicleCreated={handleVehicleCreated} onCancelService={handleCancelService} mode="service" />
+        <ServiceDialog
+          open={isEditDialogOpen}
+          onOpenChange={setIsEditDialogOpen}
+          service={editingService}
+          vehicles={vehicles}
+          technicians={technicians}
+          inventoryItems={inventoryItems}
+          onVehicleCreated={handleVehicleCreated}
+          onCancelService={handleCancelService}
+          mode="service"
+        />
       )}
     </>
   );
