@@ -683,6 +683,44 @@ export function ServiceForm({
         return;
     }
     
+    // Logic to deduct inventory when a service is completed
+    const isNowCompleted = values.status === 'Completado';
+    const wasPreviouslyCompleted = initialDataService?.status === 'Completado';
+
+    if (isNowCompleted && !wasPreviouslyCompleted) {
+      let inventoryWasUpdated = false;
+      (values.serviceItems || []).forEach(item => {
+        (item.suppliesUsed || []).forEach(supply => {
+          const inventoryItemIndex = placeholderInventory.findIndex(invItem => invItem.id === supply.supplyId);
+
+          if (inventoryItemIndex !== -1 && !placeholderInventory[inventoryItemIndex].isService) {
+            const inventoryItem = placeholderInventory[inventoryItemIndex];
+            const quantityToDeduct = supply.quantity || 0;
+
+            if (inventoryItem.quantity < quantityToDeduct) {
+              toast({
+                title: "Stock insuficiente (Advertencia)",
+                description: `Se descontaron ${quantityToDeduct} de "${inventoryItem.name}", pero solo había ${inventoryItem.quantity}. El stock es ahora negativo.`,
+                variant: "destructive",
+                duration: 8000,
+              });
+            }
+            
+            inventoryItem.quantity -= quantityToDeduct;
+            inventoryWasUpdated = true;
+          }
+        });
+      });
+
+      if (inventoryWasUpdated) {
+        await persistToFirestore(['inventory']);
+        toast({
+          title: "Inventario Actualizado",
+          description: "El stock de los insumos ha sido descontado.",
+        });
+      }
+    }
+    
     const finalSubTotal = totalCost / (1 + IVA_RATE);
     const finalTaxAmount = totalCost - finalSubTotal;
     const finalProfit = totalCost - totalSuppliesWorkshopCost;
@@ -1779,3 +1817,5 @@ export function ServiceForm({
     </>
   );
 }
+
+    
