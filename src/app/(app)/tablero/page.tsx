@@ -11,6 +11,9 @@ import { ServiceDialog } from '../servicios/components/service-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Eye, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { isToday, parseISO, isValid } from 'date-fns';
+import { cn } from '@/lib/utils';
+
 
 type KanbanColumnId = 'Agendado' | 'En Espera de Refacciones' | 'Reparando' | 'Completado' | 'Entregado';
 
@@ -43,7 +46,7 @@ function KanbanCard({
   };
   
   return (
-    <Card className="mb-4 group shadow-sm hover:shadow-md transition-shadow">
+    <Card className="mb-4 group shadow-sm hover:shadow-md transition-shadow bg-card">
       <CardContent className="p-3 relative">
         <div className="absolute top-1 right-1 flex">
            <Button
@@ -76,6 +79,14 @@ function KanbanCard({
     </Card>
   );
 }
+
+const columnStyles: Record<KanbanColumnId, { bg: string; title: string }> = {
+  'Agendado': { bg: 'bg-blue-50 dark:bg-blue-900/30', title: 'text-blue-800 dark:text-blue-200' },
+  'En Espera de Refacciones': { bg: 'bg-orange-50 dark:bg-orange-900/30', title: 'text-orange-800 dark:text-orange-200' },
+  'Reparando': { bg: 'bg-yellow-50 dark:bg-yellow-900/30', title: 'text-yellow-800 dark:text-yellow-200' },
+  'Completado': { bg: 'bg-green-50 dark:bg-green-900/30', title: 'text-green-800 dark:text-green-200' },
+  'Entregado': { bg: 'bg-gray-100 dark:bg-gray-800', title: 'text-gray-800 dark:text-gray-200' },
+};
 
 export default function TableroPage() {
   const { toast } = useToast();
@@ -118,14 +129,22 @@ export default function TableroPage() {
       'Agendado': { id: 'Agendado', title: 'Agenda', services: [] },
       'En Espera de Refacciones': { id: 'En Espera de Refacciones', title: 'Espera Refacciones', services: [] },
       'Reparando': { id: 'Reparando', title: 'En Reparación', services: [] },
-      'Completado': { id: 'Completado', title: 'Completado', services: [] },
+      'Completado': { id: 'Completado', title: 'Completado (Hoy)', services: [] },
       'Entregado': { id: 'Entregado', title: 'Entregado', services: [] },
     };
 
     services.forEach(service => {
       const status = service.status as KanbanColumnId;
       if (columns[status]) {
-        columns[status].services.push(service);
+        // Special filter for "Completado" column
+        if (status === 'Completado') {
+          const deliveryDate = service.deliveryDateTime ? parseISO(service.deliveryDateTime) : null;
+          if (deliveryDate && isValid(deliveryDate) && isToday(deliveryDate)) {
+            columns[status].services.push(service);
+          }
+        } else if (status !== 'Entregado') { // Don't show "Entregado" for now
+          columns[status].services.push(service);
+        }
       }
     });
 
@@ -136,8 +155,9 @@ export default function TableroPage() {
             return dateA - dateB; // Oldest first
         });
     }
-
-    return columnOrder.map(id => columns[id]);
+    
+    // For the final display, filter out the "Entregado" column
+    return columnOrder.filter(id => id !== 'Entregado').map(id => columns[id]);
   }, [services]);
 
   const handleCardClick = (service: ServiceRecord) => {
@@ -170,6 +190,9 @@ export default function TableroPage() {
 
         // Update master data and persist
         placeholderServiceRecords[serviceIndex].status = newStatus;
+        if(newStatus === 'Completado') {
+            placeholderServiceRecords[serviceIndex].deliveryDateTime = new Date().toISOString();
+        }
         await persistToFirestore(['serviceRecords']);
         
         toast({
@@ -215,31 +238,34 @@ export default function TableroPage() {
         description="Visualiza y gestiona el flujo de trabajo de tu taller."
       />
       <div className="flex gap-4 overflow-x-auto pb-4">
-        {kanbanColumns.map((column, colIndex) => (
-          <div key={column.id} className="w-72 flex-shrink-0">
-            <Card className="h-full bg-muted">
-              <CardHeader className="p-4">
-                <CardTitle className="text-base font-semibold flex justify-between items-center">
-                  <span>{column.title}</span>
-                  <Badge variant="secondary">{column.services.length}</Badge>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-4 pt-0 h-full">
-                {column.services.map(service => (
-                  <KanbanCard
-                    key={service.id}
-                    service={service}
-                    vehicle={vehicles.find(v => v.id === service.vehicleId)}
-                    onClick={() => handleCardClick(service)}
-                    onMove={(direction) => handleMoveService(service.id, direction)}
-                    isFirst={colIndex === 0}
-                    isLast={colIndex === columnOrder.length - 1}
-                  />
-                ))}
-              </CardContent>
-            </Card>
-          </div>
-        ))}
+        {kanbanColumns.map((column, colIndex) => {
+            const columnStyle = columnStyles[column.id];
+            return (
+              <div key={column.id} className="w-72 flex-shrink-0">
+                <Card className={cn("h-full", columnStyle.bg)}>
+                  <CardHeader className="p-4 border-b">
+                    <CardTitle className={cn("text-base font-semibold flex justify-between items-center", columnStyle.title)}>
+                      <span>{column.title}</span>
+                      <Badge variant="secondary" className="bg-white/60 text-black">{column.services.length}</Badge>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-4 pt-4 h-full">
+                    {column.services.map(service => (
+                      <KanbanCard
+                        key={service.id}
+                        service={service}
+                        vehicle={vehicles.find(v => v.id === service.vehicleId)}
+                        onClick={() => handleCardClick(service)}
+                        onMove={(direction) => handleMoveService(service.id, direction)}
+                        isFirst={colIndex === 0}
+                        isLast={colIndex === columnOrder.length - 1}
+                      />
+                    ))}
+                  </CardContent>
+                </Card>
+              </div>
+            )
+        })}
       </div>
        {isServiceDialogOpen && editingService && (
         <ServiceDialog
@@ -256,3 +282,5 @@ export default function TableroPage() {
     </>
   );
 }
+
+    
