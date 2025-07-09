@@ -77,7 +77,7 @@ const QuoteList = React.memo(({ quotes, vehicles, onEditQuote, onGenerateService
               <CardContent className="p-0">
                 <div className="flex flex-col md:flex-row">
                    <div className="p-4 flex flex-col justify-start items-start text-left w-full md:w-48 flex-shrink-0">
-                      <p className="font-semibold text-lg text-foreground">{format(parseISO(quote.quoteDate ?? new Date().toISOString()), "dd MMM yyyy", { locale: es })}</p>
+                      <p className="font-semibold text-xl text-foreground">{format(parseISO(quote.quoteDate ?? new Date().toISOString()), "dd MMM yyyy", { locale: es })}</p>
                       <p className="text-muted-foreground text-xs mt-1">Folio: {quote.id}</p>
                       <StatusTracker status={status} />
                     </div>
@@ -165,7 +165,7 @@ function HistorialCotizacionesPageComponent() {
       switch (sortOption) {
         case "date_asc": return compareAsc(parseISO(a.quoteDate ?? ""), parseISO(b.quoteDate ?? ""));
         case "total_asc": return totalA - totalB;
-        case "total_desc": return totalB - totalA;
+        case "total_desc": return totalB - a.totalCost;
         case "vehicle_asc": return (a.vehicleIdentifier || '').localeCompare(b.vehicleIdentifier || '');
         case "vehicle_desc": return (b.vehicleIdentifier || '').localeCompare(a.vehicleIdentifier || '');
         case "date_desc": default: return compareDesc(parseISO(a.quoteDate ?? ""), parseISO(b.quoteDate ?? ""));
