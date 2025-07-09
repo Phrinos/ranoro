@@ -398,16 +398,10 @@ function ConfiguracionTicketPageContent() {
                     </Card>
                     
                     <Card>
-                        <CardHeader><CardTitle>Pie de Ticket</CardTitle></CardHeader>
-                        <CardContent>
+                        <CardHeader><CardTitle>Pie de Ticket y Espaciado Final</CardTitle></CardHeader>
+                        <CardContent className="space-y-4">
                              <TextFieldWithBoldness name="fixedFooterText" label="Texto Final" control={form.control} isTextarea />
-                        </CardContent>
-                    </Card>
-
-                    <Card>
-                        <CardHeader><CardTitle>Espaciado Final</CardTitle></CardHeader>
-                        <CardContent>
-                            <FormField control={form.control} name="blankLinesBottom" render={({ field }) => (<FormItem><FormLabel>Líneas en Blanco (Abajo)</FormLabel><FormControl><Input type="number" min={0} max={10} {...field} value={field.value || 0}/></FormControl></FormItem>)}/>
+                             <FormField control={form.control} name="blankLinesBottom" render={({ field }) => (<FormItem><FormLabel>Líneas en Blanco (Abajo)</FormLabel><FormControl><Input type="number" min={0} max={10} {...field} value={field.value || 0}/></FormControl></FormItem>)}/>
                         </CardContent>
                     </Card>
 
