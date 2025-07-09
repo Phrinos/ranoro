@@ -35,7 +35,8 @@ import {
   BookOpen,
   Truck,
   Wallet,
-  UserCircle
+  UserCircle,
+  Landmark
 } from 'lucide-react';
 import type { User, AppRole } from '@/types';
 import { placeholderAppRoles, AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
@@ -126,6 +127,22 @@ const BASE_NAV_STRUCTURE: ReadonlyArray<Omit<NavigationEntry, 'isActive'>> = [
     permissions: ['fleet:manage']
   },
   
+  // Análisis
+  {
+    label: 'Finanzas',
+    path: '/finanzas/resumen',
+    icon: Landmark,
+    groupTag: "Análisis",
+    permissions: ['finances:view_report']
+  },
+  {
+    label: 'Reportes',
+    path: '/finanzas/reporte',
+    icon: BarChartHorizontal,
+    groupTag: "Análisis",
+    permissions: ['finances:view_report']
+  },
+
   // Opciones
   {
     label: 'Opciones',
@@ -141,16 +158,9 @@ const BASE_NAV_STRUCTURE: ReadonlyArray<Omit<NavigationEntry, 'isActive'>> = [
     groupTag: "Opciones",
     permissions: ['technicians:manage']
   },
-  {
-    label: 'Reportes',
-    path: '/finanzas/reporte',
-    icon: BarChartHorizontal,
-    groupTag: "Opciones",
-    permissions: ['finances:view_report']
-  },
 ];
 
-const DESIRED_GROUP_ORDER = ["Mi Taller", "Operaciones", "Mi Flotilla", "Opciones"];
+const DESIRED_GROUP_ORDER = ["Mi Taller", "Operaciones", "Mi Flotilla", "Análisis", "Opciones"];
 
 
 const useNavigation = (): NavigationEntry[] => {
@@ -209,10 +219,11 @@ const useNavigation = (): NavigationEntry[] => {
     if (entry.path === '/inventario' && pathname.startsWith('/inventario')) isActive = true;
     if (entry.path === '/pos' && pathname.startsWith('/pos')) isActive = true;
     if (entry.path === '/personal' && (pathname.startsWith('/personal') || pathname.startsWith('/tecnicos') || pathname.startsWith('/administrativos'))) isActive = true;
-    if (entry.path === '/opciones' && (pathname.startsWith('/opciones') || pathname.startsWith('/perfil') || pathname.startsWith('/manual') || pathname.startsWith('/finanzas/reporte'))) isActive = true;
+    if (entry.path === '/opciones' && (pathname.startsWith('/opciones') || pathname.startsWith('/perfil') || pathname.startsWith('/manual'))) isActive = true;
+    if (entry.path === '/finanzas/resumen' && pathname.startsWith('/finanzas')) isActive = true;
+    if (entry.path === '/finanzas/reporte' && pathname.startsWith('/finanzas')) isActive = true;
     
     // Other specific cases
-    if (entry.groupTag === "Finanzas" && pathname.startsWith('/finanzas')) isActive = true;
     if (entry.path === '/precios' && pathname === '/precios') isActive = true;
     if (entry.path === '/flotilla' && (pathname.startsWith('/flotilla') || pathname.startsWith('/conductores') || pathname.startsWith('/rentas'))) isActive = true;
 
