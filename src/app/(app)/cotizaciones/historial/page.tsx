@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import React, { useState, useEffect, useMemo, useRef, useCallback, Suspense } from "react";
@@ -27,10 +26,10 @@ type QuoteSortOption =
   | "vehicle_asc" | "vehicle_desc";
 
 
-const QuoteList = React.memo(({ quotes, vehicles, onEdit, onViewQuote }: { 
+const QuoteList = React.memo(({ quotes, vehicles, onEditQuote, onViewQuote }: { 
     quotes: QuoteRecord[], 
     vehicles: Vehicle[], 
-    onEdit: (quote: QuoteRecord) => void,
+    onEditQuote: (quote: QuoteRecord) => void,
     onViewQuote: (quote: QuoteRecord) => void,
 }) => {
   
@@ -91,7 +90,7 @@ const QuoteList = React.memo(({ quotes, vehicles, onEdit, onViewQuote }: {
                         <p className="text-xs text-muted-foreground">Asesor: {quote.preparedByTechnicianName || 'N/A'}</p>
                         <div className="flex justify-center items-center gap-1">
                           <Button variant="ghost" size="icon" onClick={() => onViewQuote(quote)} title="Vista Previa"><Eye className="h-4 w-4" /></Button>
-                          <Button variant="ghost" size="icon" onClick={() => onEdit(quote)} title="Editar Cotización"><Edit className="h-4 w-4" /></Button>
+                          <Button variant="ghost" size="icon" onClick={() => onEditQuote(quote)} title="Editar Cotización"><Edit className="h-4 w-4" /></Button>
                         </div>
                     </div>
                 </div>
