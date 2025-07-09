@@ -22,7 +22,7 @@ const initialWorkshopInfo: WorkshopInfo = {
   logoUrl: "/ranoro-logo.png",
   footerLine1: "¡Gracias por su preferencia!",
   footerLine2: "Para dudas o aclaraciones, no dude en contactarnos.",
-  fixedFooterText: "Sistema de Administración de Talleres Ranoro®\nDiseñado y Desarrollado por Arturo Valdelamar",
+  fixedFooterText: "© 2024 Ranoro®\nSistema de Administracion de Talleres\nTodos los derechos reservados - Diseñado y Desarrollado por Arturo Valdelamar +524493930914",
 };
 
 const inspectionGroups = [
@@ -160,7 +160,7 @@ const SafetyChecklistDisplay = ({
                                                 {checkItem.photos.map((photoUrl, pIndex) => (
                                                      <button
                                                         type="button"
-                                                        onClick={() => onViewImage(photoUrl)}
+                                                        onClick={() => onViewImage && onViewImage(photoUrl)}
                                                         key={pIndex} 
                                                         className="relative aspect-video w-full bg-gray-100 rounded overflow-hidden border group"
                                                     >
