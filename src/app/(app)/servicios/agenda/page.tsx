@@ -3,7 +3,7 @@
 
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Edit, Ban, Clock, Search as SearchIcon, Calendar as CalendarIcon, CalendarCheck, CheckCircle, Wrench, Printer, Tag, FileText, BrainCircuit, Loader2, AlertTriangle, List, CalendarDays, MessageSquare, Copy, Pencil } from "lucide-react";
+import { PlusCircle, Edit, Ban, Clock, Search as SearchIcon, Calendar as CalendarIcon, CalendarCheck, CheckCircle, Wrench, Printer, Tag, FileText, BrainCircuit, Loader2, AlertTriangle, List, CalendarDays, MessageSquare, Copy, Pencil, Eye } from "lucide-react";
 import {
   placeholderServiceRecords,
   placeholderVehicles,
@@ -66,9 +66,7 @@ export default function AgendaServiciosPage() {
   
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [serviceForSheet, setServiceForSheet] = useState<ServiceRecord | null>(null);
-
-  const [isQuoteViewOpen, setIsQuoteViewOpen] = useState(false);
-  const [quoteForView, setQuoteForView] = useState<QuoteRecord | null>(null);
+  const [quoteForPreview, setQuoteForPreview] = useState<QuoteRecord | null>(null);
 
   const [capacityInfo, setCapacityInfo] = useState<CapacityAnalysisOutput | null>(null);
   const [isCapacityLoading, setIsCapacityLoading] = useState(true);
@@ -334,12 +332,13 @@ export default function AgendaServiciosPage() {
     setShowPrintTicketDialog(true);
   }, [techniciansState, vehicles]);
 
-  const handleShowSheet = async (service: ServiceRecord) => {
+  const handleShowPreview = async (service: ServiceRecord) => {
     const authUserString = typeof window !== 'undefined' ? localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY) : null;
     const currentUser: User | null = authUserString ? JSON.parse(authUserString) : null;
 
     let serviceToDisplay = { ...service };
 
+    // Fetch latest signatures from public doc before displaying
     if (service.publicId && db) {
         try {
             const publicDocRef = doc(db, 'publicServices', service.publicId);
@@ -366,10 +365,10 @@ export default function AgendaServiciosPage() {
             }
         } catch(e) {
             console.error("Error syncing sheet for view", e);
-            toast({ title: "Error de Sincronización", description: "No se pudieron cargar las firmas más recientes.", variant: "destructive" });
         }
     }
 
+    // Enrich with advisor info
     if (currentUser && currentUser.id === service.serviceAdvisorId) {
       serviceToDisplay = {
         ...serviceToDisplay,
@@ -377,20 +376,13 @@ export default function AgendaServiciosPage() {
         serviceAdvisorSignatureDataUrl: currentUser.signatureDataUrl,
       };
     }
+    
+    const originalQuote = placeholderQuotes.find(q => q.serviceId === service.id);
+    
     setServiceForSheet(serviceToDisplay);
+    setQuoteForPreview(originalQuote || null);
     setIsSheetOpen(true);
   };
-  
-  const handleViewQuote = useCallback((serviceId: string) => {
-    const quote = placeholderQuotes.find(q => q.serviceId === serviceId);
-    if (quote) {
-      setQuoteForView(quote);
-      setIsQuoteViewOpen(true);
-    } else {
-      toast({ title: 'No encontrada', description: 'No se encontró la cotización original para este servicio.', variant: 'default' });
-    }
-  }, [toast]);
-
 
   const onVehicleCreated = useCallback(async (newVehicle: Vehicle) => {
     setVehicles(currentVehicles => {
@@ -540,7 +532,6 @@ ${shareUrl}
               <div className="space-y-4">
                 {dayServices.map(service => {
                   const vehicle = vehicles.find(v => v.id === service.vehicleId);
-                  const originalQuote = placeholderQuotes.find(q => q.serviceId === service.id);
                   const serviceDate = safeParseISO(service.serviceDate);
 
                   return (
@@ -580,11 +571,9 @@ ${shareUrl}
                              <div className="w-full space-y-2">
                                 <p className="text-xs text-muted-foreground mt-2">Asesor: {service.serviceAdvisorName || 'N/A'}</p>
                                 <div className="flex justify-center items-center gap-1 mt-2">
-                                    {originalQuote && (
-                                      <Button variant="ghost" size="icon" title="Ver Cotización" onClick={() => handleViewQuote(service.id)}>
-                                          <FileText className="h-4 w-4" />
-                                      </Button>
-                                    )}
+                                    <Button variant="ghost" size="icon" title="Vista Previa" onClick={() => handleShowPreview(service)}>
+                                      <Eye className="h-4 w-4" />
+                                    </Button>
                                     <Button variant="ghost" size="icon" title="Editar Cita" onClick={() => handleOpenEditDialog(service)}>
                                       <Edit className="h-4 w-4" />
                                     </Button>
@@ -750,7 +739,6 @@ ${shareUrl}
           onVehicleCreated={onVehicleCreated}
           onCancelService={handleCancelService}
           mode="service"
-          onViewQuoteRequest={handleViewQuote}
         />
       )}
       {currentServiceForTicket && (
@@ -780,32 +768,14 @@ ${shareUrl}
         </PrintTicketDialog>
       )}
 
-       {isQuoteViewOpen && quoteForView && (
-        <PrintTicketDialog
-          open={isQuoteViewOpen}
-          onOpenChange={setIsQuoteViewOpen}
-          title={`Cotización Original: ${quoteForView.id}`}
-          dialogContentClassName="printable-quote-dialog"
-          onDialogClose={() => setQuoteForView(null)}
-          footerActions={
-            <Button onClick={() => window.print()}>
-              <Printer className="mr-2 h-4 w-4" /> Imprimir Cotización
-            </Button>
-          }
-        >
-          <QuoteContent
-            quote={quoteForView}
-            vehicle={vehicles.find(v => v.id === quoteForView.vehicleId)}
-            workshopInfo={quoteForView.workshopInfo}
-          />
-        </PrintTicketDialog>
-      )}
-
       <PrintTicketDialog
           open={isSheetOpen}
           onOpenChange={setIsSheetOpen}
-          title="Hoja de Servicio"
-          onDialogClose={() => setServiceForSheet(null)}
+          title="Vista Previa"
+          onDialogClose={() => {
+            setServiceForSheet(null);
+            setQuoteForPreview(null);
+          }}
           dialogContentClassName="printable-quote-dialog"
           footerActions={
             <>
@@ -813,12 +783,18 @@ ${shareUrl}
                   <MessageSquare className="mr-2 h-4 w-4" /> Copiar para WhatsApp
               </Button>
               <Button onClick={() => window.print()}>
-                  <Printer className="mr-2 h-4 w-4" /> Imprimir Hoja
+                  <Printer className="mr-2 h-4 w-4" /> Imprimir
               </Button>
             </>
           }
       >
-          {serviceForSheet && <ServiceSheetContent service={serviceForSheet} vehicle={vehicles.find(v => v.id === serviceForSheet.vehicleId)} workshopInfo={workshopInfo} />}
+          {serviceForSheet && (
+            <ServiceSheetContent 
+              service={serviceForSheet} 
+              quote={quoteForPreview || undefined}
+              vehicle={vehicles.find(v => v.id === serviceForSheet.vehicleId)} 
+              workshopInfo={workshopInfo} />
+          )}
       </PrintTicketDialog>
     </>
   );

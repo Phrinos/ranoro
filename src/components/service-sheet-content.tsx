@@ -469,12 +469,16 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
     
     const quoteContentRef = React.useRef<HTMLDivElement>(null);
 
+    const defaultTabValue = showQuote ? 'quote' : 'order';
+    const numTabs = [showQuote, true, showChecklist, showPhotoReport].filter(Boolean).length;
+    const gridColsClass = `grid-cols-${numTabs}`;
+
     return (
       <div ref={ref} data-format="letter" className="font-sans bg-white text-black text-sm">
         {/* For Screen View */}
         <div className="print:hidden p-0 sm:p-2 md:p-4 shadow-lg">
-          <Tabs defaultValue="order" className="w-full">
-            <TabsList className="grid w-full" style={{ gridTemplateColumns: `repeat(${[showQuote, true, showChecklist, showPhotoReport].filter(Boolean).length}, 1fr)` }}>
+          <Tabs defaultValue={defaultTabValue} className="w-full">
+            <TabsList className={cn("grid w-full", gridColsClass)}>
               {showQuote && <TabsTrigger value="quote">Cotización</TabsTrigger>}
               <TabsTrigger value="order">Orden de Servicio</TabsTrigger>
               {showChecklist && <TabsTrigger value="checklist">Revisión</TabsTrigger>}
