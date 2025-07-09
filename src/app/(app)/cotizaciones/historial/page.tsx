@@ -205,15 +205,15 @@ function HistorialCotizacionesPageComponent() {
 
   return (
     <>
-      <PageHeader
-          title="Gestión de Cotizaciones"
-          description="Consulta, filtra y da seguimiento a todas las cotizaciones generadas."
-      />
+      <div className="bg-primary text-primary-foreground rounded-lg p-6 mb-6">
+          <h1 className="text-3xl font-bold tracking-tight">Gestión de Cotizaciones</h1>
+          <p className="text-primary-foreground/80 mt-1">Consulta, filtra y da seguimiento a todas las cotizaciones generadas.</p>
+      </div>
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-3 mb-6">
-            <TabsTrigger value="resumen">Resumen</TabsTrigger>
-            <TabsTrigger value="vigentes">Vigentes</TabsTrigger>
-            <TabsTrigger value="historial">Historial</TabsTrigger>
+            <TabsTrigger value="resumen" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Resumen</TabsTrigger>
+            <TabsTrigger value="vigentes" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Vigentes</TabsTrigger>
+            <TabsTrigger value="historial" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Historial</TabsTrigger>
         </TabsList>
         
         <TabsContent value="resumen" className="mt-0 space-y-6">
@@ -251,4 +251,5 @@ function HistorialCotizacionesPageComponent() {
 export default function HistorialCotizacionesPageWrapper() {
     return (<Suspense fallback={<div>Cargando...</div>}><HistorialCotizacionesPageComponent /></Suspense>)
 }
+
 
