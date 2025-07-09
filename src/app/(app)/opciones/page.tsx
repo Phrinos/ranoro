@@ -14,7 +14,10 @@ import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import type { User, SaleReceipt, AppRole, WorkshopInfo } from '@/types';
-import { Save, Signature, BookOpen, Settings, UserCircle, Upload, Loader2, Bold, Shield, MessageSquare, Copy, Download, Printer } from 'lucide-react';
+import { 
+    Save, Signature, BookOpen, Settings, UserCircle, Upload, Loader2, Bold, Shield, MessageSquare, Copy, Download, Printer,
+    LayoutDashboard, Wrench, FileText, Receipt, Package, DollarSign, Users
+} from 'lucide-react';
 import { onAuthStateChanged, updatePassword, reauthenticateWithCredential, EmailAuthProvider } from 'firebase/auth';
 import { auth, storage, db } from '@/lib/firebaseClient.js';
 import { ref, uploadString, getDownloadURL } from 'firebase/storage';
@@ -27,7 +30,6 @@ import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
 import { optimizeImage } from "@/lib/utils";
 import { Checkbox } from "@/components/ui/checkbox";
-import { LayoutDashboard, Wrench } from 'lucide-react';
 
 // --- Schema and content from /perfil ---
 const profileSchema = z.object({
