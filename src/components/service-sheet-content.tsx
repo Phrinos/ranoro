@@ -7,7 +7,7 @@ import { format, parseISO, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
 import React from 'react';
 import { cn } from "@/lib/utils";
-import Image from "next/legacy/image";
+import Image from "next/image";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Check, Eye } from 'lucide-react';
@@ -210,6 +210,48 @@ interface ServiceSheetContentProps {
 export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheetContentProps>(
   ({ service, quote, vehicle, workshopInfo: workshopInfoProp, onViewImage }, ref) => {
     const effectiveWorkshopInfo = { ...initialWorkshopInfo, ...workshopInfoProp };
+    const quoteContentRef = React.useRef<HTMLDivElement>(null);
+    
+    // NEW LOGIC: If status is quote or scheduled, only show the quote view.
+    if (service && (service.status === 'Cotizacion' || service.status === 'Agendado')) {
+      const quoteToShow = quote || {
+        // Create a quote-like object from the service if no explicit quote exists.
+        id: service.id,
+        publicId: service.publicId,
+        quoteDate: service.quoteDate || service.serviceDate,
+        vehicleId: service.vehicleId,
+        vehicleIdentifier: service.vehicleIdentifier,
+        description: service.description,
+        preparedByTechnicianId: service.serviceAdvisorId,
+        preparedByTechnicianName: service.serviceAdvisorName,
+        preparedByTechnicianSignatureDataUrl: service.serviceAdvisorSignatureDataUrl,
+        serviceItems: service.serviceItems,
+        estimatedTotalCost: service.totalCost,
+        estimatedSubTotal: service.subTotal,
+        estimatedTaxAmount: service.taxAmount,
+        estimatedTotalSuppliesCost: service.totalSuppliesCost,
+        estimatedProfit: service.serviceProfit,
+        notes: service.notes,
+        mileage: service.mileage,
+        serviceType: service.serviceType,
+        workshopInfo: service.workshopInfo,
+        status: 'Cotizacion'
+      };
+
+      return (
+        <div ref={ref} data-format="letter" className="font-sans bg-white text-black text-sm shadow-lg print:shadow-none">
+          {/* This wrapper ensures it's printable and styled correctly */}
+          <div className="p-0 sm:p-2 md:p-4">
+             <QuoteContent
+              ref={quoteContentRef}
+              quote={quoteToShow as QuoteRecord}
+              vehicle={vehicle}
+              workshopInfo={effectiveWorkshopInfo}
+            />
+          </div>
+        </div>
+      );
+    }
     
     const formatCurrency = (amount: number | undefined) => {
         if (amount === undefined) return '$0.00';
@@ -467,8 +509,6 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
       </div>
     ) : null;
     
-    const quoteContentRef = React.useRef<HTMLDivElement>(null);
-
     const defaultTabValue = showQuote ? 'quote' : 'order';
     const numTabs = [showQuote, true, showChecklist, showPhotoReport].filter(Boolean).length;
     const gridColsClass = `grid-cols-${numTabs}`;
