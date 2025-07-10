@@ -134,29 +134,50 @@ export function VehicleSelectionCard({
       <CardContent className="space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
             <div className="space-y-4">
-              <FormField
-                  control={control}
-                  name="vehicleLicensePlateSearch"
-                  render={({ field }) => (
-                  <FormItem>
-                      <FormLabel>Placa del Vehículo</FormLabel>
-                      <FormControl>
-                      <Input
-                          placeholder="Buscar/Ingresar Placas"
-                          {...field}
-                          value={vehicleLicensePlateSearch}
-                          onChange={(e) => {
-                              setVehicleLicensePlateSearch(e.target.value.toUpperCase());
-                              field.onChange(e.target.value.toUpperCase());
-                          }}
-                          disabled={isReadOnly}
-                          className="uppercase"
-                          onKeyDown={handleVehiclePlateKeyDown}
-                      />
-                      </FormControl>
-                  </FormItem>
-                  )}
-              />
+              <div className="relative">
+                <FormField
+                    control={control}
+                    name="vehicleLicensePlateSearch"
+                    render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Placa del Vehículo</FormLabel>
+                        <FormControl>
+                        <Input
+                            placeholder="Buscar/Ingresar Placas"
+                            {...field}
+                            value={vehicleLicensePlateSearch}
+                            onChange={(e) => {
+                                setVehicleLicensePlateSearch(e.target.value.toUpperCase());
+                                field.onChange(e.target.value.toUpperCase());
+                            }}
+                            disabled={isReadOnly}
+                            className="uppercase"
+                            onKeyDown={handleVehiclePlateKeyDown}
+                        />
+                        </FormControl>
+                    </FormItem>
+                    )}
+                />
+                {vehicleSearchResults.length > 0 && (
+                  <div className="absolute top-full mt-1 w-full md:w-full z-10">
+                    <ScrollArea className="h-auto max-h-[150px] rounded-md border bg-background shadow-lg">
+                      <div className="p-2">
+                        {vehicleSearchResults.map(v => (
+                          <button
+                            type="button"
+                            key={v.id}
+                            onClick={() => handleSelectVehicleFromSearch(v)}
+                            className="w-full text-left p-2 rounded-md hover:bg-muted"
+                          >
+                            <p className="font-semibold">{v.licensePlate}</p>
+                            <p className="text-sm text-muted-foreground">{v.make} {v.model} - {v.ownerName}</p>
+                          </button>
+                        ))}
+                      </div>
+                    </ScrollArea>
+                  </div>
+                )}
+              </div>
               <FormField
                   control={control}
                   name="mileage"
@@ -196,24 +217,6 @@ export function VehicleSelectionCard({
                 )}
             </div>
         </div>
-        
-        {vehicleSearchResults.length > 0 && (
-          <ScrollArea className="h-auto max-h-[150px] w-full md:w-1/2 rounded-md border">
-            <div className="p-2">
-              {vehicleSearchResults.map(v => (
-                <button
-                  type="button"
-                  key={v.id}
-                  onClick={() => handleSelectVehicleFromSearch(v)}
-                  className="w-full text-left p-2 rounded-md hover:bg-muted"
-                >
-                  <p className="font-semibold">{v.licensePlate}</p>
-                  <p className="text-sm text-muted-foreground">{v.make} {v.model} - {v.ownerName}</p>
-                </button>
-              ))}
-            </div>
-          </ScrollArea>
-        )}
 
         {vehicleNotFound && !selectedVehicle && !isReadOnly && (
           <div className="p-3 border border-orange-500 rounded-md bg-orange-50 dark:bg-orange-900/30 dark:text-orange-300 text-sm flex flex-col sm:flex-row items-center justify-between gap-2">
@@ -236,4 +239,3 @@ export function VehicleSelectionCard({
     </Card>
   );
 }
-
