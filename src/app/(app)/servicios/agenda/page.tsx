@@ -2,12 +2,12 @@
 
 "use client";
 
-import React, { useState, useEffect, useMemo, useCallback, Suspense } from "react";
+import React, { useState, useEffect, useMemo, useCallback, Suspense, useRef } from "react";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, List, Calendar as CalendarIcon, FileCheck, Eye, Loader2, Edit, CheckCircle } from "lucide-react";
+import { PlusCircle, List, Calendar as CalendarIcon, FileCheck, Eye, Loader2, Edit, CheckCircle, Printer, MessageSquare } from "lucide-react";
 import { ServiceDialog } from "../components/service-dialog";
-import type { ServiceRecord, Vehicle, Technician, QuoteRecord, InventoryItem, CapacityAnalysisOutput } from "@/types";
+import type { ServiceRecord, Vehicle, Technician, QuoteRecord, InventoryItem, CapacityAnalysisOutput, WorkshopInfo } from "@/types";
 import { useToast } from "@/hooks/use-toast";
 import { format, parseISO, isToday, isTomorrow, compareAsc, isValid, startOfDay, endOfDay } from "date-fns";
 import { es } from 'date-fns/locale';
@@ -22,13 +22,16 @@ import { analyzeWorkshopCapacity } from '@/ai/flows/capacity-analysis-flow';
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { StatusTracker } from "../components/StatusTracker";
+import { ServiceSheetContent } from '@/components/service-sheet-content';
+import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
 
 
-const ServiceAppointmentCard = React.memo(({ service, vehicles, onEdit, onConfirm }: { 
+const ServiceAppointmentCard = React.memo(({ service, vehicles, onEdit, onConfirm, onView }: { 
   service: ServiceRecord, 
   vehicles: Vehicle[], 
   onEdit: () => void,
   onConfirm: () => void,
+  onView: () => void,
 }) => {
   const vehicle = vehicles.find(v => v.id === service.vehicleId);
   const getServiceDescriptionText = (service: ServiceRecord) => {
@@ -77,9 +80,8 @@ const ServiceAppointmentCard = React.memo(({ service, vehicles, onEdit, onConfir
                       <CheckCircle className="h-4 w-4 text-green-600" />
                     </Button>
                   )}
-                  <Button variant="ghost" size="icon" onClick={onEdit} title="Ver/Editar Servicio">
-                      <Eye className="h-4 w-4" />
-                  </Button>
+                  <Button variant="ghost" size="icon" onClick={onView} title="Vista Previa"><Eye className="h-4 w-4" /></Button>
+                  <Button variant="ghost" size="icon" onClick={onEdit} title="Editar Servicio"><Edit className="h-4 w-4" /></Button>
               </div>
           </div>
         </div>
@@ -116,6 +118,11 @@ function AgendaPageComponent() {
   const [capacityInfo, setCapacityInfo] = useState<CapacityAnalysisOutput | null>(null);
   const [isCapacityLoading, setIsCapacityLoading] = useState(false);
   const [capacityError, setCapacityError] = useState<string | null>(null);
+  
+  const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const [serviceForSheet, setServiceForSheet] = useState<ServiceRecord | null>(null);
+  const sheetContentRef = useRef<HTMLDivElement>(null);
+  const [workshopInfo, setWorkshopInfo] = useState<WorkshopInfo | {}>({});
 
   useEffect(() => {
     const handleDbUpdate = () => setVersion(v => v + 1);
@@ -125,6 +132,11 @@ function AgendaPageComponent() {
       setVehicles([...placeholderVehicles]);
       setTechnicians([...placeholderTechnicians]);
       setInventoryItems([...placeholderInventory]);
+      
+      const storedWorkshopInfo = localStorage.getItem("workshopTicketInfo");
+      if (storedWorkshopInfo) {
+        setWorkshopInfo(JSON.parse(storedWorkshopInfo));
+      }
     });
     window.addEventListener('databaseUpdated', handleDbUpdate);
     return () => window.removeEventListener('databaseUpdated', handleDbUpdate);
@@ -187,6 +199,11 @@ function AgendaPageComponent() {
   const handleOpenServiceDialog = useCallback((service: ServiceRecord) => {
     setEditingService(service);
     setIsServiceDialogOpen(true);
+  }, []);
+  
+  const handleShowPreview = useCallback((service: ServiceRecord) => {
+    setServiceForSheet(service);
+    setIsSheetOpen(true);
   }, []);
   
   const handleCancelService = useCallback(async (serviceId: string, reason: string) => {
@@ -277,13 +294,13 @@ function AgendaPageComponent() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {todayServices.length > 0 ? todayServices.map(service => (<ServiceAppointmentCard key={service.id} service={service} vehicles={vehicles} onEdit={() => handleOpenServiceDialog(service)} onConfirm={() => handleConfirmAppointment(service.id)} />)) : <p className="text-muted-foreground text-center py-4">No hay citas para hoy.</p>}
+              {todayServices.length > 0 ? todayServices.map(service => (<ServiceAppointmentCard key={service.id} service={service} vehicles={vehicles} onEdit={() => handleOpenServiceDialog(service)} onConfirm={() => handleConfirmAppointment(service.id)} onView={() => handleShowPreview(service)} />)) : <p className="text-muted-foreground text-center py-4">No hay citas para hoy.</p>}
             </CardContent>
           </Card>
            <Card>
             <CardHeader><CardTitle>Citas para Mañana</CardTitle></CardHeader>
             <CardContent>
-              {tomorrowServices.length > 0 ? tomorrowServices.map(service => (<ServiceAppointmentCard key={service.id} service={service} vehicles={vehicles} onEdit={() => handleOpenServiceDialog(service)} onConfirm={() => handleConfirmAppointment(service.id)} />)) : <p className="text-muted-foreground text-center py-4">No hay citas para mañana.</p>}
+              {tomorrowServices.length > 0 ? tomorrowServices.map(service => (<ServiceAppointmentCard key={service.id} service={service} vehicles={vehicles} onEdit={() => handleOpenServiceDialog(service)} onConfirm={() => handleConfirmAppointment(service.id)} onView={() => handleShowPreview(service)} />)) : <p className="text-muted-foreground text-center py-4">No hay citas para mañana.</p>}
             </CardContent>
           </Card>
         </TabsContent>
@@ -306,6 +323,24 @@ function AgendaPageComponent() {
           onSave={handleSaveService}
         />
       )}
+      
+       <PrintTicketDialog
+          open={isSheetOpen}
+          onOpenChange={setIsSheetOpen}
+          title="Vista Previa de Hoja de Servicio"
+          onDialogClose={() => setServiceForSheet(null)}
+          dialogContentClassName="printable-quote-dialog"
+          footerActions={<Button onClick={() => window.print()}><Printer className="mr-2 h-4 w-4" /> Imprimir Hoja</Button>}
+      >
+          {serviceForSheet && (
+              <ServiceSheetContent
+                  ref={sheetContentRef}
+                  service={serviceForSheet}
+                  vehicle={vehicles.find(v => v.id === serviceForSheet.vehicleId)}
+                  workshopInfo={workshopInfo as WorkshopInfo}
+              />
+          )}
+      </PrintTicketDialog>
     </>
   );
 }
@@ -317,3 +352,4 @@ export default function AgendaPageWrapper() {
     </Suspense>
   );
 }
+
