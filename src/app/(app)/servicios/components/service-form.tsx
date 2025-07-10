@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -53,6 +54,7 @@ import { SafetyChecklist } from './SafetyChecklist';
 import { UnifiedPreviewDialog } from "@/components/shared/unified-preview-dialog";
 import { VehicleSelectionCard } from './VehicleSelectionCard';
 import { ReceptionAndDelivery } from './ReceptionAndDelivery';
+import { Separator } from "@/components/ui/separator.js";
 
 const supplySchema = z.object({
   supplyId: z.string().min(1, "Seleccione un insumo"),
@@ -263,7 +265,14 @@ export function ServiceForm({
   });
   const { control, getValues, setValue } = form;
 
-  const stableServiceId = useMemo(() => initialData?.id || getValues('id') || `SRV_${generateUniqueId()}`, [initialData?.id, getValues]);
+  // Use a stable ID for the service throughout the form's lifecycle
+  const serviceId = useMemo(() => initialData?.id || `SRV_${generateUniqueId()}`, [initialData?.id]);
+
+  useEffect(() => {
+      if (!getValues('id')) {
+          setValue('id', serviceId);
+      }
+  }, [serviceId, getValues, setValue]);
 
   const { fields: serviceItemsFields, append: appendServiceItem, remove: removeServiceItem } = useFieldArray({ control, name: "serviceItems" });
   const { fields: photoReportFields, append: appendPhotoReport, remove: removePhotoReport } = useFieldArray({ control, name: "photoReports" });
@@ -322,7 +331,8 @@ export function ServiceForm({
         }
         
         form.reset({
-            id: data.id, publicId: (data as any)?.publicId, vehicleId: data.vehicleId ? String(data.vehicleId) : undefined,
+            id: data.id || serviceId, // Prioritize existing ID, fallback to stable ID
+            publicId: (data as any)?.publicId, vehicleId: data.vehicleId ? String(data.vehicleId) : undefined,
             vehicleLicensePlateSearch: data.vehicleIdentifier || "",
             serviceDate: isValid(parseDate(data.serviceDate)) ? parseDate(data.serviceDate) : undefined,
             quoteDate: isValid(parseDate(data.quoteDate)) ? parseDate(data.quoteDate) : undefined,
@@ -345,7 +355,7 @@ export function ServiceForm({
         });
     } else {
       form.reset({
-          id: stableServiceId,
+          id: serviceId,
           serviceAdvisorId: currentUser?.id || '', serviceAdvisorName: currentUser?.name || '', serviceAdvisorSignatureDataUrl: currentUser?.signatureDataUrl || '',
           status: mode === 'quote' ? 'Cotizacion' : 'Agendado',
           quoteDate: mode === 'quote' ? new Date() : undefined,
@@ -354,7 +364,7 @@ export function ServiceForm({
           photoReports: [{ id: `rep_recepcion_${Date.now()}`, date: new Date().toISOString(), description: "Notas de la Recepción", photos: [] }],
       });
     }
-  }, [initialDataService, initialDataQuote, mode, form, isReadOnly, stableServiceId]);
+  }, [initialDataService, initialDataQuote, mode, form, isReadOnly, serviceId]);
   
   const handlePhotoUploadComplete = useCallback((reportIndex: number, urls: string[]) => {
     const currentPhotos = getValues(`photoReports.${reportIndex}.photos`) || [];
@@ -547,11 +557,56 @@ export function ServiceForm({
             </TabsContent>
             
             <TabsContent value="reporte">
-              {/* Photo Reports Section */}
+              <Card>
+                  <CardHeader>
+                      <CardTitle>Reporte Fotográfico</CardTitle>
+                      <CardDescription>Documenta el progreso o hallazgos con imágenes. Puedes crear múltiples grupos de fotos.</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                      {photoReportFields.map((field, index) => (
+                          <div key={field.id} className="p-4 border rounded-lg bg-muted/30">
+                              <FormField
+                                  control={control}
+                                  name={`photoReports.${index}.description`}
+                                  render={({ field: descField }) => (
+                                      <FormItem>
+                                          <FormLabel className="flex justify-between items-center text-base font-semibold">
+                                              <span>Descripción del Grupo de Fotos #{index + 1}</span>
+                                              {!isReadOnly && <Button type="button" size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={() => removePhotoReport(index)}><Trash2 className="h-4 w-4"/></Button>}
+                                          </FormLabel>
+                                          <FormControl>
+                                              <Textarea placeholder="Ej: Evidencia de recepción, daño encontrado, reparación completada..." {...descField} disabled={isReadOnly} />
+                                          </FormControl>
+                                      </FormItem>
+                                  )}
+                              />
+                               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-2">
+                                  {field.photos.map((photoUrl, photoIndex) => (
+                                      <div key={photoIndex} className="relative aspect-video w-full group">
+                                          <Image src={photoUrl} alt={`Foto ${photoIndex + 1}`} layout="fill" objectFit="cover" className="rounded-md" />
+                                          <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                            <Button type="button" size="icon" variant="ghost" className="text-white hover:text-white" onClick={() => handleViewImage(photoUrl)}><Eye className="h-5 w-5"/></Button>
+                                          </div>
+                                      </div>
+                                  ))}
+                              </div>
+                              <PhotoUploader 
+                                  reportIndex={index} 
+                                  serviceId={serviceId} 
+                                  onUploadComplete={handlePhotoUploadComplete} 
+                                  photosLength={field.photos.length}
+                                  disabled={isReadOnly}
+                                  maxPhotos={5}
+                              />
+                          </div>
+                      ))}
+                      {!isReadOnly && <Button type="button" variant="outline" onClick={() => appendPhotoReport({ id: `rep_${Date.now()}`, date: new Date().toISOString(), description: '', photos: []})}><PlusCircle className="mr-2 h-4 w-4"/>Nuevo Grupo de Fotos</Button>}
+                  </CardContent>
+              </Card>
             </TabsContent>
             
             <TabsContent value="seguridad">
-               <SafetyChecklist control={control} isReadOnly={isReadOnly} onSignatureClick={() => setIsTechSignatureDialogOpen(true)} signatureDataUrl={form.watch('safetyInspection.technicianSignature')} isEnhancingText={isEnhancingText} handleEnhanceText={handleEnhanceText} serviceId={stableServiceId} onPhotoUploaded={handleChecklistPhotoUpload} onViewImage={handleViewImage}/>
+               <SafetyChecklist control={control} isReadOnly={isReadOnly} onSignatureClick={() => setIsTechSignatureDialogOpen(true)} signatureDataUrl={form.watch('safetyInspection.technicianSignature')} isEnhancingText={isEnhancingText} handleEnhanceText={handleEnhanceText} serviceId={serviceId} onPhotoUploaded={handleChecklistPhotoUpload} onViewImage={handleViewImage}/>
             </TabsContent>
           </Tabs>
 
@@ -567,6 +622,26 @@ export function ServiceForm({
       <SignatureDialog open={isCustomerSignatureDialogOpen} onOpenChange={setIsCustomerSignatureDialogOpen} onSave={(s) => { form.setValue(customerSignatureType === 'reception' ? 'customerSignatureReception' : 'customerSignatureDelivery', s, { shouldDirty: true }); setIsCustomerSignatureDialogOpen(false); toast({ title: 'Firma de Cliente Capturada' }); }}/>
       {isPreviewOpen && serviceForPreview && (<UnifiedPreviewDialog open={isPreviewOpen} onOpenChange={setIsPreviewOpen} service={serviceForPreview} />)}
       <VehicleDialog open={isVehicleDialogOpen} onOpenChange={setIsVehicleDialogOpen} onSave={handleSaveNewVehicle} vehicle={newVehicleInitialData}/>
+      <Dialog open={isImageViewerOpen} onOpenChange={setIsImageViewerOpen}>
+        <DialogContent className="max-w-4xl p-2">
+            <DialogHeader className="print:hidden">
+              <DialogTitle>Vista Previa de Imagen</DialogTitle>
+              <DialogDescription>
+                Visualizando la imagen de evidencia. Puede descargarla si lo necesita.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="relative aspect-video w-full">
+                {viewingImageUrl && (
+                    <Image src={viewingImageUrl} alt="Vista ampliada de evidencia" layout="fill" objectFit="contain" crossOrigin="anonymous" />
+                )}
+            </div>
+            <DialogFooter className="mt-2 print:hidden">
+                <Button onClick={handleDownloadImage}>
+                    <Download className="mr-2 h-4 w-4"/>Descargar Imagen
+                </Button>
+            </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
