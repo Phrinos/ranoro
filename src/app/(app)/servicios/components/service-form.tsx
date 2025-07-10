@@ -38,7 +38,7 @@ import {
     AUTH_USER_LOCALSTORAGE_KEY,
 } from '@/lib/placeholder-data';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger, AlertDialogDescription, AlertDialogFooter } from "@/components/ui/alert-dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger, AlertDialogDescription } from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/label";
 import { suggestQuote } from '@/ai/flows/quote-suggestion-flow';
 import { enhanceText } from '@/ai/flows/text-enhancement-flow';
@@ -257,12 +257,7 @@ export function ServiceForm({
   
   const form = useForm<ServiceFormValues>({
     resolver: zodResolver(serviceFormSchemaBase),
-    defaultValues: {
-        id: initialData?.id || `SRV-${generateUniqueId()}`,
-        status: mode === 'service' ? ((initialData as ServiceRecord)?.status || 'Agendado') : 'Cotizacion',
-        serviceItems: [],
-        photoReports: [],
-    }
+    defaultValues: {},
   });
   const { control, getValues, setValue } = form;
 
@@ -305,55 +300,50 @@ export function ServiceForm({
 
   useEffect(() => {
     const data = mode === 'service' ? initialDataService : initialDataQuote;
+    refreshCurrentUser();
+    const storedWorkshopInfo = typeof window !== "undefined" ? localStorage.getItem("workshopTicketInfo") : null;
+    if (storedWorkshopInfo) setWorkshopInfo(JSON.parse(storedWorkshopInfo));
     
-    // Set form values only after the component is mounted and data is available
-    if (data || !initialData) { // Check for either existing data or a new form
-        refreshCurrentUser();
-        const storedWorkshopInfo = typeof window !== "undefined" ? localStorage.getItem("workshopTicketInfo") : null;
-        if (storedWorkshopInfo) setWorkshopInfo(JSON.parse(storedWorkshopInfo));
-        
-        const parseDate = (date: any) => date && (typeof date.toDate === 'function' ? date.toDate() : (typeof date === 'string' ? parseISO(date) : date));
-        
-        let photoReportsData = (data as ServiceRecord)?.photoReports || [];
-        if (!isReadOnly && (!photoReportsData || photoReportsData.length === 0)) {
-            photoReportsData = [{ id: `rep_recepcion_${Date.now()}`, date: new Date().toISOString(), description: "Notas de la Recepción", photos: [] }];
-        }
-        
-        form.reset({
-            id: data?.id || `SRV-${generateUniqueId()}`,
-            publicId: (data as any)?.publicId, vehicleId: data?.vehicleId ? String(data.vehicleId) : undefined,
-            vehicleLicensePlateSearch: data?.vehicleIdentifier || "",
-            serviceDate: isValid(parseDate(data?.serviceDate)) ? parseDate(data.serviceDate) : undefined,
-            quoteDate: isValid(parseDate(data?.quoteDate)) ? parseDate(data.quoteDate) : undefined,
-            deliveryDateTime: isValid(parseDate((data as ServiceRecord)?.deliveryDateTime)) ? parseDate((data as ServiceRecord)?.deliveryDateTime) : undefined,
-            mileage: data?.mileage || undefined, description: (data as any).description || "",
-            notes: data?.notes || "", technicianId: (data as ServiceRecord)?.technicianId || (data as QuoteRecord)?.preparedByTechnicianId || undefined,
-            status: data?.status || (mode === 'quote' ? 'Cotizacion' : 'Agendado'),
-            serviceType: (data as ServiceRecord)?.serviceType || (data as QuoteRecord)?.serviceType || 'Servicio General',
-            vehicleConditions: (data as ServiceRecord)?.vehicleConditions || "", fuelLevel: (data as ServiceRecord)?.fuelLevel || undefined,
-            customerItems: (data as ServiceRecord)?.customerItems || '',
-            customerSignatureReception: (data as ServiceRecord)?.customerSignatureReception || undefined,
-            customerSignatureDelivery: (data as ServiceRecord)?.customerSignatureDelivery || undefined,
-            serviceItems: ('serviceItems' in (data || {}) && Array.isArray(data.serviceItems)) ? data.serviceItems.map(item => ({ ...item, price: item.price ?? 0, suppliesUsed: item.suppliesUsed || [] })) : [{ id: `item_${Date.now()}`, name: '', price: undefined, suppliesUsed: [] }],
-            safetyInspection: data?.safetyInspection || {}, paymentMethod: (data as ServiceRecord)?.paymentMethod || 'Efectivo',
-            cardFolio: (data as ServiceRecord)?.cardFolio || '', transferFolio: (initialData as ServiceRecord)?.transferFolio || '',
-            nextServiceInfo: (data as ServiceRecord)?.nextServiceInfo, photoReports: photoReportsData,
-            serviceAdvisorId: data?.serviceAdvisorId || freshUserRef.current?.id || '',
-            serviceAdvisorName: data?.serviceAdvisorName || freshUserRef.current?.name || '',
-            serviceAdvisorSignatureDataUrl: data?.serviceAdvisorSignatureDataUrl || freshUserRef.current?.signatureDataUrl || '',
-        });
-        
-        if (!data) {
-            form.setValue('serviceDate', setHours(setMinutes(new Date(), 30), 8));
-            if (mode === 'quote') form.setValue('quoteDate', new Date());
-        }
+    const parseDate = (date: any) => date && (typeof date.toDate === 'function' ? date.toDate() : (typeof date === 'string' ? parseISO(date) : date));
+    
+    let photoReportsData = (data as ServiceRecord)?.photoReports || [];
+    if (!isReadOnly && (!photoReportsData || photoReportsData.length === 0)) {
+        photoReportsData = [{ id: `rep_recepcion_${Date.now()}`, date: new Date().toISOString(), description: "Notas de la Recepción", photos: [] }];
+    }
+    
+    form.reset({
+        id: data?.id || `SRV-${generateUniqueId()}`,
+        publicId: (data as any)?.publicId, vehicleId: data?.vehicleId ? String(data.vehicleId) : undefined,
+        vehicleLicensePlateSearch: data?.vehicleIdentifier || "",
+        serviceDate: isValid(parseDate(data?.serviceDate)) ? parseDate(data.serviceDate) : undefined,
+        quoteDate: isValid(parseDate(data?.quoteDate)) ? parseDate(data.quoteDate) : undefined,
+        deliveryDateTime: isValid(parseDate((data as ServiceRecord)?.deliveryDateTime)) ? parseDate((data as ServiceRecord)?.deliveryDateTime) : undefined,
+        mileage: data?.mileage || undefined, description: (data as any).description || "",
+        notes: data?.notes || "", technicianId: (data as ServiceRecord)?.technicianId || (data as QuoteRecord)?.preparedByTechnicianId || undefined,
+        status: data?.status || (mode === 'quote' ? 'Cotizacion' : 'Agendado'),
+        serviceType: (data as ServiceRecord)?.serviceType || (data as QuoteRecord)?.serviceType || 'Servicio General',
+        vehicleConditions: (data as ServiceRecord)?.vehicleConditions || "", fuelLevel: (data as ServiceRecord)?.fuelLevel || undefined,
+        customerItems: (data as ServiceRecord)?.customerItems || '',
+        customerSignatureReception: (data as ServiceRecord)?.customerSignatureReception || undefined,
+        customerSignatureDelivery: (data as ServiceRecord)?.customerSignatureDelivery || undefined,
+        serviceItems: ('serviceItems' in (data || {}) && Array.isArray(data.serviceItems)) ? data.serviceItems.map(item => ({ ...item, price: item.price ?? 0, suppliesUsed: item.suppliesUsed || [] })) : [{ id: `item_${Date.now()}`, name: '', price: undefined, suppliesUsed: [] }],
+        safetyInspection: data?.safetyInspection || {}, paymentMethod: (data as ServiceRecord)?.paymentMethod || 'Efectivo',
+        cardFolio: (data as ServiceRecord)?.cardFolio || '', transferFolio: (initialData as ServiceRecord)?.transferFolio || '',
+        nextServiceInfo: (data as ServiceRecord)?.nextServiceInfo, photoReports: photoReportsData,
+        serviceAdvisorId: data?.serviceAdvisorId || freshUserRef.current?.id || '',
+        serviceAdvisorName: data?.serviceAdvisorName || freshUserRef.current?.name || '',
+        serviceAdvisorSignatureDataUrl: data?.serviceAdvisorSignatureDataUrl || freshUserRef.current?.signatureDataUrl || '',
+    });
+    
+    if (!data) {
+        form.setValue('serviceDate', setHours(setMinutes(new Date(), 30), 8));
+        if (mode === 'quote') form.setValue('quoteDate', new Date());
     }
   }, [initialDataService, initialDataQuote, mode, form, isReadOnly, refreshCurrentUser]);
   
-    const handlePhotoUploadComplete = useCallback(
+  const handlePhotoUploadComplete = useCallback(
     (reportIndex: number, url: string) => {
-      const currentPhotos =
-        getValues(`photoReports.${reportIndex}.photos`) || [];
+      const currentPhotos = getValues(`photoReports.${reportIndex}.photos`) || [];
       setValue(
         `photoReports.${reportIndex}.photos`,
         [...currentPhotos, url],
@@ -365,15 +355,14 @@ export function ServiceForm({
   
   const handleChecklistPhotoUpload = useCallback(
     (itemName: string, urls: string[]) => {
-        const path = `safetyInspection.${itemName}` as const;
-        const current = getValues(path) || { status: "na", photos: [] };
-        // Combine existing photos with newly uploaded ones
-        const newPhotos = [...current.photos, ...urls];
-        setValue(
-            path,
-            { ...current, photos: newPhotos },
-            { shouldDirty: true }
-        );
+      const path = `safetyInspection.${itemName}` as const;
+      const current = getValues(path) || { status: "na", photos: [] };
+      const newPhotos = [...current.photos, ...urls];
+      setValue(
+          path,
+          { ...current, photos: newPhotos },
+          { shouldDirty: true }
+      );
     },
     [getValues, setValue]
   );
@@ -539,9 +528,9 @@ export function ServiceForm({
               <div className="flex justify-between items-center gap-2 mb-2 border-b">
                 <TabsList className="bg-transparent p-0 w-max -mb-px">
                   <TabsTrigger value="servicio" className="text-sm sm:text-base data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none flex items-center gap-2 py-3 px-3 sm:px-4"><Wrench className="h-4 w-4 shrink-0"/> Detalles</TabsTrigger>
-                  <TabsTrigger value="recepcion" disabled={!showReceptionTab} className="text-sm sm:text-base data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none flex items-center gap-2 py-3 px-3 sm:px-4"><FileCheck className="h-4 w-4 shrink-0"/> Rec. y Ent.</TabsTrigger>
-                  <TabsTrigger value="reporte" disabled={!showReportTab} className="text-sm sm:text-base data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none flex items-center gap-2 py-3 px-3 sm:px-4"><Camera className="h-4 w-4 shrink-0"/> Fotos</TabsTrigger>
-                  <TabsTrigger value="seguridad" disabled={!showReceptionTab} className="text-sm sm:text-base data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none flex items-center gap-2 py-3 px-3 sm:px-4"><ShieldCheck className="h-4 w-4 shrink-0"/> Revisión</TabsTrigger>
+                  {showReceptionTab && <TabsTrigger value="recepcion" className="text-sm sm:text-base data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none flex items-center gap-2 py-3 px-3 sm:px-4"><FileCheck className="h-4 w-4 shrink-0"/> Rec. y Ent.</TabsTrigger>}
+                  {showReportTab && <TabsTrigger value="reporte" className="text-sm sm:text-base data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none flex items-center gap-2 py-3 px-3 sm:px-4"><Camera className="h-4 w-4 shrink-0"/> Fotos</TabsTrigger>}
+                  {showReceptionTab && <TabsTrigger value="seguridad" className="text-sm sm:text-base data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none flex items-center gap-2 py-3 px-3 sm:px-4"><ShieldCheck className="h-4 w-4 shrink-0"/> Revisión</TabsTrigger>}
                 </TabsList>
                 {!isReadOnly && <Button type="button" onClick={handlePrintSheet} variant="ghost" size="icon" title="Vista Previa"><Eye className="h-5 w-5" /></Button>}
               </div>
@@ -626,7 +615,7 @@ export function ServiceForm({
           </Tabs>
         
           <div className="flex justify-between items-center pt-4">
-            {!isReadOnly && initialData?.id && (<AlertDialog open={isCancelAlertOpen} onOpenChange={setIsCancelAlertOpen}><AlertDialogTrigger asChild><Button type="button" variant="destructive"><Ban className="mr-2 h-4 w-4" />{mode === 'quote' ? 'Eliminar Cotización' : 'Cancelar Servicio'}</Button></AlertDialogTrigger><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>¿Está seguro?</AlertDialogTitle><AlertDialogDescription>{mode === 'quote' ? `Se eliminará la cotización ${initialDataQuote?.id}.` : `Se cancelará el servicio ${initialDataService?.id}.`}</AlertDialogDescription>{mode === 'service' && (<div className="mt-4"><Label htmlFor="cancellation-reason">Motivo (obligatorio)</Label><Textarea id="cancellation-reason" value={cancellationReason} onChange={(e) => setCancellationReason(e.target.value)} className="mt-2" /></div>)}</AlertDialogHeader><AlertDialogFooter><AlertDialogCancel onClick={() => setCancellationReason('')}>Volver</AlertDialogCancel><AlertDialogAction onClick={handleConfirmDelete} disabled={mode === 'service' && !cancellationReason.trim()} className="bg-destructive hover:bg-destructive/90">Sí, proceder</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog>)}
+            {!isReadOnly && initialData?.id && (<AlertDialog open={isCancelAlertOpen} onOpenChange={setIsCancelAlertOpen}><AlertDialogTrigger asChild><Button type="button" variant="destructive"><Ban className="mr-2 h-4 w-4" />{mode === 'quote' ? 'Eliminar Cotización' : 'Cancelar Servicio'}</Button></AlertDialogTrigger><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>¿Está seguro?</AlertDialogTitle><AlertDialogDescription>{mode === 'quote' ? `Se eliminará la cotización ${initialDataQuote?.id}.` : `Se cancelará el servicio ${initialDataService?.id}.`}</AlertDialogDescription>{mode === 'service' && (<div className="mt-4"><Label htmlFor="cancellation-reason">Motivo (obligatorio)</Label><Textarea id="cancellation-reason" value={cancellationReason} onChange={(e) => setCancellationReason(e.target.value)} className="mt-2" /></div>)}</AlertDialogHeader><AlertDialog.Footer><AlertDialogCancel onClick={() => setCancellationReason('')}>Volver</AlertDialogCancel><AlertDialogAction onClick={handleConfirmDelete} disabled={mode === 'service' && !cancellationReason.trim()} className="bg-destructive hover:bg-destructive/90">Sí, proceder</AlertDialogAction></AlertDialog.Footer></AlertDialogContent></AlertDialog>)}
             <div className="flex justify-end gap-2 w-full">
               {isReadOnly ? <Button type="button" variant="outline" onClick={onClose}>Cerrar</Button> : (<><Button type="button" variant="outline" onClick={onClose}>Cancelar</Button><Button type="submit" disabled={form.formState.isSubmitting || !getValues('vehicleId')}>{form.formState.isSubmitting ? "Guardando..." : (initialData?.id ? "Actualizar" : "Crear")}</Button></>)}
             </div>
