@@ -1,11 +1,12 @@
 
+
 "use client";
 
 import type { QuoteRecord, Vehicle, Technician, WorkshopInfo } from '@/types';
 import { format, parseISO, isValid, addDays } from 'date-fns';
 import { es } from 'date-fns/locale';
 import React from 'react';
-import { cn, capitalizeWords } from "@/lib/utils";
+import { cn, capitalizeWords, normalizeDataUrl } from "@/lib/utils";
 import { Card, CardContent } from '@/components/ui/card';
 import Image from "next/image";
 
@@ -170,7 +171,7 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
                     <div className="relative flex justify-center items-center h-16 w-40 mb-1">
                         {quote.serviceAdvisorSignatureDataUrl && (
                            <img
-                                src={quote.serviceAdvisorSignatureDataUrl} 
+                                src={normalizeDataUrl(quote.serviceAdvisorSignatureDataUrl)} 
                                 alt="Firma del asesor"
                                 style={{ maxHeight: '100%', maxWidth: '100%', objectFit: 'contain' }}
                                 crossOrigin="anonymous"
