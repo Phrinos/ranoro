@@ -27,7 +27,7 @@ import { Badge } from "@/components/ui/badge";
 import { ServiceDialog } from "../components/service-dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { StatusTracker } from "../components/StatusTracker";
-import { UnifiedPreviewDialog } from "@/components/shared/unified-preview-dialog";
+import { UnifiedPreviewDialog } from '@/components/shared/unified-preview-dialog';
 
 
 type ServiceSortOption = 
@@ -38,21 +38,12 @@ type ServiceSortOption =
   | "status_asc" | "status_desc";
 
 
-const ServiceList = React.memo(({ services, vehicles, onEdit, onReprint, onView }: {
+const ServiceList = React.memo(({ services, vehicles, onEdit, onView }: {
   services: ServiceRecord[],
   vehicles: Vehicle[],
   onEdit: (service: ServiceRecord) => void,
-  onReprint: (service: ServiceRecord) => void,
   onView: (service: ServiceRecord) => void
 }) => {
-  const getStatusVariant = (status: ServiceRecord['status']): "default" | "secondary" | "outline" | "destructive" | "success" | "waiting" | "delivered" => {
-    switch (status) {
-      case "Completado": return "success"; case "Reparando": return "secondary"; case "Cancelado": return "destructive"; 
-      case "Agendado": return "default"; case "Cotizacion": return "outline"; case "Entregado": return "delivered";
-      default: return "default";
-    }
-  };
-  
   const getServiceDescriptionText = (service: ServiceRecord) => {
     if (service.serviceItems && service.serviceItems.length > 0) return service.serviceItems.map(item => item.name).join(', ');
     return service.description;
@@ -92,7 +83,6 @@ const ServiceList = React.memo(({ services, vehicles, onEdit, onReprint, onView 
                     <div className="flex justify-center items-center gap-1">
                         <Button variant="ghost" size="icon" onClick={() => onView(service)} title="Vista Previa"><Eye className="h-4 w-4" /></Button>
                         <Button variant="ghost" size="icon" onClick={() => onEdit(service)} title="Editar Servicio"><Edit className="h-4 w-4" /></Button>
-                        {service.status === 'Completado' && (<Button variant="ghost" size="icon" onClick={() => onReprint(service)} title="Reimprimir Comprobante"><Printer className="h-4 w-4" /></Button>)}
                     </div>
                   </div>
                 </div>
@@ -121,7 +111,6 @@ function HistorialServiciosPageComponent() {
   const [vehicles, setVehicles] = useState<Vehicle[]>(placeholderVehicles); 
   const [technicians, setTechnicians] = useState<Technician[]>(placeholderTechnicians);
   const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>(placeholderInventory);
-  const [workshopInfo, setWorkshopInfo] = useState<WorkshopInfo | undefined>(undefined);
   
   const [searchTerm, setSearchTerm] = useState("");
   const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
@@ -131,8 +120,8 @@ function HistorialServiciosPageComponent() {
   const [editingService, setEditingService] = useState<ServiceRecord | null>(null);
 
   const [isSheetOpen, setIsSheetOpen] = useState(false);
-  const [serviceForPreview, setServiceForPreview] = useState<ServiceRecord | null>(null);
-
+  const [previewData, setPreviewData] = useState<{ service: ServiceRecord, quote?: QuoteRecord, vehicle?: Vehicle }> | null>(null);
+  
   useEffect(() => {
     // Sync with global state
     setAllServices(placeholderServiceRecords);
@@ -157,7 +146,7 @@ function HistorialServiciosPageComponent() {
   }, [allServices, dateRange, searchTerm]);
 
   const activeServices = useMemo(() => {
-    return allServices.filter(s => s.status === 'Reparando' || (s.status === 'Completado' && s.deliveryDateTime && isToday(parseISO(s.deliveryDateTime))));
+    return allServices.filter(s => s.status === 'Reparando' || s.status === 'En Espera de Refacciones' || (s.status === 'Completado' && s.deliveryDateTime && isToday(parseISO(s.deliveryDateTime))));
   }, [allServices]);
   
   const handleSaveService = useCallback(async (data: QuoteRecord | ServiceRecord) => {
@@ -166,9 +155,9 @@ function HistorialServiciosPageComponent() {
 
   const handleCancelService = useCallback(async (serviceId: string, reason: string) => { /* ... */ }, []);
   const handleVehicleCreated = useCallback((newVehicle: Vehicle) => { /* ... */ }, []);
-  const handleReprintService = useCallback((service: ServiceRecord) => { /* ... */ }, []);
+  
   const handleShowPreview = useCallback((service: ServiceRecord) => {
-    setServiceForPreview(service);
+    setPreviewData({ service });
     setIsSheetOpen(true);
   }, []);
 
@@ -186,7 +175,7 @@ function HistorialServiciosPageComponent() {
           </TabsList>
           
           <TabsContent value="activos" className="mt-0 space-y-4">
-              <ServiceList services={activeServices} vehicles={vehicles} onEdit={(s) => {setEditingService(s); setIsEditDialogOpen(true);}} onReprint={handleReprintService} onView={handleShowPreview}/>
+              <ServiceList services={activeServices} vehicles={vehicles} onEdit={(s) => {setEditingService(s); setIsEditDialogOpen(true);}} onView={handleShowPreview}/>
           </TabsContent>
           
           <TabsContent value="historial" className="mt-0 space-y-4">
@@ -195,7 +184,7 @@ function HistorialServiciosPageComponent() {
               <Popover><PopoverTrigger asChild><Button variant={"outline"} className={cn("min-w-[240px] justify-start text-left font-normal flex-1 sm:flex-initial bg-card", !dateRange && "text-muted-foreground")}><CalendarDateIcon className="mr-2 h-4 w-4" />{dateRange?.from ? (dateRange.to ? (`${format(dateRange.from, "LLL dd, y")} - ${format(dateRange.to, "LLL dd, y")}`) : format(dateRange.from, "LLL dd, y")) : (<span>Seleccione rango</span>)}</Button></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar initialFocus mode="range" defaultMonth={dateRange?.from} selected={dateRange} onSelect={setDateRange} numberOfMonths={2} locale={es} /></PopoverContent></Popover>
               <DropdownMenu><DropdownMenuTrigger asChild><Button variant="outline" className="min-w-[150px] flex-1 sm:flex-initial bg-card"><ListFilter className="mr-2 h-4 w-4" />Ordenar</Button></DropdownMenuTrigger><DropdownMenuContent align="end"><DropdownMenuLabel>Ordenar por</DropdownMenuLabel><DropdownMenuRadioGroup value={sortOption} onValueChange={(value) => setSortOption(value as ServiceSortOption)}><DropdownMenuRadioItem value="serviceDate_desc">Fecha (Más Reciente)</DropdownMenuRadioItem></DropdownMenuRadioGroup></DropdownMenuContent></DropdownMenu>
             </div>
-            <ServiceList services={historicalServices} vehicles={vehicles} onEdit={(s) => {setEditingService(s); setIsEditDialogOpen(true);}} onReprint={handleReprintService} onView={handleShowPreview}/>
+            <ServiceList services={historicalServices} vehicles={vehicles} onEdit={(s) => {setEditingService(s); setIsEditDialogOpen(true);}} onView={handleShowPreview}/>
           </TabsContent>
       </Tabs>
       
@@ -214,11 +203,11 @@ function HistorialServiciosPageComponent() {
         />
       )}
 
-      {isSheetOpen && serviceForPreview && (
+      {isSheetOpen && previewData && (
         <UnifiedPreviewDialog
           open={isSheetOpen}
           onOpenChange={setIsSheetOpen}
-          service={serviceForPreview}
+          service={previewData.service}
         />
       )}
     </>
