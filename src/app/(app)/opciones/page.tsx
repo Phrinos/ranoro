@@ -78,7 +78,7 @@ function PerfilPageContent() {
                 form.reset({
                   name: user.name,
                   email: user.email,
-                  phone: user.phone || '',
+                  phone: user.phone || '', // Ensure undefined is handled
                   signatureDataUrl: user.signatureDataUrl || '',
                 });
             } else { router.push('/login'); }
