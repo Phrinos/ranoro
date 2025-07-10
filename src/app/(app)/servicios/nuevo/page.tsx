@@ -85,7 +85,7 @@ export default function NuevoServicioPage() {
             handleSaveComplete(data as ServiceRecord);
           }}
           onVehicleCreated={handleVehicleCreated}
-          mode="service" // Start in service mode by default
+          mode="quote" // Changed from "service" to "quote"
         />
       )}
       
