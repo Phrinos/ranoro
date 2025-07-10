@@ -37,6 +37,14 @@ import {
     persistToFirestore, 
     AUTH_USER_LOCALSTORAGE_KEY,
 } from '@/lib/placeholder-data';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/label";
 import { suggestQuote } from '@/ai/flows/quote-suggestion-flow';
@@ -342,19 +350,28 @@ export function ServiceForm({
     }
   }, [initialDataService, initialDataQuote, mode, form, isReadOnly, refreshCurrentUser]);
   
-  const handlePhotoUploadComplete = useCallback(
-    (reportIndex: number, urls: string[]) => {
-      const currentPhotos = getValues(`photoReports.${reportIndex}.photos`) || [];
-      setValue( `photoReports.${reportIndex}.photos`, [...currentPhotos, ...urls], { shouldDirty: true });
+ const handlePhotoUploadComplete = useCallback(
+    (reportIndex: number, url: string) => {
+      const currentPhotos =
+        getValues(`photoReports.${reportIndex}.photos`) || [];
+      setValue(
+        `photoReports.${reportIndex}.photos`,
+        [...currentPhotos, url],
+        { shouldDirty: true }
+      );
     },
     [getValues, setValue]
   );
   
   const handleChecklistPhotoUpload = useCallback(
-    (itemName: string, urls: string[]) => {
-        const path = `safetyInspection.${itemName}` as const;
-        const current = getValues(path) || { status: "na", photos: [] };
-        setValue( path, { ...current, photos: [...(current.photos || []), ...urls] }, { shouldDirty: true });
+    (itemName: string, url: string) => {
+      const path = `safetyInspection.${itemName}` as const;
+      const current = getValues(path) || { status: "na", photos: [] };
+      setValue(
+        path,
+        { ...current, photos: [...current.photos, url] },
+        { shouldDirty: true }
+      );
     },
     [getValues, setValue]
   );
