@@ -7,7 +7,7 @@ import { es } from 'date-fns/locale';
 import React from 'react';
 import { cn, capitalizeWords } from "@/lib/utils";
 import { Card, CardContent } from '@/components/ui/card';
-import Image from "next/legacy/image";
+import Image from "next/image";
 
 const initialWorkshopInfo: WorkshopInfo = {
   name: "RANORO",
