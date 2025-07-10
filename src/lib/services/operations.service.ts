@@ -1,6 +1,7 @@
 
 import type { ServiceRecord, QuoteRecord, SaleReceipt } from "@/types";
-import { placeholderServiceRecords, placeholderSales, persistToFirestore, logAudit, placeholderInventory, savePublicDocument } from "@/lib/placeholder-data";
+import { placeholderServiceRecords, placeholderSales, persistToFirestore, logAudit, placeholderInventory } from "@/lib/placeholder-data";
+import { savePublicDocument } from '@/lib/public-document';
 import { inventoryService } from './inventory.service';
 import { personnelService } from './personnel.service';
 
