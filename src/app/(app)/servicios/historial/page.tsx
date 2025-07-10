@@ -20,7 +20,6 @@ import { inventoryService } from '@/lib/services/inventory.service';
 import { adminService } from '@/lib/services/admin.service';
 import { ServiceAppointmentCard } from '../agenda/page';
 
-
 function HistorialServiciosPageComponent() {
   const { toast } = useToast();
   const searchParams = useSearchParams();
@@ -54,20 +53,17 @@ function HistorialServiciosPageComponent() {
     };
     loadData();
 
-    const handleDbUpdate = () => setVersion(v => v + 1);
-    window.addEventListener('databaseUpdated', handleDbUpdate);
-    return () => window.removeEventListener('databaseUpdated', handleDbUpdate);
-  }, []);
-
-  useEffect(() => {
-    const updateData = async () => {
+    const handleDbUpdate = async () => {
+        setVersion(v => v + 1);
         setAllServices(await operationsService.getServices());
         setVehicles(await inventoryService.getVehicles());
         setTechnicians(await personnelService.getTechnicians());
         setInventoryItems(await inventoryService.getItems());
     };
-    if (version > 0) updateData();
-  }, [version]);
+    
+    window.addEventListener('databaseUpdated', handleDbUpdate);
+    return () => window.removeEventListener('databaseUpdated', handleDbUpdate);
+  }, []);
   
   const activeServices = useMemo(() => {
     return allServices.filter(s => {
@@ -80,12 +76,12 @@ function HistorialServiciosPageComponent() {
 
   const {
     filteredData: historicalServices,
-    TableToolbarComponent,
+    ...tableManager
   } = useTableManager({
-    initialData: allServices.filter(s => s.status !== 'Cotizacion' && s.status !== 'Agendado'),
-    initialSortOption: 'serviceDate_desc',
+    initialData: allServices.filter(s => s.status !== 'Cotizacion'),
     searchKeys: ['id', 'vehicleIdentifier', 'description'],
-    dateFilterKey: 'serviceDate'
+    dateFilterKey: 'serviceDate',
+    initialSortOption: 'date_desc'
   });
 
   const handleSaveService = useCallback(async (data: QuoteRecord | ServiceRecord) => {
@@ -138,7 +134,6 @@ function HistorialServiciosPageComponent() {
     toast({ title: "Cita Confirmada" });
   }, [toast]);
 
-
   return (
     <>
       <div className="bg-primary text-primary-foreground rounded-lg p-6 mb-6">
@@ -171,7 +166,15 @@ function HistorialServiciosPageComponent() {
           </TabsContent>
           
           <TabsContent value="historial" className="mt-0 space-y-4">
-            <TableToolbarComponent />
+            <TableToolbar
+              searchTerm={tableManager.searchTerm}
+              onSearchTermChange={tableManager.setSearchTerm}
+              dateRange={tableManager.dateRange}
+              onDateRangeChange={tableManager.setDateRange}
+              sortOption={tableManager.sortOption}
+              onSortOptionChange={tableManager.setSortOption}
+              searchPlaceholder="Buscar por folio, placa, descripción..."
+            />
             {historicalServices.length > 0 ? (
                 historicalServices.map(service => (
                     <ServiceAppointmentCard 
@@ -238,6 +241,3 @@ export default function HistorialServiciosPageWrapper() {
         </Suspense>
     )
 }
-
-
-    
