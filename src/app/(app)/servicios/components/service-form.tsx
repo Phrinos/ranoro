@@ -58,7 +58,7 @@ import { savePublicDocument } from "@/lib/public-document";
 import { PhotoUploader } from "./PhotoUploader";
 import { ServiceItemCard } from './ServiceItemCard';
 import { SafetyChecklist } from './SafetyChecklist';
-import { UnifiedPreviewDialog } from "@/components/shared/unified-preview-dialog";
+import { UnifiedPreviewDialog } from '@/components/shared/unified-preview-dialog';
 import { VehicleSelectionCard } from './VehicleSelectionCard';
 import { ReceptionAndDelivery } from './ReceptionAndDelivery';
 import { Separator } from "@/components/ui/separator";
@@ -352,30 +352,24 @@ export function ServiceForm({
   
  const handlePhotoUploadComplete = useCallback(
     (reportIndex: number, url: string) => {
-      const currentPhotos =
-        getValues(`photoReports.${reportIndex}.photos`) || [];
-      setValue(
-        `photoReports.${reportIndex}.photos`,
-        [...currentPhotos, url],
-        { shouldDirty: true }
-      );
+      const currentPhotos = getValues(`photoReports.${reportIndex}.photos`) || [];
+      setValue(`photoReports.${reportIndex}.photos`, [...currentPhotos, url], { shouldDirty: true });
     },
     [getValues, setValue]
   );
   
   const handleChecklistPhotoUpload = useCallback(
-    (itemName: string, url: string) => {
-      const path = `safetyInspection.${itemName}` as const;
-      const current = getValues(path) || { status: "na", photos: [] };
-      setValue(
-        path,
-        { ...current, photos: [...current.photos, url] },
-        { shouldDirty: true }
-      );
+    (itemName: string, urls: string[]) => {
+        const path = `safetyInspection.${itemName}` as const;
+        const current = getValues(path) || { status: "na", photos: [] };
+        setValue(
+            path,
+            { ...current, photos: [...current.photos, ...urls] },
+            { shouldDirty: true }
+        );
     },
     [getValues, setValue]
   );
-
 
   const handleViewImage = (url: string) => { setViewingImageUrl(url); setIsImageViewerOpen(true); };
   
@@ -606,7 +600,7 @@ export function ServiceForm({
                             </div>
                             <PhotoUploader 
                                 reportIndex={index} 
-                                serviceId={watchedId || ''}
+                                serviceId={watchedId || form.getValues('id') || ''}
                                 onUploadComplete={handlePhotoUploadComplete} 
                                 photosLength={field.photos?.length || 0}
                                 disabled={isReadOnly || !watchedId}

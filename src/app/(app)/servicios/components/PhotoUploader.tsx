@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useCallback } from "react";
 import { ref, uploadString, getDownloadURL } from "firebase/storage";
 import { Loader2, Camera } from "lucide-react";
 
@@ -31,15 +31,16 @@ export function PhotoUploader({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isUploading, setIsUploading] = useState(false);
 
-  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePhotoUpload = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (fileInputRef.current) {
-        fileInputRef.current.value = ""; // Reset input
+        fileInputRef.current.value = ""; // Reset input immediately
     }
     if (!file) return;
 
+    // This is the crucial check to prevent uploads with an invalid path
     if (!serviceId) {
-        toast({ title: "Error", description: "Se necesita un ID de servicio para subir fotos.", variant: "destructive" });
+        toast({ title: "Error", description: "Se necesita un ID de servicio válido para subir fotos. Guarde el servicio primero.", variant: "destructive" });
         return;
     }
 
@@ -74,7 +75,7 @@ export function PhotoUploader({
     } finally {
         setIsUploading(false);
     }
-  };
+  }, [serviceId, photosLength, maxPhotos, onUploadComplete, reportIndex, toast]);
   
   const isDisabled = disabled || isUploading || photosLength >= maxPhotos;
 
@@ -100,7 +101,7 @@ export function PhotoUploader({
         ref={fileInputRef}
         type="file"
         accept="image/*"
-        onChange={handleFileChange}
+        onChange={handlePhotoUpload}
         capture="environment"
         className="hidden"
       />
