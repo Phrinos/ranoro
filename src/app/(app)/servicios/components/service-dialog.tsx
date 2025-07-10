@@ -157,17 +157,34 @@ export function ServiceDialog({
     }
   };
   
-  const dialogTitle = isReadOnly 
-    ? (mode === 'quote' ? "Detalles de la Cotización" : "Detalles del Servicio")
-    : (service || quote 
-      ? (mode === 'quote' ? "Editar Cotización" : "Editar Servicio") 
-      : (mode === 'quote' ? "Nueva Cotización" : "Nuevo Servicio"));
+  const getDynamicTitles = () => {
+    const currentRecord = service || quote;
+    const status = currentRecord?.status;
 
-  const dialogDescription = isReadOnly
-    ? (mode === 'quote' ? "Visualizando los detalles de la cotización." : "Visualizando los detalles de la orden de servicio.")
-    : (service || quote
-      ? (mode === 'quote' ? "Actualiza los detalles de la cotización." : "Actualiza los detalles de la orden de servicio.")
-      : (mode === 'quote' ? "Completa la información para una nueva cotización." : "Completa la información para una nueva orden de servicio."));
+    if (isReadOnly) {
+        switch (status) {
+            case 'Cotizacion': return { title: "Detalles de la Cotización", description: "Visualizando los detalles de la cotización." };
+            case 'Agendado': return { title: "Detalles de la Cita", description: "Visualizando los detalles de la cita agendada." };
+            default: return { title: "Detalles del Servicio", description: "Visualizando los detalles de la orden de servicio." };
+        }
+    }
+
+    if (currentRecord?.id) { // Editing existing record
+        switch (status) {
+            case 'Cotizacion': return { title: "Editar Cotización", description: "Actualiza los detalles de la cotización." };
+            case 'Agendado': return { title: "Editar Cita", description: "Actualiza los detalles de la cita." };
+            default: return { title: "Editar Servicio", description: "Actualiza los detalles de la orden de servicio." };
+        }
+    }
+    
+    // Creating new record
+    return { 
+        title: mode === 'quote' ? "Nueva Cotización" : "Nuevo Servicio", 
+        description: mode === 'quote' ? "Completa la información para una nueva cotización." : "Completa la información para una nueva orden de servicio." 
+    };
+  };
+
+  const { title: dialogTitle, description: dialogDescription } = getDynamicTitles();
       
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
