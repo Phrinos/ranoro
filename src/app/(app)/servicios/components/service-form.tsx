@@ -271,9 +271,6 @@ export function ServiceForm({
   const [isGeneratingQuote, setIsGeneratingQuote] = useState(false);
   
   const [isSheetOpen, setIsSheetOpen] = useState(false);
-  const [serviceForSheet, setServiceForSheet] = useState<ServiceRecord | null>(null);
-  
-  const [isQuoteViewOpen, setIsQuoteViewOpen] = useState(false);
   
   const [isServiceDatePickerOpen, setIsServiceDatePickerOpen] = useState(false);
   const [isDeliveryDatePickerOpen, setIsDeliveryDatePickerOpen] = useState(false);
@@ -843,7 +840,6 @@ export function ServiceForm({
     serviceData.serviceAdvisorName = freshCurrentUser?.name || 'N/A';
     serviceData.serviceAdvisorSignatureDataUrl = freshCurrentUser?.signatureDataUrl;
 
-    setServiceForSheet(serviceData);
     setIsSheetOpen(true);
   }, [form]);
 
@@ -1171,8 +1167,8 @@ export function ServiceForm({
                 </TabsList>
               </div>
               <div className="flex gap-2 self-end sm:self-center">
-                  {mode === 'service' && !isReadOnly && (watchedStatus === 'Reparando' || watchedStatus === 'Completado') && (
-                      <Button type="button" onClick={handlePrintSheet} variant="ghost" size="icon" className="bg-card" title="Vista Previa">
+                  {!isReadOnly && (
+                      <Button type="button" onClick={handlePrintSheet} variant="ghost" size="icon" className="bg-card" title="Vista Previa Unificada">
                         <Eye className="h-5 w-5" />
                       </Button>
                   )}
@@ -1732,27 +1728,22 @@ export function ServiceForm({
           toast({ title: 'Firma Capturada', description: 'La firma del técnico se ha guardado en el formulario.' });
         }}
       />
-
-      {isQuoteViewOpen && quoteForViewing && (
-        <PrintTicketDialog
-            open={isQuoteViewOpen}
-            onOpenChange={setIsQuoteViewOpen}
-            title={`Cotización: ${quoteForViewing.id}`}
-            dialogContentClassName="printable-quote-dialog"
-            onDialogClose={() => {}} // Remove setQuoteForView
-            footerActions={
-            <Button onClick={() => window.print()}>
-                <Printer className="mr-2 h-4 w-4" /> Imprimir Cotización
-            </Button>
-            }
-        >
-            <QuoteContent
-                quote={quoteForViewing}
-                vehicle={localVehicles.find(v => v.id === quoteForViewing.vehicleId)}
-                workshopInfo={quoteForViewing.workshopInfo}
-            />
-        </PrintTicketDialog>
-      )}
+      
+      <PrintTicketDialog
+          open={isSheetOpen}
+          onOpenChange={setIsSheetOpen}
+          title="Vista Previa Unificada"
+          onDialogClose={() => {}}
+          dialogContentClassName="printable-quote-dialog"
+          footerActions={<><Button type="button" onClick={() => handleShareService(form.getValues() as ServiceRecord)} variant="outline"><MessageSquare className="mr-2 h-4 w-4" /> Copiar para WhatsApp</Button><Button onClick={() => window.print()}><Printer className="mr-2 h-4 w-4" /> Imprimir Documento</Button></>}
+      >
+          <ServiceSheetContent
+              service={form.getValues() as ServiceRecord}
+              quote={quoteForViewing || undefined}
+              vehicle={selectedVehicle || undefined}
+              workshopInfo={workshopInfo as WorkshopInfo}
+          />
+      </PrintTicketDialog>
 
       <VehicleDialog
           open={isVehicleDialogOpen}
@@ -1762,29 +1753,10 @@ export function ServiceForm({
       />
       
       <PrintTicketDialog
-          open={isSheetOpen}
-          onOpenChange={setIsSheetOpen}
-          title="Vista Previa"
-          onDialogClose={() => setServiceForSheet(null)}
-          dialogContentClassName="printable-quote-dialog"
-          footerActions={<><Button type="button" onClick={() => handleShareService(serviceForSheet)} variant="outline"><MessageSquare className="mr-2 h-4 w-4" /> Copiar para WhatsApp</Button><Button onClick={() => window.print()}><Printer className="mr-2 h-4 w-4" /> Imprimir Hoja</Button></>}
-      >
-          {serviceForSheet && (
-              <ServiceSheetContent
-                  ref={ticketContentRef}
-                  service={serviceForSheet}
-                  quote={quoteForViewing}
-                  vehicle={localVehicles.find(v => v.id === serviceForSheet.vehicleId)}
-                  workshopInfo={workshopInfo as WorkshopInfo}
-                  onViewImage={handleViewImage}
-              />
-          )}
-      </PrintTicketDialog>
-
-      <PrintTicketDialog
         open={isTicketPreviewOpen}
         onOpenChange={setIsTicketPreviewOpen}
         title="Comprobante de Servicio"
+        onDialogClose={() => {}}
         dialogContentClassName="printable-content"
         footerActions={
             <div className="flex gap-2">
