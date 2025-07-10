@@ -68,7 +68,16 @@ function HistorialServiciosPageComponent() {
   
   const activeServices = useMemo(() => {
     return allServices
-        .filter(s => s.status === 'En Taller' || s.status === 'Agendado')
+        .filter(s => {
+            if (s.status === 'En Taller') {
+                return true;
+            }
+            if (s.status === 'Entregado') {
+                const deliveryDate = s.deliveryDateTime ? parseISO(s.deliveryDateTime) : null;
+                return deliveryDate && isValid(deliveryDate) && isToday(deliveryDate);
+            }
+            return false;
+        })
         .sort((a,b) => parseISO(a.serviceDate).getTime() - parseISO(b.serviceDate).getTime());
   }, [allServices]);
 
@@ -239,7 +248,3 @@ export default function HistorialServiciosPageWrapper() {
         </Suspense>
     )
 }
-
-    
-
-    
