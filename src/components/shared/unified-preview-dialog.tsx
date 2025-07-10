@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Printer, MessageSquare, Copy, Eye, Download } from 'lucide-react';
 import type { ServiceRecord, Vehicle, QuoteRecord, WorkshopInfo } from '@/types';
 import { ServiceSheetContent } from '@/components/service-sheet-content';
-import { placeholderServiceRecords } from '@/lib/placeholder-data';
+import { placeholderServiceRecords, placeholderVehicles } from '@/lib/placeholder-data';
 import { useToast } from '@/hooks/use-toast';
 import { TicketContent } from '@/components/ticket-content';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../ui/dialog';
@@ -31,13 +31,14 @@ export function UnifiedPreviewDialog({ open, onOpenChange, service }: UnifiedPre
 
   useEffect(() => {
     if (open && service) {
-      // Find the associated quote if it exists
-      const foundQuote = placeholderServiceRecords.find(s => s.id === service.id && s.status === 'Cotizacion');
+      // Find the associated quote if it exists by looking for a record with the same ID and a quoteDate.
+      // This is more robust than checking for status === 'Cotizacion'.
+      const foundQuote = placeholderServiceRecords.find(s => s.id === service.id && s.quoteDate);
       setAssociatedQuote(foundQuote || null);
 
       // Find the associated vehicle
-      const foundVehicle = placeholderServiceRecords.find(v => v.id === service.vehicleId);
-      setVehicle(foundVehicle as Vehicle | null); // Assuming vehicle data is within service records for simplicity, adjust as needed
+      const foundVehicle = placeholderVehicles.find(v => v.id === service.vehicleId);
+      setVehicle(foundVehicle || null);
       
       const storedWorkshopInfo = localStorage.getItem("workshopTicketInfo");
       if (storedWorkshopInfo) {
@@ -48,13 +49,25 @@ export function UnifiedPreviewDialog({ open, onOpenChange, service }: UnifiedPre
 
   const handleShareService = useCallback(() => {
     if (!service || !service.publicId) {
-      toast({ title: "Enlace no disponible", variant: "default" });
+      toast({ title: "Enlace no disponible", description: 'No se ha podido generar el enlace público.', variant: "default" });
       return;
     }
+    const vehicleForShare = placeholderVehicles.find(v => v.id === service.vehicleId);
+    if (!vehicleForShare) {
+        toast({ title: "Faltan Datos", description: "No se encontró el vehículo asociado.", variant: "destructive" });
+        return;
+    }
     const shareUrl = `${window.location.origin}/s/${service.publicId}`;
-    const message = `Consulta la hoja de servicio aquí: ${shareUrl}`;
+    const message = `Hola, ${vehicleForShare.ownerName || 'Cliente'}:
+
+Consulta los detalles de tu servicio para el vehículo ${vehicleForShare.make} ${vehicleForShare.model} en el siguiente enlace:
+
+${shareUrl}
+
+¡Gracias por confiar en nosotros!`;
+
     navigator.clipboard.writeText(message).then(() => {
-      toast({ title: 'Mensaje Copiado', description: 'El mensaje para WhatsApp ha sido copiado.' });
+      toast({ title: 'Mensaje Copiado', description: 'El mensaje para WhatsApp ha sido copiado a tu portapapeles.' });
     });
   }, [service, toast]);
   
@@ -76,7 +89,7 @@ export function UnifiedPreviewDialog({ open, onOpenChange, service }: UnifiedPre
         onOpenChange={onOpenChange}
         title="Vista Previa Unificada"
         onDialogClose={() => {}}
-        dialogContentClassName="printable-quote-dialog"
+        dialogContentClassName="printable-quote-dialog max-w-4xl"
         footerActions={
           <div className="flex flex-col sm:flex-row gap-2">
             <Button onClick={() => handleShareService()} variant="outline"><MessageSquare className="mr-2 h-4 w-4" /> Copiar para WhatsApp</Button>
