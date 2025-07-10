@@ -6,7 +6,7 @@ import dynamic from "next/dynamic";
 import { parseISO, isToday, isValid, isSameDay } from "date-fns";
 import { PageHeader } from "@/components/page-header";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { placeholderServiceRecords, placeholderInventory, placeholderSales, calculateSaleProfit, placeholderTechnicians } from "@/lib/placeholder-data";
+import { placeholderServiceRecords, placeholderInventory, placeholderSales, calculateSaleProfit, placeholderTechnicians, hydrateReady } from "@/lib/placeholder-data";
 import type { User, CapacityAnalysisOutput, PurchaseRecommendation } from "@/types";
 import { BrainCircuit, Loader2, ShoppingCart, AlertTriangle, Printer, Wrench, DollarSign, PackageSearch, CheckCircle } from "lucide-react"; 
 import { useToast } from "@/hooks/use-toast";
@@ -115,13 +115,13 @@ export default function DashboardPage() {
       return isValid(serviceDay) && isToday(serviceDay);
     });
 
-    const salesToday = placeholderSales.filter(s => isSameDay(parseISO(s.saleDate), clientToday));
-    const servicesCompletedToday = placeholderServiceRecords.filter(s => s.status === 'Completado' && s.deliveryDateTime && isSameDay(parseISO(s.deliveryDateTime), clientToday));
+    const salesToday = placeholderSales.filter(s => s.saleDate && isValid(parseISO(s.saleDate)) && isSameDay(parseISO(s.saleDate), clientToday));
+    const servicesCompletedToday = placeholderServiceRecords.filter(s => s.status === 'Completado' && s.deliveryDateTime && isValid(parseISO(s.deliveryDateTime)) && isSameDay(parseISO(s.deliveryDateTime), clientToday));
     
     const revenueFromSales = salesToday.reduce((sum, s) => sum + s.totalAmount, 0);
-    const revenueFromServices = servicesCompletedToday.reduce((sum, s) => sum + s.totalCost, 0);
+    const revenueFromServices = servicesCompletedToday.reduce((sum, s) => sum + (s.totalCost || 0), 0);
     
-    const profitFromSales = salesToday.reduce((sum, s) => sum + calculateSaleProfit(s, placeholderInventory, 0.16), 0);
+    const profitFromSales = salesToday.reduce((sum, s) => sum + calculateSaleProfit(s, placeholderInventory), 0);
     const profitFromServices = servicesCompletedToday.reduce((sum, s) => sum + (s.serviceProfit || 0), 0);
 
     setKpiData({
@@ -134,34 +134,39 @@ export default function DashboardPage() {
 
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const authUserString = localStorage.getItem('authUser');
-      if (authUserString) {
-        try {
-          const authUser: User = JSON.parse(authUserString);
-          setUserName(authUser.name);
-        } catch (e) {
-          console.error("Failed to parse authUser for dashboard welcome message:", e);
-          setUserName(null);
+    const init = async () => {
+        await hydrateReady; // Wait for hydration to complete
+        if (typeof window !== 'undefined') {
+          const authUserString = localStorage.getItem('authUser');
+          if (authUserString) {
+            try {
+              const authUser: User = JSON.parse(authUserString);
+              setUserName(authUser.name);
+            } catch (e) {
+              console.error("Failed to parse authUser for dashboard welcome message:", e);
+              setUserName(null);
+            }
+          } else {
+             setUserName(null);
+          }
+          const stored = localStorage.getItem('workshopTicketInfo');
+          if (stored) {
+            try {
+              const info = JSON.parse(stored);
+              if (info.name) setWorkshopName(info.name);
+            } catch (e) {
+              console.error("Failed to parse workshop info", e);
+            }
+          }
         }
-      } else {
-         setUserName(null);
-      }
-      const stored = localStorage.getItem('workshopTicketInfo');
-      if (stored) {
-        try {
-          const info = JSON.parse(stored);
-          if (info.name) setWorkshopName(info.name);
-        } catch (e) {
-          console.error("Failed to parse workshop info", e);
-        }
-      }
-    }
-    calculateKpiData();
+        calculateKpiData();
+    };
+    init();
   }, [calculateKpiData]);
   
   useEffect(() => {
     const runCapacityAnalysis = async () => {
+      await hydrateReady;
       setIsCapacityLoading(true);
       setCapacityError(null);
       try {
