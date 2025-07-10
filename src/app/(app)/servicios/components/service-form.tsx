@@ -45,7 +45,17 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/label";
 import { suggestQuote } from '@/ai/flows/quote-suggestion-flow';
 import { enhanceText } from '@/ai/flows/text-enhancement-flow';
@@ -327,7 +337,7 @@ export function ServiceForm({
         serviceDate: isValid(parseDate(data?.serviceDate)) ? parseDate(data.serviceDate) : undefined,
         quoteDate: isValid(parseDate(data?.quoteDate)) ? parseDate(data.quoteDate) : undefined,
         deliveryDateTime: isValid(parseDate((data as ServiceRecord)?.deliveryDateTime)) ? parseDate((data as ServiceRecord)?.deliveryDateTime) : undefined,
-        mileage: data?.mileage || undefined, description: (data as any).description || "",
+        mileage: data?.mileage || undefined, description: data?.description || "",
         notes: data?.notes || "", technicianId: (data as ServiceRecord)?.technicianId || (data as QuoteRecord)?.preparedByTechnicianId || undefined,
         status: data?.status || (mode === 'quote' ? 'Cotizacion' : 'Agendado'),
         serviceType: (data as ServiceRecord)?.serviceType || (data as QuoteRecord)?.serviceType || 'Servicio General',
@@ -350,23 +360,28 @@ export function ServiceForm({
     }
   }, [initialDataService, initialDataQuote, mode, form, isReadOnly, refreshCurrentUser]);
   
- const handlePhotoUploadComplete = useCallback(
+  const handlePhotoUploadComplete = useCallback(
     (reportIndex: number, url: string) => {
-      const currentPhotos = getValues(`photoReports.${reportIndex}.photos`) || [];
-      setValue(`photoReports.${reportIndex}.photos`, [...currentPhotos, url], { shouldDirty: true });
+      const currentPhotos =
+        getValues(`photoReports.${reportIndex}.photos`) || [];
+      setValue(
+        `photoReports.${reportIndex}.photos`,
+        [...currentPhotos, url],
+        { shouldDirty: true }
+      );
     },
     [getValues, setValue]
   );
   
   const handleChecklistPhotoUpload = useCallback(
-    (itemName: string, urls: string[]) => {
-        const path = `safetyInspection.${itemName}` as const;
-        const current = getValues(path) || { status: "na", photos: [] };
-        setValue(
-            path,
-            { ...current, photos: [...current.photos, ...urls] },
-            { shouldDirty: true }
-        );
+    (itemName: string, url: string) => {
+      const path = `safetyInspection.${itemName}` as const;
+      const current = getValues(path) || { status: "na", photos: [] };
+      setValue(
+        path,
+        { ...current, photos: [...current.photos, url] },
+        { shouldDirty: true }
+      );
     },
     [getValues, setValue]
   );
@@ -433,7 +448,7 @@ export function ServiceForm({
     const wasPreviouslyCompleted = originalStatusRef.current === 'Completado';
     if (isNowCompleted && !wasPreviouslyCompleted) {
         let inventoryWasUpdated = false;
-        values.serviceItems.forEach(item => {
+        (values.serviceItems || []).forEach(item => {
           (item.suppliesUsed || []).forEach(supply => {
             const idx = placeholderInventory.findIndex(i => i.id === supply.supplyId);
             if (idx !== -1 && !placeholderInventory[idx].isService) {
@@ -450,7 +465,7 @@ export function ServiceForm({
         id: values.id || generateUniqueId(),
         publicId: values.publicId || `s_${generateUniqueId().toLowerCase()}`,
         vehicleId: getValues('vehicleId')!,
-        description: values.serviceItems.map(item => item.name).join(', ') || 'Servicio',
+        description: (values.serviceItems || []).map(item => item.name).join(', ') || 'Servicio',
         technicianId: values.technicianId || '',
         status: values.status || 'Agendado',
         totalCost: totalCost, 
@@ -469,7 +484,7 @@ export function ServiceForm({
 
     if (values.status === 'Completado') {
         const deliveryDate = dataToSave.deliveryDateTime ? new Date(dataToSave.deliveryDateTime) : new Date();
-        const oilSupply = values.serviceItems.flatMap(i => i.suppliesUsed).map(s => currentInventoryItems.find(item => item.id === s.supplyId)).find(item => item?.category?.toLowerCase().includes('aceite'));
+        const oilSupply = (values.serviceItems || []).flatMap(i => i.suppliesUsed).map(s => currentInventoryItems.find(item => item.id === s.supplyId)).find(item => item?.category?.toLowerCase().includes('aceite'));
         if (oilSupply?.rendimiento) {
             dataToSave.nextServiceInfo = { date: addDays(deliveryDate, 183).toISOString(), mileage: (values.mileage || 0) + oilSupply.rendimiento };
         } else {
@@ -481,7 +496,7 @@ export function ServiceForm({
     await onSubmit(dataToSave);
     toast({ title: `${!initialData?.id ? 'Creado' : 'Actualizado'} con Éxito` });
     onClose();
-  }, [isReadOnly, onClose, getValues, onSubmit, toast, technicians, totalCost, serviceProfit, workshopInfo, initialData, localVehicles, currentInventoryItems, totalSuppliesWorkshopCost]);
+  }, [isReadOnly, onClose, getValues, onSubmit, toast, technicians, totalCost, totalSuppliesWorkshopCost, serviceProfit, workshopInfo, initialData, localVehicles, currentInventoryItems]);
 
   const handlePrintSheet = useCallback(() => {
     const serviceData = form.getValues() as ServiceRecord;
