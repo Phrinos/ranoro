@@ -1,3 +1,4 @@
+
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -19,7 +20,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription} from '@/components/ui/card';
-import { CalendarIcon, PlusCircle, Trash2, BrainCircuit, Loader2, Printer, Ban, ShieldQuestion, Wrench, Wallet, CreditCard, Send, WalletCards, ArrowRightLeft, ShieldCheck, Copy, Eye, Download, Camera, CheckCircle } from "lucide-react";
+import { CalendarIcon, PlusCircle, Trash2, BrainCircuit, Loader2, Printer, Ban, ShieldQuestion, Wrench, Wallet, CreditCard, Send, WalletCards, ArrowRightLeft, ShieldCheck, Copy, Eye, Download, Camera, CheckCircle, FileCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format, parseISO, setHours, setMinutes, isValid, startOfDay, addDays } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -203,17 +204,10 @@ interface ServiceFormProps {
   mode?: 'service' | 'quote';
   onDelete?: (id: string) => void;
   onCancelService?: (serviceId: string, reason: string) => void;
+  onViewQuoteRequest?: (serviceId: string) => void;
 }
 
 const IVA_RATE = 0.16;
-
-const paymentMethodIcons: Record<PaymentMethod, React.ElementType> = {
-  "Efectivo": Wallet,
-  "Tarjeta": CreditCard,
-  "Transferencia": Send,
-  "Efectivo+Transferencia": WalletCards,
-  "Tarjeta+Transferencia": ArrowRightLeft,
-};
 
 const generateUniqueId = () => (Date.now().toString(36) + Math.random().toString(36).slice(2, 9)).toUpperCase();
 
@@ -235,7 +229,6 @@ export function ServiceForm({
   
   const initialData = mode === 'service' ? initialDataService : initialDataQuote;
   
-  // State Management
   const [localVehicles, setLocalVehicles] = useState<Vehicle[]>(parentVehicles);
   const [currentInventoryItems, setCurrentInventoryItems] = useState<InventoryItem[]>(inventoryItemsProp);
   const [workshopInfo, setWorkshopInfo] = useState<WorkshopInfo | {}>({});
@@ -243,7 +236,6 @@ export function ServiceForm({
   const [isEnhancingText, setIsEnhancingText] = useState<string | null>(null);
   const [cancellationReason, setCancellationReason] = useState('');
   
-  // Dialog States
   const [isVehicleDialogOpen, setIsVehicleDialogOpen] = useState(false);
   const [newVehicleInitialData, setNewVehicleInitialData] = useState<Partial<VehicleFormValues> | null>(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
@@ -257,11 +249,9 @@ export function ServiceForm({
   const [viewingImageUrl, setViewingImageUrl] = useState<string | null>(null);
   const [isCancelAlertOpen, setIsCancelAlertOpen] = useState(false);
   
-  // Refs
   const freshUserRef = useRef<User | null>(null);
   const originalStatusRef = useRef(initialDataService?.status || initialDataQuote?.status);
 
-  // Form setup
   const form = useForm<ServiceFormValues>({
     resolver: zodResolver(serviceFormSchemaBase),
     defaultValues: {
@@ -273,17 +263,14 @@ export function ServiceForm({
   });
   const { control, getValues, setValue } = form;
 
-  const stableServiceId = useMemo(() => getValues('id') || `SRV_${generateUniqueId()}`, [getValues]);
+  const stableServiceId = useMemo(() => initialData?.id || getValues('id') || `SRV_${generateUniqueId()}`, [initialData?.id, getValues]);
 
   const { fields: serviceItemsFields, append: appendServiceItem, remove: removeServiceItem } = useFieldArray({ control, name: "serviceItems" });
   const { fields: photoReportFields, append: appendPhotoReport, remove: removePhotoReport } = useFieldArray({ control, name: "photoReports" });
   
-  // Watched values
   const watchedStatus = useWatch({ control, name: 'status' });
-  const selectedPaymentMethod = useWatch({ control, name: 'paymentMethod' });
   const watchedServiceItems = useWatch({ control, name: "serviceItems" });
 
-  // Memoized computations
   const { totalCost, totalSuppliesWorkshopCost, serviceProfit } = useMemo(() => {
     let calculatedTotalCost = 0;
     let workshopCost = 0;
@@ -306,7 +293,6 @@ export function ServiceForm({
   const showReceptionTab = useMemo(() => mode === 'service' && watchedStatus !== 'Cotizacion' && watchedStatus !== 'Agendado', [mode, watchedStatus]);
   const showReportTab = useMemo(() => mode === 'service' && watchedStatus !== 'Agendado' && watchedStatus !== 'Cotizacion', [mode, watchedStatus]);
 
-  // Effects
   useEffect(() => { setLocalVehicles(parentVehicles); }, [parentVehicles]);
   useEffect(() => { setCurrentInventoryItems(inventoryItemsProp); }, [inventoryItemsProp]);
 
@@ -368,9 +354,8 @@ export function ServiceForm({
           photoReports: [{ id: `rep_recepcion_${Date.now()}`, date: new Date().toISOString(), description: "Notas de la Recepción", photos: [] }],
       });
     }
-  }, [initialDataService, initialDataQuote, mode, form, isReadOnly]);
+  }, [initialDataService, initialDataQuote, mode, form, isReadOnly, stableServiceId]);
   
-  // Callbacks
   const handlePhotoUploadComplete = useCallback((reportIndex: number, urls: string[]) => {
     const currentPhotos = getValues(`photoReports.${reportIndex}.photos`) || [];
     setValue(`photoReports.${reportIndex}.photos`, [...currentPhotos, ...urls], { shouldDirty: true });
@@ -574,3 +559,4 @@ export function ServiceForm({
     </>
   );
 }
+
