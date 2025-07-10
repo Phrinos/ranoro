@@ -46,7 +46,7 @@ import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../../../../lib/firebaseClient.js';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SignatureDialog } from './signature-dialog';
-import { formatCurrency, capitalizeSentences } from '@/lib/utils';
+import { formatCurrency, capitalizeSentences, normalizeDataUrl } from '@/lib/utils';
 import { savePublicDocument } from "@/lib/public-document";
 import { PhotoUploader } from "./PhotoUploader";
 import { ServiceItemCard } from './ServiceItemCard';
@@ -273,7 +273,7 @@ export function ServiceForm({
   const watchedStatus = useWatch({ control, name: 'status' });
   const watchedServiceItems = useWatch({ control, name: "serviceItems" });
 
-  const { totalCost, totalSuppliesCost, serviceProfit } = useMemo(() => {
+  const { totalCost, totalSuppliesWorkshopCost, serviceProfit } = useMemo(() => {
     let calculatedTotalCost = 0;
     let workshopCost = 0;
     for (const item of watchedServiceItems) {
@@ -573,50 +573,50 @@ export function ServiceForm({
             
             <TabsContent value="reporte" className="mt-4">
               <Card>
-                  <CardHeader>
-                      <CardTitle>Reporte Fotográfico</CardTitle>
-                      <CardDescription>Documenta el progreso o hallazgos con imágenes. Puedes crear múltiples grupos de fotos.</CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-6">
-                      {photoReportFields.map((field, index) => (
-                          <div key={field.id} className="p-4 border rounded-lg bg-muted/30">
-                              <FormField
-                                  control={control}
-                                  name={`photoReports.${index}.description`}
-                                  render={({ field: descField }) => (
-                                      <FormItem>
-                                          <FormLabel className="flex justify-between items-center text-base font-semibold">
-                                              <span>Descripción del Grupo de Fotos #{index + 1}</span>
-                                              {!isReadOnly && <Button type="button" size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={() => removePhotoReport(index)}><Trash2 className="h-4 w-4"/></Button>}
-                                          </FormLabel>
-                                          <FormControl>
-                                              <Textarea placeholder="Ej: Evidencia de recepción, daño encontrado, reparación completada..." {...descField} disabled={isReadOnly} />
-                                          </FormControl>
-                                      </FormItem>
-                                  )}
-                              />
-                               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-2">
-                                  {field.photos.map((photoUrl, photoIndex) => (
-                                      <div key={photoIndex} className="relative aspect-video w-full group">
-                                          <Image src={photoUrl} alt={`Foto ${photoIndex + 1}`} layout="fill" objectFit="cover" className="rounded-md" />
-                                          <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                <CardHeader>
+                    <CardTitle>Reporte Fotográfico</CardTitle>
+                    <CardDescription>Documenta el progreso o hallazgos con imágenes. Puedes crear múltiples grupos de fotos.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                    {photoReportFields.map((field, index) => (
+                        <div key={field.id} className="p-4 border rounded-lg bg-muted/30">
+                            <FormField
+                                control={control}
+                                name={`photoReports.${index}.description`}
+                                render={({ field: descField }) => (
+                                    <FormItem>
+                                        <FormLabel className="flex justify-between items-center text-base font-semibold">
+                                            <span>Descripción del Grupo de Fotos #{index + 1}</span>
+                                            {!isReadOnly && <Button type="button" size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={() => removePhotoReport(index)}><Trash2 className="h-4 w-4"/></Button>}
+                                        </FormLabel>
+                                        <FormControl>
+                                            <Textarea placeholder="Ej: Evidencia de recepción, daño encontrado, reparación completada..." {...descField} disabled={isReadOnly} />
+                                        </FormControl>
+                                    </FormItem>
+                                )}
+                            />
+                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-2">
+                                {(field.photos || []).map((photoUrl, photoIndex) => (
+                                    <div key={photoIndex} className="relative aspect-video w-full group">
+                                        <Image src={photoUrl} alt={`Foto ${photoIndex + 1}`} layout="fill" objectFit="cover" className="rounded-md" />
+                                        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                                             <Button type="button" size="icon" variant="ghost" className="text-white hover:text-white" onClick={() => handleViewImage(photoUrl)}><Eye className="h-5 w-5"/></Button>
-                                          </div>
-                                      </div>
-                                  ))}
-                              </div>
-                              <PhotoUploader 
-                                  reportIndex={index} 
-                                  serviceId={watchedId || ''}
-                                  onUploadComplete={handlePhotoUploadComplete} 
-                                  photosLength={field.photos.length}
-                                  disabled={isReadOnly || !watchedId}
-                                  maxPhotos={5}
-                              />
-                          </div>
-                      ))}
-                      {!isReadOnly && <Button type="button" variant="outline" onClick={() => appendPhotoReport({ id: `rep_${Date.now()}`, date: new Date().toISOString(), description: '', photos: []})}><PlusCircle className="mr-2 h-4 w-4"/>Nuevo Grupo de Fotos</Button>}
-                  </CardContent>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                            <PhotoUploader 
+                                reportIndex={index} 
+                                serviceId={watchedId || ''}
+                                onUploadComplete={handlePhotoUploadComplete} 
+                                photosLength={field.photos?.length || 0}
+                                disabled={isReadOnly || !watchedId}
+                                maxPhotos={5}
+                            />
+                        </div>
+                    ))}
+                    {!isReadOnly && <Button type="button" variant="outline" onClick={() => appendPhotoReport({ id: `rep_${Date.now()}`, date: new Date().toISOString(), description: '', photos: []})}><PlusCircle className="mr-2 h-4 w-4"/>Nuevo Grupo de Fotos</Button>}
+                </CardContent>
               </Card>
             </TabsContent>
             
