@@ -1,5 +1,3 @@
-
-
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -21,7 +19,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription} from '@/components/ui/card';
-import { CalendarIcon, PlusCircle, Search, Trash2, AlertCircle, Car as CarIcon, Clock, DollarSign, PackagePlus, BrainCircuit, Loader2, Printer, Plus, Minus, FileText, Signature, MessageSquare, Ban, ShieldQuestion, Wrench, Wallet, CreditCard, Send, WalletCards, ArrowRightLeft, Tag, FileCheck, Check, ShieldCheck, Copy, Eye, Download, Camera, CheckCircle } from "lucide-react";
+import { CalendarIcon, PlusCircle, Trash2, BrainCircuit, Loader2, Printer, Ban, ShieldQuestion, Wrench, Wallet, CreditCard, Send, WalletCards, ArrowRightLeft, ShieldCheck, Copy, Eye, Download, Camera, CheckCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format, parseISO, setHours, setMinutes, isValid, startOfDay, addDays } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -33,36 +31,27 @@ import type { VehicleFormValues } from "../../vehiculos/components/vehicle-form"
 import { 
     placeholderVehicles as defaultPlaceholderVehicles, 
     placeholderInventory, 
-    placeholderCategories, 
-    placeholderSuppliers, 
     placeholderServiceRecords as defaultServiceRecords, 
     persistToFirestore, 
     AUTH_USER_LOCALSTORAGE_KEY,
 } from '@/lib/placeholder-data';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger, AlertDialogDescription, AlertDialogFooter } from "@/components/ui/alert-dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger, AlertDialogDescription } from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { InventoryItemDialog } from "../../inventario/components/inventory-item-dialog";
-import type { InventoryItemFormValues } from "../../inventario/components/inventory-item-form";
-import { suggestQuote, type QuoteSuggestionInput } from '@/ai/flows/quote-suggestion-flow';
+import { suggestQuote } from '@/ai/flows/quote-suggestion-flow';
 import { enhanceText } from '@/ai/flows/text-enhancement-flow';
-import { Checkbox } from "@/components/ui/checkbox";
-import Image from "next/image";
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../../../../lib/firebaseClient.js';
-import { ref, getDownloadURL } from 'firebase/storage';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SignatureDialog } from './signature-dialog';
-import { capitalizeWords, formatCurrency, capitalizeSentences, optimizeImage } from '@/lib/utils';
+import { formatCurrency, capitalizeSentences } from '@/lib/utils';
 import { savePublicDocument } from "@/lib/public-document";
 import { PhotoUploader } from "./PhotoUploader";
 import { ServiceItemCard } from './ServiceItemCard';
 import { SafetyChecklist } from './SafetyChecklist';
 import { UnifiedPreviewDialog } from "@/components/shared/unified-preview-dialog";
 import { VehicleSelectionCard } from './VehicleSelectionCard';
-
+import { ReceptionAndDelivery } from './ReceptionAndDelivery';
 
 const supplySchema = z.object({
   supplyId: z.string().min(1, "Seleccione un insumo"),
@@ -124,7 +113,6 @@ const safetyInspectionSchema = z.object({
   technicianSignature: z.string().optional(),
 }).optional();
 
-
 const paymentMethods: [PaymentMethod, ...PaymentMethod[]] = [
   "Efectivo",
   "Tarjeta",
@@ -134,12 +122,12 @@ const paymentMethods: [PaymentMethod, ...PaymentMethod[]] = [
 ];
 
 const serviceFormSchemaBase = z.object({
-  id: z.string().optional(), // For identifying existing records
+  id: z.string().optional(), 
   publicId: z.string().optional(),
   vehicleId: z.string({required_error: "Debe seleccionar o registrar un vehículo."}).min(1, "Debe seleccionar o registrar un vehículo.").optional(),
   vehicleLicensePlateSearch: z.string().optional(),
   serviceDate: z.date().optional(),
-  quoteDate: z.date().optional(), // For quote mode
+  quoteDate: z.date().optional(), 
   mileage: z.coerce.number({ invalid_type_error: "El kilometraje debe ser numérico." }).int("El kilometraje debe ser un número entero.").min(0, "El kilometraje no puede ser negativo.").optional(),
   description: z.string().optional(),
   notes: z.string().optional(),
@@ -207,13 +195,12 @@ interface ServiceFormProps {
   initialDataQuote?: Partial<QuoteRecord> | null;
   vehicles: Vehicle[];
   technicians: Technician[];
-  inventoryItems: InventoryItem[]; // Prop for initial inventory items
+  inventoryItems: InventoryItem[]; 
   onSubmit: (data: ServiceRecord | QuoteRecord) => Promise<void>;
   onClose: () => void;
   isReadOnly?: boolean;
   onVehicleCreated?: (newVehicle: Vehicle) => void; 
   mode?: 'service' | 'quote';
-  onInventoryItemCreatedFromService?: (newItem: InventoryItem) => void; // Optional: To notify parent of new items
   onDelete?: (id: string) => void;
   onCancelService?: (serviceId: string, reason: string) => void;
 }
@@ -241,7 +228,6 @@ export function ServiceForm({
   isReadOnly = false,
   onVehicleCreated,
   mode = 'service',
-  onInventoryItemCreatedFromService,
   onDelete,
   onCancelService,
 }: ServiceFormProps) {
@@ -249,29 +235,33 @@ export function ServiceForm({
   
   const initialData = mode === 'service' ? initialDataService : initialDataQuote;
   
+  // State Management
   const [localVehicles, setLocalVehicles] = useState<Vehicle[]>(parentVehicles);
-  const [isVehicleDialogOpen, setIsVehicleDialogOpen] = useState(false);
-  const [newVehicleInitialData, setNewVehicleInitialData] = useState<Partial<VehicleFormValues> | null>(null);
-
   const [currentInventoryItems, setCurrentInventoryItems] = useState<InventoryItem[]>(inventoryItemsProp);
   const [workshopInfo, setWorkshopInfo] = useState<WorkshopInfo | {}>({});
-
   const [isGeneratingQuote, setIsGeneratingQuote] = useState(false);
+  const [isEnhancingText, setIsEnhancingText] = useState<string | null>(null);
+  const [cancellationReason, setCancellationReason] = useState('');
   
+  // Dialog States
+  const [isVehicleDialogOpen, setIsVehicleDialogOpen] = useState(false);
+  const [newVehicleInitialData, setNewVehicleInitialData] = useState<Partial<VehicleFormValues> | null>(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [serviceForPreview, setServiceForPreview] = useState<ServiceRecord | null>(null);
-  
   const [isServiceDatePickerOpen, setIsServiceDatePickerOpen] = useState(false);
   const [isDeliveryDatePickerOpen, setIsDeliveryDatePickerOpen] = useState(false);
-  
-  const freshUserRef = useRef<User | null>(null);
   const [isTechSignatureDialogOpen, setIsTechSignatureDialogOpen] = useState(false);
-  const [isEnhancingText, setIsEnhancingText] = useState<string | null>(null);
-  
-  const [viewingImageUrl, setViewingImageUrl] = useState<string | null>(null);
+  const [isCustomerSignatureDialogOpen, setIsCustomerSignatureDialogOpen] = useState(false);
+  const [customerSignatureType, setCustomerSignatureType] = useState<'reception' | 'delivery'>('reception');
   const [isImageViewerOpen, setIsImageViewerOpen] = useState(false);
+  const [viewingImageUrl, setViewingImageUrl] = useState<string | null>(null);
+  const [isCancelAlertOpen, setIsCancelAlertOpen] = useState(false);
   
+  // Refs
+  const freshUserRef = useRef<User | null>(null);
+  const originalStatusRef = useRef(initialDataService?.status || initialDataQuote?.status);
 
+  // Form setup
   const form = useForm<ServiceFormValues>({
     resolver: zodResolver(serviceFormSchemaBase),
     defaultValues: {
@@ -281,165 +271,76 @@ export function ServiceForm({
         photoReports: [],
     }
   });
-  
-  const serviceId = form.watch('id') || `SRV_${generateUniqueId()}`;
-  
   const { control, getValues, setValue } = form;
-  const originalStatusRef = useRef(initialDataService?.status || initialDataQuote?.status);
+
+  const stableServiceId = useMemo(() => getValues('id') || `SRV_${generateUniqueId()}`, [getValues]);
+
+  const { fields: serviceItemsFields, append: appendServiceItem, remove: removeServiceItem } = useFieldArray({ control, name: "serviceItems" });
+  const { fields: photoReportFields, append: appendPhotoReport, remove: removePhotoReport } = useFieldArray({ control, name: "photoReports" });
+  
+  // Watched values
   const watchedStatus = useWatch({ control, name: 'status' });
   const selectedPaymentMethod = useWatch({ control, name: 'paymentMethod' });
-  const customerSignatureReception = useWatch({ control, name: 'customerSignatureReception' });
-  const customerSignatureDelivery = useWatch({ control, name: 'customerSignatureDelivery' });
-  const technicianSignature = useWatch({ control, name: 'safetyInspection.technicianSignature' });
-
-  const { fields: serviceItemsFields, append: appendServiceItem, remove: removeServiceItem, update: updateServiceItem } = useFieldArray({
-    control: form.control,
-    name: "serviceItems",
-  });
-  
-  const { fields: photoReportFields, append: appendPhotoReport, remove: removePhotoReport, update: updatePhotoReport } = useFieldArray({
-    control: form.control,
-    name: "photoReports",
-  });
-  
-  const handlePhotoUploadComplete = useCallback((reportIndex: number, urls: string[]) => {
-    const currentPhotos = getValues(`photoReports.${reportIndex}.photos`) || [];
-    setValue(`photoReports.${reportIndex}.photos`, [...currentPhotos, ...urls], { shouldDirty: true });
-  }, [getValues, setValue]);
-  
-  const handleViewImage = (url: string) => {
-    setViewingImageUrl(url);
-    setIsImageViewerOpen(true);
-  };
-
   const watchedServiceItems = useWatch({ control, name: "serviceItems" });
 
+  // Memoized computations
   const { totalCost, totalSuppliesWorkshopCost, serviceProfit } = useMemo(() => {
     let calculatedTotalCost = 0;
     let workshopCost = 0;
-
     for (const item of watchedServiceItems) {
         calculatedTotalCost += Number(item.price) || 0;
         if (item.suppliesUsed) {
             for (const supply of item.suppliesUsed) {
-                const inventoryItem = currentInventoryItems.find(i => i.id === supply.supplyId);
-                const costPerUnit = inventoryItem?.unitPrice ?? supply.unitPrice ?? 0;
+                const costPerUnit = supply.unitPrice ?? 0;
                 workshopCost += (costPerUnit * supply.quantity);
             }
         }
     }
-    const calculatedProfit = calculatedTotalCost - workshopCost;
-
     return {
       totalCost: calculatedTotalCost,
       totalSuppliesWorkshopCost: workshopCost,
-      serviceProfit: calculatedProfit,
+      serviceProfit: calculatedTotalCost - workshopCost,
     };
-}, [watchedServiceItems, currentInventoryItems]);
+  }, [watchedServiceItems]);
 
+  const showReceptionTab = useMemo(() => mode === 'service' && watchedStatus !== 'Cotizacion' && watchedStatus !== 'Agendado', [mode, watchedStatus]);
+  const showReportTab = useMemo(() => mode === 'service' && watchedStatus !== 'Agendado' && watchedStatus !== 'Cotizacion', [mode, watchedStatus]);
+
+  // Effects
+  useEffect(() => { setLocalVehicles(parentVehicles); }, [parentVehicles]);
+  useEffect(() => { setCurrentInventoryItems(inventoryItemsProp); }, [inventoryItemsProp]);
 
   const refreshCurrentUser = useCallback(() => {
-    if (typeof window === "undefined") return;
-    const authUserString = localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY);
-    if (authUserString) {
-      try {
-        freshUserRef.current = JSON.parse(authUserString);
-      } catch (e) {
-        console.error("Failed to parse user from localStorage:", e);
-        freshUserRef.current = null;
-      }
-    } else {
-      freshUserRef.current = null;
-    }
+    const authUserString = typeof window !== "undefined" ? localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY) : null;
+    freshUserRef.current = authUserString ? JSON.parse(authUserString) : null;
   }, []);
 
-  // Effect to auto-populate dates when status changes
   useEffect(() => {
-    const initialStatus = originalStatusRef.current;
-    
-    if (watchedStatus === 'Agendado' && initialStatus === 'Cotizacion') {
-        if (!getValues('serviceDate')) {
-            setValue('serviceDate', setHours(setMinutes(new Date(), 30), 8), { shouldDirty: true });
-        }
-    }
-    
-    if (watchedStatus === 'Completado' && initialStatus !== 'Completado') {
-        if (!getValues('deliveryDateTime')) {
-            setValue('deliveryDateTime', new Date(), { shouldDirty: true });
-        }
-    }
-
-    if (watchedStatus === 'Cotizacion' && !getValues('quoteDate')) {
-        setValue('quoteDate', new Date());
-    }
-
-  }, [watchedStatus, getValues, setValue]);
-
-  useEffect(() => {
-    refreshCurrentUser(); // Initial load
+    refreshCurrentUser();
+    const storedWorkshopInfo = typeof window !== "undefined" ? localStorage.getItem("workshopTicketInfo") : null;
+    if (storedWorkshopInfo) setWorkshopInfo(JSON.parse(storedWorkshopInfo));
     window.addEventListener('focus', refreshCurrentUser);
-    return () => {
-      window.removeEventListener('focus', refreshCurrentUser);
-    };
+    return () => window.removeEventListener('focus', refreshCurrentUser);
   }, [refreshCurrentUser]);
-  
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-        const storedWorkshopInfo = localStorage.getItem("workshopTicketInfo");
-        if (storedWorkshopInfo) {
-          setWorkshopInfo(JSON.parse(storedWorkshopInfo));
-        }
-    }
-  }, []);
 
-  // Main effect to set form values from initialData
   useEffect(() => {
     const data = mode === 'service' ? initialDataService : initialDataQuote;
-    
-    refreshCurrentUser();
     const currentUser = freshUserRef.current;
     
     if (data) {
-        
-        let serviceItemsData: ServiceItem[] = ('serviceItems' in data && Array.isArray(data.serviceItems))
-            ? data.serviceItems.map(item => ({
-                ...item, price: item.price ?? 0,
-                suppliesUsed: (item.suppliesUsed || []).map(supply => ({
-                    ...supply,
-                    unitPrice: supply.unitPrice ?? currentInventoryItems.find(i => i.id === supply.supplyId)?.unitPrice ?? 0,
-                    sellingPrice: supply.sellingPrice ?? currentInventoryItems.find(i => i.id === supply.supplyId)?.sellingPrice ?? 0,
-                }))
-            }))
-            : [];
-        
         const parseDate = (date: any) => date && (typeof date.toDate === 'function' ? date.toDate() : (typeof date === 'string' ? parseISO(date) : date));
-        const serviceDate = parseDate(data.serviceDate);
-        const quoteDate = parseDate(data.quoteDate);
-        const deliveryDateTime = parseDate((data as ServiceRecord)?.deliveryDateTime);
-
-        const safetyInspectionData: any = {};
-        if (data.safetyInspection) {
-            for (const key in data.safetyInspection) {
-                const value = (data.safetyInspection as any)[key];
-                if (typeof value === 'string' && key !== 'inspectionNotes' && key !== 'technicianSignature') {
-                    safetyInspectionData[key] = { status: value, photos: [] };
-                } else {
-                    safetyInspectionData[key] = value;
-                }
-            }
-        }
         
         let photoReportsData = (data as ServiceRecord)?.photoReports || [];
         if (!isReadOnly && (!photoReportsData || photoReportsData.length === 0)) {
-            photoReportsData = [{ id: `rep_recepcion_${Date.now()}`, date: new Date().toISOString(), description: '', photos: [] }];
+            photoReportsData = [{ id: `rep_recepcion_${Date.now()}`, date: new Date().toISOString(), description: "Notas de la Recepción", photos: [] }];
         }
-
+        
         form.reset({
             id: data.id, publicId: (data as any)?.publicId, vehicleId: data.vehicleId ? String(data.vehicleId) : undefined,
             vehicleLicensePlateSearch: data.vehicleIdentifier || "",
-            serviceDate: isValid(serviceDate) ? serviceDate : undefined,
-            quoteDate: isValid(quoteDate) ? quoteDate : undefined,
-            deliveryDateTime: isValid(deliveryDateTime) ? deliveryDateTime : undefined,
+            serviceDate: isValid(parseDate(data.serviceDate)) ? parseDate(data.serviceDate) : undefined,
+            quoteDate: isValid(parseDate(data.quoteDate)) ? parseDate(data.quoteDate) : undefined,
+            deliveryDateTime: isValid(parseDate((data as ServiceRecord)?.deliveryDateTime)) ? parseDate((data as ServiceRecord)?.deliveryDateTime) : undefined,
             mileage: data.mileage || undefined, description: (data as any).description || "",
             notes: data.notes || "", technicianId: (data as ServiceRecord)?.technicianId || (data as QuoteRecord)?.preparedByTechnicianId || undefined,
             status: data.status || (mode === 'quote' ? 'Cotizacion' : 'Agendado'),
@@ -448,801 +349,228 @@ export function ServiceForm({
             customerItems: (data as ServiceRecord)?.customerItems || '',
             customerSignatureReception: (data as ServiceRecord)?.customerSignatureReception || undefined,
             customerSignatureDelivery: (data as ServiceRecord)?.customerSignatureDelivery || undefined,
-            serviceItems: serviceItemsData, safetyInspection: safetyInspectionData, paymentMethod: (data as ServiceRecord)?.paymentMethod || 'Efectivo',
+            serviceItems: ('serviceItems' in data && Array.isArray(data.serviceItems)) ? data.serviceItems.map(item => ({ ...item, price: item.price ?? 0, suppliesUsed: item.suppliesUsed || [] })) : [],
+            safetyInspection: data.safetyInspection || {}, paymentMethod: (data as ServiceRecord)?.paymentMethod || 'Efectivo',
             cardFolio: (data as ServiceRecord)?.cardFolio || '', transferFolio: (initialData as ServiceRecord)?.transferFolio || '',
             nextServiceInfo: (data as ServiceRecord)?.nextServiceInfo, photoReports: photoReportsData,
             serviceAdvisorId: data.serviceAdvisorId || currentUser?.id || '',
             serviceAdvisorName: data.serviceAdvisorName || currentUser?.name || '',
             serviceAdvisorSignatureDataUrl: data.serviceAdvisorSignatureDataUrl || currentUser?.signatureDataUrl || '',
         });
-
-    } else { // New form
+    } else {
       form.reset({
-          id: `SRV_${generateUniqueId()}`, // Assign a stable ID on creation
+          id: stableServiceId,
           serviceAdvisorId: currentUser?.id || '', serviceAdvisorName: currentUser?.name || '', serviceAdvisorSignatureDataUrl: currentUser?.signatureDataUrl || '',
           status: mode === 'quote' ? 'Cotizacion' : 'Agendado',
           quoteDate: mode === 'quote' ? new Date() : undefined,
           serviceDate: mode === 'service' ? setHours(setMinutes(new Date(), 30), 8) : undefined,
           serviceItems: [{ id: `item_${Date.now()}`, name: '', price: undefined, suppliesUsed: [] }],
-          photoReports: [{ id: `rep_recepcion_${Date.now()}`, date: new Date().toISOString(), description: '', photos: [] }],
+          photoReports: [{ id: `rep_recepcion_${Date.now()}`, date: new Date().toISOString(), description: "Notas de la Recepción", photos: [] }],
       });
     }
-  }, [initialDataService, initialDataQuote, mode, localVehicles, currentInventoryItems, form, refreshCurrentUser, isReadOnly]);
+  }, [initialDataService, initialDataQuote, mode, form, isReadOnly]);
   
-  // Effect to sync signatures from public doc
-  useEffect(() => {
-    const syncSignatures = async () => {
-      const serviceData = mode === 'service' ? initialDataService : null;
-      if (serviceData?.id && serviceData.publicId && db) {
-        try {
-          const publicDocRef = doc(db, 'publicServices', serviceData.publicId);
-          const docSnap = await getDoc(publicDocRef);
-          if (docSnap.exists()) {
-            const publicData = docSnap.data() as ServiceRecord;
-            let changed = false;
+  // Callbacks
+  const handlePhotoUploadComplete = useCallback((reportIndex: number, urls: string[]) => {
+    const currentPhotos = getValues(`photoReports.${reportIndex}.photos`) || [];
+    setValue(`photoReports.${reportIndex}.photos`, [...currentPhotos, ...urls], { shouldDirty: true });
+  }, [getValues, setValue]);
 
-            if (publicData.customerSignatureReception && form.getValues('customerSignatureReception') !== publicData.customerSignatureReception) {
-              form.setValue('customerSignatureReception', publicData.customerSignatureReception);
-              changed = true;
-            }
-            if (publicData.customerSignatureDelivery && form.getValues('customerSignatureDelivery') !== publicData.customerSignatureDelivery) {
-              form.setValue('customerSignatureDelivery', publicData.customerSignatureDelivery);
-              changed = true;
-            }
+  const handleChecklistPhotoUpload = useCallback((itemName: string, urls: string[]) => {
+    const path = `safetyInspection.${itemName}` as const;
+    const currentItemValue = getValues(path) || { status: 'na', photos: [] };
+    const updatedPhotos = [...(currentItemValue.photos || []), ...urls];
+    setValue(path, { ...currentItemValue, photos: updatedPhotos }, { shouldDirty: true });
+  }, [getValues, setValue]);
 
-            if (changed) {
-              const serviceIndex = defaultServiceRecords.findIndex(s => s.id === serviceData.id);
-              if (serviceIndex > -1) {
-                if(publicData.customerSignatureReception) defaultServiceRecords[serviceIndex].customerSignatureReception = publicData.customerSignatureReception;
-                if(publicData.customerSignatureDelivery) defaultServiceRecords[serviceIndex].customerSignatureDelivery = publicData.customerSignatureDelivery;
-                await persistToFirestore(['serviceRecords']);
-              }
-              toast({ title: 'Firma Sincronizada', description: 'Se cargó una nueva firma de cliente.' });
-            }
-          }
-        } catch (e) {
-          console.error("Failed to sync signatures from public doc:", e);
-        }
-      }
-    };
-    syncSignatures();
-  }, [initialDataService, mode, form, toast]);
+  const handleViewImage = (url: string) => { setViewingImageUrl(url); setIsImageViewerOpen(true); };
 
-
-  useEffect(() => {
-    setLocalVehicles(parentVehicles);
-  }, [parentVehicles]);
-
-  useEffect(() => {
-    setCurrentInventoryItems(inventoryItemsProp);
-  }, [inventoryItemsProp]);
-
-  const showReceptionTab = useMemo(() => {
-    if (mode !== 'service') return false;
-    if (!watchedStatus || watchedStatus === 'Cotizacion' || watchedStatus === 'Agendado') {
-        return false;
-    }
-    return true;
-  }, [mode, watchedStatus]);
-  
-  const showReportTab = useMemo(() => {
-    if (mode !== 'service') return false;
-    const currentServiceType = form.getValues('serviceType');
-    if (!currentServiceType || (currentServiceType !== 'Servicio General' && currentServiceType !== 'Pintura' && currentServiceType !== 'Cambio de Aceite')) {
-        return false;
-    }
-    return watchedStatus !== 'Agendado' && watchedStatus !== 'Cotizacion';
-}, [mode, watchedStatus, form]);
-
-
-  const handleSaveNewVehicle = async (vehicleData: VehicleFormValues) => {
+  const handleSaveNewVehicle = useCallback(async (vehicleData: VehicleFormValues) => {
     const newVehicle: Vehicle = {
       id: generateUniqueId(),
       ...vehicleData,
       year: Number(vehicleData.year),
     };
-
     defaultPlaceholderVehicles.push(newVehicle);
     await persistToFirestore(['vehicles']);
-    
     setLocalVehicles(prev => [...prev, newVehicle]);
-
     setValue('vehicleId', String(newVehicle.id), { shouldValidate: true });
     setValue('vehicleLicensePlateSearch', newVehicle.licensePlate);
     setIsVehicleDialogOpen(false);
     toast({ title: "Vehículo Registrado", description: `Se registró ${newVehicle.make} ${newVehicle.model} (${newVehicle.licensePlate}).`});
-    if (onVehicleCreated) {
-        onVehicleCreated(newVehicle);
-    }
-  };
+    onVehicleCreated?.(newVehicle);
+  }, [onVehicleCreated, setValue, toast]);
 
-  const handleFormSubmit = async (values: ServiceFormValues) => {
-    if (isReadOnly) {
-        onClose();
-        return;
-    }
-    
-    const currentUser = freshUserRef.current;
-
-    if (!currentUser) {
-        toast({ title: "Error de Sesión", description: "No se pudo verificar su sesión. Por favor, inicie sesión de nuevo.", variant: "destructive" });
-        return;
-    }
-
-    const vehicleIdToSave = getValues('vehicleId');
-
-    if (!vehicleIdToSave) {
-        form.setError("vehicleLicensePlateSearch", { type: "manual", message: "Debe buscar y seleccionar un vehículo válido." });
-        toast({
-            title: "Vehículo no seleccionado",
-            description: "Por favor, busque un vehículo por su placa y selecciónelo de la lista. El vehículo debe estar cargado y visible antes de guardar.",
-            variant: "destructive"
-        });
-        return;
-    }
-
-    const isValidForm = await form.trigger();
-    if (!isValidForm) {
-        toast({
-            title: "Formulario Incompleto",
-            variant: "destructive",
-        });
-        return;
-    }
-    
-    // Logic to deduct inventory when a service is completed
-    const isNowCompleted = values.status === 'Completado';
-    const wasPreviouslyCompleted = originalStatusRef.current === 'Completado';
-
-    if (isNowCompleted && !wasPreviouslyCompleted) {
-      let inventoryWasUpdated = false;
-      (values.serviceItems || []).forEach(item => {
-        (item.suppliesUsed || []).forEach(supply => {
-          const inventoryItemIndex = placeholderInventory.findIndex(invItem => invItem.id === supply.supplyId);
-
-          if (inventoryItemIndex !== -1 && !placeholderInventory[inventoryItemIndex].isService) { // Only deduct stock for non-service items
-            const inventoryItem = placeholderInventory[inventoryItemIndex];
-            const quantityToDeduct = supply.quantity || 0;
-
-            if (inventoryItem.quantity < quantityToDeduct) {
-              toast({
-                title: "Stock insuficiente (Advertencia)",
-                description: `Se descontaron ${quantityToDeduct} de "${inventoryItem.name}", pero solo había ${inventoryItem.quantity}. El stock es ahora negativo.`,
-                variant: "destructive",
-                duration: 8000,
-              });
-            }
-            
-            inventoryItem.quantity -= quantityToDeduct;
-            inventoryWasUpdated = true;
-          }
-        });
-      });
-
-      if (inventoryWasUpdated) {
-        await persistToFirestore(['inventory']);
-        toast({
-          title: "Inventario Actualizado",
-          description: "El stock de los insumos ha sido descontado.",
-        });
-      }
-    }
-    
-    const finalSubTotal = totalCost / (1 + IVA_RATE);
-    const finalTaxAmount = totalCost - finalSubTotal;
-    const finalProfit = totalCost - totalSuppliesWorkshopCost;
-    const compositeDescription = values.serviceItems.map(item => item.name).join(', ') || 'Servicio';
-    
-    const isNew = !initialData?.id;
-
-    const dataToSave: ServiceRecord = {
-        ...values,
-        id: values.id || generateUniqueId(),
-        publicId: values.publicId || `s_${generateUniqueId().toLowerCase()}`,
-        vehicleId: vehicleIdToSave,
-        description: compositeDescription,
-        technicianId: values.technicianId || '',
-        status: values.status || 'Agendado',
-        totalCost: totalCost,
-        serviceItems: values.serviceItems,
-        serviceDate: values.serviceDate ? values.serviceDate.toISOString() : new Date().toISOString(),
-        quoteDate: values.quoteDate ? values.quoteDate.toISOString() : undefined,
-        deliveryDateTime: values.deliveryDateTime ? values.deliveryDateTime.toISOString() : undefined,
-        vehicleIdentifier: getValues('vehicleLicensePlateSearch') || 'N/A',
-        technicianName: technicians.find(t => t.id === values.technicianId)?.name || 'N/A',
-        subTotal: finalSubTotal,
-        taxAmount: finalTaxAmount,
-        totalSuppliesCost: totalSuppliesWorkshopCost,
-        serviceProfit: finalProfit,
-        serviceAdvisorId: currentUser.id,
-        serviceAdvisorName: currentUser.name,
-        serviceAdvisorSignatureDataUrl: currentUser.signatureDataUrl,
-        workshopInfo: (workshopInfo && Object.keys(workshopInfo).length > 0) ? workshopInfo as WorkshopInfo : undefined,
-    };
-      
-    if (values.status === 'Completado') {
-        try {
-          const deliveryDate = dataToSave.deliveryDateTime ? new Date(dataToSave.deliveryDateTime) : new Date();
-          if (isValid(deliveryDate)) {
-            const nextServiceDate = addDays(deliveryDate, 183);
-            let nextServiceMileage: number | undefined;
-            const mileageValue = values.mileage;
-            if (typeof mileageValue === 'number' && isFinite(mileageValue) && mileageValue > 0) {
-              const oilSupplies = values.serviceItems.flatMap(item => item.suppliesUsed).map(supply => currentInventoryItems.find(i => i.id === supply.supplyId)).filter(Boolean);
-              const rendimientos = oilSupplies.filter(item => item && item.category?.toLowerCase().includes('aceite') && typeof item.rendimiento === 'number' && item.rendimiento > 0).map(item => item!.rendimiento as number);
-              if (rendimientos.length > 0) {
-                const lowestRendimiento = Math.min(...rendimientos);
-                if (isFinite(lowestRendimiento)) nextServiceMileage = mileageValue + lowestRendimiento;
-              }
-            }
-            dataToSave.nextServiceInfo = { date: nextServiceDate.toISOString(), mileage: nextServiceMileage };
-          }
-        } catch (e) { console.error("Error calculating nextServiceInfo:", e); }
-    }
-    
-    // Call public save before local persistence
-    const selectedVehicle = localVehicles.find(v => v.id === vehicleIdToSave);
-    await savePublicDocument('service', dataToSave, selectedVehicle || null, workshopInfo);
-    
-    await onSubmit(dataToSave); // This handles the main local persistence and UI update
-    
-    toast({
-      title: `${isNew ? 'Creado' : 'Actualizado'} con Éxito`,
-      description: `El documento ${dataToSave.id} se ha guardado.`,
-    });
-    
-    onClose();
-  };
-  
-  const handlePrintSheet = useCallback(() => {
-    const serviceData = form.getValues() as ServiceRecord;
-     // Make sure to include the latest advisor signature from the form
-    const enrichedServiceData = {
-        ...serviceData,
-        serviceAdvisorName: form.getValues('serviceAdvisorName'),
-        serviceAdvisorSignatureDataUrl: form.getValues('serviceAdvisorSignatureDataUrl')
-    };
-    setServiceForPreview(enrichedServiceData);
-    setIsPreviewOpen(true);
-  }, [form]);
-
-
-    const handleEnhanceText = async (fieldName: 'notes' | 'vehicleConditions' | 'customerItems' | 'safetyInspection.inspectionNotes' | `photoReports.${number}.description`) => {
-    const contextMap: Record<string, string> = {
-      'notes': 'Notas Adicionales del Servicio',
-      'vehicleConditions': 'Condiciones del Vehículo (al recibir)',
-      'customerItems': 'Pertenencias del Cliente',
-      'safetyInspection.inspectionNotes': 'Observaciones de la Inspección de Seguridad',
-      'photoDescription': 'Descripción de Fotografía de Evidencia'
-    };
-
+  const handleEnhanceText = useCallback(async (fieldName: 'notes' | 'vehicleConditions' | 'customerItems' | 'safetyInspection.inspectionNotes' | `photoReports.${number}.description`) => {
+    const contextMap: Record<string, string> = { 'notes': 'Notas Adicionales', 'vehicleConditions': 'Condiciones del Vehículo', 'customerItems': 'Pertenencias del Cliente', 'safetyInspection.inspectionNotes': 'Observaciones de Inspección', 'photoDescription': 'Descripción de Foto' };
     const contextKey = fieldName.startsWith('photoReports') ? 'photoDescription' : fieldName;
     const context = contextMap[contextKey];
     const currentValue = form.getValues(fieldName as any);
 
-    if (!currentValue || currentValue.trim().length < 2) {
-        toast({ title: 'No hay suficiente texto', description: 'Escriba algo antes de mejorar el texto.', variant: 'default' });
-        return;
-    }
+    if (!currentValue || currentValue.trim().length < 2) return toast({ title: 'Texto insuficiente', variant: 'default' });
     
     setIsEnhancingText(fieldName);
     try {
         const result = await enhanceText({ text: currentValue, context });
         form.setValue(fieldName as any, result, { shouldDirty: true });
-        toast({ title: 'Texto Mejorado', description: 'La IA ha corregido y mejorado el texto.' });
+        toast({ title: 'Texto Mejorado' });
     } catch (e) {
-        console.error("Error enhancing text:", e);
-        toast({ title: "Error de IA", description: "No se pudo mejorar el texto.", variant: "destructive" });
+        toast({ title: "Error de IA", variant: "destructive" });
     } finally {
         setIsEnhancingText(null);
     }
-  };
-  
-  const handleChecklistPhotoUpload = useCallback((itemName: string, urls: string[]) => {
-    const path = `safetyInspection.${itemName}` as const;
-    const currentItemValue = getValues(path) || { status: 'na', photos: [] };
-    const updatedPhotos = [...(currentItemValue.photos || []), ...urls];
+  }, [form, toast]);
 
-    setValue(path, { ...currentItemValue, photos: updatedPhotos }, { shouldDirty: true });
-  }, [getValues, setValue]);
+  const handleFormSubmit = useCallback(async (values: ServiceFormValues) => {
+    if (isReadOnly) return onClose();
+    if (!freshUserRef.current) return toast({ title: "Error de Sesión", variant: "destructive" });
+    if (!getValues('vehicleId')) return toast({ title: "Vehículo no seleccionado", variant: "destructive" });
+    if (!await form.trigger()) return toast({ title: "Formulario Incompleto", variant: "destructive" });
 
+    const isNowCompleted = values.status === 'Completado';
+    const wasPreviouslyCompleted = originalStatusRef.current === 'Completado';
+    if (isNowCompleted && !wasPreviouslyCompleted) {
+        let inventoryWasUpdated = false;
+        values.serviceItems.forEach(item => {
+          (item.suppliesUsed || []).forEach(supply => {
+            const idx = placeholderInventory.findIndex(i => i.id === supply.supplyId);
+            if (idx !== -1 && !placeholderInventory[idx].isService) {
+              placeholderInventory[idx].quantity -= supply.quantity;
+              inventoryWasUpdated = true;
+            }
+          });
+        });
+        if (inventoryWasUpdated) await persistToFirestore(['inventory']);
+    }
 
-  const handleGenerateQuoteWithAI = async () => {
+    const dataToSave: ServiceRecord = {
+        ...values,
+        id: values.id || generateUniqueId(),
+        publicId: values.publicId || `s_${generateUniqueId().toLowerCase()}`,
+        vehicleId: getValues('vehicleId')!,
+        description: values.serviceItems.map(item => item.name).join(', ') || 'Servicio',
+        technicianId: values.technicianId || '',
+        status: values.status || 'Agendado',
+        totalCost, totalSuppliesCost, serviceProfit,
+        serviceDate: values.serviceDate ? values.serviceDate.toISOString() : new Date().toISOString(),
+        quoteDate: values.quoteDate?.toISOString(), deliveryDateTime: values.deliveryDateTime?.toISOString(),
+        vehicleIdentifier: getValues('vehicleLicensePlateSearch') || 'N/A',
+        technicianName: technicians.find(t => t.id === values.technicianId)?.name || 'N/A',
+        subTotal: totalCost / (1 + IVA_RATE), taxAmount: totalCost - (totalCost / (1 + IVA_RATE)),
+        serviceAdvisorId: freshUserRef.current.id,
+        serviceAdvisorName: freshUserRef.current.name,
+        serviceAdvisorSignatureDataUrl: freshUserRef.current.signatureDataUrl,
+        workshopInfo: (workshopInfo && Object.keys(workshopInfo).length > 0) ? workshopInfo as WorkshopInfo : undefined,
+    };
+
+    if (values.status === 'Completado') {
+        const deliveryDate = dataToSave.deliveryDateTime ? new Date(dataToSave.deliveryDateTime) : new Date();
+        const oilSupply = values.serviceItems.flatMap(i => i.suppliesUsed).map(s => currentInventoryItems.find(item => item.id === s.supplyId)).find(item => item?.category?.toLowerCase().includes('aceite'));
+        if (oilSupply?.rendimiento) {
+            dataToSave.nextServiceInfo = { date: addDays(deliveryDate, 183).toISOString(), mileage: (values.mileage || 0) + oilSupply.rendimiento };
+        } else {
+            dataToSave.nextServiceInfo = { date: addDays(deliveryDate, 183).toISOString() };
+        }
+    }
+    
+    await savePublicDocument('service', dataToSave, localVehicles.find(v => v.id === getValues('vehicleId')) || null, workshopInfo);
+    await onSubmit(dataToSave);
+    toast({ title: `${!initialData?.id ? 'Creado' : 'Actualizado'} con Éxito` });
+    onClose();
+  }, [isReadOnly, onClose, getValues, onSubmit, toast, technicians, totalCost, totalSuppliesWorkshopCost, serviceProfit, workshopInfo, initialData, localVehicles, currentInventoryItems]);
+
+  const handlePrintSheet = useCallback(() => {
+    const serviceData = form.getValues() as ServiceRecord;
+    setServiceForPreview({ ...serviceData, serviceAdvisorName: form.getValues('serviceAdvisorName'), serviceAdvisorSignatureDataUrl: form.getValues('serviceAdvisorSignatureDataUrl') });
+    setIsPreviewOpen(true);
+  }, [form]);
+
+  const handleGenerateQuoteWithAI = useCallback(async () => {
     setIsGeneratingQuote(true);
     const vehicleId = getValues('vehicleId');
     const vehicle = localVehicles.find(v => v.id === vehicleId);
     const description = form.getValues('description');
-
     if (!vehicle || !description) {
-        toast({ title: "Faltan Datos", description: "Por favor, seleccione un vehículo y escriba una descripción para generar la cotización.", variant: "destructive" });
+        toast({ title: "Faltan Datos", variant: "destructive" });
         setIsGeneratingQuote(false);
         return;
     }
-
     try {
-        const history = defaultServiceRecords.map(h => ({
-            description: h.description,
-            suppliesUsed: ('serviceItems' in h ? h.serviceItems.flatMap(i => i.suppliesUsed) : []).map(s => ({
-                supplyName: s.supplyName || currentInventoryItems.find(i => i.id === s.supplyId)?.name || 'Unknown',
-                quantity: s.quantity
-            })),
-            totalCost: h.totalCost || 0
-        }));
-
-        const inventoryForAI = currentInventoryItems.map(i => ({
-            id: i.id,
-            name: i.name,
-            sellingPrice: i.sellingPrice
-        }));
-
-        const result = await suggestQuote({
-            vehicleInfo: { make: vehicle.make, model: vehicle.model, year: vehicle.year },
-            serviceDescription: description,
-            serviceHistory: history,
-            inventory: inventoryForAI,
-        });
-
-        const newServiceItem: ServiceItem = {
-          id: `item_ai_${Date.now()}`,
-          name: description,
-          price: result.estimatedTotalCost,
-          suppliesUsed: result.suppliesProposed.map(supply => {
-            const itemDetails = currentInventoryItems.find(i => i.id === supply.supplyId);
-            return {
-                supplyId: supply.supplyId,
-                quantity: supply.quantity,
-                supplyName: itemDetails?.name || 'N/A',
-                unitPrice: itemDetails?.sellingPrice || 0,
-                isService: itemDetails?.isService || false,
-                unitType: itemDetails?.unitType || 'units'
-            };
-          })
-        };
-        
-        appendServiceItem(newServiceItem);
-
-        toast({
-            title: "Cotización Generada por IA",
-            description: result.reasoning,
-            duration: 10000,
-        });
-
+        const history = defaultServiceRecords.map(h => ({ description: h.description, suppliesUsed: ('serviceItems' in h ? h.serviceItems.flatMap(i => i.suppliesUsed) : []).map(s => ({ supplyName: s.supplyName || 'Unknown', quantity: s.quantity })), totalCost: h.totalCost || 0 }));
+        const inventoryForAI = currentInventoryItems.map(i => ({ id: i.id, name: i.name, sellingPrice: i.sellingPrice }));
+        const result = await suggestQuote({ vehicleInfo: { make: vehicle.make, model: vehicle.model, year: vehicle.year }, serviceDescription: description, serviceHistory: history, inventory: inventoryForAI });
+        appendServiceItem({ id: `item_ai_${Date.now()}`, name: description, price: result.estimatedTotalCost, suppliesUsed: result.suppliesProposed.map(supply => ({ supplyId: supply.supplyId, quantity: supply.quantity, supplyName: currentInventoryItems.find(i => i.id === supply.supplyId)?.name || 'N/A', unitPrice: currentInventoryItems.find(i => i.id === supply.supplyId)?.sellingPrice || 0, isService: currentInventoryItems.find(i => i.id === supply.supplyId)?.isService || false, unitType: currentInventoryItems.find(i => i.id === supply.supplyId)?.unitType || 'units' })) });
+        toast({ title: "Cotización Generada por IA", description: result.reasoning, duration: 10000 });
     } catch (e) {
-        console.error("Error generating quote with AI:", e);
-        toast({ title: "Error de IA", description: "No se pudo generar la cotización.", variant: "destructive" });
+        toast({ title: "Error de IA", variant: "destructive" });
     } finally {
         setIsGeneratingQuote(false);
     }
-  };
-
-  const [cancellationReason, setCancellationReason] = useState('');
-  const [isCancelAlertOpen, setIsCancelAlertOpen] = useState(false);
-
-  const handleConfirmDelete = () => {
+  }, [getValues, localVehicles, currentInventoryItems, toast, appendServiceItem]);
+  
+  const handleConfirmDelete = useCallback(() => {
     if (onDelete && mode === 'quote' && initialDataQuote?.id) {
       onDelete(initialDataQuote.id);
-      onClose();
     } else if (onCancelService && initialDataService?.id) {
-      if (!cancellationReason.trim()) {
-        toast({ title: "Motivo Requerido", variant: "destructive" });
-        return;
-      }
+      if (!cancellationReason.trim()) return toast({ title: "Motivo Requerido", variant: "destructive" });
       onCancelService(initialDataService.id, cancellationReason);
-      setIsCancelAlertOpen(false);
-      onClose();
     }
-  };
-
-  const deleteButtonText = mode === 'quote'
-    ? 'Eliminar Cotización'
-    : (initialDataService?.status === 'Agendado' ? 'Cancelar Cita' : 'Cancelar Servicio');
+    setIsCancelAlertOpen(false);
+    onClose();
+  }, [onDelete, onCancelService, mode, initialDataQuote, initialDataService, cancellationReason, toast, onClose]);
   
-  const statusOptions = useMemo(() => {
-    const allOptions = ["Cotizacion", "Agendado", "En Espera de Refacciones", "Reparando", "Completado"];
-    return allOptions;
-  }, []);
-  
-  const handleDownloadImage = () => {
-    if (!viewingImageUrl) return;
-    try {
-      window.open(viewingImageUrl, '_blank')?.focus();
-    } catch (err) {
-      console.error("Error opening image:", err);
-      toast({
-        title: "Error al Abrir",
-        description: "No se pudo abrir la imagen en una nueva pestaña.",
-        variant: "destructive"
-      });
-    }
-  };
-
   return (
     <>
       <Form {...form}>
         <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-6">
           <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm -mx-6 px-6 pt-2">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-2 border-b">
-              <div className="w-full overflow-x-auto pb-0 -mb-px">
-                  <Tabs defaultValue="servicio" className="w-full">
-                    <TabsList className="bg-transparent p-0 w-max">
-                    <TabsTrigger value="servicio" className="text-sm sm:text-base data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none flex items-center gap-2 py-3 px-3 sm:px-4">
-                        <Wrench className="h-4 w-4 shrink-0"/>
-                        <span className="hidden sm:inline">Detalles</span>
-                        <span className="sm:hidden">Detalles</span>
-                    </TabsTrigger>
-                    {showReceptionTab && (
-                        <TabsTrigger value="recepcion" className="text-sm sm:text-base data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none flex items-center gap-2 py-3 px-3 sm:px-4">
-                            <FileCheck className="h-4 w-4 shrink-0"/>
-                            <span className="hidden sm:inline">Rec. y Ent.</span>
-                            <span className="sm:hidden">Rec. y Ent.</span>
-                        </TabsTrigger>
-                    )}
-                    {showReportTab && (
-                        <TabsTrigger value="reporte" className="text-sm sm:text-base data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none flex items-center gap-2 py-3 px-3 sm:px-4">
-                            <Camera className="h-4 w-4 shrink-0"/>
-                            <span className="hidden sm:inline">Reporte Fotográfico</span>
-                            <span className="sm:hidden">Fotos</span>
-                        </TabsTrigger>
-                    )}
-                    {showReceptionTab && (
-                        <TabsTrigger value="seguridad" className="text-sm sm:text-base data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none flex items-center gap-2 py-3 px-3 sm:px-4">
-                            <ShieldCheck className="h-4 w-4 shrink-0"/>
-                            <span className="hidden sm:inline">Revisión</span>
-                            <span className="sm:hidden">Revisión</span>
-                        </TabsTrigger>
-                    )}
-                    </TabsList>
-                  </Tabs>
-              </div>
-              <div className="flex gap-2 self-end sm:self-center mb-2">
-                  {!isReadOnly && (
-                      <Button type="button" onClick={handlePrintSheet} variant="ghost" size="icon" className="bg-card" title="Vista Previa Unificada">
-                          <Eye className="h-5 w-5" />
-                      </Button>
-                  )}
-              </div>
+            <div className="flex justify-between items-center gap-2 mb-2 border-b">
+              <Tabs defaultValue="servicio" className="w-full">
+                <TabsList className="bg-transparent p-0 w-max -mb-px">
+                  <TabsTrigger value="servicio" className="text-sm sm:text-base data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none flex items-center gap-2 py-3 px-3 sm:px-4"><Wrench className="h-4 w-4 shrink-0"/> Detalles</TabsTrigger>
+                  {showReceptionTab && (<TabsTrigger value="recepcion" className="text-sm sm:text-base data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none flex items-center gap-2 py-3 px-3 sm:px-4"><FileCheck className="h-4 w-4 shrink-0"/> Rec. y Ent.</TabsTrigger>)}
+                  {showReportTab && (<TabsTrigger value="reporte" className="text-sm sm:text-base data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none flex items-center gap-2 py-3 px-3 sm:px-4"><Camera className="h-4 w-4 shrink-0"/> Fotos</TabsTrigger>)}
+                  {showReceptionTab && (<TabsTrigger value="seguridad" className="text-sm sm:text-base data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none flex items-center gap-2 py-3 px-3 sm:px-4"><ShieldCheck className="h-4 w-4 shrink-0"/> Revisión</TabsTrigger>)}
+                </TabsList>
+              </Tabs>
+              {!isReadOnly && <Button type="button" onClick={handlePrintSheet} variant="ghost" size="icon" title="Vista Previa"><Eye className="h-5 w-5" /></Button>}
             </div>
           </div>
           
-          {/* Main content area */}
           <div className="space-y-6 mt-4">
-
-              <VehicleSelectionCard
-                isReadOnly={isReadOnly}
-                localVehicles={localVehicles}
-                onVehicleSelected={(vehicle) => { /* Logic to handle vehicle selection state update is internal to the component */ }}
-                onOpenNewVehicleDialog={() => {
-                  setNewVehicleInitialData({ licensePlate: getValues('vehicleLicensePlateSearch') || "" });
-                  setIsVehicleDialogOpen(true);
-                }}
-              />
-              
-              <Card>
-                <CardHeader>
-                    <div className="flex justify-between items-center">
-                        <CardTitle className="text-lg">
-                            Información del Documento
-                        </CardTitle>
-                    </div>
-                </CardHeader>
+              <VehicleSelectionCard isReadOnly={isReadOnly} localVehicles={localVehicles} onVehicleSelected={() => {}} onOpenNewVehicleDialog={() => { setNewVehicleInitialData({ licensePlate: getValues('vehicleLicensePlateSearch') || "" }); setIsVehicleDialogOpen(true); }}/>
+              <Card><CardHeader><CardTitle className="text-lg">Información del Documento</CardTitle></CardHeader>
                 <CardContent className="space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
-                      <FormField
-                          control={form.control}
-                          name="status"
-                          render={({ field }) => (
-                              <FormItem>
-                                  <FormLabel>Estado</FormLabel>
-                                  <Select onValueChange={field.onChange} value={field.value} disabled={isReadOnly || watchedStatus === 'Completado' || watchedStatus === 'Entregado'}>
-                                      <FormControl>
-                                          <SelectTrigger className="font-bold">
-                                              <SelectValue placeholder="Seleccione un estado" />
-                                          </SelectTrigger>
-                                      </FormControl>
-                                      <SelectContent>
-                                          {statusOptions.map((statusVal) => (
-                                              <SelectItem key={statusVal} value={statusVal}>{statusVal}</SelectItem>
-                                          ))}
-                                      </SelectContent>
-                                  </Select>
-                              </FormItem>
-                          )}
-                      />
-                      <FormField
-                        control={form.control}
-                        name="serviceType"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Tipo de Servicio</FormLabel>
-                            <Select onValueChange={field.onChange} value={field.value || 'Servicio General'} disabled={isReadOnly}>
-                              <FormControl>
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Seleccione un tipo" />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                <SelectItem value="Servicio General">Servicio General</SelectItem>
-                                <SelectItem value="Cambio de Aceite">Cambio de Aceite</SelectItem>
-                                <SelectItem value="Pintura">Pintura</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </FormItem>
-                        )}
-                      />
+                      <FormField control={control} name="status" render={({ field }) => ( <FormItem><FormLabel>Estado</FormLabel><Select onValueChange={field.onChange} value={field.value} disabled={isReadOnly || watchedStatus === 'Completado' || watchedStatus === 'Entregado'}><FormControl><SelectTrigger className="font-bold"><SelectValue placeholder="Seleccione un estado" /></SelectTrigger></FormControl><SelectContent>{["Cotizacion", "Agendado", "En Espera de Refacciones", "Reparando", "Completado"].map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )}/>
+                      <FormField control={control} name="serviceType" render={({ field }) => ( <FormItem><FormLabel>Tipo de Servicio</FormLabel><Select onValueChange={field.onChange} value={field.value || 'Servicio General'} disabled={isReadOnly}><FormControl><SelectTrigger><SelectValue placeholder="Seleccione un tipo" /></SelectTrigger></FormControl><SelectContent><SelectItem value="Servicio General">Servicio General</SelectItem><SelectItem value="Cambio de Aceite">Cambio de Aceite</SelectItem><SelectItem value="Pintura">Pintura</SelectItem></SelectContent></Select></FormItem> )}/>
                     </div>
-                    
-                    {watchedStatus === 'Agendado' && (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t items-end">
-                            <Controller
-                            name="serviceDate"
-                            control={form.control}
-                            render={({ field }) => (
-                                <FormItem className="flex flex-col">
-                                <FormLabel>Fecha de Cita</FormLabel>
-                                <Popover open={isServiceDatePickerOpen} onOpenChange={setIsServiceDatePickerOpen}>
-                                    <PopoverTrigger asChild disabled={isReadOnly}>
-                                    <Button variant="outline" className={cn("justify-start text-left font-normal", !field.value && "text-muted-foreground")} disabled={isReadOnly}>
-                                        {field.value ? format(field.value, "PPP", { locale: es }) : <span>Seleccione fecha</span>}
-                                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                                    </Button>
-                                    </PopoverTrigger>
-                                    <PopoverContent className="w-auto p-0" align="start">
-                                    <Calendar
-                                        mode="single"
-                                        selected={field.value}
-                                        onSelect={(date) => {
-                                        const currentVal = field.value || new Date();
-                                        const newDate = date ? setMinutes(setHours(date, currentVal.getHours()), currentVal.getMinutes()) : new Date();
-                                        field.onChange(newDate);
-                                        setIsServiceDatePickerOpen(false);
-                                        }}
-                                        disabled={isReadOnly}
-                                        initialFocus
-                                        locale={es}
-                                    />
-                                    </PopoverContent>
-                                </Popover>
-                                </FormItem>
-                            )}
-                            />
-                            <Controller
-                            name="serviceDate"
-                            control={form.control}
-                            render={({ field }) => (
-                                <FormItem>
-                                <FormLabel>Hora de Cita</FormLabel>
-                                <FormControl>
-                                    <Input
-                                    type="time"
-                                    value={field.value && isValid(field.value) ? format(field.value, 'HH:mm') : ""}
-                                    onChange={(e) => {
-                                        const timeValue = e.target.value;
-                                        if (!timeValue) return;
-                                        const [hours, minutes] = timeValue.split(':').map(Number);
-                                        const currentVal = field.value || new Date();
-                                        field.onChange(setMinutes(setHours(currentVal, hours), minutes));
-                                    }}
-                                    disabled={isReadOnly}
-                                    />
-                                </FormControl>
-                                </FormItem>
-                            )}
-                            />
-                        </div>
-                    )}
+                    {watchedStatus === 'Agendado' && (<div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t items-end"><Controller name="serviceDate" control={control} render={({ field }) => ( <FormItem className="flex flex-col"><FormLabel>Fecha de Cita</FormLabel><Popover open={isServiceDatePickerOpen} onOpenChange={setIsServiceDatePickerOpen}><PopoverTrigger asChild disabled={isReadOnly}><Button variant="outline" className={cn("justify-start text-left font-normal", !field.value && "text-muted-foreground")} disabled={isReadOnly}>{field.value ? format(field.value, "PPP", { locale: es }) : <span>Seleccione fecha</span>}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value} onSelect={(date) => { field.onChange(date ? setMinutes(setHours(date, (field.value || new Date()).getHours()), (field.value || new Date()).getMinutes()) : new Date()); setIsServiceDatePickerOpen(false); }} disabled={isReadOnly} initialFocus locale={es}/></PopoverContent></Popover></FormItem> )}/><Controller name="serviceDate" control={control} render={({ field }) => ( <FormItem><FormLabel>Hora de Cita</FormLabel><FormControl><Input type="time" value={field.value && isValid(field.value) ? format(field.value, 'HH:mm') : ""} onChange={(e) => { if (!e.target.value) return; const [h, m] = e.target.value.split(':').map(Number); field.onChange(setMinutes(setHours(field.value || new Date(), h), m)); }} disabled={isReadOnly}/></FormControl></FormItem> )}/></div>)}
                 </CardContent>
               </Card>
-
-              
-              <Card>
-                <CardHeader><CardTitle className="text-lg">Trabajos a Realizar</CardTitle></CardHeader>
+              <Card><CardHeader><CardTitle className="text-lg">Trabajos a Realizar</CardTitle></CardHeader>
                 <CardContent className="space-y-4">
-                    {serviceItemsFields.map((serviceField, serviceIndex) => (
-                        <ServiceItemCard
-                            key={serviceField.id}
-                            serviceIndex={serviceIndex}
-                            control={control}
-                            removeServiceItem={removeServiceItem}
-                            isReadOnly={isReadOnly}
-                            inventoryItems={currentInventoryItems}
-                            mode={mode}
-                        />
-                    ))}
-                    {!isReadOnly && (
-                        <Button type="button" variant="outline" onClick={() => appendServiceItem({ id: `item_${Date.now()}`, name: '', price: undefined, suppliesUsed: [] })}>
-                            <PlusCircle className="mr-2 h-4 w-4"/> Añadir Trabajo a Realizar
-                        </Button>
-                    )}
-                    {mode === 'quote' && !isReadOnly && (
-                        <Button type="button" variant="secondary" onClick={handleGenerateQuoteWithAI} disabled={isGeneratingQuote}>
-                            {isGeneratingQuote ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <BrainCircuit className="mr-2 h-4 w-4" />}
-                            Sugerir Cotización con IA
-                        </Button>
-                    )}
+                    {serviceItemsFields.map((field, index) => <ServiceItemCard key={field.id} serviceIndex={index} control={control} removeServiceItem={removeServiceItem} isReadOnly={isReadOnly} inventoryItems={currentInventoryItems} mode={mode} />)}
+                    {!isReadOnly && (<Button type="button" variant="outline" onClick={() => appendServiceItem({ id: `item_${Date.now()}`, name: '', price: undefined, suppliesUsed: [] })}><PlusCircle className="mr-2 h-4 w-4"/> Añadir Trabajo</Button>)}
+                    {mode === 'quote' && !isReadOnly && (<Button type="button" variant="secondary" onClick={handleGenerateQuoteWithAI} disabled={isGeneratingQuote}>{isGeneratingQuote ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <BrainCircuit className="mr-2 h-4 w-4" />}Sugerir Cotización con IA</Button>)}
                 </CardContent>
               </Card>
-              
-              <div className={cn("grid gap-6 items-start", watchedStatus === 'Completado' ? "grid-cols-1 md:grid-cols-2" : "grid-cols-1")}>
-                  <div className="space-y-6">
-                      {(watchedStatus === 'Reparando' || watchedStatus === 'En Espera de Refacciones' || watchedStatus === 'Completado') && mode === 'service' && (
-                         <Card>
-                            <CardHeader><CardTitle className="text-lg">Técnico Asignado</CardTitle></CardHeader>
-                            <CardContent>
-                                <FormField
-                                    control={form.control}
-                                    name="technicianId"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel>Técnico Responsable</FormLabel>
-                                            <Select onValueChange={field.onChange} value={field.value} disabled={isReadOnly}>
-                                                <FormControl><SelectTrigger><SelectValue placeholder="Seleccione un técnico" /></SelectTrigger></FormControl>
-                                                <SelectContent>
-                                                {technicians.map((tech) => (
-                                                    <SelectItem key={tech.id} value={tech.id}>{tech.name}</SelectItem>
-                                                ))}
-                                                </SelectContent>
-                                            </Select>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
-                            </CardContent>
-                         </Card>
-                      )}
-                      
-                      <Card>
-                        <CardHeader>
-                          <FormField
-                            control={form.control}
-                            name="notes"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel className="flex justify-between items-center w-full">
-                                        <span className="text-lg font-semibold">Notas Adicionales (Opcional)</span>
-                                        {!isReadOnly && (
-                                            <Button type="button" size="sm" variant="ghost" onClick={() => handleEnhanceText('notes')} disabled={isEnhancingText === 'notes' || !field.value}>
-                                                {isEnhancingText === 'notes' ? <Loader2 className="animate-spin" /> : <BrainCircuit className="h-4 w-4" />}
-                                                <span className="ml-2 hidden sm:inline">Mejorar texto</span>
-                                            </Button>
-                                        )}
-                                    </FormLabel>
-                                    <FormControl><Textarea {...field} onChange={(e) => field.onChange(capitalizeSentences(e.target.value))} disabled={isReadOnly} className="min-h-[100px]" /></FormControl>
-                                </FormItem>
-                            )}
-                          />
-                        </CardHeader>
-                      </Card>
-                  </div>
-                  
-                  <div className="space-y-6">
-                      {watchedStatus === 'Completado' && mode === 'service' && (
-                          <Card>
-                            <CardHeader><CardTitle className="text-lg">Método de Pago</CardTitle></CardHeader>
-                            <CardContent className="space-y-4">
-                                <FormField control={form.control} name="paymentMethod" render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Método de Pago</FormLabel>
-                                        <Select onValueChange={field.onChange} value={field.value} disabled={isReadOnly}>
-                                            <FormControl><SelectTrigger><SelectValue placeholder="Seleccione método"/></SelectTrigger></FormControl>
-                                            <SelectContent>{paymentMethods.map(method => { const Icon = paymentMethodIcons[method]; return (<SelectItem key={method} value={method}><div className="flex items-center gap-2"><Icon className="h-4 w-4" /><span>{method}</span></div></SelectItem>)})}</SelectContent>
-                                        </Select>
-                                    </FormItem>
-                                )}/>
-                                {(selectedPaymentMethod === "Tarjeta" || selectedPaymentMethod === "Tarjeta+Transferencia") && (
-                                    <FormField control={form.control} name="cardFolio" render={({ field }) => (<FormItem><FormLabel>Folio Tarjeta</FormLabel><FormControl><Input placeholder="Folio de la transacción" {...field} disabled={isReadOnly}/></FormControl><FormMessage /></FormItem>)}/>
-                                )}
-                                {(selectedPaymentMethod === "Transferencia" || selectedPaymentMethod === "Efectivo+Transferencia" || selectedPaymentMethod === "Tarjeta+Transferencia") && (
-                                    <FormField control={form.control} name="transferFolio" render={({ field }) => (<FormItem><FormLabel>Folio Transferencia</FormLabel><FormControl><Input placeholder="Referencia de la transferencia" {...field} disabled={isReadOnly}/></FormControl><FormMessage /></FormItem>)}/>
-                                )}
-                            </CardContent>
-                          </Card>
-                      )}
-                      
-                      <Card className="bg-card">
-                          <CardHeader><CardTitle className="text-lg">Costo del Servicio</CardTitle></CardHeader>
-                          <CardContent>
-                              <div className="space-y-1 text-sm">
-                                  <div className="flex justify-between font-bold text-lg text-primary"><span>Total (IVA Inc.):</span><span>{formatCurrency(totalCost)}</span></div>
-                                  <div className="flex justify-between text-xs"><span>(-) Costo Insumos:</span><span className="font-medium text-red-600 dark:text-red-400">{formatCurrency(totalSuppliesWorkshopCost)}</span></div>
-                                  <hr className="my-1 border-dashed"/>
-                                  <div className="flex justify-between font-bold text-green-700 dark:text-green-400"><span>(=) Ganancia:</span><span>{formatCurrency(serviceProfit)}</span></div>
-                              </div>
-                          </CardContent>
-                      </Card>
-                  </div>
-              </div>
+              <ReceptionAndDelivery isReadOnly={isReadOnly} onCustomerSignatureClick={(type) => { setCustomerSignatureType(type); setIsCustomerSignatureDialogOpen(true); }} isEnhancingText={isEnhancingText} handleEnhanceText={handleEnhanceText} />
+              <SafetyChecklist control={control} isReadOnly={isReadOnly} onSignatureClick={() => setIsTechSignatureDialogOpen(true)} signatureDataUrl={form.watch('safetyInspection.technicianSignature')} isEnhancingText={isEnhancingText} handleEnhanceText={handleEnhanceText} serviceId={stableServiceId} onPhotoUploaded={handleChecklistPhotoUpload} onViewImage={handleViewImage}/>
+              <Card><CardHeader><CardTitle className="text-lg">Costo del Servicio</CardTitle></CardHeader><CardContent><div className="space-y-1 text-sm"><div className="flex justify-between font-bold text-lg text-primary"><span>Total (IVA Inc.):</span><span>{formatCurrency(totalCost)}</span></div><div className="flex justify-between text-xs"><span>(-) Costo Insumos:</span><span className="font-medium text-red-600 dark:text-red-400">{formatCurrency(totalSuppliesWorkshopCost)}</span></div><hr className="my-1 border-dashed"/><div className="flex justify-between font-bold text-green-700 dark:text-green-400"><span>(=) Ganancia:</span><span>{formatCurrency(serviceProfit)}</span></div></div></CardContent></Card>
           </div>
-
           <div className="flex justify-between items-center pt-4">
-            <div className="flex items-center gap-2">
-                <AlertDialog open={isCancelAlertOpen} onOpenChange={setIsCancelAlertOpen}>
-                    <AlertDialogTrigger asChild>
-                        {!isReadOnly && initialData?.id && (
-                            <Button type="button" variant="destructive">
-                                <Ban className="mr-2 h-4 w-4" />
-                                {deleteButtonText}
-                            </Button>
-                        )}
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                        <AlertDialogHeader>
-                            <AlertDialogTitle>¿Está seguro?</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              {mode === 'quote' ? `Se eliminará la cotización ${initialDataQuote?.id}. Esta acción no se puede deshacer.` : `Se cancelará el servicio ${initialDataService?.id}.`}
-                            </AlertDialogDescription>
-                            {mode === 'service' && (
-                              <div className="mt-4">
-                                <Label htmlFor="cancellation-reason">Motivo de la cancelación (obligatorio)</Label>
-                                <Textarea id="cancellation-reason" value={cancellationReason} onChange={(e) => setCancellationReason(e.target.value)} placeholder="Ej: El cliente no se presentó..." className="mt-2" />
-                              </div>
-                            )}
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                            <AlertDialogCancel onClick={() => setCancellationReason('')}>No, volver</AlertDialogCancel>
-                            <AlertDialogAction onClick={handleConfirmDelete} disabled={mode === 'service' && !cancellationReason.trim()} className="bg-destructive hover:bg-destructive/90">
-                               Sí, proceder
-                            </AlertDialogAction>
-                        </AlertDialogFooter>
-                    </AlertDialogContent>
-                </AlertDialog>
-            </div>
+            {!isReadOnly && initialData?.id && (<AlertDialog open={isCancelAlertOpen} onOpenChange={setIsCancelAlertOpen}><AlertDialogTrigger asChild><Button type="button" variant="destructive"><Ban className="mr-2 h-4 w-4" />{mode === 'quote' ? 'Eliminar Cotización' : 'Cancelar Servicio'}</Button></AlertDialogTrigger><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>¿Está seguro?</AlertDialogTitle><AlertDialogDescription>{mode === 'quote' ? `Se eliminará la cotización ${initialDataQuote?.id}.` : `Se cancelará el servicio ${initialDataService?.id}.`}</AlertDialogDescription>{mode === 'service' && (<div className="mt-4"><Label htmlFor="cancellation-reason">Motivo (obligatorio)</Label><Textarea id="cancellation-reason" value={cancellationReason} onChange={(e) => setCancellationReason(e.target.value)} className="mt-2" /></div>)}</AlertDialogHeader><AlertDialogFooter><AlertDialogCancel onClick={() => setCancellationReason('')}>Volver</AlertDialogCancel><AlertDialogAction onClick={handleConfirmDelete} disabled={mode === 'service' && !cancellationReason.trim()} className="bg-destructive hover:bg-destructive/90">Sí, proceder</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog>)}
             <div className="flex justify-end gap-2 w-full">
-            {isReadOnly ? (<Button type="button" variant="outline" onClick={onClose}>Cerrar</Button>) : (
-                <>
-                <Button type="button" variant="outline" onClick={onClose}>Cancelar</Button>
-                <Button type="submit" disabled={form.formState.isSubmitting || !getValues('vehicleId')}>{form.formState.isSubmitting ? "Guardando..." : (initialData?.id ? "Actualizar" : "Crear")}</Button>
-                </>
-            )}
+              {isReadOnly ? <Button type="button" variant="outline" onClick={onClose}>Cerrar</Button> : (<><Button type="button" variant="outline" onClick={onClose}>Cancelar</Button><Button type="submit" disabled={form.formState.isSubmitting || !getValues('vehicleId')}>{form.formState.isSubmitting ? "Guardando..." : (initialData?.id ? "Actualizar" : "Crear")}</Button></>)}
             </div>
           </div>
         </form>
       </Form>
-
-       <SignatureDialog
-        open={isTechSignatureDialogOpen}
-        onOpenChange={setIsTechSignatureDialogOpen}
-        onSave={(signature) => {
-          form.setValue('safetyInspection.technicianSignature', signature, { shouldDirty: true });
-          setIsTechSignatureDialogOpen(false);
-          toast({ title: 'Firma Capturada', description: 'La firma del técnico se ha guardado en el formulario.' });
-        }}
-      />
-      
-      {isPreviewOpen && serviceForPreview && (
-        <UnifiedPreviewDialog
-          open={isPreviewOpen}
-          onOpenChange={setIsPreviewOpen}
-          service={serviceForPreview}
-        />
-      )}
-
-      <VehicleDialog
-          open={isVehicleDialogOpen}
-          onOpenChange={setIsVehicleDialogOpen}
-          onSave={handleSaveNewVehicle}
-          vehicle={newVehicleInitialData}
-      />
-      
-      <Dialog open={isImageViewerOpen} onOpenChange={setIsImageViewerOpen}>
-        <DialogContent className="max-w-4xl p-2">
-            <DialogHeader className="print:hidden">
-              <DialogTitle>Vista Previa de Imagen</DialogTitle>
-              <DialogDescription>
-                Visualizando la imagen de evidencia. Puede descargarla si lo necesita.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="relative aspect-video w-full">
-                {viewingImageUrl && (
-                    <img src={viewingImageUrl} alt="Vista ampliada de evidencia" style={{ objectFit: 'contain', width: '100%', height: '100%' }} crossOrigin="anonymous" />
-                )}
-            </div>
-            <DialogFooter className="mt-2 print:hidden">
-                <Button onClick={handleDownloadImage}>
-                    <Download className="mr-2 h-4 w-4"/>Descargar Imagen
-                </Button>
-            </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <SignatureDialog open={isTechSignatureDialogOpen} onOpenChange={setIsTechSignatureDialogOpen} onSave={(s) => { form.setValue('safetyInspection.technicianSignature', s, { shouldDirty: true }); setIsTechSignatureDialogOpen(false); toast({ title: 'Firma Capturada' }); }}/>
+      <SignatureDialog open={isCustomerSignatureDialogOpen} onOpenChange={setIsCustomerSignatureDialogOpen} onSave={(s) => { form.setValue(customerSignatureType === 'reception' ? 'customerSignatureReception' : 'customerSignatureDelivery', s, { shouldDirty: true }); setIsCustomerSignatureDialogOpen(false); toast({ title: 'Firma de Cliente Capturada' }); }}/>
+      {isPreviewOpen && serviceForPreview && (<UnifiedPreviewDialog open={isPreviewOpen} onOpenChange={setIsPreviewOpen} service={serviceForPreview} />)}
+      <VehicleDialog open={isVehicleDialogOpen} onOpenChange={setIsVehicleDialogOpen} onSave={handleSaveNewVehicle} vehicle={newVehicleInitialData}/>
     </>
   );
 }
