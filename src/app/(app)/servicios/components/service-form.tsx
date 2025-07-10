@@ -37,8 +37,7 @@ import {
     persistToFirestore, 
     AUTH_USER_LOCALSTORAGE_KEY,
 } from '@/lib/placeholder-data';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger, AlertDialogDescription } from "@/components/ui/alert-dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter } from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/label";
 import { suggestQuote } from '@/ai/flows/quote-suggestion-flow';
 import { enhanceText } from '@/ai/flows/text-enhancement-flow';
@@ -271,12 +270,14 @@ export function ServiceForm({
   const { totalCost, totalSuppliesWorkshopCost, serviceProfit } = useMemo(() => {
     let calculatedTotalCost = 0;
     let workshopCost = 0;
-    for (const item of watchedServiceItems) {
-        calculatedTotalCost += Number(item.price) || 0;
-        if (item.suppliesUsed) {
-            for (const supply of item.suppliesUsed) {
-                const costPerUnit = supply.unitPrice ?? 0;
-                workshopCost += (costPerUnit * supply.quantity);
+    if (Array.isArray(watchedServiceItems)) {
+        for (const item of watchedServiceItems) {
+            calculatedTotalCost += Number(item.price) || 0;
+            if (item.suppliesUsed) {
+                for (const supply of item.suppliesUsed) {
+                    const costPerUnit = supply.unitPrice ?? 0;
+                    workshopCost += (costPerUnit * supply.quantity);
+                }
             }
         }
     }
@@ -344,32 +345,23 @@ export function ServiceForm({
   const handlePhotoUploadComplete = useCallback(
     (reportIndex: number, url: string) => {
       const currentPhotos = getValues(`photoReports.${reportIndex}.photos`) || [];
-      setValue(
-        `photoReports.${reportIndex}.photos`,
-        [...currentPhotos, url],
-        { shouldDirty: true }
-      );
+      setValue(`photoReports.${reportIndex}.photos`, [...currentPhotos, url], { shouldDirty: true });
     },
     [getValues, setValue]
   );
   
   const handleChecklistPhotoUpload = useCallback(
-    (itemName: string, urls: string[]) => {
+    (itemName: string, url: string) => {
       const path = `safetyInspection.${itemName}` as const;
       const current = getValues(path) || { status: "na", photos: [] };
-      const newPhotos = [...current.photos, ...urls];
-      setValue(
-          path,
-          { ...current, photos: newPhotos },
-          { shouldDirty: true }
-      );
+      setValue(path, { ...current, photos: [...current.photos, url] }, { shouldDirty: true });
     },
     [getValues, setValue]
   );
 
   const handleViewImage = (url: string) => { setViewingImageUrl(url); setIsImageViewerOpen(true); };
   
-  const handleDownloadImage = () => {
+  const handleDownloadImage = useCallback(() => {
     if (!viewingImageUrl) return;
     try {
       window.open(viewingImageUrl, '_blank')?.focus();
@@ -381,7 +373,7 @@ export function ServiceForm({
         variant: "destructive"
       });
     }
-  };
+  }, [viewingImageUrl, toast]);
 
   const handleSaveNewVehicle = useCallback(async (vehicleData: VehicleFormValues) => {
     const newVehicle: Vehicle = {
@@ -449,7 +441,7 @@ export function ServiceForm({
         description: values.serviceItems.map(item => item.name).join(', ') || 'Servicio',
         technicianId: values.technicianId || '',
         status: values.status || 'Agendado',
-        totalCost, 
+        totalCost: totalCost, 
         totalSuppliesCost: totalSuppliesWorkshopCost, 
         serviceProfit,
         serviceDate: values.serviceDate ? values.serviceDate.toISOString() : new Date().toISOString(),
@@ -477,7 +469,7 @@ export function ServiceForm({
     await onSubmit(dataToSave);
     toast({ title: `${!initialData?.id ? 'Creado' : 'Actualizado'} con Éxito` });
     onClose();
-  }, [isReadOnly, onClose, getValues, onSubmit, toast, technicians, totalCost, totalSuppliesWorkshopCost, serviceProfit, workshopInfo, initialData, localVehicles, currentInventoryItems]);
+  }, [isReadOnly, onClose, getValues, onSubmit, toast, technicians, totalCost, serviceProfit, workshopInfo, initialData, localVehicles, currentInventoryItems, totalSuppliesWorkshopCost]);
 
   const handlePrintSheet = useCallback(() => {
     const serviceData = form.getValues() as ServiceRecord;
@@ -615,7 +607,7 @@ export function ServiceForm({
           </Tabs>
         
           <div className="flex justify-between items-center pt-4">
-            {!isReadOnly && initialData?.id && (<AlertDialog open={isCancelAlertOpen} onOpenChange={setIsCancelAlertOpen}><AlertDialogTrigger asChild><Button type="button" variant="destructive"><Ban className="mr-2 h-4 w-4" />{mode === 'quote' ? 'Eliminar Cotización' : 'Cancelar Servicio'}</Button></AlertDialogTrigger><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>¿Está seguro?</AlertDialogTitle><AlertDialogDescription>{mode === 'quote' ? `Se eliminará la cotización ${initialDataQuote?.id}.` : `Se cancelará el servicio ${initialDataService?.id}.`}</AlertDialogDescription>{mode === 'service' && (<div className="mt-4"><Label htmlFor="cancellation-reason">Motivo (obligatorio)</Label><Textarea id="cancellation-reason" value={cancellationReason} onChange={(e) => setCancellationReason(e.target.value)} className="mt-2" /></div>)}</AlertDialogHeader><AlertDialog.Footer><AlertDialogCancel onClick={() => setCancellationReason('')}>Volver</AlertDialogCancel><AlertDialogAction onClick={handleConfirmDelete} disabled={mode === 'service' && !cancellationReason.trim()} className="bg-destructive hover:bg-destructive/90">Sí, proceder</AlertDialogAction></AlertDialog.Footer></AlertDialogContent></AlertDialog>)}
+            {!isReadOnly && initialData?.id && (<AlertDialog open={isCancelAlertOpen} onOpenChange={setIsCancelAlertOpen}><AlertDialogTrigger asChild><Button type="button" variant="destructive"><Ban className="mr-2 h-4 w-4" />{mode === 'quote' ? 'Eliminar Cotización' : 'Cancelar Servicio'}</Button></AlertDialogTrigger><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>¿Está seguro?</AlertDialogTitle><AlertDialogDescription>{mode === 'quote' ? `Se eliminará la cotización ${initialDataQuote?.id}.` : `Se cancelará el servicio ${initialDataService?.id}.`}</AlertDialogDescription>{mode === 'service' && (<div className="mt-4"><Label htmlFor="cancellation-reason">Motivo (obligatorio)</Label><Textarea id="cancellation-reason" value={cancellationReason} onChange={(e) => setCancellationReason(e.target.value)} className="mt-2" /></div>)}</AlertDialogHeader><AlertDialogFooter><AlertDialogCancel onClick={() => setCancellationReason('')}>Volver</AlertDialogCancel><AlertDialogAction onClick={handleConfirmDelete} disabled={mode === 'service' && !cancellationReason.trim()} className="bg-destructive hover:bg-destructive/90">Sí, proceder</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog>)}
             <div className="flex justify-end gap-2 w-full">
               {isReadOnly ? <Button type="button" variant="outline" onClick={onClose}>Cerrar</Button> : (<><Button type="button" variant="outline" onClick={onClose}>Cancelar</Button><Button type="submit" disabled={form.formState.isSubmitting || !getValues('vehicleId')}>{form.formState.isSubmitting ? "Guardando..." : (initialData?.id ? "Actualizar" : "Crear")}</Button></>)}
             </div>
