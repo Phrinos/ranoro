@@ -67,6 +67,16 @@ const formatCurrency = (amount: number) => {
     return `$${amount.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 };
 
+const handleAiError = (error: any, toast: any, context: string): string => {
+    console.error(`AI Error in ${context}:`, error);
+    let message = `La IA no pudo completar la acción de ${context}.`;
+    if (error instanceof Error && error.message.includes('503')) {
+        message = "El modelo de IA está sobrecargado. Por favor, inténtelo de nuevo más tarde.";
+    }
+    toast({ title: "Error de IA", description: message, variant: "destructive" });
+    return message; // Return the user-friendly message
+};
+
 export default function DashboardPage() {
   const [userName, setUserName] = useState<string | null>(null);
   const { toast } = useToast();
@@ -189,14 +199,13 @@ export default function DashboardPage() {
         });
         setCapacityInfo(result);
       } catch (e) {
-        console.error("Capacity analysis failed on dashboard:", e);
-        setCapacityError("La IA no pudo calcular la capacidad.");
+        setCapacityError(handleAiError(e, toast, 'análisis de capacidad'));
       } finally {
         setIsCapacityLoading(false);
       }
     };
     runCapacityAnalysis();
-  }, []);
+  }, [toast]);
   
   const handleGeneratePurchaseOrder = async () => {
     setIsPurchaseLoading(true);
@@ -231,13 +240,7 @@ export default function DashboardPage() {
       setIsPurchaseOrderDialogOpen(true);
 
     } catch (e) {
-      console.error(e);
-      setPurchaseError("La IA no pudo generar la orden de compra. Por favor, inténtelo de nuevo más tarde.");
-      toast({
-        title: "Error de IA",
-        description: "No se pudo generar la orden de compra.",
-        variant: "destructive"
-      });
+      setPurchaseError(handleAiError(e, toast, 'recomendación de compra'));
     } finally {
       setIsPurchaseLoading(false);
     }
@@ -277,13 +280,7 @@ export default function DashboardPage() {
       });
 
     } catch (e) {
-      console.error(e);
-      setAnalysisError("La IA no pudo completar el análisis. Por favor, inténtelo de nuevo más tarde.");
-      toast({
-        title: "Error de Análisis",
-        description: "Hubo un problema al contactar con la IA.",
-        variant: "destructive"
-      });
+      setAnalysisError(handleAiError(e, toast, 'análisis de inventario'));
     } finally {
       setIsAnalysisLoading(false);
     }
