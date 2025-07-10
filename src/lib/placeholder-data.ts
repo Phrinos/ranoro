@@ -297,11 +297,12 @@ export let placeholderTechnicianMonthlyPerformance: TechnicianMonthlyPerformance
 // ===  LÓGICA DE PERSISTENCIA DE DATOS  ===
 // =======================================
 
-// IMPORTANT: Set this to `false` to enable Firestore persistence.
-// Set to `true` to work in a local-only mode without affecting the database.
+// IMPORTANT: Set this to `true` to enable local persistence without affecting the database.
+// Set to `false` for production mode with Firestore.
 const DEV_MODE_LOCAL_ONLY = true;
 
 const DB_PATH = 'database/main'; // The single document in Firestore to hold all data
+const LOCALSTORAGE_DB_KEY = 'ranoroLocalDatabase';
 
 const DATA_ARRAYS = {
   categories: placeholderCategories,
@@ -329,6 +330,41 @@ const DATA_ARRAYS = {
 };
 
 type DataKey = keyof typeof DATA_ARRAYS;
+
+const saveToLocalStorage = () => {
+    try {
+        const dataToSave = sanitizeObjectForFirestore(DATA_ARRAYS);
+        localStorage.setItem(LOCALSTORAGE_DB_KEY, JSON.stringify(dataToSave));
+    } catch (e) {
+        console.error("Failed to save data to localStorage:", e);
+    }
+};
+
+const hydrateFromLocalStorage = (): boolean => {
+    try {
+        const localDataString = localStorage.getItem(LOCALSTORAGE_DB_KEY);
+        if (localDataString) {
+            const localData = JSON.parse(localDataString);
+            for (const key in DATA_ARRAYS) {
+                if (localData[key]) {
+                    const targetArray = DATA_ARRAYS[key as DataKey];
+                    if (!Array.isArray(targetArray)) {
+                        if (key === 'initialCashBalance') {
+                            placeholderInitialCashBalance = localData[key];
+                        }
+                    } else if (Array.isArray(localData[key])) {
+                        targetArray.splice(0, targetArray.length, ...localData[key]);
+                    }
+                }
+            }
+            console.log('Hydrated successfully from localStorage.');
+            return true;
+        }
+    } catch (e) {
+        console.error("Failed to hydrate from localStorage:", e);
+    }
+    return false;
+};
 
 // --------------------------------------------------------------------------------
 // Hydration helpers
@@ -380,29 +416,33 @@ export async function hydrateFromFirestore() {
     return;
   }
   
-  // If in local dev mode, skip hydration from Firestore entirely but ensure defaults are set.
   if (DEV_MODE_LOCAL_ONLY) {
-    console.warn('[DEV MODE] Firestore hydration is disabled. Using only local placeholder data.');
+    console.warn('[DEV MODE] Persistence is local. Hydrating from localStorage.');
+    const hydratedFromLocal = hydrateFromLocalStorage();
+    if (!hydratedFromLocal) {
+        console.log('No local data found, seeding with default placeholder data.');
+        // Ensure default roles and users are present if local storage is empty
+        if (placeholderAppRoles.length === 0) {
+            const adminPermissions = ALL_AVAILABLE_PERMISSIONS.filter(p => !['users:manage', 'roles:manage'].includes(p.id)).map(p => p.id);
+            placeholderAppRoles.push(
+                { id: 'role_superadmin_default', name: 'Superadmin', permissions: ALL_AVAILABLE_PERMISSIONS.map(p => p.id) },
+                { id: 'role_admin_default', name: 'Admin', permissions: adminPermissions },
+                { id: 'role_tecnico_default', name: 'Tecnico', permissions: ['dashboard:view', 'services:create', 'services:edit', 'services:view_history', 'inventory:view', 'vehicles:manage', 'pos:view_sales'] },
+                { id: 'role_ventas_default', name: 'Ventas', permissions: ['dashboard:view', 'pos:create_sale', 'pos:view_sales', 'inventory:view', 'vehicles:manage'] }
+            );
+        }
+        if (!placeholderUsers.some(u => u.id === defaultSuperAdmin.id)) {
+            placeholderUsers.unshift(defaultSuperAdmin);
+        }
+        saveToLocalStorage(); // Save the initial defaults
+    }
     
-    // Ensure default roles and users are present for local mode
-    if (placeholderAppRoles.length === 0) {
-      const adminPermissions = ALL_AVAILABLE_PERMISSIONS.filter(p => !['users:manage', 'roles:manage'].includes(p.id)).map(p => p.id);
-      placeholderAppRoles.push(
-        { id: 'role_superadmin_default', name: 'Superadmin', permissions: ALL_AVAILABLE_PERMISSIONS.map(p => p.id) },
-        { id: 'role_admin_default', name: 'Admin', permissions: adminPermissions },
-        { id: 'role_tecnico_default', name: 'Tecnico', permissions: ['dashboard:view', 'services:create', 'services:edit', 'services:view_history', 'inventory:view', 'vehicles:manage', 'pos:view_sales'] },
-        { id: 'role_ventas_default', name: 'Ventas', permissions: ['dashboard:view', 'pos:create_sale', 'pos:view_sales', 'inventory:view', 'vehicles:manage'] }
-      );
-    }
-    if (!placeholderUsers.some(u => u.id === defaultSuperAdmin.id)) {
-        placeholderUsers.unshift(defaultSuperAdmin);
-    }
-
     (window as any).__APP_HYDRATED__ = true;
     resolveHydration?.();
     return;
   }
 
+  // --- Production Firestore logic ---
   console.log('Attempting to hydrate application data from Firestore...');
   const docRef = doc(db, DB_PATH);
   let docSnap;
@@ -428,106 +468,44 @@ export async function hydrateFromFirestore() {
         }
       }
     } else {
-      // Document doesn't exist. Check if any local arrays have data from a previous session.
-      const hasLocalData = Object.values(DATA_ARRAYS).some((arr) => Array.isArray(arr) && arr.length > 0);
-
-      if (hasLocalData) {
-        console.warn('No database document found, but local data exists. Persisting local data to new document to prevent loss.');
-        changesMade = true; // Mark to trigger persistence of all data
-      } else {
-        console.warn('No database document found. Seeding the app with initial default data.');
-        // Seed with default data only if there's no local data either
-        placeholderFixedMonthlyExpenses.splice(0, placeholderFixedMonthlyExpenses.length, ...[
-          { id: 'exp_1', name: 'Renta del Local', amount: 12000 },
-          { id: 'exp_2', name: 'Servicio de Internet', amount: 800 },
-          { id: 'exp_3', name: 'Servicio de Luz', amount: 2500 },
-          { id: 'exp_4', name: 'Servicio de Agua', amount: 600 },
-        ]);
-
-        const adminPermissions = ALL_AVAILABLE_PERMISSIONS.filter((p) => !['users:manage', 'roles:manage'].includes(p.id)).map((p) => p.id);
-
-        const defaultRoles: AppRole[] = [
-          {
-            id: 'role_superadmin_default',
-            name: 'Superadmin',
-            permissions: ALL_AVAILABLE_PERMISSIONS.map((p) => p.id),
-          },
-          { id: 'role_admin_default', name: 'Admin', permissions: adminPermissions },
-          {
-            id: 'role_tecnico_default',
-            name: 'Tecnico',
-            permissions: ['dashboard:view', 'services:create', 'services:edit', 'services:view_history', 'inventory:view', 'vehicles:manage', 'pos:view_sales'],
-          },
-          {
-            id: 'role_ventas_default',
-            name: 'Ventas',
-            permissions: ['dashboard:view', 'pos:create_sale', 'pos:view_sales', 'inventory:view', 'vehicles:manage'],
-          },
-        ];
-        placeholderAppRoles.splice(0, placeholderAppRoles.length, ...defaultRoles);
-        changesMade = true;
-      }
+      console.warn('No database document found. Seeding the app with initial default data.');
+      placeholderFixedMonthlyExpenses.splice(0, placeholderFixedMonthlyExpenses.length, ...[
+        { id: 'exp_1', name: 'Renta del Local', amount: 12000 },
+        { id: 'exp_2', name: 'Servicio de Internet', amount: 800 },
+        { id: 'exp_3', name: 'Servicio de Luz', amount: 2500 },
+        { id: 'exp_4', name: 'Servicio de Agua', amount: 600 },
+      ]);
+      changesMade = true;
     }
   } catch (error) {
     console.error('Error reading from Firestore:', error);
-    console.warn('Could not read from Firestore. This might be due to Firestore rules. The app will proceed with in-memory data for this session.');
+    console.warn('Could not read from Firestore. The app will proceed with in-memory data for this session.');
   }
-
-  // --- ONE-TIME DATA MIGRATION: Assign completed services to a specific technician ---
-  const technicianToAssign = placeholderTechnicians.find(t => t.name === 'Guillermo Martinez Lozano');
-  if (technicianToAssign) {
-    let servicesUpdatedCount = 0;
-    placeholderServiceRecords.forEach(service => {
-      if (service.status === 'Completado') {
-        // Update only if it's not already assigned to him
-        if(service.technicianId !== technicianToAssign.id) {
-          service.technicianId = technicianToAssign.id;
-          service.technicianName = technicianToAssign.name;
-          servicesUpdatedCount++;
-        }
-      }
-    });
-    if (servicesUpdatedCount > 0) {
-        console.log(`[MIGRATION] Assigned ${servicesUpdatedCount} completed services to ${technicianToAssign.name}.`);
-        changesMade = true;
-    }
-  } else {
-      console.warn("[MIGRATION SKIPPED] Could not find technician 'Guillermo Martinez Lozano'.");
-  }
-
 
   // --- DATA INTEGRITY CHECKS ---
-  if (!placeholderUsers.some((u) => u.id === defaultSuperAdmin.id)) {
+  if (!placeholderUsers.some((u) => u.email.toLowerCase() === defaultSuperAdmin.email.toLowerCase())) {
     placeholderUsers.unshift(defaultSuperAdmin);
     changesMade = true;
-    console.log(`Default user '${defaultSuperAdmin.email}' was missing and has been added to the current session.`);
+    console.log(`Default user '${defaultSuperAdmin.email}' was missing and has been added.`);
   }
   
-  // Ensure roles have all available permissions after hydrating
   const superAdminRole = placeholderAppRoles.find(r => r.name === 'Superadmin');
-  const allPermissionIds = ALL_AVAILABLE_PERMISSIONS.map(p => p.id);
-  if (superAdminRole && superAdminRole.permissions.length < allPermissionIds.length) {
-    console.log("Updating Superadmin role with latest permissions...");
-    superAdminRole.permissions = allPermissionIds;
+  if (!superAdminRole) {
+    const adminPermissions = ALL_AVAILABLE_PERMISSIONS.filter(p => !['users:manage', 'roles:manage'].includes(p.id)).map(p => p.id);
+    placeholderAppRoles.push(
+      { id: 'role_superadmin_default', name: 'Superadmin', permissions: ALL_AVAILABLE_PERMISSIONS.map(p => p.id) },
+      { id: 'role_admin_default', name: 'Admin', permissions: adminPermissions },
+      { id: 'role_tecnico_default', name: 'Tecnico', permissions: ['dashboard:view', 'services:create', 'services:edit', 'services:view_history', 'inventory:view', 'vehicles:manage', 'pos:view_sales'] }
+    );
     changesMade = true;
   }
-  
-  const adminRole = placeholderAppRoles.find(r => r.name === 'Admin');
-  const adminPermissions = ALL_AVAILABLE_PERMISSIONS.filter(p => !['users:manage', 'roles:manage'].includes(p.id)).map(p => p.id);
-  if (adminRole && adminRole.permissions.length < adminPermissions.length) {
-      console.log("Updating Admin role with latest permissions...");
-      adminRole.permissions = adminPermissions;
-      changesMade = true;
-  }
-
 
   (window as any).__APP_HYDRATED__ = true;
   resolveHydration?.();
   console.log('Hydration process complete.');
 
-  // If the document didn't exist or we had to make integrity changes, persist back to Firestore.
   if (changesMade && db) {
-    console.log('Attempting to persist initial/updated data to Firestore in the background...');
+    console.log('Attempting to persist initial/updated data to Firestore...');
     const keysToPersist = Object.keys(DATA_ARRAYS) as DataKey[];
     persistToFirestore(keysToPersist).catch((err) => {
       console.error('Background persistence failed:', err);
@@ -540,17 +518,15 @@ export async function hydrateFromFirestore() {
  * @param keysToUpdate An array of keys corresponding to the data arrays to be updated.
  */
 export async function persistToFirestore(keysToUpdate?: DataKey[]) {
-  // Check if we are in local-only development mode.
   if (DEV_MODE_LOCAL_ONLY) { 
-      console.log(`[DEV MODE] Persist to Firestore skipped for keys: ${keysToUpdate?.join(', ')}`);
+      saveToLocalStorage();
+      console.log(`[DEV MODE] Data persisted to localStorage for keys: ${keysToUpdate?.join(', ')}`);
       if (typeof window !== 'undefined') {
-          // Dispatch event to keep local UI consistent with in-memory changes
           window.dispatchEvent(new CustomEvent('databaseUpdated'));
       }
       return;
   }
 
-  // The code below is now disabled in dev mode.
   if (!db) {
     console.warn('Persist skipped: Firebase not configured.');
     return;
@@ -561,11 +537,9 @@ export async function persistToFirestore(keysToUpdate?: DataKey[]) {
   }
 
   const keys = keysToUpdate && keysToUpdate.length > 0 ? keysToUpdate : (Object.keys(DATA_ARRAYS) as DataKey[]);
-
   console.log(`Persisting granular data to Firestore for keys: ${keys.join(', ')}`);
 
   const dataToPersist: { [key in DataKey]?: any } = {} as any;
-
   for (const key of keys) {
     if (DATA_ARRAYS[key] !== undefined) {
       dataToPersist[key] = DATA_ARRAYS[key];
@@ -602,7 +576,6 @@ export async function logAudit(
     userName?: string;
   } = {}
 ) {
-  // Get current user from localStorage if not provided
   let userId = details.userId;
   let userName = details.userName;
 
@@ -630,7 +603,7 @@ export async function logAudit(
     entityId: details.entityId,
   };
 
-  placeholderAuditLogs.unshift(newLog); // Add to the beginning of the array
+  placeholderAuditLogs.unshift(newLog);
   await persistToFirestore(['auditLogs']);
 }
 
