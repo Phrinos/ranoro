@@ -20,7 +20,7 @@ import { ServiceDialog } from "../../servicios/components/service-dialog";
 import { StatusTracker } from "../../servicios/components/StatusTracker";
 import { Badge } from "@/components/ui/badge";
 import { PrintTicketDialog } from "@/components/ui/print-ticket-dialog";
-import { QuoteContent } from "@/components/quote-content";
+import { ServiceSheetContent } from '@/components/service-sheet-content';
 
 
 type QuoteSortOption = 
@@ -137,7 +137,7 @@ function HistorialCotizacionesPageComponent() {
 
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [quoteForPreview, setQuoteForPreview] = useState<QuoteRecord | null>(null);
-  const quoteContentRef = useRef<HTMLDivElement>(null);
+  const serviceSheetRef = useRef<HTMLDivElement>(null);
 
 
   useEffect(() => {
@@ -168,7 +168,7 @@ function HistorialCotizacionesPageComponent() {
       const totalB = b.totalCost ?? 0;
       
       const dateA = a.quoteDate ? (typeof a.quoteDate === 'string' ? parseISO(a.quoteDate) : new Date(a.quoteDate)) : new Date(0);
-      const dateB = b.quoteDate ? (typeof b.quoteDate === 'string' ? parseISO(b.quoteDate) : new Date(b.quoteDate)) : new Date(0);
+      const dateB = b.quoteDate ? (typeof b.quoteDate === 'string' ? parseISO(b.quoteDate) : new Date(b.quoteDate)) : new Date(b.quoteDate);
 
       switch (sortOption) {
         case "date_asc": return compareAsc(dateA, dateB);
@@ -255,19 +255,20 @@ function HistorialCotizacionesPageComponent() {
         <PrintTicketDialog
           open={isPreviewOpen}
           onOpenChange={setIsPreviewOpen}
-          title={`Cotización: ${quoteForPreview.id}`}
+          title="Vista Previa Unificada"
           dialogContentClassName="printable-quote-dialog"
           footerActions={
             <Button onClick={() => window.print()}>
-              <Printer className="mr-2 h-4 w-4" /> Imprimir Cotización
+              <Printer className="mr-2 h-4 w-4" /> Imprimir Documento
             </Button>
           }
         >
-          <QuoteContent
-            ref={quoteContentRef}
+          <ServiceSheetContent
+            ref={serviceSheetRef}
+            service={quoteForPreview}
             quote={quoteForPreview}
             vehicle={vehicles.find(v => v.id === quoteForPreview.vehicleId)}
-            workshopInfo={workshopInfo}
+            workshopInfo={workshopInfo as WorkshopInfo}
           />
         </PrintTicketDialog>
       )}
