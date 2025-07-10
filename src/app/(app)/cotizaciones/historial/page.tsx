@@ -13,7 +13,7 @@ import { Search, ListFilter, FileText, Eye, Edit, Printer } from "lucide-react";
 import { placeholderServiceRecords, placeholderVehicles, placeholderTechnicians, placeholderInventory, persistToFirestore, AUTH_USER_LOCALSTORAGE_KEY } from "@/lib/placeholder-data"; 
 import type { QuoteRecord, Vehicle, ServiceRecord, Technician, InventoryItem, WorkshopInfo, User } from "@/types"; 
 import { useToast } from "@/hooks/use-toast";
-import { format, parseISO, compareAsc, compareDesc, isBefore, addDays, isValid } from "date-fns";
+import { format, parseISO, compareAsc, compareDesc, isBefore, addDays } from "date-fns";
 import { es } from 'date-fns/locale';
 import { cn, formatCurrency } from "@/lib/utils";
 import { ServiceDialog } from "../../servicios/components/service-dialog";
@@ -29,10 +29,10 @@ type QuoteSortOption =
   | "vehicle_asc" | "vehicle_desc";
 
 
-const QuoteList = React.memo(({ quotes, vehicles, onEdit, onViewQuote }: { 
+const QuoteList = React.memo(({ quotes, vehicles, onEditQuote, onViewQuote }: { 
     quotes: QuoteRecord[], 
     vehicles: Vehicle[], 
-    onEdit: (quote: QuoteRecord) => void,
+    onEditQuote: (quote: QuoteRecord) => void,
     onViewQuote: (quote: QuoteRecord) => void,
 }) => {
   
@@ -47,10 +47,13 @@ const QuoteList = React.memo(({ quotes, vehicles, onEdit, onViewQuote }: {
     if (quote.status !== 'Cotizacion') {
       return { label: 'Procesada', variant: 'blue' };
     }
-    const quoteDate = parseISO(quote.quoteDate ?? new Date().toISOString());
+    const quoteDateStr = quote.quoteDate ?? new Date().toISOString();
+    const quoteDate = typeof quoteDateStr === 'string' ? parseISO(quoteDateStr) : new Date(quoteDateStr);
+    
     if (!isValid(quoteDate)) {
         return { label: 'Archivada', variant: 'secondary' };
     }
+    
     const expirationDate = addDays(quoteDate, 15);
     
     if (isBefore(new Date(), expirationDate)) {
@@ -67,13 +70,14 @@ const QuoteList = React.memo(({ quotes, vehicles, onEdit, onViewQuote }: {
           const vehicle = vehicles.find(v => v.id === quote.vehicleId);
           const status = quote.status;
           const quoteStatusInfo = getQuoteStatus(quote);
+          const quoteDate = quote.quoteDate ? parseISO(quote.quoteDate as string) : new Date();
 
           return (
             <Card key={quote.id} className="shadow-sm overflow-hidden">
               <CardContent className="p-0">
                 <div className="flex flex-col md:flex-row">
                    <div className="p-4 flex flex-col justify-center items-center text-center w-full md:w-48 flex-shrink-0">
-                      <p className="font-semibold text-xl text-foreground">{format(parseISO(quote.quoteDate ?? new Date().toISOString()), "dd MMM yyyy", { locale: es })}</p>
+                      <p className="font-semibold text-xl text-foreground">{isValid(quoteDate) ? format(quoteDate, "dd MMM yyyy", { locale: es }) : "Fecha inválida"}</p>
                       <p className="text-muted-foreground text-xs mt-1">Folio: {quote.id}</p>
                       <StatusTracker status={status} />
                     </div>
@@ -87,7 +91,7 @@ const QuoteList = React.memo(({ quotes, vehicles, onEdit, onViewQuote }: {
                     <div className="p-3 flex flex-col justify-center items-center text-center w-full md:w-48 flex-shrink-0">
                       <p className="text-xs text-muted-foreground">Costo Estimado</p>
                       <p className="font-bold text-xl text-black">{formatCurrency(quote.totalCost)}</p>
-                       {!!quote.serviceProfit && (
+                       {quote.serviceProfit !== undefined && (
                         <p className="text-xs text-green-600 font-medium">
                             Ganancia: {formatCurrency(quote.serviceProfit)}
                         </p>
@@ -98,7 +102,7 @@ const QuoteList = React.memo(({ quotes, vehicles, onEdit, onViewQuote }: {
                         <p className="text-xs text-muted-foreground">Asesor: {quote.preparedByTechnicianName || 'N/A'}</p>
                         <div className="flex justify-center items-center gap-1">
                           <Button variant="ghost" size="icon" onClick={() => onViewQuote(quote)} title="Vista Previa"><Eye className="h-4 w-4" /></Button>
-                          <Button variant="ghost" size="icon" onClick={() => onEdit(quote)} title="Editar Cotización"><Edit className="h-4 w-4" /></Button>
+                          <Button variant="ghost" size="icon" onClick={() => onEditQuote(quote)} title="Editar Cotización"><Edit className="h-4 w-4" /></Button>
                         </div>
                     </div>
                 </div>
@@ -147,9 +151,7 @@ function HistorialCotizacionesPageComponent() {
   }, []);
   
   const activeQuotes = useMemo(() => {
-    // A record is considered a "quote" for this page if its status is Cotizacion,
-    // OR if its status has changed but it was originally a quote (and has a quoteDate).
-    let filtered = allServices.filter(service => service.status === 'Cotizacion' || service.quoteDate);
+    let filtered = allServices.filter(service => service.status === 'Cotizacion' || (service.quoteDate && service.status !== 'Cotizacion'));
 
     if (searchTerm) {
       const lowerSearchTerm = searchTerm.toLowerCase();
@@ -162,8 +164,9 @@ function HistorialCotizacionesPageComponent() {
     filtered.sort((a, b) => {
       const totalA = a.totalCost ?? 0;
       const totalB = b.totalCost ?? 0;
-      const dateA = a.quoteDate ? parseISO(a.quoteDate) : new Date(0);
-      const dateB = b.quoteDate ? parseISO(b.quoteDate) : new Date(0);
+      
+      const dateA = a.quoteDate ? (typeof a.quoteDate === 'string' ? parseISO(a.quoteDate) : new Date(a.quoteDate)) : new Date(0);
+      const dateB = b.quoteDate ? (typeof b.quoteDate === 'string' ? parseISO(b.quoteDate) : new Date(b.quoteDate)) : new Date(0);
 
       switch (sortOption) {
         case "date_asc": return compareAsc(dateA, dateB);
@@ -196,28 +199,9 @@ function HistorialCotizacionesPageComponent() {
     toast({ title: "Cotización Eliminada", description: `La cotización ${quoteId} ha sido eliminada.` });
   }, [toast]);
 
-  const handleSaveQuote = useCallback(async (data: QuoteRecord | ServiceRecord) => {
-    const isNew = !data.id;
-    const recordId = data.id || `doc_${Date.now().toString(36)}`;
-    const recordToSave = { ...data, id: recordId };
-    
-    const recordIndex = placeholderServiceRecords.findIndex(q => q.id === recordId);
-    
-    if (recordIndex > -1) {
-      placeholderServiceRecords[recordIndex] = recordToSave as ServiceRecord;
-    } else {
-      placeholderServiceRecords.push(recordToSave as ServiceRecord);
-    }
-    
-    await persistToFirestore(['serviceRecords']);
-    
-    toast({
-      title: `Cotización ${isNew ? 'creada' : 'actualizada'}`,
-      description: `Se han guardado los cambios para ${recordId}.`,
-    });
-    
+  const handleSaveQuote = useCallback(async (data: ServiceRecord | QuoteRecord) => {
     setIsFormDialogOpen(false);
-  }, [toast]);
+  }, []);
 
 
   return (
@@ -235,7 +219,7 @@ function HistorialCotizacionesPageComponent() {
         <QuoteList
           quotes={activeQuotes}
           vehicles={vehicles}
-          onEdit={handleEditQuote}
+          onEditQuote={handleEditQuote}
           onViewQuote={handleViewQuote}
         />
       </div>
