@@ -80,6 +80,15 @@ export let placeholderInventory: InventoryItem[] = [
 // =======================================
 export let placeholderVehicles: Vehicle[] = [
   {
+    id: 'VEH001',
+    make: 'Nissan',
+    model: 'Versa',
+    year: 2020,
+    ownerName: 'Juan Perez',
+    ownerPhone: '4491234567',
+    licensePlate: 'AAA123A',
+  },
+  {
     id: 'VEH002',
     make: 'Honda',
     model: 'CR-V',
@@ -131,7 +140,9 @@ export const defaultSuperAdmin: User = {
   signatureDataUrl: undefined,
 };
 
-export let placeholderUsers: User[] = []; // This will be hydrated from Firestore
+export let placeholderUsers: User[] = [
+  { id: 'diana_user_id', name: 'Diana Arriaga', email: 'diana@ranoro.mx', role: 'Admin' }
+]; // This will be hydrated from Firestore
 export const AUTH_USER_LOCALSTORAGE_KEY = 'authUser';
 export const USER_LOCALSTORAGE_KEY = 'appUsers';
 export const ROLES_LOCALSTORAGE_KEY = 'appRoles';
@@ -191,7 +202,39 @@ export let placeholderAuditLogs: AuditLog[] = [
 // --- SERVICIOS ---
 // MIGRATED DATA - This data now follows the standardized ServiceRecord structure.
 export let placeholderServiceRecords: ServiceRecord[] = [
-  // --- Existing Data Migrated ---
+  {
+    id: 'SER001',
+    publicId: 's_qwert12345',
+    vehicleId: 'VEH001',
+    vehicleIdentifier: 'AAA123A',
+    serviceDate: subDays(new Date(), 10).toISOString(),
+    deliveryDateTime: subDays(new Date(), 9).toISOString(),
+    serviceType: 'Cambio de Aceite',
+    description: 'Cambio de aceite y filtro.',
+    technicianId: 'T001',
+    technicianName: 'Carlos Rodriguez',
+    serviceItems: [
+      {
+        id: 'item_ser001_1',
+        name: 'Cambio de aceite y filtro',
+        price: 850,
+        suppliesUsed: [
+          { supplyId: 'PROD001', supplyName: 'Aceite Sintético 5W-30', quantity: 4.5, unitPrice: 150, sellingPrice: 180 },
+          { supplyId: 'PROD002', supplyName: 'Filtro de Aceite', quantity: 1, unitPrice: 80, sellingPrice: 96 },
+        ]
+      }
+    ],
+    totalCost: 850,
+    totalSuppliesCost: 755, // (4.5 * 150) + 80
+    serviceProfit: 95, // 850 - 755
+    subTotal: 732.76,
+    taxAmount: 117.24,
+    status: 'Completado',
+    mileage: 75000,
+    serviceAdvisorId: 'diana_user_id',
+    serviceAdvisorName: 'Diana Arriaga',
+    appointmentStatus: 'Confirmada',
+  },
   {
     id: 'SER002',
     publicId: 's_zxcvbnm123',
@@ -219,8 +262,8 @@ export let placeholderServiceRecords: ServiceRecord[] = [
     taxAmount: 165.52,
     status: 'Reparando',
     mileage: 89000,
-    serviceAdvisorId: 'user_superadmin',
-    serviceAdvisorName: 'Arturo Valdelamar',
+    serviceAdvisorId: 'diana_user_id',
+    serviceAdvisorName: 'Diana Arriaga',
     appointmentStatus: 'Confirmada',
   },
   {
@@ -248,18 +291,17 @@ export let placeholderServiceRecords: ServiceRecord[] = [
     taxAmount: 248.28,
     status: 'Agendado',
     mileage: 15000,
-    serviceAdvisorId: 'user_superadmin',
-    serviceAdvisorName: 'Arturo Valdelamar',
+    serviceAdvisorId: 'diana_user_id',
+    serviceAdvisorName: 'Diana Arriaga',
     appointmentStatus: 'Creada',
   },
-  // --- New Quote Example ---
   {
     id: 'COT001',
     publicId: 's_qwerty789',
     vehicleId: 'VEH002',
     vehicleIdentifier: 'BBB456B',
     quoteDate: subDays(new Date(), 2).toISOString(),
-    serviceDate: subDays(new Date(), 2).toISOString(), // A serviceDate is needed for consistency
+    serviceDate: subDays(new Date(), 2).toISOString(), 
     serviceType: 'Frenos',
     description: 'Cambio de balatas delanteras y traseras.',
     technicianId: 'T001',
@@ -282,8 +324,8 @@ export let placeholderServiceRecords: ServiceRecord[] = [
     taxAmount: 344.83,
     status: 'Cotizacion',
     mileage: 91000,
-    serviceAdvisorId: 'user_superadmin',
-    serviceAdvisorName: 'Arturo Valdelamar',
+    serviceAdvisorId: 'diana_user_id',
+    serviceAdvisorName: 'Diana Arriaga',
   }
 ];
 
