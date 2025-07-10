@@ -180,12 +180,10 @@ function HistorialServiciosPageComponent() {
     const today = new Date();
     return allServices
       .filter(s => {
-        if (s.status === 'En Taller') return true;
-        if (s.status === 'Agendado') {
-          const serviceDay = parseISO(s.serviceDate);
-          return isValid(serviceDay) && isToday(serviceDay);
-        }
-        return false;
+        const isScheduledForToday = s.status === 'Agendado' && s.serviceDate && isValid(parseISO(s.serviceDate)) && isToday(parseISO(s.serviceDate));
+        const isInWorkshop = s.status === 'En Taller';
+        const isDeliveredToday = s.status === 'Entregado' && s.deliveryDateTime && isValid(parseISO(s.deliveryDateTime)) && isToday(parseISO(s.deliveryDateTime));
+        return isScheduledForToday || isInWorkshop || isDeliveredToday;
       })
       .sort((a,b) => compareAsc(parseISO(a.serviceDate), parseISO(b.serviceDate)));
   }, [allServices]);
