@@ -39,7 +39,7 @@ import {
     persistToFirestore, 
     AUTH_USER_LOCALSTORAGE_KEY,
 } from '@/lib/placeholder-data';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription as DialogDesc, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDesc, DialogFooter } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
@@ -271,6 +271,7 @@ export function ServiceForm({
   const [isGeneratingQuote, setIsGeneratingQuote] = useState(false);
   
   const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const [serviceForSheet, setServiceForSheet] = useState<ServiceRecord | null>(null);
   
   const [isServiceDatePickerOpen, setIsServiceDatePickerOpen] = useState(false);
   const [isDeliveryDatePickerOpen, setIsDeliveryDatePickerOpen] = useState(false);
@@ -354,15 +355,14 @@ export function ServiceForm({
   const watchedServiceItems = useWatch({ control, name: "serviceItems" });
 
   const quoteForViewing = useMemo(() => {
-    const data = (mode === 'quote' ? initialDataQuote : initialDataService);
-    if (!data) return null;
-    const isQuote = data.status === 'Cotizacion';
-    if(isQuote) return data as QuoteRecord;
+    const currentId = initialData?.id;
+    if (!currentId) return null;
     
-    // Find the original quote if this is a service converted from a quote
-    const originalQuote = defaultServiceRecords.find(q => q.status === 'Cotizacion' && q.id === data.id);
+    // Find the original quote, regardless of the current status
+    const originalQuote = defaultServiceRecords.find(q => q.id === currentId && q.status === 'Cotizacion');
     return originalQuote || null;
-  }, [mode, initialDataQuote, initialDataService]);
+  }, [initialData?.id]);
+
 
   const { totalCost, totalSuppliesWorkshopCost, serviceProfit } = useMemo(() => {
     let calculatedTotalCost = 0;
@@ -831,15 +831,10 @@ export function ServiceForm({
     onClose();
   };
   
-  const handlePrintSheet = useCallback(async () => {
-    // Refresh user data right before printing
-    const authUserString = localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY);
-    const freshCurrentUser = authUserString ? JSON.parse(authUserString) : null;
-    
-    const serviceData = { ...form.getValues() } as ServiceRecord;
-    serviceData.serviceAdvisorName = freshCurrentUser?.name || 'N/A';
-    serviceData.serviceAdvisorSignatureDataUrl = freshCurrentUser?.signatureDataUrl;
-
+  const handlePrintSheet = useCallback(() => {
+    // This function will now be responsible for setting the data for the unified preview.
+    const serviceData = form.getValues() as ServiceRecord;
+    setServiceForSheet(serviceData);
     setIsSheetOpen(true);
   }, [form]);
 
@@ -1733,16 +1728,18 @@ export function ServiceForm({
           open={isSheetOpen}
           onOpenChange={setIsSheetOpen}
           title="Vista Previa Unificada"
-          onDialogClose={() => {}}
+          onDialogClose={() => {setServiceForSheet(null);}}
           dialogContentClassName="printable-quote-dialog"
-          footerActions={<><Button type="button" onClick={() => handleShareService(form.getValues() as ServiceRecord)} variant="outline"><MessageSquare className="mr-2 h-4 w-4" /> Copiar para WhatsApp</Button><Button onClick={() => window.print()}><Printer className="mr-2 h-4 w-4" /> Imprimir Documento</Button></>}
+          footerActions={<><Button type="button" onClick={() => handleShareService(serviceForSheet)} variant="outline"><MessageSquare className="mr-2 h-4 w-4" /> Copiar para WhatsApp</Button><Button onClick={() => window.print()}><Printer className="mr-2 h-4 w-4" /> Imprimir Documento</Button></>}
       >
-          <ServiceSheetContent
-              service={form.getValues() as ServiceRecord}
-              quote={quoteForViewing || undefined}
-              vehicle={selectedVehicle || undefined}
-              workshopInfo={workshopInfo as WorkshopInfo}
-          />
+          {serviceForSheet && (
+              <ServiceSheetContent
+                  service={serviceForSheet}
+                  quote={quoteForViewing}
+                  vehicle={selectedVehicle || undefined}
+                  workshopInfo={workshopInfo as WorkshopInfo}
+              />
+          )}
       </PrintTicketDialog>
 
       <VehicleDialog
