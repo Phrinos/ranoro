@@ -1,6 +1,4 @@
 
-'use server';
-
 import type { ServiceRecord, QuoteRecord, SaleReceipt } from "@/types";
 import { placeholderServiceRecords, placeholderSales, persistToFirestore, logAudit, placeholderInventory, savePublicDocument } from "@/lib/placeholder-data";
 import { inventoryService } from './inventory.service';

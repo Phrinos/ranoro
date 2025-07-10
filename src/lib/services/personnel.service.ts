@@ -1,6 +1,4 @@
 
-'use server';
-
 import type { Technician, AdministrativeStaff, Driver } from "@/types";
 import { placeholderTechnicians, placeholderAdministrativeStaff, placeholderDrivers, persistToFirestore } from "@/lib/placeholder-data";
 import type { TechnicianFormValues } from "@/app/(app)/tecnicos/components/technician-form";
