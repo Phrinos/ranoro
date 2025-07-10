@@ -14,7 +14,7 @@ import React, { useEffect, useState, useMemo, useCallback, useRef } from "react"
 import { useToast } from "@/hooks/use-toast";
 import { VehicleDialog } from "../../vehiculos/components/vehicle-dialog";
 import type { VehicleFormValues } from "../../vehiculos/components/vehicle-form";
-import { placeholderVehicles as defaultPlaceholderVehicles, placeholderInventory, persistToFirestore, AUTH_USER_LOCALSTORAGE_KEY, placeholderServiceTypes } from '@/lib/placeholder-data';
+import { placeholderVehicles as defaultPlaceholderVehicles, placeholderInventory, persistToFirestore, AUTH_USER_LOCALSTORAGE_KEY, placeholderServiceTypes } from "@/lib/placeholder-data";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/label";
 import { suggestQuote } from '@/ai/flows/quote-suggestion-flow';
@@ -264,6 +264,11 @@ export function ServiceForm({
         photoReportsData = [{ id: `rep_recepcion_${Date.now()}`, date: new Date().toISOString(), description: "Notas de la Recepción", photos: [] }];
     }
     
+    let serviceItemsData = data?.serviceItems || [];
+    if (serviceItemsData.length === 0 && !isReadOnly) {
+        serviceItemsData = [{ id: `item_${Date.now()}`, name: '', price: undefined, suppliesUsed: [] }];
+    }
+
     form.reset({
         id: data?.id || `SRV-${generateUniqueId()}`,
         status: data?.status || (mode === 'quote' ? 'Cotizacion' : 'Agendado'),
@@ -286,6 +291,7 @@ export function ServiceForm({
         serviceAdvisorName: data?.serviceAdvisorName || freshUserRef.current?.name || '',
         serviceAdvisorSignatureDataUrl: data?.serviceAdvisorSignatureDataUrl || freshUserRef.current?.signatureDataUrl || '',
         photoReports: photoReportsData,
+        serviceItems: serviceItemsData,
     });
     
   }, [initialData, mode, form, isReadOnly, refreshCurrentUser, serviceTypes]);
