@@ -151,7 +151,7 @@ function HistorialCotizacionesPageComponent() {
   }, []);
   
   const activeQuotes = useMemo(() => {
-    let filtered = allServices.filter(service => service.status === 'Cotizacion' || service.quoteDate);
+    let filtered = allServices.filter(service => service.status === 'Cotizacion' || (service.quoteDate && service.status !== 'Cotizacion'));
 
     if (searchTerm) {
       const lowerSearchTerm = searchTerm.toLowerCase();
@@ -171,7 +171,7 @@ function HistorialCotizacionesPageComponent() {
       switch (sortOption) {
         case "date_asc": return compareAsc(dateA, dateB);
         case "total_asc": return totalA - totalB;
-        case "total_desc": return totalB - totalA;
+        case "total_desc": return totalB - a.totalCost;
         case "vehicle_asc": return (a.vehicleIdentifier || '').localeCompare(b.vehicleIdentifier || '');
         case "vehicle_desc": return (b.vehicleIdentifier || '').localeCompare(a.vehicleIdentifier || '');
         case "date_desc": default: return compareDesc(dateA, dateB);
