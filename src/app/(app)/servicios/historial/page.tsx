@@ -64,7 +64,7 @@ const ServiceList = React.memo(({ services, vehicles, technicians, onEdit, onVie
           const vehicle = vehicles.find(v => v.id === service.vehicleId);
           const technician = technicians.find(t => t.id === service.technicianId);
           const isCompletable = service.status === 'Reparando' || service.status === 'En Espera de Refacciones';
-          const isInProgress = service.status === 'Reparando' || service.status === 'En Espera de Refacciones';
+          const isInProgress = service.status === 'Reparando' || service.status === 'En Espera de Refacciones' || service.status === 'Agendado';
 
           return (
             <Card key={service.id} className="shadow-sm overflow-hidden">
@@ -72,6 +72,7 @@ const ServiceList = React.memo(({ services, vehicles, technicians, onEdit, onVie
                 <div className="flex flex-col md:flex-row text-sm">
                   <div className="p-4 flex flex-col justify-center items-center text-center w-full md:w-48 flex-shrink-0">
                       <p className="font-semibold text-xl text-foreground">{format(safeParseISO(service.serviceDate), "dd MMM yyyy", { locale: es })}</p>
+                      <p className="font-semibold text-lg text-foreground">{format(safeParseISO(service.serviceDate), "HH:mm", { locale: es })}</p>
                       <p className="text-muted-foreground text-xs mt-1">Folio: {service.id}</p>
                       <StatusTracker status={service.status} />
                   </div>
@@ -167,13 +168,22 @@ function HistorialServiciosPageComponent() {
 
   const activeServices = useMemo(() => {
     return allServices.filter(s => {
+      const serviceDay = parseISO(s.serviceDate);
+      if (!isValid(serviceDay)) return false;
+
+      // Agendado for today
+      if (s.status === 'Agendado' && isToday(serviceDay)) return true;
+      
+      // In repair
       if (s.status === 'Reparando' || s.status === 'En Espera de Refacciones') return true;
+
+      // Completed today
       if (s.status === 'Completado' && s.deliveryDateTime) {
         const deliveryDate = parseISO(s.deliveryDateTime);
         return isValid(deliveryDate) && isToday(deliveryDate);
       }
       return false;
-    });
+    }).sort((a,b) => compareAsc(parseISO(a.serviceDate), parseISO(b.serviceDate)));
   }, [allServices]);
   
   const handleSaveService = useCallback(async (data: QuoteRecord | ServiceRecord) => {
@@ -398,4 +408,5 @@ export default function HistorialServiciosPageWrapper() {
     )
 }
     
+
 
