@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React from "react";
@@ -64,7 +65,7 @@ export const ReceptionAndDelivery = ({
   const customerSignatureReception = watch("customerSignatureReception");
   const customerSignatureDelivery = watch("customerSignatureDelivery");
 
-  const receptionDate = watch("serviceDate");
+  const receptionDate = watch("receptionDateTime");
   const deliveryDate = watch("deliveryDateTime");
   
   const formattedReceptionDate = receptionDate && isValid(receptionDate)
