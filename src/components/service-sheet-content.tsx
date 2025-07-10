@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import type { ServiceRecord, Vehicle, QuoteRecord, WorkshopInfo, SafetyInspection, SafetyCheckStatus, PhotoReportGroup } from '@/types';
@@ -189,7 +188,7 @@ const SafetyChecklistDisplay = ({
             {inspection.technicianSignature && (
                  <div className="mt-8 border-t pt-4 text-center flex flex-col items-center">
                     <div className="h-24 w-full max-w-[200px] relative">
-                        <Image src={inspection.technicianSignature} alt="Firma del técnico" layout="fill" objectFit="contain" />
+                        <img src={inspection.technicianSignature} alt="Firma del técnico" style={{ objectFit: 'contain', width: '100%', height: '100%' }} crossOrigin="anonymous"/>
                     </div>
                     <div className="border-t-2 border-black mt-2 pt-1 w-64 text-center">
                         <p className="text-xs font-bold">FIRMA DEL TÉCNICO</p>
@@ -235,8 +234,15 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
     const formattedServiceDate = isValid(serviceDate) ? format(serviceDate, "dd 'de' MMMM 'de' yyyy, HH:mm 'hrs'", { locale: es }) : 'N/A';
 
     const fuelLevelMap: Record<string, number> = {
-        'Vacío': 0, '1/8': 12.5, '1/4': 25, '3/8': 37.5, '1/2': 50,
-        '5/8': 62.5, '3/4': 75, '7/8': 87.5, 'Lleno': 100,
+        'Vacío': 0,
+        '1/8': 12.5,
+        '1/4': 25,
+        '3/8': 37.5,
+        '1/2': 50,
+        '5/8': 62.5,
+        '3/4': 75,
+        '7/8': 87.5,
+        'Lleno': 100,
     };
 
     const fuelPercentage = service.fuelLevel ? fuelLevelMap[service.fuelLevel] ?? 0 : 0;
