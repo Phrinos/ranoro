@@ -71,7 +71,8 @@ export default function LoginPage() {
             alt="Ranoro Logo"
             width={240}
             height={60}
-            className="dark:invert h-auto mx-auto"
+            className="dark:invert mx-auto"
+            style={{ width: 'auto', height: 'auto' }}
             priority
             data-ai-hint="ranoro logo"
           />
