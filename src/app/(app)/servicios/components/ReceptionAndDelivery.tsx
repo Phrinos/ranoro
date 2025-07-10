@@ -65,15 +65,15 @@ export const ReceptionAndDelivery = ({
   const customerSignatureReception = watch("customerSignatureReception");
   const customerSignatureDelivery = watch("customerSignatureDelivery");
 
-  const receptionDate = watch("receptionDateTime");
-  const deliveryDate = watch("deliveryDateTime");
+  const receptionDateTime = watch("receptionDateTime");
+  const deliveryDateTime = watch("deliveryDateTime");
   
-  const formattedReceptionDate = receptionDate && isValid(receptionDate)
-    ? format(receptionDate, "dd MMM yyyy, HH:mm 'hrs'", { locale: es })
+  const formattedReceptionDate = receptionDateTime && isValid(receptionDateTime)
+    ? format(receptionDateTime, "dd MMM yyyy, HH:mm 'hrs'", { locale: es })
     : null;
     
-  const formattedDeliveryDate = deliveryDate && isValid(deliveryDate)
-    ? format(deliveryDate, "dd MMM yyyy, HH:mm 'hrs'", { locale: es })
+  const formattedDeliveryDate = deliveryDateTime && isValid(deliveryDateTime)
+    ? format(deliveryDateTime, "dd MMM yyyy, HH:mm 'hrs'", { locale: es })
     : null;
 
   return (
@@ -86,8 +86,54 @@ export const ReceptionAndDelivery = ({
       </CardHeader>
 
       <CardContent className="space-y-6">
+        {/* Panel de Firmas */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t">
+          <div>
+            <FormLabel className="font-semibold text-base">Firma de Recepción</FormLabel>
+            {formattedReceptionDate && (
+                <p className="text-xs text-muted-foreground mt-1">
+                    Recepción: {formattedReceptionDate}
+                </p>
+            )}
+             <div className="mt-2 p-3 min-h-[50px] border rounded-md bg-muted/50 flex items-center justify-center">
+                {customerSignatureReception ? (
+                  <div className="text-center text-green-600">
+                    <CheckCircle className="mx-auto h-6 w-6 mb-1"/>
+                    <p className="font-semibold">Firma Capturada</p>
+                  </div>
+                ) : (
+                  <div className="text-center text-muted-foreground">
+                    <Clock className="mx-auto h-6 w-6 mb-1"/>
+                    <p>Firma Pendiente</p>
+                  </div>
+                )}
+            </div>
+          </div>
+          <div>
+            <FormLabel className="font-semibold text-base">Firma de Conformidad</FormLabel>
+            {formattedDeliveryDate && (
+                 <p className="text-xs text-muted-foreground mt-1">
+                    Entrega: {formattedDeliveryDate}
+                </p>
+            )}
+            <div className="mt-2 p-3 min-h-[50px] border rounded-md bg-muted/50 flex items-center justify-center">
+                {customerSignatureDelivery ? (
+                   <div className="text-center text-green-600">
+                    <CheckCircle className="mx-auto h-6 w-6 mb-1"/>
+                    <p className="font-semibold">Firma Capturada</p>
+                  </div>
+                ) : (
+                  <div className="text-center text-muted-foreground">
+                    <Clock className="mx-auto h-6 w-6 mb-1"/>
+                    <p>Firma Pendiente</p>
+                  </div>
+                )}
+            </div>
+          </div>
+        </div>
+        
         {/* Condiciones y pertenencias */}
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 pt-4 border-t">
           {/* Condiciones del vehículo */}
           <FormField
             control={control}
@@ -172,7 +218,7 @@ export const ReceptionAndDelivery = ({
           control={control}
           name="fuelLevel"
           render={({ field }) => (
-            <FormItem>
+            <FormItem className="pt-4 border-t">
               <FormLabel>Nivel de Combustible</FormLabel>
               <Select
                 onValueChange={field.onChange}
@@ -196,43 +242,6 @@ export const ReceptionAndDelivery = ({
           )}
         />
         
-        {/* Panel de Firmas */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t">
-          <div>
-            <FormLabel className="font-semibold text-base">Firma de Recepción</FormLabel>
-             <div className="mt-2 p-3 min-h-[50px] border rounded-md bg-muted/50 flex items-center justify-center">
-                {customerSignatureReception ? (
-                  <div className="text-center text-green-600">
-                    <CheckCircle className="mx-auto h-6 w-6 mb-1"/>
-                    <p className="font-semibold">Firma Capturada</p>
-                    {formattedReceptionDate && <p className="text-xs text-muted-foreground">{formattedReceptionDate}</p>}
-                  </div>
-                ) : (
-                  <div className="text-center text-muted-foreground">
-                    <Clock className="mx-auto h-6 w-6 mb-1"/>
-                    <p>Firma Pendiente</p>
-                  </div>
-                )}
-            </div>
-          </div>
-          <div>
-            <FormLabel className="font-semibold text-base">Firma de Conformidad</FormLabel>
-            <div className="mt-2 p-3 min-h-[50px] border rounded-md bg-muted/50 flex items-center justify-center">
-                {customerSignatureDelivery ? (
-                   <div className="text-center text-green-600">
-                    <CheckCircle className="mx-auto h-6 w-6 mb-1"/>
-                    <p className="font-semibold">Firma Capturada</p>
-                    {formattedDeliveryDate && <p className="text-xs text-muted-foreground">{formattedDeliveryDate}</p>}
-                  </div>
-                ) : (
-                  <div className="text-center text-muted-foreground">
-                    <Clock className="mx-auto h-6 w-6 mb-1"/>
-                    <p>Firma Pendiente</p>
-                  </div>
-                )}
-            </div>
-          </div>
-        </div>
       </CardContent>
     </Card>
   );
