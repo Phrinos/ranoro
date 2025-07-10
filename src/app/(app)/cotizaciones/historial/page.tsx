@@ -149,7 +149,9 @@ function HistorialCotizacionesPageComponent() {
   }, []);
   
   const activeQuotes = useMemo(() => {
-    let filtered = allServices.filter(service => service.status === 'Cotizacion' || (service.quoteDate && service.status !== 'Cotizacion'));
+    // A record is considered a quote if its status is 'Cotizacion' OR if it has a quoteDate.
+    // This includes quotes that have been processed into services.
+    let filtered = allServices.filter(service => service.status === 'Cotizacion' || !!service.quoteDate);
 
     if (searchTerm) {
       const lowerSearchTerm = searchTerm.toLowerCase();
