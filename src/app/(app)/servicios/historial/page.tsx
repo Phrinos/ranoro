@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import React, { useState, useEffect, useMemo, useCallback, Suspense, useRef } from "react";
@@ -155,10 +154,16 @@ function HistorialServiciosPageComponent() {
   }, []);
   
   const historicalServices = useMemo(() => {
-    let filtered = allServices.filter(s => s.status !== 'Agendado' && s.status !== 'Cotizacion');
+    // Show everything that is NOT a quote.
+    let filtered = allServices.filter(s => s.status !== 'Cotizacion');
+
     if (dateRange?.from) {
       filtered = filtered.filter(service => {
-        const serviceDate = parseISO(service.serviceDate);
+        // Filter by serviceDate for Agendado/En Taller, and deliveryDateTime for Entregado
+        const dateToCompare = service.status === 'Entregado' && service.deliveryDateTime ? service.deliveryDateTime : service.serviceDate;
+        if (!dateToCompare) return false;
+        
+        const serviceDate = parseISO(dateToCompare);
         return isValid(serviceDate) && isWithinInterval(serviceDate, { start: startOfDay(dateRange.from!), end: endOfDay(dateRange.to || dateRange.from!) });
       });
     }
@@ -173,16 +178,13 @@ function HistorialServiciosPageComponent() {
     const today = new Date();
     return allServices
       .filter(s => {
+        // An active service is one that is "En Taller" or is scheduled for today.
         if (s.status === 'En Taller') {
           return true;
         }
         if (s.status === 'Agendado') {
           const serviceDay = parseISO(s.serviceDate);
           return isValid(serviceDay) && isToday(serviceDay);
-        }
-        if (s.status === 'Entregado') {
-          const deliveryDate = s.deliveryDateTime ? parseISO(s.deliveryDateTime) : null;
-          return deliveryDate && isValid(deliveryDate) && isToday(deliveryDate);
         }
         return false;
       })
@@ -411,8 +413,3 @@ export default function HistorialServiciosPageWrapper() {
     )
 }
     
-
-
-
-
-
