@@ -4,6 +4,7 @@
 import { useState, useMemo } from 'react';
 import type { DateRange } from 'react-day-picker';
 import { isWithinInterval, parseISO, isValid, startOfDay, endOfDay, compareAsc, compareDesc } from 'date-fns';
+import { TableToolbar } from '@/components/shared/table-toolbar';
 
 interface UseTableManagerOptions<T> {
   initialData: T[];
@@ -70,8 +71,6 @@ export function useTableManager<T extends { [key: string]: any }>({
     return data;
   }, [initialData, searchTerm, sortOption, dateRange, otherFilters, searchKeys, dateFilterKey]);
 
-  const TableToolbarComponent = require('@/components/shared/table-toolbar').TableToolbar;
-
   return {
     filteredData,
     searchTerm,
@@ -83,7 +82,7 @@ export function useTableManager<T extends { [key: string]: any }>({
     otherFilters,
     setOtherFilters,
     TableToolbarComponent: (props: any) => (
-        <TableToolbarComponent
+        <TableToolbar
             searchTerm={searchTerm}
             onSearchTermChange={setSearchTerm}
             dateRange={dateRange}
