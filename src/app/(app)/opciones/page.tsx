@@ -17,7 +17,7 @@ import * as z from 'zod';
 import type { User, SaleReceipt, AppRole, WorkshopInfo, ServiceTypeRecord } from '@/types';
 import { 
     Save, Signature, BookOpen, Settings, UserCircle, Upload, Loader2, Bold, Shield, MessageSquare, Copy, Download, Printer,
-    LayoutDashboard, Wrench, FileText, Receipt, Package, DollarSign, Users, Shapes, Edit, Trash2
+    LayoutDashboard, Wrench, FileText, Receipt, Package, DollarSign, Users, Shapes, Edit, Trash2, PlusCircle
 } from 'lucide-react';
 import { onAuthStateChanged, updatePassword, reauthenticateWithCredential, EmailAuthProvider } from 'firebase/auth';
 import { auth, storage, db } from '@/lib/firebaseClient.js';
@@ -640,3 +640,4 @@ export default function OpcionesPageWrapper() {
         </Suspense>
     );
 }
+
