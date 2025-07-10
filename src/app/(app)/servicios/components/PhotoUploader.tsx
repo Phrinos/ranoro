@@ -38,7 +38,6 @@ export function PhotoUploader({
     }
     if (!file) return;
 
-    // This is the crucial check to prevent uploads with an invalid path
     if (!serviceId) {
         toast({ title: "Error", description: "Se necesita un ID de servicio válido para subir fotos. Guarde el servicio primero.", variant: "destructive" });
         return;

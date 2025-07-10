@@ -25,7 +25,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Signature, BrainCircuit, Loader2 } from "lucide-react";
+import { Signature, BrainCircuit, Loader2, CheckCircle, Clock } from "lucide-react";
 import type { ServiceFormValues } from "./service-form";
 import { format, parseISO, isValid } from "date-fns";
 import { es } from "date-fns/locale";
@@ -44,7 +44,6 @@ const fuelLevels = [
 
 interface ReceptionAndDeliveryProps {
   isReadOnly?: boolean;
-  onCustomerSignatureClick: (type: "reception" | "delivery") => void;
   isEnhancingText: string | null;
   handleEnhanceText: (
     fieldName:
@@ -54,22 +53,20 @@ interface ReceptionAndDeliveryProps {
       | "safetyInspection.inspectionNotes"
       | `photoReports.${number}.description`
   ) => void;
-  receptionDate?: Date;
-  deliveryDate?: Date;
 }
 
 export const ReceptionAndDelivery = ({
   isReadOnly,
-  onCustomerSignatureClick,
   isEnhancingText,
   handleEnhanceText,
-  receptionDate,
-  deliveryDate,
 }: ReceptionAndDeliveryProps) => {
   const { control, watch } = useFormContext<ServiceFormValues>();
   const customerSignatureReception = watch("customerSignatureReception");
   const customerSignatureDelivery = watch("customerSignatureDelivery");
 
+  const receptionDate = watch("serviceDate");
+  const deliveryDate = watch("deliveryDateTime");
+  
   const formattedReceptionDate = receptionDate && isValid(receptionDate)
     ? format(receptionDate, "dd MMM yyyy, HH:mm 'hrs'", { locale: es })
     : null;
@@ -197,63 +194,42 @@ export const ReceptionAndDelivery = ({
             </FormItem>
           )}
         />
-
-        {/* Firmas */}
-        <div className="grid grid-cols-1 gap-6 pt-4 md:grid-cols-2">
-          {/* Firma recepción */}
+        
+        {/* Panel de Firmas */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t">
           <div>
-            <FormLabel>Firma de Recepción del Cliente</FormLabel>
-            <div className="mt-2 flex min-h-[100px] flex-col items-center justify-center rounded-md border bg-muted/50 p-2 text-center">
-              {customerSignatureReception ? (
-                <>
-                  <p className="font-semibold text-green-600">Firma Capturada</p>
-                  {formattedReceptionDate && <p className="text-xs text-muted-foreground">{formattedReceptionDate}</p>}
-                </>
-              ) : (
-                <span className="text-sm text-muted-foreground">
-                  Firma pendiente
-                </span>
-              )}
+            <FormLabel className="font-semibold text-base">Firma de Recepción</FormLabel>
+             <div className="mt-2 p-3 min-h-[50px] border rounded-md bg-muted/50 flex items-center justify-center">
+                {customerSignatureReception ? (
+                  <div className="text-center text-green-600">
+                    <CheckCircle className="mx-auto h-6 w-6 mb-1"/>
+                    <p className="font-semibold">Firma Capturada</p>
+                    {formattedReceptionDate && <p className="text-xs text-muted-foreground">{formattedReceptionDate}</p>}
+                  </div>
+                ) : (
+                  <div className="text-center text-muted-foreground">
+                    <Clock className="mx-auto h-6 w-6 mb-1"/>
+                    <p>Firma Pendiente</p>
+                  </div>
+                )}
             </div>
-            {!isReadOnly && (
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => onCustomerSignatureClick("reception")}
-                className="mt-2 w-full"
-              >
-                <Signature className="mr-2 h-4 w-4" />
-                {customerSignatureReception ? "Cambiar Firma" : "Capturar Firma"}
-              </Button>
-            )}
           </div>
-
-          {/* Firma entrega */}
           <div>
-            <FormLabel>Firma de Entrega del Cliente</FormLabel>
-            <div className="mt-2 flex min-h-[100px] flex-col items-center justify-center rounded-md border bg-muted/50 p-2 text-center">
-              {customerSignatureDelivery ? (
-                 <>
-                  <p className="font-semibold text-green-600">Firma Capturada</p>
-                  {formattedDeliveryDate && <p className="text-xs text-muted-foreground">{formattedDeliveryDate}</p>}
-                </>
-              ) : (
-                <span className="text-sm text-muted-foreground">
-                  Firma pendiente
-                </span>
-              )}
+            <FormLabel className="font-semibold text-base">Firma de Conformidad</FormLabel>
+            <div className="mt-2 p-3 min-h-[50px] border rounded-md bg-muted/50 flex items-center justify-center">
+                {customerSignatureDelivery ? (
+                   <div className="text-center text-green-600">
+                    <CheckCircle className="mx-auto h-6 w-6 mb-1"/>
+                    <p className="font-semibold">Firma Capturada</p>
+                    {formattedDeliveryDate && <p className="text-xs text-muted-foreground">{formattedDeliveryDate}</p>}
+                  </div>
+                ) : (
+                  <div className="text-center text-muted-foreground">
+                    <Clock className="mx-auto h-6 w-6 mb-1"/>
+                    <p>Firma Pendiente</p>
+                  </div>
+                )}
             </div>
-            {!isReadOnly && (
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => onCustomerSignatureClick("delivery")}
-                className="mt-2 w-full"
-              >
-                <Signature className="mr-2 h-4 w-4" />
-                {customerSignatureDelivery ? "Cambiar Firma" : "Capturar Firma"}
-              </Button>
-            )}
           </div>
         </div>
       </CardContent>
