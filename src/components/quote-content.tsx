@@ -24,14 +24,13 @@ const initialWorkshopInfo: WorkshopInfo = {
 interface QuoteContentProps {
   quote: QuoteRecord;
   vehicle?: Vehicle; 
-  preparedByTechnician?: Technician; 
   workshopInfo?: WorkshopInfo; 
 }
 
 const IVA_RATE = 0.16; 
 
 export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
-  ({ quote, vehicle, preparedByTechnician, workshopInfo: workshopInfoProp }, ref) => {
+  ({ quote, vehicle, workshopInfo: workshopInfoProp }, ref) => {
     const effectiveWorkshopInfo = { ...initialWorkshopInfo, ...workshopInfoProp };
     
     const now = new Date();
@@ -128,21 +127,21 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
 
               <section className="flex flex-col sm:flex-row justify-end pt-4 border-t border-dashed">
                   <div className="w-full sm:max-w-xs md:max-w-sm space-y-1 text-sm">
-                      {quote.estimatedSubTotal !== undefined && (
+                      {quote.subTotal !== undefined && (
                           <div className="flex justify-between">
                               <span>Subtotal:</span>
-                              <span className="font-medium">{formatCurrency(quote.estimatedSubTotal)}</span>
+                              <span className="font-medium">{formatCurrency(quote.subTotal)}</span>
                           </div>
                       )}
-                      {quote.estimatedTaxAmount !== undefined && (
+                      {quote.taxAmount !== undefined && (
                           <div className="flex justify-between">
                               <span>IVA ({(IVA_RATE * 100).toFixed(0)}%):</span>
-                              <span className="font-medium">{formatCurrency(quote.estimatedTaxAmount)}</span>
+                              <span className="font-medium">{formatCurrency(quote.taxAmount)}</span>
                           </div>
                       )}
                       <div className="flex justify-between font-bold pt-1 mt-1 border-t border-gray-300">
                           <span>Total Estimado:</span>
-                          <span>{formatCurrency(quote.estimatedTotalCost)}</span>
+                          <span>{formatCurrency(quote.totalCost)}</span>
                       </div>
                   </div>
               </section>
@@ -162,11 +161,11 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
                     <p className="font-semibold">¡Gracias por su preferencia!</p>
                     <p>Para dudas o aclaraciones, no dude en contactarnos.</p>
                 </div>
-                <div className="text-right flex flex-col items-end justify-end mt-4 sm:mt-0">
+                <div className="text-right flex flex-col items-center justify-end mt-4 sm:mt-0">
                     <div className="relative flex justify-center items-center h-16 w-40 mb-1">
-                        {quote.preparedByTechnicianSignatureDataUrl && (
+                        {quote.serviceAdvisorSignatureDataUrl && (
                            <img
-                                src={quote.preparedByTechnicianSignatureDataUrl} 
+                                src={quote.serviceAdvisorSignatureDataUrl} 
                                 alt="Firma del asesor"
                                 style={{ maxHeight: '100%', maxWidth: '100%', objectFit: 'contain' }}
                                 crossOrigin="anonymous"
@@ -175,7 +174,7 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
                     </div>
                     <div className="border-t-2 border-gray-300/30 pt-1 w-56 text-center">
                         <p className="font-bold">
-                           ASESOR: {capitalizeWords((quote.preparedByTechnicianName || '').toLowerCase()) || '________________________________'}
+                           ASESOR: {capitalizeWords((quote.serviceAdvisorName || '').toLowerCase()) || '________________________________'}
                         </p>
                     </div>
                 </div>
