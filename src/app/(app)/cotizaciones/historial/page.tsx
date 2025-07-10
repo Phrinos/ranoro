@@ -134,7 +134,11 @@ function HistorialCotizacionesPageComponent() {
   const [selectedQuote, setSelectedQuote] = useState<QuoteRecord | null>(null);
 
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
-  const [serviceForPreview, setServiceForPreview] = useState<ServiceRecord | null>(null);
+  const [previewData, setPreviewData] = useState<{
+    service: ServiceRecord;
+    quote?: QuoteRecord;
+    vehicle?: Vehicle;
+  } | null>(null);
 
   useEffect(() => {
     // This effect can be used to sync with a global state or DB in the future
@@ -175,7 +179,6 @@ function HistorialCotizacionesPageComponent() {
   }, [allServices, searchTerm, sortOption]);
 
   const handleViewQuote = useCallback((quote: QuoteRecord) => {
-    //-- Usuario logueado
     let currentUser: User | null = null;
     try {
       const raw = typeof window !== "undefined"
@@ -184,7 +187,6 @@ function HistorialCotizacionesPageComponent() {
       if (raw) currentUser = JSON.parse(raw);
     } catch { /* ignore */ }
   
-    //-- Enriquecemos la cotización
     const enrichedQuote: QuoteRecord = {
       ...quote,
       serviceAdvisorName:
@@ -193,9 +195,13 @@ function HistorialCotizacionesPageComponent() {
         quote.serviceAdvisorSignatureDataUrl || currentUser?.signatureDataUrl || "",
     };
   
-    setServiceForPreview(enrichedQuote);
+    setPreviewData({ 
+        service: enrichedQuote,
+        quote: enrichedQuote,
+        vehicle: vehicles.find(v => v.id === enrichedQuote.vehicleId) 
+    });
     setIsPreviewOpen(true);
-  }, []);
+  }, [vehicles]);
   
   const handleEditQuote = useCallback((quote: QuoteRecord) => { 
     setSelectedQuote(quote); 
@@ -261,11 +267,11 @@ function HistorialCotizacionesPageComponent() {
         />
       )}
       
-      {isPreviewOpen && serviceForPreview && (
+      {isPreviewOpen && previewData && (
         <UnifiedPreviewDialog
           open={isPreviewOpen}
           onOpenChange={setIsPreviewOpen}
-          service={serviceForPreview}
+          service={previewData.service}
         />
       )}
     </>
