@@ -7,7 +7,7 @@ import { optimizeImage } from "@/lib/utils";
 import { storage } from "@/lib/firebaseClient";
 import { ref, uploadString, getDownloadURL } from "firebase/storage";
 import { Loader2, Camera } from "lucide-react";
-import React, { useRef, useState, useCallback } from "react";
+import React, { useRef, useState } from "react";
 
 interface PhotoUploaderProps {
   reportIndex: number;
@@ -32,7 +32,7 @@ export function PhotoUploader({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isUploading, setIsUploading] = useState(false);
 
-  const handleFileChange = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
     
     if (fileInputRef.current) {
@@ -46,8 +46,7 @@ export function PhotoUploader({
         return;
     }
 
-    const totalPhotos = photosLength + files.length;
-    if (totalPhotos > maxPhotos) {
+    if ((photosLength + files.length) > maxPhotos) {
       toast({ title: `Límite de ${maxPhotos} Fotos Excedido`, description: `Solo puede subir un máximo de ${maxPhotos} fotos en esta sección.`, variant: 'destructive' });
       return;
     }
@@ -85,7 +84,7 @@ export function PhotoUploader({
     } finally {
         setIsUploading(false);
     }
-  }, [maxPhotos, onUploadComplete, photosLength, reportIndex, serviceId, toast]);
+  };
 
 
   const isDisabled = disabled || isUploading || photosLength >= maxPhotos;
