@@ -149,17 +149,37 @@ export default function PublicServiceSheetPage() {
       if (!db) {
         throw new Error("La base de datos no está inicializada.");
       }
-      // Always save to the main service document
-      const serviceRef = doc(db, 'publicServices', publicId);
+      
       const fieldToUpdate = signatureType === 'reception' ? 'customerSignatureReception' : 'customerSignatureDelivery';
       
+      // Optimistic UI update
+      setService(prevService => {
+          if (!prevService) return null;
+          return {
+              ...prevService,
+              [fieldToUpdate]: signatureDataUrl
+          };
+      });
+      setSignatureType(null);
+
+      // Save to Firestore
+      const serviceRef = doc(db, 'publicServices', publicId);
       await setDoc(serviceRef, { [fieldToUpdate]: signatureDataUrl }, { merge: true });
 
       toast({ title: "Firma Guardada", description: "Su firma ha sido guardada exitosamente." });
-      setSignatureType(null);
       
     } catch (error) {
       toast({ title: "Error al Guardar", description: `No se pudo guardar la firma. ${error instanceof Error ? error.message : ''}`, variant: "destructive" });
+      // Revert optimistic update on error
+      setService(prevService => {
+          if (!prevService) return null;
+          const fieldToRevert = signatureType === 'reception' ? 'customerSignatureReception' : 'customerSignatureDelivery';
+          return {
+              ...prevService,
+              [fieldToRevert]: undefined
+          };
+      });
+
     } finally {
       setIsSigning(false);
     }

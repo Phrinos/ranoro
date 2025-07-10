@@ -56,7 +56,7 @@ export function UnifiedPreviewDialog({ open, onOpenChange, service }: UnifiedPre
     }
     const shareUrl = `${window.location.origin}/s/${service.publicId}`;
     
-    const message = `Enlace: ${shareUrl}
+    const message = `${shareUrl}
 
 Hola ${vehicleForShare.ownerName || 'Cliente'}, gracias por confiar en Ranoro. Te proporcionamos los detalles del servicio de tu vehículo ${vehicleForShare.make} ${vehicleForShare.model} ${vehicleForShare.year} placas ${vehicleForShare.licensePlate}.
 
