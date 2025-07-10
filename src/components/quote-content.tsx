@@ -55,10 +55,12 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
       >
         <header className="mb-4 pb-2 border-b-2 border-black">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-             <img 
+             <Image 
               src={effectiveWorkshopInfo.logoUrl} 
               alt={`${effectiveWorkshopInfo.name} Logo`} 
-              style={{ width: '150px', height: 'auto' }}
+              width={150}
+              height={50}
+              objectFit="contain"
               data-ai-hint="workshop logo"
               crossOrigin="anonymous"
             />
