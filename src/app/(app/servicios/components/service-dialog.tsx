@@ -62,25 +62,52 @@ export function ServiceDialog({
 
   // Mark signatures as "viewed" when the dialog opens
   useEffect(() => {
-    if (open && service && mode === 'service') {
-      let changed = false;
-      if (service.customerSignatureReception && !service.receptionSignatureViewed) {
-        service.receptionSignatureViewed = true;
-        changed = true;
-      }
-      if (service.customerSignatureDelivery && !service.deliverySignatureViewed) {
-        service.deliverySignatureViewed = true;
-        changed = true;
-      }
-      
-      if (changed) {
-        const serviceIndex = placeholderServiceRecords.findIndex(s => s.id === service.id);
-        if (serviceIndex > -1) {
-          placeholderServiceRecords[serviceIndex] = { ...service };
-          persistToFirestore(['serviceRecords']).catch(err => console.error("Failed to mark signature as viewed", err));
+    const syncAndMarkAsViewed = async () => {
+      if (open && service && mode === 'service') {
+        let changed = false;
+
+        // Sync from public document first
+        if (service.publicId && db) {
+          try {
+            const publicDocRef = doc(db, 'publicServices', service.publicId);
+            const publicDocSnap = await getDoc(publicDocRef);
+
+            if (publicDocSnap.exists()) {
+              const publicData = publicDocSnap.data() as ServiceRecord;
+              if (publicData.customerSignatureReception && !service.customerSignatureReception) {
+                service.customerSignatureReception = publicData.customerSignatureReception;
+                changed = true;
+              }
+              if (publicData.customerSignatureDelivery && !service.customerSignatureDelivery) {
+                service.customerSignatureDelivery = publicData.customerSignatureDelivery;
+                changed = true;
+              }
+            }
+          } catch (e) {
+            console.error("Failed to sync signatures from public doc:", e);
+          }
+        }
+
+        // Now, mark as viewed
+        if (service.customerSignatureReception && !service.receptionSignatureViewed) {
+          service.receptionSignatureViewed = true;
+          changed = true;
+        }
+        if (service.customerSignatureDelivery && !service.deliverySignatureViewed) {
+          service.deliverySignatureViewed = true;
+          changed = true;
+        }
+        
+        if (changed) {
+          const serviceIndex = placeholderServiceRecords.findIndex(s => s.id === service.id);
+          if (serviceIndex > -1) {
+            placeholderServiceRecords[serviceIndex] = { ...service };
+            await persistToFirestore(['serviceRecords']);
+          }
         }
       }
-    }
+    };
+    syncAndMarkAsViewed();
   }, [open, service, mode]);
 
   const internalOnSave = async (formData: ServiceRecord | QuoteRecord) => {
@@ -109,7 +136,7 @@ export function ServiceDialog({
       }
 
       const recordToSave: ServiceRecord = { 
-        ...formData,
+        ...formData, // Start with all data from the form, including the new status
         id: recordId,
         quoteDate: formData.status === 'Cotizacion' 
             ? (formData.quoteDate ? new Date(formData.quoteDate).toISOString() : new Date().toISOString()) 
@@ -157,17 +184,34 @@ export function ServiceDialog({
     }
   };
   
-  const dialogTitle = isReadOnly 
-    ? (mode === 'quote' ? "Detalles de la Cotización" : "Detalles del Servicio")
-    : (service || quote 
-      ? (mode === 'quote' ? "Editar Cotización" : "Editar Servicio") 
-      : (mode === 'quote' ? "Nueva Cotización" : "Nuevo Servicio"));
+  const getDynamicTitles = () => {
+    const currentRecord = service || quote;
+    const status = currentRecord?.status;
 
-  const dialogDescription = isReadOnly
-    ? (mode === 'quote' ? "Visualizando los detalles de la cotización." : "Visualizando los detalles de la orden de servicio.")
-    : (service || quote
-      ? (mode === 'quote' ? "Actualiza los detalles de la cotización." : "Actualiza los detalles de la orden de servicio.")
-      : (mode === 'quote' ? "Completa la información para una nueva cotización." : "Completa la información para una nueva orden de servicio."));
+    if (isReadOnly) {
+        switch (status) {
+            case 'Cotizacion': return { title: "Detalles de la Cotización", description: "Visualizando los detalles de la cotización." };
+            case 'Agendado': return { title: "Detalles de la Cita", description: "Visualizando los detalles de la cita agendada." };
+            default: return { title: "Detalles del Servicio", description: "Visualizando los detalles de la orden de servicio." };
+        }
+    }
+
+    if (currentRecord?.id) { // Editing existing record
+        switch (status) {
+            case 'Cotizacion': return { title: "Editar Cotización", description: "Actualiza los detalles de la cotización." };
+            case 'Agendado': return { title: "Editar Cita", description: "Actualiza los detalles de la cita." };
+            default: return { title: "Editar Servicio", description: "Actualiza los detalles de la orden de servicio." };
+        }
+    }
+    
+    // Creating new record
+    return { 
+        title: mode === 'quote' ? "Nueva Cotización" : "Nuevo Servicio", 
+        description: mode === 'quote' ? "Completa la información para una nueva cotización." : "Completa la información para una nueva orden de servicio." 
+    };
+  };
+
+  const { title: dialogTitle, description: dialogDescription } = getDynamicTitles();
       
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
