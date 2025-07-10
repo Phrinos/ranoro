@@ -470,6 +470,11 @@ export function ServiceForm({
                 }
             }
         }
+        
+        let photoReportsData = (data as ServiceRecord)?.photoReports || [];
+        if (!isReadOnly && (!photoReportsData || photoReportsData.length === 0)) {
+            photoReportsData = [{ id: `rep_recepcion_${Date.now()}`, date: new Date().toISOString(), description: 'Recepción del Vehículo', photos: [] }];
+        }
 
         form.reset({
             id: data.id, publicId: (data as any)?.publicId, vehicleId: data.vehicleId ? String(data.vehicleId) : undefined,
@@ -487,7 +492,7 @@ export function ServiceForm({
             customerSignatureDelivery: (data as ServiceRecord)?.customerSignatureDelivery || undefined,
             serviceItems: serviceItemsData, safetyInspection: safetyInspectionData, paymentMethod: (data as ServiceRecord)?.paymentMethod || 'Efectivo',
             cardFolio: (data as ServiceRecord)?.cardFolio || '', transferFolio: (initialData as ServiceRecord)?.transferFolio || '',
-            nextServiceInfo: (data as ServiceRecord)?.nextServiceInfo, photoReports: (data as ServiceRecord)?.photoReports || [],
+            nextServiceInfo: (data as ServiceRecord)?.nextServiceInfo, photoReports: photoReportsData,
             serviceAdvisorId: data.serviceAdvisorId || currentUser?.id || '',
             serviceAdvisorName: data.serviceAdvisorName || currentUser?.name || '',
             serviceAdvisorSignatureDataUrl: data.serviceAdvisorSignatureDataUrl || currentUser?.signatureDataUrl || '',
@@ -500,10 +505,10 @@ export function ServiceForm({
           quoteDate: mode === 'quote' ? new Date() : undefined,
           serviceDate: mode === 'service' ? setHours(setMinutes(new Date(), 30), 8) : undefined,
           serviceItems: [{ id: `item_${Date.now()}`, name: '', price: undefined, suppliesUsed: [] }],
-          photoReports: [],
+          photoReports: [{ id: `rep_recepcion_${Date.now()}`, date: new Date().toISOString(), description: 'Recepción del Vehículo', photos: [] }],
       });
     }
-  }, [initialDataService, initialDataQuote, mode, localVehicles, currentInventoryItems, form, refreshCurrentUser]);
+  }, [initialDataService, initialDataQuote, mode, localVehicles, currentInventoryItems, form, refreshCurrentUser, isReadOnly]);
   
   // Effect to sync signatures from public doc
   useEffect(() => {
@@ -1432,7 +1437,7 @@ export function ServiceForm({
                         <Card key={field.id} className="p-4 bg-muted/30">
                            <div className="flex justify-between items-start mb-2">
                                 <Label className="text-base font-semibold flex items-center gap-2">Reporte #{index + 1}</Label>
-                                {!isReadOnly && (<Button type="button" variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => removePhotoReport(index)}><Trash2 className="h-4 w-4"/></Button>)}
+                                {!isReadOnly && index > 0 && (<Button type="button" variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => removePhotoReport(index)}><Trash2 className="h-4 w-4"/></Button>)}
                            </div>
                            <FormField
                               control={form.control}
@@ -1448,7 +1453,7 @@ export function ServiceForm({
                                             </Button>
                                         )}
                                       </FormLabel>
-                                      <FormControl><Textarea placeholder="Describe el conjunto de fotos..." disabled={isReadOnly} {...descField} /></FormControl>
+                                      <FormControl><Textarea placeholder="Describe el conjunto de fotos..." disabled={isReadOnly || (index === 0 && field.description === 'Recepción del Vehículo')} {...descField} /></FormControl>
                                       <FormMessage />
                                   </FormItem>
                               )}

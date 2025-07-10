@@ -74,24 +74,33 @@ const ChecklistItemPhotoUploader = ({ itemName, serviceId, onUpload, photos, isR
     const [isUploading, setIsUploading] = useState(false);
 
     const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
-        const file = event.target.files?.[0];
+        const files = event.target.files;
         if (fileInputRef.current) fileInputRef.current.value = '';
-        if (!file) return;
+        if (!files || files.length === 0) return;
+
+        const totalPhotos = photos.length + files.length;
+        if (totalPhotos > 2) {
+          toast({ title: 'Límite de Fotos Excedido', description: 'Solo puede subir un máximo de 2 fotos por punto de revisión.', variant: 'destructive' });
+          return;
+        }
 
         setIsUploading(true);
-        try {
-            const optimizedUrl = await optimizeImage(file, 800);
-            const storageRef = ref(storage, `service-photos/${serviceId}/checklist/${itemName}/${Date.now()}.jpg`);
-            await uploadString(storageRef, optimizedUrl, 'data_url');
-            const downloadURL = await getDownloadURL(storageRef);
-            onUpload(itemName, downloadURL);
-            toast({ title: 'Foto subida', description: 'La foto se ha añadido a la inspección.' });
-        } catch (error) {
-            console.error("Error uploading photo:", error);
-            toast({ title: 'Error al subir foto', variant: 'destructive' });
-        } finally {
-            setIsUploading(false);
+        toast({ title: `Subiendo ${files.length} foto(s)...` });
+
+        for (const file of Array.from(files)) {
+          try {
+              const optimizedUrl = await optimizeImage(file, 800);
+              const storageRef = ref(storage, `service-photos/${serviceId}/checklist/${itemName}/${Date.now()}.jpg`);
+              await uploadString(storageRef, optimizedUrl, 'data_url');
+              const downloadURL = await getDownloadURL(storageRef);
+              onUpload(itemName, downloadURL);
+          } catch (error) {
+              console.error("Error uploading photo:", error);
+              toast({ title: 'Error al subir foto', variant: 'destructive' });
+          }
         }
+        
+        setIsUploading(false);
     };
 
     return (
@@ -117,7 +126,7 @@ const ChecklistItemPhotoUploader = ({ itemName, serviceId, onUpload, photos, isR
                         {isUploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Camera className="mr-2 h-4 w-4" />}
                         Añadir Foto ({photos.length}/2)
                     </Button>
-                    <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/*" className="hidden" />
+                    <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/*" className="hidden" multiple />
                  </>
             )}
         </div>
