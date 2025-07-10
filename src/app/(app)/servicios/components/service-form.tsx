@@ -38,7 +38,7 @@ import {
     AUTH_USER_LOCALSTORAGE_KEY,
 } from '@/lib/placeholder-data';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger, AlertDialogDescription } from "@/components/ui/alert-dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger, AlertDialogDescription, AlertDialogFooter } from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/label";
 import { suggestQuote } from '@/ai/flows/quote-suggestion-flow';
 import { enhanceText } from '@/ai/flows/text-enhancement-flow';
@@ -560,12 +560,12 @@ export function ServiceForm({
                 </Card>
                 <Card><CardHeader><CardTitle className="text-lg">Costo del Servicio</CardTitle></CardHeader><CardContent><div className="space-y-1 text-sm"><div className="flex justify-between font-bold text-lg text-primary"><span>Total (IVA Inc.):</span><span>{formatCurrency(totalCost)}</span></div><div className="flex justify-between text-xs"><span>(-) Costo Insumos:</span><span className="font-medium text-red-600 dark:text-red-400">{formatCurrency(totalSuppliesWorkshopCost)}</span></div><hr className="my-1 border-dashed"/><div className="flex justify-between font-bold text-green-700 dark:text-green-400"><span>(=) Ganancia:</span><span>{formatCurrency(serviceProfit)}</span></div></div></CardContent></Card>
             </TabsContent>
-
-            <TabsContent value="recepcion">
+            
+            <TabsContent value="recepcion" className="mt-4">
                <ReceptionAndDelivery isReadOnly={isReadOnly} onCustomerSignatureClick={(type) => { setCustomerSignatureType(type); setIsCustomerSignatureDialogOpen(true); }} isEnhancingText={isEnhancingText} handleEnhanceText={handleEnhanceText} />
             </TabsContent>
             
-            <TabsContent value="reporte">
+            <TabsContent value="reporte" className="mt-4">
               <Card>
                   <CardHeader>
                       <CardTitle>Reporte Fotográfico</CardTitle>
@@ -614,7 +614,7 @@ export function ServiceForm({
               </Card>
             </TabsContent>
             
-            <TabsContent value="seguridad">
+            <TabsContent value="seguridad" className="mt-4">
                <SafetyChecklist control={control} isReadOnly={isReadOnly} onSignatureClick={() => setIsTechSignatureDialogOpen(true)} signatureDataUrl={form.watch('safetyInspection.technicianSignature')} isEnhancingText={isEnhancingText} handleEnhanceText={handleEnhanceText} serviceId={stableServiceId} onPhotoUploaded={handleChecklistPhotoUpload} onViewImage={handleViewImage}/>
             </TabsContent>
           </Tabs>
