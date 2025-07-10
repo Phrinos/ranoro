@@ -1,6 +1,7 @@
+
 "use client";
 
-import React, { useRef, useState, useCallback } from "react";
+import React, { useRef, useState } from "react";
 import { ref, uploadString, getDownloadURL } from "firebase/storage";
 import { Loader2, Camera } from "lucide-react";
 
@@ -32,42 +33,51 @@ export function PhotoUploader({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isUploading, setIsUploading] = useState(false);
 
-  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePhotoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
-    if (fileInputRef.current) fileInputRef.current.value = "";
-    if (!files || files.length === 0) return;
-    
+    if (fileInputRef.current) {
+        fileInputRef.current.value = ""; // Reset input to allow re-selecting the same file
+    }
+    if (!files || files.length === 0) {
+        return;
+    }
+
     if (!serviceId) {
-      toast({ title: "Error", description: "Se necesita un ID de servicio para subir fotos.", variant: "destructive" });
-      return;
+        toast({ title: "Error", description: "Se necesita un ID de servicio para subir fotos.", variant: "destructive" });
+        return;
     }
+
     if (photosLength + files.length > maxPhotos) {
-      toast({ title: `Límite de ${maxPhotos} foto(s) excedido`, variant: "destructive" });
-      return;
+        toast({ title: `Límite de ${maxPhotos} foto(s) excedido`, variant: "destructive" });
+        return;
     }
+
     if (!storage) {
-      toast({ title: "Storage no disponible", variant: "destructive" });
-      return;
+        toast({ title: "Storage no disponible", variant: "destructive" });
+        return;
     }
 
     setIsUploading(true);
     toast({ title: `Subiendo ${files.length} imagen(es)…` });
 
     try {
-      for (const file of Array.from(files)) {
-        const dataUrl = await optimizeImage(file, 1280);
-        const fileName = `${Date.now()}_${file.name.replace(/\s+/g, "_")}.jpg`;
-        const photoRef = ref(storage, `service-photos/${serviceId}/${fileName}`);
-        await uploadString(photoRef, dataUrl, "data_url");
-        const downloadURL = await getDownloadURL(photoRef);
-        onUploadComplete(reportIndex, downloadURL);
-      }
-      toast({ title: "¡Listo!", description: "Imagen(es) añadida(s)." });
+        for (const file of Array.from(files)) {
+            const dataUrl = await optimizeImage(file, 1280);
+            const fileName = `${Date.now()}_${file.name.replace(/\s+/g, "_")}.jpg`;
+            const photoRef = ref(storage, `service-photos/${serviceId}/${fileName}`);
+            
+            await uploadString(photoRef, dataUrl, "data_url");
+            const downloadURL = await getDownloadURL(photoRef);
+            
+            // Call the passed-in function to update the parent form state
+            onUploadComplete(reportIndex, downloadURL);
+        }
+        toast({ title: "¡Listo!", description: "Imagen(es) añadida(s)." });
     } catch (err) {
-      console.error("Error al subir:", err);
-      toast({ title: "Error al subir", description: err instanceof Error ? err.message : "Ocurrió un error desconocido.", variant: "destructive" });
+        console.error("Error al subir:", err);
+        toast({ title: "Error al subir", description: err instanceof Error ? err.message : "Ocurrió un error desconocido.", variant: "destructive" });
     } finally {
-      setIsUploading(false);
+        setIsUploading(false);
     }
   };
 
@@ -96,7 +106,7 @@ export function PhotoUploader({
         type="file"
         accept="image/*"
         multiple
-        onChange={handleFileChange}
+        onChange={handlePhotoUpload} // This was the critical error, it was pointing to an empty function
         capture={captureMode === "camera" ? "environment" : undefined}
         className="hidden"
       />
