@@ -56,7 +56,7 @@ export default function LandingPage() {
               width={120}
               height={30}
               className="dark:invert"
-              style={{ height: "auto" }}
+              style={{ width: "auto", height: "auto" }}
               priority
               data-ai-hint="ranoro logo"
             />
