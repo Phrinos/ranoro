@@ -31,6 +31,7 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogD
 import Image from "next/image";
 import { Download } from "lucide-react";
 import { ServiceDetailsCard } from "./ServiceDetailsCard"; // Import the new component
+import { Textarea } from "@/components/ui/textarea";
 
 const supplySchema = z.object({
   supplyId: z.string().min(1, "Seleccione un insumo"),
