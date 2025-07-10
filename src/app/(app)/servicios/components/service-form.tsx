@@ -1789,9 +1789,9 @@ export function ServiceForm({
         <DialogContent className="max-w-4xl p-2">
             <DialogHeader className="print:hidden">
               <DialogTitle>Vista Previa de Imagen</DialogTitle>
-              <DialogDescription>
+              <DialogDesc>
                 Visualizando la imagen de evidencia. Puede descargarla si lo necesita.
-              </DialogDescription>
+              </DialogDesc>
             </DialogHeader>
             <div className="relative aspect-video w-full">
                 {viewingImageUrl && (
