@@ -389,7 +389,3 @@ export default function POSPageWrapper() {
         </Suspense>
     )
 }
-
-    
-
-    

@@ -17,7 +17,7 @@ interface SaleItemsListProps {
   inventoryItems: InventoryItem[];
 }
 
-export function SaleItemsList({ onAddItem, inventoryItems }: SaleItemsListProps) {
+export const SaleItemsList = React.memo(({ onAddItem, inventoryItems }: SaleItemsListProps) => {
   const { control, getValues, setValue } = useFormContext();
   const { fields, remove } = useFieldArray({ control, name: "items" });
   const { toast } = useToast();
@@ -77,4 +77,6 @@ export function SaleItemsList({ onAddItem, inventoryItems }: SaleItemsListProps)
       </CardContent>
     </Card>
   );
-}
+});
+
+SaleItemsList.displayName = 'SaleItemsList';

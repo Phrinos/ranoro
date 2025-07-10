@@ -17,7 +17,7 @@ import { format, parseISO, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Printer, Edit, Ban, Receipt } from "lucide-react";
 import { calculateSaleProfit } from "@/lib/placeholder-data";
-import { cn } from "@/lib/utils";
+import { cn, formatCurrency } from "@/lib/utils";
 
 interface SalesTableProps {
   sales: SaleReceipt[];
@@ -47,10 +47,6 @@ export const SalesTable = React.memo(({ sales, onReprintTicket, inventoryItems, 
         </div>
     );
   }
-
-  const formatCurrency = (amount: number) => {
-    return `$${amount.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-  };
 
   const getPaymentMethodVariant = (method?: SaleReceipt['paymentMethod']): BadgeVariantType => {
     switch (method) {

@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { useState, useMemo, useEffect, useCallback, Suspense } from 'react';
@@ -24,9 +23,8 @@ import { PriceListDialog } from '../precios/components/price-list-dialog';
 import type { PriceListFormValues } from '../precios/components/price-list-form';
 import { formatCurrency } from '@/lib/utils';
 
-
 // --- START CONTENT FOR RESUMEN ---
-function ResumenVehiculosPageComponent({ summaryData, onNewVehicleClick }: {
+const ResumenVehiculosPageComponent = React.memo(({ summaryData, onNewVehicleClick }: {
     summaryData: {
         totalVehiclesCount: number;
         inactive6MonthsCount: number;
@@ -36,7 +34,7 @@ function ResumenVehiculosPageComponent({ summaryData, onNewVehicleClick }: {
         mostCommonVehicle: string;
     };
     onNewVehicleClick: () => void;
-}) {
+}) => {
     return (
         <div className="space-y-6">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -108,10 +106,12 @@ function ResumenVehiculosPageComponent({ summaryData, onNewVehicleClick }: {
             </div>
         </div>
     );
-}
+});
+ResumenVehiculosPageComponent.displayName = 'ResumenVehiculosPageComponent';
+
 
 // --- START CONTENT FOR LISTA DE VEHICULOS ---
-function ListaVehiculosPageContent({ vehicles }: { vehicles: Vehicle[] }) {
+const ListaVehiculosPageContent = React.memo(({ vehicles }: { vehicles: Vehicle[] }) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [activityFilter, setActivityFilter] = useState("all");
   const [sortOption, setSortOption] = useState<string>("date_asc");
@@ -199,21 +199,20 @@ function ListaVehiculosPageContent({ vehicles }: { vehicles: Vehicle[] }) {
         <Card><CardContent className="p-0"><VehiclesTable vehicles={filteredAndSortedVehicles} /></CardContent></Card>
     </div>
   );
-}
+});
+ListaVehiculosPageContent.displayName = 'ListaVehiculosPageContent';
 
 
 // --- START CONTENT FOR PRECOTIZACIONES ---
-function PrecotizacionesPageContent({ 
+const PrecotizacionesPageContent = React.memo(({ 
   priceLists, 
-  onSave, 
   onDelete,
   onOpenDialog
 }: {
   priceLists: VehiclePriceList[];
-  onSave: (data: PriceListFormValues) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
   onOpenDialog: (record?: VehiclePriceList) => void;
-}) {
+}) => {
   const [searchTerm, setSearchTerm] = useState('');
 
   const filteredRecords = useMemo(() => {
@@ -344,7 +343,9 @@ function PrecotizacionesPageContent({
       </div>
     </div>
   );
-}
+});
+PrecotizacionesPageContent.displayName = 'PrecotizacionesPageContent';
+
 
 // --- MAIN PAGE COMPONENT ---
 function VehiculosPageComponent() {
@@ -548,4 +549,3 @@ export default function VehiculosPageWrapper() {
         </Suspense>
     );
 }
-

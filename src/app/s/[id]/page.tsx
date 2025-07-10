@@ -1,8 +1,7 @@
 
-
 "use client";
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import { ServiceSheetContent } from '@/components/service-sheet-content';
 import { Button } from '@/components/ui/button';
@@ -16,6 +15,7 @@ import { doc, setDoc, onSnapshot, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebasePublic.js';
 import Image from "next/image";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { QuoteContent } from '@/components/quote-content';
 
 
 export default function PublicServiceSheetPage() {
@@ -37,17 +37,10 @@ export default function PublicServiceSheetPage() {
   const [viewingImageUrl, setViewingImageUrl] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!publicId) {
-      setError("No se proporcionó un ID de servicio en el enlace.");
+    if (!publicId || !db) {
+      setError("Enlace inválido o base de datos no configurada.");
       setService(null);
       return;
-    }
-
-    if (!db) {
-        console.error("Firebase (db) no está configurado. No se puede cargar la hoja de servicio pública.");
-        setError("La conexión con la base de datos no está configurada. Este enlace no funcionará.");
-        setService(null);
-        return;
     }
     
     // Attempt to fetch from publicServices first
@@ -135,7 +128,7 @@ export default function PublicServiceSheetPage() {
     setSignatureType(type);
   };
   
-  const handleDownloadImage = () => {
+  const handleDownloadImage = useCallback(() => {
     if (!viewingImageUrl) return;
     try {
       window.open(viewingImageUrl, '_blank')?.focus();
@@ -147,7 +140,7 @@ export default function PublicServiceSheetPage() {
         variant: "destructive"
       });
     }
-  };
+  }, [viewingImageUrl, toast]);
 
   const handleSaveSignature = async (signatureDataUrl: string) => {
     if (!signatureType || !publicId) return;
@@ -172,10 +165,10 @@ export default function PublicServiceSheetPage() {
     }
   };
 
-  const handleViewImage = (url: string) => {
+  const handleViewImage = useCallback((url: string) => {
     setViewingImageUrl(url);
     setIsImageViewerOpen(true);
-  };
+  }, []);
 
   if (service === undefined) {
     return (
@@ -187,7 +180,7 @@ export default function PublicServiceSheetPage() {
   }
   
   if (error || !service || !vehicle) {
-    return (
+     return (
       <div className="container mx-auto py-8">
         <Card className="max-w-4xl mx-auto text-center"><CardHeader><ShieldAlert className="mx-auto h-16 w-16 text-destructive mb-4" /><CardTitle className="text-2xl font-bold">Error al Cargar el Documento</CardTitle></CardHeader>
           <CardContent className="space-y-4 text-left">
@@ -212,7 +205,7 @@ export default function PublicServiceSheetPage() {
   }
 
   const showSignReception = service.status !== 'Cotizacion' && !service.customerSignatureReception;
-  const showSignDelivery = service.status === 'Completado' && !!service.customerSignatureReception && !service.customerSignatureDelivery;
+  const showSignDelivery = service.status === 'Entregado' && !!service.customerSignatureReception && !service.customerSignatureDelivery;
 
   return (
     <div className="container mx-auto">
@@ -227,7 +220,7 @@ export default function PublicServiceSheetPage() {
           </div>
         </CardHeader>
       </Card>
-      <div className="bg-white mx-auto shadow-2xl printable-content">
+      <div className="bg-white mx-auto shadow-2xl printable-content max-w-4xl">
         <ServiceSheetContent 
           ref={serviceSheetRef} 
           service={service}

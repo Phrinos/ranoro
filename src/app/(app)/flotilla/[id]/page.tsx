@@ -4,12 +4,9 @@
 import { useParams, useRouter } from 'next/navigation';
 import { 
   placeholderVehicles, 
-  placeholderServiceRecords, 
-  placeholderInventory, 
-  placeholderTechnicians, 
   persistToFirestore 
 } from '@/lib/placeholder-data';
-import type { Vehicle, ServiceRecord, QuoteRecord } from '@/types';
+import type { Vehicle } from '@/types';
 import { PageHeader } from '@/components/page-header';
 import { Button } from '@/components/ui/button';
 import { ShieldAlert, Edit, ArrowLeft, Trash2 } from 'lucide-react';
@@ -36,7 +33,6 @@ import { DetailsTabContent } from './components/details-tab-content';
 import { MaintenancesTabContent } from './components/maintenances-tab-content';
 import { FinesTabContent } from './components/fines-tab-content';
 import { PaperworkTabContent } from './components/paperwork-tab-content';
-import { ServiceDialog } from '../../servicios/components/service-dialog';
 
 
 export default function FleetVehicleDetailPage() {
@@ -53,7 +49,7 @@ export default function FleetVehicleDetailPage() {
     setVehicle(foundVehicle || null);
   }, [vehicleId]);
 
-  const handleSaveVehicle = async (formData: VehicleFormValues) => {
+  const handleSaveVehicle = useCallback(async (formData: VehicleFormValues) => {
     if (!vehicle) return;
 
     const updatedVehicleData: Partial<Vehicle> = {
@@ -66,23 +62,23 @@ export default function FleetVehicleDetailPage() {
     };
     
     const updatedVehicle = { ...vehicle, ...updatedVehicleData } as Vehicle;
-    setVehicle(updatedVehicle);
-
+    
     const pIndex = placeholderVehicles.findIndex(v => v.id === updatedVehicle.id);
     if (pIndex !== -1) {
       placeholderVehicles[pIndex] = updatedVehicle;
     }
     
     await persistToFirestore(['vehicles']);
+    setVehicle(updatedVehicle);
 
     setIsVehicleEditDialogOpen(false);
     toast({
       title: "Vehículo Actualizado",
       description: `Los datos de ${updatedVehicle.make} ${updatedVehicle.model} han sido actualizados.`,
     });
-  };
+  }, [vehicle, toast]);
 
-  const handleRemoveFromFleet = async () => {
+  const handleRemoveFromFleet = useCallback(async () => {
     if (!vehicle) return;
 
     const vehicleIndex = placeholderVehicles.findIndex(v => v.id === vehicle.id);
@@ -99,7 +95,7 @@ export default function FleetVehicleDetailPage() {
     });
 
     router.push('/flotilla');
-  };
+  }, [vehicle, toast, router]);
 
   if (vehicle === undefined) {
     return <div className="container mx-auto py-8 text-center">Cargando datos del vehículo...</div>;
