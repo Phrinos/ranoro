@@ -127,52 +127,66 @@ export function VehicleSelectionCard({
         <CardTitle className="text-lg">Información del Vehículo</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
-            <FormField
-                control={control}
-                name="vehicleLicensePlateSearch"
-                render={({ field }) => (
-                <FormItem className="w-full">
-                    <FormLabel>Placa del Vehículo</FormLabel>
-                    <FormControl>
-                    <Input
-                        placeholder="Buscar/Ingresar Placas"
-                        {...field}
-                        value={vehicleLicensePlateSearch}
-                        onChange={(e) => {
-                            setVehicleLicensePlateSearch(e.target.value.toUpperCase());
-                            field.onChange(e.target.value.toUpperCase());
-                        }}
-                        disabled={isReadOnly}
-                        className="uppercase"
-                        onKeyDown={handleVehiclePlateKeyDown}
-                    />
-                    </FormControl>
-                </FormItem>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+            {/* Columna Izquierda: Inputs */}
+            <div className="space-y-4">
+              <FormField
+                  control={control}
+                  name="vehicleLicensePlateSearch"
+                  render={({ field }) => (
+                  <FormItem>
+                      <FormLabel>Placa del Vehículo</FormLabel>
+                      <FormControl>
+                      <Input
+                          placeholder="Buscar/Ingresar Placas"
+                          {...field}
+                          value={vehicleLicensePlateSearch}
+                          onChange={(e) => {
+                              setVehicleLicensePlateSearch(e.target.value.toUpperCase());
+                              field.onChange(e.target.value.toUpperCase());
+                          }}
+                          disabled={isReadOnly}
+                          className="uppercase"
+                          onKeyDown={handleVehiclePlateKeyDown}
+                      />
+                      </FormControl>
+                  </FormItem>
+                  )}
+              />
+              <FormField
+                  control={control}
+                  name="mileage"
+                  render={({ field }) => (
+                      <FormItem>
+                          <FormLabel>Kilometraje (Opcional)</FormLabel>
+                          <FormControl>
+                              <Input
+                              type="number"
+                              placeholder="Ej: 55000 km"
+                              {...field}
+                              value={field.value ?? ''}
+                              disabled={isReadOnly}
+                              />
+                          </FormControl>
+                      </FormItem>
+                  )}
+              />
+            </div>
+            
+            {/* Columna Derecha: Información del vehículo seleccionado */}
+            <div>
+                {selectedVehicle && (
+                <div className="p-3 border rounded-md bg-amber-50 dark:bg-amber-950/50 text-sm space-y-1 h-full">
+                    <p className="font-semibold">{selectedVehicle.licensePlate} - {selectedVehicle.make} {selectedVehicle.model} {selectedVehicle.year}</p>
+                    <p>Propietario: {selectedVehicle.ownerName} - {selectedVehicle.ownerPhone}</p>
+                    <p>Últ. Servicio: {lastServiceDateFormatted}</p>
+                </div>
                 )}
-            />
-             <FormField
-                control={control}
-                name="mileage"
-                render={({ field }) => (
-                    <FormItem>
-                        <FormLabel>Kilometraje (Opcional)</FormLabel>
-                        <FormControl>
-                            <Input
-                            type="number"
-                            placeholder="Ej: 55000 km"
-                            {...field}
-                            value={field.value ?? ''}
-                            disabled={isReadOnly}
-                            />
-                        </FormControl>
-                    </FormItem>
-                )}
-            />
+            </div>
         </div>
         
         {vehicleSearchResults.length > 0 && (
-          <ScrollArea className="h-auto max-h-[150px] w-full rounded-md border">
+          <ScrollArea className="h-auto max-h-[150px] w-full md:w-1/2 rounded-md border">
             <div className="p-2">
               {vehicleSearchResults.map(v => (
                 <button
@@ -187,14 +201,6 @@ export function VehicleSelectionCard({
               ))}
             </div>
           </ScrollArea>
-        )}
-
-        {selectedVehicle && (
-          <div className="p-3 border rounded-md bg-amber-50 dark:bg-amber-950/50 text-sm space-y-1">
-            <p className="font-semibold">{selectedVehicle.licensePlate} - {selectedVehicle.make} {selectedVehicle.model} {selectedVehicle.year}</p>
-            <p>Propietario: {selectedVehicle.ownerName} - {selectedVehicle.ownerPhone}</p>
-            <p>Últ. Servicio: {lastServiceDateFormatted}</p>
-          </div>
         )}
 
         {vehicleNotFound && !selectedVehicle && !isReadOnly && (
