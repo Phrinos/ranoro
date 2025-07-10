@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React, { useState, useEffect, useMemo, useCallback, Suspense, useRef } from "react";
@@ -18,7 +19,7 @@ import { operationsService } from '@/lib/services/operations.service';
 import { personnelService } from '@/lib/services/personnel.service';
 import { inventoryService } from '@/lib/services/inventory.service';
 import { adminService } from '@/lib/services/admin.service';
-import { ServiceAppointmentCard } from '../agenda/page';
+import { ServiceAppointmentCard } from '../components/ServiceAppointmentCard';
 
 function HistorialServiciosPageComponent() {
   const { toast } = useToast();
@@ -77,7 +78,7 @@ function HistorialServiciosPageComponent() {
   const {
     filteredData: historicalServices,
     ...tableManager
-  } = useTableManager({
+  } = useTableManager<ServiceRecord>({
     initialData: allServices.filter(s => s.status !== 'Cotizacion'),
     searchKeys: ['id', 'vehicleIdentifier', 'description'],
     dateFilterKey: 'serviceDate',
