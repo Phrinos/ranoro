@@ -441,6 +441,10 @@ export function ServiceForm({
   useEffect(() => {
     const data = mode === 'service' ? initialDataService : initialDataQuote;
     
+    // Always refresh current user data when the dialog opens or initial data changes.
+    refreshCurrentUser();
+    const currentUser = freshUserRef.current;
+    
     if (data) {
         const vehicle = localVehicles.find(v => v.id === data.vehicleId);
         if (vehicle) {
@@ -542,33 +546,38 @@ export function ServiceForm({
             transferFolio: (initialData as ServiceRecord)?.transferFolio || '',
             nextServiceInfo: (data as ServiceRecord)?.nextServiceInfo,
             photoReports: (data as ServiceRecord)?.photoReports || [],
-            serviceAdvisorId: (data as ServiceRecord)?.serviceAdvisorId,
-            serviceAdvisorName: (data as ServiceRecord)?.serviceAdvisorName,
-            serviceAdvisorSignatureDataUrl: (data as ServiceRecord)?.serviceAdvisorSignatureDataUrl,
+            serviceAdvisorId: data.serviceAdvisorId || currentUser?.id,
+            serviceAdvisorName: data.serviceAdvisorName || currentUser?.name,
+            serviceAdvisorSignatureDataUrl: data.serviceAdvisorSignatureDataUrl || currentUser?.signatureDataUrl,
         };
 
         form.reset(dataToReset);
 
     } else {
       // Set default for new forms
+      const baseDefaults: Partial<ServiceFormValues> = {
+          serviceAdvisorId: currentUser?.id,
+          serviceAdvisorName: currentUser?.name,
+          serviceAdvisorSignatureDataUrl: currentUser?.signatureDataUrl,
+      };
+
       if (mode === 'quote') {
-          form.setValue('status', 'Cotizacion');
-          form.setValue('quoteDate', new Date());
-          const authUserString = typeof window !== 'undefined' ? localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY) : null;
-          const freshCurrentUser: User | null = authUserString ? JSON.parse(authUserString) : null;
-          if (freshCurrentUser) {
-            form.setValue('technicianId', freshCurrentUser.id);
-          }
+          form.reset({
+              ...baseDefaults,
+              status: 'Cotizacion',
+              quoteDate: new Date(),
+              serviceItems: [{ id: `item_${Date.now()}`, name: '', price: undefined, suppliesUsed: [] }],
+          });
       } else {
-          form.setValue('status', 'Agendado');
-          form.setValue('serviceDate', setHours(setMinutes(new Date(), 30), 8));
-      }
-      // Automatically add one service item if none exist for a new form
-      if (form.getValues('serviceItems').length === 0) {
-        appendServiceItem({ id: `item_${Date.now()}`, name: '', price: undefined, suppliesUsed: [] });
+          form.reset({
+              ...baseDefaults,
+              status: 'Agendado',
+              serviceDate: setHours(setMinutes(new Date(), 30), 8),
+              serviceItems: [{ id: `item_${Date.now()}`, name: '', price: undefined, suppliesUsed: [] }],
+          });
       }
     }
-  }, [initialDataService, initialDataQuote, mode, localVehicles, currentInventoryItems, form, appendServiceItem]);
+  }, [initialDataService, initialDataQuote, mode, localVehicles, currentInventoryItems, form, refreshCurrentUser]);
   
   // Effect to sync signatures from public doc
   useEffect(() => {
@@ -1752,6 +1761,7 @@ export function ServiceForm({
       >
           {serviceForSheet && (
               <ServiceSheetContent
+                  ref={serviceSheetRef}
                   service={serviceForSheet}
                   quote={quoteForViewing}
                   vehicle={localVehicles.find(v => v.id === serviceForSheet.vehicleId)}
