@@ -190,12 +190,13 @@ export interface ServiceRecord {
   totalCost: number; // Final, tax-inclusive price for services OR estimated price for quotes
   totalSuppliesCost: number; 
   serviceProfit: number; 
-  status: 'Cotizacion' | 'Agendado' | 'Reparando' | 'Completado' | 'Entregado' | 'Cancelado';
+  status: 'Cotizacion' | 'Agendado' | 'En Espera de Refacciones' | 'Reparando' | 'Completado' | 'Entregado' | 'Cancelado';
   cancellationReason?: string;
   cancelledBy?: string;
   notes?: string;
   mileage?: number;
-  deliveryDateTime?: string; 
+  receptionDateTime?: string; // Automatically set when status becomes 'Reparando'
+  deliveryDateTime?: string; // Automatically set when status becomes 'Completado'
   vehicleConditions?: string;
   fuelLevel?: string;
   customerItems?: string;

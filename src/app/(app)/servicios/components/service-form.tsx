@@ -156,6 +156,7 @@ const serviceFormSchemaBase = z.object({
   serviceItems: z.array(serviceItemSchema).min(1, "Debe agregar al menos un ítem de servicio."),
   status: z.enum(["Cotizacion", "Agendado", "En Espera de Refacciones", "Reparando", "Completado", "Entregado", "Cancelado"]).optional(),
   serviceType: z.enum(["Servicio General", "Cambio de Aceite", "Pintura"]).optional(),
+  receptionDateTime: z.date().optional(),
   deliveryDateTime: z.date({ invalid_type_error: "La fecha de entrega no es válida." }).optional(),
   vehicleConditions: z.string().optional(),
   fuelLevel: z.string().optional(),
@@ -274,13 +275,13 @@ export function ServiceForm({
     resolver: zodResolver(serviceFormSchemaBase),
     defaultValues: {},
   });
-  const { control, getValues, setValue } = form;
+  const { control, getValues, setValue, watch, trigger } = form;
 
   const { fields: serviceItemsFields, append: appendServiceItem, remove: removeServiceItem } = useFieldArray({ control, name: "serviceItems" });
   const { fields: photoReportFields, append: appendPhotoReport, remove: removePhotoReport } = useFieldArray({ control, name: "photoReports" });
   
   const watchedId = useWatch({ control, name: 'id' });
-  const watchedStatus = useWatch({ control, name: 'status' });
+  const watchedStatus = watch('status');
   const watchedServiceItems = useWatch({ control, name: "serviceItems" });
 
   const { totalCost, totalSuppliesWorkshopCost, serviceProfit } = useMemo(() => {
@@ -334,6 +335,7 @@ export function ServiceForm({
         vehicleLicensePlateSearch: data?.vehicleIdentifier || "",
         serviceDate: isValid(parseDate(data?.serviceDate)) ? parseDate(data.serviceDate) : undefined,
         quoteDate: isValid(parseDate(data?.quoteDate)) ? parseDate(data.quoteDate) : undefined, 
+        receptionDateTime: isValid(parseDate((data as ServiceRecord)?.receptionDateTime)) ? parseDate((data as ServiceRecord)?.receptionDateTime) : undefined,
         deliveryDateTime: isValid(parseDate((data as ServiceRecord)?.deliveryDateTime)) ? parseDate((data as ServiceRecord)?.deliveryDateTime) : undefined,
         mileage: data?.mileage || undefined, description: data?.description || "",
         notes: data?.notes || "", technicianId: (data as ServiceRecord)?.technicianId || (data as QuoteRecord)?.preparedByTechnicianId || undefined,
@@ -440,7 +442,15 @@ export function ServiceForm({
     if (isReadOnly) return onClose();
     if (!freshUserRef.current) return toast({ title: "Error de Sesión", variant: "destructive" });
     if (!getValues('vehicleId')) return toast({ title: "Vehículo no seleccionado", variant: "destructive" });
-    if (!await form.trigger()) return toast({ title: "Formulario Incompleto", variant: "destructive" });
+    if (!await trigger()) return toast({ title: "Formulario Incompleto", variant: "destructive" });
+
+    // Handle automatic timestamps
+    if(originalStatusRef.current !== 'Reparando' && values.status === 'Reparando' && !values.receptionDateTime) {
+        values.receptionDateTime = new Date();
+    }
+    if(originalStatusRef.current !== 'Completado' && values.status === 'Completado' && !values.deliveryDateTime) {
+        values.deliveryDateTime = new Date();
+    }
 
     const isNowCompleted = values.status === 'Completado';
     const wasPreviouslyCompleted = originalStatusRef.current === 'Completado';
@@ -470,7 +480,9 @@ export function ServiceForm({
         totalSuppliesCost: totalSuppliesWorkshopCost, 
         serviceProfit,
         serviceDate: values.serviceDate ? values.serviceDate.toISOString() : new Date().toISOString(),
-        quoteDate: values.quoteDate?.toISOString(), deliveryDateTime: values.deliveryDateTime?.toISOString(),
+        quoteDate: values.quoteDate?.toISOString(), 
+        receptionDateTime: values.receptionDateTime?.toISOString(),
+        deliveryDateTime: values.deliveryDateTime?.toISOString(),
         vehicleIdentifier: getValues('vehicleLicensePlateSearch') || 'N/A',
         technicianName: technicians.find(t => t.id === values.technicianId)?.name || 'N/A',
         subTotal: totalCost / (1 + IVA_RATE), taxAmount: totalCost - (totalCost / (1 + IVA_RATE)),
@@ -494,7 +506,7 @@ export function ServiceForm({
     await onSubmit(dataToSave);
     toast({ title: `${!initialData?.id ? 'Creado' : 'Actualizado'} con Éxito` });
     onClose();
-  }, [isReadOnly, onClose, getValues, onSubmit, toast, technicians, totalCost, serviceProfit, workshopInfo, initialData, localVehicles, currentInventoryItems, totalSuppliesWorkshopCost]);
+  }, [isReadOnly, onClose, getValues, onSubmit, toast, technicians, totalCost, serviceProfit, workshopInfo, initialData, localVehicles, currentInventoryItems, totalSuppliesWorkshopCost, trigger]);
 
   const handlePrintSheet = useCallback(() => {
     const serviceData = form.getValues() as ServiceRecord;
@@ -610,7 +622,7 @@ export function ServiceForm({
             </TabsContent>
             
             <TabsContent value="recepcion" className="mt-4">
-               <ReceptionAndDelivery isReadOnly={isReadOnly} onSignatureClick={() => {}} isEnhancingText={isEnhancingText} handleEnhanceText={handleEnhanceText} receptionDate={getValues('serviceDate')} deliveryDate={getValues('deliveryDateTime')} />
+               <ReceptionAndDelivery isReadOnly={isReadOnly} isEnhancingText={isEnhancingText} handleEnhanceText={handleEnhanceText} />
             </TabsContent>
             
             <TabsContent value="reporte" className="mt-4">
