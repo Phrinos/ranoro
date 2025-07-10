@@ -291,8 +291,6 @@ export const placeholderDashboardMetrics: DashboardMetrics = {
   lowStockAlerts: 0,
 };
 
-export let placeholderTechnicianMonthlyPerformance: TechnicianMonthlyPerformance[] = [];
-
 // =======================================
 // ===  LÓGICA DE PERSISTENCIA DE DATOS  ===
 // =======================================
@@ -318,7 +316,6 @@ const DATA_ARRAYS = {
   fixedExpenses: placeholderFixedMonthlyExpenses,
   cashDrawerTransactions: placeholderCashDrawerTransactions,
   initialCashBalance: placeholderInitialCashBalance,
-  technicianPerformance: placeholderTechnicianMonthlyPerformance,
   appRoles: placeholderAppRoles,
   vehiclePriceLists: placeholderVehiclePriceLists,
   drivers: placeholderDrivers,
