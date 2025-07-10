@@ -202,7 +202,7 @@ const SafetyChecklistDisplay = ({
 
 interface ServiceSheetContentProps {
   service: ServiceRecord;
-  quote?: QuoteRecord;
+  quote?: QuoteRecord | null;
   vehicle?: Vehicle;
   workshopInfo?: WorkshopInfo;
   onViewImage?: (url: string) => void;
@@ -216,7 +216,6 @@ interface ServiceSheetContentProps {
 export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheetContentProps>(
   ({ service, quote, vehicle, workshopInfo: workshopInfoProp, onViewImage, isPublicView, showSignReception, showSignDelivery, onSignClick, isSigning }, ref) => {
     const effectiveWorkshopInfo = { ...initialWorkshopInfo, ...workshopInfoProp };
-    const quoteContentRef = React.useRef<HTMLDivElement>(null);
     
     const formatCurrency = (amount: number | undefined) => {
         if (amount === undefined) return '$0.00';
@@ -257,7 +256,7 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
     
     const fuelColor = getFuelColorClass(fuelPercentage);
     
-    const showOrder = service.status !== 'Cotizacion';
+    const showOrder = service.status !== 'Cotizacion' && service.status !== 'Agendado';
     const showQuote = !!quote;
     const showChecklist = !!service.safetyInspection && Object.keys(service.safetyInspection).some(k => k !== 'inspectionNotes' && k !== 'technicianSignature' && (service.safetyInspection as any)[k]?.status !== 'na' && (service.safetyInspection as any)[k]?.status !== undefined);
     const showPhotoReport = !!service.photoReports && service.photoReports.length > 0;
@@ -268,7 +267,10 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
     if (showChecklist) tabs.push({ value: 'checklist', label: 'Revisión' });
     if (showPhotoReport) tabs.push({ value: 'photoreport', label: 'Reporte Fotográfico' });
     
-    const defaultTabValue = service.status === 'Cotizacion' ? 'quote' : 'order';
+    let defaultTabValue = 'order';
+    if(service.status === 'Cotizacion' || service.status === 'Agendado') {
+        defaultTabValue = 'quote';
+    }
 
 
     const ServiceOrderContent = (
@@ -505,7 +507,26 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
         </div>
       </div>
     ) : null;
+
+    // View for "Cotizacion" or "Agendado" state
+    if (service.status === 'Cotizacion' || service.status === 'Agendado') {
+      return (
+        <div ref={ref} data-format="letter" className="font-sans bg-white text-black text-sm">
+          <div className="p-0 sm:p-2 md:p-4 print:p-0">
+            {showQuote ? (
+              <QuoteContent 
+                ref={null} // QuoteContent doesn't need a ref here
+                quote={quote} 
+                vehicle={vehicle} 
+                workshopInfo={effectiveWorkshopInfo} 
+              />
+            ) : <p className="text-center p-8">No hay información de cotización para mostrar.</p>}
+          </div>
+        </div>
+      );
+    }
     
+    // Default view with tabs for other states
     return (
       <div ref={ref} data-format="letter" className="font-sans bg-white text-black text-sm">
         {/* For Screen View */}
@@ -516,7 +537,7 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
             </TabsList>
             
             <TabsContent value="quote">
-              {showQuote ? <QuoteContent ref={quoteContentRef} quote={quote!} vehicle={vehicle} workshopInfo={effectiveWorkshopInfo} /> : null}
+              {showQuote ? <QuoteContent quote={quote!} vehicle={vehicle} workshopInfo={effectiveWorkshopInfo} /> : null}
             </TabsContent>
             <TabsContent value="order" className="mt-4">{ServiceOrderContent}</TabsContent>
             <TabsContent value="checklist" className="mt-4">
@@ -539,7 +560,6 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
           {showQuote && (
               <div className="p-4 md:p-8">
                   <QuoteContent
-                      ref={quoteContentRef}
                       quote={quote!}
                       vehicle={vehicle}
                       workshopInfo={effectiveWorkshopInfo}

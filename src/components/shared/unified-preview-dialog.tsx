@@ -9,9 +9,9 @@ import type { ServiceRecord, Vehicle, QuoteRecord, WorkshopInfo } from '@/types'
 import { ServiceSheetContent } from '@/components/service-sheet-content';
 import { placeholderServiceRecords, placeholderVehicles } from '@/lib/placeholder-data';
 import { useToast } from '@/hooks/use-toast';
-import { TicketContent } from '@/components/ticket-content';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../ui/dialog';
 import Image from 'next/image';
+import { QuoteContent } from '../quote-content';
 
 interface UnifiedPreviewDialogProps {
   open: boolean;
@@ -24,18 +24,18 @@ export function UnifiedPreviewDialog({ open, onOpenChange, service }: UnifiedPre
   const [associatedQuote, setAssociatedQuote] = useState<QuoteRecord | null>(null);
   const [vehicle, setVehicle] = useState<Vehicle | null>(null);
   const [workshopInfo, setWorkshopInfo] = useState<WorkshopInfo | {}>({});
-  const serviceSheetRef = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
 
   const [isImageViewerOpen, setIsImageViewerOpen] = useState(false);
   const [viewingImageUrl, setViewingImageUrl] = useState<string | null>(null);
 
+  const isSimpleView = service.status === 'Cotizacion' || service.status === 'Agendado';
+
   useEffect(() => {
     if (open && service) {
-      // Find the associated quote if it exists by looking for a record with the same ID and a quoteDate.
       const foundQuote = placeholderServiceRecords.find(s => s.id === service.id && s.quoteDate);
       setAssociatedQuote(foundQuote || null);
 
-      // Find the associated vehicle
       const foundVehicle = placeholderVehicles.find(v => v.id === service.vehicleId);
       setVehicle(foundVehicle || null);
       
@@ -85,7 +85,6 @@ Hola ${vehicleForShare.ownerName || 'Cliente'}, gracias por confiar en Ranoro. T
     window.open(viewingImageUrl, '_blank')?.focus();
   };
 
-
   return (
     <>
       <PrintTicketDialog
@@ -96,14 +95,14 @@ Hola ${vehicleForShare.ownerName || 'Cliente'}, gracias por confiar en Ranoro. T
         dialogContentClassName="printable-quote-dialog max-w-4xl"
         footerActions={
           <div className="flex flex-col sm:flex-row gap-2">
-            <Button onClick={() => handleShareService()} variant="outline"><MessageSquare className="mr-2 h-4 w-4" /> Copiar para WhatsApp</Button>
+            <Button onClick={handleShareService} variant="outline"><MessageSquare className="mr-2 h-4 w-4" /> Copiar para WhatsApp</Button>
             <Button onClick={() => window.print()}><Printer className="mr-2 h-4 w-4" /> Imprimir Documento</Button>
           </div>
         }
       >
         {service && (
           <ServiceSheetContent
-            ref={serviceSheetRef}
+            ref={contentRef}
             service={service}
             quote={associatedQuote}
             vehicle={vehicle || undefined}
