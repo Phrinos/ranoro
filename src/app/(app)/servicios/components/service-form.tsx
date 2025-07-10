@@ -374,12 +374,12 @@ export function ServiceForm({
   );
   
   const handleChecklistPhotoUpload = useCallback(
-    (itemName: string, url: string) => {
+    (itemName: string, urls: string[]) => {
       const path = `safetyInspection.${itemName}` as const;
       const current = getValues(path) || { status: "na", photos: [] };
       setValue(
         path,
-        { ...current, photos: [...current.photos, url] },
+        { ...current, photos: [...current.photos, ...urls] },
         { shouldDirty: true }
       );
     },
@@ -612,7 +612,7 @@ export function ServiceForm({
             </TabsContent>
             
             <TabsContent value="recepcion" className="mt-4">
-               <ReceptionAndDelivery isReadOnly={isReadOnly} onCustomerSignatureClick={(type) => { setCustomerSignatureType(type); setIsCustomerSignatureDialogOpen(true); }} isEnhancingText={isEnhancingText} handleEnhanceText={handleEnhanceText} />
+               <ReceptionAndDelivery isReadOnly={isReadOnly} onCustomerSignatureClick={(type) => { setCustomerSignatureType(type); setIsCustomerSignatureDialogOpen(true); }} isEnhancingText={isEnhancingText} handleEnhanceText={handleEnhanceText} receptionDate={getValues('serviceDate')} deliveryDate={getValues('deliveryDateTime')} />
             </TabsContent>
             
             <TabsContent value="reporte" className="mt-4">

@@ -1,3 +1,4 @@
+
 "use client";
 
 import React from "react";
@@ -26,7 +27,8 @@ import {
 } from "@/components/ui/select";
 import { Signature, BrainCircuit, Loader2 } from "lucide-react";
 import type { ServiceFormValues } from "./service-form";
-import Image from "next/image";
+import { format, parseISO, isValid } from "date-fns";
+import { es } from "date-fns/locale";
 
 const fuelLevels = [
   "Vacío",
@@ -52,6 +54,8 @@ interface ReceptionAndDeliveryProps {
       | "safetyInspection.inspectionNotes"
       | `photoReports.${number}.description`
   ) => void;
+  receptionDate?: Date;
+  deliveryDate?: Date;
 }
 
 export const ReceptionAndDelivery = ({
@@ -59,10 +63,20 @@ export const ReceptionAndDelivery = ({
   onCustomerSignatureClick,
   isEnhancingText,
   handleEnhanceText,
+  receptionDate,
+  deliveryDate,
 }: ReceptionAndDeliveryProps) => {
   const { control, watch } = useFormContext<ServiceFormValues>();
   const customerSignatureReception = watch("customerSignatureReception");
   const customerSignatureDelivery = watch("customerSignatureDelivery");
+
+  const formattedReceptionDate = receptionDate && isValid(receptionDate)
+    ? format(receptionDate, "dd MMM yyyy, HH:mm 'hrs'", { locale: es })
+    : null;
+    
+  const formattedDeliveryDate = deliveryDate && isValid(deliveryDate)
+    ? format(deliveryDate, "dd MMM yyyy, HH:mm 'hrs'", { locale: es })
+    : null;
 
   return (
     <Card>
@@ -189,16 +203,12 @@ export const ReceptionAndDelivery = ({
           {/* Firma recepción */}
           <div>
             <FormLabel>Firma de Recepción del Cliente</FormLabel>
-            <div className="mt-2 flex min-h-[100px] items-center justify-center rounded-md border bg-muted/50 p-2">
+            <div className="mt-2 flex min-h-[100px] flex-col items-center justify-center rounded-md border bg-muted/50 p-2 text-center">
               {customerSignatureReception ? (
-                <div className="relative aspect-video w-full max-w-[200px]">
-                  <Image
-                    src={customerSignatureReception}
-                    alt="Firma del cliente en recepción"
-                    fill
-                    style={{ objectFit: "contain" }}
-                  />
-                </div>
+                <>
+                  <p className="font-semibold text-green-600">Firma Capturada</p>
+                  {formattedReceptionDate && <p className="text-xs text-muted-foreground">{formattedReceptionDate}</p>}
+                </>
               ) : (
                 <span className="text-sm text-muted-foreground">
                   Firma pendiente
@@ -221,16 +231,12 @@ export const ReceptionAndDelivery = ({
           {/* Firma entrega */}
           <div>
             <FormLabel>Firma de Entrega del Cliente</FormLabel>
-            <div className="mt-2 flex min-h-[100px] items-center justify-center rounded-md border bg-muted/50 p-2">
+            <div className="mt-2 flex min-h-[100px] flex-col items-center justify-center rounded-md border bg-muted/50 p-2 text-center">
               {customerSignatureDelivery ? (
-                <div className="relative aspect-video w-full max-w-[200px]">
-                  <Image
-                    src={customerSignatureDelivery}
-                    alt="Firma del cliente en entrega"
-                    fill
-                    style={{ objectFit: "contain" }}
-                  />
-                </div>
+                 <>
+                  <p className="font-semibold text-green-600">Firma Capturada</p>
+                  {formattedDeliveryDate && <p className="text-xs text-muted-foreground">{formattedDeliveryDate}</p>}
+                </>
               ) : (
                 <span className="text-sm text-muted-foreground">
                   Firma pendiente
