@@ -473,7 +473,7 @@ export function ServiceForm({
         
         let photoReportsData = (data as ServiceRecord)?.photoReports || [];
         if (!isReadOnly && (!photoReportsData || photoReportsData.length === 0)) {
-            photoReportsData = [{ id: `rep_recepcion_${Date.now()}`, date: new Date().toISOString(), description: 'Notas de la Recepción', photos: [] }];
+            photoReportsData = [{ id: `rep_recepcion_${Date.now()}`, date: new Date().toISOString(), description: '', photos: [] }];
         }
 
         form.reset({
@@ -505,7 +505,7 @@ export function ServiceForm({
           quoteDate: mode === 'quote' ? new Date() : undefined,
           serviceDate: mode === 'service' ? setHours(setMinutes(new Date(), 30), 8) : undefined,
           serviceItems: [{ id: `item_${Date.now()}`, name: '', price: undefined, suppliesUsed: [] }],
-          photoReports: [{ id: `rep_recepcion_${Date.now()}`, date: new Date().toISOString(), description: 'Notas de la Recepción', photos: [] }],
+          photoReports: [{ id: `rep_recepcion_${Date.now()}`, date: new Date().toISOString(), description: '', photos: [] }],
       });
     }
   }, [initialDataService, initialDataQuote, mode, localVehicles, currentInventoryItems, form, refreshCurrentUser, isReadOnly]);
@@ -976,47 +976,49 @@ export function ServiceForm({
       <Form {...form}>
         <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-6">
           <Tabs defaultValue="servicio" className="w-full">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-4 border-b pb-2">
-              <div className="w-full overflow-x-auto pb-2 -mb-2">
-                <TabsList className="bg-transparent p-0 w-max">
-                  <TabsTrigger value="servicio" className="text-sm sm:text-base data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none flex items-center gap-2 py-2 px-3 sm:px-4">
-                      <Wrench className="h-4 w-4 shrink-0"/>
-                      <span className="hidden sm:inline">Detalles</span>
-                      <span className="sm:hidden">Detalles</span>
-                  </TabsTrigger>
-                  {showReceptionTab && (
-                      <TabsTrigger value="recepcion" className="text-sm sm:text-base data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none flex items-center gap-2 py-2 px-3 sm:px-4">
-                          <FileCheck className="h-4 w-4 shrink-0"/>
-                          <span className="hidden sm:inline">Rec. y Ent.</span>
-                          <span className="sm:hidden">Rec. y Ent.</span>
-                      </TabsTrigger>
-                  )}
-                  {showReportTab && (
-                      <TabsTrigger value="reporte" className="text-sm sm:text-base data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none flex items-center gap-2 py-2 px-3 sm:px-4">
-                          <Camera className="h-4 w-4 shrink-0"/>
-                          <span className="hidden sm:inline">Reporte Fotográfico</span>
-                          <span className="sm:hidden">Fotos</span>
-                      </TabsTrigger>
-                  )}
-                  {showReceptionTab && (
-                      <TabsTrigger value="seguridad" className="text-sm sm:text-base data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none flex items-center gap-2 py-2 px-3 sm:px-4">
-                          <ShieldCheck className="h-4 w-4 shrink-0"/>
-                          <span className="hidden sm:inline">Revisión</span>
-                          <span className="sm:hidden">Revisión</span>
-                      </TabsTrigger>
-                  )}
-                </TabsList>
-              </div>
-              <div className="flex gap-2 self-end sm:self-center">
-                  {!isReadOnly && (
-                      <Button type="button" onClick={handlePrintSheet} variant="ghost" size="icon" className="bg-card" title="Vista Previa Unificada">
-                        <Eye className="h-5 w-5" />
-                      </Button>
-                  )}
-              </div>
+            <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm -mx-6 px-6 pt-2">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-2 border-b">
+                <div className="w-full overflow-x-auto pb-0 -mb-px">
+                    <TabsList className="bg-transparent p-0 w-max">
+                    <TabsTrigger value="servicio" className="text-sm sm:text-base data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none flex items-center gap-2 py-3 px-3 sm:px-4">
+                        <Wrench className="h-4 w-4 shrink-0"/>
+                        <span className="hidden sm:inline">Detalles</span>
+                        <span className="sm:hidden">Detalles</span>
+                    </TabsTrigger>
+                    {showReceptionTab && (
+                        <TabsTrigger value="recepcion" className="text-sm sm:text-base data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none flex items-center gap-2 py-3 px-3 sm:px-4">
+                            <FileCheck className="h-4 w-4 shrink-0"/>
+                            <span className="hidden sm:inline">Rec. y Ent.</span>
+                            <span className="sm:hidden">Rec. y Ent.</span>
+                        </TabsTrigger>
+                    )}
+                    {showReportTab && (
+                        <TabsTrigger value="reporte" className="text-sm sm:text-base data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none flex items-center gap-2 py-3 px-3 sm:px-4">
+                            <Camera className="h-4 w-4 shrink-0"/>
+                            <span className="hidden sm:inline">Reporte Fotográfico</span>
+                            <span className="sm:hidden">Fotos</span>
+                        </TabsTrigger>
+                    )}
+                    {showReceptionTab && (
+                        <TabsTrigger value="seguridad" className="text-sm sm:text-base data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none flex items-center gap-2 py-3 px-3 sm:px-4">
+                            <ShieldCheck className="h-4 w-4 shrink-0"/>
+                            <span className="hidden sm:inline">Revisión</span>
+                            <span className="sm:hidden">Revisión</span>
+                        </TabsTrigger>
+                    )}
+                    </TabsList>
+                </div>
+                <div className="flex gap-2 self-end sm:self-center mb-2">
+                    {!isReadOnly && (
+                        <Button type="button" onClick={handlePrintSheet} variant="ghost" size="icon" className="bg-card" title="Vista Previa Unificada">
+                            <Eye className="h-5 w-5" />
+                        </Button>
+                    )}
+                </div>
+                </div>
             </div>
 
-            <TabsContent value="servicio" className="space-y-6 mt-0">
+            <TabsContent value="servicio" className="space-y-6 mt-4">
               <Card>
                 <CardHeader>
                     <div className="flex justify-between items-center">
@@ -1476,7 +1478,7 @@ export function ServiceForm({
                                 photosLength={field.photos.length}
                                 disabled={isReadOnly}
                                 onUploadComplete={handlePhotoUploadComplete}
-                                captureMode="gallery" // Allow gallery and camera
+                                captureMode={index === 0 ? "gallery" : "camera"}
                                 maxPhotos={index === 0 ? 10 : 3} // Different limit for reception
                             />
                         </Card>
