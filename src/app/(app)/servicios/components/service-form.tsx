@@ -274,7 +274,7 @@ export function ServiceForm({
   const form = useForm<ServiceFormValues>({
     resolver: zodResolver(serviceFormSchemaBase),
     defaultValues: {
-      status: 'Agendado', // Default for new records
+      status: mode === 'quote' ? 'Cotizacion' : 'Agendado',
       serviceType: 'Servicio General',
       serviceItems: [],
       photoReports: [],
