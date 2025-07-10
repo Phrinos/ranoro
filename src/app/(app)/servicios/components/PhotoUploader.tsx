@@ -16,7 +16,6 @@ interface PhotoUploaderProps {
   onUploadComplete: (reportIndex: number, url: string) => void;
   photosLength: number;
   disabled?: boolean;
-  captureMode?: "camera" | "gallery";
   maxPhotos?: number;
 }
 
@@ -26,53 +25,49 @@ export function PhotoUploader({
   onUploadComplete,
   photosLength,
   disabled,
-  captureMode = "gallery",
   maxPhotos = 3,
 }: PhotoUploaderProps) {
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isUploading, setIsUploading] = useState(false);
 
-  const handlePhotoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = event.target.files;
+  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
     if (fileInputRef.current) {
-        fileInputRef.current.value = ""; // Reset input to allow re-selecting the same file
+        fileInputRef.current.value = ""; // Reset input
     }
-    if (!files || files.length === 0) {
-        return;
-    }
+    if (!file) return;
 
     if (!serviceId) {
         toast({ title: "Error", description: "Se necesita un ID de servicio para subir fotos.", variant: "destructive" });
         return;
     }
 
-    if (photosLength + files.length > maxPhotos) {
+    if (photosLength >= maxPhotos) {
         toast({ title: `Límite de ${maxPhotos} foto(s) excedido`, variant: "destructive" });
         return;
     }
-
+    
     if (!storage) {
         toast({ title: "Storage no disponible", variant: "destructive" });
         return;
     }
 
     setIsUploading(true);
-    toast({ title: `Subiendo ${files.length} imagen(es)…` });
+    toast({ title: "Subiendo imagen...", description: "Por favor, espere." });
 
     try {
-        for (const file of Array.from(files)) {
-            const dataUrl = await optimizeImage(file, 1280);
-            const fileName = `${Date.now()}_${file.name.replace(/\s+/g, "_")}.jpg`;
-            const photoRef = ref(storage, `service-photos/${serviceId}/${fileName}`);
-            
-            await uploadString(photoRef, dataUrl, "data_url");
-            const downloadURL = await getDownloadURL(photoRef);
-            
-            // Call the passed-in function to update the parent form state
-            onUploadComplete(reportIndex, downloadURL);
-        }
-        toast({ title: "¡Listo!", description: "Imagen(es) añadida(s)." });
+        const dataUrl = await optimizeImage(file, 1280);
+        const fileName = `${Date.now()}_${file.name.replace(/\s+/g, "_")}.jpg`;
+        const photoRef = ref(storage, `service-photos/${serviceId}/${fileName}`);
+        
+        await uploadString(photoRef, dataUrl, "data_url");
+        const downloadURL = await getDownloadURL(photoRef);
+        
+        onUploadComplete(reportIndex, downloadURL);
+        
+        toast({ title: "¡Listo!", description: "Imagen añadida correctamente." });
+
     } catch (err) {
         console.error("Error al subir:", err);
         toast({ title: "Error al subir", description: err instanceof Error ? err.message : "Ocurrió un error desconocido.", variant: "destructive" });
@@ -80,7 +75,7 @@ export function PhotoUploader({
         setIsUploading(false);
     }
   };
-
+  
   const isDisabled = disabled || isUploading || photosLength >= maxPhotos;
 
   return (
@@ -105,9 +100,8 @@ export function PhotoUploader({
         ref={fileInputRef}
         type="file"
         accept="image/*"
-        multiple
-        onChange={handlePhotoUpload} // This was the critical error, it was pointing to an empty function
-        capture={captureMode === "camera" ? "environment" : undefined}
+        onChange={handleFileChange}
+        capture="environment"
         className="hidden"
       />
     </>
