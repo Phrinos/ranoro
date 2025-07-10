@@ -163,6 +163,9 @@ const serviceFormSchemaBase = z.object({
     mileage: z.number().optional(),
   }).optional(),
   photoReports: z.array(photoReportGroupSchema).optional(),
+  serviceAdvisorId: z.string().optional(),
+  serviceAdvisorName: z.string().optional(),
+  serviceAdvisorSignatureDataUrl: z.string().optional(),
 }).refine(data => {
     if (data.status && data.status !== 'Cotizacion' && !data.serviceDate) {
         return false;
@@ -313,6 +316,9 @@ export function ServiceForm({
         transferFolio: (initialData as ServiceRecord)?.transferFolio || '',
         nextServiceInfo: (initialData as ServiceRecord)?.nextServiceInfo,
         photoReports: (initialData as ServiceRecord)?.photoReports || [],
+        serviceAdvisorId: (initialData as ServiceRecord)?.serviceAdvisorId,
+        serviceAdvisorName: (initialData as ServiceRecord)?.serviceAdvisorName,
+        serviceAdvisorSignatureDataUrl: (initialData as ServiceRecord)?.serviceAdvisorSignatureDataUrl,
     }
   });
   
@@ -408,7 +414,7 @@ export function ServiceForm({
     }
 
     if (watchedStatus === 'Cotizacion' && !getValues('quoteDate')) {
-        setValue('quoteDate', new Date(), { shouldDirty: true });
+        setValue('quoteDate', new Date());
     }
 
   }, [watchedStatus, getValues, setValue]);
@@ -535,6 +541,9 @@ export function ServiceForm({
             transferFolio: (initialData as ServiceRecord)?.transferFolio || '',
             nextServiceInfo: (data as ServiceRecord)?.nextServiceInfo,
             photoReports: (data as ServiceRecord)?.photoReports || [],
+            serviceAdvisorId: (data as ServiceRecord)?.serviceAdvisorId,
+            serviceAdvisorName: (data as ServiceRecord)?.serviceAdvisorName,
+            serviceAdvisorSignatureDataUrl: (data as ServiceRecord)?.serviceAdvisorSignatureDataUrl,
         };
 
         form.reset(dataToReset);
