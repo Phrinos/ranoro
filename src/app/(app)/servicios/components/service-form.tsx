@@ -273,7 +273,13 @@ export function ServiceForm({
   
   const form = useForm<ServiceFormValues>({
     resolver: zodResolver(serviceFormSchemaBase),
-    defaultValues: {},
+    defaultValues: {
+      status: 'Agendado', // Default for new records
+      serviceType: 'Servicio General',
+      serviceItems: [],
+      photoReports: [],
+      safetyInspection: {}
+    },
   });
   const { control, getValues, setValue, watch, trigger } = form;
 
@@ -337,7 +343,8 @@ export function ServiceForm({
         quoteDate: isValid(parseDate(data?.quoteDate)) ? parseDate(data.quoteDate) : undefined, 
         receptionDateTime: isValid(parseDate((data as ServiceRecord)?.receptionDateTime)) ? parseDate((data as ServiceRecord)?.receptionDateTime) : undefined,
         deliveryDateTime: isValid(parseDate((data as ServiceRecord)?.deliveryDateTime)) ? parseDate((data as ServiceRecord)?.deliveryDateTime) : undefined,
-        mileage: data?.mileage || undefined, description: data?.description || "",
+        mileage: data?.mileage || undefined,
+        description: data?.description || "",
         notes: data?.notes || "", technicianId: (data as ServiceRecord)?.technicianId || (data as QuoteRecord)?.preparedByTechnicianId || undefined,
         status: data?.status || (mode === 'quote' ? 'Cotizacion' : 'Agendado'),
         serviceType: (data as ServiceRecord)?.serviceType || (data as QuoteRecord)?.serviceType || 'Servicio General',
