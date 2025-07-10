@@ -7,7 +7,7 @@ import { useParams } from 'next/navigation';
 import { ServiceSheetContent } from '@/components/service-sheet-content';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import type { ServiceRecord, Vehicle, WorkshopInfo, QuoteRecord } from '@/types';
+import type { ServiceRecord, Vehicle, QuoteRecord, WorkshopInfo } from '@/types';
 import { ShieldAlert, Printer, Loader2, Signature, Eye, Download } from 'lucide-react';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
@@ -185,15 +185,11 @@ export default function PublicServiceSheetPage() {
       </div>
     );
   }
-
+  
   if (error || !service || !vehicle) {
     return (
       <div className="container mx-auto py-8">
-        <Card className="max-w-4xl mx-auto text-center">
-          <CardHeader>
-            <ShieldAlert className="mx-auto h-16 w-16 text-destructive mb-4" />
-            <CardTitle className="text-2xl font-bold">Error al Cargar el Documento</CardTitle>
-          </CardHeader>
+        <Card className="max-w-4xl mx-auto text-center"><CardHeader><ShieldAlert className="mx-auto h-16 w-16 text-destructive mb-4" /><CardTitle className="text-2xl font-bold">Error al Cargar el Documento</CardTitle></CardHeader>
           <CardContent className="space-y-4 text-left">
             <div>
               <p className="font-semibold text-foreground">Motivo del Error:</p>
@@ -207,9 +203,7 @@ export default function PublicServiceSheetPage() {
               </ul>
             </div>
             <div className="text-center">
-              <Button asChild className="mt-6">
-                <Link href="/login">Volver al Inicio</Link>
-              </Button>
+              <Button asChild className="mt-6"><Link href="/login">Volver al Inicio</Link></Button>
             </div>
           </CardContent>
         </Card>
@@ -263,7 +257,7 @@ export default function PublicServiceSheetPage() {
             </DialogHeader>
             <div className="relative aspect-video w-full">
                 {viewingImageUrl && (
-                    <img src={viewingImageUrl} alt="Vista ampliada de evidencia" style={{ objectFit: 'contain', width: '100%', height: '100%' }} crossOrigin="anonymous" />
+                    <Image src={viewingImageUrl} alt="Vista ampliada de evidencia" layout="fill" objectFit="contain" crossOrigin="anonymous" />
                 )}
             </div>
             <DialogFooter className="mt-2 print:hidden">

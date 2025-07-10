@@ -188,7 +188,7 @@ const serviceFormSchemaBase = z.object({
   }
   return true;
 }, {
-  message: "El folio de la tarjeta es obligatorio para este método de pago.",
+  message: "El folio de la tarjeta es obligatorio.",
   path: ["cardFolio"],
 }).refine(data => {
   if (data.status === 'Completado' && (data.paymentMethod === "Transferencia" || data.paymentMethod === "Efectivo+Transferencia" || data.paymentMethod === "Tarjeta+Transferencia") && !data.transferFolio) {
@@ -263,8 +263,6 @@ export function ServiceForm({
   const [isServiceDatePickerOpen, setIsServiceDatePickerOpen] = useState(false);
   const [isDeliveryDatePickerOpen, setIsDeliveryDatePickerOpen] = useState(false);
   const [isTechSignatureDialogOpen, setIsTechSignatureDialogOpen] = useState(false);
-  const [isCustomerSignatureDialogOpen, setIsCustomerSignatureDialogOpen] = useState(false);
-  const [customerSignatureType, setCustomerSignatureType] = useState<'reception' | 'delivery'>('reception');
   const [isImageViewerOpen, setIsImageViewerOpen] = useState(false);
   const [viewingImageUrl, setViewingImageUrl] = useState<string | null>(null);
   const [isCancelAlertOpen, setIsCancelAlertOpen] = useState(false);
@@ -335,7 +333,7 @@ export function ServiceForm({
         publicId: (data as any)?.publicId, vehicleId: data?.vehicleId ? String(data.vehicleId) : undefined,
         vehicleLicensePlateSearch: data?.vehicleIdentifier || "",
         serviceDate: isValid(parseDate(data?.serviceDate)) ? parseDate(data.serviceDate) : undefined,
-        quoteDate: isValid(parseDate(data?.quoteDate)) ? parseDate(data.quoteDate) : undefined,
+        quoteDate: isValid(parseDate(data?.quoteDate)) ? parseDate(data.quoteDate) : undefined, 
         deliveryDateTime: isValid(parseDate((data as ServiceRecord)?.deliveryDateTime)) ? parseDate((data as ServiceRecord)?.deliveryDateTime) : undefined,
         mileage: data?.mileage || undefined, description: data?.description || "",
         notes: data?.notes || "", technicianId: (data as ServiceRecord)?.technicianId || (data as QuoteRecord)?.preparedByTechnicianId || undefined,
@@ -496,7 +494,7 @@ export function ServiceForm({
     await onSubmit(dataToSave);
     toast({ title: `${!initialData?.id ? 'Creado' : 'Actualizado'} con Éxito` });
     onClose();
-  }, [isReadOnly, onClose, getValues, onSubmit, toast, technicians, totalCost, totalSuppliesWorkshopCost, serviceProfit, workshopInfo, initialData, localVehicles, currentInventoryItems]);
+  }, [isReadOnly, onClose, getValues, onSubmit, toast, technicians, totalCost, serviceProfit, workshopInfo, initialData, localVehicles, currentInventoryItems, totalSuppliesWorkshopCost]);
 
   const handlePrintSheet = useCallback(() => {
     const serviceData = form.getValues() as ServiceRecord;
@@ -612,7 +610,7 @@ export function ServiceForm({
             </TabsContent>
             
             <TabsContent value="recepcion" className="mt-4">
-               <ReceptionAndDelivery isReadOnly={isReadOnly} onCustomerSignatureClick={(type) => { setCustomerSignatureType(type); setIsCustomerSignatureDialogOpen(true); }} isEnhancingText={isEnhancingText} handleEnhanceText={handleEnhanceText} receptionDate={getValues('serviceDate')} deliveryDate={getValues('deliveryDateTime')} />
+               <ReceptionAndDelivery isReadOnly={isReadOnly} onSignatureClick={() => {}} isEnhancingText={isEnhancingText} handleEnhanceText={handleEnhanceText} receptionDate={getValues('serviceDate')} deliveryDate={getValues('deliveryDateTime')} />
             </TabsContent>
             
             <TabsContent value="reporte" className="mt-4">
@@ -678,7 +676,7 @@ export function ServiceForm({
         </form>
       </Form>
       <SignatureDialog open={isTechSignatureDialogOpen} onOpenChange={setIsTechSignatureDialogOpen} onSave={(s) => { form.setValue('safetyInspection.technicianSignature', s, { shouldDirty: true }); setIsTechSignatureDialogOpen(false); toast({ title: 'Firma Capturada' }); }}/>
-      <SignatureDialog open={isCustomerSignatureDialogOpen} onOpenChange={setIsCustomerSignatureDialogOpen} onSave={(s) => { form.setValue(customerSignatureType === 'reception' ? 'customerSignatureReception' : 'customerSignatureDelivery', s, { shouldDirty: true }); setIsCustomerSignatureDialogOpen(false); toast({ title: 'Firma de Cliente Capturada' }); }}/>
+      
       {isPreviewOpen && serviceForPreview && (<UnifiedPreviewDialog open={isPreviewOpen} onOpenChange={setIsPreviewOpen} service={serviceForPreview} />)}
       <VehicleDialog open={isVehicleDialogOpen} onOpenChange={setIsVehicleDialogOpen} onSave={handleSaveNewVehicle} vehicle={newVehicleInitialData}/>
       <Dialog open={isImageViewerOpen} onOpenChange={setIsImageViewerOpen}>
