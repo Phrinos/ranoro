@@ -47,7 +47,9 @@ const QuoteList = React.memo(({ quotes, vehicles, onEditQuote, onViewQuote }: {
     if (quote.status !== 'Cotizacion') {
       return { label: 'Procesada', variant: 'blue' };
     }
-    const quoteDateStr = quote.quoteDate ?? new Date().toISOString();
+    const quoteDateStr = quote.quoteDate;
+    if (!quoteDateStr) return { label: 'Archivada', variant: 'secondary' };
+
     const quoteDate = typeof quoteDateStr === 'string' ? parseISO(quoteDateStr) : new Date(quoteDateStr);
     
     if (!isValid(quoteDate)) {
@@ -99,7 +101,7 @@ const QuoteList = React.memo(({ quotes, vehicles, onEditQuote, onViewQuote }: {
                     </div>
                     <div className="p-4 flex flex-col justify-center items-center text-center border-t md:border-t-0 md:border-l w-full md:w-56 flex-shrink-0 space-y-2">
                         <Badge variant={quoteStatusInfo.variant} className="mb-1">{quoteStatusInfo.label}</Badge>
-                        <p className="text-xs text-muted-foreground">Asesor: {quote.preparedByTechnicianName || 'N/A'}</p>
+                        <p className="text-xs text-muted-foreground">Asesor: {quote.serviceAdvisorName || 'N/A'}</p>
                         <div className="flex justify-center items-center gap-1">
                           <Button variant="ghost" size="icon" onClick={() => onViewQuote(quote)} title="Vista Previa"><Eye className="h-4 w-4" /></Button>
                           <Button variant="ghost" size="icon" onClick={() => onEditQuote(quote)} title="Editar Cotización"><Edit className="h-4 w-4" /></Button>
