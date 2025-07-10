@@ -61,6 +61,7 @@ import { PhotoUploader } from "./PhotoUploader";
 import { ServiceItemCard } from './ServiceItemCard';
 import { SafetyChecklist } from './SafetyChecklist';
 import { UnifiedPreviewDialog } from "@/components/shared/unified-preview-dialog";
+import { VehicleSelectionCard } from './VehicleSelectionCard';
 
 
 const supplySchema = z.object({
@@ -247,16 +248,10 @@ export function ServiceForm({
   const { toast } = useToast();
   
   const initialData = mode === 'service' ? initialDataService : initialDataQuote;
-  const initialVehicleIdentifier = initialData?.vehicleIdentifier;
   
-  const [vehicleLicensePlateSearch, setVehicleLicensePlateSearch] = useState(initialVehicleIdentifier || "");
-  const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
-  const [lastService, setLastService] = useState<ServiceRecord | null>(null);
-  const [vehicleNotFound, setVehicleNotFound] = useState(false);
-  const [isVehicleDialogOpen, setIsVehicleDialogOpen] = useState(false);
   const [localVehicles, setLocalVehicles] = useState<Vehicle[]>(parentVehicles);
+  const [isVehicleDialogOpen, setIsVehicleDialogOpen] = useState(false);
   const [newVehicleInitialData, setNewVehicleInitialData] = useState<Partial<VehicleFormValues> | null>(null);
-  const [vehicleSearchResults, setVehicleSearchResults] = useState<Vehicle[]>([]);
 
   const [currentInventoryItems, setCurrentInventoryItems] = useState<InventoryItem[]>(inventoryItemsProp);
   const [workshopInfo, setWorkshopInfo] = useState<WorkshopInfo | {}>({});
@@ -279,36 +274,11 @@ export function ServiceForm({
 
   const form = useForm<ServiceFormValues>({
     resolver: zodResolver(serviceFormSchemaBase),
-    // This defaultValues block will be overridden by useEffect, but it's good practice.
     defaultValues: {
         id: initialData?.id || undefined,
-        publicId: (initialData as any)?.publicId,
-        vehicleId: initialData?.vehicleId || undefined,
-        vehicleLicensePlateSearch: initialVehicleIdentifier || "",
-        serviceDate: undefined,
-        quoteDate: undefined,
-        mileage: initialData?.mileage || undefined,
-        description: (initialData as any)?.description || "",
-        notes: initialData?.notes || "",
-        technicianId: (initialData as ServiceRecord)?.technicianId || (initialData as QuoteRecord)?.preparedByTechnicianId || "",
-        serviceItems: [],
         status: mode === 'service' ? ((initialData as ServiceRecord)?.status || 'Agendado') : 'Cotizacion',
-        serviceType: (initialData as ServiceRecord)?.serviceType || (initialData as QuoteRecord)?.serviceType || 'Servicio General',
-        deliveryDateTime: undefined,
-        vehicleConditions: (initialData as ServiceRecord)?.vehicleConditions || "",
-        fuelLevel: (initialData as ServiceRecord)?.fuelLevel || undefined,
-        customerItems: (initialData as ServiceRecord)?.customerItems || '',
-        customerSignatureReception: (initialData as ServiceRecord)?.customerSignatureReception || undefined,
-        customerSignatureDelivery: (initialData as ServiceRecord)?.customerSignatureDelivery || undefined,
-        safetyInspection: (initialData as ServiceRecord)?.safetyInspection || {},
-        paymentMethod: (initialData as ServiceRecord)?.paymentMethod || 'Efectivo',
-        cardFolio: (initialData as ServiceRecord)?.cardFolio || '',
-        transferFolio: (initialData as ServiceRecord)?.transferFolio || '',
-        nextServiceInfo: (initialData as ServiceRecord)?.nextServiceInfo,
-        photoReports: (initialData as ServiceRecord)?.photoReports || [],
-        serviceAdvisorId: (initialData as ServiceRecord)?.serviceAdvisorId || '',
-        serviceAdvisorName: (initialData as ServiceRecord)?.serviceAdvisorName || '',
-        serviceAdvisorSignatureDataUrl: (initialData as ServiceRecord)?.serviceAdvisorSignatureDataUrl || '',
+        serviceItems: [],
+        photoReports: [],
     }
   });
   
@@ -430,13 +400,6 @@ export function ServiceForm({
     const currentUser = freshUserRef.current;
     
     if (data) {
-        const vehicle = localVehicles.find(v => v.id === data.vehicleId);
-        if (vehicle) {
-            setSelectedVehicle(vehicle);
-            setVehicleLicensePlateSearch(vehicle.licensePlate);
-            const vehicleServices = defaultServiceRecords.filter(s => s.vehicleId === vehicle.id).sort((a, b) => new Date(b.serviceDate).getTime() - new Date(a.serviceDate).getTime());
-            if (vehicleServices.length > 0) setLastService(vehicleServices[0]); else setLastService(null);
-        }
         
         let serviceItemsData: ServiceItem[] = ('serviceItems' in data && Array.isArray(data.serviceItems))
             ? data.serviceItems.map(item => ({
@@ -473,7 +436,7 @@ export function ServiceForm({
 
         form.reset({
             id: data.id, publicId: (data as any)?.publicId, vehicleId: data.vehicleId ? String(data.vehicleId) : undefined,
-            vehicleLicensePlateSearch: vehicle?.licensePlate || data.vehicleIdentifier || "",
+            vehicleLicensePlateSearch: data.vehicleIdentifier || "",
             serviceDate: isValid(serviceDate) ? serviceDate : undefined,
             quoteDate: isValid(quoteDate) ? quoteDate : undefined,
             deliveryDateTime: isValid(deliveryDateTime) ? deliveryDateTime : undefined,
@@ -572,24 +535,6 @@ export function ServiceForm({
 }, [mode, watchedStatus, form]);
 
 
-  const handleSearchVehicle = () => {
-    if (!vehicleLicensePlateSearch.trim()) {
-      toast({ title: "Ingrese Placa", description: "Por favor ingrese una placa para buscar.", variant: "destructive" });
-      return;
-    }
-    const found = localVehicles.find(v => v.licensePlate.toLowerCase() === vehicleLicensePlateSearch.trim().toLowerCase());
-    if (found) {
-        handleSelectVehicleFromSearch(found);
-        toast({ title: "Vehículo Encontrado", description: `${found.make} ${found.model} ${found.year}`});
-    } else {
-      setSelectedVehicle(null);
-      form.setValue('vehicleId', undefined);
-      setVehicleNotFound(true);
-      setLastService(null);
-      toast({ title: "Vehículo No Encontrado", description: "Puede registrarlo si es nuevo.", variant: "default"});
-    }
-  };
-
   const handleSaveNewVehicle = async (vehicleData: VehicleFormValues) => {
     const newVehicle: Vehicle = {
       id: generateUniqueId(),
@@ -602,12 +547,9 @@ export function ServiceForm({
     
     setLocalVehicles(prev => [...prev, newVehicle]);
 
-    setSelectedVehicle(newVehicle);
-    form.setValue('vehicleId', String(newVehicle.id), { shouldValidate: true });
-    setVehicleLicensePlateSearch(newVehicle.licensePlate);
-    setVehicleNotFound(false);
+    setValue('vehicleId', String(newVehicle.id), { shouldValidate: true });
+    setValue('vehicleLicensePlateSearch', newVehicle.licensePlate);
     setIsVehicleDialogOpen(false);
-    setLastService(null);
     toast({ title: "Vehículo Registrado", description: `Se registró ${newVehicle.make} ${newVehicle.model} (${newVehicle.licensePlate}).`});
     if (onVehicleCreated) {
         onVehicleCreated(newVehicle);
@@ -627,7 +569,7 @@ export function ServiceForm({
         return;
     }
 
-    const vehicleIdToSave = selectedVehicle?.id;
+    const vehicleIdToSave = getValues('vehicleId');
 
     if (!vehicleIdToSave) {
         form.setError("vehicleLicensePlateSearch", { type: "manual", message: "Debe buscar y seleccionar un vehículo válido." });
@@ -706,7 +648,7 @@ export function ServiceForm({
         serviceDate: values.serviceDate ? values.serviceDate.toISOString() : new Date().toISOString(),
         quoteDate: values.quoteDate ? values.quoteDate.toISOString() : undefined,
         deliveryDateTime: values.deliveryDateTime ? values.deliveryDateTime.toISOString() : undefined,
-        vehicleIdentifier: selectedVehicle?.licensePlate || values.vehicleLicensePlateSearch || 'N/A',
+        vehicleIdentifier: getValues('vehicleLicensePlateSearch') || 'N/A',
         technicianName: technicians.find(t => t.id === values.technicianId)?.name || 'N/A',
         subTotal: finalSubTotal,
         taxAmount: finalTaxAmount,
@@ -739,7 +681,8 @@ export function ServiceForm({
     }
     
     // Call public save before local persistence
-    await savePublicDocument('service', dataToSave, selectedVehicle, workshopInfo);
+    const selectedVehicle = localVehicles.find(v => v.id === vehicleIdToSave);
+    await savePublicDocument('service', dataToSave, selectedVehicle || null, workshopInfo);
     
     await onSubmit(dataToSave); // This handles the main local persistence and UI update
     
@@ -763,51 +706,8 @@ export function ServiceForm({
     setIsPreviewOpen(true);
   }, [form]);
 
-  const handleVehiclePlateKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
-    if (event.key === 'Enter') {
-      event.preventDefault();
-      handleSearchVehicle();
-    }
-  };
 
-    const handleSelectVehicleFromSearch = (vehicle: Vehicle) => {
-        setSelectedVehicle(vehicle);
-        setVehicleLicensePlateSearch(vehicle.licensePlate);
-        form.setValue('vehicleId', String(vehicle.id), { shouldValidate: true });
-        if (vehicle.isFleetVehicle && vehicle.currentMileage) {
-          form.setValue('mileage', vehicle.currentMileage, { shouldDirty: true });
-        }
-        setVehicleNotFound(false);
-        setVehicleSearchResults([]);
-        const vehicleServices = defaultServiceRecords.filter(s => s.vehicleId === vehicle.id).sort((a, b) => new Date(b.serviceDate).getTime() - new Date(a.serviceDate).getTime());
-        if (vehicleServices.length > 0) {
-            setLastService(vehicleServices[0]);
-        } else {
-            setLastService(null);
-        }
-    };
-    
-    useEffect(() => {
-        if (!vehicleLicensePlateSearch || vehicleLicensePlateSearch.length < 2) {
-            setVehicleSearchResults([]);
-            return;
-        }
-        if (selectedVehicle && selectedVehicle.licensePlate === vehicleLicensePlateSearch) {
-             setVehicleSearchResults([]);
-             return;
-        }
-
-        const lowerSearch = vehicleLicensePlateSearch.toLowerCase();
-        const results = localVehicles.filter(v => 
-            v.licensePlate.toLowerCase().includes(lowerSearch) ||
-            v.make.toLowerCase().includes(lowerSearch) ||
-            v.model.toLowerCase().includes(lowerSearch) ||
-            v.ownerName.toLowerCase().includes(lowerSearch)
-        ).slice(0, 5);
-        setVehicleSearchResults(results);
-    }, [vehicleLicensePlateSearch, localVehicles, selectedVehicle]);
-
-  const handleEnhanceText = async (fieldName: 'notes' | 'vehicleConditions' | 'customerItems' | 'safetyInspection.inspectionNotes' | `photoReports.${number}.description`) => {
+    const handleEnhanceText = async (fieldName: 'notes' | 'vehicleConditions' | 'customerItems' | 'safetyInspection.inspectionNotes' | `photoReports.${number}.description`) => {
     const contextMap: Record<string, string> = {
       'notes': 'Notas Adicionales del Servicio',
       'vehicleConditions': 'Condiciones del Vehículo (al recibir)',
@@ -849,7 +749,8 @@ export function ServiceForm({
 
   const handleGenerateQuoteWithAI = async () => {
     setIsGeneratingQuote(true);
-    const vehicle = selectedVehicle;
+    const vehicleId = getValues('vehicleId');
+    const vehicle = localVehicles.find(v => v.id === vehicleId);
     const description = form.getValues('description');
 
     if (!vehicle || !description) {
@@ -941,18 +842,6 @@ export function ServiceForm({
     return allOptions;
   }, []);
   
-  const lastServiceDateFormatted = useMemo(() => {
-    if (!lastService) return 'No tiene historial de servicios.';
-    
-    // new Date() can handle both ISO strings and Date objects, which is more robust.
-    const date = new Date(lastService.serviceDate);
-
-    if (!isValid(date)) return 'Fecha inválida.';
-    
-    const description = lastService.description || '';
-    return `${lastService.mileage ? `${lastService.mileage.toLocaleString('es-ES')} km - ` : ''}${format(date, "dd MMM yyyy", { locale: es })} - ${description}`;
-  }, [lastService]);
-
   const handleDownloadImage = () => {
     if (!viewingImageUrl) return;
     try {
@@ -971,10 +860,10 @@ export function ServiceForm({
     <>
       <Form {...form}>
         <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-6">
-          <Tabs defaultValue="servicio" className="w-full">
-            <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm -mx-6 px-6 pt-2">
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-2 border-b">
-                <div className="w-full overflow-x-auto pb-0 -mb-px">
+          <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm -mx-6 px-6 pt-2">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-2 border-b">
+              <div className="w-full overflow-x-auto pb-0 -mb-px">
+                  <Tabs defaultValue="servicio" className="w-full">
                     <TabsList className="bg-transparent p-0 w-max">
                     <TabsTrigger value="servicio" className="text-sm sm:text-base data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none flex items-center gap-2 py-3 px-3 sm:px-4">
                         <Wrench className="h-4 w-4 shrink-0"/>
@@ -1003,18 +892,31 @@ export function ServiceForm({
                         </TabsTrigger>
                     )}
                     </TabsList>
-                </div>
-                <div className="flex gap-2 self-end sm:self-center mb-2">
-                    {!isReadOnly && (
-                        <Button type="button" onClick={handlePrintSheet} variant="ghost" size="icon" className="bg-card" title="Vista Previa Unificada">
-                            <Eye className="h-5 w-5" />
-                        </Button>
-                    )}
-                </div>
-                </div>
+                  </Tabs>
+              </div>
+              <div className="flex gap-2 self-end sm:self-center mb-2">
+                  {!isReadOnly && (
+                      <Button type="button" onClick={handlePrintSheet} variant="ghost" size="icon" className="bg-card" title="Vista Previa Unificada">
+                          <Eye className="h-5 w-5" />
+                      </Button>
+                  )}
+              </div>
             </div>
+          </div>
+          
+          {/* Main content area */}
+          <div className="space-y-6 mt-4">
 
-            <TabsContent value="servicio" className="space-y-6 mt-4">
+              <VehicleSelectionCard
+                isReadOnly={isReadOnly}
+                localVehicles={localVehicles}
+                onVehicleSelected={(vehicle) => { /* Logic to handle vehicle selection state update is internal to the component */ }}
+                onOpenNewVehicleDialog={() => {
+                  setNewVehicleInitialData({ licensePlate: getValues('vehicleLicensePlateSearch') || "" });
+                  setIsVehicleDialogOpen(true);
+                }}
+              />
+              
               <Card>
                 <CardHeader>
                     <div className="flex justify-between items-center">
@@ -1128,21 +1030,6 @@ export function ServiceForm({
                             />
                         </div>
                     )}
-
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
-                      <FormField control={form.control} name="vehicleLicensePlateSearch" render={({ field }) => (<FormItem className="w-full"><FormLabel>Placa del Vehículo</FormLabel><FormControl><Input placeholder="Buscar/Ingresar Placas" {...field} value={vehicleLicensePlateSearch} onChange={(e) => {setVehicleLicensePlateSearch(e.target.value.toUpperCase()); field.onChange(e.target.value.toUpperCase());}} disabled={isReadOnly} className="uppercase" onKeyDown={handleVehiclePlateKeyDown} /></FormControl></FormItem>)}/>
-                      <FormField control={form.control} name="mileage" render={({ field }) => ( <FormItem><FormLabel>Kilometraje (Opcional)</FormLabel><FormControl><Input type="number" placeholder="Ej: 55000 km" {...field} value={field.value ?? ''} disabled={isReadOnly} /></FormControl></FormItem>)}/>
-                    </div>
-                    {vehicleSearchResults.length > 0 && ( <ScrollArea className="h-auto max-h-[150px] w-full rounded-md border"><div className="p-2">{vehicleSearchResults.map(v => (<button type="button" key={v.id} onClick={() => handleSelectVehicleFromSearch(v)} className="w-full text-left p-2 rounded-md hover:bg-muted"><p className="font-semibold">{v.licensePlate}</p><p className="text-sm text-muted-foreground">{v.make} {v.model} - {v.ownerName}</p></button>))}</div></ScrollArea>)}
-                    {selectedVehicle && (
-                      <div className="p-3 border rounded-md bg-amber-50 dark:bg-amber-950/50 text-sm space-y-1">
-                        <p className="font-semibold">{selectedVehicle.licensePlate} - {selectedVehicle.make} {selectedVehicle.model} {selectedVehicle.year}</p>
-                        <p>Propietario: {selectedVehicle.ownerName} - {selectedVehicle.ownerPhone}</p>
-                        <p>Últ. Servicio: {lastServiceDateFormatted}</p>
-                      </div>
-                    )}
-                    {vehicleNotFound && !selectedVehicle && !isReadOnly && (<div className="p-3 border border-orange-500 rounded-md bg-orange-50 dark:bg-orange-900/30 dark:text-orange-300 text-sm flex flex-col sm:flex-row items-center justify-between gap-2"><div className="flex items-center gap-2"><AlertCircle className="h-5 w-5 shrink-0"/><p>Vehículo con placa "{vehicleLicensePlateSearch}" no encontrado.</p></div><Button type="button" size="sm" variant="outline" onClick={() => {setNewVehicleInitialData({ licensePlate: vehicleLicensePlateSearch }); setIsVehicleDialogOpen(true);}} className="w-full sm:w-auto"><CarIcon className="mr-2 h-4 w-4"/> Registrar Nuevo Vehículo</Button></div>)}
                 </CardContent>
               </Card>
 
@@ -1264,247 +1151,7 @@ export function ServiceForm({
                       </Card>
                   </div>
               </div>
-            </TabsContent>
-            
-            {showReceptionTab && (
-              <TabsContent value="recepcion" className="space-y-6 mt-0">
-                  <Card>
-                    <CardHeader><CardTitle>Fechas y Horarios</CardTitle></CardHeader>
-                    <CardContent className="space-y-6">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 items-end">
-                            <Controller
-                                name="serviceDate"
-                                control={form.control}
-                                render={({ field }) => (
-                                    <FormItem className="flex flex-col">
-                                        <FormLabel>Fecha de Recepción</FormLabel>
-                                        <Popover open={isServiceDatePickerOpen} onOpenChange={setIsServiceDatePickerOpen}>
-                                            <PopoverTrigger asChild disabled={isReadOnly}>
-                                                <Button variant="outline" className={cn("justify-start text-left font-normal", !field.value && "text-muted-foreground")} disabled={isReadOnly}>
-                                                    {field.value ? format(field.value, "PPP", { locale: es }) : <span>Seleccione fecha</span>}
-                                                    <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                                                </Button>
-                                            </PopoverTrigger>
-                                            <PopoverContent className="w-auto p-0" align="start">
-                                                <Calendar
-                                                    mode="single"
-                                                    selected={field.value}
-                                                    onSelect={(date) => {
-                                                        const currentVal = field.value || new Date();
-                                                        const newDate = date ? setMinutes(setHours(date, currentVal.getHours()), currentVal.getMinutes()) : new Date();
-                                                        field.onChange(newDate);
-                                                        setIsServiceDatePickerOpen(false);
-                                                    }}
-                                                    disabled={isReadOnly}
-                                                    initialFocus
-                                                    locale={es}
-                                                />
-                                            </PopoverContent>
-                                        </Popover>
-                                    </FormItem>
-                                )}
-                            />
-                             <Controller
-                                name="serviceDate"
-                                control={form.control}
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Hora de Recepción</FormLabel>
-                                        <FormControl>
-                                            <Input
-                                                type="time"
-                                                value={field.value && isValid(field.value) ? format(field.value, 'HH:mm') : ""}
-                                                onChange={(e) => {
-                                                    const timeValue = e.target.value;
-                                                    if (!timeValue) return;
-                                                    const [hours, minutes] = timeValue.split(':').map(Number);
-                                                    const currentVal = field.value || new Date();
-                                                    field.onChange(setMinutes(setHours(currentVal, hours), minutes));
-                                                }}
-                                                disabled={isReadOnly}
-                                            />
-                                        </FormControl>
-                                    </FormItem>
-                                )}
-                            />
-                        </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 items-end">
-                            <Controller
-                                name="deliveryDateTime"
-                                control={form.control}
-                                render={({ field }) => (
-                                    <FormItem className="flex flex-col">
-                                      <FormLabel>Fecha de Entrega</FormLabel>
-                                      <Popover open={isDeliveryDatePickerOpen} onOpenChange={setIsDeliveryDatePickerOpen}>
-                                        <PopoverTrigger asChild disabled={isReadOnly}>
-                                            <Button variant={"outline"} className={cn("w-full justify-start text-left font-normal", !field.value && "text-muted-foreground")} disabled={isReadOnly}>
-                                                {field.value ? format(field.value, "PPP", { locale: es }) : <span>Seleccione fecha</span>}
-                                                <Clock className="ml-auto h-4 w-4 opacity-50" />
-                                            </Button>
-                                        </PopoverTrigger>
-                                        <PopoverContent className="w-auto p-0" align="start">
-                                          <Calendar
-                                            mode="single"
-                                            selected={field.value}
-                                            onSelect={(date) => {
-                                              const currentVal = field.value || new Date();
-                                              const newDate = date ? setMinutes(setHours(date, currentVal.getHours()), currentVal.getMinutes()) : new Date();
-                                              field.onChange(newDate);
-                                              setIsDeliveryDatePickerOpen(false);
-                                            }}
-                                            disabled={isReadOnly}
-                                            initialFocus
-                                            locale={es}
-                                          />
-                                        </PopoverContent>
-                                      </Popover>
-                                    </FormItem>
-                                )}
-                            />
-                            <Controller
-                                control={form.control}
-                                name="deliveryDateTime"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Hora de Entrega</FormLabel>
-                                        <FormControl>
-                                            <Input
-                                                type="time"
-                                                value={field.value && isValid(field.value) ? format(field.value, 'HH:mm') : ""}
-                                                onChange={(e) => {
-                                                    const timeValue = e.target.value;
-                                                    if (!timeValue) return;
-                                                    const [hours, minutes] = timeValue.split(':').map(Number);
-                                                    const currentVal = field.value || new Date();
-                                                    field.onChange(setMinutes(setHours(currentVal, hours), minutes));
-                                                }}
-                                                disabled={isReadOnly}
-                                            />
-                                        </FormControl>
-                                    </FormItem>
-                                )}
-                            />
-                        </div>
-                    </CardContent>
-                  </Card>
-
-                  <Card>
-                    <CardHeader>
-                       <FormField
-                          control={form.control}
-                          name="vehicleConditions"
-                          render={({ field }) => (
-                              <FormItem>
-                                  <FormLabel className="flex justify-between items-center w-full">
-                                      <span className="text-lg font-semibold">Condiciones del Vehículo (al recibir)</span>
-                                      {!isReadOnly && (
-                                          <Button type="button" size="sm" variant="ghost" onClick={() => handleEnhanceText('vehicleConditions')} disabled={isEnhancingText === 'vehicleConditions' || !field.value}>
-                                              {isEnhancingText === 'vehicleConditions' ? <Loader2 className="animate-spin" /> : <BrainCircuit className="h-4 w-4" />}
-                                              <span className="ml-2 hidden sm:inline">Mejorar texto</span>
-                                          </Button>
-                                      )}
-                                  </FormLabel>
-                                  <FormControl><Textarea placeholder="Ej: Rayón en puerta del conductor, llanta trasera derecha baja, etc." {...field} disabled={isReadOnly} /></FormControl>
-                              </FormItem>
-                          )}
-                        />
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <FormField control={form.control} name="fuelLevel" render={({ field }) => (<FormItem><FormLabel>Nivel de Combustible</FormLabel><Select onValueChange={field.onChange} value={field.value} disabled={isReadOnly}><FormControl><SelectTrigger><SelectValue placeholder="Seleccionar nivel..." /></SelectTrigger></FormControl><SelectContent><SelectItem value="Vacío">Vacío</SelectItem><SelectItem value="1/8">1/8</SelectItem><SelectItem value="1/4">1/4"></SelectItem><SelectItem value="3/8">3/8</SelectItem><SelectItem value="1/2">1/2</SelectItem><SelectItem value="5/8">5/8</SelectItem><SelectItem value="3/4">3/4</SelectItem><SelectItem value="7/8">7/8</SelectItem><SelectItem value="Lleno">Lleno</SelectItem></SelectContent></Select></FormItem>)}/>
-                            <FormField control={form.control} name="customerItems" render={({ field }) => (<FormItem><FormLabel>Pertenencias del Cliente (Opcional)</FormLabel><FormControl><Textarea placeholder="Ej: Gato, llanta de refacción, cargador de celular en la guantera, etc." {...field} disabled={isReadOnly} /></FormControl></FormItem>)}/>
-                        </div>
-                        <div className="pt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div><Label>Firma de Recepción</Label><div className="mt-2 p-2 h-24 border rounded-md bg-muted/50 flex items-center justify-center">{customerSignatureReception ? (<img src={customerSignatureReception} alt="Firma de recepción" style={{objectFit: 'contain', width: '150px', height: '75px'}}/>) : (<span className="text-sm text-muted-foreground">Pendiente de firma del cliente</span>)}</div></div>
-                            <div><Label>Firma de Entrega</Label><div className="mt-2 p-2 h-24 border rounded-md bg-muted/50 flex items-center justify-center">{customerSignatureDelivery ? (<img src={customerSignatureDelivery} alt="Firma de entrega" style={{objectFit: 'contain', width: '150px', height: '75px'}}/>) : (<span className="text-sm text-muted-foreground">Pendiente de firma del cliente</span>)}</div></div>
-                        </div>
-                    </CardContent>
-                  </Card>
-              </TabsContent>
-            )}
-            
-            {showReportTab && (
-              <TabsContent value="reporte" className="space-y-6 mt-0">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Reporte Fotográfico</CardTitle>
-                    <CardDescription>Añade grupos de fotos para documentar el estado del vehículo o las reparaciones realizadas.</CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    {photoReportFields.map((field, index) => (
-                        <Card key={field.id} className="p-4 bg-muted/30">
-                           <div className="flex justify-between items-start mb-2">
-                                <Label className="text-base font-semibold flex items-center gap-2">
-                                  {index === 0 ? "Recepción del Vehículo" : `Reporte Adicional #${index}`}
-                                </Label>
-                                {!isReadOnly && index > 0 && (<Button type="button" variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => removePhotoReport(index)}><Trash2 className="h-4 w-4"/></Button>)}
-                           </div>
-                           <FormField
-                              control={form.control}
-                              name={`photoReports.${index}.description`}
-                              render={({ field: descField }) => (
-                                  <FormItem>
-                                      <FormLabel className="flex justify-between items-center w-full text-sm">
-                                        <span>{index === 0 ? "Notas de la Recepción" : "Descripción del Reporte"}</span>
-                                        {!isReadOnly && (
-                                            <Button type="button" size="sm" variant="ghost" onClick={() => handleEnhanceText(`photoReports.${index}.description`)} disabled={isEnhancingText === `photoReports.${index}.description` || !descField.value}>
-                                                {isEnhancingText === `photoReports.${index}.description` ? <Loader2 className="animate-spin" /> : <BrainCircuit className="h-4 w-4" />}
-                                                <span className="ml-2 hidden sm:inline">Mejorar</span>
-                                            </Button>
-                                        )}
-                                      </FormLabel>
-                                      <FormControl><Textarea placeholder={index === 0 ? "" : "Describe el conjunto de fotos..."} disabled={isReadOnly} {...descField} /></FormControl>
-                                      <FormMessage />
-                                  </FormItem>
-                              )}
-                            />
-                            <div className="grid grid-cols-3 gap-2 mt-2">
-                                {field.photos.map((photoUrl, photoIndex) => (
-                                    <button type="button" key={photoIndex} className="relative aspect-video w-full bg-muted rounded-md overflow-hidden group" onClick={() => handleViewImage(photoUrl)}>
-                                        <Image src={photoUrl} layout="fill" objectFit="cover" alt={`Foto ${photoIndex + 1} del reporte ${index + 1}`} className="transition-transform duration-300 group-hover:scale-105" />
-                                        <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity group-hover:opacity-100">
-                                            <Eye className="h-8 w-8 text-white" />
-                                        </div>
-                                    </button>
-                                ))}
-                            </div>
-                            <PhotoUploader
-                                reportIndex={index}
-                                serviceId={serviceId}
-                                photosLength={field.photos.length}
-                                disabled={isReadOnly}
-                                onUploadComplete={handlePhotoUploadComplete}
-                                captureMode={index === 0 ? "gallery" : "camera"}
-                                maxPhotos={index === 0 ? 10 : 3} // Different limit for reception
-                            />
-                        </Card>
-                    ))}
-                    {!isReadOnly && (
-                      <Button type="button" variant="secondary" onClick={() => appendPhotoReport({ id: `rep_${Date.now()}`, date: new Date().toISOString(), description: '', photos: [] })}>
-                        <PlusCircle className="mr-2 h-4 w-4" /> Añadir Nuevo Reporte
-                      </Button>
-                    )}
-                  </CardContent>
-                </Card>
-              </TabsContent>
-            )}
-
-            {showReceptionTab && (
-              <TabsContent value="seguridad" className="space-y-6 mt-0">
-                  <SafetyChecklist 
-                    control={control} 
-                    isReadOnly={isReadOnly} 
-                    onSignatureClick={() => setIsTechSignatureDialogOpen(true)} 
-                    signatureDataUrl={technicianSignature}
-                    isEnhancingText={isEnhancingText}
-                    handleEnhanceText={handleEnhanceText}
-                    serviceId={serviceId}
-                    onPhotoUploaded={handleChecklistPhotoUpload}
-                    onViewImage={handleViewImage}
-                  />
-              </TabsContent>
-            )}
-          </Tabs>
+          </div>
 
           <div className="flex justify-between items-center pt-4">
             <div className="flex items-center gap-2">
@@ -1543,7 +1190,7 @@ export function ServiceForm({
             {isReadOnly ? (<Button type="button" variant="outline" onClick={onClose}>Cerrar</Button>) : (
                 <>
                 <Button type="button" variant="outline" onClick={onClose}>Cancelar</Button>
-                <Button type="submit" disabled={form.formState.isSubmitting || !selectedVehicle}>{form.formState.isSubmitting ? "Guardando..." : (initialData?.id ? "Actualizar" : "Crear")}</Button>
+                <Button type="submit" disabled={form.formState.isSubmitting || !getValues('vehicleId')}>{form.formState.isSubmitting ? "Guardando..." : (initialData?.id ? "Actualizar" : "Crear")}</Button>
                 </>
             )}
             </div>
