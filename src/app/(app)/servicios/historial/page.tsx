@@ -217,7 +217,7 @@ function HistorialServiciosPageComponent() {
         />
       )}
 
-      {isPreviewOpen && previewData && (
+      {isSheetOpen && previewData && (
         <UnifiedPreviewDialog
           open={isSheetOpen}
           onOpenChange={setIsSheetOpen}
@@ -241,3 +241,5 @@ export default function HistorialServiciosPageWrapper() {
         </Suspense>
     )
 }
+
+    
