@@ -7,7 +7,6 @@ import type {
   DashboardMetrics,
   SaleReceipt,
   ServiceSupply,
-  TechnicianMonthlyPerformance,
   InventoryCategory,
   Supplier,
   SaleItem,
@@ -659,7 +658,8 @@ export const calculateSaleProfit = (
     }
   }
   
-  const profit = sale.totalAmount - totalCost;
+  const totalAmountPreTax = sale.totalAmount / (1 + IVA_RATE);
+  const profit = totalAmountPreTax - totalCost;
   
   return isFinite(profit) ? profit : 0;
 };
@@ -762,8 +762,7 @@ export async function migrateData(vehiclesData: any[], servicesData: any[]): Pro
 
     let servicesAdded = 0;
     servicesData.forEach(row => {
-        const licensePlate = row['Placa'];
-        const vehicle = placeholderVehicles.find(v => v.licensePlate === licensePlate);
+        const vehicle = placeholderVehicles.find(v => v.licensePlate === row['Placa']);
         if (vehicle) {
             const newService: ServiceRecord = {
                 id: `SER_MIG_G_${servicesAdded}`,
