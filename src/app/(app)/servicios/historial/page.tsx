@@ -92,6 +92,9 @@ const ServiceList = React.memo(({ services, vehicles, technicians, onEdit, onVie
                     {isInProgress && (
                         <Badge variant="secondary">{service.status}</Badge>
                     )}
+                    {service.status === 'Cancelado' && (
+                        <Badge variant="destructive">Servicio Cancelado</Badge>
+                    )}
                     <p className="text-xs text-muted-foreground">Asesor: {service.serviceAdvisorName || 'N/A'}</p>
                     {technician && <p className="text-xs text-muted-foreground">Técnico: {technician.name}</p>}
                     <div className="flex justify-center items-center gap-1">
@@ -168,14 +171,13 @@ function HistorialServiciosPageComponent() {
 
   const activeServices = useMemo(() => {
     return allServices.filter(s => {
+      if (s.status === 'Reparando' || s.status === 'En Espera de Refacciones') return true;
+      
       const serviceDay = parseISO(s.serviceDate);
       if (!isValid(serviceDay)) return false;
 
       // Agendado for today
       if (s.status === 'Agendado' && isToday(serviceDay)) return true;
-      
-      // In repair
-      if (s.status === 'Reparando' || s.status === 'En Espera de Refacciones') return true;
 
       // Completed today
       if (s.status === 'Completado' && s.deliveryDateTime) {
@@ -408,5 +410,6 @@ export default function HistorialServiciosPageWrapper() {
     )
 }
     
+
 
 
