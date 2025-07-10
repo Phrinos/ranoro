@@ -38,7 +38,7 @@ import {
     AUTH_USER_LOCALSTORAGE_KEY,
 } from '@/lib/placeholder-data';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger, AlertDialogDescription, AlertDialogFooter } from "@/components/ui/alert-dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger, AlertDialogDescription } from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/label";
 import { suggestQuote } from '@/ai/flows/quote-suggestion-flow';
 import { enhanceText } from '@/ai/flows/text-enhancement-flow';
@@ -54,7 +54,8 @@ import { SafetyChecklist } from './SafetyChecklist';
 import { UnifiedPreviewDialog } from "@/components/shared/unified-preview-dialog";
 import { VehicleSelectionCard } from './VehicleSelectionCard';
 import { ReceptionAndDelivery } from './ReceptionAndDelivery';
-import { Separator } from "@/components/ui/separator.js";
+import { Separator } from "@/components/ui/separator";
+import Image from "next/image";
 
 const supplySchema = z.object({
   supplyId: z.string().min(1, "Seleccione un insumo"),
@@ -254,25 +255,19 @@ export function ServiceForm({
   const freshUserRef = useRef<User | null>(null);
   const originalStatusRef = useRef(initialDataService?.status || initialDataQuote?.status);
 
+  // The stableServiceId ensures that new services have a consistent ID for photo uploads before saving.
+  const stableServiceId = useMemo(() => initialData?.id || `SRV-${generateUniqueId()}`, [initialData?.id]);
+  
   const form = useForm<ServiceFormValues>({
     resolver: zodResolver(serviceFormSchemaBase),
     defaultValues: {
-        id: initialData?.id || undefined,
+        id: stableServiceId,
         status: mode === 'service' ? ((initialData as ServiceRecord)?.status || 'Agendado') : 'Cotizacion',
         serviceItems: [],
         photoReports: [],
     }
   });
   const { control, getValues, setValue } = form;
-
-  // Use a stable ID for the service throughout the form's lifecycle
-  const serviceId = useMemo(() => initialData?.id || `SRV_${generateUniqueId()}`, [initialData?.id]);
-
-  useEffect(() => {
-      if (!getValues('id')) {
-          setValue('id', serviceId);
-      }
-  }, [serviceId, getValues, setValue]);
 
   const { fields: serviceItemsFields, append: appendServiceItem, remove: removeServiceItem } = useFieldArray({ control, name: "serviceItems" });
   const { fields: photoReportFields, append: appendPhotoReport, remove: removePhotoReport } = useFieldArray({ control, name: "photoReports" });
@@ -331,7 +326,7 @@ export function ServiceForm({
         }
         
         form.reset({
-            id: data.id || serviceId, // Prioritize existing ID, fallback to stable ID
+            id: data.id || stableServiceId, 
             publicId: (data as any)?.publicId, vehicleId: data.vehicleId ? String(data.vehicleId) : undefined,
             vehicleLicensePlateSearch: data.vehicleIdentifier || "",
             serviceDate: isValid(parseDate(data.serviceDate)) ? parseDate(data.serviceDate) : undefined,
@@ -355,7 +350,7 @@ export function ServiceForm({
         });
     } else {
       form.reset({
-          id: serviceId,
+          id: stableServiceId,
           serviceAdvisorId: currentUser?.id || '', serviceAdvisorName: currentUser?.name || '', serviceAdvisorSignatureDataUrl: currentUser?.signatureDataUrl || '',
           status: mode === 'quote' ? 'Cotizacion' : 'Agendado',
           quoteDate: mode === 'quote' ? new Date() : undefined,
@@ -364,7 +359,7 @@ export function ServiceForm({
           photoReports: [{ id: `rep_recepcion_${Date.now()}`, date: new Date().toISOString(), description: "Notas de la Recepción", photos: [] }],
       });
     }
-  }, [initialDataService, initialDataQuote, mode, form, isReadOnly, serviceId]);
+  }, [initialDataService, initialDataQuote, mode, form, isReadOnly, stableServiceId]);
   
   const handlePhotoUploadComplete = useCallback((reportIndex: number, urls: string[]) => {
     const currentPhotos = getValues(`photoReports.${reportIndex}.photos`) || [];
@@ -514,6 +509,20 @@ export function ServiceForm({
     onClose();
   }, [onDelete, onCancelService, mode, initialDataQuote, initialDataService, cancellationReason, toast, onClose]);
   
+  const handleDownloadImage = () => {
+    if (!viewingImageUrl) return;
+    try {
+      window.open(viewingImageUrl, '_blank')?.focus();
+    } catch (err) {
+      console.error("Error opening image:", err);
+      toast({
+        title: "Error al Abrir",
+        description: "No se pudo abrir la imagen en una nueva pestaña.",
+        variant: "destructive"
+      });
+    }
+  };
+
   return (
     <>
       <Form {...form}>
@@ -592,7 +601,7 @@ export function ServiceForm({
                               </div>
                               <PhotoUploader 
                                   reportIndex={index} 
-                                  serviceId={serviceId} 
+                                  serviceId={stableServiceId}
                                   onUploadComplete={handlePhotoUploadComplete} 
                                   photosLength={field.photos.length}
                                   disabled={isReadOnly}
@@ -606,7 +615,7 @@ export function ServiceForm({
             </TabsContent>
             
             <TabsContent value="seguridad">
-               <SafetyChecklist control={control} isReadOnly={isReadOnly} onSignatureClick={() => setIsTechSignatureDialogOpen(true)} signatureDataUrl={form.watch('safetyInspection.technicianSignature')} isEnhancingText={isEnhancingText} handleEnhanceText={handleEnhanceText} serviceId={serviceId} onPhotoUploaded={handleChecklistPhotoUpload} onViewImage={handleViewImage}/>
+               <SafetyChecklist control={control} isReadOnly={isReadOnly} onSignatureClick={() => setIsTechSignatureDialogOpen(true)} signatureDataUrl={form.watch('safetyInspection.technicianSignature')} isEnhancingText={isEnhancingText} handleEnhanceText={handleEnhanceText} serviceId={stableServiceId} onPhotoUploaded={handleChecklistPhotoUpload} onViewImage={handleViewImage}/>
             </TabsContent>
           </Tabs>
 
