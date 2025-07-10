@@ -170,22 +170,23 @@ function HistorialServiciosPageComponent() {
   }, [allServices, dateRange, searchTerm]);
 
   const activeServices = useMemo(() => {
-    return allServices.filter(s => {
-      if (s.status === 'En Taller') return true;
-      
-      const serviceDay = parseISO(s.serviceDate);
-      if (!isValid(serviceDay)) return false;
-
-      // Agendado for today
-      if (s.status === 'Agendado' && isToday(serviceDay)) return true;
-
-      // Completed today
-      if (s.status === 'Entregado' && s.deliveryDateTime) {
-        const deliveryDate = parseISO(s.deliveryDateTime);
-        return isValid(deliveryDate) && isToday(deliveryDate);
-      }
-      return false;
-    }).sort((a,b) => compareAsc(parseISO(a.serviceDate), parseISO(b.serviceDate)));
+    const today = new Date();
+    return allServices
+      .filter(s => {
+        if (s.status === 'En Taller') {
+          return true;
+        }
+        if (s.status === 'Agendado') {
+          const serviceDay = parseISO(s.serviceDate);
+          return isValid(serviceDay) && isToday(serviceDay);
+        }
+        if (s.status === 'Entregado') {
+          const deliveryDate = s.deliveryDateTime ? parseISO(s.deliveryDateTime) : null;
+          return deliveryDate && isValid(deliveryDate) && isToday(deliveryDate);
+        }
+        return false;
+      })
+      .sort((a,b) => compareAsc(parseISO(a.serviceDate), parseISO(b.serviceDate)));
   }, [allServices]);
   
   const handleSaveService = useCallback(async (data: QuoteRecord | ServiceRecord) => {
@@ -410,6 +411,7 @@ export default function HistorialServiciosPageWrapper() {
     )
 }
     
+
 
 
 
