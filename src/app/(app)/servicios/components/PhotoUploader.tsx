@@ -41,6 +41,11 @@ export function PhotoUploader({
 
     if (!files || files.length === 0) return;
     
+    if (!serviceId) {
+        toast({ title: "Error", description: "Se necesita un ID de servicio para subir fotos.", variant: "destructive" });
+        return;
+    }
+
     const totalPhotos = photosLength + files.length;
     if (totalPhotos > maxPhotos) {
       toast({ title: `Límite de ${maxPhotos} Fotos Excedido`, description: `Solo puede subir un máximo de ${maxPhotos} fotos en esta sección.`, variant: 'destructive' });
@@ -55,16 +60,16 @@ export function PhotoUploader({
     setIsUploading(true);
     toast({ title: `Subiendo ${files.length} imagen(es)...`, description: 'Por favor espere...' });
 
-    const uploadPromises = Array.from(files).map(async (file) => {
-        const optimizedDataUrl = await optimizeImage(file, 1280);
-        const photoName = `${Date.now()}_${file.name.replace(/\s+/g, '_')}.jpg`;
-        const photoRef = ref(storage, `service-photos/${serviceId}/${photoName}`);
-        
-        await uploadString(photoRef, optimizedDataUrl, 'data_url');
-        return getDownloadURL(photoRef);
-    });
-
     try {
+        const uploadPromises = Array.from(files).map(async (file) => {
+            const optimizedDataUrl = await optimizeImage(file, 1280);
+            const photoName = `${Date.now()}_${file.name.replace(/\s+/g, '_')}.jpg`;
+            const photoRef = ref(storage, `service-photos/${serviceId}/${photoName}`);
+            
+            await uploadString(photoRef, optimizedDataUrl, 'data_url');
+            return getDownloadURL(photoRef);
+        });
+
         const downloadURLs = await Promise.all(uploadPromises);
         onUploadComplete(reportIndex, downloadURLs); // Pass all new URLs at once
         toast({ title: '¡Éxito!', description: `Se añadieron las imágenes a tu reporte.` });
