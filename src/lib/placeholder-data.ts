@@ -189,12 +189,16 @@ export let placeholderAuditLogs: AuditLog[] = [
 // =======================================
 
 // --- SERVICIOS ---
+// MIGRATED DATA - This data now follows the standardized ServiceRecord structure.
 export let placeholderServiceRecords: ServiceRecord[] = [
+  // --- Existing Data Migrated ---
   {
     id: 'SER002',
+    publicId: 's_zxcvbnm123',
     vehicleId: 'VEH002',
     vehicleIdentifier: 'BBB456B',
     serviceDate: subDays(new Date(), 5).toISOString(),
+    serviceType: 'Servicio General',
     description: 'Diagnóstico de sistema eléctrico.',
     technicianId: 'T002',
     technicianName: 'Ricardo Gomez',
@@ -209,8 +213,10 @@ export let placeholderServiceRecords: ServiceRecord[] = [
       }
     ],
     totalCost: 1200,
-    totalSuppliesCost: 500,
-    serviceProfit: 700,
+    totalSuppliesCost: 500, // 2 * 250
+    serviceProfit: 700, // 1200 - 500
+    subTotal: 1034.48,
+    taxAmount: 165.52,
     status: 'Reparando',
     mileage: 89000,
     serviceAdvisorId: 'user_superadmin',
@@ -219,9 +225,11 @@ export let placeholderServiceRecords: ServiceRecord[] = [
   },
   {
     id: 'SER003',
+    publicId: 's_asdfghj456',
     vehicleId: 'VEH003',
     vehicleIdentifier: 'CCC789C',
     serviceDate: new Date().toISOString(),
+    serviceType: 'Servicio General',
     description: 'Mantenimiento preventivo flotilla.',
     technicianId: 'T001',
     technicianName: 'Carlos Rodriguez',
@@ -234,16 +242,53 @@ export let placeholderServiceRecords: ServiceRecord[] = [
         }
     ],
     totalCost: 1800,
+    totalSuppliesCost: 0,
+    serviceProfit: 1800,
+    subTotal: 1551.72,
+    taxAmount: 248.28,
     status: 'Agendado',
     mileage: 15000,
     serviceAdvisorId: 'user_superadmin',
     serviceAdvisorName: 'Arturo Valdelamar',
     appointmentStatus: 'Creada',
+  },
+  // --- New Quote Example ---
+  {
+    id: 'COT001',
+    publicId: 's_qwerty789',
+    vehicleId: 'VEH002',
+    vehicleIdentifier: 'BBB456B',
+    quoteDate: subDays(new Date(), 2).toISOString(),
+    serviceDate: subDays(new Date(), 2).toISOString(), // A serviceDate is needed for consistency
+    serviceType: 'Frenos',
+    description: 'Cambio de balatas delanteras y traseras.',
+    technicianId: 'T001',
+    technicianName: 'Carlos Rodriguez',
+    serviceItems: [
+      {
+        id: 'item_cot001_1',
+        name: 'Cambio de balatas delanteras y traseras',
+        price: 2500,
+        suppliesUsed: [
+          { supplyId: 'PROD003', supplyName: 'Juego de Balatas Delanteras', quantity: 1, unitPrice: 600, sellingPrice: 720 },
+          { supplyId: 'PROD003', supplyName: 'Juego de Balatas Delanteras', quantity: 1, unitPrice: 600, sellingPrice: 720 }, // Assuming same part for rear for simplicity
+        ]
+      }
+    ],
+    totalCost: 2500,
+    totalSuppliesCost: 1200, // 600 + 600
+    serviceProfit: 1300, // 2500 - 1200
+    subTotal: 2155.17,
+    taxAmount: 344.83,
+    status: 'Cotizacion',
+    mileage: 91000,
+    serviceAdvisorId: 'user_superadmin',
+    serviceAdvisorName: 'Arturo Valdelamar',
   }
 ];
 
 // --- COTIZACIONES ---
-export let placeholderQuotes: QuoteRecord[] = [];
+export let placeholderQuotes: QuoteRecord[] = []; // This is now obsolete, quotes are ServiceRecords with status 'Cotizacion'
 
 // --- VENTAS (POS) ---
 export let placeholderSales: SaleReceipt[] = [
@@ -295,7 +340,6 @@ export const placeholderDashboardMetrics: DashboardMetrics = {
 // =======================================
 
 // IMPORTANT: Set this to `true` to enable local persistence without affecting the database.
-// Set to `false` for production mode with Firestore.
 const DEV_MODE_LOCAL_ONLY = false;
 
 const DB_PATH = 'database/main'; // The single document in Firestore to hold all data
