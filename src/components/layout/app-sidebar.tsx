@@ -3,7 +3,7 @@
 
 import Link from "next/link";
 import React from "react";
-import Image from "next/legacy/image";
+import Image from "next/image";
 import {
   Sidebar,
   SidebarContent,
@@ -176,7 +176,8 @@ export function AppSidebar() {
             alt="Ranoro Logo"
             width={120}
             height={30}
-            className="dark:invert object-contain"
+            className="dark:invert"
+            style={{ objectFit: 'contain' }}
             data-ai-hint="ranoro logo"
           />
         </Link>
