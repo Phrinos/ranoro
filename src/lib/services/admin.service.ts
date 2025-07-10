@@ -1,6 +1,4 @@
 
-'use server';
-
 import type { User, AppRole, AuditLog } from "@/types";
 import { placeholderUsers, placeholderAppRoles, placeholderAuditLogs, persistToFirestore, logAudit, defaultSuperAdmin } from "@/lib/placeholder-data";
 
