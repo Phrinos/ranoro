@@ -81,6 +81,15 @@ export let placeholderInventory: InventoryItem[] = [
 // =======================================
 export let placeholderVehicles: Vehicle[] = [
   {
+    id: 'VEH001',
+    make: 'Nissan',
+    model: 'Versa',
+    year: 2020,
+    ownerName: 'Juan Pérez',
+    ownerPhone: '4491234567',
+    licensePlate: 'AAA123A'
+  },
+  {
     id: 'VEH002',
     make: 'Honda',
     model: 'CR-V',
