@@ -349,7 +349,7 @@ export default function DashboardPage() {
               ) : capacityInfo ? (
                   <>
                       <div className="text-2xl font-bold font-headline">{capacityInfo.capacityPercentage}%</div>
-                      <p className="text-xs text-muted-foreground" title={`${capacityInfo.totalRequiredHours}h de ${capacityInfo.totalAvailableHours}h`}>
+                      <p className="text-xs text-muted-foreground" title={`${capacityInfo.totalRequiredHours.toFixed(1)}h de ${capacityInfo.totalAvailableHours}h`}>
                           {capacityInfo.recommendation}
                       </p>
                   </>

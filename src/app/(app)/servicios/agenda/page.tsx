@@ -105,6 +105,7 @@ function AgendaPageComponent() {
 
   const [capacityInfo, setCapacityInfo] = useState<CapacityAnalysisOutput | null>(null);
   const [isCapacityLoading, setIsCapacityLoading] = useState(false);
+  const [capacityError, setCapacityError] = useState<string | null>(null);
 
   useEffect(() => {
     const handleDbUpdate = () => setVersion(v => v + 1);
@@ -132,18 +133,19 @@ function AgendaPageComponent() {
     if (agendaView === 'lista') {
       const runCapacityAnalysis = async () => {
         setIsCapacityLoading(true);
-        const servicesForToday = placeholderServiceRecords.filter(s => {
-          if (!s.serviceDate || typeof s.serviceDate !== 'string') return false;
-          return isValid(parseISO(s.serviceDate)) && isToday(parseISO(s.serviceDate)) && s.status !== 'Completado' && s.status !== 'Cancelado';
-        });
-        
-        if (servicesForToday.length === 0) {
-            setCapacityInfo({ totalRequiredHours: 0, totalAvailableHours: placeholderTechnicians.reduce((sum, t) => sum + (t.standardHoursPerDay || 8), 0), recommendation: "Taller disponible", capacityPercentage: 0 });
-            setIsCapacityLoading(false);
-            return;
-        }
-
+        setCapacityError(null);
         try {
+          const servicesForToday = placeholderServiceRecords.filter(s => {
+            if (!s.serviceDate || typeof s.serviceDate !== 'string') return false;
+            return isValid(parseISO(s.serviceDate)) && isToday(parseISO(s.serviceDate)) && s.status !== 'Completado' && s.status !== 'Cancelado';
+          });
+          
+          if (servicesForToday.length === 0) {
+              setCapacityInfo({ totalRequiredHours: 0, totalAvailableHours: placeholderTechnicians.reduce((sum, t) => sum + (t.standardHoursPerDay || 8), 0), recommendation: "Taller disponible", capacityPercentage: 0 });
+              setIsCapacityLoading(false);
+              return;
+          }
+
           const result = await analyzeWorkshopCapacity({
             servicesForDay: servicesForToday.map(s => ({ description: s.description || '' })),
             technicians: placeholderTechnicians.filter(t => !t.isArchived).map(t => ({ id: t.id, standardHoursPerDay: t.standardHoursPerDay || 8 })),
@@ -152,6 +154,7 @@ function AgendaPageComponent() {
           setCapacityInfo(result);
         } catch (e) {
           console.error("Capacity analysis failed:", e);
+          setCapacityError("La IA no pudo calcular la capacidad.");
         } finally {
           setIsCapacityLoading(false);
         }
@@ -213,6 +216,7 @@ function AgendaPageComponent() {
 
   const renderCapacityBadge = () => {
     if (isCapacityLoading) return <Loader2 className="h-5 w-5 animate-spin" />;
+    if (capacityError) return <Badge variant="destructive" title={capacityError}>Error de IA</Badge>;
     if (!capacityInfo) return null;
 
     const { capacityPercentage, recommendation } = capacityInfo;
