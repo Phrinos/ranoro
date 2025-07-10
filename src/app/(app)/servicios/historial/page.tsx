@@ -62,6 +62,8 @@ const ServiceList = React.memo(({ services, vehicles, onEdit, onView, onComplete
         services.map(service => {
           const vehicle = vehicles.find(v => v.id === service.vehicleId);
           const isCompletable = service.status === 'Reparando' || service.status === 'En Espera de Refacciones';
+          const isInProgress = service.status === 'Reparando' || service.status === 'En Espera de Refacciones';
+
           return (
             <Card key={service.id} className="shadow-sm overflow-hidden">
               <CardContent className="p-0">
@@ -82,6 +84,9 @@ const ServiceList = React.memo(({ services, vehicles, onEdit, onView, onComplete
                   <div className="p-4 flex flex-col justify-center items-center text-center border-t md:border-t-0 md:border-l w-full md:w-56 flex-shrink-0 space-y-2">
                     {service.status === 'Completado' && (
                         <Badge variant="success">Servicio Completado</Badge>
+                    )}
+                    {isInProgress && (
+                        <Badge variant="secondary">{service.status}</Badge>
                     )}
                     <p className="text-xs text-muted-foreground">Asesor: {service.serviceAdvisorName || 'N/A'}</p>
                     <div className="flex justify-center items-center gap-1">
