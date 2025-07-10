@@ -4,7 +4,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
 import { Button } from '@/components/ui/button';
-import { Printer, MessageSquare } from 'lucide-react';
+import { Printer, MessageSquare, Download } from 'lucide-react';
 import type { ServiceRecord, Vehicle, QuoteRecord, WorkshopInfo } from '@/types';
 import { ServiceSheetContent } from '@/components/service-sheet-content';
 import { placeholderServiceRecords, placeholderVehicles } from '@/lib/placeholder-data';
