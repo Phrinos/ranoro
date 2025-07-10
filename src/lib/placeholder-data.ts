@@ -235,7 +235,7 @@ export let placeholderServiceRecords: ServiceRecord[] = [
     serviceProfit: 95, // 850 - 755
     subTotal: 732.76,
     taxAmount: 117.24,
-    status: 'Completado',
+    status: 'Entregado',
     mileage: 75000,
     serviceAdvisorId: 'diana_user_id',
     serviceAdvisorName: 'Diana Arriaga',
@@ -266,7 +266,7 @@ export let placeholderServiceRecords: ServiceRecord[] = [
     serviceProfit: 700, // 1200 - 500
     subTotal: 1034.48,
     taxAmount: 165.52,
-    status: 'Reparando',
+    status: 'En Taller',
     mileage: 89000,
     serviceAdvisorId: 'diana_user_id',
     serviceAdvisorName: 'Diana Arriaga',
@@ -300,7 +300,39 @@ export let placeholderServiceRecords: ServiceRecord[] = [
     serviceAdvisorId: 'diana_user_id',
     serviceAdvisorName: 'Diana Arriaga',
     appointmentStatus: 'Creada',
-  }
+  },
+  {
+    id: 'SER_mcxpk73o',
+    publicId: 's_vbnmkl345',
+    vehicleId: 'VEH002',
+    vehicleIdentifier: 'BBB456B',
+    serviceDate: subMonths(new Date(), 1).toISOString(),
+    deliveryDateTime: subMonths(new Date(), 1).toISOString(),
+    serviceType: 'Servicio General',
+    description: 'Reparación de suspensión.',
+    technicianId: 'T001',
+    technicianName: 'Carlos Rodriguez',
+    serviceItems: [
+      {
+        id: 'item_ser_mcxpk73o_1',
+        name: 'Cambio de amortiguadores',
+        price: 2500,
+        suppliesUsed: [
+          { supplyId: 'PROD005', supplyName: 'Amortiguador Delantero', quantity: 2, unitPrice: 800, sellingPrice: 960 },
+        ]
+      }
+    ],
+    totalCost: 2500,
+    totalSuppliesCost: 1600,
+    serviceProfit: 900,
+    subTotal: 2155.17,
+    taxAmount: 344.83,
+    status: 'Entregado',
+    mileage: 85000,
+    serviceAdvisorId: 'diana_user_id',
+    serviceAdvisorName: 'Diana Arriaga',
+    appointmentStatus: 'Confirmada',
+  },
 ];
 
 // --- COTIZACIONES ---
@@ -832,7 +864,7 @@ export async function migrateData(vehiclesData: any[], servicesData: any[]): Pro
                 serviceDate: row['Fecha'] ? new Date(row['Fecha']).toISOString() : new Date().toISOString(),
                 description: row['Descripción'] || 'Servicio migrado',
                 totalCost: Number(row['Costo']) || 0,
-                status: 'Completado',
+                status: 'Entregado',
                 technicianId: 'T001',
                 serviceItems: [],
                 subTotal: 0,
