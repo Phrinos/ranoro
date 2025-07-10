@@ -37,9 +37,10 @@ type ServiceSortOption =
   | "status_asc" | "status_desc";
 
 
-const ServiceList = React.memo(({ services, vehicles, onEdit, onView, onComplete }: {
+const ServiceList = React.memo(({ services, vehicles, technicians, onEdit, onView, onComplete }: {
   services: ServiceRecord[],
   vehicles: Vehicle[],
+  technicians: Technician[],
   onEdit: (service: ServiceRecord) => void,
   onView: (service: ServiceRecord) => void,
   onComplete: (service: ServiceRecord) => void,
@@ -61,6 +62,7 @@ const ServiceList = React.memo(({ services, vehicles, onEdit, onView, onComplete
       {services.length > 0 ? (
         services.map(service => {
           const vehicle = vehicles.find(v => v.id === service.vehicleId);
+          const technician = technicians.find(t => t.id === service.technicianId);
           const isCompletable = service.status === 'Reparando' || service.status === 'En Espera de Refacciones';
           const isInProgress = service.status === 'Reparando' || service.status === 'En Espera de Refacciones';
 
@@ -74,6 +76,7 @@ const ServiceList = React.memo(({ services, vehicles, onEdit, onView, onComplete
                       <StatusTracker status={service.status} />
                   </div>
                   <div className="p-4 flex flex-col justify-center flex-grow space-y-2 text-left border-y md:border-y-0 md:border-x">
+                      <p className="text-sm text-muted-foreground">{vehicle?.ownerName} - {vehicle?.ownerPhone}</p>
                       <p className="font-bold text-2xl text-black">{vehicle ? `${vehicle.licensePlate} - ${vehicle.make} ${vehicle.model}` : 'N/A'}</p>
                       <p className="text-sm text-foreground"><span className="font-semibold">{service.serviceType}:</span> {getServiceDescriptionText(service)}</p>
                   </div>
@@ -89,6 +92,7 @@ const ServiceList = React.memo(({ services, vehicles, onEdit, onView, onComplete
                         <Badge variant="secondary">{service.status}</Badge>
                     )}
                     <p className="text-xs text-muted-foreground">Asesor: {service.serviceAdvisorName || 'N/A'}</p>
+                    {technician && <p className="text-xs text-muted-foreground">Técnico: {technician.name}</p>}
                     <div className="flex justify-center items-center gap-1">
                         <Button variant="ghost" size="icon" onClick={() => onView(service)} title="Vista Previa"><Eye className="h-4 w-4" /></Button>
                         <Button variant="ghost" size="icon" onClick={() => onEdit(service)} title="Editar Servicio"><Edit className="h-4 w-4" /></Button>
@@ -300,7 +304,7 @@ function HistorialServiciosPageComponent() {
           </TabsList>
           
           <TabsContent value="activos" className="mt-0 space-y-4">
-              <ServiceList services={activeServices} vehicles={vehicles} onEdit={(s) => {setEditingService(s); setIsEditDialogOpen(true);}} onView={handleShowPreview} onComplete={handleOpenCompleteDialog}/>
+              <ServiceList services={activeServices} vehicles={vehicles} technicians={technicians} onEdit={(s) => {setEditingService(s); setIsEditDialogOpen(true);}} onView={handleShowPreview} onComplete={handleOpenCompleteDialog}/>
           </TabsContent>
           
           <TabsContent value="historial" className="mt-0 space-y-4">
@@ -330,7 +334,7 @@ function HistorialServiciosPageComponent() {
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
-            <ServiceList services={historicalServices} vehicles={vehicles} onEdit={(s) => {setEditingService(s); setIsEditDialogOpen(true);}} onView={handleShowPreview} onComplete={handleOpenCompleteDialog}/>
+            <ServiceList services={historicalServices} vehicles={vehicles} technicians={technicians} onEdit={(s) => {setEditingService(s); setIsEditDialogOpen(true);}} onView={handleShowPreview} onComplete={handleOpenCompleteDialog}/>
           </TabsContent>
       </Tabs>
       
@@ -394,3 +398,4 @@ export default function HistorialServiciosPageWrapper() {
     )
 }
     
+
