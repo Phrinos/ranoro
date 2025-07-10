@@ -32,7 +32,6 @@ export function UnifiedPreviewDialog({ open, onOpenChange, service }: UnifiedPre
   useEffect(() => {
     if (open && service) {
       // Find the associated quote if it exists by looking for a record with the same ID and a quoteDate.
-      // This is more robust than checking for status === 'Cotizacion'.
       const foundQuote = placeholderServiceRecords.find(s => s.id === service.id && s.quoteDate);
       setAssociatedQuote(foundQuote || null);
 
