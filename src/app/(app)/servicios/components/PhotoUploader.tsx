@@ -37,13 +37,19 @@ export function PhotoUploader({
   }, []);
 
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
+    const files = event.target.files;
     
     if (fileInputRef.current) {
         fileInputRef.current.value = '';
     }
 
-    if (!file) return;
+    if (!files || files.length === 0) return;
+    
+    const totalPhotos = photosLength + files.length;
+    if (totalPhotos > 3) {
+      toast({ title: 'Límite de Fotos Excedido', description: 'Solo puede subir un máximo de 3 fotos por reporte.', variant: 'destructive' });
+      return;
+    }
 
     if (!storage) {
       toast({ title: 'Error de Configuración', description: 'El almacenamiento de archivos no está disponible.', variant: 'destructive' });
@@ -54,45 +60,35 @@ export function PhotoUploader({
       setIsUploading(true);
     }
     
-    try {
-      toast({ title: 'Procesando imagen...', description: `Optimizando ${file.name}...` });
-      const optimizedDataUrl = await optimizeImage(file, 1280);
-      
-      toast({ title: 'Subiendo a la nube...', description: `Enviando ${file.name}...` });
-      
-      const photoName = `${Date.now()}_${file.name.replace(/\s+/g, '_')}.jpg`;
-      const photoRef = ref(storage, `service-photos/${serviceId}/${photoName}`);
-      
-      await uploadString(photoRef, optimizedDataUrl, 'data_url');
-      const downloadURL = await getDownloadURL(photoRef);
-      
-      if (isMounted.current) {
-        onUploadComplete(reportIndex, downloadURL);
-      }
-      
-      toast({
-        title: '¡Éxito!',
-        description: `Se añadió la imagen a tu reporte.`,
-      });
+    toast({ title: `Subiendo ${files.length} imagen(es)...`, description: 'Por favor espere...' });
 
-    } catch (error) {
-      console.error(`Error al subir ${file.name}:`, error);
-      let errorMessage = "Ocurrió un error desconocido al subir la imagen.";
-      if (error instanceof Error) {
-        errorMessage = error.message.includes('storage/unauthorized')
-          ? "Permiso denegado. Revisa las reglas de seguridad de Firebase Storage."
-          : `Error: ${error.message}`;
+    for (const file of Array.from(files)) {
+      try {
+        const optimizedDataUrl = await optimizeImage(file, 1280);
+        const photoName = `${Date.now()}_${file.name.replace(/\s+/g, '_')}.jpg`;
+        const photoRef = ref(storage, `service-photos/${serviceId}/${photoName}`);
+        
+        await uploadString(photoRef, optimizedDataUrl, 'data_url');
+        const downloadURL = await getDownloadURL(photoRef);
+        
+        if (isMounted.current) {
+          onUploadComplete(reportIndex, downloadURL);
+        }
+      } catch (error) {
+        console.error(`Error al subir ${file.name}:`, error);
+        let errorMessage = "Ocurrió un error desconocido al subir la imagen.";
+        if (error instanceof Error) {
+          errorMessage = error.message.includes('storage/unauthorized')
+            ? "Permiso denegado. Revisa las reglas de seguridad de Firebase Storage."
+            : `Error: ${error.message}`;
+        }
+        toast({ title: `Error al subir ${file.name}`, description: errorMessage, variant: 'destructive', duration: 8000 });
       }
-      toast({
-        title: `Error al subir ${file.name}`,
-        description: errorMessage,
-        variant: 'destructive',
-        duration: 8000,
-      });
-    } finally {
-      if (isMounted.current) {
-        setIsUploading(false);
-      }
+    }
+
+    if (isMounted.current) {
+      setIsUploading(false);
+      toast({ title: '¡Éxito!', description: `Se añadieron las imágenes a tu reporte.` });
     }
   };
 
@@ -121,6 +117,7 @@ export function PhotoUploader({
         onChange={handleFileChange} 
         accept="image/*" 
         className="hidden" 
+        multiple
       />
     </>
   );
