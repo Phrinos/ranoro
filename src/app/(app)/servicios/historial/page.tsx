@@ -63,8 +63,8 @@ const ServiceList = React.memo(({ services, vehicles, technicians, onEdit, onVie
         services.map(service => {
           const vehicle = vehicles.find(v => v.id === service.vehicleId);
           const technician = technicians.find(t => t.id === service.technicianId);
-          const isCompletable = service.status === 'Reparando' || service.status === 'En Espera de Refacciones';
-          const isInProgress = service.status === 'Reparando' || service.status === 'En Espera de Refacciones' || service.status === 'Agendado';
+          const isCompletable = service.status === 'En Taller';
+          const isInProgress = service.status === 'En Taller' || service.status === 'Agendado';
 
           return (
             <Card key={service.id} className="shadow-sm overflow-hidden">
@@ -86,11 +86,11 @@ const ServiceList = React.memo(({ services, vehicles, technicians, onEdit, onVie
                     <p className="font-bold text-2xl text-black">{formatCurrency(service.totalCost)}</p>
                   </div>
                   <div className="p-4 flex flex-col justify-center items-center text-center border-t md:border-t-0 md:border-l w-full md:w-56 flex-shrink-0 space-y-2">
-                    {service.status === 'Completado' && (
-                        <Badge variant="success">Servicio Completado</Badge>
+                    {service.status === 'Entregado' && (
+                        <Badge variant="success">Servicio Entregado</Badge>
                     )}
                     {isInProgress && (
-                        <Badge variant="secondary">{service.status}</Badge>
+                        <Badge variant="secondary">{service.status === 'En Taller' ? `${service.status} (${service.subStatus || 'N/A'})` : service.status}</Badge>
                     )}
                     {service.status === 'Cancelado' && (
                         <Badge variant="destructive">Servicio Cancelado</Badge>
@@ -100,7 +100,7 @@ const ServiceList = React.memo(({ services, vehicles, technicians, onEdit, onVie
                     <div className="flex justify-center items-center gap-1">
                         <Button variant="ghost" size="icon" onClick={() => onView(service)} title="Vista Previa"><Eye className="h-4 w-4" /></Button>
                         <Button variant="ghost" size="icon" onClick={() => onEdit(service)} title="Editar Servicio"><Edit className="h-4 w-4" /></Button>
-                        {isCompletable && <Button variant="ghost" size="icon" onClick={() => onComplete(service)} title="Marcar como Completado"><CheckCircle className="h-4 w-4 text-green-600" /></Button>}
+                        {isCompletable && <Button variant="ghost" size="icon" onClick={() => onComplete(service)} title="Marcar como Entregado"><CheckCircle className="h-4 w-4 text-green-600" /></Button>}
                     </div>
                   </div>
                 </div>
@@ -171,7 +171,7 @@ function HistorialServiciosPageComponent() {
 
   const activeServices = useMemo(() => {
     return allServices.filter(s => {
-      if (s.status === 'Reparando' || s.status === 'En Espera de Refacciones') return true;
+      if (s.status === 'En Taller') return true;
       
       const serviceDay = parseISO(s.serviceDate);
       if (!isValid(serviceDay)) return false;
@@ -180,7 +180,7 @@ function HistorialServiciosPageComponent() {
       if (s.status === 'Agendado' && isToday(serviceDay)) return true;
 
       // Completed today
-      if (s.status === 'Completado' && s.deliveryDateTime) {
+      if (s.status === 'Entregado' && s.deliveryDateTime) {
         const deliveryDate = parseISO(s.deliveryDateTime);
         return isValid(deliveryDate) && isToday(deliveryDate);
       }
@@ -241,7 +241,7 @@ function HistorialServiciosPageComponent() {
 
     const updatedService = {
       ...service,
-      status: 'Completado' as const,
+      status: 'Entregado' as const,
       deliveryDateTime: new Date().toISOString(),
       paymentMethod: paymentDetails.paymentMethod,
       cardFolio: paymentDetails.cardFolio,
@@ -272,7 +272,7 @@ function HistorialServiciosPageComponent() {
     
     toast({
       title: "Servicio Completado",
-      description: `El servicio para ${service.vehicleIdentifier} ha sido marcado como completado.`,
+      description: `El servicio para ${service.vehicleIdentifier} ha sido marcado como entregado.`,
     });
     
     // Set data for the ticket and open the dialog
@@ -410,6 +410,7 @@ export default function HistorialServiciosPageWrapper() {
     )
 }
     
+
 
 
 
