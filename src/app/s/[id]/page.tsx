@@ -15,7 +15,7 @@ import { SignatureDialog } from '@/app/(app)/servicios/components/signature-dial
 import { doc, setDoc, onSnapshot, getDoc } from 'firebase/firestore'; 
 import { db } from '@/lib/firebasePublic.js';
 import Image from "next/image";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 
 
 export default function PublicServiceSheetPage() {
