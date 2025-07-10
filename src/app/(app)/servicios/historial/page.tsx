@@ -158,23 +158,36 @@ function HistorialServiciosPageComponent() {
   }, []);
   
   const historicalServices = useMemo(() => {
-    let filtered = allServices.filter(s => s.status !== 'Cotizacion');
+    // Start with all services that are not just quotes.
+    let baseList = allServices.filter(s => s.status !== 'Cotizacion');
 
+    // Apply search filter first.
+    if (searchTerm) {
+      const lowerSearch = searchTerm.toLowerCase();
+      baseList = baseList.filter(s =>
+        s.id.toLowerCase().includes(lowerSearch) ||
+        s.vehicleIdentifier?.toLowerCase().includes(lowerSearch) ||
+        s.description?.toLowerCase().includes(lowerSearch)
+      );
+    }
+    
+    // Then, apply date range filter if it exists.
     if (dateRange?.from) {
-      filtered = filtered.filter(service => {
-        const dateToCompare = service.status === 'Entregado' && service.deliveryDateTime ? service.deliveryDateTime : service.serviceDate;
+      const from = startOfDay(dateRange.from);
+      const to = dateRange.to ? endOfDay(dateRange.to) : endOfDay(dateRange.from);
+
+      baseList = baseList.filter(service => {
+        const dateToCompare = service.deliveryDateTime || service.serviceDate;
         if (!dateToCompare) return false;
         
         const serviceDate = parseISO(dateToCompare);
-        return isValid(serviceDate) && isWithinInterval(serviceDate, { start: startOfDay(dateRange.from!), end: endOfDay(dateRange.to || dateRange.from!) });
+        return isValid(serviceDate) && isWithinInterval(serviceDate, { start: from, end: to });
       });
     }
-    if (searchTerm) {
-      const lowerSearch = searchTerm.toLowerCase();
-      filtered = filtered.filter(s => s.id.toLowerCase().includes(lowerSearch) || s.vehicleIdentifier?.toLowerCase().includes(lowerSearch));
-    }
-    return filtered;
+
+    return baseList;
   }, [allServices, dateRange, searchTerm]);
+
 
   const activeServices = useMemo(() => {
     const today = new Date();
@@ -182,8 +195,7 @@ function HistorialServiciosPageComponent() {
       .filter(s => {
         const isScheduledForToday = s.status === 'Agendado' && s.serviceDate && isValid(parseISO(s.serviceDate)) && isToday(parseISO(s.serviceDate));
         const isInWorkshop = s.status === 'En Taller';
-        const isDeliveredToday = s.status === 'Entregado' && s.deliveryDateTime && isValid(parseISO(s.deliveryDateTime)) && isToday(parseISO(s.deliveryDateTime));
-        return isScheduledForToday || isInWorkshop || isDeliveredToday;
+        return isScheduledForToday || isInWorkshop;
       })
       .sort((a,b) => compareAsc(parseISO(a.serviceDate), parseISO(b.serviceDate)));
   }, [allServices]);
