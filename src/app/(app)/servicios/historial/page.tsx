@@ -67,19 +67,9 @@ function HistorialServiciosPageComponent() {
   }, []);
   
   const activeServices = useMemo(() => {
-    const today = new Date();
-    return allServices.filter(s => {
-      // Exclude completed or cancelled services
-      if (s.status === 'Cancelado' || s.status === 'Entregado') return false;
-      
-      // Include any service currently in the workshop
-      if (s.status === 'En Taller') return true;
-
-      // Include any scheduled service, regardless of date
-      if (s.status === 'Agendado') return true;
-      
-      return false;
-    }).sort((a,b) => parseISO(a.serviceDate).getTime() - parseISO(b.serviceDate).getTime());
+    return allServices
+        .filter(s => s.status === 'En Taller' || s.status === 'Agendado')
+        .sort((a,b) => parseISO(a.serviceDate).getTime() - parseISO(b.serviceDate).getTime());
   }, [allServices]);
 
   const {
@@ -249,5 +239,7 @@ export default function HistorialServiciosPageWrapper() {
         </Suspense>
     )
 }
+
+    
 
     
