@@ -249,14 +249,6 @@ export function ServiceForm({
   const initialData = mode === 'service' ? initialDataService : initialDataQuote;
   const initialVehicleIdentifier = initialData?.vehicleIdentifier;
   
-  const [serviceId, setServiceId] = useState(() => initialData?.id || `TEMP_${generateUniqueId()}`);
-  useEffect(() => {
-    if (initialData?.id && initialData.id !== serviceId) {
-      setServiceId(initialData.id);
-    }
-  }, [initialData?.id, serviceId]);
-
-
   const [vehicleLicensePlateSearch, setVehicleLicensePlateSearch] = useState(initialVehicleIdentifier || "");
   const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
   const [lastService, setLastService] = useState<ServiceRecord | null>(null);
@@ -319,6 +311,8 @@ export function ServiceForm({
         serviceAdvisorSignatureDataUrl: (initialData as ServiceRecord)?.serviceAdvisorSignatureDataUrl || '',
     }
   });
+  
+  const serviceId = form.watch('id') || `SRV_${generateUniqueId()}`;
   
   const { control, getValues, setValue } = form;
   const originalStatusRef = useRef(initialDataService?.status || initialDataQuote?.status);
@@ -501,6 +495,7 @@ export function ServiceForm({
 
     } else { // New form
       form.reset({
+          id: `SRV_${generateUniqueId()}`, // Assign a stable ID on creation
           serviceAdvisorId: currentUser?.id || '', serviceAdvisorName: currentUser?.name || '', serviceAdvisorSignatureDataUrl: currentUser?.signatureDataUrl || '',
           status: mode === 'quote' ? 'Cotizacion' : 'Agendado',
           quoteDate: mode === 'quote' ? new Date() : undefined,
@@ -696,7 +691,7 @@ export function ServiceForm({
     const finalProfit = totalCost - totalSuppliesWorkshopCost;
     const compositeDescription = values.serviceItems.map(item => item.name).join(', ') || 'Servicio';
     
-    const isNew = !values.id;
+    const isNew = !initialData?.id;
 
     const dataToSave: ServiceRecord = {
         ...values,

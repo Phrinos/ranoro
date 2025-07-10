@@ -294,38 +294,6 @@ export let placeholderServiceRecords: ServiceRecord[] = [
     serviceAdvisorId: 'diana_user_id',
     serviceAdvisorName: 'Diana Arriaga',
     appointmentStatus: 'Creada',
-  },
-  {
-    id: 'COT001',
-    publicId: 's_qwerty789',
-    vehicleId: 'VEH002',
-    vehicleIdentifier: 'BBB456B',
-    quoteDate: subDays(new Date(), 2).toISOString(),
-    serviceDate: subDays(new Date(), 2).toISOString(), 
-    serviceType: 'Frenos',
-    description: 'Cambio de balatas delanteras y traseras.',
-    technicianId: 'T001',
-    technicianName: 'Carlos Rodriguez',
-    serviceItems: [
-      {
-        id: 'item_cot001_1',
-        name: 'Cambio de balatas delanteras y traseras',
-        price: 2500,
-        suppliesUsed: [
-          { supplyId: 'PROD003', supplyName: 'Juego de Balatas Delanteras', quantity: 1, unitPrice: 600, sellingPrice: 720 },
-          { supplyId: 'PROD003', supplyName: 'Juego de Balatas Delanteras', quantity: 1, unitPrice: 600, sellingPrice: 720 }, // Assuming same part for rear for simplicity
-        ]
-      }
-    ],
-    totalCost: 2500,
-    totalSuppliesCost: 1200, // 600 + 600
-    serviceProfit: 1300, // 2500 - 1200
-    subTotal: 2155.17,
-    taxAmount: 344.83,
-    status: 'Cotizacion',
-    mileage: 91000,
-    serviceAdvisorId: 'diana_user_id',
-    serviceAdvisorName: 'Diana Arriaga',
   }
 ];
 
