@@ -25,7 +25,7 @@ import { CalendarIcon, PlusCircle, Trash2, BrainCircuit, Loader2, Printer, Ban, 
 import { cn } from "@/lib/utils";
 import { format, parseISO, setHours, setMinutes, isValid, startOfDay, addDays } from 'date-fns';
 import { es } from 'date-fns/locale';
-import type { ServiceRecord, Vehicle, Technician, InventoryItem, ServiceSupply, QuoteRecord, InventoryCategory, Supplier, User, WorkshopInfo, ServiceItem, SafetyInspection, PaymentMethod, SafetyCheckStatus, PhotoReportGroup, SafetyCheckValue, ServiceTypeRecord } from "@/types";
+import type { ServiceRecord, Vehicle, Technician, InventoryItem, ServiceSupply, QuoteRecord, InventoryCategory, Supplier, User, WorkshopInfo, ServiceItem, SafetyInspection, PaymentMethod, SafetyCheckStatus, PhotoReportGroup, SafetyCheckValue, ServiceTypeRecord, ServiceSubStatus } from "@/types";
 import React, { useEffect, useState, useMemo, useCallback, useRef } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { VehicleDialog } from "../../vehiculos/components/vehicle-dialog";
@@ -155,7 +155,8 @@ const serviceFormSchemaBase = z.object({
   notes: z.string().optional(),
   technicianId: z.string().optional(),
   serviceItems: z.array(serviceItemSchema).min(1, "Debe agregar al menos un ítem de servicio."),
-  status: z.enum(["Cotizacion", "Agendado", "En Espera de Refacciones", "Reparando", "Completado", "Entregado", "Cancelado"]).optional(),
+  status: z.enum(["Cotizacion", "Agendado", "En Taller", "Entregado", "Cancelado"]).optional(),
+  subStatus: z.enum(["En Espera de Refacciones", "Reparando", "Completado"]).optional(),
   serviceType: z.string().optional(),
   receptionDateTime: z.date().optional(),
   deliveryDateTime: z.date({ invalid_type_error: "La fecha de entrega no es válida." }).optional(),
@@ -185,7 +186,7 @@ const serviceFormSchemaBase = z.object({
     message: "La fecha programada no es válida.",
     path: ["serviceDate"],
 }).refine(data => {
-  if (data.status === 'Completado' && (data.paymentMethod === "Tarjeta" || data.paymentMethod === "Tarjeta+Transferencia") && !data.cardFolio) {
+  if (data.status === 'Entregado' && (data.paymentMethod === "Tarjeta" || data.paymentMethod === "Tarjeta+Transferencia") && !data.cardFolio) {
     return false;
   }
   return true;
@@ -193,7 +194,7 @@ const serviceFormSchemaBase = z.object({
   message: "El folio de la tarjeta es obligatorio.",
   path: ["cardFolio"],
 }).refine(data => {
-  if (data.status === 'Completado' && (data.paymentMethod === "Transferencia" || data.paymentMethod === "Efectivo+Transferencia" || data.paymentMethod === "Tarjeta+Transferencia") && !data.transferFolio) {
+  if (data.status === 'Entregado' && (data.paymentMethod === "Transferencia" || data.paymentMethod === "Efectivo+Transferencia" || data.paymentMethod === "Tarjeta+Transferencia") && !data.transferFolio) {
     return false;
   }
   return true;
@@ -201,12 +202,12 @@ const serviceFormSchemaBase = z.object({
   message: "El folio de la transferencia es obligatorio para este método de pago.",
   path: ["transferFolio"],
 }).refine(data => {
-    if ((data.status === 'Reparando' || data.status === 'En Espera de Refacciones') && !data.technicianId) {
+    if ((data.status === 'En Taller') && !data.technicianId) {
         return false;
     }
     return true;
 }, {
-    message: "Debe asignar un técnico cuando el servicio está en reparación.",
+    message: "Debe asignar un técnico cuando el servicio está en taller.",
     path: ["technicianId"],
 });
 
@@ -334,6 +335,7 @@ export function ServiceForm({
     form.reset({
         id: data?.id || `SRV-${generateUniqueId()}`,
         status: data?.status || (mode === 'quote' ? 'Cotizacion' : 'Agendado'),
+        subStatus: (data as ServiceRecord)?.subStatus || undefined,
         publicId: (data as any)?.publicId, vehicleId: data?.vehicleId ? String(data.vehicleId) : undefined,
         vehicleLicensePlateSearch: data?.vehicleIdentifier || "",
         serviceDate: isValid(parseDate(data?.serviceDate)) ? parseDate(data.serviceDate) : new Date(),
@@ -448,15 +450,15 @@ export function ServiceForm({
     if (!await trigger()) return toast({ title: "Formulario Incompleto", variant: "destructive" });
 
     // Handle automatic timestamps
-    if(originalStatusRef.current !== 'Reparando' && values.status === 'Reparando' && !values.receptionDateTime) {
+    if(originalStatusRef.current !== 'En Taller' && values.status === 'En Taller' && !values.receptionDateTime) {
         values.receptionDateTime = new Date();
     }
-    if(originalStatusRef.current !== 'Completado' && values.status === 'Completado' && !values.deliveryDateTime) {
+    if(originalStatusRef.current !== 'Entregado' && values.status === 'Entregado' && !values.deliveryDateTime) {
         values.deliveryDateTime = new Date();
     }
 
-    const isNowCompleted = values.status === 'Completado';
-    const wasPreviouslyCompleted = originalStatusRef.current === 'Completado';
+    const isNowCompleted = values.status === 'Entregado';
+    const wasPreviouslyCompleted = originalStatusRef.current === 'Entregado';
     if (isNowCompleted && !wasPreviouslyCompleted) {
         let inventoryWasUpdated = false;
         (values.serviceItems || []).forEach(item => {
@@ -495,7 +497,7 @@ export function ServiceForm({
         workshopInfo: (workshopInfo && Object.keys(workshopInfo).length > 0) ? workshopInfo as WorkshopInfo : undefined,
     };
 
-    if (values.status === 'Completado') {
+    if (values.status === 'Entregado') {
         const deliveryDate = dataToSave.deliveryDateTime ? new Date(dataToSave.deliveryDateTime) : new Date();
         const oilSupply = (values.serviceItems || []).flatMap(i => i.suppliesUsed).map(s => currentInventoryItems.find(item => item.id === s.supplyId)).find(item => item?.category?.toLowerCase().includes('aceite'));
         if (oilSupply?.rendimiento) {
@@ -577,7 +579,10 @@ export function ServiceForm({
                     </CardHeader>
                     <CardContent className="space-y-6">
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <FormField control={control} name="status" render={({ field }) => ( <FormItem><FormLabel>Estado</FormLabel><Select onValueChange={field.onChange} value={field.value} disabled={isReadOnly || watchedStatus === 'Completado' || watchedStatus === 'Entregado'}><FormControl><SelectTrigger className="font-bold"><SelectValue placeholder="Seleccione un estado" /></SelectTrigger></FormControl><SelectContent>{["Cotizacion", "Agendado", "En Espera de Refacciones", "Reparando", "Completado"].map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )}/>
+                            <FormField control={control} name="status" render={({ field }) => ( <FormItem><FormLabel>Estado</FormLabel><Select onValueChange={field.onChange} value={field.value} disabled={isReadOnly || watchedStatus === 'Entregado'}><FormControl><SelectTrigger className="font-bold"><SelectValue placeholder="Seleccione un estado" /></SelectTrigger></FormControl><SelectContent>{["Cotizacion", "Agendado", "En Taller", "Entregado"].map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )}/>
+                            {watchedStatus === 'En Taller' && (
+                                <FormField control={control} name="subStatus" render={({ field }) => ( <FormItem><FormLabel>Sub-Estado Taller</FormLabel><Select onValueChange={field.onChange} value={field.value} disabled={isReadOnly}><FormControl><SelectTrigger><SelectValue placeholder="Seleccione sub-estado..." /></SelectTrigger></FormControl><SelectContent>{["En Espera de Refacciones", "Reparando", "Completado"].map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent></Select></FormItem> )}/>
+                            )}
                             <FormField control={control} name="serviceType" render={({ field }) => ( <FormItem><FormLabel>Tipo de Servicio</FormLabel><Select onValueChange={field.onChange} value={field.value || 'Servicio General'} disabled={isReadOnly}><FormControl><SelectTrigger><SelectValue placeholder="Seleccione un tipo" /></SelectTrigger></FormControl><SelectContent>{serviceTypes.map((type) => <SelectItem key={type.id} value={type.name}>{type.name}</SelectItem>)}</SelectContent></Select></FormItem> )}/>
                             <FormField control={control} name="technicianId" render={({ field }) => ( <FormItem><FormLabel>Técnico Asignado</FormLabel><Select onValueChange={field.onChange} value={field.value} disabled={isReadOnly}><FormControl><SelectTrigger><SelectValue placeholder="Seleccione un técnico..." /></SelectTrigger></FormControl><SelectContent>{technicians.filter((t) => !t.isArchived).map((technician) => ( <SelectItem key={technician.id} value={technician.id}>{technician.name} - {technician.specialty}</SelectItem> ))}</SelectContent></Select><FormMessage /></FormItem>)}/>
                         </div>

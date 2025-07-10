@@ -198,8 +198,8 @@ export interface ServiceRecord {
   cancelledBy?: string;
   notes?: string;
   mileage?: number;
-  receptionDateTime?: string; // Automatically set when status becomes 'Reparando'
-  deliveryDateTime?: string; // Automatically set when status becomes 'Completado'
+  receptionDateTime?: string; // Automatically set when status becomes 'En Taller'
+  deliveryDateTime?: string; // Automatically set when status becomes 'Entregado'
   vehicleConditions?: string;
   fuelLevel?: string;
   customerItems?: string;

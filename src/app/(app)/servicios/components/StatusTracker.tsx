@@ -13,15 +13,15 @@ export const StatusTracker = ({ status }: StatusTrackerProps) => {
   const states = [
     { id: 'COTI', label: 'Cotización', statuses: ['Cotizacion'] },
     { id: 'AGEN', label: 'Agendado', statuses: ['Agendado'] },
-    { id: 'SERV', label: 'En Servicio', statuses: ['Reparando', 'En Espera de Refacciones'] },
-    { id: 'COMP', label: 'Completado', statuses: ['Completado', 'Entregado'] },
+    { id: 'SERV', label: 'En Taller', statuses: ['En Taller'] },
+    { id: 'COMP', label: 'Entregado', statuses: ['Entregado'] },
   ];
 
   const getRank = (s: string) => {
     if (s === 'Cotizacion') return 0;
     if (s === 'Agendado') return 1;
-    if (s === 'Reparando' || s === 'En Espera de Refacciones') return 2;
-    if (s === 'Completado' || s === 'Entregado') return 3;
+    if (s === 'En Taller') return 2;
+    if (s === 'Entregado') return 3;
     return -1; // For cancelled or other states
   };
 
