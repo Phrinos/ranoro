@@ -109,7 +109,7 @@ export function ServiceDialog({
       }
 
       const recordToSave: ServiceRecord = { 
-        ...formData,
+        ...formData, // Start with all data from the form, including the new status
         id: recordId,
         quoteDate: formData.status === 'Cotizacion' 
             ? (formData.quoteDate ? new Date(formData.quoteDate).toISOString() : new Date().toISOString()) 
