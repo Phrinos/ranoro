@@ -19,8 +19,7 @@ import { cn, formatCurrency } from "@/lib/utils";
 import { ServiceDialog } from "../../servicios/components/service-dialog";
 import { StatusTracker } from "../../servicios/components/StatusTracker";
 import { Badge } from "@/components/ui/badge";
-import { PrintTicketDialog } from "@/components/ui/print-ticket-dialog";
-import { ServiceSheetContent } from '@/components/service-sheet-content';
+import { UnifiedPreviewDialog } from '@/components/shared/unified-preview-dialog';
 
 
 type QuoteSortOption = 
@@ -126,7 +125,6 @@ function HistorialCotizacionesPageComponent() {
   const [vehicles, setVehicles] = useState<Vehicle[]>(placeholderVehicles);
   const [technicians, setTechnicians] = useState<Technician[]>(placeholderTechnicians);
   const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>(placeholderInventory);
-  const [workshopInfo, setWorkshopInfo] = useState<WorkshopInfo | undefined>(undefined);
   const { toast } = useToast();
   
   const [searchTerm, setSearchTerm] = useState("");
@@ -136,9 +134,7 @@ function HistorialCotizacionesPageComponent() {
   const [selectedQuote, setSelectedQuote] = useState<QuoteRecord | null>(null);
 
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
-  const [previewData, setPreviewData] = useState<{ service: ServiceRecord, quote?: QuoteRecord, vehicle?: Vehicle }> | null>(null);
-  const serviceSheetRef = useRef<HTMLDivElement>(null);
-
+  const [serviceForPreview, setServiceForPreview] = useState<ServiceRecord | null>(null);
 
   useEffect(() => {
     // This effect can be used to sync with a global state or DB in the future
@@ -146,10 +142,6 @@ function HistorialCotizacionesPageComponent() {
     setVehicles(placeholderVehicles);
     setTechnicians(placeholderTechnicians);
     setInventoryItems(placeholderInventory);
-    if (typeof window !== 'undefined') {
-        const stored = localStorage.getItem('workshopTicketInfo');
-        if (stored) setWorkshopInfo(JSON.parse(stored));
-    }
   }, []);
   
   const activeQuotes = useMemo(() => {
@@ -183,13 +175,9 @@ function HistorialCotizacionesPageComponent() {
   }, [allServices, searchTerm, sortOption]);
 
   const handleViewQuote = useCallback((quote: QuoteRecord) => {
-    setPreviewData({
-        service: quote, // The quote is a type of service record
-        quote: quote, // Explicitly pass it as a quote
-        vehicle: vehicles.find(v => v.id === quote.vehicleId)
-    });
+    setServiceForPreview(quote);
     setIsPreviewOpen(true);
-  }, [vehicles]);
+  }, []);
   
   const handleEditQuote = useCallback((quote: QuoteRecord) => { 
     setSelectedQuote(quote); 
@@ -255,26 +243,12 @@ function HistorialCotizacionesPageComponent() {
         />
       )}
       
-      {isPreviewOpen && previewData && (
-        <PrintTicketDialog
+      {isPreviewOpen && serviceForPreview && (
+        <UnifiedPreviewDialog
           open={isPreviewOpen}
           onOpenChange={setIsPreviewOpen}
-          title="Vista Previa Unificada"
-          dialogContentClassName="printable-quote-dialog"
-          footerActions={
-            <Button onClick={() => window.print()}>
-              <Printer className="mr-2 h-4 w-4" /> Imprimir Documento
-            </Button>
-          }
-        >
-          <ServiceSheetContent
-            ref={serviceSheetRef}
-            service={previewData.service}
-            quote={previewData.quote}
-            vehicle={previewData.vehicle}
-            workshopInfo={workshopInfo as WorkshopInfo}
-          />
-        </PrintTicketDialog>
+          service={serviceForPreview}
+        />
       )}
     </>
   );

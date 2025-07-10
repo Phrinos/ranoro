@@ -48,22 +48,19 @@ import { InventoryItemDialog } from "../../inventario/components/inventory-item-
 import type { InventoryItemFormValues } from "../../inventario/components/inventory-item-form";
 import { suggestQuote, type QuoteSuggestionInput } from '@/ai/flows/quote-suggestion-flow';
 import { enhanceText } from '@/ai/flows/text-enhancement-flow';
-import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
-import { ServiceSheetContent } from '@/components/service-sheet-content';
 import { Checkbox } from "@/components/ui/checkbox";
 import Image from "next/image";
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../../../../lib/firebaseClient.js';
 import { ref, getDownloadURL } from 'firebase/storage';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { QuoteContent } from '@/components/quote-content';
 import { SignatureDialog } from './signature-dialog';
-import { TicketContent } from '@/components/ticket-content';
 import { capitalizeWords, formatCurrency, capitalizeSentences, optimizeImage } from '@/lib/utils';
 import { savePublicDocument } from "@/lib/public-document";
 import { PhotoUploader } from "./PhotoUploader";
 import { ServiceItemCard } from './ServiceItemCard';
 import { SafetyChecklist } from './SafetyChecklist';
+import { UnifiedPreviewDialog } from "@/components/shared/unified-preview-dialog";
 
 
 const supplySchema = z.object({
@@ -271,8 +268,7 @@ export function ServiceForm({
   const [isGeneratingQuote, setIsGeneratingQuote] = useState(false);
   
   const [isSheetOpen, setIsSheetOpen] = useState(false);
-  const [serviceForSheet, setServiceForSheet] = useState<ServiceRecord | null>(null);
-  const [quoteForSheet, setQuoteForSheet] = useState<QuoteRecord | null>(null);
+  const [serviceForPreview, setServiceForPreview] = useState<ServiceRecord | null>(null);
   
   const [isServiceDatePickerOpen, setIsServiceDatePickerOpen] = useState(false);
   const [isDeliveryDatePickerOpen, setIsDeliveryDatePickerOpen] = useState(false);
@@ -280,8 +276,6 @@ export function ServiceForm({
   const freshUserRef = useRef<User | null>(null);
   const [isTechSignatureDialogOpen, setIsTechSignatureDialogOpen] = useState(false);
   const [isEnhancingText, setIsEnhancingText] = useState<string | null>(null);
-  const [isTicketPreviewOpen, setIsTicketPreviewOpen] = useState(false);
-  const ticketContentRef = useRef<HTMLDivElement>(null);
   
   const [viewingImageUrl, setViewingImageUrl] = useState<string | null>(null);
   const [isImageViewerOpen, setIsImageViewerOpen] = useState(false);
@@ -316,9 +310,9 @@ export function ServiceForm({
         transferFolio: (initialData as ServiceRecord)?.transferFolio || '',
         nextServiceInfo: (initialData as ServiceRecord)?.nextServiceInfo,
         photoReports: (initialData as ServiceRecord)?.photoReports || [],
-        serviceAdvisorId: (initialData as ServiceRecord)?.serviceAdvisorId,
-        serviceAdvisorName: (initialData as ServiceRecord)?.serviceAdvisorName,
-        serviceAdvisorSignatureDataUrl: (initialData as ServiceRecord)?.serviceAdvisorSignatureDataUrl,
+        serviceAdvisorId: (initialData as ServiceRecord)?.serviceAdvisorId || '',
+        serviceAdvisorName: (initialData as ServiceRecord)?.serviceAdvisorName || '',
+        serviceAdvisorSignatureDataUrl: (initialData as ServiceRecord)?.serviceAdvisorSignatureDataUrl || '',
     }
   });
   
@@ -437,7 +431,6 @@ export function ServiceForm({
   useEffect(() => {
     const data = mode === 'service' ? initialDataService : initialDataQuote;
     
-    // Always refresh current user data when the dialog opens or initial data changes.
     refreshCurrentUser();
     const currentUser = freshUserRef.current;
     
@@ -446,134 +439,69 @@ export function ServiceForm({
         if (vehicle) {
             setSelectedVehicle(vehicle);
             setVehicleLicensePlateSearch(vehicle.licensePlate);
-            // Also fetch last service info for existing data
             const vehicleServices = defaultServiceRecords.filter(s => s.vehicleId === vehicle.id).sort((a, b) => new Date(b.serviceDate).getTime() - new Date(a.serviceDate).getTime());
-            if (vehicleServices.length > 0) {
-                setLastService(vehicleServices[0]);
-            } else {
-                setLastService(null);
-            }
+            if (vehicleServices.length > 0) setLastService(vehicleServices[0]); else setLastService(null);
         }
         
-        let serviceItemsData: ServiceItem[] = [];
-        if ('serviceItems' in data && Array.isArray(data.serviceItems)) {
-            serviceItemsData = data.serviceItems.map(item => ({
-                ...item,
-                price: item.price ?? 0, // Ensure price is a number
+        let serviceItemsData: ServiceItem[] = ('serviceItems' in data && Array.isArray(data.serviceItems))
+            ? data.serviceItems.map(item => ({
+                ...item, price: item.price ?? 0,
                 suppliesUsed: (item.suppliesUsed || []).map(supply => ({
                     ...supply,
                     unitPrice: supply.unitPrice ?? currentInventoryItems.find(i => i.id === supply.supplyId)?.unitPrice ?? 0,
                     sellingPrice: supply.sellingPrice ?? currentInventoryItems.find(i => i.id === supply.supplyId)?.sellingPrice ?? 0,
                 }))
-            }));
-        }
-
-        const rawServiceDate = data.serviceDate;
-        let parsedServiceDate: Date | undefined = undefined;
-        if (rawServiceDate) {
-            if (rawServiceDate instanceof Date) {
-                parsedServiceDate = rawServiceDate;
-            } else if (typeof rawServiceDate === 'string') {
-                const parsed = parseISO(rawServiceDate);
-                if (isValid(parsed)) parsedServiceDate = parsed;
-            }
-        }
+            }))
+            : [];
         
-        const rawQuoteDate = data.quoteDate;
-        let parsedQuoteDate: Date | undefined = undefined;
-        if (rawQuoteDate) {
-            if (rawQuoteDate instanceof Date) {
-                parsedQuoteDate = rawQuoteDate;
-            } else if (typeof rawQuoteDate === 'string') {
-                const parsed = parseISO(rawQuoteDate);
-                if (isValid(parsed)) parsedQuoteDate = parsed;
-            }
-        }
+        const parseDate = (date: any) => date && (typeof date.toDate === 'function' ? date.toDate() : (typeof date === 'string' ? parseISO(date) : date));
+        const serviceDate = parseDate(data.serviceDate);
+        const quoteDate = parseDate(data.quoteDate);
+        const deliveryDateTime = parseDate((data as ServiceRecord)?.deliveryDateTime);
 
-        const rawDeliveryDate = (data as ServiceRecord)?.deliveryDateTime;
-        let parsedDeliveryDate: Date | undefined = undefined;
-        if (rawDeliveryDate) {
-            if (rawDeliveryDate instanceof Date) {
-                parsedDeliveryDate = rawDeliveryDate;
-            } else if (typeof rawDeliveryDate === 'string') {
-                const parsed = parseISO(rawDeliveryDate);
-                if (isValid(parsed)) parsedDeliveryDate = parsed;
-            }
-        }
-        
-        // Convert old safetyInspection data format to new one
         const safetyInspectionData: any = {};
         if (data.safetyInspection) {
             for (const key in data.safetyInspection) {
                 const value = (data.safetyInspection as any)[key];
                 if (typeof value === 'string' && key !== 'inspectionNotes' && key !== 'technicianSignature') {
-                    // This is the old format (e.g., "ok"), convert it
                     safetyInspectionData[key] = { status: value, photos: [] };
                 } else {
-                    // This is either the new format or a string field like notes/signature
                     safetyInspectionData[key] = value;
                 }
             }
         }
 
-        const dataToReset: Partial<ServiceFormValues> = {
-            id: data.id,
-            publicId: (data as any)?.publicId,
-            vehicleId: data.vehicleId ? String(data.vehicleId) : undefined,
+        form.reset({
+            id: data.id, publicId: (data as any)?.publicId, vehicleId: data.vehicleId ? String(data.vehicleId) : undefined,
             vehicleLicensePlateSearch: vehicle?.licensePlate || data.vehicleIdentifier || "",
-            serviceDate: parsedServiceDate,
-            quoteDate: parsedQuoteDate,
-            deliveryDateTime: parsedDeliveryDate,
-            mileage: data.mileage || undefined,
-            description: (data as any).description || "",
-            notes: data.notes || "",
-            technicianId: (data as ServiceRecord)?.technicianId || (data as QuoteRecord)?.preparedByTechnicianId || undefined,
+            serviceDate: isValid(serviceDate) ? serviceDate : undefined,
+            quoteDate: isValid(quoteDate) ? quoteDate : undefined,
+            deliveryDateTime: isValid(deliveryDateTime) ? deliveryDateTime : undefined,
+            mileage: data.mileage || undefined, description: (data as any).description || "",
+            notes: data.notes || "", technicianId: (data as ServiceRecord)?.technicianId || (data as QuoteRecord)?.preparedByTechnicianId || undefined,
             status: data.status || (mode === 'quote' ? 'Cotizacion' : 'Agendado'),
             serviceType: (data as ServiceRecord)?.serviceType || (data as QuoteRecord)?.serviceType || 'Servicio General',
-            vehicleConditions: (data as ServiceRecord)?.vehicleConditions || "",
-            fuelLevel: (data as ServiceRecord)?.fuelLevel || undefined,
+            vehicleConditions: (data as ServiceRecord)?.vehicleConditions || "", fuelLevel: (data as ServiceRecord)?.fuelLevel || undefined,
             customerItems: (data as ServiceRecord)?.customerItems || '',
             customerSignatureReception: (data as ServiceRecord)?.customerSignatureReception || undefined,
             customerSignatureDelivery: (data as ServiceRecord)?.customerSignatureDelivery || undefined,
-            serviceItems: serviceItemsData,
-            safetyInspection: safetyInspectionData,
-            paymentMethod: (data as ServiceRecord)?.paymentMethod || 'Efectivo',
-            cardFolio: (data as ServiceRecord)?.cardFolio || '',
-            transferFolio: (initialData as ServiceRecord)?.transferFolio || '',
-            nextServiceInfo: (data as ServiceRecord)?.nextServiceInfo,
-            photoReports: (data as ServiceRecord)?.photoReports || [],
-            serviceAdvisorId: data.serviceAdvisorId || currentUser?.id,
-            serviceAdvisorName: data.serviceAdvisorName || currentUser?.name,
-            serviceAdvisorSignatureDataUrl: data.serviceAdvisorSignatureDataUrl || currentUser?.signatureDataUrl,
-        };
+            serviceItems: serviceItemsData, safetyInspection: safetyInspectionData, paymentMethod: (data as ServiceRecord)?.paymentMethod || 'Efectivo',
+            cardFolio: (data as ServiceRecord)?.cardFolio || '', transferFolio: (initialData as ServiceRecord)?.transferFolio || '',
+            nextServiceInfo: (data as ServiceRecord)?.nextServiceInfo, photoReports: (data as ServiceRecord)?.photoReports || [],
+            serviceAdvisorId: data.serviceAdvisorId || currentUser?.id || '',
+            serviceAdvisorName: data.serviceAdvisorName || currentUser?.name || '',
+            serviceAdvisorSignatureDataUrl: data.serviceAdvisorSignatureDataUrl || currentUser?.signatureDataUrl || '',
+        });
 
-        form.reset(dataToReset);
-
-    } else {
-      // Set default for new forms
-      refreshCurrentUser(); // Make sure user data is fresh for new forms too
-      const currentUser = freshUserRef.current;
-      const baseDefaults: Partial<ServiceFormValues> = {
-          serviceAdvisorId: currentUser?.id,
-          serviceAdvisorName: currentUser?.name,
-          serviceAdvisorSignatureDataUrl: currentUser?.signatureDataUrl,
-      };
-
-      if (mode === 'quote') {
-          form.reset({
-              ...baseDefaults,
-              status: 'Cotizacion',
-              quoteDate: new Date(),
-              serviceItems: [{ id: `item_${Date.now()}`, name: '', price: undefined, suppliesUsed: [] }],
-          });
-      } else {
-          form.reset({
-              ...baseDefaults,
-              status: 'Agendado',
-              serviceDate: setHours(setMinutes(new Date(), 30), 8),
-              serviceItems: [{ id: `item_${Date.now()}`, name: '', price: undefined, suppliesUsed: [] }],
-          });
-      }
+    } else { // New form
+      form.reset({
+          serviceAdvisorId: currentUser?.id || '', serviceAdvisorName: currentUser?.name || '', serviceAdvisorSignatureDataUrl: currentUser?.signatureDataUrl || '',
+          status: mode === 'quote' ? 'Cotizacion' : 'Agendado',
+          quoteDate: mode === 'quote' ? new Date() : undefined,
+          serviceDate: mode === 'service' ? setHours(setMinutes(new Date(), 30), 8) : undefined,
+          serviceItems: [{ id: `item_${Date.now()}`, name: '', price: undefined, suppliesUsed: [] }],
+          photoReports: [],
+      });
     }
   }, [initialDataService, initialDataQuote, mode, localVehicles, currentInventoryItems, form, refreshCurrentUser]);
   
@@ -822,21 +750,9 @@ export function ServiceForm({
     onClose();
   };
   
-  const handlePrintSheet = useCallback(async () => {
-    // This function will now be responsible for setting the data for the unified preview.
+  const handlePrintSheet = useCallback(() => {
     const serviceData = form.getValues() as ServiceRecord;
-    let associatedQuote: QuoteRecord | null = null;
-
-    // Always check for an associated quote by ID.
-    if (serviceData.id) {
-        const foundQuote = defaultServiceRecords.find(q => q.id === serviceData.id && q.status === 'Cotizacion');
-        if (foundQuote) {
-            associatedQuote = foundQuote;
-        }
-    }
-    
-    setServiceForSheet(serviceData);
-    setQuoteForSheet(associatedQuote);
+    setServiceForPreview(serviceData);
     setIsSheetOpen(true);
   }, [form]);
 
@@ -990,44 +906,6 @@ export function ServiceForm({
         setIsGeneratingQuote(false);
     }
   };
-  
-  const handlePrintTicket = useCallback(() => {
-    window.print();
-  }, []);
-  
-  const handleCopyAsImage = async () => {
-    if (!ticketContentRef.current) {
-        toast({ title: "Error", description: "No se encontró el contenido del ticket.", variant: "destructive" });
-        return;
-    }
-    try {
-        const html2canvas = (await import('html2canvas')).default;
-        const canvas = await html2canvas(ticketContentRef.current, {
-            useCORS: true,
-            backgroundColor: '#ffffff',
-            scale: 2.5,
-        });
-        canvas.toBlob(async (blob) => {
-            if (blob) {
-                try {
-                    await navigator.clipboard.write([
-                        new ClipboardItem({ 'image/png': blob })
-                    ]);
-                    toast({ title: "Copiado", description: "La imagen del comprobante ha sido copiada." });
-                } catch (clipboardErr) {
-                    console.error('Clipboard API error:', clipboardErr);
-                    toast({ title: "Error de Copiado", description: "Tu navegador no pudo copiar la imagen. Intenta imprimir.", variant: "destructive" });
-                }
-            } else {
-                 toast({ title: "Error de Conversión", description: "No se pudo convertir a imagen.", variant: "destructive" });
-            }
-        }, 'image/png');
-    } catch (e) {
-        console.error("html2canvas error:", e);
-        toast({ title: "Error de Captura", description: "No se pudo generar la imagen del ticket.", variant: "destructive" });
-    }
-  };
-
 
   const [cancellationReason, setCancellationReason] = useState('');
   const [isCancelAlertOpen, setIsCancelAlertOpen] = useState(false);
@@ -1055,52 +933,7 @@ export function ServiceForm({
     const allOptions = ["Cotizacion", "Agendado", "En Espera de Refacciones", "Reparando", "Completado"];
     return allOptions;
   }, []);
-
-  const handleShareService = useCallback(async (service: ServiceRecord | null) => {
-    if (!service) return;
-    
-    if (!service.publicId) {
-        toast({ title: "Enlace no disponible", description: "Guarde el servicio primero para generar un enlace.", variant: "default" });
-        return;
-    }
-
-    const vehicleForAction = localVehicles.find((v) => v.id === service.vehicleId);
-    if (!vehicleForAction) {
-      toast({
-        title: 'Faltan Datos',
-        description: 'No se encontró el vehículo asociado.',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    const shareUrl = `${window.location.origin}/s/${service.publicId}`;
-    const message = `Hola, ${
-      vehicleForAction.ownerName || 'Cliente'
-    }:\n\nTe invitamos a consultar la hoja de servicio de tu ${
-      vehicleForAction.make
-    } ${vehicleForAction.model} ${
-      vehicleForAction.year
-    }. Puedes revisarla en el siguiente enlace:\n\n${shareUrl}\n\n¡Gracias por confiar en Ranoro!`;
-
-    navigator.clipboard
-      .writeText(message)
-      .then(() => {
-        toast({
-          title: 'Mensaje Copiado',
-          description:
-            'El mensaje para WhatsApp ha sido copiado a tu portapapeles.',
-        });
-      })
-      .catch((err) => {
-        console.error('Could not copy text: ', err);
-        toast({
-          title: 'Error al Copiar',
-          variant: 'destructive',
-        });
-      });
-  }, [localVehicles, toast]);
-
+  
   const lastServiceDateFormatted = useMemo(() => {
     if (!lastService) return 'No tiene historial de servicios.';
     
@@ -1692,17 +1525,6 @@ export function ServiceForm({
                         </AlertDialogFooter>
                     </AlertDialogContent>
                 </AlertDialog>
-                
-                {mode === 'service' && watchedStatus === 'Completado' && !isReadOnly && initialData?.id && (
-                    <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => setIsTicketPreviewOpen(true)}
-                    >
-                        <Printer className="mr-2 h-4 w-4" />
-                        Ver Comprobante
-                    </Button>
-                )}
             </div>
             <div className="flex justify-end gap-2 w-full">
             {isReadOnly ? (<Button type="button" variant="outline" onClick={onClose}>Cerrar</Button>) : (
@@ -1726,23 +1548,13 @@ export function ServiceForm({
         }}
       />
       
-      <PrintTicketDialog
+      {isSheetOpen && serviceForPreview && (
+        <UnifiedPreviewDialog
           open={isSheetOpen}
           onOpenChange={setIsSheetOpen}
-          title="Vista Previa Unificada"
-          onDialogClose={() => {setServiceForSheet(null);}}
-          dialogContentClassName="printable-quote-dialog"
-          footerActions={<><Button type="button" onClick={() => handleShareService(serviceForSheet)} variant="outline"><MessageSquare className="mr-2 h-4 w-4" /> Copiar para WhatsApp</Button><Button onClick={() => window.print()}><Printer className="mr-2 h-4 w-4" /> Imprimir Documento</Button></>}
-      >
-          {serviceForSheet && (
-              <ServiceSheetContent
-                  service={serviceForSheet}
-                  quote={quoteForSheet}
-                  vehicle={selectedVehicle || undefined}
-                  workshopInfo={workshopInfo as WorkshopInfo}
-              />
-          )}
-      </PrintTicketDialog>
+          service={serviceForPreview}
+        />
+      )}
 
       <VehicleDialog
           open={isVehicleDialogOpen}
@@ -1750,31 +1562,6 @@ export function ServiceForm({
           onSave={handleSaveNewVehicle}
           vehicle={newVehicleInitialData}
       />
-      
-      <PrintTicketDialog
-        open={isTicketPreviewOpen}
-        onOpenChange={setIsTicketPreviewOpen}
-        title="Comprobante de Servicio"
-        onDialogClose={() => {}}
-        dialogContentClassName="printable-content"
-        footerActions={
-            <div className="flex gap-2">
-                <Button variant="outline" onClick={handleCopyAsImage}>
-                    <Copy className="mr-2 h-4 w-4"/> Copiar Imagen
-                </Button>
-                <Button onClick={handlePrintTicket}>
-                    <Printer className="mr-2 h-4 w-4" /> Imprimir Comprobante
-                </Button>
-            </div>
-        }
-      >
-        <TicketContent 
-            ref={ticketContentRef}
-            service={form.getValues() as ServiceRecord}
-            vehicle={selectedVehicle}
-            technician={technicians.find(t => t.id === form.getValues('technicianId'))}
-        />
-      </PrintTicketDialog>
       
       <Dialog open={isImageViewerOpen} onOpenChange={setIsImageViewerOpen}>
         <DialogContent className="max-w-4xl p-2">
