@@ -6,7 +6,7 @@ import { PageHeader } from '@/components/page-header';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { placeholderServiceRecords, placeholderVehicles, placeholderTechnicians, placeholderInventory, persistToFirestore, hydrateReady, logAudit } from '@/lib/placeholder-data';
-import type { ServiceRecord, Vehicle, Technician, InventoryItem, QuoteRecord } from '@/types';
+import type { ServiceRecord, Vehicle, Technician, InventoryItem, QuoteRecord, ServiceSubStatus } from '@/types';
 import { ServiceDialog } from '../servicios/components/service-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Eye, ChevronLeft, ChevronRight, PlusCircle } from 'lucide-react';
@@ -16,7 +16,7 @@ import { cn } from '@/lib/utils';
 import Link from 'next/link';
 
 
-type KanbanColumnId = 'Agendado' | 'Reparando' | 'Completado';
+type KanbanColumnId = 'Agendado' | 'En Taller' | 'Completado';
 
 interface KanbanColumn {
   id: KanbanColumnId;
@@ -63,6 +63,7 @@ function KanbanCard({
         <div className="pr-8">
             <p className="font-bold text-sm">{vehicle ? `${vehicle.licensePlate}` : service.vehicleIdentifier}</p>
             <p className="text-xs text-muted-foreground">{vehicle ? `${vehicle.make} ${vehicle.model} ${vehicle.year}` : 'Vehículo no encontrado'}</p>
+            {service.subStatus && <Badge variant="outline" className="mt-1 text-xs">{service.subStatus}</Badge>}
             <p className="text-xs font-semibold mt-2">{service.serviceType || 'Servicio General'}</p>
             <p className="text-xs text-muted-foreground truncate" title={getServiceDescriptionText(service)}>
                 {getServiceDescriptionText(service)}
@@ -83,7 +84,7 @@ function KanbanCard({
 
 const columnStyles: Record<KanbanColumnId, { bg: string; title: string }> = {
   'Agendado': { bg: 'bg-blue-50 dark:bg-blue-900/30', title: 'text-blue-800 dark:text-blue-200' },
-  'Reparando': { bg: 'bg-yellow-50 dark:bg-yellow-900/30', title: 'text-yellow-800 dark:text-yellow-200' },
+  'En Taller': { bg: 'bg-yellow-50 dark:bg-yellow-900/30', title: 'text-yellow-800 dark:text-yellow-200' },
   'Completado': { bg: 'bg-green-50 dark:bg-green-900/30', title: 'text-green-800 dark:text-green-200' },
 };
 
@@ -121,28 +122,28 @@ export default function TableroPage() {
     }
   }, [hydrated, version]);
 
-  const columnOrder: KanbanColumnId[] = ['Agendado', 'Reparando', 'Completado'];
+  const columnOrder: KanbanColumnId[] = ['Agendado', 'En Taller', 'Completado'];
   
   const kanbanColumns = useMemo((): KanbanColumn[] => {
     const columns: Record<KanbanColumnId, KanbanColumn> = {
-      'Agendado': { id: 'Agendado', title: 'Agenda', services: [] },
-      'Reparando': { id: 'Reparando', title: 'En Reparación', services: [] },
-      'Completado': { id: 'Completado', title: 'Completado (Hoy)', services: [] },
+      'Agendado': { id: 'Agendado', title: 'Agenda (Hoy)', services: [] },
+      'En Taller': { id: 'En Taller', title: 'En Taller', services: [] },
+      'Completado': { id: 'Completado', title: 'Listo para Entrega (Hoy)', services: [] },
     };
 
     services.forEach(service => {
-      const status = service.status as KanbanColumnId;
-      if (columns[status]) {
-        // Special filter for "Completado" column to only show today's
-        if (status === 'Completado') {
-          const deliveryDate = service.deliveryDateTime ? parseISO(service.deliveryDateTime) : null;
-          if (deliveryDate && isValid(deliveryDate) && isToday(deliveryDate)) {
-            columns[status].services.push(service);
-          }
-        } else {
-          columns[status].services.push(service);
+        if(service.status === 'Agendado' && service.serviceDate && isValid(parseISO(service.serviceDate)) && isToday(parseISO(service.serviceDate))) {
+            columns['Agendado'].services.push(service);
+        } else if (service.status === 'En Taller') {
+            if (service.subStatus === 'Completado') {
+                const deliveryDate = service.deliveryDateTime ? parseISO(service.deliveryDateTime) : null;
+                if(deliveryDate && isValid(deliveryDate) && isToday(deliveryDate)) {
+                    columns['Completado'].services.push(service);
+                }
+            } else {
+                columns['En Taller'].services.push(service);
+            }
         }
-      }
     });
 
     for (const colId in columns) {
@@ -165,41 +166,51 @@ export default function TableroPage() {
     const serviceIndex = placeholderServiceRecords.findIndex(s => s.id === serviceId);
     if (serviceIndex === -1) return;
 
-    const currentStatus = placeholderServiceRecords[serviceIndex].status as KanbanColumnId;
-    const currentIndex = columnOrder.indexOf(currentStatus);
-    
-    let newIndex;
-    if (direction === 'left') {
-        newIndex = Math.max(0, currentIndex - 1);
-    } else {
-        newIndex = Math.min(columnOrder.length - 1, currentIndex + 1);
+    const currentService = placeholderServiceRecords[serviceIndex];
+    let currentStatus = currentService.status as KanbanColumnId;
+
+    if (currentStatus === 'En Taller' && currentService.subStatus === 'Completado') {
+        currentStatus = 'Completado';
     }
+    
+    const currentIndex = columnOrder.indexOf(currentStatus);
+    let newIndex = direction === 'left' ? currentIndex - 1 : currentIndex + 1;
+    newIndex = Math.max(0, Math.min(columnOrder.length - 1, newIndex));
+
 
     if (newIndex !== currentIndex) {
-        const newStatus = columnOrder[newIndex];
-        
+        const newMainStatus = columnOrder[newIndex];
+
         // Optimistic UI update
         const updatedServices = services.map(s => 
-          s.id === serviceId ? { ...s, status: newStatus } : s
+          s.id === serviceId ? { ...s, status: newMainStatus } : s
         );
         setServices(updatedServices);
 
         // Update master data and persist
-        placeholderServiceRecords[serviceIndex].status = newStatus;
-        if(newStatus === 'Completado') {
-            placeholderServiceRecords[serviceIndex].deliveryDateTime = new Date().toISOString();
+        placeholderServiceRecords[serviceIndex].status = newMainStatus === 'Completado' ? 'En Taller' : newMainStatus;
+        
+        let newSubStatus: ServiceSubStatus | undefined = undefined;
+        if(newMainStatus === 'En Taller') {
+            newSubStatus = 'Reparando';
+        } else if (newMainStatus === 'Completado') {
+            newSubStatus = 'Completado';
+            if(!placeholderServiceRecords[serviceIndex].deliveryDateTime) {
+                placeholderServiceRecords[serviceIndex].deliveryDateTime = new Date().toISOString();
+            }
         }
+        placeholderServiceRecords[serviceIndex].subStatus = newSubStatus;
         
         await logAudit(
           'Editar',
-          `Movió el servicio #${serviceId} de "${currentStatus}" a "${newStatus}".`,
+          `Movió el servicio #${serviceId} de "${currentStatus}" a "${newMainStatus}".`,
           { entityType: 'Servicio', entityId: serviceId }
         );
         await persistToFirestore(['serviceRecords', 'auditLogs']);
         
         toast({
             title: 'Servicio Movido',
-            description: `El servicio ahora está en "${newStatus}".`
+            description: `El servicio ahora está en "${newMainStatus}".`
         });
     }
   };

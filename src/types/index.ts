@@ -173,6 +173,8 @@ export interface PhotoReportGroup {
   photos: string[]; // Array of data URLs or storage URLs
 }
 
+export type ServiceStatus = 'Cotizacion' | 'Agendado' | 'En Taller' | 'Entregado' | 'Cancelado';
+export type ServiceSubStatus = 'En Espera de Refacciones' | 'Reparando' | 'Completado';
 
 export interface ServiceRecord {
   id: string;
@@ -190,7 +192,8 @@ export interface ServiceRecord {
   totalCost: number; // Final, tax-inclusive price for services OR estimated price for quotes
   totalSuppliesCost: number; 
   serviceProfit: number; 
-  status: 'Cotizacion' | 'Agendado' | 'En Espera de Refacciones' | 'Reparando' | 'Completado' | 'Entregado' | 'Cancelado';
+  status: ServiceStatus;
+  subStatus?: ServiceSubStatus;
   cancellationReason?: string;
   cancelledBy?: string;
   notes?: string;
