@@ -15,6 +15,8 @@ interface PhotoUploaderProps {
   onUploadComplete: (reportIndex: number, downloadURL: string) => void;
   photosLength: number;
   disabled?: boolean;
+  captureMode?: 'camera' | 'gallery'; // New prop
+  maxPhotos?: number; // New prop
 }
 
 export function PhotoUploader({ 
@@ -22,7 +24,9 @@ export function PhotoUploader({
     serviceId, 
     onUploadComplete, 
     photosLength,
-    disabled 
+    disabled,
+    captureMode = 'gallery', // Default to gallery
+    maxPhotos = 3, // Default to 3
 }: PhotoUploaderProps) {
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -46,8 +50,8 @@ export function PhotoUploader({
     if (!files || files.length === 0) return;
     
     const totalPhotos = photosLength + files.length;
-    if (totalPhotos > 3) {
-      toast({ title: 'Límite de Fotos Excedido', description: 'Solo puede subir un máximo de 3 fotos por reporte.', variant: 'destructive' });
+    if (totalPhotos > maxPhotos) {
+      toast({ title: `Límite de ${maxPhotos} Fotos Excedido`, description: `Solo puede subir un máximo de ${maxPhotos} fotos en esta sección.`, variant: 'destructive' });
       return;
     }
 
@@ -92,7 +96,7 @@ export function PhotoUploader({
     }
   };
 
-  const isDisabled = disabled || isUploading || photosLength >= 3;
+  const isDisabled = disabled || isUploading || photosLength >= maxPhotos;
 
   return (
     <>
@@ -109,13 +113,14 @@ export function PhotoUploader({
         ) : (
           <Camera className="mr-2 h-4 w-4" />
         )}
-        Añadir Foto ({photosLength}/3)
+        Añadir Foto ({photosLength}/{maxPhotos})
       </Button>
       <input 
         type="file" 
         ref={fileInputRef} 
         onChange={handleFileChange} 
         accept="image/*" 
+        capture={captureMode === 'camera' ? 'environment' : undefined}
         className="hidden" 
         multiple
       />

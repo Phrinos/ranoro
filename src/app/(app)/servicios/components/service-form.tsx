@@ -84,7 +84,7 @@ const photoReportGroupSchema = z.object({
   id: z.string(),
   date: z.string(),
   description: z.string().optional(),
-  photos: z.array(z.string().url("URL de foto inválida.")).max(3, "No más de 3 fotos por reporte."),
+  photos: z.array(z.string().url("URL de foto inválida.")),
 });
 
 const safetyCheckValueSchema = z.object({
@@ -473,7 +473,7 @@ export function ServiceForm({
         
         let photoReportsData = (data as ServiceRecord)?.photoReports || [];
         if (!isReadOnly && (!photoReportsData || photoReportsData.length === 0)) {
-            photoReportsData = [{ id: `rep_recepcion_${Date.now()}`, date: new Date().toISOString(), description: 'Recepción del Vehículo', photos: [] }];
+            photoReportsData = [{ id: `rep_recepcion_${Date.now()}`, date: new Date().toISOString(), description: 'Notas de la Recepción', photos: [] }];
         }
 
         form.reset({
@@ -505,7 +505,7 @@ export function ServiceForm({
           quoteDate: mode === 'quote' ? new Date() : undefined,
           serviceDate: mode === 'service' ? setHours(setMinutes(new Date(), 30), 8) : undefined,
           serviceItems: [{ id: `item_${Date.now()}`, name: '', price: undefined, suppliesUsed: [] }],
-          photoReports: [{ id: `rep_recepcion_${Date.now()}`, date: new Date().toISOString(), description: 'Recepción del Vehículo', photos: [] }],
+          photoReports: [{ id: `rep_recepcion_${Date.now()}`, date: new Date().toISOString(), description: 'Notas de la Recepción', photos: [] }],
       });
     }
   }, [initialDataService, initialDataQuote, mode, localVehicles, currentInventoryItems, form, refreshCurrentUser, isReadOnly]);
@@ -1436,7 +1436,9 @@ export function ServiceForm({
                     {photoReportFields.map((field, index) => (
                         <Card key={field.id} className="p-4 bg-muted/30">
                            <div className="flex justify-between items-start mb-2">
-                                <Label className="text-base font-semibold flex items-center gap-2">Reporte #{index + 1}</Label>
+                                <Label className="text-base font-semibold flex items-center gap-2">
+                                  {index === 0 ? "Recepción del Vehículo" : `Reporte Adicional #${index}`}
+                                </Label>
                                 {!isReadOnly && index > 0 && (<Button type="button" variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => removePhotoReport(index)}><Trash2 className="h-4 w-4"/></Button>)}
                            </div>
                            <FormField
@@ -1445,7 +1447,7 @@ export function ServiceForm({
                               render={({ field: descField }) => (
                                   <FormItem>
                                       <FormLabel className="flex justify-between items-center w-full text-sm">
-                                        <span>Descripción del Reporte</span>
+                                        <span>{index === 0 ? "Notas de la Recepción" : "Descripción del Reporte"}</span>
                                         {!isReadOnly && (
                                             <Button type="button" size="sm" variant="ghost" onClick={() => handleEnhanceText(`photoReports.${index}.description`)} disabled={isEnhancingText === `photoReports.${index}.description` || !descField.value}>
                                                 {isEnhancingText === `photoReports.${index}.description` ? <Loader2 className="animate-spin" /> : <BrainCircuit className="h-4 w-4" />}
@@ -1453,7 +1455,7 @@ export function ServiceForm({
                                             </Button>
                                         )}
                                       </FormLabel>
-                                      <FormControl><Textarea placeholder="Describe el conjunto de fotos..." disabled={isReadOnly || (index === 0 && field.description === 'Recepción del Vehículo')} {...descField} /></FormControl>
+                                      <FormControl><Textarea placeholder="Describe el conjunto de fotos..." disabled={isReadOnly} {...descField} /></FormControl>
                                       <FormMessage />
                                   </FormItem>
                               )}
@@ -1474,6 +1476,8 @@ export function ServiceForm({
                                 photosLength={field.photos.length}
                                 disabled={isReadOnly}
                                 onUploadComplete={handlePhotoUploadComplete}
+                                captureMode="gallery" // Allow gallery and camera
+                                maxPhotos={index === 0 ? 10 : 3} // Different limit for reception
                             />
                         </Card>
                     ))}

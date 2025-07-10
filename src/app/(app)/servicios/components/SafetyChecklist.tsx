@@ -16,6 +16,7 @@ import { useToast } from "@/hooks/use-toast";
 import { optimizeImage } from "@/lib/utils";
 import { storage } from "@/lib/firebaseClient";
 import { ref, uploadString, getDownloadURL } from "firebase/storage";
+import { PhotoUploader } from './PhotoUploader';
 
 
 const inspectionGroups = [
@@ -126,7 +127,15 @@ const ChecklistItemPhotoUploader = ({ itemName, serviceId, onUpload, photos, isR
                         {isUploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Camera className="mr-2 h-4 w-4" />}
                         Añadir Foto ({photos.length}/2)
                     </Button>
-                    <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/*" className="hidden" multiple />
+                    <input 
+                      type="file" 
+                      ref={fileInputRef} 
+                      onChange={handleFileChange} 
+                      accept="image/*" 
+                      capture="environment" // Only allow camera
+                      className="hidden" 
+                      multiple 
+                    />
                  </>
             )}
         </div>
