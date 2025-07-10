@@ -2,7 +2,7 @@
 
 "use client";
 
-import React, { useState, useEffect, useMemo, useCallback, Suspense } from "react";
+import React, { useState, useEffect, useMemo, useCallback, Suspense, useRef } from "react";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,8 +10,8 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Card, CardContent } from "@/components/ui/card";
-import { Search, ListFilter, CalendarIcon as CalendarDateIcon } from "lucide-react";
-import { placeholderServiceRecords, placeholderVehicles, placeholderTechnicians, placeholderInventory, persistToFirestore, AUTH_USER_LOCALSTORAGE_KEY, calculateSaleProfit, logAudit } from "@/lib/placeholder-data";
+import { Search, ListFilter, CalendarIcon as CalendarDateIcon, Eye, Edit, CheckCircle, Printer, Copy } from "lucide-react";
+import { placeholderServiceRecords, placeholderVehicles, placeholderTechnicians, placeholderInventory, persistToFirestore, AUTH_USER_LOCALSTORAGE_KEY, logAudit } from "@/lib/placeholder-data";
 import type { ServiceRecord, Vehicle, Technician, InventoryItem, QuoteRecord, User } from "@/types";
 import { useToast } from "@/hooks/use-toast";
 import { format, parseISO, compareAsc, compareDesc, isWithinInterval, isValid, startOfDay, endOfDay, isToday } from "date-fns";
@@ -24,8 +24,9 @@ import { ServiceDialog } from "../components/service-dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { StatusTracker } from "../components/StatusTracker";
 import { UnifiedPreviewDialog } from '@/components/shared/unified-preview-dialog';
-import { Eye, Edit, CheckCircle } from 'lucide-react';
 import { CompleteServiceDialog } from '../components/CompleteServiceDialog';
+import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
+import { TicketContent } from '@/components/ticket-content';
 
 
 type ServiceSortOption = 
@@ -124,15 +125,16 @@ function HistorialServiciosPageComponent() {
   const [editingService, setEditingService] = useState<ServiceRecord | null>(null);
 
   const [isSheetOpen, setIsSheetOpen] = useState(false);
-  const [previewData, setPreviewData] = useState<{
-    service: ServiceRecord;
-  } | null>(null);
+  const [previewData, setPreviewData] = useState<{ service: ServiceRecord; } | null>(null);
 
   const [serviceToComplete, setServiceToComplete] = useState<ServiceRecord | null>(null);
   const [isCompleteDialogOpen, setIsCompleteDialogOpen] = useState(false);
   
+  const [isTicketDialogOpen, setIsTicketDialogOpen] = useState(false);
+  const [ticketData, setTicketData] = useState<{service: ServiceRecord, vehicle?: Vehicle, technician?: Technician} | null>(null);
+  const ticketContentRef = useRef<HTMLDivElement>(null);
+  
   useEffect(() => {
-    // Sync with global state
     setAllServices(placeholderServiceRecords);
     setVehicles(placeholderVehicles);
     setTechnicians(placeholderTechnicians);
@@ -151,7 +153,6 @@ function HistorialServiciosPageComponent() {
       const lowerSearch = searchTerm.toLowerCase();
       filtered = filtered.filter(s => s.id.toLowerCase().includes(lowerSearch) || s.vehicleIdentifier?.toLowerCase().includes(lowerSearch));
     }
-    // Add sorting logic here if needed
     return filtered;
   }, [allServices, dateRange, searchTerm]);
 
@@ -171,11 +172,20 @@ function HistorialServiciosPageComponent() {
   }, []);
 
   const handleCancelService = useCallback(async (serviceId: string, reason: string) => {
-    // Implementation for cancelling a service can be added here.
-  }, []);
+    const pIndex = placeholderServiceRecords.findIndex(s => s.id === serviceId);
+    if (pIndex !== -1) {
+        placeholderServiceRecords[pIndex].status = 'Cancelado';
+        placeholderServiceRecords[pIndex].cancellationReason = reason;
+        await logAudit('Cancelar', `Canceló el servicio #${serviceId} por: ${reason}`, { entityType: 'Servicio', entityId: serviceId });
+        await persistToFirestore(['serviceRecords', 'auditLogs']);
+        toast({ title: "Servicio Cancelado" });
+    }
+  }, [toast]);
+
 
   const handleVehicleCreated = useCallback(async (newVehicle: Vehicle) => {
-    // Implementation for when a new vehicle is created from the dialog.
+     placeholderVehicles.push(newVehicle);
+     await persistToFirestore(['vehicles']);
   }, []);
   
   const handleShowPreview = useCallback((service: ServiceRecord) => {
@@ -217,7 +227,6 @@ function HistorialServiciosPageComponent() {
       transferFolio: paymentDetails.transferFolio,
     };
     
-    // Deduct inventory
     let inventoryWasUpdated = false;
     (updatedService.serviceItems || []).forEach(item => {
       (item.suppliesUsed || []).forEach(supply => {
@@ -245,9 +254,32 @@ function HistorialServiciosPageComponent() {
       description: `El servicio para ${service.vehicleIdentifier} ha sido marcado como completado.`,
     });
     
-    handleShowPreview(updatedService);
+    // Set data for the ticket and open the dialog
+    setTicketData({
+        service: updatedService,
+        vehicle: vehicles.find(v => v.id === updatedService.vehicleId),
+        technician: technicians.find(t => t.id === updatedService.technicianId),
+    });
+    setIsTicketDialogOpen(true);
 
-  }, [toast, handleShowPreview]);
+  }, [toast, vehicles, technicians]);
+
+  const handleCopyTicket = async () => {
+    if (!ticketContentRef.current) return;
+    const html2canvas = (await import('html2canvas')).default;
+    try {
+        const canvas = await html2canvas(ticketContentRef.current, { scale: 2 });
+        canvas.toBlob((blob) => {
+            if (blob) {
+                navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+                toast({ title: "Copiado", description: "La imagen del ticket ha sido copiada." });
+            }
+        });
+    } catch (e) {
+        console.error("Error copying image:", e);
+        toast({ title: "Error", description: "No se pudo copiar la imagen del ticket.", variant: "destructive" });
+    }
+  };
 
   return (
     <>
@@ -272,10 +304,9 @@ function HistorialServiciosPageComponent() {
               <Popover><PopoverTrigger asChild><Button variant={"outline"} className={cn("min-w-[240px] justify-start text-left font-normal flex-1 sm:flex-initial bg-card", !dateRange && "text-muted-foreground")}><CalendarDateIcon className="mr-2 h-4 w-4" />{dateRange?.from ? (dateRange.to ? (`${format(dateRange.from, "LLL dd, y")} - ${format(dateRange.to, "LLL dd, y")}`) : format(dateRange.from, "LLL dd, y")) : (<span>Seleccione rango</span>)}</Button></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar initialFocus mode="range" defaultMonth={dateRange?.from} selected={dateRange} onSelect={setDateRange} numberOfMonths={2} locale={es} /></PopoverContent></Popover>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild><Button variant="outline" className="min-w-[150px] flex-1 sm:flex-initial bg-card"><ListFilter className="mr-2 h-4 w-4" />Ordenar</Button></DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                    <DropdownMenuLabel>Ordenar por</DropdownMenuLabel>
+                <DropdownMenuContent align="end"><DropdownMenuLabel>Ordenar por</DropdownMenuLabel>
                     <DropdownMenuRadioGroup value={sortOption} onValueChange={(value) => setSortOption(value as ServiceSortOption)}>
-                    <DropdownMenuRadioItem value="serviceDate_desc">Fecha (Más Reciente)</DropdownMenuRadioItem>
+                      <DropdownMenuRadioItem value="serviceDate_desc">Fecha (Más Reciente)</DropdownMenuRadioItem>
                     </DropdownMenuRadioGroup>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -315,6 +346,22 @@ function HistorialServiciosPageComponent() {
           service={previewData.service}
         />
       )}
+      
+      {ticketData && (
+         <PrintTicketDialog
+          open={isTicketDialogOpen}
+          onOpenChange={setIsTicketDialogOpen}
+          title="Comprobante de Servicio"
+          footerActions={
+            <div className="flex gap-2">
+                <Button variant="outline" onClick={handleCopyTicket}><Copy className="mr-2 h-4 w-4"/> Copiar</Button>
+                <Button onClick={() => window.print()}><Printer className="mr-2 h-4 w-4" /> Imprimir</Button>
+            </div>
+          }
+        >
+          <TicketContent ref={ticketContentRef} service={ticketData.service} vehicle={ticketData.vehicle} technician={ticketData.technician} />
+        </PrintTicketDialog>
+      )}
     </>
   );
 }
@@ -327,3 +374,4 @@ export default function HistorialServiciosPageWrapper() {
     )
 }
     
+
