@@ -5,13 +5,11 @@
 import { useState, useEffect, useRef } from 'react';
 import { PageHeader } from "@/components/page-header";
 import { ServiceDialog } from "../components/service-dialog";
-import { placeholderVehicles, placeholderTechnicians, placeholderInventory, placeholderServiceRecords, persistToFirestore } from "@/lib/placeholder-data"; 
-import type { ServiceRecord, Vehicle, Technician, InventoryItem, WorkshopInfo, QuoteRecord } from '@/types'; 
+import { UnifiedPreviewDialog } from '@/components/shared/unified-preview-dialog';
+import { placeholderVehicles, placeholderTechnicians, placeholderInventory, persistToFirestore, hydrateReady } from "@/lib/placeholder-data"; 
+import type { ServiceRecord, Vehicle, Technician, InventoryItem, QuoteRecord } from '@/types'; 
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from 'next/navigation';
-import { Button } from '@/components/ui/button';
-import { Printer, Copy, MessageSquare } from 'lucide-react';
-import { UnifiedPreviewDialog } from '@/components/shared/unified-preview-dialog';
 
 type DialogStep = 'form' | 'preview' | 'closed';
 
@@ -19,28 +17,26 @@ export default function NuevoServicioPage() {
   const { toast } = useToast(); 
   const router = useRouter();
   
-  const [vehicles, setVehicles] = useState<Vehicle[]>(placeholderVehicles);
-  const technicians = placeholderTechnicians; 
-  const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>(placeholderInventory);
+  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
+  const [technicians, setTechnicians] = useState<Technician[]>([]);
+  const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
+  const [hydrated, setHydrated] = useState(false);
 
   const [dialogStep, setDialogStep] = useState<DialogStep>('form');
   const [lastSavedRecord, setLastSavedRecord] = useState<ServiceRecord | null>(null);
-
+  
   useEffect(() => {
-    const handleDatabaseUpdate = () => {
+    hydrateReady.then(() => {
       setVehicles([...placeholderVehicles]);
+      setTechnicians([...placeholderTechnicians]);
       setInventoryItems([...placeholderInventory]);
-    };
-    window.addEventListener('databaseUpdated', handleDatabaseUpdate);
-
-    return () => {
-      window.removeEventListener('databaseUpdated', handleDatabaseUpdate);
-    };
+      setHydrated(true);
+    });
   }, []);
 
   useEffect(() => {
     if (dialogStep === 'closed') {
-      router.push('/dashboard'); // Redirect after closing preview
+      router.push('/cotizaciones/historial'); // Redirect to quotes list
     }
   }, [dialogStep, router]);
 
@@ -52,7 +48,7 @@ export default function NuevoServicioPage() {
 
   const handleFormDialogClose = () => { 
      if (dialogStep === 'form') { 
-      router.push('/dashboard'); // Go back if form is closed without saving
+      router.push('/dashboard'); 
     }
   };
   
@@ -63,7 +59,13 @@ export default function NuevoServicioPage() {
   
   const handleVehicleCreated = (newVehicle: Vehicle) => {
     setVehicles(prev => [...prev, newVehicle]);
+    placeholderVehicles.push(newVehicle); // Also update the global placeholder
+    persistToFirestore(['vehicles']);
   };
+
+  if (!hydrated) {
+    return <div className="text-center py-10">Cargando...</div>;
+  }
 
   return (
     <>
@@ -85,7 +87,7 @@ export default function NuevoServicioPage() {
             handleSaveComplete(data as ServiceRecord);
           }}
           onVehicleCreated={handleVehicleCreated}
-          mode="quote" // Changed from "service" to "quote"
+          mode="quote"
         />
       )}
       
