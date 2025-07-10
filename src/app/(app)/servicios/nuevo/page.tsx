@@ -9,13 +9,13 @@ import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
 import { TicketContent } from '@/components/ticket-content';
 import { ServiceSheetContent } from '@/components/service-sheet-content';
 import { placeholderVehicles, placeholderTechnicians, placeholderInventory, placeholderServiceRecords, persistToFirestore } from "@/lib/placeholder-data"; 
-import type { ServiceRecord, Vehicle, Technician, InventoryItem, WorkshopInfo } from '@/types'; 
+import type { ServiceRecord, Vehicle, Technician, InventoryItem, WorkshopInfo, QuoteRecord } from '@/types'; 
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Printer, Copy, MessageSquare } from 'lucide-react';
 
-type DialogStep = 'service' | 'print' | 'sheet' | 'closed';
+type DialogStep = 'form' | 'print_ticket' | 'print_sheet' | 'closed';
 
 export default function NuevoServicioPage() {
   const { toast } = useToast(); 
@@ -27,10 +27,9 @@ export default function NuevoServicioPage() {
   const technicians = placeholderTechnicians; 
   const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>(placeholderInventory);
 
-  const [dialogStep, setDialogStep] = useState<DialogStep>('service');
-  const [currentServiceForTicket, setCurrentServiceForTicket] = useState<ServiceRecord | null>(null);
+  const [dialogStep, setDialogStep] = useState<DialogStep>('form');
+  const [lastSavedRecord, setLastSavedRecord] = useState<ServiceRecord | null>(null);
   const [currentVehicle, setCurrentVehicle] = useState<Vehicle | null>(null);
-  const [currentTechnician, setCurrentTechnician] = useState<Technician | null>(null);
   const [workshopInfo, setWorkshopInfo] = useState<WorkshopInfo | {}>({});
 
   useEffect(() => {
@@ -52,22 +51,21 @@ export default function NuevoServicioPage() {
 
   useEffect(() => {
     if (dialogStep === 'closed') {
-      router.push('/tablero');
+      router.push('/cotizaciones/historial');
     }
   }, [dialogStep, router]);
 
-  const handleSaveNewService = (data: ServiceRecord) => {
-    const vehicle = vehicles.find(v => v.id === data.vehicleId);
-    const technician = technicians.find(t => t.id === data.technicianId);
+  const handleSaveComplete = (data: ServiceRecord | QuoteRecord) => {
+    const savedRecord = data as ServiceRecord;
+    const vehicle = vehicles.find(v => v.id === savedRecord.vehicleId);
     
-    setCurrentServiceForTicket(data);
+    setLastSavedRecord(savedRecord);
     setCurrentVehicle(vehicle || null);
-    setCurrentTechnician(technician || null);
 
-    if (data.status === 'Completado') {
-      setDialogStep('print');
-    } else if (data.status !== 'Cotizacion') {
-      setDialogStep('sheet'); 
+    if (savedRecord.status === 'Completado') {
+      setDialogStep('print_ticket');
+    } else if (savedRecord.status !== 'Cotizacion') {
+      setDialogStep('print_sheet'); 
     } else {
       handleDialogClose();
     }
@@ -141,14 +139,9 @@ ${shareUrl}
     });
   };
 
-
   const handleVehicleCreated = (newVehicle: Vehicle) => {
-    // This function will be called by ServiceDialog when a vehicle is created
-    // We update the local state to make the new vehicle available immediately
     setVehicles(prev => [...prev, newVehicle]);
-    // The dialog itself will handle persisting the new vehicle to the database
   };
-
 
   return (
     <>
@@ -156,7 +149,7 @@ ${shareUrl}
         title="Nuevo Registro"
         description="Crear una nueva cotización o una orden de servicio."
       />
-      {dialogStep === 'service' && (
+      {dialogStep === 'form' && (
         <ServiceDialog
           open={true} 
           onOpenChange={(isOpen) => { 
@@ -167,16 +160,15 @@ ${shareUrl}
           technicians={technicians}
           inventoryItems={inventoryItems}
           onSave={(data) => {
-            // ServiceDialog now handles persistence, we just need to react
-            handleSaveNewService(data as ServiceRecord);
-            return Promise.resolve(); // Fulfill the promise
+            handleSaveComplete(data as ServiceRecord);
+            return Promise.resolve();
           }}
           onVehicleCreated={handleVehicleCreated}
-          mode="service"
+          mode="quote" // Start in quote mode by default
         />
       )}
       
-      {dialogStep === 'sheet' && currentServiceForTicket && (
+      {dialogStep === 'print_sheet' && lastSavedRecord && (
         <PrintTicketDialog
           open={true}
           onOpenChange={(isOpen) => !isOpen && handleDialogClose()}
@@ -185,7 +177,7 @@ ${shareUrl}
           dialogContentClassName="printable-quote-dialog"
           footerActions={
             <>
-              <Button variant="outline" onClick={() => handleShareService(currentServiceForTicket)}>
+              <Button variant="outline" onClick={() => handleShareService(lastSavedRecord)}>
                   <MessageSquare className="mr-2 h-4 w-4" /> Copiar para WhatsApp
               </Button>
               <Button onClick={() => window.print()}>
@@ -196,14 +188,14 @@ ${shareUrl}
         >
           <ServiceSheetContent
             ref={serviceSheetRef}
-            service={currentServiceForTicket}
+            service={lastSavedRecord}
             vehicle={currentVehicle || undefined}
             workshopInfo={workshopInfo as WorkshopInfo}
           />
         </PrintTicketDialog>
       )}
 
-      {dialogStep === 'print' && currentServiceForTicket && (
+      {dialogStep === 'print_ticket' && lastSavedRecord && (
         <PrintTicketDialog
           open={true}
           onOpenChange={(isOpen) => !isOpen && handleDialogClose()}
@@ -223,9 +215,9 @@ ${shareUrl}
         >
           <TicketContent 
             ref={ticketContentRef}
-            service={currentServiceForTicket} 
+            service={lastSavedRecord} 
             vehicle={currentVehicle || undefined}
-            technician={currentTechnician || undefined}
+            technician={technicians.find(t => t.id === lastSavedRecord.technicianId) || undefined}
             previewWorkshopInfo={workshopInfo}
           />
         </PrintTicketDialog>
