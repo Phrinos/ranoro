@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { Suspense, useState, useEffect, useRef, useMemo, useCallback } from "react";
@@ -114,7 +115,7 @@ function PerfilPageContent() {
         if (!storage) return toast({ title: "Error de Almacenamiento", variant: "destructive" });
         try {
             const signatureRef = ref(storage, `user-signatures/${currentUser.id}.png`);
-            await uploadString(signatureRef, data.signatureDataUrl, 'data_url');
+            await uploadString(signatureRef, data.signatureDataUrl, 'data_url', {contentType: 'image/png'});
             updatedUser.signatureDataUrl = await getDownloadURL(signatureRef);
         } catch (e) { console.error("Error uploading signature:", e); toast({ title: "Error de Subida", variant: "destructive" }); }
     }

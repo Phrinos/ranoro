@@ -231,9 +231,9 @@ export default function PublicServiceSheetPage() {
         <DialogContent className="max-w-4xl p-2">
             <DialogHeader className="print:hidden">
               <DialogTitle>Vista Previa de Imagen</DialogTitle>
-              <CardDescription>
+              <DialogDescription>
                 Visualizando imagen de evidencia. Puede descargar una copia.
-              </CardDescription>
+              </DialogDescription>
             </DialogHeader>
             <div className="relative aspect-video w-full">
                 {viewingImageUrl && (

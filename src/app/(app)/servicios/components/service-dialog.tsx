@@ -11,9 +11,9 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { ServiceForm } from "./service-form";
-import type { ServiceRecord, Vehicle, Technician, InventoryItem, QuoteRecord } from "@/types";
+import type { ServiceRecord, Vehicle, Technician, InventoryItem, QuoteRecord, User } from "@/types";
 import { useToast } from "@/hooks/use-toast"; 
-import { persistToFirestore, placeholderServiceRecords, logAudit } from '@/lib/placeholder-data';
+import { persistToFirestore, placeholderServiceRecords, logAudit, AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
 import { db } from '@/lib/firebaseClient.js';
 import { doc, getDoc } from 'firebase/firestore';
 
@@ -93,6 +93,21 @@ export function ServiceDialog({
       const isNew = !formData.id;
       const recordId = formData.id || `doc_${Date.now().toString(36)}`;
       
+      // Ensure advisor signature is captured correctly from the form or current user
+      let advisorSignature = formData.serviceAdvisorSignatureDataUrl;
+      let advisorName = formData.serviceAdvisorName;
+      let advisorId = formData.serviceAdvisorId;
+
+      if (!advisorSignature || !advisorName || !advisorId) {
+        const authUserString = localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY);
+        if (authUserString) {
+          const currentUser: User = JSON.parse(authUserString);
+          advisorId = currentUser.id;
+          advisorName = currentUser.name;
+          advisorSignature = currentUser.signatureDataUrl;
+        }
+      }
+
       const recordToSave: ServiceRecord = { 
         ...formData,
         id: recordId,
@@ -102,6 +117,9 @@ export function ServiceDialog({
         serviceDate: formData.status !== 'Cotizacion' 
             ? (formData.serviceDate ? new Date(formData.serviceDate).toISOString() : new Date().toISOString()) 
             : (formData.serviceDate ? new Date(formData.serviceDate).toISOString() : undefined),
+        serviceAdvisorId: advisorId,
+        serviceAdvisorName: advisorName,
+        serviceAdvisorSignatureDataUrl: advisorSignature,
       } as ServiceRecord;
 
       const recordIndex = placeholderServiceRecords.findIndex(q => q.id === recordId);
