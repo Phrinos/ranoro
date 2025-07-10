@@ -548,6 +548,42 @@ export function ServiceForm({
                         <FormField control={control} name="status" render={({ field }) => ( <FormItem><FormLabel>Estado</FormLabel><Select onValueChange={field.onChange} value={field.value} disabled={isReadOnly || watchedStatus === 'Completado' || watchedStatus === 'Entregado'}><FormControl><SelectTrigger className="font-bold"><SelectValue placeholder="Seleccione un estado" /></SelectTrigger></FormControl><SelectContent>{["Cotizacion", "Agendado", "En Espera de Refacciones", "Reparando", "Completado"].map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )}/>
                         <FormField control={control} name="serviceType" render={({ field }) => ( <FormItem><FormLabel>Tipo de Servicio</FormLabel><Select onValueChange={field.onChange} value={field.value || 'Servicio General'} disabled={isReadOnly}><FormControl><SelectTrigger><SelectValue placeholder="Seleccione un tipo" /></SelectTrigger></FormControl><SelectContent><SelectItem value="Servicio General">Servicio General</SelectItem><SelectItem value="Cambio de Aceite">Cambio de Aceite</SelectItem><SelectItem value="Pintura">Pintura</SelectItem></SelectContent></Select></FormItem> )}/>
                       </div>
+                      
+                      {(watchedStatus === 'Reparando' || watchedStatus === 'En Espera de Refacciones') && (
+                        <div className="pt-4 border-t">
+                          <FormField
+                            control={control}
+                            name="technicianId"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Técnico Asignado</FormLabel>
+                                <Select
+                                  onValueChange={field.onChange}
+                                  value={field.value}
+                                  disabled={isReadOnly}
+                                >
+                                  <FormControl>
+                                    <SelectTrigger>
+                                      <SelectValue placeholder="Seleccione un técnico..." />
+                                    </SelectTrigger>
+                                  </FormControl>
+                                  <SelectContent>
+                                    {technicians
+                                      .filter((t) => !t.isArchived)
+                                      .map((technician) => (
+                                        <SelectItem key={technician.id} value={technician.id}>
+                                          {technician.name} - {technician.specialty}
+                                        </SelectItem>
+                                      ))}
+                                  </SelectContent>
+                                </Select>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+                      )}
+                      
                       {watchedStatus === 'Agendado' && (<div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t items-end"><Controller name="serviceDate" control={control} render={({ field }) => ( <FormItem className="flex flex-col"><FormLabel>Fecha de Cita</FormLabel><Popover open={isServiceDatePickerOpen} onOpenChange={setIsServiceDatePickerOpen}><PopoverTrigger asChild disabled={isReadOnly}><Button variant="outline" className={cn("justify-start text-left font-normal", !field.value && "text-muted-foreground")} disabled={isReadOnly}>{field.value ? format(field.value, "PPP", { locale: es }) : <span>Seleccione fecha</span>}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value} onSelect={(date) => { field.onChange(date ? setMinutes(setHours(date, (field.value || new Date()).getHours()), (field.value || new Date()).getMinutes()) : new Date()); setIsServiceDatePickerOpen(false); }} disabled={isReadOnly} initialFocus locale={es}/></PopoverContent></Popover></FormItem> )}/><Controller name="serviceDate" control={control} render={({ field }) => ( <FormItem><FormLabel>Hora de Cita</FormLabel><FormControl><Input type="time" value={field.value && isValid(field.value) ? format(field.value, 'HH:mm') : ""} onChange={(e) => { if (!e.target.value) return; const [h, m] = e.target.value.split(':').map(Number); field.onChange(setMinutes(setHours(field.value || new Date(), h), m)); }} disabled={isReadOnly}/></FormControl></FormItem> )}/></div>)}
                   </CardContent>
                 </Card>
