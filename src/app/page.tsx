@@ -55,7 +55,8 @@ export default function LandingPage() {
               alt="Ranoro Logo"
               width={120}
               height={30}
-              className="dark:invert h-auto"
+              className="dark:invert"
+              style={{ height: "auto" }}
               priority
               data-ai-hint="ranoro logo"
             />
