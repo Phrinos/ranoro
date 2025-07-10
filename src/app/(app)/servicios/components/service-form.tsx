@@ -392,9 +392,17 @@ export function ServiceForm({
 
 
   const refreshCurrentUser = useCallback(() => {
+    if (typeof window === "undefined") return;
     const authUserString = localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY);
     if (authUserString) {
-      freshUserRef.current = JSON.parse(authUserString);
+      try {
+        freshUserRef.current = JSON.parse(authUserString);
+      } catch (e) {
+        console.error("Failed to parse user from localStorage:", e);
+        freshUserRef.current = null;
+      }
+    } else {
+      freshUserRef.current = null;
     }
   }, []);
 
@@ -555,6 +563,8 @@ export function ServiceForm({
 
     } else {
       // Set default for new forms
+      refreshCurrentUser(); // Make sure user data is fresh for new forms too
+      const currentUser = freshUserRef.current;
       const baseDefaults: Partial<ServiceFormValues> = {
           serviceAdvisorId: currentUser?.id,
           serviceAdvisorName: currentUser?.name,
@@ -1761,7 +1771,7 @@ export function ServiceForm({
       >
           {serviceForSheet && (
               <ServiceSheetContent
-                  ref={serviceSheetRef}
+                  ref={ticketContentRef}
                   service={serviceForSheet}
                   quote={quoteForViewing}
                   vehicle={localVehicles.find(v => v.id === serviceForSheet.vehicleId)}
@@ -1818,3 +1828,4 @@ export function ServiceForm({
     </>
   );
 }
+
