@@ -200,6 +200,16 @@ function HistorialCotizacionesPageComponent() {
   }, [toast]);
 
   const handleSaveQuote = useCallback(async (data: ServiceRecord | QuoteRecord) => {
+    const recordIndex = placeholderServiceRecords.findIndex(q => q.id === data.id);
+      
+      if (recordIndex > -1) {
+        placeholderServiceRecords[recordIndex] = data as ServiceRecord;
+      } else {
+        placeholderServiceRecords.push(data as ServiceRecord);
+      }
+      
+      await persistToFirestore(['serviceRecords']);
+
     setIsFormDialogOpen(false);
   }, []);
 
