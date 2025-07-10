@@ -96,8 +96,12 @@ export function ServiceDialog({
       const recordToSave: ServiceRecord = { 
         ...formData,
         id: recordId,
-        quoteDate: formData.status === 'Cotizacion' ? (formData.quoteDate || new Date()).toISOString() : (formData.quoteDate ? new Date(formData.quoteDate).toISOString() : undefined),
-        serviceDate: formData.status !== 'Cotizacion' ? (formData.serviceDate || new Date()).toISOString() : (formData.serviceDate ? new Date(formData.serviceDate).toISOString() : undefined),
+        quoteDate: formData.status === 'Cotizacion' 
+            ? (formData.quoteDate ? new Date(formData.quoteDate).toISOString() : new Date().toISOString()) 
+            : (formData.quoteDate ? new Date(formData.quoteDate).toISOString() : undefined),
+        serviceDate: formData.status !== 'Cotizacion' 
+            ? (formData.serviceDate ? new Date(formData.serviceDate).toISOString() : new Date().toISOString()) 
+            : (formData.serviceDate ? new Date(formData.serviceDate).toISOString() : undefined),
       } as ServiceRecord;
 
       const recordIndex = placeholderServiceRecords.findIndex(q => q.id === recordId);
