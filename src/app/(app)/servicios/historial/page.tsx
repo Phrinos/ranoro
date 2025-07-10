@@ -12,7 +12,7 @@ import { TableToolbar } from '@/components/shared/table-toolbar';
 import type { ServiceRecord, Vehicle, Technician, InventoryItem, QuoteRecord, User } from "@/types";
 import { useToast } from "@/hooks/use-toast";
 import { useTableManager } from '@/hooks/useTableManager';
-import { isToday, parseISO, isValid } from "date-fns";
+import { isToday, parseISO, isValid, isAfter } from "date-fns";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useSearchParams } from "next/navigation";
 import { operationsService } from '@/lib/services/operations.service';
@@ -67,10 +67,17 @@ function HistorialServiciosPageComponent() {
   }, []);
   
   const activeServices = useMemo(() => {
+    const today = new Date();
     return allServices.filter(s => {
+      // Exclude completed or cancelled services
       if (s.status === 'Cancelado' || s.status === 'Entregado') return false;
+      
+      // Include any service currently in the workshop
       if (s.status === 'En Taller') return true;
-      if (s.status === 'Agendado' && s.serviceDate && isValid(parseISO(s.serviceDate)) && isToday(parseISO(s.serviceDate))) return true;
+
+      // Include any scheduled service, regardless of date
+      if (s.status === 'Agendado') return true;
+      
       return false;
     }).sort((a,b) => parseISO(a.serviceDate).getTime() - parseISO(b.serviceDate).getTime());
   }, [allServices]);
