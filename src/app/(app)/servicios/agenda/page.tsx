@@ -23,72 +23,8 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { StatusTracker } from "../components/StatusTracker";
 import { UnifiedPreviewDialog } from '@/components/shared/unified-preview-dialog';
+import { ServiceAppointmentCard } from '../components/ServiceAppointmentCard';
 
-
-const ServiceAppointmentCard = React.memo(({ service, vehicles, onEdit, onConfirm, onView }: { 
-  service: ServiceRecord, 
-  vehicles: Vehicle[], 
-  onEdit: () => void,
-  onConfirm: () => void,
-  onView: () => void,
-}) => {
-  const vehicle = vehicles.find(v => v.id === service.vehicleId);
-  const getServiceDescriptionText = (service: ServiceRecord) => {
-    // This function will now focus only on the detailed description.
-    const serviceType = service.serviceType ? `${service.serviceType}: ` : '';
-    const description = (service.serviceItems && service.serviceItems.length > 0)
-      ? service.serviceItems.map(item => item.name).join(', ')
-      : service.description || 'Servicio sin descripción';
-    return `${serviceType}${description}`;
-  };
-
-  const getAppointmentStatus = (service: ServiceRecord): { label: string; variant: "lightRed" | "success" } => {
-    if (service.appointmentStatus === 'Confirmada') {
-      return { label: 'Confirmada', variant: 'success' };
-    }
-    return { label: 'Creada', variant: 'lightRed' };
-  };
-
-  const appointmentStatus = getAppointmentStatus(service);
-
-  return (
-    <Card className="shadow-sm overflow-hidden mb-4">
-      <CardContent className="p-0">
-        <div className="flex flex-col md:flex-row text-sm">
-          <div className="p-4 flex flex-col justify-center items-center text-center w-full md:w-48 flex-shrink-0">
-              <p className="font-semibold text-xl text-foreground">{format(parseISO(service.serviceDate), "dd MMM yyyy", { locale: es })}</p>
-              <p className="text-muted-foreground text-xs mt-1">Folio: {service.id}</p>
-              <StatusTracker status={service.status} />
-          </div>
-          <div className="p-4 flex flex-col justify-center flex-grow space-y-2 text-left border-y md:border-y-0 md:border-x">
-              <p className="font-bold text-2xl text-black">{vehicle ? `${vehicle.licensePlate} - ${vehicle.make} ${vehicle.model}` : 'N/A'}</p>
-              <p className="text-sm text-foreground">
-                  {getServiceDescriptionText(service)}
-              </p>
-          </div>
-          <div className="p-4 flex flex-col justify-center items-center text-center w-full md:w-48 flex-shrink-0">
-              <p className="text-xs text-muted-foreground">Hora de Cita</p>
-              <p className="font-bold text-2xl text-black">{format(parseISO(service.serviceDate), "HH:mm", { locale: es })}</p>
-          </div>
-          <div className="p-4 flex flex-col justify-center items-center text-center border-t md:border-t-0 md:border-l w-full md:w-56 flex-shrink-0 space-y-2">
-              <Badge variant={appointmentStatus.variant} className="mb-1">{appointmentStatus.label}</Badge>
-              <p className="text-xs text-muted-foreground">Asesor: {service.serviceAdvisorName || 'N/A'}</p>
-              <div className="flex justify-center items-center gap-1">
-                  {appointmentStatus.label === 'Creada' && (
-                    <Button variant="ghost" size="icon" onClick={onConfirm} title="Confirmar Cita">
-                      <CheckCircle className="h-4 w-4 text-green-600" />
-                    </Button>
-                  )}
-                  <Button variant="ghost" size="icon" onClick={onView} title="Vista Previa"><Eye className="h-4 w-4" /></Button>
-                  <Button variant="ghost" size="icon" onClick={onEdit} title="Editar Servicio"><Edit className="h-4 w-4" /></Button>
-              </div>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  );
-});
-ServiceAppointmentCard.displayName = 'ServiceAppointmentCard';
 
 const handleAiError = (error: any, toast: any, context: string): string => {
     console.error(`AI Error in ${context}:`, error);
