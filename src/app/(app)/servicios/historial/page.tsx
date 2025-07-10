@@ -11,7 +11,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Card, CardContent } from "@/components/ui/card";
 import { Search, ListFilter, CalendarIcon as CalendarDateIcon } from "lucide-react";
-import { placeholderServiceRecords, placeholderVehicles, placeholderTechnicians, placeholderInventory, persistToFirestore, AUTH_USER_LOCALSTORAGE_KEY } from "@/lib/placeholder-data";
+import { placeholderServiceRecords, placeholderVehicles, placeholderTechnicians, placeholderInventory, persistToFirestore, AUTH_USER_LOCALSTORAGE_KEY, calculateSaleProfit, logAudit } from "@/lib/placeholder-data";
 import type { ServiceRecord, Vehicle, Technician, InventoryItem, QuoteRecord, User } from "@/types";
 import { useToast } from "@/hooks/use-toast";
 import { format, parseISO, compareAsc, compareDesc, isWithinInterval, isValid, startOfDay, endOfDay, isToday } from "date-fns";
@@ -25,6 +25,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { StatusTracker } from "../components/StatusTracker";
 import { UnifiedPreviewDialog } from '@/components/shared/unified-preview-dialog';
 import { Eye, Edit, CheckCircle } from 'lucide-react';
+import { CompleteServiceDialog } from '../components/CompleteServiceDialog';
 
 
 type ServiceSortOption = 
@@ -126,6 +127,9 @@ function HistorialServiciosPageComponent() {
   const [previewData, setPreviewData] = useState<{
     service: ServiceRecord;
   } | null>(null);
+
+  const [serviceToComplete, setServiceToComplete] = useState<ServiceRecord | null>(null);
+  const [isCompleteDialogOpen, setIsCompleteDialogOpen] = useState(false);
   
   useEffect(() => {
     // Sync with global state
@@ -195,17 +199,55 @@ function HistorialServiciosPageComponent() {
     setIsSheetOpen(true);
   }, []);
 
-  const handleCompleteService = useCallback((service: ServiceRecord) => {
+  const handleOpenCompleteDialog = useCallback((service: ServiceRecord) => {
+    setServiceToComplete(service);
+    setIsCompleteDialogOpen(true);
+  }, []);
+  
+  const handleConfirmCompletion = useCallback(async (service: ServiceRecord, paymentDetails: { paymentMethod: any, cardFolio?: string, transferFolio?: string }) => {
+    const serviceIndex = placeholderServiceRecords.findIndex(s => s.id === service.id);
+    if (serviceIndex === -1) return;
+
     const updatedService = {
-        ...service,
-        status: 'Completado' as const,
-        deliveryDateTime: new Date().toISOString(),
+      ...service,
+      status: 'Completado' as const,
+      deliveryDateTime: new Date().toISOString(),
+      paymentMethod: paymentDetails.paymentMethod,
+      cardFolio: paymentDetails.cardFolio,
+      transferFolio: paymentDetails.transferFolio,
     };
     
-    // Pass the updated service to the dialog for payment and final details
-    setEditingService(updatedService);
-    setIsEditDialogOpen(true);
-  }, []);
+    // Deduct inventory
+    let inventoryWasUpdated = false;
+    (updatedService.serviceItems || []).forEach(item => {
+      (item.suppliesUsed || []).forEach(supply => {
+        const inventoryItemIndex = placeholderInventory.findIndex(invItem => invItem.id === supply.supplyId);
+        if (inventoryItemIndex !== -1 && !placeholderInventory[inventoryItemIndex].isService) {
+          placeholderInventory[inventoryItemIndex].quantity -= supply.quantity;
+          inventoryWasUpdated = true;
+        }
+      });
+    });
+
+    placeholderServiceRecords[serviceIndex] = updatedService;
+    
+    const persistKeys: ('serviceRecords' | 'inventory')[] = ['serviceRecords'];
+    if (inventoryWasUpdated) {
+        persistKeys.push('inventory');
+    }
+    
+    await persistToFirestore(persistKeys);
+    
+    setAllServices([...placeholderServiceRecords]);
+    
+    toast({
+      title: "Servicio Completado",
+      description: `El servicio para ${service.vehicleIdentifier} ha sido marcado como completado.`,
+    });
+    
+    handleShowPreview(updatedService);
+
+  }, [toast, handleShowPreview]);
 
   return (
     <>
@@ -221,7 +263,7 @@ function HistorialServiciosPageComponent() {
           </TabsList>
           
           <TabsContent value="activos" className="mt-0 space-y-4">
-              <ServiceList services={activeServices} vehicles={vehicles} onEdit={(s) => {setEditingService(s); setIsEditDialogOpen(true);}} onView={handleShowPreview} onComplete={handleCompleteService}/>
+              <ServiceList services={activeServices} vehicles={vehicles} onEdit={(s) => {setEditingService(s); setIsEditDialogOpen(true);}} onView={handleShowPreview} onComplete={handleOpenCompleteDialog}/>
           </TabsContent>
           
           <TabsContent value="historial" className="mt-0 space-y-4">
@@ -229,23 +271,16 @@ function HistorialServiciosPageComponent() {
               <div className="relative flex-1 min-w-[200px] sm:min-w-[300px]"><Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" /><Input type="search" placeholder="Buscar por folio o vehículo..." className="w-full rounded-lg bg-card pl-8" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} /></div>
               <Popover><PopoverTrigger asChild><Button variant={"outline"} className={cn("min-w-[240px] justify-start text-left font-normal flex-1 sm:flex-initial bg-card", !dateRange && "text-muted-foreground")}><CalendarDateIcon className="mr-2 h-4 w-4" />{dateRange?.from ? (dateRange.to ? (`${format(dateRange.from, "LLL dd, y")} - ${format(dateRange.to, "LLL dd, y")}`) : format(dateRange.from, "LLL dd, y")) : (<span>Seleccione rango</span>)}</Button></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar initialFocus mode="range" defaultMonth={dateRange?.from} selected={dateRange} onSelect={setDateRange} numberOfMonths={2} locale={es} /></PopoverContent></Popover>
               <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" className="min-w-[150px] flex-1 sm:flex-initial bg-card">
-                    <ListFilter className="mr-2 h-4 w-4" />
-                    Ordenar
-                  </Button>
-                </DropdownMenuTrigger>
+                <DropdownMenuTrigger asChild><Button variant="outline" className="min-w-[150px] flex-1 sm:flex-initial bg-card"><ListFilter className="mr-2 h-4 w-4" />Ordenar</Button></DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuLabel>Ordenar por</DropdownMenuLabel>
-                  <DropdownMenuRadioGroup value={sortOption} onValueChange={(value) => setSortOption(value as ServiceSortOption)}>
-                    <DropdownMenuRadioItem value="serviceDate_desc">
-                      Fecha (Más Reciente)
-                    </DropdownMenuRadioItem>
-                  </DropdownMenuRadioGroup>
+                    <DropdownMenuLabel>Ordenar por</DropdownMenuLabel>
+                    <DropdownMenuRadioGroup value={sortOption} onValueChange={(value) => setSortOption(value as ServiceSortOption)}>
+                    <DropdownMenuRadioItem value="serviceDate_desc">Fecha (Más Reciente)</DropdownMenuRadioItem>
+                    </DropdownMenuRadioGroup>
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
-            <ServiceList services={historicalServices} vehicles={vehicles} onEdit={(s) => {setEditingService(s); setIsEditDialogOpen(true);}} onView={handleShowPreview} onComplete={handleCompleteService}/>
+            <ServiceList services={historicalServices} vehicles={vehicles} onEdit={(s) => {setEditingService(s); setIsEditDialogOpen(true);}} onView={handleShowPreview} onComplete={handleOpenCompleteDialog}/>
           </TabsContent>
       </Tabs>
       
@@ -261,6 +296,15 @@ function HistorialServiciosPageComponent() {
           onCancelService={handleCancelService}
           mode="service"
           onSave={handleSaveService}
+        />
+      )}
+
+      {serviceToComplete && (
+        <CompleteServiceDialog 
+            open={isCompleteDialogOpen}
+            onOpenChange={setIsCompleteDialogOpen}
+            service={serviceToComplete}
+            onConfirm={handleConfirmCompletion}
         />
       )}
 
