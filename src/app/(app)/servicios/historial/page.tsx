@@ -2,7 +2,6 @@
 "use client";
 
 import React, { useState, useEffect, useMemo, useCallback, Suspense, useRef } from "react";
-import { ServiceList } from "../components/service-list";
 import { ServiceDialog } from "../components/service-dialog";
 import { UnifiedPreviewDialog } from '@/components/shared/unified-preview-dialog';
 import { CompleteServiceDialog } from '../components/CompleteServiceDialog';
@@ -15,11 +14,11 @@ import { useTableManager } from '@/hooks/useTableManager';
 import { isToday, parseISO, isValid } from "date-fns";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useSearchParams } from "next/navigation";
-
 import { operationsService } from '@/lib/services/operations.service';
 import { personnelService } from '@/lib/services/personnel.service';
 import { inventoryService } from '@/lib/services/inventory.service';
 import { adminService } from '@/lib/services/admin.service';
+import { ServiceAppointmentCard } from '../agenda/page';
 
 
 function HistorialServiciosPageComponent() {
@@ -72,9 +71,10 @@ function HistorialServiciosPageComponent() {
   
   const activeServices = useMemo(() => {
     return allServices.filter(s => {
-      const isScheduledForToday = s.status === 'Agendado' && s.serviceDate && isValid(parseISO(s.serviceDate)) && isToday(parseISO(s.serviceDate));
-      const isInWorkshop = s.status === 'En Taller';
-      return isScheduledForToday || isInWorkshop;
+      if (s.status === 'Cancelado' || s.status === 'Entregado') return false;
+      if (s.status === 'En Taller') return true;
+      if (s.status === 'Agendado' && s.serviceDate && isValid(parseISO(s.serviceDate)) && isToday(parseISO(s.serviceDate))) return true;
+      return false;
     }).sort((a,b) => parseISO(a.serviceDate).getTime() - parseISO(b.serviceDate).getTime());
   }, [allServices]);
 
@@ -82,7 +82,7 @@ function HistorialServiciosPageComponent() {
     filteredData: historicalServices,
     TableToolbarComponent,
   } = useTableManager({
-    initialData: allServices.filter(s => s.status !== 'Cotizacion'),
+    initialData: allServices.filter(s => s.status !== 'Cotizacion' && s.status !== 'Agendado'),
     initialSortOption: 'serviceDate_desc',
     searchKeys: ['id', 'vehicleIdentifier', 'description'],
     dateFilterKey: 'serviceDate'
@@ -127,6 +127,17 @@ function HistorialServiciosPageComponent() {
     });
     setIsTicketDialogOpen(true);
   }, [toast]);
+  
+  const handleEditService = useCallback((service: ServiceRecord) => {
+    setEditingService(service);
+    setIsEditDialogOpen(true);
+  }, []);
+  
+  const handleConfirmAppointment = useCallback(async (service: ServiceRecord) => {
+    await operationsService.updateService(service.id, { ...service, appointmentStatus: 'Confirmada' });
+    toast({ title: "Cita Confirmada" });
+  }, [toast]);
+
 
   return (
     <>
@@ -142,12 +153,40 @@ function HistorialServiciosPageComponent() {
           </TabsList>
           
           <TabsContent value="activos" className="mt-0 space-y-4">
-              <ServiceList services={activeServices} vehicles={vehicles} technicians={technicians} onEdit={(s) => {setEditingService(s); setIsEditDialogOpen(true);}} onView={handleShowPreview} onComplete={handleOpenCompleteDialog}/>
+              {activeServices.length > 0 ? (
+                activeServices.map(service => (
+                    <ServiceAppointmentCard 
+                        key={service.id} 
+                        service={service} 
+                        vehicles={vehicles} 
+                        onEdit={() => handleEditService(service)} 
+                        onConfirm={() => handleConfirmAppointment(service)} 
+                        onView={() => handleShowPreview(service)}
+                        onComplete={() => handleOpenCompleteDialog(service)}
+                    />
+                ))
+              ) : (
+                <p className="text-center text-muted-foreground py-10">No hay servicios activos para hoy.</p>
+              )}
           </TabsContent>
           
           <TabsContent value="historial" className="mt-0 space-y-4">
             <TableToolbarComponent />
-            <ServiceList services={historicalServices} vehicles={vehicles} technicians={technicians} onEdit={(s) => {setEditingService(s); setIsEditDialogOpen(true);}} onView={handleShowPreview} onComplete={handleOpenCompleteDialog}/>
+            {historicalServices.length > 0 ? (
+                historicalServices.map(service => (
+                    <ServiceAppointmentCard 
+                        key={service.id} 
+                        service={service} 
+                        vehicles={vehicles} 
+                        onEdit={() => handleEditService(service)} 
+                        onConfirm={() => handleConfirmAppointment(service)} 
+                        onView={() => handleShowPreview(service)}
+                        onComplete={() => handleOpenCompleteDialog(service)}
+                    />
+                ))
+              ) : (
+                <p className="text-center text-muted-foreground py-10">No hay servicios en el historial que coincidan con los filtros.</p>
+              )}
           </TabsContent>
       </Tabs>
       
@@ -199,3 +238,6 @@ export default function HistorialServiciosPageWrapper() {
         </Suspense>
     )
 }
+
+
+    
