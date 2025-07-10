@@ -81,15 +81,6 @@ export let placeholderInventory: InventoryItem[] = [
 // =======================================
 export let placeholderVehicles: Vehicle[] = [
   {
-    id: 'VEH001',
-    make: 'Nissan',
-    model: 'Versa',
-    year: 2020,
-    ownerName: 'Juan Pérez',
-    ownerPhone: '4491234567',
-    licensePlate: 'AAA123A'
-  },
-  {
     id: 'VEH002',
     make: 'Honda',
     model: 'CR-V',
@@ -306,6 +297,10 @@ export let placeholderTechnicianMonthlyPerformance: TechnicianMonthlyPerformance
 // ===  LÓGICA DE PERSISTENCIA DE DATOS  ===
 // =======================================
 
+// IMPORTANT: Set this to `false` to enable Firestore persistence.
+// Set to `true` to work in a local-only mode without affecting the database.
+const DEV_MODE_LOCAL_ONLY = true;
+
 const DB_PATH = 'database/main'; // The single document in Firestore to hold all data
 
 const DATA_ARRAYS = {
@@ -383,6 +378,15 @@ export async function hydrateFromFirestore() {
   if (typeof window === 'undefined' || (window as any).__APP_HYDRATED__) {
     return;
   }
+  
+  // If in local dev mode, skip hydration from Firestore entirely.
+  if (DEV_MODE_LOCAL_ONLY) {
+    console.warn('[DEV MODE] Firestore hydration is disabled. Using only local placeholder data.');
+    (window as any).__APP_HYDRATED__ = true;
+    resolveHydration?.();
+    return;
+  }
+
 
   console.log('Attempting to hydrate application data from Firestore...');
   const docRef = doc(db, DB_PATH);
@@ -521,9 +525,8 @@ export async function hydrateFromFirestore() {
  * @param keysToUpdate An array of keys corresponding to the data arrays to be updated.
  */
 export async function persistToFirestore(keysToUpdate?: DataKey[]) {
-  // DEV MODE: Disable Firestore writes by setting this to `true`.
-  const DEV_MODE_SKIP_PERSISTENCE = true;
-  if (DEV_MODE_SKIP_PERSISTENCE) { 
+  // Check if we are in local-only development mode.
+  if (DEV_MODE_LOCAL_ONLY) { 
       console.log(`[DEV MODE] Persist to Firestore skipped for keys: ${keysToUpdate?.join(', ')}`);
       if (typeof window !== 'undefined') {
           // Dispatch event to keep local UI consistent with in-memory changes
@@ -703,3 +706,103 @@ export const enrichServiceForPrinting = (
     serviceItems: enrichedServiceItems,
   };
 };
+
+// --- MIGRATION FUNCTIONS (to be removed or adapted) ---
+
+export async function migrateVehicles(csvData: any[]): Promise<{ count: number }> {
+    let vehiclesAdded = 0;
+    csvData.forEach(row => {
+        const licensePlate = row['Placa'] || row['placa'];
+        if (licensePlate && !placeholderVehicles.find(v => v.licensePlate === licensePlate)) {
+            const newVehicle: Vehicle = {
+                id: `VEH_MIG_${vehiclesAdded}`,
+                make: row['Marca'] || row['marca'] || 'N/A',
+                model: row['Modelo'] || row['modelo'] || 'N/A',
+                year: Number(row['Año'] || row['año']) || 2000,
+                ownerName: row['Cliente'] || row['cliente'] || 'N/A',
+                ownerPhone: String(row['Telefono'] || row['telefono'] || 'N/A'),
+                licensePlate: licensePlate,
+            };
+            placeholderVehicles.push(newVehicle);
+            vehiclesAdded++;
+        }
+    });
+    if (vehiclesAdded > 0) await persistToFirestore(['vehicles']);
+    return { count: vehiclesAdded };
+}
+
+export async function migrateProducts(csvData: any[]): Promise<{ count: number }> {
+  let productsAdded = 0;
+  csvData.forEach(row => {
+    const sku = row['SKU'] || row['sku'] || `PROD_MIG_${productsAdded}`;
+    if (sku && !placeholderInventory.find(p => p.sku === sku)) {
+      const newProduct: InventoryItem = {
+        id: `PROD_MIG_${productsAdded}`,
+        sku: sku,
+        name: row['Nombre'] || row['nombre'] || 'Producto Migrado',
+        quantity: Number(row['Cantidad'] || row['cantidad'] || 0),
+        unitPrice: Number(row['Precio de Compra'] || row['precio de compra'] || 0),
+        sellingPrice: Number(row['Precio de Venta'] || row['precio de venta'] || 0),
+        category: 'Migración',
+        supplier: 'Migración',
+        lowStockThreshold: 1,
+      };
+      placeholderInventory.push(newProduct);
+      productsAdded++;
+    }
+  });
+  if (productsAdded > 0) await persistToFirestore(['inventory']);
+  return { count: productsAdded };
+}
+
+
+export async function migrateData(vehiclesData: any[], servicesData: any[]): Promise<{ vehicles: number, services: number }> {
+    let vehiclesAdded = 0;
+    vehiclesData.forEach(row => {
+        const licensePlate = row['Placa'];
+        if (licensePlate && !placeholderVehicles.find(v => v.licensePlate === licensePlate)) {
+            const newVehicle: Vehicle = {
+                id: `VEH_MIG_G_${vehiclesAdded}`,
+                make: row['Marca'] || 'N/A',
+                model: row['Modelo'] || 'N/A',
+                year: Number(row['Año']) || 2000,
+                ownerName: row['Cliente'] || 'N/A',
+                ownerPhone: String(row['Telefono'] || 'N/A'),
+                licensePlate: licensePlate,
+            };
+            placeholderVehicles.push(newVehicle);
+            vehiclesAdded++;
+        }
+    });
+
+    let servicesAdded = 0;
+    servicesData.forEach(row => {
+        const licensePlate = row['Placa'];
+        const vehicle = placeholderVehicles.find(v => v.licensePlate === licensePlate);
+        if (vehicle) {
+            const newService: ServiceRecord = {
+                id: `SER_MIG_G_${servicesAdded}`,
+                vehicleId: vehicle.id,
+                vehicleIdentifier: vehicle.licensePlate,
+                serviceDate: row['Fecha'] ? new Date(row['Fecha']).toISOString() : new Date().toISOString(),
+                description: row['Descripción'] || 'Servicio migrado',
+                totalCost: Number(row['Costo']) || 0,
+                status: 'Completado',
+                technicianId: 'T001',
+                serviceItems: [],
+                subTotal: 0,
+                taxAmount: 0,
+                totalSuppliesCost: 0,
+                serviceProfit: 0,
+            };
+            placeholderServiceRecords.push(newService);
+            servicesAdded++;
+        }
+    });
+    
+    if (vehiclesAdded > 0 || servicesAdded > 0) {
+        await persistToFirestore(['vehicles', 'serviceRecords']);
+    }
+
+    return { vehicles: vehiclesAdded, services: servicesAdded };
+}
