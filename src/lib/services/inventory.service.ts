@@ -1,6 +1,4 @@
 
-'use server';
-
 import type { InventoryItem, InventoryCategory, Supplier, Vehicle, VehiclePriceList } from "@/types";
 import { placeholderInventory, placeholderCategories, placeholderSuppliers, placeholderVehicles, placeholderVehiclePriceLists, persistToFirestore, logAudit, placeholderCashDrawerTransactions } from "@/lib/placeholder-data";
 import type { InventoryItemFormValues } from "@/app/(app)/inventario/components/inventory-item-form";
