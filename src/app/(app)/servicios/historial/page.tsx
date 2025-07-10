@@ -123,6 +123,7 @@ function HistorialServiciosPageComponent() {
   const [vehicles, setVehicles] = useState<Vehicle[]>(placeholderVehicles); 
   const [technicians, setTechnicians] = useState<Technician[]>(placeholderTechnicians);
   const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>(placeholderInventory);
+  const [workshopInfo, setWorkshopInfo] = useState<WorkshopInfo | undefined>(undefined);
   
   const [searchTerm, setSearchTerm] = useState("");
   const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
@@ -130,6 +131,10 @@ function HistorialServiciosPageComponent() {
 
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editingService, setEditingService] = useState<ServiceRecord | null>(null);
+
+  const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const [previewData, setPreviewData] = useState<{ service: ServiceRecord, quote?: QuoteRecord, vehicle?: Vehicle }> | null>(null);
+  const serviceSheetRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     // Sync with global state
@@ -174,7 +179,15 @@ function HistorialServiciosPageComponent() {
   const handleCancelService = useCallback(async (serviceId: string, reason: string) => { /* ... */ }, []);
   const handleVehicleCreated = useCallback((newVehicle: Vehicle) => { /* ... */ }, []);
   const handleReprintService = useCallback((service: ServiceRecord) => { /* ... */ }, []);
-  const handleShowPreview = useCallback(async (service: ServiceRecord) => { /* ... */ }, []);
+  const handleShowPreview = useCallback(async (service: ServiceRecord) => {
+    const associatedQuote = allServices.find(s => s.id === service.id && s.status === 'Cotizacion');
+    setPreviewData({
+        service,
+        quote: associatedQuote,
+        vehicle: vehicles.find(v => v.id === service.vehicleId)
+    });
+    setIsSheetOpen(true);
+  }, [allServices, vehicles]);
 
   return (
     <>
@@ -216,6 +229,28 @@ function HistorialServiciosPageComponent() {
           mode="service"
           onSave={handleSaveService}
         />
+      )}
+
+      {isSheetOpen && previewData && (
+        <PrintTicketDialog
+          open={isSheetOpen}
+          onOpenChange={setIsSheetOpen}
+          title="Vista Previa Unificada"
+          dialogContentClassName="printable-quote-dialog"
+          footerActions={
+            <Button onClick={() => window.print()}>
+              <Printer className="mr-2 h-4 w-4" /> Imprimir Documento
+            </Button>
+          }
+        >
+          <ServiceSheetContent
+            ref={serviceSheetRef}
+            service={previewData.service}
+            quote={previewData.quote}
+            vehicle={previewData.vehicle}
+            workshopInfo={workshopInfo as WorkshopInfo}
+          />
+        </PrintTicketDialog>
       )}
     </>
   );

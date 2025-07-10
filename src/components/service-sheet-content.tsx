@@ -257,9 +257,19 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
     
     const fuelColor = getFuelColorClass(fuelPercentage);
     
+    const showOrder = service.status !== 'Cotizacion';
     const showQuote = !!quote;
     const showChecklist = !!service.safetyInspection && Object.keys(service.safetyInspection).some(k => k !== 'inspectionNotes' && k !== 'technicianSignature' && (service.safetyInspection as any)[k]?.status !== 'na' && (service.safetyInspection as any)[k]?.status !== undefined);
     const showPhotoReport = !!service.photoReports && service.photoReports.length > 0;
+    
+    const tabs = [];
+    if (showQuote) tabs.push({ value: 'quote', label: 'Cotización' });
+    if (showOrder) tabs.push({ value: 'order', label: 'Orden de Servicio' });
+    if (showChecklist) tabs.push({ value: 'checklist', label: 'Revisión' });
+    if (showPhotoReport) tabs.push({ value: 'photoreport', label: 'Reporte Fotográfico' });
+    
+    const defaultTabValue = service.status === 'Cotizacion' ? 'quote' : 'order';
+
 
     const ServiceOrderContent = (
       <div className="flex flex-col min-h-[10in]">
@@ -299,7 +309,7 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
                     <div className="border-2 border-black rounded-md overflow-hidden">
                         <h3 className="font-bold p-1 bg-gray-700 text-white text-xs text-center">DATOS DEL VEHÍCULO</h3>
                         <div className="space-y-0.5 p-2">
-                            <p><span className="font-semibold">Vehículo:</span> <span className="font-bold">{vehicle?.year} {vehicle?.make} {vehicle?.model}</span></p>
+                            <p><span className="font-semibold">Vehículo:</span> <span className="font-bold">{vehicle ? `${vehicle.year} ${vehicle.make} ${vehicle.model}` : 'N/A'}</span></p>
                             <p><span className="font-semibold">Placas:</span> <span className="font-bold">{vehicle?.licensePlate}</span></p>
                             {vehicle?.color && <p><span className="font-semibold">Color:</span> <span className="font-bold">{vehicle.color}</span></p>}
                             {service.mileage && <p><span className="font-semibold">Kilometraje:</span> <span className="font-bold">{service.mileage.toLocaleString('es-MX')} km</span></p>}
@@ -474,7 +484,7 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
                         type="button"
                         onClick={() => onViewImage && onViewImage(photoUrl)}
                         key={photoIndex} 
-                        className="relative aspect-video w-full bg-gray-100 rounded-md overflow-hidden border group"
+                        className="relative aspect-video w-full bg-gray-100 rounded overflow-hidden border group"
                     >
                         <Image
                             src={photoUrl}
@@ -496,49 +506,31 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
       </div>
     ) : null;
     
-    const defaultTabValue = showQuote ? 'quote' : 'order';
-    const numTabs = [showQuote, true, showChecklist, showPhotoReport].filter(Boolean).length;
-    const gridColsClass = `grid-cols-${numTabs}`;
-
     return (
       <div ref={ref} data-format="letter" className="font-sans bg-white text-black text-sm">
         {/* For Screen View */}
         <div className="print:hidden p-0 sm:p-2 md:p-4 shadow-lg">
           <Tabs defaultValue={defaultTabValue} className="w-full">
-            <TabsList className={cn("grid w-full", `grid-cols-${numTabs}`)}>
-              {showQuote && <TabsTrigger value="quote">Cotización</TabsTrigger>}
-              <TabsTrigger value="order">Orden de Servicio</TabsTrigger>
-              {showChecklist && <TabsTrigger value="checklist">Revisión</TabsTrigger>}
-              {showPhotoReport && <TabsTrigger value="photoreport">Reporte Foto</TabsTrigger>}
+            <TabsList className={cn('grid w-full', `grid-cols-${tabs.length}`)}>
+                {tabs.map(tab => <TabsTrigger key={tab.value} value={tab.value}>{tab.label}</TabsTrigger>)}
             </TabsList>
             
-            {showQuote && (
-                <TabsContent value="quote" className="mt-4">
-                    <QuoteContent
-                      ref={quoteContentRef}
-                      quote={quote!}
-                      vehicle={vehicle}
-                      workshopInfo={effectiveWorkshopInfo}
-                    />
-                </TabsContent>
-            )}
+            <TabsContent value="quote">
+              {showQuote ? <QuoteContent ref={quoteContentRef} quote={quote} vehicle={vehicle} workshopInfo={effectiveWorkshopInfo} /> : null}
+            </TabsContent>
             <TabsContent value="order" className="mt-4">{ServiceOrderContent}</TabsContent>
-            {showChecklist && (
-                <TabsContent value="checklist" className="mt-4">
-                    <SafetyChecklistDisplay 
-                        inspection={service.safetyInspection!}
-                        workshopInfo={effectiveWorkshopInfo}
-                        service={service}
-                        vehicle={vehicle}
-                        onViewImage={onViewImage || (() => {})}
-                    />
-                </TabsContent>
-            )}
-             {showPhotoReport && (
-                <TabsContent value="photoreport" className="mt-4">
-                    {PhotoReportContent}
-                </TabsContent>
-             )}
+            <TabsContent value="checklist" className="mt-4">
+              {showChecklist ? <SafetyChecklistDisplay 
+                inspection={service.safetyInspection!}
+                workshopInfo={effectiveWorkshopInfo}
+                service={service}
+                vehicle={vehicle}
+                onViewImage={onViewImage || (() => {})}
+              /> : null}
+            </TabsContent>
+             <TabsContent value="photoreport" className="mt-4">
+               {showPhotoReport ? PhotoReportContent : null}
+            </TabsContent>
           </Tabs>
         </div>
 
@@ -554,9 +546,11 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
                   />
               </div>
           )}
-          <div className={cn("p-4 md:p-8", showQuote && "break-before-page")}>
-            {ServiceOrderContent}
-          </div>
+          {showOrder && (
+              <div className={cn("p-4 md:p-8", showQuote && "break-before-page")}>
+                {ServiceOrderContent}
+              </div>
+          )}
           {showChecklist && (
             <>
               <div className="break-before-page" />
