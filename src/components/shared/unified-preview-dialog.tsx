@@ -4,7 +4,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
 import { Button } from '@/components/ui/button';
-import { Printer, MessageSquare, Copy, Eye, Download } from 'lucide-react';
+import { Printer, MessageSquare } from 'lucide-react';
 import type { ServiceRecord, Vehicle, QuoteRecord, WorkshopInfo } from '@/types';
 import { ServiceSheetContent } from '@/components/service-sheet-content';
 import { placeholderServiceRecords, placeholderVehicles } from '@/lib/placeholder-data';
@@ -28,8 +28,6 @@ export function UnifiedPreviewDialog({ open, onOpenChange, service }: UnifiedPre
 
   const [isImageViewerOpen, setIsImageViewerOpen] = useState(false);
   const [viewingImageUrl, setViewingImageUrl] = useState<string | null>(null);
-
-  const isSimpleView = service.status === 'Cotizacion' || service.status === 'Agendado';
 
   useEffect(() => {
     if (open && service) {

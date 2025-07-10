@@ -20,14 +20,14 @@ interface TechniciansTableProps {
   technicians: Technician[];
 }
 
-export const TechniciansTable = React.memo(({ technicians: initialTechnicians }: TechniciansTableProps) => {
+export const TechniciansTable = React.memo(({ technicians }: TechniciansTableProps) => {
   const router = useRouter();
 
   const handleRowClick = (technicianId: string) => {
     router.push(`/tecnicos/${technicianId}`);
   };
 
-  if (!initialTechnicians.length) {
+  if (!technicians.length) {
     return (
         <div className="flex flex-col items-center justify-center py-10 text-center text-muted-foreground border-2 border-dashed rounded-lg">
             <Users className="h-12 w-12 mb-2" />
@@ -53,7 +53,7 @@ export const TechniciansTable = React.memo(({ technicians: initialTechnicians }:
           </TableRow>
         </TableHeader>
         <TableBody>
-          {initialTechnicians.map((technician) => (
+          {technicians.map((technician) => (
             <TableRow 
               key={technician.id} 
               onClick={() => handleRowClick(technician.id)}

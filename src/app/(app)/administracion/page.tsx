@@ -4,16 +4,14 @@
 import { Suspense, useState, useEffect, useMemo, useCallback } from "react";
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import type { User, AppRole } from '@/types';
-import { placeholderAppRoles, AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
+import type { User } from '@/types';
+import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
 
-// Import refactored components
 import { UsuariosPageContent } from "./components/usuarios-content";
 import { RolesPageContent } from "./components/roles-content";
 import { AuditoriaPageContent } from "./components/auditoria-content";
 import { MigracionPageContent } from "./components/migracion-content";
 
-// --- Main Component ---
 function AdministracionPageComponent() {
     const searchParams = useSearchParams();
     const defaultSubTab = searchParams.get('tab') || 'usuarios';

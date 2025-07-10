@@ -12,7 +12,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import type { Vehicle } from "@/types";
-import { format, parseISO } from 'date-fns';
+import { format, parseISO, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Car } from "lucide-react";
 
@@ -20,14 +20,14 @@ interface VehiclesTableProps {
   vehicles: Vehicle[];
 }
 
-export const VehiclesTable = React.memo(({ vehicles: initialVehicles }: VehiclesTableProps) => {
+export const VehiclesTable = React.memo(({ vehicles }: VehiclesTableProps) => {
   const router = useRouter();
 
-  const handleRowClick = (vehicleId: string) => { // Changed id to string to match type
+  const handleRowClick = (vehicleId: string) => {
     router.push(`/vehiculos/${vehicleId}`);
   };
 
-  if (!initialVehicles.length) {
+  if (!vehicles.length) {
     return (
         <div className="flex flex-col items-center justify-center py-10 text-center text-muted-foreground border-2 border-dashed rounded-lg">
             <Car className="h-12 w-12 mb-2" />
@@ -52,7 +52,7 @@ export const VehiclesTable = React.memo(({ vehicles: initialVehicles }: Vehicles
           </TableRow>
         </TableHeader>
         <TableBody>
-          {initialVehicles.map((vehicle) => (
+          {vehicles.map((vehicle) => (
             <TableRow 
               key={vehicle.id} 
               onClick={() => handleRowClick(vehicle.id)}
@@ -65,7 +65,7 @@ export const VehiclesTable = React.memo(({ vehicles: initialVehicles }: Vehicles
               <TableCell>{vehicle.ownerName}</TableCell>
               <TableCell>{vehicle.ownerPhone}</TableCell>
               <TableCell>
-                {vehicle.lastServiceDate 
+                {vehicle.lastServiceDate && isValid(parseISO(vehicle.lastServiceDate))
                   ? format(parseISO(vehicle.lastServiceDate), "dd MMM yyyy", { locale: es }) 
                   : 'N/A'}
               </TableCell>
