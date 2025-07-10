@@ -1,15 +1,15 @@
-
 rules_version = '2';
 
+// Reglas de Storage
 service firebase.storage {
   match /b/{bucket}/o {
-    // Allow public read access to all files.
-    // This is useful for public links to images (signatures, logos, etc.).
-    // For a production app, you might want more specific rules,
-    // e.g., match /b/{bucket}/o/public/{allPaths=**} {
+    // Regla global para permitir la lectura pública de todos los archivos
+    // Esto es útil para que las imágenes en cotizaciones y reportes públicos sean accesibles.
+    // Para un entorno de producción, considera restringir el acceso a rutas específicas
+    // o requerir autenticación si los datos son sensibles.
     match /{allPaths=**} {
       allow read;
-      allow write: if request.auth != null; // Only authenticated users can write.
+      allow write: if request.auth != null; // Permite escribir solo si el usuario está autenticado
     }
   }
 }
