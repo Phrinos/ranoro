@@ -267,7 +267,7 @@ export function ServiceForm({
 
   const [isGeneratingQuote, setIsGeneratingQuote] = useState(false);
   
-  const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [serviceForPreview, setServiceForPreview] = useState<ServiceRecord | null>(null);
   
   const [isServiceDatePickerOpen, setIsServiceDatePickerOpen] = useState(false);
@@ -752,8 +752,14 @@ export function ServiceForm({
   
   const handlePrintSheet = useCallback(() => {
     const serviceData = form.getValues() as ServiceRecord;
-    setServiceForPreview(serviceData);
-    setIsSheetOpen(true);
+     // Make sure to include the latest advisor signature from the form
+    const enrichedServiceData = {
+        ...serviceData,
+        serviceAdvisorName: form.getValues('serviceAdvisorName'),
+        serviceAdvisorSignatureDataUrl: form.getValues('serviceAdvisorSignatureDataUrl')
+    };
+    setServiceForPreview(enrichedServiceData);
+    setIsPreviewOpen(true);
   }, [form]);
 
   const handleVehiclePlateKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
@@ -1548,10 +1554,10 @@ export function ServiceForm({
         }}
       />
       
-      {isSheetOpen && serviceForPreview && (
+      {isPreviewOpen && serviceForPreview && (
         <UnifiedPreviewDialog
-          open={isSheetOpen}
-          onOpenChange={setIsSheetOpen}
+          open={isPreviewOpen}
+          onOpenChange={setIsPreviewOpen}
           service={serviceForPreview}
         />
       )}
@@ -1567,9 +1573,9 @@ export function ServiceForm({
         <DialogContent className="max-w-4xl p-2">
             <DialogHeader className="print:hidden">
               <DialogTitle>Vista Previa de Imagen</DialogTitle>
-              <DialogDesc>
+              <DialogDescription>
                 Visualizando la imagen de evidencia. Puede descargarla si lo necesita.
-              </DialogDesc>
+              </DialogDescription>
             </DialogHeader>
             <div className="relative aspect-video w-full">
                 {viewingImageUrl && (
