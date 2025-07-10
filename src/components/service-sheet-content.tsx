@@ -516,7 +516,7 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
             </TabsList>
             
             <TabsContent value="quote">
-              {showQuote ? <QuoteContent ref={quoteContentRef} quote={quote} vehicle={vehicle} workshopInfo={effectiveWorkshopInfo} /> : null}
+              {showQuote ? <QuoteContent ref={quoteContentRef} quote={quote!} vehicle={vehicle} workshopInfo={effectiveWorkshopInfo} /> : null}
             </TabsContent>
             <TabsContent value="order" className="mt-4">{ServiceOrderContent}</TabsContent>
             <TabsContent value="checklist" className="mt-4">
