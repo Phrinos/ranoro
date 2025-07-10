@@ -551,7 +551,7 @@ export function ServiceForm({
   return (
     <>
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-6">
+        <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-6 pb-24">
           <Tabs defaultValue="servicio" className="w-full">
             <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm -mx-6 px-6 pt-2">
               <div className="flex justify-between items-center gap-2 mb-2 border-b">
@@ -679,10 +679,50 @@ export function ServiceForm({
             </TabsContent>
           </Tabs>
         
-          <div className="flex justify-between items-center pt-4">
-            {!isReadOnly && initialData?.id && (<AlertDialog open={isCancelAlertOpen} onOpenChange={setIsCancelAlertOpen}><AlertDialogTrigger asChild><Button type="button" variant="destructive"><Ban className="mr-2 h-4 w-4" />{mode === 'quote' ? 'Eliminar Cotización' : 'Cancelar Servicio'}</Button></AlertDialogTrigger><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>¿Está seguro?</AlertDialogTitle><AlertDialogDescription>{mode === 'quote' ? `Se eliminará la cotización ${initialDataQuote?.id}.` : `Se cancelará el servicio ${initialDataService?.id}.`}</AlertDialogDescription>{mode === 'service' && (<div className="mt-4"><Label htmlFor="cancellation-reason">Motivo (obligatorio)</Label><Textarea id="cancellation-reason" value={cancellationReason} onChange={(e) => setCancellationReason(e.target.value)} className="mt-2" /></div>)}</AlertDialogHeader><AlertDialogFooter><AlertDialogCancel onClick={() => setCancellationReason('')}>Volver</AlertDialogCancel><AlertDialogAction onClick={handleConfirmDelete} disabled={mode === 'service' && !cancellationReason.trim()} className="bg-destructive hover:bg-destructive/90">Sí, proceder</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog>)}
-            <div className="flex justify-end gap-2 w-full">
-              {isReadOnly ? <Button type="button" variant="outline" onClick={onClose}>Cerrar</Button> : (<><Button type="button" variant="outline" onClick={onClose}>Cancelar</Button><Button type="submit" disabled={form.formState.isSubmitting || !getValues('vehicleId')}>{form.formState.isSubmitting ? "Guardando..." : (initialData?.id ? "Actualizar" : "Crear")}</Button></>)}
+          <div className="fixed bottom-0 left-0 right-0 z-20 bg-background/95 border-t p-3 md:pl-[var(--sidebar-width)] print:hidden">
+            <div className="container mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+                <div className="flex justify-between items-center">
+                    {!isReadOnly && initialData?.id ? (
+                        <AlertDialog open={isCancelAlertOpen} onOpenChange={setIsCancelAlertOpen}>
+                            <AlertDialogTrigger asChild>
+                                <Button type="button" variant="destructive">
+                                    <Ban className="mr-2 h-4 w-4" />
+                                    {mode === 'quote' ? 'Eliminar Cotización' : 'Cancelar Servicio'}
+                                </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                                <AlertDialogHeader>
+                                    <AlertDialogTitle>¿Está seguro?</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                        {mode === 'quote' ? `Se eliminará la cotización ${initialDataQuote?.id}.` : `Se cancelará el servicio ${initialDataService?.id}.`}
+                                    </AlertDialogDescription>
+                                    {mode === 'service' && (
+                                        <div className="mt-4">
+                                            <Label htmlFor="cancellation-reason">Motivo (obligatorio)</Label>
+                                            <Textarea id="cancellation-reason" value={cancellationReason} onChange={(e) => setCancellationReason(e.target.value)} className="mt-2" />
+                                        </div>
+                                    )}
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                    <AlertDialogCancel onClick={() => setCancellationReason('')}>Volver</AlertDialogCancel>
+                                    <AlertDialogAction onClick={handleConfirmDelete} disabled={mode === 'service' && !cancellationReason.trim()} className="bg-destructive hover:bg-destructive/90">Sí, proceder</AlertDialogAction>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                        </AlertDialog>
+                    ) : ( <div></div> /* Placeholder to keep alignment */ )}
+                    <div className="flex justify-end gap-2">
+                        {isReadOnly ? (
+                            <Button type="button" variant="outline" onClick={onClose}>Cerrar</Button>
+                        ) : (
+                            <>
+                                <Button type="button" variant="outline" onClick={onClose}>Cancelar</Button>
+                                <Button type="submit" disabled={form.formState.isSubmitting || !getValues('vehicleId')}>
+                                    {form.formState.isSubmitting ? "Guardando..." : (initialData?.id ? "Actualizar" : "Crear")}
+                                </Button>
+                            </>
+                        )}
+                    </div>
+                </div>
             </div>
           </div>
         </form>
