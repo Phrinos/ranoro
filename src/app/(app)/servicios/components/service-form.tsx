@@ -38,7 +38,7 @@ import {
     AUTH_USER_LOCALSTORAGE_KEY,
 } from '@/lib/placeholder-data';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger, AlertDialogDescription } from "@/components/ui/alert-dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger, AlertDialogDescription, AlertDialogFooter } from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/label";
 import { suggestQuote } from '@/ai/flows/quote-suggestion-flow';
 import { enhanceText } from '@/ai/flows/text-enhancement-flow';
@@ -258,7 +258,7 @@ export function ServiceForm({
   const form = useForm<ServiceFormValues>({
     resolver: zodResolver(serviceFormSchemaBase),
     defaultValues: {
-        id: undefined, // Initialize as undefined
+        id: initialData?.id || `SRV-${generateUniqueId()}`,
         status: mode === 'service' ? ((initialData as ServiceRecord)?.status || 'Agendado') : 'Cotizacion',
         serviceItems: [],
         photoReports: [],
@@ -273,7 +273,7 @@ export function ServiceForm({
   const watchedStatus = useWatch({ control, name: 'status' });
   const watchedServiceItems = useWatch({ control, name: "serviceItems" });
 
-  const { totalCost, totalSuppliesWorkshopCost, serviceProfit } = useMemo(() => {
+  const { totalCost, totalSuppliesCost, serviceProfit } = useMemo(() => {
     let calculatedTotalCost = 0;
     let workshopCost = 0;
     for (const item of watchedServiceItems) {
@@ -287,7 +287,7 @@ export function ServiceForm({
     }
     return {
       totalCost: calculatedTotalCost,
-      totalSuppliesCost: workshopCost,
+      totalSuppliesWorkshopCost: workshopCost,
       serviceProfit: calculatedTotalCost - workshopCost,
     };
   }, [watchedServiceItems]);
@@ -304,85 +304,95 @@ export function ServiceForm({
   }, []);
 
   useEffect(() => {
-    refreshCurrentUser();
-    const storedWorkshopInfo = typeof window !== "undefined" ? localStorage.getItem("workshopTicketInfo") : null;
-    if (storedWorkshopInfo) setWorkshopInfo(JSON.parse(storedWorkshopInfo));
-    window.addEventListener('focus', refreshCurrentUser);
-    return () => window.removeEventListener('focus', refreshCurrentUser);
-  }, [refreshCurrentUser]);
-
-  useEffect(() => {
     const data = mode === 'service' ? initialDataService : initialDataQuote;
-    const currentUser = freshUserRef.current;
     
-    // The stable ID is now determined here, ensuring all data is loaded first.
-    const stableServiceId = data?.id || `SRV-${generateUniqueId()}`;
-    
-    const parseDate = (date: any) => date && (typeof date.toDate === 'function' ? date.toDate() : (typeof date === 'string' ? parseISO(date) : date));
-    
-    let photoReportsData = (data as ServiceRecord)?.photoReports || [];
-    if (!isReadOnly && (!photoReportsData || photoReportsData.length === 0)) {
-        photoReportsData = [{ id: `rep_recepcion_${Date.now()}`, date: new Date().toISOString(), description: "Notas de la Recepción", photos: [] }];
+    // Set form values only after the component is mounted and data is available
+    if (data || !initialData) { // Check for either existing data or a new form
+        refreshCurrentUser();
+        const storedWorkshopInfo = typeof window !== "undefined" ? localStorage.getItem("workshopTicketInfo") : null;
+        if (storedWorkshopInfo) setWorkshopInfo(JSON.parse(storedWorkshopInfo));
+        
+        const parseDate = (date: any) => date && (typeof date.toDate === 'function' ? date.toDate() : (typeof date === 'string' ? parseISO(date) : date));
+        
+        let photoReportsData = (data as ServiceRecord)?.photoReports || [];
+        if (!isReadOnly && (!photoReportsData || photoReportsData.length === 0)) {
+            photoReportsData = [{ id: `rep_recepcion_${Date.now()}`, date: new Date().toISOString(), description: "Notas de la Recepción", photos: [] }];
+        }
+        
+        form.reset({
+            id: data?.id || `SRV-${generateUniqueId()}`,
+            publicId: (data as any)?.publicId, vehicleId: data?.vehicleId ? String(data.vehicleId) : undefined,
+            vehicleLicensePlateSearch: data?.vehicleIdentifier || "",
+            serviceDate: isValid(parseDate(data?.serviceDate)) ? parseDate(data.serviceDate) : undefined,
+            quoteDate: isValid(parseDate(data?.quoteDate)) ? parseDate(data.quoteDate) : undefined,
+            deliveryDateTime: isValid(parseDate((data as ServiceRecord)?.deliveryDateTime)) ? parseDate((data as ServiceRecord)?.deliveryDateTime) : undefined,
+            mileage: data?.mileage || undefined, description: (data as any).description || "",
+            notes: data?.notes || "", technicianId: (data as ServiceRecord)?.technicianId || (data as QuoteRecord)?.preparedByTechnicianId || undefined,
+            status: data?.status || (mode === 'quote' ? 'Cotizacion' : 'Agendado'),
+            serviceType: (data as ServiceRecord)?.serviceType || (data as QuoteRecord)?.serviceType || 'Servicio General',
+            vehicleConditions: (data as ServiceRecord)?.vehicleConditions || "", fuelLevel: (data as ServiceRecord)?.fuelLevel || undefined,
+            customerItems: (data as ServiceRecord)?.customerItems || '',
+            customerSignatureReception: (data as ServiceRecord)?.customerSignatureReception || undefined,
+            customerSignatureDelivery: (data as ServiceRecord)?.customerSignatureDelivery || undefined,
+            serviceItems: ('serviceItems' in (data || {}) && Array.isArray(data.serviceItems)) ? data.serviceItems.map(item => ({ ...item, price: item.price ?? 0, suppliesUsed: item.suppliesUsed || [] })) : [{ id: `item_${Date.now()}`, name: '', price: undefined, suppliesUsed: [] }],
+            safetyInspection: data?.safetyInspection || {}, paymentMethod: (data as ServiceRecord)?.paymentMethod || 'Efectivo',
+            cardFolio: (data as ServiceRecord)?.cardFolio || '', transferFolio: (initialData as ServiceRecord)?.transferFolio || '',
+            nextServiceInfo: (data as ServiceRecord)?.nextServiceInfo, photoReports: photoReportsData,
+            serviceAdvisorId: data?.serviceAdvisorId || freshUserRef.current?.id || '',
+            serviceAdvisorName: data?.serviceAdvisorName || freshUserRef.current?.name || '',
+            serviceAdvisorSignatureDataUrl: data?.serviceAdvisorSignatureDataUrl || freshUserRef.current?.signatureDataUrl || '',
+        });
+        
+        if (!data) {
+            form.setValue('serviceDate', setHours(setMinutes(new Date(), 30), 8));
+            if (mode === 'quote') form.setValue('quoteDate', new Date());
+        }
     }
-    
-    form.reset({
-        id: stableServiceId, 
-        publicId: (data as any)?.publicId, vehicleId: data?.vehicleId ? String(data.vehicleId) : undefined,
-        vehicleLicensePlateSearch: data?.vehicleIdentifier || "",
-        serviceDate: isValid(parseDate(data?.serviceDate)) ? parseDate(data.serviceDate) : undefined,
-        quoteDate: isValid(parseDate(data?.quoteDate)) ? parseDate(data.quoteDate) : undefined,
-        deliveryDateTime: isValid(parseDate((data as ServiceRecord)?.deliveryDateTime)) ? parseDate((data as ServiceRecord)?.deliveryDateTime) : undefined,
-        mileage: data?.mileage || undefined, description: (data as any).description || "",
-        notes: data?.notes || "", technicianId: (data as ServiceRecord)?.technicianId || (data as QuoteRecord)?.preparedByTechnicianId || undefined,
-        status: data?.status || (mode === 'quote' ? 'Cotizacion' : 'Agendado'),
-        serviceType: (data as ServiceRecord)?.serviceType || (data as QuoteRecord)?.serviceType || 'Servicio General',
-        vehicleConditions: (data as ServiceRecord)?.vehicleConditions || "", fuelLevel: (data as ServiceRecord)?.fuelLevel || undefined,
-        customerItems: (data as ServiceRecord)?.customerItems || '',
-        customerSignatureReception: (data as ServiceRecord)?.customerSignatureReception || undefined,
-        customerSignatureDelivery: (data as ServiceRecord)?.customerSignatureDelivery || undefined,
-        serviceItems: ('serviceItems' in (data || {}) && Array.isArray(data.serviceItems)) ? data.serviceItems.map(item => ({ ...item, price: item.price ?? 0, suppliesUsed: item.suppliesUsed || [] })) : [{ id: `item_${Date.now()}`, name: '', price: undefined, suppliesUsed: [] }],
-        safetyInspection: data?.safetyInspection || {}, paymentMethod: (data as ServiceRecord)?.paymentMethod || 'Efectivo',
-        cardFolio: (data as ServiceRecord)?.cardFolio || '', transferFolio: (initialData as ServiceRecord)?.transferFolio || '',
-        nextServiceInfo: (data as ServiceRecord)?.nextServiceInfo, photoReports: photoReportsData,
-        serviceAdvisorId: data?.serviceAdvisorId || currentUser?.id || '',
-        serviceAdvisorName: data?.serviceAdvisorName || currentUser?.name || '',
-        serviceAdvisorSignatureDataUrl: data?.serviceAdvisorSignatureDataUrl || currentUser?.signatureDataUrl || '',
-    });
-    
-    if (!data) {
-        form.setValue('serviceDate', setHours(setMinutes(new Date(), 30), 8));
-        if (mode === 'quote') form.setValue('quoteDate', new Date());
-    }
-
-  }, [initialDataService, initialDataQuote, mode, form, isReadOnly]);
+  }, [initialDataService, initialDataQuote, mode, form, isReadOnly, refreshCurrentUser]);
+  
+    const handlePhotoUploadComplete = useCallback(
+    (reportIndex: number, url: string) => {
+      const currentPhotos =
+        getValues(`photoReports.${reportIndex}.photos`) || [];
+      setValue(
+        `photoReports.${reportIndex}.photos`,
+        [...currentPhotos, url],
+        { shouldDirty: true }
+      );
+    },
+    [getValues, setValue]
+  );
   
   const handleChecklistPhotoUpload = useCallback(
-  (itemName: string, url: string) => {
-    const path = `safetyInspection.${itemName}` as const;
-    const current = getValues(path) || { status: "na", photos: [] };
-    setValue(
-      path,
-      { ...current, photos: [...current.photos, url] },
-      { shouldDirty: true }
-    );
-  },
-  [getValues, setValue]
-);
-
-const handlePhotoUploadComplete = useCallback(
-  (reportIndex: number, url: string) => {
-    const currentPhotos =
-      getValues(`photoReports.${reportIndex}.photos`) || [];
-    setValue(
-      `photoReports.${reportIndex}.photos`,
-      [...currentPhotos, url],
-      { shouldDirty: true }
-    );
-  },
-  [getValues, setValue]
-);
+    (itemName: string, urls: string[]) => {
+        const path = `safetyInspection.${itemName}` as const;
+        const current = getValues(path) || { status: "na", photos: [] };
+        // Combine existing photos with newly uploaded ones
+        const newPhotos = [...current.photos, ...urls];
+        setValue(
+            path,
+            { ...current, photos: newPhotos },
+            { shouldDirty: true }
+        );
+    },
+    [getValues, setValue]
+  );
 
   const handleViewImage = (url: string) => { setViewingImageUrl(url); setIsImageViewerOpen(true); };
+  
+  const handleDownloadImage = () => {
+    if (!viewingImageUrl) return;
+    try {
+      window.open(viewingImageUrl, '_blank')?.focus();
+    } catch (err) {
+      console.error("Error opening image:", err);
+      toast({
+        title: "Error al Abrir",
+        description: "No se pudo abrir la imagen en una nueva pestaña.",
+        variant: "destructive"
+      });
+    }
+  };
 
   const handleSaveNewVehicle = useCallback(async (vehicleData: VehicleFormValues) => {
     const newVehicle: Vehicle = {
@@ -519,20 +529,6 @@ const handlePhotoUploadComplete = useCallback(
     setIsCancelAlertOpen(false);
     onClose();
   }, [onDelete, onCancelService, mode, initialDataQuote, initialDataService, cancellationReason, toast, onClose]);
-  
-  const handleDownloadImage = () => {
-    if (!viewingImageUrl) return;
-    try {
-      window.open(viewingImageUrl, '_blank')?.focus();
-    } catch (err) {
-      console.error("Error opening image:", err);
-      toast({
-        title: "Error al Abrir",
-        description: "No se pudo abrir la imagen en una nueva pestaña.",
-        variant: "destructive"
-      });
-    }
-  };
 
   return (
     <>
