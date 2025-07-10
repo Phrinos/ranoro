@@ -152,6 +152,9 @@ function toast({ ...props }: Toast) {
       toast: { ...props, id },
     })
   const dismiss = () => dispatch({ type: "DISMISS_TOAST", toastId: id })
+  
+  // Set a default duration for auto-dismissal
+  const duration = props.duration || 3000;
 
   dispatch({
     type: "ADD_TOAST",
@@ -164,6 +167,12 @@ function toast({ ...props }: Toast) {
       },
     },
   })
+  
+  // Auto-dismiss logic
+  setTimeout(() => {
+    dismiss();
+  }, duration);
+
 
   return {
     id: id,

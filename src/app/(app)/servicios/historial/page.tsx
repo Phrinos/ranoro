@@ -78,11 +78,11 @@ const ServiceList = React.memo(({ services, vehicles, onEdit, onView, onComplete
                   <div className="p-4 flex flex-col justify-center items-center text-center w-full md:w-48 flex-shrink-0">
                     <p className="text-xs text-muted-foreground">Costo Total</p>
                     <p className="font-bold text-2xl text-black">{formatCurrency(service.totalCost)}</p>
-                    {service.status === 'Completado' && (
-                        <Badge variant="success" className="mt-1">Servicio Completado</Badge>
-                    )}
                   </div>
                   <div className="p-4 flex flex-col justify-center items-center text-center border-t md:border-t-0 md:border-l w-full md:w-56 flex-shrink-0 space-y-2">
+                    {service.status === 'Completado' && (
+                        <Badge variant="success">Servicio Completado</Badge>
+                    )}
                     <p className="text-xs text-muted-foreground">Asesor: {service.serviceAdvisorName || 'N/A'}</p>
                     <div className="flex justify-center items-center gap-1">
                         <Button variant="ghost" size="icon" onClick={() => onView(service)} title="Vista Previa"><Eye className="h-4 w-4" /></Button>
@@ -303,11 +303,25 @@ function HistorialServiciosPageComponent() {
               <div className="relative flex-1 min-w-[200px] sm:min-w-[300px]"><Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" /><Input type="search" placeholder="Buscar por folio o vehículo..." className="w-full rounded-lg bg-card pl-8" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} /></div>
               <Popover><PopoverTrigger asChild><Button variant={"outline"} className={cn("min-w-[240px] justify-start text-left font-normal flex-1 sm:flex-initial bg-card", !dateRange && "text-muted-foreground")}><CalendarDateIcon className="mr-2 h-4 w-4" />{dateRange?.from ? (dateRange.to ? (`${format(dateRange.from, "LLL dd, y")} - ${format(dateRange.to, "LLL dd, y")}`) : format(dateRange.from, "LLL dd, y")) : (<span>Seleccione rango</span>)}</Button></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar initialFocus mode="range" defaultMonth={dateRange?.from} selected={dateRange} onSelect={setDateRange} numberOfMonths={2} locale={es} /></PopoverContent></Popover>
               <DropdownMenu>
-                <DropdownMenuTrigger asChild><Button variant="outline" className="min-w-[150px] flex-1 sm:flex-initial bg-card"><ListFilter className="mr-2 h-4 w-4" />Ordenar</Button></DropdownMenuTrigger>
-                <DropdownMenuContent align="end"><DropdownMenuLabel>Ordenar por</DropdownMenuLabel>
-                    <DropdownMenuRadioGroup value={sortOption} onValueChange={(value) => setSortOption(value as ServiceSortOption)}>
-                      <DropdownMenuRadioItem value="serviceDate_desc">Fecha (Más Reciente)</DropdownMenuRadioItem>
-                    </DropdownMenuRadioGroup>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="min-w-[150px] flex-1 sm:flex-initial bg-card"
+                  >
+                    <ListFilter className="mr-2 h-4 w-4" />
+                    Ordenar
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuLabel>Ordenar por</DropdownMenuLabel>
+                  <DropdownMenuRadioGroup
+                    value={sortOption}
+                    onValueChange={(value) => setSortOption(value as ServiceSortOption)}
+                  >
+                    <DropdownMenuRadioItem value="serviceDate_desc">
+                      Fecha (Más Reciente)
+                    </DropdownMenuRadioItem>
+                  </DropdownMenuRadioGroup>
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
@@ -352,6 +366,7 @@ function HistorialServiciosPageComponent() {
           open={isTicketDialogOpen}
           onOpenChange={setIsTicketDialogOpen}
           title="Comprobante de Servicio"
+          onDialogClose={() => setTicketData(null)}
           footerActions={
             <div className="flex gap-2">
                 <Button variant="outline" onClick={handleCopyTicket}><Copy className="mr-2 h-4 w-4"/> Copiar</Button>
@@ -374,4 +389,3 @@ export default function HistorialServiciosPageWrapper() {
     )
 }
     
-
