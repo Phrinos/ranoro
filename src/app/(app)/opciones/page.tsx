@@ -76,10 +76,11 @@ function PerfilPageContent() {
                 const user: User = JSON.parse(authUserString);
                 setCurrentUser(user);
                 form.reset({
-                  name: user.name,
-                  email: user.email,
-                  phone: user.phone || '', // Ensure undefined is handled
+                  name: user.name || '',
+                  email: user.email || '',
+                  phone: user.phone || '',
                   signatureDataUrl: user.signatureDataUrl || '',
+                  currentPassword: '', newPassword: '', confirmNewPassword: '',
                 });
             } else { router.push('/login'); }
         } else { router.push('/login'); }
