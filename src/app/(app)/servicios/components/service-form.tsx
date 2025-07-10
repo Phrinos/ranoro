@@ -14,7 +14,7 @@ import React, { useEffect, useState, useMemo, useCallback, useRef } from "react"
 import { useToast } from "@/hooks/use-toast";
 import { VehicleDialog } from "../../vehiculos/components/vehicle-dialog";
 import type { VehicleFormValues } from "../../vehiculos/components/vehicle-form";
-import { placeholderVehicles as defaultPlaceholderVehicles, placeholderInventory, persistToFirestore, AUTH_USER_LOCALSTORAGE_KEY, placeholderServiceTypes } from "@/lib/placeholder-data";
+import { placeholderVehicles as defaultPlaceholderVehicles, placeholderInventory, persistToFirestore, AUTH_USER_LOCALSTORAGE_KEY, placeholderServiceTypes, placeholderServiceRecords } from "@/lib/placeholder-data";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/label";
 import { suggestQuote } from '@/ai/flows/quote-suggestion-flow';
@@ -27,11 +27,14 @@ import { SafetyChecklist } from './SafetyChecklist';
 import { UnifiedPreviewDialog } from '@/components/shared/unified-preview-dialog';
 import { VehicleSelectionCard } from './VehicleSelectionCard';
 import { ReceptionAndDelivery } from './ReceptionAndDelivery';
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription } from '../ui/dialog';
 import Image from "next/image";
 import { Download } from "lucide-react";
 import { ServiceDetailsCard } from "./ServiceDetailsCard"; // Import the new component
 import { Textarea } from "@/components/ui/textarea";
+import { db } from '@/lib/firebaseClient.js';
+import { doc, getDoc } from 'firebase/firestore';
+
 
 const supplySchema = z.object({
   supplyId: z.string().min(1, "Seleccione un insumo"),
@@ -294,8 +297,45 @@ export function ServiceForm({
         photoReports: photoReportsData,
         serviceItems: serviceItemsData,
     });
+
+    // --- Signature Sync Logic ---
+    const syncSignature = async () => {
+      if (data?.id && data.publicId && db) {
+        try {
+          const publicDocRef = doc(db, 'publicServices', data.publicId);
+          const publicDocSnap = await getDoc(publicDocRef);
+
+          if (publicDocSnap.exists()) {
+            const publicData = publicDocSnap.data() as ServiceRecord;
+            let formUpdated = false;
+            
+            if (publicData.customerSignatureReception && !getValues('customerSignatureReception')) {
+              setValue('customerSignatureReception', publicData.customerSignatureReception, { shouldDirty: true });
+              formUpdated = true;
+            }
+            if (publicData.customerSignatureDelivery && !getValues('customerSignatureDelivery')) {
+              setValue('customerSignatureDelivery', publicData.customerSignatureDelivery, { shouldDirty: true });
+              formUpdated = true;
+            }
+
+            if(formUpdated) {
+                // Also update the master data array and persist
+                const serviceIndex = placeholderServiceRecords.findIndex(s => s.id === data.id);
+                if (serviceIndex > -1) {
+                    const updatedRecord = { ...placeholderServiceRecords[serviceIndex], ...getValues() };
+                    placeholderServiceRecords[serviceIndex] = updatedRecord;
+                    await persistToFirestore(['serviceRecords']);
+                }
+            }
+          }
+        } catch (e) {
+          console.error("Failed to sync signatures from public doc:", e);
+        }
+      }
+    };
+    syncSignature();
     
-  }, [initialData, mode, form, isReadOnly, refreshCurrentUser, serviceTypes]);
+  }, [initialData, mode, form, isReadOnly, refreshCurrentUser, serviceTypes, getValues, setValue]);
   
   const handlePhotoUploadComplete = useCallback(
     (reportIndex: number, url: string) => {
