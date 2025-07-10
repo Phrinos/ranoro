@@ -37,7 +37,7 @@ import {
     persistToFirestore, 
     AUTH_USER_LOCALSTORAGE_KEY,
 } from '@/lib/placeholder-data';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter } from "@/components/ui/alert-dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/label";
 import { suggestQuote } from '@/ai/flows/quote-suggestion-flow';
 import { enhanceText } from '@/ai/flows/text-enhancement-flow';
@@ -343,21 +343,22 @@ export function ServiceForm({
   }, [initialDataService, initialDataQuote, mode, form, isReadOnly, refreshCurrentUser]);
   
   const handlePhotoUploadComplete = useCallback(
-    (reportIndex: number, url: string) => {
+    (reportIndex: number, urls: string[]) => {
       const currentPhotos = getValues(`photoReports.${reportIndex}.photos`) || [];
-      setValue(`photoReports.${reportIndex}.photos`, [...currentPhotos, url], { shouldDirty: true });
+      setValue( `photoReports.${reportIndex}.photos`, [...currentPhotos, ...urls], { shouldDirty: true });
     },
     [getValues, setValue]
   );
   
   const handleChecklistPhotoUpload = useCallback(
-    (itemName: string, url: string) => {
-      const path = `safetyInspection.${itemName}` as const;
-      const current = getValues(path) || { status: "na", photos: [] };
-      setValue(path, { ...current, photos: [...current.photos, url] }, { shouldDirty: true });
+    (itemName: string, urls: string[]) => {
+        const path = `safetyInspection.${itemName}` as const;
+        const current = getValues(path) || { status: "na", photos: [] };
+        setValue( path, { ...current, photos: [...(current.photos || []), ...urls] }, { shouldDirty: true });
     },
     [getValues, setValue]
   );
+
 
   const handleViewImage = (url: string) => { setViewingImageUrl(url); setIsImageViewerOpen(true); };
   
