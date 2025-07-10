@@ -12,7 +12,7 @@ import { TableToolbar } from '@/components/shared/table-toolbar';
 import type { ServiceRecord, Vehicle, Technician, InventoryItem, QuoteRecord, User } from "@/types";
 import { useToast } from "@/hooks/use-toast";
 import { useTableManager } from '@/hooks/useTableManager';
-import { isToday, parseISO, isValid, isAfter } from "date-fns";
+import { isSameDay, parseISO, isValid, isAfter } from "date-fns";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useSearchParams } from "next/navigation";
 import { operationsService } from '@/lib/services/operations.service';
@@ -67,6 +67,7 @@ function HistorialServiciosPageComponent() {
   }, []);
   
   const activeServices = useMemo(() => {
+    const today = new Date();
     return allServices
         .filter(s => {
             if (s.status === 'En Taller') {
@@ -74,12 +75,12 @@ function HistorialServiciosPageComponent() {
             }
             if (s.status === 'Entregado') {
                 const deliveryDate = s.deliveryDateTime ? parseISO(s.deliveryDateTime) : null;
-                return deliveryDate && isValid(deliveryDate) && isToday(deliveryDate);
+                return deliveryDate && isValid(deliveryDate) && isSameDay(deliveryDate, today);
             }
             return false;
         })
         .sort((a,b) => parseISO(a.serviceDate).getTime() - parseISO(b.serviceDate).getTime());
-  }, [allServices]);
+  }, [allServices, version]);
 
   const {
     filteredData: historicalServices,
@@ -165,6 +166,12 @@ function HistorialServiciosPageComponent() {
                         onConfirm={() => handleConfirmAppointment(service)} 
                         onView={() => handleShowPreview(service)}
                         onComplete={() => handleOpenCompleteDialog(service)}
+                        onCancel={() => {
+                            if(service.id) {
+                                const reason = prompt("Motivo de la cancelación:");
+                                if (reason) handleCancelService(service.id, reason);
+                            }
+                        }}
                     />
                 ))
               ) : (
@@ -192,6 +199,12 @@ function HistorialServiciosPageComponent() {
                         onConfirm={() => handleConfirmAppointment(service)} 
                         onView={() => handleShowPreview(service)}
                         onComplete={() => handleOpenCompleteDialog(service)}
+                        onCancel={() => {
+                            if(service.id) {
+                                const reason = prompt("Motivo de la cancelación:");
+                                if (reason) handleCancelService(service.id, reason);
+                            }
+                        }}
                     />
                 ))
               ) : (
