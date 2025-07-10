@@ -1,7 +1,3 @@
-// UPDATED ServiceForm.tsx – versión completa con la corrección de carga
-// de fotos (PhotoUploader ahora entrega string[] y este form lo espera)
-// Además se cambia la propiedad de dataToSave a totalSuppliesWorkshopCost
-// para que compile.
 
 "use client";
 
@@ -96,7 +92,7 @@ import { ReceptionAndDelivery } from "./ReceptionAndDelivery";
 import { SignatureDialog } from "./signature-dialog";
 import { UnifiedPreviewDialog } from '@/components/shared/unified-preview-dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import Image from "next/image";
@@ -165,6 +161,7 @@ const serviceFormSchemaBase = z.object({
   serviceAdvisorId: z.string().optional(),
   serviceAdvisorName: z.string().optional(),
   serviceAdvisorSignatureDataUrl: z.string().optional(),
+  safetyInspection: z.any().optional(),
 }).refine(
   (d) => (d.status && d.status !== "Cotizacion" ? !!d.serviceDate : true),
   {
@@ -235,6 +232,8 @@ export function ServiceForm(props: {
   const [isSignatureDialogOpen, setIsSignatureDialogOpen] = useState(false);
   const [signatureFieldToSet, setSignatureFieldToSet] = useState<"reception" | "delivery" | "technician" | null>(null);
   const [isVehicleDialogOpen, setIsVehicleDialogOpen] = useState(false);
+  const [stableServiceId, setStableServiceId] = useState<string>('');
+
 
   const form = useForm<ServiceFormValues>({
     resolver: zodResolver(serviceFormSchemaBase),
@@ -249,35 +248,50 @@ export function ServiceForm(props: {
   const { control, getValues, setValue, reset, formState } = form;
 
   useEffect(() => {
-    const dataToLoad = mode === 'service' ? initialDataService : initialDataQuote;
-    const initialValues = {
-      id: dataToLoad?.id,
-      publicId: dataToLoad?.publicId,
-      vehicleId: dataToLoad?.vehicleId,
-      vehicleLicensePlateSearch: dataToLoad?.vehicleIdentifier || '',
-      serviceDate: dataToLoad?.serviceDate ? parseISO(dataToLoad.serviceDate) : new Date(),
-      quoteDate: dataToLoad?.quoteDate ? parseISO(dataToLoad.quoteDate) : (dataToLoad?.status === 'Cotizacion' ? new Date() : undefined),
-      mileage: dataToLoad?.mileage,
-      notes: dataToLoad?.notes,
-      technicianId: dataToLoad?.technicianId,
-      serviceItems: dataToLoad?.serviceItems || [],
-      status: dataToLoad?.status || (mode === 'service' ? 'Agendado' : 'Cotizacion'),
-      serviceType: dataToLoad?.serviceType || 'Servicio General',
-      deliveryDateTime: dataToLoad?.deliveryDateTime ? parseISO(dataToLoad.deliveryDateTime) : undefined,
-      vehicleConditions: dataToLoad?.vehicleConditions,
-      fuelLevel: dataToLoad?.fuelLevel,
-      customerItems: dataToLoad?.customerItems,
-      customerSignatureReception: dataToLoad?.customerSignatureReception,
-      customerSignatureDelivery: dataToLoad?.customerSignatureDelivery,
-      paymentMethod: dataToLoad?.paymentMethod,
-      cardFolio: dataToLoad?.cardFolio,
-      transferFolio: dataToLoad?.transferFolio,
-      photoReports: dataToLoad?.photoReports || [],
-      serviceAdvisorId: dataToLoad?.serviceAdvisorId,
-      serviceAdvisorName: dataToLoad?.serviceAdvisorName,
-      serviceAdvisorSignatureDataUrl: dataToLoad?.serviceAdvisorSignatureDataUrl,
-    };
-    reset(initialValues);
+      const dataToLoad = mode === 'service' ? initialDataService : initialDataQuote;
+      if (dataToLoad) {
+          const initialValues = {
+            id: dataToLoad.id || `doc_${Date.now().toString(36)}`,
+            publicId: dataToLoad.publicId,
+            vehicleId: dataToLoad.vehicleId,
+            vehicleLicensePlateSearch: dataToLoad.vehicleIdentifier || '',
+            serviceDate: dataToLoad.serviceDate ? parseISO(dataToLoad.serviceDate) : new Date(),
+            quoteDate: dataToLoad.quoteDate ? parseISO(dataToLoad.quoteDate) : (dataToLoad.status === 'Cotizacion' ? new Date() : undefined),
+            mileage: dataToLoad.mileage,
+            notes: dataToLoad.notes,
+            technicianId: dataToLoad.technicianId,
+            serviceItems: dataToLoad.serviceItems || [],
+            status: dataToLoad.status || (mode === 'service' ? 'Agendado' : 'Cotizacion'),
+            serviceType: dataToLoad.serviceType || 'Servicio General',
+            deliveryDateTime: dataToLoad.deliveryDateTime ? parseISO(dataToLoad.deliveryDateTime) : undefined,
+            vehicleConditions: dataToLoad.vehicleConditions,
+            fuelLevel: dataToLoad.fuelLevel,
+            customerItems: dataToLoad.customerItems,
+            customerSignatureReception: dataToLoad.customerSignatureReception,
+            customerSignatureDelivery: dataToLoad.customerSignatureDelivery,
+            paymentMethod: dataToLoad.paymentMethod,
+            cardFolio: dataToLoad.cardFolio,
+            transferFolio: dataToLoad.transferFolio,
+            photoReports: dataToLoad.photoReports || [],
+            serviceAdvisorId: dataToLoad.serviceAdvisorId,
+            serviceAdvisorName: dataToLoad.serviceAdvisorName,
+            serviceAdvisorSignatureDataUrl: dataToLoad.serviceAdvisorSignatureDataUrl,
+            safetyInspection: dataToLoad.safetyInspection || {},
+          };
+          reset(initialValues);
+          setStableServiceId(initialValues.id);
+      } else {
+        const newId = `doc_${Date.now().toString(36)}`;
+        reset({
+          id: newId,
+          status: mode === "service" ? "Agendado" : "Cotizacion",
+          serviceItems: [],
+          photoReports: [],
+          serviceDate: new Date(),
+          quoteDate: mode === 'quote' ? new Date() : undefined
+        });
+        setStableServiceId(newId);
+      }
   }, [initialDataService, initialDataQuote, mode, reset]);
 
 
@@ -287,7 +301,6 @@ export function ServiceForm(props: {
     useFieldArray({ control, name: "photoReports" });
 
   const watchedStatus = useWatch({ control, name: "status" });
-  const watchedId = useWatch({ control, name: "id" });
   const watchedServiceItems = useWatch({ control, name: "serviceItems" });
 
   const { totalCost, totalSuppliesWorkshopCost, serviceProfit } = useMemo(() => {
@@ -301,11 +314,11 @@ export function ServiceForm(props: {
     });
     return { totalCost: total, totalSuppliesWorkshopCost: cost, serviceProfit: total - cost };
   }, [watchedServiceItems]);
-
+  
   const handlePhotoUploadComplete = useCallback(
-    (reportIndex: number, urls: string[]) => {
-      const current = getValues(`photoReports.${reportIndex}.photos`) || [];
-      setValue(`photoReports.${reportIndex}.photos`, [...current, ...urls], {
+    (reportIndex: number, newUrls: string[]) => {
+      const currentPhotos = getValues(`photoReports.${reportIndex}.photos`) || [];
+      setValue(`photoReports.${reportIndex}.photos`, [...currentPhotos, ...newUrls], {
         shouldDirty: true,
       });
     },
@@ -328,6 +341,7 @@ export function ServiceForm(props: {
     window.open(viewingImageUrl, '_blank')?.focus();
   };
 
+
   const handleViewImage = (url: string) => {
     setViewingImageUrl(url);
     setIsImageViewerOpen(true);
@@ -340,14 +354,14 @@ export function ServiceForm(props: {
     }
     const dataToSave: ServiceRecord = {
       ...(values as ServiceRecord),
-      id: values.id || `doc_${Date.now().toString(36)}`,
+      id: stableServiceId,
       totalCost,
       totalSuppliesCost: totalSuppliesWorkshopCost,
       serviceProfit,
     };
     
     await onSubmit(dataToSave);
-  }, [isReadOnly, onClose, onSubmit, totalCost, totalSuppliesWorkshopCost, serviceProfit]);
+  }, [isReadOnly, onClose, onSubmit, totalCost, totalSuppliesWorkshopCost, serviceProfit, stableServiceId]);
   
   const handleEnhanceText = useCallback(async (fieldName: 'notes' | 'vehicleConditions' | 'customerItems' | 'safetyInspection.inspectionNotes' | `photoReports.${number}.description`) => {
     const currentValue = getValues(fieldName);
@@ -426,13 +440,49 @@ export function ServiceForm(props: {
             <div className="border-b border-border sticky top-0 bg-background z-10 -mx-6 px-6 mb-6">
                 <TabsList className="bg-transparent p-0 w-max -mb-px">
                   <TabsTrigger value="servicio" className="text-sm sm:text-base data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none flex items-center gap-2 py-3 px-3 sm:px-4"><Wrench className="h-4 w-4 shrink-0"/> Detalles</TabsTrigger>
-                  {showReceptionTab && (<TabsTrigger value="recepcion" className="text-sm sm:text-base data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none flex items-center gap-2 py-3 px-3 sm:px-4"><FileCheck className="h-4 w-4 shrink-0"/> Rec. y Ent.</TabsTrigger>)}
-                  {showReportTab && (<TabsTrigger value="reporte" className="text-sm sm:text-base data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none flex items-center gap-2 py-3 px-3 sm:px-4"><Camera className="h-4 w-4 shrink-0"/> Fotos</TabsTrigger>)}
-                  {showReceptionTab && (<TabsTrigger value="seguridad" className="text-sm sm:text-base data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none flex items-center gap-2 py-3 px-3 sm:px-4"><ShieldCheck className="h-4 w-4 shrink-0"/> Revisión</TabsTrigger>)}
+                  <TabsContent value="recepcion" className="mt-6 space-y-6">
+                    <ReceptionAndDelivery isReadOnly={isReadOnly} onCustomerSignatureClick={(type) => handleOpenSignatureDialog(type)} isEnhancingText={isEnhancingText} handleEnhanceText={handleEnhanceText}/>
+                  </TabsContent>
+                  <TabsContent value="reporte" className="mt-6 space-y-6">
+                    <Card>
+                        <CardHeader><CardTitle>Reporte Fotográfico</CardTitle><CardDescription>Adjunte fotos del estado del vehículo o del progreso del trabajo.</CardDescription></CardHeader>
+                        <CardContent className="space-y-4">
+                            {photoReportFields.map((field, index) => (
+                                <Card key={field.id} className="p-4 bg-muted/30">
+                                    <div className="flex justify-between items-center mb-2">
+                                        <h4 className="font-semibold">Reporte #{index + 1}</h4>
+                                        {!isReadOnly && (<Button type="button" variant="ghost" size="icon" onClick={() => removePhotoReport(index)}><Trash2 className="h-4 w-4 text-destructive"/></Button>)}
+                                    </div>
+                                    <FormField control={form.control} name={`photoReports.${index}.description`} render={({ field: descField }) => (
+                                        <FormItem>
+                                            <FormLabel className="flex justify-between items-center w-full"><span>Descripción</span>{!isReadOnly && (<Button type="button" size="sm" variant="ghost" onClick={() => handleEnhanceText(`photoReports.${index}.description`)} disabled={isEnhancingText === `photoReports.${index}.description` || !descField.value}><BrainCircuit className="h-4 w-4" /><span className="ml-2 hidden sm:inline">Mejorar</span></Button>)}</FormLabel>
+                                            <FormControl><Textarea placeholder="Describa el progreso o el problema..." {...descField} disabled={isReadOnly} /></FormControl>
+                                        </FormItem>
+                                    )}/>
+                                     <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mt-2">
+                                        {(getValues(`photoReports.${index}.photos`) || []).map((photo, pIndex) => (
+                                          <div key={pIndex} className="relative aspect-video group">
+                                            <Image src={photo} alt={`Foto ${pIndex+1}`} layout="fill" objectFit="cover" className="rounded-md"/>
+                                            <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                                <Button type="button" variant="secondary" size="icon" onClick={() => handleViewImage(photo)}><Eye className="h-5 w-5"/></Button>
+                                            </div>
+                                          </div>
+                                        ))}
+                                    </div>
+                                    <PhotoUploader reportIndex={index} serviceId={stableServiceId} onUploadComplete={handlePhotoUploadComplete} photosLength={field.photos.length} />
+                                </Card>
+                            ))}
+                            {!isReadOnly && (<Button type="button" variant="outline" size="sm" onClick={() => appendPhotoReport({ id: `report_${Date.now()}`, date: new Date().toISOString(), photos: [] })}><PlusCircle className="mr-2 h-4 w-4"/>Añadir Reporte Fotográfico</Button>)}
+                        </CardContent>
+                    </Card>
+                  </TabsContent>
+                  <TabsContent value="seguridad" className="mt-6 space-y-6">
+                    <SafetyChecklist control={control} isReadOnly={isReadOnly} onSignatureClick={() => handleOpenSignatureDialog("technician")} isEnhancingText={isEnhancingText} handleEnhanceText={handleEnhanceText} serviceId={stableServiceId} onPhotoUploaded={handleChecklistPhotoUpload} onViewImage={handleViewImage}/>
+                  </TabsContent>
                 </TabsList>
             </div>
             
-            <TabsContent value="servicio" className="space-y-6">
+            <TabsContent value="servicio" className="mt-0 space-y-6">
                 <VehicleSelectionCard localVehicles={localVehicles} isReadOnly={isReadOnly} onVehicleSelected={(v) => {}} onOpenNewVehicleDialog={handleOpenNewVehicleDialog} />
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <FormField control={form.control} name="serviceType" render={({ field }) => ( <FormItem><FormLabel>Tipo de Servicio</FormLabel><Select onValueChange={field.onChange} value={field.value} disabled={isReadOnly}><FormControl><SelectTrigger><SelectValue placeholder="Seleccione un tipo..." /></SelectTrigger></FormControl><SelectContent><SelectItem value="Servicio General">Servicio General</SelectItem><SelectItem value="Cambio de Aceite">Cambio de Aceite</SelectItem><SelectItem value="Pintura">Pintura</SelectItem></SelectContent></Select><FormMessage /></FormItem> )}/>
@@ -443,46 +493,6 @@ export function ServiceForm(props: {
                 ))}
                 {!isReadOnly && (<Button type="button" variant="outline" size="sm" onClick={() => appendServiceItem({ id: `item_${Date.now()}`, name: '', price: 0, suppliesUsed: []})}><PlusCircle className="mr-2 h-4 w-4"/> Añadir Trabajo/Servicio</Button>)}
                  <FormField control={form.control} name="notes" render={({ field }) => ( <FormItem><FormLabel className="flex justify-between items-center w-full"><span>Notas Adicionales del Servicio</span>{!isReadOnly && (<Button type="button" size="sm" variant="ghost" onClick={() => handleEnhanceText('notes')} disabled={isEnhancingText === 'notes' || !field.value}>{isEnhancingText === 'notes' ? <Loader2 className="animate-spin" /> : <BrainCircuit className="h-4 w-4" />}<span className="ml-2 hidden sm:inline">Mejorar</span></Button>)}</FormLabel><FormControl><Textarea placeholder="Notas internas, detalles importantes para el técnico..." {...field} disabled={isReadOnly} /></FormControl></FormItem> )}/>
-            </TabsContent>
-
-            <TabsContent value="recepcion"><ReceptionAndDelivery isReadOnly={isReadOnly} onCustomerSignatureClick={(type) => handleOpenSignatureDialog(type)} isEnhancingText={isEnhancingText} handleEnhanceText={handleEnhanceText}/></TabsContent>
-            
-            <TabsContent value="reporte">
-                <Card>
-                    <CardHeader><CardTitle>Reporte Fotográfico</CardTitle><CardDescription>Adjunte fotos del estado del vehículo o del progreso del trabajo.</CardDescription></CardHeader>
-                    <CardContent className="space-y-4">
-                        {photoReportFields.map((field, index) => (
-                            <Card key={field.id} className="p-4 bg-muted/30">
-                                <div className="flex justify-between items-center mb-2">
-                                    <h4 className="font-semibold">Reporte #{index + 1}</h4>
-                                    {!isReadOnly && (<Button type="button" variant="ghost" size="icon" onClick={() => removePhotoReport(index)}><Trash2 className="h-4 w-4 text-destructive"/></Button>)}
-                                </div>
-                                <FormField control={form.control} name={`photoReports.${index}.description`} render={({ field: descField }) => (
-                                    <FormItem>
-                                        <FormLabel className="flex justify-between items-center w-full"><span>Descripción</span>{!isReadOnly && (<Button type="button" size="sm" variant="ghost" onClick={() => handleEnhanceText(`photoReports.${index}.description`)} disabled={isEnhancingText === `photoReports.${index}.description` || !descField.value}><BrainCircuit className="h-4 w-4" /><span className="ml-2 hidden sm:inline">Mejorar</span></Button>)}</FormLabel>
-                                        <FormControl><Textarea placeholder="Describa el progreso o el problema..." {...descField} disabled={isReadOnly} /></FormControl>
-                                    </FormItem>
-                                )}/>
-                                 <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mt-2">
-                                    {(getValues(`photoReports.${index}.photos`) || []).map((photo, pIndex) => (
-                                      <div key={pIndex} className="relative aspect-video group">
-                                        <Image src={photo} alt={`Foto ${pIndex+1}`} layout="fill" objectFit="cover" className="rounded-md"/>
-                                        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                            <Button type="button" variant="secondary" size="icon" onClick={() => handleViewImage(photo)}><Eye className="h-5 w-5"/></Button>
-                                        </div>
-                                      </div>
-                                    ))}
-                                </div>
-                                <PhotoUploader reportIndex={index} serviceId={watchedId || ""} onUploadComplete={handlePhotoUploadComplete} photosLength={field.photos.length} />
-                            </Card>
-                        ))}
-                         {!isReadOnly && (<Button type="button" variant="outline" size="sm" onClick={() => appendPhotoReport({ id: `report_${Date.now()}`, date: new Date().toISOString(), photos: [] })}><PlusCircle className="mr-2 h-4 w-4"/>Añadir Reporte Fotográfico</Button>)}
-                    </CardContent>
-                </Card>
-            </TabsContent>
-            
-            <TabsContent value="seguridad">
-                <SafetyChecklist control={control} isReadOnly={isReadOnly} onSignatureClick={() => handleOpenSignatureDialog("technician")} isEnhancingText={isEnhancingText} handleEnhanceText={handleEnhanceText} serviceId={watchedId || ""} onPhotoUploaded={handleChecklistPhotoUpload} onViewImage={handleViewImage}/>
             </TabsContent>
         </Tabs>
         
