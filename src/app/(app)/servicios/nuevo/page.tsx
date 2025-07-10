@@ -40,7 +40,7 @@ export default function NuevoServicioPage() {
 
   useEffect(() => {
     if (dialogStep === 'closed') {
-      router.push('/servicios/agenda'); // Redirect after closing preview
+      router.push('/dashboard'); // Redirect after closing preview
     }
   }, [dialogStep, router]);
 
@@ -52,7 +52,7 @@ export default function NuevoServicioPage() {
 
   const handleFormDialogClose = () => { 
      if (dialogStep === 'form') { 
-      router.push('/servicios/agenda'); // Go back if form is closed without saving
+      router.push('/dashboard'); // Go back if form is closed without saving
     }
   };
   
