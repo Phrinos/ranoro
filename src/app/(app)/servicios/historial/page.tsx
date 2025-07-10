@@ -88,8 +88,11 @@ const ServiceList = React.memo(({ services, vehicles, technicians, onEdit, onVie
                     {service.status === 'Entregado' && (
                         <Badge variant="success">Servicio Entregado</Badge>
                     )}
-                    {isInProgress && (
-                        <Badge variant="secondary">{service.status === 'En Taller' ? `${service.status} (${service.subStatus || 'N/A'})` : service.status}</Badge>
+                     {service.status === 'En Taller' && (
+                        <Badge variant="secondary">{service.subStatus ? `En Taller (${service.subStatus})` : 'En Taller'}</Badge>
+                    )}
+                     {service.status === 'Agendado' && (
+                        <Badge variant="default">Agendado</Badge>
                     )}
                     {service.status === 'Cancelado' && (
                         <Badge variant="destructive">Servicio Cancelado</Badge>
@@ -147,6 +150,7 @@ function HistorialServiciosPageComponent() {
   const ticketContentRef = useRef<HTMLDivElement>(null);
   
   useEffect(() => {
+    // This now simply loads everything from the placeholder data.
     setAllServices(placeholderServiceRecords);
     setVehicles(placeholderVehicles);
     setTechnicians(placeholderTechnicians);
@@ -154,12 +158,10 @@ function HistorialServiciosPageComponent() {
   }, []);
   
   const historicalServices = useMemo(() => {
-    // Show everything that is NOT a quote.
     let filtered = allServices.filter(s => s.status !== 'Cotizacion');
 
     if (dateRange?.from) {
       filtered = filtered.filter(service => {
-        // Filter by serviceDate for Agendado/En Taller, and deliveryDateTime for Entregado
         const dateToCompare = service.status === 'Entregado' && service.deliveryDateTime ? service.deliveryDateTime : service.serviceDate;
         if (!dateToCompare) return false;
         
@@ -178,10 +180,7 @@ function HistorialServiciosPageComponent() {
     const today = new Date();
     return allServices
       .filter(s => {
-        // An active service is one that is "En Taller" or is scheduled for today.
-        if (s.status === 'En Taller') {
-          return true;
-        }
+        if (s.status === 'En Taller') return true;
         if (s.status === 'Agendado') {
           const serviceDay = parseISO(s.serviceDate);
           return isValid(serviceDay) && isToday(serviceDay);
@@ -412,4 +411,6 @@ export default function HistorialServiciosPageWrapper() {
         </Suspense>
     )
 }
+    
+
     
