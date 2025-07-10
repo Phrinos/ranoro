@@ -20,7 +20,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ServiceCalendar } from '../components/service-calendar';
 import { analyzeWorkshopCapacity } from '@/ai/flows/capacity-analysis-flow';
 import { Badge } from "@/components/ui/badge";
-import { cn } from '@/lib/utils';
+import { cn } from "@/lib/utils";
 import { StatusTracker } from "../components/StatusTracker";
 
 
@@ -89,6 +89,16 @@ const ServiceAppointmentCard = React.memo(({ service, vehicles, onEdit, onConfir
 });
 ServiceAppointmentCard.displayName = 'ServiceAppointmentCard';
 
+const handleAiError = (error: any, toast: any, context: string): string => {
+    console.error(`AI Error in ${context}:`, error);
+    let message = `La IA no pudo completar la acción de ${context}.`;
+    if (error instanceof Error && error.message.includes('503')) {
+        message = "El modelo de IA está sobrecargado. Por favor, inténtelo de nuevo más tarde.";
+    }
+    toast({ title: "Error de IA", description: message, variant: "destructive" });
+    return message; // Return the user-friendly message
+};
+
 function AgendaPageComponent() {
   const { toast } = useToast();
   
@@ -153,15 +163,14 @@ function AgendaPageComponent() {
           });
           setCapacityInfo(result);
         } catch (e) {
-          console.error("Capacity analysis failed:", e);
-          setCapacityError("La IA no pudo calcular la capacidad.");
+          setCapacityError(handleAiError(e, toast, 'análisis de capacidad'));
         } finally {
           setIsCapacityLoading(false);
         }
       };
       runCapacityAnalysis();
     }
-  }, [agendaView]);
+  }, [agendaView, toast]);
 
   const { scheduledServices, todayServices, tomorrowServices } = useMemo(() => {
     const scheduled = allServices.filter(s => s.status === 'Agendado' || (s.status === 'Reparando' && !s.deliveryDateTime));
