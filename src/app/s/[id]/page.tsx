@@ -12,10 +12,10 @@ import { ShieldAlert, Printer, Loader2, Signature, Eye, Download } from 'lucide-
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
 import { SignatureDialog } from '@/app/(app)/servicios/components/signature-dialog';
-import { doc, setDoc, onSnapshot, collection, query, where, getDocs, limit } from 'firebase/firestore'; 
+import { doc, setDoc, onSnapshot, getDoc } from 'firebase/firestore'; 
 import { db } from '@/lib/firebasePublic.js';
 import Image from "next/image";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 
 export default function PublicServiceSheetPage() {
@@ -50,6 +50,7 @@ export default function PublicServiceSheetPage() {
         return;
     }
     
+    // Attempt to fetch from publicServices first
     const serviceRef = doc(db, 'publicServices', publicId);
     
     const unsubscribe = onSnapshot(serviceRef, async (docSnap) => {
@@ -71,34 +72,58 @@ export default function PublicServiceSheetPage() {
         setVehicle(serviceData.vehicle || null);
         setWorkshopInfo(serviceData.workshopInfo || null);
         setError(null);
-
-        // --- Fetch associated quote ---
-        try {
-          const quotesCollection = collection(db, 'publicQuotes');
-          const q = query(quotesCollection, where("serviceId", "==", serviceData.id), limit(1));
-          const querySnapshot = await getDocs(q);
-
-          if (!querySnapshot.empty) {
-            const quoteDoc = querySnapshot.docs[0];
-            const quoteData = quoteDoc.data();
-            processDates(quoteData); // Also process dates for the quote
-            setQuote(quoteData as QuoteRecord);
-          } else {
-            setQuote(null); // No quote found
-          }
-        } catch (quoteError) {
-            console.error("Error fetching associated quote:", quoteError);
-            setQuote(null);
+        
+        // If it's a service, check if it has an associated quote
+        if(serviceData.status !== 'Cotizacion'){
+           try {
+              const quoteRef = doc(db, 'publicQuotes', serviceData.id);
+              const quoteSnap = await getDoc(quoteRef);
+              if (quoteSnap.exists()) {
+                 const quoteData = quoteSnap.data();
+                 processDates(quoteData);
+                 setQuote(quoteData as QuoteRecord);
+              } else {
+                 setQuote(null);
+              }
+           } catch(quoteError) {
+              console.error("Error fetching associated quote:", quoteError);
+              setQuote(null);
+           }
+        } else {
+          setQuote(serviceData); // If the service itself is a quote
         }
 
       } else {
-        setError(`La hoja de servicio con ID "${publicId}" no se encontró. Pudo haber sido eliminada o el enlace es incorrecto.`);
-        setService(null);
-        setQuote(null);
+        // If not found in services, try quotes (for backward compatibility)
+        const quoteRef = doc(db, 'publicQuotes', publicId);
+        const quoteSnap = await getDoc(quoteRef);
+        if (quoteSnap.exists()) {
+            const data = quoteSnap.data();
+            const processDates = (obj: any) => {
+              for (const key in obj) {
+                if (obj[key] && typeof obj[key].toDate === 'function') {
+                  obj[key] = obj[key].toDate().toISOString();
+                } else if (typeof obj[key] === 'object' && obj[key] !== null) {
+                  processDates(obj[key]);
+                }
+              }
+            };
+            processDates(data);
+            const quoteData = data as QuoteRecord & { vehicle?: Vehicle };
+            setService(quoteData); // Treat it as a service record for the UI
+            setQuote(quoteData);
+            setVehicle(quoteData.vehicle || null);
+            setWorkshopInfo(quoteData.workshopInfo || null);
+            setError(null);
+        } else {
+            setError(`El documento con ID "${publicId}" no se encontró. Pudo haber sido eliminado o el enlace es incorrecto.`);
+            setService(null);
+            setQuote(null);
+        }
       }
     }, (err) => {
       console.error("Error with real-time listener:", err);
-      setError("Ocurrió un error al intentar cargar la hoja de servicio desde la base de datos. Por favor, intente más tarde.");
+      setError("Ocurrió un error al intentar cargar el documento desde la base de datos. Por favor, intente más tarde.");
       setService(null);
       setQuote(null);
     });
@@ -131,6 +156,7 @@ export default function PublicServiceSheetPage() {
       if (!db) {
         throw new Error("La base de datos no está inicializada.");
       }
+      // Always save to the main service document
       const serviceRef = doc(db, 'publicServices', publicId);
       const fieldToUpdate = signatureType === 'reception' ? 'customerSignatureReception' : 'customerSignatureDelivery';
       
@@ -155,7 +181,7 @@ export default function PublicServiceSheetPage() {
     return (
       <div className="container mx-auto py-8 text-center flex flex-col items-center justify-center min-h-[50vh]">
         <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
-        <p className="text-lg text-muted-foreground">Cargando hoja de servicio...</p>
+        <p className="text-lg text-muted-foreground">Cargando documento...</p>
       </div>
     );
   }
@@ -166,7 +192,7 @@ export default function PublicServiceSheetPage() {
         <Card className="max-w-4xl mx-auto text-center">
           <CardHeader>
             <ShieldAlert className="mx-auto h-16 w-16 text-destructive mb-4" />
-            <CardTitle className="text-2xl font-bold">Error al Cargar la Hoja de Servicio</CardTitle>
+            <CardTitle className="text-2xl font-bold">Error al Cargar el Documento</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4 text-left">
             <div>
@@ -191,7 +217,7 @@ export default function PublicServiceSheetPage() {
     );
   }
 
-  const showSignReception = !service.customerSignatureReception;
+  const showSignReception = service.status !== 'Cotizacion' && !service.customerSignatureReception;
   const showSignDelivery = service.status === 'Completado' && !!service.customerSignatureReception && !service.customerSignatureDelivery;
 
   return (
@@ -199,11 +225,11 @@ export default function PublicServiceSheetPage() {
       <Card className="max-w-4xl mx-auto mb-6 print:hidden">
         <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
-            <CardTitle>Hoja de Servicio: {service.id}</CardTitle>
+            <CardTitle>Vista Pública: {service.status === 'Cotizacion' ? 'Cotización' : 'Orden de Servicio'} #{service.id}</CardTitle>
             <CardDescription>Revise los detalles y firme digitalmente si es necesario.</CardDescription>
           </div>
           <div className="flex flex-wrap gap-2 justify-end">
-            <Button variant="outline" onClick={() => window.print()}><Printer className="mr-2 h-4 w-4"/> Imprimir Hoja</Button>
+            <Button variant="outline" onClick={() => window.print()}><Printer className="mr-2 h-4 w-4"/> Imprimir</Button>
           </div>
         </CardHeader>
       </Card>
