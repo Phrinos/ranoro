@@ -157,6 +157,19 @@ function HistorialServiciosPageComponent() {
     setInventoryItems(placeholderInventory);
   }, []);
   
+  const activeServices = useMemo(() => {
+    return allServices.filter(s => {
+      if (s.status === 'Cancelado' || s.status === 'Cotizacion') {
+        return false;
+      }
+      const isScheduledForToday = s.status === 'Agendado' && s.serviceDate && isValid(parseISO(s.serviceDate)) && isToday(parseISO(s.serviceDate));
+      const isInWorkshop = s.status === 'En Taller';
+      const isDeliveredToday = s.status === 'Entregado' && s.deliveryDateTime && isValid(parseISO(s.deliveryDateTime)) && isToday(parseISO(s.deliveryDateTime));
+
+      return isScheduledForToday || isInWorkshop || isDeliveredToday;
+    }).sort((a,b) => compareAsc(parseISO(a.serviceDate), parseISO(b.serviceDate)));
+  }, [allServices]);
+  
   const historicalServices = useMemo(() => {
     // Start with all services that are not just quotes.
     let baseList = allServices.filter(s => s.status !== 'Cotizacion');
@@ -166,8 +179,8 @@ function HistorialServiciosPageComponent() {
       const lowerSearch = searchTerm.toLowerCase();
       baseList = baseList.filter(s =>
         s.id.toLowerCase().includes(lowerSearch) ||
-        s.vehicleIdentifier?.toLowerCase().includes(lowerSearch) ||
-        s.description?.toLowerCase().includes(lowerSearch)
+        (s.vehicleIdentifier && s.vehicleIdentifier.toLowerCase().includes(lowerSearch)) ||
+        (s.description && s.description.toLowerCase().includes(lowerSearch))
       );
     }
     
@@ -185,20 +198,10 @@ function HistorialServiciosPageComponent() {
       });
     }
 
-    return baseList;
+    return baseList.sort((a,b) => compareDesc(parseISO(a.serviceDate), parseISO(b.serviceDate)));
   }, [allServices, dateRange, searchTerm]);
 
 
-  const activeServices = useMemo(() => {
-    const today = new Date();
-    return allServices
-      .filter(s => {
-        const isScheduledForToday = s.status === 'Agendado' && s.serviceDate && isValid(parseISO(s.serviceDate)) && isToday(parseISO(s.serviceDate));
-        const isInWorkshop = s.status === 'En Taller';
-        return isScheduledForToday || isInWorkshop;
-      })
-      .sort((a,b) => compareAsc(parseISO(a.serviceDate), parseISO(b.serviceDate)));
-  }, [allServices]);
   
   const handleSaveService = useCallback(async (data: QuoteRecord | ServiceRecord) => {
     setIsEditDialogOpen(false);
