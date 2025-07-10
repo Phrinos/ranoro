@@ -258,7 +258,7 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
     const fuelColor = getFuelColorClass(fuelPercentage);
     
     const showQuote = !!quote;
-    const showChecklist = !!service.safetyInspection && Object.keys(service.safetyInspection).some(k => k !== 'inspectionNotes' && k !== 'technicianSignature');
+    const showChecklist = !!service.safetyInspection && Object.keys(service.safetyInspection).some(k => k !== 'inspectionNotes' && k !== 'technicianSignature' && (service.safetyInspection as any)[k]?.status !== 'na' && (service.safetyInspection as any)[k]?.status !== undefined);
     const showPhotoReport = !!service.photoReports && service.photoReports.length > 0;
 
     const ServiceOrderContent = (
@@ -505,7 +505,7 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
         {/* For Screen View */}
         <div className="print:hidden p-0 sm:p-2 md:p-4 shadow-lg">
           <Tabs defaultValue={defaultTabValue} className="w-full">
-            <TabsList className={cn("grid w-full", gridColsClass)}>
+            <TabsList className={cn("grid w-full", `grid-cols-${numTabs}`)}>
               {showQuote && <TabsTrigger value="quote">Cotización</TabsTrigger>}
               <TabsTrigger value="order">Orden de Servicio</TabsTrigger>
               {showChecklist && <TabsTrigger value="checklist">Revisión</TabsTrigger>}
