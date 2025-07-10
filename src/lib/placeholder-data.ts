@@ -296,7 +296,7 @@ export const placeholderDashboardMetrics: DashboardMetrics = {
 
 // IMPORTANT: Set this to `true` to enable local persistence without affecting the database.
 // Set to `false` for production mode with Firestore.
-const DEV_MODE_LOCAL_ONLY = true;
+const DEV_MODE_LOCAL_ONLY = false;
 
 const DB_PATH = 'database/main'; // The single document in Firestore to hold all data
 const LOCALSTORAGE_DB_KEY = 'ranoroLocalDatabase';
