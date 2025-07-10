@@ -254,14 +254,11 @@ export function ServiceForm({
   
   const freshUserRef = useRef<User | null>(null);
   const originalStatusRef = useRef(initialDataService?.status || initialDataQuote?.status);
-
-  // The stableServiceId ensures that new services have a consistent ID for photo uploads before saving.
-  const stableServiceId = useMemo(() => initialData?.id || `SRV-${generateUniqueId()}`, [initialData?.id]);
   
   const form = useForm<ServiceFormValues>({
     resolver: zodResolver(serviceFormSchemaBase),
     defaultValues: {
-        id: stableServiceId,
+        id: undefined, // Initialize as undefined
         status: mode === 'service' ? ((initialData as ServiceRecord)?.status || 'Agendado') : 'Cotizacion',
         serviceItems: [],
         photoReports: [],
@@ -272,6 +269,7 @@ export function ServiceForm({
   const { fields: serviceItemsFields, append: appendServiceItem, remove: removeServiceItem } = useFieldArray({ control, name: "serviceItems" });
   const { fields: photoReportFields, append: appendPhotoReport, remove: removePhotoReport } = useFieldArray({ control, name: "photoReports" });
   
+  const watchedId = useWatch({ control, name: 'id' });
   const watchedStatus = useWatch({ control, name: 'status' });
   const watchedServiceItems = useWatch({ control, name: "serviceItems" });
 
@@ -317,49 +315,46 @@ export function ServiceForm({
     const data = mode === 'service' ? initialDataService : initialDataQuote;
     const currentUser = freshUserRef.current;
     
-    if (data) {
-        const parseDate = (date: any) => date && (typeof date.toDate === 'function' ? date.toDate() : (typeof date === 'string' ? parseISO(date) : date));
-        
-        let photoReportsData = (data as ServiceRecord)?.photoReports || [];
-        if (!isReadOnly && (!photoReportsData || photoReportsData.length === 0)) {
-            photoReportsData = [{ id: `rep_recepcion_${Date.now()}`, date: new Date().toISOString(), description: "Notas de la Recepción", photos: [] }];
-        }
-        
-        form.reset({
-            id: data.id || stableServiceId, 
-            publicId: (data as any)?.publicId, vehicleId: data.vehicleId ? String(data.vehicleId) : undefined,
-            vehicleLicensePlateSearch: data.vehicleIdentifier || "",
-            serviceDate: isValid(parseDate(data.serviceDate)) ? parseDate(data.serviceDate) : undefined,
-            quoteDate: isValid(parseDate(data.quoteDate)) ? parseDate(data.quoteDate) : undefined,
-            deliveryDateTime: isValid(parseDate((data as ServiceRecord)?.deliveryDateTime)) ? parseDate((data as ServiceRecord)?.deliveryDateTime) : undefined,
-            mileage: data.mileage || undefined, description: (data as any).description || "",
-            notes: data.notes || "", technicianId: (data as ServiceRecord)?.technicianId || (data as QuoteRecord)?.preparedByTechnicianId || undefined,
-            status: data.status || (mode === 'quote' ? 'Cotizacion' : 'Agendado'),
-            serviceType: (data as ServiceRecord)?.serviceType || (data as QuoteRecord)?.serviceType || 'Servicio General',
-            vehicleConditions: (data as ServiceRecord)?.vehicleConditions || "", fuelLevel: (data as ServiceRecord)?.fuelLevel || undefined,
-            customerItems: (data as ServiceRecord)?.customerItems || '',
-            customerSignatureReception: (data as ServiceRecord)?.customerSignatureReception || undefined,
-            customerSignatureDelivery: (data as ServiceRecord)?.customerSignatureDelivery || undefined,
-            serviceItems: ('serviceItems' in data && Array.isArray(data.serviceItems)) ? data.serviceItems.map(item => ({ ...item, price: item.price ?? 0, suppliesUsed: item.suppliesUsed || [] })) : [],
-            safetyInspection: data.safetyInspection || {}, paymentMethod: (data as ServiceRecord)?.paymentMethod || 'Efectivo',
-            cardFolio: (data as ServiceRecord)?.cardFolio || '', transferFolio: (initialData as ServiceRecord)?.transferFolio || '',
-            nextServiceInfo: (data as ServiceRecord)?.nextServiceInfo, photoReports: photoReportsData,
-            serviceAdvisorId: data.serviceAdvisorId || currentUser?.id || '',
-            serviceAdvisorName: data.serviceAdvisorName || currentUser?.name || '',
-            serviceAdvisorSignatureDataUrl: data.serviceAdvisorSignatureDataUrl || currentUser?.signatureDataUrl || '',
-        });
-    } else {
-      form.reset({
-          id: stableServiceId,
-          serviceAdvisorId: currentUser?.id || '', serviceAdvisorName: currentUser?.name || '', serviceAdvisorSignatureDataUrl: currentUser?.signatureDataUrl || '',
-          status: mode === 'quote' ? 'Cotizacion' : 'Agendado',
-          quoteDate: mode === 'quote' ? new Date() : undefined,
-          serviceDate: mode === 'service' ? setHours(setMinutes(new Date(), 30), 8) : undefined,
-          serviceItems: [{ id: `item_${Date.now()}`, name: '', price: undefined, suppliesUsed: [] }],
-          photoReports: [{ id: `rep_recepcion_${Date.now()}`, date: new Date().toISOString(), description: "Notas de la Recepción", photos: [] }],
-      });
+    // The stable ID is now determined here, ensuring all data is loaded first.
+    const stableServiceId = data?.id || `SRV-${generateUniqueId()}`;
+    
+    const parseDate = (date: any) => date && (typeof date.toDate === 'function' ? date.toDate() : (typeof date === 'string' ? parseISO(date) : date));
+    
+    let photoReportsData = (data as ServiceRecord)?.photoReports || [];
+    if (!isReadOnly && (!photoReportsData || photoReportsData.length === 0)) {
+        photoReportsData = [{ id: `rep_recepcion_${Date.now()}`, date: new Date().toISOString(), description: "Notas de la Recepción", photos: [] }];
     }
-  }, [initialDataService, initialDataQuote, mode, form, isReadOnly, stableServiceId]);
+    
+    form.reset({
+        id: stableServiceId, 
+        publicId: (data as any)?.publicId, vehicleId: data?.vehicleId ? String(data.vehicleId) : undefined,
+        vehicleLicensePlateSearch: data?.vehicleIdentifier || "",
+        serviceDate: isValid(parseDate(data?.serviceDate)) ? parseDate(data.serviceDate) : undefined,
+        quoteDate: isValid(parseDate(data?.quoteDate)) ? parseDate(data.quoteDate) : undefined,
+        deliveryDateTime: isValid(parseDate((data as ServiceRecord)?.deliveryDateTime)) ? parseDate((data as ServiceRecord)?.deliveryDateTime) : undefined,
+        mileage: data?.mileage || undefined, description: (data as any).description || "",
+        notes: data?.notes || "", technicianId: (data as ServiceRecord)?.technicianId || (data as QuoteRecord)?.preparedByTechnicianId || undefined,
+        status: data?.status || (mode === 'quote' ? 'Cotizacion' : 'Agendado'),
+        serviceType: (data as ServiceRecord)?.serviceType || (data as QuoteRecord)?.serviceType || 'Servicio General',
+        vehicleConditions: (data as ServiceRecord)?.vehicleConditions || "", fuelLevel: (data as ServiceRecord)?.fuelLevel || undefined,
+        customerItems: (data as ServiceRecord)?.customerItems || '',
+        customerSignatureReception: (data as ServiceRecord)?.customerSignatureReception || undefined,
+        customerSignatureDelivery: (data as ServiceRecord)?.customerSignatureDelivery || undefined,
+        serviceItems: ('serviceItems' in (data || {}) && Array.isArray(data.serviceItems)) ? data.serviceItems.map(item => ({ ...item, price: item.price ?? 0, suppliesUsed: item.suppliesUsed || [] })) : [{ id: `item_${Date.now()}`, name: '', price: undefined, suppliesUsed: [] }],
+        safetyInspection: data?.safetyInspection || {}, paymentMethod: (data as ServiceRecord)?.paymentMethod || 'Efectivo',
+        cardFolio: (data as ServiceRecord)?.cardFolio || '', transferFolio: (initialData as ServiceRecord)?.transferFolio || '',
+        nextServiceInfo: (data as ServiceRecord)?.nextServiceInfo, photoReports: photoReportsData,
+        serviceAdvisorId: data?.serviceAdvisorId || currentUser?.id || '',
+        serviceAdvisorName: data?.serviceAdvisorName || currentUser?.name || '',
+        serviceAdvisorSignatureDataUrl: data?.serviceAdvisorSignatureDataUrl || currentUser?.signatureDataUrl || '',
+    });
+    
+    if (!data) {
+        form.setValue('serviceDate', setHours(setMinutes(new Date(), 30), 8));
+        if (mode === 'quote') form.setValue('quoteDate', new Date());
+    }
+
+  }, [initialDataService, initialDataQuote, mode, form, isReadOnly]);
   
   const handlePhotoUploadComplete = useCallback((reportIndex: number, urls: string[]) => {
     const currentPhotos = getValues(`photoReports.${reportIndex}.photos`) || [];
@@ -601,10 +596,10 @@ export function ServiceForm({
                               </div>
                               <PhotoUploader 
                                   reportIndex={index} 
-                                  serviceId={stableServiceId}
+                                  serviceId={watchedId || ''}
                                   onUploadComplete={handlePhotoUploadComplete} 
                                   photosLength={field.photos.length}
-                                  disabled={isReadOnly}
+                                  disabled={isReadOnly || !watchedId}
                                   maxPhotos={5}
                               />
                           </div>
@@ -615,7 +610,7 @@ export function ServiceForm({
             </TabsContent>
             
             <TabsContent value="seguridad" className="mt-4">
-               <SafetyChecklist control={control} isReadOnly={isReadOnly} onSignatureClick={() => setIsTechSignatureDialogOpen(true)} signatureDataUrl={form.watch('safetyInspection.technicianSignature')} isEnhancingText={isEnhancingText} handleEnhanceText={handleEnhanceText} serviceId={stableServiceId} onPhotoUploaded={handleChecklistPhotoUpload} onViewImage={handleViewImage}/>
+               <SafetyChecklist control={control} isReadOnly={isReadOnly} onSignatureClick={() => setIsTechSignatureDialogOpen(true)} signatureDataUrl={form.watch('safetyInspection.technicianSignature')} isEnhancingText={isEnhancingText} handleEnhanceText={handleEnhanceText} serviceId={watchedId || ''} onPhotoUploaded={handleChecklistPhotoUpload} onViewImage={handleViewImage}/>
             </TabsContent>
           </Tabs>
 
