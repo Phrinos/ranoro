@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
-import { Car as CarIcon, AlertCircle, User, Fingerprint } from 'lucide-react';
+import { Car as CarIcon, AlertCircle, User, Fingerprint, History } from 'lucide-react';
 import type { Vehicle, ServiceRecord } from '@/types';
 import { placeholderServiceRecords } from '@/lib/placeholder-data';
 import { format, isValid, parseISO } from 'date-fns';
@@ -35,6 +35,7 @@ export function VehicleSelectionCard({
   const [vehicleSearchResults, setVehicleSearchResults] = useState<Vehicle[]>([]);
   const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
   const [lastService, setLastService] = useState<ServiceRecord | null>(null);
+  const [penultimateService, setPenultimateService] = useState<ServiceRecord | null>(null);
   const [vehicleNotFound, setVehicleNotFound] = useState(false);
 
   const vehicleId = watch('vehicleId');
@@ -46,11 +47,13 @@ export function VehicleSelectionCard({
         setSelectedVehicle(vehicle);
         setVehicleLicensePlateSearch(vehicle.licensePlate);
         const vehicleServices = placeholderServiceRecords.filter(s => s.vehicleId === vehicle.id).sort((a, b) => new Date(b.serviceDate).getTime() - new Date(a.serviceDate).getTime());
-        setLastService(vehicleServices.length > 0 ? vehicleServices[0] : null);
+        setLastService(vehicleServices[0] || null);
+        setPenultimateService(vehicleServices[1] || null);
       }
     } else {
         setSelectedVehicle(null);
         setLastService(null);
+        setPenultimateService(null);
     }
   }, [vehicleId, localVehicles]);
 
@@ -68,6 +71,7 @@ export function VehicleSelectionCard({
       setValue('vehicleId', undefined);
       setVehicleNotFound(true);
       setLastService(null);
+      setPenultimateService(null);
       toast({ title: "Vehículo No Encontrado", description: "Puede registrarlo si es nuevo.", variant: "default" });
     }
   };
@@ -82,7 +86,8 @@ export function VehicleSelectionCard({
     setVehicleNotFound(false);
     setVehicleSearchResults([]);
     const vehicleServices = placeholderServiceRecords.filter(s => s.vehicleId === vehicle.id).sort((a, b) => new Date(b.serviceDate).getTime() - new Date(a.serviceDate).getTime());
-    setLastService(vehicleServices.length > 0 ? vehicleServices[0] : null);
+    setLastService(vehicleServices[0] || null);
+    setPenultimateService(vehicleServices[1] || null);
     onVehicleSelected(vehicle);
   };
   
@@ -113,13 +118,13 @@ export function VehicleSelectionCard({
     setVehicleSearchResults(results);
   }, [vehicleLicensePlateSearch, localVehicles, selectedVehicle]);
   
-  const lastServiceDateFormatted = useMemo(() => {
-    if (!lastService) return 'No tiene historial de servicios.';
-    const date = new Date(lastService.serviceDate);
+  const formatServiceInfo = (service: ServiceRecord | null): string => {
+    if (!service) return 'No hay registro.';
+    const date = new Date(service.serviceDate);
+    const description = service.description || '';
     if (!isValid(date)) return 'Fecha inválida.';
-    const description = lastService.description || '';
-    return `${lastService.mileage ? `${lastService.mileage.toLocaleString('es-ES')} km - ` : ''}${format(date, "dd MMM yyyy", { locale: es })} - ${description}`;
-  }, [lastService]);
+    return `${service.mileage ? `${service.mileage.toLocaleString('es-ES')} km - ` : ''}${format(date, "dd MMM yyyy", { locale: es })} - ${description}`;
+  };
 
   return (
     <Card>
@@ -128,7 +133,6 @@ export function VehicleSelectionCard({
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
-            {/* Columna Izquierda: Inputs */}
             <div className="space-y-4">
               <FormField
                   control={control}
@@ -173,21 +177,20 @@ export function VehicleSelectionCard({
               />
             </div>
             
-            {/* Columna Derecha: Información del vehículo seleccionado */}
             <div>
                 {selectedVehicle && (
                     <div className="p-3 border rounded-md bg-amber-50 dark:bg-amber-950/50 text-sm space-y-2 h-full flex flex-col justify-center">
                         <div>
-                            <p className="font-bold text-lg">{selectedVehicle.licensePlate}</p>
-                            <p className="text-muted-foreground">{selectedVehicle.make} {selectedVehicle.model} {selectedVehicle.year}</p>
+                            <p className="font-bold text-lg">{selectedVehicle.licensePlate} - {selectedVehicle.make} {selectedVehicle.model} {selectedVehicle.year}</p>
                         </div>
                         <div className="space-y-1 pt-1">
                             <p className="flex items-center gap-2"><User className="h-4 w-4 text-muted-foreground" /> {selectedVehicle.ownerName} - {selectedVehicle.ownerPhone}</p>
                             <p className="flex items-center gap-2"><Fingerprint className="h-4 w-4 text-muted-foreground" /> {selectedVehicle.vin || 'VIN no registrado'}</p>
                         </div>
-                        <div className="text-xs pt-2 mt-auto border-t">
-                            <p className="font-semibold">Último Servicio:</p>
-                            <p className="text-muted-foreground truncate">{lastServiceDateFormatted}</p>
+                        <div className="text-xs pt-2 mt-auto border-t space-y-1">
+                            <p className="font-semibold flex items-center gap-1"><History className="h-3 w-3" /> Historial Reciente:</p>
+                            <p className="text-muted-foreground truncate" title={formatServiceInfo(lastService)}><strong>Último:</strong> {formatServiceInfo(lastService)}</p>
+                            <p className="text-muted-foreground truncate" title={formatServiceInfo(penultimateService)}><strong>Anterior:</strong> {formatServiceInfo(penultimateService)}</p>
                         </div>
                     </div>
                 )}
