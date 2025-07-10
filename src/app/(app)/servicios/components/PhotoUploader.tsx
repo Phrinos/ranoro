@@ -60,7 +60,7 @@ export function PhotoUploader({
       
       toast({ title: 'Subiendo a la nube...', description: `Enviando ${file.name}...` });
       
-      const photoName = `${Date.now()}_${file.name.replace(/\s+/g, '_')}`;
+      const photoName = `${Date.now()}_${file.name.replace(/\s+/g, '_')}.jpg`;
       const photoRef = ref(storage, `service-photos/${serviceId}/${photoName}`);
       
       await uploadString(photoRef, optimizedDataUrl, 'data_url');
