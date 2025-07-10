@@ -42,7 +42,8 @@ import {
   CalendarDays
 } from 'lucide-react';
 import type { User, AppRole } from '@/types';
-import { placeholderAppRoles, AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
+import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
+import { adminService } from '@/lib/services/admin.service';
 
 export interface NavigationEntry {
   label: string;
@@ -179,20 +180,23 @@ const useNavigation = (): NavigationEntry[] => {
   const [roles, setRoles] = React.useState<AppRole[]>([]);
 
   React.useEffect(() => {
-    if (typeof window !== "undefined") {
-      const authUserString = localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY);
-      if (authUserString) {
-        try {
-            setCurrentUser(JSON.parse(authUserString));
-        } catch (e) {
-            console.error("Failed to parse authUser:", e);
-            setCurrentUser(null);
+    const loadData = async () => {
+        if (typeof window !== "undefined") {
+            const authUserString = localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY);
+            if (authUserString) {
+                try {
+                    setCurrentUser(JSON.parse(authUserString));
+                } catch (e) {
+                    console.error("Failed to parse authUser:", e);
+                    setCurrentUser(null);
+                }
+            } else {
+                setCurrentUser(null);
+            }
+            setRoles(await adminService.getRoles());
         }
-      } else {
-        setCurrentUser(null);
-      }
-      setRoles(placeholderAppRoles);
-    }
+    };
+    loadData();
   }, [pathname]);
 
   const userPermissions = React.useMemo(() => {

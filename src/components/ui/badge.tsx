@@ -9,29 +9,28 @@ const badgeVariants = cva(
   {
     variants: {
       variant: {
-        default: // For "Agendado" - uses primary color (red in current theme)
+        default:
           "border-transparent bg-primary text-primary-foreground hover:bg-primary/80",
-        secondary: // For "En Progreso" - uses secondary color (light gray in current theme)
+        secondary:
           "border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80",
-        destructive: // For "Cancelado"
+        destructive:
           "border-transparent bg-destructive text-destructive-foreground hover:bg-destructive/80",
-        outline: // For "Pendiente" - white/transparent with border
-          "text-foreground",
-        success: // For "Completado" and "Efectivo" - green
+        outline: "text-foreground",
+        success:
           "border-transparent bg-green-600 text-primary-foreground hover:bg-green-600/80",
-        waiting: // For "En Espera de Refacciones"
+        waiting: 
           "border-transparent bg-orange-500 text-white hover:bg-orange-500/80",
-        delivered: // For "Entregado"
+        delivered:
           "border-transparent bg-gray-500 text-white hover:bg-gray-500/80 dark:bg-gray-600",
-        purple: // For "Tarjeta"
+        purple:
           "border-transparent bg-purple-500 text-white hover:bg-purple-500/80 dark:bg-purple-600 dark:hover:bg-purple-600/80",
-        blue: // For "Transferencia"
+        blue:
           "border-transparent bg-blue-500 text-white hover:bg-blue-500/80 dark:bg-blue-600 dark:hover:bg-blue-600/80",
-        lightGreen: // For "Efectivo+Transferencia"
+        lightGreen:
           "border-transparent bg-green-300 text-green-800 hover:bg-green-300/80 dark:bg-green-700 dark:text-green-100 dark:hover:bg-green-700/80",
-        lightPurple: // For "Tarjeta+Transferencia"
+        lightPurple:
           "border-transparent bg-purple-300 text-purple-800 hover:bg-purple-300/80 dark:bg-purple-700 dark:text-purple-100 dark:hover:bg-purple-700/80",
-        lightRed: // For "Agendado" from quote
+        lightRed:
           "border-transparent bg-red-100 text-red-800 hover:bg-red-100/80 dark:bg-red-900/50 dark:text-red-300",
       },
     },
