@@ -209,6 +209,24 @@ function AgendaPageComponent() {
       setIsServiceDialogOpen(false);
   }, []);
 
+  const renderCapacityBadge = () => {
+    if (isCapacityLoading) return <Loader2 className="h-5 w-5 animate-spin" />;
+    if (!capacityInfo) return null;
+
+    const { capacityPercentage, recommendation } = capacityInfo;
+    const isOverloaded = capacityPercentage > 95;
+    
+    let text = recommendation;
+    if (recommendation === "Se pueden aceptar más trabajos") {
+        const remainingPercentage = 100 - capacityPercentage;
+        text = `${recommendation} (${remainingPercentage}% libre)`;
+    }
+
+    return (
+        <Badge variant={isOverloaded ? "destructive" : "secondary"}>{text}</Badge>
+    );
+};
+
   if (!hydrated) {
     return <div className="text-center py-10">Cargando datos...</div>;
   }
@@ -237,7 +255,7 @@ function AgendaPageComponent() {
             <CardHeader>
               <CardTitle className="flex justify-between items-center">
                 <span>Citas para Hoy</span>
-                {isCapacityLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Badge variant={capacityInfo?.capacityPercentage && capacityInfo.capacityPercentage > 95 ? "destructive" : "secondary"}>{capacityInfo?.recommendation}</Badge>}
+                {renderCapacityBadge()}
               </CardTitle>
               <CardDescription>
                 Ganancia total estimada para hoy: {totalEarningsToday.toLocaleString('es-MX', { style: 'currency', currency: 'MXN' })}
