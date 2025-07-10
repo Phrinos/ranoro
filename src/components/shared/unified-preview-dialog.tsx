@@ -57,13 +57,18 @@ export function UnifiedPreviewDialog({ open, onOpenChange, service }: UnifiedPre
         return;
     }
     const shareUrl = `${window.location.origin}/s/${service.publicId}`;
-    const message = `Hola, ${vehicleForShare.ownerName || 'Cliente'}:
+    
+    const message = `Enlace: ${shareUrl}
 
-Consulta los detalles de tu servicio para el vehículo ${vehicleForShare.make} ${vehicleForShare.model} en el siguiente enlace:
+Hola ${vehicleForShare.ownerName || 'Cliente'}, gracias por confiar en Ranoro. Te proporcionamos los detalles del servicio de tu vehículo ${vehicleForShare.make} ${vehicleForShare.model} ${vehicleForShare.year} placas ${vehicleForShare.licensePlate}.
 
-${shareUrl}
+• Haz clic en el enlace y encontrarás:
+  1️⃣ La cotización detallada.
+  2️⃣ La hoja de servicio para que firmes la entrega y recepción, además de las actualizaciones de estatus.
+  3️⃣ Las evidencias fotográficas cuando estén listas.
 
-¡Gracias por confiar en nosotros!`;
+¡Cualquier duda, escríbenos!`;
+
 
     navigator.clipboard.writeText(message).then(() => {
       toast({ title: 'Mensaje Copiado', description: 'El mensaje para WhatsApp ha sido copiado a tu portapapeles.' });
