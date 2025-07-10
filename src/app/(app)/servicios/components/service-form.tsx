@@ -272,6 +272,7 @@ export function ServiceForm({
   
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [serviceForSheet, setServiceForSheet] = useState<ServiceRecord | null>(null);
+  const [quoteForSheet, setQuoteForSheet] = useState<QuoteRecord | null>(null);
   
   const [isServiceDatePickerOpen, setIsServiceDatePickerOpen] = useState(false);
   const [isDeliveryDatePickerOpen, setIsDeliveryDatePickerOpen] = useState(false);
@@ -353,16 +354,6 @@ export function ServiceForm({
   };
 
   const watchedServiceItems = useWatch({ control, name: "serviceItems" });
-
-  const quoteForViewing = useMemo(() => {
-    const currentId = initialData?.id;
-    if (!currentId) return null;
-    
-    // Find the original quote, regardless of the current status
-    const originalQuote = defaultServiceRecords.find(q => q.id === currentId && q.status === 'Cotizacion');
-    return originalQuote || null;
-  }, [initialData?.id]);
-
 
   const { totalCost, totalSuppliesWorkshopCost, serviceProfit } = useMemo(() => {
     let calculatedTotalCost = 0;
@@ -831,10 +822,21 @@ export function ServiceForm({
     onClose();
   };
   
-  const handlePrintSheet = useCallback(() => {
+  const handlePrintSheet = useCallback(async () => {
     // This function will now be responsible for setting the data for the unified preview.
     const serviceData = form.getValues() as ServiceRecord;
+    let associatedQuote: QuoteRecord | null = null;
+
+    // Always check for an associated quote by ID.
+    if (serviceData.id) {
+        const foundQuote = defaultServiceRecords.find(q => q.id === serviceData.id && q.status === 'Cotizacion');
+        if (foundQuote) {
+            associatedQuote = foundQuote;
+        }
+    }
+    
     setServiceForSheet(serviceData);
+    setQuoteForSheet(associatedQuote);
     setIsSheetOpen(true);
   }, [form]);
 
@@ -1735,7 +1737,7 @@ export function ServiceForm({
           {serviceForSheet && (
               <ServiceSheetContent
                   service={serviceForSheet}
-                  quote={quoteForViewing}
+                  quote={quoteForSheet}
                   vehicle={selectedVehicle || undefined}
                   workshopInfo={workshopInfo as WorkshopInfo}
               />
