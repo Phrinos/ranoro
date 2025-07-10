@@ -376,17 +376,32 @@ export function sanitizeObjectForFirestore(obj: any): any {
  */
 export async function hydrateFromFirestore() {
   if (typeof window === 'undefined' || (window as any).__APP_HYDRATED__) {
+    resolveHydration?.();
     return;
   }
   
-  // If in local dev mode, skip hydration from Firestore entirely.
+  // If in local dev mode, skip hydration from Firestore entirely but ensure defaults are set.
   if (DEV_MODE_LOCAL_ONLY) {
     console.warn('[DEV MODE] Firestore hydration is disabled. Using only local placeholder data.');
+    
+    // Ensure default roles and users are present for local mode
+    if (placeholderAppRoles.length === 0) {
+      const adminPermissions = ALL_AVAILABLE_PERMISSIONS.filter(p => !['users:manage', 'roles:manage'].includes(p.id)).map(p => p.id);
+      placeholderAppRoles.push(
+        { id: 'role_superadmin_default', name: 'Superadmin', permissions: ALL_AVAILABLE_PERMISSIONS.map(p => p.id) },
+        { id: 'role_admin_default', name: 'Admin', permissions: adminPermissions },
+        { id: 'role_tecnico_default', name: 'Tecnico', permissions: ['dashboard:view', 'services:create', 'services:edit', 'services:view_history', 'inventory:view', 'vehicles:manage', 'pos:view_sales'] },
+        { id: 'role_ventas_default', name: 'Ventas', permissions: ['dashboard:view', 'pos:create_sale', 'pos:view_sales', 'inventory:view', 'vehicles:manage'] }
+      );
+    }
+    if (!placeholderUsers.some(u => u.id === defaultSuperAdmin.id)) {
+        placeholderUsers.unshift(defaultSuperAdmin);
+    }
+
     (window as any).__APP_HYDRATED__ = true;
     resolveHydration?.();
     return;
   }
-
 
   console.log('Attempting to hydrate application data from Firestore...');
   const docRef = doc(db, DB_PATH);
