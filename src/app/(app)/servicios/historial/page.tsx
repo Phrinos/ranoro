@@ -161,9 +161,27 @@ function HistorialServiciosPageComponent() {
   const handleVehicleCreated = useCallback((newVehicle: Vehicle) => { /* ... */ }, []);
   
   const handleShowPreview = useCallback((service: ServiceRecord) => {
-    setPreviewData({ service, vehicle: vehicles.find(v => v.id === service.vehicleId) });
+    //-- Obtenemos al usuario autenticado almacenado en localStorage
+    let currentUser: User | null = null;
+    try {
+      const raw = typeof window !== "undefined"
+        ? localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY)
+        : null;
+      if (raw) currentUser = JSON.parse(raw);
+    } catch { /* ignore */ }
+  
+    //-- Enriquecemos el servicio con datos del asesor cuando falten
+    const enrichedService: ServiceRecord = {
+      ...service,
+      serviceAdvisorName:
+        service.serviceAdvisorName || currentUser?.name || "",
+      serviceAdvisorSignatureDataUrl:
+        service.serviceAdvisorSignatureDataUrl || currentUser?.signatureDataUrl || "",
+    };
+  
+    setPreviewData({ service: enrichedService });
     setIsSheetOpen(true);
-  }, [vehicles]);
+  }, []);
 
   return (
     <>
