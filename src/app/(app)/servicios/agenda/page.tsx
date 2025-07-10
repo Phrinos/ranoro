@@ -327,15 +327,16 @@ function AgendaPageComponent() {
        <PrintTicketDialog
           open={isSheetOpen}
           onOpenChange={setIsSheetOpen}
-          title="Vista Previa de Hoja de Servicio"
+          title="Vista Previa Unificada"
           onDialogClose={() => setServiceForSheet(null)}
           dialogContentClassName="printable-quote-dialog"
-          footerActions={<Button onClick={() => window.print()}><Printer className="mr-2 h-4 w-4" /> Imprimir Hoja</Button>}
+          footerActions={<Button onClick={() => window.print()}><Printer className="mr-2 h-4 w-4" /> Imprimir Documento</Button>}
       >
           {serviceForSheet && (
               <ServiceSheetContent
                   ref={sheetContentRef}
                   service={serviceForSheet}
+                  quote={placeholderServiceRecords.find(q => q.id === serviceForSheet.id && q.status === 'Cotizacion')}
                   vehicle={vehicles.find(v => v.id === serviceForSheet.vehicleId)}
                   workshopInfo={workshopInfo as WorkshopInfo}
               />
@@ -352,4 +353,3 @@ export default function AgendaPageWrapper() {
     </Suspense>
   );
 }
-
