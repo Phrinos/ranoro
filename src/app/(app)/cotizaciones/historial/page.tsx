@@ -136,7 +136,7 @@ function HistorialCotizacionesPageComponent() {
   const [selectedQuote, setSelectedQuote] = useState<QuoteRecord | null>(null);
 
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
-  const [quoteForPreview, setQuoteForPreview] = useState<QuoteRecord | null>(null);
+  const [previewData, setPreviewData] = useState<{ service: ServiceRecord, quote?: QuoteRecord, vehicle?: Vehicle }> | null>(null);
   const serviceSheetRef = useRef<HTMLDivElement>(null);
 
 
@@ -183,9 +183,13 @@ function HistorialCotizacionesPageComponent() {
   }, [allServices, searchTerm, sortOption]);
 
   const handleViewQuote = useCallback((quote: QuoteRecord) => {
-    setQuoteForPreview(quote);
+    setPreviewData({
+        service: quote, // The quote is a type of service record
+        quote: quote, // Explicitly pass it as a quote
+        vehicle: vehicles.find(v => v.id === quote.vehicleId)
+    });
     setIsPreviewOpen(true);
-  }, []);
+  }, [vehicles]);
   
   const handleEditQuote = useCallback((quote: QuoteRecord) => { 
     setSelectedQuote(quote); 
@@ -251,7 +255,7 @@ function HistorialCotizacionesPageComponent() {
         />
       )}
       
-      {isPreviewOpen && quoteForPreview && (
+      {isPreviewOpen && previewData && (
         <PrintTicketDialog
           open={isPreviewOpen}
           onOpenChange={setIsPreviewOpen}
@@ -265,9 +269,9 @@ function HistorialCotizacionesPageComponent() {
         >
           <ServiceSheetContent
             ref={serviceSheetRef}
-            service={quoteForPreview}
-            quote={quoteForPreview}
-            vehicle={vehicles.find(v => v.id === quoteForPreview.vehicleId)}
+            service={previewData.service}
+            quote={previewData.quote}
+            vehicle={previewData.vehicle}
             workshopInfo={workshopInfo as WorkshopInfo}
           />
         </PrintTicketDialog>
