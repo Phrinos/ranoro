@@ -26,6 +26,7 @@ import type {
   CashDrawerTransaction,
   InitialCashBalance,
   AuditLog,
+  ServiceTypeRecord,
 } from '@/types';
 import {
   format,
@@ -56,6 +57,11 @@ export let placeholderCategories: InventoryCategory[] = [
     { id: 'CAT003', name: 'Frenos' },
     { id: 'CAT004', name: 'Suspensión' },
     { id: 'CAT005', name: 'Eléctrico' },
+];
+export let placeholderServiceTypes: ServiceTypeRecord[] = [
+    { id: 'st_1', name: 'Servicio General' },
+    { id: 'st_2', name: 'Cambio de Aceite' },
+    { id: 'st_3', name: 'Pintura' },
 ];
 export let placeholderSuppliers: Supplier[] = [
     { id: 'SUP001', name: 'Refaccionaria GDL', contactPerson: 'Juan Hernandez', phone: '333-123-4567', email: 'ventas@refaccionariagdl.com' },
@@ -377,6 +383,7 @@ const DATA_ARRAYS = {
   ownerWithdrawals: placeholderOwnerWithdrawals,
   vehicleExpenses: placeholderVehicleExpenses,
   auditLogs: placeholderAuditLogs,
+  serviceTypes: placeholderServiceTypes,
 };
 
 type DataKey = keyof typeof DATA_ARRAYS;

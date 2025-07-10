@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState, useMemo, useEffect, useCallback, Suspense, useRef } from 'react';
@@ -11,8 +12,9 @@ import {
   placeholderServiceRecords,
   placeholderInventory, 
   hydrateReady,
+  placeholderServiceTypes,
 } from "@/lib/placeholder-data";
-import type { InventoryItem, FinancialOperation, AggregatedInventoryItem, PaymentMethod } from "@/types";
+import type { InventoryItem, FinancialOperation, AggregatedInventoryItem, PaymentMethod, ServiceTypeRecord } from "@/types";
 import {
   format,
   parseISO,
@@ -31,7 +33,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
-type OperationTypeFilter = "all" | "Venta" | "Servicio General" | "C. Aceite" | "Pintura";
+type OperationTypeFilter = "all" | string;
 
 function ReportesPageComponent() {
     const searchParams = useSearchParams();
@@ -40,6 +42,7 @@ function ReportesPageComponent() {
     const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
     const [hydrated, setHydrated] = useState(false);
     const [version, setVersion] = useState(0);
+    const [serviceTypes, setServiceTypes] = useState<ServiceTypeRecord[]>([]);
 
     const [reporteOpSearchTerm, setReporteOpSearchTerm] = useState("");
     const [reporteOpTypeFilter, setReporteOpTypeFilter] = useState<OperationTypeFilter>("all");
@@ -50,7 +53,10 @@ function ReportesPageComponent() {
     const [reporteInvSortOption, setReporteInvSortOption] = useState<string>("quantity_desc");
 
     useEffect(() => {
-        hydrateReady.then(() => setHydrated(true));
+        hydrateReady.then(() => {
+          setHydrated(true);
+          setServiceTypes([...placeholderServiceTypes]);
+        });
         const forceUpdate = () => setVersion(v => v + 1);
         window.addEventListener('databaseUpdated', forceUpdate);
         
@@ -59,6 +65,12 @@ function ReportesPageComponent() {
 
         return () => window.removeEventListener('databaseUpdated', forceUpdate);
     }, []);
+
+    useEffect(() => {
+      if (hydrated) {
+        setServiceTypes([...placeholderServiceTypes]);
+      }
+    }, [hydrated, version]);
 
     const combinedOperations = useMemo((): FinancialOperation[] => {
         if (!hydrated) return [];
@@ -211,9 +223,9 @@ function ReportesPageComponent() {
                                     <DropdownMenuRadioGroup value={reporteOpTypeFilter} onValueChange={(v) => setReporteOpTypeFilter(v as OperationTypeFilter)}>
                                         <DropdownMenuRadioItem value="all">Todos</DropdownMenuRadioItem>
                                         <DropdownMenuRadioItem value="Venta">Venta</DropdownMenuRadioItem>
-                                        <DropdownMenuRadioItem value="Servicio General">Servicio General</DropdownMenuRadioItem>
-                                        <DropdownMenuRadioItem value="Cambio de Aceite">Cambio de Aceite</DropdownMenuRadioItem>
-                                        <DropdownMenuRadioItem value="Pintura">Pintura</DropdownMenuRadioItem>
+                                        {serviceTypes.map((type) => (
+                                          <DropdownMenuRadioItem key={type.id} value={type.name}>{type.name}</DropdownMenuRadioItem>
+                                        ))}
                                     </DropdownMenuRadioGroup>
                                 </DropdownMenuContent>
                             </DropdownMenu>

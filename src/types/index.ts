@@ -180,7 +180,7 @@ export interface ServiceRecord {
   vehicleId: string;
   vehicleIdentifier?: string;
   serviceDate: string; // Date of service or quote
-  serviceType?: 'Servicio General' | 'Cambio de Aceite' | 'Pintura';
+  serviceType?: string; // Changed from enum to string
   description?: string;
   technicianId: string;
   technicianName?: string;
@@ -280,6 +280,11 @@ export interface InventoryCategory {
   name: string;
 }
 
+export interface ServiceTypeRecord {
+  id: string;
+  name: string;
+}
+
 export interface Supplier {
   id: string;
   name: string;
@@ -340,7 +345,7 @@ export interface DashboardMetrics {
 export interface FinancialOperation {
   id: string;
   date: string;
-  type: 'Venta' | 'Servicio General' | 'Cambio de Aceite' | 'Pintura';
+  type: string;
   description: string; 
   totalAmount: number; // This is the final, tax-inclusive amount
   profit: number;

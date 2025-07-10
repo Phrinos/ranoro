@@ -25,7 +25,7 @@ import { CalendarIcon, PlusCircle, Trash2, BrainCircuit, Loader2, Printer, Ban, 
 import { cn } from "@/lib/utils";
 import { format, parseISO, setHours, setMinutes, isValid, startOfDay, addDays } from 'date-fns';
 import { es } from 'date-fns/locale';
-import type { ServiceRecord, Vehicle, Technician, InventoryItem, ServiceSupply, QuoteRecord, InventoryCategory, Supplier, User, WorkshopInfo, ServiceItem, SafetyInspection, PaymentMethod, SafetyCheckStatus, PhotoReportGroup, SafetyCheckValue } from "@/types";
+import type { ServiceRecord, Vehicle, Technician, InventoryItem, ServiceSupply, QuoteRecord, InventoryCategory, Supplier, User, WorkshopInfo, ServiceItem, SafetyInspection, PaymentMethod, SafetyCheckStatus, PhotoReportGroup, SafetyCheckValue, ServiceTypeRecord } from "@/types";
 import React, { useEffect, useState, useMemo, useCallback, useRef } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { VehicleDialog } from "../../vehiculos/components/vehicle-dialog";
@@ -36,6 +36,7 @@ import {
     placeholderServiceRecords as defaultServiceRecords, 
     persistToFirestore, 
     AUTH_USER_LOCALSTORAGE_KEY,
+    placeholderServiceTypes,
 } from '@/lib/placeholder-data';
 import {
   Dialog,
@@ -155,7 +156,7 @@ const serviceFormSchemaBase = z.object({
   technicianId: z.string().optional(),
   serviceItems: z.array(serviceItemSchema).min(1, "Debe agregar al menos un ítem de servicio."),
   status: z.enum(["Cotizacion", "Agendado", "En Espera de Refacciones", "Reparando", "Completado", "Entregado", "Cancelado"]).optional(),
-  serviceType: z.enum(["Servicio General", "Cambio de Aceite", "Pintura"]).optional(),
+  serviceType: z.string().optional(),
   receptionDateTime: z.date().optional(),
   deliveryDateTime: z.date({ invalid_type_error: "La fecha de entrega no es válida." }).optional(),
   vehicleConditions: z.string().optional(),
@@ -248,10 +249,9 @@ export function ServiceForm({
 }: ServiceFormProps) {
   const { toast } = useToast();
   
-  const initialData = mode === 'service' ? initialDataService : initialDataQuote;
-  
   const [localVehicles, setLocalVehicles] = useState<Vehicle[]>(parentVehicles);
   const [currentInventoryItems, setCurrentInventoryItems] = useState<InventoryItem[]>(inventoryItemsProp);
+  const [serviceTypes, setServiceTypes] = useState<ServiceTypeRecord[]>([]);
   const [workshopInfo, setWorkshopInfo] = useState<WorkshopInfo | {}>({});
   const [isGeneratingQuote, setIsGeneratingQuote] = useState(false);
   const [isEnhancingText, setIsEnhancingText] = useState<string | null>(null);
@@ -269,17 +269,11 @@ export function ServiceForm({
   const [isCancelAlertOpen, setIsCancelAlertOpen] = useState(false);
   
   const freshUserRef = useRef<User | null>(null);
-  const originalStatusRef = useRef(initialDataService?.status || initialDataQuote?.status);
+  const initialData = mode === 'service' ? initialDataService : initialDataQuote;
+  const originalStatusRef = useRef(initialData?.status);
   
   const form = useForm<ServiceFormValues>({
     resolver: zodResolver(serviceFormSchemaBase),
-    defaultValues: {
-      status: mode === 'quote' ? 'Cotizacion' : 'Agendado',
-      serviceType: 'Servicio General',
-      serviceItems: [],
-      photoReports: [],
-      safetyInspection: {}
-    },
   });
   const { control, getValues, setValue, watch, trigger } = form;
 
@@ -316,6 +310,8 @@ export function ServiceForm({
 
   useEffect(() => { setLocalVehicles(parentVehicles); }, [parentVehicles]);
   useEffect(() => { setCurrentInventoryItems(inventoryItemsProp); }, [inventoryItemsProp]);
+  useEffect(() => { setServiceTypes([...placeholderServiceTypes]); }, []);
+
 
   const refreshCurrentUser = useCallback(() => {
     const authUserString = typeof window !== "undefined" ? localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY) : null;
@@ -323,7 +319,7 @@ export function ServiceForm({
   }, []);
 
   useEffect(() => {
-    const data = initialData || (mode === 'service' ? initialDataService : initialDataQuote);
+    const data = initialData;
     refreshCurrentUser();
     const storedWorkshopInfo = typeof window !== "undefined" ? localStorage.getItem("workshopTicketInfo") : null;
     if (storedWorkshopInfo) setWorkshopInfo(JSON.parse(storedWorkshopInfo));
@@ -347,7 +343,7 @@ export function ServiceForm({
         mileage: data?.mileage || undefined,
         description: data?.description || "",
         notes: data?.notes || "", technicianId: (data as ServiceRecord)?.technicianId || (data as QuoteRecord)?.preparedByTechnicianId || undefined,
-        serviceType: (data as ServiceRecord)?.serviceType || (data as QuoteRecord)?.serviceType || 'Servicio General',
+        serviceType: data?.serviceType || serviceTypes[0]?.name || 'Servicio General',
         vehicleConditions: (data as ServiceRecord)?.vehicleConditions || "", fuelLevel: (data as ServiceRecord)?.fuelLevel || undefined,
         customerItems: (data as ServiceRecord)?.customerItems || '',
         customerSignatureReception: (data as ServiceRecord)?.customerSignatureReception || undefined,
@@ -365,7 +361,7 @@ export function ServiceForm({
         form.setValue('serviceDate', setHours(setMinutes(new Date(), 30), 8));
         if (mode === 'quote') form.setValue('quoteDate', new Date());
     }
-  }, [initialDataService, initialDataQuote, mode, form, isReadOnly, refreshCurrentUser]);
+  }, [initialData, mode, form, isReadOnly, refreshCurrentUser, serviceTypes]);
   
   const handlePhotoUploadComplete = useCallback(
     (reportIndex: number, url: string) => {
@@ -582,7 +578,7 @@ export function ServiceForm({
                     <CardContent className="space-y-6">
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <FormField control={control} name="status" render={({ field }) => ( <FormItem><FormLabel>Estado</FormLabel><Select onValueChange={field.onChange} value={field.value} disabled={isReadOnly || watchedStatus === 'Completado' || watchedStatus === 'Entregado'}><FormControl><SelectTrigger className="font-bold"><SelectValue placeholder="Seleccione un estado" /></SelectTrigger></FormControl><SelectContent>{["Cotizacion", "Agendado", "En Espera de Refacciones", "Reparando", "Completado"].map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )}/>
-                            <FormField control={control} name="serviceType" render={({ field }) => ( <FormItem><FormLabel>Tipo de Servicio</FormLabel><Select onValueChange={field.onChange} value={field.value || 'Servicio General'} disabled={isReadOnly}><FormControl><SelectTrigger><SelectValue placeholder="Seleccione un tipo" /></SelectTrigger></FormControl><SelectContent><SelectItem value="Servicio General">Servicio General</SelectItem><SelectItem value="Cambio de Aceite">Cambio de Aceite</SelectItem><SelectItem value="Pintura">Pintura</SelectItem></SelectContent></Select></FormItem> )}/>
+                            <FormField control={control} name="serviceType" render={({ field }) => ( <FormItem><FormLabel>Tipo de Servicio</FormLabel><Select onValueChange={field.onChange} value={field.value || 'Servicio General'} disabled={isReadOnly}><FormControl><SelectTrigger><SelectValue placeholder="Seleccione un tipo" /></SelectTrigger></FormControl><SelectContent>{serviceTypes.map((type) => <SelectItem key={type.id} value={type.name}>{type.name}</SelectItem>)}</SelectContent></Select></FormItem> )}/>
                             <FormField control={control} name="technicianId" render={({ field }) => ( <FormItem><FormLabel>Técnico Asignado</FormLabel><Select onValueChange={field.onChange} value={field.value} disabled={isReadOnly}><FormControl><SelectTrigger><SelectValue placeholder="Seleccione un técnico..." /></SelectTrigger></FormControl><SelectContent>{technicians.filter((t) => !t.isArchived).map((technician) => ( <SelectItem key={technician.id} value={technician.id}>{technician.name} - {technician.specialty}</SelectItem> ))}</SelectContent></Select><FormMessage /></FormItem>)}/>
                         </div>
                         
