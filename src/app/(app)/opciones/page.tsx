@@ -14,23 +14,26 @@ import { useToast } from '@/hooks/use-toast';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import type { User, SaleReceipt, AppRole, WorkshopInfo } from '@/types';
+import type { User, SaleReceipt, AppRole, WorkshopInfo, ServiceTypeRecord } from '@/types';
 import { 
     Save, Signature, BookOpen, Settings, UserCircle, Upload, Loader2, Bold, Shield, MessageSquare, Copy, Download, Printer,
-    LayoutDashboard, Wrench, FileText, Receipt, Package, DollarSign, Users
+    LayoutDashboard, Wrench, FileText, Receipt, Package, DollarSign, Users, Shapes, Edit, Trash2
 } from 'lucide-react';
 import { onAuthStateChanged, updatePassword, reauthenticateWithCredential, EmailAuthProvider } from 'firebase/auth';
 import { auth, storage, db } from '@/lib/firebaseClient.js';
 import { ref, uploadString, getDownloadURL } from 'firebase/storage';
-import { placeholderUsers, persistToFirestore, AUTH_USER_LOCALSTORAGE_KEY, placeholderAppRoles } from '@/lib/placeholder-data';
+import { placeholderUsers, persistToFirestore, AUTH_USER_LOCALSTORAGE_KEY, placeholderAppRoles, placeholderServiceTypes, logAudit } from '@/lib/placeholder-data';
 import { SignatureDialog } from '@/app/(app)/servicios/components/signature-dialog';
 import Image from "next/legacy/image";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { TicketContent } from "@/components/ticket-content";
 import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
-import { optimizeImage } from "@/lib/utils";
+import { optimizeImage, capitalizeWords } from "@/lib/utils";
 import { Checkbox } from "@/components/ui/checkbox";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Label } from "@/components/ui/label";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 // --- Schema and content from /perfil ---
 const profileSchema = z.object({
@@ -441,6 +444,127 @@ function ConfiguracionTicketPageContent() {
   );
 }
 
+// --- NEW Tipos de Servicio Content ---
+function TiposDeServicioPageContent() {
+    const { toast } = useToast();
+    const [serviceTypes, setServiceTypes] = useState<ServiceTypeRecord[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const [editingType, setEditingType] = useState<ServiceTypeRecord | null>(null);
+    const [currentTypeName, setCurrentTypeName] = useState('');
+
+    useEffect(() => {
+        setServiceTypes([...placeholderServiceTypes]);
+        setIsLoading(false);
+    }, []);
+
+    const handleOpenDialog = (type: ServiceTypeRecord | null = null) => {
+        setEditingType(type);
+        setCurrentTypeName(type ? type.name : '');
+        setIsDialogOpen(true);
+    };
+
+    const handleSaveType = async (e: React.FormEvent) => {
+        e.preventDefault();
+        const trimmedName = currentTypeName.trim();
+        if (!trimmedName) return toast({ title: "Nombre vacío", variant: "destructive" });
+
+        const isDuplicate = serviceTypes.some(
+            (t) => t.name.toLowerCase() === trimmedName.toLowerCase() && t.id !== editingType?.id
+        );
+        if (isDuplicate) return toast({ title: "Tipo de servicio duplicado", variant: "destructive" });
+
+        const isNew = !editingType;
+        const typeToSave: ServiceTypeRecord = {
+            id: isNew ? `st_${Date.now()}` : editingType.id,
+            name: trimmedName,
+        };
+        
+        const action = isNew ? 'Crear' : 'Editar';
+        await logAudit(action, `Se ${action.toLowerCase() === 'crear' ? 'creó el' : 'actualizó el'} tipo de servicio: "${trimmedName}".`, { entityType: 'Servicio', entityId: typeToSave.id });
+
+        if (isNew) {
+            placeholderServiceTypes.push(typeToSave);
+        } else {
+            const index = placeholderServiceTypes.findIndex(t => t.id === typeToSave.id);
+            if (index > -1) placeholderServiceTypes[index] = typeToSave;
+        }
+
+        await persistToFirestore(['serviceTypes']);
+        setServiceTypes([...placeholderServiceTypes]);
+        toast({ title: `Tipo de servicio ${isNew ? 'creado' : 'actualizado'}.` });
+        setIsDialogOpen(false);
+    };
+
+    const handleDeleteType = async (type: ServiceTypeRecord) => {
+        if (window.confirm(`¿Seguro que quieres eliminar "${type.name}"?`)) {
+            await logAudit('Eliminar', `Se eliminó el tipo de servicio: "${type.name}".`, { entityType: 'Servicio', entityId: type.id });
+            const index = placeholderServiceTypes.findIndex(t => t.id === type.id);
+            if (index > -1) {
+                placeholderServiceTypes.splice(index, 1);
+                await persistToFirestore(['serviceTypes']);
+                setServiceTypes([...placeholderServiceTypes]);
+                toast({ title: "Tipo de servicio eliminado.", variant: "destructive" });
+            }
+        }
+    };
+    
+    if (isLoading) return <p>Cargando tipos de servicio...</p>;
+
+    return (
+        <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+                <div>
+                    <CardTitle>Tipos de Servicio</CardTitle>
+                    <CardDescription>Gestiona los tipos de servicios que ofreces en tu taller.</CardDescription>
+                </div>
+                <Button onClick={() => handleOpenDialog()}><PlusCircle className="mr-2 h-4 w-4"/>Nuevo Tipo</Button>
+            </CardHeader>
+            <CardContent>
+                 <div className="rounded-md border">
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>Nombre</TableHead>
+                                <TableHead className="text-right">Acciones</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {serviceTypes.length > 0 ? (
+                                serviceTypes.map(type => (
+                                    <TableRow key={type.id}>
+                                        <TableCell className="font-medium">{type.name}</TableCell>
+                                        <TableCell className="text-right">
+                                            <Button variant="ghost" size="icon" onClick={() => handleOpenDialog(type)}><Edit className="h-4 w-4"/></Button>
+                                            <Button variant="ghost" size="icon" onClick={() => handleDeleteType(type)}><Trash2 className="h-4 w-4 text-destructive"/></Button>
+                                        </TableCell>
+                                    </TableRow>
+                                ))
+                            ) : (
+                                <TableRow><TableCell colSpan={2} className="h-24 text-center">No hay tipos de servicio definidos.</TableCell></TableRow>
+                            )}
+                        </TableBody>
+                    </Table>
+                </div>
+            </CardContent>
+            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>{editingType ? 'Editar' : 'Nuevo'} Tipo de Servicio</DialogTitle>
+                    </DialogHeader>
+                    <form onSubmit={handleSaveType} className="py-4 space-y-4">
+                        <Label htmlFor="type-name">Nombre del Tipo de Servicio</Label>
+                        <Input id="type-name" value={currentTypeName} onChange={(e) => setCurrentTypeName(capitalizeWords(e.target.value))} />
+                        <DialogFooter>
+                            <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>Cancelar</Button>
+                            <Button type="submit">Guardar</Button>
+                        </DialogFooter>
+                    </form>
+                </DialogContent>
+            </Dialog>
+        </Card>
+    )
+}
 
 // --- Main Component ---
 function OpcionesPageComponent() {
@@ -478,11 +602,14 @@ function OpcionesPageComponent() {
         </div>
         
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 mb-6">
+            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 mb-6">
                 <TabsTrigger value="perfil" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground flex items-center gap-2"><UserCircle className="h-5 w-5"/>Mi Perfil</TabsTrigger>
                 <TabsTrigger value="manual" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground flex items-center gap-2"><BookOpen className="h-5 w-5"/>Manual de Usuario</TabsTrigger>
                 {userPermissions.has('ticket_config:manage') && (
                     <TabsTrigger value="ticket" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground flex items-center gap-2"><Settings className="h-5 w-5"/>Configurar Ticket</TabsTrigger>
+                )}
+                 {userPermissions.has('roles:manage') && (
+                    <TabsTrigger value="service_types" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground flex items-center gap-2"><Shapes className="h-5 w-5"/>Tipos de Servicio</TabsTrigger>
                 )}
             </TabsList>
             <TabsContent value="perfil" className="mt-0">
@@ -494,6 +621,11 @@ function OpcionesPageComponent() {
             {userPermissions.has('ticket_config:manage') && (
                 <TabsContent value="ticket" className="mt-0">
                     <ConfiguracionTicketPageContent />
+                </TabsContent>
+            )}
+            {userPermissions.has('roles:manage') && (
+                <TabsContent value="service_types" className="mt-0">
+                    <TiposDeServicioPageContent />
                 </TabsContent>
             )}
         </Tabs>
