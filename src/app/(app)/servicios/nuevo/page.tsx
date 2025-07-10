@@ -67,6 +67,7 @@ export default function NuevoServicioPage() {
     } else if (savedRecord.status !== 'Cotizacion') {
       setDialogStep('print_sheet'); 
     } else {
+      // If it's a quote, redirect to the history page instead of showing a preview
       handleDialogClose();
     }
   };

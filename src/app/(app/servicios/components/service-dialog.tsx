@@ -11,14 +11,17 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { ServiceForm } from "./service-form";
-import type { ServiceRecord, Vehicle, Technician, InventoryItem, QuoteRecord } from "@/types";
+import type { ServiceRecord, Vehicle, Technician, InventoryItem, QuoteRecord, User } from "@/types";
 import { useToast } from "@/hooks/use-toast"; 
-import { persistToFirestore, placeholderServiceRecords, logAudit } from '@/lib/placeholder-data';
+import { persistToFirestore, placeholderServiceRecords, logAudit, AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
+import { db } from '@/lib/firebaseClient.js';
+import { doc, getDoc } from 'firebase/firestore';
+
 
 interface ServiceDialogProps {
   trigger?: React.ReactNode;
   service?: ServiceRecord | null; 
-  quote?: Partial<QuoteRecord> | null;
+  quote?: Partial<QuoteRecord> | null; // For quote mode initialization
   vehicles: Vehicle[]; 
   technicians: Technician[]; 
   inventoryItems: InventoryItem[]; 
@@ -27,8 +30,8 @@ interface ServiceDialogProps {
   open?: boolean; 
   onOpenChange?: (isOpen: boolean) => void; 
   onVehicleCreated?: (newVehicle: Vehicle) => void; 
-  mode?: 'service' | 'quote';
-  onDelete?: (id: string) => void; 
+  mode?: 'service' | 'quote'; // New mode prop
+  onDelete?: (id: string) => void; // For quote deletion
   onCancelService?: (serviceId: string, reason: string) => void;
   onViewQuoteRequest?: (serviceId: string) => void;
 }
@@ -45,7 +48,7 @@ export function ServiceDialog({
   open: controlledOpen,
   onOpenChange: setControlledOpen,
   onVehicleCreated,
-  mode = 'service', 
+  mode = 'service', // Default to service mode
   onDelete,
   onCancelService,
   onViewQuoteRequest,
@@ -57,6 +60,7 @@ export function ServiceDialog({
   const open = isControlled ? controlledOpen : uncontrolledOpen;
   const onOpenChange = isControlled ? setControlledOpen : setUncontrolledOpen;
 
+  // Mark signatures as "viewed" when the dialog opens
   useEffect(() => {
     if (open && service && mode === 'service') {
       let changed = false;
@@ -89,11 +93,33 @@ export function ServiceDialog({
       const isNew = !formData.id;
       const recordId = formData.id || `doc_${Date.now().toString(36)}`;
       
+      // Ensure advisor signature is captured correctly from the form or current user
+      let advisorSignature = formData.serviceAdvisorSignatureDataUrl;
+      let advisorName = formData.serviceAdvisorName;
+      let advisorId = formData.serviceAdvisorId;
+
+      if (!advisorSignature || !advisorName || !advisorId) {
+        const authUserString = localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY);
+        if (authUserString) {
+          const currentUser: User = JSON.parse(authUserString);
+          advisorId = currentUser.id;
+          advisorName = currentUser.name;
+          advisorSignature = currentUser.signatureDataUrl;
+        }
+      }
+
       const recordToSave: ServiceRecord = { 
         ...formData,
         id: recordId,
-        quoteDate: formData.status === 'Cotizacion' ? (formData.quoteDate || new Date()).toISOString() : formData.quoteDate?.toISOString(),
-        serviceDate: formData.status !== 'Cotizacion' ? (formData.serviceDate || new Date()).toISOString() : formData.serviceDate?.toISOString(),
+        quoteDate: formData.status === 'Cotizacion' 
+            ? (formData.quoteDate ? new Date(formData.quoteDate).toISOString() : new Date().toISOString()) 
+            : (formData.quoteDate ? new Date(formData.quoteDate).toISOString() : undefined),
+        serviceDate: formData.status !== 'Cotizacion' 
+            ? (formData.serviceDate ? new Date(formData.serviceDate).toISOString() : new Date().toISOString()) 
+            : (formData.serviceDate ? new Date(formData.serviceDate).toISOString() : undefined),
+        serviceAdvisorId: advisorId,
+        serviceAdvisorName: advisorName,
+        serviceAdvisorSignatureDataUrl: advisorSignature,
       } as ServiceRecord;
 
       const recordIndex = placeholderServiceRecords.findIndex(q => q.id === recordId);
@@ -117,7 +143,7 @@ export function ServiceDialog({
       });
 
       if (onSave) {
-        await onSave(formData);
+        await onSave(recordToSave);
       }
       
       onOpenChange(false);
@@ -142,7 +168,7 @@ export function ServiceDialog({
     : (service || quote
       ? (mode === 'quote' ? "Actualiza los detalles de la cotización." : "Actualiza los detalles de la orden de servicio.")
       : (mode === 'quote' ? "Completa la información para una nueva cotización." : "Completa la información para una nueva orden de servicio."));
-
+      
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       {trigger && !isControlled && <DialogTrigger asChild onClick={() => onOpenChange(true)}>{trigger}</DialogTrigger>}

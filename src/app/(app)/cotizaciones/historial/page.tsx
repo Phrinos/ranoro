@@ -212,6 +212,7 @@ function HistorialCotizacionesPageComponent() {
       
       await persistToFirestore(['serviceRecords']);
 
+    setAllServices([...placeholderServiceRecords]);
     setIsFormDialogOpen(false);
   }, []);
 
