@@ -32,6 +32,7 @@ const ServiceAppointmentCard = React.memo(({ service, vehicles, onEdit, onConfir
 }) => {
   const vehicle = vehicles.find(v => v.id === service.vehicleId);
   const getServiceDescriptionText = (service: ServiceRecord) => {
+    // This function will now focus only on the detailed description.
     if (service.serviceItems && service.serviceItems.length > 0) {
       return service.serviceItems.map(item => item.name).join(', ');
     }
