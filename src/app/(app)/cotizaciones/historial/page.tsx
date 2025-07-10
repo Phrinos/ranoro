@@ -13,7 +13,7 @@ import { Search, ListFilter, FileText, Eye, Edit, Printer } from "lucide-react";
 import { placeholderServiceRecords, placeholderVehicles, placeholderTechnicians, placeholderInventory, persistToFirestore, AUTH_USER_LOCALSTORAGE_KEY } from "@/lib/placeholder-data"; 
 import type { QuoteRecord, Vehicle, ServiceRecord, Technician, InventoryItem, WorkshopInfo, User } from "@/types"; 
 import { useToast } from "@/hooks/use-toast";
-import { format, parseISO, compareAsc, compareDesc, isBefore, addDays } from "date-fns";
+import { format, parseISO, compareAsc, compareDesc, isBefore, addDays, isValid } from "date-fns";
 import { es } from 'date-fns/locale';
 import { cn, formatCurrency } from "@/lib/utils";
 import { ServiceDialog } from "../../servicios/components/service-dialog";
@@ -90,7 +90,7 @@ const QuoteList = React.memo(({ quotes, vehicles, onEditQuote, onViewQuote }: {
                     </div>
                     <div className="p-3 flex flex-col justify-center items-center text-center w-full md:w-48 flex-shrink-0">
                       <p className="text-xs text-muted-foreground">Costo Estimado</p>
-                      <p className="font-bold text-xl text-black">{formatCurrency(quote.totalCost)}</p>
+                      <p className="font-bold text-2xl text-black">{formatCurrency(quote.totalCost)}</p>
                        {quote.serviceProfit !== undefined && (
                         <p className="text-xs text-green-600 font-medium">
                             Ganancia: {formatCurrency(quote.serviceProfit)}
@@ -151,7 +151,7 @@ function HistorialCotizacionesPageComponent() {
   }, []);
   
   const activeQuotes = useMemo(() => {
-    let filtered = allServices.filter(service => service.status === 'Cotizacion' || (service.quoteDate && service.status !== 'Cotizacion'));
+    let filtered = allServices.filter(service => service.status === 'Cotizacion' || service.quoteDate);
 
     if (searchTerm) {
       const lowerSearchTerm = searchTerm.toLowerCase();
