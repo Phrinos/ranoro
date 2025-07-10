@@ -62,10 +62,17 @@ const inspectionGroups = [
   ]},
 ];
 
-const ChecklistItemPhotoUploader = ({ itemName, serviceId, onUpload, photos, isReadOnly, onViewImage }: { 
+const ChecklistItemPhotoUploader = ({ 
+    itemName, 
+    serviceId, 
+    onUpload, 
+    photos, 
+    isReadOnly, 
+    onViewImage 
+}: { 
     itemName: string, 
     serviceId: string, 
-    onUpload: (itemName: string, url: string) => void, 
+    onUpload: (itemName: string, urls: string[]) => void, 
     photos: string[], 
     isReadOnly?: boolean,
     onViewImage: (url: string) => void 
@@ -87,18 +94,20 @@ const ChecklistItemPhotoUploader = ({ itemName, serviceId, onUpload, photos, isR
 
         setIsUploading(true);
         toast({ title: `Subiendo ${files.length} foto(s)...` });
+        
+        const uploadPromises = Array.from(files).map(async (file) => {
+            const optimizedUrl = await optimizeImage(file, 800);
+            const storageRef = ref(storage, `service-photos/${serviceId}/checklist/${itemName}/${Date.now()}.jpg`);
+            await uploadString(storageRef, optimizedUrl, 'data_url');
+            return getDownloadURL(storageRef);
+        });
 
-        for (const file of Array.from(files)) {
-          try {
-              const optimizedUrl = await optimizeImage(file, 800);
-              const storageRef = ref(storage, `service-photos/${serviceId}/checklist/${itemName}/${Date.now()}.jpg`);
-              await uploadString(storageRef, optimizedUrl, 'data_url');
-              const downloadURL = await getDownloadURL(storageRef);
-              onUpload(itemName, downloadURL);
-          } catch (error) {
-              console.error("Error uploading photo:", error);
-              toast({ title: 'Error al subir foto', variant: 'destructive' });
-          }
+        try {
+            const downloadURLs = await Promise.all(uploadPromises);
+            onUpload(itemName, downloadURLs);
+        } catch (error) {
+            console.error("Error uploading photo:", error);
+            toast({ title: 'Error al subir foto', variant: 'destructive' });
         }
         
         setIsUploading(false);
@@ -149,7 +158,7 @@ const SafetyCheckRow = ({ name, label, control, isReadOnly, serviceId, onPhotoUp
     control: Control<ServiceFormValues>; 
     isReadOnly?: boolean; 
     serviceId: string; 
-    onPhotoUploaded: (itemName: string, url: string) => void;
+    onPhotoUploaded: (itemName: string, urls: string[]) => void;
     onViewImage: (url: string) => void;
 }) => {
   return (
@@ -213,7 +222,7 @@ export const SafetyChecklist = ({ control, isReadOnly, onSignatureClick, signatu
   isEnhancingText: string | null;
   handleEnhanceText: (fieldName: 'notes' | 'vehicleConditions' | 'customerItems' | 'safetyInspection.inspectionNotes' | `photoReports.${number}.description`) => void;
   serviceId: string;
-  onPhotoUploaded: (itemName: string, url: string) => void;
+  onPhotoUploaded: (itemName: string, urls: string[]) => void;
   onViewImage: (url: string) => void;
 }) => {
   return (

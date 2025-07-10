@@ -249,9 +249,13 @@ export function ServiceForm({
   const initialData = mode === 'service' ? initialDataService : initialDataQuote;
   const initialVehicleIdentifier = initialData?.vehicleIdentifier;
   
-  const [stableServiceId] = useState(
-    initialData?.id || `TEMP_${generateUniqueId()}`
-  );
+  const [serviceId, setServiceId] = useState(() => initialData?.id || `TEMP_${generateUniqueId()}`);
+  useEffect(() => {
+    if (initialData?.id && initialData.id !== serviceId) {
+      setServiceId(initialData.id);
+    }
+  }, [initialData?.id, serviceId]);
+
 
   const [vehicleLicensePlateSearch, setVehicleLicensePlateSearch] = useState(initialVehicleIdentifier || "");
   const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
@@ -334,13 +338,10 @@ export function ServiceForm({
     name: "photoReports",
   });
   
-  const handlePhotoUploadComplete = useCallback((reportIndex: number, downloadURL: string) => {
-    const freshReportState = getValues(`photoReports.${reportIndex}`);
-    updatePhotoReport(reportIndex, {
-      ...freshReportState,
-      photos: [...freshReportState.photos, downloadURL],
-    });
-  }, [getValues, updatePhotoReport]);
+  const handlePhotoUploadComplete = useCallback((reportIndex: number, urls: string[]) => {
+    const currentPhotos = getValues(`photoReports.${reportIndex}.photos`) || [];
+    setValue(`photoReports.${reportIndex}.photos`, [...currentPhotos, ...urls], { shouldDirty: true });
+  }, [getValues, setValue]);
   
   const handleViewImage = (url: string) => {
     setViewingImageUrl(url);
@@ -842,10 +843,10 @@ export function ServiceForm({
     }
   };
   
-  const handleChecklistPhotoUpload = useCallback((itemName: string, url: string) => {
+  const handleChecklistPhotoUpload = useCallback((itemName: string, urls: string[]) => {
     const path = `safetyInspection.${itemName}` as const;
     const currentItemValue = getValues(path) || { status: 'na', photos: [] };
-    const updatedPhotos = [...(currentItemValue.photos || []), url];
+    const updatedPhotos = [...(currentItemValue.photos || []), ...urls];
 
     setValue(path, { ...currentItemValue, photos: updatedPhotos }, { shouldDirty: true });
   }, [getValues, setValue]);
@@ -1457,7 +1458,7 @@ export function ServiceForm({
                                             </Button>
                                         )}
                                       </FormLabel>
-                                      <FormControl><Textarea placeholder="Describe el conjunto de fotos..." disabled={isReadOnly} {...descField} /></FormControl>
+                                      <FormControl><Textarea placeholder={index === 0 ? "" : "Describe el conjunto de fotos..."} disabled={isReadOnly} {...descField} /></FormControl>
                                       <FormMessage />
                                   </FormItem>
                               )}
@@ -1474,7 +1475,7 @@ export function ServiceForm({
                             </div>
                             <PhotoUploader
                                 reportIndex={index}
-                                serviceId={stableServiceId}
+                                serviceId={serviceId}
                                 photosLength={field.photos.length}
                                 disabled={isReadOnly}
                                 onUploadComplete={handlePhotoUploadComplete}
@@ -1502,7 +1503,7 @@ export function ServiceForm({
                     signatureDataUrl={technicianSignature}
                     isEnhancingText={isEnhancingText}
                     handleEnhanceText={handleEnhanceText}
-                    serviceId={stableServiceId}
+                    serviceId={serviceId}
                     onPhotoUploaded={handleChecklistPhotoUpload}
                     onViewImage={handleViewImage}
                   />
