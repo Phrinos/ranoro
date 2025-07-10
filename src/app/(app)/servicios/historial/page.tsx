@@ -120,7 +120,11 @@ function HistorialServiciosPageComponent() {
   const [editingService, setEditingService] = useState<ServiceRecord | null>(null);
 
   const [isSheetOpen, setIsSheetOpen] = useState(false);
-  const [previewData, setPreviewData] = useState<{ service: ServiceRecord, quote?: QuoteRecord, vehicle?: Vehicle }> | null>(null);
+  const [previewData, setPreviewData] = useState<{
+    service: ServiceRecord;
+    quote?: QuoteRecord;
+    vehicle?: Vehicle;
+  } | null>(null);
   
   useEffect(() => {
     // Sync with global state
@@ -157,9 +161,9 @@ function HistorialServiciosPageComponent() {
   const handleVehicleCreated = useCallback((newVehicle: Vehicle) => { /* ... */ }, []);
   
   const handleShowPreview = useCallback((service: ServiceRecord) => {
-    setPreviewData({ service });
+    setPreviewData({ service, vehicle: vehicles.find(v => v.id === service.vehicleId) });
     setIsSheetOpen(true);
-  }, []);
+  }, [vehicles]);
 
   return (
     <>
