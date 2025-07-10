@@ -33,10 +33,11 @@ const ServiceAppointmentCard = React.memo(({ service, vehicles, onEdit, onConfir
   const vehicle = vehicles.find(v => v.id === service.vehicleId);
   const getServiceDescriptionText = (service: ServiceRecord) => {
     // This function will now focus only on the detailed description.
-    if (service.serviceItems && service.serviceItems.length > 0) {
-      return service.serviceItems.map(item => item.name).join(', ');
-    }
-    return service.description || 'Servicio sin descripción';
+    const serviceType = service.serviceType ? `${service.serviceType}: ` : '';
+    const description = (service.serviceItems && service.serviceItems.length > 0)
+      ? service.serviceItems.map(item => item.name).join(', ')
+      : service.description || 'Servicio sin descripción';
+    return `${serviceType}${description}`;
   };
 
   const getAppointmentStatus = (service: ServiceRecord): { label: string; variant: "lightRed" | "success" } => {
@@ -60,7 +61,7 @@ const ServiceAppointmentCard = React.memo(({ service, vehicles, onEdit, onConfir
           <div className="p-4 flex flex-col justify-center flex-grow space-y-2 text-left border-y md:border-y-0 md:border-x">
               <p className="font-bold text-2xl text-black">{vehicle ? `${vehicle.licensePlate} - ${vehicle.make} ${vehicle.model}` : 'N/A'}</p>
               <p className="text-sm text-foreground">
-                  <span className="font-semibold">{service.serviceType}:</span> {getServiceDescriptionText(service)}
+                  {getServiceDescriptionText(service)}
               </p>
           </div>
           <div className="p-4 flex flex-col justify-center items-center text-center w-full md:w-48 flex-shrink-0">
