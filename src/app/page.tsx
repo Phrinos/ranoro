@@ -2,7 +2,7 @@
 "use client";
 
 import Link from 'next/link';
-import Image from "next/legacy/image";
+import Image from "next/image";
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Car, Wrench, BrainCircuit, Users, ShieldCheck, Drill, GitCommitHorizontal, CircleDotDashed, Truck, CheckCircle, MessageSquare } from 'lucide-react';
@@ -80,9 +80,10 @@ export default function LandingPage() {
           <Image
             src="/ranoro1.jpg"
             alt="Taller mecánico profesional"
-            layout="fill"
+            fill
             priority
-            className="absolute z-0 object-cover"
+            className="absolute z-0"
+            style={{ objectFit: 'cover' }}
             data-ai-hint="mechanic garage"
           />
           <div className="absolute inset-0 bg-black/60 z-0" />
@@ -231,7 +232,8 @@ export default function LandingPage() {
                   alt="Servicio a flotillas"
                   width={600}
                   height={400}
-                  className="rounded-lg shadow-xl object-cover"
+                  className="rounded-lg shadow-xl"
+                  style={{ objectFit: 'cover' }}
                   data-ai-hint="trucks fleet"
                 />
               </div>
