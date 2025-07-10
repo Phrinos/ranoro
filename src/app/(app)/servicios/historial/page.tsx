@@ -2,7 +2,7 @@
 
 "use client";
 
-import React, { useState, useEffect, useMemo, useRef, useCallback, Suspense } from "react";
+import React, { useState, useEffect, useMemo, useCallback, Suspense } from "react";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,7 +24,7 @@ import { ServiceDialog } from "../components/service-dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { StatusTracker } from "../components/StatusTracker";
 import { UnifiedPreviewDialog } from '@/components/shared/unified-preview-dialog';
-import { Eye, Edit } from 'lucide-react';
+import { Eye, Edit, CheckCircle } from 'lucide-react';
 
 
 type ServiceSortOption = 
@@ -35,11 +35,12 @@ type ServiceSortOption =
   | "status_asc" | "status_desc";
 
 
-const ServiceList = React.memo(({ services, vehicles, onEdit, onView }: {
+const ServiceList = React.memo(({ services, vehicles, onEdit, onView, onComplete }: {
   services: ServiceRecord[],
   vehicles: Vehicle[],
   onEdit: (service: ServiceRecord) => void,
-  onView: (service: ServiceRecord) => void
+  onView: (service: ServiceRecord) => void,
+  onComplete: (service: ServiceRecord) => void,
 }) => {
   const getServiceDescriptionText = (service: ServiceRecord) => {
     if (service.serviceItems && service.serviceItems.length > 0) return service.serviceItems.map(item => item.name).join(', ');
@@ -58,6 +59,7 @@ const ServiceList = React.memo(({ services, vehicles, onEdit, onView }: {
       {services.length > 0 ? (
         services.map(service => {
           const vehicle = vehicles.find(v => v.id === service.vehicleId);
+          const isCompletable = service.status === 'Reparando' || service.status === 'En Espera de Refacciones';
           return (
             <Card key={service.id} className="shadow-sm overflow-hidden">
               <CardContent className="p-0">
@@ -83,6 +85,7 @@ const ServiceList = React.memo(({ services, vehicles, onEdit, onView }: {
                     <div className="flex justify-center items-center gap-1">
                         <Button variant="ghost" size="icon" onClick={() => onView(service)} title="Vista Previa"><Eye className="h-4 w-4" /></Button>
                         <Button variant="ghost" size="icon" onClick={() => onEdit(service)} title="Editar Servicio"><Edit className="h-4 w-4" /></Button>
+                        {isCompletable && <Button variant="ghost" size="icon" onClick={() => onComplete(service)} title="Marcar como Completado"><CheckCircle className="h-4 w-4 text-green-600" /></Button>}
                     </div>
                   </div>
                 </div>
@@ -192,6 +195,18 @@ function HistorialServiciosPageComponent() {
     setIsSheetOpen(true);
   }, []);
 
+  const handleCompleteService = useCallback((service: ServiceRecord) => {
+    const updatedService = {
+        ...service,
+        status: 'Completado' as const,
+        deliveryDateTime: new Date().toISOString(),
+    };
+    
+    // Pass the updated service to the dialog for payment and final details
+    setEditingService(updatedService);
+    setIsEditDialogOpen(true);
+  }, []);
+
   return (
     <>
       <div className="bg-primary text-primary-foreground rounded-lg p-6 mb-6">
@@ -206,7 +221,7 @@ function HistorialServiciosPageComponent() {
           </TabsList>
           
           <TabsContent value="activos" className="mt-0 space-y-4">
-              <ServiceList services={activeServices} vehicles={vehicles} onEdit={(s) => {setEditingService(s); setIsEditDialogOpen(true);}} onView={handleShowPreview}/>
+              <ServiceList services={activeServices} vehicles={vehicles} onEdit={(s) => {setEditingService(s); setIsEditDialogOpen(true);}} onView={handleShowPreview} onComplete={handleCompleteService}/>
           </TabsContent>
           
           <TabsContent value="historial" className="mt-0 space-y-4">
@@ -223,12 +238,14 @@ function HistorialServiciosPageComponent() {
                 <DropdownMenuContent align="end">
                   <DropdownMenuLabel>Ordenar por</DropdownMenuLabel>
                   <DropdownMenuRadioGroup value={sortOption} onValueChange={(value) => setSortOption(value as ServiceSortOption)}>
-                    <DropdownMenuRadioItem value="serviceDate_desc">Fecha (Más Reciente)</DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="serviceDate_desc">
+                      Fecha (Más Reciente)
+                    </DropdownMenuRadioItem>
                   </DropdownMenuRadioGroup>
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
-            <ServiceList services={historicalServices} vehicles={vehicles} onEdit={(s) => {setEditingService(s); setIsEditDialogOpen(true);}} onView={handleShowPreview}/>
+            <ServiceList services={historicalServices} vehicles={vehicles} onEdit={(s) => {setEditingService(s); setIsEditDialogOpen(true);}} onView={handleShowPreview} onComplete={handleCompleteService}/>
           </TabsContent>
       </Tabs>
       
