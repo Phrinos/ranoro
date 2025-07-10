@@ -398,7 +398,7 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
                     <div className="h-14 flex-grow flex items-center justify-center">
                         {service.serviceAdvisorSignatureDataUrl && (
                             <div className="relative w-full h-full max-w-[200px]">
-                                <Image src={service.serviceAdvisorSignatureDataUrl} alt="Firma del asesor" layout="fill" objectFit="contain" />
+                                <img src={service.serviceAdvisorSignatureDataUrl} alt="Firma del asesor" style={{ objectFit: 'contain', width: '100%', height: '100%' }} crossOrigin="anonymous"/>
                             </div>
                         )}
                     </div>
@@ -410,7 +410,7 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
                    <div className="h-full flex-grow flex flex-col items-center justify-center">
                        {service.customerSignatureDelivery ? (
                          <div className="relative w-48 h-24">
-                           <Image src={service.customerSignatureDelivery} alt="Firma de conformidad" layout="fill" objectFit="contain" />
+                           <img src={service.customerSignatureDelivery} alt="Firma de conformidad" style={{ objectFit: 'contain', width: '100%', height: '100%' }} crossOrigin="anonymous"/>
                          </div>
                        ) : (
                          isPublicView && showSignDelivery && onSignClick && (

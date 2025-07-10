@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -815,9 +816,14 @@ export function ServiceForm({
   };
   
   const handlePrintSheet = useCallback(async () => {
+    // Refresh user data right before printing
+    const authUserString = localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY);
+    const freshCurrentUser = authUserString ? JSON.parse(authUserString) : null;
+    
     const serviceData = { ...form.getValues() } as ServiceRecord;
-    serviceData.serviceAdvisorName = freshUserRef.current?.name || 'N/A';
-    serviceData.serviceAdvisorSignatureDataUrl = freshUserRef.current?.signatureDataUrl;
+    serviceData.serviceAdvisorName = freshCurrentUser?.name || 'N/A';
+    serviceData.serviceAdvisorSignatureDataUrl = freshCurrentUser?.signatureDataUrl;
+
     setServiceForSheet(serviceData);
     setIsSheetOpen(true);
   }, [form]);
@@ -1745,7 +1751,13 @@ export function ServiceForm({
           footerActions={<><Button type="button" onClick={() => handleShareService(serviceForSheet)} variant="outline"><MessageSquare className="mr-2 h-4 w-4" /> Copiar para WhatsApp</Button><Button onClick={() => window.print()}><Printer className="mr-2 h-4 w-4" /> Imprimir Hoja</Button></>}
       >
           {serviceForSheet && (
-              <ServiceSheetContent service={serviceForSheet} quote={quoteForViewing} vehicle={localVehicles.find(v => v.id === serviceForSheet.vehicleId)} workshopInfo={workshopInfo as WorkshopInfo} onViewImage={handleViewImage}/>
+              <ServiceSheetContent
+                  service={serviceForSheet}
+                  quote={quoteForViewing}
+                  vehicle={localVehicles.find(v => v.id === serviceForSheet.vehicleId)}
+                  workshopInfo={workshopInfo as WorkshopInfo}
+                  onViewImage={handleViewImage}
+              />
           )}
       </PrintTicketDialog>
 
@@ -1777,9 +1789,9 @@ export function ServiceForm({
         <DialogContent className="max-w-4xl p-2">
             <DialogHeader className="print:hidden">
               <DialogTitle>Vista Previa de Imagen</DialogTitle>
-              <DialogDesc>
+              <DialogDescription>
                 Visualizando la imagen de evidencia. Puede descargarla si lo necesita.
-              </DialogDesc>
+              </DialogDescription>
             </DialogHeader>
             <div className="relative aspect-video w-full">
                 {viewingImageUrl && (
