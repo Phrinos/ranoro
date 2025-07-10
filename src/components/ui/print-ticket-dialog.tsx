@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useRef } from 'react';
+import React from 'react';
 import {
   Dialog,
   DialogContent,
@@ -61,11 +61,13 @@ export function PrintTicketDialog({
           {children}
         </div>
 
-        <DialogFooter className="print:hidden sm:justify-end">
-          <div className="flex flex-col sm:flex-row gap-2">
-            {footerActions}
-          </div>
-        </DialogFooter>
+        {footerActions && (
+          <DialogFooter className="print:hidden sm:justify-end">
+            <div className="flex flex-col sm:flex-row gap-2">
+              {footerActions}
+            </div>
+          </DialogFooter>
+        )}
       </DialogContent>
     </Dialog>
   );
