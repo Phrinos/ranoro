@@ -130,14 +130,6 @@ const serviceFormSchemaBase = z.object({
 }, {
     message: "La fecha programada no es válida.",
     path: ["serviceDate"],
-}).refine(data => {
-    if ((data.status === 'En Taller') && !data.technicianId) {
-        return false;
-    }
-    return true;
-}, {
-    message: "Debe asignar un técnico cuando el servicio está en taller.",
-    path: ["technicianId"],
 });
 
 
