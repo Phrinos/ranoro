@@ -50,17 +50,8 @@ export const TicketContent = React.forwardRef<HTMLDivElement, TicketContentProps
     const operation = sale || service;
     const operationId = sale?.id || service?.id;
     
-    const operationDateInput = sale?.saleDate || service?.serviceDate;
-    let operationDate: Date;
-    if (typeof operationDateInput === 'string') {
-      operationDate = parseISO(operationDateInput);
-    } else if (operationDateInput instanceof Date) {
-      operationDate = operationDateInput;
-    } else {
-      operationDate = new Date(NaN); // Invalid date
-    }
-    
-    const formattedDateTime = isValid(operationDate) ? format(operationDate, "dd/MM/yyyy HH:mm:ss", { locale: es }) : 'N/A';
+    // Corrected: Always use the current time for ticket generation
+    const formattedDateTime = format(new Date(), "dd/MM/yyyy HH:mm:ss", { locale: es });
 
     const formatCurrency = (amount: number | undefined) => {
       if (typeof amount !== 'number' || isNaN(amount)) return '$0.00';
