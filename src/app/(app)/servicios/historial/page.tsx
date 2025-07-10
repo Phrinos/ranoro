@@ -9,25 +9,22 @@ import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
-import { Search, ListFilter, CalendarIcon as CalendarDateIcon, DollarSign, TrendingUp, Car as CarIcon, Wrench, PlusCircle, Printer, MessageSquare, Copy, Eye, FileCheck, Edit } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Search, ListFilter, CalendarIcon as CalendarDateIcon } from "lucide-react";
 import { placeholderServiceRecords, placeholderVehicles, placeholderTechnicians, placeholderInventory, persistToFirestore, AUTH_USER_LOCALSTORAGE_KEY } from "@/lib/placeholder-data";
-import type { ServiceRecord, Vehicle, Technician, InventoryItem, QuoteRecord, WorkshopInfo, User } from "@/types";
+import type { ServiceRecord, Vehicle, Technician, InventoryItem, QuoteRecord, User } from "@/types";
 import { useToast } from "@/hooks/use-toast";
 import { format, parseISO, compareAsc, compareDesc, isWithinInterval, isValid, startOfDay, endOfDay, isToday } from "date-fns";
 import { es } from 'date-fns/locale';
 import type { DateRange } from "react-day-picker";
-import { useRouter, useSearchParams } from "next/navigation";
-import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { cn, formatCurrency } from "@/lib/utils";
-import { doc, getDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebasePublic.js';
 import { Badge } from "@/components/ui/badge";
 import { ServiceDialog } from "../components/service-dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { StatusTracker } from "../components/StatusTracker";
 import { UnifiedPreviewDialog } from '@/components/shared/unified-preview-dialog';
+import { Eye, Edit } from 'lucide-react';
 
 
 type ServiceSortOption = 
@@ -110,10 +107,10 @@ function HistorialServiciosPageComponent() {
   const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'activos');
   
-  const [allServices, setAllServices] = useState<ServiceRecord[]>(placeholderServiceRecords);
-  const [vehicles, setVehicles] = useState<Vehicle[]>(placeholderVehicles); 
-  const [technicians, setTechnicians] = useState<Technician[]>(placeholderTechnicians);
-  const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>(placeholderInventory);
+  const [allServices, setAllServices] = useState<ServiceRecord[]>([]);
+  const [vehicles, setVehicles] = useState<Vehicle[]>([]); 
+  const [technicians, setTechnicians] = useState<Technician[]>([]);
+  const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
   
   const [searchTerm, setSearchTerm] = useState("");
   const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
@@ -147,15 +144,23 @@ function HistorialServiciosPageComponent() {
       const lowerSearch = searchTerm.toLowerCase();
       filtered = filtered.filter(s => s.id.toLowerCase().includes(lowerSearch) || s.vehicleIdentifier?.toLowerCase().includes(lowerSearch));
     }
+    // Add sorting logic here if needed
     return filtered;
   }, [allServices, dateRange, searchTerm]);
 
   const activeServices = useMemo(() => {
-    return allServices.filter(s => s.status === 'Reparando' || s.status === 'En Espera de Refacciones' || (s.status === 'Completado' && s.deliveryDateTime && isToday(parseISO(s.deliveryDateTime))));
+    return allServices.filter(s => {
+      if (s.status === 'Reparando' || s.status === 'En Espera de Refacciones') return true;
+      if (s.status === 'Completado' && s.deliveryDateTime) {
+        const deliveryDate = parseISO(s.deliveryDateTime);
+        return isValid(deliveryDate) && isToday(deliveryDate);
+      }
+      return false;
+    });
   }, [allServices]);
   
   const handleSaveService = useCallback(async (data: QuoteRecord | ServiceRecord) => {
-      setIsEditDialogOpen(false);
+    setIsEditDialogOpen(false);
   }, []);
 
   const handleCancelService = useCallback(async (serviceId: string, reason: string) => {
@@ -208,7 +213,20 @@ function HistorialServiciosPageComponent() {
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:flex-wrap">
               <div className="relative flex-1 min-w-[200px] sm:min-w-[300px]"><Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" /><Input type="search" placeholder="Buscar por folio o vehículo..." className="w-full rounded-lg bg-card pl-8" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} /></div>
               <Popover><PopoverTrigger asChild><Button variant={"outline"} className={cn("min-w-[240px] justify-start text-left font-normal flex-1 sm:flex-initial bg-card", !dateRange && "text-muted-foreground")}><CalendarDateIcon className="mr-2 h-4 w-4" />{dateRange?.from ? (dateRange.to ? (`${format(dateRange.from, "LLL dd, y")} - ${format(dateRange.to, "LLL dd, y")}`) : format(dateRange.from, "LLL dd, y")) : (<span>Seleccione rango</span>)}</Button></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar initialFocus mode="range" defaultMonth={dateRange?.from} selected={dateRange} onSelect={setDateRange} numberOfMonths={2} locale={es} /></PopoverContent></Popover>
-              <DropdownMenu><DropdownMenuTrigger asChild><Button variant="outline" className="min-w-[150px] flex-1 sm:flex-initial bg-card"><ListFilter className="mr-2 h-4 w-4" />Ordenar</Button></DropdownMenuTrigger><DropdownMenuContent align="end"><DropdownMenuLabel>Ordenar por</DropdownMenuLabel><DropdownMenuRadioGroup value={sortOption} onValueChange={(value) => setSortOption(value as ServiceSortOption)}><DropdownMenuRadioItem value="serviceDate_desc">Fecha (Más Reciente)</DropdownMenuRadioItem></DropdownMenuContent></DropdownMenu>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" className="min-w-[150px] flex-1 sm:flex-initial bg-card">
+                    <ListFilter className="mr-2 h-4 w-4" />
+                    Ordenar
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuLabel>Ordenar por</DropdownMenuLabel>
+                  <DropdownMenuRadioGroup value={sortOption} onValueChange={(value) => setSortOption(value as ServiceSortOption)}>
+                    <DropdownMenuRadioItem value="serviceDate_desc">Fecha (Más Reciente)</DropdownMenuRadioItem>
+                  </DropdownMenuRadioGroup>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
             <ServiceList services={historicalServices} vehicles={vehicles} onEdit={(s) => {setEditingService(s); setIsEditDialogOpen(true);}} onView={handleShowPreview}/>
           </TabsContent>
