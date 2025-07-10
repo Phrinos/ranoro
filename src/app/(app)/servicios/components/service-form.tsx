@@ -391,23 +391,24 @@ export function ServiceForm({
     }
   }, []);
 
-  // Effect to auto-populate delivery date when status changes to 'Completado'
+  // Effect to auto-populate dates when status changes
   useEffect(() => {
     const initialStatus = originalStatusRef.current;
     
-    // When status changes to 'Completado' for the first time in this form session
+    if (watchedStatus === 'Agendado' && initialStatus === 'Cotizacion') {
+        if (!getValues('serviceDate')) {
+            setValue('serviceDate', setHours(setMinutes(new Date(), 30), 8), { shouldDirty: true });
+        }
+    }
+    
     if (watchedStatus === 'Completado' && initialStatus !== 'Completado') {
-      // If deliveryDateTime is not already set (either by user or initial data), set it to now.
-      if (!getValues('deliveryDateTime')) {
-        setValue('deliveryDateTime', new Date(), { shouldDirty: true });
-      }
+        if (!getValues('deliveryDateTime')) {
+            setValue('deliveryDateTime', new Date(), { shouldDirty: true });
+        }
     }
 
-    // Auto-populate serviceDate when changing to Agendado
-    if (watchedStatus === 'Agendado' && initialStatus === 'Cotizacion') {
-      if (!getValues('serviceDate')) {
-        setValue('serviceDate', new Date(), { shouldDirty: true });
-      }
+    if (watchedStatus === 'Cotizacion' && !getValues('quoteDate')) {
+        setValue('quoteDate', new Date(), { shouldDirty: true });
     }
 
   }, [watchedStatus, getValues, setValue]);
@@ -460,7 +461,7 @@ export function ServiceForm({
             }));
         }
 
-        const rawServiceDate = data.serviceDate || data.quoteDate;
+        const rawServiceDate = data.serviceDate;
         let parsedServiceDate: Date | undefined = undefined;
         if (rawServiceDate) {
             if (rawServiceDate instanceof Date) {
@@ -468,6 +469,17 @@ export function ServiceForm({
             } else if (typeof rawServiceDate === 'string') {
                 const parsed = parseISO(rawServiceDate);
                 if (isValid(parsed)) parsedServiceDate = parsed;
+            }
+        }
+        
+        const rawQuoteDate = data.quoteDate;
+        let parsedQuoteDate: Date | undefined = undefined;
+        if (rawQuoteDate) {
+            if (rawQuoteDate instanceof Date) {
+                parsedQuoteDate = rawQuoteDate;
+            } else if (typeof rawQuoteDate === 'string') {
+                const parsed = parseISO(rawQuoteDate);
+                if (isValid(parsed)) parsedQuoteDate = parsed;
             }
         }
 
@@ -503,6 +515,7 @@ export function ServiceForm({
             vehicleId: data.vehicleId ? String(data.vehicleId) : undefined,
             vehicleLicensePlateSearch: vehicle?.licensePlate || data.vehicleIdentifier || "",
             serviceDate: parsedServiceDate,
+            quoteDate: parsedQuoteDate,
             deliveryDateTime: parsedDeliveryDate,
             mileage: data.mileage || undefined,
             description: (data as any).description || "",
@@ -528,9 +541,9 @@ export function ServiceForm({
 
     } else {
       // Set default for new forms
-      form.setValue('serviceDate', setHours(setMinutes(new Date(), 30), 8));
       if (mode === 'quote') {
           form.setValue('status', 'Cotizacion');
+          form.setValue('quoteDate', new Date());
           const authUserString = typeof window !== 'undefined' ? localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY) : null;
           const freshCurrentUser: User | null = authUserString ? JSON.parse(authUserString) : null;
           if (freshCurrentUser) {
@@ -538,6 +551,7 @@ export function ServiceForm({
           }
       } else {
           form.setValue('status', 'Agendado');
+          form.setValue('serviceDate', setHours(setMinutes(new Date(), 30), 8));
       }
       // Automatically add one service item if none exist for a new form
       if (form.getValues('serviceItems').length === 0) {
@@ -1012,12 +1026,8 @@ export function ServiceForm({
   
   const statusOptions = useMemo(() => {
     const allOptions = ["Cotizacion", "Agendado", "En Espera de Refacciones", "Reparando", "Completado"];
-    if (mode === 'quote') {
-        return allOptions;
-    }
-    // If it's a new service (no initialData) or any existing service, allow all options
     return allOptions;
-  }, [mode]);
+  }, []);
 
   const handleShareService = useCallback(async (service: ServiceRecord | null) => {
     if (!service) return;
@@ -1777,4 +1787,3 @@ export function ServiceForm({
     </>
   );
 }
-
