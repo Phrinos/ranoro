@@ -158,8 +158,13 @@ function HistorialServiciosPageComponent() {
       setIsEditDialogOpen(false);
   }, []);
 
-  const handleCancelService = useCallback(async (serviceId: string, reason: string) => { /* ... */ }, []);
-  const handleVehicleCreated = useCallback((newVehicle: Vehicle) => { /* ... */ }, []);
+  const handleCancelService = useCallback(async (serviceId: string, reason: string) => {
+    // Implementation for cancelling a service can be added here.
+  }, []);
+
+  const handleVehicleCreated = useCallback(async (newVehicle: Vehicle) => {
+    // Implementation for when a new vehicle is created from the dialog.
+  }, []);
   
   const handleShowPreview = useCallback((service: ServiceRecord) => {
     let currentUser: User | null = null;
