@@ -133,7 +133,7 @@ function HistorialServiciosPageComponent() {
   const [editingService, setEditingService] = useState<ServiceRecord | null>(null);
 
   const [isSheetOpen, setIsSheetOpen] = useState(false);
-  const [previewData, setPreviewData] = useState<{ service: ServiceRecord, quote?: QuoteRecord, vehicle?: Vehicle }> | null>(null);
+  const [previewData, setPreviewData] = useState<{ service: ServiceRecord, quote?: QuoteRecord, vehicle?: Vehicle } | null>(null);
   const serviceSheetRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -162,14 +162,6 @@ function HistorialServiciosPageComponent() {
   const activeServices = useMemo(() => {
     return allServices.filter(s => s.status === 'Reparando' || (s.status === 'Completado' && s.deliveryDateTime && isToday(parseISO(s.deliveryDateTime))));
   }, [allServices]);
-
-  const summaryData = useMemo(() => {
-    const servicesForSummary = dateRange?.from ? historicalServices : allServices.filter(s => s.status !== 'Agendado' && s.status !== 'Cotizacion');
-    const totalServices = servicesForSummary.length;
-    const totalRevenue = servicesForSummary.reduce((sum, s) => sum + (s.totalCost || 0), 0);
-    const totalProfit = servicesForSummary.reduce((sum, s) => sum + (s.serviceProfit || 0), 0);
-    return { totalServices, totalRevenue, totalProfit };
-  }, [historicalServices, allServices, dateRange]);
   
   const handleSaveService = useCallback(async (data: QuoteRecord | ServiceRecord) => {
       // The ServiceDialog now handles persistence. We just need to close the dialog.
