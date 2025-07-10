@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
-import { Car as CarIcon, AlertCircle } from 'lucide-react';
+import { Car as CarIcon, AlertCircle, User, Fingerprint } from 'lucide-react';
 import type { Vehicle, ServiceRecord } from '@/types';
 import { placeholderServiceRecords } from '@/lib/placeholder-data';
 import { format, isValid, parseISO } from 'date-fns';
@@ -176,11 +176,20 @@ export function VehicleSelectionCard({
             {/* Columna Derecha: Información del vehículo seleccionado */}
             <div>
                 {selectedVehicle && (
-                <div className="p-3 border rounded-md bg-amber-50 dark:bg-amber-950/50 text-sm space-y-1 h-full">
-                    <p className="font-semibold">{selectedVehicle.licensePlate} - {selectedVehicle.make} {selectedVehicle.model} {selectedVehicle.year}</p>
-                    <p>Propietario: {selectedVehicle.ownerName} - {selectedVehicle.ownerPhone}</p>
-                    <p>Últ. Servicio: {lastServiceDateFormatted}</p>
-                </div>
+                    <div className="p-3 border rounded-md bg-amber-50 dark:bg-amber-950/50 text-sm space-y-2 h-full flex flex-col justify-center">
+                        <div>
+                            <p className="font-bold text-lg">{selectedVehicle.licensePlate}</p>
+                            <p className="text-muted-foreground">{selectedVehicle.make} {selectedVehicle.model} {selectedVehicle.year}</p>
+                        </div>
+                        <div className="space-y-1 pt-1">
+                            <p className="flex items-center gap-2"><User className="h-4 w-4 text-muted-foreground" /> {selectedVehicle.ownerName} - {selectedVehicle.ownerPhone}</p>
+                            <p className="flex items-center gap-2"><Fingerprint className="h-4 w-4 text-muted-foreground" /> {selectedVehicle.vin || 'VIN no registrado'}</p>
+                        </div>
+                        <div className="text-xs pt-2 mt-auto border-t">
+                            <p className="font-semibold">Último Servicio:</p>
+                            <p className="text-muted-foreground truncate">{lastServiceDateFormatted}</p>
+                        </div>
+                    </div>
                 )}
             </div>
         </div>
@@ -224,3 +233,4 @@ export function VehicleSelectionCard({
     </Card>
   );
 }
+
