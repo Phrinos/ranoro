@@ -175,7 +175,25 @@ function HistorialCotizacionesPageComponent() {
   }, [allServices, searchTerm, sortOption]);
 
   const handleViewQuote = useCallback((quote: QuoteRecord) => {
-    setServiceForPreview(quote);
+    //-- Usuario logueado
+    let currentUser: User | null = null;
+    try {
+      const raw = typeof window !== "undefined"
+        ? localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY)
+        : null;
+      if (raw) currentUser = JSON.parse(raw);
+    } catch { /* ignore */ }
+  
+    //-- Enriquecemos la cotización
+    const enrichedQuote: QuoteRecord = {
+      ...quote,
+      serviceAdvisorName:
+        quote.serviceAdvisorName || currentUser?.name || "",
+      serviceAdvisorSignatureDataUrl:
+        quote.serviceAdvisorSignatureDataUrl || currentUser?.signatureDataUrl || "",
+    };
+  
+    setServiceForPreview(enrichedQuote);
     setIsPreviewOpen(true);
   }, []);
   
