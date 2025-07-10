@@ -12,8 +12,6 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuLabel, DropdownMenuRadio
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Search, ListFilter, CalendarIcon as CalendarDateIcon, DollarSign, TrendingUp, Car as CarIcon, Wrench, PlusCircle, Printer, MessageSquare, Copy, Eye, FileCheck, Edit } from "lucide-react";
-import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
-import { TicketContent } from '@/components/ticket-content';
 import { placeholderServiceRecords, placeholderVehicles, placeholderTechnicians, placeholderInventory, persistToFirestore, AUTH_USER_LOCALSTORAGE_KEY } from "@/lib/placeholder-data";
 import type { ServiceRecord, Vehicle, Technician, InventoryItem, QuoteRecord, WorkshopInfo, User } from "@/types";
 import { useToast } from "@/hooks/use-toast";
@@ -23,13 +21,13 @@ import type { DateRange } from "react-day-picker";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { cn, formatCurrency } from "@/lib/utils";
-import { ServiceSheetContent } from '@/components/service-sheet-content';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebasePublic.js';
 import { Badge } from "@/components/ui/badge";
 import { ServiceDialog } from "../components/service-dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { StatusTracker } from "../components/StatusTracker";
+import { UnifiedPreviewDialog } from "@/components/shared/unified-preview-dialog";
 
 
 type ServiceSortOption = 
@@ -133,8 +131,7 @@ function HistorialServiciosPageComponent() {
   const [editingService, setEditingService] = useState<ServiceRecord | null>(null);
 
   const [isSheetOpen, setIsSheetOpen] = useState(false);
-  const [previewData, setPreviewData] = useState<{ service: ServiceRecord, quote?: QuoteRecord, vehicle?: Vehicle } | null>(null);
-  const serviceSheetRef = useRef<HTMLDivElement>(null);
+  const [serviceForPreview, setServiceForPreview] = useState<ServiceRecord | null>(null);
 
   useEffect(() => {
     // Sync with global state
@@ -164,22 +161,16 @@ function HistorialServiciosPageComponent() {
   }, [allServices]);
   
   const handleSaveService = useCallback(async (data: QuoteRecord | ServiceRecord) => {
-      // The ServiceDialog now handles persistence. We just need to close the dialog.
       setIsEditDialogOpen(false);
   }, []);
 
   const handleCancelService = useCallback(async (serviceId: string, reason: string) => { /* ... */ }, []);
   const handleVehicleCreated = useCallback((newVehicle: Vehicle) => { /* ... */ }, []);
   const handleReprintService = useCallback((service: ServiceRecord) => { /* ... */ }, []);
-  const handleShowPreview = useCallback(async (service: ServiceRecord) => {
-    const associatedQuote = allServices.find(s => s.id === service.id && s.status === 'Cotizacion');
-    setPreviewData({
-        service,
-        quote: associatedQuote,
-        vehicle: vehicles.find(v => v.id === service.vehicleId)
-    });
+  const handleShowPreview = useCallback((service: ServiceRecord) => {
+    setServiceForPreview(service);
     setIsSheetOpen(true);
-  }, [allServices, vehicles]);
+  }, []);
 
   return (
     <>
@@ -223,26 +214,12 @@ function HistorialServiciosPageComponent() {
         />
       )}
 
-      {isSheetOpen && previewData && (
-        <PrintTicketDialog
+      {isSheetOpen && serviceForPreview && (
+        <UnifiedPreviewDialog
           open={isSheetOpen}
           onOpenChange={setIsSheetOpen}
-          title="Vista Previa Unificada"
-          dialogContentClassName="printable-quote-dialog"
-          footerActions={
-            <Button onClick={() => window.print()}>
-              <Printer className="mr-2 h-4 w-4" /> Imprimir Documento
-            </Button>
-          }
-        >
-          <ServiceSheetContent
-            ref={serviceSheetRef}
-            service={previewData.service}
-            quote={previewData.quote}
-            vehicle={previewData.vehicle}
-            workshopInfo={workshopInfo as WorkshopInfo}
-          />
-        </PrintTicketDialog>
+          service={serviceForPreview}
+        />
       )}
     </>
   );

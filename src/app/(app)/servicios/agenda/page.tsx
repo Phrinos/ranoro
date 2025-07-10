@@ -22,8 +22,7 @@ import { analyzeWorkshopCapacity } from '@/ai/flows/capacity-analysis-flow';
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { StatusTracker } from "../components/StatusTracker";
-import { ServiceSheetContent } from '@/components/service-sheet-content';
-import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
+import { UnifiedPreviewDialog } from '@/components/shared/unified-preview-dialog';
 
 
 const ServiceAppointmentCard = React.memo(({ service, vehicles, onEdit, onConfirm, onView }: { 
@@ -120,9 +119,7 @@ function AgendaPageComponent() {
   const [capacityError, setCapacityError] = useState<string | null>(null);
   
   const [isSheetOpen, setIsSheetOpen] = useState(false);
-  const [serviceForSheet, setServiceForSheet] = useState<ServiceRecord | null>(null);
-  const sheetContentRef = useRef<HTMLDivElement>(null);
-  const [workshopInfo, setWorkshopInfo] = useState<WorkshopInfo | {}>({});
+  const [serviceForPreview, setServiceForPreview] = useState<ServiceRecord | null>(null);
 
   useEffect(() => {
     const handleDbUpdate = () => setVersion(v => v + 1);
@@ -132,11 +129,6 @@ function AgendaPageComponent() {
       setVehicles([...placeholderVehicles]);
       setTechnicians([...placeholderTechnicians]);
       setInventoryItems([...placeholderInventory]);
-      
-      const storedWorkshopInfo = localStorage.getItem("workshopTicketInfo");
-      if (storedWorkshopInfo) {
-        setWorkshopInfo(JSON.parse(storedWorkshopInfo));
-      }
     });
     window.addEventListener('databaseUpdated', handleDbUpdate);
     return () => window.removeEventListener('databaseUpdated', handleDbUpdate);
@@ -202,7 +194,7 @@ function AgendaPageComponent() {
   }, []);
   
   const handleShowPreview = useCallback((service: ServiceRecord) => {
-    setServiceForSheet(service);
+    setServiceForPreview(service);
     setIsSheetOpen(true);
   }, []);
   
@@ -324,24 +316,13 @@ function AgendaPageComponent() {
         />
       )}
       
-       <PrintTicketDialog
+       {isSheetOpen && serviceForPreview && (
+        <UnifiedPreviewDialog
           open={isSheetOpen}
           onOpenChange={setIsSheetOpen}
-          title="Vista Previa Unificada"
-          onDialogClose={() => setServiceForSheet(null)}
-          dialogContentClassName="printable-quote-dialog"
-          footerActions={<Button onClick={() => window.print()}><Printer className="mr-2 h-4 w-4" /> Imprimir Documento</Button>}
-      >
-          {serviceForSheet && (
-              <ServiceSheetContent
-                  ref={sheetContentRef}
-                  service={serviceForSheet}
-                  quote={placeholderServiceRecords.find(q => q.id === serviceForSheet.id && q.status === 'Cotizacion')}
-                  vehicle={vehicles.find(v => v.id === serviceForSheet.vehicleId)}
-                  workshopInfo={workshopInfo as WorkshopInfo}
-              />
-          )}
-      </PrintTicketDialog>
+          service={serviceForPreview}
+        />
+      )}
     </>
   );
 }
