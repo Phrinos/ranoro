@@ -7,6 +7,7 @@ import { es } from 'date-fns/locale';
 import React from 'react';
 import { cn, capitalizeWords } from "@/lib/utils";
 import { Card, CardContent } from '@/components/ui/card';
+import Image from "next/legacy/image";
 
 const initialWorkshopInfo: WorkshopInfo = {
   name: "RANORO",
@@ -154,7 +155,9 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
               )}
             </CardContent>
           </Card>
-          
+        </main>
+        
+        <footer className="mt-auto">
           <Card className="mt-4 mb-4 border-gray-200">
             <CardContent className="p-4 flex flex-col sm:flex-row justify-between min-h-[120px]" style={{ fontSize: '14px' }}>
                 <div className="text-left">
@@ -180,9 +183,7 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
                 </div>
             </CardContent>
           </Card>
-        </main>
-        
-        <footer className="mt-auto">
+
           <section className="pt-4" style={{paddingBottom: '0'}}>
             <h4 className="font-semibold text-sm text-gray-700 mb-1">Términos y Condiciones:</h4>
             <p className="text-xs text-gray-600 leading-snug">
