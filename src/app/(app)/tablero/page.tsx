@@ -16,7 +16,7 @@ import { cn } from '@/lib/utils';
 import Link from 'next/link';
 
 
-type KanbanColumnId = 'Agendado' | 'En Taller' | 'Completado';
+type KanbanColumnId = 'Agendado' | 'En Espera de Refacciones' | 'Reparando' | 'Completado';
 
 interface KanbanColumn {
   id: KanbanColumnId;
@@ -63,7 +63,7 @@ function KanbanCard({
         <div className="pr-8">
             <p className="font-bold text-sm">{vehicle ? `${vehicle.licensePlate}` : service.vehicleIdentifier}</p>
             <p className="text-xs text-muted-foreground">{vehicle ? `${vehicle.make} ${vehicle.model} ${vehicle.year}` : 'Vehículo no encontrado'}</p>
-            {service.subStatus && <Badge variant="outline" className="mt-1 text-xs">{service.subStatus}</Badge>}
+            {service.subStatus && service.status === 'En Taller' && <Badge variant="outline" className="mt-1 text-xs">{service.subStatus}</Badge>}
             <p className="text-xs font-semibold mt-2">{service.serviceType || 'Servicio General'}</p>
             <p className="text-xs text-muted-foreground truncate" title={getServiceDescriptionText(service)}>
                 {getServiceDescriptionText(service)}
@@ -84,7 +84,8 @@ function KanbanCard({
 
 const columnStyles: Record<KanbanColumnId, { bg: string; title: string }> = {
   'Agendado': { bg: 'bg-blue-50 dark:bg-blue-900/30', title: 'text-blue-800 dark:text-blue-200' },
-  'En Taller': { bg: 'bg-yellow-50 dark:bg-yellow-900/30', title: 'text-yellow-800 dark:text-yellow-200' },
+  'En Espera de Refacciones': { bg: 'bg-orange-50 dark:bg-orange-900/30', title: 'text-orange-800 dark:text-orange-200' },
+  'Reparando': { bg: 'bg-yellow-50 dark:bg-yellow-900/30', title: 'text-yellow-800 dark:text-yellow-200' },
   'Completado': { bg: 'bg-green-50 dark:bg-green-900/30', title: 'text-green-800 dark:text-green-200' },
 };
 
@@ -122,26 +123,31 @@ export default function TableroPage() {
     }
   }, [hydrated, version]);
 
-  const columnOrder: KanbanColumnId[] = ['Agendado', 'En Taller', 'Completado'];
+  const columnOrder: KanbanColumnId[] = ['Agendado', 'En Espera de Refacciones', 'Reparando', 'Completado'];
   
   const kanbanColumns = useMemo((): KanbanColumn[] => {
     const columns: Record<KanbanColumnId, KanbanColumn> = {
       'Agendado': { id: 'Agendado', title: 'Agenda (Hoy)', services: [] },
-      'En Taller': { id: 'En Taller', title: 'En Taller', services: [] },
-      'Completado': { id: 'Completado', title: 'Listo para Entrega (Hoy)', services: [] },
+      'En Espera de Refacciones': { id: 'En Espera de Refacciones', title: 'Espera Refacciones', services: [] },
+      'Reparando': { id: 'Reparando', title: 'Reparando', services: [] },
+      'Completado': { id: 'Completado', title: 'Listo para Entrega', services: [] },
     };
 
     services.forEach(service => {
         if(service.status === 'Agendado' && service.serviceDate && isValid(parseISO(service.serviceDate)) && isToday(parseISO(service.serviceDate))) {
             columns['Agendado'].services.push(service);
         } else if (service.status === 'En Taller') {
-            if (service.subStatus === 'Completado') {
-                const deliveryDate = service.deliveryDateTime ? parseISO(service.deliveryDateTime) : null;
-                if(deliveryDate && isValid(deliveryDate) && isToday(deliveryDate)) {
+            switch(service.subStatus) {
+                case 'En Espera de Refacciones':
+                    columns['En Espera de Refacciones'].services.push(service);
+                    break;
+                case 'Completado':
                     columns['Completado'].services.push(service);
-                }
-            } else {
-                columns['En Taller'].services.push(service);
+                    break;
+                case 'Reparando':
+                default:
+                    columns['Reparando'].services.push(service);
+                    break;
             }
         }
     });
@@ -167,57 +173,60 @@ export default function TableroPage() {
     if (serviceIndex === -1) return;
 
     const currentService = placeholderServiceRecords[serviceIndex];
-    let currentStatus = currentService.status as KanbanColumnId;
+    let currentColumnId: KanbanColumnId;
 
-    if (currentStatus === 'En Taller' && currentService.subStatus === 'Completado') {
-        currentStatus = 'Completado';
+    if (currentService.status === 'Agendado') {
+        currentColumnId = 'Agendado';
+    } else { // 'En Taller'
+        switch(currentService.subStatus) {
+            case 'En Espera de Refacciones': currentColumnId = 'En Espera de Refacciones'; break;
+            case 'Completado': currentColumnId = 'Completado'; break;
+            default: currentColumnId = 'Reparando'; break;
+        }
     }
     
-    const currentIndex = columnOrder.indexOf(currentStatus);
+    const currentIndex = columnOrder.indexOf(currentColumnId);
     let newIndex = direction === 'left' ? currentIndex - 1 : currentIndex + 1;
     newIndex = Math.max(0, Math.min(columnOrder.length - 1, newIndex));
-
-
+    
     if (newIndex !== currentIndex) {
-        const newMainStatus = columnOrder[newIndex];
-
-        // Optimistic UI update
-        const updatedServices = services.map(s => 
-          s.id === serviceId ? { ...s, status: newMainStatus } : s
-        );
-        setServices(updatedServices);
-
-        // Update master data and persist
-        placeholderServiceRecords[serviceIndex].status = newMainStatus === 'Completado' ? 'En Taller' : newMainStatus;
+        const newColumnId = columnOrder[newIndex];
         
-        let newSubStatus: ServiceSubStatus | undefined = undefined;
-        if(newMainStatus === 'En Taller') {
-            newSubStatus = 'Reparando';
-        } else if (newMainStatus === 'Completado') {
-            newSubStatus = 'Completado';
-            if(!placeholderServiceRecords[serviceIndex].deliveryDateTime) {
-                placeholderServiceRecords[serviceIndex].deliveryDateTime = new Date().toISOString();
+        if (newColumnId === 'Agendado') {
+            placeholderServiceRecords[serviceIndex].status = 'Agendado';
+            placeholderServiceRecords[serviceIndex].subStatus = undefined;
+        } else {
+            placeholderServiceRecords[serviceIndex].status = 'En Taller';
+            if (newColumnId === 'En Espera de Refacciones') {
+                placeholderServiceRecords[serviceIndex].subStatus = 'En Espera de Refacciones';
+            } else if (newColumnId === 'Completado') {
+                placeholderServiceRecords[serviceIndex].subStatus = 'Completado';
+                if (!placeholderServiceRecords[serviceIndex].deliveryDateTime) {
+                    placeholderServiceRecords[serviceIndex].deliveryDateTime = new Date().toISOString();
+                }
+            } else { // Reparando
+                placeholderServiceRecords[serviceIndex].subStatus = 'Reparando';
             }
         }
-        placeholderServiceRecords[serviceIndex].subStatus = newSubStatus;
         
+        setServices([...placeholderServiceRecords]); // Optimistic UI update
+
         await logAudit(
           'Editar',
-          `Movió el servicio #${serviceId} de "${currentStatus}" a "${newMainStatus}".`,
+          `Movió el servicio #${serviceId} de "${currentColumnId}" a "${newColumnId}".`,
           { entityType: 'Servicio', entityId: serviceId }
         );
         await persistToFirestore(['serviceRecords', 'auditLogs']);
         
         toast({
             title: 'Servicio Movido',
-            description: `El servicio ahora está en "${newMainStatus}".`
+            description: `El servicio ahora está en "${newColumnId}".`
         });
     }
   };
   
   const handleSaveService = async () => {
     setIsServiceDialogOpen(false);
-    // The ServiceDialog now handles persistence, we just need to re-sync local state
     setVersion(v => v + 1);
   };
 

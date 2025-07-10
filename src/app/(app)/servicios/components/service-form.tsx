@@ -318,6 +318,17 @@ export function ServiceForm({
     const authUserString = typeof window !== "undefined" ? localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY) : null;
     freshUserRef.current = authUserString ? JSON.parse(authUserString) : null;
   }, []);
+  
+  useEffect(() => {
+      const currentStatus = getValues('status');
+      if (originalStatusRef.current !== 'En Taller' && currentStatus === 'En Taller') {
+          const currentSubStatus = getValues('subStatus');
+          if (!currentSubStatus) {
+              setValue('subStatus', 'Reparando');
+          }
+      }
+      originalStatusRef.current = currentStatus;
+  }, [watchedStatus, getValues, setValue]);
 
   useEffect(() => {
     const data = initialData;
