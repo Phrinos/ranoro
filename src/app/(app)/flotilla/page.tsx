@@ -14,7 +14,7 @@ import { FineCheckDialog } from "./components/fine-check-dialog";
 import { placeholderVehicles, persistToFirestore, hydrateReady, AUTH_USER_LOCALSTORAGE_KEY, placeholderDrivers, placeholderRentalPayments } from '@/lib/placeholder-data';
 import type { User, Vehicle, Driver } from '@/types';
 import { useToast } from "@/hooks/use-toast";
-import { subDays, isBefore, parseISO, isValid, differenceInCalendarDays, startOfToday, isAfter, compareAsc, startOfMonth, endOfMonth, getDate } from 'date-fns';
+import { format, subDays, isBefore, parseISO, isValid, differenceInCalendarDays, startOfToday, isAfter, compareAsc, startOfMonth, endOfMonth, getDate } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -319,4 +319,5 @@ export default function FlotillaPageWrapper() {
         </Suspense>
     )
 }
+
 
