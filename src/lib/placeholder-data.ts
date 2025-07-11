@@ -376,113 +376,55 @@ export let placeholderVehiclePriceLists: VehiclePriceList[] = [];
 export let placeholderPublicOwnerReports: PublicOwnerReport[] = [];
 
 // --- DATOS SIMULADOS (BORRAR O REEMPLAZAR) ---
+export const placeholderTechnicianMonthlyPerformance: TechnicianMonthlyPerformance[] = [
+    { id: 'perf_t001_1', technicianId: 'T001', monthYear: 'julio 2024', servicesCount: 12, revenueGenerated: 35000, earnings: 1750, penalties: 0 },
+    { id: 'perf_t002_1', technicianId: 'T002', monthYear: 'julio 2024', servicesCount: 15, revenueGenerated: 42000, earnings: 2940, penalties: 150 },
+    { id: 'perf_t001_2', technicianId: 'T001', monthYear: 'junio 2024', servicesCount: 10, revenueGenerated: 31000, earnings: 1550, penalties: 0 },
+];
 export const placeholderDashboardMetrics: DashboardMetrics = {
-  activeServices: 0,
-  technicianEarnings: 0,
-  dailyRevenue: 0,
-  lowStockAlerts: 0,
+  activeServices: 3,
+  technicianEarnings: 4690,
+  dailyRevenue: 5200,
+  lowStockAlerts: 2,
 };
 
-// =======================================
-// ===  LÓGICA DE PERSISTENCIA DE DATOS  ===
-// =======================================
-
-// IMPORTANT: Set this to `true` to enable local persistence without affecting the database.
-const DEV_MODE_LOCAL_ONLY = false;
-
-const DB_PATH = 'database/main'; // The single document in Firestore to hold all data
-const LOCALSTORAGE_DB_KEY = 'ranoroLocalDatabase';
+// --- DATA PERSISTENCE & HYDRATION ---
 
 const DATA_ARRAYS = {
-  categories: placeholderCategories,
-  suppliers: placeholderSuppliers,
-  inventory: placeholderInventory,
-  vehicles: placeholderVehicles,
-  technicians: placeholderTechnicians,
-  administrativeStaff: placeholderAdministrativeStaff,
-  users: placeholderUsers,
-  serviceRecords: placeholderServiceRecords,
-  quotes: placeholderQuotes,
-  sales: placeholderSales,
-  fixedExpenses: placeholderFixedMonthlyExpenses,
-  cashDrawerTransactions: placeholderCashDrawerTransactions,
-  initialCashBalance: placeholderInitialCashBalance,
-  appRoles: placeholderAppRoles,
-  vehiclePriceLists: placeholderVehiclePriceLists,
-  drivers: placeholderDrivers,
-  rentalPayments: placeholderRentalPayments,
-  publicOwnerReports: placeholderPublicOwnerReports,
-  ownerWithdrawals: placeholderOwnerWithdrawals,
-  vehicleExpenses: placeholderVehicleExpenses,
-  auditLogs: placeholderAuditLogs,
-  serviceTypes: placeholderServiceTypes,
+    vehicles: placeholderVehicles,
+    serviceRecords: placeholderServiceRecords,
+    technicians: placeholderTechnicians,
+    inventory: placeholderInventory,
+    categories: placeholderCategories,
+    suppliers: placeholderSuppliers,
+    sales: placeholderSales,
+    users: placeholderUsers,
+    appRoles: placeholderAppRoles,
+    fixedExpenses: placeholderFixedMonthlyExpenses,
+    administrativeStaff: placeholderAdministrativeStaff,
+    vehiclePriceLists: placeholderVehiclePriceLists,
+    drivers: placeholderDrivers,
+    rentalPayments: placeholderRentalPayments,
+    ownerWithdrawals: placeholderOwnerWithdrawals,
+    vehicleExpenses: placeholderVehicleExpenses,
+    publicOwnerReports: placeholderPublicOwnerReports,
+    cashDrawerTransactions: placeholderCashDrawerTransactions,
+    initialCashBalance: placeholderInitialCashBalance,
+    auditLogs: placeholderAuditLogs,
+    serviceTypes: placeholderServiceTypes,
 };
 
-type DataKey = keyof typeof DATA_ARRAYS;
 
-const saveToLocalStorage = () => {
-    try {
-        const dataToSave = sanitizeObjectForFirestore(DATA_ARRAYS);
-        localStorage.setItem(LOCALSTORAGE_DB_KEY, JSON.stringify(dataToSave));
-    } catch (e) {
-        console.error("Failed to save data to localStorage:", e);
-    }
-};
+const LOCALSTORAGE_DB_KEY = 'ranoroLocalDatabase';
 
-const hydrateFromLocalStorage = (): boolean => {
-    try {
-        const localDataString = localStorage.getItem(LOCALSTORAGE_DB_KEY);
-        if (localDataString) {
-            const localData = JSON.parse(localDataString);
-            for (const key in DATA_ARRAYS) {
-                if (localData[key]) {
-                    const targetArray = DATA_ARRAYS[key as DataKey];
-                    if (!Array.isArray(targetArray)) {
-                        if (key === 'initialCashBalance') {
-                            placeholderInitialCashBalance = localData[key];
-                        }
-                    } else if (Array.isArray(localData[key])) {
-                        targetArray.splice(0, targetArray.length, ...localData[key]);
-                    }
-                }
-            }
-            console.log('Hydrated successfully from localStorage.');
-            return true;
-        }
-    } catch (e) {
-        console.error("Failed to hydrate from localStorage:", e);
-    }
-    return false;
-};
-
-// --------------------------------------------------------------------------------
-// Hydration helpers
-// --------------------------------------------------------------------------------
 let resolveHydration: () => void;
-/**
- * Promise que se resuelve cuando la app terminó de hidratar sus datos, útil
- * para deshabilitar acciones (como Registrar Venta) hasta que el inventario
- * esté disponible.
- */
 export const hydrateReady = new Promise<void>((res) => {
   resolveHydration = res;
 });
 
-/**
- * Removes properties with `undefined` values from an object, recursively.
- * This is necessary because Firestore does not support `undefined`.
- * @param obj The object to sanitize.
- * @returns A new object with `undefined` values removed.
- */
 export function sanitizeObjectForFirestore(obj: any): any {
-  if (obj === null || typeof obj !== 'object') {
-    return obj;
-  }
-  
-  if (Array.isArray(obj)) {
-    return obj.map(item => sanitizeObjectForFirestore(item));
-  }
-
+  if (obj === null || typeof obj !== 'object') return obj;
+  if (Array.isArray(obj)) return obj.map(item => sanitizeObjectForFirestore(item));
   const newObj: { [key: string]: any } = {};
   for (const key in obj) {
     if (Object.prototype.hasOwnProperty.call(obj, key)) {
@@ -495,179 +437,13 @@ export function sanitizeObjectForFirestore(obj: any): any {
   return newObj;
 }
 
-
-/**
- * Loads all application data from a single Firestore document.
- */
-export async function hydrateFromFirestore() {
-  if (typeof window === 'undefined' || (window as any).__APP_HYDRATED__) {
-    resolveHydration?.();
-    return;
-  }
-  
-  if (DEV_MODE_LOCAL_ONLY) {
-    console.warn('[DEV MODE] Persistence is local. Hydrating from localStorage.');
-    const hydratedFromLocal = hydrateFromLocalStorage();
-    if (!hydratedFromLocal) {
-        console.log('No local data found, seeding with default placeholder data.');
-        // Ensure default roles and users are present if local storage is empty
-        if (placeholderAppRoles.length === 0) {
-            const adminPermissions = ALL_AVAILABLE_PERMISSIONS.filter(p => !['users:manage', 'roles:manage'].includes(p.id)).map(p => p.id);
-            placeholderAppRoles.push(
-                { id: 'role_superadmin_default', name: 'Superadmin', permissions: ALL_AVAILABLE_PERMISSIONS.map(p => p.id) },
-                { id: 'role_admin_default', name: 'Admin', permissions: adminPermissions },
-                { id: 'role_tecnico_default', name: 'Tecnico', permissions: ['dashboard:view', 'services:create', 'services:edit', 'services:view_history', 'inventory:view', 'vehicles:manage', 'pos:view_sales'] },
-                { id: 'role_ventas_default', name: 'Ventas', permissions: ['dashboard:view', 'pos:create_sale', 'pos:view_sales', 'inventory:view', 'vehicles:manage'] }
-            );
-        }
-        if (!placeholderUsers.some(u => u.id === defaultSuperAdmin.id)) {
-            placeholderUsers.unshift(defaultSuperAdmin);
-        }
-        saveToLocalStorage(); // Save the initial defaults
-    }
-    
-    (window as any).__APP_HYDRATED__ = true;
-    resolveHydration?.();
-    return;
-  }
-
-  // --- Production Firestore logic ---
-  console.log('Attempting to hydrate application data from Firestore...');
-  const docRef = doc(db, DB_PATH);
-  let docSnap;
-  let changesMade = false;
-
-  try {
-    docSnap = await getDoc(docRef);
-
-    if (docSnap.exists()) {
-      console.log('Firestore document found. Hydrating from snapshot.');
-      const firestoreData = docSnap.data();
-      for (const key in DATA_ARRAYS) {
-        if (firestoreData[key]) {
-           const targetArray = DATA_ARRAYS[key as DataKey];
-           // Handle single object persistence (for initialCashBalance)
-           if (!Array.isArray(targetArray)) {
-              if (key === 'initialCashBalance') {
-                 placeholderInitialCashBalance = firestoreData[key];
-              }
-           } else if (Array.isArray(firestoreData[key])) {
-              targetArray.splice(0, targetArray.length, ...firestoreData[key]);
-           }
-        }
-      }
-    } else {
-      console.warn('No database document found. Seeding the app with initial default data.');
-      placeholderFixedMonthlyExpenses.splice(0, placeholderFixedMonthlyExpenses.length, ...[
-        { id: 'exp_1', name: 'Renta del Local', amount: 12000 },
-        { id: 'exp_2', name: 'Servicio de Internet', amount: 800 },
-        { id: 'exp_3', name: 'Servicio de Luz', amount: 2500 },
-        { id: 'exp_4', name: 'Servicio de Agua', amount: 600 },
-      ]);
-      changesMade = true;
-    }
-  } catch (error) {
-    console.error('Error reading from Firestore:', error);
-    console.warn('Could not read from Firestore. The app will proceed with in-memory data for this session.');
-  }
-
-  // --- DATA INTEGRITY CHECKS ---
-  if (!placeholderUsers.some((u) => u.email.toLowerCase() === defaultSuperAdmin.email.toLowerCase())) {
-    placeholderUsers.unshift(defaultSuperAdmin);
-    changesMade = true;
-    console.log(`Default user '${defaultSuperAdmin.email}' was missing and has been added.`);
-  }
-  
-  const superAdminRole = placeholderAppRoles.find(r => r.name === 'Superadmin');
-  if (!superAdminRole) {
-    const adminPermissions = ALL_AVAILABLE_PERMISSIONS.filter(p => !['users:manage', 'roles:manage'].includes(p.id)).map(p => p.id);
-    placeholderAppRoles.push(
-      { id: 'role_superadmin_default', name: 'Superadmin', permissions: ALL_AVAILABLE_PERMISSIONS.map(p => p.id) },
-      { id: 'role_admin_default', name: 'Admin', permissions: adminPermissions },
-      { id: 'role_tecnico_default', name: 'Tecnico', permissions: ['dashboard:view', 'services:create', 'services:edit', 'services:view_history', 'inventory:view', 'vehicles:manage', 'pos:view_sales'] }
-    );
-    changesMade = true;
-  }
-
-  (window as any).__APP_HYDRATED__ = true;
-  resolveHydration?.();
-  console.log('Hydration process complete.');
-
-  if (changesMade && db) {
-    console.log('Attempting to persist initial/updated data to Firestore...');
-    const keysToPersist = Object.keys(DATA_ARRAYS) as DataKey[];
-    persistToFirestore(keysToPersist).catch((err) => {
-      console.error('Background persistence failed:', err);
-    });
-  }
-}
-
-/**
- * Saves specific parts of the application state from memory to a single Firestore document.
- * @param keysToUpdate An array of keys corresponding to the data arrays to be updated.
- */
-export async function persistToFirestore(keysToUpdate?: DataKey[]) {
-  if (DEV_MODE_LOCAL_ONLY) { 
-      saveToLocalStorage();
-      console.log(`[DEV MODE] Data persisted to localStorage for keys: ${keysToUpdate?.join(', ')}`);
-      if (typeof window !== 'undefined') {
-          window.dispatchEvent(new CustomEvent('databaseUpdated'));
-      }
-      return;
-  }
-
-  if (!db) {
-    console.warn('Persist skipped: Firebase not configured.');
-    return;
-  }
-  if (typeof window === 'undefined' || !(window as any).__APP_HYDRATED__) {
-    console.warn('Persist skipped: App not yet hydrated.');
-    return;
-  }
-
-  const keys = keysToUpdate && keysToUpdate.length > 0 ? keysToUpdate : (Object.keys(DATA_ARRAYS) as DataKey[]);
-  console.log(`Persisting granular data to Firestore for keys: ${keys.join(', ')}`);
-
-  const dataToPersist: { [key in DataKey]?: any } = {} as any;
-  for (const key of keys) {
-    if (DATA_ARRAYS[key] !== undefined) {
-      dataToPersist[key] = DATA_ARRAYS[key];
-    }
-  }
-  
-  const sanitizedData = sanitizeObjectForFirestore(dataToPersist);
-
-  try {
-    await setDoc(doc(db, DB_PATH), sanitizedData, { merge: true });
-    console.log('Data successfully persisted to Firestore.');
-    if (typeof window !== 'undefined') {
-        window.dispatchEvent(new CustomEvent('databaseUpdated'));
-    }
-  } catch (e) {
-    console.error('Error persisting data to Firestore:', e);
-  }
-}
-
-// =======================================
-// ===          FUNCIONES HELPER         ===
-// =======================================
-
-/**
- * Creates and persists an audit log entry.
- */
 export async function logAudit(
   actionType: AuditLog['actionType'],
   description: string,
-  details: {
-    entityType?: AuditLog['entityType'];
-    entityId?: string;
-    userId?: string;
-    userName?: string;
-  } = {}
+  details: { entityType?: AuditLog['entityType']; entityId?: string; userId?: string; userName?: string; } = {}
 ) {
   let userId = details.userId;
   let userName = details.userName;
-
   if (!userId || !userName) {
     try {
       const authUserString = localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY);
@@ -676,53 +452,119 @@ export async function logAudit(
         userId = userId || currentUser.id;
         userName = userName || currentUser.name;
       }
-    } catch (e) {
-      console.error("Could not get user for audit log:", e);
-    }
+    } catch (e) { console.error("Could not get user for audit log:", e); }
   }
-
   const newLog: AuditLog = {
     id: `log_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
     date: new Date().toISOString(),
     userId: userId || 'system',
     userName: userName || 'Sistema',
-    actionType,
-    description,
-    entityType: details.entityType,
-    entityId: details.entityId,
+    actionType, description, entityType: details.entityType, entityId: details.entityId,
   };
-
   placeholderAuditLogs.unshift(newLog);
   await persistToFirestore(['auditLogs']);
 }
 
+export async function hydrateFromFirestore() {
+  if (typeof window === 'undefined' || (window as any).__APP_HYDRATED__) {
+    resolveHydration?.();
+    return;
+  }
+  
+  const docRef = doc(db, 'workshopData', 'main');
+  let docSnap;
+  let changesMade = false;
 
-export const getCurrentMonthRange = () => {
-  const now = new Date();
-  return { from: startOfMonth(now), to: endOfMonth(now) };
-};
+  try {
+    docSnap = await getDoc(docRef);
 
-export const getLastMonthRange = () => {
-  const now = new Date();
-  const lastMonthDate = subMonths(now, 1);
-  return { from: startOfMonth(lastMonthDate), to: endOfMonth(lastMonthDate) };
-};
+    if (docSnap.exists()) {
+      const firestoreData = docSnap.data();
+      Object.assign(placeholderVehicles, firestoreData.vehicles || []);
+      Object.assign(placeholderServiceRecords, firestoreData.serviceRecords || []);
+      Object.assign(placeholderTechnicians, firestoreData.technicians || []);
+      Object.assign(placeholderInventory, firestoreData.inventory || []);
+      Object.assign(placeholderCategories, firestoreData.categories || []);
+      Object.assign(placeholderSuppliers, firestoreData.suppliers || []);
+      Object.assign(placeholderSales, firestoreData.sales || []);
+      Object.assign(placeholderUsers, firestoreData.users || []);
+      Object.assign(placeholderAppRoles, firestoreData.appRoles || []);
+      Object.assign(placeholderFixedMonthlyExpenses, firestoreData.fixedExpenses || []);
+      Object.assign(placeholderAdministrativeStaff, firestoreData.administrativeStaff || []);
+      Object.assign(placeholderVehiclePriceLists, firestoreData.vehiclePriceLists || []);
+      Object.assign(placeholderDrivers, firestoreData.drivers || []);
+      Object.assign(placeholderRentalPayments, firestoreData.rentalPayments || []);
+      Object.assign(placeholderOwnerWithdrawals, firestoreData.ownerWithdrawals || []);
+      Object.assign(placeholderVehicleExpenses, firestoreData.vehicleExpenses || []);
+      Object.assign(placeholderCashDrawerTransactions, firestoreData.cashDrawerTransactions || []);
+      Object.assign(placeholderAuditLogs, firestoreData.auditLogs || []);
+      Object.assign(placeholderServiceTypes, firestoreData.serviceTypes || []);
+      if (firestoreData.initialCashBalance) {
+        Object.assign(placeholderInitialCashBalance, firestoreData.initialCashBalance);
+      } else {
+        placeholderInitialCashBalance = null;
+      }
+      
+    } else {
+      console.warn('No database document found. Seeding with initial data.');
+      changesMade = true;
+    }
+  } catch (error) {
+    console.error('Error reading from Firestore, using local fallback:', error);
+  }
+  
+  const superAdminExists = placeholderUsers.some(u => u.email === defaultSuperAdmin.email);
+  if (!superAdminExists) {
+      placeholderUsers.push(defaultSuperAdmin);
+      changesMade = true;
+  }
+  const superAdminRoleExists = placeholderAppRoles.some(r => r.name === 'Superadmin');
+  if(!superAdminRoleExists) {
+      placeholderAppRoles.push({
+          id: 'role_superadmin',
+          name: 'Superadmin',
+          permissions: ALL_AVAILABLE_PERMISSIONS.map(p => p.id)
+      });
+      changesMade = true;
+  }
 
-export const getTodayRange = () => {
-  const now = new Date();
-  return { from: startOfDay(now), to: endOfDay(now) };
-};
+  (window as any).__APP_HYDRATED__ = true;
+  resolveHydration?.();
+  console.log('Hydration process complete.');
+  
+  if (changesMade) {
+    console.log('Persisting initial/updated data to Firestore...');
+    await persistToFirestore(); // Persist all data
+  }
+}
 
-export const getYesterdayRange = () => {
-  const now = new Date();
-  const yesterday = subDays(now, 1);
-  return { from: startOfDay(yesterday), to: endOfDay(yesterday) };
-};
+export async function persistToFirestore(keysToUpdate?: (keyof typeof DATA_ARRAYS)[]) {
+  if (!db) {
+    console.warn('Persist skipped: Firebase not configured.');
+    return;
+  }
 
-/**
- * Calculates the profit of a POS sale.
- * Profit = Total Sale Amount - Total Cost of Goods Sold.
- */
+  const keys = keysToUpdate && keysToUpdate.length > 0 ? keysToUpdate : Object.keys(DATA_ARRAYS) as (keyof typeof DATA_ARRAYS)[];
+  
+  const dataToPersist: { [key: string]: any } = {};
+  for (const key of keys) {
+    if (DATA_ARRAYS[key] !== undefined) {
+      dataToPersist[key] = DATA_ARRAYS[key];
+    }
+  }
+  
+  const sanitizedData = sanitizeObjectForFirestore(dataToPersist);
+  try {
+    await setDoc(doc(db, 'workshopData', 'main'), sanitizedData, { merge: true });
+    console.log(`Data successfully persisted to Firestore for keys: ${keys.join(', ')}`);
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('databaseUpdated'));
+    }
+  } catch (e) {
+    console.error('Error persisting data to Firestore:', e);
+  }
+}
+
 export const calculateSaleProfit = (
   sale: SaleReceipt,
   inventory: InventoryItem[]
@@ -758,10 +600,6 @@ export const calculateSaleProfit = (
 };
 
 
-/**
- * Crea un ServiceRecord listo para imprimir sustituyendo el unitPrice de supplies
- * por su sellingPrice.
- */
 export const enrichServiceForPrinting = (
   service: ServiceRecord,
   inventory: InventoryItem[],
@@ -784,102 +622,3 @@ export const enrichServiceForPrinting = (
     serviceItems: enrichedServiceItems,
   };
 };
-
-// --- MIGRATION FUNCTIONS (to be removed or adapted) ---
-
-export async function migrateVehicles(csvData: any[]): Promise<{ count: number }> {
-    let vehiclesAdded = 0;
-    csvData.forEach(row => {
-        const licensePlate = row['Placa'] || row['placa'];
-        if (licensePlate && !placeholderVehicles.find(v => v.licensePlate === licensePlate)) {
-            const newVehicle: Vehicle = {
-                id: `VEH_MIG_${vehiclesAdded}`,
-                make: row['Marca'] || row['marca'] || 'N/A',
-                model: row['Modelo'] || row['modelo'] || 'N/A',
-                year: Number(row['Año'] || row['año']) || 2000,
-                ownerName: row['Cliente'] || row['cliente'] || 'N/A',
-                ownerPhone: String(row['Telefono'] || row['telefono'] || 'N/A'),
-                licensePlate: licensePlate,
-            };
-            placeholderVehicles.push(newVehicle);
-            vehiclesAdded++;
-        }
-    });
-    if (vehiclesAdded > 0) await persistToFirestore(['vehicles']);
-    return { count: vehiclesAdded };
-}
-
-export async function migrateProducts(csvData: any[]): Promise<{ count: number }> {
-  let productsAdded = 0;
-  csvData.forEach(row => {
-    const sku = row['SKU'] || row['sku'] || `PROD_MIG_${productsAdded}`;
-    if (sku && !placeholderInventory.find(p => p.sku === sku)) {
-      const newProduct: InventoryItem = {
-        id: `PROD_MIG_${productsAdded}`,
-        sku: sku,
-        name: row['Nombre'] || row['nombre'] || 'Producto Migrado',
-        quantity: Number(row['Cantidad'] || row['cantidad'] || 0),
-        unitPrice: Number(row['Precio de Compra'] || row['precio de compra'] || 0),
-        sellingPrice: Number(row['Precio de Venta'] || row['precio de venta'] || 0),
-        category: 'Migración',
-        supplier: 'Migración',
-        lowStockThreshold: 1,
-      };
-      placeholderInventory.push(newProduct);
-      productsAdded++;
-    }
-  });
-  if (productsAdded > 0) await persistToFirestore(['inventory']);
-  return { count: productsAdded };
-}
-
-
-export async function migrateData(vehiclesData: any[], servicesData: any[]): Promise<{ vehicles: number, services: number }> {
-    let vehiclesAdded = 0;
-    vehiclesData.forEach(row => {
-        const licensePlate = row['Placa'];
-        if (licensePlate && !placeholderVehicles.find(v => v.licensePlate === licensePlate)) {
-            const newVehicle: Vehicle = {
-                id: `VEH_MIG_G_${vehiclesAdded}`,
-                make: row['Marca'] || 'N/A',
-                model: row['Modelo'] || 'N/A',
-                year: Number(row['Año']) || 2000,
-                ownerName: row['Cliente'] || 'N/A',
-                ownerPhone: String(row['Telefono'] || 'N/A'),
-                licensePlate: licensePlate,
-            };
-            placeholderVehicles.push(newVehicle);
-            vehiclesAdded++;
-        }
-    });
-
-    let servicesAdded = 0;
-    servicesData.forEach(row => {
-        const vehicle = placeholderVehicles.find(v => v.licensePlate === row['Placa']);
-        if (vehicle) {
-            const newService: ServiceRecord = {
-                id: `SER_MIG_G_${servicesAdded}`,
-                vehicleId: vehicle.id,
-                vehicleIdentifier: vehicle.licensePlate,
-                serviceDate: row['Fecha'] ? new Date(row['Fecha']).toISOString() : new Date().toISOString(),
-                description: row['Descripción'] || 'Servicio migrado',
-                totalCost: Number(row['Costo']) || 0,
-                status: 'Entregado',
-                technicianId: 'T001',
-                serviceItems: [],
-                subTotal: 0,
-                taxAmount: 0,
-                totalSuppliesCost: 0,
-                serviceProfit: 0,
-            };
-            placeholderServiceRecords.push(newService);
-            servicesAdded++;
-        }
-    });
-    
-    if (vehiclesAdded > 0 || servicesAdded > 0) {
-        await persistToFirestore(['vehicles', 'serviceRecords']);
-    }
-
-    return { vehicles: vehiclesAdded, services: servicesAdded };
-}
