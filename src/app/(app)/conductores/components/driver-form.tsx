@@ -19,6 +19,8 @@ const driverFormSchema = z.object({
   emergencyPhone: z.string().min(7, "Ingrese un teléfono de emergencia válido."),
   depositAmount: z.coerce.number().min(0, "El depósito no puede ser negativo.").optional(),
   contractDate: z.string().optional(),
+  debtAmount: z.coerce.number().min(0, "La deuda no puede ser negativa.").optional(),
+  debtNote: z.string().optional(),
 });
 
 export type DriverFormValues = z.infer<typeof driverFormSchema>;
@@ -36,6 +38,8 @@ export function DriverForm({ initialData, onSubmit, onClose }: DriverFormProps) 
         ...initialData,
         depositAmount: initialData.depositAmount ?? undefined,
         contractDate: initialData.contractDate ? new Date(initialData.contractDate).toISOString().split('T')[0] : '',
+        debtAmount: initialData.debtAmount ?? undefined,
+        debtNote: initialData.debtNote ?? '',
     } : {
       name: "",
       address: "",
@@ -43,6 +47,8 @@ export function DriverForm({ initialData, onSubmit, onClose }: DriverFormProps) 
       emergencyPhone: "",
       depositAmount: undefined,
       contractDate: '',
+      debtAmount: undefined,
+      debtNote: '',
     },
   });
 
@@ -120,6 +126,37 @@ export function DriverForm({ initialData, onSubmit, onClose }: DriverFormProps) 
                     <FormLabel>Fecha del Contrato</FormLabel>
                     <FormControl>
                     <Input type="date" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                </FormItem>
+                )}
+            />
+         </div>
+         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <FormField
+                control={form.control}
+                name="debtAmount"
+                render={({ field }) => (
+                    <FormItem>
+                    <FormLabel>Deuda Adicional</FormLabel>
+                    <FormControl>
+                        <div className="relative">
+                            <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                            <Input type="number" step="0.01" placeholder="Deuda manual" {...field} value={field.value ?? ''} className="pl-8" />
+                        </div>
+                    </FormControl>
+                    <FormMessage />
+                    </FormItem>
+                )}
+            />
+            <FormField
+                control={form.control}
+                name="debtNote"
+                render={({ field }) => (
+                <FormItem>
+                    <FormLabel>Nota de Deuda</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Ej: Costo de llanta ponchada" {...field} />
                     </FormControl>
                     <FormMessage />
                 </FormItem>

@@ -81,6 +81,8 @@ export interface Driver {
   depositAmount?: number;
   contractDate?: string; // ISO string
   contractStartDate?: string;
+  debtAmount?: number;
+  debtNote?: string;
 }
 
 export interface RentalPayment {
