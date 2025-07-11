@@ -4,7 +4,11 @@
 import { useState, useMemo, useEffect, useCallback, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Button } from "@/components/ui/button";
-import { PlusCircle } from "lucide-react";
+import { PlusCircle, ListFilter, Search } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuLabel } from "@/components/ui/dropdown-menu";
+
 import { hydrateReady } from "@/lib/placeholder-data";
 import type { Vehicle, VehiclePriceList } from "@/types";
 import type { VehicleFormValues } from "./components/vehicle-form";
@@ -12,14 +16,93 @@ import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PriceListDialog } from '../precios/components/price-list-dialog';
 import type { PriceListFormValues } from '../precios/components/price-list-form';
-import { ResumenVehiculosPageComponent } from './components/resumen-vehiculos-content';
-import { ListaVehiculosPageContent } from './components/lista-vehiculos-content';
-import { PrecotizacionesPageContent } from './components/precotizaciones-content';
 import { VehicleDialog } from './components/vehicle-dialog';
+import { VehiclesTable } from './components/vehicles-table'; 
+import { PriceListTable } from '../precios/components/price-list-table';
 
 import { inventoryService } from '@/lib/services/inventory.service';
 import { operationsService } from '@/lib/services/operations.service';
+import { subMonths, isBefore, parseISO, isValid } from 'date-fns';
 
+// --- ResumenVehiculosPageComponent ---
+const ResumenVehiculosPageComponent = ({ summaryData, onNewVehicleClick }: { summaryData: any, onNewVehicleClick: () => void }) => {
+    return (
+        <div className="space-y-6">
+             <div className="space-y-2">
+                <h2 className="text-2xl font-semibold tracking-tight">Resumen de Flotilla</h2>
+                <p className="text-muted-foreground">Una vista rápida del estado de tus vehículos registrados.</p>
+            </div>
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                <Card><CardHeader><CardTitle>Vehículos Totales</CardTitle></CardHeader><CardContent><div className="text-2xl font-bold">{summaryData.totalVehiclesCount}</div></CardContent></Card>
+                <Card><CardHeader><CardTitle>Propietarios Únicos</CardTitle></CardHeader><CardContent><div className="text-2xl font-bold">{summaryData.uniqueOwnersCount}</div></CardContent></Card>
+                <Card><CardHeader><CardTitle>Vehículos Inactivos (6+ meses)</CardTitle></CardHeader><CardContent><div className="text-2xl font-bold">{summaryData.inactive6MonthsCount}</div></CardContent></Card>
+                <Card><CardHeader><CardTitle>Vehículo Más Común</CardTitle></CardHeader><CardContent><div className="text-2xl font-bold">{summaryData.mostCommonVehicle}</div></CardContent></Card>
+            </div>
+            <Button onClick={onNewVehicleClick}><PlusCircle className="mr-2 h-4 w-4" /> Registrar Nuevo Vehículo</Button>
+        </div>
+    );
+};
+
+// --- ListaVehiculosPageContent ---
+const ListaVehiculosPageContent = ({ vehicles }: { vehicles: Vehicle[] }) => {
+    const [searchTerm, setSearchTerm] = useState('');
+    const [sortOption, setSortOption] = useState('licensePlate_asc');
+    
+    const filteredVehicles = useMemo(() => {
+        let filtered = [...vehicles];
+        if (searchTerm) {
+            const lowercasedFilter = searchTerm.toLowerCase();
+            filtered = filtered.filter(v => 
+                v.licensePlate.toLowerCase().includes(lowercasedFilter) ||
+                v.make.toLowerCase().includes(lowercasedFilter) ||
+                v.model.toLowerCase().includes(lowercasedFilter) ||
+                v.ownerName.toLowerCase().includes(lowercasedFilter)
+            );
+        }
+        filtered.sort((a,b) => a.licensePlate.localeCompare(b.licensePlate));
+        return filtered;
+    }, [vehicles, searchTerm]);
+
+    return (
+        <div className="space-y-4">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div className="relative flex-1 w-full">
+                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input type="search" placeholder="Buscar por placa, marca, modelo, propietario..." className="w-full rounded-lg bg-card pl-8" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+                </div>
+            </div>
+            <Card>
+                <CardContent className="pt-6">
+                    <VehiclesTable vehicles={filteredVehicles} />
+                </CardContent>
+            </Card>
+        </div>
+    );
+};
+
+// --- PrecotizacionesPageContent ---
+const PrecotizacionesPageContent = ({ priceLists, onDelete, onOpenDialog }: { priceLists: VehiclePriceList[], onDelete: (id: string) => void, onOpenDialog: (record?: VehiclePriceList) => void }) => {
+    return (
+        <div className="space-y-4">
+             <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
+                <div>
+                    <h2 className="text-2xl font-semibold tracking-tight">Lista de Precios de Vehículos</h2>
+                    <p className="text-muted-foreground">Precios estandarizados por modelo para agilizar cotizaciones.</p>
+                </div>
+                <Button onClick={() => onOpenDialog()}><PlusCircle className="mr-2 h-4 w-4" />Nueva Lista de Precios</Button>
+            </div>
+             <Card>
+                <CardContent className="pt-6">
+                    <PriceListTable
+                        records={priceLists}
+                        onEdit={onOpenDialog}
+                        onDelete={onDelete}
+                    />
+                </CardContent>
+            </Card>
+        </div>
+    );
+};
 
 function VehiculosPageComponent() {
     const searchParams = useSearchParams();
