@@ -1,11 +1,12 @@
 
+
 "use client";
 
 import { useState, useMemo, useEffect, useCallback, Suspense, useRef } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { PlusCircle, Search, ListFilter, ShieldCheck, User, ChevronRight } from "lucide-react";
+import { PlusCircle, Search, ListFilter, ShieldCheck, User, ChevronRight, AlertTriangle } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { AddVehicleToFleetDialog } from "./components/add-vehicle-to-fleet-dialog";
@@ -13,14 +14,13 @@ import { FineCheckDialog } from "./components/fine-check-dialog";
 import { placeholderVehicles, persistToFirestore, hydrateReady, AUTH_USER_LOCALSTORAGE_KEY, placeholderDrivers, placeholderRentalPayments } from '@/lib/placeholder-data';
 import type { User, Vehicle, Driver } from '@/types';
 import { useToast } from "@/hooks/use-toast";
-import { subDays, isBefore, parseISO, isValid, differenceInCalendarDays, startOfToday, isAfter, compareAsc } from 'date-fns';
+import { subDays, isBefore, parseISO, isValid, differenceInCalendarDays, startOfToday, isAfter, compareAsc, startOfMonth, endOfMonth, getDate } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency, cn } from '@/lib/utils';
 import { DriverDialog } from '../conductores/components/driver-dialog';
 import type { DriverFormValues } from '../conductores/components/driver-form';
-import { AlertTriangle } from 'lucide-react';
 import Link from 'next/link';
 
 type FlotillaSortOption = "plate_asc" | "plate_desc" | "owner_asc" | "owner_desc" | "rent_asc" | "rent_desc";
@@ -28,6 +28,16 @@ type DriverSortOption = 'name_asc' | 'name_desc';
 
 const FINE_CHECK_INTERVAL_DAYS = 15;
 const FINE_CHECK_STORAGE_KEY = 'fleetFineLastCheckDate';
+
+interface MonthlyBalance {
+  driverId: string;
+  driverName: string;
+  vehicleInfo: string;
+  charges: number;
+  payments: number;
+  balance: number;
+  daysOwed: number;
+}
 
 function FlotillaPageComponent() {
   const { toast } = useToast();
@@ -71,30 +81,59 @@ function FlotillaPageComponent() {
 
   const fleetVehicles = useMemo(() => allVehicles.filter(v => v.isFleetVehicle), [allVehicles]);
   const nonFleetVehicles = useMemo(() => allVehicles.filter(v => !v.isFleetVehicle), [allVehicles]);
-  
-  const indebtedDrivers = useMemo(() => {
-    if (!hydrated) return [];
-    const paymentsByDriver = new Map<string, number>();
-    placeholderRentalPayments.forEach(p => {
-        paymentsByDriver.set(p.driverId, (paymentsByDriver.get(p.driverId) || 0) + p.amount);
-    });
-    return allDrivers.map(driver => {
-        if (!driver.contractDate) return null;
-        const vehicle = allVehicles.find(v => v.id === driver.assignedVehicleId);
-        if (!vehicle?.dailyRentalCost) return null;
-        const contractStartDate = parseISO(driver.contractDate);
-        const today = startOfToday();
-        if (isAfter(contractStartDate, today)) return null;
-        const daysSinceContractStart = differenceInCalendarDays(today, contractStartDate) + 1;
-        const totalExpectedAmount = daysSinceContractStart * vehicle.dailyRentalCost;
-        const totalPaidAmount = paymentsByDriver.get(driver.id) || 0;
-        const debtAmount = Math.max(0, totalExpectedAmount - totalPaidAmount);
-        const daysOwed = debtAmount > 0 ? debtAmount / vehicle.dailyRentalCost : 0;
-        if (daysOwed > 2) return { id: driver.id, name: driver.name, daysOwed: Math.floor(daysOwed), debtAmount: debtAmount, vehicleLicensePlate: vehicle.licensePlate };
-        return null;
-      }).filter((d): d is NonNullable<typeof d> => d !== null).sort((a, b) => b.daysOwed - a.daysOwed);
-  }, [hydrated, version, allDrivers, allVehicles]);
 
+  const monthlyBalances = useMemo((): MonthlyBalance[] => {
+    if (!hydrated) return [];
+    
+    const today = new Date();
+    const monthStart = startOfMonth(today);
+    const monthEnd = endOfMonth(today);
+
+    const paymentsThisMonthByDriver = placeholderRentalPayments.filter(p => {
+        const pDate = parseISO(p.paymentDate);
+        return isValid(pDate) && isWithinInterval(pDate, { start: monthStart, end: monthEnd });
+    }).reduce((acc, p) => {
+        acc[p.driverId] = (acc[p.driverId] || 0) + p.amount;
+        return acc;
+    }, {} as Record<string, number>);
+
+    return allDrivers.map(driver => {
+        const vehicle = allVehicles.find(v => v.id === driver.assignedVehicleId);
+        const dailyRate = vehicle?.dailyRentalCost || 0;
+        
+        let charges = 0;
+        if (driver.contractDate && dailyRate > 0) {
+            const contractStartDate = parseISO(driver.contractDate);
+            if (isValid(contractStartDate) && !isAfter(contractStartDate, today)) {
+                const startOfCalculation = isAfter(contractStartDate, monthStart) ? contractStartDate : monthStart;
+                const daysInMonthSoFar = differenceInCalendarDays(today, startOfCalculation) + 1;
+                charges = daysInMonthSoFar * dailyRate;
+            }
+        }
+        
+        const manualDebtsThisMonth = (driver.manualDebts || []).filter(d => {
+            const dDate = parseISO(d.date);
+            return isValid(dDate) && isWithinInterval(dDate, { start: monthStart, end: monthEnd });
+        }).reduce((sum, d) => sum + d.amount, 0);
+
+        const totalCharges = charges + manualDebtsThisMonth;
+        const totalPayments = paymentsThisMonthByDriver[driver.id] || 0;
+        const balance = totalPayments - totalCharges;
+        const debt = Math.max(0, -balance);
+        const daysOwed = dailyRate > 0 ? debt / dailyRate : 0;
+        
+        return {
+            driverId: driver.id,
+            driverName: driver.name,
+            vehicleInfo: vehicle ? `${vehicle.licensePlate} (${formatCurrency(dailyRate)}/día)` : 'N/A',
+            charges: totalCharges,
+            payments: totalPayments,
+            balance: balance,
+            daysOwed: daysOwed,
+        };
+    }).sort((a,b) => a.driverName.localeCompare(b.driverName));
+  }, [hydrated, version, allDrivers, allVehicles]);
+  
   const overduePaperwork = useMemo(() => {
     if (!hydrated) return [];
     const today = startOfToday();
@@ -188,38 +227,62 @@ function FlotillaPageComponent() {
           <TabsTrigger value="vehiculos" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Vehículos</TabsTrigger>
         </TabsList>
         <TabsContent value="informe" className="space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <Card className="border-orange-500/50 bg-orange-50 dark:bg-orange-900/30">
-                  <CardHeader><CardTitle className="flex items-center gap-2 text-orange-700 dark:text-orange-300"><AlertTriangle />Conductores con Atraso Mayor a 2 Días</CardTitle></CardHeader>
-                  <CardContent>
-                      {indebtedDrivers.length > 0 ? (
-                          <div className="space-y-2 max-h-40 overflow-y-auto pr-2">
-                              {indebtedDrivers.map(d => (
-                                  <Link href={`/conductores/${d.id}`} key={d.id} className="flex justify-between items-center p-2 rounded-md hover:bg-orange-100 dark:hover:bg-orange-800/50">
-                                      <div><p className="font-semibold">{d.name}</p><p className="text-xs text-muted-foreground">{d.vehicleLicensePlate}</p></div>
-                                      <div className="text-right"><p className="font-bold text-destructive text-lg">{d.daysOwed} días</p><p className="text-xs text-muted-foreground">{formatCurrency(d.debtAmount)}</p></div>
-                                  </Link>
-                              ))}
-                          </div>
-                      ) : <p className="text-muted-foreground text-center py-4">No hay conductores con atrasos significativos.</p>}
-                  </CardContent>
-              </Card>
-              <Card className="border-red-500/50 bg-red-50 dark:bg-red-900/30">
-                  <CardHeader><CardTitle className="flex items-center gap-2 text-red-700 dark:text-red-300"><AlertTriangle />Trámites Vencidos o por Vencer</CardTitle></CardHeader>
-                  <CardContent>
-                      {overduePaperwork.length > 0 ? (
-                          <div className="space-y-2 max-h-40 overflow-y-auto pr-2">
-                              {overduePaperwork.map(item => (
-                                  <Link href={`/flotilla/${item.vehicleId}`} key={item.paperworkId} className="flex justify-between items-center p-2 rounded-md hover:bg-red-100 dark:hover:bg-red-800/50">
-                                      <div><p className="font-semibold">{item.vehicleLicensePlate}: {item.paperworkName}</p></div>
-                                      <div className="text-right"><p className="font-bold text-destructive text-sm">Vence:</p><p className="text-xs text-muted-foreground">{format(parseISO(item.dueDate), "dd MMM yyyy", { locale: es })}</p></div>
-                                  </Link>
-                              ))}
-                          </div>
-                      ) : <p className="text-muted-foreground text-center py-4">No hay trámites vencidos.</p>}
-                  </CardContent>
-              </Card>
-          </div>
+            <Card>
+                <CardHeader>
+                    <div className="flex justify-between items-center">
+                        <div>
+                            <CardTitle>Estado de Cuenta Mensual</CardTitle>
+                            <CardDescription>Resumen de saldos de todos los conductores para el mes de {format(new Date(), "MMMM", { locale: es })}.</CardDescription>
+                        </div>
+                        <p className="text-sm text-muted-foreground">Día {getDate(new Date())} del mes</p>
+                    </div>
+                </CardHeader>
+                <CardContent>
+                    <div className="rounded-md border overflow-x-auto">
+                        <Table>
+                            <TableHeader className="bg-black">
+                                <TableRow>
+                                    <TableHead className="text-white">Conductor</TableHead>
+                                    <TableHead className="text-white">Vehículo (Renta)</TableHead>
+                                    <TableHead className="text-right text-white">Ingresos del Mes</TableHead>
+                                    <TableHead className="text-right text-white">Cargos del Mes</TableHead>
+                                    <TableHead className="text-right text-white">Balance Mensual</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {monthlyBalances.length > 0 ? (
+                                    monthlyBalances.map(mb => (
+                                        <TableRow key={mb.driverId} className={cn(mb.daysOwed > 2 && "bg-red-50 dark:bg-red-900/30")}>
+                                            <TableCell className="font-semibold">{mb.driverName}</TableCell>
+                                            <TableCell>{mb.vehicleInfo}</TableCell>
+                                            <TableCell className="text-right text-green-600">{formatCurrency(mb.payments)}</TableCell>
+                                            <TableCell className="text-right text-red-600">{formatCurrency(mb.charges)}</TableCell>
+                                            <TableCell className={cn("text-right font-bold", mb.balance >= 0 ? "text-green-700" : "text-red-700")}>{formatCurrency(mb.balance)}</TableCell>
+                                        </TableRow>
+                                    ))
+                                ) : (
+                                    <TableRow><TableCell colSpan={5} className="h-24 text-center">No hay conductores activos.</TableCell></TableRow>
+                                )}
+                            </TableBody>
+                        </Table>
+                    </div>
+                </CardContent>
+            </Card>
+            <Card className="border-orange-500/50 bg-orange-50 dark:bg-orange-900/30">
+                <CardHeader><CardTitle className="flex items-center gap-2 text-orange-700 dark:text-orange-300"><AlertTriangle />Trámites Vencidos o por Vencer</CardTitle></CardHeader>
+                <CardContent>
+                    {overduePaperwork.length > 0 ? (
+                        <div className="space-y-2 max-h-40 overflow-y-auto pr-2">
+                            {overduePaperwork.map(item => (
+                                <Link href={`/flotilla/${item.vehicleId}`} key={item.paperworkId} className="flex justify-between items-center p-2 rounded-md hover:bg-orange-100 dark:hover:bg-orange-800/50">
+                                    <div><p className="font-semibold">{item.vehicleLicensePlate}: {item.paperworkName}</p></div>
+                                    <div className="text-right"><p className="font-bold text-destructive text-sm">Vence:</p><p className="text-xs text-muted-foreground">{format(parseISO(item.dueDate), "dd MMM yyyy", { locale: es })}</p></div>
+                                </Link>
+                            ))}
+                        </div>
+                    ) : <p className="text-muted-foreground text-center py-4">No hay trámites vencidos.</p>}
+                </CardContent>
+            </Card>
         </TabsContent>
         <TabsContent value="reportes" className="space-y-6">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -256,3 +319,4 @@ export default function FlotillaPageWrapper() {
         </Suspense>
     )
 }
+
