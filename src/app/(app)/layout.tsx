@@ -55,41 +55,32 @@ export default function AppLayout({
         try {
           setIsHydrating(true);
           
-          // STEP 1: Get user profile from /users collection
+          // STEP 1: Get or Create User Profile
           const userDocRef = doc(db, 'users', firebaseUser.uid);
           let userDocSnap = await getDoc(userDocRef);
 
-          // STEP 2: If user profile doesn't exist, create it (first login scenario)
           if (!userDocSnap.exists()) {
-            console.log(`User profile for ${firebaseUser.uid} not found. Creating...`);
+            console.log(`Creando perfil para el nuevo usuario: ${firebaseUser.uid}`);
             const newUserProfile: User = { ...defaultSuperAdmin, id: firebaseUser.uid, email: firebaseUser.email! };
+            await setDoc(userDocRef, newUserProfile); // Create profile first
+            userDocSnap = await getDoc(userDocRef); // Re-fetch to confirm creation
             
-            // Create user profile in /users
-            await setDoc(userDocRef, newUserProfile);
-            
-            // Hydrate the rest of the app data from the single data document
-            // If the document doesn't exist, it will be seeded by hydrateFromFirestore
-            await hydrateFromFirestore();
-
-            userDocSnap = await getDoc(userDocRef); // Re-fetch the newly created user doc
             if (!userDocSnap.exists()) {
                  throw new Error("No se pudo crear y recuperar el perfil de usuario inicial.");
             }
           }
-
           const appUser = userDocSnap.data() as User;
           
-          // STEP 3: Now that we have the user profile, hydrate all data.
-          // This ensures rules have access to the user profile when reading workshop data.
-          await hydrateFromFirestore();
+          // STEP 2: Hydrate workshop data using the confirmed user profile
+          await hydrateFromFirestore(appUser);
           
-          // STEP 4: Set local state and finish loading.
+          // STEP 3: Set local state and finish loading
           localStorage.setItem(AUTH_USER_LOCALSTORAGE_KEY, JSON.stringify(appUser));
           setAuthStatus('authenticated');
           setIsHydrating(false);
 
         } catch (error: any) {
-          console.error("Error during authentication or data hydration:", error);
+          console.error("Error durante la autenticación o carga de datos:", error);
           await handleLogout(error.message || "Error al cargar los datos del taller.");
         }
       } else {

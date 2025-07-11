@@ -274,7 +274,8 @@ export async function logAudit(
   await persistToFirestore(['auditLogs']);
 }
 
-export async function hydrateFromFirestore() {
+// HydrateFromFirestore ahora toma al usuario como argumento para asegurar el orden correcto
+export async function hydrateFromFirestore(currentUser: User) {
   if (typeof window === 'undefined' || (window as any).__APP_HYDRATED__) {
     resolveHydration?.();
     return;
@@ -299,7 +300,7 @@ export async function hydrateFromFirestore() {
       });
     } else {
       console.warn('No database document found. Seeding with initial data.');
-      await persistToFirestore();
+      await persistToFirestore(Object.keys(DATA_ARRAYS) as (keyof typeof DATA_ARRAYS)[], currentUser);
     }
   } catch (error) {
     console.error('Error reading from Firestore, using local fallback:', error);
@@ -313,7 +314,7 @@ export async function hydrateFromFirestore() {
           name: 'Superadmin',
           permissions: ALL_AVAILABLE_PERMISSIONS.map(p => p.id)
       });
-      await persistToFirestore(['appRoles']);
+      await persistToFirestore(['appRoles'], currentUser);
   }
 
   (window as any).__APP_HYDRATED__ = true;
@@ -322,7 +323,10 @@ export async function hydrateFromFirestore() {
 }
 
 
-export async function persistToFirestore(keysToUpdate?: (keyof typeof DATA_ARRAYS)[]) {
+export async function persistToFirestore(
+  keysToUpdate?: (keyof typeof DATA_ARRAYS)[],
+  currentUser?: User
+) {
   if (!db) {
     console.warn('Persist skipped: Firebase not configured.');
     return;
@@ -408,3 +412,4 @@ export const enrichServiceForPrinting = (
     serviceItems: enrichedServiceItems,
   };
 };
+

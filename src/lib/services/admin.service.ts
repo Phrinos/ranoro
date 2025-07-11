@@ -6,6 +6,7 @@ import { doc, setDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebaseClient.js';
 
 const getUsers = async (): Promise<User[]> => {
+    // This will now be hydrated from the main data doc, but we can keep it for local testing if needed.
     return [...placeholderUsers];
 };
 
@@ -33,12 +34,13 @@ const saveUser = async (user: User, isEditing: boolean): Promise<User> => {
     }
     
     // Persist to the top-level /users collection
-    await setDoc(doc(db, "users", userId), { ...userData, password: '' });
+    await setDoc(doc(db, "users", userId), { ...userData, password: '' }, { merge: true });
     
+    // This now gets persisted within the main workshop data doc
+    await persistToFirestore(['users']);
+
     await logAudit(isEditing ? 'Editar' : 'Crear', description, { entityType: 'Usuario', entityId: userId });
     
-    // The main persistToFirestore no longer handles the users array.
-    // We don't need to call it here unless other data changed.
     return userData;
 };
 
@@ -51,7 +53,7 @@ const deleteUser = async (userId: string): Promise<void> => {
     const index = placeholderUsers.findIndex(u => u.id === userId);
     if (index > -1) {
         placeholderUsers.splice(index, 1);
-        await persistToFirestore(['auditLogs']);
+        await persistToFirestore(['users', 'auditLogs']);
     }
 };
 
@@ -93,6 +95,9 @@ const updateUserProfile = async (user: User): Promise<User> => {
     // Update in Firestore /users collection
     const userDocRef = doc(db, 'users', user.id);
     await setDoc(userDocRef, { ...user, password: '' }, { merge: true }); // Ensure password is not stored
+
+    // Update in main workshop data
+    await persistToFirestore(['users']);
 
     return placeholderUsers[userIndex];
 };
