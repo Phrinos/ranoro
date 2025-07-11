@@ -112,7 +112,7 @@ export function AppSidebar({
             width={120}
             height={30}
             className="dark:invert"
-            style={{ width: "auto", height: "auto" }}
+            style={{ width: "120px", height: "auto" }}
             data-ai-hint="ranoro logo"
           />
         </Link>

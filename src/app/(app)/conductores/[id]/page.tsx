@@ -26,7 +26,7 @@ import { format, parseISO, differenceInCalendarDays, startOfToday, isAfter, star
 import { es } from 'date-fns/locale';
 import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
 import { ContractContent } from '../components/contract-content';
-import Image from "next/legacy/image";
+import Image from "next/image";
 import { RegisterPaymentDialog } from '../components/register-payment-dialog';
 import { DebtDialog, type DebtFormValues } from '../components/debt-dialog';
 import { ref, uploadString, getDownloadURL } from "firebase/storage";
@@ -381,7 +381,7 @@ export default function DriverDetailPage() {
                   <CardContent className="flex flex-col items-center gap-4">
                     <div className="w-full h-40 bg-muted rounded-md flex items-center justify-center border">
                       {driver.documents?.[type as keyof Driver['documents']] ? (
-                        <Image src={driver.documents[type as keyof Driver['documents']]!} alt={label} width={200} height={125} className="object-contain" data-ai-hint="document photo"/>
+                        <Image src={driver.documents[type as keyof Driver['documents']]!} alt={label} fill className="object-contain" data-ai-hint="document photo"/>
                       ) : (
                         <div className="flex flex-col items-center gap-2 text-muted-foreground">
                             <FileX className="h-8 w-8" />

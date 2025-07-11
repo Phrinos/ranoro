@@ -104,7 +104,8 @@ export default function LandingPage() {
               alt="Ranoro Logo"
               width={140}
               height={40}
-              className="dark:invert"
+              className="dark:invert h-auto"
+              style={{ width: '140px' }}
               data-ai-hint="ranoro logo"
             />
           </Link>
@@ -130,9 +131,8 @@ export default function LandingPage() {
             <Image
               src="/home.png"
               alt="Taller mecánico moderno con un coche deportivo"
-              layout="fill"
-              objectFit="cover"
-              className="object-center"
+              fill
+              className="object-cover object-center"
               priority
               data-ai-hint="mechanic workshop sportscar"
             />
@@ -164,12 +164,12 @@ export default function LandingPage() {
                     Con la confianza de los mejores talleres de LATAM
                 </p>
                 <div className="mt-8 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-8 items-center">
-                    <div className="flex justify-center"><Image width={150} height={40} src="/logos/taller1.png" alt="Logo Taller 1" data-ai-hint="company logo"/></div>
-                    <div className="flex justify-center"><Image width={150} height={40} src="/logos/taller2.png" alt="Logo Taller 2" data-ai-hint="company logo"/></div>
-                    <div className="flex justify-center"><Image width={150} height={40} src="/logos/taller3.png" alt="Logo Taller 3" data-ai-hint="company logo"/></div>
-                    <div className="flex justify-center"><Image width={150} height={40} src="/logos/taller4.png" alt="Logo Taller 4" data-ai-hint="company logo"/></div>
-                    <div className="flex justify-center"><Image width={150} height={40} src="/logos/taller5.png" alt="Logo Taller 5" data-ai-hint="company logo"/></div>
-                    <div className="flex justify-center"><Image width={150} height={40} src="/ranoro-logo.png" alt="Logo Ranoro" data-ai-hint="company logo"/></div>
+                    <div className="flex justify-center"><Image width={150} height={40} src="/logos/taller1.png" alt="Logo Taller 1" style={{ height: '40px', width: 'auto'}} data-ai-hint="company logo"/></div>
+                    <div className="flex justify-center"><Image width={150} height={40} src="/logos/taller2.png" alt="Logo Taller 2" style={{ height: '40px', width: 'auto'}} data-ai-hint="company logo"/></div>
+                    <div className="flex justify-center"><Image width={150} height={40} src="/logos/taller3.png" alt="Logo Taller 3" style={{ height: '40px', width: 'auto'}} data-ai-hint="company logo"/></div>
+                    <div className="flex justify-center"><Image width={150} height={40} src="/logos/taller4.png" alt="Logo Taller 4" style={{ height: '40px', width: 'auto'}} data-ai-hint="company logo"/></div>
+                    <div className="flex justify-center"><Image width={150} height={40} src="/logos/taller5.png" alt="Logo Taller 5" style={{ height: '40px', width: 'auto'}} data-ai-hint="company logo"/></div>
+                    <div className="flex justify-center"><Image width={150} height={40} src="/ranoro-logo.png" alt="Logo Ranoro" style={{ height: '40px', width: 'auto'}} data-ai-hint="company logo"/></div>
                 </div>
               </AnimatedDiv>
             </div>
@@ -418,7 +418,7 @@ export default function LandingPage() {
                           alt="Ranoro Logo"
                           width={140}
                           height={40}
-                          className=""
+                          style={{height: 'auto'}}
                           data-ai-hint="ranoro logo"
                         />
                     </Link>
