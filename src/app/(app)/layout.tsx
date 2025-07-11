@@ -39,85 +39,59 @@ export default function AppLayout({
       return; 
     }
 
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      if (user) {
-        console.log(`Firebase onAuthStateChanged: User detected (UID: ${user.uid}).`);
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      if (firebaseUser) {
         setAuthStatus('authenticated');
-        
         setIsHydrating(true);
         try {
+          // Attempt to hydrate all app data from the tenant document
           await hydrateFromFirestore();
-          
-          let appUser = placeholderUsers.find(u => u.id === user.uid);
-          let needsPersistence = false;
-    
-          if (!appUser && user.email) {
-            console.log(`User with UID ${user.uid} not found. Attempting to link by email: ${user.email}...`);
-            const preSeededUserIndex = placeholderUsers.findIndex(u => u.email && u.email.toLowerCase() === user.email!.toLowerCase());
-            if (preSeededUserIndex !== -1) {
-              console.log(`Found pre-seeded user by email. Linking to Firebase UID.`);
-              placeholderUsers[preSeededUserIndex].id = user.uid;
-              appUser = placeholderUsers[preSeededUserIndex];
-              needsPersistence = true;
-            }
-          }
 
-          if (appUser) {
-            console.log(`App user profile found for ${appUser.email}. Role: ${appUser.role}. Syncing profile info...`);
-            
-            if (user.displayName && appUser.name !== user.displayName) {
-                console.log(`- Syncing name: '${appUser.name}' -> '${user.displayName}'`);
-                appUser.name = user.displayName;
-                needsPersistence = true;
-            }
-            if (user.phoneNumber && appUser.phone !== user.phoneNumber) {
-                 console.log(`- Syncing phone.`);
-                appUser.phone = user.phoneNumber;
-                needsPersistence = true;
-            }
-            
-            localStorage.setItem(AUTH_USER_LOCALSTORAGE_KEY, JSON.stringify(appUser));
-            
-            if (needsPersistence) {
-                console.log("Persisting profile updates to database...");
-                persistToFirestore(['users']).catch(err => console.error("Failed to persist user data update:", err));
-            }
+          // After hydrating, find the specific app user profile from the now-hydrated placeholderUsers
+          let appUser = placeholderUsers.find(u => u.id === firebaseUser.uid);
 
-            setIsHydrating(false); 
-          } else {
-            console.log(`User with UID ${user.uid} not found in app DB. Creating new user record (Just-In-Time)...`);
-            
+          // If user exists in Firebase Auth but not in our user collection (e.g., first login for a pre-seeded auth user)
+          if (!appUser && firebaseUser.email) {
+            console.log(`User with UID ${firebaseUser.uid} not found. Attempting to create profile...`);
+
+            // This is a new user or a user whose profile doesn't exist yet.
+            // Create a new user profile object.
             const newUser: User = {
-              id: user.uid,
-              email: user.email!,
-              name: user.displayName || user.email!.split('@')[0],
-              role: 'Tecnico',
-              phone: user.phoneNumber || undefined,
+              id: firebaseUser.uid,
+              email: firebaseUser.email!,
+              name: firebaseUser.displayName || firebaseUser.email!.split('@')[0],
+              role: 'Tecnico', // Default role for new users
+              tenantId: defaultSuperAdmin.tenantId, // Assign the default tenantId
             };
             
+            // Add the new user to the local placeholder array
             placeholderUsers.push(newUser);
-            localStorage.setItem(AUTH_USER_LOCALSTORAGE_KEY, JSON.stringify(newUser));
             
-            console.log("Persisting new user profile to database...");
-            persistToFirestore(['users']).catch(err => {
-              console.error("Failed to persist newly created user:", err);
-            });
+            // Persist ONLY the users array to Firestore, which now includes the new user.
+            // The security rules allow a user to create their own profile.
+            await persistToFirestore(['users']);
             
-            toast({
-              title: "¡Bienvenido!",
-              description: `Hemos creado un perfil para ti con el rol por defecto.`,
-            });
-            
-            setIsHydrating(false);
+            appUser = newUser; // Set the newly created user as the current appUser
+            toast({ title: "¡Bienvenido!", description: `Hemos creado un perfil para ti.` });
           }
-        } catch (error) {
-          console.error("Hydration failed:", error);
-          toast({ title: "Error de Carga", description: "No se pudieron cargar los datos del taller desde la base de datos.", variant: "destructive" });
-          await signOut(auth);
-        }
 
+          // At this point, appUser should exist.
+          if (appUser) {
+            localStorage.setItem(AUTH_USER_LOCALSTORAGE_KEY, JSON.stringify(appUser));
+            setIsHydrating(false);
+          } else {
+            // This case should ideally not be reached, but as a fallback:
+            throw new Error("No se pudo encontrar o crear un perfil de usuario.");
+          }
+
+        } catch (error: any) {
+          console.error("Error during hydration or user setup:", error);
+          toast({ title: "Error de Carga", description: error.message || "No se pudieron cargar los datos del taller. Por favor, intente de nuevo.", variant: "destructive", duration: 5000 });
+          await signOut(auth);
+          setAuthStatus('unauthenticated');
+          router.push('/login');
+        }
       } else {
-        console.log("Firebase onAuthStateChanged: No user detected.");
         setAuthStatus('unauthenticated');
         router.replace('/login');
       }
@@ -140,6 +114,15 @@ export default function AppLayout({
     return null;
   }
   
+  if (isHydrating) {
+      return (
+        <div className="flex h-screen w-full items-center justify-center">
+            <Loader2 className="h-8 w-8 animate-spin" />
+            <p className="text-lg ml-4">Cargando datos del taller...</p>
+        </div>
+      );
+  }
+
   return (
     <SidebarProvider defaultOpen={true}>
       <AppSidebar key={isHydrating ? 'hydrating' : 'hydrated'} />
@@ -148,14 +131,7 @@ export default function AppLayout({
       </div>
       <SidebarInset className="flex flex-col">
         <main className="flex-1 overflow-y-auto p-4 pt-20 md:pt-6 lg:p-8">
-          {isHydrating ? (
-            <div className="flex h-full w-full items-center justify-center">
-               <Loader2 className="h-8 w-8 animate-spin" />
-               <p className="text-lg ml-4">Cargando datos del taller...</p>
-            </div>
-          ) : (
-            children
-          )}
+            {children}
         </main>
       </SidebarInset>
     </SidebarProvider>
