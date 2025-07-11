@@ -2,48 +2,90 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    // --- Colecciones Públicas (para compartir enlaces) ---
-    // Legibles por todos, pero requieren autenticación para escribir.
-    match /publicQuotes/{quoteId} {
-      allow read: if true;
-      allow create, update, delete: if request.auth != null;
-    }
-
-    match /publicOwnerReports/{reportId} {
-      allow read: if true;
-      allow create, update, delete: if request.auth != null;
-    }
-
+    
+    // PUBLIC COLLECTIONS
+    // Anyone can read these, but no one can write.
     match /publicServices/{serviceId} {
       allow read: if true;
-      // Usuarios no autenticados solo pueden actualizar los campos de firma.
-      allow update: if request.auth != null ||
-                      (request.resource.data.diff(resource.data).affectedKeys()
-                      .hasOnly(['customerSignatureReception', 'customerSignatureDelivery', 'receptionSignatureViewed', 'deliverySignatureViewed']));
-      allow create, delete: if request.auth != null;
+      allow write: if false;
     }
-
-    match /public_documents/{documentId} {
+     match /publicQuotes/{quoteId} {
       allow read: if true;
-      allow create, update, delete: if request.auth != null;
+      allow write: if false;
+    }
+    match /publicOwnerReports/{reportId} {
+      allow read: if true;
+      allow write: if false;
     }
 
-    // --- Perfiles de Usuario ---
-    // Los usuarios pueden leer y escribir en su propio documento, pero no en los de otros.
-    // Esto es crucial para la seguridad y la privacidad.
-    match /users/{userId} {
-      allow read, create, update: if request.auth != null && request.auth.uid == userId;
-      // Nota: La eliminación de perfiles por parte del cliente está deshabilitada por seguridad.
-    }
+    // PRIVATE COLLECTIONS
+    // Only authenticated users can access these collections.
     
-    // --- CUALQUIER OTRA COLECCIÓN ---
-    // Por defecto, se deniega el acceso a cualquier otra ruta de documento.
-    // Esta es la regla de seguridad más importante para un entorno de producción.
-    // Si necesitas dar acceso a otras colecciones (ej. 'services', 'vehicles'),
-    // debes añadir una regla explícita para ellas, idealmente basada en roles.
-    match /{document=**} {
-      allow read, write: if false;
+    // Users can read anyone's profile, but only write to their own.
+    match /users/{userId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Authenticated users can read/write any of the main business documents.
+    match /serviceRecords/{serviceId} {
+      allow read, write: if request.auth != null;
+    }
+    match /vehicles/{vehicleId} {
+      allow read, write: if request.auth != null;
+    }
+    match /inventory/{itemId} {
+      allow read, write: if request.auth != null;
+    }
+    match /technicians/{technicianId} {
+      allow read, write: if request.auth != null;
+    }
+    match /sales/{saleId} {
+      allow read, write: if request.auth != null;
+    }
+    match /appRoles/{roleId} {
+      allow read, write: if request.auth != null;
+    }
+    match /administrativeStaff/{staffId} {
+        allow read, write: if request.auth != null;
+    }
+    match /drivers/{driverId} {
+        allow read, write: if request.auth != null;
+    }
+    match /rentalPayments/{paymentId} {
+        allow read, write: if request.auth != null;
+    }
+    match /ownerWithdrawals/{withdrawalId} {
+        allow read, write: if request.auth != null;
+    }
+    match /vehicleExpenses/{expenseId} {
+        allow read, write: if request.auth != null;
+    }
+    match /fixedExpenses/{expenseId} {
+        allow read, write: if request.auth != null;
+    }
+    match /cashDrawerTransactions/{transactionId} {
+        allow read, write: if request.auth != null;
+    }
+     match /initialCashBalance/{docId} {
+        allow read, write: if request.auth != null;
+    }
+
+    // Configuration collections, readable by authenticated users.
+    match /inventoryCategories/{categoryId} {
+      allow read, write: if request.auth != null;
+    }
+    match /suppliers/{supplierId} {
+      allow read, write: if request.auth != null;
+    }
+    match /vehiclePriceLists/{listId} {
+      allow read, write: if request.auth != null;
+    }
+    match /serviceTypes/{typeId} {
+      allow read, write: if request.auth != null;
+    }
+    match /auditLogs/{logId} {
+      allow read, write: if request.auth != null;
     }
   }
 }
