@@ -20,16 +20,8 @@ const getAuditLogs = async (): Promise<AuditLog[]> => {
 const saveUser = async (user: User, isEditing: boolean): Promise<User> => {
     const description = `Se ${isEditing ? 'actualizó el perfil del' : 'creó el'} usuario "${user.name}" (Email: ${user.email}).`;
 
-    const authUserString = localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY);
-    const adminUser: User | null = authUserString ? JSON.parse(authUserString) : defaultSuperAdmin;
-    const tenantId = adminUser?.tenantId;
-
-    if (!tenantId) {
-        throw new Error("Could not determine tenantId for new user.");
-    }
-    
     const userId = user.id || `user_${Date.now()}`;
-    const userData = { ...user, id: userId, password: '', tenantId };
+    const userData = { ...user, id: userId, password: '' };
 
     if (isEditing) {
         const userIndex = placeholderUsers.findIndex(u => u.id === userId);

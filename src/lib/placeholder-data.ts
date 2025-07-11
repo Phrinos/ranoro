@@ -130,7 +130,6 @@ export let placeholderVehicleExpenses: VehicleExpense[] = [];
 // =======================================
 export const defaultSuperAdmin: User = {
   id: 'RaMVBO4UZeTeNW1BZlmwWMg9Na32',
-  tenantId: 'T01H858YMEG5V6V3V3V3V3V3V3',
   name: 'Arturo Valdelamar',
   email: 'arturo@ranoro.mx',
   role: 'Superadmin',
@@ -199,6 +198,7 @@ export let placeholderPublicOwnerReports: PublicOwnerReport[] = [];
 
 
 // --- DATA PERSISTENCE & HYDRATION ---
+const DATA_STORE_ID = "main_data";
 
 const DATA_ARRAYS = {
     vehicles: placeholderVehicles,
@@ -274,43 +274,32 @@ export async function logAudit(
   await persistToFirestore(['auditLogs']);
 }
 
-export async function hydrateFromFirestore(tenantId: string) {
+export async function hydrateFromFirestore() {
   if (typeof window === 'undefined' || (window as any).__APP_HYDRATED__) {
     resolveHydration?.();
     return;
   }
   
-  const docRef = doc(db, 'tenants', tenantId);
-  const userListDocRef = doc(db, 'users', tenantId); // Assumes users are stored under a doc named after the tenantId
-
+  const docRef = doc(db, 'workshop_data', DATA_STORE_ID);
+  
   try {
-    const tenantDocSnap = await getDoc(docRef);
-    const userListSnap = await getDoc(userListDocRef); // This might be wrong, depends on user structure
-
-    if (tenantDocSnap.exists()) {
-      const firestoreData = tenantDocSnap.data();
-      // Assign data to placeholders
+    const docSnap = await getDoc(docRef);
+    if (docSnap.exists()) {
+      const firestoreData = docSnap.data();
       Object.keys(DATA_ARRAYS).forEach(key => {
-        if (key !== 'users' && firestoreData[key]) {
+        if (firestoreData[key]) {
           const placeholder = DATA_ARRAYS[key as keyof typeof DATA_ARRAYS];
           if (Array.isArray(placeholder)) {
             placeholder.splice(0, placeholder.length, ...firestoreData[key]);
           } else {
-             // Handle non-array placeholders like initialCashBalance
              if (placeholder) Object.assign(placeholder, firestoreData[key]);
              else DATA_ARRAYS[key as keyof typeof DATA_ARRAYS] = firestoreData[key];
           }
         }
       });
-      // Handle user list separately if needed from a different document
-      // if (userListSnap.exists()) {
-      //     placeholderUsers.splice(0, placeholderUsers.length, ...userListSnap.data().users);
-      // }
-
     } else {
-      console.warn('No database document found for tenant. Seeding with initial data.');
-      // Persist all data if document is new
-      await persistToFirestore(undefined, tenantId);
+      console.warn('No database document found. Seeding with initial data.');
+      await persistToFirestore();
     }
   } catch (error) {
     console.error('Error reading from Firestore, using local fallback:', error);
@@ -324,7 +313,7 @@ export async function hydrateFromFirestore(tenantId: string) {
           name: 'Superadmin',
           permissions: ALL_AVAILABLE_PERMISSIONS.map(p => p.id)
       });
-      await persistToFirestore(['appRoles'], tenantId);
+      await persistToFirestore(['appRoles']);
   }
 
   (window as any).__APP_HYDRATED__ = true;
@@ -333,32 +322,16 @@ export async function hydrateFromFirestore(tenantId: string) {
 }
 
 
-export async function persistToFirestore(keysToUpdate?: (keyof typeof DATA_ARRAYS)[], forceTenantId?: string) {
+export async function persistToFirestore(keysToUpdate?: (keyof typeof DATA_ARRAYS)[]) {
   if (!db) {
     console.warn('Persist skipped: Firebase not configured.');
     return;
-  }
-  
-  let tenantId = forceTenantId;
-
-  if (!tenantId) {
-      const authUserString = typeof window !== 'undefined' ? localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY) : null;
-      const currentUser: User | null = authUserString ? JSON.parse(authUserString) : null;
-      tenantId = currentUser?.tenantId;
-  }
-  
-  if (!tenantId) {
-      console.error('Persist skipped: No tenantId found.');
-      return;
   }
   
   const keys = keysToUpdate && keysToUpdate.length > 0 ? keysToUpdate : Object.keys(DATA_ARRAYS) as (keyof typeof DATA_ARRAYS)[];
   
   const dataToPersist: { [key: string]: any } = {};
   for (const key of keys) {
-    // Special handling for 'users' to avoid storing it inside the tenant document
-    if (key === 'users') continue;
-    
     if (DATA_ARRAYS[key] !== undefined) {
       dataToPersist[key] = DATA_ARRAYS[key];
     }
@@ -366,10 +339,10 @@ export async function persistToFirestore(keysToUpdate?: (keyof typeof DATA_ARRAY
   
   const sanitizedData = sanitizeObjectForFirestore(dataToPersist);
   try {
-    const docRef = doc(db, 'tenants', tenantId);
+    const docRef = doc(db, 'workshop_data', DATA_STORE_ID);
     await setDoc(docRef, sanitizedData, { merge: true });
     
-    console.log(`Data successfully persisted to Firestore for tenant ${tenantId} on keys: ${keys.join(', ')}`);
+    console.log(`Data successfully persisted to Firestore on keys: ${keys.join(', ')}`);
     if (typeof window !== 'undefined') {
       window.dispatchEvent(new CustomEvent('databaseUpdated'));
     }
