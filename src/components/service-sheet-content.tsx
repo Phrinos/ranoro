@@ -7,7 +7,7 @@ import { format, parseISO, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
 import React from 'react';
 import { cn, normalizeDataUrl, calculateDriverDebt } from "@/lib/utils";
-import Image from "next/image";
+import Image from "next/legacy/image";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Check, Eye, Signature, Loader2, AlertCircle } from 'lucide-react';

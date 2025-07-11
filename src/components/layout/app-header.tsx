@@ -15,8 +15,8 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import { signOut, onAuthStateChanged } from 'firebase/auth';
 import { auth, db } from '@/lib/firebaseClient.js';
 import { useEffect, useState } from 'react';
-import type { User } from 'firebase/auth';
-import type { RanoroUser } from '@/types';
+import type { User as FirebaseUser } from 'firebase/auth';
+import type { User as RanoroUser } from '@/types';
 import { doc, getDoc } from 'firebase/firestore';
 
 
@@ -27,7 +27,7 @@ export function AppHeader() {
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const router = useRouter();
   
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
   const [ranoroUser, setRanoroUser] = useState<RanoroUser | null>(null);
 
   useEffect(() => {
@@ -112,6 +112,7 @@ export function AppHeader() {
                     width={120}
                     height={30}
                     className="dark:invert h-auto"
+                    style={{width: '120px', height: 'auto'}}
                     data-ai-hint="ranoro logo"
                   />
                 </Link>
@@ -128,6 +129,7 @@ export function AppHeader() {
                 width={120}
                 height={30}
                 className="dark:invert h-auto"
+                style={{width: '120px', height: 'auto'}}
                 data-ai-hint="ranoro logo"
               />
             </Link>
@@ -141,7 +143,7 @@ export function AppHeader() {
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="relative h-9 w-9 rounded-full">
                   <Avatar>
-                    <AvatarImage src={ranoroUser?.photoURL || undefined} alt={ranoroUser?.name || 'Usuario'}/>
+                    <AvatarImage src={(ranoroUser as any)?.photoURL || undefined} alt={ranoroUser?.name || 'Usuario'}/>
                     <AvatarFallback>{ranoroUser?.name?.[0] || 'U'}</AvatarFallback>
                   </Avatar>
                 </Button>

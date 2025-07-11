@@ -13,7 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 import { SignatureDialog } from '@/app/(app)/servicios/components/signature-dialog';
 import { doc, setDoc, onSnapshot, getDoc } from 'firebase/firestore'; 
 import { db } from '@/lib/firebasePublic.js';
-import Image from "next/image";
+import Image from "next/legacy/image";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { QuoteContent } from '@/components/quote-content';
 

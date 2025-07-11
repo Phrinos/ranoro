@@ -6,7 +6,7 @@ import { Suspense } from 'react';
 
 function Redirector() {
     // Redirect to the new unified page with the correct tab selected
-    redirect('/pos?tab=caja');
+    redirect('/pos');
     return null;
 }
 

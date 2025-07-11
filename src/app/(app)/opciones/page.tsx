@@ -24,7 +24,7 @@ import { ref, uploadString, getDownloadURL } from 'firebase/storage';
 import { AUTH_USER_LOCALSTORAGE_KEY, placeholderAppRoles, placeholderServiceTypes, logAudit } from '@/lib/placeholder-data';
 import { adminService } from '@/lib/services/admin.service'; // Import the service
 import { SignatureDialog } from '@/app/(app)/servicios/components/signature-dialog';
-import Image from "next/image";
+import Image from "next/legacy/image";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { TicketContent } from "@/components/ticket-content";
 import { Slider } from "@/components/ui/slider";

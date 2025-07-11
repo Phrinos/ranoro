@@ -26,7 +26,7 @@ import { format, parseISO, differenceInCalendarDays, startOfToday, isAfter, star
 import { es } from 'date-fns/locale';
 import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
 import { ContractContent } from '../components/contract-content';
-import Image from "next/image";
+import Image from "next/legacy/image";
 import { RegisterPaymentDialog } from '../components/register-payment-dialog';
 import { DebtDialog, type DebtFormValues } from '../components/debt-dialog';
 import { ref, uploadString, getDownloadURL } from "firebase/storage";

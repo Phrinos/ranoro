@@ -30,7 +30,7 @@ import { formatCurrency } from "@/lib/utils";
 import Link from "next/link";
 import { useToast } from "@/hooks/use-toast";
 import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
-import Image from "next/image";
+import Image from "next/legacy/image";
 
 
 const ReportContent = React.forwardRef<HTMLDivElement, { report: PublicOwnerReport }>(({ report }, ref) => {
