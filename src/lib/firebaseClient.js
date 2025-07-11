@@ -8,23 +8,18 @@ import { getStorage } from "firebase/storage";
 import { getAuth } from "firebase/auth";
 
 // ---------------------------------------------------
-// 1. Configuración mediante variables de entorno
-//    Asegúrate de que estas variables existan en tu archivo .env.local
+// 1. Configuración de Firebase (Producción)
+//    Estas son las credenciales para el entorno en vivo.
 // ---------------------------------------------------
 const firebaseConfig = {
-  apiKey: process.env.NEXT_PUBLIC_FB_API_KEY,
-  authDomain: process.env.NEXT_PUBLIC_FB_AUTH_DOMAIN,
-  databaseURL: process.env.NEXT_PUBLIC_FB_DB_URL,
-  projectId: process.env.NEXT_PUBLIC_FB_PROJECT_ID,
-  storageBucket: process.env.NEXT_PUBLIC_FB_STORAGE_BUCKET,
-  messagingSenderId: process.env.NEXT_PUBLIC_FB_SENDER_ID,
-  appId: process.env.NEXT_PUBLIC_FB_APP_ID,
+  apiKey: "AIzaSyA_ot6L0zgglc1tC0BounxYIvj7y8048Sg",
+  authDomain: "ranoro-jm8l0.firebaseapp.com",
+  projectId: "ranoro-jm8l0",
+  storageBucket: "ranoro-jm8l0.firebasestorage.app",
+  messagingSenderId: "290934350177",
+  appId: "1:290934350177:web:2365c77eaca4bb0d906520",
 };
 
-// Verificación de que las variables de entorno están cargadas
-if (!firebaseConfig.apiKey || !firebaseConfig.projectId) {
-  throw new Error("No se encontraron las variables de entorno de Firebase. Asegúrate de tener un archivo .env.local con la configuración correcta.");
-}
 
 // ---------------------------------------------------
 // 2. Inicializa la app solo una vez
