@@ -5,7 +5,7 @@
 import { useState, useMemo, useEffect, useCallback, Suspense, useRef } from 'react';
 import { PageHeader } from '@/components/page-header';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, Printer } from 'lucide-react';
+import { PlusCircle, Printer, Copy } from 'lucide-react';
 import { RegisterPaymentDialog } from './components/register-payment-dialog';
 import {
   placeholderDrivers,
@@ -23,6 +23,7 @@ import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
 import { RentalReceiptContent } from './components/rental-receipt-content';
 import { formatCurrency } from '@/lib/utils';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import html2canvas from 'html2canvas';
 
 function RentasPageComponent() {
   const [hydrated, setHydrated] = useState(false);
@@ -102,6 +103,22 @@ function RentasPageComponent() {
     setPaymentForReceipt(newPayment); // Set the new payment for receipt display
   };
   
+  const handleCopyAsImage = useCallback(async () => {
+    if (!receiptRef.current) return;
+    try {
+        const canvas = await html2canvas(receiptRef.current, { scale: 2.5, backgroundColor: null });
+        canvas.toBlob((blob) => {
+            if (blob) {
+                navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+                toast({ title: "Copiado", description: "La imagen del recibo ha sido copiada." });
+            }
+        });
+    } catch (e) {
+        console.error("Error copying image:", e);
+        toast({ title: "Error", description: "No se pudo copiar la imagen del recibo.", variant: "destructive" });
+    }
+  }, [toast]);
+  
   // Sorting payments
   const sortedPayments = useMemo(() => {
     return [...payments].sort((a, b) => compareDesc(parseISO(a.paymentDate), parseISO(b.paymentDate)));
@@ -179,7 +196,12 @@ function RentasPageComponent() {
         onOpenChange={(isOpen) => !isOpen && setPaymentForReceipt(null)}
         title="Recibo de Pago de Renta"
         dialogContentClassName="printable-content"
-        footerActions={ <Button onClick={() => window.print()}><Printer className="mr-2 h-4 w-4" /> Imprimir Recibo</Button> }
+        footerActions={
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={handleCopyAsImage}><Copy className="mr-2 h-4 w-4" /> Copiar Imagen</Button>
+            <Button onClick={() => window.print()}><Printer className="mr-2 h-4 w-4" /> Imprimir Recibo</Button>
+          </div>
+        }
       >
         {paymentForReceipt && <RentalReceiptContent ref={receiptRef} payment={paymentForReceipt} workshopInfo={workshopInfo} />}
       </PrintTicketDialog>
