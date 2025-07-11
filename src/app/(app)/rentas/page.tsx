@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState, useMemo, useEffect, useCallback, Suspense, useRef } from 'react';
@@ -14,7 +15,7 @@ import {
   hydrateReady,
 } from '@/lib/placeholder-data';
 import type { RentalPayment, Driver, Vehicle, WorkshopInfo } from '@/types';
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from "@/hooks/use-toast";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { format, parseISO, compareDesc, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';

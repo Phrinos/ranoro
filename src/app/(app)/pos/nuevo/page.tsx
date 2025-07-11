@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState, useEffect, useRef } from 'react';
@@ -6,12 +7,13 @@ import { PageHeader } from "@/components/page-header";
 import { PosDialog } from "../components/pos-dialog";
 import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
 import { TicketContent } from '@/components/ticket-content';
-import { placeholderInventory } from "@/lib/placeholder-data"; 
+import { placeholderInventory, persistToFirestore, hydrateReady } from "@/lib/placeholder-data"; 
 import type { SaleReceipt, InventoryItem, WorkshopInfo } from '@/types'; 
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Printer, Copy } from 'lucide-react';
+import html2canvas from 'html2canvas';
 
 type DialogStep = 'pos' | 'print_preview' | 'closed';
 
@@ -20,16 +22,19 @@ export default function NuevaVentaPage() {
   const router = useRouter();
   const ticketContentRef = useRef<HTMLDivElement>(null);
   
-  const [currentInventoryItems, setCurrentInventoryItems] = useState<InventoryItem[]>(placeholderInventory); 
+  const [currentInventoryItems, setCurrentInventoryItems] = useState<InventoryItem[]>([]);
   const [dialogStep, setDialogStep] = useState<DialogStep>('pos');
   const [currentSaleForTicket, setCurrentSaleForTicket] = useState<SaleReceipt | null>(null);
   const [workshopInfo, setWorkshopInfo] = useState<WorkshopInfo | undefined>(undefined);
+  const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
-        const stored = localStorage.getItem('workshopTicketInfo');
-        if (stored) setWorkshopInfo(JSON.parse(stored));
-    }
+    hydrateReady.then(() => {
+      setCurrentInventoryItems([...placeholderInventory]);
+      const stored = localStorage.getItem('workshopTicketInfo');
+      if (stored) setWorkshopInfo(JSON.parse(stored));
+      setHydrated(true);
+    });
   }, []);
 
   useEffect(() => {
@@ -64,7 +69,6 @@ export default function NuevaVentaPage() {
         return;
     }
     try {
-        const html2canvas = (await import('html2canvas')).default;
         const canvas = await html2canvas(ticketContentRef.current, {
             useCORS: true,
             backgroundColor: '#ffffff',
@@ -104,6 +108,10 @@ export default function NuevaVentaPage() {
     });
   };
 
+
+  if (!hydrated) {
+      return <div className="text-center p-8 text-muted-foreground">Cargando...</div>;
+  }
 
   return (
     <>
