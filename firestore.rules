@@ -6,7 +6,9 @@ service cloud.firestore {
 
     // Allow users to read and write their own profile document.
     // This is essential for login and profile updates.
+    // Also, allow any authenticated user to create their own user document.
     match /users/{userId} {
+      allow create: if request.auth != null;
       allow read, write: if request.auth.uid == userId;
     }
 
