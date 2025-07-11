@@ -1,50 +1,32 @@
-
 rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-  
-    // Helper Functions
-    function isAuthenticated() {
-      return request.auth != null;
-    }
     
-    function isOwner(userId) {
-      return request.auth.uid == userId;
-    }
-
-    // --- USERS Collection ---
-    // User profiles, containing their role and tenantId.
+    // Allow an authenticated user to read and create their own user profile
     match /users/{userId} {
-      // Any authenticated user can read their OWN profile to get their tenantId.
-      // An authenticated user can create their OWN profile if it doesn't exist yet.
-      allow read, create: if isAuthenticated() && isOwner(userId);
-      // An admin of the same tenant can update user profiles (e.g., change roles).
-      allow update: if isAuthenticated() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.tenantId == resource.data.tenantId;
+      allow read, update: if request.auth.uid == userId;
+      allow create: if request.auth.uid == userId;
     }
 
-    // --- TENANTS Collection ---
-    // This collection holds all the operational data for each workshop (tenant).
+    // Allow a user to read/write to a tenant document if their profile's tenantId matches
     match /tenants/{tenantId} {
-        // Allow read/write access if the requesting user's tenantId (from their profile)
-        // matches the tenantId of the document they are trying to access.
-        allow read, write: if isAuthenticated() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.tenantId == tenantId;
+      allow read, write: if request.auth != null && 
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.tenantId == tenantId;
+      // Allow creation of the tenant document if it doesn't exist yet by an authenticated user
+      allow create: if request.auth != null && !exists(/databases/$(database)/documents/tenants/$(tenantId));
     }
 
-    // --- PUBLIC Collections ---
-    // Read-only access for public-facing documents.
-    match /publicServices/{publicId} {
-      allow get;
-      // Allow an unauthenticated (or any) user to update only the signature fields.
-      allow update: if request.resource.data.diff(resource.data).affectedKeys().hasOnly(['customerSignatureReception', 'customerSignatureDelivery']);
+    // Publicly readable collections
+    match /publicServices/{serviceId} {
+      allow read: if true;
+      allow write: if request.auth != null; // Allow signed-in users (from the app) to write/update signatures
     }
-    
-    match /publicQuotes/{publicId} {
-        allow get;
+    match /publicQuotes/{quoteId} {
+        allow read: if true;
     }
-    
-    match /publicOwnerReports/{publicId} {
-        allow get;
+    match /publicOwnerReports/{reportId} {
+        allow read: if true;
     }
   }
 }

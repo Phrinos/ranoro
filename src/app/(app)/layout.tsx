@@ -5,7 +5,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/layout/app-sidebar";
-import { hydrateFromFirestore, AUTH_USER_LOCALSTORAGE_KEY, defaultSuperAdmin } from '@/lib/placeholder-data';
+import { hydrateFromFirestore, AUTH_USER_LOCALSTORAGE_KEY, defaultSuperAdmin, persistToFirestore } from '@/lib/placeholder-data';
 import { onAuthStateChanged, signOut } from 'firebase/auth'; 
 import { auth, db } from '@/lib/firebaseClient.js';
 import { Loader2 } from 'lucide-react';
@@ -55,18 +55,34 @@ export default function AppLayout({
         try {
           setIsHydrating(true);
           
-          // STEP 1: Get user profile from /users collection
-          const userDocRef = doc(db, 'users', firebaseUser.uid);
-          let userDocSnap = await getDoc(userDocRef);
           let appUser: User | null = null;
           let tenantId: string | null = null;
+          
+          const userDocRef = doc(db, 'users', firebaseUser.uid);
+          let userDocSnap = await getDoc(userDocRef);
 
           if (!userDocSnap.exists()) {
-            // This is likely the very first login for the superadmin. Create their profile.
             console.log(`User profile for ${firebaseUser.uid} not found. Creating...`);
             const newUserProfile: User = { ...defaultSuperAdmin, id: firebaseUser.uid, email: firebaseUser.email! };
+            tenantId = newUserProfile.tenantId;
+
+            // Step 1: Create the user profile document FIRST. This is critical for the rules to work.
             await setDoc(userDocRef, newUserProfile);
-            userDocSnap = await getDoc(userDocRef); // Re-fetch the doc
+            
+            // Step 2: Now that the user profile exists, check and create the tenant document.
+            if(tenantId) {
+                const tenantDocRef = doc(db, 'tenants', tenantId);
+                const tenantDocSnap = await getDoc(tenantDocRef);
+                if (!tenantDocSnap.exists()) {
+                    console.log(`Tenant document for ${tenantId} not found. Seeding initial data...`);
+                    // This will create the tenant document with initial data including the user list.
+                    await persistToFirestore([], tenantId);
+                }
+            } else {
+                 throw new Error("El perfil de Superadmin por defecto no tiene un tenantId asignado.");
+            }
+            
+            userDocSnap = await getDoc(userDocRef); // Re-fetch the user doc
             if (!userDocSnap.exists()) {
                  throw new Error("No se pudo crear el perfil de usuario inicial.");
             }
@@ -80,10 +96,10 @@ export default function AppLayout({
             return;
           }
 
-          // STEP 2: Now that we have the tenantId, hydrate the rest of the data.
+          // Step 3: Now that we have the tenantId, hydrate the rest of the data.
           await hydrateFromFirestore(tenantId);
           
-          // STEP 3: Set local state and finish loading.
+          // Step 4: Set local state and finish loading.
           localStorage.setItem(AUTH_USER_LOCALSTORAGE_KEY, JSON.stringify(appUser));
           setAuthStatus('authenticated');
           setIsHydrating(false);

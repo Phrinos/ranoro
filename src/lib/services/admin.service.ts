@@ -2,6 +2,8 @@
 
 import type { User, AppRole, AuditLog } from "@/types";
 import { placeholderUsers, placeholderAppRoles, placeholderAuditLogs, persistToFirestore, logAudit, defaultSuperAdmin, AUTH_USER_LOCALSTORAGE_KEY } from "@/lib/placeholder-data";
+import { doc, setDoc } from 'firebase/firestore';
+import { db } from '@/lib/firebaseClient.js';
 
 const getUsers = async (): Promise<User[]> => {
     return [...placeholderUsers];
@@ -25,20 +27,27 @@ const saveUser = async (user: User, isEditing: boolean): Promise<User> => {
     if (!tenantId) {
         throw new Error("Could not determine tenantId for new user.");
     }
+    
+    const userId = user.id || `user_${Date.now()}`;
+    const userData = { ...user, id: userId, password: '', tenantId };
 
     if (isEditing) {
-        const userIndex = placeholderUsers.findIndex(u => u.id === user.id);
+        const userIndex = placeholderUsers.findIndex(u => u.id === userId);
         if (userIndex > -1) {
-            placeholderUsers[userIndex] = { ...placeholderUsers[userIndex], ...user, password: '', tenantId: placeholderUsers[userIndex].tenantId };
+            placeholderUsers[userIndex] = userData;
         }
     } else {
-        const newUser: User = { id: `user_${Date.now()}`, ...user, password: '', tenantId };
-        placeholderUsers.push(newUser);
+        placeholderUsers.push(userData);
     }
     
-    await logAudit(isEditing ? 'Editar' : 'Crear', description, { entityType: 'Usuario', entityId: user.id || 'new' });
-    await persistToFirestore(['users']); // Explicitly persist user changes
-    return user;
+    // Persist to the top-level /users collection
+    await setDoc(doc(db, "users", userId), { ...userData, password: '' });
+    
+    await logAudit(isEditing ? 'Editar' : 'Crear', description, { entityType: 'Usuario', entityId: userId });
+    
+    // The main persistToFirestore no longer handles the users array.
+    // We don't need to call it here unless other data changed.
+    return userData;
 };
 
 const deleteUser = async (userId: string): Promise<void> => {
@@ -50,7 +59,7 @@ const deleteUser = async (userId: string): Promise<void> => {
     const index = placeholderUsers.findIndex(u => u.id === userId);
     if (index > -1) {
         placeholderUsers.splice(index, 1);
-        await persistToFirestore(['users', 'auditLogs']);
+        await persistToFirestore(['auditLogs']);
     }
 };
 
@@ -65,6 +74,7 @@ const saveRole = async (role: AppRole, isEditing: boolean): Promise<AppRole> => 
     }
     
     await logAudit(isEditing ? 'Editar' : 'Crear', description, { entityType: 'Rol', entityId: role.id });
+    await persistToFirestore(['appRoles', 'auditLogs']);
     return role;
 };
 
@@ -85,9 +95,14 @@ const updateUserProfile = async (user: User): Promise<User> => {
     const userIndex = placeholderUsers.findIndex(u => u.id === user.id);
     if (userIndex === -1) throw new Error("User not found");
     
-    placeholderUsers[userIndex] = user;
-    await persistToFirestore(['users']);
-    return user;
+    // Update local placeholder
+    placeholderUsers[userIndex] = { ...placeholderUsers[userIndex], ...user };
+
+    // Update in Firestore /users collection
+    const userDocRef = doc(db, 'users', user.id);
+    await setDoc(userDocRef, { ...user, password: '' }, { merge: true }); // Ensure password is not stored
+
+    return placeholderUsers[userIndex];
 };
 
 export const adminService = {
