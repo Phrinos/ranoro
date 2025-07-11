@@ -77,11 +77,10 @@ export let placeholderVehicleExpenses: VehicleExpense[] = [];
 // ===          USUARIOS Y ROLES         ===
 // =======================================
 export const defaultSuperAdmin: User = {
-  id: 'RaMVBO4UZeTeNW1BZlmwWMg9Na32',
+  id: 'H0XVkuViOFM7zt729AyAK531iIj2',
   name: 'Arturo Valdelamar',
   email: 'arturo@ranoro.mx',
   role: 'Superadmin',
-  password: 'CA1abaza',
   phone: '4493930914',
   signatureDataUrl: undefined,
 };
@@ -216,57 +215,64 @@ export async function hydrateFromFirestore() {
     return;
   }
   
-  const docRef = doc(db, 'database', DATA_STORE_ID);
-  
+  // First, hydrate the users and roles collections
   try {
-    const docSnap = await getDoc(docRef);
+    const usersDocRef = doc(db, 'database', 'users');
+    const usersDocSnap = await getDoc(usersDocRef);
+    if (usersDocSnap.exists()) {
+      placeholderUsers.splice(0, placeholderUsers.length, ...usersDocSnap.data().list);
+    }
+  } catch(e) { console.error("Error hydrating users", e) }
+
+  // Ensure superadmin exists after potential hydration
+  if (!placeholderUsers.some(u => u.id === defaultSuperAdmin.id)) {
+      placeholderUsers.push(defaultSuperAdmin);
+  }
+
+  try {
+    const rolesDocRef = doc(db, 'database', 'roles');
+    const rolesDocSnap = await getDoc(rolesDocRef);
+    if (rolesDocSnap.exists()) {
+       placeholderAppRoles.splice(0, placeholderAppRoles.length, ...rolesDocSnap.data().list);
+    }
+  } catch(e) { console.error("Error hydrating roles", e) }
+
+  if(placeholderAppRoles.length === 0) {
+      placeholderAppRoles.push(
+          { id: 'role_superadmin', name: 'Superadmin', permissions: ALL_AVAILABLE_PERMISSIONS.map(p => p.id) },
+          { id: 'role_admin', name: 'Admin', permissions: ALL_AVAILABLE_PERMISSIONS.filter(p => !p.id.includes(':manage')).map(p => p.id) },
+          { id: 'role_tecnico', name: 'Tecnico', permissions: ['services:view_history', 'services:edit'] }
+      );
+  }
+  
+  // Then, hydrate the main data document
+  const mainDataDocRef = doc(db, 'database', 'main');
+  try {
+    const docSnap = await getDoc(mainDataDocRef);
     if (docSnap.exists()) {
       const firestoreData = docSnap.data();
       Object.keys(DATA_ARRAYS).forEach(key => {
-        if (firestoreData[key] !== undefined) {
+        if (firestoreData[key] !== undefined && key !== 'users' && key !== 'appRoles') {
           const placeholder = DATA_ARRAYS[key as keyof typeof DATA_ARRAYS];
           if (Array.isArray(placeholder)) {
             placeholder.splice(0, placeholder.length, ...firestoreData[key]);
           } else if (placeholder !== null) {
             Object.assign(placeholder, firestoreData[key]);
           } else {
-             // For cases where the placeholder is null, like initialCashBalance
              DATA_ARRAYS[key as keyof typeof DATA_ARRAYS] = firestoreData[key];
           }
         }
       });
-      // Ensure the default superadmin exists in the user list if it's missing,
-      // which is crucial for the very first login.
-      if (!placeholderUsers.some(u => u.id === defaultSuperAdmin.id)) {
-          placeholderUsers.push(defaultSuperAdmin);
-          // Don't persist here, let the first user action do it.
-      }
-      console.log('Data successfully hydrated from Firestore.');
+      console.log('Main data successfully hydrated from Firestore.');
     } else {
-      console.warn('Main data document not found. App will start with empty data. First save will create it.');
-       Object.keys(DATA_ARRAYS).forEach(key => {
-           const placeholder = DATA_ARRAYS[key as keyof typeof DATA_ARRAYS];
-           if (Array.isArray(placeholder)) {
-               placeholder.length = 0;
-           } else {
-               DATA_ARRAYS[key as keyof typeof DATA_ARRAYS] = null;
-           }
-       });
-       // Ensure default roles and the superadmin user exist for first-time use
-       placeholderAppRoles.splice(0, placeholderAppRoles.length, 
-          { id: 'role_superadmin', name: 'Superadmin', permissions: ALL_AVAILABLE_PERMISSIONS.map(p => p.id) },
-          { id: 'role_admin', name: 'Admin', permissions: ALL_AVAILABLE_PERMISSIONS.filter(p => !p.id.includes(':manage')).map(p => p.id) },
-          { id: 'role_tecnico', name: 'Tecnico', permissions: ['services:view_history', 'services:edit'] }
-        );
-       placeholderUsers.push(defaultSuperAdmin);
+       console.warn('Main data document not found. App will start with empty data. First save will create it.');
     }
   } catch (error) {
-    console.error('Error reading from Firestore, using local fallback:', error);
+    console.error('Error reading main data from Firestore:', error);
   }
 
   (window as any).__APP_HYDRATED__ = true;
   resolveHydration?.();
-  console.log('Hydration process complete.');
 }
 
 
@@ -282,6 +288,18 @@ export async function persistToFirestore(
   
   const dataToPersist: { [key: string]: any } = {};
   for (const key of keys) {
+    // Special handling for users and roles to save them in separate docs
+    if (key === 'users') {
+        const usersDocRef = doc(db, 'database', 'users');
+        await setDoc(usersDocRef, sanitizeObjectForFirestore({ list: placeholderUsers }));
+        continue;
+    }
+    if (key === 'appRoles') {
+        const rolesDocRef = doc(db, 'database', 'roles');
+        await setDoc(rolesDocRef, sanitizeObjectForFirestore({ list: placeholderAppRoles }));
+        continue;
+    }
+
     if (DATA_ARRAYS[key] !== undefined) {
       dataToPersist[key] = DATA_ARRAYS[key];
     }

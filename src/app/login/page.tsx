@@ -4,7 +4,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { signInWithEmailAndPassword } from 'firebase/auth';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { doc, getDoc } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebaseClient.js';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
@@ -15,30 +15,21 @@ import { Loader2 } from 'lucide-react';
 import Image from "next/image";
 import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
 import type { User as RanoroUser } from '@/types';
+import { hydrateFromFirestore } from '@/lib/placeholder-data';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   const router = useRouter();
   const { toast } = useToast();
-
-  useEffect(() => {
-    // This effect runs only on the client
-    if (localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY)) {
-      router.push('/dashboard');
-    } else {
-      setIsCheckingAuth(false);
-    }
-  }, [router]);
 
   const handleLogin = async (event: React.FormEvent) => {
     event.preventDefault();
     setIsLoading(true);
 
     if (!auth || !db) {
-        toast({ title: 'Error de Configuración', description: 'La autenticación o la base de datos no está disponible.', variant: 'destructive' });
+        toast({ title: 'Error de Configuración', variant: 'destructive' });
         setIsLoading(false);
         return;
     }
@@ -47,18 +38,18 @@ export default function LoginPage() {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
+      // Ensure data is loaded before proceeding
+      await hydrateFromFirestore();
+
       const userDocRef = doc(db, "users", user.uid);
       const docSnap = await getDoc(userDocRef);
       
       if (docSnap.exists()) {
-        const ranoroUser = docSnap.data() as RanoroUser;
+        const ranoroUser = { id: docSnap.id, ...docSnap.data() } as RanoroUser;
         localStorage.setItem(AUTH_USER_LOCALSTORAGE_KEY, JSON.stringify(ranoroUser));
         toast({ title: '¡Bienvenido!', description: 'Has iniciado sesión correctamente.' });
         router.push('/dashboard');
       } else {
-        // The user exists in Firebase Auth, but not in our /users collection.
-        // This is an error state. We should not create users from the login page.
-        // Users should be created from the admin panel.
         throw new Error("El perfil de usuario no se encuentra en la base de datos. Contacte a un administrador.");
       }
       
@@ -81,14 +72,6 @@ export default function LoginPage() {
       setIsLoading(false);
     } 
   };
-  
-  if (isCheckingAuth) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-gray-100 dark:bg-gray-900">
-        <Loader2 className="h-8 w-8 animate-spin" />
-      </div>
-    );
-  }
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-100 dark:bg-gray-900 px-4">
