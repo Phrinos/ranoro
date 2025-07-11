@@ -11,11 +11,17 @@ import { Loader2 } from 'lucide-react';
 import Image from "next/image";
 import Link from 'next/link';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { AUTH_USER_LOCALSTORAGE_KEY, defaultSuperAdmin } from '@/lib/placeholder-data';
 import { capitalizeWords } from '@/lib/utils';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { auth, db } from '@/lib/firebaseClient';
+import { 
+  signInWithEmailAndPassword, 
+  createUserWithEmailAndPassword,
+  GoogleAuthProvider,
+  signInWithPopup
+} from 'firebase/auth';
+import { doc, setDoc, getDoc } from 'firebase/firestore';
 
-// Google Icon SVG Component
 const GoogleIcon = () => (
   <svg className="mr-2 h-4 w-4" aria-hidden="true" focusable="false" data-prefix="fab" data-icon="google" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 488 512">
     <path fill="currentColor" d="M488 261.8C488 403.3 391.1 504 248 504 110.8 504 0 393.2 0 256S110.8 8 248 8c66.8 0 126 23.4 172.9 61.9l-69.2 69.2c-20.3-19.6-48.8-31.8-79.7-31.8-62.3 0-113.5 51.6-113.5 115.6s51.2 115.6 113.5 115.6c69.2 0 98.6-46.4 103.3-72.2h-103.3v-91.1h199.1c1.2 10.8 1.8 22.3 1.8 34.9z"></path>
@@ -36,24 +42,29 @@ export default function LoginPage() {
   const router = useRouter();
   const { toast } = useToast();
 
-  const handleLogin = (event: React.FormEvent) => {
+  const handleLogin = async (event: React.FormEvent) => {
     event.preventDefault();
     setIsLoading(true);
-    setTimeout(() => {
-      let userToLogin = { name: 'Usuario Demo', email: emailLogin, role: 'Admin', id: `demo_${Date.now()}` };
-      
-      // Use the correct superadmin credentials
-      if (emailLogin.toLowerCase() === defaultSuperAdmin.email.toLowerCase()) {
-          userToLogin = defaultSuperAdmin;
-      }
-      
-      localStorage.setItem(AUTH_USER_LOCALSTORAGE_KEY, JSON.stringify(userToLogin));
-      toast({ title: 'Inicio de Sesión Exitoso', description: `Bienvenido de nuevo, ${userToLogin.name}.` });
+    try {
+      if (!auth) throw new Error("Firebase Auth no está inicializado.");
+      await signInWithEmailAndPassword(auth, emailLogin, passwordLogin);
+      toast({ title: 'Inicio de Sesión Exitoso', description: `¡Bienvenido de nuevo!` });
       router.push('/tablero');
-    }, 1000);
+    } catch (error: any) {
+      console.error("Error en inicio de sesión:", error);
+      toast({
+        title: 'Error al Iniciar Sesión',
+        description: error.code === 'auth/invalid-credential' 
+          ? 'Las credenciales son incorrectas. Por favor, inténtalo de nuevo.'
+          : 'Ocurrió un error inesperado. Por favor, inténtalo de nuevo.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleRegister = (event: React.FormEvent) => {
+  const handleRegister = async (event: React.FormEvent) => {
     event.preventDefault();
     if (passwordRegister.length < 6) {
         toast({ title: "Contraseña Corta", description: "La contraseña debe tener al menos 6 caracteres.", variant: 'destructive' });
@@ -64,20 +75,64 @@ export default function LoginPage() {
         return;
     }
     setIsLoading(true);
-    setTimeout(() => {
-      localStorage.setItem(AUTH_USER_LOCALSTORAGE_KEY, JSON.stringify({ name: nameRegister, email: emailRegister, role: 'Admin', id: `new_${Date.now()}` }));
+    try {
+      if (!auth) throw new Error("Firebase Auth no está inicializado.");
+      const userCredential = await createUserWithEmailAndPassword(auth, emailRegister, passwordRegister);
+      const user = userCredential.user;
+      
+      await setDoc(doc(db, 'users', user.uid), {
+        name: nameRegister,
+        email: emailRegister,
+        role: 'Admin', // o el rol por defecto que prefieras
+        createdAt: new Date(),
+      });
+
       toast({ title: 'Registro Exitoso', description: `Bienvenido, ${nameRegister}. Tu cuenta ha sido creada.` });
       router.push('/tablero');
-    }, 1000);
+    } catch (error: any) {
+        console.error("Error en registro:", error);
+        toast({
+            title: 'Error al Registrarse',
+            description: error.code === 'auth/email-already-in-use'
+                ? 'Este correo electrónico ya está en uso.'
+                : 'Ocurrió un error inesperado. Por favor, inténtalo de nuevo.',
+            variant: 'destructive',
+        });
+    } finally {
+        setIsLoading(false);
+    }
   };
   
-  const handleGoogleSignIn = () => {
+  const handleGoogleSignIn = async () => {
     setIsLoading(true);
-    toast({ title: "Iniciando sesión con Google...", description: "Esta función se conectará a Firebase Authentication." });
-    setTimeout(() => {
+    try {
+      if (!auth) throw new Error("Firebase Auth no está inicializado.");
+      const provider = new GoogleAuthProvider();
+      const result = await signInWithPopup(auth, provider);
+      const user = result.user;
+
+      // Check if user already exists in Firestore
+      const userDocRef = doc(db, 'users', user.uid);
+      const userDoc = await getDoc(userDocRef);
+
+      if (!userDoc.exists()) {
+        // Create a new user document in Firestore
+        await setDoc(userDocRef, {
+          name: user.displayName,
+          email: user.email,
+          role: 'Admin', // Default role
+          createdAt: new Date(),
+        });
+      }
+
+      toast({ title: "Inicio de Sesión Exitoso", description: `Bienvenido, ${user.displayName}.` });
+      router.push('/tablero');
+    } catch (error) {
+      console.error("Error con Google Sign-In:", error);
+      toast({ title: "Error", description: "No se pudo iniciar sesión con Google.", variant: "destructive" });
+    } finally {
       setIsLoading(false);
-      toast({ title: "Función no implementada", description: "La autenticación con Google está pendiente.", variant: "default" });
-    }, 1500);
+    }
   };
 
   return (
