@@ -13,12 +13,17 @@ import { useTableManager } from '@/hooks/useTableManager';
 import { isSameDay, parseISO, isValid } from "date-fns";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useSearchParams } from "next/navigation";
-import { operationsService } from '@/lib/services/operations.service';
-import { personnelService } from '@/lib/services/personnel.service';
-import { inventoryService } from '@/lib/services/inventory.service';
-import { adminService } from '@/lib/services/admin.service';
 import { ServiceAppointmentCard } from '../components/ServiceAppointmentCard';
 import { Loader2 } from 'lucide-react';
+import {
+  placeholderServiceRecords,
+  placeholderVehicles,
+  placeholderTechnicians,
+  placeholderInventory,
+  persistToFirestore,
+  hydrateReady,
+  logAudit,
+} from "@/lib/placeholder-data";
 
 function HistorialServiciosPageComponent() {
   const { toast } = useToast();
@@ -41,18 +46,23 @@ function HistorialServiciosPageComponent() {
   const [isCompleteDialogOpen, setIsCompleteDialogOpen] = useState(false);
   
   useEffect(() => {
-    const unsubs: (() => void)[] = [];
-    setIsLoading(true);
+    const loadData = () => {
+      setIsLoading(true);
+      setAllServices([...placeholderServiceRecords]);
+      setVehicles([...placeholderVehicles]);
+      setTechnicians([...placeholderTechnicians]);
+      setInventoryItems([...placeholderInventory]);
+      setIsLoading(false);
+    };
 
-    unsubs.push(operationsService.onServicesUpdate(setAllServices));
-    unsubs.push(inventoryService.onVehiclesUpdate(setVehicles));
-    unsubs.push(personnelService.onTechniciansUpdate(setTechnicians));
-    unsubs.push(inventoryService.onItemsUpdate((data) => {
-        setInventoryItems(data);
-        setIsLoading(false);
-    }));
+    hydrateReady.then(() => {
+      loadData();
+      window.addEventListener('databaseUpdated', loadData);
+    });
 
-    return () => unsubs.forEach(unsub => unsub());
+    return () => {
+      window.removeEventListener('databaseUpdated', loadData);
+    };
   }, []);
   
   const activeServices = useMemo(() => {
@@ -90,18 +100,31 @@ function HistorialServiciosPageComponent() {
   });
 
   const handleSaveService = useCallback(async (data: QuoteRecord | ServiceRecord) => {
-    await operationsService.updateService(data.id!, data as ServiceRecord);
+    const recordIndex = placeholderServiceRecords.findIndex(s => s.id === data.id);
+    if(recordIndex > -1){
+        placeholderServiceRecords[recordIndex] = data as ServiceRecord;
+    } else {
+        placeholderServiceRecords.push(data as ServiceRecord);
+    }
+    await persistToFirestore(['serviceRecords']);
     setIsEditDialogOpen(false);
     toast({ title: "Servicio actualizado."});
   }, [toast]);
 
   const handleCancelService = useCallback(async (serviceId: string, reason: string) => {
-    await operationsService.cancelService(serviceId, reason);
-    toast({ title: "Servicio Cancelado" });
+    const recordIndex = placeholderServiceRecords.findIndex(s => s.id === serviceId);
+    if (recordIndex > -1) {
+        placeholderServiceRecords[recordIndex].status = 'Cancelado';
+        placeholderServiceRecords[recordIndex].cancellationReason = reason;
+        await logAudit('Cancelar', `Canceló el servicio #${serviceId} por: ${reason}`, { entityType: 'Servicio', entityId: serviceId });
+        await persistToFirestore(['serviceRecords', 'auditLogs']);
+        toast({ title: "Servicio Cancelado" });
+    }
   }, [toast]);
 
   const handleVehicleCreated = useCallback(async (newVehicle: Vehicle) => {
-    await inventoryService.addVehicle(newVehicle);
+    placeholderVehicles.push(newVehicle);
+    await persistToFirestore(['vehicles']);
   }, []);
 
   const handleShowPreview = useCallback((service: ServiceRecord) => {
@@ -115,11 +138,20 @@ function HistorialServiciosPageComponent() {
   }, []);
   
   const handleConfirmCompletion = useCallback(async (service: ServiceRecord, paymentDetails: { paymentMethod: any, cardFolio?: string, transferFolio?: string }) => {
-    await operationsService.completeService(service.id, paymentDetails);
-    toast({
-      title: "Servicio Completado",
-      description: `El servicio para ${service.vehicleIdentifier} ha sido marcado como entregado.`,
-    });
+    const recordIndex = placeholderServiceRecords.findIndex(s => s.id === service.id);
+    if (recordIndex > -1) {
+        placeholderServiceRecords[recordIndex] = {
+            ...placeholderServiceRecords[recordIndex],
+            status: 'Entregado',
+            deliveryDateTime: new Date().toISOString(),
+            ...paymentDetails
+        };
+        await persistToFirestore(['serviceRecords']);
+        toast({
+          title: "Servicio Completado",
+          description: `El servicio para ${service.vehicleIdentifier} ha sido marcado como entregado.`,
+        });
+    }
   }, [toast]);
   
   const handleEditService = useCallback((service: ServiceRecord) => {
@@ -128,8 +160,12 @@ function HistorialServiciosPageComponent() {
   }, []);
   
   const handleConfirmAppointment = useCallback(async (service: ServiceRecord) => {
-    await operationsService.updateService(service.id, { ...service, appointmentStatus: 'Confirmada' });
-    toast({ title: "Cita Confirmada" });
+    const recordIndex = placeholderServiceRecords.findIndex(s => s.id === service.id);
+    if (recordIndex > -1) {
+        placeholderServiceRecords[recordIndex].appointmentStatus = 'Confirmada';
+        await persistToFirestore(['serviceRecords']);
+        toast({ title: "Cita Confirmada" });
+    }
   }, [toast]);
 
   if(isLoading) {

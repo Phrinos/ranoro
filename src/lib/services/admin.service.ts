@@ -1,12 +1,9 @@
 
 
 import type { User, AppRole, AuditLog } from "@/types";
-import { placeholderUsers, placeholderAppRoles, placeholderAuditLogs, persistToFirestore, logAudit, defaultSuperAdmin, AUTH_USER_LOCALSTORAGE_KEY } from "@/lib/placeholder-data";
-import { doc, setDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebaseClient.js';
+import { placeholderUsers, placeholderAppRoles, placeholderAuditLogs, persistToFirestore, logAudit } from "@/lib/placeholder-data";
 
 const getUsers = async (): Promise<User[]> => {
-    // This will now be hydrated from the main data doc, but we can keep it for local testing if needed.
     return [...placeholderUsers];
 };
 
@@ -18,30 +15,22 @@ const getAuditLogs = async (): Promise<AuditLog[]> => {
     return [...placeholderAuditLogs];
 };
 
-const saveUser = async (user: User, isEditing: boolean): Promise<User> => {
+// Functions to modify local data and then "persist"
+const saveUser = async (user: User): Promise<User> => {
+    const isEditing = !!user.id;
     const description = `Se ${isEditing ? 'actualizó el perfil del' : 'creó el'} usuario "${user.name}" (Email: ${user.email}).`;
 
-    const userId = user.id || `user_${Date.now()}`;
-    const userData = { ...user, id: userId, password: '' };
-
     if (isEditing) {
-        const userIndex = placeholderUsers.findIndex(u => u.id === userId);
-        if (userIndex > -1) {
-            placeholderUsers[userIndex] = userData;
-        }
+        const index = placeholderUsers.findIndex(u => u.id === user.id);
+        if (index > -1) placeholderUsers[index] = user;
     } else {
-        placeholderUsers.push(userData);
+        const newUser = { ...user, id: `user_${Date.now()}` };
+        placeholderUsers.push(newUser);
     }
     
-    // Persist to the top-level /users collection
-    await setDoc(doc(db, "users", userId), { ...userData, password: '' }, { merge: true });
-    
-    // This now gets persisted within the main workshop data doc
-    await persistToFirestore(['users']);
-
-    await logAudit(isEditing ? 'Editar' : 'Crear', description, { entityType: 'Usuario', entityId: userId });
-    
-    return userData;
+    await logAudit(isEditing ? 'Editar' : 'Crear', description, { entityType: 'Usuario', entityId: user.id });
+    await persistToFirestore(['users', 'auditLogs']);
+    return user;
 };
 
 const deleteUser = async (userId: string): Promise<void> => {
@@ -57,14 +46,16 @@ const deleteUser = async (userId: string): Promise<void> => {
     }
 };
 
-const saveRole = async (role: AppRole, isEditing: boolean): Promise<AppRole> => {
-    const description = `Se ${isEditing ? 'actualizó la' : 'creó la nueva'} categoría de inventario: "${role.name}".`;
+const saveRole = async (role: AppRole): Promise<AppRole> => {
+    const isEditing = !!role.id;
+    const description = `Se ${isEditing ? 'actualizó el' : 'creó la nueva'} categoría de inventario: "${role.name}".`;
 
     if (isEditing) {
       const index = placeholderAppRoles.findIndex(r => r.id === role.id);
       if (index > -1) placeholderAppRoles[index] = role;
     } else {
-      placeholderAppRoles.push({ ...role, id: `role_${Date.now()}` });
+      const newRole = { ...role, id: `role_${Date.now()}` };
+      placeholderAppRoles.push(newRole);
     }
     
     await logAudit(isEditing ? 'Editar' : 'Crear', description, { entityType: 'Rol', entityId: role.id });
@@ -89,14 +80,7 @@ const updateUserProfile = async (user: User): Promise<User> => {
     const userIndex = placeholderUsers.findIndex(u => u.id === user.id);
     if (userIndex === -1) throw new Error("User not found");
     
-    // Update local placeholder
     placeholderUsers[userIndex] = { ...placeholderUsers[userIndex], ...user };
-
-    // Update in Firestore /users collection
-    const userDocRef = doc(db, 'users', user.id);
-    await setDoc(userDocRef, { ...user, password: '' }, { merge: true }); // Ensure password is not stored
-
-    // Update in main workshop data
     await persistToFirestore(['users']);
 
     return placeholderUsers[userIndex];
