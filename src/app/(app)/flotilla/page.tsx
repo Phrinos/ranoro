@@ -37,6 +37,7 @@ interface MonthlyBalance {
   payments: number;
   balance: number;
   daysOwed: number;
+  daysCovered: number;
 }
 
 function FlotillaPageComponent() {
@@ -93,9 +94,11 @@ function FlotillaPageComponent() {
         const pDate = parseISO(p.paymentDate);
         return isValid(pDate) && isWithinInterval(pDate, { start: monthStart, end: monthEnd });
     }).reduce((acc, p) => {
-        acc[p.driverId] = (acc[p.driverId] || 0) + p.amount;
+        if (!acc[p.driverId]) acc[p.driverId] = { totalAmount: 0, totalDaysCovered: 0};
+        acc[p.driverId].totalAmount += p.amount;
+        acc[p.driverId].totalDaysCovered += p.daysCovered;
         return acc;
-    }, {} as Record<string, number>);
+    }, {} as Record<string, { totalAmount: number, totalDaysCovered: number }>);
 
     return allDrivers.map(driver => {
         const vehicle = allVehicles.find(v => v.id === driver.assignedVehicleId);
@@ -117,7 +120,8 @@ function FlotillaPageComponent() {
         }).reduce((sum, d) => sum + d.amount, 0);
 
         const totalCharges = charges + manualDebtsThisMonth;
-        const totalPayments = paymentsThisMonthByDriver[driver.id] || 0;
+        const driverPaymentsInfo = paymentsThisMonthByDriver[driver.id] || { totalAmount: 0, totalDaysCovered: 0 };
+        const totalPayments = driverPaymentsInfo.totalAmount;
         const balance = totalPayments - totalCharges;
         const debt = Math.max(0, -balance);
         const daysOwed = dailyRate > 0 ? debt / dailyRate : 0;
@@ -128,6 +132,7 @@ function FlotillaPageComponent() {
             vehicleInfo: vehicle ? `${vehicle.licensePlate} (${formatCurrency(dailyRate)}/día)` : 'N/A',
             charges: totalCharges,
             payments: totalPayments,
+            daysCovered: driverPaymentsInfo.totalDaysCovered,
             balance: balance,
             daysOwed: daysOwed,
         };
@@ -244,9 +249,11 @@ function FlotillaPageComponent() {
                                 <TableRow>
                                     <TableHead className="text-white">Conductor</TableHead>
                                     <TableHead className="text-white">Vehículo (Renta)</TableHead>
-                                    <TableHead className="text-right text-white">Ingresos del Mes</TableHead>
-                                    <TableHead className="text-right text-white">Cargos del Mes</TableHead>
-                                    <TableHead className="text-right text-white">Balance Mensual</TableHead>
+                                    <TableHead className="text-right text-white">Pagos</TableHead>
+                                    <TableHead className="text-right text-white">Cargos</TableHead>
+                                    <TableHead className="text-right text-white">Días Pagados (Mes)</TableHead>
+                                    <TableHead className="text-right text-white">Días Adeudo</TableHead>
+                                    <TableHead className="text-right text-white">Balance</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -257,11 +264,13 @@ function FlotillaPageComponent() {
                                             <TableCell>{mb.vehicleInfo}</TableCell>
                                             <TableCell className="text-right text-green-600">{formatCurrency(mb.payments)}</TableCell>
                                             <TableCell className="text-right text-red-600">{formatCurrency(mb.charges)}</TableCell>
+                                            <TableCell className="text-right font-semibold">{mb.daysCovered.toFixed(1)}</TableCell>
+                                            <TableCell className="text-right font-bold text-destructive">{mb.daysOwed.toFixed(1)}</TableCell>
                                             <TableCell className={cn("text-right font-bold", mb.balance >= 0 ? "text-green-700" : "text-red-700")}>{formatCurrency(mb.balance)}</TableCell>
                                         </TableRow>
                                     ))
                                 ) : (
-                                    <TableRow><TableCell colSpan={5} className="h-24 text-center">No hay conductores activos.</TableCell></TableRow>
+                                    <TableRow><TableCell colSpan={7} className="h-24 text-center">No hay conductores activos.</TableCell></TableRow>
                                 )}
                             </TableBody>
                         </Table>
@@ -319,3 +328,5 @@ export default function FlotillaPageWrapper() {
         </Suspense>
     )
 }
+
+
