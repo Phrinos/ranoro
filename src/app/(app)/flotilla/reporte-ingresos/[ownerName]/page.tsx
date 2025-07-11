@@ -39,7 +39,9 @@ const ReportContent = React.forwardRef<HTMLDivElement, { report: PublicOwnerRepo
   return (
     <div ref={ref} className="p-8 font-sans bg-white text-black" data-format="letter">
       <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 border-b-2 border-black pb-4">
-        <Image src={workshopInfo.logoUrl} alt={`${workshopInfo.name} Logo`} width={64} height={64} className="h-16 w-auto mb-4 sm:mb-0" data-ai-hint="workshop logo" />
+        <div className="relative h-16 w-40 mb-4 sm:mb-0">
+            <Image src={workshopInfo.logoUrl} alt={`${workshopInfo.name} Logo`} layout="fill" objectFit="contain" className="" data-ai-hint="workshop logo" />
+        </div>
         <div className="text-left sm:text-right">
           <h1 className="text-2xl font-bold">Reporte de Ingresos de Flotilla</h1>
           <p className="text-sm">Propietario: <span className="font-semibold">{report.ownerName}</span></p>
