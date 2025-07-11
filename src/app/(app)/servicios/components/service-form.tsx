@@ -27,7 +27,7 @@ import { SafetyChecklist } from './SafetyChecklist';
 import { UnifiedPreviewDialog } from '@/components/shared/unified-preview-dialog';
 import { VehicleSelectionCard } from './VehicleSelectionCard';
 import { ReceptionAndDelivery } from './ReceptionAndDelivery';
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription } from '../ui/dialog';
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import Image from "next/image";
 import { Download } from "lucide-react";
 import { ServiceDetailsCard } from "./ServiceDetailsCard"; // Import the new component
