@@ -2,6 +2,10 @@
 
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
+import { differenceInCalendarDays, startOfToday, parseISO, isAfter } from 'date-fns';
+import type { Driver, RentalPayment, Vehicle } from '@/types';
+import { STANDARD_DEPOSIT_AMOUNT } from '@/lib/placeholder-data';
+
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -140,7 +144,43 @@ export function sanitizeObjectForFirestore(obj: any): any {
   return newObj;
 }
     
+/**
+ * Calculates the total debt for a given driver.
+ * This includes rental debt, deposit debt, and manual debts.
+ * @param driver The driver object.
+ * @param allPayments Array of all rental payments.
+ * @param allVehicles Array of all vehicles to find the assigned one.
+ * @returns An object with the total debt and its breakdown.
+ */
+export function calculateDriverDebt(driver: Driver, allPayments: RentalPayment[], allVehicles: Vehicle[]) {
+    if (!driver) return { totalDebt: 0, rentalDebt: 0, depositDebt: 0, manualDebt: 0 };
+    
+    // 1. Calculate Deposit Debt
+    const depositDebt = Math.max(0, STANDARD_DEPOSIT_AMOUNT - (driver.depositAmount || 0));
+    
+    // 2. Calculate Manual Debt
+    const manualDebt = (driver.manualDebts || []).reduce((sum, debt) => sum + debt.amount, 0);
 
+    // 3. Calculate Rental Debt
+    let rentalDebt = 0;
+    const assignedVehicle = allVehicles.find(v => v.id === driver.assignedVehicleId);
+    if (driver.contractDate && assignedVehicle?.dailyRentalCost) {
+        const contractStartDate = parseISO(driver.contractDate);
+        const today = startOfToday();
+        
+        if (!isAfter(contractStartDate, today)) {
+            const totalDaysSinceContract = differenceInCalendarDays(today, contractStartDate) + 1;
+            const totalExpectedRental = totalDaysSinceContract * assignedVehicle.dailyRentalCost;
+            
+            const totalPaid = allPayments
+                .filter(p => p.driverId === driver.id)
+                .reduce((sum, p) => sum + p.amount, 0);
 
+            rentalDebt = Math.max(0, totalExpectedRental - totalPaid);
+        }
+    }
 
+    const totalDebt = depositDebt + manualDebt + rentalDebt;
 
+    return { totalDebt, rentalDebt, depositDebt, manualDebt };
+}

@@ -2,17 +2,18 @@
 
 "use client";
 
-import type { ServiceRecord, Vehicle, QuoteRecord, WorkshopInfo, SafetyInspection, SafetyCheckStatus, PhotoReportGroup } from '@/types';
+import type { ServiceRecord, Vehicle, QuoteRecord, WorkshopInfo, SafetyInspection, SafetyCheckStatus, PhotoReportGroup, Driver } from '@/types';
 import { format, parseISO, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
 import React from 'react';
-import { cn, normalizeDataUrl } from "@/lib/utils";
+import { cn, normalizeDataUrl, calculateDriverDebt } from "@/lib/utils";
 import Image from "next/image";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Check, Eye, Signature, Loader2 } from 'lucide-react';
+import { Check, Eye, Signature, Loader2, AlertCircle } from 'lucide-react';
 import { QuoteContent } from '@/components/quote-content';
 import { Button } from '@/components/ui/button';
+import { placeholderDrivers, placeholderRentalPayments } from '@/lib/placeholder-data';
 
 const initialWorkshopInfo: WorkshopInfo = {
   name: "RANORO",
@@ -234,32 +235,31 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
     const formattedServiceDate = isValid(serviceDate) ? format(serviceDate, "dd 'de' MMMM 'de' yyyy, HH:mm 'hrs'", { locale: es }) : 'N/A';
 
     const fuelLevelMap: Record<string, number> = {
-        'Vacío': 0,
-        '1/8': 12.5,
-        '1/4': 25,
-        '3/8': 37.5,
-        '1/2': 50,
-        '5/8': 62.5,
-        '3/4': 75,
-        '7/8': 87.5,
-        'Lleno': 100,
+        'Vacío': 0, '1/8': 12.5, '1/4': 25, '3/8': 37.5, '1/2': 50,
+        '5/8': 62.5, '3/4': 75, '7/8': 87.5, 'Lleno': 100,
     };
 
     const fuelPercentage = service.fuelLevel ? fuelLevelMap[service.fuelLevel] ?? 0 : 0;
-    
     const getFuelColorClass = (percentage: number) => {
         if (percentage <= 25) return "bg-red-500";
         if (percentage <= 50) return "bg-orange-400";
         if (percentage <= 87.5) return "bg-yellow-400";
         return "bg-green-500";
     };
-    
     const fuelColor = getFuelColorClass(fuelPercentage);
     
+    // --- DEBT CALCULATION ---
+    const driver: Driver | undefined = vehicle?.isFleetVehicle 
+        ? placeholderDrivers.find(d => d.assignedVehicleId === vehicle.id) 
+        : undefined;
+
+    const driverDebt = driver ? calculateDriverDebt(driver, placeholderRentalPayments, [vehicle]) : { totalDebt: 0 };
+    // --- END DEBT CALCULATION ---
+
     const showOrder = service.status !== 'Cotizacion' && service.status !== 'Agendado';
     const showQuote = !!quote;
     const showChecklist = !!service.safetyInspection && Object.keys(service.safetyInspection).some(k => k !== 'inspectionNotes' && k !== 'technicianSignature' && (service.safetyInspection as any)[k]?.status !== 'na' && (service.safetyInspection as any)[k]?.status !== undefined);
-    const showPhotoReport = !!service.photoReports && service.photoReports.length > 0;
+    const showPhotoReport = !!service.photoReports && service.photoReports.length > 0 && service.photoReports.some(r => r.photos.length > 0);
     
     const tabs = [];
     if (showQuote) tabs.push({ value: 'quote', label: 'Cotización' });
@@ -331,6 +331,20 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
                     )}
                 </div>
             </section>
+            
+          {driverDebt.totalDebt > 0 && (
+            <div className="my-4 p-3 border-2 border-red-500 bg-red-50 rounded-md text-red-800">
+                <h4 className="font-bold text-base flex items-center gap-2"><AlertCircle className="h-5 w-5"/>AVISO IMPORTANTE DE ADEUDO</h4>
+                <p className="text-sm mt-1">
+                    Este conductor presenta un adeudo con la flotilla por un total de <strong>{formatCurrency(driverDebt.totalDebt)}</strong>.
+                </p>
+                <ul className="text-xs list-disc pl-5 mt-1">
+                    {driverDebt.depositDebt > 0 && <li>Deuda de depósito: {formatCurrency(driverDebt.depositDebt)}</li>}
+                    {driverDebt.rentalDebt > 0 && <li>Deuda de renta: {formatCurrency(driverDebt.rentalDebt)}</li>}
+                    {driverDebt.manualDebt > 0 && <li>Deudas manuales: {formatCurrency(driverDebt.manualDebt)}</li>}
+                </ul>
+            </div>
+          )}
 
 
           <section className="border-2 border-black rounded-md overflow-hidden mb-4">
