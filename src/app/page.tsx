@@ -175,7 +175,7 @@ export default function LandingPage() {
             </div>
         </section>
 
-        <section id="ai-power" className="py-20 md:py-28 bg-white">
+        <section id="ai-power" className="bg-white pt-12 pb-20 md:pt-16 md:pb-28">
             <div className="container mx-auto px-4 sm:px-6 lg:px-8">
                 <AnimatedDiv className="text-center flex flex-col items-center">
                     <GeminiLogo className="mb-4" />
