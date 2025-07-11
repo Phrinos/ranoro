@@ -46,7 +46,7 @@ export function UsuariosPageContent({ currentUser }: { currentUser: User | null 
     // Ensure the default admin is always in the list for display if it's the only user
     const usersWithDefault = [...placeholderUsers];
     if (!usersWithDefault.some(u => u.id === defaultSuperAdmin.id)) {
-        usersWithDefault.push(defaultSuperAdmin);
+        usersWithDefault.unshift(defaultSuperAdmin);
     }
     setUsers(usersWithDefault);
     setAvailableRoles(placeholderAppRoles);
@@ -207,3 +207,4 @@ export function UsuariosPageContent({ currentUser }: { currentUser: User | null 
     </div>
   );
 }
+

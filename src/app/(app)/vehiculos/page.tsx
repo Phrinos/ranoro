@@ -1,9 +1,10 @@
 
-
 "use client";
 
 import { useState, useMemo, useEffect, useCallback, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
+import { collection, onSnapshot } from 'firebase/firestore';
+import { db } from '@/lib/firebaseClient';
 import { Button } from "@/components/ui/button";
 import { PlusCircle } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
@@ -18,13 +19,8 @@ import { VehiclesTable } from './components/vehicles-table';
 import { PriceListTable } from '../precios/components/price-list-table';
 import { TableToolbar } from '@/components/shared/table-toolbar';
 import { Loader2 } from 'lucide-react';
-import { 
-    placeholderVehicles, 
-    placeholderVehiclePriceLists, 
-    persistToFirestore, 
-    hydrateReady 
-} from '@/lib/placeholder-data';
 import { useTableManager } from '@/hooks/useTableManager';
+import { addDoc, updateDoc, doc, deleteDoc } from 'firebase/firestore';
 
 function VehiculosPageComponent() {
     const searchParams = useSearchParams();
@@ -36,24 +32,29 @@ function VehiculosPageComponent() {
 
     const [isVehicleDialogOpen, setIsVehicleDialogOpen] = useState(false);
     const [isPriceListDialogOpen, setIsPriceListDialogOpen] = useState(false);
+    const [editingVehicle, setEditingVehicle] = useState<Vehicle | null>(null);
     const [editingPriceRecord, setEditingPriceRecord] = useState<VehiclePriceList | null>(null);
     
     const [allVehicles, setAllVehicles] = useState<Vehicle[]>([]);
     const [priceLists, setPriceLists] = useState<VehiclePriceList[]>([]);
   
     useEffect(() => {
-        const loadData = () => {
-            setIsLoading(true);
-            setAllVehicles([...placeholderVehicles]);
-            setPriceLists([...placeholderVehiclePriceLists]);
+        setIsLoading(true);
+        const unsubscribeVehicles = onSnapshot(collection(db, "vehicles"), (snapshot) => {
+            const vehiclesData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Vehicle));
+            setAllVehicles(vehiclesData);
             setIsLoading(false);
-        };
-        hydrateReady.then(() => {
-            loadData();
-            window.addEventListener('databaseUpdated', loadData);
         });
 
-        return () => window.removeEventListener('databaseUpdated', loadData);
+        const unsubscribePriceLists = onSnapshot(collection(db, "vehiclePriceLists"), (snapshot) => {
+            const priceListsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as VehiclePriceList));
+            setPriceLists(priceListsData);
+        });
+
+        return () => {
+            unsubscribeVehicles();
+            unsubscribePriceLists();
+        };
     }, []);
 
     const {
@@ -65,44 +66,63 @@ function VehiculosPageComponent() {
       dateFilterKey: 'lastServiceDate',
       initialSortOption: 'plate_asc',
     });
+    
+    const handleOpenVehicleDialog = (vehicle: Vehicle | null = null) => {
+        setEditingVehicle(vehicle);
+        setIsVehicleDialogOpen(true);
+    };
 
-    const handleSaveVehicle = useCallback(async (data: VehicleFormValues) => {
-        const newVehicle: Vehicle = {
-          id: `V${String(placeholderVehicles.length + 1).padStart(3, '0')}${Date.now().toString().slice(-4)}`,
-          ...data,
-          year: Number(data.year),
-        };
-        placeholderVehicles.push(newVehicle);
-        await persistToFirestore(['vehicles']);
-        toast({ title: "Vehículo Creado", description: `Se ha agregado ${newVehicle.make} ${newVehicle.model}.` });
-        setIsVehicleDialogOpen(false);
-    }, [toast]);
+    const handleSaveVehicle = async (data: VehicleFormValues) => {
+        try {
+            if (editingVehicle) {
+                const vehicleRef = doc(db, "vehicles", editingVehicle.id);
+                await updateDoc(vehicleRef, data);
+                toast({ title: "Vehículo Actualizado", description: `Se ha actualizado ${data.make} ${data.model}.` });
+            } else {
+                await addDoc(collection(db, "vehicles"), {
+                    ...data,
+                    year: Number(data.year),
+                });
+                toast({ title: "Vehículo Creado", description: `Se ha agregado ${data.make} ${data.model}.` });
+            }
+            setIsVehicleDialogOpen(false);
+            setEditingVehicle(null);
+        } catch (error) {
+            console.error("Error saving vehicle: ", error);
+            toast({ title: "Error", description: "No se pudo guardar el vehículo.", variant: "destructive" });
+        }
+    };
 
     const handleOpenPriceListDialog = useCallback((record: VehiclePriceList | null = null) => {
         setEditingPriceRecord(record);
         setIsPriceListDialogOpen(true);
     }, []);
 
-    const handleSavePriceListRecord = useCallback(async (formData: PriceListFormValues) => {
-        if(editingPriceRecord) {
-            const index = placeholderVehiclePriceLists.findIndex(p => p.id === editingPriceRecord.id);
-            if(index > -1) placeholderVehiclePriceLists[index] = { ...editingPriceRecord, ...formData, years: formData.years.sort((a,b) => a-b) };
-        } else {
-            placeholderVehiclePriceLists.push({ id: `PL_${Date.now()}`, ...formData, years: formData.years.sort((a,b) => a-b) });
+    const handleSavePriceListRecord = async (formData: PriceListFormValues) => {
+        try {
+            if(editingPriceRecord) {
+                const priceListRef = doc(db, "vehiclePriceLists", editingPriceRecord.id);
+                await updateDoc(priceListRef, { ...formData, years: formData.years.sort((a,b) => a-b) });
+            } else {
+                await addDoc(collection(db, "vehiclePriceLists"), { ...formData, years: formData.years.sort((a,b) => a-b) });
+            }
+            toast({ title: `Precotización ${editingPriceRecord ? 'Actualizada' : 'Creada'}` });
+            setIsPriceListDialogOpen(false);
+        } catch (error) {
+            console.error("Error saving price list record: ", error);
+            toast({ title: "Error", description: "No se pudo guardar la lista de precios.", variant: "destructive" });
         }
-        await persistToFirestore(['vehiclePriceLists']);
-        toast({ title: `Precotización ${editingPriceRecord ? 'Actualizada' : 'Creada'}` });
-        setIsPriceListDialogOpen(false);
-    }, [editingPriceRecord, toast]);
+    };
     
-    const handleDeletePriceListRecord = useCallback(async (recordId: string) => {
-        const index = placeholderVehiclePriceLists.findIndex(p => p.id === recordId);
-        if(index > -1) {
-            placeholderVehiclePriceLists.splice(index, 1);
-            await persistToFirestore(['vehiclePriceLists']);
+    const handleDeletePriceListRecord = async (recordId: string) => {
+        try {
+            await deleteDoc(doc(db, "vehiclePriceLists", recordId));
             toast({ title: "Registro Eliminado", variant: 'destructive' });
+        } catch (error) {
+            console.error("Error deleting price list record: ", error);
+            toast({ title: "Error", description: "No se pudo eliminar el registro.", variant: "destructive" });
         }
-    }, [toast]);
+    };
     
     if (isLoading) {
       return <div className="flex justify-center items-center h-64"><Loader2 className="h-8 w-8 animate-spin" /></div>;
@@ -123,7 +143,7 @@ function VehiculosPageComponent() {
 
                 <TabsContent value="vehiculos" className="mt-0">
                     <div className="space-y-4">
-                        <Button onClick={() => setIsVehicleDialogOpen(true)}>
+                        <Button onClick={() => handleOpenVehicleDialog()}>
                             <PlusCircle className="mr-2 h-4 w-4" /> Registrar Nuevo Vehículo
                         </Button>
                         <TableToolbar 
@@ -137,7 +157,7 @@ function VehiculosPageComponent() {
                         />
                         <Card>
                             <CardContent className="pt-6">
-                                <VehiclesTable vehicles={filteredVehicles} />
+                                <VehiclesTable vehicles={filteredVehicles} onEdit={handleOpenVehicleDialog} />
                             </CardContent>
                         </Card>
                     </div>
@@ -169,7 +189,7 @@ function VehiculosPageComponent() {
                 open={isVehicleDialogOpen}
                 onOpenChange={setIsVehicleDialogOpen}
                 onSave={handleSaveVehicle}
-                vehicle={null} 
+                vehicle={editingVehicle} 
             />
             
             <PriceListDialog
@@ -184,7 +204,7 @@ function VehiculosPageComponent() {
 
 export default function VehiculosPageWrapper() {
     return (
-        <Suspense fallback={<div>Cargando...</div>}>
+        <Suspense fallback={<div className="flex justify-center items-center h-64"><Loader2 className="h-8 w-8 animate-spin" /></div>}>
             <VehiculosPageComponent />
         </Suspense>
     );
