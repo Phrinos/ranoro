@@ -70,15 +70,22 @@ function HistorialServiciosPageComponent() {
     const today = new Date();
     return allServices
         .filter(s => {
-            const status = s.status as string; // Cast to string for wider compatibility
+            const status = s.status as string;
             const deliveryDate = s.deliveryDateTime ? parseISO(s.deliveryDateTime) : null;
             const isDeliveredToday = deliveryDate && isValid(deliveryDate) && isSameDay(deliveryDate, today);
+            
+            const serviceDate = s.serviceDate ? parseISO(s.serviceDate) : null;
+            const isScheduledForToday = serviceDate && isValid(serviceDate) && isSameDay(serviceDate, today);
 
             if (status === 'En Taller' || status === 'Reparando') {
                 return true;
             }
             
             if ((status === 'Entregado' || status === 'Completado') && isDeliveredToday) {
+                return true;
+            }
+            
+            if (status === 'Agendado' && isScheduledForToday) {
                 return true;
             }
             
