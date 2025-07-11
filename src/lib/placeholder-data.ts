@@ -204,10 +204,14 @@ export async function logAudit(
   // Do not persist audit logs on their own to avoid circular dependencies with other functions
 }
 
-// HydrateFromFirestore now ONLY reads. It assumes the document exists.
-// Creation is handled by the first persistToFirestore call.
 export async function hydrateFromFirestore() {
   if (typeof window === 'undefined' || (window as any).__APP_HYDRATED__) {
+    resolveHydration?.();
+    return;
+  }
+  
+  if (!db) {
+    console.error("Hydration skipped: Firestore client is not available.");
     resolveHydration?.();
     return;
   }
@@ -219,20 +223,27 @@ export async function hydrateFromFirestore() {
     if (docSnap.exists()) {
       const firestoreData = docSnap.data();
       Object.keys(DATA_ARRAYS).forEach(key => {
-        if (firestoreData[key]) {
+        if (firestoreData[key] !== undefined) {
           const placeholder = DATA_ARRAYS[key as keyof typeof DATA_ARRAYS];
           if (Array.isArray(placeholder)) {
             placeholder.splice(0, placeholder.length, ...firestoreData[key]);
+          } else if (placeholder !== null) {
+            Object.assign(placeholder, firestoreData[key]);
           } else {
-             if (placeholder) Object.assign(placeholder, firestoreData[key]);
-             else DATA_ARRAYS[key as keyof typeof DATA_ARRAYS] = firestoreData[key];
+             // For cases where the placeholder is null, like initialCashBalance
+             DATA_ARRAYS[key as keyof typeof DATA_ARRAYS] = firestoreData[key];
           }
         }
       });
+      // Ensure the default superadmin exists in the user list if it's missing,
+      // which is crucial for the very first login.
+      if (!placeholderUsers.some(u => u.id === defaultSuperAdmin.id)) {
+          placeholderUsers.push(defaultSuperAdmin);
+          // Don't persist here, let the first user action do it.
+      }
       console.log('Data successfully hydrated from Firestore.');
     } else {
       console.warn('Main data document not found. App will start with empty data. First save will create it.');
-      // Reset all arrays to be empty if the doc doesn't exist
        Object.keys(DATA_ARRAYS).forEach(key => {
            const placeholder = DATA_ARRAYS[key as keyof typeof DATA_ARRAYS];
            if (Array.isArray(placeholder)) {
@@ -241,12 +252,13 @@ export async function hydrateFromFirestore() {
                DATA_ARRAYS[key as keyof typeof DATA_ARRAYS] = null;
            }
        });
-       // Ensure default roles exist for first-time use
+       // Ensure default roles and the superadmin user exist for first-time use
        placeholderAppRoles.splice(0, placeholderAppRoles.length, 
           { id: 'role_superadmin', name: 'Superadmin', permissions: ALL_AVAILABLE_PERMISSIONS.map(p => p.id) },
           { id: 'role_admin', name: 'Admin', permissions: ALL_AVAILABLE_PERMISSIONS.filter(p => !p.id.includes(':manage')).map(p => p.id) },
           { id: 'role_tecnico', name: 'Tecnico', permissions: ['services:view_history', 'services:edit'] }
         );
+       placeholderUsers.push(defaultSuperAdmin);
     }
   } catch (error) {
     console.error('Error reading from Firestore, using local fallback:', error);
