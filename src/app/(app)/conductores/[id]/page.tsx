@@ -22,7 +22,7 @@ import type { DriverFormValues } from '../components/driver-form';
 import { useToast } from '@/hooks/use-toast';
 import { Label } from '@/components/ui/label';
 import { formatCurrency, optimizeImage } from '@/lib/utils';
-import { format, parseISO, differenceInCalendarDays, startOfToday, isAfter } from 'date-fns';
+import { format, parseISO, differenceInCalendarDays, startOfToday, isAfter, startOfMonth, endOfMonth, eachDayOfInterval } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
 import { ContractContent } from '../components/contract-content';
@@ -69,20 +69,30 @@ export default function DriverDetailPage() {
   }, [driver]);
   
   const debtInfo = useMemo(() => {
-    if (!driver) {
+    if (!driver || !assignedVehicle?.dailyRentalCost) {
       return { totalDebt: 0, daysOwed: 0, calculatedRentDebt: 0 };
     }
     
+    const today = startOfToday();
+    const monthStart = startOfMonth(today);
+    const monthEnd = endOfMonth(today);
     let calculatedRentDebt = 0;
-    if (driver.contractDate && assignedVehicle?.dailyRentalCost) {
+
+    if (driver.contractDate) {
         const contractStartDate = parseISO(driver.contractDate);
-        const today = startOfToday();
-        
         if (!isAfter(contractStartDate, today)) {
-            const daysSinceContractStart = differenceInCalendarDays(today, contractStartDate) + 1;
-            const totalExpectedAmount = daysSinceContractStart * assignedVehicle.dailyRentalCost;
-            const totalPaidAmount = driverPayments.reduce((sum, p) => sum + p.amount, 0);
-            calculatedRentDebt = Math.max(0, totalExpectedAmount - totalPaidAmount);
+            const daysInMonthOfContract = eachDayOfInterval({
+                start: contractStartDate > monthStart ? contractStartDate : monthStart,
+                end: today < monthEnd ? today : monthEnd
+            });
+            
+            const totalExpectedAmountThisMonth = daysInMonthOfContract.length * assignedVehicle.dailyRentalCost;
+            
+            const paymentsThisMonth = driverPayments
+                .filter(p => isAfter(parseISO(p.paymentDate), monthStart) || isAfter(monthStart, parseISO(p.paymentDate)))
+                .reduce((sum, p) => sum + p.amount, 0);
+
+            calculatedRentDebt = Math.max(0, totalExpectedAmountThisMonth - paymentsThisMonth);
         }
     }
     
@@ -260,15 +270,16 @@ export default function DriverDetailPage() {
       </div>
 
       <Tabs defaultValue="details" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="details" className="font-bold data-[state=active]:bg-primary data-[state=active]:text-white">Detalles</TabsTrigger>
+          <TabsTrigger value="deuda" className="font-bold data-[state=active]:bg-primary data-[state=active]:text-white">Deuda</TabsTrigger>
           <TabsTrigger value="documents" className="font-bold data-[state=active]:bg-primary data-[state=active]:text-white">Documentos</TabsTrigger>
           <TabsTrigger value="payments" className="font-bold data-[state=active]:bg-primary data-[state=active]:text-white">Pagos</TabsTrigger>
         </TabsList>
 
         <TabsContent value="details">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <Card className="lg:col-span-2">
+            <Card className="lg:col-span-3">
               <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle>Información del Conductor</CardTitle>
                 <Button variant="outline" size="sm" onClick={() => setIsEditDialogOpen(true)}>
@@ -290,23 +301,6 @@ export default function DriverDetailPage() {
                     </Button>
                 </div>
               </CardContent>
-            </Card>
-            <Card className="lg:col-span-1 bg-amber-50 dark:bg-amber-900/50 border-amber-200">
-                <CardHeader>
-                    <CardTitle className="text-lg text-amber-900 dark:text-amber-200">Estado de Cuenta</CardTitle>
-                    <CardDescription className="text-amber-800 dark:text-amber-300">Resumen de la deuda actual.</CardDescription>
-                </CardHeader>
-                <CardContent className="text-center space-y-4">
-                    <div>
-                        <p className="text-sm font-medium text-muted-foreground">DEUDA TOTAL</p>
-                        <p className="text-3xl font-bold text-destructive">{formatCurrency(debtInfo.totalDebt)}</p>
-                        <p className="text-xs text-muted-foreground">(Renta: {formatCurrency(debtInfo.calculatedRentDebt)} + Adicional: {formatCurrency(driver.debtAmount || 0)})</p>
-                    </div>
-                    <div>
-                        <p className="text-sm font-medium text-muted-foreground">DÍAS PENDIENTES (APROX)</p>
-                        <p className="text-3xl font-bold">{debtInfo.daysOwed}</p>
-                    </div>
-                </CardContent>
             </Card>
           </div>
           <Card className="mt-6">
@@ -341,6 +335,26 @@ export default function DriverDetailPage() {
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="deuda">
+            <Card className="lg:col-span-1 bg-amber-50 dark:bg-amber-900/50 border-amber-200">
+                <CardHeader>
+                    <CardTitle className="text-lg text-amber-900 dark:text-amber-200">Estado de Cuenta</CardTitle>
+                    <CardDescription className="text-amber-800 dark:text-amber-300">Resumen de la deuda del mes actual.</CardDescription>
+                </CardHeader>
+                <CardContent className="text-center space-y-4">
+                    <div>
+                        <p className="text-sm font-medium text-muted-foreground">DEUDA TOTAL</p>
+                        <p className="text-3xl font-bold text-destructive">{formatCurrency(debtInfo.totalDebt)}</p>
+                        <p className="text-xs text-muted-foreground">(Renta Mes: {formatCurrency(debtInfo.calculatedRentDebt)} + Deuda Adicional: {formatCurrency(driver.debtAmount || 0)})</p>
+                    </div>
+                    <div>
+                        <p className="text-sm font-medium text-muted-foreground">DÍAS PENDIENTES (APROX)</p>
+                        <p className="text-3xl font-bold">{debtInfo.daysOwed}</p>
+                    </div>
+                </CardContent>
+            </Card>
         </TabsContent>
 
         <TabsContent value="documents">
