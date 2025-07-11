@@ -41,9 +41,7 @@ import {
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import type { User, ServiceRecord, AppRole } from "@/types";
-import { signOut } from "firebase/auth"; // Firebase
-import { auth } from "@/lib/firebaseClient.js"; // Firebase
-import { placeholderServiceRecords, placeholderAppRoles, AUTH_USER_LOCALSTORAGE_KEY, persistToFirestore } from "@/lib/placeholder-data";
+import { placeholderServiceRecords, placeholderAppRoles, AUTH_USER_LOCALSTORAGE_KEY, persistToFirestore, defaultSuperAdmin } from "@/lib/placeholder-data";
 import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -56,7 +54,7 @@ export function AppSidebar() {
   const { toast } = useToast();
   const { isMobile, setOpenMobile } = useSidebar(); // Get sidebar context
 
-  const [currentUser, setCurrentUser] = React.useState<User | null>(null);
+  const [currentUser, setCurrentUser] = React.useState<User | null>(defaultSuperAdmin);
   const [newSignatureServices, setNewSignatureServices] = React.useState<ServiceRecord[]>([]);
 
   React.useEffect(() => {
@@ -68,7 +66,7 @@ export function AppSidebar() {
             setCurrentUser(JSON.parse(authUserString));
           } catch (e) {
             console.error("Failed to parse authUser for sidebar:", e);
-            setCurrentUser(null);
+            setCurrentUser(defaultSuperAdmin);
           }
         }
         
@@ -84,28 +82,17 @@ export function AppSidebar() {
     checkNotifications(); // Initial check
 
     window.addEventListener('focus', checkNotifications); // Re-check when window gains focus
+    window.addEventListener('databaseUpdated', checkNotifications); // Re-check on data changes
 
     return () => {
       window.removeEventListener('focus', checkNotifications); // Cleanup listener
+      window.removeEventListener('databaseUpdated', checkNotifications);
     };
   }, []);
 
   const handleLogout = async () => {
-    try {
-      await signOut(auth);
-      if (typeof window !== "undefined") {
-        localStorage.removeItem(AUTH_USER_LOCALSTORAGE_KEY);
-      }
-      toast({
-        title: "Sesión Cerrada",
-        description: "Has cerrado sesión exitosamente.",
-      });
-      setCurrentUser(null);
-      router.push("/login");
-    } catch (error) {
-       console.error("Logout Error:", error);
-       toast({ title: "Error al cerrar sesión", variant: "destructive" });
-    }
+    // In no-auth mode, just redirect
+    router.push("/login");
   };
 
   const handleNotificationOpen = async (isOpen: boolean) => {
@@ -289,7 +276,7 @@ export function AppSidebar() {
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={handleLogout}>
               <LogOut className="mr-2 h-4 w-4 text-destructive" />
-              <span className="text-destructive">Cerrar Sesión</span>
+              <span className="text-destructive">Salir</span>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

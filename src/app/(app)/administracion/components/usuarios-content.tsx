@@ -12,28 +12,18 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import type { User, AppRole } from '@/types';
 import { PlusCircle, Trash2, Edit, Search, Users } from 'lucide-react';
-import { placeholderUsers, persistToFirestore, placeholderAppRoles, logAudit } from '@/lib/placeholder-data';
+import { placeholderUsers, persistToFirestore, placeholderAppRoles, logAudit, defaultSuperAdmin } from '@/lib/placeholder-data';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { capitalizeWords } from '@/lib/utils';
 
+// Simplified schema without password fields as auth is disabled
 const userFormSchema = z.object({
   name: z.string().min(3, "El nombre debe tener al menos 3 caracteres."),
   email: z.string().email("Ingrese un correo electrónico válido."),
   phone: z.string().optional(),
   role: z.string({ required_error: "Seleccione un rol." }).min(1, "Debe seleccionar un rol."),
-  password: z.string().optional().or(z.literal('')),
-  confirmPassword: z.string().optional().or(z.literal('')),
-}).refine(data => {
-    if (data.password && data.password.length > 0) {
-        if (data.password.length < 6) return false;
-        return data.password === data.confirmPassword;
-    }
-    return true;
-}, {
-  message: "Las contraseñas no coinciden o tienen menos de 6 caracteres.",
-  path: ["confirmPassword"],
 });
 
 type UserFormValues = z.infer<typeof userFormSchema>;
@@ -49,11 +39,16 @@ export function UsuariosPageContent({ currentUser }: { currentUser: User | null 
 
   const form = useForm<UserFormValues>({
     resolver: zodResolver(userFormSchema),
-    defaultValues: { name: '', email: '', phone: '', role: 'Tecnico', password: '', confirmPassword: '' },
+    defaultValues: { name: '', email: '', phone: '', role: 'Tecnico' },
   });
   
   useEffect(() => {
-    setUsers(placeholderUsers);
+    // Ensure the default admin is always in the list for display if it's the only user
+    const usersWithDefault = [...placeholderUsers];
+    if (!usersWithDefault.some(u => u.id === defaultSuperAdmin.id)) {
+        usersWithDefault.push(defaultSuperAdmin);
+    }
+    setUsers(usersWithDefault);
     setAvailableRoles(placeholderAppRoles);
   }, []);
   
@@ -91,12 +86,10 @@ export function UsuariosPageContent({ currentUser }: { currentUser: User | null 
         email: userToEdit.email,
         phone: userToEdit.phone || '',
         role: userToEdit.role,
-        password: '',
-        confirmPassword: '',
       });
     } else {
       setEditingUser(null);
-      form.reset({ name: '', email: '', phone: '', role: 'Tecnico', password: '', confirmPassword: '' });
+      form.reset({ name: '', email: '', phone: '', role: 'Tecnico' });
     }
     setIsFormOpen(true);
   };
@@ -106,15 +99,14 @@ export function UsuariosPageContent({ currentUser }: { currentUser: User | null 
     const action = isEditing ? 'Editar' : 'Crear';
     const description = `Se ${isEditing ? 'actualizó el perfil del' : 'creó el'} usuario "${data.name}" (Email: ${data.email}).`;
 
-    // Here you would handle Firebase Auth user creation/update.
-    // For now, we update the placeholder data.
+    // Local-only update, no Firebase Auth
     if (isEditing) {
         const userIndex = placeholderUsers.findIndex(u => u.id === editingUser!.id);
         if (userIndex > -1) {
-            placeholderUsers[userIndex] = { ...placeholderUsers[userIndex], ...data, password: '' };
+            placeholderUsers[userIndex] = { ...placeholderUsers[userIndex], ...data };
         }
     } else {
-        const newUser: User = { id: `user_${Date.now()}`, ...data, password: '' };
+        const newUser: User = { id: `user_${Date.now()}`, ...data };
         placeholderUsers.push(newUser);
     }
     
@@ -137,7 +129,7 @@ export function UsuariosPageContent({ currentUser }: { currentUser: User | null 
         placeholderUsers.splice(index, 1);
         await persistToFirestore(['users', 'auditLogs']);
         setUsers([...placeholderUsers]);
-        toast({ title: "Usuario eliminado (localmente)." });
+        toast({ title: "Usuario eliminado." });
     }
   };
 
@@ -178,7 +170,7 @@ export function UsuariosPageContent({ currentUser }: { currentUser: User | null 
                           <TableCell className="font-medium">{user.name}</TableCell><TableCell>{user.email}</TableCell><TableCell>{user.phone || 'N/A'}</TableCell>
                           <TableCell><span className={`px-2 py-1 text-xs rounded-full font-medium ${ user.role === 'Superadmin' ? 'bg-red-100 text-red-700' : user.role === 'Admin' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-700' }`}>{user.role}</span></TableCell>
                           <TableCell className="text-right">
-                            {canEditOrDelete(user) && ( <> <Button variant="ghost" size="icon" onClick={() => handleOpenForm(user)} className="mr-2"><Edit className="h-4 w-4" /></Button><AlertDialog><AlertDialogTrigger asChild><Button variant="ghost" size="icon"><Trash2 className="h-4 w-4 text-destructive" /></Button></AlertDialogTrigger><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>¿Eliminar Usuario?</AlertDialogTitle><AlertDialogDescription>¿Seguro que quieres eliminar a "{user.name}"? Esta acción es local. Recuerda eliminarlo también de Firebase.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Cancelar</AlertDialogCancel><AlertDialogAction onClick={() => handleDeleteUser(user.id)} className="bg-destructive hover:bg-destructive/90">Sí, Eliminar</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog></>)}
+                            {canEditOrDelete(user) && ( <> <Button variant="ghost" size="icon" onClick={() => handleOpenForm(user)} className="mr-2"><Edit className="h-4 w-4" /></Button><AlertDialog><AlertDialogTrigger asChild><Button variant="ghost" size="icon"><Trash2 className="h-4 w-4 text-destructive" /></Button></AlertDialogTrigger><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>¿Eliminar Usuario?</AlertDialogTitle><AlertDialogDescription>¿Seguro que quieres eliminar a "{user.name}"? Esta acción es permanente.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Cancelar</AlertDialogCancel><AlertDialogAction onClick={() => handleDeleteUser(user.id)} className="bg-destructive hover:bg-destructive/90">Sí, Eliminar</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog></>)}
                           </TableCell>
                         </TableRow>
                       ))}
@@ -200,13 +192,9 @@ export function UsuariosPageContent({ currentUser }: { currentUser: User | null 
                     <Form {...form}>
                         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                             <FormField control={form.control} name="name" render={({ field }) => ( <FormItem><FormLabel>Nombre</FormLabel><FormControl><Input placeholder="Nombre completo" {...field} onChange={e => field.onChange(capitalizeWords(e.target.value))} /></FormControl><FormMessage /></FormItem> )}/>
-                            <FormField control={form.control} name="email" render={({ field }) => ( <FormItem><FormLabel>Email</FormLabel><FormControl><Input type="email" placeholder="correo@ejemplo.com" {...field} disabled={!!editingUser} /></FormControl><FormDescription>El email se usa para el inicio de sesión y no se puede cambiar.</FormDescription><FormMessage /></FormItem> )}/>
+                            <FormField control={form.control} name="email" render={({ field }) => ( <FormItem><FormLabel>Email</FormLabel><FormControl><Input type="email" placeholder="correo@ejemplo.com" {...field} disabled={!!editingUser} /></FormControl><FormDescription>El email se usará para identificar al usuario, no se puede cambiar.</FormDescription><FormMessage /></FormItem> )}/>
                             <FormField control={form.control} name="phone" render={({ field }) => ( <FormItem><FormLabel>Teléfono (Opcional)</FormLabel><FormControl><Input placeholder="4491234567" {...field} /></FormControl><FormMessage /></FormItem> )}/>
                             <FormField control={form.control} name="role" render={({ field }) => ( <FormItem><FormLabel>Rol</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Seleccione un rol" /></SelectTrigger></FormControl><SelectContent>{assignableRoles.map(role => ( <SelectItem key={role.id} value={role.name}>{role.name}</SelectItem> ))}</SelectContent></Select><FormMessage /></FormItem> )}/>
-                            <Card><CardHeader><CardTitle className="text-base">Contraseña</CardTitle><FormDescription>Deje en blanco si no desea cambiarla.</FormDescription></CardHeader><CardContent className="space-y-4">
-                                <FormField control={form.control} name="password" render={({ field }) => ( <FormItem><FormLabel>Nueva Contraseña</FormLabel><FormControl><Input type="password" {...field} /></FormControl><FormMessage /></FormItem> )}/>
-                                <FormField control={form.control} name="confirmPassword" render={({ field }) => ( <FormItem><FormLabel>Confirmar Contraseña</FormLabel><FormControl><Input type="password" {...field} /></FormControl><FormMessage /></FormItem> )}/>
-                            </CardContent></Card>
                             <div className="flex justify-end gap-2">
                                 <Button type="button" variant="outline" onClick={() => setIsFormOpen(false)}>Cancelar</Button>
                                 <Button type="submit">{editingUser ? 'Guardar Cambios' : 'Crear Usuario'}</Button>

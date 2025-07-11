@@ -9,17 +9,22 @@ import { getAuth } from "firebase/auth";
 
 // ---------------------------------------------------
 // 1. Configuración mediante variables de entorno
-//    (añádelas en .env.local)
+//    Asegúrate de que estas variables existan en tu archivo .env.local
 // ---------------------------------------------------
 const firebaseConfig = {
-  apiKey: process.env.NEXT_PUBLIC_FB_API_KEY ?? "AIzaSyA_ot6L0zgglc1tC0BounxYIvj7y8048Sg",
-  authDomain: process.env.NEXT_PUBLIC_FB_AUTH_DOMAIN ?? "ranoro-jm8l0.firebaseapp.com",
-  databaseURL: process.env.NEXT_PUBLIC_FB_DB_URL ?? "https://ranoro-jm8l0-default-rtdb.firebaseio.com",
-  projectId: process.env.NEXT_PUBLIC_FB_PROJECT_ID ?? "ranoro-jm8l0",
-  storageBucket: process.env.NEXT_PUBLIC_FB_STORAGE_BUCKET ?? "ranoro-jm8l0.firebasestorage.app", // Correct domain for Firebase Storage
-  messagingSenderId: process.env.NEXT_PUBLIC_FB_SENDER_ID ?? "290934350177",
-  appId: process.env.NEXT_PUBLIC_FB_APP_ID ?? "1:290934350177:web:2365c77eaca4bb0d906520",
+  apiKey: process.env.NEXT_PUBLIC_FB_API_KEY,
+  authDomain: process.env.NEXT_PUBLIC_FB_AUTH_DOMAIN,
+  databaseURL: process.env.NEXT_PUBLIC_FB_DB_URL,
+  projectId: process.env.NEXT_PUBLIC_FB_PROJECT_ID,
+  storageBucket: process.env.NEXT_PUBLIC_FB_STORAGE_BUCKET,
+  messagingSenderId: process.env.NEXT_PUBLIC_FB_SENDER_ID,
+  appId: process.env.NEXT_PUBLIC_FB_APP_ID,
 };
+
+// Verificación de que las variables de entorno están cargadas
+if (!firebaseConfig.apiKey || !firebaseConfig.projectId) {
+  throw new Error("No se encontraron las variables de entorno de Firebase. Asegúrate de tener un archivo .env.local con la configuración correcta.");
+}
 
 // ---------------------------------------------------
 // 2. Inicializa la app solo una vez
