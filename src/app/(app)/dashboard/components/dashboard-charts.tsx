@@ -8,6 +8,7 @@ import { useMemo } from 'react';
 import { placeholderServiceRecords, placeholderSales, calculateSaleProfit, placeholderInventory } from '@/lib/placeholder-data';
 import { format, subMonths, startOfMonth, endOfMonth, isValid, parseISO, isWithinInterval } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { formatCurrency } from '@/lib/utils';
 
 const formatCurrencyForChart = (value: number) => {
   if (Math.abs(value) > 1000) {
@@ -21,8 +22,8 @@ const CustomTooltip = ({ active, payload, label }: any) => {
     return (
       <div className="bg-background border shadow-sm p-2 rounded-md">
         <p className="label font-bold">{`${label}`}</p>
-        <p className="text-blue-500">{`Ingresos: ${formatCurrencyForChart(payload[0].value)}`}</p>
-        <p className="text-green-500">{`Ganancia: ${formatCurrencyForChart(payload[1].value)}`}</p>
+        <p className="text-blue-500">{`Ingresos: ${formatCurrency(payload[0].value)}`}</p>
+        <p className="text-green-500">{`Ganancia: ${formatCurrency(payload[1].value)}`}</p>
       </div>
     );
   }
