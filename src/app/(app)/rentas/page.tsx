@@ -127,7 +127,7 @@ function RentasPageComponent() {
   return (
     <>
       <PageHeader
-        title="Pagos de Renta de Flotilla"
+        title="Registrar Pago de Renta"
         description="Registra y consulta los pagos de renta de los conductores."
         actions={
           <Button onClick={() => setIsPaymentDialogOpen(true)}>
