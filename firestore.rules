@@ -1,44 +1,50 @@
-
 rules_version = '2';
+
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Public read access for specific collections
-    match /publicServices/{serviceId} {
-      allow read;
-    }
-    match /publicQuotes/{quoteId} {
-      allow read;
-    }
-    match /publicOwnerReports/{reportId} {
-      allow read;
-    }
     
-    // User collection: Authenticated users can read any profile, but only write to their own.
-    match /users/{userId} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null && request.auth.uid == userId;
+    // The main database document is private.
+    // Only authenticated users (employees) can read or write to it.
+    match /database/main {
+      allow read, write: if request.auth != null;
     }
 
-    // Authenticated users can read/write to most other collections
-    match /vehicles/{vehicleId} { allow read, write: if request.auth != null; }
-    match /serviceRecords/{serviceId} { allow read, write: if request.auth != null; }
-    match /inventory/{itemId} { allow read, write: if request.auth != null; }
-    match /inventoryCategories/{categoryId} { allow read, write: if request.auth != null; }
-    match /suppliers/{supplierId} { allow read, write: if request.auth != null; }
-    match /sales/{saleId} { allow read, write: if request.auth != null; }
-    match /technicians/{techId} { allow read, write: if request.auth != null; }
-    match /administrativeStaff/{staffId} { allow read, write: if request.auth != null; }
-    match /drivers/{driverId} { allow read, write: if request.auth != null; }
-    match /rentalPayments/{paymentId} { allow read, write: if request.auth != null; }
-    // Note: ownerWithdrawals is not in the types, but adding a rule for it just in case.
-    match /ownerWithdrawals/{withdrawalId} { allow read, write: if request.auth != null; }
-    match /vehicleExpenses/{expenseId} { allow read, write: if request.auth != null; }
-    match /fixedExpenses/{expenseId} { allow read, write: if request.auth != null; }
-    match /cashDrawerTransactions/{transactionId} { allow read, write: if request.auth != null; }
-    match /initialCashBalance/{balanceId} { allow read, write: if request.auth != null; }
-    match /vehiclePriceLists/{listId} { allow read, write: if request.auth != null; }
-    match /serviceTypes/{typeId} { allow read, write: if request.auth != null; }
-    match /appRoles/{roleId} { allow read, write: if request.auth != null; }
-    match /auditLogs/{logId} { allow read, write: if request.auth != null; }
+    // publicQuotes are world-readable for sharing, but not writable from the client.
+    match /publicQuotes/{quoteId} {
+      allow read: if true;
+      allow create, update, delete: if request.auth != null; 
+    }
+    
+    // publicOwnerReports are world-readable for sharing, but not writable from the client.
+    match /publicOwnerReports/{reportId} {
+      allow read: if true;
+      allow create, update, delete: if request.auth != null;
+    }
+    
+    // publicServices are world-readable.
+    match /publicServices/{serviceId} {
+      allow read: if true;
+      
+      // Allow authenticated users to perform any update.
+      // Allow unauthenticated customers to update ONLY signature fields.
+      allow update: if request.auth != null || 
+                      (request.resource.data.diff(resource.data).affectedKeys()
+                      .hasOnly(['customerSignatureReception', 'customerSignatureDelivery', 'receptionSignatureViewed', 'deliverySignatureViewed']));
+                      
+      // Allow create/delete only for authenticated users.
+      allow create, delete: if request.auth != null;
+    }
+    
+    // Rule for the new public_documents collection
+    match /public_documents/{documentId} {
+      allow read: if true;
+      allow create, update, delete: if request.auth != null;
+    }
+
+    // By default, deny access to any other collection/document path.
+    // This is a security best practice.
+    match /{document=**} {
+      allow read, write: if false;
+    }
   }
 }
