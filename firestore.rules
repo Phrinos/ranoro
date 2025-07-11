@@ -4,37 +4,36 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     
-    // Allow any authenticated user to read/write their own user profile.
+    // Any authenticated user can read and write to the main database document.
+    // This simplifies the logic and relies on application-level checks for roles.
+    match /database/main {
+      allow read, write: if request.auth != null;
+    }
+
+    // Individual user profiles can only be accessed by the user themselves.
+    // This allows users to manage their own profile info securely.
     match /users/{userId} {
-      allow read, write: if request.auth.uid == userId;
+      allow read, write: if request.auth != null && request.auth.uid == userId;
     }
 
-    // Allow any authenticated user to create their own user profile if it doesn't exist.
-    match /users/{userId} {
-      allow create: if request.auth.uid == userId;
-    }
-
-    // Allow read/write to the main data document if the user is authenticated.
-    match /database/{docId} {
-       allow read, write: if request.auth != null;
-    }
-
-    // Public documents (e.g., for sharing links with customers)
-    match /publicServices/{serviceId} {
-      // Anyone can read a public document.
+    // Public documents are world-readable, but only authenticated users can modify them.
+    // This pattern is used for sharing quotes, service sheets, etc.
+    match /publicServices/{documentId} {
       allow read: if true;
-      
-      // Allow authenticated users (employees) to perform any update.
-      // Allow unauthenticated customers to update ONLY signature fields.
-      allow update: if request.auth != null || 
-                      (request.resource.data.diff(resource.data).affectedKeys()
-                      .hasOnly(['customerSignatureReception', 'customerSignatureDelivery']));
-                      
-      // Allow create/delete only for authenticated users (employees).
-      allow create, delete: if request.auth != null;
+      allow write: if request.auth != null;
     }
 
-    // By default, deny access to any other path.
+    match /publicQuotes/{documentId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+    
+    match /publicOwnerReports/{documentId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+
+    // Fallback: Deny all other access by default.
     match /{document=**} {
       allow read, write: if false;
     }

@@ -1,11 +1,10 @@
 
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { signInWithEmailAndPassword } from 'firebase/auth';
-import { doc, getDoc } from 'firebase/firestore';
-import { auth, db } from '@/lib/firebaseClient.js';
+import { auth } from '@/lib/firebaseClient.js';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -13,9 +12,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Loader2 } from 'lucide-react';
 import Image from "next/image";
-import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
-import type { User as RanoroUser } from '@/types';
-import { hydrateFromFirestore } from '@/lib/placeholder-data';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -28,40 +24,27 @@ export default function LoginPage() {
     event.preventDefault();
     setIsLoading(true);
 
-    if (!auth || !db) {
-        toast({ title: 'Error de Configuración', variant: 'destructive' });
+    if (!auth) {
+        toast({ title: 'Error de Configuración', description: 'El cliente de autenticación no está disponible.', variant: 'destructive' });
         setIsLoading(false);
         return;
     }
 
     try {
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      const user = userCredential.user;
-
-      // Ensure data is loaded before proceeding
-      await hydrateFromFirestore();
-
-      const userDocRef = doc(db, "users", user.uid);
-      const docSnap = await getDoc(userDocRef);
+      // Step 1: Just sign in the user. Don't fetch any other data here.
+      await signInWithEmailAndPassword(auth, email, password);
       
-      if (docSnap.exists()) {
-        const ranoroUser = { id: docSnap.id, ...docSnap.data() } as RanoroUser;
-        localStorage.setItem(AUTH_USER_LOCALSTORAGE_KEY, JSON.stringify(ranoroUser));
-        toast({ title: '¡Bienvenido!', description: 'Has iniciado sesión correctamente.' });
-        router.push('/dashboard');
-      } else {
-        throw new Error("El perfil de usuario no se encuentra en la base de datos. Contacte a un administrador.");
-      }
+      // Step 2: Redirect to the dashboard. The main layout will handle all data loading.
+      // This avoids all race conditions and permissions issues.
+      router.push('/dashboard');
       
     } catch (error: any) {
       console.error("Error de inicio de sesión:", error);
-      let errorMessage = 'Las credenciales son incorrectas o hubo un error al cargar tu perfil.';
+      let errorMessage = 'Las credenciales son incorrectas.';
       if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
           errorMessage = 'El correo o la contraseña son incorrectos.';
       } else if (error.code === 'auth/too-many-requests') {
           errorMessage = 'Demasiados intentos fallidos. Por favor, inténtalo de nuevo más tarde.';
-      } else if (error.message) {
-          errorMessage = error.message;
       }
       
       toast({
@@ -87,7 +70,7 @@ export default function LoginPage() {
                 data-ai-hint="ranoro logo"
             />
           <CardTitle className="text-2xl pt-4">Iniciar Sesión</CardTitle>
-          <CardDescription>Ingresa tu correo y contraseña para acceder al sistema.</CardDescription>
+          <CardDescription>Ingresa tus credenciales para acceder al sistema.</CardDescription>
         </CardHeader>
         <form onSubmit={handleLogin}>
           <CardContent className="space-y-4">
@@ -100,6 +83,7 @@ export default function LoginPage() {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                autoComplete="email"
               />
             </div>
             <div className="space-y-2">
@@ -110,6 +94,7 @@ export default function LoginPage() {
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                autoComplete="current-password"
               />
             </div>
           </CardContent>

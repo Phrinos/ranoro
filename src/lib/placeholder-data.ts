@@ -215,51 +215,23 @@ export async function hydrateFromFirestore() {
     return;
   }
   
-  // First, hydrate the users and roles collections
-  try {
-    const usersDocRef = doc(db, 'database', 'users');
-    const usersDocSnap = await getDoc(usersDocRef);
-    if (usersDocSnap.exists()) {
-      placeholderUsers.splice(0, placeholderUsers.length, ...usersDocSnap.data().list);
-    }
-  } catch(e) { console.error("Error hydrating users", e) }
-
-  // Ensure superadmin exists after potential hydration
-  if (!placeholderUsers.some(u => u.id === defaultSuperAdmin.id)) {
-      placeholderUsers.push(defaultSuperAdmin);
-  }
-
-  try {
-    const rolesDocRef = doc(db, 'database', 'roles');
-    const rolesDocSnap = await getDoc(rolesDocRef);
-    if (rolesDocSnap.exists()) {
-       placeholderAppRoles.splice(0, placeholderAppRoles.length, ...rolesDocSnap.data().list);
-    }
-  } catch(e) { console.error("Error hydrating roles", e) }
-
-  if(placeholderAppRoles.length === 0) {
-      placeholderAppRoles.push(
-          { id: 'role_superadmin', name: 'Superadmin', permissions: ALL_AVAILABLE_PERMISSIONS.map(p => p.id) },
-          { id: 'role_admin', name: 'Admin', permissions: ALL_AVAILABLE_PERMISSIONS.filter(p => !p.id.includes(':manage')).map(p => p.id) },
-          { id: 'role_tecnico', name: 'Tecnico', permissions: ['services:view_history', 'services:edit'] }
-      );
-  }
+  // The main layout now ensures the user profile exists before calling this.
+  // This function now only loads the main data document.
   
-  // Then, hydrate the main data document
-  const mainDataDocRef = doc(db, 'database', 'main');
+  const mainDataDocRef = doc(db, 'database', DATA_STORE_ID);
   try {
     const docSnap = await getDoc(mainDataDocRef);
     if (docSnap.exists()) {
       const firestoreData = docSnap.data();
       Object.keys(DATA_ARRAYS).forEach(key => {
-        if (firestoreData[key] !== undefined && key !== 'users' && key !== 'appRoles') {
+        if (firestoreData[key] !== undefined) {
           const placeholder = DATA_ARRAYS[key as keyof typeof DATA_ARRAYS];
           if (Array.isArray(placeholder)) {
             placeholder.splice(0, placeholder.length, ...firestoreData[key]);
           } else if (placeholder !== null) {
             Object.assign(placeholder, firestoreData[key]);
           } else {
-             DATA_ARRAYS[key as keyof typeof DATA_ARRAYS] = firestoreData[key];
+             (DATA_ARRAYS as any)[key] = firestoreData[key];
           }
         }
       });
@@ -284,24 +256,15 @@ export async function persistToFirestore(
     return;
   }
   
+  // This function is now the only place that creates the main data document.
+  // It's called after login is complete, so permissions are guaranteed.
+  
   const keys = keysToUpdate && keysToUpdate.length > 0 ? keysToUpdate : Object.keys(DATA_ARRAYS) as (keyof typeof DATA_ARRAYS)[];
   
   const dataToPersist: { [key: string]: any } = {};
   for (const key of keys) {
-    // Special handling for users and roles to save them in separate docs
-    if (key === 'users') {
-        const usersDocRef = doc(db, 'database', 'users');
-        await setDoc(usersDocRef, sanitizeObjectForFirestore({ list: placeholderUsers }));
-        continue;
-    }
-    if (key === 'appRoles') {
-        const rolesDocRef = doc(db, 'database', 'roles');
-        await setDoc(rolesDocRef, sanitizeObjectForFirestore({ list: placeholderAppRoles }));
-        continue;
-    }
-
-    if (DATA_ARRAYS[key] !== undefined) {
-      dataToPersist[key] = DATA_ARRAYS[key];
+    if (DATA_ARRAYS[key as keyof typeof DATA_ARRAYS] !== undefined) {
+      dataToPersist[key] = DATA_ARRAYS[key as keyof typeof DATA_ARRAYS];
     }
   }
   
