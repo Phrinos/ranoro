@@ -274,8 +274,8 @@ export async function logAudit(
   await persistToFirestore(['auditLogs']);
 }
 
-// HydrateFromFirestore ahora toma al usuario como argumento para asegurar el orden correcto
-export async function hydrateFromFirestore(currentUser: User) {
+// HydrateFromFirestore is now simpler. It just READS. It does not create data.
+export async function hydrateFromFirestore() {
   if (typeof window === 'undefined' || (window as any).__APP_HYDRATED__) {
     resolveHydration?.();
     return;
@@ -298,23 +298,13 @@ export async function hydrateFromFirestore(currentUser: User) {
           }
         }
       });
+      console.log('Data successfully hydrated from Firestore.');
     } else {
-      console.warn('No database document found. Seeding with initial data.');
-      await persistToFirestore(Object.keys(DATA_ARRAYS) as (keyof typeof DATA_ARRAYS)[], currentUser);
+      console.warn('Workshop data document not found. App will start with empty data. First save operation will create the document.');
+      // Do nothing, let the app start with empty placeholders
     }
   } catch (error) {
     console.error('Error reading from Firestore, using local fallback:', error);
-  }
-
-  // Ensure default roles exist if the app roles are empty
-  const superAdminRoleExists = placeholderAppRoles.some(r => r.name === 'Superadmin');
-  if(!superAdminRoleExists) {
-      placeholderAppRoles.push({
-          id: 'role_superadmin',
-          name: 'Superadmin',
-          permissions: ALL_AVAILABLE_PERMISSIONS.map(p => p.id)
-      });
-      await persistToFirestore(['appRoles'], currentUser);
   }
 
   (window as any).__APP_HYDRATED__ = true;
@@ -323,9 +313,9 @@ export async function hydrateFromFirestore(currentUser: User) {
 }
 
 
+// PersistToFirestore now handles the creation of the workshop document if it doesn't exist.
 export async function persistToFirestore(
-  keysToUpdate?: (keyof typeof DATA_ARRAYS)[],
-  currentUser?: User
+  keysToUpdate?: (keyof typeof DATA_ARRAYS)[]
 ) {
   if (!db) {
     console.warn('Persist skipped: Firebase not configured.');
@@ -341,9 +331,20 @@ export async function persistToFirestore(
     }
   }
   
+  // Ensure default roles exist on the first major save operation
+  if (!placeholderAppRoles.some(r => r.name === 'Superadmin')) {
+      placeholderAppRoles.push({
+          id: 'role_superadmin',
+          name: 'Superadmin',
+          permissions: ALL_AVAILABLE_PERMISSIONS.map(p => p.id)
+      });
+      dataToPersist['appRoles'] = placeholderAppRoles;
+  }
+  
   const sanitizedData = sanitizeObjectForFirestore(dataToPersist);
   try {
     const docRef = doc(db, 'workshop_data', DATA_STORE_ID);
+    // Use merge:true which will create the document if it doesn't exist, or update it if it does.
     await setDoc(docRef, sanitizedData, { merge: true });
     
     console.log(`Data successfully persisted to Firestore on keys: ${keys.join(', ')}`);
@@ -412,4 +413,3 @@ export const enrichServiceForPrinting = (
     serviceItems: enrichedServiceItems,
   };
 };
-

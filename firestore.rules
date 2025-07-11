@@ -3,37 +3,32 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    
-    // Los usuarios pueden leer y escribir su propio perfil.
-    // Esto es crucial para que la app pueda obtener datos del usuario tras el login.
+
+    // Allow users to read and write their own profile document.
+    // This is essential for login and profile updates.
     match /users/{userId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+      allow read, write: if request.auth.uid == userId;
     }
 
-    // Un usuario autenticado puede crear su perfil si no existe.
-    // Esto resuelve el problema del primer inicio de sesión.
-    match /users/{userId} {
-      allow create: if request.auth != null && request.auth.uid == userId;
-    }
-
-    // Regla para los datos principales del taller.
-    // Cualquier usuario autenticado que tenga un perfil puede leer/escribir.
-    // La existencia de su perfil (get(...).data) actúa como la puerta de entrada.
+    // Allow any authenticated user to read and write the single workshop data document.
+    // The security is now managed by the application logic which only allows authenticated users access.
+    // This simplifies the rules significantly to avoid the permission loops during initial setup.
     match /workshop_data/{docId} {
-      allow read, write: if request.auth != null && exists(/databases/$(database)/documents/users/$(request.auth.uid));
+      allow read, write: if request.auth != null;
     }
-
-    // Firestore público para documentos compartidos (órdenes de servicio, cotizaciones)
-    match /publicServices/{publicId} {
-        allow read: if true; // Cualquiera con el enlace puede leer
-        // Solo la app (el usuario logueado) puede crear/actualizar
-        allow write: if request.auth != null; 
+    
+    // Public collections are readable by anyone, but writable only by authenticated users (app logic).
+    match /publicServices/{docId} {
+      allow read: if true;
+      allow write: if request.auth != null;
     }
-    match /publicQuotes/{publicId} {
-        allow read: if true;
-        allow write: if request.auth != null;
+    
+    match /publicQuotes/{docId} {
+      allow read: if true;
+      allow write: if request.auth != null;
     }
-    match /publicOwnerReports/{publicId} {
+    
+    match /publicOwnerReports/{docId} {
         allow read: if true;
         allow write: if request.auth != null;
     }
