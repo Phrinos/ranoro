@@ -42,8 +42,7 @@ import {
   CalendarDays
 } from 'lucide-react';
 import type { User, AppRole } from '@/types';
-import { AUTH_USER_LOCALSTORAGE_KEY, defaultSuperAdmin } from '@/lib/placeholder-data';
-import { adminService } from '@/lib/services/admin.service';
+import { AUTH_USER_LOCALSTORAGE_KEY, defaultSuperAdmin, placeholderAppRoles } from '@/lib/placeholder-data';
 
 export interface NavigationEntry {
   label: string;
@@ -192,7 +191,7 @@ const useNavigation = (): NavigationEntry[] => {
             } else {
                 setCurrentUser(defaultSuperAdmin);
             }
-            setRoles(await adminService.getRoles());
+            setRoles([...placeholderAppRoles]);
         }
     };
     loadData();

@@ -1,89 +1,112 @@
 
 
+import {
+  collection,
+  getDocs,
+  addDoc,
+  doc,
+  updateDoc,
+  deleteDoc,
+  serverTimestamp,
+} from 'firebase/firestore';
+import { db } from '../firebaseClient';
 import type { User, AppRole, AuditLog } from "@/types";
-import { placeholderUsers, placeholderAppRoles, placeholderAuditLogs, persistToFirestore, logAudit } from "@/lib/placeholder-data";
+
+const logAudit = async (
+  actionType: AuditLog['actionType'],
+  description: string,
+  details: { entityType?: AuditLog['entityType']; entityId?: string; userId: string; userName: string; }
+): Promise<void> => {
+  if (!db) return;
+  await addDoc(collection(db, 'auditLogs'), {
+    ...details,
+    actionType,
+    description,
+    date: serverTimestamp(),
+  });
+};
 
 const getUsers = async (): Promise<User[]> => {
-    return [...placeholderUsers];
+    if (!db) return [];
+    const usersCollection = collection(db, 'users');
+    const usersSnapshot = await getDocs(usersCollection);
+    return usersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User));
 };
 
 const getRoles = async (): Promise<AppRole[]> => {
-    return [...placeholderAppRoles];
+    if (!db) return [];
+    const rolesCollection = collection(db, 'appRoles');
+    const rolesSnapshot = await getDocs(rolesCollection);
+    return rolesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as AppRole));
 };
 
 const getAuditLogs = async (): Promise<AuditLog[]> => {
-    return [...placeholderAuditLogs];
+    if (!db) return [];
+    const auditLogsCollection = collection(db, 'auditLogs');
+    const auditLogsSnapshot = await getDocs(auditLogsCollection);
+    return auditLogsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as AuditLog));
 };
 
-// Functions to modify local data and then "persist"
-const saveUser = async (user: User): Promise<User> => {
-    const isEditing = !!user.id;
+const saveUser = async (user: User, adminUser: User): Promise<User> => {
+    if (!db) throw new Error("Database not initialized.");
+    let id = user.id;
+    const { id: _, ...userData } = user;
+    const isEditing = !!id;
     const description = `Se ${isEditing ? 'actualizó el perfil del' : 'creó el'} usuario "${user.name}" (Email: ${user.email}).`;
 
     if (isEditing) {
-        const index = placeholderUsers.findIndex(u => u.id === user.id);
-        if (index > -1) placeholderUsers[index] = user;
+        await updateDoc(doc(db, 'users', id), userData);
     } else {
-        const newUser = { ...user, id: `user_${Date.now()}` };
-        placeholderUsers.push(newUser);
+        const newUserRef = await addDoc(collection(db, 'users'), userData);
+        id = newUserRef.id;
     }
     
-    await logAudit(isEditing ? 'Editar' : 'Crear', description, { entityType: 'Usuario', entityId: user.id });
-    await persistToFirestore(['users', 'auditLogs']);
-    return user;
+    await logAudit(isEditing ? 'Editar' : 'Crear', description, { entityType: 'Usuario', entityId: id, userId: adminUser.id, userName: adminUser.name });
+    return { id, ...userData };
 };
 
-const deleteUser = async (userId: string): Promise<void> => {
-    const userToDelete = placeholderUsers.find(u => u.id === userId);
-    if (!userToDelete) return;
-
-    await logAudit('Eliminar', `Eliminó al usuario "${userToDelete.name}" (Email: ${userToDelete.email}).`, { entityType: 'Usuario', entityId: userId });
-    
-    const index = placeholderUsers.findIndex(u => u.id === userId);
-    if (index > -1) {
-        placeholderUsers.splice(index, 1);
-        await persistToFirestore(['users', 'auditLogs']);
-    }
+const deleteUser = async (userId: string, adminUser: User): Promise<void> => {
+    if (!db) throw new Error("Database not initialized.");
+    const userDoc = doc(db, 'users', userId);
+    // You might want to fetch the user to log their name before deletion
+    await deleteDoc(userDoc);
+    await logAudit('Eliminar', `Eliminó al usuario con ID "${userId}".`, { entityType: 'Usuario', entityId: userId, userId: adminUser.id, userName: adminUser.name });
 };
 
-const saveRole = async (role: AppRole): Promise<AppRole> => {
-    const isEditing = !!role.id;
+const saveRole = async (role: AppRole, adminUser: User): Promise<AppRole> => {
+    if (!db) throw new Error("Database not initialized.");
+    let id = role.id;
+    const { id: _, ...roleData } = role;
+    const isEditing = !!id;
     const description = `Se ${isEditing ? 'actualizó el' : 'creó la nueva'} categoría de inventario: "${role.name}".`;
 
     if (isEditing) {
-      const index = placeholderAppRoles.findIndex(r => r.id === role.id);
-      if (index > -1) placeholderAppRoles[index] = role;
+        await updateDoc(doc(db, 'appRoles', id), roleData);
     } else {
-      const newRole = { ...role, id: `role_${Date.now()}` };
-      placeholderAppRoles.push(newRole);
+        const newRoleRef = await addDoc(collection(db, 'appRoles'), roleData);
+        id = newRoleRef.id;
     }
     
-    await logAudit(isEditing ? 'Editar' : 'Crear', description, { entityType: 'Rol', entityId: role.id });
-    await persistToFirestore(['appRoles', 'auditLogs']);
-    return role;
+    await logAudit(isEditing ? 'Editar' : 'Crear', description, { entityType: 'Rol', entityId: id, userId: adminUser.id, userName: adminUser.name });
+    return { id, ...roleData };
 };
 
-const deleteRole = async (roleId: string): Promise<void> => {
-    const roleToDelete = placeholderAppRoles.find(r => r.id === roleId);
-    if (!roleToDelete) return;
-
-    await logAudit('Eliminar', `Se eliminó el rol "${roleToDelete.name}".`, { entityType: 'Rol', entityId: roleId });
-    
-    const index = placeholderAppRoles.findIndex(r => r.id === roleId);
-    if (index > -1) {
-        placeholderAppRoles.splice(index, 1);
-        await persistToFirestore(['appRoles', 'auditLogs']);
-    }
+const deleteRole = async (roleId: string, adminUser: User): Promise<void> => {
+    if (!db) throw new Error("Database not initialized.");
+    const roleDoc = doc(db, 'appRoles', roleId);
+    await deleteDoc(roleDoc);
+    await logAudit('Eliminar', `Se eliminó el rol con ID "${roleId}".`, { entityType: 'Rol', entityId: roleId, userId: adminUser.id, userName: adminUser.name });
 };
 
 const updateUserProfile = async (user: User): Promise<User> => {
-    const userIndex = placeholderUsers.findIndex(u => u.id === user.id);
-    if (userIndex === -1) throw new Error("User not found");
+    if (!db) throw new Error("Database not initialized.");
+    const { id, ...userData } = user;
+    if (!id) throw new Error("User ID is required to update profile.");
     
-    placeholderUsers[userIndex] = { ...placeholderUsers[userIndex], ...user };
-    await persistToFirestore(['users']);
+    const userRef = doc(db, 'users', id);
+    await updateDoc(userRef, userData);
 
-    return placeholderUsers[userIndex];
+    return user;
 };
 
 export const adminService = {

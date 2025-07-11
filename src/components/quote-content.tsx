@@ -9,7 +9,6 @@ import React from 'react';
 import { cn, capitalizeWords, normalizeDataUrl, calculateDriverDebt } from "@/lib/utils";
 import { Card, CardContent } from '@/components/ui/card';
 import Image from "next/image";
-import { placeholderDrivers, placeholderRentalPayments } from '@/lib/placeholder-data';
 import { AlertCircle } from 'lucide-react';
 
 const initialWorkshopInfo: WorkshopInfo = {
@@ -29,13 +28,15 @@ Todos los derechos reservados - Diseñado y Desarrollado por Arturo Valdelamar +
 interface QuoteContentProps {
   quote: QuoteRecord;
   vehicle?: Vehicle; 
-  workshopInfo?: WorkshopInfo; 
+  workshopInfo?: WorkshopInfo;
+  drivers?: Driver[];
+  rentalPayments?: RentalPayment[];
 }
 
 const IVA_RATE = 0.16; 
 
 export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
-  ({ quote, vehicle, workshopInfo: workshopInfoProp }, ref) => {
+  ({ quote, vehicle, workshopInfo: workshopInfoProp, drivers = [], rentalPayments = [] }, ref) => {
     const effectiveWorkshopInfo = { ...initialWorkshopInfo, ...workshopInfoProp };
     
     const now = new Date();
@@ -53,10 +54,10 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
     
     // --- DEBT CALCULATION ---
     const driver: Driver | undefined = vehicle?.isFleetVehicle 
-        ? placeholderDrivers.find(d => d.assignedVehicleId === vehicle.id) 
+        ? drivers.find(d => d.assignedVehicleId === vehicle.id) 
         : undefined;
 
-    const driverDebt = driver ? calculateDriverDebt(driver, placeholderRentalPayments, [vehicle]) : { totalDebt: 0 };
+    const driverDebt = driver && vehicle ? calculateDriverDebt(driver, rentalPayments, [vehicle]) : { totalDebt: 0, rentalDebt: 0, depositDebt: 0, manualDebt: 0 };
     // --- END DEBT CALCULATION ---
 
 
