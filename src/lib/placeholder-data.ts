@@ -1,4 +1,5 @@
 
+
 import type {
   Vehicle,
   ServiceRecord,
@@ -533,13 +534,15 @@ export async function persistToFirestore(keysToUpdate?: (keyof typeof DATA_ARRAY
   
   const sanitizedData = sanitizeObjectForFirestore(dataToPersist);
   try {
-    await setDoc(doc(db, 'tenants', tenantId), sanitizedData, { merge: true });
+    const docRef = doc(db, 'tenants', tenantId);
+    await setDoc(docRef, sanitizedData, { merge: true });
     
     // Also update the /users collection if users were part of the update
     if (keys.includes('users')) {
         for(const user of placeholderUsers) {
             if(user.id) { // Ensure user has an ID
-                await setDoc(doc(db, 'users', user.id), sanitizeObjectForFirestore(user), { merge: true });
+                const userDocRef = doc(db, 'users', user.id);
+                await setDoc(userDocRef, sanitizeObjectForFirestore(user), { merge: true });
             }
         }
     }
@@ -610,3 +613,4 @@ export const enrichServiceForPrinting = (
     serviceItems: enrichedServiceItems,
   };
 };
+
