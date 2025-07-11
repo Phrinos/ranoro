@@ -72,7 +72,8 @@ export default function AppLayout({
           const appUser = userDocSnap.data() as User;
           
           // STEP 2: Hydrate workshop data using the confirmed user profile
-          await hydrateFromFirestore(appUser);
+          // This function now ONLY reads, it does not create the workshop data.
+          await hydrateFromFirestore();
           
           // STEP 3: Set local state and finish loading
           localStorage.setItem(AUTH_USER_LOCALSTORAGE_KEY, JSON.stringify(appUser));
