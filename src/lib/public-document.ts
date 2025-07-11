@@ -1,4 +1,5 @@
 
+
 import { doc, setDoc } from 'firebase/firestore';
 // IMPORTANT: Use the authenticated client for write operations
 import { db } from '@/lib/firebaseClient'; 
