@@ -12,13 +12,12 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import type { User, AppRole } from '@/types';
 import { PlusCircle, Trash2, Edit, Search, Users } from 'lucide-react';
-import { placeholderUsers, persistToFirestore, placeholderAppRoles, logAudit, defaultSuperAdmin } from '@/lib/placeholder-data';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { capitalizeWords } from '@/lib/utils';
+import { adminService } from '@/lib/services/admin.service';
 
-// Simplified schema without password fields as auth is disabled
 const userFormSchema = z.object({
   name: z.string().min(3, "El nombre debe tener al menos 3 caracteres."),
   email: z.string().email("Ingrese un correo electrónico válido."),
@@ -28,10 +27,10 @@ const userFormSchema = z.object({
 
 type UserFormValues = z.infer<typeof userFormSchema>;
 
-export function UsuariosPageContent({ currentUser }: { currentUser: User | null }) {
+export function UsuariosPageContent({ currentUser, initialUsers, initialRoles }: { currentUser: User | null, initialUsers: User[], initialRoles: AppRole[] }) {
   const { toast } = useToast();
-  const [users, setUsers] = useState<User[]>([]);
-  const [availableRoles, setAvailableRoles] = useState<AppRole[]>([]);
+  const [users, setUsers] = useState<User[]>(initialUsers);
+  const [availableRoles, setAvailableRoles] = useState<AppRole[]>(initialRoles);
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -41,16 +40,6 @@ export function UsuariosPageContent({ currentUser }: { currentUser: User | null 
     resolver: zodResolver(userFormSchema),
     defaultValues: { name: '', email: '', phone: '', role: 'Tecnico' },
   });
-  
-  useEffect(() => {
-    // Ensure the default admin is always in the list for display if it's the only user
-    const usersWithDefault = [...placeholderUsers];
-    if (!usersWithDefault.some(u => u.id === defaultSuperAdmin.id)) {
-        usersWithDefault.unshift(defaultSuperAdmin);
-    }
-    setUsers(usersWithDefault);
-    setAvailableRoles(placeholderAppRoles);
-  }, []);
   
   useEffect(() => {
     if (isFormOpen && formCardRef.current) {
@@ -95,41 +84,35 @@ export function UsuariosPageContent({ currentUser }: { currentUser: User | null 
   };
 
   const onSubmit = async (data: UserFormValues) => {
+    if (!currentUser) return;
     const isEditing = !!editingUser;
-    const action = isEditing ? 'Editar' : 'Crear';
-    const description = `Se ${isEditing ? 'actualizó el perfil del' : 'creó el'} usuario "${data.name}" (Email: ${data.email}).`;
-
-    // Local-only update, no Firebase Auth
-    if (isEditing) {
-        const userIndex = placeholderUsers.findIndex(u => u.id === editingUser!.id);
-        if (userIndex > -1) {
-            placeholderUsers[userIndex] = { ...placeholderUsers[userIndex], ...data };
-        }
-    } else {
-        const newUser: User = { id: `user_${Date.now()}`, ...data };
-        placeholderUsers.push(newUser);
+    
+    const userData: User = {
+        id: editingUser?.id || '', // Will be ignored on creation
+        ...data,
+    };
+    
+    try {
+        const savedUser = await adminService.saveUser(userData, currentUser);
+        const updatedUsers = isEditing
+            ? users.map(u => u.id === savedUser.id ? savedUser : u)
+            : [...users, savedUser];
+        setUsers(updatedUsers);
+        toast({ title: `Usuario ${isEditing ? 'actualizado' : 'creado'}` });
+        setIsFormOpen(false);
+    } catch (error: any) {
+        toast({ title: "Error al guardar", description: error.message, variant: 'destructive'});
     }
-    
-    await logAudit(action, description, { entityType: 'Usuario', entityId: editingUser?.id || 'new' });
-    await persistToFirestore(['users', 'auditLogs']);
-    
-    setUsers([...placeholderUsers]);
-    toast({ title: `Usuario ${isEditing ? 'actualizado' : 'creado'}` });
-    setIsFormOpen(false);
   };
   
   const handleDeleteUser = async (userId: string) => {
-    const userToDelete = users.find(u => u.id === userId);
-    if (!userToDelete) return;
-
-    await logAudit('Eliminar', `Eliminó al usuario "${userToDelete.name}" (Email: ${userToDelete.email}).`, { entityType: 'Usuario', entityId: userId });
-    
-    const index = placeholderUsers.findIndex(u => u.id === userId);
-    if (index > -1) {
-        placeholderUsers.splice(index, 1);
-        await persistToFirestore(['users', 'auditLogs']);
-        setUsers([...placeholderUsers]);
+    if (!currentUser) return;
+    try {
+        await adminService.deleteUser(userId, currentUser);
+        setUsers(prev => prev.filter(u => u.id !== userId));
         toast({ title: "Usuario eliminado." });
+    } catch (error: any) {
+        toast({ title: "Error al eliminar", description: error.message, variant: 'destructive'});
     }
   };
 
@@ -207,4 +190,3 @@ export function UsuariosPageContent({ currentUser }: { currentUser: User | null 
     </div>
   );
 }
-
