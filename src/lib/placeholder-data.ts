@@ -43,8 +43,46 @@ export let placeholderVehicles: Vehicle[] = [
   { id: 'V001', make: 'Nissan', model: 'Versa', year: 2020, licensePlate: 'AFG-330-A', ownerName: 'Maria Garcia', ownerPhone: '4491234567', lastServiceDate: '2023-10-15T10:00:00.000Z' },
   { id: 'V002', make: 'Chevrolet', model: 'Aveo', year: 2022, licensePlate: 'XYZ-789-B', ownerName: 'Juan Perez', ownerPhone: '4497654321', lastServiceDate: '2024-01-20T11:30:00.000Z' },
   { id: 'V003', make: 'Ford', model: 'Fusion', year: 2018, licensePlate: 'FGH-456-C', ownerName: 'Pedro Ramirez', ownerPhone: '4492345678', lastServiceDate: '2023-11-05T09:00:00.000Z' },
-  { id: 'V004', make: 'Honda', model: 'CR-V', year: 2021, licensePlate: 'JKL-123-D', ownerName: 'Arturo Valdelamar', ownerPhone: '4498765432', lastServiceDate: '2024-02-10T14:00:00.000Z', isFleetVehicle: true, dailyRentalCost: 350, gpsMonthlyCost: 150, adminMonthlyCost: 200, insuranceMonthlyCost: 250, currentMileage: 45000, lastMileageUpdate: new Date().toISOString() },
-  { id: 'V005', make: 'Kia', model: 'Rio', year: 2023, licensePlate: 'MNO-456-E', ownerName: 'Arturo Valdelamar', ownerPhone: '4498765432', isFleetVehicle: true, dailyRentalCost: 320, gpsMonthlyCost: 150, adminMonthlyCost: 200, insuranceMonthlyCost: 250, currentMileage: 22000, lastMileageUpdate: new Date().toISOString() },
+  { 
+    id: 'V004', 
+    make: 'Honda', 
+    model: 'CR-V', 
+    year: 2021, 
+    licensePlate: 'JKL-123-D', 
+    ownerName: 'Arturo Valdelamar', 
+    ownerPhone: '4498765432', 
+    lastServiceDate: '2024-02-10T14:00:00.000Z', 
+    isFleetVehicle: true, 
+    dailyRentalCost: 350, 
+    gpsMonthlyCost: 150, 
+    adminMonthlyCost: 200, 
+    insuranceMonthlyCost: 250, 
+    currentMileage: 45000, 
+    lastMileageUpdate: new Date().toISOString(),
+    paperwork: [
+      { id: 'pwk_v004_1', name: 'Verificación Vehicular', dueDate: new Date(new Date().setMonth(new Date().getMonth() - 2)).toISOString(), status: 'Pendiente' },
+      { id: 'pwk_v004_2', name: 'Pago de Tenencia', dueDate: new Date(new Date().setMonth(new Date().getMonth() - 5)).toISOString(), status: 'Pendiente' },
+    ]
+  },
+  { 
+    id: 'V005', 
+    make: 'Kia', 
+    model: 'Rio', 
+    year: 2023, 
+    licensePlate: 'MNO-456-E', 
+    ownerName: 'Arturo Valdelamar', 
+    ownerPhone: '4498765432', 
+    isFleetVehicle: true, 
+    dailyRentalCost: 320, 
+    gpsMonthlyCost: 150, 
+    adminMonthlyCost: 200, 
+    insuranceMonthlyCost: 250, 
+    currentMileage: 22000, 
+    lastMileageUpdate: new Date().toISOString(),
+    paperwork: [
+        { id: 'pwk_v005_1', name: 'Seguro Vehicular', dueDate: new Date(new Date().setMonth(new Date().getMonth() + 6)).toISOString(), status: 'Pendiente', notes: 'Cotizar renovación con GNP y Qualitas' },
+    ]
+  },
 ];
 export let placeholderServiceRecords: ServiceRecord[] = [
   {
@@ -125,8 +163,8 @@ export let placeholderAdministrativeStaff: AdministrativeStaff[] = [ { id: 'adm1
 export let placeholderUsers: User[] = [defaultSuperAdmin];
 export let placeholderVehiclePriceLists: VehiclePriceList[] = [];
 export let placeholderDrivers: Driver[] = [
-  { id: 'DRV001', name: 'Juan Pérez', address: 'Calle Falsa 123, Aguascalientes', phone: '449-555-0101', emergencyPhone: '449-555-0199', assignedVehicleId: 'V004', depositAmount: 2500, contractDate: '2024-05-01T10:00:00Z' },
-  { id: 'DRV002', name: 'Ana Martínez', address: 'Av. Siempre Viva 742, Aguascalientes', phone: '449-555-0102', emergencyPhone: '449-555-0198', assignedVehicleId: 'V005', depositAmount: 2500, contractDate: '2024-06-15T10:00:00Z' },
+  { id: 'DRV001', name: 'Juan Pérez', address: 'Calle Falsa 123, Aguascalientes', phone: '449-555-0101', emergencyPhone: '449-555-0199', assignedVehicleId: 'V004', depositAmount: 2500, contractDate: '2024-05-01T10:00:00Z', manualDebts: [{ id: 'md001', date: new Date().toISOString(), amount: 350, note: 'Reparación de llanta' }] },
+  { id: 'DRV002', name: 'Ana Martínez', address: 'Av. Siempre Viva 742, Aguascalientes', phone: '449-555-0102', emergencyPhone: '449-555-0198', assignedVehicleId: 'V005', depositAmount: 2500, contractDate: '2024-06-15T10:00:00Z', manualDebts: [] },
 ];
 export let placeholderRentalPayments: RentalPayment[] = [
   { id: 'PAY001', driverId: 'DRV001', driverName: 'Juan Pérez', vehicleLicensePlate: 'JKL-123-D', paymentDate: new Date(new Date().setDate(new Date().getDate() - 7)).toISOString(), amount: 2100, daysCovered: 6 },
