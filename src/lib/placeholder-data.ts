@@ -25,6 +25,7 @@ import type {
 
 export const IVA_RATE = 0.16;
 export const AUTH_USER_LOCALSTORAGE_KEY = 'authUser';
+export const STANDARD_DEPOSIT_AMOUNT = 3500;
 
 // =======================================
 // ===    DEFAULT SUPERADMIN CONFIG    ===
@@ -164,7 +165,7 @@ export let placeholderUsers: User[] = [defaultSuperAdmin];
 export let placeholderVehiclePriceLists: VehiclePriceList[] = [];
 export let placeholderDrivers: Driver[] = [
   { id: 'DRV001', name: 'Juan Pérez', address: 'Calle Falsa 123, Aguascalientes', phone: '449-555-0101', emergencyPhone: '449-555-0199', assignedVehicleId: 'V004', depositAmount: 2500, contractDate: '2024-05-01T10:00:00Z', manualDebts: [{ id: 'md001', date: new Date().toISOString(), amount: 350, note: 'Reparación de llanta' }] },
-  { id: 'DRV002', name: 'Ana Martínez', address: 'Av. Siempre Viva 742, Aguascalientes', phone: '449-555-0102', emergencyPhone: '449-555-0198', assignedVehicleId: 'V005', depositAmount: 2500, contractDate: '2024-06-15T10:00:00Z', manualDebts: [] },
+  { id: 'DRV002', name: 'Ana Martínez', address: 'Av. Siempre Viva 742, Aguascalientes', phone: '449-555-0102', emergencyPhone: '449-555-0198', assignedVehicleId: 'V005', depositAmount: 3500, contractDate: '2024-06-15T10:00:00Z', manualDebts: [] },
 ];
 export let placeholderRentalPayments: RentalPayment[] = [
   { id: 'PAY001', driverId: 'DRV001', driverName: 'Juan Pérez', vehicleLicensePlate: 'JKL-123-D', paymentDate: new Date(new Date().setDate(new Date().getDate() - 7)).toISOString(), amount: 2100, daysCovered: 6 },

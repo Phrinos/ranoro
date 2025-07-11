@@ -2,13 +2,15 @@
 
 "use client";
 
-import type { QuoteRecord, Vehicle, Technician, WorkshopInfo } from '@/types';
+import type { QuoteRecord, Vehicle, Technician, WorkshopInfo, Driver, RentalPayment } from '@/types';
 import { format, parseISO, isValid, addDays } from 'date-fns';
 import { es } from 'date-fns/locale';
 import React from 'react';
-import { cn, capitalizeWords, normalizeDataUrl } from "@/lib/utils";
+import { cn, capitalizeWords, normalizeDataUrl, calculateDriverDebt } from "@/lib/utils";
 import { Card, CardContent } from '@/components/ui/card';
 import Image from "next/image";
+import { placeholderDrivers, placeholderRentalPayments } from '@/lib/placeholder-data';
+import { AlertCircle } from 'lucide-react';
 
 const initialWorkshopInfo: WorkshopInfo = {
   name: "RANORO",
@@ -48,6 +50,15 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
     
     const validityDays = 15; 
     const validityDate = isValid(quoteDate) ? format(addDays(quoteDate, validityDays), "dd 'de' MMMM 'de' yyyy", { locale: es }) : 'N/A';
+    
+    // --- DEBT CALCULATION ---
+    const driver: Driver | undefined = vehicle?.isFleetVehicle 
+        ? placeholderDrivers.find(d => d.assignedVehicleId === vehicle.id) 
+        : undefined;
+
+    const driverDebt = driver ? calculateDriverDebt(driver, placeholderRentalPayments, [vehicle]) : { totalDebt: 0 };
+    // --- END DEBT CALCULATION ---
+
 
     return (
       <div 
@@ -104,6 +115,20 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
                 </div>
               </div>
           </section>
+
+          {driverDebt.totalDebt > 0 && (
+            <div className="my-4 p-3 border-2 border-red-500 bg-red-50 rounded-md text-red-800">
+                <h4 className="font-bold text-base flex items-center gap-2"><AlertCircle className="h-5 w-5"/>AVISO IMPORTANTE DE ADEUDO</h4>
+                <p className="text-sm mt-1">
+                    Este conductor presenta un adeudo con la flotilla por un total de <strong>{formatCurrency(driverDebt.totalDebt)}</strong>.
+                </p>
+                <ul className="text-xs list-disc pl-5 mt-1">
+                    {driverDebt.depositDebt > 0 && <li>Deuda de depósito: {formatCurrency(driverDebt.depositDebt)}</li>}
+                    {driverDebt.rentalDebt > 0 && <li>Deuda de renta: {formatCurrency(driverDebt.rentalDebt)}</li>}
+                    {driverDebt.manualDebt > 0 && <li>Deudas manuales: {formatCurrency(driverDebt.manualDebt)}</li>}
+                </ul>
+            </div>
+          )}
 
           <Card className="mt-4 mb-4 border-2 border-gray-200 overflow-hidden">
             <h3 className="font-semibold text-white bg-gray-700 p-2" style={{ fontSize: '14px' }}>TRABAJOS A REALIZAR (Precios con IVA)</h3>
