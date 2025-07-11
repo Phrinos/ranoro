@@ -1,32 +1,46 @@
+
 rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    
-    // Allow an authenticated user to read and create their own user profile
+
+    // Helper function to check if the user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Rules for the 'users' collection
     match /users/{userId} {
-      allow read, update: if request.auth.uid == userId;
-      allow create: if request.auth.uid == userId;
+      // Any authenticated user can create their own profile if it doesn't exist
+      allow create: if isAuthenticated() && request.auth.uid == userId;
+      // Users can only read or update their own profile
+      allow read, update: if isAuthenticated() && request.auth.uid == userId;
+      // No one can list all users or delete them through the client
+      allow list, delete: if false;
     }
 
-    // Allow a user to read/write to a tenant document if their profile's tenantId matches
-    match /tenants/{tenantId} {
-      allow read, write: if request.auth != null && 
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.tenantId == tenantId;
-      // Allow creation of the tenant document if it doesn't exist yet by an authenticated user
-      allow create: if request.auth != null && !exists(/databases/$(database)/documents/tenants/$(tenantId));
+    // Rules for the 'workshop_data' collection which holds all tenant data
+    match /workshop_data/{docId} {
+      // Any authenticated user can read and write to the workshop data document.
+      // This is a simplified rule for a single-tenant application.
+      // Security is managed by Firebase Auth (user must be logged in).
+      allow read, write: if isAuthenticated();
     }
-
-    // Publicly readable collections
-    match /publicServices/{serviceId} {
-      allow read: if true;
-      allow write: if request.auth != null; // Allow signed-in users (from the app) to write/update signatures
-    }
-    match /publicQuotes/{quoteId} {
+    
+    // Rules for public-facing documents
+    match /publicServices/{docId} {
+        // Anyone can read a public document.
         allow read: if true;
+        // Only authenticated users can create/update.
+        // Update is used for signing.
+        allow write: if isAuthenticated();
     }
-    match /publicOwnerReports/{reportId} {
+    
+    match /publicQuotes/{docId} {
+        // Anyone can read a public document.
         allow read: if true;
+        // Only authenticated users can create/update.
+        allow write: if isAuthenticated();
     }
   }
 }
