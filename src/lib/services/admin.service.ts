@@ -37,8 +37,7 @@ const saveUser = async (user: User, isEditing: boolean): Promise<User> => {
     }
     
     await logAudit(isEditing ? 'Editar' : 'Crear', description, { entityType: 'Usuario', entityId: user.id || 'new' });
-    // Audit log function already persists
-    // await persistToFirestore(['users', 'auditLogs']); 
+    await persistToFirestore(['users']); // Explicitly persist user changes
     return user;
 };
 

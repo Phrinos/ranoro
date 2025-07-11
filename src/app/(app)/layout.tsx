@@ -1,16 +1,17 @@
 
 "use client";
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/layout/app-sidebar";
-import { hydrateFromFirestore, placeholderUsers, AUTH_USER_LOCALSTORAGE_KEY, persistToFirestore, defaultSuperAdmin } from '@/lib/placeholder-data';
+import { hydrateFromFirestore, AUTH_USER_LOCALSTORAGE_KEY, defaultSuperAdmin } from '@/lib/placeholder-data';
 import { onAuthStateChanged, signOut } from 'firebase/auth'; 
-import { auth } from '@/lib/firebaseClient.js';
+import { auth, db } from '@/lib/firebaseClient.js';
 import { Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import type { User } from '@/types';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 
 declare global {
   interface Window {
@@ -28,101 +29,95 @@ export default function AppLayout({
   const [authStatus, setAuthStatus] = useState<'loading' | 'unauthenticated' | 'authenticated'>('loading');
   const [isHydrating, setIsHydrating] = useState(true);
 
+  const handleLogout = useCallback(async (message?: string) => {
+      if (auth) {
+        await signOut(auth);
+      }
+      localStorage.removeItem(AUTH_USER_LOCALSTORAGE_KEY);
+      setAuthStatus('unauthenticated');
+      if (message) {
+        toast({ title: "Error de Acceso", description: message, variant: "destructive" });
+      }
+      router.push('/login');
+  }, [router, toast]);
+
   useEffect(() => {
-    // This check is crucial for Firebase to work. If it's not configured, nothing will work.
-    if (!auth) {
-      console.error("Firebase no está configurado. La aplicación no puede funcionar. Revisa tu archivo firebaseClient.js");
+    if (!auth || !db) {
+      console.error("Firebase no está configurado. La aplicación no puede funcionar.");
       toast({ title: "Error Crítico de Configuración", description: "La conexión con Firebase no está disponible.", variant: "destructive", duration: Infinity });
-      setAuthStatus('unauthenticated'); // Prevent infinite loading
+      setAuthStatus('unauthenticated');
       setIsHydrating(false);
-      // Don't route here, as it might cause loops. Let the component render a message or fail.
       return; 
     }
 
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
-        setAuthStatus('authenticated');
-        setIsHydrating(true);
         try {
-          // Attempt to hydrate all app data from the tenant document
-          await hydrateFromFirestore();
+          setIsHydrating(true);
+          
+          // STEP 1: Get user profile from /users collection
+          const userDocRef = doc(db, 'users', firebaseUser.uid);
+          let userDocSnap = await getDoc(userDocRef);
+          let appUser: User | null = null;
+          let tenantId: string | null = null;
 
-          // After hydrating, find the specific app user profile from the now-hydrated placeholderUsers
-          let appUser = placeholderUsers.find(u => u.id === firebaseUser.uid);
-
-          // If user exists in Firebase Auth but not in our user collection (e.g., first login for a pre-seeded auth user)
-          if (!appUser && firebaseUser.email) {
-            console.log(`User with UID ${firebaseUser.uid} not found. Attempting to create profile...`);
-
-            // This is a new user or a user whose profile doesn't exist yet.
-            // Create a new user profile object.
-            const newUser: User = {
-              id: firebaseUser.uid,
-              email: firebaseUser.email!,
-              name: firebaseUser.displayName || firebaseUser.email!.split('@')[0],
-              role: 'Tecnico', // Default role for new users
-              tenantId: defaultSuperAdmin.tenantId, // Assign the default tenantId
-            };
-            
-            // Add the new user to the local placeholder array
-            placeholderUsers.push(newUser);
-            
-            // Persist ONLY the users array to Firestore, which now includes the new user.
-            // The security rules allow a user to create their own profile.
-            await persistToFirestore(['users']);
-            
-            appUser = newUser; // Set the newly created user as the current appUser
-            toast({ title: "¡Bienvenido!", description: `Hemos creado un perfil para ti.` });
+          if (!userDocSnap.exists()) {
+            // This is likely the very first login for the superadmin. Create their profile.
+            console.log(`User profile for ${firebaseUser.uid} not found. Creating...`);
+            const newUserProfile: User = { ...defaultSuperAdmin, id: firebaseUser.uid, email: firebaseUser.email! };
+            await setDoc(userDocRef, newUserProfile);
+            userDocSnap = await getDoc(userDocRef); // Re-fetch the doc
+            if (!userDocSnap.exists()) {
+                 throw new Error("No se pudo crear el perfil de usuario inicial.");
+            }
+          }
+          
+          appUser = userDocSnap.data() as User;
+          tenantId = appUser.tenantId || null;
+          
+          if (!tenantId) {
+            await handleLogout("Tu perfil no tiene un taller asignado. Contacta al administrador.");
+            return;
           }
 
-          // At this point, appUser should exist.
-          if (appUser) {
-            localStorage.setItem(AUTH_USER_LOCALSTORAGE_KEY, JSON.stringify(appUser));
-            setIsHydrating(false);
-          } else {
-            // This case should ideally not be reached, but as a fallback:
-            throw new Error("No se pudo encontrar o crear un perfil de usuario.");
-          }
+          // STEP 2: Now that we have the tenantId, hydrate the rest of the data.
+          await hydrateFromFirestore(tenantId);
+          
+          // STEP 3: Set local state and finish loading.
+          localStorage.setItem(AUTH_USER_LOCALSTORAGE_KEY, JSON.stringify(appUser));
+          setAuthStatus('authenticated');
+          setIsHydrating(false);
 
         } catch (error: any) {
-          console.error("Error during hydration or user setup:", error);
-          toast({ title: "Error de Carga", description: error.message || "No se pudieron cargar los datos del taller. Por favor, intente de nuevo.", variant: "destructive", duration: 5000 });
-          await signOut(auth);
-          setAuthStatus('unauthenticated');
-          router.push('/login');
+          console.error("Error during authentication or data hydration:", error);
+          await handleLogout(error.message || "Error al cargar los datos del taller.");
         }
       } else {
         setAuthStatus('unauthenticated');
+        setIsHydrating(false); // No user, stop hydrating
         router.replace('/login');
       }
     });
 
     return () => unsubscribe();
-  }, [router, toast]);
+  }, [router, toast, handleLogout]);
 
 
-  if (authStatus === 'loading') {
+  if (authStatus === 'loading' || isHydrating) {
     return (
       <div className="flex h-screen w-full items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin" />
-        <p className="text-lg ml-4">Iniciando aplicación...</p>
+        <p className="text-lg ml-4">{authStatus === 'loading' ? 'Verificando sesión...' : 'Cargando datos del taller...'}</p>
       </div>
     );
   }
 
   if (authStatus === 'unauthenticated') {
+     // Render nothing, the effect will redirect.
+     // This avoids a flash of the login page if already logged in.
     return null;
   }
   
-  if (isHydrating) {
-      return (
-        <div className="flex h-screen w-full items-center justify-center">
-            <Loader2 className="h-8 w-8 animate-spin" />
-            <p className="text-lg ml-4">Cargando datos del taller...</p>
-        </div>
-      );
-  }
-
   return (
     <SidebarProvider defaultOpen={true}>
       <AppSidebar key={isHydrating ? 'hydrating' : 'hydrated'} />
