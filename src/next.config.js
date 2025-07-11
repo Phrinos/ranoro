@@ -23,9 +23,10 @@ const nextConfig = {
     ],
   },
   
-  // This allows connections from the cloud workstation that hosts the IDE
-  // This was moved from the 'dev' object to the root level.
-  allowedDevOrigins: ['https://*.cloudworkstations.dev'],
+  devIndicators: {
+    // This allows connections from the cloud workstation that hosts the IDE
+    allowedDevOrigins: ['https://*.cloudworkstations.dev'],
+  },
 
   async headers() {
     return [
