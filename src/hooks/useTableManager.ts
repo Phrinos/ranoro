@@ -54,16 +54,31 @@ export function useTableManager<T extends { [key: string]: any }>({
     
     // Generic sorter - can be expanded
     data.sort((a, b) => {
+      // Safe date parsing for sorting
+      const safeParse = (dateString: any): Date | null => {
+          if (!dateString || typeof dateString !== 'string') return null;
+          const parsed = parseISO(dateString);
+          return isValid(parsed) ? parsed : null;
+      };
+
+      const dateA = safeParse(a[dateFilterKey]);
+      const dateB = safeParse(b[dateFilterKey]);
+      
+      // Treat items without a valid date as "older"
+      if (!dateA && dateB) return 1;
+      if (dateA && !dateB) return -1;
+      if (!dateA && !dateB) return 0;
+      
       switch (sortOption) {
         case 'date_asc':
-          return compareAsc(parseISO(a[dateFilterKey]), parseISO(b[dateFilterKey]));
+          return compareAsc(dateA!, dateB!);
         case 'total_desc':
             return (b.totalAmount ?? b.totalCost ?? 0) - (a.totalAmount ?? a.totalCost ?? 0);
         case 'total_asc':
             return (a.totalAmount ?? a.totalCost ?? 0) - (b.totalAmount ?? b.totalCost ?? 0);
         case 'date_desc':
         default:
-          return compareDesc(parseISO(a[dateFilterKey]), parseISO(b[dateFilterKey]));
+          return compareDesc(dateA!, dateB!);
       }
     });
 
