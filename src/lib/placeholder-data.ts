@@ -44,6 +44,7 @@ import {
   endOfDay,
 } from 'date-fns';
 import { es } from 'date-fns/locale';
+// Use the authenticated client for all Firestore operations in this file
 import { db } from '@/lib/firebaseClient.js';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 
@@ -281,6 +282,7 @@ export async function hydrateFromFirestore() {
     return;
   }
   
+  // Explicitly use the authenticated 'db' instance for reading workshop data
   const docRef = doc(db, 'workshop_data', DATA_STORE_ID);
   
   try {
@@ -317,6 +319,7 @@ export async function hydrateFromFirestore() {
 export async function persistToFirestore(
   keysToUpdate?: (keyof typeof DATA_ARRAYS)[]
 ) {
+  // Explicitly use the authenticated 'db' instance for writing workshop data
   if (!db) {
     console.warn('Persist skipped: Firebase not configured.');
     return;
@@ -338,7 +341,7 @@ export async function persistToFirestore(
           name: 'Superadmin',
           permissions: ALL_AVAILABLE_PERMISSIONS.map(p => p.id)
       });
-      dataToPersist['appRoles'] = placeholderAppRoles;
+      dataTo_persist['appRoles'] = placeholderAppRoles;
   }
   
   const sanitizedData = sanitizeObjectForFirestore(dataToPersist);
