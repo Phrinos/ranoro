@@ -3,8 +3,8 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { signInWithEmailAndPassword, onAuthStateChanged } from 'firebase/auth';
-import { doc, getDoc } from 'firebase/firestore';
+import { signInWithEmailAndPassword } from 'firebase/auth';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebaseClient.js';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
@@ -56,17 +56,10 @@ export default function LoginPage() {
         toast({ title: '¡Bienvenido!', description: 'Has iniciado sesión correctamente.' });
         router.push('/dashboard');
       } else {
-          // If profile doesn't exist, create a basic one before redirecting
-          const ranoroUser: RanoroUser = {
-              id: user.uid,
-              name: user.displayName || user.email || 'Nuevo Usuario',
-              email: user.email!,
-              role: 'Admin', // Default role for a new user
-          };
-          await setDoc(userDocRef, ranoroUser);
-          localStorage.setItem(AUTH_USER_LOCALSTORAGE_KEY, JSON.stringify(ranoroUser));
-          toast({ title: '¡Bienvenido!', description: 'Perfil creado y sesión iniciada.' });
-          router.push('/dashboard');
+        // The user exists in Firebase Auth, but not in our /users collection.
+        // This is an error state. We should not create users from the login page.
+        // Users should be created from the admin panel.
+        throw new Error("El perfil de usuario no se encuentra en la base de datos. Contacte a un administrador.");
       }
       
     } catch (error: any) {
@@ -76,7 +69,10 @@ export default function LoginPage() {
           errorMessage = 'El correo o la contraseña son incorrectos.';
       } else if (error.code === 'auth/too-many-requests') {
           errorMessage = 'Demasiados intentos fallidos. Por favor, inténtalo de nuevo más tarde.';
+      } else if (error.message) {
+          errorMessage = error.message;
       }
+      
       toast({
         title: 'Error de Inicio de Sesión',
         description: errorMessage,
