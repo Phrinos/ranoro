@@ -18,7 +18,8 @@ export default function LegalLayout({
               alt="Ranoro Logo"
               width={140}
               height={40}
-              className="dark:invert"
+              className="dark:invert h-auto"
+              style={{width: '140px'}}
               data-ai-hint="ranoro logo"
             />
           </Link>
@@ -33,9 +34,8 @@ export default function LegalLayout({
                  <Image
                     src="/login.png"
                     alt="Mecánico trabajando en un vehículo"
-                    layout="fill"
-                    objectFit="cover"
-                    className="object-center"
+                    fill
+                    className="object-cover object-center"
                     data-ai-hint="mechanic workshop"
                 />
             </div>

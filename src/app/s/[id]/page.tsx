@@ -270,7 +270,7 @@ export default function PublicServiceSheetPage() {
             </DialogHeader>
             <div className="relative aspect-video w-full">
                 {viewingImageUrl && (
-                    <Image src={viewingImageUrl} alt="Vista ampliada de evidencia" layout="fill" objectFit="contain" crossOrigin="anonymous" />
+                    <Image src={viewingImageUrl} alt="Vista ampliada de evidencia" fill className="object-contain" crossOrigin="anonymous" />
                 )}
             </div>
             <DialogFooter className="mt-2 print:hidden">

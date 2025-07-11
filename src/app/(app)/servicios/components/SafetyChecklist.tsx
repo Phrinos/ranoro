@@ -123,7 +123,7 @@ const ChecklistItemPhotoUploader = ({
                         className="relative aspect-video w-full bg-muted rounded-md overflow-hidden group"
                         onClick={() => onViewImage(url)}
                     >
-                        <Image src={url} alt={`Foto ${index + 1}`} layout="fill" objectFit="cover" className="transition-transform duration-300 group-hover:scale-105"/>
+                        <Image src={url} alt={`Foto ${index + 1}`} fill objectFit="cover" className="transition-transform duration-300 group-hover:scale-105"/>
                          <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity group-hover:opacity-100">
                             <Eye className="h-6 w-6 text-white" />
                         </div>
@@ -294,7 +294,7 @@ export const SafetyChecklist = ({ control, isReadOnly, onSignatureClick, signatu
             <div className="mt-2 p-2 min-h-[100px] border rounded-md bg-muted/50 flex items-center justify-center">
                 {signatureDataUrl ? (
                     <div className="relative w-full h-full max-w-[200px] aspect-video">
-                        <Image src={signatureDataUrl} alt="Firma del técnico" layout="fill" objectFit="contain" />
+                        <Image src={signatureDataUrl} alt="Firma del técnico" fill className="object-contain" />
                     </div>
                 ) : (
                     <span className="text-sm text-muted-foreground">Firma pendiente</span>
