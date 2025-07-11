@@ -21,40 +21,26 @@ export default function AppLayout({
   const router = useRouter();
 
   useEffect(() => {
+    // This effect runs only on the client side
     const checkAuthAndHydrate = async () => {
       const authUserString = localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY);
       
       if (!authUserString) {
-        // No user data in storage, redirect to login
         router.push('/login');
-        return; // Stop execution here
+        return; 
       }
       
       try {
-        // User data exists, proceed to hydrate the app data
         await hydrateFromFirestore();
-        // Once hydration is complete, stop loading and show the app
         setIsLoading(false);
       } catch (error) {
         console.error("Hydration failed:", error);
-        // Handle hydration error, maybe clear user and redirect
         localStorage.removeItem(AUTH_USER_LOCALSTORAGE_KEY);
         router.push('/login');
       }
     };
     
     checkAuthAndHydrate();
-    
-    // Optional: You can still listen for auth changes to handle token expiration
-    // or manual sign-outs from other tabs, but the primary guard is the localStorage check.
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-        if (!user) {
-            localStorage.removeItem(AUTH_USER_LOCALSTORAGE_KEY);
-            router.push('/login');
-        }
-    });
-
-    return () => unsubscribe();
     
   }, [router]);
 

@@ -19,20 +19,18 @@ import type { User as RanoroUser } from '@/types';
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [isLoading, setIsLoading] = useState(true); // Start loading to check auth state
+  const [isLoading, setIsLoading] = useState(false);
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   const router = useRouter();
   const { toast } = useToast();
 
   useEffect(() => {
-    // Check if user is already logged in on initial load
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (user && localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY)) {
-        router.push('/dashboard');
-      } else {
-        setIsLoading(false); // Only stop loading if there's no user
-      }
-    });
-    return () => unsubscribe();
+    // This effect runs only on the client
+    if (localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY)) {
+      router.push('/dashboard');
+    } else {
+      setIsCheckingAuth(false);
+    }
   }, [router]);
 
   const handleLogin = async (event: React.FormEvent) => {
@@ -49,23 +47,26 @@ export default function LoginPage() {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
-      // --- CRITICAL STEP: Fetch user profile data and store it BEFORE redirecting ---
-      const userDocRef = doc(db, "database", "main");
+      const userDocRef = doc(db, "users", user.uid);
       const docSnap = await getDoc(userDocRef);
-
+      
       if (docSnap.exists()) {
-        const allUsers = docSnap.data().users as RanoroUser[];
-        const ranoroUser = allUsers.find(u => u.id === user.uid);
-        
-        if (ranoroUser) {
-          localStorage.setItem(AUTH_USER_LOCALSTORAGE_KEY, JSON.stringify(ranoroUser));
-          toast({ title: '¡Bienvenido!', description: 'Has iniciado sesión correctamente.' });
-          router.push('/dashboard'); // Now it's safe to redirect
-        } else {
-          throw new Error("User profile not found in main database.");
-        }
+        const ranoroUser = docSnap.data() as RanoroUser;
+        localStorage.setItem(AUTH_USER_LOCALSTORAGE_KEY, JSON.stringify(ranoroUser));
+        toast({ title: '¡Bienvenido!', description: 'Has iniciado sesión correctamente.' });
+        router.push('/dashboard');
       } else {
-        throw new Error("Main data document not found.");
+          // If profile doesn't exist, create a basic one before redirecting
+          const ranoroUser: RanoroUser = {
+              id: user.uid,
+              name: user.displayName || user.email || 'Nuevo Usuario',
+              email: user.email!,
+              role: 'Admin', // Default role for a new user
+          };
+          await setDoc(userDocRef, ranoroUser);
+          localStorage.setItem(AUTH_USER_LOCALSTORAGE_KEY, JSON.stringify(ranoroUser));
+          toast({ title: '¡Bienvenido!', description: 'Perfil creado y sesión iniciada.' });
+          router.push('/dashboard');
       }
       
     } catch (error: any) {
@@ -85,7 +86,7 @@ export default function LoginPage() {
     } 
   };
   
-  if (isLoading) {
+  if (isCheckingAuth) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gray-100 dark:bg-gray-900">
         <Loader2 className="h-8 w-8 animate-spin" />
