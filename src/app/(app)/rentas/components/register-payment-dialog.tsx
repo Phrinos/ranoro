@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect } from 'react';
@@ -17,13 +18,14 @@ import type { Driver, Vehicle } from "@/types";
 import { DollarSign } from 'lucide-react';
 import { subDays, isBefore, parseISO, isValid } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
+import { Textarea } from '@/components/ui/textarea';
 
 interface RegisterPaymentDialogProps {
   open: boolean;
   onOpenChange: (isOpen: boolean) => void;
   drivers: Driver[];
   vehicles: Vehicle[];
-  onSave: (driverId: string, amount: number, mileage?: number) => void;
+  onSave: (driverId: string, amount: number, note: string | undefined, mileage?: number) => void;
 }
 
 export function RegisterPaymentDialog({
@@ -37,6 +39,7 @@ export function RegisterPaymentDialog({
   const [selectedDriverId, setSelectedDriverId] = useState('');
   const [amount, setAmount] = useState<number | ''>('');
   const [mileage, setMileage] = useState<number | ''>('');
+  const [note, setNote] = useState('');
   const [needsMileageUpdate, setNeedsMileageUpdate] = useState(false);
 
   useEffect(() => {
@@ -45,6 +48,7 @@ export function RegisterPaymentDialog({
       setSelectedDriverId('');
       setAmount('');
       setMileage('');
+      setNote('');
       setNeedsMileageUpdate(false);
       return;
     }
@@ -71,6 +75,7 @@ export function RegisterPaymentDialog({
     } else {
         setAmount('');
         setMileage('');
+        setNote('');
         setNeedsMileageUpdate(false);
     }
   }, [selectedDriverId, drivers, vehicles, open]);
@@ -89,7 +94,7 @@ export function RegisterPaymentDialog({
         return;
     }
 
-    onSave(selectedDriverId, Number(amount), mileage !== '' ? Number(mileage) : undefined);
+    onSave(selectedDriverId, Number(amount), note, mileage !== '' ? Number(mileage) : undefined);
     onOpenChange(false);
   };
 
@@ -128,6 +133,10 @@ export function RegisterPaymentDialog({
                 <p className="text-sm text-muted-foreground">Se requiere actualizar el kilometraje (última vez hace más de 7 días).</p>
             </div>
           )}
+          <div className="space-y-2">
+            <Label htmlFor="note-input">Concepto o Nota (Opcional)</Label>
+            <Textarea id="note-input" value={note} onChange={(e) => setNote(e.target.value)} placeholder="Ej: Pago de renta semana 25" />
+          </div>
         </div>
         <DialogFooter>
           <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>

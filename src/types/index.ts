@@ -99,6 +99,7 @@ export interface RentalPayment {
   paymentDate: string; // ISO String
   amount: number;
   daysCovered: number;
+  note?: string;
 }
 
 export interface OwnerWithdrawal {
