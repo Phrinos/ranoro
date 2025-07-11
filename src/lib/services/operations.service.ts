@@ -1,70 +1,79 @@
 
+
 import type { ServiceRecord, QuoteRecord, SaleReceipt } from "@/types";
-import { placeholderServiceRecords, placeholderSales, persistToFirestore, logAudit, placeholderInventory } from "@/lib/placeholder-data";
+import { logAudit } from "../placeholder-data";
 import { savePublicDocument } from '@/lib/public-document';
 import { inventoryService } from './inventory.service';
-import { personnelService } from './personnel.service';
+import { db } from '@/lib/firebaseClient.js';
+import { collection, onSnapshot, doc, setDoc, addDoc, getDoc } from 'firebase/firestore';
 
 
-const getServices = async (): Promise<ServiceRecord[]> => {
-    return [...placeholderServiceRecords];
+const onServicesUpdate = (callback: (services: ServiceRecord[]) => void): (() => void) => {
+    return onSnapshot(collection(db, 'serviceRecords'), snapshot => {
+        const services = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ServiceRecord));
+        callback(services);
+    });
 };
 
-const getSales = async (): Promise<SaleReceipt[]> => {
-    return [...placeholderSales];
+const onSalesUpdate = (callback: (sales: SaleReceipt[]) => void): (() => void) => {
+    return onSnapshot(collection(db, 'sales'), snapshot => {
+        const sales = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as SaleReceipt));
+        callback(sales);
+    });
 };
 
 const updateService = async (serviceId: string, data: ServiceRecord | QuoteRecord): Promise<ServiceRecord> => {
-    const pIndex = placeholderServiceRecords.findIndex(s => s.id === serviceId);
-    if (pIndex === -1) throw new Error("Service not found");
-    
     const serviceToSave = data as ServiceRecord;
-    placeholderServiceRecords[pIndex] = serviceToSave;
+    await setDoc(doc(db, "serviceRecords", serviceId), serviceToSave, { merge: true });
 
-    await savePublicDocument('service', serviceToSave, await inventoryService.getVehicleById(serviceToSave.vehicleId), {});
-    await persistToFirestore(['serviceRecords']);
+    const vehicle = await getDoc(doc(db, "vehicles", serviceToSave.vehicleId));
+    await savePublicDocument('service', serviceToSave, vehicle.data(), {});
     
     return serviceToSave;
 };
 
 const cancelService = async (serviceId: string, reason: string): Promise<void> => {
-    const pIndex = placeholderServiceRecords.findIndex(s => s.id === serviceId);
-    if (pIndex !== -1) {
-        placeholderServiceRecords[pIndex].status = 'Cancelado';
-        placeholderServiceRecords[pIndex].cancellationReason = reason;
-        await logAudit('Cancelar', `Canceló el servicio #${serviceId} por: ${reason}`, { entityType: 'Servicio', entityId: serviceId });
-        await persistToFirestore(['serviceRecords', 'auditLogs']);
-    }
+    await setDoc(doc(db, "serviceRecords", serviceId), {
+        status: 'Cancelado',
+        cancellationReason: reason,
+    }, { merge: true });
+    
+    const newLog = logAudit('Cancelar', `Canceló el servicio #${serviceId} por: ${reason}`, { entityType: 'Servicio', entityId: serviceId });
+    await addDoc(collection(db, 'auditLogs'), newLog);
 };
 
 const completeService = async (serviceId: string, paymentDetails: { paymentMethod: any, cardFolio?: string, transferFolio?: string }): Promise<ServiceRecord> => {
-    const serviceIndex = placeholderServiceRecords.findIndex(s => s.id === serviceId);
-    if (serviceIndex === -1) throw new Error("Service not found");
+    const serviceRef = doc(db, 'serviceRecords', serviceId);
+    const serviceSnap = await getDoc(serviceRef);
+    if (!serviceSnap.exists()) throw new Error("Service not found");
 
-    const updatedService: ServiceRecord = {
-      ...placeholderServiceRecords[serviceIndex],
+    const updatedServiceData: Partial<ServiceRecord> = {
       status: 'Entregado',
       deliveryDateTime: new Date().toISOString(),
       ...paymentDetails,
     };
     
-    (updatedService.serviceItems || []).forEach(item => {
-      (item.suppliesUsed || []).forEach(supply => {
-        const inventoryItemIndex = placeholderInventory.findIndex(invItem => invItem.id === supply.supplyId);
-        if (inventoryItemIndex !== -1 && !placeholderInventory[inventoryItemIndex].isService) {
-          placeholderInventory[inventoryItemIndex].quantity -= supply.quantity;
-        }
-      });
-    });
+    await setDoc(serviceRef, updatedServiceData, { merge: true });
 
-    placeholderServiceRecords[serviceIndex] = updatedService;
-    await persistToFirestore(['serviceRecords', 'inventory']);
-    return updatedService;
+    // Update inventory stock
+    const service = serviceSnap.data() as ServiceRecord;
+    for (const item of service.serviceItems || []) {
+      for (const supply of item.suppliesUsed || []) {
+        const inventoryItemRef = doc(db, 'inventory', supply.supplyId);
+        const invSnap = await getDoc(inventoryItemRef);
+        if (invSnap.exists() && !invSnap.data().isService) {
+            const currentQuantity = invSnap.data().quantity || 0;
+            await setDoc(inventoryItemRef, { quantity: currentQuantity - supply.quantity }, { merge: true });
+        }
+      }
+    }
+    
+    return { ...service, ...updatedServiceData } as ServiceRecord;
 };
 
 export const operationsService = {
-    getServices,
-    getSales,
+    onServicesUpdate,
+    onSalesUpdate,
     updateService,
     cancelService,
     completeService,

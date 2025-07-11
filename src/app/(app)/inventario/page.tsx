@@ -6,8 +6,7 @@ import { useSearchParams } from 'next/navigation';
 import { Button } from "@/components/ui/button";
 import { PlusCircle } from "lucide-react";
 import { InventoryItemDialog } from "./components/inventory-item-dialog";
-import { hydrateReady } from "@/lib/placeholder-data";
-import type { InventoryItem, InventoryCategory, Supplier, User, CashDrawerTransaction, PurchaseRecommendation } from "@/types";
+import type { InventoryItem, InventoryCategory, Supplier, CashDrawerTransaction, PurchaseRecommendation } from "@/types";
 import type { InventoryItemFormValues } from "./components/inventory-item-form";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -18,56 +17,45 @@ import { ProductosContent } from './components/productos-content';
 import { CategoriasContent } from './components/categorias-content';
 import { ProveedoresContent } from './components/proveedores-content';
 import { AnalisisIaContent } from './components/analisis-ia-content';
-
 import { inventoryService } from '@/lib/services/inventory.service';
-import { operationsService } from '@/lib/services/operations.service';
-
+import { Loader2 } from 'lucide-react';
 
 function InventarioPageComponent() {
   const searchParams = useSearchParams();
   const defaultTab = searchParams.get('tab') || 'informe';
 
-  // ======== SHARED STATE ========
   const { toast } = useToast();
-  const [version, setVersion] = useState(0);
-  const [hydrated, setHydrated] = useState(false);
   const [activeTab, setActiveTab] = useState(defaultTab);
   
-  // ======== DATA STATE ========
   const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
   const [categories, setCategories] = useState<InventoryCategory[]>([]);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // ======== HYDRATION & SYNC ========
   useEffect(() => {
-    const loadData = async () => {
-        await hydrateReady;
-        setInventoryItems(await inventoryService.getItems());
-        setCategories(await inventoryService.getCategories());
-        setSuppliers(await inventoryService.getSuppliers());
-        setHydrated(true);
-    };
-
-    const handleDbUpdate = async () => {
-        setVersion(v => v + 1);
-        setInventoryItems(await inventoryService.getItems());
-        setCategories(await inventoryService.getCategories());
-        setSuppliers(await inventoryService.getSuppliers());
-    };
+    const unsubs: (() => void)[] = [];
     
-    loadData();
+    setIsLoading(true);
+    unsubs.push(inventoryService.onItemsUpdate(setInventoryItems));
+    unsubs.push(inventoryService.onCategoriesUpdate(setCategories));
+    unsubs.push(inventoryService.onSuppliersUpdate((data) => {
+      setSuppliers(data);
+      setIsLoading(false); // Assume this is the last one to load
+    }));
 
-    window.addEventListener('databaseUpdated', handleDbUpdate);
-    return () => window.removeEventListener('databaseUpdated', handleDbUpdate);
+    return () => unsubs.forEach(unsub => unsub());
   }, []);
 
-  // ======== NEW PURCHASE FLOW ========
   const [isRegisterPurchaseOpen, setIsRegisterPurchaseOpen] = useState(false);
 
   const handleSavePurchase = useCallback(async (data: PurchaseFormValues) => {
-    await inventoryService.registerPurchase(data);
-    toast({ title: "Compra Registrada", description: `La compra al proveedor ha sido registrada con éxito.` });
-    setIsRegisterPurchaseOpen(false);
+    try {
+      await inventoryService.registerPurchase(data);
+      toast({ title: "Compra Registrada", description: `La compra ha sido registrada con éxito.` });
+      setIsRegisterPurchaseOpen(false);
+    } catch (e) {
+      toast({ title: "Error", description: e instanceof Error ? e.message : "No se pudo registrar la compra.", variant: "destructive" });
+    }
   }, [toast]);
   
   const handleInventoryItemCreated = useCallback(async (itemData: InventoryItemFormValues): Promise<InventoryItem> => {
@@ -76,9 +64,8 @@ function InventarioPageComponent() {
       return newItem;
   }, [toast]);
 
-
-  if (!hydrated) {
-    return <div className="text-center py-10">Cargando datos del inventario...</div>;
+  if (isLoading) {
+    return <div className="flex justify-center items-center h-64"><Loader2 className="h-8 w-8 animate-spin" /></div>;
   }
 
   return (

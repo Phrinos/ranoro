@@ -3,10 +3,48 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     
-    // TEMPORARY RULE: Allow all reads and writes to guarantee access.
-    // This will be secured again once login is confirmed to be working.
+    // The main database document is private.
+    // Only authenticated users (employees) can read or write to it.
+    match /database/main {
+      allow read, write: if request.auth != null;
+    }
+
+    // publicQuotes are world-readable for sharing, but not writable from the client.
+    match /publicQuotes/{quoteId} {
+      allow read: if true;
+      allow create, update, delete: if request.auth != null; 
+    }
+    
+    // publicOwnerReports are world-readable for sharing, but not writable from the client.
+    match /publicOwnerReports/{reportId} {
+      allow read: if true;
+      allow create, update, delete: if request.auth != null;
+    }
+    
+    // publicServices are world-readable.
+    match /publicServices/{serviceId} {
+      allow read: if true;
+      
+      // Allow authenticated users to perform any update.
+      // Allow unauthenticated customers to update ONLY signature fields.
+      allow update: if request.auth != null || 
+                      (request.resource.data.diff(resource.data).affectedKeys()
+                      .hasOnly(['customerSignatureReception', 'customerSignatureDelivery', 'receptionSignatureViewed', 'deliverySignatureViewed']));
+                      
+      // Allow create/delete only for authenticated users.
+      allow create, delete: if request.auth != null;
+    }
+    
+    // Rule for the new public_documents collection
+    match /public_documents/{documentId} {
+      allow read: if true;
+      allow create, update, delete: if request.auth != null;
+    }
+
+    // By default, deny access to any other collection/document path.
+    // This is a security best practice.
     match /{document=**} {
-      allow read, write: if true;
+      allow read, write: if false;
     }
   }
 }

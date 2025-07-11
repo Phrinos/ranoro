@@ -6,13 +6,11 @@ import React, { useState, useEffect, useMemo, useCallback, Suspense, useRef } fr
 import { ServiceDialog } from "../components/service-dialog";
 import { UnifiedPreviewDialog } from '@/components/shared/unified-preview-dialog';
 import { CompleteServiceDialog } from '../components/CompleteServiceDialog';
-import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
-import { TicketContent } from '@/components/ticket-content';
 import { TableToolbar } from '@/components/shared/table-toolbar';
 import type { ServiceRecord, Vehicle, Technician, InventoryItem, QuoteRecord, User } from "@/types";
 import { useToast } from "@/hooks/use-toast";
 import { useTableManager } from '@/hooks/useTableManager';
-import { isSameDay, parseISO, isValid, isAfter } from "date-fns";
+import { isSameDay, parseISO, isValid } from "date-fns";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useSearchParams } from "next/navigation";
 import { operationsService } from '@/lib/services/operations.service';
@@ -20,6 +18,7 @@ import { personnelService } from '@/lib/services/personnel.service';
 import { inventoryService } from '@/lib/services/inventory.service';
 import { adminService } from '@/lib/services/admin.service';
 import { ServiceAppointmentCard } from '../components/ServiceAppointmentCard';
+import { Loader2 } from 'lucide-react';
 
 function HistorialServiciosPageComponent() {
   const { toast } = useToast();
@@ -30,8 +29,8 @@ function HistorialServiciosPageComponent() {
   const [vehicles, setVehicles] = useState<Vehicle[]>([]); 
   const [technicians, setTechnicians] = useState<Technician[]>([]);
   const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
-  const [version, setVersion] = useState(0);
-
+  const [isLoading, setIsLoading] = useState(true);
+  
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editingService, setEditingService] = useState<ServiceRecord | null>(null);
   
@@ -41,29 +40,19 @@ function HistorialServiciosPageComponent() {
   const [serviceToComplete, setServiceToComplete] = useState<ServiceRecord | null>(null);
   const [isCompleteDialogOpen, setIsCompleteDialogOpen] = useState(false);
   
-  const [isTicketDialogOpen, setIsTicketDialogOpen] = useState(false);
-  const [ticketData, setTicketData] = useState<{service: ServiceRecord, vehicle?: Vehicle, technician?: Technician} | null>(null);
-  const ticketContentRef = useRef<HTMLDivElement>(null);
-  
   useEffect(() => {
-    const loadData = async () => {
-        setAllServices(await operationsService.getServices());
-        setVehicles(await inventoryService.getVehicles());
-        setTechnicians(await personnelService.getTechnicians());
-        setInventoryItems(await inventoryService.getItems());
-    };
-    loadData();
+    const unsubs: (() => void)[] = [];
+    setIsLoading(true);
 
-    const handleDbUpdate = async () => {
-        setVersion(v => v + 1);
-        setAllServices(await operationsService.getServices());
-        setVehicles(await inventoryService.getVehicles());
-        setTechnicians(await personnelService.getTechnicians());
-        setInventoryItems(await inventoryService.getItems());
-    };
-    
-    window.addEventListener('databaseUpdated', handleDbUpdate);
-    return () => window.removeEventListener('databaseUpdated', handleDbUpdate);
+    unsubs.push(operationsService.onServicesUpdate(setAllServices));
+    unsubs.push(inventoryService.onVehiclesUpdate(setVehicles));
+    unsubs.push(personnelService.onTechniciansUpdate(setTechnicians));
+    unsubs.push(inventoryService.onItemsUpdate((data) => {
+        setInventoryItems(data);
+        setIsLoading(false);
+    }));
+
+    return () => unsubs.forEach(unsub => unsub());
   }, []);
   
   const activeServices = useMemo(() => {
@@ -77,29 +66,18 @@ function HistorialServiciosPageComponent() {
             const serviceDate = s.serviceDate ? parseISO(s.serviceDate) : null;
             const isScheduledForToday = serviceDate && isValid(serviceDate) && isSameDay(serviceDate, today);
 
-            if (status === 'En Taller' || status === 'Reparando') {
-                return true;
-            }
-            
-            if ((status === 'Entregado' || status === 'Completado') && isDeliveredToday) {
-                return true;
-            }
-            
-            if (status === 'Agendado' && isScheduledForToday) {
-                return true;
-            }
+            if (status === 'En Taller' || status === 'Reparando') return true;
+            if ((status === 'Entregado' || status === 'Completado') && isDeliveredToday) return true;
+            if (status === 'Agendado' && isScheduledForToday) return true;
             
             return false;
         })
         .sort((a,b) => {
             const dateA = a.serviceDate ? parseISO(a.serviceDate) : new Date(0);
             const dateB = b.serviceDate ? parseISO(b.serviceDate) : new Date(0);
-            if(isValid(dateA) && isValid(dateB)) {
-                return dateA.getTime() - dateB.getTime();
-            }
-            return 0;
+            return isValid(dateA) && isValid(dateB) ? dateA.getTime() - dateB.getTime() : 0;
         });
-  }, [allServices, version]);
+  }, [allServices]);
 
   const {
     filteredData: historicalServices,
@@ -114,7 +92,8 @@ function HistorialServiciosPageComponent() {
   const handleSaveService = useCallback(async (data: QuoteRecord | ServiceRecord) => {
     await operationsService.updateService(data.id!, data as ServiceRecord);
     setIsEditDialogOpen(false);
-  }, []);
+    toast({ title: "Servicio actualizado."});
+  }, [toast]);
 
   const handleCancelService = useCallback(async (serviceId: string, reason: string) => {
     await operationsService.cancelService(serviceId, reason);
@@ -136,19 +115,11 @@ function HistorialServiciosPageComponent() {
   }, []);
   
   const handleConfirmCompletion = useCallback(async (service: ServiceRecord, paymentDetails: { paymentMethod: any, cardFolio?: string, transferFolio?: string }) => {
-    const updatedService = await operationsService.completeService(service.id, paymentDetails);
-    
+    await operationsService.completeService(service.id, paymentDetails);
     toast({
       title: "Servicio Completado",
       description: `El servicio para ${service.vehicleIdentifier} ha sido marcado como entregado.`,
     });
-    
-    setTicketData({
-        service: updatedService,
-        vehicle: await inventoryService.getVehicleById(updatedService.vehicleId),
-        technician: await personnelService.getTechnicianById(updatedService.technicianId),
-    });
-    setIsTicketDialogOpen(true);
   }, [toast]);
   
   const handleEditService = useCallback((service: ServiceRecord) => {
@@ -160,6 +131,10 @@ function HistorialServiciosPageComponent() {
     await operationsService.updateService(service.id, { ...service, appointmentStatus: 'Confirmada' });
     toast({ title: "Cita Confirmada" });
   }, [toast]);
+
+  if(isLoading) {
+    return <div className="flex justify-center items-center h-64"><Loader2 className="h-8 w-8 animate-spin" /></div>;
+  }
 
   return (
     <>
@@ -262,12 +237,6 @@ function HistorialServiciosPageComponent() {
           onOpenChange={setIsSheetOpen}
           service={previewData.service}
         />
-      )}
-      
-      {ticketData && (
-         <PrintTicketDialog open={isTicketDialogOpen} onOpenChange={setIsTicketDialogOpen} title="Comprobante de Servicio" onDialogClose={() => setTicketData(null)}>
-          <TicketContent ref={ticketContentRef} service={ticketData.service} vehicle={ticketData.vehicle} technician={ticketData.technician} />
-        </PrintTicketDialog>
       )}
     </>
   );

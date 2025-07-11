@@ -1,12 +1,12 @@
 
+
 "use client";
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { PageHeader } from '@/components/page-header';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { placeholderServiceRecords, placeholderVehicles, placeholderTechnicians, placeholderInventory, persistToFirestore, hydrateReady, logAudit } from '@/lib/placeholder-data';
-import type { ServiceRecord, Vehicle, Technician, InventoryItem, QuoteRecord, ServiceSubStatus } from '@/types';
+import type { ServiceRecord, Vehicle, Technician, ServiceSubStatus } from '@/types';
 import { ServiceDialog } from '../servicios/components/service-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Eye, ChevronLeft, ChevronRight, PlusCircle } from 'lucide-react';
@@ -14,6 +14,9 @@ import { Button } from '@/components/ui/button';
 import { isToday, parseISO, isValid } from 'date-fns';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
+import { operationsService } from '@/lib/services/operations.service';
+import { inventoryService } from '@/lib/services/inventory.service';
+import { personnelService } from '@/lib/services/personnel.service';
 
 
 type KanbanColumnId = 'Agendado' | 'En Espera de Refacciones' | 'Reparando' | 'Completado';
@@ -95,33 +98,26 @@ export default function TableroPage() {
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [technicians, setTechnicians] = useState<Technician[]>([]);
   const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
-  const [hydrated, setHydrated] = useState(false);
-  const [version, setVersion] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
 
   const [isServiceDialogOpen, setIsServiceDialogOpen] = useState(false);
   const [editingService, setEditingService] = useState<ServiceRecord | null>(null);
 
   useEffect(() => {
-    const handleDatabaseUpdate = () => setVersion(v => v + 1);
-    hydrateReady.then(() => {
-      setServices([...placeholderServiceRecords]);
-      setVehicles([...placeholderVehicles]);
-      setTechnicians([...placeholderTechnicians]);
-      setInventoryItems([...placeholderInventory]);
-      setHydrated(true);
-    });
-    window.addEventListener('databaseUpdated', handleDatabaseUpdate);
-    return () => window.removeEventListener('databaseUpdated', handleDatabaseUpdate);
+    const unsubs: (() => void)[] = [];
+    setIsLoading(true);
+
+    unsubs.push(operationsService.onServicesUpdate(setServices));
+    unsubs.push(inventoryService.onVehiclesUpdate(setVehicles));
+    unsubs.push(personnelService.onTechniciansUpdate(setTechnicians));
+    unsubs.push(inventoryService.onItemsUpdate((data) => {
+        setInventoryItems(data);
+        setIsLoading(false);
+    }));
+
+    return () => unsubs.forEach(unsub => unsub());
   }, []);
 
-  useEffect(() => {
-    if (hydrated) {
-      setServices([...placeholderServiceRecords]);
-      setVehicles([...placeholderVehicles]);
-      setTechnicians([...placeholderTechnicians]);
-      setInventoryItems([...placeholderInventory]);
-    }
-  }, [hydrated, version]);
 
   const columnOrder: KanbanColumnId[] = ['Agendado', 'En Espera de Refacciones', 'Reparando', 'Completado'];
   
@@ -156,7 +152,7 @@ export default function TableroPage() {
         columns[colId as KanbanColumnId].services.sort((a, b) => {
             const dateA = a.serviceDate ? new Date(a.serviceDate).getTime() : 0;
             const dateB = b.serviceDate ? new Date(b.serviceDate).getTime() : 0;
-            return dateA - dateB; // Oldest first
+            return dateA - dateB; 
         });
     }
     
@@ -169,20 +165,14 @@ export default function TableroPage() {
   };
   
   const handleMoveService = async (serviceId: string, direction: 'left' | 'right') => {
-    const serviceIndex = placeholderServiceRecords.findIndex(s => s.id === serviceId);
-    if (serviceIndex === -1) return;
+    const service = services.find(s => s.id === serviceId);
+    if (!service) return;
 
-    const currentService = placeholderServiceRecords[serviceIndex];
     let currentColumnId: KanbanColumnId;
-
-    if (currentService.status === 'Agendado') {
+    if (service.status === 'Agendado') {
         currentColumnId = 'Agendado';
-    } else { // 'En Taller'
-        switch(currentService.subStatus) {
-            case 'En Espera de Refacciones': currentColumnId = 'En Espera de Refacciones'; break;
-            case 'Completado': currentColumnId = 'Completado'; break;
-            default: currentColumnId = 'Reparando'; break;
-        }
+    } else {
+        currentColumnId = service.subStatus as KanbanColumnId || 'Reparando';
     }
     
     const currentIndex = columnOrder.indexOf(currentColumnId);
@@ -191,32 +181,20 @@ export default function TableroPage() {
     
     if (newIndex !== currentIndex) {
         const newColumnId = columnOrder[newIndex];
+        const updatedService = { ...service };
         
         if (newColumnId === 'Agendado') {
-            placeholderServiceRecords[serviceIndex].status = 'Agendado';
-            placeholderServiceRecords[serviceIndex].subStatus = undefined;
+            updatedService.status = 'Agendado';
+            delete updatedService.subStatus;
         } else {
-            placeholderServiceRecords[serviceIndex].status = 'En Taller';
-            if (newColumnId === 'En Espera de Refacciones') {
-                placeholderServiceRecords[serviceIndex].subStatus = 'En Espera de Refacciones';
-            } else if (newColumnId === 'Completado') {
-                placeholderServiceRecords[serviceIndex].subStatus = 'Completado';
-                if (!placeholderServiceRecords[serviceIndex].deliveryDateTime) {
-                    placeholderServiceRecords[serviceIndex].deliveryDateTime = new Date().toISOString();
-                }
-            } else { // Reparando
-                placeholderServiceRecords[serviceIndex].subStatus = 'Reparando';
+            updatedService.status = 'En Taller';
+            updatedService.subStatus = newColumnId as ServiceSubStatus;
+            if (newColumnId === 'Completado' && !updatedService.deliveryDateTime) {
+                updatedService.deliveryDateTime = new Date().toISOString();
             }
         }
         
-        setServices([...placeholderServiceRecords]); // Optimistic UI update
-
-        await logAudit(
-          'Editar',
-          `Movió el servicio #${serviceId} de "${currentColumnId}" a "${newColumnId}".`,
-          { entityType: 'Servicio', entityId: serviceId }
-        );
-        await persistToFirestore(['serviceRecords', 'auditLogs']);
+        await operationsService.updateService(serviceId, updatedService);
         
         toast({
             title: 'Servicio Movido',
@@ -227,10 +205,9 @@ export default function TableroPage() {
   
   const handleSaveService = async () => {
     setIsServiceDialogOpen(false);
-    setVersion(v => v + 1);
   };
 
-  if (!hydrated) {
+  if (isLoading) {
     return (
       <div className="flex h-full w-full items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
