@@ -70,16 +70,28 @@ function HistorialServiciosPageComponent() {
     const today = new Date();
     return allServices
         .filter(s => {
-            if (s.status === 'En Taller') {
+            const status = s.status as string; // Cast to string for wider compatibility
+            const deliveryDate = s.deliveryDateTime ? parseISO(s.deliveryDateTime) : null;
+            const isDeliveredToday = deliveryDate && isValid(deliveryDate) && isSameDay(deliveryDate, today);
+
+            if (status === 'En Taller' || status === 'Reparando') {
                 return true;
             }
-            if (s.status === 'Entregado') {
-                const deliveryDate = s.deliveryDateTime ? parseISO(s.deliveryDateTime) : null;
-                return deliveryDate && isValid(deliveryDate) && isSameDay(deliveryDate, today);
+            
+            if ((status === 'Entregado' || status === 'Completado') && isDeliveredToday) {
+                return true;
             }
+            
             return false;
         })
-        .sort((a,b) => parseISO(a.serviceDate).getTime() - parseISO(b.serviceDate).getTime());
+        .sort((a,b) => {
+            const dateA = a.serviceDate ? parseISO(a.serviceDate) : new Date(0);
+            const dateB = b.serviceDate ? parseISO(b.serviceDate) : new Date(0);
+            if(isValid(dateA) && isValid(dateB)) {
+                return dateA.getTime() - dateB.getTime();
+            }
+            return 0;
+        });
   }, [allServices, version]);
 
   const {
