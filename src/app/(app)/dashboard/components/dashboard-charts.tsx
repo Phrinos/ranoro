@@ -2,157 +2,151 @@
 "use client";
 
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from "@/components/ui/button";
-import { Badge } from '@/components/ui/badge';
-import { CheckCircle, BrainCircuit, Wrench, Package, LineChart } from 'lucide-react';
-import Image from "next/image";
-import { cn } from '@/lib/utils';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
+import { useMemo } from 'react';
+import { placeholderServiceRecords, placeholderSales, calculateSaleProfit, placeholderInventory } from '@/lib/placeholder-data';
+import { format, subMonths, startOfMonth, endOfMonth, isValid, parseISO, isWithinInterval } from 'date-fns';
+import { es } from 'date-fns/locale';
 
-const tabData = [
-  {
-    id: 'servicios',
-    title: 'Servicios',
-    content: {
-      heading: 'Gestión de Servicios Simplificada',
-      text: 'Desde la recepción del vehículo hasta la entrega, sigue cada paso. Crea órdenes de trabajo, asigna técnicos, y mantén a tus clientes informados con un solo clic.',
-      list: [
-        'Órdenes de trabajo digitales con checklist y fotos.',
-        'Historial completo por cliente y vehículo.',
-        'Comunicación con clientes vía WhatsApp (Add-on).',
-      ],
-      image: {
-        src: '/A1.png',
-        alt: 'Vista de la interfaz de gestión de servicios',
-        hint: 'dashboard interface'
-      }
-    }
-  },
-  {
-    id: 'inventario',
-    title: 'Inventario y POS',
-    content: {
-      heading: 'Inventario y Punto de Venta Integrados',
-      text: 'Controla tus refacciones y consumibles. Nuestro sistema te alerta sobre stock bajo y te permite facturar servicios y productos desde un mismo lugar.',
-      list: [
-        'Altas y bajas automáticas al usar refacciones en servicios.',
-        'Punto de Venta (POS) para cobros rápidos y facturación CFDI.',
-        'Sugerencias de compra basadas en la demanda.',
-      ],
-      image: {
-        src: '/A2.png',
-        alt: 'Vista de la interfaz de control de inventario',
-        hint: 'inventory software'
-      }
-    }
-  },
-  {
-    id: 'ia',
-    title: 'Inteligencia Artificial',
-    content: {
-      heading: 'Decisiones Potenciadas con IA',
-      text: 'Deja que la inteligencia artificial trabaje para ti. Ranoro analiza tus datos para darte recomendaciones que aumentan tu rentabilidad y eficiencia.',
-      list: [
-        'Sugerencias de precios para maximizar ganancias.',
-        'Análisis de capacidad para optimizar la agenda.',
-        'Ranking de refacciones por rentabilidad y rotación.',
-      ],
-      image: {
-        src: '/A3.png',
-        alt: 'Dashboard con insights de inteligencia artificial',
-        hint: 'AI dashboard'
-      }
-    }
-  },
-  {
-    id: 'reportes',
-    title: 'Reportes y Finanzas',
-    content: {
-      heading: 'Reportes Financieros al Instante',
-      text: 'Conoce la salud de tu negocio en tiempo real. Genera reportes financieros, de ventas y KPIs clave para tomar el control de tus finanzas.',
-      list: [
-        'Dashboards interactivos con tus métricas más importantes.',
-        'Exporta tus datos a PDF y Excel con un solo clic.',
-        'Conciliaciones y cortes de caja para una contabilidad clara.',
-      ],
-      image: {
-        src: '/A4.png',
-        alt: 'Dashboard financiero con gráficos',
-        hint: 'financial dashboard'
-      }
-    }
+const formatCurrencyForChart = (value: number) => {
+  if (Math.abs(value) > 1000) {
+    return `$${(value / 1000).toFixed(1)}k`;
   }
-];
+  return `$${value.toFixed(0)}`;
+};
 
-export function FeaturesSection() {
-    const [activeTab, setActiveTab] = React.useState('servicios');
-
+const CustomTooltip = ({ active, payload, label }: any) => {
+  if (active && payload && payload.length) {
     return (
-        <section id="features" className="py-20 md:py-28 bg-gray-50 dark:bg-gray-900/50">
-            <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="text-center max-w-3xl mx-auto">
-                    <Badge variant="secondary">Todo en un solo lugar</Badge>
-                    <h2 className="text-3xl md:text-4xl font-extrabold text-foreground mt-4">Una plataforma para cada necesidad de tu taller</h2>
-                    <p className="mt-4 text-lg text-muted-foreground">
-                        Controla cada aspecto de tu negocio con módulos diseñados específicamente para la operación automotriz.
-                    </p>
-                </div>
-
-                <div className="mt-12 max-w-5xl mx-auto">
-                    <div className="flex flex-wrap justify-center border-b border-gray-200">
-                        {tabData.map(tab => (
-                            <button
-                                key={tab.id}
-                                onClick={() => setActiveTab(tab.id)}
-                                className={cn(
-                                    "py-4 px-6 block font-medium text-center border-b-2 transition-colors duration-300 focus:outline-none",
-                                    activeTab === tab.id
-                                        ? 'border-primary text-primary'
-                                        : 'border-transparent text-muted-foreground hover:text-foreground hover:border-gray-300'
-                                )}
-                            >
-                                {tab.title}
-                            </button>
-                        ))}
-                    </div>
-                    
-                    <div className="mt-10">
-                        {tabData.map(tab => (
-                            <div key={tab.id} style={{ display: activeTab === tab.id ? 'block' : 'none' }}>
-                                <div className="grid md:grid-cols-2 gap-12 items-center">
-                                    <div>
-                                        <h3 className="text-2xl font-bold text-foreground">{tab.content.heading}</h3>
-                                        <p className="mt-4 text-muted-foreground">{tab.content.text}</p>
-                                        <ul className="mt-6 space-y-3">
-                                            {tab.content.list.map((item, index) => (
-                                                <li key={index} className="flex items-start">
-                                                    <CheckCircle className="h-6 w-6 text-green-500 mr-3 mt-1 shrink-0" />
-                                                    <span>{item}</span>
-                                                </li>
-                                            ))}
-                                        </ul>
-                                    </div>
-                                    <div className="bg-white p-4 rounded-2xl shadow-lg">
-                                        <Image
-                                            src={tab.content.image.src}
-                                            alt={tab.content.image.alt}
-                                            width={600}
-                                            height={400}
-                                            className="rounded-xl"
-                                            data-ai-hint={tab.content.image.hint}
-                                        />
-                                    </div>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            </div>
-        </section>
+      <div className="bg-background border shadow-sm p-2 rounded-md">
+        <p className="label font-bold">{`${label}`}</p>
+        <p className="text-blue-500">{`Ingresos: ${formatCurrencyForChart(payload[0].value)}`}</p>
+        <p className="text-green-500">{`Ganancia: ${formatCurrencyForChart(payload[1].value)}`}</p>
+      </div>
     );
+  }
+  return null;
+};
+
+const RADIAN = Math.PI / 180;
+const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent, index, name }: any) => {
+    const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
+    const x = cx + radius * Math.cos(-midAngle * RADIAN);
+    const y = cy + radius * Math.sin(-midAngle * RADIAN);
+    if (percent < 0.05) return null; // Don't render label if slice is too small
+    return (
+        <text x={x} y={y} fill="white" textAnchor={x > cx ? 'start' : 'end'} dominantBaseline="central" className="text-xs font-bold">
+            {`${name} (${(percent * 100).toFixed(0)}%)`}
+        </text>
+    );
+};
+
+
+export function DashboardCharts() {
+  const chartData = useMemo(() => {
+    const months = Array.from({ length: 6 }, (_, i) => subMonths(new Date(), i)).reverse();
+    
+    return months.map(monthDate => {
+      const monthStart = startOfMonth(monthDate);
+      const monthEnd = endOfMonth(monthDate);
+      
+      const servicesInMonth = placeholderServiceRecords.filter(s => {
+        const d = s.deliveryDateTime ? parseISO(s.deliveryDateTime) : null;
+        return s.status === 'Completado' && d && isValid(d) && isWithinInterval(d, { start: monthStart, end: monthEnd });
+      });
+
+      const salesInMonth = placeholderSales.filter(s => {
+          const d = s.saleDate ? parseISO(s.saleDate) : null;
+          return s.status !== 'Cancelado' && d && isValid(d) && isWithinInterval(d, {start: monthStart, end: monthEnd});
+      });
+
+      const serviceRevenue = servicesInMonth.reduce((sum, s) => sum + (s.totalCost || 0), 0);
+      const serviceProfit = servicesInMonth.reduce((sum, s) => sum + (s.serviceProfit || 0), 0);
+      
+      const salesRevenue = salesInMonth.reduce((sum, s) => sum + s.totalAmount, 0);
+      const salesProfit = salesInMonth.reduce((sum, s) => sum + calculateSaleProfit(s, placeholderInventory), 0);
+
+      return {
+        name: format(monthDate, 'MMM yy', { locale: es }),
+        ingresos: serviceRevenue + salesRevenue,
+        ganancia: serviceProfit + salesProfit,
+      };
+    });
+  }, []);
+
+  const serviceTypeDistribution = useMemo(() => {
+    const distribution: { [key: string]: number } = {};
+    placeholderServiceRecords.forEach(s => {
+      if(s.status === 'Completado') {
+        const type = s.serviceType || 'Servicio General';
+        distribution[type] = (distribution[type] || 0) + 1;
+      }
+    });
+    return Object.entries(distribution).map(([name, value]) => ({ name, value }));
+  }, []);
+  
+  const revenueSourceData = useMemo(() => {
+    const serviceRevenue = placeholderServiceRecords
+      .filter(s => s.status === 'Completado')
+      .reduce((sum, s) => sum + (s.totalCost || 0), 0);
+
+    const posRevenue = placeholderSales
+        .filter(s => s.status !== 'Cancelado')
+        .reduce((sum, s) => sum + s.totalAmount, 0);
+
+    return [{ name: 'Servicios', value: serviceRevenue }, { name: 'Ventas POS', value: posRevenue }];
+  }, []);
+
+  const PIE_COLORS = ['#3B82F6', '#10B981', '#F97316', '#8B5CF6', '#EC4899'];
+  const PIE_COLORS_REVENUE = ['#3B82F6', '#10B981'];
+
+  return (
+    <div className="grid gap-6 sm:grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 mt-6">
+      <Card className="xl:col-span-2">
+        <CardHeader>
+          <CardTitle>Ingresos vs. Ganancia (Últimos 6 Meses)</CardTitle>
+          <CardDescription>Análisis de la rentabilidad mensual de todas las operaciones.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={chartData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="name" fontSize={12} tickLine={false} axisLine={false} />
+              <YAxis fontSize={12} tickLine={false} axisLine={false} tickFormatter={formatCurrencyForChart} />
+              <Tooltip content={<CustomTooltip />} cursor={{ fill: 'hsl(var(--muted))' }}/>
+              <Legend />
+              <Bar dataKey="ingresos" fill="hsl(var(--chart-1))" name="Ingresos" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="ganancia" fill="hsl(var(--chart-2))" name="Ganancia" radius={[4, 4, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </CardContent>
+      </Card>
+      
+      <Card>
+        <CardHeader>
+          <CardTitle>Distribución de Servicios</CardTitle>
+          <CardDescription>Tipos de servicios completados más comunes.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <ResponsiveContainer width="100%" height={300}>
+            <PieChart>
+                <Pie data={serviceTypeDistribution} cx="50%" cy="50%" labelLine={false} label={renderCustomizedLabel} outerRadius={100} dataKey="value" nameKey="name">
+                  {serviceTypeDistribution.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip />
+                <Legend />
+            </PieChart>
+          </ResponsiveContainer>
+        </CardContent>
+      </Card>
+    </div>
+  );
 }
 
-// Keeping the original DashboardCharts component empty as requested
-export function DashboardCharts() {
-  return null;
+// Kept this for compatibility with the main page, though it's empty now
+export function FeaturesSection() {
+    return null;
 }
