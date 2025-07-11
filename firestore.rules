@@ -1,57 +1,44 @@
-rules_version = '2';
 
+rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    
-    // User data is private to the user themselves.
-    match /users/{userId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
-    }
-    
-    // App-specific collections are accessible to any authenticated user.
-    // You might want to refine these rules further based on roles.
-    match /vehicles/{vehicleId} {
-      allow read, write: if request.auth != null;
-    }
-    
-    match /vehiclePriceLists/{priceListId} {
-      allow read, write: if request.auth != null;
-    }
-
-    match /serviceRecords/{serviceId} {
-      allow read, write: if request.auth != null;
-    }
-
-    // publicQuotes are world-readable for sharing.
-    match /publicQuotes/{quoteId} {
-      allow read: if true;
-      allow create, update, delete: if request.auth != null; 
-    }
-    
-    // publicOwnerReports are world-readable for sharing.
-    match /publicOwnerReports/{reportId} {
-      allow read: if true;
-      allow create, update, delete: if request.auth != null;
-    }
-    
-    // publicServices are world-readable.
+    // Public read access for specific collections
     match /publicServices/{serviceId} {
-      allow read: if true;
-      allow update: if request.auth != null || 
-                      (request.resource.data.diff(resource.data).affectedKeys()
-                      .hasOnly(['customerSignatureReception', 'customerSignatureDelivery', 'receptionSignatureViewed', 'deliverySignatureViewed']));
-      allow create, delete: if request.auth != null;
+      allow read;
+    }
+    match /publicQuotes/{quoteId} {
+      allow read;
+    }
+    match /publicOwnerReports/{reportId} {
+      allow read;
     }
     
-    // Rule for the new public_documents collection
-    match /public_documents/{documentId} {
-      allow read: if true;
-      allow create, update, delete: if request.auth != null;
+    // User collection: Authenticated users can read any profile, but only write to their own.
+    match /users/{userId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && request.auth.uid == userId;
     }
 
-    // Fallback rule: Deny access to any other path.
-    match /{path=**} {
-      allow read, write: if false;
-    }
+    // Authenticated users can read/write to most other collections
+    match /vehicles/{vehicleId} { allow read, write: if request.auth != null; }
+    match /serviceRecords/{serviceId} { allow read, write: if request.auth != null; }
+    match /inventory/{itemId} { allow read, write: if request.auth != null; }
+    match /inventoryCategories/{categoryId} { allow read, write: if request.auth != null; }
+    match /suppliers/{supplierId} { allow read, write: if request.auth != null; }
+    match /sales/{saleId} { allow read, write: if request.auth != null; }
+    match /technicians/{techId} { allow read, write: if request.auth != null; }
+    match /administrativeStaff/{staffId} { allow read, write: if request.auth != null; }
+    match /drivers/{driverId} { allow read, write: if request.auth != null; }
+    match /rentalPayments/{paymentId} { allow read, write: if request.auth != null; }
+    // Note: ownerWithdrawals is not in the types, but adding a rule for it just in case.
+    match /ownerWithdrawals/{withdrawalId} { allow read, write: if request.auth != null; }
+    match /vehicleExpenses/{expenseId} { allow read, write: if request.auth != null; }
+    match /fixedExpenses/{expenseId} { allow read, write: if request.auth != null; }
+    match /cashDrawerTransactions/{transactionId} { allow read, write: if request.auth != null; }
+    match /initialCashBalance/{balanceId} { allow read, write: if request.auth != null; }
+    match /vehiclePriceLists/{listId} { allow read, write: if request.auth != null; }
+    match /serviceTypes/{typeId} { allow read, write: if request.auth != null; }
+    match /appRoles/{roleId} { allow read, write: if request.auth != null; }
+    match /auditLogs/{logId} { allow read, write: if request.auth != null; }
   }
 }
