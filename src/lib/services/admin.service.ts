@@ -1,6 +1,7 @@
 
+
 import type { User, AppRole, AuditLog } from "@/types";
-import { placeholderUsers, placeholderAppRoles, placeholderAuditLogs, persistToFirestore, logAudit, defaultSuperAdmin } from "@/lib/placeholder-data";
+import { placeholderUsers, placeholderAppRoles, placeholderAuditLogs, persistToFirestore, logAudit, defaultSuperAdmin, AUTH_USER_LOCALSTORAGE_KEY } from "@/lib/placeholder-data";
 
 const getUsers = async (): Promise<User[]> => {
     return [...placeholderUsers];
@@ -17,13 +18,21 @@ const getAuditLogs = async (): Promise<AuditLog[]> => {
 const saveUser = async (user: User, isEditing: boolean): Promise<User> => {
     const description = `Se ${isEditing ? 'actualizó el perfil del' : 'creó el'} usuario "${user.name}" (Email: ${user.email}).`;
 
+    const authUserString = localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY);
+    const adminUser: User | null = authUserString ? JSON.parse(authUserString) : defaultSuperAdmin;
+    const tenantId = adminUser?.tenantId;
+
+    if (!tenantId) {
+        throw new Error("Could not determine tenantId for new user.");
+    }
+
     if (isEditing) {
         const userIndex = placeholderUsers.findIndex(u => u.id === user.id);
         if (userIndex > -1) {
-            placeholderUsers[userIndex] = { ...placeholderUsers[userIndex], ...user, password: '' };
+            placeholderUsers[userIndex] = { ...placeholderUsers[userIndex], ...user, password: '', tenantId: placeholderUsers[userIndex].tenantId };
         }
     } else {
-        const newUser: User = { id: `user_${Date.now()}`, ...user, password: '' };
+        const newUser: User = { id: `user_${Date.now()}`, ...user, password: '', tenantId };
         placeholderUsers.push(newUser);
     }
     
