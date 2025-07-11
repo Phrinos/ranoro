@@ -60,7 +60,7 @@ function RentasPageComponent() {
   
   const [paymentForReceipt, setPaymentForReceipt] = useState<RentalPayment | null>(null);
 
-  const handleSavePayment = async (driverId: string, amount: number, mileage?: number) => {
+  const handleSavePayment = async (driverId: string, amount: number, note: string | undefined, mileage?: number) => {
     const driver = drivers.find(d => d.id === driverId);
     const vehicle = vehicles.find(v => v.id === driver?.assignedVehicleId);
 
@@ -77,6 +77,7 @@ function RentasPageComponent() {
       paymentDate: new Date().toISOString(),
       amount: amount,
       daysCovered: amount / (vehicle.dailyRentalCost || 1), // Avoid division by zero
+      note: note,
     };
 
     placeholderRentalPayments.push(newPayment);
