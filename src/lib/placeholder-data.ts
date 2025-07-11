@@ -1,5 +1,6 @@
 
 
+
 import type {
   Vehicle,
   ServiceRecord,
@@ -42,6 +43,7 @@ import { es } from 'date-fns/locale';
 // Use the authenticated client for all Firestore operations in this file
 import { db } from '@/lib/firebaseClient.js';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { sanitizeObjectForFirestore } from './utils';
 
 export const IVA_RATE = 0.16;
 
@@ -178,21 +180,6 @@ let resolveHydration: () => void;
 export const hydrateReady = new Promise<void>((res) => {
   resolveHydration = res;
 });
-
-export function sanitizeObjectForFirestore(obj: any): any {
-  if (obj === null || typeof obj !== 'object') return obj;
-  if (Array.isArray(obj)) return obj.map(item => sanitizeObjectForFirestore(item));
-  const newObj: { [key: string]: any } = {};
-  for (const key in obj) {
-    if (Object.prototype.hasOwnProperty.call(obj, key)) {
-      const value = obj[key];
-      if (value !== undefined) {
-        newObj[key] = sanitizeObjectForFirestore(value);
-      }
-    }
-  }
-  return newObj;
-}
 
 export async function logAudit(
   actionType: AuditLog['actionType'],
