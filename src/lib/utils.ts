@@ -2,7 +2,7 @@
 
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
-import { differenceInCalendarDays, startOfToday, parseISO, isAfter } from 'date-fns';
+import { differenceInCalendarDays, startOfToday, parseISO, isAfter, startOfMonth, endOfMonth, isWithinInterval } from 'date-fns';
 import type { Driver, RentalPayment, Vehicle } from '@/types';
 import { STANDARD_DEPOSIT_AMOUNT } from '@/lib/placeholder-data';
 
@@ -145,8 +145,8 @@ export function sanitizeObjectForFirestore(obj: any): any {
 }
     
 /**
- * Calculates the total debt for a given driver.
- * This includes rental debt, deposit debt, and manual debts.
+ * Calculates the total debt for a given driver, focusing on the current month's rental activity.
+ * This includes rental debt for the current month, deposit debt, and manual debts.
  * @param driver The driver object.
  * @param allPayments Array of all rental payments.
  * @param allVehicles Array of all vehicles to find the assigned one.
@@ -161,22 +161,32 @@ export function calculateDriverDebt(driver: Driver, allPayments: RentalPayment[]
     // 2. Calculate Manual Debt
     const manualDebt = (driver.manualDebts || []).reduce((sum, debt) => sum + debt.amount, 0);
 
-    // 3. Calculate Rental Debt
+    // 3. Calculate Rental Debt for the CURRENT MONTH
     let rentalDebt = 0;
     const assignedVehicle = allVehicles.find(v => v.id === driver.assignedVehicleId);
+    
     if (driver.contractDate && assignedVehicle?.dailyRentalCost) {
-        const contractStartDate = parseISO(driver.contractDate);
         const today = startOfToday();
+        const monthStart = startOfMonth(today);
+        const monthEnd = endOfMonth(today);
+        
+        const contractStartDate = parseISO(driver.contractDate);
         
         if (!isAfter(contractStartDate, today)) {
-            const totalDaysSinceContract = differenceInCalendarDays(today, contractStartDate) + 1;
-            const totalExpectedRental = totalDaysSinceContract * assignedVehicle.dailyRentalCost;
+            // Determine the start of the calculation period for this month
+            const calculationStart = isAfter(contractStartDate, monthStart) ? contractStartDate : monthStart;
             
-            const totalPaid = allPayments
-                .filter(p => p.driverId === driver.id)
+            // Calculate how many days of rent should have been paid THIS MONTH
+            const daysToChargeThisMonth = differenceInCalendarDays(today, calculationStart) + 1;
+            const expectedRentalThisMonth = daysToChargeThisMonth * assignedVehicle.dailyRentalCost;
+            
+            // Calculate how much has been paid THIS MONTH
+            const paymentsThisMonth = allPayments
+                .filter(p => p.driverId === driver.id && isWithinInterval(parseISO(p.paymentDate), { start: monthStart, end: monthEnd }))
                 .reduce((sum, p) => sum + p.amount, 0);
 
-            rentalDebt = Math.max(0, totalExpectedRental - totalPaid);
+            // The rental debt is what's expected this month minus what was paid this month
+            rentalDebt = Math.max(0, expectedRentalThisMonth - paymentsThisMonth);
         }
     }
 
