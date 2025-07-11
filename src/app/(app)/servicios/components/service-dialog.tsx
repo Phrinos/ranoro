@@ -15,7 +15,7 @@ import type { ServiceRecord, Vehicle, Technician, InventoryItem, QuoteRecord, Us
 import { useToast } from "@/hooks/use-toast"; 
 import { persistToFirestore, placeholderServiceRecords, logAudit, AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
 import { db } from '@/lib/firebaseClient.js';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 
 
 interface ServiceDialogProps {
@@ -62,25 +62,57 @@ export function ServiceDialog({
 
   // Mark signatures as "viewed" when the dialog opens
   useEffect(() => {
-    if (open && service && mode === 'service') {
-      let changed = false;
-      if (service.customerSignatureReception && !service.receptionSignatureViewed) {
-        service.receptionSignatureViewed = true;
-        changed = true;
-      }
-      if (service.customerSignatureDelivery && !service.deliverySignatureViewed) {
-        service.deliverySignatureViewed = true;
-        changed = true;
-      }
-      
-      if (changed) {
-        const serviceIndex = placeholderServiceRecords.findIndex(s => s.id === service.id);
-        if (serviceIndex > -1) {
-          placeholderServiceRecords[serviceIndex] = { ...service };
-          persistToFirestore(['serviceRecords']).catch(err => console.error("Failed to mark signature as viewed", err));
+    const syncAndMarkAsViewed = async () => {
+      if (open && service && service.id && mode === 'service') {
+        let changed = false;
+        let serviceToUpdate = { ...service };
+
+        // Sync from public document first
+        if (service.publicId && db) {
+          try {
+            const publicDocRef = doc(db, 'publicServices', service.publicId);
+            const publicDocSnap = await getDoc(publicDocRef);
+
+            if (publicDocSnap.exists()) {
+              const publicData = publicDocSnap.data() as ServiceRecord;
+              if (publicData.customerSignatureReception && !serviceToUpdate.customerSignatureReception) {
+                serviceToUpdate.customerSignatureReception = publicData.customerSignatureReception;
+                changed = true;
+              }
+              if (publicData.customerSignatureDelivery && !serviceToUpdate.customerSignatureDelivery) {
+                serviceToUpdate.customerSignatureDelivery = publicData.customerSignatureDelivery;
+                changed = true;
+              }
+            }
+          } catch (e) {
+            console.error("Failed to sync signatures from public doc:", e);
+          }
+        }
+
+        // Now, mark as viewed
+        if (serviceToUpdate.customerSignatureReception && !serviceToUpdate.receptionSignatureViewed) {
+          serviceToUpdate.receptionSignatureViewed = true;
+          changed = true;
+        }
+        if (serviceToUpdate.customerSignatureDelivery && !serviceToUpdate.deliverySignatureViewed) {
+          serviceToUpdate.deliverySignatureViewed = true;
+          changed = true;
+        }
+        
+        if (changed) {
+          // This should now trigger a re-render in the parent through the onSave prop if available
+          // or directly update firestore
+          const serviceDocRef = doc(db, "serviceRecords", service.id);
+          await setDoc(serviceDocRef, { 
+              customerSignatureReception: serviceToUpdate.customerSignatureReception,
+              customerSignatureDelivery: serviceToUpdate.customerSignatureDelivery,
+              receptionSignatureViewed: serviceToUpdate.receptionSignatureViewed,
+              deliverySignatureViewed: serviceToUpdate.deliverySignatureViewed,
+           }, { merge: true });
         }
       }
-    }
+    };
+    syncAndMarkAsViewed();
   }, [open, service, mode]);
 
   const internalOnSave = async (formData: ServiceRecord | QuoteRecord) => {
@@ -90,62 +122,9 @@ export function ServiceDialog({
     }
 
     try {
-      const isNew = !formData.id;
-      const recordId = formData.id || `doc_${Date.now().toString(36)}`;
-      
-      // Ensure advisor signature is captured correctly from the form or current user
-      let advisorSignature = formData.serviceAdvisorSignatureDataUrl;
-      let advisorName = formData.serviceAdvisorName;
-      let advisorId = formData.serviceAdvisorId;
-
-      if (!advisorSignature || !advisorName || !advisorId) {
-        const authUserString = localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY);
-        if (authUserString) {
-          const currentUser: User = JSON.parse(authUserString);
-          advisorId = currentUser.id;
-          advisorName = currentUser.name;
-          advisorSignature = currentUser.signatureDataUrl;
-        }
-      }
-
-      const recordToSave: ServiceRecord = { 
-        ...formData, // Start with all data from the form, including the new status
-        id: recordId,
-        quoteDate: formData.status === 'Cotizacion' 
-            ? (formData.quoteDate ? new Date(formData.quoteDate).toISOString() : new Date().toISOString()) 
-            : (formData.quoteDate ? new Date(formData.quoteDate).toISOString() : undefined),
-        serviceDate: formData.status !== 'Cotizacion' 
-            ? (formData.serviceDate ? new Date(formData.serviceDate).toISOString() : new Date().toISOString()) 
-            : (formData.serviceDate ? new Date(formData.serviceDate).toISOString() : undefined),
-        serviceAdvisorId: advisorId,
-        serviceAdvisorName: advisorName,
-        serviceAdvisorSignatureDataUrl: advisorSignature,
-      } as ServiceRecord;
-
-      const recordIndex = placeholderServiceRecords.findIndex(q => q.id === recordId);
-      
-      if (recordIndex > -1) {
-        placeholderServiceRecords[recordIndex] = recordToSave;
-      } else {
-        placeholderServiceRecords.push(recordToSave);
-      }
-      
-      const actionType = isNew ? 'Crear' : 'Editar';
-      const entityType = recordToSave.status === 'Cotizacion' ? 'Cotización' : 'Servicio';
-      const description = `${isNew ? 'Creó' : 'Actualizó'} la ${entityType.toLowerCase()} #${recordId} para el vehículo ${recordToSave.vehicleIdentifier}.`;
-      
-      await logAudit(actionType, description, { entityType, entityId: recordId });
-      await persistToFirestore(['serviceRecords', 'auditLogs']);
-
-      toast({
-        title: `${entityType} ${isNew ? 'creada' : 'actualizada'}`,
-        description: `Se han guardado los cambios para ${recordId}.`,
-      });
-
       if (onSave) {
-        await onSave(recordToSave);
+        await onSave(formData);
       }
-      
       onOpenChange(false);
     } catch (error) {
       console.error(`Error saving ${mode} from dialog:`, error);
