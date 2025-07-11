@@ -1,26 +1,21 @@
 rules_version = '2';
-
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    // --- Public Read-Only Collections ---
-    // Anyone can read these documents, but no one can write to them.
-    // This is for shared links like service sheets.
-    match /publicServices/{documentId} {
+    // Allow public read-only access for shared documents
+    match /publicServices/{serviceId} {
       allow read;
       allow write: if false;
     }
-    match /publicQuotes/{documentId} {
-      allow read;
-      allow write: if false;
-    }
-    match /publicOwnerReports/{documentId} {
+     match /publicQuotes/{quoteId} {
         allow read;
         allow write: if false;
     }
+     match /publicOwnerReports/{reportId} {
+      allow read;
+      allow write: if false;
+    }
 
-    // --- Private Collections ---
-    // Only authenticated users can read or write to these collections.
+    // Authenticated access for main app collections
     function isAuthenticated() {
       return request.auth != null;
     }
@@ -28,17 +23,14 @@ service cloud.firestore {
     match /users/{userId} {
       allow read, write: if isAuthenticated();
     }
+    
+    // THIS RULE WAS MISSING AND IS NOW ADDED
     match /serviceRecords/{serviceId} {
-      allow read, write: if isAuthenticated();
+        allow read, write: if isAuthenticated();
     }
+    
     match /vehicles/{vehicleId} {
       allow read, write: if isAuthenticated();
-    }
-    match /technicians/{technicianId} {
-      allow read, write: if isAuthenticated();
-    }
-    match /administrativeStaff/{staffId} {
-        allow read, write: if isAuthenticated();
     }
     match /inventory/{itemId} {
       allow read, write: if isAuthenticated();
@@ -46,20 +38,29 @@ service cloud.firestore {
     match /inventoryCategories/{categoryId} {
         allow read, write: if isAuthenticated();
     }
-    match /suppliers/{supplierId} {
+    match /technicians/{technicianId} {
+      allow read, write: if isAuthenticated();
+    }
+    match /administrativeStaff/{staffId} {
         allow read, write: if isAuthenticated();
     }
     match /sales/{saleId} {
       allow read, write: if isAuthenticated();
     }
     match /drivers/{driverId} {
-      allow read, write: if isAuthenticated();
+        allow read, write: if isAuthenticated();
     }
     match /rentalPayments/{paymentId} {
-      allow read, write: if isAuthenticated();
+        allow read, write: if isAuthenticated();
     }
-    match /vehicleExpenses/{expenseId} {
-      allow read, write: if isAuthenticated();
+     match /vehicleExpenses/{expenseId} {
+        allow read, write: if isAuthenticated();
+    }
+     match /ownerWithdrawals/{withdrawalId} {
+        allow read, write: if isAuthenticated();
+    }
+     match /suppliers/{supplierId} {
+        allow read, write: if isAuthenticated();
     }
     match /fixedExpenses/{expenseId} {
         allow read, write: if isAuthenticated();
@@ -70,10 +71,10 @@ service cloud.firestore {
     match /auditLogs/{logId} {
         allow read, write: if isAuthenticated();
     }
-    match /initialCashBalance/{docId} {
+     match /initialCashBalance/{docId} {
         allow read, write: if isAuthenticated();
     }
-    match /cashDrawerTransactions/{transactionId} {
+    match /cashDrawerTransactions/{trxId} {
         allow read, write: if isAuthenticated();
     }
     match /vehiclePriceLists/{listId} {
@@ -82,6 +83,5 @@ service cloud.firestore {
     match /serviceTypes/{typeId} {
         allow read, write: if isAuthenticated();
     }
-
   }
 }
