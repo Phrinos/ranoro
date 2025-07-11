@@ -4,7 +4,7 @@
 import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/layout/app-sidebar";
 import { useEffect, useState } from "react";
-import { hydrateFromFirestore } from "@/lib/placeholder-data";
+import { hydrateFromFirestore, hydrateReady } from "@/lib/placeholder-data";
 import { Loader2 } from "lucide-react";
 import Image from "next/image";
 
@@ -16,17 +16,10 @@ export default function AppLayout({
   const [isHydrated, setIsHydrated] = useState(false);
 
   useEffect(() => {
-    const performHydration = async () => {
-      try {
-        await hydrateFromFirestore();
+    // In local mode, hydration is instant.
+    hydrateReady.then(() => {
         setIsHydrated(true);
-      } catch (error) {
-        console.error("Failed to hydrate from Firestore:", error);
-        // Handle error state if necessary, e.g., show an error message
-      }
-    };
-
-    performHydration();
+    });
   }, []);
 
   if (!isHydrated) {
@@ -40,10 +33,11 @@ export default function AppLayout({
                 height={50}
                 className="h-auto dark:invert"
                 priority
+                data-ai-hint="ranoro logo"
             />
             <div className="flex items-center">
               <Loader2 className="h-6 w-6 animate-spin" />
-              <span className="ml-3 text-lg text-muted-foreground">Cargando datos del taller...</span>
+              <span className="ml-3 text-lg text-muted-foreground">Cargando datos locales...</span>
             </div>
         </div>
       </div>

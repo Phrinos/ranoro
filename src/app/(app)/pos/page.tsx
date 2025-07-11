@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState, useMemo, useEffect, useCallback, Suspense, useRef } from 'react';
@@ -102,12 +103,27 @@ function PosPageComponent() {
   const [isInitialBalanceDialogOpen, setIsInitialBalanceDialogOpen] = useState(false);
   const [initialBalanceAmount, setInitialBalanceAmount] = useState<number | ''>('');
   const [isCorteDialogOpen, setIsCorteDialogOpen] = useState(false);
+  
+  const [allSales, setAllSales] = useState<SaleReceipt[]>([]);
+  const [allInventory, setAllInventory] = useState<InventoryItem[]>([]);
+  const [allServices, setAllServices] = useState<ServiceRecord[]>([]);
+  const [allCashTransactions, setAllCashTransactions] = useState<CashDrawerTransaction[]>([]);
+  const [initialCashBalance, setInitialCashBalance] = useState<InitialCashBalance | null>(null);
 
   useEffect(() => {
-    hydrateReady.then(() => setHydrated(true));
-    const forceUpdate = () => setVersion(v => v + 1);
-    window.addEventListener('databaseUpdated', forceUpdate);
-    return () => window.removeEventListener('databaseUpdated', forceUpdate);
+    const loadData = () => {
+        setAllSales([...placeholderSales]);
+        setAllInventory([...placeholderInventory]);
+        setAllServices([...placeholderServiceRecords]);
+        setAllCashTransactions([...placeholderCashDrawerTransactions]);
+        setInitialCashBalance({...placeholderInitialCashBalance});
+        setHydrated(true);
+    };
+    hydrateReady.then(() => {
+        loadData();
+        window.addEventListener('databaseUpdated', loadData);
+    });
+    return () => window.removeEventListener('databaseUpdated', loadData);
   }, []);
   
   useEffect(() => {
@@ -118,7 +134,7 @@ function PosPageComponent() {
 
   const filteredAndSortedSales = useMemo(() => {
     if (!hydrated) return [];
-    let list = [...placeholderSales];
+    let list = [...allSales];
 
     if (dateRange?.from) {
       const from = startOfDay(dateRange.from);
@@ -134,12 +150,12 @@ function PosPageComponent() {
     }
     list.sort((a, b) => compareDesc(parseISO(a.saleDate), parseISO(b.saleDate)));
     return list;
-  }, [dateRange, ventasSearchTerm, ventasPaymentMethodFilter, ventasSortOption, hydrated, version]);
+  }, [dateRange, ventasSearchTerm, ventasPaymentMethodFilter, ventasSortOption, hydrated, allSales]);
 
   const ventasSummaryData = useMemo(() => {
     const totalSalesCount = filteredAndSortedSales.filter(s => s.status !== 'Cancelado').length;
     const totalRevenue = filteredAndSortedSales.filter(s => s.status !== 'Cancelado').reduce((sum, s) => sum + s.totalAmount, 0);
-    const totalProfit = filteredAndSortedSales.filter(s => s.status !== 'Cancelado').reduce((sum, s) => sum + calculateSaleProfit(s, placeholderInventory), 0);
+    const totalProfit = filteredAndSortedSales.filter(s => s.status !== 'Cancelado').reduce((sum, s) => sum + calculateSaleProfit(s, allInventory), 0);
     
     const itemCounts = filteredAndSortedSales.filter(s => s.status !== 'Cancelado').flatMap(s => s.items).reduce((acc, item) => {
         acc[item.itemName] = (acc[item.itemName] || 0) + item.quantity;
@@ -161,17 +177,16 @@ function PosPageComponent() {
         totalProfit, 
         mostSoldItem
     };
-  }, [filteredAndSortedSales]);
+  }, [filteredAndSortedSales, allInventory]);
 
   const cajaSummaryData = useMemo(() => {
     if (!hydrated || !dateRange?.from) return { initialBalance: 0, totalCashSales: 0, totalCashIn: 0, totalCashOut: 0, finalCashBalance: 0, salesByPaymentMethod: {}, totalSales: 0, totalServices: 0 };
     const start = startOfDay(dateRange.from);
     const end = dateRange.to ? endOfDay(dateRange.to) : endOfDay(dateRange.from);
-    const initialBalanceRecord = placeholderInitialCashBalance;
-    const initialBalance = (initialBalanceRecord && isSameDay(parseISO(initialBalanceRecord.date), start)) ? initialBalanceRecord.amount : 0;
-    const transactionsInRange = placeholderCashDrawerTransactions.filter(t => isValid(parseISO(t.date)) && isWithinInterval(parseISO(t.date), { start, end }));
-    const salesInRange = placeholderSales.filter(s => s.status !== 'Cancelado' && isValid(parseISO(s.saleDate)) && isWithinInterval(parseISO(s.saleDate), { start, end }));
-    const servicesInRange = placeholderServiceRecords.filter(s => {
+    const initialBalance = (initialCashBalance && isSameDay(parseISO(initialCashBalance.date), start)) ? initialCashBalance.amount : 0;
+    const transactionsInRange = allCashTransactions.filter(t => isValid(parseISO(t.date)) && isWithinInterval(parseISO(t.date), { start, end }));
+    const salesInRange = allSales.filter(s => s.status !== 'Cancelado' && isValid(parseISO(s.saleDate)) && isWithinInterval(parseISO(s.saleDate), { start, end }));
+    const servicesInRange = allServices.filter(s => {
         const dateToParse = s.deliveryDateTime || s.serviceDate;
         if (!dateToParse) return false;
         const sDate = parseISO(dateToParse);
@@ -188,7 +203,7 @@ function PosPageComponent() {
       salesByPaymentMethod[method] = (salesByPaymentMethod[method] || 0) + amount;
     });
     return { initialBalance, totalCashSales, totalCashIn, totalCashOut, finalCashBalance, salesByPaymentMethod, totalSales: salesInRange.length, totalServices: servicesInRange.length };
-  }, [hydrated, dateRange, version]);
+  }, [hydrated, dateRange, allSales, allServices, allCashTransactions, initialCashBalance]);
   
 
   const handleCancelSale = useCallback(async (saleId: string, reason: string) => {
@@ -208,7 +223,6 @@ function PosPageComponent() {
     placeholderSales[saleIndex] = { ...saleToCancel, status: 'Cancelado', cancellationReason: reason, cancelledBy: currentUser?.name || 'Sistema' };
     
     await persistToFirestore(['sales', 'inventory']);
-    setVersion(v => v + 1);
     setIsViewDialogOpen(false);
     toast({ title: 'Venta Cancelada', description: 'El stock ha sido restaurado.' });
   }, [toast]);
@@ -243,7 +257,6 @@ function PosPageComponent() {
     placeholderInitialCashBalance.userName = currentUser?.name || 'Sistema';
 
     await persistToFirestore(['initialCashBalance']);
-    setVersion(v => v + 1);
     setIsInitialBalanceDialogOpen(false);
     toast({ title: 'Saldo Inicial Guardado' });
   }, [initialBalanceAmount, toast, dateRange]);
@@ -254,7 +267,6 @@ function PosPageComponent() {
     const newTransaction: CashDrawerTransaction = { id: `trx_${Date.now()}`, date: new Date().toISOString(), type, amount: values.amount, concept: values.concept, userId: currentUser?.id || 'system', userName: currentUser?.name || 'Sistema' };
     placeholderCashDrawerTransactions.push(newTransaction);
     await persistToFirestore(['cashDrawerTransactions']);
-    setVersion(v => v + 1);
     toast({ title: `Se registró una ${type.toLowerCase()} de caja.` });
   }, [toast]);
   
@@ -376,7 +388,7 @@ function PosPageComponent() {
         </DialogContent>
       </Dialog>
       <PrintTicketDialog open={isCorteDialogOpen} onOpenChange={setIsCorteDialogOpen} title="Corte de Caja">
-         <CorteDiaContent reportData={cajaSummaryData} date={dateRange?.from || new Date()} transactions={placeholderCashDrawerTransactions.filter(t => isWithinInterval(parseISO(t.date), {start: startOfDay(dateRange?.from || new Date()), end: endOfDay(dateRange?.to || dateRange?.from || new Date())}))}/>
+         <CorteDiaContent reportData={cajaSummaryData} date={dateRange?.from || new Date()} transactions={allCashTransactions.filter(t => isWithinInterval(parseISO(t.date), {start: startOfDay(dateRange?.from || new Date()), end: endOfDay(dateRange?.to || dateRange?.from || new Date())}))}/>
       </PrintTicketDialog>
     </>
   );

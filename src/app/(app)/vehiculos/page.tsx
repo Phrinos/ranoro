@@ -16,11 +16,15 @@ import type { PriceListFormValues } from '../precios/components/price-list-form'
 import { VehicleDialog } from './components/vehicle-dialog';
 import { VehiclesTable } from './components/vehicles-table'; 
 import { PriceListTable } from '../precios/components/price-list-table';
-import { inventoryService } from '@/lib/services/inventory.service';
-import { operationsService } from '@/lib/services/operations.service';
-import { subMonths, isBefore, parseISO, isValid } from 'date-fns';
 import { TableToolbar } from '@/components/shared/table-toolbar';
 import { Loader2 } from 'lucide-react';
+import { 
+    placeholderVehicles, 
+    placeholderVehiclePriceLists, 
+    persistToFirestore, 
+    hydrateReady 
+} from '@/lib/placeholder-data';
+import { useTableManager } from '@/hooks/useTableManager';
 
 function VehiculosPageComponent() {
     const searchParams = useSearchParams();
@@ -38,14 +42,18 @@ function VehiculosPageComponent() {
     const [priceLists, setPriceLists] = useState<VehiclePriceList[]>([]);
   
     useEffect(() => {
-        const unsubs: (() => void)[] = [];
-        setIsLoading(true);
-        unsubs.push(inventoryService.onVehiclesUpdate((data) => {
-            setAllVehicles(data);
-            setIsLoading(false); // Assume vehicles are the main data for this page
-        }));
-        unsubs.push(inventoryService.onPriceListsUpdate(setPriceLists));
-        return () => unsubs.forEach(unsub => unsub());
+        const loadData = () => {
+            setIsLoading(true);
+            setAllVehicles([...placeholderVehicles]);
+            setPriceLists([...placeholderVehiclePriceLists]);
+            setIsLoading(false);
+        };
+        hydrateReady.then(() => {
+            loadData();
+            window.addEventListener('databaseUpdated', loadData);
+        });
+
+        return () => window.removeEventListener('databaseUpdated', loadData);
     }, []);
 
     const {
@@ -59,7 +67,13 @@ function VehiculosPageComponent() {
     });
 
     const handleSaveVehicle = useCallback(async (data: VehicleFormValues) => {
-        const newVehicle = await inventoryService.addVehicle(data);
+        const newVehicle: Vehicle = {
+          id: `V${String(placeholderVehicles.length + 1).padStart(3, '0')}${Date.now().toString().slice(-4)}`,
+          ...data,
+          year: Number(data.year),
+        };
+        placeholderVehicles.push(newVehicle);
+        await persistToFirestore(['vehicles']);
         toast({ title: "Vehículo Creado", description: `Se ha agregado ${newVehicle.make} ${newVehicle.model}.` });
         setIsVehicleDialogOpen(false);
     }, [toast]);
@@ -70,14 +84,24 @@ function VehiculosPageComponent() {
     }, []);
 
     const handleSavePriceListRecord = useCallback(async (formData: PriceListFormValues) => {
-        await inventoryService.savePriceList(formData, editingPriceRecord?.id);
+        if(editingPriceRecord) {
+            const index = placeholderVehiclePriceLists.findIndex(p => p.id === editingPriceRecord.id);
+            if(index > -1) placeholderVehiclePriceLists[index] = { ...editingPriceRecord, ...formData, years: formData.years.sort((a,b) => a-b) };
+        } else {
+            placeholderVehiclePriceLists.push({ id: `PL_${Date.now()}`, ...formData, years: formData.years.sort((a,b) => a-b) });
+        }
+        await persistToFirestore(['vehiclePriceLists']);
         toast({ title: `Precotización ${editingPriceRecord ? 'Actualizada' : 'Creada'}` });
         setIsPriceListDialogOpen(false);
     }, [editingPriceRecord, toast]);
     
     const handleDeletePriceListRecord = useCallback(async (recordId: string) => {
-        await inventoryService.deletePriceList(recordId);
-        toast({ title: "Registro Eliminado", variant: 'destructive' });
+        const index = placeholderVehiclePriceLists.findIndex(p => p.id === recordId);
+        if(index > -1) {
+            placeholderVehiclePriceLists.splice(index, 1);
+            await persistToFirestore(['vehiclePriceLists']);
+            toast({ title: "Registro Eliminado", variant: 'destructive' });
+        }
     }, [toast]);
     
     if (isLoading) {
