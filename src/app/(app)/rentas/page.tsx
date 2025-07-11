@@ -13,7 +13,7 @@ import {
   persistToFirestore,
   hydrateReady,
 } from '@/lib/placeholder-data';
-import type { RentalPayment, Driver, Vehicle } from '@/types';
+import type { RentalPayment, Driver, Vehicle, WorkshopInfo } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { format, parseISO, compareDesc, isValid } from 'date-fns';
@@ -30,6 +30,7 @@ function RentasPageComponent() {
   const [drivers, setDrivers] = useState<Driver[]>([]);
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [payments, setPayments] = useState<RentalPayment[]>([]);
+  const [workshopInfo, setWorkshopInfo] = useState<Partial<WorkshopInfo>>({});
 
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
   const { toast } = useToast();
@@ -41,6 +42,8 @@ function RentasPageComponent() {
       setDrivers([...placeholderDrivers]);
       setVehicles([...placeholderVehicles]);
       setPayments([...placeholderRentalPayments]);
+      const storedInfo = localStorage.getItem('workshopTicketInfo');
+      if (storedInfo) setWorkshopInfo(JSON.parse(storedInfo));
     });
     const forceUpdate = () => setVersion(v => v + 1);
     window.addEventListener('databaseUpdated', forceUpdate);
@@ -176,7 +179,7 @@ function RentasPageComponent() {
         dialogContentClassName="printable-content"
         footerActions={ <Button onClick={() => window.print()}><Printer className="mr-2 h-4 w-4" /> Imprimir Recibo</Button> }
       >
-        {paymentForReceipt && <RentalReceiptContent ref={receiptRef} payment={paymentForReceipt} />}
+        {paymentForReceipt && <RentalReceiptContent ref={receiptRef} payment={paymentForReceipt} workshopInfo={workshopInfo} />}
       </PrintTicketDialog>
     </>
   );

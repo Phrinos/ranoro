@@ -1,22 +1,27 @@
 
 "use client";
 
-import type { RentalPayment } from '@/types';
+import type { RentalPayment, WorkshopInfo } from '@/types';
 import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 import React from 'react';
 
+const initialWorkshopInfo: WorkshopInfo = {
+  name: "RANORO",
+  phone: "4491425323",
+  addressLine1: "Av. de la Convencion de 1914 No. 1421",
+  logoUrl: "/ranoro-logo.png",
+};
+
+
 interface RentalReceiptContentProps {
   payment: RentalPayment;
+  workshopInfo?: Partial<WorkshopInfo>;
 }
 
 export const RentalReceiptContent = React.forwardRef<HTMLDivElement, RentalReceiptContentProps>(
-  ({ payment }, ref) => {
-    const workshopInfo = {
-      name: "RANORO",
-      phone: "4491425323",
-      addressLine1: "Av. de la Convencion de 1914 No. 1421",
-    };
+  ({ payment, workshopInfo: customWorkshopInfo }, ref) => {
+    const workshopInfo = { ...initialWorkshopInfo, ...customWorkshopInfo };
 
     const formattedDateTime = format(parseISO(payment.paymentDate), "dd/MM/yyyy HH:mm:ss", { locale: es });
     const formattedAmount = `$${payment.amount.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -28,6 +33,16 @@ export const RentalReceiptContent = React.forwardRef<HTMLDivElement, RentalRecei
         className="font-mono bg-white text-black px-2 py-4 max-w-[300px] mx-auto text-[10px] leading-tight print:max-w-full print:text-[9px] print:p-0"
       >
         <div className="text-center mb-2">
+           {workshopInfo.logoUrl && (
+            <img 
+              src={workshopInfo.logoUrl} 
+              alt="Logo" 
+              className="mx-auto mb-1" 
+              style={{ width: `${workshopInfo.logoWidth || 120}px` }}
+              crossOrigin="anonymous"
+              data-ai-hint="workshop logo"
+            />
+          )}
           <h1 className="text-lg font-bold">{workshopInfo.name}</h1>
           <p>{workshopInfo.addressLine1}</p>
           <p>Tel: {workshopInfo.phone}</p>
