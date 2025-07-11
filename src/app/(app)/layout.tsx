@@ -5,13 +5,12 @@ import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/layout/app-sidebar";
-import { hydrateFromFirestore, AUTH_USER_LOCALSTORAGE_KEY, defaultSuperAdmin, persistToFirestore, placeholderUsers, logAudit } from '@/lib/placeholder-data';
+import { hydrateFromFirestore, AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
 import { Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import type { User as RanoroUser } from '@/types';
 import { onAuthStateChanged, type User as FirebaseUser } from "firebase/auth";
 import { auth, db } from "@/lib/firebaseClient.js";
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { doc, getDoc } from 'firebase/firestore';
 
 export default function AppLayout({
   children,
@@ -23,45 +22,30 @@ export default function AppLayout({
   const router = useRouter();
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser: FirebaseUser | null) => {
-      if (firebaseUser) {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (user) {
         // User is signed in.
         try {
-          const userDocRef = doc(db, "users", firebaseUser.uid);
-          const userDoc = await getDoc(userDocRef);
-
-          let appUser: RanoroUser;
-
+          const userDoc = await getDoc(doc(db, "users", user.uid));
           if (userDoc.exists()) {
-            // User profile exists, load it.
-            appUser = userDoc.data() as RanoroUser;
+            localStorage.setItem(AUTH_USER_LOCALSTORAGE_KEY, JSON.stringify({ id: user.uid, ...userDoc.data() }));
           } else {
-            // First login for this user, create their profile.
-            // This is crucial for the default admin on a new setup.
-            appUser = {
-              ...defaultSuperAdmin,
-              id: firebaseUser.uid,
-              email: firebaseUser.email!,
-            };
-            await setDoc(userDocRef, appUser);
-            await logAudit('Acceso', 'Creación de perfil de usuario en el primer inicio de sesión.', { userId: appUser.id, userName: appUser.name });
-            // This initial user list will be persisted in the main doc on the first save operation.
-            placeholderUsers.push(appUser); 
+            // This case should ideally be handled during the first login creation process
+            // but as a fallback, we can use default data or log an error.
+            console.warn("User document does not exist in Firestore for UID:", user.uid);
+            // Maybe redirect to login with an error message.
+            router.push('/login');
           }
           
-          localStorage.setItem(AUTH_USER_LOCALSTORAGE_KEY, JSON.stringify(appUser));
-          
-          // Now that we have the user and their profile, we can hydrate the workshop data.
           await hydrateFromFirestore();
-          
           setIsAuthenticated(true);
+
         } catch (error) {
-            console.error("Error during user authentication or data hydration:", error);
+            console.error("Error during user data hydration:", error);
             // Handle error, maybe sign out user and redirect to login
             await auth.signOut();
             router.push('/login');
         }
-
       } else {
         // User is signed out.
         localStorage.removeItem(AUTH_USER_LOCALSTORAGE_KEY);
@@ -79,7 +63,7 @@ export default function AppLayout({
     return (
       <div className="flex h-screen w-full items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin" />
-        <p className="text-lg ml-4">Verificando sesión...</p>
+        <p className="text-lg ml-4">Cargando aplicación...</p>
       </div>
     );
   }
