@@ -1,452 +1,158 @@
 
 "use client";
 
-import * as React from "react";
-import {
-  Line,
-  LineChart,
-  Pie,
-  PieChart,
-  CartesianGrid,
-  XAxis,
-  YAxis,
-  ResponsiveContainer,
-} from "recharts";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-  type ChartConfig,
-} from "@/components/ui/chart";
-import {
-  placeholderServiceRecords,
-  placeholderSales,
-  calculateSaleProfit,
-  placeholderInventory,
-} from "@/lib/placeholder-data";
-import { subMonths, format, parseISO, isValid } from "date-fns";
-import { es } from "date-fns/locale";
+import React from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from "@/components/ui/button";
+import { Badge } from '@/components/ui/badge';
+import { CheckCircle, BrainCircuit, Wrench, Package, LineChart } from 'lucide-react';
+import Image from "next/image";
+import { cn } from '@/lib/utils';
 
-interface MonthlyChartData {
-  month: string;
-  revenue: number;
-  profit: number;
-}
-
-interface MonthlyOperationsData {
-  month: string;
-  services: number;
-  sales: number;
-}
-
-interface ServiceTypeChartData {
-  name: string;
-  value: number;
-  fill: string;
-}
-
-interface RevenueSourceChartData {
-  source: string;
-  value: number;
-  fill: string;
-}
-
-export function DashboardCharts() {
-  const [monthlyChartData, setMonthlyChartData] =
-    React.useState<MonthlyChartData[]>([]);
-  const [monthlyOperationsData, setMonthlyOperationsData] =
-    React.useState<MonthlyOperationsData[]>([]);
-  const [serviceTypeChartData, setServiceTypeChartData] =
-    React.useState<ServiceTypeChartData[]>([]);
-  const [revenueSourceChartData, setRevenueSourceChartData] =
-    React.useState<RevenueSourceChartData[]>([]);
-
-  React.useEffect(() => {
-    const now = new Date();
-
-    const monthlyData: Record<string, MonthlyChartData> = {};
-    const monthlyOpsData: Record<string, MonthlyOperationsData> = {};
-
-    for (let i = 5; i >= 0; i--) {
-      const date = subMonths(now, i);
-      const monthKey = format(date, "yyyy-MM");
-      const monthLabel = format(date, "MMM", { locale: es });
-      monthlyData[monthKey] = { month: monthLabel, revenue: 0, profit: 0 };
-      monthlyOpsData[monthKey] = { month: monthLabel, services: 0, sales: 0 };
+const tabData = [
+  {
+    id: 'servicios',
+    title: 'Servicios',
+    content: {
+      heading: 'Gestión de Servicios Simplificada',
+      text: 'Desde la recepción del vehículo hasta la entrega, sigue cada paso. Crea órdenes de trabajo, asigna técnicos, y mantén a tus clientes informados con un solo clic.',
+      list: [
+        'Órdenes de trabajo digitales con checklist y fotos.',
+        'Historial completo por cliente y vehículo.',
+        'Comunicación con clientes vía WhatsApp (Add-on).',
+      ],
+      image: {
+        src: 'https://placehold.co/600x400',
+        alt: 'Vista de la interfaz de gestión de servicios',
+        hint: 'dashboard interface'
+      }
     }
-
-    placeholderServiceRecords.forEach((service) => {
-      if (service.status !== "Completado") return;
-      const date = parseISO(service.deliveryDateTime || service.serviceDate);
-      if (!isValid(date)) return;
-      const monthKey = format(date, "yyyy-MM");
-      if (monthlyData[monthKey]) {
-        monthlyData[monthKey].revenue += service.totalCost || 0;
-        const profit = (service.totalCost || 0) - (service.totalSuppliesCost || 0);
-        monthlyData[monthKey].profit += isFinite(profit) ? profit : 0;
-        monthlyOpsData[monthKey].services += 1;
+  },
+  {
+    id: 'inventario',
+    title: 'Inventario y POS',
+    content: {
+      heading: 'Inventario y Punto de Venta Integrados',
+      text: 'Controla tus refacciones y consumibles. Nuestro sistema te alerta sobre stock bajo y te permite facturar servicios y productos desde un mismo lugar.',
+      list: [
+        'Altas y bajas automáticas al usar refacciones en servicios.',
+        'Punto de Venta (POS) para cobros rápidos y facturación CFDI.',
+        'Sugerencias de compra basadas en la demanda.',
+      ],
+      image: {
+        src: 'https://placehold.co/600x400',
+        alt: 'Vista de la interfaz de control de inventario',
+        hint: 'inventory software'
       }
-    });
-
-    placeholderSales.forEach((sale) => {
-      const date = parseISO(sale.saleDate);
-      if (!isValid(date)) return;
-      const monthKey = format(date, "yyyy-MM");
-      if (monthlyData[monthKey]) {
-        monthlyData[monthKey].revenue += sale.totalAmount;
-        monthlyData[monthKey].profit += calculateSaleProfit(
-          sale,
-          placeholderInventory
-        );
-        monthlyOpsData[monthKey].sales += 1;
+    }
+  },
+  {
+    id: 'ia',
+    title: 'Inteligencia Artificial',
+    content: {
+      heading: 'Decisiones Potenciadas con IA',
+      text: 'Deja que la inteligencia artificial trabaje para ti. Ranoro analiza tus datos para darte recomendaciones que aumentan tu rentabilidad y eficiencia.',
+      list: [
+        'Sugerencias de precios para maximizar ganancias.',
+        'Análisis de capacidad para optimizar la agenda.',
+        'Ranking de refacciones por rentabilidad y rotación.',
+      ],
+      image: {
+        src: 'https://placehold.co/600x400',
+        alt: 'Dashboard con insights de inteligencia artificial',
+        hint: 'AI dashboard'
       }
-    });
+    }
+  },
+  {
+    id: 'reportes',
+    title: 'Reportes y Finanzas',
+    content: {
+      heading: 'Reportes Financieros al Instante',
+      text: 'Conoce la salud de tu negocio en tiempo real. Genera reportes financieros, de ventas y KPIs clave para tomar el control de tus finanzas.',
+      list: [
+        'Dashboards interactivos con tus métricas más importantes.',
+        'Exporta tus datos a PDF y Excel con un solo clic.',
+        'Conciliaciones y cortes de caja para una contabilidad clara.',
+      ],
+      image: {
+        src: 'https://placehold.co/600x400',
+        alt: 'Dashboard financiero con gráficos',
+        hint: 'financial dashboard'
+      }
+    }
+  }
+];
 
-    setMonthlyChartData(Object.values(monthlyData));
-    setMonthlyOperationsData(Object.values(monthlyOpsData));
+export function FeaturesSection() {
+    const [activeTab, setActiveTab] = React.useState('servicios');
 
-    const serviceTypeCounts: Record<string, number> = {};
-    placeholderServiceRecords.forEach((service) => {
-      const type = service.serviceType || "Servicio General";
-      serviceTypeCounts[type] = (serviceTypeCounts[type] || 0) + 1;
-    });
-
-    const serviceTypeColors: Record<string, string> = {
-      "Servicio General": "hsl(var(--chart-1))",
-      "Cambio de Aceite": "hsl(var(--chart-2))",
-      Pintura: "hsl(var(--chart-3))",
-    };
-
-    setServiceTypeChartData(
-      Object.entries(serviceTypeCounts).map(([name, value], index) => ({
-        name,
-        value,
-        fill:
-          serviceTypeColors[name] ||
-          `hsl(var(--chart-${(index % 5) + 1}))`,
-      }))
-    );
-
-    const totalServiceRevenue = placeholderServiceRecords
-      .filter((s) => s.status === "Completado")
-      .reduce((sum, s) => sum + (s.totalCost || 0), 0);
-    const totalPosRevenue = placeholderSales.reduce(
-      (sum, s) => sum + s.totalAmount,
-      0
-    );
-
-    setRevenueSourceChartData([
-      {
-        source: "Servicios",
-        value: totalServiceRevenue,
-        fill: "hsl(var(--chart-1))",
-      },
-      {
-        source: "Ventas POS",
-        value: totalPosRevenue,
-        fill: "hsl(var(--chart-2))",
-      },
-    ]);
-  }, []);
-
-  const formatCurrency = (value: number) =>
-    `$${new Intl.NumberFormat("es-MX", {
-      notation: "compact",
-      compactDisplay: "short",
-    }).format(value)}`;
-
-  const formatNumber = (value: number) =>
-    new Intl.NumberFormat("es-MX").format(value);
-
-  const monthlyChartConfig: ChartConfig = {
-    revenue: { label: "Ingresos", color: "hsl(var(--chart-1))" },
-    profit: { label: "Ganancia", color: "hsl(var(--chart-2))" },
-  };
-
-  const monthlyOpsChartConfig: ChartConfig = {
-    services: { label: "Servicios", color: "hsl(var(--chart-1))" },
-    sales: { label: "Ventas", color: "hsl(var(--chart-2))" },
-  };
-
-  const serviceTypeChartConfig: ChartConfig = serviceTypeChartData.reduce(
-    (acc, { name, fill }) => {
-      acc[name] = { label: name, color: fill };
-      return acc;
-    },
-    {} as ChartConfig
-  );
-
-  const revenueSourceChartConfig: ChartConfig = {
-    Servicios: { label: "Servicios", color: "hsl(var(--chart-1))" },
-    "Ventas POS": { label: "Ventas POS", color: "hsl(var(--chart-2))" },
-  };
-
-  return (
-    <>
-      <div className="grid gap-6 sm:grid-cols-1 lg:grid-cols-2">
-        {/* CHART 1 */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Ingresos vs. Ganancia</CardTitle>
-            <CardDescription>
-              Evolución mensual de ingresos brutos y ganancia neta.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="p-4 pt-0">
-            <div className="flex w-full items-center justify-center gap-x-8 gap-y-2 text-sm text-muted-foreground flex-wrap mb-4">
-              <div className="flex items-center gap-2">
-                <span
-                  className="h-2.5 w-2.5 rounded-full"
-                  style={{ backgroundColor: "var(--color-revenue)" }}
-                />
-                <span className="font-medium">Ingresos</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span
-                  className="h-2.5 w-2.5 rounded-full"
-                  style={{ backgroundColor: "var(--color-profit)" }}
-                />
-                <span className="font-medium">Ganancia</span>
-              </div>
-            </div>
-            <ChartContainer config={monthlyChartConfig} className="h-[300px] w-full">
-                <LineChart
-                  data={monthlyChartData}
-                  margin={{ top: 5, right: 10, left: 0, bottom: 10 }}
-                >
-                  <CartesianGrid vertical={false} />
-                  <XAxis
-                    dataKey="month"
-                    tickLine={false}
-                    axisLine={false}
-                    tickMargin={8}
-                  />
-                  <YAxis
-                    tickLine={false}
-                    axisLine={false}
-                    tickMargin={8}
-                    tickFormatter={(v) => formatCurrency(Number(v))}
-                  />
-                  <ChartTooltip
-                    cursor={false}
-                    content={<ChartTooltipContent formatter={formatCurrency} />}
-                  />
-                  <Line
-                    dataKey="revenue"
-                    type="monotone"
-                    stroke="var(--color-revenue)"
-                    strokeWidth={3}
-                    dot={{ r: 4 }}
-                    activeDot={{ r: 6 }}
-                    name="Ingresos"
-                  />
-                  <Line
-                    dataKey="profit"
-                    type="monotone"
-                    stroke="var(--color-profit)"
-                    strokeWidth={3}
-                    dot={{ r: 4 }}
-                    activeDot={{ r: 6 }}
-                    name="Ganancia"
-                  />
-                </LineChart>
-            </ChartContainer>
-          </CardContent>
-        </Card>
-
-        {/* CHART 2 */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Servicios vs. Ventas</CardTitle>
-            <CardDescription>
-              Volumen de operaciones mensuales.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="p-4 pt-0">
-            <div className="flex w-full items-center justify-center gap-x-8 gap-y-2 text-sm text-muted-foreground flex-wrap mb-4">
-              <div className="flex items-center gap-2">
-                <span
-                  className="h-2.5 w-2.5 rounded-full"
-                  style={{ backgroundColor: "var(--color-services)" }}
-                />
-                <span className="font-medium">Servicios</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span
-                  className="h-2.5 w-2.5 rounded-full"
-                  style={{ backgroundColor: "var(--color-sales)" }}
-                />
-                <span className="font-medium">Ventas</span>
-              </div>
-            </div>
-            <ChartContainer config={monthlyOpsChartConfig} className="h-[300px] w-full">
-                <LineChart
-                  data={monthlyOperationsData}
-                  margin={{ top: 5, right: 10, left: 0, bottom: 10 }}
-                >
-                  <CartesianGrid vertical={false} />
-                  <XAxis
-                    dataKey="month"
-                    tickLine={false}
-                    axisLine={false}
-                    tickMargin={8}
-                  />
-                  <YAxis
-                    tickLine={false}
-                    axisLine={false}
-                    tickMargin={8}
-                    tickFormatter={(v) => formatNumber(Number(v))}
-                  />
-                  <ChartTooltip
-                    cursor={false}
-                    content={<ChartTooltipContent formatter={formatNumber} />}
-                  />
-                  <Line
-                    dataKey="services"
-                    type="monotone"
-                    stroke="var(--color-services)"
-                    strokeWidth={3}
-                    dot={{ r: 4 }}
-                    activeDot={{ r: 6 }}
-                    name="Servicios"
-                  />
-                  <Line
-                    dataKey="sales"
-                    type="monotone"
-                    stroke="var(--color-sales)"
-                    strokeWidth={3}
-                    dot={{ r: 4 }}
-                    activeDot={{ r: 6 }}
-                    name="Ventas"
-                  />
-                </LineChart>
-            </ChartContainer>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* PIE CHARTS ROW */}
-      <div className="grid gap-6 sm:grid-cols-1 lg:grid-cols-2">
-        {/* PIE CHART 1 */}
-        <Card className="flex flex-col">
-          <CardHeader>
-            <CardTitle>Distribución de Tipos de Servicio</CardTitle>
-            <CardDescription>
-              Servicios más comunes (histórico).
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="flex-1 pb-0">
-            <ChartContainer
-              config={serviceTypeChartConfig}
-              className="mx-auto aspect-square max-h-[250px]"
-            >
-              <PieChart>
-                <ChartTooltip content={<ChartTooltipContent hideLabel />} />
-                <Pie
-                  data={serviceTypeChartData}
-                  dataKey="value"
-                  nameKey="name"
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={60}
-                  strokeWidth={5}
-                  labelLine={false}
-                  label={({
-                    cy,
-                    midAngle,
-                    innerRadius,
-                    outerRadius,
-                    percent,
-                  }) => {
-                    const RADIAN = Math.PI / 180;
-                    const radius =
-                      innerRadius + (outerRadius - innerRadius) * 0.5;
-                    const x = cy + radius * Math.cos(-midAngle * RADIAN);
-                    const y = cy + radius * Math.sin(-midAngle * RADIAN);
-                    return (
-                      <text
-                        x={x}
-                        y={y}
-                        fill="white"
-                        textAnchor={x > cy ? "start" : "end"}
-                        dominantBaseline="central"
-                        className="text-xs font-bold"
-                      >
-                        {(percent * 100).toFixed(0)}%
-                      </text>
-                    );
-                  }}
-                />
-              </PieChart>
-            </ChartContainer>
-          </CardContent>
-          <CardContent className="flex justify-center p-4">
-            <div className="flex w-full items-center justify-center gap-x-6 gap-y-2 text-sm text-muted-foreground flex-wrap">
-              {serviceTypeChartData.map((item) => (
-                <div key={item.name} className="flex items-center gap-2">
-                  <span
-                    className="h-2.5 w-2.5 rounded-full"
-                    style={{ backgroundColor: item.fill }}
-                  />
-                  <span className="font-medium">{item.name}</span>
+    return (
+        <section id="features" className="py-20 md:py-28 bg-gray-50 dark:bg-gray-900/50">
+            <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+                <div className="text-center max-w-3xl mx-auto">
+                    <Badge variant="secondary">Todo en un solo lugar</Badge>
+                    <h2 className="text-3xl md:text-4xl font-extrabold text-foreground mt-4">Una plataforma para cada necesidad de tu taller</h2>
+                    <p className="mt-4 text-lg text-muted-foreground">
+                        Controla cada aspecto de tu negocio con módulos diseñados específicamente para la operación automotriz.
+                    </p>
                 </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
 
-        {/* PIE CHART 2 */}
-        <Card className="flex flex-col">
-          <CardHeader>
-            <CardTitle>Fuentes de Ingresos (Histórico)</CardTitle>
-            <CardDescription>
-              Comparativa de ingresos por servicios vs. ventas de mostrador.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="flex-1 pb-0">
-            <ChartContainer
-              config={revenueSourceChartConfig}
-              className="mx-auto aspect-square max-h-[250px]"
-            >
-              <PieChart>
-                <ChartTooltip
-                  cursor={false}
-                  content={<ChartTooltipContent hideLabel formatter={formatCurrency} />}
-                />
-                <Pie
-                  data={revenueSourceChartData}
-                  dataKey="value"
-                  nameKey="source"
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={60}
-                  strokeWidth={5}
-                />
-              </PieChart>
-            </ChartContainer>
-          </CardContent>
-          <CardContent className="flex justify-center p-4">
-            <div className="flex w-full items-center justify-center gap-x-6 gap-y-2 text-sm text-muted-foreground flex-wrap">
-              {revenueSourceChartData.map((item) => (
-                <div key={item.source} className="flex items-center gap-2">
-                  <span
-                    className="h-2.5 w-2.5 rounded-full"
-                    style={{ backgroundColor: item.fill }}
-                  />
-                  <span className="font-medium">{item.source}</span>
+                <div className="mt-12 max-w-5xl mx-auto">
+                    <div className="flex flex-wrap justify-center border-b border-gray-200">
+                        {tabData.map(tab => (
+                            <button
+                                key={tab.id}
+                                onClick={() => setActiveTab(tab.id)}
+                                className={cn(
+                                    "py-4 px-6 block font-medium text-center border-b-2 transition-colors duration-300 focus:outline-none",
+                                    activeTab === tab.id
+                                        ? 'border-primary text-primary'
+                                        : 'border-transparent text-muted-foreground hover:text-foreground hover:border-gray-300'
+                                )}
+                            >
+                                {tab.title}
+                            </button>
+                        ))}
+                    </div>
+                    
+                    <div className="mt-10">
+                        {tabData.map(tab => (
+                            <div key={tab.id} style={{ display: activeTab === tab.id ? 'block' : 'none' }}>
+                                <div className="grid md:grid-cols-2 gap-12 items-center">
+                                    <div>
+                                        <h3 className="text-2xl font-bold text-foreground">{tab.content.heading}</h3>
+                                        <p className="mt-4 text-muted-foreground">{tab.content.text}</p>
+                                        <ul className="mt-6 space-y-3">
+                                            {tab.content.list.map((item, index) => (
+                                                <li key={index} className="flex items-start">
+                                                    <CheckCircle className="h-6 w-6 text-green-500 mr-3 mt-1 shrink-0" />
+                                                    <span>{item}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                    <div className="bg-white p-4 rounded-2xl shadow-lg">
+                                        <Image
+                                            src={tab.content.image.src}
+                                            alt={tab.content.image.alt}
+                                            width={600}
+                                            height={400}
+                                            className="rounded-xl"
+                                            data-ai-hint={tab.content.image.hint}
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
                 </div>
-              ))}
             </div>
-          </CardContent>
-        </Card>
-      </div>
-    </>
-  );
+        </section>
+    );
+}
+
+// Keeping the original DashboardCharts component empty as requested
+export function DashboardCharts() {
+  return null;
 }

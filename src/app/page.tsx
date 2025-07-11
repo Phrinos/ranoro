@@ -11,6 +11,7 @@ import { CheckCircle, Wrench, Package, LineChart, BrainCircuit, Rocket, Target, 
 import React, { useRef } from 'react';
 import { useIntersectionObserver } from '@/hooks/use-intersection-observer';
 import { cn } from '@/lib/utils';
+import { FeaturesSection } from './(app)/dashboard/components/dashboard-charts';
 
 const faqItems = [
     {
@@ -227,48 +228,7 @@ export default function LandingPage() {
             </div>
         </section>
         
-        <section id="proposal" className="py-20 md:py-28 bg-muted/50">
-            <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="grid md:grid-cols-2 gap-12 items-center">
-                    <AnimatedDiv>
-                         <Image 
-                            src="/antesdespues.png" 
-                            alt="Comparativa de un servicio antes y después de usar Ranoro"
-                            width={1200} 
-                            height={900} 
-                            className="rounded-xl shadow-2xl w-full h-auto"
-                            data-ai-hint="comparison before after"
-                        />
-                    </AnimatedDiv>
-                    <AnimatedDiv>
-                        <h2 className="text-3xl md:text-4xl font-extrabold">
-                            Lleva tu taller al nivel agencia
-                        </h2>
-                        <p className="mt-4 text-lg text-foreground">
-                            Ranoro es la plataforma SaaS diseñada para elevar la calidad, eficiencia y atención al cliente de tu taller — al mismo nivel de las agencias de autos — con un costo accesible y sin necesidad de más personal.
-                        </p>
-                    </AnimatedDiv>
-                </div>
-            </div>
-        </section>
-
-        <section id="features" className="py-20 md:py-28 bg-white">
-            <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-                <AnimatedDiv className="text-center max-w-3xl mx-auto">
-                    <Badge variant="secondary" className="mb-4 px-4 py-2 text-base sm:px-6 sm:py-3 sm:text-lg">¿Qué implica esto para ti?</Badge>
-                    <h2 className="text-3xl md:text-4xl font-extrabold">Automatización, Comunicación y Visión Estratégica</h2>
-                     <p className="mt-4 text-lg text-foreground">
-                        Ranoro te da las herramientas para optimizar cada área de tu taller.
-                    </p>
-                </AnimatedDiv>
-                <div className="mt-12 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 text-center">
-                    <AnimatedDiv><Card><CardHeader><RadioTower className="mx-auto h-10 w-10 text-primary mb-2"/><CardTitle>Comunicación Multicanal</CardTitle></CardHeader><CardContent><p className="text-muted-foreground">Envía recordatorios, ofertas y aprobaciones por WhatsApp, con un 95% de apertura.</p></CardContent></Card></AnimatedDiv>
-                    <AnimatedDiv><Card><CardHeader><BarChart3 className="mx-auto h-10 w-10 text-primary mb-2"/><CardTitle>Olvidate del Papeleo</CardTitle></CardHeader><CardContent><p className="text-muted-foreground">Genera cotizaciones, ordenes de servicio, revisiones de puntos de seguridad y hasta los tickets de manera digital.</p></CardContent></Card></AnimatedDiv>
-                    <AnimatedDiv><Card><CardHeader><BrainCircuit className="mx-auto h-10 w-10 text-primary mb-2"/><CardTitle>IA en Reportes</CardTitle></CardHeader><CardContent><p className="text-muted-foreground">Visualiza KPIs clave y diagnostica cuellos de botella sin agregar nómina.</p></CardContent></Card></AnimatedDiv>
-                    <AnimatedDiv><Card><CardHeader><CheckCircle className="mx-auto h-10 w-10 text-primary mb-2"/><CardTitle>Automatización Total</CardTitle></CardHeader><CardContent><p className="text-muted-foreground">Tus clientes confirmas sus citas directamente reduciendo la carga administrativa.</p></CardContent></Card></AnimatedDiv>
-                </div>
-            </div>
-        </section>
+        <FeaturesSection />
 
         <section id="benefits" className="py-20 md:py-28 bg-muted/50">
             <div className="container mx-auto px-4 sm:px-6 lg:px-8">
