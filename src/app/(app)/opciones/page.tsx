@@ -4,7 +4,6 @@
 
 import { Suspense, useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { useSearchParams, useRouter } from 'next/navigation';
-import { PageHeader } from "@/components/page-header";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -22,9 +21,10 @@ import {
 import { onAuthStateChanged, updatePassword, reauthenticateWithCredential, EmailAuthProvider } from 'firebase/auth';
 import { auth, storage, db } from '@/lib/firebaseClient.js';
 import { ref, uploadString, getDownloadURL } from 'firebase/storage';
-import { placeholderUsers, persistToFirestore, AUTH_USER_LOCALSTORAGE_KEY, placeholderAppRoles, placeholderServiceTypes, logAudit } from '@/lib/placeholder-data';
+import { AUTH_USER_LOCALSTORAGE_KEY, placeholderAppRoles, placeholderServiceTypes, logAudit } from '@/lib/placeholder-data';
+import { adminService } from '@/lib/services/admin.service'; // Import the service
 import { SignatureDialog } from '@/app/(app)/servicios/components/signature-dialog';
-import Image from "next/legacy/image";
+import Image from "next/image";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { TicketContent } from "@/components/ticket-content";
 import { Slider } from "@/components/ui/slider";
@@ -110,10 +110,7 @@ function PerfilPageContent() {
       }
     }
 
-    const userIndex = placeholderUsers.findIndex(u => u.id === currentUser.id);
-    if (userIndex === -1) return toast({ title: "Error", description: "No se pudo encontrar tu perfil.", variant: "destructive" });
-
-    const updatedUser: User = { ...placeholderUsers[userIndex], name: data.name, phone: data.phone || undefined, signatureDataUrl: data.signatureDataUrl || undefined };
+    const updatedUser: User = { ...currentUser, name: data.name, phone: data.phone || undefined, signatureDataUrl: data.signatureDataUrl || undefined };
 
     if (data.signatureDataUrl && data.signatureDataUrl.startsWith('data:image')) {
         if (!storage) return toast({ title: "Error de Almacenamiento", variant: "destructive" });
@@ -124,15 +121,15 @@ function PerfilPageContent() {
         } catch (e) { console.error("Error uploading signature:", e); toast({ title: "Error de Subida", variant: "destructive" }); }
     }
     
-    placeholderUsers[userIndex] = updatedUser; 
-
     try {
-        await persistToFirestore(['users']);
-        localStorage.setItem(AUTH_USER_LOCALSTORAGE_KEY, JSON.stringify(updatedUser));
-        setCurrentUser(updatedUser); 
+        const savedUser = await adminService.updateUserProfile(updatedUser);
+        localStorage.setItem(AUTH_USER_LOCALSTORAGE_KEY, JSON.stringify(savedUser));
+        setCurrentUser(savedUser); 
         toast({ title: "Perfil Actualizado" });
-        form.reset({ ...form.getValues(), name: data.name, phone: data.phone || '', signatureDataUrl: updatedUser.signatureDataUrl || '', newPassword: '', confirmNewPassword: '', currentPassword: '' });
-    } catch (e) { toast({ title: "Error de Guardado", variant: "destructive" }); }
+        form.reset({ ...form.getValues(), name: data.name, phone: data.phone || '', signatureDataUrl: savedUser.signatureDataUrl || '', newPassword: '', confirmNewPassword: '', currentPassword: '' });
+    } catch (e) { 
+        toast({ title: "Error de Guardado", variant: "destructive" });
+    }
   };
 
   if (isLoading) return <div className="text-center">Cargando perfil...</div>;
@@ -525,10 +522,7 @@ function TiposDeServicioPageContent() {
                  <div className="rounded-md border">
                     <Table>
                         <TableHeader>
-                            <TableRow>
-                                <TableHead>Nombre</TableHead>
-                                <TableHead className="text-right">Acciones</TableHead>
-                            </TableRow>
+                            <TableRow><TableHead>Nombre</TableHead><TableHead className="text-right">Acciones</TableHead></TableRow>
                         </TableHeader>
                         <TableBody>
                             {serviceTypes.length > 0 ? (
@@ -550,16 +544,11 @@ function TiposDeServicioPageContent() {
             </CardContent>
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                 <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>{editingType ? 'Editar' : 'Nuevo'} Tipo de Servicio</DialogTitle>
-                    </DialogHeader>
+                    <DialogHeader><DialogTitle>{editingType ? 'Editar' : 'Nuevo'} Tipo de Servicio</DialogTitle></DialogHeader>
                     <form onSubmit={handleSaveType} className="py-4 space-y-4">
                         <Label htmlFor="type-name">Nombre del Tipo de Servicio</Label>
                         <Input id="type-name" value={currentTypeName} onChange={(e) => setCurrentTypeName(capitalizeWords(e.target.value))} />
-                        <DialogFooter>
-                            <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>Cancelar</Button>
-                            <Button type="submit">Guardar</Button>
-                        </DialogFooter>
+                        <DialogFooter><Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>Cancelar</Button><Button type="submit">Guardar</Button></DialogFooter>
                     </form>
                 </DialogContent>
             </Dialog>
@@ -641,5 +630,4 @@ export default function OpcionesPageWrapper() {
         </Suspense>
     );
 }
-
 
