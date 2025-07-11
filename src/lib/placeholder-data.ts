@@ -1,6 +1,4 @@
 
-
-
 import type {
   Vehicle,
   ServiceRecord,
@@ -148,7 +146,7 @@ export let placeholderPublicOwnerReports: PublicOwnerReport[] = [];
 
 
 // --- DATA PERSISTENCE & HYDRATION ---
-const DATA_STORE_ID = "main_data";
+const DATA_STORE_ID = "main"; // Simplified ID
 
 const DATA_ARRAYS = {
     vehicles: placeholderVehicles,
@@ -172,9 +170,6 @@ const DATA_ARRAYS = {
     serviceTypes: placeholderServiceTypes,
     users: placeholderUsers,
 };
-
-
-const LOCALSTORAGE_DB_KEY = 'ranoroLocalDatabase';
 
 let resolveHydration: () => void;
 export const hydrateReady = new Promise<void>((res) => {
@@ -206,18 +201,18 @@ export async function logAudit(
     actionType, description, entityType: details.entityType, entityId: details.entityId,
   };
   placeholderAuditLogs.unshift(newLog);
-  await persistToFirestore(['auditLogs']);
+  // Do not persist audit logs on their own to avoid circular dependencies with other functions
 }
 
-// HydrateFromFirestore is now simpler. It just READS. It does not create data.
+// HydrateFromFirestore now ONLY reads. It assumes the document exists.
+// Creation is handled by the first persistToFirestore call.
 export async function hydrateFromFirestore() {
   if (typeof window === 'undefined' || (window as any).__APP_HYDRATED__) {
     resolveHydration?.();
     return;
   }
   
-  // Explicitly use the authenticated 'db' instance for reading workshop data
-  const docRef = doc(db, 'workshop_data', DATA_STORE_ID);
+  const docRef = doc(db, 'database', DATA_STORE_ID);
   
   try {
     const docSnap = await getDoc(docRef);
@@ -236,8 +231,22 @@ export async function hydrateFromFirestore() {
       });
       console.log('Data successfully hydrated from Firestore.');
     } else {
-      console.warn('Workshop data document not found. App will start with empty data. First save operation will create the document.');
-      // Do nothing, let the app start with empty placeholders
+      console.warn('Main data document not found. App will start with empty data. First save will create it.');
+      // Reset all arrays to be empty if the doc doesn't exist
+       Object.keys(DATA_ARRAYS).forEach(key => {
+           const placeholder = DATA_ARRAYS[key as keyof typeof DATA_ARRAYS];
+           if (Array.isArray(placeholder)) {
+               placeholder.length = 0;
+           } else {
+               DATA_ARRAYS[key as keyof typeof DATA_ARRAYS] = null;
+           }
+       });
+       // Ensure default roles exist for first-time use
+       placeholderAppRoles.splice(0, placeholderAppRoles.length, 
+          { id: 'role_superadmin', name: 'Superadmin', permissions: ALL_AVAILABLE_PERMISSIONS.map(p => p.id) },
+          { id: 'role_admin', name: 'Admin', permissions: ALL_AVAILABLE_PERMISSIONS.filter(p => !p.id.includes(':manage')).map(p => p.id) },
+          { id: 'role_tecnico', name: 'Tecnico', permissions: ['services:view_history', 'services:edit'] }
+        );
     }
   } catch (error) {
     console.error('Error reading from Firestore, using local fallback:', error);
@@ -249,11 +258,9 @@ export async function hydrateFromFirestore() {
 }
 
 
-// PersistToFirestore now handles the creation of the workshop document if it doesn't exist.
 export async function persistToFirestore(
   keysToUpdate?: (keyof typeof DATA_ARRAYS)[]
 ) {
-  // Explicitly use the authenticated 'db' instance for writing workshop data
   if (!db) {
     console.warn('Persist skipped: Firebase not configured.');
     return;
@@ -270,8 +277,7 @@ export async function persistToFirestore(
   
   const sanitizedData = sanitizeObjectForFirestore(dataToPersist);
   try {
-    const docRef = doc(db, 'workshop_data', DATA_STORE_ID);
-    // Use merge:true which will create the document if it doesn't exist, or update it if it does.
+    const docRef = doc(db, 'database', DATA_STORE_ID);
     await setDoc(docRef, sanitizedData, { merge: true });
     
     console.log(`Data successfully persisted to Firestore on keys: ${keys.join(', ')}`);

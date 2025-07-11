@@ -40,10 +40,10 @@ service cloud.firestore {
       allow read: if true;
       allow create, update, delete: if request.auth != null;
     }
-
-    // By default, deny access to any other collection/document path.
-    // This is a security best practice.
-    match /{document=**} {
+    
+    // Default deny access to any other collection/document path.
+    match /{path=**} {
       allow read, write: if false;
     }
   }
+}

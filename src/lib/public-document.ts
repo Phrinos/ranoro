@@ -1,5 +1,4 @@
 
-
 import { doc, setDoc } from 'firebase/firestore';
 // IMPORTANT: Use the authenticated client for write operations
 import { db } from '@/lib/firebaseClient'; 
@@ -37,10 +36,10 @@ export const savePublicDocument = async (
   // Map the type to the correct collection name
   const collectionMap = {
     service: 'publicServices',
-    quote: 'publicQuotes',
+    quote: 'publicQuotes', // Quotes are also stored in publicServices now, but we keep this for legacy/flexibility
     ownerReport: 'publicOwnerReports',
   };
-  const collectionName = collectionMap[type];
+  const collectionName = type === 'quote' ? 'publicServices' : collectionMap[type];
 
   // Prepare the full data payload
   const fullPublicData = sanitizeObjectForFirestore({
