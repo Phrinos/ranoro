@@ -3,17 +3,37 @@
 
 import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/layout/app-sidebar";
+import { useEffect, useState } from "react";
+import { hydrateFromFirestore } from "@/lib/placeholder-data";
+import { Loader2 } from "lucide-react";
 
 export default function AppLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  
-  // The complex auth and hydration logic has been removed.
-  // We are now simply displaying the layout and its children
-  // to ensure there are no blocks to rendering the app content after login.
-  
+  const [isHydrated, setIsHydrated] = useState(false);
+
+  useEffect(() => {
+    const performHydration = async () => {
+      // The hydrateFromFirestore function now handles loading all data
+      // from the main document in Firestore.
+      await hydrateFromFirestore();
+      setIsHydrated(true);
+    };
+
+    performHydration();
+  }, []);
+
+  if (!isHydrated) {
+    return (
+      <div className="flex h-screen w-screen items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin" />
+        <span className="ml-4 text-lg text-muted-foreground">Cargando datos del taller...</span>
+      </div>
+    );
+  }
+
   return (
     <SidebarProvider defaultOpen={true}>
       <AppSidebar />
