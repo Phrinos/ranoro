@@ -88,9 +88,9 @@ export const RentalReceiptContent = React.forwardRef<HTMLDivElement, RentalRecei
                 <div className="my-2 p-2 border border-red-500 bg-red-50 text-red-800">
                     <h4 className="font-bold flex items-center gap-1"><AlertTriangle className="h-3 w-3"/>AVISO DE ADEUDO</h4>
                     <div className="space-y-0.5 text-xs mt-1">
-                        {driverDebt.rentalDebt > 0 && <div className="flex justify-between"><span>Deuda de Renta:</span><span>{formatCurrency(driverDebt.rentalDebt)}</span></div>}
-                        {driverDebt.depositDebt > 0 && <div className="flex justify-between"><span>Deuda de Depósito:</span><span>{formatCurrency(driverDebt.depositDebt)}</span></div>}
-                        {driverDebt.manualDebt > 0 && <div className="flex justify-between"><span>Cargos Manuales:</span><span>{formatCurrency(driverDebt.manualDebt)}</span></div>}
+                        {driverDebt.depositDebt > 0 && <div className="flex justify-between"><span>Deuda de depósito:</span><span>{formatCurrency(driverDebt.depositDebt)}</span></div>}
+                        {driverDebt.rentalDebt > 0 && <div className="flex justify-between"><span>Deuda de renta (mensual):</span><span>{formatCurrency(driverDebt.rentalDebt)}</span></div>}
+                        {driverDebt.manualDebt > 0 && <div className="flex justify-between"><span>Adeudo Pendiente:</span><span>{formatCurrency(driverDebt.manualDebt)}</span></div>}
                         <div className="flex justify-between font-bold border-t border-red-300 mt-1 pt-1"><span>Deuda Total Restante:</span><span>{formatCurrency(driverDebt.totalDebt)}</span></div>
                     </div>
                 </div>
