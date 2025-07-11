@@ -2,22 +2,21 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm, Controller, useFieldArray, type Control, useWatch } from "react-hook-form";
+import { useForm, useFieldArray, useWatch } from "react-hook-form";
 import * as z from "zod";
 import { Button } from "@/components/ui/button";
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Form, FormControl, FormField, FormItem, FormLabel } from "@/components/ui/form";
 import { Ban, Camera, CheckCircle, Eye, Loader2, PlusCircle, ShieldCheck, Signature, Trash2, Wrench } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { parseISO, isValid } from 'date-fns';
-import type { ServiceRecord, Vehicle, Technician, InventoryItem, QuoteRecord, User, WorkshopInfo, ServiceItem, SafetyInspection, PhotoReportGroup, ServiceTypeRecord } from "@/types";
+import type { ServiceRecord, Vehicle, Technician, InventoryItem, QuoteRecord, User, WorkshopInfo, ServiceTypeRecord } from "@/types";
 import React, { useEffect, useState, useMemo, useCallback, useRef } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { VehicleDialog } from "../../vehiculos/components/vehicle-dialog";
 import type { VehicleFormValues } from "../../vehiculos/components/vehicle-form";
-import { placeholderVehicles as defaultPlaceholderVehicles, placeholderInventory, persistToFirestore, AUTH_USER_LOCALSTORAGE_KEY, placeholderServiceTypes, placeholderServiceRecords } from "@/lib/placeholder-data";
+import { AUTH_USER_LOCALSTORAGE_KEY } from "@/lib/placeholder-data";
 import { AlertDialog, AlertDialogTrigger, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter } from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/label";
-import { suggestQuote } from '@/ai/flows/quote-suggestion-flow';
 import { enhanceText } from '@/ai/flows/text-enhancement-flow';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SignatureDialog } from './signature-dialog';
@@ -30,7 +29,7 @@ import { ReceptionAndDelivery } from './ReceptionAndDelivery';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import Image from "next/image";
 import { Download } from "lucide-react";
-import { ServiceDetailsCard } from "./ServiceDetailsCard"; // Import the new component
+import { ServiceDetailsCard } from "./ServiceDetailsCard";
 import { Textarea } from "@/components/ui/textarea";
 import { db } from '@/lib/firebaseClient.js';
 import { doc, getDoc } from 'firebase/firestore';
@@ -140,7 +139,9 @@ interface ServiceFormProps {
   initialDataQuote?: Partial<QuoteRecord> | null;
   vehicles: Vehicle[];
   technicians: Technician[];
-  inventoryItems: InventoryItem[]; 
+  inventoryItems: InventoryItem[];
+  serviceHistory: ServiceRecord[];
+  serviceTypes: ServiceTypeRecord[];
   onSubmit: (data: ServiceRecord | QuoteRecord) => Promise<void>;
   onClose: () => void;
   isReadOnly?: boolean;
@@ -148,7 +149,6 @@ interface ServiceFormProps {
   mode?: 'service' | 'quote';
   onDelete?: (id: string) => void;
   onCancelService?: (serviceId: string, reason: string) => void;
-  onViewQuoteRequest?: (serviceId: string) => void;
 }
 
 const IVA_RATE = 0.16;
@@ -161,6 +161,8 @@ export function ServiceForm({
   vehicles: parentVehicles,
   technicians,
   inventoryItems: inventoryItemsProp,
+  serviceHistory,
+  serviceTypes,
   onSubmit,
   onClose,
   isReadOnly = false,
@@ -173,7 +175,6 @@ export function ServiceForm({
   
   const [localVehicles, setLocalVehicles] = useState<Vehicle[]>(parentVehicles);
   const [currentInventoryItems, setCurrentInventoryItems] = useState<InventoryItem[]>(inventoryItemsProp);
-  const [serviceTypes, setServiceTypes] = useState<ServiceTypeRecord[]>([]);
   const [workshopInfo, setWorkshopInfo] = useState<WorkshopInfo | {}>({});
   const [isGeneratingQuote, setIsGeneratingQuote] = useState(false);
   const [isEnhancingText, setIsEnhancingText] = useState<string | null>(null);
@@ -197,8 +198,6 @@ export function ServiceForm({
   });
   const { control, getValues, setValue, watch, trigger } = form;
 
-  const { fields: photoReportFields, append: appendPhotoReport, remove: removePhotoReport } = useFieldArray({ control, name: "photoReports" });
-  
   const watchedId = useWatch({ control, name: 'id' });
   const watchedStatus = watch('status');
   const watchedServiceItems = useWatch({ control, name: "serviceItems" });
@@ -229,7 +228,6 @@ export function ServiceForm({
 
   useEffect(() => { setLocalVehicles(parentVehicles); }, [parentVehicles]);
   useEffect(() => { setCurrentInventoryItems(inventoryItemsProp); }, [inventoryItemsProp]);
-  useEffect(() => { setServiceTypes([...placeholderServiceTypes]); }, []);
 
   const refreshCurrentUser = useCallback(() => {
     const authUserString = typeof window !== "undefined" ? localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY) : null;
@@ -289,43 +287,6 @@ export function ServiceForm({
         photoReports: photoReportsData,
         serviceItems: serviceItemsData,
     });
-
-    // --- Signature Sync Logic ---
-    const syncSignature = async () => {
-      if (data?.id && data.publicId && db) {
-        try {
-          const publicDocRef = doc(db, 'publicServices', data.publicId);
-          const publicDocSnap = await getDoc(publicDocRef);
-
-          if (publicDocSnap.exists()) {
-            const publicData = publicDocSnap.data() as ServiceRecord;
-            let formUpdated = false;
-            
-            if (publicData.customerSignatureReception && !getValues('customerSignatureReception')) {
-              setValue('customerSignatureReception', publicData.customerSignatureReception, { shouldDirty: true });
-              formUpdated = true;
-            }
-            if (publicData.customerSignatureDelivery && !getValues('customerSignatureDelivery')) {
-              setValue('customerSignatureDelivery', publicData.customerSignatureDelivery, { shouldDirty: true });
-              formUpdated = true;
-            }
-
-            if(formUpdated) {
-                // Also update the master data array and persist
-                const serviceIndex = placeholderServiceRecords.findIndex(s => s.id === data.id);
-                if (serviceIndex > -1) {
-                    const updatedRecord = { ...placeholderServiceRecords[serviceIndex], ...getValues() };
-                    placeholderServiceRecords[serviceIndex] = updatedRecord;
-                    await persistToFirestore(['serviceRecords']);
-                }
-            }
-          }
-        } catch (e) {
-          console.error("Failed to sync signatures from public doc:", e);
-        }
-      }
-    };
-    syncSignature();
     
   }, [initialData, mode, form, isReadOnly, refreshCurrentUser, serviceTypes, getValues, setValue]);
   
@@ -372,19 +333,18 @@ export function ServiceForm({
   }, [viewingImageUrl, toast]);
 
   const handleSaveNewVehicle = useCallback(async (vehicleData: VehicleFormValues) => {
+    if (!onVehicleCreated) return;
     const newVehicle: Vehicle = {
-      id: generateUniqueId(),
+      id: generateUniqueId(), // Firestore will generate its own ID, this is temporary
       ...vehicleData,
       year: Number(vehicleData.year),
     };
-    defaultPlaceholderVehicles.push(newVehicle);
-    await persistToFirestore(['vehicles']);
+    onVehicleCreated(newVehicle);
     setLocalVehicles(prev => [...prev, newVehicle]);
     setValue('vehicleId', String(newVehicle.id), { shouldValidate: true });
     setValue('vehicleLicensePlateSearch', newVehicle.licensePlate);
     setIsVehicleDialogOpen(false);
     toast({ title: "Vehículo Registrado", description: `Se registró ${newVehicle.make} ${newVehicle.model} (${newVehicle.licensePlate}).`});
-    onVehicleCreated?.(newVehicle);
   }, [onVehicleCreated, setValue, toast]);
 
   const handleEnhanceText = useCallback(async (fieldName: 'notes' | 'vehicleConditions' | 'customerItems' | 'safetyInspection.inspectionNotes' | `photoReports.${number}.description`) => {
@@ -456,9 +416,6 @@ export function ServiceForm({
 
   const handleGenerateQuoteWithAI = useCallback(async () => {
     setIsGeneratingQuote(true);
-    // This function's body was removed as it's no longer used in this refactored component.
-    // The logic will be handled by the parent component that calls this via the prop.
-    // For now, we simulate an async operation.
     await new Promise(resolve => setTimeout(resolve, 1000));
     console.warn("handleGenerateQuoteWithAI should be passed from the parent.");
     setIsGeneratingQuote(false);
@@ -493,7 +450,7 @@ export function ServiceForm({
             </div>
             
             <TabsContent value="servicio" className="space-y-6 mt-4">
-                <VehicleSelectionCard isReadOnly={isReadOnly} localVehicles={localVehicles} onVehicleSelected={() => {}} onOpenNewVehicleDialog={() => { setNewVehicleInitialData({ licensePlate: getValues('vehicleLicensePlateSearch') || "" }); setIsVehicleDialogOpen(true); }}/>
+                <VehicleSelectionCard isReadOnly={isReadOnly} localVehicles={localVehicles} serviceHistory={serviceHistory} onVehicleSelected={() => {}} onOpenNewVehicleDialog={() => { setNewVehicleInitialData({ licensePlate: getValues('vehicleLicensePlateSearch') || "" }); setIsVehicleDialogOpen(true); }}/>
                 <ServiceDetailsCard
                   isReadOnly={isReadOnly}
                   technicians={technicians}
@@ -571,7 +528,15 @@ export function ServiceForm({
       </Form>
       <SignatureDialog open={isTechSignatureDialogOpen} onOpenChange={setIsTechSignatureDialogOpen} onSave={(s) => { form.setValue('safetyInspection.technicianSignature', s, { shouldDirty: true }); setIsTechSignatureDialogOpen(false); toast({ title: 'Firma Capturada' }); }}/>
       
-      {isPreviewOpen && serviceForPreview && (<UnifiedPreviewDialog open={isPreviewOpen} onOpenChange={setIsPreviewOpen} service={serviceForPreview} />)}
+      {isPreviewOpen && serviceForPreview && (
+        <UnifiedPreviewDialog 
+          open={isPreviewOpen} 
+          onOpenChange={setIsPreviewOpen} 
+          service={serviceForPreview} 
+          vehicle={localVehicles.find(v => v.id === serviceForPreview.vehicleId) || null}
+          associatedQuote={null} // Pass the associated quote if available
+        />
+      )}
       <VehicleDialog open={isVehicleDialogOpen} onOpenChange={setIsVehicleDialogOpen} onSave={handleSaveNewVehicle} vehicle={newVehicleInitialData}/>
       <Dialog open={isImageViewerOpen} onOpenChange={setIsImageViewerOpen}>
         <DialogContent className="max-w-4xl p-2">

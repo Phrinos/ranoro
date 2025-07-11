@@ -41,88 +41,36 @@ import {
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import type { User, ServiceRecord, AppRole } from "@/types";
-import { placeholderServiceRecords, placeholderAppRoles, AUTH_USER_LOCALSTORAGE_KEY, persistToFirestore, defaultSuperAdmin } from "@/lib/placeholder-data";
 import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 
 
-export function AppSidebar() {
+export function AppSidebar({
+  currentUser,
+  newSignatureServices,
+  onNotificationsViewed,
+  onLogout,
+}: {
+  currentUser: User | null;
+  newSignatureServices: ServiceRecord[];
+  onNotificationsViewed: () => void;
+  onLogout: () => void;
+}) {
   const navItems = useNavigation();
   const router = useRouter();
   const { toast } = useToast();
   const { isMobile, setOpenMobile } = useSidebar(); // Get sidebar context
 
-  const [currentUser, setCurrentUser] = React.useState<User | null>(defaultSuperAdmin);
-  const [newSignatureServices, setNewSignatureServices] = React.useState<ServiceRecord[]>([]);
-
-  React.useEffect(() => {
-    const checkNotifications = () => {
-      if (typeof window !== "undefined") {
-        const authUserString = localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY);
-        if (authUserString) {
-          try {
-            setCurrentUser(JSON.parse(authUserString));
-          } catch (e) {
-            console.error("Failed to parse authUser for sidebar:", e);
-            setCurrentUser(defaultSuperAdmin);
-          }
-        }
-        
-        // Check for new signatures on load
-        const unreadServices = placeholderServiceRecords.filter(s => 
-          (s.customerSignatureReception && !s.receptionSignatureViewed) ||
-          (s.customerSignatureDelivery && !s.deliverySignatureViewed)
-        );
-        setNewSignatureServices(unreadServices);
-      }
-    };
-
-    checkNotifications(); // Initial check
-
-    window.addEventListener('focus', checkNotifications); // Re-check when window gains focus
-    window.addEventListener('databaseUpdated', checkNotifications); // Re-check on data changes
-
-    return () => {
-      window.removeEventListener('focus', checkNotifications); // Cleanup listener
-      window.removeEventListener('databaseUpdated', checkNotifications);
-    };
-  }, []);
-
   const handleLogout = async () => {
-    // In no-auth mode, just redirect
+    onLogout();
     router.push("/login");
   };
 
-  const handleNotificationOpen = async (isOpen: boolean) => {
+  const handleNotificationOpen = (isOpen: boolean) => {
     if (isOpen && newSignatureServices.length > 0) {
-      const servicesToUpdate = [...newSignatureServices];
-      setNewSignatureServices([]); // Clear immediately for UI responsiveness
-
-      const serviceIdsToUpdate = servicesToUpdate.map(s => s.id);
-      let recordsChanged = false;
-
-      placeholderServiceRecords.forEach((record, index) => {
-        if (serviceIdsToUpdate.includes(record.id)) {
-          if (record.customerSignatureReception && !record.receptionSignatureViewed) {
-            placeholderServiceRecords[index].receptionSignatureViewed = true;
-            recordsChanged = true;
-          }
-          if (record.customerSignatureDelivery && !record.deliverySignatureViewed) {
-            placeholderServiceRecords[index].deliverySignatureViewed = true;
-            recordsChanged = true;
-          }
-        }
-      });
-
-      if (recordsChanged) {
-        await persistToFirestore(['serviceRecords']);
-        toast({
-            title: "Notificaciones leídas",
-            description: "Las nuevas firmas han sido marcadas como vistas.",
-        });
-      }
+      onNotificationsViewed();
     }
   };
 

@@ -11,13 +11,13 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
 import { Car as CarIcon, AlertCircle, User, Fingerprint, History } from 'lucide-react';
 import type { Vehicle, ServiceRecord } from '@/types';
-import { placeholderServiceRecords } from '@/lib/placeholder-data';
 import { format, isValid, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 
 interface VehicleSelectionCardProps {
   isReadOnly?: boolean;
   localVehicles: Vehicle[];
+  serviceHistory: ServiceRecord[];
   onVehicleSelected: (vehicle: Vehicle | null) => void;
   onOpenNewVehicleDialog: () => void;
 }
@@ -25,6 +25,7 @@ interface VehicleSelectionCardProps {
 export function VehicleSelectionCard({
   isReadOnly,
   localVehicles,
+  serviceHistory,
   onVehicleSelected,
   onOpenNewVehicleDialog,
 }: VehicleSelectionCardProps) {
@@ -46,7 +47,7 @@ export function VehicleSelectionCard({
       if (vehicle) {
         setSelectedVehicle(vehicle);
         setVehicleLicensePlateSearch(vehicle.licensePlate);
-        const vehicleServices = placeholderServiceRecords.filter(s => s.vehicleId === vehicle.id).sort((a, b) => new Date(b.serviceDate).getTime() - new Date(a.serviceDate).getTime());
+        const vehicleServices = serviceHistory.filter(s => s.vehicleId === vehicle.id).sort((a, b) => new Date(b.serviceDate).getTime() - new Date(a.serviceDate).getTime());
         setLastService(vehicleServices[0] || null);
         setPenultimateService(vehicleServices[1] || null);
       }
@@ -55,7 +56,7 @@ export function VehicleSelectionCard({
         setLastService(null);
         setPenultimateService(null);
     }
-  }, [vehicleId, localVehicles]);
+  }, [vehicleId, localVehicles, serviceHistory]);
 
   const handleSearchVehicle = () => {
     if (!vehicleLicensePlateSearch.trim()) {
@@ -85,7 +86,7 @@ export function VehicleSelectionCard({
     }
     setVehicleNotFound(false);
     setVehicleSearchResults([]);
-    const vehicleServices = placeholderServiceRecords.filter(s => s.vehicleId === vehicle.id).sort((a, b) => new Date(b.serviceDate).getTime() - new Date(a.serviceDate).getTime());
+    const vehicleServices = serviceHistory.filter(s => s.vehicleId === vehicle.id).sort((a, b) => new Date(b.serviceDate).getTime() - new Date(a.serviceDate).getTime());
     setLastService(vehicleServices[0] || null);
     setPenultimateService(vehicleServices[1] || null);
     onVehicleSelected(vehicle);

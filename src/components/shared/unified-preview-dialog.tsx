@@ -7,22 +7,20 @@ import { Button } from '@/components/ui/button';
 import { Printer, MessageSquare, Download } from 'lucide-react';
 import type { ServiceRecord, Vehicle, QuoteRecord, WorkshopInfo } from '@/types';
 import { ServiceSheetContent } from '@/components/service-sheet-content';
-import { placeholderServiceRecords, placeholderVehicles } from '@/lib/placeholder-data';
 import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../ui/dialog';
 import Image from 'next/image';
-import { QuoteContent } from '../quote-content';
 
 interface UnifiedPreviewDialogProps {
   open: boolean;
   onOpenChange: (isOpen: boolean) => void;
   service: ServiceRecord;
+  vehicle: Vehicle | null;
+  associatedQuote?: QuoteRecord | null;
 }
 
-export function UnifiedPreviewDialog({ open, onOpenChange, service }: UnifiedPreviewDialogProps) {
+export function UnifiedPreviewDialog({ open, onOpenChange, service, vehicle, associatedQuote }: UnifiedPreviewDialogProps) {
   const { toast } = useToast();
-  const [associatedQuote, setAssociatedQuote] = useState<QuoteRecord | null>(null);
-  const [vehicle, setVehicle] = useState<Vehicle | null>(null);
   const [workshopInfo, setWorkshopInfo] = useState<WorkshopInfo | {}>({});
   const contentRef = useRef<HTMLDivElement>(null);
 
@@ -30,27 +28,20 @@ export function UnifiedPreviewDialog({ open, onOpenChange, service }: UnifiedPre
   const [viewingImageUrl, setViewingImageUrl] = useState<string | null>(null);
 
   useEffect(() => {
-    if (open && service) {
-      const foundQuote = placeholderServiceRecords.find(s => s.id === service.id && s.quoteDate);
-      setAssociatedQuote(foundQuote || null);
-
-      const foundVehicle = placeholderVehicles.find(v => v.id === service.vehicleId);
-      setVehicle(foundVehicle || null);
-      
+    if (open) {
       const storedWorkshopInfo = localStorage.getItem("workshopTicketInfo");
       if (storedWorkshopInfo) {
         setWorkshopInfo(JSON.parse(storedWorkshopInfo));
       }
     }
-  }, [open, service]);
+  }, [open]);
 
   const handleShareService = useCallback(() => {
     if (!service || !service.publicId) {
       toast({ title: "Enlace no disponible", description: 'No se ha podido generar el enlace público.', variant: "default" });
       return;
     }
-    const vehicleForShare = placeholderVehicles.find(v => v.id === service.vehicleId);
-    if (!vehicleForShare) {
+    if (!vehicle) {
         toast({ title: "Faltan Datos", description: "No se encontró el vehículo asociado.", variant: "destructive" });
         return;
     }
@@ -58,7 +49,7 @@ export function UnifiedPreviewDialog({ open, onOpenChange, service }: UnifiedPre
     
     const message = `${shareUrl}
 
-Hola ${vehicleForShare.ownerName || 'Cliente'}, gracias por confiar en Ranoro. Te proporcionamos los detalles del servicio de tu vehículo ${vehicleForShare.make} ${vehicleForShare.model} ${vehicleForShare.year} placas ${vehicleForShare.licensePlate}.
+Hola ${vehicle.ownerName || 'Cliente'}, gracias por confiar en Ranoro. Te proporcionamos los detalles del servicio de tu vehículo ${vehicle.make} ${vehicle.model} ${vehicle.year} placas ${vehicle.licensePlate}.
 
 • Haz clic en el enlace y encontrarás:
   1️⃣ La cotización detallada.
@@ -71,7 +62,7 @@ Hola ${vehicleForShare.ownerName || 'Cliente'}, gracias por confiar en Ranoro. T
     navigator.clipboard.writeText(message).then(() => {
       toast({ title: 'Mensaje Copiado', description: 'El mensaje para WhatsApp ha sido copiado a tu portapapeles.' });
     });
-  }, [service, toast]);
+  }, [service, vehicle, toast]);
   
   const handleViewImage = (url: string) => {
     setViewingImageUrl(url);

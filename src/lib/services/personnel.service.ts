@@ -1,78 +1,79 @@
 
-
+import {
+  collection,
+  onSnapshot,
+  doc,
+  getDoc,
+  addDoc,
+  updateDoc,
+} from 'firebase/firestore';
+import { db } from '../firebaseClient';
 import type { Technician, AdministrativeStaff, Driver } from "@/types";
 import type { TechnicianFormValues } from "@/app/(app)/tecnicos/components/technician-form";
 import type { AdministrativeStaffFormValues } from "@/app/(app)/administrativos/components/administrative-staff-form";
 import type { DriverFormValues } from "@/app/(app)/conductores/components/driver-form";
-import { 
-    placeholderTechnicians, 
-    placeholderAdministrativeStaff,
-    placeholderDrivers,
-    persistToFirestore
-} from '../placeholder-data';
-
 
 // --- Technicians ---
 
 const onTechniciansUpdate = (callback: (technicians: Technician[]) => void): (() => void) => {
-    callback([...placeholderTechnicians]);
-    return () => {};
+    const unsubscribe = onSnapshot(collection(db, "technicians"), (snapshot) => {
+        callback(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Technician)));
+    });
+    return unsubscribe;
 };
 
 const getTechnicianById = async (id: string): Promise<Technician | undefined> => {
-    return placeholderTechnicians.find(t => t.id === id);
+    const docRef = doc(db, 'technicians', id);
+    const docSnap = await getDoc(docRef);
+    return docSnap.exists() ? { id: docSnap.id, ...docSnap.data() } as Technician : undefined;
 };
 
 const addTechnician = async (data: TechnicianFormValues): Promise<Technician> => {
-    const newTechnician: Technician = {
-        id: `tech_${Date.now()}`,
+    const newTechnicianData = {
         ...data,
         isArchived: false,
     };
-    placeholderTechnicians.push(newTechnician);
-    await persistToFirestore(['technicians']);
-    return newTechnician;
+    const docRef = await addDoc(collection(db, 'technicians'), newTechnicianData);
+    return { id: docRef.id, ...newTechnicianData };
 };
 
 // --- Administrative Staff ---
 
 const onAdminStaffUpdate = (callback: (staff: AdministrativeStaff[]) => void): (() => void) => {
-    callback([...placeholderAdministrativeStaff]);
-    return () => {};
+    const unsubscribe = onSnapshot(collection(db, "administrativeStaff"), (snapshot) => {
+        callback(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as AdministrativeStaff)));
+    });
+    return unsubscribe;
 };
 
 const addAdminStaff = async (data: AdministrativeStaffFormValues): Promise<AdministrativeStaff> => {
-    const newStaff: AdministrativeStaff = {
-        id: `adm_${Date.now()}`,
+    const newStaffData = {
         ...data,
         isArchived: false,
     };
-    placeholderAdministrativeStaff.push(newStaff);
-    await persistToFirestore(['administrativeStaff']);
-    return newStaff;
+    const docRef = await addDoc(collection(db, 'administrativeStaff'), newStaffData);
+    return { id: docRef.id, ...newStaffData };
 };
 
 // --- Drivers ---
 
 const onDriversUpdate = (callback: (drivers: Driver[]) => void): (() => void) => {
-    callback([...placeholderDrivers]);
-    return () => {};
+    const unsubscribe = onSnapshot(collection(db, "drivers"), (snapshot) => {
+        callback(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Driver)));
+    });
+    return unsubscribe;
 };
 
 const saveDriver = async (data: DriverFormValues, existingId?: string): Promise<Driver> => {
     if (existingId) {
-        const index = placeholderDrivers.findIndex(d => d.id === existingId);
-        if (index > -1) {
-            placeholderDrivers[index] = { ...placeholderDrivers[index], ...data };
-            await persistToFirestore(['drivers']);
-            return placeholderDrivers[index];
-        }
-        throw new Error("Driver not found");
+        const docRef = doc(db, 'drivers', existingId);
+        await updateDoc(docRef, data);
+        const docSnap = await getDoc(docRef);
+        return { id: docSnap.id, ...docSnap.data() } as Driver;
     } else {
-        const newDriver: Driver = { id: `drv_${Date.now()}`, ...data, documents: {} };
-        placeholderDrivers.push(newDriver);
-        await persistToFirestore(['drivers']);
-        return newDriver;
+        const newDriverData = { ...data, documents: {} };
+        const docRef = await addDoc(collection(db, 'drivers'), newDriverData);
+        return { id: docRef.id, ...newDriverData };
     }
 };
 

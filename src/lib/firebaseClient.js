@@ -1,31 +1,32 @@
 // lib/firebaseClient.js
-// ---------------------------------------------------
-// CONEXIÓN A FIREBASE DESACTIVADA PARA MODO LOCAL
-// ---------------------------------------------------
+import { initializeApp, getApps, getApp } from 'firebase/app'
+import { getFirestore } from 'firebase/firestore'
+import { getStorage } from 'firebase/storage'
+import { getAuth } from 'firebase/auth'
 
-// import { initializeApp, getApps, getApp } from "firebase/app";
-// import { getFirestore } from "firebase/firestore";
-// import { getStorage } from "firebase/storage";
-// import { getAuth } from "firebase/auth";
+/* ----------------------------------------------------------
+   1.  Configuración: TODO se toma de variables de entorno
+   ---------------------------------------------------------- */
+const firebaseConfig = {
+  apiKey:            process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+  authDomain:        process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  databaseURL:       process.env.NEXT_PUBLIC_FIREBASE_DATABASE_URL,
+  projectId:         process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+  storageBucket:     process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+  appId:             process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+}
 
-// const firebaseConfig = {
-//   apiKey: "AIzaSyA_ot6L0zgglc1tC0BounxYIvj7y8048Sg",
-//   authDomain: "ranoro-jm8l0.firebaseapp.com",
-//   projectId: "ranoro-jm8l0",
-//   storageBucket: "ranoro-jm8l0.firebasestorage.app",
-//   messagingSenderId: "290934350177",
-//   appId: "1:290934350177:web:2365c77eaca4bb0d906520",
-// };
+/* ----------------------------------------------------------
+   2.  Inicializa (sin duplicar apps si hace HMR)
+   ---------------------------------------------------------- */
+const app = getApps().length ? getApp() : initializeApp(firebaseConfig)
 
-// const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
+/* ----------------------------------------------------------
+   3.  Exporta los SDK listos para usar
+   ---------------------------------------------------------- */
+export const db      = getFirestore(app)
+export const storage = getStorage(app)
+export const auth    = typeof window !== 'undefined' ? getAuth(app) : null
 
-// export const db = getFirestore(app);
-// export const storage = getStorage(app);
-// export const auth = typeof window !== "undefined" ? getAuth(app) : null;
-// export { app };
-
-// --- CONFIGURACIÓN PARA MODO LOCAL ---
-export const db = null;
-export const storage = null;
-export const auth = null;
-export const app = null;
+export { app } // por si lo necesitas en otra parte

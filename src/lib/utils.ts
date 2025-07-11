@@ -1,11 +1,10 @@
 
-
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
 import { differenceInCalendarDays, startOfToday, parseISO, isAfter, startOfMonth, endOfMonth, isWithinInterval } from 'date-fns';
 import type { Driver, RentalPayment, Vehicle } from '@/types';
-import { STANDARD_DEPOSIT_AMOUNT } from '@/lib/placeholder-data';
 
+const STANDARD_DEPOSIT_AMOUNT = 3500;
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -25,7 +24,7 @@ export const formatCurrency = (amount: number | undefined) => {
  */
 export const capitalizeWords = (str: string): string => {
   if (!str) return '';
-  return str.toLowerCase().replace(/\b\w/g, char => char.toUpperCase());
+  return str.toLowerCase().replace(/\w/g, char => char.toUpperCase());
 };
 
 
