@@ -1,3 +1,4 @@
+
 "use client";
 
 import type { RentalPayment } from '@/types';

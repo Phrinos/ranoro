@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useMemo, useEffect, useCallback, Suspense, useRef } from 'react';
@@ -53,6 +54,8 @@ function RentasPageComponent() {
       setPayments([...placeholderRentalPayments]);
     }
   }, [hydrated, version]);
+  
+  const [paymentForReceipt, setPaymentForReceipt] = useState<RentalPayment | null>(null);
 
   const handleSavePayment = async (driverId: string, amount: number, mileage?: number) => {
     const driver = drivers.find(d => d.id === driverId);
@@ -91,15 +94,13 @@ function RentasPageComponent() {
     
     toast({ title: 'Pago Registrado', description: `Se registró el pago de ${formatCurrency(amount)} para ${driver.name}.` });
     setIsPaymentDialogOpen(false);
+    setPaymentForReceipt(newPayment); // Set the new payment for receipt display
   };
   
   // Sorting payments
   const sortedPayments = useMemo(() => {
     return [...payments].sort((a, b) => compareDesc(parseISO(a.paymentDate), parseISO(b.paymentDate)));
   }, [payments]);
-  
-  // State for reprinting receipt
-  const [paymentForReceipt, setPaymentForReceipt] = useState<RentalPayment | null>(null);
   
   return (
     <>
