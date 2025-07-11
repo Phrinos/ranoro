@@ -17,7 +17,7 @@ import { nanoid } from 'nanoid';
 // --- Services ---
 
 const onServicesUpdate = (callback: (services: ServiceRecord[]) => void): (() => void) => {
-    const q = query(collection(db, "services"));
+    const q = query(collection(db, "serviceRecords"));
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
         const services: ServiceRecord[] = [];
         querySnapshot.forEach((doc) => {
@@ -29,7 +29,7 @@ const onServicesUpdate = (callback: (services: ServiceRecord[]) => void): (() =>
 };
 
 const updateService = async (serviceId: string, data: Partial<ServiceRecord>): Promise<ServiceRecord> => {
-    const serviceRef = doc(db, "services", serviceId);
+    const serviceRef = doc(db, "serviceRecords", serviceId);
     await updateDoc(serviceRef, data);
     
     // This part is tricky as we don't have the full service object.
@@ -43,7 +43,7 @@ const updateService = async (serviceId: string, data: Partial<ServiceRecord>): P
 };
 
 const cancelService = async (serviceId: string, reason: string): Promise<void> => {
-    const serviceRef = doc(db, "services", serviceId);
+    const serviceRef = doc(db, "serviceRecords", serviceId);
     await updateDoc(serviceRef, {
         status: 'Cancelado',
         cancellationReason: reason,
@@ -51,7 +51,7 @@ const cancelService = async (serviceId: string, reason: string): Promise<void> =
 };
 
 const completeService = async (serviceId: string, paymentDetails: { paymentMethod: any, cardFolio?: string, transferFolio?: string }): Promise<ServiceRecord> => {
-    const serviceRef = doc(db, "services", serviceId);
+    const serviceRef = doc(db, "serviceRecords", serviceId);
     
     // Again, we need the full service object. Let's assume we fetch it first.
     // This is a simplified version. A real implementation would fetch the doc.

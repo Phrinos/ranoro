@@ -95,7 +95,7 @@ export default function VehicleDetailPage() {
         setVehicle(vehicleData);
 
         const servicesQuery = query(
-          collection(db, "services"),
+          collection(db, "serviceRecords"),
           where("vehicleId", "==", vehicleId)
         );
         const servicesSnap = await getDocs(servicesQuery);
@@ -189,7 +189,7 @@ export default function VehicleDetailPage() {
     }
     const updatedService = data as ServiceRecord;
 
-    const serviceRef = doc(db, "services", updatedService.id);
+    const serviceRef = doc(db, "serviceRecords", updatedService.id);
     await updateDoc(serviceRef, updatedService);
 
     setServices((prevServices) =>
