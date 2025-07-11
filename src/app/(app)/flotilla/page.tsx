@@ -14,7 +14,7 @@ import { FineCheckDialog } from "./components/fine-check-dialog";
 import { placeholderVehicles, persistToFirestore, hydrateReady, AUTH_USER_LOCALSTORAGE_KEY, placeholderDrivers, placeholderRentalPayments } from '@/lib/placeholder-data';
 import type { User, Vehicle, Driver } from '@/types';
 import { useToast } from "@/hooks/use-toast";
-import { format, subDays, isBefore, parseISO, isValid, differenceInCalendarDays, startOfToday, isAfter, compareAsc, startOfMonth, endOfMonth, getDate, isWithinInterval } from 'date-fns';
+import { subDays, isBefore, parseISO, isValid, differenceInCalendarDays, startOfToday, isAfter, compareAsc, startOfMonth, endOfMonth, getDate, isWithinInterval } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -38,6 +38,16 @@ interface MonthlyBalance {
   balance: number;
   daysOwed: number;
   daysCovered: number;
+}
+
+interface OverduePaperworkItem {
+    vehicleId: string;
+    vehicleInfo: string;
+    vehicleLicensePlate: string;
+    ownerName: string;
+    paperworkId: string;
+    paperworkName: string;
+    dueDate: string;
 }
 
 function FlotillaPageComponent() {
@@ -139,19 +149,27 @@ function FlotillaPageComponent() {
     }).sort((a,b) => a.driverName.localeCompare(b.driverName));
   }, [hydrated, version, allDrivers, allVehicles]);
   
-  const overduePaperwork = useMemo(() => {
+  const overduePaperwork = useMemo((): OverduePaperworkItem[] => {
     if (!hydrated) return [];
     const today = startOfToday();
-    const alerts: { vehicleId: string; vehicleLicensePlate: string; paperworkId: string; paperworkName: string; dueDate: string; }[] = [];
+    const alerts: OverduePaperworkItem[] = [];
     fleetVehicles.forEach(vehicle => {
-        (vehicle.paperwork || []).forEach(p => {
-            const dueDate = parseISO(p.dueDate);
-            if (p.status === 'Pendiente' && isValid(dueDate) && !isAfter(dueDate, today)) {
-                alerts.push({ vehicleId: vehicle.id, vehicleLicensePlate: vehicle.licensePlate, paperworkId: p.id, paperworkName: p.name, dueDate: p.dueDate });
-            }
-        });
+      (vehicle.paperwork || []).forEach(p => {
+        const dueDate = parseISO(p.dueDate);
+        if (p.status === 'Pendiente' && isValid(dueDate) && !isAfter(dueDate, today)) {
+          alerts.push({
+            vehicleId: vehicle.id,
+            vehicleLicensePlate: vehicle.licensePlate,
+            vehicleInfo: `${vehicle.make} ${vehicle.model} ${vehicle.year}`,
+            ownerName: vehicle.ownerName,
+            paperworkId: p.id,
+            paperworkName: p.name,
+            dueDate: p.dueDate
+          });
+        }
+      });
     });
-    return alerts.sort((a,b) => compareAsc(parseISO(a.dueDate), parseISO(b.dueDate)));
+    return alerts.sort((a, b) => compareAsc(parseISO(a.dueDate), parseISO(b.dueDate)));
   }, [hydrated, version, fleetVehicles]);
 
   const filteredFleetVehicles = useMemo(() => {
@@ -281,13 +299,31 @@ function FlotillaPageComponent() {
                 <CardHeader><CardTitle className="flex items-center gap-2 text-orange-700 dark:text-orange-300"><AlertTriangle />Trámites Vencidos o por Vencer</CardTitle></CardHeader>
                 <CardContent>
                     {overduePaperwork.length > 0 ? (
-                        <div className="space-y-2 max-h-40 overflow-y-auto pr-2">
-                            {overduePaperwork.map(item => (
-                                <Link href={`/flotilla/${item.vehicleId}`} key={item.paperworkId} className="flex justify-between items-center p-2 rounded-md hover:bg-orange-100 dark:hover:bg-orange-800/50">
-                                    <div><p className="font-semibold">{item.vehicleLicensePlate}: {item.paperworkName}</p></div>
-                                    <div className="text-right"><p className="font-bold text-destructive text-sm">Vence:</p><p className="text-xs text-muted-foreground">{format(parseISO(item.dueDate), "dd MMM yyyy", { locale: es })}</p></div>
-                                </Link>
-                            ))}
+                        <div className="rounded-md border overflow-x-auto">
+                            <Table>
+                                <TableHeader className="bg-orange-100 dark:bg-orange-800/50">
+                                    <TableRow>
+                                        <TableHead className="font-semibold text-orange-800 dark:text-orange-200">Placa</TableHead>
+                                        <TableHead className="font-semibold text-orange-800 dark:text-orange-200">Vehículo</TableHead>
+                                        <TableHead className="font-semibold text-orange-800 dark:text-orange-200">Propietario</TableHead>
+                                        <TableHead className="font-semibold text-orange-800 dark:text-orange-200">Trámite</TableHead>
+                                        <TableHead className="text-right font-semibold text-orange-800 dark:text-orange-200">Vencimiento</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {overduePaperwork.map(item => (
+                                        <TableRow key={item.paperworkId} className="hover:bg-orange-100/50 dark:hover:bg-orange-800/20">
+                                            <TableCell className="font-medium">
+                                                <Link href={`/flotilla/${item.vehicleId}`} className="hover:underline text-primary">{item.vehicleLicensePlate}</Link>
+                                            </TableCell>
+                                            <TableCell>{item.vehicleInfo}</TableCell>
+                                            <TableCell>{item.ownerName}</TableCell>
+                                            <TableCell className="font-semibold">{item.paperworkName}</TableCell>
+                                            <TableCell className="text-right font-bold text-destructive">{format(parseISO(item.dueDate), "dd MMM, yyyy", { locale: es })}</TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
                         </div>
                     ) : <p className="text-muted-foreground text-center py-4">No hay trámites vencidos.</p>}
                 </CardContent>
@@ -328,5 +364,6 @@ export default function FlotillaPageWrapper() {
         </Suspense>
     )
 }
+
 
 
