@@ -299,8 +299,8 @@ export default function DriverDetailPage() {
       <Tabs defaultValue="details" className="w-full">
         <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="details" className="font-bold data-[state=active]:bg-primary data-[state=active]:text-white">Detalles</TabsTrigger>
-          <TabsTrigger value="deuda" className="font-bold data-[state=active]:bg-primary data-[state=active]:text-white">Deuda</TabsTrigger>
           <TabsTrigger value="documents" className="font-bold data-[state=active]:bg-primary data-[state=active]:text-white">Documentos</TabsTrigger>
+          <TabsTrigger value="deuda" className="font-bold data-[state=active]:bg-primary data-[state=active]:text-white">Deuda</TabsTrigger>
           <TabsTrigger value="payments" className="font-bold data-[state=active]:bg-primary data-[state=active]:text-white">Pagos</TabsTrigger>
         </TabsList>
 
@@ -362,58 +362,7 @@ export default function DriverDetailPage() {
             </CardContent>
           </Card>
         </TabsContent>
-
-        <TabsContent value="deuda" className="space-y-6">
-            <Card className="lg:col-span-1 bg-amber-50 dark:bg-amber-900/50 border-amber-200">
-                <CardHeader>
-                    <CardTitle className="text-lg text-amber-900 dark:text-amber-200">Estado de Cuenta</CardTitle>
-                    <CardDescription className="text-amber-800 dark:text-amber-300">Resumen de la deuda del mes actual y cargos manuales.</CardDescription>
-                </CardHeader>
-                <CardContent className="text-center space-y-4">
-                    <div>
-                        <p className="text-sm font-medium text-muted-foreground">DEUDA TOTAL</p>
-                        <p className="text-3xl font-bold text-destructive">{formatCurrency(debtInfo.totalDebt)}</p>
-                        <p className="text-xs text-muted-foreground">(Renta Mes: {formatCurrency(debtInfo.calculatedRentDebt)} + Adeudos Manuales: {formatCurrency(debtInfo.manualDebt)})</p>
-                    </div>
-                    <div>
-                        <p className="text-sm font-medium text-muted-foreground">DÍAS PENDIENTES (APROX)</p>
-                        <p className="text-3xl font-bold">{debtInfo.daysOwed}</p>
-                    </div>
-                </CardContent>
-            </Card>
-            <Card>
-                <CardHeader className="flex flex-row items-center justify-between">
-                  <div>
-                    <CardTitle>Historial de Adeudos Manuales</CardTitle>
-                    <CardDescription>Cargos adicionales como multas, daños, etc.</CardDescription>
-                  </div>
-                  <Button onClick={() => setIsDebtDialogOpen(true)}>
-                    <PlusCircle className="mr-2 h-4 w-4" /> Añadir Adeudo
-                  </Button>
-                </CardHeader>
-                <CardContent>
-                    <div className="rounded-md border overflow-x-auto">
-                      <Table>
-                        <TableHeader className="bg-black"><TableRow><TableHead className="text-white">Fecha</TableHead><TableHead className="text-white">Concepto</TableHead><TableHead className="text-right text-white">Monto</TableHead></TableRow></TableHeader>
-                        <TableBody>
-                          {(driver.manualDebts || []).length > 0 ? (
-                            [...driver.manualDebts].sort((a,b) => parseISO(b.date).getTime() - parseISO(a.date).getTime()).map(debt => (
-                              <TableRow key={debt.id}>
-                                <TableCell>{format(parseISO(debt.date), "dd MMM, yyyy", { locale: es })}</TableCell>
-                                <TableCell>{debt.note}</TableCell>
-                                <TableCell className="text-right font-semibold text-destructive">{formatCurrency(debt.amount)}</TableCell>
-                              </TableRow>
-                            ))
-                          ) : (
-                            <TableRow><TableCell colSpan={3} className="h-24 text-center">No hay adeudos manuales registrados.</TableCell></TableRow>
-                          )}
-                        </TableBody>
-                      </Table>
-                    </div>
-                </CardContent>
-            </Card>
-        </TabsContent>
-
+        
         <TabsContent value="documents">
           <Card>
             <CardHeader>
@@ -465,6 +414,57 @@ export default function DriverDetailPage() {
               ))}
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="deuda" className="space-y-6">
+            <Card className="lg:col-span-1 bg-amber-50 dark:bg-amber-900/50 border-amber-200">
+                <CardHeader>
+                    <CardTitle className="text-lg text-amber-900 dark:text-amber-200">Estado de Cuenta</CardTitle>
+                    <CardDescription className="text-amber-800 dark:text-amber-300">Resumen de la deuda del mes actual y cargos manuales.</CardDescription>
+                </CardHeader>
+                <CardContent className="text-center space-y-4">
+                    <div>
+                        <p className="text-sm font-medium text-muted-foreground">DEUDA TOTAL</p>
+                        <p className="text-3xl font-bold text-destructive">{formatCurrency(debtInfo.totalDebt)}</p>
+                        <p className="text-xs text-muted-foreground">(Renta Mes: {formatCurrency(debtInfo.calculatedRentDebt)} + Adeudos Manuales: {formatCurrency(debtInfo.manualDebt)})</p>
+                    </div>
+                    <div>
+                        <p className="text-sm font-medium text-muted-foreground">DÍAS PENDIENTES (APROX)</p>
+                        <p className="text-3xl font-bold">{debtInfo.daysOwed}</p>
+                    </div>
+                </CardContent>
+            </Card>
+            <Card>
+                <CardHeader className="flex flex-row items-center justify-between">
+                  <div>
+                    <CardTitle>Historial de Adeudos Manuales</CardTitle>
+                    <CardDescription>Cargos adicionales como multas, daños, etc.</CardDescription>
+                  </div>
+                  <Button onClick={() => setIsDebtDialogOpen(true)}>
+                    <PlusCircle className="mr-2 h-4 w-4" /> Añadir Adeudo
+                  </Button>
+                </CardHeader>
+                <CardContent>
+                    <div className="rounded-md border overflow-x-auto">
+                      <Table>
+                        <TableHeader className="bg-black"><TableRow><TableHead className="text-white">Fecha</TableHead><TableHead className="text-white">Concepto</TableHead><TableHead className="text-right text-white">Monto</TableHead></TableRow></TableHeader>
+                        <TableBody>
+                          {(driver.manualDebts || []).length > 0 ? (
+                            [...driver.manualDebts].sort((a,b) => parseISO(b.date).getTime() - parseISO(a.date).getTime()).map(debt => (
+                              <TableRow key={debt.id}>
+                                <TableCell>{format(parseISO(debt.date), "dd MMM, yyyy", { locale: es })}</TableCell>
+                                <TableCell>{debt.note}</TableCell>
+                                <TableCell className="text-right font-semibold text-destructive">{formatCurrency(debt.amount)}</TableCell>
+                              </TableRow>
+                            ))
+                          ) : (
+                            <TableRow><TableCell colSpan={3} className="h-24 text-center">No hay adeudos manuales registrados.</TableCell></TableRow>
+                          )}
+                        </TableBody>
+                      </Table>
+                    </div>
+                </CardContent>
+            </Card>
         </TabsContent>
 
         <TabsContent value="payments">
