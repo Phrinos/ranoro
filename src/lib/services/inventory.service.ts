@@ -1,73 +1,69 @@
 
+
 import type { InventoryItem, InventoryCategory, Supplier, Vehicle, VehiclePriceList } from "@/types";
-import { placeholderInventory, placeholderCategories, placeholderSuppliers, placeholderVehicles, placeholderVehiclePriceLists, persistToFirestore, logAudit, placeholderCashDrawerTransactions } from "@/lib/placeholder-data";
 import type { InventoryItemFormValues } from "@/app/(app)/inventario/components/inventory-item-form";
 import type { VehicleFormValues } from "@/app/(app)/vehiculos/components/vehicle-form";
 import type { PurchaseFormValues } from "@/app/(app)/inventario/components/register-purchase-dialog";
 import type { PriceListFormValues } from "@/app/(app)/precios/components/price-list-form";
 import { formatCurrency, capitalizeWords } from "@/lib/utils";
 import { subMonths, isBefore, parseISO, isValid } from 'date-fns';
+import { db } from '@/lib/firebaseClient.js';
+import { collection, onSnapshot, doc, setDoc, addDoc, deleteDoc } from 'firebase/firestore';
+import { logAudit } from '../placeholder-data';
 
 // --- Inventory Items ---
 
-const getItems = async (): Promise<InventoryItem[]> => {
-    return [...placeholderInventory];
+const onItemsUpdate = (callback: (items: InventoryItem[]) => void): (() => void) => {
+    return onSnapshot(collection(db, 'inventory'), snapshot => {
+        const items = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as InventoryItem));
+        callback(items);
+    });
 };
 
 const addItem = async (data: InventoryItemFormValues): Promise<InventoryItem> => {
-    const newItem: InventoryItem = {
-        id: `PROD_${Date.now().toString(36)}`,
-        ...data,
-        isService: data.isService || false,
-        quantity: 0,
-        lowStockThreshold: data.lowStockThreshold === undefined ? 5 : data.lowStockThreshold,
-        unitPrice: data.unitPrice || 0,
-        sellingPrice: data.sellingPrice || 0,
-    };
-    placeholderInventory.push(newItem);
-    await logAudit('Crear', `Creó el producto "${newItem.name}" (SKU: ${newItem.sku})`, { entityType: 'Producto', entityId: newItem.id });
-    await persistToFirestore(['inventory']);
-    return newItem;
+    const newItemRef = await addDoc(collection(db, 'inventory'), data);
+    const newLog = logAudit('Crear', `Creó el producto "${data.name}" (SKU: ${data.sku})`, { entityType: 'Producto', entityId: newItemRef.id });
+    await addDoc(collection(db, 'auditLogs'), newLog);
+    return { id: newItemRef.id, ...data } as InventoryItem;
 };
 
 // --- Categories ---
 
-const getCategories = async (): Promise<InventoryCategory[]> => {
-    return [...placeholderCategories];
-};
-
-const addCategory = async (name: string): Promise<InventoryCategory> => {
-    const newCategory = { id: `CAT${Date.now()}`, name };
-    placeholderCategories.push(newCategory);
-    await persistToFirestore(['categories']);
-    return newCategory;
+const onCategoriesUpdate = (callback: (categories: InventoryCategory[]) => void): (() => void) => {
+    return onSnapshot(collection(db, 'categories'), snapshot => {
+        const categories = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as InventoryCategory));
+        callback(categories);
+    });
 };
 
 // --- Suppliers ---
 
-const getSuppliers = async (): Promise<Supplier[]> => {
-    return [...placeholderSuppliers];
+const onSuppliersUpdate = (callback: (suppliers: Supplier[]) => void): (() => void) => {
+    return onSnapshot(collection(db, 'suppliers'), snapshot => {
+        const suppliers = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Supplier));
+        callback(suppliers);
+    });
 };
 
 // --- Vehicles ---
 
-const getVehicles = async (): Promise<Vehicle[]> => {
-    return [...placeholderVehicles];
+const onVehiclesUpdate = (callback: (vehicles: Vehicle[]) => void): (() => void) => {
+    return onSnapshot(collection(db, 'vehicles'), snapshot => {
+        const vehicles = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Vehicle));
+        callback(vehicles);
+    });
 };
 
+
 const getVehicleById = async (id: string): Promise<Vehicle | undefined> => {
-    return placeholderVehicles.find(v => v.id === id);
+    const docRef = doc(db, 'vehicles', id);
+    const docSnap = await getDoc(docRef);
+    return docSnap.exists() ? { id: docSnap.id, ...docSnap.data() } as Vehicle : undefined;
 };
 
 const addVehicle = async (data: VehicleFormValues): Promise<Vehicle> => {
-    const newVehicle: Vehicle = {
-        id: `VEH_${Date.now().toString(36)}`,
-        ...data,
-        year: Number(data.year),
-    };
-    placeholderVehicles.push(newVehicle);
-    await persistToFirestore(['vehicles']);
-    return newVehicle;
+    const newVehicleRef = await addDoc(collection(db, 'vehicles'), data);
+    return { id: newVehicleRef.id, ...data, year: Number(data.year) };
 };
 
 const getVehiclesSummary = (vehiclesWithLastService: Vehicle[]) => {
@@ -107,85 +103,82 @@ const getVehiclesSummary = (vehiclesWithLastService: Vehicle[]) => {
 
 // --- Price Lists ---
 
-const getPriceLists = async (): Promise<VehiclePriceList[]> => {
-    return [...placeholderVehiclePriceLists];
+const onPriceListsUpdate = (callback: (lists: VehiclePriceList[]) => void): (() => void) => {
+    return onSnapshot(collection(db, 'vehiclePriceLists'), snapshot => {
+        const lists = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as VehiclePriceList));
+        callback(lists);
+    });
 };
 
 const savePriceList = async (formData: PriceListFormValues, recordId?: string): Promise<VehiclePriceList> => {
-    let recordToSave: VehiclePriceList;
+    const dataToSave = { ...formData, years: formData.years.sort((a,b) => a-b) };
     if (recordId) {
-        const index = placeholderVehiclePriceLists.findIndex(r => r.id === recordId);
-        if (index > -1) {
-            recordToSave = { ...placeholderVehiclePriceLists[index], ...formData };
-            placeholderVehiclePriceLists[index] = recordToSave;
-        } else {
-            throw new Error("Record not found for update");
-        }
+        await setDoc(doc(db, 'vehiclePriceLists', recordId), dataToSave, { merge: true });
+        return { id: recordId, ...dataToSave };
     } else {
-        recordToSave = { id: `VPL_${Date.now().toString(36)}`, ...formData };
-        placeholderVehiclePriceLists.push(recordToSave);
+        const newRef = await addDoc(collection(db, 'vehiclePriceLists'), dataToSave);
+        return { id: newRef.id, ...dataToSave };
     }
-    await persistToFirestore(['vehiclePriceLists']);
-    return recordToSave;
 };
 
 const deletePriceList = async (recordId: string): Promise<void> => {
-    const index = placeholderVehiclePriceLists.findIndex(r => r.id === recordId);
-    if (index > -1) {
-        placeholderVehiclePriceLists.splice(index, 1);
-        await persistToFirestore(['vehiclePriceLists']);
-    }
+    await deleteDoc(doc(db, 'vehiclePriceLists', recordId));
 };
 
 // --- Purchases ---
 
 const registerPurchase = async (data: PurchaseFormValues): Promise<void> => {
-    const supplier = placeholderSuppliers.find(s => s.id === data.supplierId);
-    if (!supplier) throw new Error("Supplier not found");
-
-    const keysToPersist: ('suppliers' | 'inventory' | 'cashDrawerTransactions' | 'auditLogs')[] = ['suppliers', 'inventory', 'auditLogs'];
-
+    // This function involves multiple writes, ideally it should be a transaction.
+    // For simplicity, we'll do separate writes.
+    const supplierRef = doc(db, 'suppliers', data.supplierId);
+    
     if (data.paymentMethod === 'Crédito') {
-        supplier.debtAmount = (supplier.debtAmount || 0) + data.invoiceTotal;
+        const supplierSnap = await getDoc(supplierRef);
+        const currentDebt = supplierSnap.data()?.debtAmount || 0;
+        await setDoc(supplierRef, { debtAmount: currentDebt + data.invoiceTotal }, { merge: true });
     } else if (data.paymentMethod === 'Efectivo') {
-        placeholderCashDrawerTransactions.push({
+        const supplierSnap = await getDoc(supplierRef);
+        const supplierName = supplierSnap.data()?.name || 'desconocido';
+        await addDoc(collection(db, 'cashDrawerTransactions'), {
             id: `trx_${Date.now()}`,
             date: new Date().toISOString(),
             type: 'Salida',
             amount: data.invoiceTotal,
-            concept: `Compra a ${supplier.name} (Factura)`,
-            userId: 'system',
+            concept: `Compra a ${supplierName} (Factura)`,
+            userId: 'system', // TODO: Get current user
             userName: 'Sistema',
         });
-        keysToPersist.push('cashDrawerTransactions');
     }
     
-    data.items.forEach(purchasedItem => {
-      const inventoryIndex = placeholderInventory.findIndex(i => i.id === purchasedItem.inventoryItemId);
-      if (inventoryIndex > -1) {
-        const item = placeholderInventory[inventoryIndex];
-        item.quantity += purchasedItem.quantity;
-        item.unitPrice = purchasedItem.unitPrice;
-        item.sellingPrice = parseFloat((purchasedItem.unitPrice * 1.20).toFixed(2));
-      }
-    });
-
-    await logAudit('Registrar', `Registró una compra al proveedor "${supplier.name}" por ${formatCurrency(data.invoiceTotal)}.`, { entityType: 'Compra', entityId: data.supplierId });
-    await persistToFirestore(keysToPersist);
+    for (const purchasedItem of data.items) {
+        const itemRef = doc(db, 'inventory', purchasedItem.inventoryItemId);
+        const itemSnap = await getDoc(itemRef);
+        if (itemSnap.exists()) {
+            const currentQuantity = itemSnap.data().quantity || 0;
+            await setDoc(itemRef, {
+                quantity: currentQuantity + purchasedItem.quantity,
+                unitPrice: purchasedItem.unitPrice,
+                sellingPrice: parseFloat((purchasedItem.unitPrice * 1.20).toFixed(2))
+            }, { merge: true });
+        }
+    }
+    const supplierSnap = await getDoc(supplierRef);
+    const supplierName = supplierSnap.data()?.name || 'desconocido';
+    const newLog = logAudit('Registrar', `Registró una compra al proveedor "${supplierName}" por ${formatCurrency(data.invoiceTotal)}.`, { entityType: 'Compra', entityId: data.supplierId });
+    await addDoc(collection(db, 'auditLogs'), newLog);
 };
 
 
 export const inventoryService = {
-    getItems,
+    onItemsUpdate,
     addItem,
-    getCategories,
-    addCategory,
-    getSuppliers,
-    getVehicles,
+    onCategoriesUpdate,
+    onSuppliersUpdate,
+    onVehiclesUpdate,
     getVehicleById,
     addVehicle,
     getVehiclesSummary,
-    getPriceLists,
+    onPriceListsUpdate,
     savePriceList,
     deletePriceList,
     registerPurchase,
