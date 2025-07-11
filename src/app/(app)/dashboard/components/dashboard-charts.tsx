@@ -22,7 +22,7 @@ const tabData = [
         'Comunicación con clientes vía WhatsApp (Add-on).',
       ],
       image: {
-        src: 'https://placehold.co/600x400',
+        src: '/A1.png',
         alt: 'Vista de la interfaz de gestión de servicios',
         hint: 'dashboard interface'
       }
@@ -40,7 +40,7 @@ const tabData = [
         'Sugerencias de compra basadas en la demanda.',
       ],
       image: {
-        src: 'https://placehold.co/600x400',
+        src: '/A2.png',
         alt: 'Vista de la interfaz de control de inventario',
         hint: 'inventory software'
       }
@@ -58,7 +58,7 @@ const tabData = [
         'Ranking de refacciones por rentabilidad y rotación.',
       ],
       image: {
-        src: 'https://placehold.co/600x400',
+        src: '/A3.png',
         alt: 'Dashboard con insights de inteligencia artificial',
         hint: 'AI dashboard'
       }
@@ -76,7 +76,7 @@ const tabData = [
         'Conciliaciones y cortes de caja para una contabilidad clara.',
       ],
       image: {
-        src: 'https://placehold.co/600x400',
+        src: '/A4.png',
         alt: 'Dashboard financiero con gráficos',
         hint: 'financial dashboard'
       }
