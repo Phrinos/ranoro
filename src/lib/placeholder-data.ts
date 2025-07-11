@@ -139,9 +139,7 @@ export const defaultSuperAdmin: User = {
   signatureDataUrl: undefined,
 };
 
-export let placeholderUsers: User[] = [
-  { id: 'diana_user_id', tenantId: 'T01H858YMEG5V6V3V3V3V3V3V3', name: 'Diana Arriaga', email: 'diana@ranoro.mx', role: 'Admin' }
-]; // This will be hydrated from Firestore
+export let placeholderUsers: User[] = []; // This will be hydrated from Firestore
 export const AUTH_USER_LOCALSTORAGE_KEY = 'authUser';
 export const USER_LOCALSTORAGE_KEY = 'appUsers';
 export const ROLES_LOCALSTORAGE_KEY = 'appRoles';
@@ -170,28 +168,7 @@ export let placeholderAppRoles: AppRole[] = [];
 // =======================================
 // ===          AUDITORÍA                ===
 // =======================================
-export let placeholderAuditLogs: AuditLog[] = [
-  {
-    id: 'log_1',
-    date: new Date().toISOString(),
-    userId: 'user_superadmin',
-    userName: 'Arturo Valdelamar',
-    actionType: 'Crear',
-    description: 'Creó el nuevo servicio #SER003 para el vehículo CCC789C.',
-    entityType: 'Servicio',
-    entityId: 'SER003'
-  },
-  {
-    id: 'log_2',
-    date: subDays(new Date(), 1).toISOString(),
-    userId: 'user_admin',
-    userName: 'Laura Mendez',
-    actionType: 'Editar',
-    description: 'Actualizó el precio del producto "Aceite Sintético 5W-30" a $180.00.',
-    entityType: 'Producto',
-    entityId: 'PROD001'
-  }
-];
+export let placeholderAuditLogs: AuditLog[] = [];
 
 
 // =======================================
@@ -200,133 +177,18 @@ export let placeholderAuditLogs: AuditLog[] = [
 
 // --- SERVICIOS ---
 // MIGRATED DATA - This data now follows the standardized ServiceRecord structure.
-export let placeholderServiceRecords: ServiceRecord[] = [
-  {
-    id: 'SER002',
-    publicId: 's_zxcvbnm123',
-    vehicleId: 'VEH002',
-    vehicleIdentifier: 'BBB456B',
-    serviceDate: subDays(new Date(), 5).toISOString(),
-    serviceType: 'Servicio General',
-    description: 'Diagnóstico de sistema eléctrico.',
-    technicianId: 'T002',
-    technicianName: 'Ricardo Gomez',
-    serviceItems: [
-      {
-        id: 'item_ser002_1',
-        name: 'Diagnóstico de sistema eléctrico.',
-        price: 1200,
-        suppliesUsed: [
-          { supplyId: 'SERV001', supplyName: 'Mano de Obra Mecánica', quantity: 2, unitPrice: 250, sellingPrice: 350 },
-        ]
-      }
-    ],
-    totalCost: 1200,
-    totalSuppliesCost: 500, // 2 * 250
-    serviceProfit: 700, // 1200 - 500
-    subTotal: 1034.48,
-    taxAmount: 165.52,
-    status: 'En Taller',
-    mileage: 89000,
-    serviceAdvisorId: 'diana_user_id',
-    serviceAdvisorName: 'Diana Arriaga',
-    appointmentStatus: 'Confirmada',
-  },
-  {
-    id: 'SER003',
-    publicId: 's_asdfghj456',
-    vehicleId: 'VEH003',
-    vehicleIdentifier: 'CCC789C',
-    serviceDate: new Date().toISOString(),
-    serviceType: 'Servicio General',
-    description: 'Mantenimiento preventivo flotilla.',
-    technicianId: 'T001',
-    technicianName: 'Carlos Rodriguez',
-    serviceItems: [
-        {
-            id: 'item_ser003_1',
-            name: 'Mantenimiento preventivo flotilla.',
-            price: 1800,
-            suppliesUsed: []
-        }
-    ],
-    totalCost: 1800,
-    totalSuppliesCost: 0,
-    serviceProfit: 1800,
-    subTotal: 1551.72,
-    taxAmount: 248.28,
-    status: 'Agendado',
-    mileage: 15000,
-    serviceAdvisorId: 'diana_user_id',
-    serviceAdvisorName: 'Diana Arriaga',
-    appointmentStatus: 'Creada',
-  },
-  {
-    id: 'SER_mcxpk73o',
-    publicId: 's_vbnmkl345',
-    vehicleId: 'VEH002',
-    vehicleIdentifier: 'BBB456B',
-    serviceDate: subMonths(new Date(), 1).toISOString(),
-    deliveryDateTime: subMonths(new Date(), 1).toISOString(),
-    serviceType: 'Servicio General',
-    description: 'Reparación de suspensión.',
-    technicianId: 'T001',
-    technicianName: 'Carlos Rodriguez',
-    serviceItems: [
-      {
-        id: 'item_ser_mcxpk73o_1',
-        name: 'Cambio de amortiguadores',
-        price: 2500,
-        suppliesUsed: [
-          { supplyId: 'PROD005', supplyName: 'Amortiguador Delantero', quantity: 2, unitPrice: 800, sellingPrice: 960 },
-        ]
-      }
-    ],
-    totalCost: 2500,
-    totalSuppliesCost: 1600,
-    serviceProfit: 900,
-    subTotal: 2155.17,
-    taxAmount: 344.83,
-    status: 'Entregado',
-    mileage: 85000,
-    serviceAdvisorId: 'diana_user_id',
-    serviceAdvisorName: 'Diana Arriaga',
-    appointmentStatus: 'Confirmada',
-  },
-];
+export let placeholderServiceRecords: ServiceRecord[] = [];
 
 // --- COTIZACIONES ---
 export let placeholderQuotes: QuoteRecord[] = []; // This is now obsolete, quotes are ServiceRecords with status 'Cotizacion'
 
 // --- VENTAS (POS) ---
-export let placeholderSales: SaleReceipt[] = [
-    {
-      id: 'SALE001',
-      saleDate: subDays(new Date(), 1).toISOString(),
-      items: [
-        { inventoryItemId: 'PROD004', itemName:'Limpiaparabrisas 22"', quantity: 2, unitPrice: 200, totalPrice: 400 },
-      ],
-      subTotal: 344.83,
-      tax: 55.17,
-      totalAmount: 400,
-      paymentMethod: 'Tarjeta',
-      customerName: 'Cliente Mostrador',
-      status: 'Completado'
-    },
-];
+export let placeholderSales: SaleReceipt[] = [];
 
 // --- GASTOS FIJOS Y CAJA ---
 export let placeholderFixedMonthlyExpenses: MonthlyFixedExpense[] = [];
-export let placeholderCashDrawerTransactions: CashDrawerTransaction[] = [
-    { id: 'trx_1', date: new Date().toISOString(), type: 'Entrada', amount: 500, concept: 'Fondo de caja inicial', userId: 'user_superadmin', userName: 'Arturo Valdelamar' },
-    { id: 'trx_2', date: new Date().toISOString(), type: 'Salida', amount: 150, concept: 'Compra de garrafón de agua', userId: 'user_superadmin', userName: 'Arturo Valdelamar' }
-];
-export let placeholderInitialCashBalance: InitialCashBalance | null = {
-    date: new Date().toISOString(),
-    amount: 500,
-    userId: 'user_superadmin',
-    userName: 'Arturo Valdelamar'
-};
+export let placeholderCashDrawerTransactions: CashDrawerTransaction[] = [];
+export let placeholderInitialCashBalance: InitialCashBalance | null = null;
 
 
 // --- LISTA DE PRECIOS ---
@@ -335,18 +197,6 @@ export let placeholderVehiclePriceLists: VehiclePriceList[] = [];
 // --- REPORTES PUBLICOS ---
 export let placeholderPublicOwnerReports: PublicOwnerReport[] = [];
 
-// --- DATOS SIMULADOS (BORRAR O REEMPLAZAR) ---
-export const placeholderTechnicianMonthlyPerformance: TechnicianMonthlyPerformance[] = [
-    { id: 'perf_t001_1', technicianId: 'T001', monthYear: 'julio 2024', servicesCount: 12, revenueGenerated: 35000, earnings: 1750, penalties: 0 },
-    { id: 'perf_t002_1', technicianId: 'T002', monthYear: 'julio 2024', servicesCount: 15, revenueGenerated: 42000, earnings: 2940, penalties: 150 },
-    { id: 'perf_t001_2', technicianId: 'T001', monthYear: 'junio 2024', servicesCount: 10, revenueGenerated: 31000, earnings: 1550, penalties: 0 },
-];
-export const placeholderDashboardMetrics: DashboardMetrics = {
-  activeServices: 3,
-  technicianEarnings: 4690,
-  dailyRevenue: 5200,
-  lowStockAlerts: 2,
-};
 
 // --- DATA PERSISTENCE & HYDRATION ---
 
@@ -424,20 +274,12 @@ export async function logAudit(
   await persistToFirestore(['auditLogs']);
 }
 
-export async function hydrateFromFirestore() {
+export async function hydrateFromFirestore(tenantId: string) {
   if (typeof window === 'undefined' || (window as any).__APP_HYDRATED__) {
     resolveHydration?.();
     return;
   }
-
-  const superAdminExistsInPlaceholders = placeholderUsers.some(
-    (u) => u.email === defaultSuperAdmin.email
-  );
-  if (!superAdminExistsInPlaceholders) {
-    placeholderUsers.push(defaultSuperAdmin);
-  }
   
-  const tenantId = defaultSuperAdmin.tenantId;
   const docRef = doc(db, 'tenants', tenantId);
   let docSnap;
   let changesMade = false;
@@ -454,7 +296,6 @@ export async function hydrateFromFirestore() {
       Object.assign(placeholderCategories, firestoreData.categories || []);
       Object.assign(placeholderSuppliers, firestoreData.suppliers || []);
       Object.assign(placeholderSales, firestoreData.sales || []);
-      Object.assign(placeholderUsers, firestoreData.users || [defaultSuperAdmin]);
       Object.assign(placeholderAppRoles, firestoreData.appRoles || []);
       Object.assign(placeholderFixedMonthlyExpenses, firestoreData.fixedExpenses || []);
       Object.assign(placeholderAdministrativeStaff, firestoreData.administrativeStaff || []);
@@ -480,12 +321,7 @@ export async function hydrateFromFirestore() {
     console.error('Error reading from Firestore, using local fallback:', error);
   }
 
-  const superAdminExists = placeholderUsers.some(u => u.email === defaultSuperAdmin.email);
-  if (!superAdminExists) {
-      placeholderUsers.push(defaultSuperAdmin);
-      changesMade = true;
-  }
-
+  // Ensure default roles exist if the app roles are empty
   const superAdminRoleExists = placeholderAppRoles.some(r => r.name === 'Superadmin');
   if(!superAdminRoleExists) {
       placeholderAppRoles.push({
@@ -514,15 +350,14 @@ export async function persistToFirestore(keysToUpdate?: (keyof typeof DATA_ARRAY
   }
   
   const authUserString = typeof window !== 'undefined' ? localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY) : null;
-  const currentUser: User | null = authUserString ? JSON.parse(authUserString) : defaultSuperAdmin;
+  const currentUser: User | null = authUserString ? JSON.parse(authUserString) : null;
   
-  if (!currentUser?.tenantId) {
-      console.error('Persist skipped: No tenantId found for the current user.');
+  const tenantId = currentUser?.tenantId || defaultSuperAdmin.tenantId;
+  if (!tenantId) {
+      console.error('Persist skipped: No tenantId found for the current user or default admin.');
       return;
   }
   
-  const tenantId = currentUser.tenantId;
-
   const keys = keysToUpdate && keysToUpdate.length > 0 ? keysToUpdate : Object.keys(DATA_ARRAYS) as (keyof typeof DATA_ARRAYS)[];
   
   const dataToPersist: { [key: string]: any } = {};
@@ -536,16 +371,6 @@ export async function persistToFirestore(keysToUpdate?: (keyof typeof DATA_ARRAY
   try {
     const docRef = doc(db, 'tenants', tenantId);
     await setDoc(docRef, sanitizedData, { merge: true });
-    
-    // Also update the /users collection if users were part of the update
-    if (keys.includes('users')) {
-        for(const user of placeholderUsers) {
-            if(user.id) { // Ensure user has an ID
-                const userDocRef = doc(db, 'users', user.id);
-                await setDoc(userDocRef, sanitizeObjectForFirestore(user), { merge: true });
-            }
-        }
-    }
     
     console.log(`Data successfully persisted to Firestore for tenant ${tenantId} on keys: ${keys.join(', ')}`);
     if (typeof window !== 'undefined') {
@@ -613,4 +438,3 @@ export const enrichServiceForPrinting = (
     serviceItems: enrichedServiceItems,
   };
 };
-
