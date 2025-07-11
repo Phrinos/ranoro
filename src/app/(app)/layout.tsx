@@ -18,44 +18,44 @@ export default function AppLayout({
   children: React.ReactNode;
 }) {
   const [isLoading, setIsLoading] = useState(true);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      if (user) {
-        // User is signed in.
-        try {
-          const userDoc = await getDoc(doc(db, "users", user.uid));
-          if (userDoc.exists()) {
-            localStorage.setItem(AUTH_USER_LOCALSTORAGE_KEY, JSON.stringify({ id: user.uid, ...userDoc.data() }));
-          } else {
-            // This case should ideally be handled during the first login creation process
-            // but as a fallback, we can use default data or log an error.
-            console.warn("User document does not exist in Firestore for UID:", user.uid);
-            // Maybe redirect to login with an error message.
-            router.push('/login');
-          }
-          
-          await hydrateFromFirestore();
-          setIsAuthenticated(true);
-
-        } catch (error) {
-            console.error("Error during user data hydration:", error);
-            // Handle error, maybe sign out user and redirect to login
-            await auth.signOut();
-            router.push('/login');
-        }
-      } else {
-        // User is signed out.
+    const checkAuthAndHydrate = async () => {
+      const authUserString = localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY);
+      
+      if (!authUserString) {
+        // No user data in storage, redirect to login
+        router.push('/login');
+        return; // Stop execution here
+      }
+      
+      try {
+        // User data exists, proceed to hydrate the app data
+        await hydrateFromFirestore();
+        // Once hydration is complete, stop loading and show the app
+        setIsLoading(false);
+      } catch (error) {
+        console.error("Hydration failed:", error);
+        // Handle hydration error, maybe clear user and redirect
         localStorage.removeItem(AUTH_USER_LOCALSTORAGE_KEY);
-        setIsAuthenticated(false);
         router.push('/login');
       }
-      setIsLoading(false);
+    };
+    
+    checkAuthAndHydrate();
+    
+    // Optional: You can still listen for auth changes to handle token expiration
+    // or manual sign-outs from other tabs, but the primary guard is the localStorage check.
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+        if (!user) {
+            localStorage.removeItem(AUTH_USER_LOCALSTORAGE_KEY);
+            router.push('/login');
+        }
     });
 
     return () => unsubscribe();
+    
   }, [router]);
 
 
@@ -64,17 +64,6 @@ export default function AppLayout({
       <div className="flex h-screen w-full items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin" />
         <p className="text-lg ml-4">Cargando aplicación...</p>
-      </div>
-    );
-  }
-  
-  if (!isAuthenticated) {
-    // This can show a brief "Redirecting..." message or a spinner
-    // while the redirect to /login happens.
-    return (
-       <div className="flex h-screen w-full items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin" />
-        <p className="text-lg ml-4">Redirigiendo al login...</p>
       </div>
     );
   }

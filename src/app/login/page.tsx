@@ -4,27 +4,32 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { signInWithEmailAndPassword, onAuthStateChanged } from 'firebase/auth';
-import { auth } from '@/lib/firebaseClient.js';
+import { doc, getDoc } from 'firebase/firestore';
+import { auth, db } from '@/lib/firebaseClient.js';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Loader2, CarFront } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import Image from "next/image";
+import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
+import type { User as RanoroUser } from '@/types';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true); // Start loading to check auth state
   const router = useRouter();
   const { toast } = useToast();
 
   useEffect(() => {
-    // Redirect if user is already logged in
+    // Check if user is already logged in on initial load
     const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (user) {
+      if (user && localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY)) {
         router.push('/dashboard');
+      } else {
+        setIsLoading(false); // Only stop loading if there's no user
       }
     });
     return () => unsubscribe();
@@ -34,19 +39,38 @@ export default function LoginPage() {
     event.preventDefault();
     setIsLoading(true);
 
-    if (!auth) {
-        toast({ title: 'Error de Configuración', description: 'La autenticación de Firebase no está disponible.', variant: 'destructive' });
+    if (!auth || !db) {
+        toast({ title: 'Error de Configuración', description: 'La autenticación o la base de datos no está disponible.', variant: 'destructive' });
         setIsLoading(false);
         return;
     }
 
     try {
-      await signInWithEmailAndPassword(auth, email, password);
-      toast({ title: '¡Bienvenido!', description: 'Has iniciado sesión correctamente.' });
-      // The onAuthStateChanged listener in the layout will handle the redirect.
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+
+      // --- CRITICAL STEP: Fetch user profile data and store it BEFORE redirecting ---
+      const userDocRef = doc(db, "database", "main");
+      const docSnap = await getDoc(userDocRef);
+
+      if (docSnap.exists()) {
+        const allUsers = docSnap.data().users as RanoroUser[];
+        const ranoroUser = allUsers.find(u => u.id === user.uid);
+        
+        if (ranoroUser) {
+          localStorage.setItem(AUTH_USER_LOCALSTORAGE_KEY, JSON.stringify(ranoroUser));
+          toast({ title: '¡Bienvenido!', description: 'Has iniciado sesión correctamente.' });
+          router.push('/dashboard'); // Now it's safe to redirect
+        } else {
+          throw new Error("User profile not found in main database.");
+        }
+      } else {
+        throw new Error("Main data document not found.");
+      }
+      
     } catch (error: any) {
-      console.error("Error de inicio de sesión:", error.code, error.message);
-      let errorMessage = 'Las credenciales son incorrectas. Por favor, inténtalo de nuevo.';
+      console.error("Error de inicio de sesión:", error);
+      let errorMessage = 'Las credenciales son incorrectas o hubo un error al cargar tu perfil.';
       if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
           errorMessage = 'El correo o la contraseña son incorrectos.';
       } else if (error.code === 'auth/too-many-requests') {
@@ -57,10 +81,17 @@ export default function LoginPage() {
         description: errorMessage,
         variant: 'destructive',
       });
-    } finally {
       setIsLoading(false);
-    }
+    } 
   };
+  
+  if (isLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gray-100 dark:bg-gray-900">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-100 dark:bg-gray-900 px-4">
@@ -89,7 +120,6 @@ export default function LoginPage() {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                disabled={isLoading}
               />
             </div>
             <div className="space-y-2">
@@ -100,7 +130,6 @@ export default function LoginPage() {
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                disabled={isLoading}
               />
             </div>
           </CardContent>
