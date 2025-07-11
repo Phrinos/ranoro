@@ -1,5 +1,6 @@
 
 
+
 "use client";
 
 import { useState, useMemo, useEffect, useCallback, Suspense, useRef } from 'react';
@@ -11,10 +12,9 @@ import {
   placeholderSales,
   placeholderServiceRecords,
   placeholderInventory, 
-  hydrateReady,
   placeholderServiceTypes,
 } from "@/lib/placeholder-data";
-import type { InventoryItem, FinancialOperation, AggregatedInventoryItem, PaymentMethod, ServiceTypeRecord } from "@/types";
+import type { InventoryItem, FinancialOperation, AggregatedInventoryItem, PaymentMethod, ServiceTypeRecord, SaleReceipt, ServiceRecord } from "@/types";
 import {
   format,
   parseISO,
@@ -32,6 +32,9 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { operationsService, inventoryService } from '@/lib/services';
+import { Loader2 } from 'lucide-react';
+
 
 type OperationTypeFilter = "all" | string;
 
@@ -40,9 +43,13 @@ function ReportesPageComponent() {
     const defaultTab = searchParams.get('tab') || 'operaciones';
     const [activeTab, setActiveTab] = useState(defaultTab);
     const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
-    const [hydrated, setHydrated] = useState(false);
-    const [version, setVersion] = useState(0);
+    const [isLoading, setIsLoading] = useState(true);
+    
+    const [allSales, setAllSales] = useState<SaleReceipt[]>([]);
+    const [allServices, setAllServices] = useState<ServiceRecord[]>([]);
+    const [allInventory, setAllInventory] = useState<InventoryItem[]>([]);
     const [serviceTypes, setServiceTypes] = useState<ServiceTypeRecord[]>([]);
+
 
     const [reporteOpSearchTerm, setReporteOpSearchTerm] = useState("");
     const [reporteOpTypeFilter, setReporteOpTypeFilter] = useState<OperationTypeFilter>("all");
@@ -53,34 +60,32 @@ function ReportesPageComponent() {
     const [reporteInvSortOption, setReporteInvSortOption] = useState<string>("quantity_desc");
 
     useEffect(() => {
-        hydrateReady.then(() => {
-          setHydrated(true);
-          setServiceTypes([...placeholderServiceTypes]);
-        });
-        const forceUpdate = () => setVersion(v => v + 1);
-        window.addEventListener('databaseUpdated', forceUpdate);
-        
+        const unsubs: (() => void)[] = [];
+        setIsLoading(true);
+
+        unsubs.push(operationsService.onSalesUpdate(setAllSales));
+        unsubs.push(operationsService.onServicesUpdate(setAllServices));
+        unsubs.push(inventoryService.onItemsUpdate(setAllInventory));
+        unsubs.push(inventoryService.onServiceTypesUpdate((data) => {
+            setServiceTypes(data);
+            setIsLoading(false);
+        }));
+
         const now = new Date();
         setDateRange({ from: startOfMonth(now), to: endOfMonth(now) });
 
-        return () => window.removeEventListener('databaseUpdated', forceUpdate);
+        return () => unsubs.forEach(unsub => unsub());
     }, []);
 
-    useEffect(() => {
-      if (hydrated) {
-        setServiceTypes([...placeholderServiceTypes]);
-      }
-    }, [hydrated, version]);
-
     const combinedOperations = useMemo((): FinancialOperation[] => {
-        if (!hydrated) return [];
-        const saleOperations: FinancialOperation[] = placeholderSales.filter(s => s.status !== 'Cancelado').map(sale => ({ id: sale.id, date: sale.saleDate, type: 'Venta', description: sale.items.map(i => i.itemName).join(', '), totalAmount: sale.totalAmount, profit: 0, originalObject: sale }));
-        const serviceOperations: FinancialOperation[] = placeholderServiceRecords.filter(s => s.status === 'Completado').map(service => ({ id: service.id, date: service.deliveryDateTime || service.serviceDate, type: service.serviceType || 'Servicio General', description: service.description || (service.serviceItems || []).map(i => i.name).join(', '), totalAmount: service.totalCost, profit: service.serviceProfit || 0, originalObject: service }));
+        if (isLoading) return [];
+        const saleOperations: FinancialOperation[] = allSales.filter(s => s.status !== 'Cancelado').map(sale => ({ id: sale.id, date: sale.saleDate, type: 'Venta', description: sale.items.map(i => i.itemName).join(', '), totalAmount: sale.totalAmount, profit: 0, originalObject: sale }));
+        const serviceOperations: FinancialOperation[] = allServices.filter(s => s.status === 'Completado').map(service => ({ id: service.id, date: service.deliveryDateTime || service.serviceDate, type: service.serviceType || 'Servicio General', description: service.description || (service.serviceItems || []).map(i => i.name).join(', '), totalAmount: service.totalCost, profit: service.serviceProfit || 0, originalObject: service }));
         return [...saleOperations, ...serviceOperations];
-    }, [hydrated, version]);
+    }, [isLoading, allSales, allServices]);
     
     const filteredAndSortedOperations = useMemo(() => {
-        if (!hydrated || !dateRange?.from) return [];
+        if (isLoading || !dateRange?.from) return [];
         const from = startOfDay(dateRange.from);
         const to = dateRange.to ? endOfDay(dateRange.to) : endOfDay(dateRange.from);
         let list = combinedOperations.filter(op => op.date && isValid(parseISO(op.date)) && isWithinInterval(parseISO(op.date), { start: from, end: to }));
@@ -116,10 +121,10 @@ function ReportesPageComponent() {
             }
         });
         return list;
-    }, [combinedOperations, dateRange, reporteOpSearchTerm, reporteOpTypeFilter, reporteOpPaymentMethodFilter, hydrated, reporteOpSortOption]);
+    }, [combinedOperations, dateRange, reporteOpSearchTerm, reporteOpTypeFilter, reporteOpPaymentMethodFilter, isLoading, reporteOpSortOption]);
 
     const aggregatedInventory = useMemo((): AggregatedInventoryItem[] => {
-        if (!hydrated || !dateRange?.from) return [];
+        if (isLoading || !dateRange?.from) return [];
         const from = startOfDay(dateRange.from);
         const to = dateRange.to ? endOfDay(dateRange.to) : endOfDay(dateRange.from);
         const allItemsSold = new Map<string, AggregatedInventoryItem>();
@@ -128,10 +133,10 @@ function ReportesPageComponent() {
             if (existing) { existing.totalQuantity += quantity; existing.totalRevenue += revenue; }
             else { allItemsSold.set(itemId, { itemId, name, sku, totalQuantity: quantity, totalRevenue: revenue }); }
         };
-        placeholderSales.forEach(sale => { if (sale.status !== 'Cancelado' && isValid(parseISO(sale.saleDate)) && isWithinInterval(parseISO(sale.saleDate), { start: from, end: to })) { sale.items.forEach(item => { const invItem = placeholderInventory.find(i => i.id === item.inventoryItemId); if (invItem && !invItem.isService) { processItem(invItem.id, invItem.name, invItem.sku, item.quantity, item.totalPrice); } }); } });
-        placeholderServiceRecords.forEach(service => { if (service.status === 'Completado' && service.deliveryDateTime && isValid(parseISO(service.deliveryDateTime)) && isWithinInterval(parseISO(service.deliveryDateTime), { start: from, end: to })) { (service.serviceItems || []).forEach(sItem => { (sItem.suppliesUsed || []).forEach(supply => { const invItem = placeholderInventory.find(i => i.id === supply.supplyId); if(invItem && !invItem.isService){ processItem(invItem.id, invItem.name, invItem.sku, supply.quantity, supply.sellingPrice ? supply.sellingPrice * supply.quantity : 0); } }); }); } });
+        allSales.forEach(sale => { if (sale.status !== 'Cancelado' && isValid(parseISO(sale.saleDate)) && isWithinInterval(parseISO(sale.saleDate), { start: from, end: to })) { sale.items.forEach(item => { const invItem = allInventory.find(i => i.id === item.inventoryItemId); if (invItem && !invItem.isService) { processItem(invItem.id, invItem.name, invItem.sku, item.quantity, item.totalPrice); } }); } });
+        allServices.forEach(service => { if (service.status === 'Completado' && service.deliveryDateTime && isValid(parseISO(service.deliveryDateTime)) && isWithinInterval(parseISO(service.deliveryDateTime), { start: from, end: to })) { (service.serviceItems || []).forEach(sItem => { (sItem.suppliesUsed || []).forEach(supply => { const invItem = allInventory.find(i => i.id === supply.supplyId); if(invItem && !invItem.isService){ processItem(invItem.id, invItem.name, invItem.sku, supply.quantity, supply.sellingPrice ? supply.sellingPrice * supply.quantity : 0); } }); }); } });
         return Array.from(allItemsSold.values());
-    }, [dateRange, hydrated, version]);
+    }, [dateRange, isLoading, allSales, allServices, allInventory]);
 
     const filteredAndSortedInventory = useMemo(() => {
         let list = [...aggregatedInventory];
@@ -177,7 +182,7 @@ function ReportesPageComponent() {
     ];
 
 
-    if (!hydrated) { return <div className="text-center py-10">Cargando reportes...</div>; }
+    if (isLoading) { return <div className="text-center py-10">Cargando reportes...</div>; }
     
     return (
         <>

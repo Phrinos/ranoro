@@ -1,5 +1,6 @@
 
 
+
 "use client";
 
 import { useState, useEffect, useRef } from 'react';
@@ -7,13 +8,16 @@ import { PageHeader } from "@/components/page-header";
 import { PosDialog } from "../components/pos-dialog";
 import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
 import { TicketContent } from '@/components/ticket-content';
-import { placeholderInventory, persistToFirestore, hydrateReady } from "@/lib/placeholder-data"; 
 import type { SaleReceipt, InventoryItem, WorkshopInfo } from '@/types'; 
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Printer, Copy } from 'lucide-react';
 import html2canvas from 'html2canvas';
+import { inventoryService, operationsService } from '@/lib/services';
+import { Loader2 } from 'lucide-react';
+import type { InventoryItemFormValues } from '../../inventario/components/inventory-item-form';
+
 
 type DialogStep = 'pos' | 'print_preview' | 'closed';
 
@@ -26,15 +30,18 @@ export default function NuevaVentaPage() {
   const [dialogStep, setDialogStep] = useState<DialogStep>('pos');
   const [currentSaleForTicket, setCurrentSaleForTicket] = useState<SaleReceipt | null>(null);
   const [workshopInfo, setWorkshopInfo] = useState<WorkshopInfo | undefined>(undefined);
-  const [hydrated, setHydrated] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    hydrateReady.then(() => {
-      setCurrentInventoryItems([...placeholderInventory]);
-      const stored = localStorage.getItem('workshopTicketInfo');
-      if (stored) setWorkshopInfo(JSON.parse(stored));
-      setHydrated(true);
+    const unsub = inventoryService.onItemsUpdate((items) => {
+        setCurrentInventoryItems(items);
+        setIsLoading(false);
     });
+    
+    const stored = localStorage.getItem('workshopTicketInfo');
+    if (stored) setWorkshopInfo(JSON.parse(stored));
+
+    return () => unsub();
   }, []);
 
   useEffect(() => {
@@ -45,7 +52,7 @@ export default function NuevaVentaPage() {
 
   const handleSaleCompletion = (saleData: SaleReceipt) => {
     setCurrentSaleForTicket(saleData);
-    setDialogStep('print_preview'); // Go directly to print preview
+    setDialogStep('print_preview'); 
   };
 
   const handlePosDialogExternalClose = () => { 
@@ -54,7 +61,7 @@ export default function NuevaVentaPage() {
     }
   };
   
-  const handlePrintDialogClose = () => {
+  const handlePreviewDialogClose = () => {
     setCurrentSaleForTicket(null); 
     setDialogStep('closed'); 
   };
@@ -95,22 +102,15 @@ export default function NuevaVentaPage() {
     }
   };
 
-
-  const handleInventoryItemCreated = (newItem: InventoryItem) => {
-    // Update the global placeholderInventory if it's not already there
-    if (!placeholderInventory.find(item => item.id === newItem.id)) {
-      placeholderInventory.push(newItem);
-    }
-    // Update local state for the PosDialog to have the latest items
-    setCurrentInventoryItems(prevItems => {
-      if (prevItems.find(item => item.id === newItem.id)) return prevItems;
-      return [...prevItems, newItem];
-    });
+  const handleInventoryItemCreated = async (newItemData: InventoryItemFormValues): Promise<InventoryItem> => {
+    const newItem = await inventoryService.addItem(newItemData);
+    // The onSnapshot listener will automatically update the inventoryItems state
+    return newItem;
   };
 
 
-  if (!hydrated) {
-      return <div className="text-center p-8 text-muted-foreground">Cargando...</div>;
+  if (isLoading) {
+      return <div className="text-center p-8 text-muted-foreground flex justify-center items-center"><Loader2 className="mr-2 h-5 w-5 animate-spin" />Cargando...</div>;
   }
 
   return (
@@ -121,13 +121,13 @@ export default function NuevaVentaPage() {
       />
       {dialogStep === 'pos' && (
         <PosDialog
-          inventoryItems={currentInventoryItems} // Use state for inventory items
+          inventoryItems={currentInventoryItems} 
           open={true} 
           onOpenChange={(isOpen) => { 
             if (!isOpen) handlePosDialogExternalClose();
           }}
           onSaleComplete={handleSaleCompletion}
-          onInventoryItemCreated={handleInventoryItemCreated} // Handle new items
+          onInventoryItemCreated={handleInventoryItemCreated}
         />
       )}
 
@@ -135,10 +135,10 @@ export default function NuevaVentaPage() {
         <PrintTicketDialog
           open={true} 
           onOpenChange={(isOpen) => { 
-            if (!isOpen) handlePrintDialogClose();
+            if (!isOpen) handlePreviewDialogClose();
           }}
           title="Ticket de Venta"
-          onDialogClose={handlePrintDialogClose}
+          onDialogClose={handlePreviewDialogClose}
           dialogContentClassName="printable-content"
           footerActions={
              <div className="flex gap-2">

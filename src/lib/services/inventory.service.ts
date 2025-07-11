@@ -10,7 +10,7 @@ import {
   writeBatch,
 } from 'firebase/firestore';
 import { db } from '../firebaseClient';
-import type { InventoryItem, InventoryCategory, Supplier, Vehicle, VehiclePriceList } from "@/types";
+import type { InventoryItem, InventoryCategory, Supplier, Vehicle, VehiclePriceList, ServiceTypeRecord } from "@/types";
 import type { InventoryItemFormValues } from "@/app/(app)/inventario/components/inventory-item-form";
 import type { VehicleFormValues } from "@/app/(app)/vehiculos/components/vehicle-form";
 import type { PriceListFormValues } from "@/app/(app)/precios/components/price-list-form";
@@ -18,6 +18,7 @@ import type { PriceListFormValues } from "@/app/(app)/precios/components/price-l
 // --- Inventory Items ---
 
 const onItemsUpdate = (callback: (items: InventoryItem[]) => void): (() => void) => {
+    if (!db) return () => {};
     const unsubscribe = onSnapshot(collection(db, "inventory"), (snapshot) => {
         callback(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as InventoryItem)));
     });
@@ -25,6 +26,7 @@ const onItemsUpdate = (callback: (items: InventoryItem[]) => void): (() => void)
 };
 
 const addItem = async (data: InventoryItemFormValues): Promise<InventoryItem> => {
+    if (!db) throw new Error("Database not initialized.");
     const newItemData = {
       ...data,
       isService: data.isService || false,
@@ -41,8 +43,18 @@ const addItem = async (data: InventoryItemFormValues): Promise<InventoryItem> =>
 // --- Categories ---
 
 const onCategoriesUpdate = (callback: (categories: InventoryCategory[]) => void): (() => void) => {
+    if (!db) return () => {};
     const unsubscribe = onSnapshot(collection(db, "inventoryCategories"), (snapshot) => {
         callback(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as InventoryCategory)));
+    });
+    return unsubscribe;
+};
+
+// --- Service Types ---
+const onServiceTypesUpdate = (callback: (types: ServiceTypeRecord[]) => void): (() => void) => {
+    if (!db) return () => {};
+    const unsubscribe = onSnapshot(collection(db, "serviceTypes"), (snapshot) => {
+        callback(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ServiceTypeRecord)));
     });
     return unsubscribe;
 };
@@ -50,6 +62,7 @@ const onCategoriesUpdate = (callback: (categories: InventoryCategory[]) => void)
 // --- Suppliers ---
 
 const onSuppliersUpdate = (callback: (suppliers: Supplier[]) => void): (() => void) => {
+    if (!db) return () => {};
     const unsubscribe = onSnapshot(collection(db, "suppliers"), (snapshot) => {
         callback(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Supplier)));
     });
@@ -59,6 +72,7 @@ const onSuppliersUpdate = (callback: (suppliers: Supplier[]) => void): (() => vo
 // --- Vehicles ---
 
 const onVehiclesUpdate = (callback: (vehicles: Vehicle[]) => void): (() => void) => {
+    if (!db) return () => {};
     const unsubscribe = onSnapshot(collection(db, "vehicles"), (snapshot) => {
         callback(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Vehicle)));
     });
@@ -67,12 +81,14 @@ const onVehiclesUpdate = (callback: (vehicles: Vehicle[]) => void): (() => void)
 
 
 const getVehicleById = async (id: string): Promise<Vehicle | undefined> => {
+    if (!db) throw new Error("Database not initialized.");
     const docRef = doc(db, 'vehicles', id);
     const docSnap = await getDoc(docRef);
     return docSnap.exists() ? { id: docSnap.id, ...docSnap.data() } as Vehicle : undefined;
 };
 
 const addVehicle = async (data: VehicleFormValues): Promise<Vehicle> => {
+    if (!db) throw new Error("Database not initialized.");
     const newVehicleData = {
       ...data,
       year: Number(data.year),
@@ -84,6 +100,7 @@ const addVehicle = async (data: VehicleFormValues): Promise<Vehicle> => {
 // --- Price Lists ---
 
 const onPriceListsUpdate = (callback: (lists: VehiclePriceList[]) => void): (() => void) => {
+    if (!db) return () => {};
     const unsubscribe = onSnapshot(collection(db, "vehiclePriceLists"), (snapshot) => {
         callback(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as VehiclePriceList)));
     });
@@ -91,6 +108,7 @@ const onPriceListsUpdate = (callback: (lists: VehiclePriceList[]) => void): (() 
 };
 
 const savePriceList = async (formData: PriceListFormValues, recordId?: string): Promise<VehiclePriceList> => {
+    if (!db) throw new Error("Database not initialized.");
     const dataToSave = { ...formData, years: formData.years.sort((a,b) => a-b) };
     if (recordId) {
         const docRef = doc(db, 'vehiclePriceLists', recordId);
@@ -103,6 +121,7 @@ const savePriceList = async (formData: PriceListFormValues, recordId?: string): 
 };
 
 const deletePriceList = async (recordId: string): Promise<void> => {
+    if (!db) throw new Error("Database not initialized.");
     const docRef = doc(db, 'vehiclePriceLists', recordId);
     await deleteDoc(docRef);
 };
@@ -111,6 +130,7 @@ export const inventoryService = {
     onItemsUpdate,
     addItem,
     onCategoriesUpdate,
+    onServiceTypesUpdate,
     onSuppliersUpdate,
     onVehiclesUpdate,
     getVehicleById,
