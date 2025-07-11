@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState } from 'react';
@@ -12,16 +13,15 @@ import {
 import { InventoryItemForm, type InventoryItemFormValues } from "./inventory-item-form";
 import type { InventoryItem, InventoryCategory, Supplier } from "@/types";
 import { useToast } from "@/hooks/use-toast";
-import { placeholderCategories, placeholderSuppliers } from '@/lib/placeholder-data'; // Ensure these are imported if not passed as props
 
 interface InventoryItemDialogProps {
   trigger?: React.ReactNode;
-  item?: InventoryItem | Partial<InventoryItemFormValues> | null; 
-  onSave?: (data: InventoryItemFormValues) => Promise<void>;
+  item?: Partial<InventoryItemFormValues> | null; 
+  onSave?: (data: InventoryItemFormValues) => Promise<InventoryItem>; // Changed to return the created item
   open?: boolean;
   onOpenChange?: (isOpen: boolean) => void;
-  categories?: InventoryCategory[]; // Optional prop
-  suppliers?: Supplier[]; // Optional prop
+  categories: InventoryCategory[];
+  suppliers: Supplier[];
 }
 
 export function InventoryItemDialog({ 
@@ -30,8 +30,8 @@ export function InventoryItemDialog({
   onSave,
   open: controlledOpen,
   onOpenChange: setControlledOpen,
-  categories: categoriesProp,
-  suppliers: suppliersProp,
+  categories,
+  suppliers,
 }: InventoryItemDialogProps) {
   const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
   const { toast } = useToast();
@@ -42,18 +42,11 @@ export function InventoryItemDialog({
 
   const isEditing = item && 'id' in item && item.id; 
 
-  // Use passed props for categories/suppliers, or fallback to imported placeholders
-  const categoriesToUse = categoriesProp || placeholderCategories;
-  const suppliersToUse = suppliersProp || placeholderSuppliers;
-
-
   const handleSubmit = async (values: InventoryItemFormValues) => {
     try {
       if (onSave) {
         await onSave(values);
       }
-      // Toast message is handled by the parent page (InventarioPage)
-      // to provide context (created vs. updated vs. created for purchase)
       onOpenChange(false);
     } catch (error) {
       console.error("Error saving inventory item:", error);
@@ -65,7 +58,6 @@ export function InventoryItemDialog({
     }
   };
   
-  // When creating an item, partial data might be passed (e.g., SKU from search)
   const initialFormData = item ? {
     name: 'name' in item ? item.name || '' : '',
     sku: 'sku' in item ? item.sku || '' : '',
@@ -75,12 +67,10 @@ export function InventoryItemDialog({
     sellingPrice: 'sellingPrice' in item ? item.sellingPrice || 0 : 0,
     lowStockThreshold: 'lowStockThreshold' in item ? item.lowStockThreshold || 5 : 5,
     unitType: 'unitType' in item ? item.unitType || 'units' : 'units',
-    category: 'category' in item ? item.category || (categoriesToUse.length > 0 ? categoriesToUse[0].name : '') : (categoriesToUse.length > 0 ? categoriesToUse[0].name : ''),
-    supplier: 'supplier' in item ? item.supplier || (suppliersToUse.length > 0 ? suppliersToUse[0].name : '') : (suppliersToUse.length > 0 ? suppliersToUse[0].name : ''),
-    // Include id if it's an existing item for editing
+    category: 'category' in item ? item.category || (categories.length > 0 ? categories[0].name : '') : (categories.length > 0 ? categories[0].name : ''),
+    supplier: 'supplier' in item ? item.supplier || (suppliers.length > 0 ? suppliers[0].name : '') : (suppliers.length > 0 ? suppliers[0].name : ''),
     ...(isEditing && 'id' in item && {id: item.id})
   } : null;
-
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -97,8 +87,8 @@ export function InventoryItemDialog({
             initialData={initialFormData as InventoryItem | null} 
             onSubmit={handleSubmit}
             onClose={() => onOpenChange(false)}
-            categories={categoriesToUse}
-            suppliers={suppliersToUse} 
+            categories={categories}
+            suppliers={suppliers} 
           />
         </div>
       </DialogContent>

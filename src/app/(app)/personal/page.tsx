@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState, useMemo, useEffect, useCallback, Suspense } from 'react';
@@ -12,7 +13,6 @@ import { TechniciansTable } from "../tecnicos/components/technicians-table";
 import { AdministrativeStaffTable } from "../administrativos/components/administrative-staff-table";
 import { TechnicianDialog } from "../tecnicos/components/technician-dialog";
 import { AdministrativeStaffDialog } from "../administrativos/components/administrative-staff-dialog";
-import { placeholderTechnicians, placeholderAdministrativeStaff, placeholderServiceRecords, persistToFirestore, IVA_RATE, hydrateReady } from "@/lib/placeholder-data";
 import type { Technician, ServiceRecord, AdministrativeStaff } from "@/types";
 import type { TechnicianFormValues } from "../tecnicos/components/technician-form";
 import type { AdministrativeStaffFormValues } from "../administrativos/components/administrative-staff-form";
@@ -23,8 +23,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { cn } from "@/lib/utils";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { Separator } from '@/components/ui/separator';
-
+import { Loader2 } from 'lucide-react';
+import { personnelService } from '@/lib/services/personnel.service';
+import { operationsService } from '@/lib/services/operations.service';
+import { IVA_RATE } from '@/lib/placeholder-data'; // Use a central constant if needed
 
 interface AggregatedTechnicianPerformance {
   technicianId: string;
@@ -47,12 +49,12 @@ function PersonalPageComponent() {
   const searchParams = useSearchParams();
   const defaultTab = searchParams.get('tab') || 'informe';
   const [activeTab, setActiveTab] = useState(defaultTab);
-  const [version, setVersion] = useState(0);
-  const [hydrated, setHydrated] = useState(false);
-
+  
   const [technicians, setTechnicians] = useState<Technician[]>([]);
   const [adminStaff, setAdminStaff] = useState<AdministrativeStaff[]>([]);
-  
+  const [services, setServices] = useState<ServiceRecord[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
   const [searchTermTech, setSearchTermTech] = useState('');
   const [showArchivedTech, setShowArchivedTech] = useState(false);
   
@@ -62,51 +64,29 @@ function PersonalPageComponent() {
   const [filterDateRange, setFilterDateRange] = useState<DateRange | undefined>(undefined);
   
   useEffect(() => {
-    hydrateReady.then(() => {
-        setHydrated(true);
-        setTechnicians([...placeholderTechnicians]);
-        setAdminStaff([...placeholderAdministrativeStaff]);
-        const now = new Date();
-        setFilterDateRange({ from: startOfMonth(now), to: endOfMonth(now) });
-    });
-    const forceUpdate = () => setVersion(v => v + 1);
-    window.addEventListener('databaseUpdated', forceUpdate);
-    return () => window.removeEventListener('databaseUpdated', forceUpdate);
+    const unsubs: (() => void)[] = [];
+    setIsLoading(true);
+    
+    unsubs.push(personnelService.onTechniciansUpdate(setTechnicians));
+    unsubs.push(personnelService.onAdminStaffUpdate(setAdminStaff));
+    unsubs.push(operationsService.onServicesUpdate((data) => {
+      setServices(data);
+      setIsLoading(false);
+    }));
+
+    const now = new Date();
+    setFilterDateRange({ from: startOfMonth(now), to: endOfMonth(now) });
+
+    return () => unsubs.forEach(unsub => unsub());
   }, []);
   
-  useEffect(() => {
-    if (hydrated) {
-        setTechnicians([...placeholderTechnicians]);
-        setAdminStaff([...placeholderAdministrativeStaff]);
-    }
-  }, [version, hydrated]);
-  
   const handleSaveTechnician = async (data: TechnicianFormValues) => {
-    const newTechnician: Technician = {
-      id: `T_${Date.now().toString(36)}`, 
-      ...data,
-      hireDate: data.hireDate ? new Date(data.hireDate).toISOString().split('T')[0] : undefined,
-      monthlySalary: Number(data.monthlySalary) || undefined,
-      commissionRate: data.commissionRate ? Number(data.commissionRate) : undefined,
-      standardHoursPerDay: data.standardHoursPerDay ? Number(data.standardHoursPerDay) : 8,
-      isArchived: false,
-    };
-    placeholderTechnicians.push(newTechnician);
-    await persistToFirestore(['technicians']);
+    await personnelService.addTechnician(data);
     toast({ title: "Técnico Creado" });
   };
   
   const handleSaveAdminStaff = async (data: AdministrativeStaffFormValues) => {
-    const newStaffMember: AdministrativeStaff = {
-      id: `ADM_${Date.now().toString(36)}`, 
-      ...data,
-      hireDate: data.hireDate ? new Date(data.hireDate).toISOString().split('T')[0] : undefined,
-      monthlySalary: Number(data.monthlySalary) || undefined,
-      commissionRate: data.commissionRate ? Number(data.commissionRate) : undefined,
-      isArchived: false,
-    };
-    placeholderAdministrativeStaff.push(newStaffMember);
-    await persistToFirestore(['administrativeStaff']);
+    await personnelService.addAdminStaff(data);
     toast({ title: "Staff Administrativo Creado" });
   };
   
@@ -114,7 +94,7 @@ function PersonalPageComponent() {
       totalTechnicians, totalMonthlyTechnicianSalaries, aggregatedTechnicianPerformance,
       totalAdministrativeStaff, totalMonthlyAdministrativeSalaries, aggregatedAdminPerformance
   } = useMemo(() => {
-    if (!hydrated || !filterDateRange?.from) return { totalTechnicians: 0, totalMonthlyTechnicianSalaries: 0, aggregatedTechnicianPerformance: [], totalAdministrativeStaff: 0, totalMonthlyAdministrativeSalaries: 0, aggregatedAdminPerformance: [] };
+    if (isLoading || !filterDateRange?.from) return { totalTechnicians: 0, totalMonthlyTechnicianSalaries: 0, aggregatedTechnicianPerformance: [], totalAdministrativeStaff: 0, totalMonthlyAdministrativeSalaries: 0, aggregatedAdminPerformance: [] };
 
     const dateFrom = startOfDay(filterDateRange.from);
     const dateTo = filterDateRange.to ? endOfDay(filterDateRange.to) : endOfDay(filterDateRange.from);
@@ -122,8 +102,11 @@ function PersonalPageComponent() {
     const activeTechnicians = technicians.filter(t => !t.isArchived);
     const totalTechs = activeTechnicians.length;
     const totalTechSalaries = activeTechnicians.reduce((sum, tech) => sum + (tech.monthlySalary || 0), 0);
+    
+    const completedServicesInRange = services.filter(s => s.status === 'Completado' && s.deliveryDateTime && isWithinInterval(parseISO(s.deliveryDateTime), { start: dateFrom, end: dateTo }));
+
     const aggTechPerformance: AggregatedTechnicianPerformance[] = activeTechnicians.map(tech => {
-      const techServices = placeholderServiceRecords.filter(s => s.technicianId === tech.id && s.status === 'Completado' && isWithinInterval(parseISO(s.deliveryDateTime || s.serviceDate), { start: dateFrom, end: dateTo }));
+      const techServices = completedServicesInRange.filter(s => s.technicianId === tech.id);
       const totalRevenue = techServices.reduce((sum, s) => sum + s.totalCost, 0);
       const totalProfit = techServices.reduce((sum, s) => sum + (s.serviceProfit || 0), 0);
       const totalCommissionEarned = totalProfit * (tech.commissionRate || 0);
@@ -133,8 +116,8 @@ function PersonalPageComponent() {
     const activeAdminStaff = adminStaff.filter(s => !s.isArchived);
     const totalAdmins = activeAdminStaff.length;
     const totalAdminSalaries = activeAdminStaff.reduce((sum, staff) => sum + (staff.monthlySalary || 0), 0);
-    const completedServicesInRange = placeholderServiceRecords.filter(s => s.status === 'Completado' && s.deliveryDateTime && isWithinInterval(parseISO(s.deliveryDateTime), { start: dateFrom, end: dateTo }));
     const totalProfitFromCompletedServicesInRange = completedServicesInRange.reduce((sum, s) => sum + (s.serviceProfit || 0), 0);
+    
     const aggAdminPerformance: AggregatedAdminStaffPerformance[] = activeAdminStaff.map(staff => {
       const commissionEarned = totalProfitFromCompletedServicesInRange * (staff.commissionRate || 0);
       const baseSalary = staff.monthlySalary || 0;
@@ -145,7 +128,7 @@ function PersonalPageComponent() {
         totalTechnicians: totalTechs, totalMonthlyTechnicianSalaries: totalTechSalaries, aggregatedTechnicianPerformance: aggTechPerformance,
         totalAdministrativeStaff: totalAdmins, totalMonthlyAdministrativeSalaries: totalAdminSalaries, aggregatedAdminPerformance: aggAdminPerformance
     };
-  }, [technicians, adminStaff, filterDateRange, hydrated, version]);
+  }, [technicians, adminStaff, services, filterDateRange, isLoading]);
 
   const filteredTechnicians = useMemo(() => {
     let items = technicians.filter(tech => showArchivedTech ? !!tech.isArchived : !tech.isArchived);
@@ -167,7 +150,7 @@ function PersonalPageComponent() {
 
   const formatCurrency = (amount: number) => `$${amount.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
-  if (!hydrated) { return <div className="text-center py-10">Cargando...</div>; }
+  if (isLoading) { return <div className="flex justify-center items-center h-64"><Loader2 className="h-8 w-8 animate-spin" /></div>; }
   
   return (
     <>

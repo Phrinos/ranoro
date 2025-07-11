@@ -18,17 +18,14 @@ import { ProductosContent } from './components/productos-content';
 import { CategoriasContent } from './components/categorias-content';
 import { ProveedoresContent } from './components/proveedores-content';
 import { AnalisisIaContent } from './components/analisis-ia-content';
-import {
-  placeholderInventory,
-  placeholderCategories,
-  placeholderSuppliers,
-  placeholderCashDrawerTransactions,
-  persistToFirestore,
-  hydrateReady,
-  logAudit
-} from '@/lib/placeholder-data';
+import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
 import { Loader2 } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
+import { inventoryService } from '@/lib/services/inventory.service';
+import { operationsService } from '@/lib/services/operations.service';
+import { adminService } from '@/lib/services/admin.service';
+import { addDoc, collection, doc, writeBatch } from 'firebase/firestore';
+import { db } from '@/lib/firebaseClient';
 
 
 function InventarioPageComponent() {
@@ -44,38 +41,35 @@ function InventarioPageComponent() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const loadData = () => {
-        setIsLoading(true);
-        setInventoryItems([...placeholderInventory]);
-        setCategories([...placeholderCategories]);
-        setSuppliers([...placeholderSuppliers]);
-        setIsLoading(false);
-    };
+    const unsubs: (() => void)[] = [];
+    setIsLoading(true);
+    
+    unsubs.push(inventoryService.onItemsUpdate(setInventoryItems));
+    unsubs.push(inventoryService.onCategoriesUpdate(setCategories));
+    unsubs.push(inventoryService.onSuppliersUpdate((data) => {
+      setSuppliers(data);
+      setIsLoading(false); // Mark loading as false after the last required dataset is fetched
+    }));
 
-    hydrateReady.then(() => {
-        loadData(); // Initial load
-        window.addEventListener('databaseUpdated', loadData); // Listen for updates
-    });
-
-    return () => {
-        window.removeEventListener('databaseUpdated', loadData); // Cleanup
-    };
+    return () => unsubs.forEach(unsub => unsub());
   }, []);
 
   const [isRegisterPurchaseOpen, setIsRegisterPurchaseOpen] = useState(false);
 
   const handleSavePurchase = useCallback(async (data: PurchaseFormValues) => {
+    if (!db) return;
+    const batch = writeBatch(db);
+
     // 1. Update supplier debt if payment method is 'Credito'
     if (data.paymentMethod === 'Crédito') {
-      const supplierIndex = placeholderSuppliers.findIndex(s => s.id === data.supplierId);
-      if (supplierIndex > -1) {
-        placeholderSuppliers[supplierIndex].debtAmount = (placeholderSuppliers[supplierIndex].debtAmount || 0) + data.invoiceTotal;
+      const supplierRef = doc(db, "suppliers", data.supplierId);
+      const supplier = suppliers.find(s => s.id === data.supplierId);
+      if (supplier) {
+        batch.update(supplierRef, { debtAmount: (supplier.debtAmount || 0) + data.invoiceTotal });
       }
     } else if (data.paymentMethod === 'Efectivo') {
-        // Create a cash drawer transaction for cash payments
-        const supplierName = placeholderSuppliers.find(s => s.id === data.supplierId)?.name || 'desconocido';
-        const newTransaction: CashDrawerTransaction = {
-          id: `trx_${Date.now()}`,
+        const supplierName = suppliers.find(s => s.id === data.supplierId)?.name || 'desconocido';
+        const newTransaction = {
           date: new Date().toISOString(),
           type: 'Salida',
           amount: data.invoiceTotal,
@@ -83,45 +77,45 @@ function InventarioPageComponent() {
           userId: 'system', // TODO: Get current user
           userName: 'Sistema',
         };
-        placeholderCashDrawerTransactions.push(newTransaction);
+        batch.set(doc(collection(db, "cashDrawerTransactions")), newTransaction);
     }
     
     // 2. Update inventory items stock and cost
     data.items.forEach(purchasedItem => {
-      const itemIndex = placeholderInventory.findIndex(i => i.id === purchasedItem.inventoryItemId);
-      if (itemIndex > -1) {
-        placeholderInventory[itemIndex].quantity += purchasedItem.quantity;
-        // Optionally update the purchase price
-        placeholderInventory[itemIndex].unitPrice = purchasedItem.unitPrice;
+      const itemRef = doc(db, "inventory", purchasedItem.inventoryItemId);
+      const inventoryItem = inventoryItems.find(i => i.id === purchasedItem.inventoryItemId);
+      if (inventoryItem) {
+        batch.update(itemRef, {
+          quantity: inventoryItem.quantity + purchasedItem.quantity,
+          unitPrice: purchasedItem.unitPrice
+        });
       }
     });
-
-    const supplierName = placeholderSuppliers.find(s => s.id === data.supplierId)?.name || 'desconocido';
-    await logAudit('Registrar', `Registró una compra al proveedor "${supplierName}" por ${formatCurrency(data.invoiceTotal)}.`, {entityType: 'Compra', entityId: data.supplierId});
-
-    // 3. Persist changes
-    await persistToFirestore(['suppliers', 'inventory', 'cashDrawerTransactions', 'auditLogs']);
+    
+    // 3. Log audit
+    const supplierName = suppliers.find(s => s.id === data.supplierId)?.name || 'desconocido';
+    const userString = typeof window !== 'undefined' ? localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY) : null;
+    const user = userString ? JSON.parse(userString) : { id: 'system', name: 'Sistema' };
+    const auditLog = {
+      actionType: 'Registrar',
+      description: `Registró una compra al proveedor "${supplierName}" por ${formatCurrency(data.invoiceTotal)}.`,
+      entityType: 'Compra',
+      entityId: data.supplierId,
+      userId: user.id,
+      userName: user.name,
+      date: new Date().toISOString(),
+    };
+    batch.set(doc(collection(db, 'auditLogs')), auditLog);
+    
+    // 4. Commit batch
+    await batch.commit();
     
     toast({ title: "Compra Registrada", description: `La compra de ${data.items.length} artículo(s) ha sido registrada.` });
     setIsRegisterPurchaseOpen(false);
-  }, [toast]);
+  }, [toast, suppliers, inventoryItems]);
   
   const handleInventoryItemCreated = useCallback(async (itemData: InventoryItemFormValues): Promise<InventoryItem> => {
-      const newId = `prod_${Date.now()}`;
-      const newItem: InventoryItem = {
-          id: newId,
-          ...itemData,
-          isService: itemData.isService || false,
-          quantity: itemData.isService ? 0 : Number(itemData.quantity),
-          lowStockThreshold: itemData.isService ? 0 : Number(itemData.lowStockThreshold),
-          unitPrice: Number(itemData.unitPrice) || 0,
-          sellingPrice: Number(itemData.sellingPrice) || 0,
-      };
-      
-      placeholderInventory.push(newItem);
-      await logAudit('Crear', `Creó el producto "${newItem.name}" (SKU: ${newItem.sku})`, {entityType: 'Producto', entityId: newId});
-      await persistToFirestore(['inventory', 'auditLogs']);
-      
+      const newItem = await inventoryService.addItem(itemData);
       toast({ title: "Producto Creado", description: `"${newItem.name}" ha sido agregado al inventario.` });
       return newItem;
   }, [toast]);
