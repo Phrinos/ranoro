@@ -208,7 +208,6 @@ const DATA_ARRAYS = {
     categories: placeholderCategories,
     suppliers: placeholderSuppliers,
     sales: placeholderSales,
-    users: placeholderUsers,
     appRoles: placeholderAppRoles,
     fixedExpenses: placeholderFixedMonthlyExpenses,
     administrativeStaff: placeholderAdministrativeStaff,
@@ -221,6 +220,7 @@ const DATA_ARRAYS = {
     initialCashBalance: placeholderInitialCashBalance,
     auditLogs: placeholderAuditLogs,
     serviceTypes: placeholderServiceTypes,
+    users: placeholderUsers,
 };
 
 
@@ -281,41 +281,36 @@ export async function hydrateFromFirestore(tenantId: string) {
   }
   
   const docRef = doc(db, 'tenants', tenantId);
-  let docSnap;
-  let changesMade = false;
+  const userListDocRef = doc(db, 'users', tenantId); // Assumes users are stored under a doc named after the tenantId
 
   try {
-    docSnap = await getDoc(docRef);
+    const tenantDocSnap = await getDoc(docRef);
+    const userListSnap = await getDoc(userListDocRef); // This might be wrong, depends on user structure
 
-    if (docSnap.exists()) {
-      const firestoreData = docSnap.data();
-      Object.assign(placeholderVehicles, firestoreData.vehicles || []);
-      Object.assign(placeholderServiceRecords, firestoreData.serviceRecords || []);
-      Object.assign(placeholderTechnicians, firestoreData.technicians || []);
-      Object.assign(placeholderInventory, firestoreData.inventory || []);
-      Object.assign(placeholderCategories, firestoreData.categories || []);
-      Object.assign(placeholderSuppliers, firestoreData.suppliers || []);
-      Object.assign(placeholderSales, firestoreData.sales || []);
-      Object.assign(placeholderAppRoles, firestoreData.appRoles || []);
-      Object.assign(placeholderFixedMonthlyExpenses, firestoreData.fixedExpenses || []);
-      Object.assign(placeholderAdministrativeStaff, firestoreData.administrativeStaff || []);
-      Object.assign(placeholderVehiclePriceLists, firestoreData.vehiclePriceLists || []);
-      Object.assign(placeholderDrivers, firestoreData.drivers || []);
-      Object.assign(placeholderRentalPayments, firestoreData.rentalPayments || []);
-      Object.assign(placeholderOwnerWithdrawals, firestoreData.ownerWithdrawals || []);
-      Object.assign(placeholderVehicleExpenses, firestoreData.vehicleExpenses || []);
-      Object.assign(placeholderCashDrawerTransactions, firestoreData.cashDrawerTransactions || []);
-      Object.assign(placeholderAuditLogs, firestoreData.auditLogs || []);
-      Object.assign(placeholderServiceTypes, firestoreData.serviceTypes || []);
-      if (firestoreData.initialCashBalance) {
-        Object.assign(placeholderInitialCashBalance, firestoreData.initialCashBalance);
-      } else {
-        placeholderInitialCashBalance = null;
-      }
-      
+    if (tenantDocSnap.exists()) {
+      const firestoreData = tenantDocSnap.data();
+      // Assign data to placeholders
+      Object.keys(DATA_ARRAYS).forEach(key => {
+        if (key !== 'users' && firestoreData[key]) {
+          const placeholder = DATA_ARRAYS[key as keyof typeof DATA_ARRAYS];
+          if (Array.isArray(placeholder)) {
+            placeholder.splice(0, placeholder.length, ...firestoreData[key]);
+          } else {
+             // Handle non-array placeholders like initialCashBalance
+             if (placeholder) Object.assign(placeholder, firestoreData[key]);
+             else DATA_ARRAYS[key as keyof typeof DATA_ARRAYS] = firestoreData[key];
+          }
+        }
+      });
+      // Handle user list separately if needed from a different document
+      // if (userListSnap.exists()) {
+      //     placeholderUsers.splice(0, placeholderUsers.length, ...userListSnap.data().users);
+      // }
+
     } else {
       console.warn('No database document found for tenant. Seeding with initial data.');
-      changesMade = true;
+      // Persist all data if document is new
+      await persistToFirestore(undefined, tenantId);
     }
   } catch (error) {
     console.error('Error reading from Firestore, using local fallback:', error);
@@ -329,32 +324,31 @@ export async function hydrateFromFirestore(tenantId: string) {
           name: 'Superadmin',
           permissions: ALL_AVAILABLE_PERMISSIONS.map(p => p.id)
       });
-      changesMade = true;
+      await persistToFirestore(['appRoles'], tenantId);
   }
 
   (window as any).__APP_HYDRATED__ = true;
   resolveHydration?.();
   console.log('Hydration process complete.');
-  
-  if (changesMade) {
-    console.log('Persisting initial/updated data to Firestore...');
-    await persistToFirestore(); // Persist all data
-  }
 }
 
 
-export async function persistToFirestore(keysToUpdate?: (keyof typeof DATA_ARRAYS)[]) {
+export async function persistToFirestore(keysToUpdate?: (keyof typeof DATA_ARRAYS)[], forceTenantId?: string) {
   if (!db) {
     console.warn('Persist skipped: Firebase not configured.');
     return;
   }
   
-  const authUserString = typeof window !== 'undefined' ? localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY) : null;
-  const currentUser: User | null = authUserString ? JSON.parse(authUserString) : null;
-  
-  const tenantId = currentUser?.tenantId || defaultSuperAdmin.tenantId;
+  let tenantId = forceTenantId;
+
   if (!tenantId) {
-      console.error('Persist skipped: No tenantId found for the current user or default admin.');
+      const authUserString = typeof window !== 'undefined' ? localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY) : null;
+      const currentUser: User | null = authUserString ? JSON.parse(authUserString) : null;
+      tenantId = currentUser?.tenantId;
+  }
+  
+  if (!tenantId) {
+      console.error('Persist skipped: No tenantId found.');
       return;
   }
   
@@ -362,6 +356,9 @@ export async function persistToFirestore(keysToUpdate?: (keyof typeof DATA_ARRAY
   
   const dataToPersist: { [key: string]: any } = {};
   for (const key of keys) {
+    // Special handling for 'users' to avoid storing it inside the tenant document
+    if (key === 'users') continue;
+    
     if (DATA_ARRAYS[key] !== undefined) {
       dataToPersist[key] = DATA_ARRAYS[key];
     }
