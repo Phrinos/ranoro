@@ -1,9 +1,15 @@
+
 rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Permite el acceso de lectura y escritura a cualquier usuario que haya iniciado sesión.
-    // Esto es adecuado para el desarrollo, pero deberías configurar reglas más detalladas para producción.
+    // Regla para la colección pública: permite lectura a todos.
+    match /publicServices/{serviceId} {
+      allow read: if true;
+      allow write: if request.auth != null; // Solo usuarios autenticados pueden escribir
+    }
+
+    // Regla general para el resto de los documentos
     match /{document=**} {
       allow read, write: if request.auth != null;
     }
