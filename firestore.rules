@@ -1,17 +1,87 @@
-
 rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Regla para la colección pública: permite lectura a todos.
-    match /publicServices/{serviceId} {
-      allow read: if true;
-      allow write: if request.auth != null; // Solo usuarios autenticados pueden escribir
+
+    // --- Public Read-Only Collections ---
+    // Anyone can read these documents, but no one can write to them.
+    // This is for shared links like service sheets.
+    match /publicServices/{documentId} {
+      allow read;
+      allow write: if false;
+    }
+    match /publicQuotes/{documentId} {
+      allow read;
+      allow write: if false;
+    }
+    match /publicOwnerReports/{documentId} {
+        allow read;
+        allow write: if false;
     }
 
-    // Regla general para el resto de los documentos
-    match /{document=**} {
-      allow read, write: if request.auth != null;
+    // --- Private Collections ---
+    // Only authenticated users can read or write to these collections.
+    function isAuthenticated() {
+      return request.auth != null;
     }
+
+    match /users/{userId} {
+      allow read, write: if isAuthenticated();
+    }
+    match /serviceRecords/{serviceId} {
+      allow read, write: if isAuthenticated();
+    }
+    match /vehicles/{vehicleId} {
+      allow read, write: if isAuthenticated();
+    }
+    match /technicians/{technicianId} {
+      allow read, write: if isAuthenticated();
+    }
+    match /administrativeStaff/{staffId} {
+        allow read, write: if isAuthenticated();
+    }
+    match /inventory/{itemId} {
+      allow read, write: if isAuthenticated();
+    }
+    match /inventoryCategories/{categoryId} {
+        allow read, write: if isAuthenticated();
+    }
+    match /suppliers/{supplierId} {
+        allow read, write: if isAuthenticated();
+    }
+    match /sales/{saleId} {
+      allow read, write: if isAuthenticated();
+    }
+    match /drivers/{driverId} {
+      allow read, write: if isAuthenticated();
+    }
+    match /rentalPayments/{paymentId} {
+      allow read, write: if isAuthenticated();
+    }
+    match /vehicleExpenses/{expenseId} {
+      allow read, write: if isAuthenticated();
+    }
+    match /fixedExpenses/{expenseId} {
+        allow read, write: if isAuthenticated();
+    }
+    match /appRoles/{roleId} {
+        allow read, write: if isAuthenticated();
+    }
+    match /auditLogs/{logId} {
+        allow read, write: if isAuthenticated();
+    }
+    match /initialCashBalance/{docId} {
+        allow read, write: if isAuthenticated();
+    }
+    match /cashDrawerTransactions/{transactionId} {
+        allow read, write: if isAuthenticated();
+    }
+    match /vehiclePriceLists/{listId} {
+        allow read, write: if isAuthenticated();
+    }
+    match /serviceTypes/{typeId} {
+        allow read, write: if isAuthenticated();
+    }
+
   }
 }
