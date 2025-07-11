@@ -65,6 +65,14 @@ export interface Vehicle {
   lastMileageUpdate?: string; // ISO String
 }
 
+export interface ManualDebtEntry {
+  id: string;
+  date: string; // ISO String
+  amount: number;
+  note: string;
+}
+
+
 export interface Driver {
   id: string;
   name: string;
@@ -80,9 +88,7 @@ export interface Driver {
   };
   depositAmount?: number;
   contractDate?: string; // ISO string
-  contractStartDate?: string;
-  debtAmount?: number;
-  debtNote?: string;
+  manualDebts?: ManualDebtEntry[];
 }
 
 export interface RentalPayment {
