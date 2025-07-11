@@ -8,7 +8,7 @@ import {
   placeholderRentalPayments,
   persistToFirestore 
 } from '@/lib/placeholder-data';
-import type { Driver, RentalPayment } from '@/types';
+import type { Driver, RentalPayment, ManualDebtEntry } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -28,6 +28,7 @@ import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
 import { ContractContent } from '../components/contract-content';
 import Image from "next/legacy/image";
 import { RegisterPaymentDialog } from '../components/register-payment-dialog';
+import { DebtDialog, type DebtFormValues } from '../components/debt-dialog';
 import { ref, uploadString, getDownloadURL } from "firebase/storage";
 import { storage } from '@/lib/firebaseClient';
 
@@ -47,6 +48,7 @@ export default function DriverDetailPage() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isContractDialogOpen, setIsContractDialogOpen] = useState(false);
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
+  const [isDebtDialogOpen, setIsDebtDialogOpen] = useState(false);
   const [uploadingDocType, setUploadingDocType] = useState<DocType | null>(null);
   const [isUploading, setIsUploading] = useState(false);
 
@@ -96,11 +98,11 @@ export default function DriverDetailPage() {
         }
     }
     
-    const manualDebt = driver.debtAmount || 0;
+    const manualDebt = (driver.manualDebts || []).reduce((sum, debt) => sum + debt.amount, 0);
     const totalDebt = calculatedRentDebt + manualDebt;
     const daysOwed = assignedVehicle?.dailyRentalCost ? Math.floor(totalDebt / assignedVehicle.dailyRentalCost) : 0;
     
-    return { totalDebt, daysOwed, calculatedRentDebt };
+    return { totalDebt, daysOwed, calculatedRentDebt, manualDebt };
 
   }, [driver, assignedVehicle, driverPayments]);
 
@@ -112,7 +114,6 @@ export default function DriverDetailPage() {
         ...driver, 
         ...formData,
         contractDate: formData.contractDate ? new Date(formData.contractDate).toISOString() : undefined,
-        debtAmount: Number(formData.debtAmount) || 0,
     };
     
     setDriver(updatedDriver);
@@ -235,6 +236,32 @@ export default function DriverDetailPage() {
     
     toast({ title: "Pago Registrado", description: `Se ha registrado el pago de ${formatCurrency(details.amount)}.` });
   };
+  
+  const handleSaveDebt = async (formData: DebtFormValues) => {
+    if (!driver) return;
+    
+    const newDebt: ManualDebtEntry = {
+        id: `DEBT_${Date.now().toString(36)}`,
+        date: new Date().toISOString(),
+        ...formData
+    };
+
+    const updatedDriver: Driver = {
+        ...driver,
+        manualDebts: [...(driver.manualDebts || []), newDebt]
+    };
+
+    setDriver(updatedDriver);
+
+    const dIndex = placeholderDrivers.findIndex(d => d.id === driverId);
+    if (dIndex > -1) {
+        placeholderDrivers[dIndex] = updatedDriver;
+    }
+    
+    await persistToFirestore(['drivers']);
+    setIsDebtDialogOpen(false);
+    toast({ title: "Adeudo Registrado", description: `Se ha añadido un nuevo cargo de ${formatCurrency(formData.amount)}.` });
+  };
 
 
   if (driver === undefined) {
@@ -293,7 +320,6 @@ export default function DriverDetailPage() {
                 <div className="flex items-center gap-3"><Phone className="h-4 w-4 text-muted-foreground" /><span>{driver.phone}</span></div>
                 <div className="flex items-center gap-3"><AlertTriangle className="h-4 w-4 text-muted-foreground" /><span>Tel. Emergencia: {driver.emergencyPhone}</span></div>
                 <div className="flex items-center gap-3"><DollarSign className="h-4 w-4 text-muted-foreground" /><span>Depósito: {driver.depositAmount ? formatCurrency(driver.depositAmount) : 'N/A'}</span></div>
-                {driver.debtNote && <div className="flex items-center gap-3"><FileText className="h-4 w-4 text-muted-foreground" /><span>Nota de Deuda: {driver.debtNote}</span></div>}
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3"><FileText className="h-4 w-4 text-muted-foreground" /><span>Contrato: {driver.contractDate ? format(parseISO(driver.contractDate), "dd MMM yyyy", { locale: es }) : 'No generado'}</span></div>
                     <Button onClick={() => setIsContractDialogOpen(true)} disabled={!driver?.depositAmount} size="sm">
@@ -337,21 +363,52 @@ export default function DriverDetailPage() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="deuda">
+        <TabsContent value="deuda" className="space-y-6">
             <Card className="lg:col-span-1 bg-amber-50 dark:bg-amber-900/50 border-amber-200">
                 <CardHeader>
                     <CardTitle className="text-lg text-amber-900 dark:text-amber-200">Estado de Cuenta</CardTitle>
-                    <CardDescription className="text-amber-800 dark:text-amber-300">Resumen de la deuda del mes actual.</CardDescription>
+                    <CardDescription className="text-amber-800 dark:text-amber-300">Resumen de la deuda del mes actual y cargos manuales.</CardDescription>
                 </CardHeader>
                 <CardContent className="text-center space-y-4">
                     <div>
                         <p className="text-sm font-medium text-muted-foreground">DEUDA TOTAL</p>
                         <p className="text-3xl font-bold text-destructive">{formatCurrency(debtInfo.totalDebt)}</p>
-                        <p className="text-xs text-muted-foreground">(Renta Mes: {formatCurrency(debtInfo.calculatedRentDebt)} + Deuda Adicional: {formatCurrency(driver.debtAmount || 0)})</p>
+                        <p className="text-xs text-muted-foreground">(Renta Mes: {formatCurrency(debtInfo.calculatedRentDebt)} + Adeudos Manuales: {formatCurrency(debtInfo.manualDebt)})</p>
                     </div>
                     <div>
                         <p className="text-sm font-medium text-muted-foreground">DÍAS PENDIENTES (APROX)</p>
                         <p className="text-3xl font-bold">{debtInfo.daysOwed}</p>
+                    </div>
+                </CardContent>
+            </Card>
+            <Card>
+                <CardHeader className="flex flex-row items-center justify-between">
+                  <div>
+                    <CardTitle>Historial de Adeudos Manuales</CardTitle>
+                    <CardDescription>Cargos adicionales como multas, daños, etc.</CardDescription>
+                  </div>
+                  <Button onClick={() => setIsDebtDialogOpen(true)}>
+                    <PlusCircle className="mr-2 h-4 w-4" /> Añadir Adeudo
+                  </Button>
+                </CardHeader>
+                <CardContent>
+                    <div className="rounded-md border overflow-x-auto">
+                      <Table>
+                        <TableHeader className="bg-black"><TableRow><TableHead className="text-white">Fecha</TableHead><TableHead className="text-white">Concepto</TableHead><TableHead className="text-right text-white">Monto</TableHead></TableRow></TableHeader>
+                        <TableBody>
+                          {(driver.manualDebts || []).length > 0 ? (
+                            [...driver.manualDebts].sort((a,b) => parseISO(b.date).getTime() - parseISO(a.date).getTime()).map(debt => (
+                              <TableRow key={debt.id}>
+                                <TableCell>{format(parseISO(debt.date), "dd MMM, yyyy", { locale: es })}</TableCell>
+                                <TableCell>{debt.note}</TableCell>
+                                <TableCell className="text-right font-semibold text-destructive">{formatCurrency(debt.amount)}</TableCell>
+                              </TableRow>
+                            ))
+                          ) : (
+                            <TableRow><TableCell colSpan={3} className="h-24 text-center">No hay adeudos manuales registrados.</TableCell></TableRow>
+                          )}
+                        </TableBody>
+                      </Table>
                     </div>
                 </CardContent>
             </Card>
@@ -460,6 +517,11 @@ export default function DriverDetailPage() {
         onOpenChange={setIsEditDialogOpen}
         driver={driver}
         onSave={handleSaveDriver}
+      />
+      <DebtDialog
+        open={isDebtDialogOpen}
+        onOpenChange={setIsDebtDialogOpen}
+        onSave={handleSaveDebt}
       />
     </div>
 
