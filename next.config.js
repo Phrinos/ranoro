@@ -6,6 +6,8 @@ const nextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
+  // This allows connections from the cloud workstation that hosts the IDE
+  allowedDevOrigins: ['https://*.cloudworkstations.dev'],
   images: {
     remotePatterns: [
       {
@@ -21,10 +23,6 @@ const nextConfig = {
         pathname: '/**',
       },
     ],
-  },
-  dev: {
-    // This allows connections from the cloud workstation that hosts the IDE
-    allowedDevOrigins: ['https://*.cloudworkstations.dev'],
   },
 
   async headers() {

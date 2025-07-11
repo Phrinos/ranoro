@@ -42,7 +42,7 @@ import {
   CalendarDays
 } from 'lucide-react';
 import type { User, AppRole } from '@/types';
-import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
+import { AUTH_USER_LOCALSTORAGE_KEY, defaultSuperAdmin } from '@/lib/placeholder-data';
 import { adminService } from '@/lib/services/admin.service';
 
 export interface NavigationEntry {
@@ -187,20 +187,28 @@ const useNavigation = (): NavigationEntry[] => {
                 try {
                     setCurrentUser(JSON.parse(authUserString));
                 } catch (e) {
-                    console.error("Failed to parse authUser:", e);
-                    setCurrentUser(null);
+                    setCurrentUser(defaultSuperAdmin);
                 }
             } else {
-                setCurrentUser(null);
+                setCurrentUser(defaultSuperAdmin);
             }
             setRoles(await adminService.getRoles());
         }
     };
     loadData();
+    
+    // Add event listener to re-evaluate on data change
+    const handleDbUpdate = () => loadData();
+    window.addEventListener('databaseUpdated', handleDbUpdate);
+    return () => window.removeEventListener('databaseUpdated', handleDbUpdate);
+    
   }, [pathname]);
 
   const userPermissions = React.useMemo(() => {
-    if (!currentUser || !roles.length) return new Set<string>();
+    if (!currentUser || !roles.length) {
+        // Fallback to superadmin permissions if no user/roles are found
+        return new Set(BASE_NAV_STRUCTURE.flatMap(item => item.permissions || []));
+    }
     const userRole = roles.find(r => r && r.name === currentUser.role);
     return new Set(userRole?.permissions || []);
   }, [currentUser, roles]);
