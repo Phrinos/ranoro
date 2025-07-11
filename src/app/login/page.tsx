@@ -31,16 +31,17 @@ export default function LoginPage() {
     }
 
     try {
-      // Step 1: Just sign in the user. Don't fetch any other data here.
+      // Step 1: Just sign in the user.
       await signInWithEmailAndPassword(auth, email, password);
       
-      // Step 2: Redirect to the dashboard. The main layout will handle all data loading.
-      // This avoids all race conditions and permissions issues.
+      // Step 2: Immediately redirect to the dashboard.
+      // The layout no longer has blocking logic, so this should work.
+      toast({ title: '¡Bienvenido!', description: 'Iniciando sesión...' });
       router.push('/dashboard');
       
     } catch (error: any) {
       console.error("Error de inicio de sesión:", error);
-      let errorMessage = 'Las credenciales son incorrectas.';
+      let errorMessage = 'Las credenciales son incorrectas o hubo un error.';
       if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
           errorMessage = 'El correo o la contraseña son incorrectos.';
       } else if (error.code === 'auth/too-many-requests') {
