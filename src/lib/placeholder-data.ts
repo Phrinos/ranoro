@@ -86,15 +86,6 @@ export let placeholderInventory: InventoryItem[] = [
 // =======================================
 export let placeholderVehicles: Vehicle[] = [
   {
-    id: 'VEH001',
-    make: 'Nissan',
-    model: 'Versa',
-    year: 2020,
-    ownerName: 'Juan Perez',
-    ownerPhone: '4491234567',
-    licensePlate: 'AAA123A',
-  },
-  {
     id: 'VEH002',
     make: 'Honda',
     model: 'CR-V',
@@ -138,6 +129,7 @@ export let placeholderVehicleExpenses: VehicleExpense[] = [];
 // =======================================
 export const defaultSuperAdmin: User = {
   id: 'RaMVBO4UZeTeNW1BZlmwWMg9Na32',
+  tenantId: 'T01H858YMEG5V6V3V3V3V3V3V3',
   name: 'Arturo Valdelamar',
   email: 'arturo@ranoro.mx',
   role: 'Superadmin',
@@ -147,7 +139,7 @@ export const defaultSuperAdmin: User = {
 };
 
 export let placeholderUsers: User[] = [
-  { id: 'diana_user_id', name: 'Diana Arriaga', email: 'diana@ranoro.mx', role: 'Admin' }
+  { id: 'diana_user_id', tenantId: 'T01H858YMEG5V6V3V3V3V3V3V3', name: 'Diana Arriaga', email: 'diana@ranoro.mx', role: 'Admin' }
 ]; // This will be hydrated from Firestore
 export const AUTH_USER_LOCALSTORAGE_KEY = 'authUser';
 export const USER_LOCALSTORAGE_KEY = 'appUsers';
@@ -208,39 +200,6 @@ export let placeholderAuditLogs: AuditLog[] = [
 // --- SERVICIOS ---
 // MIGRATED DATA - This data now follows the standardized ServiceRecord structure.
 export let placeholderServiceRecords: ServiceRecord[] = [
-  {
-    id: 'SER001',
-    publicId: 's_qwert12345',
-    vehicleId: 'VEH001',
-    vehicleIdentifier: 'AAA123A',
-    serviceDate: subDays(new Date(), 10).toISOString(),
-    deliveryDateTime: subDays(new Date(), 9).toISOString(),
-    serviceType: 'Cambio de Aceite',
-    description: 'Cambio de aceite y filtro.',
-    technicianId: 'T001',
-    technicianName: 'Carlos Rodriguez',
-    serviceItems: [
-      {
-        id: 'item_ser001_1',
-        name: 'Cambio de aceite y filtro',
-        price: 850,
-        suppliesUsed: [
-          { supplyId: 'PROD001', supplyName: 'Aceite Sintético 5W-30', quantity: 4.5, unitPrice: 150, sellingPrice: 180 },
-          { supplyId: 'PROD002', supplyName: 'Filtro de Aceite', quantity: 1, unitPrice: 80, sellingPrice: 96 },
-        ]
-      }
-    ],
-    totalCost: 850,
-    totalSuppliesCost: 755, // (4.5 * 150) + 80
-    serviceProfit: 95, // 850 - 755
-    subTotal: 732.76,
-    taxAmount: 117.24,
-    status: 'Entregado',
-    mileage: 75000,
-    serviceAdvisorId: 'diana_user_id',
-    serviceAdvisorName: 'Diana Arriaga',
-    appointmentStatus: 'Confirmada',
-  },
   {
     id: 'SER002',
     publicId: 's_zxcvbnm123',
@@ -407,7 +366,6 @@ const DATA_ARRAYS = {
     rentalPayments: placeholderRentalPayments,
     ownerWithdrawals: placeholderOwnerWithdrawals,
     vehicleExpenses: placeholderVehicleExpenses,
-    publicOwnerReports: placeholderPublicOwnerReports,
     cashDrawerTransactions: placeholderCashDrawerTransactions,
     initialCashBalance: placeholderInitialCashBalance,
     auditLogs: placeholderAuditLogs,
@@ -470,8 +428,16 @@ export async function hydrateFromFirestore() {
     resolveHydration?.();
     return;
   }
+
+  const superAdminExistsInPlaceholders = placeholderUsers.some(
+    (u) => u.email === defaultSuperAdmin.email
+  );
+  if (!superAdminExistsInPlaceholders) {
+    placeholderUsers.push(defaultSuperAdmin);
+  }
   
-  const docRef = doc(db, 'workshopData', 'main');
+  const tenantId = defaultSuperAdmin.tenantId;
+  const docRef = doc(db, 'tenants', tenantId);
   let docSnap;
   let changesMade = false;
 
@@ -487,7 +453,7 @@ export async function hydrateFromFirestore() {
       Object.assign(placeholderCategories, firestoreData.categories || []);
       Object.assign(placeholderSuppliers, firestoreData.suppliers || []);
       Object.assign(placeholderSales, firestoreData.sales || []);
-      Object.assign(placeholderUsers, firestoreData.users || []);
+      Object.assign(placeholderUsers, firestoreData.users || [defaultSuperAdmin]);
       Object.assign(placeholderAppRoles, firestoreData.appRoles || []);
       Object.assign(placeholderFixedMonthlyExpenses, firestoreData.fixedExpenses || []);
       Object.assign(placeholderAdministrativeStaff, firestoreData.administrativeStaff || []);
@@ -506,18 +472,19 @@ export async function hydrateFromFirestore() {
       }
       
     } else {
-      console.warn('No database document found. Seeding with initial data.');
+      console.warn('No database document found for tenant. Seeding with initial data.');
       changesMade = true;
     }
   } catch (error) {
     console.error('Error reading from Firestore, using local fallback:', error);
   }
-  
+
   const superAdminExists = placeholderUsers.some(u => u.email === defaultSuperAdmin.email);
   if (!superAdminExists) {
       placeholderUsers.push(defaultSuperAdmin);
       changesMade = true;
   }
+
   const superAdminRoleExists = placeholderAppRoles.some(r => r.name === 'Superadmin');
   if(!superAdminRoleExists) {
       placeholderAppRoles.push({
@@ -538,11 +505,22 @@ export async function hydrateFromFirestore() {
   }
 }
 
+
 export async function persistToFirestore(keysToUpdate?: (keyof typeof DATA_ARRAYS)[]) {
   if (!db) {
     console.warn('Persist skipped: Firebase not configured.');
     return;
   }
+  
+  const authUserString = typeof window !== 'undefined' ? localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY) : null;
+  const currentUser: User | null = authUserString ? JSON.parse(authUserString) : defaultSuperAdmin;
+  
+  if (!currentUser?.tenantId) {
+      console.error('Persist skipped: No tenantId found for the current user.');
+      return;
+  }
+  
+  const tenantId = currentUser.tenantId;
 
   const keys = keysToUpdate && keysToUpdate.length > 0 ? keysToUpdate : Object.keys(DATA_ARRAYS) as (keyof typeof DATA_ARRAYS)[];
   
@@ -555,8 +533,18 @@ export async function persistToFirestore(keysToUpdate?: (keyof typeof DATA_ARRAY
   
   const sanitizedData = sanitizeObjectForFirestore(dataToPersist);
   try {
-    await setDoc(doc(db, 'workshopData', 'main'), sanitizedData, { merge: true });
-    console.log(`Data successfully persisted to Firestore for keys: ${keys.join(', ')}`);
+    await setDoc(doc(db, 'tenants', tenantId), sanitizedData, { merge: true });
+    
+    // Also update the /users collection if users were part of the update
+    if (keys.includes('users')) {
+        for(const user of placeholderUsers) {
+            if(user.id) { // Ensure user has an ID
+                await setDoc(doc(db, 'users', user.id), sanitizeObjectForFirestore(user), { merge: true });
+            }
+        }
+    }
+    
+    console.log(`Data successfully persisted to Firestore for tenant ${tenantId} on keys: ${keys.join(', ')}`);
     if (typeof window !== 'undefined') {
       window.dispatchEvent(new CustomEvent('databaseUpdated'));
     }
