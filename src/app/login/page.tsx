@@ -21,6 +21,8 @@ import {
   signInWithPopup
 } from 'firebase/auth';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
+import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
+import type { User } from '@/types';
 
 const GoogleIcon = () => (
   <svg className="mr-2 h-4 w-4" aria-hidden="true" focusable="false" data-prefix="fab" data-icon="google" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 488 512">
@@ -46,17 +48,30 @@ export default function LoginPage() {
     event.preventDefault();
     setIsLoading(true);
     try {
-      if (!auth) throw new Error("Firebase Auth no está inicializado.");
-      await signInWithEmailAndPassword(auth, emailLogin, passwordLogin);
-      toast({ title: 'Inicio de Sesión Exitoso', description: `¡Bienvenido de nuevo!` });
+      if (!auth || !db) throw new Error("Firebase no está inicializado.");
+      const userCredential = await signInWithEmailAndPassword(auth, emailLogin, passwordLogin);
+      const user = userCredential.user;
+
+      // Fetch user profile from Firestore and save to localStorage
+      const userDocRef = doc(db, 'users', user.uid);
+      const userDoc = await getDoc(userDocRef);
+      if (userDoc.exists()) {
+        const userData = { id: user.uid, ...userDoc.data() } as User;
+        localStorage.setItem(AUTH_USER_LOCALSTORAGE_KEY, JSON.stringify(userData));
+      } else {
+        throw new Error("No se encontró el perfil de usuario en la base de datos.");
+      }
+      
+      toast({ title: 'Inicio de Sesión Exitoso' });
       router.push('/tablero');
     } catch (error: any) {
       console.error("Error en inicio de sesión:", error);
+      const errorMessage = error.code === 'auth/invalid-credential' 
+          ? 'Las credenciales son incorrectas.'
+          : 'Ocurrió un error inesperado.';
       toast({
         title: 'Error al Iniciar Sesión',
-        description: error.code === 'auth/invalid-credential' 
-          ? 'Las credenciales son incorrectas. Por favor, inténtalo de nuevo.'
-          : 'Ocurrió un error inesperado. Por favor, inténtalo de nuevo.',
+        description: errorMessage,
         variant: 'destructive',
       });
     } finally {
@@ -71,31 +86,41 @@ export default function LoginPage() {
         return;
     }
     if (passwordRegister !== confirmPasswordRegister) {
-        toast({ title: "Las contraseñas no coinciden", description: "Por favor, verifique la confirmación de su contraseña.", variant: 'destructive' });
+        toast({ title: "Las contraseñas no coinciden", variant: 'destructive' });
         return;
     }
     setIsLoading(true);
     try {
-      if (!auth) throw new Error("Firebase Auth no está inicializado.");
+      if (!auth || !db) throw new Error("Firebase no está inicializado.");
       const userCredential = await createUserWithEmailAndPassword(auth, emailRegister, passwordRegister);
       const user = userCredential.user;
       
-      await setDoc(doc(db, 'users', user.uid), {
+      const newUserProfile: User = {
+        id: user.uid,
         name: nameRegister,
         email: emailRegister,
-        role: 'Admin', // o el rol por defecto que prefieras
+        role: 'Admin', // Default role for new sign-ups
+      };
+
+      await setDoc(doc(db, 'users', user.uid), {
+        name: newUserProfile.name,
+        email: newUserProfile.email,
+        role: newUserProfile.role,
         createdAt: new Date(),
       });
+      
+      localStorage.setItem(AUTH_USER_LOCALSTORAGE_KEY, JSON.stringify(newUserProfile));
 
-      toast({ title: 'Registro Exitoso', description: `Bienvenido, ${nameRegister}. Tu cuenta ha sido creada.` });
+      toast({ title: 'Registro Exitoso', description: `Bienvenido, ${nameRegister}.` });
       router.push('/tablero');
     } catch (error: any) {
         console.error("Error en registro:", error);
+        const errorMessage = error.code === 'auth/email-already-in-use'
+                ? 'Este correo electrónico ya está en uso.'
+                : 'Ocurrió un error inesperado.';
         toast({
             title: 'Error al Registrarse',
-            description: error.code === 'auth/email-already-in-use'
-                ? 'Este correo electrónico ya está en uso.'
-                : 'Ocurrió un error inesperado. Por favor, inténtalo de nuevo.',
+            description: errorMessage,
             variant: 'destructive',
         });
     } finally {
@@ -106,24 +131,28 @@ export default function LoginPage() {
   const handleGoogleSignIn = async () => {
     setIsLoading(true);
     try {
-      if (!auth) throw new Error("Firebase Auth no está inicializado.");
+      if (!auth || !db) throw new Error("Firebase no está inicializado.");
       const provider = new GoogleAuthProvider();
       const result = await signInWithPopup(auth, provider);
       const user = result.user;
 
-      // Check if user already exists in Firestore
       const userDocRef = doc(db, 'users', user.uid);
       const userDoc = await getDoc(userDocRef);
-
+      
+      let userData: User;
       if (!userDoc.exists()) {
-        // Create a new user document in Firestore
-        await setDoc(userDocRef, {
-          name: user.displayName,
-          email: user.email,
+        userData = {
+          id: user.uid,
+          name: user.displayName || 'Usuario de Google',
+          email: user.email!,
           role: 'Admin', // Default role
-          createdAt: new Date(),
-        });
+        };
+        await setDoc(userDocRef, { ...userData, createdAt: new Date() });
+      } else {
+        userData = { id: user.uid, ...userDoc.data() } as User;
       }
+      
+      localStorage.setItem(AUTH_USER_LOCALSTORAGE_KEY, JSON.stringify(userData));
 
       toast({ title: "Inicio de Sesión Exitoso", description: `Bienvenido, ${user.displayName}.` });
       router.push('/tablero');

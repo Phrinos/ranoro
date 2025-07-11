@@ -19,6 +19,7 @@ import { Loader2 } from "lucide-react";
 import Image from "next/image";
 import type { ServiceRecord, User } from "@/types";
 import { useRouter } from 'next/navigation';
+import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
 
 export default function AppLayout({
   children,
@@ -31,35 +32,39 @@ export default function AppLayout({
   const router = useRouter();
 
   useEffect(() => {
-    if (!auth) {
-        // Redirigir si auth no está disponible
-        router.push('/login');
+    if (!auth || !db) {
+        // Firebase no está listo, podría ser un render del lado del servidor inicial
+        setIsLoading(true);
         return;
     }
 
     const unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
         if (user) {
-            // Usuario ha iniciado sesión
+            // El usuario está autenticado en Firebase
             const userDocRef = doc(db, 'users', user.uid);
             const userDoc = await getDoc(userDocRef);
+
             if (userDoc.exists()) {
-                setCurrentUser({ uid: user.uid, ...userDoc.data() } as User);
+                const userData = { id: user.uid, ...userDoc.data() } as User;
+                localStorage.setItem(AUTH_USER_LOCALSTORAGE_KEY, JSON.stringify(userData));
+                setCurrentUser(userData);
             } else {
-                // El usuario existe en Auth pero no en Firestore.
-                // Esto podría pasar con Google Sign-In si el documento no se creó.
-                // Por ahora, lo deslogueamos.
+                // Caso raro: autenticado pero sin documento.
                 await signOut(auth);
+                localStorage.removeItem(AUTH_USER_LOCALSTORAGE_KEY);
                 setCurrentUser(null);
+                router.push('/login');
             }
         } else {
             // Usuario no ha iniciado sesión
             setCurrentUser(null);
+            localStorage.removeItem(AUTH_USER_LOCALSTORAGE_KEY);
             router.push('/login');
         }
         setIsLoading(false);
     });
     
-    // El listener de serviceRecords no necesita cambiar.
+    // El listener de serviceRecords para notificaciones de firma
     const q = query(
       collection(db, "serviceRecords"),
       where("status", "in", ["Entregado", "En Taller"])
@@ -83,7 +88,7 @@ export default function AppLayout({
   }, [router]);
   
   const handleNotificationsViewed = async () => {
-    if (newSignatureServices.length === 0) return;
+    if (newSignatureServices.length === 0 || !db) return;
 
     const batch = writeBatch(db);
     newSignatureServices.forEach((service) => {
