@@ -52,15 +52,30 @@ export default function LoginPage() {
       const userCredential = await signInWithEmailAndPassword(auth, emailLogin, passwordLogin);
       const user = userCredential.user;
 
-      // Fetch user profile from Firestore and save to localStorage
       const userDocRef = doc(db, 'users', user.uid);
       const userDoc = await getDoc(userDocRef);
+      
+      let userData: User;
       if (userDoc.exists()) {
-        const userData = { id: user.uid, ...userDoc.data() } as User;
-        localStorage.setItem(AUTH_USER_LOCALSTORAGE_KEY, JSON.stringify(userData));
+        userData = { id: user.uid, ...userDoc.data() } as User;
       } else {
-        throw new Error("No se encontró el perfil de usuario en la base de datos.");
+        // Si el usuario existe en Auth pero no en Firestore, crea su perfil
+        userData = {
+          id: user.uid,
+          name: user.displayName || user.email?.split('@')[0] || 'Usuario',
+          email: user.email!,
+          role: 'Admin', // Asigna un rol por defecto
+        };
+        await setDoc(userDocRef, { 
+          name: userData.name,
+          email: userData.email,
+          role: userData.role,
+          createdAt: new Date() 
+        });
+        toast({ title: 'Perfil Creado', description: 'Hemos creado tu perfil de usuario.' });
       }
+      
+      localStorage.setItem(AUTH_USER_LOCALSTORAGE_KEY, JSON.stringify(userData));
       
       toast({ title: 'Inicio de Sesión Exitoso' });
       router.push('/tablero');

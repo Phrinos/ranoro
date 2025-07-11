@@ -5,25 +5,22 @@ import { db } from './src/lib/firebaseClient.js';
 async function testFirestoreConnection() {
   console.log("Iniciando prueba de conexión a Firestore...");
   try {
-    // Intentamos obtener 1 documento de la colección 'serviceRecords'
-    const serviceRecordsCol = collection(db, "serviceRecords");
-    const q = query(serviceRecordsCol, limit(1));
+    // Apuntamos a una colección pública permitida por las reglas de seguridad de producción.
+    const publicServicesCol = collection(db, "publicServices");
+    const q = query(publicServicesCol, limit(1));
     const querySnapshot = await getDocs(q);
 
     if (querySnapshot.empty) {
-      console.log("✅ Conexión a Firestore exitosa, pero la colección 'serviceRecords' está vacía o no contiene documentos.");
+      console.log("✅ Conexión a Firestore exitosa, pero la colección 'publicServices' está vacía.");
     } else {
       console.log("✅ ¡Conexión a Firestore y lectura de datos exitosa!");
       querySnapshot.forEach(doc => {
-        console.log("   => Documento de muestra encontrado:", doc.id);
-        // console.log(doc.data()); // Descomentar para ver datos completos
+        console.log("   => Documento de muestra encontrado en 'publicServices':", doc.id);
       });
     }
-    // Forzar la salida del script para evitar que se quede colgado
     process.exit(0);
   } catch (error) {
     console.error("❌ Error al conectar o consultar Firestore:", error);
-    // Forzar la salida del script con un código de error
     process.exit(1);
   }
 }
@@ -33,6 +30,5 @@ setTimeout(() => {
   console.error("❌ Error: La prueba de conexión ha superado el tiempo de espera (15 segundos).");
   process.exit(1);
 }, 15000);
-
 
 testFirestoreConnection();
