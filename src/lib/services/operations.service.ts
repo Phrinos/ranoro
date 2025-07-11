@@ -9,7 +9,7 @@ import {
   persistToFirestore,
 } from "../placeholder-data";
 import { savePublicDocument } from '@/lib/public-document';
-import { getVehicleById } from './inventory.service';
+import { inventoryService } from './inventory.service';
 import { nanoid } from 'nanoid';
 
 // --- Services ---
@@ -28,7 +28,7 @@ const updateService = async (serviceId: string, data: Partial<ServiceRecord>): P
     const serviceToSave = placeholderServiceRecords[index];
 
     // Simulate public doc save
-    const vehicle = await getVehicleById(serviceToSave.vehicleId);
+    const vehicle = await inventoryService.getVehicleById(serviceToSave.vehicleId);
     await savePublicDocument('service', serviceToSave, vehicle, {});
     
     await persistToFirestore(['serviceRecords']);
