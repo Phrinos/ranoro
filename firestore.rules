@@ -4,46 +4,39 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     
-    // Default deny all access to prevent unintentional open collections
-    match /{document=**} {
-      allow read, write: if false;
-    }
-
-    // Allow authenticated users to manage their own user profile document.
+    // Allow any authenticated user to read/write their own user profile.
     match /users/{userId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+      allow read, write: if request.auth.uid == userId;
     }
 
-    // Allow authenticated users to read and write to the main workshop data document.
-    // The security is implicit: if a user can authenticate, they are part of the workshop.
-    match /database/main {
-      allow read, write: if request.auth != null;
+    // Allow any authenticated user to create their own user profile if it doesn't exist.
+    match /users/{userId} {
+      allow create: if request.auth.uid == userId;
     }
 
-    // publicQuotes are world-readable for sharing, but only auth users can write.
-    match /publicQuotes/{quoteId} {
-      allow read: if true;
-      allow create, update, delete: if request.auth != null; 
+    // Allow read/write to the main data document if the user is authenticated.
+    match /database/{docId} {
+       allow read, write: if request.auth != null;
     }
-    
-    // publicOwnerReports are world-readable for sharing, but only auth users can write.
-    match /publicOwnerReports/{reportId} {
-      allow read: if true;
-      allow create, update, delete: if request.auth != null;
-    }
-    
-    // publicServices are world-readable for sharing.
+
+    // Public documents (e.g., for sharing links with customers)
     match /publicServices/{serviceId} {
+      // Anyone can read a public document.
       allow read: if true;
       
-      // Allow authenticated users to perform any update.
+      // Allow authenticated users (employees) to perform any update.
       // Allow unauthenticated customers to update ONLY signature fields.
       allow update: if request.auth != null || 
                       (request.resource.data.diff(resource.data).affectedKeys()
-                      .hasOnly(['customerSignatureReception', 'customerSignatureDelivery', 'receptionSignatureViewed', 'deliverySignatureViewed']));
+                      .hasOnly(['customerSignatureReception', 'customerSignatureDelivery']));
                       
-      // Allow create/delete only for authenticated users.
+      // Allow create/delete only for authenticated users (employees).
       allow create, delete: if request.auth != null;
+    }
+
+    // By default, deny access to any other path.
+    match /{document=**} {
+      allow read, write: if false;
     }
   }
 }
