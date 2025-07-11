@@ -1,25 +1,67 @@
-rules_version = '2';
 
+rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+  
+    // --- Helper Functions ---
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
     
-    // Allow public access to shared documents
-    match /publicQuotes/{quoteId} {
-      allow read: if true;
-      allow write: if false; // Quotes are read-only once created
+    // Function to get the tenantId from the user's profile
+    function getTenantId() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.tenantId;
     }
 
-    match /publicServices/{serviceId} {
-      allow read: if true;
-      // Allow unauthenticated users (clients) to update ONLY the signature fields.
-      allow update: if request.resource.data.diff(resource.data).affectedKeys().hasOnly(['customerSignatureReception', 'customerSignatureDelivery']);
-      // Allow authenticated app users to create or fully overwrite the document.
-      allow write: if request.auth != null;
+    // --- Rules for Users Collection ---
+    match /users/{userId} {
+      // READ: A user can read their own profile.
+      allow read: if isAuthenticated() && isOwner(userId);
+      
+      // CREATE: A user can create their own profile if it doesn't exist yet.
+      allow create: if isAuthenticated() && isOwner(userId);
+      
+      // UPDATE: A user can update their own profile.
+      allow update: if isAuthenticated() && isOwner(userId);
+      
+      // DELETE: Not allowed for safety.
+      allow delete: if false;
     }
-
-    // Default authenticated access for all other collections
-    match /{document=**} {
-      allow read, write: if request.auth != null;
+    
+    // --- Rules for Tenant Data ---
+    // The tenant document contains all the main workshop data.
+    match /tenants/{tenantId} {
+      // READ, WRITE: Allow access if the user's tenantId from their profile
+      // matches the tenantId of the document they are trying to access.
+      allow read, write: if isAuthenticated() && getTenantId() == tenantId;
+    }
+    
+    // --- Rules for Publicly Shared Documents ---
+    // These collections are for sharing service sheets and quotes with customers
+    // who are not authenticated.
+    match /publicServices/{publicId} {
+      // READ: Anyone can read a public document.
+      allow read: if true;
+      // WRITE: Only authenticated app users can create/update public documents.
+      allow write: if isAuthenticated();
+    }
+    
+    match /publicQuotes/{publicId} {
+       // READ: Anyone can read a public document.
+      allow read: if true;
+       // WRITE: Only authenticated app users can create/update public documents.
+      allow write: if isAuthenticated();
+    }
+    
+    match /publicOwnerReports/{publicId} {
+       // READ: Anyone can read a public document.
+      allow read: if true;
+       // WRITE: Only authenticated app users can create/update public documents.
+      allow write: if isAuthenticated();
     }
   }
 }
