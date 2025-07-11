@@ -5,7 +5,7 @@ import type { RentalPayment, WorkshopInfo, Driver } from '@/types';
 import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 import React, { useMemo } from 'react';
-import Image from "next/image";
+import Image from "next/legacy/image";
 import { placeholderDrivers, placeholderVehicles, placeholderRentalPayments } from '@/lib/placeholder-data';
 import { calculateDriverDebt, formatCurrency } from '@/lib/utils';
 import { AlertTriangle } from 'lucide-react';

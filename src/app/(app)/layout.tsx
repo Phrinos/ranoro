@@ -122,7 +122,7 @@ export default function AppLayout({
             width={200}
             height={50}
             className="h-auto dark:invert"
-            style={{width: '200px'}}
+            style={{width: '200px', height: 'auto'}}
             priority
             data-ai-hint="ranoro logo"
           />

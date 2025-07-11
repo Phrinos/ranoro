@@ -8,7 +8,7 @@ import { es } from 'date-fns/locale';
 import React from 'react';
 import { cn, capitalizeWords, normalizeDataUrl, calculateDriverDebt } from "@/lib/utils";
 import { Card, CardContent } from '@/components/ui/card';
-import Image from "next/image";
+import Image from "next/legacy/image";
 import { AlertCircle } from 'lucide-react';
 
 const initialWorkshopInfo: WorkshopInfo = {

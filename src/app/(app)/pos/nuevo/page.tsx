@@ -1,6 +1,5 @@
 
 
-
 "use client";
 
 import { useState, useEffect, useRef } from 'react';
@@ -13,7 +12,6 @@ import { useToast } from "@/hooks/use-toast";
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Printer, Copy } from 'lucide-react';
-import html2canvas from 'html2canvas';
 import { inventoryService, operationsService } from '@/lib/services';
 import { Loader2 } from 'lucide-react';
 import type { InventoryItemFormValues } from '../../inventario/components/inventory-item-form';
@@ -75,6 +73,7 @@ export default function NuevaVentaPage() {
         toast({ title: "Error", description: "No se encontró el contenido del ticket.", variant: "destructive" });
         return;
     }
+    const html2canvas = (await import('html2canvas')).default;
     try {
         const canvas = await html2canvas(ticketContentRef.current, {
             useCORS: true,
@@ -131,7 +130,7 @@ export default function NuevaVentaPage() {
         />
       )}
 
-      {dialogStep === 'print_preview' && currentSaleForTicket && (
+      {dialogStep === 'preview' && currentSaleForTicket && (
         <PrintTicketDialog
           open={true} 
           onOpenChange={(isOpen) => { 

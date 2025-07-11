@@ -27,7 +27,7 @@ import { UnifiedPreviewDialog } from '@/components/shared/unified-preview-dialog
 import { VehicleSelectionCard } from './VehicleSelectionCard';
 import { ReceptionAndDelivery } from './ReceptionAndDelivery';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import Image from "next/image";
+import Image from "next/legacy/image";
 import { Download } from "lucide-react";
 import { ServiceDetailsCard } from "./ServiceDetailsCard";
 import { Textarea } from "@/components/ui/textarea";
@@ -371,7 +371,7 @@ export function ServiceForm({
     if (isReadOnly) return onClose();
     if (!freshUserRef.current) return toast({ title: "Error de Sesión", variant: "destructive" });
     if (!getValues('vehicleId')) return toast({ title: "Vehículo no seleccionado", variant: "destructive" });
-    if (!await trigger()) return toast({ title: "Formulario Incompleto", variant: "destructive" });
+    if (!(await trigger())) return toast({ title: "Formulario Incompleto", variant: "destructive" });
 
     // Handle automatic timestamps
     if(originalStatusRef.current !== 'En Taller' && values.status === 'En Taller' && !values.receptionDateTime) {
