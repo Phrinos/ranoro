@@ -2,47 +2,46 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    
-    // The main database document is private.
-    // Only authenticated users (employees) can read or write to it.
-    match /database/main {
-      allow read, write: if request.auth != null;
-    }
 
-    // publicQuotes are world-readable for sharing, but not writable from the client.
+    // --- Colecciones Públicas (para compartir enlaces) ---
+    // Legibles por todos, pero requieren autenticación para escribir.
     match /publicQuotes/{quoteId} {
       allow read: if true;
-      allow create, update, delete: if request.auth != null; 
+      allow create, update, delete: if request.auth != null;
     }
-    
-    // publicOwnerReports are world-readable for sharing, but not writable from the client.
+
     match /publicOwnerReports/{reportId} {
       allow read: if true;
       allow create, update, delete: if request.auth != null;
     }
-    
-    // publicServices are world-readable.
+
     match /publicServices/{serviceId} {
       allow read: if true;
-      
-      // Allow authenticated users to perform any update.
-      // Allow unauthenticated customers to update ONLY signature fields.
-      allow update: if request.auth != null || 
+      // Usuarios no autenticados solo pueden actualizar los campos de firma.
+      allow update: if request.auth != null ||
                       (request.resource.data.diff(resource.data).affectedKeys()
                       .hasOnly(['customerSignatureReception', 'customerSignatureDelivery', 'receptionSignatureViewed', 'deliverySignatureViewed']));
-                      
-      // Allow create/delete only for authenticated users.
       allow create, delete: if request.auth != null;
     }
-    
-    // Rule for the new public_documents collection
+
     match /public_documents/{documentId} {
       allow read: if true;
       allow create, update, delete: if request.auth != null;
     }
 
-    // By default, deny access to any other collection/document path.
-    // This is a security best practice.
+    // --- Perfiles de Usuario ---
+    // Los usuarios pueden leer y escribir en su propio documento, pero no en los de otros.
+    // Esto es crucial para la seguridad y la privacidad.
+    match /users/{userId} {
+      allow read, create, update: if request.auth != null && request.auth.uid == userId;
+      // Nota: La eliminación de perfiles por parte del cliente está deshabilitada por seguridad.
+    }
+    
+    // --- CUALQUIER OTRA COLECCIÓN ---
+    // Por defecto, se deniega el acceso a cualquier otra ruta de documento.
+    // Esta es la regla de seguridad más importante para un entorno de producción.
+    // Si necesitas dar acceso a otras colecciones (ej. 'services', 'vehicles'),
+    // debes añadir una regla explícita para ellas, idealmente basada en roles.
     match /{document=**} {
       allow read, write: if false;
     }
