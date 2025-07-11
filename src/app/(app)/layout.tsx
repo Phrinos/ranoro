@@ -34,7 +34,7 @@ export default function AppLayout({
     setCurrentUser(user);
 
     const q = query(
-      collection(db, "services"),
+      collection(db, "serviceRecords"),
       where("status", "in", ["Entregado", "En Taller"])
     );
 
@@ -58,7 +58,7 @@ export default function AppLayout({
 
     const batch = writeBatch(db);
     newSignatureServices.forEach((service) => {
-      const serviceRef = doc(db, "services", service.id);
+      const serviceRef = doc(db, "serviceRecords", service.id);
       const updateData: { receptionSignatureViewed?: boolean; deliverySignatureViewed?: boolean } = {};
       if (service.customerSignatureReception && !service.receptionSignatureViewed) {
         updateData.receptionSignatureViewed = true;
