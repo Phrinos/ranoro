@@ -52,7 +52,7 @@ function HistorialServiciosPageComponent() {
 
   useEffect(() => {
     const unsubscribes = [
-      onSnapshot(collection(db, "services"), (snapshot) => {
+      onSnapshot(collection(db, "serviceRecords"), (snapshot) => {
         setAllServices(
           snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() } as ServiceRecord))
         );
@@ -123,9 +123,9 @@ function HistorialServiciosPageComponent() {
     async (data: QuoteRecord | ServiceRecord) => {
       const { id, ...rest } = data;
       if (id) {
-        await updateDoc(doc(db, "services", id), rest);
+        await updateDoc(doc(db, "serviceRecords", id), rest);
       } else {
-        await addDoc(collection(db, "services"), rest);
+        await addDoc(collection(db, "serviceRecords"), rest);
       }
       setIsEditDialogOpen(false);
       toast({ title: "Servicio actualizado." });
@@ -135,7 +135,7 @@ function HistorialServiciosPageComponent() {
 
   const handleCancelService = useCallback(
     async (serviceId: string, reason: string) => {
-      await updateDoc(doc(db, "services", serviceId), {
+      await updateDoc(doc(db, "serviceRecords", serviceId), {
         status: "Cancelado",
         cancellationReason: reason,
       });
@@ -172,7 +172,7 @@ function HistorialServiciosPageComponent() {
       }
     ) => {
       const batch = writeBatch(db);
-      const serviceRef = doc(db, "services", service.id);
+      const serviceRef = doc(db, "serviceRecords", service.id);
 
       batch.update(serviceRef, {
         status: "Entregado",
@@ -209,7 +209,7 @@ function HistorialServiciosPageComponent() {
 
   const handleConfirmAppointment = useCallback(
     async (service: ServiceRecord) => {
-      await updateDoc(doc(db, "services", service.id), {
+      await updateDoc(doc(db, "serviceRecords", service.id), {
         appointmentStatus: "Confirmada",
       });
       toast({ title: "Cita Confirmada" });
