@@ -117,7 +117,7 @@ const BASE_NAV_STRUCTURE: ReadonlyArray<Omit<NavigationEntry, 'isActive'>> = [
   
   // Mi Flotilla
   {
-    label: 'Rentas',
+    label: 'Registar Pago',
     path: '/rentas',
     icon: DollarSign,
     groupTag: "Mi Flotilla",
