@@ -1,9 +1,9 @@
 
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { signInWithEmailAndPassword } from 'firebase/auth';
+import { signInWithEmailAndPassword, onAuthStateChanged } from 'firebase/auth';
 import { auth } from '@/lib/firebaseClient.js';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
@@ -20,6 +20,16 @@ export default function LoginPage() {
   const router = useRouter();
   const { toast } = useToast();
 
+  useEffect(() => {
+    // Redirect if user is already logged in
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        router.push('/dashboard');
+      }
+    });
+    return () => unsubscribe();
+  }, [router]);
+
   const handleLogin = async (event: React.FormEvent) => {
     event.preventDefault();
     setIsLoading(true);
@@ -33,12 +43,18 @@ export default function LoginPage() {
     try {
       await signInWithEmailAndPassword(auth, email, password);
       toast({ title: '¡Bienvenido!', description: 'Has iniciado sesión correctamente.' });
-      router.push('/dashboard');
+      // The onAuthStateChanged listener in the layout will handle the redirect.
     } catch (error: any) {
       console.error("Error de inicio de sesión:", error.code, error.message);
+      let errorMessage = 'Las credenciales son incorrectas. Por favor, inténtalo de nuevo.';
+      if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
+          errorMessage = 'El correo o la contraseña son incorrectos.';
+      } else if (error.code === 'auth/too-many-requests') {
+          errorMessage = 'Demasiados intentos fallidos. Por favor, inténtalo de nuevo más tarde.';
+      }
       toast({
         title: 'Error de Inicio de Sesión',
-        description: 'Las credenciales son incorrectas. Por favor, inténtalo de nuevo.',
+        description: errorMessage,
         variant: 'destructive',
       });
     } finally {
