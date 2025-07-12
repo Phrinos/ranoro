@@ -26,7 +26,7 @@ import { SafetyChecklist } from './SafetyChecklist';
 import { UnifiedPreviewDialog } from '@/components/shared/unified-preview-dialog';
 import { VehicleSelectionCard } from './VehicleSelectionCard';
 import { ReceptionAndDelivery } from './ReceptionAndDelivery';
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import Image from "next/legacy/image";
 import { Download } from "lucide-react";
 import { ServiceDetailsCard } from "./ServiceDetailsCard";
@@ -233,9 +233,10 @@ export function ServiceForm({
     };
   }, [watchedServiceItems]);
 
-  const showReceptionTab = useMemo(() => mode === 'service' && watchedStatus && ['En Taller', 'Entregado', 'Cancelado'].includes(watchedStatus), [mode, watchedStatus]);
-  const showReportTab = useMemo(() => mode === 'service' && watchedStatus && ['En Taller', 'Entregado', 'Cancelado'].includes(watchedStatus), [mode, watchedStatus]);
-  const showChecklistTab = useMemo(() => mode === 'service' && watchedStatus && ['En Taller', 'Entregado', 'Cancelado'].includes(watchedStatus), [mode, watchedStatus]);
+  const showAdvancedTabs = useMemo(() => {
+      if (!watchedStatus) return false;
+      return ['En Taller', 'Entregado', 'Cancelado'].includes(watchedStatus);
+  }, [watchedStatus]);
 
 
   useEffect(() => { setLocalVehicles(parentVehicles); }, [parentVehicles]);
@@ -448,21 +449,21 @@ export function ServiceForm({
 
   const availableTabs = useMemo(() => [
     { value: 'servicio', label: 'Detalles', icon: Wrench, condition: true },
-    { value: 'recepcion', label: 'Rec. y Ent.', icon: CheckCircle, condition: showReceptionTab },
-    { value: 'reporte', label: 'Fotos', icon: Camera, condition: showReportTab },
-    { value: 'seguridad', label: 'Revisión', icon: ShieldCheck, condition: showChecklistTab },
-  ].filter(tab => tab.condition), [showReceptionTab, showReportTab, showChecklistTab]);
+    { value: 'recepcion', label: 'Rec. y Ent.', icon: CheckCircle, condition: showAdvancedTabs },
+    { value: 'reporte', label: 'Fotos', icon: Camera, condition: showAdvancedTabs },
+    { value: 'seguridad', label: 'Revisión', icon: ShieldCheck, condition: showAdvancedTabs },
+  ].filter(tab => tab.condition), [showAdvancedTabs]);
 
   return (
     <>
       <Form {...form}>
         <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-6 pb-24">
           <Tabs defaultValue="servicio" className="w-full">
-            <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm -mx-6 px-6 pt-2">
-                <div className="flex justify-between items-center mb-2">
+             <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm -mx-6 px-6 pt-2 pb-2 border-b">
+                <div className="flex justify-between items-center">
                     <TabsList className={cn("grid w-full mb-0", `grid-cols-${availableTabs.length}`)}>
                         {availableTabs.map(tab => (
-                            <TabsTrigger key={tab.value} value={tab.value} className="text-xs sm:text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                            <TabsTrigger key={tab.value} value={tab.value} className="text-xs sm:text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground flex items-center gap-2">
                                 <tab.icon className="h-4 w-4 mr-1.5 shrink-0"/>
                                 <span className="hidden sm:inline">{tab.label}</span>
                                 <span className="sm:hidden">{tab.label.substring(0,5)}</span>
@@ -479,7 +480,7 @@ export function ServiceForm({
                 </div>
             </div>
 
-            <TabsContent value="servicio" className="mt-4">
+            <TabsContent value="servicio" className="mt-6">
                <Card className="shadow-none border-none p-0">
                   <CardContent className="p-0">
                     <div className="space-y-6">
@@ -501,7 +502,7 @@ export function ServiceForm({
                </Card>
             </TabsContent>
             
-            <TabsContent value="recepcion" className="mt-4">
+            <TabsContent value="recepcion" className="mt-6">
                <Card className="shadow-none border-none p-0">
                  <CardContent className="p-0">
                     <ReceptionAndDelivery isReadOnly={isReadOnly} isEnhancingText={isEnhancingText} handleEnhanceText={handleEnhanceText} />
@@ -509,7 +510,7 @@ export function ServiceForm({
                </Card>
             </TabsContent>
             
-            <TabsContent value="reporte" className="mt-4">
+            <TabsContent value="reporte" className="mt-6">
               <Card className="shadow-none border-none p-0">
                  <CardContent className="p-0">
                     {/* Photo Report Content */}
@@ -517,7 +518,7 @@ export function ServiceForm({
               </Card>
             </TabsContent>
             
-            <TabsContent value="seguridad" className="mt-4">
+            <TabsContent value="seguridad" className="mt-6">
                <Card className="shadow-none border-none p-0">
                  <CardContent className="p-0">
                     <SafetyChecklist control={control} isReadOnly={isReadOnly} onSignatureClick={() => setIsTechSignatureDialogOpen(true)} signatureDataUrl={form.watch('safetyInspection.technicianSignature')} isEnhancingText={isEnhancingText} handleEnhanceText={handleEnhanceText} serviceId={watchedId || ''} onPhotoUploaded={handleChecklistPhotoUpload} onViewImage={handleViewImage}/>
