@@ -15,7 +15,7 @@ import React, { useEffect, useState, useMemo, useCallback, useRef } from "react"
 import { useToast } from "@/hooks/use-toast";
 import { VehicleDialog } from "../../vehiculos/components/vehicle-dialog";
 import type { VehicleFormValues } from "../../vehiculos/components/vehicle-form";
-import { AUTH_USER_LOCALSTORAGE_KEY } from "@/lib/placeholder-data";
+import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
 import { AlertDialog, AlertDialogTrigger, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter } from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/label";
 import { enhanceText } from '@/ai/flows/text-enhancement-flow';
@@ -157,6 +157,20 @@ interface ServiceFormProps {
 }
 
 const IVA_RATE = 0.16;
+
+// Helper to remove undefined properties from an object, which Firestore doesn't support.
+function cleanDataForFirestore(data: Record<string, any>) {
+  const cleanedData: Record<string, any> = {};
+  for (const key in data) {
+    if (data[key] !== undefined) {
+      cleanedData[key] = data[key];
+    } else {
+      cleanedData[key] = null; // Explicitly set undefined to null for Firestore
+    }
+  }
+  return cleanedData;
+}
+
 
 export function ServiceForm({
   initialDataService,
@@ -308,7 +322,7 @@ export function ServiceForm({
         serviceType: data?.serviceType || (serviceTypes.length > 0 ? serviceTypes[0].name : 'Servicio General'),
     });
     
-  }, [initialData, mode, form, isReadOnly, refreshCurrentUser, serviceTypes, getValues, setValue]);
+  }, [initialData, mode, form, isReadOnly, refreshCurrentUser, serviceTypes]);
   
   const handlePhotoUploadComplete = useCallback(
     (reportIndex: number, url: string) => {
@@ -397,11 +411,8 @@ export function ServiceForm({
         values.receptionDateTime = new Date();
     }
     
-    // Sanitize data before saving
-    let dataToSave: Partial<ServiceFormValues> = { ...values };
-    
-    const finalData = {
-        ...dataToSave,
+    const finalData = cleanDataForFirestore({
+        ...values,
         id: values.id,
         publicId: values.publicId || `s_${nanoid(12).toLowerCase()}`,
         vehicleId: getValues('vehicleId')!,
@@ -423,10 +434,7 @@ export function ServiceForm({
         serviceAdvisorId: freshUserRef.current.id,
         serviceAdvisorName: freshUserRef.current.name,
         serviceAdvisorSignatureDataUrl: freshUserRef.current.signatureDataUrl,
-        mileage: values.mileage ?? null,
-        fuelLevel: values.fuelLevel ?? null,
-        subStatus: values.status === 'En Taller' ? (values.subStatus || 'Reparando') : null,
-    };
+    });
     
     if (db && finalData.publicId) {
         await savePublicDocument('service', finalData as ServiceRecord, localVehicles.find(v => v.id === getValues('vehicleId')) || null, workshopInfo);
@@ -622,6 +630,4 @@ export function ServiceForm({
     </>
   );
 }
-
-
 
