@@ -63,7 +63,8 @@ export function ServiceDetailsCard({
   };
   
   const showAppointmentFields = useMemo(() => {
-    // Show appointment fields ONLY if status is 'Agendado' OR if a serviceDate has already been set (meaning it was scheduled at some point).
+    // Show appointment fields if the status is 'Agendado' (allowing setting a date)
+    // OR if a serviceDate has already been set (meaning it was previously scheduled).
     return watchedStatus === 'Agendado' || (!!serviceDate && isValid(serviceDate));
   }, [watchedStatus, serviceDate]);
 
