@@ -9,10 +9,10 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuLabel, DropdownMenuRadio
 import type { Supplier } from '@/types';
 import { PlusCircle, Search, ListFilter } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
-import { persistToFirestore, placeholderSuppliers, logAudit } from '@/lib/placeholder-data';
 import { SuppliersTable } from '../proveedores/components/suppliers-table';
 import { SupplierDialog } from '../proveedores/components/supplier-dialog';
 import type { SupplierFormValues } from '../proveedores/components/supplier-form';
+import { inventoryService } from '@/lib/services';
 
 type SupplierSortOption = | "name_asc" | "name_desc" | "debt_asc" | "debt_desc";
 
@@ -55,39 +55,25 @@ export function ProveedoresContent({ suppliers: initialSuppliers }: ProveedoresC
   }, []);
 
   const handleSaveSupplier = useCallback(async (formData: SupplierFormValues) => {
-    const isEditing = !!editingSupplier;
-    const action = isEditing ? 'Editar' : 'Crear';
-    const description = `Se ${isEditing ? 'actualizó el' : 'creó el nuevo'} proveedor: "${formData.name}".`;
-    const entityId = editingSupplier ? editingSupplier.id : `SUP_${Date.now().toString(36)}`;
-
-    if (isEditing) {
-      const index = placeholderSuppliers.findIndex(s => s.id === entityId);
-      if (index > -1) placeholderSuppliers[index] = { ...placeholderSuppliers[index], ...formData, debtAmount: Number(formData.debtAmount) || 0 };
-    } else {
-      placeholderSuppliers.push({ id: entityId, ...formData, debtAmount: Number(formData.debtAmount) || 0 });
+    try {
+      await inventoryService.saveSupplier(formData, editingSupplier?.id);
+      toast({ title: `Proveedor ${editingSupplier ? 'Actualizado' : 'Agregado'}` });
+      setIsDialogOpen(false);
+    } catch (error) {
+      console.error("Error saving supplier:", error);
+      toast({ title: "Error al guardar", description: "No se pudo guardar el proveedor.", variant: "destructive" });
     }
-    
-    await logAudit(action, description, { entityType: 'Proveedor', entityId });
-    await persistToFirestore(['suppliers', 'auditLogs']);
-    setSuppliers([...placeholderSuppliers]);
-    toast({ title: `Proveedor ${isEditing ? 'Actualizado' : 'Agregado'}` });
-    setIsDialogOpen(false);
   }, [editingSupplier, toast]);
 
   const handleDeleteSupplier = useCallback(async (supplierId: string) => {
-    const supplierToDelete = suppliers.find(s => s.id === supplierId);
-    if (!supplierToDelete) return;
-
-    await logAudit('Eliminar', `Se eliminó al proveedor "${supplierToDelete.name}".`, { entityType: 'Proveedor', entityId: supplierId });
-    
-    const index = placeholderSuppliers.findIndex(sup => sup.id === supplierId);
-    if (index > -1) {
-      placeholderSuppliers.splice(index, 1);
-      await persistToFirestore(['suppliers', 'auditLogs']);
-      setSuppliers([...placeholderSuppliers]);
+    try {
+      await inventoryService.deleteSupplier(supplierId);
       toast({ title: "Proveedor Eliminado" });
+    } catch (error) {
+      console.error("Error deleting supplier:", error);
+      toast({ title: "Error al eliminar", description: "No se pudo eliminar el proveedor.", variant: "destructive" });
     }
-  }, [suppliers, toast]);
+  }, [toast]);
 
   return (
     <>
