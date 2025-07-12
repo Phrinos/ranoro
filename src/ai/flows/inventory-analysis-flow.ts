@@ -15,7 +15,7 @@ const InventoryItemInputSchema = z.object({
 });
 
 const ServiceRecordInputSchema = z.object({
-    serviceDate: z.string().describe("The date the service was performed in ISO format."),
+    serviceDate: z.string().optional().describe("The date the service was performed in ISO format."),
     suppliesUsed: z.array(z.object({
         supplyId: z.string(),
         quantity: z.number(),
@@ -53,10 +53,10 @@ const analyzeInventoryPrompt = ai.definePrompt({
   prompt: `Eres un experto gestor de inventario para un taller mecánico. Tu tarea es analizar el inventario actual y su uso histórico para proporcionar recomendaciones de reabastecimiento accionables.
 
 **Instrucciones:**
-1.  Para cada artículo en el inventario, calcula su consumo mensual promedio basándote en los \`serviceRecords\`.
+1.  Para cada artículo en el inventario, calcula su consumo mensual promedio basándote en los \`serviceRecords\`. Considera un mes como 30 días.
 2.  Compara la \`quantity\` (cantidad) actual con el \`lowStockThreshold\` (umbral de stock bajo) y la tasa de consumo calculada.
-3.  Genera una recomendación SOLAMENTE para los artículos que están en o por debajo de su umbral de stock bajo, o que se prevé que se agoten en el próximo mes. Para todos los demás artículos, no generes una recomendación.
-4.  Para cada recomendación, proporciona una cantidad de recompra sugerida. Una buena regla general es pedir lo suficiente para 2-3 meses de consumo.
+3.  Genera una recomendación SOLAMENTE para los artículos que están en o por debajo de su umbral de stock bajo, o que se prevé que se agoten en el próximo mes basándote en su consumo. Para todos los demás artículos, no generes una recomendación.
+4.  Para cada recomendación, proporciona una cantidad de recompra sugerida. Una buena regla general es pedir lo suficiente para 2-3 meses de consumo. La cantidad debe ser un número entero.
 5.  Proporciona un razonamiento claro y conciso para cada recomendación.
 
 **Datos Proporcionados:**

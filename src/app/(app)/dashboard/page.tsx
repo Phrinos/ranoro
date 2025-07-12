@@ -6,7 +6,7 @@ import dynamic from "next/dynamic";
 import { parseISO, isToday, isValid, isSameDay } from "date-fns";
 import { PageHeader } from "@/components/page-header";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { placeholderServiceRecords, placeholderInventory, placeholderSales, calculateSaleProfit, placeholderTechnicians, AUTH_USER_LOCALSTORAGE_KEY } from "@/lib/placeholder-data";
+import { AUTH_USER_LOCALSTORAGE_KEY, calculateSaleProfit } from "@/lib/placeholder-data";
 import type { User, CapacityAnalysisOutput, PurchaseRecommendation, ServiceRecord, SaleReceipt, InventoryItem, Technician } from "@/types";
 import { BrainCircuit, Loader2, ShoppingCart, AlertTriangle, Printer, Wrench, DollarSign, PackageSearch, CheckCircle } from "lucide-react"; 
 import { useToast } from "@/hooks/use-toast";
