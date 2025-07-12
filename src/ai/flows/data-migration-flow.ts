@@ -82,7 +82,7 @@ This is the most critical step. The license plate ('placa') is the MANDATORY, UN
 - **CRITICAL: Format all text fields to be consistently capitalized. 'make', 'model', and 'ownerName' should be in "Title Case" (e.g., "Nissan Sentra"). 'licensePlate' should be in ALL CAPS. 'description' should start with a capital letter.**
 - **IMPORTANT:** If a value for a field is missing or empty, you MUST return it as an empty string ("") for text fields, or 0 for numeric fields (like year or cost). Do not omit the field from the JSON.
 - **CRITICAL:** Every vehicle in the output 'vehicles' array and every service in the 'services' array must have a valid 'licensePlate' or 'vehicleLicensePlate' field, respectively. Rows without a discernible license plate should be ignored.
-- **YEAR FIELD:** Look for columns named 'Año' or 'Anio'. If the cell contains a number, use it. If it's a non-numeric string, try to parse a four-digit number from it. Only use 0 if the cell is completely empty or cannot be converted to a number.
+- **YEAR FIELD (CRITICAL):** Look for columns named 'Año' or 'Anio'. If the cell contains a numerical value (e.g., 2020, '2020), you MUST extract that number for the 'year' field. Only use 0 if the cell is completely empty or contains non-numeric text. Do not default to 0 if a year is present.
 
 **CSV Data to Analyze:**
 \`\`\`csv
