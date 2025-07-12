@@ -55,6 +55,7 @@ export function VehicleForm({ initialData, onSubmit, onClose }: VehicleFormProps
       ownerPhone: initialData.ownerPhone || "",
       ownerEmail: initialData.ownerEmail || "",
       color: initialData.color || "",
+      vin: initialData.vin || "",
       notes: initialData.notes || "",
       dailyRentalCost: initialData.dailyRentalCost ?? undefined,
       gpsMonthlyCost: initialData.gpsMonthlyCost ?? undefined,

@@ -123,26 +123,6 @@ export function normalizeDataUrl(raw?: string) {
   return `data:image/png;base64,${raw}`;
 }
 
-/**
- * Recursively removes any keys with `undefined` values from an object or array.
- * This is crucial for Firestore, which does not allow `undefined` values.
- * @param obj The object or array to sanitize.
- * @returns A new object or array with `undefined` values removed.
- */
-export function sanitizeObjectForFirestore(obj: any): any {
-  if (obj === null || typeof obj !== 'object') return obj;
-  if (Array.isArray(obj)) return obj.map(item => sanitizeObjectForFirestore(item));
-  const newObj: { [key: string]: any } = {};
-  for (const key in obj) {
-    if (Object.prototype.hasOwnProperty.call(obj, key)) {
-      const value = obj[key];
-      if (value !== undefined) {
-        newObj[key] = sanitizeObjectForFirestore(value);
-      }
-    }
-  }
-  return newObj;
-}
     
 /**
  * Calculates the total debt for a given driver, focusing on the current month's rental activity.
