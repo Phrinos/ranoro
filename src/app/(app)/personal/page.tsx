@@ -66,15 +66,15 @@ function PersonalPageComponent() {
 
 
   useEffect(() => {
-    const unsubs: (() => void)[] = [];
     setIsLoading(true);
-    
-    unsubs.push(personnelService.onTechniciansUpdate(setTechnicians));
-    unsubs.push(personnelService.onAdminStaffUpdate(setAdminStaff));
-    unsubs.push(operationsService.onServicesUpdate((data) => {
-      setServices(data);
-      setIsLoading(false);
-    }));
+    const unsubs: (() => void)[] = [
+      personnelService.onTechniciansUpdate(setTechnicians),
+      personnelService.onAdminStaffUpdate(setAdminStaff),
+      operationsService.onServicesUpdate((data) => {
+        setServices(data);
+        setIsLoading(false);
+      })
+    ];
 
     const now = new Date();
     setFilterDateRange({ from: startOfMonth(now), to: endOfMonth(now) });
@@ -308,4 +308,3 @@ function PersonalPageComponent() {
 export default function PersonalPageWrapper() {
     return (<Suspense fallback={<div>Cargando...</div>}><PersonalPageComponent /></Suspense>)
 }
-

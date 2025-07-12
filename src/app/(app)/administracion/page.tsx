@@ -25,33 +25,22 @@ function AdministracionPageComponent() {
     const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
-    const fetchData = useCallback(async () => {
-        setIsLoading(true);
-        try {
-            const authUserString = localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY);
-            if (authUserString) setCurrentUser(JSON.parse(authUserString));
-
-            const [usersData, rolesData, auditLogsData] = await Promise.all([
-                adminService.getUsers(),
-                adminService.getRoles(),
-                adminService.getAuditLogs(),
-            ]);
-            setUsers(usersData);
-            setRoles(rolesData);
-            setAuditLogs(auditLogsData);
-        } catch (error) {
-            console.error("Failed to fetch admin data:", error);
-        } finally {
-            setIsLoading(false);
-        }
-    }, []);
-
     useEffect(() => {
-        fetchData();
-        const handleDbUpdate = () => fetchData();
-        window.addEventListener('databaseUpdated', handleDbUpdate);
-        return () => window.removeEventListener('databaseUpdated', handleDbUpdate);
-    }, [fetchData]);
+        setIsLoading(true);
+        const authUserString = localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY);
+        if (authUserString) setCurrentUser(JSON.parse(authUserString));
+
+        const unsubs = [
+            adminService.onUsersUpdate(setUsers),
+            adminService.onRolesUpdate(setRoles),
+            adminService.onAuditLogsUpdate((logs) => {
+                setAuditLogs(logs);
+                setIsLoading(false); // Consider loading finished after the last subscription is active
+            })
+        ];
+
+        return () => unsubs.forEach(unsub => unsub());
+    }, []);
     
     if (isLoading) {
         return <div className="flex justify-center items-center h-64"><Loader2 className="h-8 w-8 animate-spin" /></div>;

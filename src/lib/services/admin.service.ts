@@ -30,27 +30,31 @@ const logAudit = async (
   await addDoc(collection(db, 'auditLogs'), newLog);
 };
 
-const getUsers = async (): Promise<User[]> => {
-    if (!db) return [];
+const onUsersUpdate = (callback: (users: User[]) => void): (() => void) => {
+    if (!db) return () => {};
     const usersCollection = collection(db, 'users');
-    const usersSnapshot = await getDocs(usersCollection);
-    return usersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User));
+    const unsubscribe = onSnapshot(usersCollection, (snapshot) => {
+        callback(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User)));
+    });
+    return unsubscribe;
 };
 
-const getRoles = async (): Promise<AppRole[]> => {
-    if (!db) return [];
+const onRolesUpdate = (callback: (roles: AppRole[]) => void): (() => void) => {
+    if (!db) return () => {};
     const rolesCollection = collection(db, 'appRoles');
-    const rolesSnapshot = await getDocs(rolesCollection);
-    return rolesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as AppRole));
+    const unsubscribe = onSnapshot(rolesCollection, (snapshot) => {
+        callback(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as AppRole)));
+    });
+    return unsubscribe;
 };
 
-const getAuditLogs = async (): Promise<AuditLog[]> => {
-    if (!db) return [];
-    const auditLogsCollection = collection(db, 'auditLogs');
-    // Sort by date descending when fetching
-    const q = query(auditLogsCollection, orderBy("date", "desc"));
-    const auditLogsSnapshot = await getDocs(q);
-    return auditLogsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as AuditLog));
+const onAuditLogsUpdate = (callback: (logs: AuditLog[]) => void): (() => void) => {
+    if (!db) return () => {};
+    const q = query(collection(db, 'auditLogs'), orderBy("date", "desc"));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+        callback(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as AuditLog)));
+    });
+    return unsubscribe;
 };
 
 const saveUser = async (user: Partial<User>, adminUser: User): Promise<User> => {
@@ -133,9 +137,9 @@ const updateUserProfile = async (user: User): Promise<User> => {
 };
 
 export const adminService = {
-    getUsers,
-    getRoles,
-    getAuditLogs,
+    onUsersUpdate,
+    onRolesUpdate,
+    onAuditLogsUpdate,
     saveUser,
     deleteUser,
     saveRole,
