@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React from 'react';
@@ -39,7 +40,7 @@ export const SaleItemsList = React.memo(({ onAddItem, inventoryItems }: SaleItem
   };
 
   return (
-    <Card className="lg:col-span-2">
+    <Card>
       <CardHeader><CardTitle>Artículos vendidos</CardTitle></CardHeader>
       <CardContent>
         <ScrollArea className="max-h-[300px] pr-4 flex-grow">

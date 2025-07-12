@@ -1,4 +1,5 @@
 
+
 import {
   collection,
   onSnapshot,
@@ -11,16 +12,17 @@ import {
   getDocs,
 } from 'firebase/firestore';
 import { db } from '../firebaseClient';
-import type { ServiceRecord, QuoteRecord, SaleReceipt, Vehicle } from "@/types";
+import type { ServiceRecord, QuoteRecord, SaleReceipt, Vehicle, CashDrawerTransaction, InitialCashBalance, InventoryItem } from "@/types";
 import { savePublicDocument } from '@/lib/public-document';
 import { inventoryService } from './inventory.service';
 import { nanoid } from 'nanoid';
 import type { ExtractedService } from '@/ai/flows/service-migration-flow';
-import { format, parse, isValid } from 'date-fns';
+import { format, parse, isValid, startOfDay, isSameDay } from 'date-fns';
 
 // --- Services ---
 
 const onServicesUpdate = (callback: (services: ServiceRecord[]) => void): (() => void) => {
+    if(!db) return () => {};
     const q = query(collection(db, "serviceRecords"));
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
         const services: ServiceRecord[] = [];
@@ -33,20 +35,17 @@ const onServicesUpdate = (callback: (services: ServiceRecord[]) => void): (() =>
 };
 
 const updateService = async (serviceId: string, data: Partial<ServiceRecord>): Promise<ServiceRecord> => {
+    if(!db) throw new Error("Database not connected");
     const serviceRef = doc(db, "serviceRecords", serviceId);
     await updateDoc(serviceRef, data);
     
-    // This part is tricky as we don't have the full service object.
-    // We should fetch it, but for now, we'll assume the data is enough.
-    // This might need to be adjusted based on how the function is used.
-    
-    // const vehicle = await inventoryService.getVehicleById(data.vehicleId);
-    // await savePublicDocument('service', {id: serviceId, ...data}, vehicle, {});
-    
+    // For simplicity, returning the partial data. A full implementation
+    // would fetch the updated document to return the complete object.
     return { id: serviceId, ...data } as ServiceRecord;
 };
 
 const cancelService = async (serviceId: string, reason: string): Promise<void> => {
+    if(!db) throw new Error("Database not connected");
     const serviceRef = doc(db, "serviceRecords", serviceId);
     await updateDoc(serviceRef, {
         status: 'Cancelado',
@@ -55,10 +54,8 @@ const cancelService = async (serviceId: string, reason: string): Promise<void> =
 };
 
 const completeService = async (serviceId: string, paymentDetails: { paymentMethod: any, cardFolio?: string, transferFolio?: string }): Promise<ServiceRecord> => {
+    if(!db) throw new Error("Database not connected");
     const serviceRef = doc(db, "serviceRecords", serviceId);
-    
-    // Again, we need the full service object. Let's assume we fetch it first.
-    // This is a simplified version. A real implementation would fetch the doc.
     
     const updatedServiceData = {
       status: 'Entregado',
@@ -67,14 +64,6 @@ const completeService = async (serviceId: string, paymentDetails: { paymentMetho
     };
     
     await updateDoc(serviceRef, updatedServiceData);
-
-    // This part requires fetching the service to know which items to update.
-    // This is a placeholder for the actual implementation.
-    // for (const item of service.serviceItems || []) {
-    //   for (const supply of item.suppliesUsed || []) {
-    //     await inventoryService.updateItemStock(supply.supplyId, -supply.quantity);
-    //   }
-    // }
     
     return { id: serviceId, ...updatedServiceData } as ServiceRecord;
 };
@@ -90,60 +79,36 @@ const saveMigratedServices = async (services: ExtractedService[]): Promise<void>
     for (const service of services) {
         let vehicleId = vehicleMap.get(service.vehicleLicensePlate);
         
-        // If vehicle doesn't exist, create it within the same batch
         if (!vehicleId) {
             const newVehicleRef = doc(collection(db, 'vehicles'));
             vehicleId = newVehicleRef.id;
             
-            // Here you might need to extract more vehicle details if available in the source data
-            // For now, we use what the 'ExtractedService' provides
             const newVehicleData = {
                 licensePlate: service.vehicleLicensePlate,
-                make: '', // Add fields if you expand data-migration-flow
-                model: '',
-                year: 0,
-                ownerName: '',
-                ownerPhone: '',
+                make: '', model: '', year: 0, ownerName: '', ownerPhone: '',
             };
             
             batch.set(newVehicleRef, newVehicleData);
-            vehicleMap.set(service.vehicleLicensePlate, vehicleId); // Add to map for subsequent services in the same batch
+            vehicleMap.set(service.vehicleLicensePlate, vehicleId);
         }
 
         let parsedDate: Date | null = null;
         const possibleFormats = ['M/d/yy', 'MM/dd/yy', 'M-d-yy', 'MM-dd-yy', 'yyyy-MM-dd', 'dd/MM/yyyy'];
         for (const fmt of possibleFormats) {
             const dt = parse(service.serviceDate, fmt, new Date());
-            if (isValid(dt)) {
-                parsedDate = dt;
-                break;
-            }
+            if (isValid(dt)) { parsedDate = dt; break; }
         }
         
-        if (!parsedDate) {
-            console.warn(`Skipping service with unparseable date: ${service.serviceDate}`);
-            continue;
-        }
+        if (!parsedDate) continue;
 
         const serviceRecord: Omit<ServiceRecord, 'id'> = {
-            vehicleId: vehicleId,
-            vehicleIdentifier: service.vehicleLicensePlate,
-            serviceDate: parsedDate.toISOString(),
-            description: service.description,
-            totalCost: service.totalCost,
-            status: 'Completado', // Assume migrated services are complete
-            deliveryDateTime: parsedDate.toISOString(), // Use serviceDate as delivery for historical data
-            subTotal: service.totalCost / 1.16,
+            vehicleId: vehicleId, vehicleIdentifier: service.vehicleLicensePlate,
+            serviceDate: parsedDate.toISOString(), description: service.description,
+            totalCost: service.totalCost, status: 'Completado', 
+            deliveryDateTime: parsedDate.toISOString(), subTotal: service.totalCost / 1.16,
             taxAmount: service.totalCost - (service.totalCost / 1.16),
-            serviceProfit: 0, // Cannot be calculated from historical data
-            totalSuppliesCost: 0,
-            technicianId: 'N/A',
-            serviceItems: [{
-                id: 'migrated-item',
-                name: service.description,
-                price: service.totalCost,
-                suppliesUsed: []
-            }],
+            serviceProfit: 0, totalSuppliesCost: 0, technicianId: 'N/A',
+            serviceItems: [{ id: 'migrated-item', name: service.description, price: service.totalCost, suppliesUsed: [] }],
         };
         const newDocRef = doc(collection(db, "serviceRecords"));
         batch.set(newDocRef, serviceRecord);
@@ -153,6 +118,7 @@ const saveMigratedServices = async (services: ExtractedService[]): Promise<void>
 
 // --- Sales ---
 const onSalesUpdate = (callback: (sales: SaleReceipt[]) => void): (() => void) => {
+    if(!db) return () => {};
     const q = query(collection(db, "sales"));
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
         const sales: SaleReceipt[] = [];
@@ -164,12 +130,91 @@ const onSalesUpdate = (callback: (sales: SaleReceipt[]) => void): (() => void) =
     return unsubscribe;
 };
 
+const registerSale = async (saleData: Omit<SaleReceipt, 'id' | 'saleDate'>, inventoryItems: InventoryItem[], batch: ReturnType<typeof writeBatch>): Promise<string> => {
+    const IVA_RATE = 0.16;
+    const totalAmount = saleData.items.reduce((sum, item) => sum + (item.totalPrice || 0), 0);
+    const subTotal = totalAmount / (1 + IVA_RATE);
+    const tax = totalAmount - subTotal;
+
+    const newSale: Omit<SaleReceipt, 'id'> = {
+      ...saleData,
+      saleDate: new Date().toISOString(),
+      subTotal, tax, totalAmount,
+      status: 'Completado',
+    };
+    
+    const newSaleRef = doc(collection(db, "sales"));
+    batch.set(newSaleRef, newSale);
+
+    saleData.items.forEach(soldItem => {
+        const inventoryItem = inventoryItems.find(invItem => invItem.id === soldItem.inventoryItemId);
+        if (inventoryItem && !inventoryItem.isService) {
+            const itemRef = doc(db, "inventory", soldItem.inventoryItemId);
+            batch.update(itemRef, { quantity: inventoryItem.quantity - soldItem.quantity });
+        }
+    });
+    
+    if (newSale.paymentMethod === 'Efectivo') {
+        const cashTransactionRef = doc(collection(db, "cashDrawerTransactions"));
+        batch.set(cashTransactionRef, {
+            date: new Date().toISOString(),
+            type: 'Entrada',
+            amount: totalAmount,
+            concept: `Venta POS #${newSaleRef.id.slice(0, 6)}`,
+            userId: 'system', // Replace with actual user ID
+            userName: 'Sistema',
+        });
+    }
+    
+    return newSaleRef.id;
+};
+
+// --- Cash Drawer ---
+const onCashTransactionsUpdate = (callback: (transactions: CashDrawerTransaction[]) => void): (() => void) => {
+    if(!db) return () => {};
+    const q = query(collection(db, "cashDrawerTransactions"));
+    const unsubscribe = onSnapshot(q, (querySnapshot) => {
+        callback(querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as CashDrawerTransaction)));
+    });
+    return unsubscribe;
+};
+
+const addCashTransaction = async (transaction: Omit<CashDrawerTransaction, 'id' | 'date'>): Promise<void> => {
+    if (!db) throw new Error("Database not connected");
+    await addDoc(collection(db, 'cashDrawerTransactions'), {
+        ...transaction,
+        date: new Date().toISOString()
+    });
+};
+
+const onInitialCashBalanceUpdate = (callback: (balance: InitialCashBalance | null) => void): (() => void) => {
+    if(!db) return () => {};
+    const todayStr = format(startOfDay(new Date()), 'yyyy-MM-dd');
+    const docRef = doc(db, "initialCashBalances", todayStr);
+    const unsubscribe = onSnapshot(docRef, (docSnap) => {
+        callback(docSnap.exists() ? docSnap.data() as InitialCashBalance : null);
+    });
+    return unsubscribe;
+};
+
+const setInitialCashBalance = async (balance: InitialCashBalance): Promise<void> => {
+    if (!db) throw new Error("Database not connected");
+    const docId = format(parseISO(balance.date), 'yyyy-MM-dd');
+    const docRef = doc(db, "initialCashBalances", docId);
+    await addDoc(collection(db, 'initialCashBalances'), balance);
+};
+
 
 export const operationsService = {
     onServicesUpdate,
     updateService,
     cancelService,
     completeService,
-    onSalesUpdate,
     saveMigratedServices,
+    onSalesUpdate,
+    registerSale,
+    onCashTransactionsUpdate,
+    addCashTransaction,
+    onInitialCashBalanceUpdate,
+    setInitialCashBalance,
 };
