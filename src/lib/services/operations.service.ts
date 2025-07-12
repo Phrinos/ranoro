@@ -50,14 +50,11 @@ const saveService = async (data: Partial<ServiceRecord>): Promise<ServiceRecord>
     const isEditing = !!data.id;
     const docId = data.id || nanoid();
     
-    // Explicitly remove id from data to be saved to avoid Firestore errors
-    const { id, ...serviceData } = data;
-
     const docRef = doc(db, 'serviceRecords', docId);
 
     // Using setDoc with { merge: true } for both create and update.
     // This simplifies the logic: if the doc doesn't exist, it's created. If it exists, it's merged/updated.
-    await setDoc(docRef, serviceData, { merge: true });
+    await setDoc(docRef, data, { merge: true });
 
     const newDocSnap = await getDoc(docRef);
     if (!newDocSnap.exists()) {
@@ -101,7 +98,8 @@ const completeService = async (serviceId: string, paymentDetails: { paymentMetho
     
     await updateDoc(serviceRef, updatedServiceData);
     
-    return { id: serviceId, ...updatedServiceData } as ServiceRecord;
+    const updatedDoc = await getDoc(serviceRef);
+    return { id: updatedDoc.id, ...(updatedDoc.data() as Omit<ServiceRecord, 'id'>) };
 };
 
 const saveMigratedServices = async (services: ExtractedService[]): Promise<void> => {
@@ -237,7 +235,7 @@ const setInitialCashBalance = async (balance: InitialCashBalance): Promise<void>
     if (!db) throw new Error("Database not connected");
     const docId = format(parseISO(balance.date), 'yyyy-MM-dd');
     const docRef = doc(db, "initialCashBalances", docId);
-    await addDoc(collection(db, 'initialCashBalances'), balance);
+    await setDoc(docRef, balance);
 };
 
 
@@ -344,3 +342,4 @@ export const operationsService = {
     addVehicleExpense,
     addOwnerWithdrawal,
 };
+

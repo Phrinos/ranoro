@@ -399,16 +399,7 @@ export function ServiceForm({
     
     // Sanitize data before saving
     let dataToSave: Partial<ServiceFormValues> = { ...values };
-
-    // Remove any keys with undefined or empty string values, except for required ones
-    Object.keys(dataToSave).forEach(keyStr => {
-        const key = keyStr as keyof typeof dataToSave;
-        const value = dataToSave[key];
-        if (value === undefined || value === '') {
-          (dataToSave as any)[key] = null;
-        }
-    });
-
+    
     const finalData = {
         ...dataToSave,
         id: values.id,
@@ -432,21 +423,17 @@ export function ServiceForm({
         serviceAdvisorId: freshUserRef.current.id,
         serviceAdvisorName: freshUserRef.current.name,
         serviceAdvisorSignatureDataUrl: freshUserRef.current.signatureDataUrl,
-        workshopInfo: (workshopInfo && Object.keys(workshopInfo).length > 0) ? workshopInfo as WorkshopInfo : null,
-        mileage: dataToSave.mileage || null
+        mileage: values.mileage ?? null,
+        fuelLevel: values.fuelLevel ?? null,
+        subStatus: values.status === 'En Taller' ? (values.subStatus || 'Reparando') : null,
     };
-
-    if (finalData.status !== 'En Taller') {
-      (finalData as any).subStatus = null;
-    }
     
     if (db && finalData.publicId) {
         await savePublicDocument('service', finalData as ServiceRecord, localVehicles.find(v => v.id === getValues('vehicleId')) || null, workshopInfo);
     }
     await onSubmit(finalData as ServiceRecord);
-    toast({ title: `${!initialData?.id ? 'Creado' : 'Actualizado'} con Éxito` });
     onClose();
-  }, [isReadOnly, onClose, getValues, onSubmit, toast, technicians, totalCost, serviceProfit, workshopInfo, initialData, localVehicles, currentInventoryItems, totalSuppliesWorkshopCost, trigger]);
+  }, [isReadOnly, onClose, getValues, onSubmit, toast, technicians, totalCost, serviceProfit, workshopInfo, localVehicles, currentInventoryItems, totalSuppliesWorkshopCost, trigger]);
 
   const handlePrintSheet = useCallback(() => {
     const serviceData = form.getValues() as ServiceRecord;
@@ -635,5 +622,6 @@ export function ServiceForm({
     </>
   );
 }
+
 
 
