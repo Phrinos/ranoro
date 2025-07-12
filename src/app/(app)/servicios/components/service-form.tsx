@@ -159,14 +159,15 @@ interface ServiceFormProps {
 const IVA_RATE = 0.16;
 
 function cleanObject(obj: any): any {
-    if (obj === null || obj === undefined) return null;
-    const newObj: any = {};
-    for (const key in obj) {
-        if (obj[key] !== undefined) {
-            newObj[key] = obj[key];
-        }
+  if (obj === null || typeof obj !== 'object') return obj;
+  if (Array.isArray(obj)) return obj.map(cleanObject);
+  
+  return Object.entries(obj).reduce((acc, [key, value]) => {
+    if (value !== undefined) {
+      acc[key] = cleanObject(value);
     }
-    return newObj;
+    return acc;
+  }, {} as any);
 }
 
 
@@ -286,7 +287,7 @@ useEffect(() => {
         dataToLoad = initialDataQuote;
     }
     
-    if (!dataToLoad) { // This is a new record
+    if (!dataToLoad || !dataToLoad.id) { // This is a new record
       const defaultStatus = mode === 'quote' ? 'Cotizacion' : 'En Taller';
       const defaultServiceType = serviceTypes.length > 0 ? serviceTypes[0].name : 'Servicio General';
       form.reset({
@@ -315,10 +316,7 @@ useEffect(() => {
     }
 
     form.reset({
-        id: dataToLoad?.id,
-        publicId: (dataToLoad as any)?.publicId,
-        vehicleId: dataToLoad?.vehicleId ? String(dataToLoad.vehicleId) : undefined,
-        vehicleLicensePlateSearch: dataToLoad?.vehicleIdentifier || "",
+        ...dataToLoad,
         serviceDate: dataToLoad?.serviceDate ? parseDate(dataToLoad.serviceDate) : undefined,
         quoteDate: dataToLoad?.quoteDate ? parseDate(dataToLoad.quoteDate) : (mode === 'quote' ? new Date() : undefined),
         receptionDateTime: isValid(parseDate((dataToLoad as ServiceRecord)?.receptionDateTime)) ? parseDate((dataToLoad as ServiceRecord)?.receptionDateTime) : undefined,
@@ -337,9 +335,7 @@ useEffect(() => {
         serviceAdvisorSignatureDataUrl: dataToLoad?.serviceAdvisorSignatureDataUrl || freshUserRef.current?.signatureDataUrl || '',
         photoReports: photoReportsData,
         serviceItems: serviceItemsData,
-        status: dataToLoad?.status,
-        subStatus: (dataToLoad as ServiceRecord)?.subStatus,
-        serviceType: dataToLoad?.serviceType,
+        vehicleLicensePlateSearch: dataToLoad?.vehicleIdentifier || "",
     });
 
 }, [initialDataService, initialDataQuote, mode, form, isReadOnly, refreshCurrentUser, serviceTypes]);
@@ -430,9 +426,9 @@ useEffect(() => {
         values.receptionDateTime = new Date();
     }
     
-    // This is the CRITICAL part for fixing the update issue
-    const idToSave = initialDataService?.id || initialDataQuote?.id || undefined;
-
+    const idToSave = initialDataService?.id || initialDataQuote?.id;
+    const selectedVehicle = localVehicles.find(v => v.id === values.vehicleId);
+    
     const finalData = {
         ...values,
         id: idToSave,
@@ -444,7 +440,7 @@ useEffect(() => {
         quoteDate: values.quoteDate ? values.quoteDate.toISOString() : null, 
         receptionDateTime: values.receptionDateTime ? values.receptionDateTime.toISOString() : null,
         deliveryDateTime: values.deliveryDateTime ? values.deliveryDateTime.toISOString() : null,
-        vehicleIdentifier: getValues('vehicleLicensePlateSearch') || 'N/A',
+        vehicleIdentifier: selectedVehicle?.licensePlate || getValues('vehicleLicensePlateSearch') || 'N/A',
         technicianName: technicians.find(t => t.id === values.technicianId)?.name || null,
         subTotal: totalCost / (1 + IVA_RATE),
         taxAmount: totalCost - (totalCost / (1 + IVA_RATE)),
@@ -453,13 +449,7 @@ useEffect(() => {
         serviceAdvisorSignatureDataUrl: freshUserRef.current.signatureDataUrl,
     };
     
-    // Ensure no undefined values are sent to Firestore
-    const cleanedData = Object.entries(finalData).reduce((acc, [key, value]) => {
-      if (value !== undefined) {
-        acc[key] = value;
-      }
-      return acc;
-    }, {} as any);
+    const cleanedData = cleanObject(finalData);
     
     await onSubmit(cleanedData as ServiceRecord);
     onClose();
