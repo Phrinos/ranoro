@@ -24,30 +24,30 @@ import { PlusCircle, Edit, Trash2 } from "lucide-react";
 import { FixedExpenseForm, type FixedExpenseFormValues } from "./fixed-expense-form";
 import type { MonthlyFixedExpense } from "@/types";
 import { useToast } from "@/hooks/use-toast";
-import { placeholderFixedMonthlyExpenses, persistToFirestore } from '@/lib/placeholder-data'; // Import the placeholder
+import { collection, onSnapshot, addDoc, doc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { db } from '@/lib/firebaseClient';
 
 interface FixedExpensesDialogProps {
   open: boolean;
   onOpenChange: (isOpen: boolean) => void;
   onExpensesUpdated: (updatedExpenses: MonthlyFixedExpense[]) => void;
+  initialExpenses: MonthlyFixedExpense[];
 }
 
 export function FixedExpensesDialog({ 
   open, 
   onOpenChange,
   onExpensesUpdated,
+  initialExpenses,
 }: FixedExpensesDialogProps) {
   const { toast } = useToast();
-  const [expenses, setExpenses] = useState<MonthlyFixedExpense[]>([]);
+  const [expenses, setExpenses] = useState<MonthlyFixedExpense[]>(initialExpenses);
   const [isSubFormOpen, setIsSubFormOpen] = useState(false);
   const [editingExpense, setEditingExpense] = useState<MonthlyFixedExpense | null>(null);
 
   useEffect(() => {
-    // Load current expenses when dialog opens or placeholder data changes
-    if (open) {
-      setExpenses([...placeholderFixedMonthlyExpenses]); // Create a mutable copy
-    }
-  }, [open]);
+    setExpenses(initialExpenses);
+  }, [initialExpenses]);
 
   const handleOpenSubForm = (expense?: MonthlyFixedExpense) => {
     setEditingExpense(expense || null);
@@ -55,40 +55,34 @@ export function FixedExpensesDialog({
   };
 
   const handleSaveExpense = async (values: FixedExpenseFormValues) => {
-    let updatedExpensesList: MonthlyFixedExpense[];
-    if (editingExpense) {
-      updatedExpensesList = expenses.map(exp =>
-        exp.id === editingExpense.id ? { ...editingExpense, ...values } : exp
-      );
-      toast({ title: "Gasto Actualizado", description: `El gasto "${values.name}" ha sido actualizado.` });
-    } else {
-      const newExpense: MonthlyFixedExpense = {
-        id: `exp_${Date.now()}`,
-        ...values,
-      };
-      updatedExpensesList = [...expenses, newExpense];
-      toast({ title: "Gasto Agregado", description: `El gasto "${values.name}" ha sido agregado.` });
+    if (!db) return toast({ title: "Error de base de datos", variant: "destructive" });
+    const dataToSave = { name: values.name, amount: Number(values.amount) };
+    try {
+      if (editingExpense) {
+        await updateDoc(doc(db, 'fixedMonthlyExpenses', editingExpense.id), dataToSave);
+        toast({ title: "Gasto Actualizado" });
+      } else {
+        await addDoc(collection(db, 'fixedMonthlyExpenses'), dataToSave);
+        toast({ title: "Gasto Agregado" });
+      }
+      setIsSubFormOpen(false);
+      setEditingExpense(null);
+      // Parent will get update from Firestore listener
+    } catch (e) {
+      console.error("Error saving fixed expense:", e);
+      toast({ title: "Error al guardar", variant: "destructive" });
     }
-    setExpenses(updatedExpensesList);
-    placeholderFixedMonthlyExpenses.splice(0, placeholderFixedMonthlyExpenses.length, ...updatedExpensesList); // Update global placeholder
-    onExpensesUpdated(updatedExpensesList);
-    
-    await persistToFirestore(['fixedExpenses']);
-
-    setIsSubFormOpen(false);
-    setEditingExpense(null);
   };
 
   const handleDeleteExpense = async (expenseId: string) => {
-    const expenseToDelete = expenses.find(exp => exp.id === expenseId);
-    const updatedExpensesList = expenses.filter(exp => exp.id !== expenseId);
-    setExpenses(updatedExpensesList);
-    placeholderFixedMonthlyExpenses.splice(0, placeholderFixedMonthlyExpenses.length, ...updatedExpensesList); // Update global placeholder
-    onExpensesUpdated(updatedExpensesList);
-
-    await persistToFirestore(['fixedExpenses']);
-
-    toast({ title: "Gasto Eliminado", description: `El gasto "${expenseToDelete?.name}" ha sido eliminado.` });
+    if (!db) return toast({ title: "Error de base de datos", variant: "destructive" });
+    try {
+      await deleteDoc(doc(db, 'fixedMonthlyExpenses', expenseId));
+      toast({ title: "Gasto Eliminado" });
+    } catch (e) {
+      console.error("Error deleting fixed expense:", e);
+      toast({ title: "Error al eliminar", variant: "destructive" });
+    }
   };
   
   const formatCurrency = (amount: number) => `$${amount.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;

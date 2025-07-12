@@ -12,7 +12,7 @@ import {
   getDocs,
 } from 'firebase/firestore';
 import { db } from '../firebaseClient';
-import type { InventoryItem, InventoryCategory, Supplier, Vehicle, VehiclePriceList, ServiceTypeRecord } from "@/types";
+import type { InventoryItem, InventoryCategory, Supplier, Vehicle, VehiclePriceList, ServiceTypeRecord, MonthlyFixedExpense } from "@/types";
 import type { InventoryItemFormValues } from "@/app/(app)/inventario/components/inventory-item-form";
 import type { VehicleFormValues } from "@/app/(app)/vehiculos/components/vehicle-form";
 import type { PriceListFormValues } from "@/app/(app)/precios/components/price-list-form";
@@ -202,6 +202,18 @@ const deletePriceList = async (recordId: string): Promise<void> => {
     await deleteDoc(docRef);
 };
 
+
+// --- Fixed Expenses ---
+const onFixedExpensesUpdate = (callback: (expenses: MonthlyFixedExpense[]) => void): (() => void) => {
+    if (!db) return () => {};
+    const q = collection(db, "fixedMonthlyExpenses");
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+        callback(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as MonthlyFixedExpense)));
+    });
+    return unsubscribe;
+};
+
+
 export const inventoryService = {
     onItemsUpdate,
     onItemsUpdatePromise,
@@ -223,4 +235,5 @@ export const inventoryService = {
     onPriceListsUpdate,
     savePriceList,
     deletePriceList,
+    onFixedExpensesUpdate,
 };
