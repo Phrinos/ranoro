@@ -146,7 +146,7 @@ function PerfilPageContent() {
               <FormField control={form.control} name="name" render={({ field }) => (
                 <FormItem>
                     <FormLabel>Nombre Completo</FormLabel>
-                    <FormControl><Input {...field} /></FormControl>
+                    <FormControl><Input {...field} onChange={(e) => field.onChange(capitalizeWords(e.target.value))} /></FormControl>
                     <FormMessage />
                 </FormItem>
               )}/>
@@ -255,7 +255,7 @@ const sampleSale: SaleReceipt = {
 };
 
 // Helper component for a form field with a bold checkbox
-const TextFieldWithBoldness = ({ name, label, control, isTextarea = false }: { name: keyof TicketForm; label: string; control: any; isTextarea?: boolean }) => (
+const TextFieldWithBoldness = ({ name, label, control, isTextarea = false, isCapitalized = false }: { name: keyof TicketForm; label: string; control: any; isTextarea?: boolean; isCapitalized?: boolean; }) => (
     <FormField
         control={control}
         name={name}
@@ -264,7 +264,11 @@ const TextFieldWithBoldness = ({ name, label, control, isTextarea = false }: { n
                 <FormLabel>{label}</FormLabel>
                 <div className="flex items-center gap-2">
                     <FormControl>
-                        {isTextarea ? <Textarea {...field} /> : <Input {...field} />}
+                        {isTextarea ? (
+                            <Textarea {...field} />
+                        ) : (
+                            <Input {...field} onChange={(e) => field.onChange(isCapitalized ? capitalizeWords(e.target.value) : e.target.value)} />
+                        )}
                     </FormControl>
                     <FormField
                         control={control}
@@ -387,7 +391,7 @@ function ConfiguracionTicketPageContent() {
             <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                     <Card><CardHeader><CardTitle>Encabezado y Logo</CardTitle></CardHeader><CardContent className="space-y-4"><FormField control={form.control} name="blankLinesTop" render={({ field }) => (<FormItem><FormLabel>Líneas en Blanco (Arriba)</FormLabel><FormControl><Input type="number" min={0} max={10} {...field} value={field.value || 0} /></FormControl></FormItem>)}/><FormItem><FormLabel>Subir Logo</FormLabel><Button type="button" variant="outline" className="w-full" onClick={() => fileInputRef.current?.click()} disabled={isUploading}>{isUploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Upload className="mr-2 h-4 w-4" />}{isUploading ? "Subiendo..." : "Seleccionar Imagen"}</Button><input type="file" ref={fileInputRef} className="hidden" accept="image/png, image/jpeg, image/webp" onChange={handleImageUpload} /><FormDescription>El logo actual se mostrará en la vista previa.</FormDescription></FormItem><FormField control={form.control} name="logoWidth" render={({ field }) => (<FormItem><FormLabel>Ancho del Logo: {field.value || defaultWorkshopInfo.logoWidth}px</FormLabel><FormControl><Slider value={[field.value || defaultWorkshopInfo.logoWidth || 120]} onValueChange={(value) => field.onChange(value[0])} min={40} max={250} step={5} /></FormControl></FormItem>)}/></CardContent></Card>
-                    <Card><CardHeader><CardTitle>Información del Negocio</CardTitle></CardHeader><CardContent className="space-y-4"><TextFieldWithBoldness name="name" label="Nombre del Taller" control={form.control} /><TextFieldWithBoldness name="phone" label="Teléfono" control={form.control} /><TextFieldWithBoldness name="addressLine1" label="Dirección (Línea 1)" control={form.control} /><TextFieldWithBoldness name="addressLine2" label="Dirección (Línea 2)" control={form.control} /><TextFieldWithBoldness name="cityState" label="Ciudad, Estado, C.P." control={form.control} /><FormField control={form.control} name="headerFontSize" render={({ field }) => (<FormItem><FormLabel>Tamaño Fuente (Encabezado): {field.value || defaultWorkshopInfo.headerFontSize}px</FormLabel><FormControl><Slider value={[field.value || defaultWorkshopInfo.headerFontSize || 10]} onValueChange={(value) => field.onChange(value[0])} min={8} max={16} step={1} /></FormControl></FormItem>)}/></CardContent></Card>
+                    <Card><CardHeader><CardTitle>Información del Negocio</CardTitle></CardHeader><CardContent className="space-y-4"><TextFieldWithBoldness name="name" label="Nombre del Taller" control={form.control} isCapitalized /><TextFieldWithBoldness name="phone" label="Teléfono" control={form.control} /><TextFieldWithBoldness name="addressLine1" label="Dirección (Línea 1)" control={form.control} isCapitalized /><TextFieldWithBoldness name="addressLine2" label="Dirección (Línea 2)" control={form.control} isCapitalized /><TextFieldWithBoldness name="cityState" label="Ciudad, Estado, C.P." control={form.control} isCapitalized /><FormField control={form.control} name="headerFontSize" render={({ field }) => (<FormItem><FormLabel>Tamaño Fuente (Encabezado): {field.value || defaultWorkshopInfo.headerFontSize}px</FormLabel><FormControl><Slider value={[field.value || defaultWorkshopInfo.headerFontSize || 10]} onValueChange={(value) => field.onChange(value[0])} min={8} max={16} step={1} /></FormControl></FormItem>)}/></CardContent></Card>
                     <Card><CardHeader><CardTitle>Estilo del Texto del Ticket</CardTitle></CardHeader><CardContent className="space-y-4"><FormField control={form.control} name="bodyFontSize" render={({ field }) => (<FormItem><FormLabel>Tamaño Fuente (Cuerpo): {field.value || defaultWorkshopInfo.bodyFontSize}px</FormLabel><FormControl><Slider value={[field.value || defaultWorkshopInfo.bodyFontSize || 10]} onValueChange={(value) => field.onChange(value[0])} min={8} max={16} step={1} /></FormControl></FormItem>)}/><FormField control={form.control} name="itemsFontSize" render={({ field }) => (<FormItem><FormLabel>Tamaño Fuente (Artículos): {field.value || defaultWorkshopInfo.itemsFontSize}px</FormLabel><FormControl><Slider value={[field.value || defaultWorkshopInfo.itemsFontSize || 10]} onValueChange={(value) => field.onChange(value[0])} min={8} max={16} step={1} /></FormControl></FormItem>)}/><FormField control={form.control} name="totalsFontSize" render={({ field }) => (<FormItem><FormLabel>Tamaño Fuente (Totales): {field.value || defaultWorkshopInfo.totalsFontSize}px</FormLabel><FormControl><Slider value={[field.value || defaultWorkshopInfo.totalsFontSize || 10]} onValueChange={(value) => field.onChange(value[0])} min={8} max={16} step={1} /></FormControl></FormItem>)}/></CardContent></Card>
                     <Card><CardHeader><CardTitle>Mensajes de Pie de Página</CardTitle></CardHeader><CardContent className="space-y-4"><TextFieldWithBoldness name="footerLine1" label="Línea de Agradecimiento" control={form.control} /><TextFieldWithBoldness name="footerLine2" label="Línea de Contacto" control={form.control} /><FormField control={form.control} name="footerFontSize" render={({ field }) => (<FormItem><FormLabel>Tamaño Fuente (Pie): {field.value || defaultWorkshopInfo.footerFontSize}px</FormLabel><FormControl><Slider value={[field.value || defaultWorkshopInfo.footerFontSize || 10]} onValueChange={(value) => field.onChange(value[0])} min={8} max={16} step={1} /></FormControl></FormItem>)}/></CardContent></Card>
                     <Card><CardHeader><CardTitle>Pie de Ticket y Espaciado Final</CardTitle></CardHeader><CardContent className="space-y-4"><TextFieldWithBoldness name="fixedFooterText" label="Texto Final" control={form.control} isTextarea /><FormField control={form.control} name="blankLinesBottom" render={({ field }) => (<FormItem><FormLabel>Líneas en Blanco (Abajo)</FormLabel><FormControl><Input type="number" min={0} max={10} {...field} value={field.value || 0}/></FormControl></FormItem>)}/></CardContent></Card>
@@ -607,3 +611,4 @@ export default function OpcionesPageWrapper() {
         </Suspense>
     );
 }
+
