@@ -56,7 +56,7 @@ export function FixedExpensesDialog({
 
   const handleSaveExpense = async (values: FixedExpenseFormValues) => {
     if (!db) return toast({ title: "Error de base de datos", variant: "destructive" });
-    const dataToSave = { name: values.name, amount: Number(values.amount) };
+    const dataToSave = { name: values.name, amount: Number(values.amount), notes: values.notes || '' };
     try {
       if (editingExpense) {
         await updateDoc(doc(db, 'fixedMonthlyExpenses', editingExpense.id), dataToSave);
@@ -125,7 +125,10 @@ export function FixedExpensesDialog({
                   <TableBody>
                     {expenses.map((expense) => (
                       <TableRow key={expense.id}>
-                        <TableCell className="font-medium">{expense.name}</TableCell>
+                        <TableCell className="font-medium">
+                          <p>{expense.name}</p>
+                          {expense.notes && <p className="text-xs text-muted-foreground">{expense.notes}</p>}
+                        </TableCell>
                         <TableCell className="text-right">{formatCurrency(expense.amount)}</TableCell>
                         <TableCell className="text-right">
                           <Button variant="ghost" size="icon" onClick={() => handleOpenSubForm(expense)} className="mr-1">
