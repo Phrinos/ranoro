@@ -19,7 +19,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import type { Technician } from "@/types";
 import { DollarSign } from "lucide-react";
-import { capitalizeSentences } from "@/lib/utils";
+import { capitalizeWords } from "@/lib/utils";
 
 const technicianFormSchema = z.object({
   name: z.string().min(3, "El nombre debe tener al menos 3 caracteres."),
