@@ -24,6 +24,17 @@ import { sanitizeObjectForFirestore } from '@/lib/utils';
 import { collection, onSnapshot, doc, updateDoc, addDoc, deleteDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebaseClient';
 
+const vehicleSortOptions = [
+    { value: 'lastServiceDate_desc', label: 'Último Servicio (Más Reciente)' },
+    { value: 'lastServiceDate_asc', label: 'Último Servicio (Más Antiguo)' },
+    { value: 'licensePlate_asc', label: 'Placa (A-Z)' },
+    { value: 'licensePlate_desc', label: 'Placa (Z-A)' },
+    { value: 'make_asc', label: 'Marca (A-Z)' },
+    { value: 'make_desc', label: 'Marca (Z-A)' },
+    { value: 'ownerName_asc', label: 'Propietario (A-Z)' },
+    { value: 'ownerName_desc', label: 'Propietario (Z-A)' },
+];
+
 function VehiculosPageComponent() {
     const searchParams = useSearchParams();
     const defaultTab = searchParams.get('tab') || 'vehiculos';
@@ -62,7 +73,7 @@ function VehiculosPageComponent() {
       initialData: allVehicles,
       searchKeys: ['licensePlate', 'make', 'model', 'ownerName'],
       dateFilterKey: 'lastServiceDate',
-      initialSortOption: 'plate_asc',
+      initialSortOption: 'lastServiceDate_desc', // Default sort
     });
     
     const handleOpenVehicleDialog = (vehicle: Vehicle | null = null) => {
@@ -143,9 +154,11 @@ function VehiculosPageComponent() {
                                 searchTerm={tableManager.searchTerm}
                                 onSearchTermChange={tableManager.setSearchTerm}
                                 searchPlaceholder="Buscar por placa, marca, modelo, propietario..."
-                                onDateRangeChange={() => {}} // No date filter on this tab
-                                onSortOptionChange={() => {}} // No sort on this tab
-                                sortOption=""
+                                dateRange={tableManager.dateRange}
+                                onDateRangeChange={tableManager.setDateRange}
+                                sortOption={tableManager.sortOption}
+                                onSortOptionChange={tableManager.setSortOption}
+                                sortOptions={vehicleSortOptions}
                             />
                             <Button onClick={() => handleOpenVehicleDialog()} className="ml-4">
                                 <PlusCircle className="mr-2 h-4 w-4" /> Registrar Nuevo Vehículo
