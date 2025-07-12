@@ -15,7 +15,7 @@ import type { WorkshopInfo } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { storage } from '@/lib/firebaseClient.js';
 import { ref, uploadString, getDownloadURL } from 'firebase/storage';
-import { optimizeImage } from '@/lib/utils';
+import { optimizeImage, capitalizeWords } from '@/lib/utils';
 import Image from 'next/image';
 import ReactCrop, { centerCrop, makeAspectCrop, type Crop } from 'react-image-crop';
 import 'react-image-crop/dist/ReactCrop.css';
@@ -28,7 +28,7 @@ const tallerSchema = z.object({
   phone: z.string().min(7, "Mínimo 7 dígitos"),
   addressLine1: z.string().min(5, "La dirección es obligatoria"),
   googleMapsUrl: z.string().url("Ingrese una URL válida de Google Maps.").optional().or(z.literal('')),
-  logoUrl: z.string().url("Debe proporcionar una URL del logo o subir una imagen.").optional().or(z.literal('')),
+  logoUrl: z.string().url("Debe proporcionar una URL del logo o subir una imagen."),
   contactPersonName: z.string().optional(),
   contactPersonPhone: z.string().optional(),
   contactPersonRole: z.string().optional(),
@@ -201,7 +201,7 @@ export function ConfigTallerPageContent() {
                     {isUploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}
                     {isUploading ? "Subiendo..." : "Seleccionar Imagen"}
                   </Button>
-                  <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={onSelectFile} />
+                  <input type="file" ref={fileInputRef} className="hidden" accept="image/png, image/jpeg, image/webp" onChange={onSelectFile} />
                   <FormMessage>{form.formState.errors.logoUrl?.message}</FormMessage>
                 </div>
               </CardContent>
@@ -211,7 +211,7 @@ export function ConfigTallerPageContent() {
               <CardHeader><CardTitle className="text-lg flex items-center gap-2"><Building/>Datos Generales</CardTitle></CardHeader>
               <CardContent className="space-y-4">
                 <FormField control={form.control} name="name" render={({ field }) => (<FormItem><FormLabel>Nombre del Taller</FormLabel><FormControl><Input placeholder="Mi Taller Mecánico" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                <FormField control={form.control} name="addressLine1" render={({ field }) => (<FormItem><FormLabel>Dirección</FormLabel><FormControl><Input placeholder="Calle Principal 123, Colonia" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                <FormField control={form.control} name="addressLine1" render={({ field }) => (<FormItem><FormLabel>Dirección</FormLabel><FormControl><Input placeholder="Calle Principal 123, Colonia" {...field} onChange={(e) => field.onChange(capitalizeWords(e.target.value))} /></FormControl><FormMessage /></FormItem>)} />
                 <FormField control={form.control} name="phone" render={({ field }) => (<FormItem><FormLabel>Teléfono Principal</FormLabel><FormControl><Input placeholder="4491234567" {...field} /></FormControl><FormMessage /></FormItem>)} />
                 <FormField control={form.control} name="googleMapsUrl" render={({ field }) => (<FormItem><FormLabel>Enlace de Google Maps (Opcional)</FormLabel><FormControl><Input placeholder="https://maps.app.goo.gl/..." {...field} /></FormControl><FormMessage /></FormItem>)} />
               </CardContent>
@@ -220,9 +220,9 @@ export function ConfigTallerPageContent() {
             <Card>
               <CardHeader><CardTitle className="text-lg flex items-center gap-2"><User/>Contacto Principal</CardTitle></CardHeader>
               <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <FormField control={form.control} name="contactPersonName" render={({ field }) => (<FormItem><FormLabel>Nombre</FormLabel><FormControl><Input placeholder="Juan Pérez" {...field} /></FormControl></FormItem>)} />
+                <FormField control={form.control} name="contactPersonName" render={({ field }) => (<FormItem><FormLabel>Nombre</FormLabel><FormControl><Input placeholder="Juan Pérez" {...field} onChange={(e) => field.onChange(capitalizeWords(e.target.value))} /></FormControl></FormItem>)} />
                 <FormField control={form.control} name="contactPersonPhone" render={({ field }) => (<FormItem><FormLabel>Teléfono</FormLabel><FormControl><Input placeholder="4497654321" {...field} /></FormControl></FormItem>)} />
-                <FormField control={form.control} name="contactPersonRole" render={({ field }) => (<FormItem><FormLabel>Puesto</FormLabel><FormControl><Input placeholder="Gerente de Servicio" {...field} /></FormControl></FormItem>)} />
+                <FormField control={form.control} name="contactPersonRole" render={({ field }) => (<FormItem><FormLabel>Puesto</FormLabel><FormControl><Input placeholder="Gerente de Servicio" {...field} onChange={(e) => field.onChange(capitalizeWords(e.target.value))} /></FormControl></FormItem>)} />
               </CardContent>
             </Card>
             
