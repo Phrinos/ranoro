@@ -190,6 +190,24 @@ export function ConfigTallerPageContent() {
           </CardHeader>
           <CardContent className="space-y-6">
             <Card>
+              <CardHeader><CardTitle className="text-lg">Logo del Taller</CardTitle></CardHeader>
+              <CardContent className="flex flex-col md:flex-row items-center gap-6">
+                <div className="w-48 h-48 border-2 border-dashed rounded-lg flex items-center justify-center bg-muted/50 shrink-0">
+                  {watchedLogoUrl ? <Image src={watchedLogoUrl} alt="Logo del Taller" width={180} height={180} className="object-contain" /> : <Building className="h-16 w-16 text-muted-foreground" />}
+                </div>
+                <div className="space-y-2 flex-grow">
+                  <FormLabel>Subir Nuevo Logo</FormLabel>
+                  <Button type="button" variant="outline" className="w-full" onClick={() => fileInputRef.current?.click()} disabled={isUploading}>
+                    {isUploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}
+                    {isUploading ? "Subiendo..." : "Seleccionar Imagen"}
+                  </Button>
+                  <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={onSelectFile} />
+                  <FormMessage>{form.formState.errors.logoUrl?.message}</FormMessage>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
               <CardHeader><CardTitle className="text-lg flex items-center gap-2"><Building/>Datos Generales</CardTitle></CardHeader>
               <CardContent className="space-y-4">
                 <FormField control={form.control} name="name" render={({ field }) => (<FormItem><FormLabel>Nombre del Taller</FormLabel><FormControl><Input placeholder="Mi Taller Mecánico" {...field} /></FormControl><FormMessage /></FormItem>)} />
@@ -208,24 +226,6 @@ export function ConfigTallerPageContent() {
               </CardContent>
             </Card>
             
-            <Card>
-              <CardHeader><CardTitle className="text-lg">Logo del Taller</CardTitle></CardHeader>
-              <CardContent className="flex flex-col md:flex-row items-center gap-6">
-                <div className="w-48 h-48 border-2 border-dashed rounded-lg flex items-center justify-center bg-muted/50 shrink-0">
-                  {watchedLogoUrl ? <Image src={watchedLogoUrl} alt="Logo del Taller" width={180} height={180} className="object-contain" /> : <Building className="h-16 w-16 text-muted-foreground" />}
-                </div>
-                <div className="space-y-2 flex-grow">
-                  <FormLabel>Subir Nuevo Logo</FormLabel>
-                  <Button type="button" variant="outline" className="w-full" onClick={() => fileInputRef.current?.click()} disabled={isUploading}>
-                    {isUploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}
-                    {isUploading ? "Subiendo..." : "Seleccionar Imagen"}
-                  </Button>
-                  <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={onSelectFile} />
-                  <FormMessage>{form.formState.errors.logoUrl?.message}</FormMessage>
-                </div>
-              </CardContent>
-            </Card>
-
             <div className="flex justify-end pt-4">
               <Button type="submit" disabled={form.formState.isSubmitting}><Save className="mr-2 h-4 w-4" />{form.formState.isSubmitting ? "Guardando..." : "Guardar Información"}</Button>
             </div>
