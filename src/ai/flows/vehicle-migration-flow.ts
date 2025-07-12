@@ -48,7 +48,7 @@ const migrateVehiclesPrompt = ai.definePrompt({
 3.  **Mandatory License Plate**: The 'licensePlate' field is absolutely mandatory. If a row does not have a value that can be identified as a license plate, you must ignore that row entirely. A license plate is typically 6 to 8 alphanumeric characters.
 4.  **Clean and Format Data**:
     *   Trim whitespace from all text fields.
-    *   Convert 'year' to a number.
+    *   **Convert 'year' to a number. If the cell for year contains any numeric value, you must extract that number. Only default to 0 if the cell is completely empty or non-numeric.**
     *   **CRITICAL: Format text fields like 'make', 'model', and 'ownerName' to be consistently capitalized in "Title Case". For example, "NISSAN" or "nissan" should both become "Nissan". "JUAN PEREZ" should become "Juan Perez".**
     *   **Format 'licensePlate' to be uppercase and remove any extra characters or spaces.**
 5.  **Default Values**: If a field (other than the mandatory licensePlate) is empty or missing, you MUST return it with a default value: an empty string ("") for text fields (like 'make', 'model'), and 0 for the 'year' field. Do not omit fields from the JSON output.
