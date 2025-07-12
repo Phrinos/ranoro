@@ -10,8 +10,6 @@ import { useToast } from "@/hooks/use-toast";
 import { useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 import { inventoryService, personnelService, operationsService } from '@/lib/services';
-import { addDoc, collection } from 'firebase/firestore';
-import { db } from '@/lib/firebaseClient';
 import type { VehicleFormValues } from '../../vehiculos/components/vehicle-form';
 
 
@@ -28,7 +26,7 @@ export default function NuevoServicioPage() {
   const [isLoading, setIsLoading] = useState(true);
 
   const [dialogStep, setDialogStep] = useState<DialogStep>('form');
-  const [redirectPath, setRedirectPath] = useState('/tablero'); // Default redirect
+  const [redirectPath, setRedirectPath] = useState('/tablero'); 
   
   useEffect(() => {
     const loadData = async () => {
@@ -37,12 +35,12 @@ export default function NuevoServicioPage() {
                 vehiclesData, 
                 techniciansData, 
                 inventoryData,
-                serviceTypesData
+                serviceTypesData,
             ] = await Promise.all([
                 inventoryService.onVehiclesUpdatePromise(),
                 personnelService.onTechniciansUpdatePromise(),
                 inventoryService.onItemsUpdatePromise(),
-                inventoryService.onServiceTypesUpdatePromise()
+                inventoryService.onServiceTypesUpdatePromise(),
             ]);
             
             setVehicles(vehiclesData);
@@ -71,15 +69,13 @@ export default function NuevoServicioPage() {
   }, [dialogStep, router, redirectPath]);
   
   const handleSaveComplete = async (data: ServiceRecord | QuoteRecord) => {
-    if (!db) return;
     try {
-      const docRef = await addDoc(collection(db, "serviceRecords"), data);
+      const docId = await operationsService.addService(data);
       toast({
         title: "Registro Creado",
-        description: `Se ha creado el registro #${docRef.id}.`
+        description: `Se ha creado el registro #${docId}.`
       });
 
-      // Set redirect path based on status
       switch (data.status) {
         case 'Cotizacion':
           setRedirectPath('/cotizaciones/historial');
@@ -92,26 +88,25 @@ export default function NuevoServicioPage() {
           setRedirectPath('/tablero');
           break;
         default:
-          setRedirectPath('/tablero'); // Fallback to dashboard
+          setRedirectPath('/tablero');
       }
 
-      setDialogStep('closed'); // Trigger redirect after saving
+      setDialogStep('closed');
     } catch (e) {
       console.error("Error creating record: ", e);
-      toast({ title: 'Error al Guardar', variant: 'destructive' });
+      toast({ title: 'Error al Guardar', description: 'No se pudo crear el registro.', variant: 'destructive' });
     }
   };
 
 
   const handleFormDialogClose = () => { 
      if (dialogStep === 'form') { 
-      setRedirectPath('/tablero'); // If closed without saving, go to dashboard
+      setRedirectPath('/tablero'); 
       setDialogStep('closed');
     }
   };
   
   const handleVehicleCreated = async (newVehicleData: Omit<Vehicle, 'id'>) => {
-    if (!db) return;
     try {
         const addedVehicle = await inventoryService.addVehicle(newVehicleData as VehicleFormValues);
         setVehicles(prev => [...prev, addedVehicle]);
