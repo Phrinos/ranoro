@@ -208,7 +208,8 @@ export function MigracionPageContent() {
     };
 
     const handleMappingChange = (fieldKey: string, header: string) => {
-        setColumnMapping(prev => ({...prev, [fieldKey]: header}));
+        const valueToSet = header === 'none' ? '' : header;
+        setColumnMapping(prev => ({...prev, [fieldKey]: valueToSet}));
     };
     
     const renderAnalysisResult = () => {
@@ -302,7 +303,7 @@ export function MigracionPageContent() {
                                 <Select value={columnMapping[field.key] || ''} onValueChange={(value) => handleMappingChange(field.key, value)}>
                                     <SelectTrigger><SelectValue placeholder={`Seleccionar: ${field.example}`} /></SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="">-- No Mapear --</SelectItem>
+                                        <SelectItem value="none">-- No Mapear --</SelectItem>
                                         {detectedHeaders.map(header => <SelectItem key={header} value={header}>{header}</SelectItem>)}
                                     </SelectContent>
                                 </Select>
@@ -334,4 +335,3 @@ export function MigracionPageContent() {
       </div>
     );
 }
-
