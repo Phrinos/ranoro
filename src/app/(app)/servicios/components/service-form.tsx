@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -32,6 +33,7 @@ import { ServiceDetailsCard } from "./ServiceDetailsCard";
 import { Textarea } from "@/components/ui/textarea";
 import { db } from '@/lib/firebaseClient.js';
 import { doc } from 'firebase/firestore';
+import { Card } from "@/components/ui/card";
 
 
 const supplySchema = z.object({
@@ -461,32 +463,42 @@ export function ServiceForm({
               </div>
             </div>
             
-            <TabsContent value="servicio" className="space-y-6 mt-4">
-                <VehicleSelectionCard isReadOnly={isReadOnly} localVehicles={localVehicles} serviceHistory={serviceHistory} onVehicleSelected={() => {}} onOpenNewVehicleDialog={() => { setNewVehicleInitialData({ licensePlate: getValues('vehicleLicensePlateSearch') || "" }); setIsVehicleDialogOpen(true); }}/>
-                <ServiceDetailsCard
-                  isReadOnly={isReadOnly}
-                  technicians={technicians}
-                  inventoryItems={currentInventoryItems}
-                  serviceTypes={serviceTypes}
-                  mode={mode}
-                  totalCost={totalCost}
-                  totalSuppliesWorkshopCost={totalSuppliesWorkshopCost}
-                  serviceProfit={serviceProfit}
-                  onGenerateQuoteWithAI={handleGenerateQuoteWithAI}
-                  isGeneratingQuote={isGeneratingQuote}
-                />
+            <TabsContent value="servicio" className="mt-4">
+               <Card className="shadow-none border-none p-0">
+                  <div className="space-y-6">
+                    <VehicleSelectionCard isReadOnly={isReadOnly} localVehicles={localVehicles} serviceHistory={serviceHistory} onVehicleSelected={() => {}} onOpenNewVehicleDialog={() => { setNewVehicleInitialData({ licensePlate: getValues('vehicleLicensePlateSearch') || "" }); setIsVehicleDialogOpen(true); }}/>
+                    <ServiceDetailsCard
+                      isReadOnly={isReadOnly}
+                      technicians={technicians}
+                      inventoryItems={currentInventoryItems}
+                      serviceTypes={serviceTypes}
+                      mode={mode}
+                      totalCost={totalCost}
+                      totalSuppliesWorkshopCost={totalSuppliesWorkshopCost}
+                      serviceProfit={serviceProfit}
+                      onGenerateQuoteWithAI={handleGenerateQuoteWithAI}
+                      isGeneratingQuote={isGeneratingQuote}
+                    />
+                  </div>
+               </Card>
             </TabsContent>
             
             <TabsContent value="recepcion" className="mt-4">
-               <ReceptionAndDelivery isReadOnly={isReadOnly} isEnhancingText={isEnhancingText} handleEnhanceText={handleEnhanceText} />
+               <Card className="shadow-none border-none p-0">
+                  <ReceptionAndDelivery isReadOnly={isReadOnly} isEnhancingText={isEnhancingText} handleEnhanceText={handleEnhanceText} />
+               </Card>
             </TabsContent>
             
             <TabsContent value="reporte" className="mt-4">
-              {/* Photo Report Content */}
+              <Card className="shadow-none border-none p-0">
+                {/* Photo Report Content */}
+              </Card>
             </TabsContent>
             
             <TabsContent value="seguridad" className="mt-4">
-               <SafetyChecklist control={control} isReadOnly={isReadOnly} onSignatureClick={() => setIsTechSignatureDialogOpen(true)} signatureDataUrl={form.watch('safetyInspection.technicianSignature')} isEnhancingText={isEnhancingText} handleEnhanceText={handleEnhanceText} serviceId={watchedId || ''} onPhotoUploaded={handleChecklistPhotoUpload} onViewImage={handleViewImage}/>
+               <Card className="shadow-none border-none p-0">
+                  <SafetyChecklist control={control} isReadOnly={isReadOnly} onSignatureClick={() => setIsTechSignatureDialogOpen(true)} signatureDataUrl={form.watch('safetyInspection.technicianSignature')} isEnhancingText={isEnhancingText} handleEnhanceText={handleEnhanceText} serviceId={watchedId || ''} onPhotoUploaded={handleChecklistPhotoUpload} onViewImage={handleViewImage}/>
+               </Card>
             </TabsContent>
           </Tabs>
         
