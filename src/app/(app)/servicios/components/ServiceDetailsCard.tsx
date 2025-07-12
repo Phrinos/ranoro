@@ -18,7 +18,7 @@ import type { Technician, InventoryItem, ServiceTypeRecord } from "@/types";
 import { cn } from "@/lib/utils";
 import { format, setHours, setMinutes, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { formatCurrency } from "@/lib/utils";
 
 interface ServiceDetailsCardProps {
@@ -46,11 +46,18 @@ export function ServiceDetailsCard({
   onGenerateQuoteWithAI,
   isGeneratingQuote,
 }: ServiceDetailsCardProps) {
-  const { control, watch } = useFormContext<ServiceFormValues>();
+  const { control, watch, setValue } = useFormContext<ServiceFormValues>();
   const { fields: serviceItemsFields, append: appendServiceItem, remove: removeServiceItem } = useFieldArray({ control, name: "serviceItems" });
   
   const watchedStatus = watch('status');
   const [isServiceDatePickerOpen, setIsServiceDatePickerOpen] = useState(false);
+  
+  const handleServiceTypeChange = (value: string) => {
+    setValue('serviceType', value);
+    if (serviceItemsFields.length > 0) {
+      setValue(`serviceItems.0.name`, value, { shouldDirty: true });
+    }
+  };
 
   return (
     <Card>
@@ -63,8 +70,8 @@ export function ServiceDetailsCard({
           {watchedStatus === 'En Taller' && (
               <FormField control={control} name="subStatus" render={({ field }) => ( <FormItem><FormLabel>Sub-Estado Taller</FormLabel><Select onValueChange={field.onChange} value={field.value} disabled={isReadOnly}><FormControl><SelectTrigger><SelectValue placeholder="Seleccione sub-estado..." /></SelectTrigger></FormControl><SelectContent>{["En Espera de Refacciones", "Reparando", "Completado"].map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent></Select></FormItem> )}/>
           )}
-          <FormField control={control} name="serviceType" render={({ field }) => ( <FormItem><FormLabel>Tipo de Servicio</FormLabel><Select onValueChange={field.onChange} value={field.value || 'Servicio General'} disabled={isReadOnly}><FormControl><SelectTrigger><SelectValue placeholder="Seleccione un tipo" /></SelectTrigger></FormControl><SelectContent>{serviceTypes.map((type) => <SelectItem key={type.id} value={type.name}>{type.name}</SelectItem>)}</SelectContent></Select></FormItem> )}/>
-          <FormField control={control} name="technicianId" render={({ field }) => ( <FormItem><FormLabel>Técnico Asignado</FormLabel><Select onValueChange={field.onChange} value={field.value} disabled={isReadOnly}><FormControl><SelectTrigger><SelectValue placeholder="Seleccione un técnico..." /></SelectTrigger></FormControl><SelectContent>{technicians.filter((t) => !t.isArchived).map((technician) => ( <SelectItem key={technician.id} value={technician.id}>{technician.name} - {technician.specialty}</SelectItem> ))}</SelectContent></Select><FormMessage /></FormItem>)}/>
+          <FormField control={control} name="serviceType" render={({ field }) => ( <FormItem><FormLabel>Tipo de Servicio</FormLabel><Select onValueChange={handleServiceTypeChange} value={field.value || 'Servicio General'} disabled={isReadOnly}><FormControl><SelectTrigger><SelectValue placeholder="Seleccione un tipo" /></SelectTrigger></FormControl><SelectContent>{serviceTypes.map((type) => <SelectItem key={type.id} value={type.name}>{type.name}</SelectItem>)}</SelectContent></Select></FormItem> )}/>
+          <FormField control={control} name="technicianId" render={({ field }) => ( <FormItem><FormLabel>Técnico Asignado</FormLabel><Select onValueChange={field.onChange} value={field.value} disabled={isReadOnly}><FormControl><SelectTrigger><SelectValue placeholder="Seleccione un técnico..." /></SelectTrigger></FormControl><SelectContent>{technicians.filter((t) => !t.isArchived).map((technician) => ( <SelectItem key={technician.id} value={technician.id}>{technician.name} - {technician.specialty}</SelectItem> ))}</SelectContent></Select><FormMessage /></FormItem> )}/>
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t items-end">
