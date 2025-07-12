@@ -2,6 +2,7 @@
 'use server';
 /**
  * @fileOverview An AI flow to migrate vehicle data from CSV-formatted text.
+ * THIS FLOW IS DEPRECATED in favor of data-migration-flow.ts
  */
 
 import { ai } from '@/ai/genkit';

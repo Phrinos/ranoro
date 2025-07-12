@@ -88,10 +88,26 @@ const saveMigratedServices = async (services: ExtractedService[]): Promise<void>
     const batch = writeBatch(db);
 
     for (const service of services) {
-        const vehicleId = vehicleMap.get(service.vehicleLicensePlate);
+        let vehicleId = vehicleMap.get(service.vehicleLicensePlate);
+        
+        // If vehicle doesn't exist, create it within the same batch
         if (!vehicleId) {
-            console.warn(`Skipping service for unknown vehicle plate: ${service.vehicleLicensePlate}`);
-            continue;
+            const newVehicleRef = doc(collection(db, 'vehicles'));
+            vehicleId = newVehicleRef.id;
+            
+            // Here you might need to extract more vehicle details if available in the source data
+            // For now, we use what the 'ExtractedService' provides
+            const newVehicleData = {
+                licensePlate: service.vehicleLicensePlate,
+                make: '', // Add fields if you expand data-migration-flow
+                model: '',
+                year: 0,
+                ownerName: '',
+                ownerPhone: '',
+            };
+            
+            batch.set(newVehicleRef, newVehicleData);
+            vehicleMap.set(service.vehicleLicensePlate, vehicleId); // Add to map for subsequent services in the same batch
         }
 
         let parsedDate: Date | null = null;
