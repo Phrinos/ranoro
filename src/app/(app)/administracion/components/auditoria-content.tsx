@@ -43,8 +43,8 @@ export function AuditoriaPageContent({ initialLogs }: { initialLogs: AuditLog[] 
           return isValid(logDate) && isWithinInterval(logDate, { start: from, end: to });
       });
     }
-    // Already sorted by date desc on creation, but we can re-sort to be safe
-    return filtered.sort((a,b) => compareDesc(parseISO(a.date), parseISO(b.date)));
+    // Data is already sorted by date from Firestore, but re-sorting is safe
+    return filtered;
   }, [logs, searchTerm, dateRange]);
 
   return (

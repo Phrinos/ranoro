@@ -15,7 +15,7 @@ import { PlusCircle, Trash2, Edit, Search, Shield } from 'lucide-react';
 import { Checkbox } from "@/components/ui/checkbox";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { adminService } from '@/lib/services/admin.service';
+import { adminService } from '@/lib/services';
 
 const PERMISSION_GROUPS = [
     {
@@ -263,5 +263,3 @@ export function RolesPageContent({ currentUser, initialRoles }: { currentUser: U
         </div>
     );
 }
-
-    
