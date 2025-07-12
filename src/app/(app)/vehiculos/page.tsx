@@ -20,7 +20,6 @@ import { TableToolbar } from '@/components/shared/table-toolbar';
 import { Loader2 } from 'lucide-react';
 import { useTableManager } from '@/hooks/useTableManager';
 import { inventoryService } from '@/lib/services';
-import { sanitizeObjectForFirestore } from '@/lib/utils';
 import { collection, onSnapshot, doc, updateDoc, addDoc, deleteDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebaseClient';
 
@@ -83,7 +82,7 @@ function VehiculosPageComponent() {
 
     const handleSaveVehicle = async (data: VehicleFormValues) => {
         try {
-            const dataToSave = sanitizeObjectForFirestore(data);
+            const dataToSave: any = { ...data };
 
             if (editingVehicle) {
                 const vehicleRef = doc(db, "vehicles", editingVehicle.id);
