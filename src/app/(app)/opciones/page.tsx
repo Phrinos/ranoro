@@ -21,7 +21,7 @@ import {
 import { onAuthStateChanged, updatePassword, reauthenticateWithCredential, EmailAuthProvider } from 'firebase/auth';
 import { auth, storage, db } from '@/lib/firebaseClient.js';
 import { ref, uploadString, getDownloadURL } from 'firebase/storage';
-import { AUTH_USER_LOCALSTORAGE_KEY, placeholderAppRoles, placeholderServiceTypes, logAudit } from '@/lib/placeholder-data';
+import { AUTH_USER_LOCALSTORAGE_KEY, placeholderAppRoles, placeholderServiceTypes, logAudit, persistToFirestore } from '@/lib/placeholder-data';
 import { adminService } from '@/lib/services/admin.service'; // Import the service
 import { SignatureDialog } from '@/app/(app)/servicios/components/signature-dialog';
 import Image from "next/legacy/image";
@@ -474,7 +474,7 @@ function TiposDeServicioPageContent() {
 
         const isNew = !editingType;
         const typeToSave: ServiceTypeRecord = {
-            id: isNew ? `st_${Date.now()}` : editingType.id,
+            id: isNew ? `st_${Date.now()}` : editingType!.id,
             name: trimmedName,
         };
         
@@ -630,4 +630,3 @@ export default function OpcionesPageWrapper() {
         </Suspense>
     );
 }
-
