@@ -213,7 +213,7 @@ export function VehicleForm({ initialData, onSubmit, onClose }: VehicleFormProps
                   <FormItem>
                     <FormLabel>Nombre del Propietario</FormLabel>
                     <FormControl>
-                      <Input placeholder="Ej: Juan Pérez" {...field} />
+                      <Input placeholder="Ej: Juan Pérez" {...field} onChange={(e) => field.onChange(capitalizeWords(e.target.value))} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -227,7 +227,7 @@ export function VehicleForm({ initialData, onSubmit, onClose }: VehicleFormProps
                     <FormItem>
                       <FormLabel>Teléfono del Propietario</FormLabel>
                       <FormControl>
-                        <Input placeholder="Ej: 555-123456" {...field} />
+                        <Input placeholder="Ej: 555-123456" {...field} onChange={(e) => field.onChange(e.target.value.replace(/[^0-9]/g, ''))}/>
                       </FormControl>
                       <FormMessage />
                     </FormItem>
