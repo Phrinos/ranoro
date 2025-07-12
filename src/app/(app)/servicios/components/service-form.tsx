@@ -233,9 +233,9 @@ export function ServiceForm({
     };
   }, [watchedServiceItems]);
 
-  const showReceptionTab = useMemo(() => mode === 'service' && watchedStatus !== 'Cotizacion' && watchedStatus !== 'Agendado', [mode, watchedStatus]);
-  const showReportTab = useMemo(() => mode === 'service' && (watchedStatus === 'En Taller' || watchedStatus === 'Entregado' || watchedStatus === 'Cancelado'), [mode, watchedStatus]);
-  const showChecklistTab = useMemo(() => mode === 'service' && (watchedStatus === 'En Taller' || watchedStatus === 'Entregado' || watchedStatus === 'Cancelado'), [mode, watchedStatus]);
+  const showReceptionTab = useMemo(() => mode === 'service' && watchedStatus && ['En Taller', 'Entregado', 'Cancelado'].includes(watchedStatus), [mode, watchedStatus]);
+  const showReportTab = useMemo(() => mode === 'service' && watchedStatus && ['En Taller', 'Entregado', 'Cancelado'].includes(watchedStatus), [mode, watchedStatus]);
+  const showChecklistTab = useMemo(() => mode === 'service' && watchedStatus && ['En Taller', 'Entregado', 'Cancelado'].includes(watchedStatus), [mode, watchedStatus]);
 
 
   useEffect(() => { setLocalVehicles(parentVehicles); }, [parentVehicles]);
@@ -392,7 +392,7 @@ export function ServiceForm({
     
     const dataToSave: ServiceRecord = {
         ...values,
-        id: values.id || generateUniqueId(),
+        id: values.id || `SRV-${generateUniqueId()}`,
         publicId: values.publicId || `s_${generateUniqueId().toLowerCase()}`,
         vehicleId: getValues('vehicleId')!,
         description: (values.serviceItems || []).map(item => item.name).join(', ') || 'Servicio',
@@ -446,12 +446,12 @@ export function ServiceForm({
     onClose();
   }, [onDelete, onCancelService, mode, initialDataQuote, initialDataService, cancellationReason, toast, onClose]);
 
-  const availableTabs = [
+  const availableTabs = useMemo(() => [
     { value: 'servicio', label: 'Detalles', icon: Wrench, condition: true },
     { value: 'recepcion', label: 'Rec. y Ent.', icon: CheckCircle, condition: showReceptionTab },
     { value: 'reporte', label: 'Fotos', icon: Camera, condition: showReportTab },
     { value: 'seguridad', label: 'Revisión', icon: ShieldCheck, condition: showChecklistTab },
-  ].filter(tab => tab.condition);
+  ].filter(tab => tab.condition), [showReceptionTab, showReportTab, showChecklistTab]);
 
   return (
     <>
@@ -462,7 +462,7 @@ export function ServiceForm({
                 <div className="flex justify-between items-center mb-2">
                     <TabsList className={cn("grid w-full mb-0", `grid-cols-${availableTabs.length}`)}>
                         {availableTabs.map(tab => (
-                            <TabsTrigger key={tab.value} value={tab.value} className="text-xs sm:text-sm">
+                            <TabsTrigger key={tab.value} value={tab.value} className="text-xs sm:text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                                 <tab.icon className="h-4 w-4 mr-1.5 shrink-0"/>
                                 <span className="hidden sm:inline">{tab.label}</span>
                                 <span className="sm:hidden">{tab.label.substring(0,5)}</span>
