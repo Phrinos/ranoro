@@ -9,11 +9,12 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogD
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from '@/hooks/use-toast';
-import type { InventoryCategory, InventoryItem } from '@/types';
+import type { InventoryCategory, InventoryItem, User } from '@/types';
 import { PlusCircle, Trash2, Edit, Search } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogTrigger, AlertDialogFooter } from "@/components/ui/alert-dialog";
-import { persistToFirestore, placeholderCategories, placeholderInventory, logAudit } from '@/lib/placeholder-data';
+import { logAudit, AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
 import { capitalizeWords } from '@/lib/utils';
+import { inventoryService } from '@/lib/services';
 
 interface CategoriasContentProps {
   categories: InventoryCategory[];
@@ -53,39 +54,27 @@ export function CategoriasContent({ categories: initialCategories, inventoryItem
     if (!categoryName) return toast({ title: "Nombre Vacío", variant: "destructive" });
     if (categories.some(cat => cat.name.toLowerCase() === categoryName.toLowerCase() && cat.id !== editingCategory?.id)) return toast({ title: "Categoría Duplicada", variant: "destructive" });
 
-    const action = editingCategory ? 'Editar' : 'Crear';
-    const entityId = editingCategory ? editingCategory.id : `CAT${String(categories.length + 1).padStart(3, '0')}${Date.now().toString().slice(-3)}`;
-    const description = `Se ${editingCategory ? 'actualizó la' : 'creó la nueva'} categoría de inventario: "${categoryName}".`;
-    
-    if (editingCategory) {
-      const pIndex = placeholderCategories.findIndex(cat => cat.id === editingCategory.id);
-      if (pIndex !== -1) placeholderCategories[pIndex].name = categoryName;
-    } else {
-      placeholderCategories.push({ id: entityId, name: categoryName });
+    try {
+      await inventoryService.saveCategory({ name: categoryName }, editingCategory?.id);
+      toast({ title: `Categoría ${editingCategory ? 'Actualizada' : 'Agregada'}` });
+      setIsCategoryDialogOpen(false);
+    } catch (error) {
+      console.error("Error saving category:", error);
+      toast({ title: "Error al guardar", description: "No se pudo guardar la categoría.", variant: "destructive" });
     }
     
-    await logAudit(action, description, { entityType: 'Categoría', entityId });
-    await persistToFirestore(['categories', 'auditLogs']);
-    setCategories([...placeholderCategories]);
-    toast({ title: `Categoría ${editingCategory ? 'Actualizada' : 'Agregada'}` });
-    setIsCategoryDialogOpen(false);
-    setEditingCategory(null);
-    setCurrentCategoryName('');
   }, [currentCategoryName, categories, editingCategory, toast]);
 
   const handleDeleteCategory = useCallback(async () => {
     if (!categoryToDelete) return;
-
-    await logAudit('Eliminar', `Se eliminó la categoría de inventario "${categoryToDelete.name}".`, { entityType: 'Categoría', entityId: categoryToDelete.id });
-    
-    const pIndex = placeholderCategories.findIndex(cat => cat.id === categoryToDelete.id);
-    if (pIndex !== -1) {
-        placeholderCategories.splice(pIndex, 1);
-        await persistToFirestore(['categories', 'auditLogs']);
-        setCategories([...placeholderCategories]);
-        toast({ title: "Categoría Eliminada" });
+    try {
+      await inventoryService.deleteCategory(categoryToDelete.id);
+      toast({ title: "Categoría Eliminada" });
+      setCategoryToDelete(null);
+    } catch (error) {
+       console.error("Error deleting category:", error);
+       toast({ title: "Error al eliminar", description: "No se pudo eliminar la categoría.", variant: "destructive" });
     }
-    setCategoryToDelete(null);
   }, [categoryToDelete, toast]);
 
   return (

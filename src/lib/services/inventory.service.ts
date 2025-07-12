@@ -16,6 +16,7 @@ import type { InventoryItem, InventoryCategory, Supplier, Vehicle, VehiclePriceL
 import type { InventoryItemFormValues } from "@/app/(app)/inventario/components/inventory-item-form";
 import type { VehicleFormValues } from "@/app/(app)/vehiculos/components/vehicle-form";
 import type { PriceListFormValues } from "@/app/(app)/precios/components/price-list-form";
+import type { SupplierFormValues } from '@/app/(app)/inventario/proveedores/components/supplier-form';
 import { logAudit } from '../placeholder-data';
 
 // --- Inventory Items ---
@@ -59,6 +60,23 @@ const onCategoriesUpdate = (callback: (categories: InventoryCategory[]) => void)
     return unsubscribe;
 };
 
+const saveCategory = async (data: Omit<InventoryCategory, 'id'>, id?: string): Promise<InventoryCategory> => {
+    if (!db) throw new Error("Database not initialized.");
+    if (id) {
+        await updateDoc(doc(db, 'inventoryCategories', id), data);
+        return { id, ...data };
+    } else {
+        const docRef = await addDoc(collection(db, 'inventoryCategories'), data);
+        return { id: docRef.id, ...data };
+    }
+};
+
+const deleteCategory = async (id: string): Promise<void> => {
+    if (!db) throw new Error("Database not initialized.");
+    await deleteDoc(doc(db, 'inventoryCategories', id));
+};
+
+
 // --- Service Types ---
 const onServiceTypesUpdate = (callback: (types: ServiceTypeRecord[]) => void): (() => void) => {
     if (!db) return () => {};
@@ -101,6 +119,25 @@ const onSuppliersUpdate = (callback: (suppliers: Supplier[]) => void): (() => vo
     });
     return unsubscribe;
 };
+
+const saveSupplier = async (data: SupplierFormValues, id?: string): Promise<Supplier> => {
+    if (!db) throw new Error("Database not initialized.");
+    const dataToSave = { ...data, debtAmount: Number(data.debtAmount) || 0 };
+
+    if (id) {
+        await updateDoc(doc(db, 'suppliers', id), dataToSave);
+        return { id, ...dataToSave };
+    } else {
+        const docRef = await addDoc(collection(db, 'suppliers'), dataToSave);
+        return { id: docRef.id, ...dataToSave };
+    }
+};
+
+const deleteSupplier = async (id: string): Promise<void> => {
+    if (!db) throw new Error("Database not initialized.");
+    await deleteDoc(doc(db, 'suppliers', id));
+};
+
 
 // --- Vehicles ---
 
@@ -170,11 +207,15 @@ export const inventoryService = {
     onItemsUpdatePromise,
     addItem,
     onCategoriesUpdate,
+    saveCategory,
+    deleteCategory,
     onServiceTypesUpdate,
     onServiceTypesUpdatePromise,
     saveServiceType,
     deleteServiceType,
     onSuppliersUpdate,
+    saveSupplier,
+    deleteSupplier,
     onVehiclesUpdate,
     onVehiclesUpdatePromise,
     getVehicleById,
