@@ -158,9 +158,12 @@ interface ServiceFormProps {
 const IVA_RATE = 0.16;
 
 function cleanObject(obj: any): any {
+    if (obj === null || obj === undefined) return null;
     const newObj: any = {};
     for (const key in obj) {
-        if (obj[key] !== undefined && obj[key] !== '') {
+        if (obj[key] !== undefined) {
+             // Firestore cannot handle 'undefined'. Convert to 'null' or omit.
+             // Omit is better to avoid storing unnecessary null fields.
             newObj[key] = obj[key];
         }
     }
@@ -277,7 +280,7 @@ useEffect(() => {
     const storedWorkshopInfo = typeof window !== "undefined" ? localStorage.getItem("workshopTicketInfo") : null;
     if (storedWorkshopInfo) setWorkshopInfo(JSON.parse(storedWorkshopInfo));
 
-    const data = initialDataService || initialDataQuote;
+    const data = mode === 'service' ? initialDataService : initialDataQuote;
     const parseDate = (date: any) => date && (typeof date.toDate === 'function' ? date.toDate() : (typeof date === 'string' ? parseISO(date) : date));
 
     let photoReportsData = (data as ServiceRecord)?.photoReports || [];
@@ -308,8 +311,8 @@ useEffect(() => {
         vehicleConditions: (data as ServiceRecord)?.vehicleConditions || "",
         fuelLevel: (data as ServiceRecord)?.fuelLevel || undefined,
         customerItems: (data as ServiceRecord)?.customerItems || '',
-        customerSignatureReception: (data as ServiceRecord)?.customerSignatureReception || undefined,
-        customerSignatureDelivery: (data as ServiceRecord)?.customerSignatureDelivery || undefined,
+        customerSignatureReception: (data as ServiceRecord)?.customerSignatureReception || null,
+        customerSignatureDelivery: (data as ServiceRecord)?.customerSignatureDelivery || null,
         safetyInspection: data?.safetyInspection || {},
         serviceAdvisorId: data?.serviceAdvisorId || freshUserRef.current?.id || '',
         serviceAdvisorName: data?.serviceAdvisorName || freshUserRef.current?.name || '',
@@ -622,3 +625,4 @@ useEffect(() => {
     </>
   );
 }
+
