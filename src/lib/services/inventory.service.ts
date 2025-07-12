@@ -8,6 +8,7 @@ import {
   updateDoc,
   deleteDoc,
   writeBatch,
+  getDocs,
 } from 'firebase/firestore';
 import { db } from '../firebaseClient';
 import type { InventoryItem, InventoryCategory, Supplier, Vehicle, VehiclePriceList, ServiceTypeRecord } from "@/types";
@@ -24,6 +25,12 @@ const onItemsUpdate = (callback: (items: InventoryItem[]) => void): (() => void)
     });
     return unsubscribe;
 };
+
+const onItemsUpdatePromise = async (): Promise<InventoryItem[]> => {
+    if (!db) return [];
+    const snapshot = await getDocs(collection(db, "inventory"));
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as InventoryItem));
+}
 
 const addItem = async (data: InventoryItemFormValues): Promise<InventoryItem> => {
     if (!db) throw new Error("Database not initialized.");
@@ -59,6 +66,13 @@ const onServiceTypesUpdate = (callback: (types: ServiceTypeRecord[]) => void): (
     return unsubscribe;
 };
 
+const onServiceTypesUpdatePromise = async (): Promise<ServiceTypeRecord[]> => {
+    if (!db) return [];
+    const snapshot = await getDocs(collection(db, "serviceTypes"));
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ServiceTypeRecord));
+};
+
+
 // --- Suppliers ---
 
 const onSuppliersUpdate = (callback: (suppliers: Supplier[]) => void): (() => void) => {
@@ -78,6 +92,12 @@ const onVehiclesUpdate = (callback: (vehicles: Vehicle[]) => void): (() => void)
     });
     return unsubscribe;
 };
+
+const onVehiclesUpdatePromise = async (): Promise<Vehicle[]> => {
+    if (!db) return [];
+    const snapshot = await getDocs(collection(db, "vehicles"));
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Vehicle));
+}
 
 
 const getVehicleById = async (id: string): Promise<Vehicle | undefined> => {
@@ -128,11 +148,14 @@ const deletePriceList = async (recordId: string): Promise<void> => {
 
 export const inventoryService = {
     onItemsUpdate,
+    onItemsUpdatePromise,
     addItem,
     onCategoriesUpdate,
     onServiceTypesUpdate,
+    onServiceTypesUpdatePromise,
     onSuppliersUpdate,
     onVehiclesUpdate,
+    onVehiclesUpdatePromise,
     getVehicleById,
     addVehicle,
     onPriceListsUpdate,
