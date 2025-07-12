@@ -108,6 +108,14 @@ const purchaseRecommendationFlow = ai.defineFlow(
       scheduledServices: input.scheduledServices,
       serviceHistory: input.serviceHistory,
     };
+
+    if (promptInput.scheduledServices.length === 0) {
+        return {
+            recommendations: [],
+            reasoning: "No hay servicios agendados para hoy que requieran análisis de compra."
+        }
+    }
+
     const { output } = await purchaseRecommendationPrompt(promptInput, {
         config: { temperature: 0.1 }
     });

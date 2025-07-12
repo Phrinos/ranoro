@@ -78,7 +78,7 @@ export default function LoginPage() {
       localStorage.setItem(AUTH_USER_LOCALSTORAGE_KEY, JSON.stringify(userData));
       
       toast({ title: 'Inicio de Sesión Exitoso' });
-      router.push('/tablero');
+      router.push('/dashboard');
     } catch (error: any) {
       console.error("Error en inicio de sesión:", error);
       const errorMessage = error.code === 'auth/invalid-credential' 
@@ -127,7 +127,7 @@ export default function LoginPage() {
       localStorage.setItem(AUTH_USER_LOCALSTORAGE_KEY, JSON.stringify(newUserProfile));
 
       toast({ title: 'Registro Exitoso', description: `Bienvenido, ${nameRegister}.` });
-      router.push('/tablero');
+      router.push('/dashboard');
     } catch (error: any) {
         console.error("Error en registro:", error);
         const errorMessage = error.code === 'auth/email-already-in-use'
@@ -170,7 +170,7 @@ export default function LoginPage() {
       localStorage.setItem(AUTH_USER_LOCALSTORAGE_KEY, JSON.stringify(userData));
 
       toast({ title: "Inicio de Sesión Exitoso", description: `Bienvenido, ${user.displayName}.` });
-      router.push('/tablero');
+      router.push('/dashboard');
     } catch (error) {
       console.error("Error con Google Sign-In:", error);
       toast({ title: "Error", description: "No se pudo iniciar sesión con Google.", variant: "destructive" });
