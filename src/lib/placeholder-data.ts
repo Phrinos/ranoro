@@ -32,7 +32,7 @@ export const defaultSuperAdmin: User = {
   id: 'H0XVkuViOFM7zt729AyAK531iIj2',
   name: 'Arturo Valdelamar',
   email: 'arturo@ranoro.mx',
-  role: 'Superadmin',
+  role: 'Superadministrador',
 };
 
 // =======================================
@@ -53,7 +53,7 @@ export const placeholderFixedMonthlyExpenses: MonthlyFixedExpense[] = [];
 export const placeholderAppRoles: AppRole[] = [
     {
     id: "superadmin_role",
-    name: "Superadmin",
+    name: "Superadministrador",
     permissions: [
       "dashboard:view",
       "services:create",
