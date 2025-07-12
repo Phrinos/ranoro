@@ -146,9 +146,30 @@ export function MigracionPageContent() {
                     <CardDescription>Sube un archivo <code>.xlsx</code> con tu historial.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
-                    <Input id="file-upload" type="file" accept=".xlsx" onChange={handleFileChange} disabled={isUploading} />
-                    {isUploading && <div className="flex items-center gap-2 text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin"/>Procesando archivo...</div>}
-                    {fileName && !isUploading && <p className="text-sm text-muted-foreground">Archivo cargado: {fileName}</p>}
+                    <div className="flex items-center justify-center w-full">
+                        <label htmlFor="file-upload" className="flex flex-col items-center justify-center w-full h-36 border-2 border-dashed rounded-lg cursor-pointer bg-card hover:bg-muted/50">
+                            {isUploading ? (
+                                <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                                    <Loader2 className="w-8 h-8 mb-4 text-primary animate-spin" />
+                                    <p className="mb-2 text-sm text-muted-foreground">Procesando...</p>
+                                </div>
+                            ) : fileName ? (
+                                <div className="flex flex-col items-center justify-center pt-5 pb-6 text-center">
+                                    <CheckCircle className="w-8 h-8 mb-4 text-green-500"/>
+                                    <p className="mb-2 text-sm text-foreground"><span className="font-semibold">Archivo cargado:</span></p>
+                                    <p className="text-xs text-muted-foreground truncate max-w-[200px]">{fileName}</p>
+                                </div>
+                            ) : (
+                                <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                                    <Upload className="w-8 h-8 mb-4 text-muted-foreground" />
+                                    <p className="mb-2 text-sm text-muted-foreground"><span className="font-semibold">Haz clic para subir</span> o arrastra</p>
+                                    <p className="text-xs text-muted-foreground">Sólo archivos .XLSX</p>
+                                </div>
+                            )}
+                             <Input id="file-upload" type="file" className="hidden" accept=".xlsx" onChange={handleFileChange} disabled={isUploading} />
+                        </label>
+                    </div>
+
                     {sheetNames.length > 0 && (
                         <Select onValueChange={(value) => handleSheetChange(value)} value={selectedSheet}>
                             <SelectTrigger><SelectValue placeholder="Seleccione una hoja" /></SelectTrigger>
