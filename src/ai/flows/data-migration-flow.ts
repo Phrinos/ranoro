@@ -78,7 +78,8 @@ This is the most critical step. The license plate ('placa') is the MANDATORY, UN
 - Extract service details like 'Fecha'/'Date' for 'serviceDate', 'Descripción'/'Description' for 'description', and 'Costo'/'Total' for 'totalCost'.
 
 **Step 4: Clean and Format Data.**
-- Clean the data as you extract it: trim whitespace, convert years and costs to numbers, and ensure all dates are in YYYY-MM-DD format.
+- **Clean the data as you extract it: trim whitespace, convert years and costs to numbers, and ensure all dates are in YYYY-MM-DD format.**
+- **CRITICAL: Format all text fields to be consistently capitalized. 'make', 'model', and 'ownerName' should be in "Title Case" (e.g., "Nissan Sentra"). 'licensePlate' should be in ALL CAPS. 'description' should start with a capital letter.**
 - **IMPORTANT:** If a value for a field is missing or empty, you MUST return it as an empty string ("") for text fields, or 0 for numeric fields (like year or cost). Do not omit the field from the JSON.
 - **CRITICAL:** Every vehicle in the output 'vehicles' array and every service in the 'services' array must have a valid 'licensePlate' or 'vehicleLicensePlate' field, respectively. Rows without a discernible license plate should be ignored.
 

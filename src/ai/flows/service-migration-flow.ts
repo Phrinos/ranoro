@@ -36,11 +36,15 @@ const migrateServicesPrompt = ai.definePrompt({
   prompt: `You are a data migration specialist for an auto repair shop. Your task is to analyze the provided CSV-formatted text and extract service history information, using a predefined column mapping.
 
 **Instructions:**
-1.  **Use the Provided Mapping**: You have been given a JSON mapping object that tells you exactly which CSV column header corresponds to each required data field. You MUST adhere to this mapping.
+1.  **Use the Provided Mapping**: You have been given a JSON mapping object that tells you exactly which CSV column corresponds to each required data field. You MUST adhere to this mapping.
     *   Mapping: {{{mapping}}}
 2.  **Extract Data**: For each row in the CSV, create one service object in the 'services' array using the headers defined in the mapping.
 3.  **Mandatory Fields**: Every service record MUST have a valid 'vehicleLicensePlate', 'serviceDate', 'description', and 'totalCost'. If a row is missing data in a column that is mapped to a mandatory field, you must ignore that row entirely.
-4.  **Clean Data**: Trim whitespace from all text fields. Convert 'totalCost' to a number. Ensure 'serviceDate' is preserved in its original format from the CSV.
+4.  **Clean and Format Data**:
+    *   Trim whitespace from all text fields.
+    *   Convert 'totalCost' to a number. Ensure 'serviceDate' is preserved in its original format from the CSV.
+    *   **Format the 'description' to start with a capital letter and have correct sentence casing.**
+    *   **Format 'vehicleLicensePlate' to be uppercase and remove any extra characters or spaces.**
 5.  **Default Values**: If a field is empty or missing in the source data, you MUST return it with a default value: an empty string ("") for 'description', and 0 for 'totalCost'. Do not omit fields.
 
 Analyze the following CSV content and return the data in the specified JSON format.
