@@ -11,21 +11,18 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useToast } from '@/hooks/use-toast';
 import type { ServiceTypeRecord } from '@/types';
 import { PlusCircle, Trash2, Edit } from 'lucide-react';
-import { persistToFirestore, placeholderServiceTypes, logAudit } from '@/lib/placeholder-data';
+import { inventoryService } from '@/lib/services';
 import { capitalizeWords } from '@/lib/utils';
 
-export function TiposDeServicioPageContent() {
+interface TiposDeServicioProps {
+    serviceTypes: ServiceTypeRecord[];
+}
+
+export function TiposDeServicioPageContent({ serviceTypes }: TiposDeServicioProps) {
     const { toast } = useToast();
-    const [serviceTypes, setServiceTypes] = useState<ServiceTypeRecord[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [editingType, setEditingType] = useState<ServiceTypeRecord | null>(null);
     const [currentTypeName, setCurrentTypeName] = useState('');
-
-    useEffect(() => {
-        setServiceTypes([...placeholderServiceTypes]);
-        setIsLoading(false);
-    }, []);
 
     const handleOpenDialog = (type: ServiceTypeRecord | null = null) => {
         setEditingType(type);
@@ -41,46 +38,35 @@ export function TiposDeServicioPageContent() {
         const isDuplicate = serviceTypes.some(t => t.name.toLowerCase() === trimmedName.toLowerCase() && t.id !== editingType?.id);
         if (isDuplicate) return toast({ title: "Tipo de servicio duplicado", variant: "destructive" });
 
-        const isNew = !editingType;
-        const typeToSave: ServiceTypeRecord = { id: isNew ? `st_${Date.now()}` : editingType.id, name: trimmedName };
-        
-        const action = isNew ? 'Crear' : 'Editar';
-        await logAudit(action, `Se ${action.toLowerCase() === 'crear' ? 'creó el' : 'actualizó el'} tipo de servicio: "${trimmedName}".`, { entityType: 'Servicio', entityId: typeToSave.id });
-
-        if (isNew) {
-            placeholderServiceTypes.push(typeToSave);
-        } else {
-            const index = placeholderServiceTypes.findIndex(t => t.id === typeToSave.id);
-            if (index > -1) placeholderServiceTypes[index] = typeToSave;
+        try {
+            await inventoryService.saveServiceType({ name: trimmedName }, editingType?.id);
+            toast({ title: `Tipo de servicio ${editingType ? 'actualizado' : 'creado'}.` });
+            setIsDialogOpen(false);
+            // The parent component will receive the update via the onSnapshot listener
+        } catch (error) {
+            console.error("Error saving service type:", error);
+            toast({ title: "Error al guardar", variant: "destructive" });
         }
-
-        await persistToFirestore(['serviceTypes', 'auditLogs']);
-        setServiceTypes([...placeholderServiceTypes]);
-        toast({ title: `Tipo de servicio ${isNew ? 'creado' : 'actualizado'}.` });
-        setIsDialogOpen(false);
     };
 
     const handleDeleteType = async (type: ServiceTypeRecord) => {
         if (window.confirm(`¿Seguro que quieres eliminar "${type.name}"?`)) {
-            await logAudit('Eliminar', `Se eliminó el tipo de servicio: "${type.name}".`, { entityType: 'Servicio', entityId: type.id });
-            const index = placeholderServiceTypes.findIndex(t => t.id === type.id);
-            if (index > -1) {
-                placeholderServiceTypes.splice(index, 1);
-                await persistToFirestore(['serviceTypes', 'auditLogs']);
-                setServiceTypes([...placeholderServiceTypes]);
+            try {
+                await inventoryService.deleteServiceType(type.id);
                 toast({ title: "Tipo de servicio eliminado.", variant: "destructive" });
+            } catch (error) {
+                console.error("Error deleting service type:", error);
+                toast({ title: "Error al eliminar", variant: "destructive" });
             }
         }
     };
     
-    if (isLoading) return <p>Cargando tipos de servicio...</p>;
-
     return (
         <Card>
             <CardHeader className="flex flex-row items-center justify-between">
                 <div>
                     <CardTitle>Tipos de Servicio</CardTitle>
-                    <CardDescription>Gestiona los tipos de servicios que ofreces en tu taller.</CardDescription>
+                    <CardDescription>Gestiona las categorías de servicios que ofreces en tu taller.</CardDescription>
                 </div>
                 <Button onClick={() => handleOpenDialog()}><PlusCircle className="mr-2 h-4 w-4"/>Nuevo Tipo</Button>
             </CardHeader>
