@@ -1,4 +1,5 @@
 
+
 import {
   collection,
   onSnapshot,
@@ -15,6 +16,7 @@ import type { InventoryItem, InventoryCategory, Supplier, Vehicle, VehiclePriceL
 import type { InventoryItemFormValues } from "@/app/(app)/inventario/components/inventory-item-form";
 import type { VehicleFormValues } from "@/app/(app)/vehiculos/components/vehicle-form";
 import type { PriceListFormValues } from "@/app/(app)/precios/components/price-list-form";
+import { logAudit } from '../placeholder-data';
 
 // --- Inventory Items ---
 
@@ -65,6 +67,23 @@ const onServiceTypesUpdate = (callback: (types: ServiceTypeRecord[]) => void): (
     });
     return unsubscribe;
 };
+
+const saveServiceType = async (data: Omit<ServiceTypeRecord, 'id'>, id?: string): Promise<ServiceTypeRecord> => {
+    if (!db) throw new Error("Database not initialized.");
+    if (id) {
+        await updateDoc(doc(db, 'serviceTypes', id), data);
+        return { id, ...data };
+    } else {
+        const docRef = await addDoc(collection(db, 'serviceTypes'), data);
+        return { id: docRef.id, ...data };
+    }
+};
+
+const deleteServiceType = async (id: string): Promise<void> => {
+    if (!db) throw new Error("Database not initialized.");
+    await deleteDoc(doc(db, 'serviceTypes', id));
+};
+
 
 const onServiceTypesUpdatePromise = async (): Promise<ServiceTypeRecord[]> => {
     if (!db) return [];
@@ -153,6 +172,8 @@ export const inventoryService = {
     onCategoriesUpdate,
     onServiceTypesUpdate,
     onServiceTypesUpdatePromise,
+    saveServiceType,
+    deleteServiceType,
     onSuppliersUpdate,
     onVehiclesUpdate,
     onVehiclesUpdatePromise,

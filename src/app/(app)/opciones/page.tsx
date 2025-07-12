@@ -21,8 +21,8 @@ import {
 import { onAuthStateChanged, updatePassword, reauthenticateWithCredential, EmailAuthProvider } from 'firebase/auth';
 import { auth, storage, db } from '@/lib/firebaseClient.js';
 import { ref, uploadString, getDownloadURL } from 'firebase/storage';
-import { AUTH_USER_LOCALSTORAGE_KEY, placeholderAppRoles, placeholderServiceTypes, logAudit, persistToFirestore } from '@/lib/placeholder-data';
-import { adminService } from '@/lib/services/admin.service'; // Import the service
+import { AUTH_USER_LOCALSTORAGE_KEY, placeholderAppRoles, persistToFirestore, logAudit } from '@/lib/placeholder-data';
+import { adminService, inventoryService } from '@/lib/services';
 import { SignatureDialog } from '@/app/(app)/servicios/components/signature-dialog';
 import Image from "next/legacy/image";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
@@ -31,7 +31,6 @@ import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
 import { optimizeImage, capitalizeWords } from "@/lib/utils";
 import { Checkbox } from "@/components/ui/checkbox";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
@@ -452,8 +451,11 @@ function TiposDeServicioPageContent() {
     const [currentTypeName, setCurrentTypeName] = useState('');
 
     useEffect(() => {
-        setServiceTypes([...placeholderServiceTypes]);
-        setIsLoading(false);
+        const unsubscribe = inventoryService.onServiceTypesUpdate((data) => {
+            setServiceTypes(data);
+            setIsLoading(false);
+        });
+        return () => unsubscribe();
     }, []);
 
     const handleOpenDialog = (type: ServiceTypeRecord | null = null) => {
@@ -472,37 +474,24 @@ function TiposDeServicioPageContent() {
         );
         if (isDuplicate) return toast({ title: "Tipo de servicio duplicado", variant: "destructive" });
 
-        const isNew = !editingType;
-        const typeToSave: ServiceTypeRecord = {
-            id: isNew ? `st_${Date.now()}` : editingType!.id,
-            name: trimmedName,
-        };
-        
-        const action = isNew ? 'Crear' : 'Editar';
-        await logAudit(action, `Se ${action.toLowerCase() === 'crear' ? 'creó el' : 'actualizó el'} tipo de servicio: "${trimmedName}".`, { entityType: 'Servicio', entityId: typeToSave.id });
-
-        if (isNew) {
-            placeholderServiceTypes.push(typeToSave);
-        } else {
-            const index = placeholderServiceTypes.findIndex(t => t.id === typeToSave.id);
-            if (index > -1) placeholderServiceTypes[index] = typeToSave;
+        try {
+            await inventoryService.saveServiceType({ name: trimmedName }, editingType?.id);
+            toast({ title: `Tipo de servicio ${editingType ? 'actualizado' : 'creado'}.` });
+            setIsDialogOpen(false);
+        } catch (error) {
+            console.error("Error saving service type:", error);
+            toast({ title: "Error al guardar", variant: "destructive" });
         }
-
-        await persistToFirestore(['serviceTypes']);
-        setServiceTypes([...placeholderServiceTypes]);
-        toast({ title: `Tipo de servicio ${isNew ? 'creado' : 'actualizado'}.` });
-        setIsDialogOpen(false);
     };
 
     const handleDeleteType = async (type: ServiceTypeRecord) => {
         if (window.confirm(`¿Seguro que quieres eliminar "${type.name}"?`)) {
-            await logAudit('Eliminar', `Se eliminó el tipo de servicio: "${type.name}".`, { entityType: 'Servicio', entityId: type.id });
-            const index = placeholderServiceTypes.findIndex(t => t.id === type.id);
-            if (index > -1) {
-                placeholderServiceTypes.splice(index, 1);
-                await persistToFirestore(['serviceTypes']);
-                setServiceTypes([...placeholderServiceTypes]);
+            try {
+                await inventoryService.deleteServiceType(type.id);
                 toast({ title: "Tipo de servicio eliminado.", variant: "destructive" });
+            } catch (error) {
+                console.error("Error deleting service type:", error);
+                toast({ title: "Error al eliminar", variant: "destructive" });
             }
         }
     };
@@ -553,7 +542,7 @@ function TiposDeServicioPageContent() {
                 </DialogContent>
             </Dialog>
         </Card>
-    )
+    );
 }
 
 // --- Main Component ---
