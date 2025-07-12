@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React, { useState, useEffect, useMemo } from 'react';
@@ -144,7 +145,7 @@ export function VehicleSelectionCard({
                         <FormLabel>Placa del Vehículo</FormLabel>
                         <FormControl>
                         <Input
-                            placeholder="Buscar/Ingresar Placas"
+                            placeholder="Buscar / Ingresar Placas"
                             {...field}
                             value={vehicleLicensePlateSearch}
                             onChange={(e) => {
