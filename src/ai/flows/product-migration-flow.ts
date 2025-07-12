@@ -46,7 +46,10 @@ const migrateProductsPrompt = ai.definePrompt({
     *   'precio de venta', 'precio publico', 'precio venta' -> 'sellingPrice'
 2.  **Extract Data**: For each row in the CSV, create one product object.
 3.  **Mandatory Name**: The 'name' field is absolutely mandatory. If a row does not have a value that can be identified as a product name, you must ignore that row.
-4.  **Clean Data**: Trim whitespace from all text fields. Convert numbers correctly, treating missing or non-numeric values as 0.
+4.  **Clean and Format Data**: 
+    *   Trim whitespace from all text fields.
+    *   Convert numbers correctly, treating missing or non-numeric values as 0.
+    *   **Crucially, format text fields like 'name' and 'sku' to be consistent. For example, 'name' should be in Title Case (e.g., "Filtro De Aceite" instead of "filtro de aceite" or "FILTRO DE ACEITE").**
 5.  **Default Values**: If a field is empty or missing in the source data, you MUST return it with a default value: an empty string ("") for text fields (like 'sku'), and 0 for numeric fields (like 'quantity' or prices). Do not omit fields.
 
 Analyze the following CSV content and return the data in the specified JSON format.
