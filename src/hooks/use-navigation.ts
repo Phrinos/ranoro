@@ -168,41 +168,42 @@ const DESIRED_GROUP_ORDER = ["Mi Taller", "Operaciones", "Mi Flotilla", "Anális
 
 const useNavigation = (): NavigationEntry[] => {
   const pathname = usePathname();
-  const [currentUser, setCurrentUser] = React.useState<User | null>(null);
-  const [roles, setRoles] = React.useState<AppRole[]>([]);
+  const [currentUser, setCurrentUser] = React.useState<User | null>(defaultSuperAdmin);
+  const roles: AppRole[] = placeholderAppRoles;
 
   React.useEffect(() => {
-    const loadData = async () => {
-        if (typeof window !== "undefined") {
-            const authUserString = localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY);
-            if (authUserString) {
-                try {
-                    setCurrentUser(JSON.parse(authUserString));
-                } catch (e) {
-                    setCurrentUser(defaultSuperAdmin);
-                }
-            } else {
+    // This effect ensures the hook re-evaluates when the user logs in/out,
+    // but now uses a more reliable direct import for roles.
+    if (typeof window !== "undefined") {
+        const authUserString = localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY);
+        if (authUserString) {
+            try {
+                setCurrentUser(JSON.parse(authUserString));
+            } catch (e) {
+                console.error("Failed to parse authUser, defaulting.", e);
                 setCurrentUser(defaultSuperAdmin);
             }
-            setRoles([...placeholderAppRoles]);
+        } else {
+            // No user in local storage, might be loading or logged out.
+            // DefaultSuperAdmin can be a placeholder.
+            setCurrentUser(defaultSuperAdmin);
         }
-    };
-    loadData();
-    
-    // Add event listener to re-evaluate on data change
-    const handleDbUpdate = () => loadData();
-    window.addEventListener('databaseUpdated', handleDbUpdate);
-    return () => window.removeEventListener('databaseUpdated', handleDbUpdate);
-    
-  }, [pathname]);
+    }
+  }, [pathname]); // Re-run on path change
 
   const userPermissions = React.useMemo(() => {
-    if (!currentUser || !roles.length) {
-        // Fallback to superadmin permissions if no user/roles are found
-        return new Set(BASE_NAV_STRUCTURE.flatMap(item => item.permissions || []));
-    }
+    if (!currentUser) return new Set<string>();
+    
+    // Use the directly imported roles array.
     const userRole = roles.find(r => r && r.name === currentUser.role);
-    return new Set(userRole?.permissions || []);
+    
+    if (!userRole) {
+      // If the user's role doesn't exist (e.g., typo, data inconsistency), default to no permissions.
+      console.warn(`Role "${currentUser.role}" not found for user "${currentUser.name}".`);
+      return new Set<string>();
+    }
+    
+    return new Set(userRole.permissions || []);
   }, [currentUser, roles]);
 
 
