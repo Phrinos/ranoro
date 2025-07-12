@@ -40,6 +40,8 @@ function InventarioPageComponent() {
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
+  const [isRegisterPurchaseOpen, setIsRegisterPurchaseOpen] = useState(false);
+
   useEffect(() => {
     const unsubs: (() => void)[] = [];
     setIsLoading(true);
@@ -53,8 +55,6 @@ function InventarioPageComponent() {
 
     return () => unsubs.forEach(unsub => unsub());
   }, []);
-
-  const [isRegisterPurchaseOpen, setIsRegisterPurchaseOpen] = useState(false);
 
   const handleSavePurchase = useCallback(async (data: PurchaseFormValues) => {
     if (!db) return;

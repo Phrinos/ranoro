@@ -4,7 +4,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { PageHeader } from "@/components/page-header";
-import { PosDialog } from "../components/pos-dialog";
+import { PosForm } from "../components/pos-form";
 import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
 import { TicketContent } from '@/components/ticket-content';
 import type { SaleReceipt, InventoryItem, WorkshopInfo } from '@/types'; 
@@ -12,7 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Printer, Copy } from 'lucide-react';
-import { inventoryService, operationsService } from '@/lib/services';
+import { inventoryService } from '@/lib/services';
 import { Loader2 } from 'lucide-react';
 import type { InventoryItemFormValues } from '../../inventario/components/inventory-item-form';
 
@@ -101,10 +101,11 @@ export default function NuevaVentaPage() {
     }
   };
 
-  const handleInventoryItemCreated = async (newItemData: InventoryItemFormValues): Promise<InventoryItem> => {
-    const newItem = await inventoryService.addItem(newItemData);
-    // The onSnapshot listener will automatically update the inventoryItems state
-    return newItem;
+  const handleInventoryItemCreated = (newItem: InventoryItem) => {
+    // The main listener in the parent component (`pos/page.tsx`) already handles this
+    // via onSnapshot. However, if we need immediate UI updates before Firestore syncs,
+    // we can update the local state here.
+    setCurrentInventoryItems(prev => [...prev, newItem]);
   };
 
 
@@ -119,18 +120,14 @@ export default function NuevaVentaPage() {
         description="Complete los artículos y detalles para la nueva venta."
       />
       {dialogStep === 'pos' && (
-        <PosDialog
+        <PosForm
           inventoryItems={currentInventoryItems} 
-          open={true} 
-          onOpenChange={(isOpen) => { 
-            if (!isOpen) handlePosDialogExternalClose();
-          }}
           onSaleComplete={handleSaleCompletion}
           onInventoryItemCreated={handleInventoryItemCreated}
         />
       )}
 
-      {dialogStep === 'preview' && currentSaleForTicket && (
+      {dialogStep === 'print_preview' && currentSaleForTicket && (
         <PrintTicketDialog
           open={true} 
           onOpenChange={(isOpen) => { 
