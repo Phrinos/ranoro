@@ -13,7 +13,7 @@ import { z } from 'zod';
 
 // Schema for a single vehicle extracted from the data
 const ExtractedVehicleSchema = z.object({
-  licensePlate: z.string().describe('The license plate of the vehicle. This is a crucial, unique identifier.'),
+  licensePlate: z.string().describe('The license plate of the vehicle. This is a crucial, unique identifier. This field is mandatory and must be extracted.'),
   make: z.string().describe('The make or brand of the vehicle (e.g., Ford, Nissan).'),
   model: z.string().describe('The model of the vehicle (e.g., F-150, Sentra).'),
   year: z.number().describe('The manufacturing year of the vehicle.'),
@@ -59,11 +59,12 @@ const migrateDataPrompt = ai.definePrompt({
   output: { schema: MigrateDataOutputSchema },
   prompt: `You are an expert data migration specialist for an auto repair shop. Your task is to analyze the provided CSV-formatted text and extract vehicle and service information.
 
-Key instructions:
-1.  **Identify Unique Vehicles**: Scan the entire document. For each unique license plate, create only ONE vehicle entry in the 'vehicles' array. The 'licensePlate' field is mandatory and the most important identifier. Use the information from the most complete row for that vehicle.
-2.  **Extract All Services**: Create a service entry in the 'services' array for EVERY service record you find. Each service must be linked to a vehicle via its license plate.
-3.  **Handle Data Variations**: The CSV column headers might vary. Be flexible. Look for headers like 'Marca'/'Make', 'Modelo'/'Model', 'Año'/'Year', 'Placa'/'LicensePlate', 'Cliente'/'OwnerName', 'Fecha'/'Date', 'Descripción'/'Description', 'Costo'/'Total'. The license plate is critical.
-4.  **Data Cleaning**: Clean up the data. Trim whitespace. Convert years and costs to numbers. Ensure dates are in YYYY-MM-DD format. If a value is missing, omit the field (e.g., 'ownerPhone').
+**CRITICAL INSTRUCTIONS:**
+1.  **EXTRACT THE LICENSE PLATE (PLACA)**: The 'licensePlate' field is the most important piece of information and is **MANDATORY**. Look for columns named 'Placa', 'Patente', 'Matrícula', or 'LicensePlate'. You MUST extract this value for every vehicle. If a row does not seem to have a license plate, it is not a valid vehicle record.
+2.  **Identify Unique Vehicles**: Based on the extracted license plate, create only ONE vehicle entry in the 'vehicles' array for each unique license plate. Use the information from the most complete row for that vehicle.
+3.  **Extract All Services**: Create a service entry in the 'services' array for EVERY service record you find. Each service must be linked to a vehicle via its 'vehicleLicensePlate'.
+4.  **Handle Data Variations**: The CSV column headers might vary. Be flexible. Look for headers like 'Marca'/'Make', 'Modelo'/'Model', 'Año'/'Year', 'Cliente'/'OwnerName', 'Fecha'/'Date', 'Descripción'/'Description', 'Costo'/'Total'.
+5.  **Data Cleaning**: Clean up the data. Trim whitespace. Convert years and costs to numbers. Ensure dates are in YYYY-MM-DD format. If a value is missing for an optional field like 'ownerPhone', omit it.
 
 Analyze the following CSV-formatted content and return the data in the specified JSON format.
 
