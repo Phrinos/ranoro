@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview An AI flow to migrate vehicle data from CSV-formatted text.
@@ -7,11 +8,12 @@ import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 
 const ExtractedVehicleSchema = z.object({
+  licensePlate: z.string().describe('The license plate of the vehicle. This is a crucial, unique identifier. It is mandatory.'),
   make: z.string().describe('The make or brand of the vehicle (e.g., Ford, Nissan).'),
   model: z.string().describe('The model of the vehicle (e.g., F-150, Sentra).'),
   year: z.number().describe('The manufacturing year of the vehicle.'),
   ownerName: z.string().describe("The full name of the vehicle's owner."),
-  ownerPhone: z.string().describe("The owner's contact phone number."),
+  ownerPhone: z.string().optional().describe("The owner's contact phone number."),
 });
 export type ExtractedVehicleForMigration = z.infer<typeof ExtractedVehicleSchema>;
 
@@ -32,12 +34,19 @@ const migrateVehiclesPrompt = ai.definePrompt({
   name: 'migrateVehiclesPrompt',
   input: { schema: VehicleMigrationInputSchema },
   output: { schema: VehicleMigrationOutputSchema },
-  prompt: `You are a data migration specialist. Your task is to analyze the provided CSV-formatted text and extract vehicle information.
+  prompt: `You are a data migration specialist for a vehicle database. Your task is to analyze the provided CSV-formatted text and extract vehicle information.
 
-The CSV will have columns for 'nombre', 'telefono', 'marca', 'modelo', and 'año'. You must map these to 'ownerName', 'ownerPhone', 'make', 'model', and 'year' respectively.
-
-- Clean up the data: trim whitespace, convert year to a number.
-- For each row in the CSV, create one vehicle object.
+**Instructions:**
+1.  **Identify Columns**: Map the columns from the CSV to the required fields. Common mappings are:
+    *   'Placa', 'Patente' -> 'licensePlate' (MANDATORY)
+    *   'Marca' -> 'make'
+    *   'Modelo' -> 'model'
+    *   'Año', 'Anio' -> 'year'
+    *   'Propietario', 'Cliente', 'Nombre' -> 'ownerName'
+    *   'Teléfono', 'Telefono' -> 'ownerPhone'
+2.  **Extract Data**: For each row in the CSV, create one vehicle object.
+3.  **Mandatory License Plate**: The 'licensePlate' field is absolutely mandatory. If a row does not have a value that can be identified as a license plate, you must ignore that row entirely. A license plate is typically 6 to 8 alphanumeric characters.
+4.  **Clean Data**: Trim whitespace from all text fields. Convert 'year' to a number.
 
 Analyze the following CSV content and return the data in the specified JSON format.
 
@@ -56,7 +65,7 @@ const migrateVehiclesFlow = ai.defineFlow(
   },
   async (input) => {
     const { output } = await migrateVehiclesPrompt(input, {
-        config: { temperature: 0.1 }
+        config: { temperature: 0.0 }
     });
     
     if (!output) {
