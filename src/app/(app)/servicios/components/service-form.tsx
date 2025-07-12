@@ -34,6 +34,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { db } from '@/lib/firebaseClient.js';
 import { doc } from 'firebase/firestore';
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
+import { nanoid } from 'nanoid';
 
 
 const supplySchema = z.object({
@@ -281,7 +282,7 @@ export function ServiceForm({
     }
 
     form.reset({
-        id: data?.id, // Keep ID undefined for new records
+        id: data?.id,
         status: data?.status || (mode === 'quote' ? 'Cotizacion' : undefined),
         subStatus: (data as ServiceRecord)?.subStatus || undefined,
         publicId: (data as any)?.publicId, vehicleId: data?.vehicleId ? String(data.vehicleId) : undefined,
@@ -398,14 +399,14 @@ export function ServiceForm({
     const dataToSave: Partial<ServiceFormValues> = { ...values };
     Object.keys(dataToSave).forEach(keyStr => {
         const key = keyStr as keyof typeof dataToSave;
-        if (dataToSave[key] === undefined || dataToSave[key] === '') {
-            delete (dataToSave as any)[key];
+        if (dataToSave[key] === undefined || (typeof dataToSave[key] === 'string' && dataToSave[key].trim() === '')) {
+            (dataToSave as any)[key] = null;
         }
     });
     
     const finalData = {
         ...dataToSave,
-        id: dataToSave.id, // ID is handled by the calling component
+        id: dataToSave.id,
         publicId: dataToSave.publicId || `s_${generateUniqueId().toLowerCase()}`,
         vehicleId: getValues('vehicleId')!,
         description: (dataToSave.serviceItems || []).map(item => item.name).join(', ') || 'Servicio',

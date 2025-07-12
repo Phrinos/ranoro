@@ -11,13 +11,14 @@ import {
   writeBatch,
   getDocs,
   getDoc,
+  setDoc,
 } from 'firebase/firestore';
 import { db } from '../firebaseClient';
 import type { ServiceRecord, QuoteRecord, SaleReceipt, Vehicle, CashDrawerTransaction, InitialCashBalance, InventoryItem, RentalPayment, VehicleExpense, OwnerWithdrawal } from "@/types";
 import { savePublicDocument } from '@/lib/public-document';
 import { inventoryService } from './inventory.service';
 import { nanoid } from 'nanoid';
-import type { ExtractedService } from '@/ai/flows/service-migration-flow';
+import type { ExtractedService } from '@/ai/flows/data-migration-flow';
 import { format, parse, isValid, startOfDay, isSameDay } from 'date-fns';
 import { personnelService } from './personnel.service';
 
@@ -43,18 +44,24 @@ const onServicesUpdatePromise = async (): Promise<ServiceRecord[]> => {
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ServiceRecord));
 }
 
-const addService = async (data: Partial<ServiceRecord>): Promise<ServiceRecord> => {
+const saveService = async (data: Partial<ServiceRecord>): Promise<ServiceRecord> => {
     if (!db) throw new Error("Database not initialized.");
+
+    const isEditing = !!data.id;
+    const docId = data.id || nanoid();
     
-    // Explicitly remove id property before adding, as addDoc generates it.
+    // Explicitly remove id from data to be saved to avoid Firestore errors
     const { id, ...serviceData } = data;
 
-    const docRef = await addDoc(collection(db, 'serviceRecords'), serviceData);
-    
-    // Fetch the newly created document to return the full object with the ID
+    const docRef = doc(db, 'serviceRecords', docId);
+
+    // Using setDoc with { merge: true } for both create and update.
+    // This simplifies the logic: if the doc doesn't exist, it's created. If it exists, it's merged/updated.
+    await setDoc(docRef, serviceData, { merge: true });
+
     const newDocSnap = await getDoc(docRef);
     if (!newDocSnap.exists()) {
-      throw new Error("Failed to retrieve newly created service document.");
+      throw new Error("Failed to save or retrieve the service document.");
     }
     
     return { id: newDocSnap.id, ...newDocSnap.data() } as ServiceRecord;
@@ -62,18 +69,15 @@ const addService = async (data: Partial<ServiceRecord>): Promise<ServiceRecord> 
 
 
 const updateService = async (serviceId: string, data: Partial<ServiceRecord>): Promise<ServiceRecord> => {
-    if(!db) throw new Error("Database not connected");
-    const serviceRef = doc(db, "serviceRecords", serviceId);
-    await updateDoc(serviceRef, data);
-    
-    // For simplicity, returning the partial data. A full implementation
-    // would fetch the updated document to return the complete object.
-    const updatedDocSnap = await getDoc(serviceRef);
-    if (!updatedDocSnap.exists()) {
-      throw new Error(`Failed to retrieve updated service document with ID: ${serviceId}`);
-    }
-    return { id: updatedDocSnap.id, ...updatedDocSnap.data() } as ServiceRecord;
+    return saveService({ ...data, id: serviceId });
 };
+
+const addService = async (data: Partial<ServiceRecord>): Promise<ServiceRecord> => {
+    // Ensure ID is not passed to the save function for creation
+    const { id, ...serviceData } = data;
+    return saveService(serviceData);
+};
+
 
 const cancelService = async (serviceId: string, reason: string): Promise<void> => {
     if(!db) throw new Error("Database not connected");
@@ -313,6 +317,7 @@ export const operationsService = {
     onServicesUpdate,
     onServicesUpdatePromise,
     addService,
+    saveService,
     updateService,
     cancelService,
     completeService,
