@@ -1,106 +1,88 @@
 
-
 "use client";
 
 import { useState, useMemo, useEffect, useCallback, Suspense, useRef } from 'react';
 import { PageHeader } from '@/components/page-header';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, Printer, Copy } from 'lucide-react';
+import { PlusCircle, Printer, Copy, Loader2 } from 'lucide-react';
 import { RegisterPaymentDialog } from './components/register-payment-dialog';
-import {
-  placeholderDrivers,
-  placeholderVehicles,
-  placeholderRentalPayments,
-  persistToFirestore,
-  hydrateReady,
-} from '@/lib/placeholder-data';
-import type { RentalPayment, Driver, Vehicle, WorkshopInfo } from '@/types';
+import type { RentalPayment, Driver, Vehicle, WorkshopInfo, VehicleExpense, OwnerWithdrawal } from '@/types';
 import { useToast } from "@/hooks/use-toast";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { format, parseISO, compareDesc, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
 import { RentalReceiptContent } from './components/rental-receipt-content';
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import html2canvas from 'html2canvas';
+import { inventoryService, operationsService, personnelService } from '@/lib/services';
+import { VehicleExpenseDialog, type VehicleExpenseFormValues } from './components/vehicle-expense-dialog';
+import { OwnerWithdrawalDialog, type OwnerWithdrawalFormValues } from './components/owner-withdrawal-dialog';
 
 function RentasPageComponent() {
-  const [hydrated, setHydrated] = useState(false);
-  const [version, setVersion] = useState(0);
-
+  const [isLoading, setIsLoading] = useState(true);
   const [drivers, setDrivers] = useState<Driver[]>([]);
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [payments, setPayments] = useState<RentalPayment[]>([]);
   const [workshopInfo, setWorkshopInfo] = useState<Partial<WorkshopInfo>>({});
-
+  
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
+  const [isExpenseDialogOpen, setIsExpenseDialogOpen] = useState(false);
+  const [isWithdrawalDialogOpen, setIsWithdrawalDialogOpen] = useState(false);
+
   const { toast } = useToast();
   const receiptRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    hydrateReady.then(() => {
-      setHydrated(true);
-      setDrivers([...placeholderDrivers]);
-      setVehicles([...placeholderVehicles]);
-      setPayments([...placeholderRentalPayments]);
-      const storedInfo = localStorage.getItem('workshopTicketInfo');
-      if (storedInfo) setWorkshopInfo(JSON.parse(storedInfo));
-    });
-    const forceUpdate = () => setVersion(v => v + 1);
-    window.addEventListener('databaseUpdated', forceUpdate);
-    return () => window.removeEventListener('databaseUpdated', forceUpdate);
+    const unsubs: (() => void)[] = [];
+    setIsLoading(true);
+
+    unsubs.push(personnelService.onDriversUpdate(setDrivers));
+    unsubs.push(inventoryService.onVehiclesUpdate(setVehicles));
+    unsubs.push(operationsService.onRentalPaymentsUpdate((data) => {
+        setPayments(data);
+        setIsLoading(false); // Consider loaded after payments are fetched
+    }));
+
+    const storedInfo = localStorage.getItem('workshopTicketInfo');
+    if (storedInfo) setWorkshopInfo(JSON.parse(storedInfo));
+
+    return () => unsubs.forEach(unsub => unsub());
   }, []);
 
-  useEffect(() => {
-    if (hydrated) {
-      setDrivers([...placeholderDrivers]);
-      setVehicles([...placeholderVehicles]);
-      setPayments([...placeholderRentalPayments]);
-    }
-  }, [hydrated, version]);
   
   const [paymentForReceipt, setPaymentForReceipt] = useState<RentalPayment | null>(null);
 
   const handleSavePayment = async (driverId: string, amount: number, note: string | undefined, mileage?: number) => {
-    const driver = drivers.find(d => d.id === driverId);
-    const vehicle = vehicles.find(v => v.id === driver?.assignedVehicleId);
-
-    if (!driver || !vehicle) {
-      toast({ title: 'Error', description: 'No se pudo encontrar el conductor o su vehículo asignado.', variant: 'destructive' });
-      return;
+    try {
+        const newPayment = await operationsService.addRentalPayment(driverId, amount, note, mileage);
+        toast({ title: 'Pago Registrado' });
+        setIsPaymentDialogOpen(false);
+        setPaymentForReceipt(newPayment);
+    } catch (e: any) {
+        toast({ title: 'Error', description: e.message, variant: 'destructive' });
     }
+  };
 
-    const newPayment: RentalPayment = {
-      id: `PAY_${Date.now().toString(36)}`,
-      driverId: driver.id,
-      driverName: driver.name,
-      vehicleLicensePlate: vehicle.licensePlate,
-      paymentDate: new Date().toISOString(),
-      amount: amount,
-      daysCovered: amount / (vehicle.dailyRentalCost || 1), // Avoid division by zero
-      note: note,
-    };
-
-    placeholderRentalPayments.push(newPayment);
-
-    const keysToPersist: Array<'rentalPayments' | 'vehicles'> = ['rentalPayments'];
-
-    // If mileage is provided, update the vehicle
-    if (mileage !== undefined) {
-        const vehicleIndex = placeholderVehicles.findIndex(v => v.id === vehicle.id);
-        if (vehicleIndex > -1) {
-            placeholderVehicles[vehicleIndex].currentMileage = mileage;
-            placeholderVehicles[vehicleIndex].lastMileageUpdate = new Date().toISOString();
-            keysToPersist.push('vehicles');
-        }
+  const handleSaveExpense = async (data: VehicleExpenseFormValues) => {
+    try {
+        await operationsService.addVehicleExpense(data);
+        toast({ title: 'Gasto Registrado'});
+        setIsExpenseDialogOpen(false);
+    } catch(e: any) {
+        toast({ title: 'Error', description: e.message, variant: 'destructive' });
     }
-
-    await persistToFirestore(keysToPersist);
-    
-    toast({ title: 'Pago Registrado', description: `Se registró el pago de ${formatCurrency(amount)} para ${driver.name}.` });
-    setIsPaymentDialogOpen(false);
-    setPaymentForReceipt(newPayment); // Set the new payment for receipt display
+  };
+  
+  const handleSaveWithdrawal = async (data: OwnerWithdrawalFormValues) => {
+    try {
+        await operationsService.addOwnerWithdrawal(data);
+        toast({ title: 'Retiro Registrado'});
+        setIsWithdrawalDialogOpen(false);
+    } catch(e: any) {
+        toast({ title: 'Error', description: e.message, variant: 'destructive' });
+    }
   };
   
   const handleCopyAsImage = useCallback(async () => {
@@ -119,28 +101,33 @@ function RentasPageComponent() {
     }
   }, [toast]);
   
-  // Sorting payments
   const sortedPayments = useMemo(() => {
     return [...payments].sort((a, b) => compareDesc(parseISO(a.paymentDate), parseISO(b.paymentDate)));
   }, [payments]);
+
+  const uniqueOwners = useMemo(() => Array.from(new Set(vehicles.filter(v => v.isFleetVehicle).map(v => v.ownerName))).sort(), [vehicles]);
   
+  if (isLoading) { return <div className="flex justify-center items-center h-64"><Loader2 className="h-8 w-8 animate-spin" /></div>; }
+
   return (
     <>
       <PageHeader
-        title="Registrar Pago de Renta"
-        description="Registra y consulta los pagos de renta de los conductores."
+        title="Gestión de Pagos de Flotilla"
+        description="Registra y consulta los pagos de renta, gastos de vehículos y retiros de propietarios."
         actions={
-          <Button onClick={() => setIsPaymentDialogOpen(true)}>
-            <PlusCircle className="mr-2 h-4 w-4" />
-            Registrar Pago
-          </Button>
+          <div className="flex flex-col sm:flex-row gap-2">
+            <Button onClick={() => setIsWithdrawalDialogOpen(true)} variant="outline">Retiro</Button>
+            <Button onClick={() => setIsExpenseDialogOpen(true)} variant="outline">Gasto</Button>
+            <Button onClick={() => setIsPaymentDialogOpen(true)}>
+                <PlusCircle className="mr-2 h-4 w-4" />
+                Registrar Pago
+            </Button>
+          </div>
         }
       />
       
       <Card>
-          <CardHeader>
-              <CardTitle>Historial de Pagos</CardTitle>
-          </CardHeader>
+          <CardHeader><CardTitle>Historial de Pagos de Renta</CardTitle></CardHeader>
           <CardContent>
              <div className="rounded-md border overflow-x-auto">
                 <Table>
@@ -158,7 +145,7 @@ function RentasPageComponent() {
                      {sortedPayments.length > 0 ? (
                         sortedPayments.map(p => (
                             <TableRow key={p.id}>
-                                <TableCell className="font-mono">{p.id}</TableCell>
+                                <TableCell className="font-mono">{p.id.slice(-6)}</TableCell>
                                 <TableCell>{format(parseISO(p.paymentDate), "dd MMM yyyy, HH:mm", { locale: es })}</TableCell>
                                 <TableCell className="font-semibold">{p.driverName}</TableCell>
                                 <TableCell>{p.vehicleLicensePlate}</TableCell>
@@ -189,6 +176,20 @@ function RentasPageComponent() {
         drivers={drivers}
         vehicles={vehicles}
         onSave={handleSavePayment}
+      />
+      
+      <VehicleExpenseDialog
+        open={isExpenseDialogOpen}
+        onOpenChange={setIsExpenseDialogOpen}
+        fleetVehicles={vehicles.filter(v => v.isFleetVehicle)}
+        onSave={handleSaveExpense}
+      />
+
+      <OwnerWithdrawalDialog
+        open={isWithdrawalDialogOpen}
+        onOpenChange={setIsWithdrawalDialogOpen}
+        owners={uniqueOwners}
+        onSave={handleSaveWithdrawal}
       />
       
       <PrintTicketDialog

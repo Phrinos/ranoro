@@ -1,18 +1,12 @@
 
 "use client";
 
-import React, { useState, useMemo, useRef } from "react";
+import React, { useState, useMemo, useRef, useEffect, useCallback } from "react";
 import { useParams, useRouter } from 'next/navigation';
 import { PageHeader } from "@/components/page-header";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import {
-  placeholderVehicles,
-  placeholderRentalPayments,
-  placeholderServiceRecords,
-  placeholderVehicleExpenses,
-} from '@/lib/placeholder-data';
-import type { PublicOwnerReport, WorkshopInfo, VehicleMonthlyReport } from '@/types';
+import type { PublicOwnerReport, WorkshopInfo, VehicleMonthlyReport, Vehicle, RentalPayment, ServiceRecord, VehicleExpense } from '@/types';
 import {
   format,
   parseISO,
@@ -24,14 +18,15 @@ import {
   isValid,
 } from "date-fns";
 import { es } from 'date-fns/locale';
-import { ChevronLeft, ChevronRight, DollarSign, Calendar, ArrowLeft, Loader2, Copy, Download } from "lucide-react";
+import { ChevronLeft, ChevronRight, DollarSign, Calendar, ArrowLeft, Loader2, Copy, Download, ShieldAlert } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { formatCurrency } from "@/lib/utils";
 import Link from "next/link";
 import { useToast } from "@/hooks/use-toast";
 import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
 import Image from "next/legacy/image";
-
+import { inventoryService, operationsService } from '@/lib/services';
+import { savePublicDocument } from '@/lib/public-document';
 
 const ReportContent = React.forwardRef<HTMLDivElement, { report: PublicOwnerReport }>(({ report }, ref) => {
   const workshopInfo = report.workshopInfo || { name: 'Taller', logoUrl: '/ranoro-logo.png' };
@@ -40,7 +35,7 @@ const ReportContent = React.forwardRef<HTMLDivElement, { report: PublicOwnerRepo
     <div ref={ref} className="p-8 font-sans bg-white text-black" data-format="letter">
       <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 border-b-2 border-black pb-4">
         <div className="relative h-16 w-40 mb-4 sm:mb-0">
-            <Image src={workshopInfo.logoUrl} alt={`${workshopInfo.name} Logo`} fill className="object-contain" data-ai-hint="workshop logo" />
+            {workshopInfo.logoUrl && <Image src={workshopInfo.logoUrl} alt={`${workshopInfo.name} Logo`} fill className="object-contain" data-ai-hint="workshop logo" />}
         </div>
         <div className="text-left sm:text-right">
           <h1 className="text-2xl font-bold">Reporte de Ingresos de Flotilla</h1>
@@ -115,13 +110,37 @@ export default function OwnerIncomeDetailPage() {
   const [isReportPreviewOpen, setIsReportPreviewOpen] = useState(false);
   const [reportToPreview, setReportToPreview] = useState<PublicOwnerReport | null>(null);
   const reportContentRef = useRef<HTMLDivElement>(null);
+  
+  const [isLoading, setIsLoading] = useState(true);
+  const [allVehicles, setAllVehicles] = useState<Vehicle[]>([]);
+  const [allPayments, setAllPayments] = useState<RentalPayment[]>([]);
+  const [allServices, setAllServices] = useState<ServiceRecord[]>([]);
+  const [allExpenses, setAllExpenses] = useState<VehicleExpense[]>([]);
+
+  useEffect(() => {
+    const loadData = async () => {
+        setIsLoading(true);
+        const [vehiclesData, paymentsData, servicesData, expensesData] = await Promise.all([
+            inventoryService.onVehiclesUpdatePromise(),
+            operationsService.onRentalPaymentsUpdatePromise(),
+            operationsService.onServicesUpdatePromise(),
+            operationsService.onVehicleExpensesUpdatePromise()
+        ]);
+        setAllVehicles(vehiclesData);
+        setAllPayments(paymentsData);
+        setAllServices(servicesData);
+        setAllExpenses(expensesData);
+        setIsLoading(false);
+    };
+    loadData();
+  }, []);
 
   const handlePreviousMonth = () => setSelectedDate(subMonths(selectedDate, 1));
   const handleNextMonth = () => setSelectedDate(addMonths(selectedDate, 1));
 
   const ownerVehicles = useMemo(() => {
-    return placeholderVehicles.filter(v => v.isFleetVehicle && v.ownerName === ownerName);
-  }, [ownerName]);
+    return allVehicles.filter(v => v.isFleetVehicle && v.ownerName === ownerName);
+  }, [ownerName, allVehicles]);
 
   const monthlyReportData = useMemo(() => {
     const monthStart = startOfMonth(selectedDate);
@@ -132,28 +151,11 @@ export default function OwnerIncomeDetailPage() {
     const ownerVehicleIds = new Set(ownerVehicles.map(v => v.id));
     const ownerVehiclePlates = new Set(ownerVehicles.map(v => v.licensePlate));
 
-    const allOwnerPayments = placeholderRentalPayments.filter(p => ownerVehiclePlates.has(p.vehicleLicensePlate));
+    const currentMonthOwnerPayments = allPayments.filter(p => isValid(parseISO(p.paymentDate)) && isWithinInterval(parseISO(p.paymentDate), { start: monthStart, end: monthEnd }) && ownerVehiclePlates.has(p.vehicleLicensePlate));
+    const prevMonthOwnerPayments = allPayments.filter(p => isValid(parseISO(p.paymentDate)) && isWithinInterval(parseISO(p.paymentDate), { start: prevMonthStart, end: prevMonthEnd }) && ownerVehiclePlates.has(p.vehicleLicensePlate));
     
-    const currentMonthOwnerPayments = allOwnerPayments.filter(p => {
-        const pDate = parseISO(p.paymentDate);
-        return isValid(pDate) && isWithinInterval(pDate, { start: monthStart, end: monthEnd });
-    });
-    const prevMonthOwnerPayments = allOwnerPayments.filter(p => {
-        const pDate = parseISO(p.paymentDate);
-        return isValid(pDate) && isWithinInterval(pDate, { start: prevMonthStart, end: prevMonthEnd });
-    });
-    
-    const currentMonthServices = placeholderServiceRecords.filter(s => {
-        if (!ownerVehicleIds.has(s.vehicleId)) return false;
-        const sDate = parseISO(s.serviceDate);
-        return isValid(sDate) && isWithinInterval(sDate, { start: monthStart, end: monthEnd });
-    });
-
-    const currentMonthExpenses = placeholderVehicleExpenses.filter(e => {
-        if (!ownerVehicleIds.has(e.vehicleId)) return false;
-        const eDate = parseISO(e.date);
-        return isValid(eDate) && isWithinInterval(eDate, { start: monthStart, end: monthEnd });
-    });
+    const currentMonthServices = allServices.filter(s => ownerVehicleIds.has(s.vehicleId) && isValid(parseISO(s.serviceDate)) && isWithinInterval(parseISO(s.serviceDate), { start: monthStart, end: monthEnd }));
+    const currentMonthExpenses = allExpenses.filter(e => ownerVehicleIds.has(e.vehicleId) && isValid(parseISO(e.date)) && isWithinInterval(parseISO(e.date), { start: monthStart, end: monthEnd }));
 
     const currentMonthIncome = currentMonthOwnerPayments.reduce((sum, p) => sum + p.amount, 0);
     const prevMonthIncome = prevMonthOwnerPayments.reduce((sum, p) => sum + p.amount, 0);
@@ -165,40 +167,30 @@ export default function OwnerIncomeDetailPage() {
       
       const vehicleServices = currentMonthServices.filter(s => s.vehicleId === vehicle.id);
       const maintenanceCostsFromServices = vehicleServices.reduce((sum, s) => sum + s.totalCost, 0);
-
       const vehicleExpensesInMonth = currentMonthExpenses.filter(e => e.vehicleId === vehicle.id);
       const costsFromVehicleExpenses = vehicleExpensesInMonth.reduce((sum, e) => sum + e.amount, 0);
-      
       const maintenanceAndExpensesCost = maintenanceCostsFromServices + costsFromVehicleExpenses;
-      
-      const administrationCost = (vehicle.gpsMonthlyCost ?? 150) + (vehicle.adminMonthlyCost ?? 200) + (vehicle.insuranceMonthlyCost ?? 250);
-      
+      const administrationCost = (vehicle.gpsMonthlyCost ?? 0) + (vehicle.adminMonthlyCost ?? 0) + (vehicle.insuranceMonthlyCost ?? 0);
       const totalDeductions = maintenanceAndExpensesCost + administrationCost;
       
       return {
         vehicleId: vehicle.id,
         vehicleInfo: `${vehicle.make} ${vehicle.model} (${vehicle.licensePlate})`,
-        daysRented,
-        rentalIncome,
-        maintenanceAndExpensesCost,
-        administrationCost,
-        totalDeductions,
+        daysRented, rentalIncome, maintenanceAndExpensesCost, administrationCost, totalDeductions,
         services: vehicleServices.map(s => ({ id: s.id, description: s.description, totalCost: s.totalCost })),
       };
     });
 
-    return {
-      currentMonthIncome,
-      prevMonthIncome,
-      detailedReport: report,
-    };
-  }, [selectedDate, ownerVehicles]);
+    return { currentMonthIncome, prevMonthIncome, detailedReport: report };
+  }, [selectedDate, ownerVehicles, allPayments, allServices, allExpenses]);
 
-  const handleGenerateReport = () => {
+  const handleGenerateReport = async () => {
     setIsGenerating(true);
-    
-    const storedWorkshopInfo = typeof window !== 'undefined' ? localStorage.getItem('workshopTicketInfo') : null;
-    const workshopInfo: WorkshopInfo | undefined = storedWorkshopInfo ? JSON.parse(storedWorkshopInfo) : undefined;
+    let storedWorkshopInfo: WorkshopInfo | undefined;
+    try {
+      const info = localStorage.getItem('workshopTicketInfo');
+      if (info) storedWorkshopInfo = JSON.parse(info);
+    } catch {}
   
     try {
         const totalRentalIncome = monthlyReportData.detailedReport.reduce((sum, r) => sum + r.rentalIncome, 0);
@@ -206,57 +198,32 @@ export default function OwnerIncomeDetailPage() {
         const totalNetBalance = totalRentalIncome - totalDeductions;
 
         const reportForPreview: PublicOwnerReport = {
-            publicId: `local-preview-${Date.now()}`,
-            ownerName: ownerName,
+            publicId: reportToPreview?.publicId || `rep_${Date.now().toString(36)}`,
+            ownerName,
             generatedDate: new Date().toISOString(),
             reportMonth: format(selectedDate, "MMMM 'de' yyyy", { locale: es }),
             detailedReport: monthlyReportData.detailedReport,
-            totalRentalIncome,
-            totalDeductions,
-            totalNetBalance,
-            workshopInfo,
+            totalRentalIncome, totalDeductions, totalNetBalance,
+            workshopInfo: storedWorkshopInfo,
         };
         
+        await savePublicDocument('ownerReport', reportForPreview);
         setReportToPreview(reportForPreview);
         setIsReportPreviewOpen(true);
-
     } catch (e) {
-       console.error("Error generating local report preview:", e);
-       toast({ title: "Error al Generar Reporte", description: `No se pudo generar la vista previa del reporte.`, variant: "destructive" });
+       console.error("Error generating report:", e);
+       toast({ title: "Error al Generar Reporte", description: `No se pudo generar la vista previa. ${e instanceof Error ? e.message : ''}`, variant: "destructive" });
     } finally {
         setIsGenerating(false);
     }
   };
   
-  const handleCopyAsImage = async () => {
-    if (!reportContentRef.current) return;
-    const html2canvas = (await import('html2canvas')).default;
-    try {
-        const canvas = await html2canvas(reportContentRef.current, { scale: 2 });
-        canvas.toBlob((blob) => {
-            if (blob) {
-                navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
-                toast({ title: "Copiado", description: "La imagen del reporte ha sido copiada." });
-            }
-        });
-    } catch (e) {
-        console.error("Error copying image:", e);
-        toast({ title: "Error", description: "No se pudo copiar la imagen del reporte.", variant: "destructive" });
-    }
-  };
-
   const handleDownloadPDF = async () => {
     if (!reportContentRef.current || !reportToPreview) return;
     const html2pdf = (await import('html2pdf.js')).default;
     const element = reportContentRef.current;
     const pdfFileName = `Reporte_Flotilla_${reportToPreview.ownerName}_${reportToPreview.reportMonth}.pdf`.replace(/ /g, '_');
-    const opt = {
-      margin: 10,
-      filename: pdfFileName,
-      image: { type: 'jpeg', quality: 0.98 },
-      html2canvas:  { scale: 2, useCORS: true, letterRendering: true },
-      jsPDF:        { unit: 'mm', format: 'letter', orientation: 'portrait' }
-    };
+    const opt = { margin: 10, filename: pdfFileName, image: { type: 'jpeg', quality: 0.98 }, html2canvas:  { scale: 2, useCORS: true, letterRendering: true }, jsPDF: { unit: 'mm', format: 'letter', orientation: 'portrait' } };
     toast({ title: "Generando PDF...", description: `Se está preparando ${pdfFileName}.` });
     html2pdf().from(element).set(opt).save();
   };
@@ -269,121 +236,29 @@ export default function OwnerIncomeDetailPage() {
         description="Análisis de los ingresos y costos de la flotilla de este propietario."
         actions={
           <div className="flex flex-col sm:flex-row gap-2">
-            <Button variant="outline" onClick={() => router.back()}>
-              <ArrowLeft className="mr-2 h-4 w-4" /> Volver
-            </Button>
-            <Button onClick={handleGenerateReport} disabled={isGenerating}>
-              {isGenerating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Calendar className="mr-2 h-4 w-4" />}
-              Reporte Mensual
-            </Button>
+            <Button variant="outline" onClick={() => router.back()}><ArrowLeft className="mr-2 h-4 w-4" /> Volver</Button>
+            <Button onClick={handleGenerateReport} disabled={isGenerating}>{isGenerating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Calendar className="mr-2 h-4 w-4" />}Reporte Mensual</Button>
           </div>
         }
       />
       
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+      {isLoading ? ( <div className="flex justify-center items-center h-64"><Loader2 className="h-8 w-8 animate-spin" /></div> ) : (
+      <>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Ingresos de Flotilla (Mes Actual)</CardTitle><DollarSign className="h-5 w-5 text-green-500"/></CardHeader><CardContent><div className="text-2xl font-bold font-headline">{formatCurrency(monthlyReportData.currentMonthIncome)}</div><p className="text-xs text-muted-foreground">{format(selectedDate, "MMMM yyyy", { locale: es })}</p></CardContent></Card>
+            <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Ingresos de Flotilla (Mes Anterior)</CardTitle><DollarSign className="h-5 w-5 text-gray-500"/></CardHeader><CardContent><div className="text-2xl font-bold font-headline">{formatCurrency(monthlyReportData.prevMonthIncome)}</div><p className="text-xs text-muted-foreground">{format(subMonths(selectedDate, 1), "MMMM yyyy", { locale: es })}</p></CardContent></Card>
+        </div>
+        
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Ingresos de Flotilla (Mes Actual)</CardTitle>
-            <DollarSign className="h-5 w-5 text-green-500"/>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold font-headline">{formatCurrency(monthlyReportData.currentMonthIncome)}</div>
-            <p className="text-xs text-muted-foreground">{format(selectedDate, "MMMM yyyy", { locale: es })}</p>
-          </CardContent>
+            <CardHeader><div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2"><div><CardTitle>Informe Mensual Detallado</CardTitle><CardDescription>Desglose de ingresos y costos por vehículo para el mes seleccionado.</CardDescription></div><div className="flex items-center gap-2"><Button variant="outline" size="icon" onClick={handlePreviousMonth}><ChevronLeft className="h-4 w-4" /></Button><span className="font-semibold text-center w-32">{format(selectedDate, "MMMM yyyy", { locale: es })}</span><Button variant="outline" size="icon" onClick={handleNextMonth}><ChevronRight className="h-4 w-4" /></Button></div></div></CardHeader>
+            <CardContent><div className="rounded-lg border shadow-sm overflow-x-auto"><Table><TableHeader className="bg-black"><TableRow><TableHead className="font-bold text-white">Vehículo</TableHead><TableHead className="text-right font-bold text-white">Ingresos por Renta</TableHead><TableHead className="text-right font-bold text-white">Costos y Deducc.</TableHead><TableHead className="text-right font-bold text-white">Balance Neto</TableHead></TableRow></TableHeader><TableBody>
+            {monthlyReportData.detailedReport.map(item => { const balance = item.rentalIncome - item.totalDeductions; return (<TableRow key={item.vehicleId}><TableCell className="font-medium align-top"><Link href={`/flotilla/${item.vehicleId}`} className="hover:underline text-primary font-semibold">{item.vehicleInfo}</Link><div className="text-xs text-muted-foreground mt-2 pl-2 border-l-2 border-destructive/20 space-y-1"><p className="font-semibold text-destructive/80 -ml-2 pl-2">Desglose de Deducciones:</p><div className="flex justify-between"><span>Ranoro (Mantenimiento):</span><span>{formatCurrency(item.maintenanceAndExpensesCost)}</span></div>{item.services && item.services.length > 0 && item.services.map(s => (<div key={s.id} className="flex justify-between pl-2"><span className="truncate pr-2">- {s.description || 'Servicio'}</span><span>{formatCurrency(s.totalCost)}</span></div>))}<div className="flex justify-between"><span>Administración (GPS, Admin, Seguro):</span><span>{formatCurrency(item.administrationCost)}</span></div></div></TableCell><TableCell className="text-right align-top">{formatCurrency(item.rentalIncome)}</TableCell><TableCell className="text-right align-top font-bold text-destructive">{formatCurrency(item.totalDeductions)}</TableCell><TableCell className={`text-right align-top font-bold ${balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>{formatCurrency(balance)}</TableCell></TableRow>)})}</TableBody></Table></div></CardContent>
         </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Ingresos de Flotilla (Mes Anterior)</CardTitle>
-            <DollarSign className="h-5 w-5 text-gray-500"/>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold font-headline">{formatCurrency(monthlyReportData.prevMonthIncome)}</div>
-            <p className="text-xs text-muted-foreground">{format(subMonths(selectedDate, 1), "MMMM yyyy", { locale: es })}</p>
-          </CardContent>
-        </Card>
-      </div>
-      
-      <Card>
-        <CardHeader>
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
-            <div>
-              <CardTitle>Informe Mensual Detallado</CardTitle>
-              <CardDescription>Desglose de ingresos y costos por vehículo para el mes seleccionado.</CardDescription>
-            </div>
-            <div className="flex items-center gap-2">
-              <Button variant="outline" size="icon" onClick={handlePreviousMonth}>
-                <ChevronLeft className="h-4 w-4" />
-              </Button>
-              <span className="font-semibold text-center w-32">{format(selectedDate, "MMMM yyyy", { locale: es })}</span>
-              <Button variant="outline" size="icon" onClick={handleNextMonth}>
-                <ChevronRight className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="rounded-lg border shadow-sm overflow-x-auto">
-            <Table>
-              <TableHeader className="bg-black">
-                <TableRow>
-                  <TableHead className="font-bold text-white">Vehículo</TableHead>
-                  <TableHead className="text-right font-bold text-white">Ingresos por Renta</TableHead>
-                  <TableHead className="text-right font-bold text-white">Costos y Deducc.</TableHead>
-                  <TableHead className="text-right font-bold text-white">Balance Neto</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {monthlyReportData.detailedReport.map(item => {
-                  const balance = item.rentalIncome - item.totalDeductions;
-                  return (
-                    <TableRow key={item.vehicleId}>
-                      <TableCell className="font-medium align-top">
-                        <Link href={`/flotilla/${item.vehicleId}`} className="hover:underline text-primary font-semibold">
-                          {item.vehicleInfo}
-                        </Link>
-                         <div className="text-xs text-muted-foreground mt-2 pl-2 border-l-2 border-destructive/20 space-y-1">
-                            <p className="font-semibold text-destructive/80 -ml-2 pl-2">Desglose de Deducciones:</p>
-                            <div className="flex justify-between"><span>Ranoro (Mantenimiento):</span><span>{formatCurrency(item.maintenanceAndExpensesCost)}</span></div>
-                            {item.services && item.services.length > 0 && item.services.map(s => (
-                                <div key={s.id} className="flex justify-between pl-2">
-                                  <span className="truncate pr-2">- {s.description || 'Servicio'}</span>
-                                  <span>{formatCurrency(s.totalCost)}</span>
-                                </div>
-                            ))}
-                            <div className="flex justify-between"><span>Administración (GPS, Admin, Seguro):</span><span>{formatCurrency(item.administrationCost)}</span></div>
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-right align-top">{formatCurrency(item.rentalIncome)}</TableCell>
-                      <TableCell className="text-right align-top font-bold text-destructive">{formatCurrency(item.totalDeductions)}</TableCell>
-                      <TableCell className={`text-right align-top font-bold ${balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                        {formatCurrency(balance)}
-                      </TableCell>
-                    </TableRow>
-                  )
-                })}
-              </TableBody>
-            </Table>
-          </div>
-        </CardContent>
-      </Card>
+      </>
+      )}
       
       {isReportPreviewOpen && reportToPreview && (
-        <PrintTicketDialog
-          open={isReportPreviewOpen}
-          onOpenChange={setIsReportPreviewOpen}
-          title="Vista Previa de Reporte"
-          dialogContentClassName="printable-quote-dialog max-w-4xl"
-          footerActions={
-            <div className="flex flex-col sm:flex-row gap-2">
-              <Button variant="outline" onClick={handleCopyAsImage}>
-                <Copy className="mr-2 h-4 w-4" /> Copiar Imagen
-              </Button>
-              <Button onClick={handleDownloadPDF}>
-                <Download className="mr-2 h-4 w-4" /> Descargar PDF
-              </Button>
-            </div>
-          }
-        >
+        <PrintTicketDialog open={isReportPreviewOpen} onOpenChange={setIsReportPreviewOpen} title="Vista Previa de Reporte" dialogContentClassName="printable-quote-dialog max-w-4xl" footerActions={<Button onClick={handleDownloadPDF}><Download className="mr-2 h-4 w-4" /> Descargar PDF</Button>}>
           <ReportContent report={reportToPreview} ref={reportContentRef} />
         </PrintTicketDialog>
       )}

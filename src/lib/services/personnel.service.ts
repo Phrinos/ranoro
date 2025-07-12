@@ -119,15 +119,28 @@ const onDriversUpdate = (callback: (drivers: Driver[]) => void): (() => void) =>
     return unsubscribe;
 };
 
+const getDriverById = async (id: string): Promise<Driver | undefined> => {
+    if (!db) throw new Error("Database not initialized.");
+    const docRef = doc(db, 'drivers', id);
+    const docSnap = await getDoc(docRef);
+    return docSnap.exists() ? { id: docSnap.id, ...docSnap.data() } as Driver : undefined;
+};
+
 const saveDriver = async (data: DriverFormValues, existingId?: string): Promise<Driver> => {
     if (!db) throw new Error("Database not initialized.");
+    const dataToSave = {
+        ...data,
+        depositAmount: Number(data.depositAmount) || 0,
+        contractDate: data.contractDate ? new Date(data.contractDate).toISOString() : undefined,
+    };
+
     if (existingId) {
         const docRef = doc(db, 'drivers', existingId);
-        await updateDoc(docRef, data);
+        await updateDoc(docRef, dataToSave);
         const docSnap = await getDoc(docRef);
-        return { id: docSnap.id, ...docSnap.data() } as Driver;
+        return { id: docSnap.id, ...(docSnap.data() as Omit<Driver, 'id'>) };
     } else {
-        const newDriverData = { ...data, documents: {} };
+        const newDriverData = { ...dataToSave, documents: {}, manualDebts: [] };
         const docRef = await addDoc(collection(db, 'drivers'), newDriverData);
         return { id: docRef.id, ...newDriverData };
     }
@@ -146,5 +159,6 @@ export const personnelService = {
     addAdminStaff,
     archiveAdminStaff,
     onDriversUpdate,
+    getDriverById,
     saveDriver
 };

@@ -2,14 +2,10 @@
 "use client";
 
 import { useParams, useRouter } from 'next/navigation';
-import { 
-  placeholderVehicles, 
-  persistToFirestore 
-} from '@/lib/placeholder-data';
-import type { Vehicle } from '@/types';
+import type { Vehicle, VehiclePaperwork } from '@/types';
 import { PageHeader } from '@/components/page-header';
 import { Button } from '@/components/ui/button';
-import { ShieldAlert, Edit, ArrowLeft, Trash2 } from 'lucide-react';
+import { ShieldAlert, Edit, ArrowLeft, Trash2, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
@@ -22,13 +18,11 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { VehicleDialog } from '../../vehiculos/components/vehicle-dialog';
 import type { VehicleFormValues } from '../../vehiculos/components/vehicle-form';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-
-// Import refactored tab components
+import { inventoryService, operationsService } from '@/lib/services';
 import { DetailsTabContent } from './components/details-tab-content';
 import { MaintenancesTabContent } from './components/maintenances-tab-content';
 import { FinesTabContent } from './components/fines-tab-content';
@@ -44,58 +38,44 @@ export default function FleetVehicleDetailPage() {
   const [vehicle, setVehicle] = useState<Vehicle | null | undefined>(undefined);
   const [isVehicleEditDialogOpen, setIsVehicleEditDialogOpen] = useState(false);
 
-  useEffect(() => {
-    const foundVehicle = placeholderVehicles.find(v => v.id === vehicleId && v.isFleetVehicle);
-    setVehicle(foundVehicle || null);
+  const fetchVehicle = useCallback(async () => {
+    const fetchedVehicle = await inventoryService.getVehicleById(vehicleId);
+    if(fetchedVehicle && fetchedVehicle.isFleetVehicle) {
+        setVehicle(fetchedVehicle);
+    } else {
+        setVehicle(null);
+    }
   }, [vehicleId]);
+
+  useEffect(() => {
+    fetchVehicle();
+  }, [fetchVehicle]);
 
   const handleSaveVehicle = useCallback(async (formData: VehicleFormValues) => {
     if (!vehicle) return;
-
-    // The form now provides clean data (null instead of undefined), so we can pass it directly.
-    const updatedVehicleData: Partial<Vehicle> = {
-        ...formData,
-        year: Number(formData.year),
-    };
-    
-    const updatedVehicle = { ...vehicle, ...updatedVehicleData } as Vehicle;
-    
-    const pIndex = placeholderVehicles.findIndex(v => v.id === updatedVehicle.id);
-    if (pIndex !== -1) {
-      placeholderVehicles[pIndex] = updatedVehicle;
+    try {
+        await inventoryService.saveVehicle(formData, vehicle.id);
+        await fetchVehicle(); // Re-fetch data to reflect changes
+        setIsVehicleEditDialogOpen(false);
+        toast({ title: "Vehículo Actualizado" });
+    } catch(e) {
+        toast({ title: "Error", description: "No se pudieron guardar los cambios.", variant: "destructive"});
     }
-    
-    await persistToFirestore(['vehicles']);
-    setVehicle(updatedVehicle);
-
-    setIsVehicleEditDialogOpen(false);
-    toast({
-      title: "Vehículo Actualizado",
-      description: `Los datos de ${updatedVehicle.make} ${updatedVehicle.model} han sido actualizados.`,
-    });
-  }, [vehicle, toast]);
+  }, [vehicle, toast, fetchVehicle]);
 
   const handleRemoveFromFleet = useCallback(async () => {
     if (!vehicle) return;
-
-    const vehicleIndex = placeholderVehicles.findIndex(v => v.id === vehicle.id);
-    if (vehicleIndex > -1) {
-      placeholderVehicles[vehicleIndex].isFleetVehicle = false;
-      delete placeholderVehicles[vehicleIndex].dailyRentalCost;
+    try {
+        await inventoryService.updateVehicle(vehicle.id, { isFleetVehicle: false, dailyRentalCost: null });
+        toast({ title: "Vehículo Removido", description: `${vehicle.licensePlate} ha sido removido de la flotilla.` });
+        router.push('/flotilla');
+    } catch(e) {
+        toast({ title: "Error", description: "No se pudo remover el vehículo.", variant: "destructive"});
     }
-
-    await persistToFirestore(['vehicles']);
-    
-    toast({
-      title: "Vehículo Removido",
-      description: `${vehicle.licensePlate} ha sido removido de la flotilla.`,
-    });
-
-    router.push('/flotilla');
   }, [vehicle, toast, router]);
 
   if (vehicle === undefined) {
-    return <div className="container mx-auto py-8 text-center">Cargando datos del vehículo...</div>;
+    return <div className="container mx-auto py-8 text-center"><Loader2 className="h-8 w-8 animate-spin" /></div>;
   }
 
   if (!vehicle) {

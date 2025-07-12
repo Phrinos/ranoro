@@ -55,10 +55,10 @@ export interface Vehicle {
   serviceHistory?: Pick<ServiceRecord, 'id' | 'serviceDate' | 'description' | 'totalCost' | 'status' | 'mileage'>[];
   lastServiceDate?: string; 
   isFleetVehicle?: boolean;
-  dailyRentalCost?: number;
-  gpsMonthlyCost?: number;
-  adminMonthlyCost?: number;
-  insuranceMonthlyCost?: number;
+  dailyRentalCost?: number | null;
+  gpsMonthlyCost?: number | null;
+  adminMonthlyCost?: number | null;
+  insuranceMonthlyCost?: number | null;
   fineCheckHistory?: {
     date: string; // ISO String
     checkedBy: string; // User name

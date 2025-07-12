@@ -1,5 +1,4 @@
 
-
 import {
   collection,
   onSnapshot,
@@ -12,12 +11,14 @@ import {
   getDocs,
 } from 'firebase/firestore';
 import { db } from '../firebaseClient';
-import type { ServiceRecord, QuoteRecord, SaleReceipt, Vehicle, CashDrawerTransaction, InitialCashBalance, InventoryItem } from "@/types";
+import type { ServiceRecord, QuoteRecord, SaleReceipt, Vehicle, CashDrawerTransaction, InitialCashBalance, InventoryItem, RentalPayment, VehicleExpense, OwnerWithdrawal } from "@/types";
 import { savePublicDocument } from '@/lib/public-document';
 import { inventoryService } from './inventory.service';
 import { nanoid } from 'nanoid';
 import type { ExtractedService } from '@/ai/flows/service-migration-flow';
 import { format, parse, isValid, startOfDay, isSameDay } from 'date-fns';
+import { personnelService } from './personnel.service';
+
 
 // --- Services ---
 
@@ -33,6 +34,12 @@ const onServicesUpdate = (callback: (services: ServiceRecord[]) => void): (() =>
     });
     return unsubscribe;
 };
+
+const onServicesUpdatePromise = async (): Promise<ServiceRecord[]> => {
+    if (!db) return [];
+    const snapshot = await getDocs(collection(db, "serviceRecords"));
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ServiceRecord));
+}
 
 const updateService = async (serviceId: string, data: Partial<ServiceRecord>): Promise<ServiceRecord> => {
     if(!db) throw new Error("Database not connected");
@@ -205,8 +212,82 @@ const setInitialCashBalance = async (balance: InitialCashBalance): Promise<void>
 };
 
 
+// --- Rental / Fleet Operations ---
+const onRentalPaymentsUpdate = (callback: (payments: RentalPayment[]) => void): (() => void) => {
+    if (!db) return () => {};
+    const q = query(collection(db, "rentalPayments"));
+    const unsubscribe = onSnapshot(q, (querySnapshot) => {
+        callback(querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as RentalPayment)));
+    });
+    return unsubscribe;
+};
+
+const onRentalPaymentsUpdatePromise = async (): Promise<RentalPayment[]> => {
+    if (!db) return [];
+    const snapshot = await getDocs(collection(db, "rentalPayments"));
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as RentalPayment));
+}
+
+const addRentalPayment = async (driverId: string, amount: number, note: string | undefined, mileage?: number): Promise<RentalPayment> => {
+    if (!db) throw new Error("Database not initialized.");
+    const driver = await personnelService.getDriverById(driverId);
+    if (!driver) throw new Error("Driver not found.");
+    const vehicle = await inventoryService.getVehicleById(driver.assignedVehicleId || '');
+    if (!vehicle) throw new Error("Assigned vehicle not found.");
+    
+    const newPayment: Omit<RentalPayment, 'id'> = {
+        driverId: driver.id,
+        driverName: driver.name,
+        vehicleLicensePlate: vehicle.licensePlate,
+        paymentDate: new Date().toISOString(),
+        amount: amount,
+        daysCovered: amount / (vehicle.dailyRentalCost || 1),
+        note: note,
+    };
+    
+    const batch = writeBatch(db);
+    const newPaymentRef = doc(collection(db, "rentalPayments"));
+    batch.set(newPaymentRef, newPayment);
+
+    if (mileage !== undefined) {
+        const vehicleRef = doc(db, "vehicles", vehicle.id);
+        batch.update(vehicleRef, { currentMileage: mileage, lastMileageUpdate: new Date().toISOString() });
+    }
+    
+    await batch.commit();
+    return { id: newPaymentRef.id, ...newPayment };
+};
+
+const onVehicleExpensesUpdatePromise = async (): Promise<VehicleExpense[]> => {
+    if (!db) return [];
+    const snapshot = await getDocs(collection(db, "vehicleExpenses"));
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as VehicleExpense));
+};
+
+const addVehicleExpense = async (data: Omit<VehicleExpense, 'id' | 'date' | 'vehicleLicensePlate'>): Promise<VehicleExpense> => {
+    if (!db) throw new Error("Database not initialized.");
+    const vehicle = await inventoryService.getVehicleById(data.vehicleId);
+    if (!vehicle) throw new Error("Vehicle not found");
+
+    const newExpense: Omit<VehicleExpense, 'id'> = {
+        ...data,
+        vehicleLicensePlate: vehicle.licensePlate,
+        date: new Date().toISOString(),
+    };
+    const docRef = await addDoc(collection(db, 'vehicleExpenses'), newExpense);
+    return { id: docRef.id, ...newExpense };
+};
+
+const addOwnerWithdrawal = async (data: Omit<OwnerWithdrawal, 'id' | 'date'>): Promise<OwnerWithdrawal> => {
+    if (!db) throw new Error("Database not initialized.");
+    const newWithdrawal = { ...data, date: new Date().toISOString() };
+    const docRef = await addDoc(collection(db, 'ownerWithdrawals'), newWithdrawal);
+    return { id: docRef.id, ...newWithdrawal };
+};
+
 export const operationsService = {
     onServicesUpdate,
+    onServicesUpdatePromise,
     updateService,
     cancelService,
     completeService,
@@ -217,4 +298,10 @@ export const operationsService = {
     addCashTransaction,
     onInitialCashBalanceUpdate,
     setInitialCashBalance,
+    onRentalPaymentsUpdate,
+    onRentalPaymentsUpdatePromise,
+    addRentalPayment,
+    onVehicleExpensesUpdatePromise,
+    addVehicleExpense,
+    addOwnerWithdrawal,
 };
