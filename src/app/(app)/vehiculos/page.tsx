@@ -41,7 +41,7 @@ function VehiculosPageComponent() {
     useEffect(() => {
         setIsLoading(true);
         const unsubscribeVehicles = onSnapshot(collection(db, "vehicles"), (snapshot) => {
-            const vehiclesData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Vehicle));
+            const vehiclesData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Vehicle[];
             setAllVehicles(vehiclesData);
             setIsLoading(false);
         });
@@ -76,10 +76,10 @@ function VehiculosPageComponent() {
         try {
             if (editingVehicle) {
                 const vehicleRef = doc(db, "vehicles", editingVehicle.id);
-                await updateDoc(vehicleRef, data);
+                await updateDoc(vehicleRef, data as any); // Cast data to any to satisfy UpdateData type
                 toast({ title: "Vehículo Actualizado", description: `Se ha actualizado ${data.make} ${data.model}.` });
             } else {
-                await addDoc(collection(db, "vehicles"), {
+                await addDoc(collection(db, "database/main/vehicles"), {
                     ...data,
                     year: Number(data.year),
                 });
@@ -102,9 +102,9 @@ function VehiculosPageComponent() {
         try {
             if(editingPriceRecord) {
                 const priceListRef = doc(db, "vehiclePriceLists", editingPriceRecord.id);
-                await updateDoc(priceListRef, { ...formData, years: formData.years.sort((a,b) => a-b) });
+                await updateDoc(priceListRef, { ...formData, years: formData.years.sort((a: number,b: number) => a-b) } as any); // Cast data to any
             } else {
-                await addDoc(collection(db, "vehiclePriceLists"), { ...formData, years: formData.years.sort((a,b) => a-b) });
+                await addDoc(collection(db, "vehiclePriceLists"), { ...formData, years: formData.years.sort((a: number,b: number) => a-b) } as any); // Cast data to any
             }
             toast({ title: `Precotización ${editingPriceRecord ? 'Actualizada' : 'Creada'}` });
             setIsPriceListDialogOpen(false);

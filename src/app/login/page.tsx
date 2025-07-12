@@ -181,17 +181,17 @@ export default function LoginPage() {
 
   return (
     <div className="w-full lg:grid lg:min-h-screen lg:grid-cols-2 xl:min-h-screen">
-      <div className="hidden bg-muted lg:block relative">
+      <div className="hidden bg-muted lg:block relative overflow-hidden">
         <Image
-          src="/home.png"
-          alt="Mecánico de Ranoro en un taller moderno"
+          src="/login.png"
+          alt="Ranoro Login"
           fill
-          className="object-cover"
-          priority
-          data-ai-hint="mechanic workshop sportscar"
+          className="object-cover object-center"
+ sizes="(max-width: 768px) 100vw, 50vw"
+ priority
         />
       </div>
-      <div className="flex items-start justify-center py-12 bg-gray-50 dark:bg-gray-900">
+      <div className="flex items-center justify-center py-12 bg-gray-50 dark:bg-gray-900">
         <Card className="mx-4 w-full sm:mx-auto sm:w-[420px] max-w-full animate-fade-in-up shadow-xl transition-all">
           <CardHeader className="text-center">
              <Link href="/" className="mb-4">
@@ -201,7 +201,7 @@ export default function LoginPage() {
                   width={180}
                   height={45}
                   className="mx-auto h-auto dark:invert"
-                  style={{width: '180px', height: 'auto'}}
+                  style={{width: 'auto', height: 'auto'}}
                   data-ai-hint="ranoro logo"
               />
             </Link>
@@ -212,7 +212,7 @@ export default function LoginPage() {
                   <TabsTrigger value="login">Iniciar Sesión</TabsTrigger>
                   <TabsTrigger value="register">Registrarse</TabsTrigger>
                 </TabsList>
-                <TabsContent value="login" className="data-[state=inactive]:animate-out data-[state=inactive]:fade-out-0 data-[state=active]:animate-in data-[state=active]:fade-in-0">
+                <TabsContent value="login">
                     <form onSubmit={handleLogin} className="space-y-4 pt-4">
                         <div className="grid gap-2 text-left">
                             <Label htmlFor="email-login">Correo Electrónico</Label>
@@ -241,7 +241,7 @@ export default function LoginPage() {
                       </Link>.
                     </div>
                 </TabsContent>
-                <TabsContent value="register" className="data-[state=inactive]:animate-out data-[state=inactive]:fade-out-0 data-[state=active]:animate-in data-[state=active]:fade-in-0">
+                <TabsContent value="register">
                    <form onSubmit={handleRegister} className="space-y-4 pt-4">
                         <div className="grid gap-2 text-left">
                             <Label htmlFor="name-register">Nombre Completo</Label>

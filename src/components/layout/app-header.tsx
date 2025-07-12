@@ -111,8 +111,7 @@ export function AppHeader() {
                     alt="Ranoro Logo"
                     width={120}
                     height={30}
-                    className="dark:invert h-auto"
-                    style={{width: '120px', height: 'auto'}}
+                    className="dark:invert w-auto h-auto"
                     data-ai-hint="ranoro logo"
                   />
                 </Link>
@@ -128,8 +127,7 @@ export function AppHeader() {
                 alt="Ranoro Logo"
                 width={120}
                 height={30}
-                className="dark:invert h-auto"
-                style={{width: '120px', height: 'auto'}}
+                className="dark:invert w-[120px] h-auto"
                 data-ai-hint="ranoro logo"
               />
             </Link>
