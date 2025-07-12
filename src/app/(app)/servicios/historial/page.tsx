@@ -1,45 +1,35 @@
 
-
 "use client";
 
 import React, { useState, useEffect, useMemo, useCallback, Suspense } from "react";
-import {
-  collection,
-  onSnapshot,
-  doc,
-  updateDoc,
-  addDoc,
-  writeBatch,
-} from "firebase/firestore";
-import { db } from "@/lib/firebaseClient";
+import { useSearchParams, useRouter } from 'next/navigation';
 import { ServiceDialog } from "../components/service-dialog";
-import { UnifiedPreviewDialog } from "@/components/shared/unified-preview-dialog";
+import { UnifiedPreviewDialog } from '@/components/shared/unified-preview-dialog';
 import { CompleteServiceDialog } from "../components/CompleteServiceDialog";
 import { TableToolbar } from "@/components/shared/table-toolbar";
-import type {
-  ServiceRecord,
-  Vehicle,
-  Technician,
-  InventoryItem,
-  QuoteRecord,
-} from "@/types";
+import type { ServiceRecord, Vehicle, Technician, InventoryItem, QuoteRecord, ServiceTypeRecord } from "@/types";
 import { useToast } from "@/hooks/use-toast";
 import { useTableManager } from "@/hooks/useTableManager";
 import { isSameDay, parseISO, isValid } from "date-fns";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useSearchParams } from "next/navigation";
 import { ServiceAppointmentCard } from "../components/ServiceAppointmentCard";
 import { Loader2 } from "lucide-react";
+import { operationsService, inventoryService, personnelService } from '@/lib/services';
+import { collection, onSnapshot, doc, getDoc, updateDoc, addDoc, writeBatch } from 'firebase/firestore';
+import { db } from '@/lib/firebaseClient';
 
 function HistorialServiciosPageComponent() {
   const { toast } = useToast();
   const searchParams = useSearchParams();
+  const router = useRouter();
+  
   const [activeTab, setActiveTab] = useState(searchParams.get("tab") || "activos");
 
   const [allServices, setAllServices] = useState<ServiceRecord[]>([]);
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [technicians, setTechnicians] = useState<Technician[]>([]);
   const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
+  const [serviceTypes, setServiceTypes] = useState<ServiceTypeRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -52,32 +42,36 @@ function HistorialServiciosPageComponent() {
   const [isCompleteDialogOpen, setIsCompleteDialogOpen] = useState(false);
 
   useEffect(() => {
-    const unsubscribes = [
-      onSnapshot(collection(db, "serviceRecords"), (snapshot) => {
-        setAllServices(
-          snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() } as ServiceRecord))
-        );
-        setIsLoading(false);
-      }),
-      onSnapshot(collection(db, "vehicles"), (snapshot) => {
-        setVehicles(
-          snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() } as Vehicle))
-        );
-      }),
-      onSnapshot(collection(db, "technicians"), (snapshot) => {
-        setTechnicians(
-          snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() } as Technician))
-        );
-      }),
-      onSnapshot(collection(db, "inventory"), (snapshot) => {
-        setInventoryItems(
-          snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() } as InventoryItem))
-        );
+    const unsubs = [
+      operationsService.onServicesUpdate(setAllServices),
+      inventoryService.onVehiclesUpdate(setVehicles),
+      personnelService.onTechniciansUpdate(setTechnicians),
+      inventoryService.onItemsUpdate(setInventoryItems),
+      inventoryService.onServiceTypesUpdate((data) => {
+          setServiceTypes(data);
+          setIsLoading(false);
       }),
     ];
 
-    return () => unsubscribes.forEach((unsub) => unsub());
+    return () => unsubs.forEach((unsub) => unsub());
   }, []);
+
+  // Effect to handle opening a service for editing via URL param
+  useEffect(() => {
+    const serviceId = searchParams.get('id');
+    const editMode = searchParams.get('edit');
+
+    if (editMode === 'true' && serviceId && allServices.length > 0) {
+      const serviceToEdit = allServices.find(s => s.id === serviceId);
+      if (serviceToEdit) {
+        handleEditService(serviceToEdit);
+        // Clean up URL params after opening dialog
+        const newUrl = window.location.pathname;
+        router.replace(newUrl, { scroll: false });
+      }
+    }
+  }, [searchParams, allServices, router]);
+
 
   const activeServices = useMemo(() => {
     const today = new Date();
@@ -122,33 +116,32 @@ function HistorialServiciosPageComponent() {
 
   const handleSaveService = useCallback(
     async (data: QuoteRecord | ServiceRecord) => {
-      const { id, ...rest } = data;
-      if (id) {
-        await updateDoc(doc(db, "serviceRecords", id), rest);
-      } else {
-        await addDoc(collection(db, "serviceRecords"), rest);
+      try {
+        await operationsService.saveService(data);
+        setIsEditDialogOpen(false);
+        toast({ title: "Servicio actualizado." });
+      } catch (e) {
+        toast({ title: "Error", description: "No se pudo actualizar el servicio.", variant: "destructive"});
       }
-      setIsEditDialogOpen(false);
-      toast({ title: "Servicio actualizado." });
     },
     [toast]
   );
 
   const handleCancelService = useCallback(
     async (serviceId: string, reason: string) => {
-      await updateDoc(doc(db, "serviceRecords", serviceId), {
-        status: "Cancelado",
-        cancellationReason: reason,
-      });
-      toast({ title: "Servicio Cancelado" });
+      try {
+        await operationsService.cancelService(serviceId, reason);
+        toast({ title: "Servicio Cancelado" });
+      } catch (e) {
+        toast({ title: "Error", description: "No se pudo cancelar el servicio.", variant: "destructive"});
+      }
     },
     [toast]
   );
 
   const handleVehicleCreated = useCallback(
-    async (newVehicle: Vehicle) => {
-      const { id, ...rest } = newVehicle;
-      await addDoc(collection(db, "vehicles"), rest);
+    async (newVehicle: any) => {
+      await inventoryService.addVehicle(newVehicle);
     },
     []
   );
@@ -172,35 +165,21 @@ function HistorialServiciosPageComponent() {
         transferFolio?: string;
       }
     ) => {
-      const batch = writeBatch(db);
-      const serviceRef = doc(db, "serviceRecords", service.id);
+       if(!db) return toast({ title: "Error de base de datos", variant: "destructive"});
+      try {
+        const batch = writeBatch(db);
+        await operationsService.completeService(service, paymentDetails, batch);
+        await batch.commit();
 
-      batch.update(serviceRef, {
-        status: "Entregado",
-        deliveryDateTime: new Date().toISOString(),
-        ...paymentDetails,
-      });
-
-      for (const item of service.serviceItems || []) {
-        for (const supply of item.suppliesUsed || []) {
-          const supplyRef = doc(db, "inventory", supply.supplyId);
-          const inventoryItem = inventoryItems.find(i => i.id === supply.supplyId);
-          if (inventoryItem && !inventoryItem.isService) {
-            batch.update(supplyRef, {
-              quantity: inventoryItem.quantity - supply.quantity,
-            });
-          }
-        }
+        toast({
+            title: "Servicio Completado",
+            description: `El servicio para ${service.vehicleIdentifier} ha sido marcado como entregado.`,
+        });
+      } catch (e) {
+        toast({ title: "Error", description: "No se pudo completar el servicio.", variant: "destructive"});
       }
-
-      await batch.commit();
-
-      toast({
-        title: "Servicio Completado",
-        description: `El servicio para ${service.vehicleIdentifier} ha sido marcado como entregado.`,
-      });
     },
-    [toast, inventoryItems]
+    [toast]
   );
 
   const handleEditService = useCallback((service: ServiceRecord) => {
@@ -210,9 +189,7 @@ function HistorialServiciosPageComponent() {
 
   const handleConfirmAppointment = useCallback(
     async (service: ServiceRecord) => {
-      await updateDoc(doc(db, "serviceRecords", service.id), {
-        appointmentStatus: "Confirmada",
-      });
+      await operationsService.updateService(service.id, { appointmentStatus: "Confirmada" });
       toast({ title: "Cita Confirmada" });
     },
     [toast]
@@ -323,6 +300,7 @@ function HistorialServiciosPageComponent() {
           vehicles={vehicles}
           technicians={technicians}
           inventoryItems={inventoryItems}
+          serviceTypes={serviceTypes}
           onVehicleCreated={handleVehicleCreated}
           onCancelService={handleCancelService}
           mode="service"
@@ -344,6 +322,8 @@ function HistorialServiciosPageComponent() {
           open={isSheetOpen}
           onOpenChange={setIsSheetOpen}
           service={previewData.service}
+          vehicle={vehicles.find(v => v.id === previewData.service.vehicleId) || null}
+          associatedQuote={null}
         />
       )}
     </>
