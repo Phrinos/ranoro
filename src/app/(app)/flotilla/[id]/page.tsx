@@ -52,13 +52,10 @@ export default function FleetVehicleDetailPage() {
   const handleSaveVehicle = useCallback(async (formData: VehicleFormValues) => {
     if (!vehicle) return;
 
+    // The form now provides clean data (null instead of undefined), so we can pass it directly.
     const updatedVehicleData: Partial<Vehicle> = {
         ...formData,
         year: Number(formData.year),
-        dailyRentalCost: formData.dailyRentalCost ? Number(formData.dailyRentalCost) : undefined,
-        gpsMonthlyCost: formData.gpsMonthlyCost ? Number(formData.gpsMonthlyCost) : undefined,
-        adminMonthlyCost: formData.adminMonthlyCost ? Number(formData.adminMonthlyCost) : undefined,
-        insuranceMonthlyCost: formData.insuranceMonthlyCost ? Number(formData.insuranceMonthlyCost) : undefined,
     };
     
     const updatedVehicle = { ...vehicle, ...updatedVehicleData } as Vehicle;

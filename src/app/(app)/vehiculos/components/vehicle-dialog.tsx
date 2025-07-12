@@ -37,21 +37,11 @@ export function VehicleDialog({
   const open = isControlled ? controlledOpen : uncontrolledOpen;
   const onOpenChange = isControlled ? setControlledOpen : setUncontrolledOpen;
 
-  // Effect to handle initial uncontrolled open state if trigger is used directly
-  // This might not be needed if trigger always sets state via parent or a click handler
-  // For now, assuming trigger clicks will be handled by DialogTrigger or parent for uncontrolled.
-
   const handleSubmit = async (values: VehicleFormValues) => {
     try {
       if (onSave) {
         await onSave(values);
       }
-      // Toast message is now handled by the caller (e.g., VehiculosPage or VehicleDetailPage)
-      // to allow for context-specific messages ("creado" vs "actualizado").
-      // toast({
-      //   title: `Vehículo ${vehicle ? 'actualizado' : 'creado'} con éxito`,
-      //   description: `El vehículo ${values.make} ${values.model} ha sido ${vehicle ? 'actualizado' : 'registrado'}.`,
-      // });
       onOpenChange(false); // Close dialog
     } catch (error) {
       console.error("Error saving vehicle:", error);
@@ -63,14 +53,9 @@ export function VehicleDialog({
     }
   };
 
-  // If the dialog is controlled and 'open' is false, don't render anything, or Dialog will manage it.
-  // However, Dialog needs to be in the tree for its open state to be managed.
-  // So, we always render Dialog and pass the 'open' and 'onOpenChange' props.
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       {trigger && !isControlled && <DialogTrigger asChild onClick={() => onOpenChange(true)}>{trigger}</DialogTrigger>}
-      {/* If controlled, the trigger mechanism is handled by the parent setting the 'open' prop */}
       {open && (
         <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>

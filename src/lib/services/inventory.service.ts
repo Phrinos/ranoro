@@ -114,7 +114,7 @@ const addVehicle = async (data: VehicleFormValues): Promise<Vehicle> => {
       year: Number(data.year),
     };
     const docRef = await addDoc(collection(db, 'vehicles'), newVehicleData);
-    return { id: docRef.id, ...newVehicleData };
+    return { id: docRef.id, ...newVehicleData } as Vehicle;
 };
 
 // --- Price Lists ---

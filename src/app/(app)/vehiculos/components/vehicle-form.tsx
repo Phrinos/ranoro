@@ -27,15 +27,15 @@ const vehicleFormSchema = z.object({
   year: z.coerce.number().min(1900, "El año debe ser posterior a 1900.").max(2040, `El año no puede ser mayor a 2040.`),
   vin: z.string().length(17, "El VIN debe tener 17 caracteres.").optional().or(z.literal('')),
   licensePlate: z.string().min(1, "La placa no puede estar vacía. Ingrese 'SINPLACA' si es necesario."),
-  color: z.string().optional(),
+  color: z.string().optional().or(z.literal('')),
   ownerName: z.string().min(2, "El nombre del propietario es obligatorio."),
   ownerPhone: z.string().min(7, "Ingrese un número de teléfono válido."),
   ownerEmail: z.string().email("Ingrese un correo electrónico válido.").optional().or(z.literal('')),
   notes: z.string().optional(),
-  dailyRentalCost: z.coerce.number().optional(),
-  gpsMonthlyCost: z.coerce.number().optional(),
-  adminMonthlyCost: z.coerce.number().optional(),
-  insuranceMonthlyCost: z.coerce.number().optional(),
+  dailyRentalCost: z.preprocess((val) => val === "" ? null : val, z.coerce.number().nullable().optional()),
+  gpsMonthlyCost: z.preprocess((val) => val === "" ? null : val, z.coerce.number().nullable().optional()),
+  adminMonthlyCost: z.preprocess((val) => val === "" ? null : val, z.coerce.number().nullable().optional()),
+  insuranceMonthlyCost: z.preprocess((val) => val === "" ? null : val, z.coerce.number().nullable().optional()),
 });
 
 export type VehicleFormValues = z.infer<typeof vehicleFormSchema>;
