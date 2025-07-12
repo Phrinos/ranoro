@@ -2,6 +2,7 @@
 'use server';
 /**
  * @fileOverview An AI flow to migrate historical service data from CSV-formatted text.
+ * THIS FLOW IS DEPRECATED in favor of data-migration-flow.ts
  */
 
 import { ai } from '@/ai/genkit';
@@ -9,7 +10,7 @@ import { z } from 'zod';
 
 const ExtractedServiceSchema = z.object({
   vehicleLicensePlate: z.string().describe('The license plate of the vehicle that received the service. This is mandatory for linking the service.'),
-  serviceDate: z.string().describe('The date the service was performed. Must be a valid date format (e.g., YYYY-MM-DD, MM/DD/YY).'),
+  serviceDate: z.string().describe('The date the service was performed. Must be a valid date format (e.g., YYYY-MM-DD, MM/DD/YY). The original format must be preserved.'),
   description: z.string().default('').describe('A brief description of the service performed.'),
   totalCost: z.coerce.number().default(0).describe('The total cost charged for the service.'),
 });
@@ -44,7 +45,8 @@ const migrateServicesPrompt = ai.definePrompt({
 3.  **Mandatory Fields**: Every service record MUST have a valid 'vehicleLicensePlate', 'serviceDate', and 'description'. If a row is missing any of these, ignore that row.
 4.  **Clean and Format Data**:
     *   Trim whitespace from all text fields.
-    *   Convert 'totalCost' to a number. Ensure 'serviceDate' is preserved in its original format from the CSV.
+    *   Convert 'totalCost' to a number.
+    *   **CRITICAL: PRESERVE DATE FORMAT.** Extract the 'serviceDate' exactly as it appears in the source CSV. Do NOT reformat it.
     *   **Format the 'description' to start with a capital letter and have correct sentence casing.**
     *   **Format 'vehicleLicensePlate' to be uppercase and remove any extra characters or spaces.**
 5.  **Default Values**: If a field is empty or missing in the source data (and not mandatory), you MUST return it with a default value. Use 0 for 'totalCost'. Do not omit fields.

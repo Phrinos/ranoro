@@ -7,20 +7,16 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Car, Package, BrainCircuit, Loader2, CheckCircle, Database, Wrench, Briefcase } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { migrateVehicles, type ExtractedVehicleForMigration } from '@/ai/flows/vehicle-migration-flow';
 import { migrateProducts, type ExtractedProduct } from '@/ai/flows/product-migration-flow';
-import { migrateServices, type ExtractedService } from '@/ai/flows/service-migration-flow';
 import { migrateData, type MigrateDataOutput } from '@/ai/flows/data-migration-flow';
 import { useToast } from '@/hooks/use-toast';
 import { inventoryService, operationsService } from '@/lib/services';
-import type { VehicleFormValues } from '@/app/(app)/vehiculos/components/vehicle-form';
 import { formatCurrency } from '@/lib/utils';
 import { format, parse, isValid } from 'date-fns';
-import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 
-type MigrationType = 'operaciones' | 'vehiculos' | 'productos' | 'servicios';
-type AnalysisResult = MigrateDataOutput & { type: MigrationType };
+type MigrationType = 'operaciones' | 'productos';
+type AnalysisResult = MigrateDataOutput & { products?: ExtractedProduct[] } & { type: MigrationType };
 
 export function MigracionPageContent() {
     const [pastedText, setPastedText] = useState<string>('');
@@ -51,15 +47,9 @@ export function MigracionPageContent() {
             if (migrationType === 'operaciones') {
                 const rawResult = await migrateData({ csvContent: pastedText });
                 result = { ...rawResult, type: 'operaciones' as const };
-            } else if (migrationType === 'vehiculos') {
-                const rawResult = await migrateVehicles({ csvContent: pastedText });
-                result = { ...rawResult, vehicles: rawResult.vehicles, services: [], type: 'vehiculos' as const };
-            } else if (migrationType === 'productos') {
+            } else { // productos
                 const rawResult = await migrateProducts({ csvContent: pastedText });
-                result = { ...rawResult, products: rawResult.products, vehicles: [], services: [], type: 'productos' as const };
-            } else { // servicios
-                const rawResult = await migrateServices({ csvContent: pastedText });
-                result = { ...rawResult, vehicles: [], services: rawResult.services, type: 'servicios' as const };
+                result = { products: rawResult.products, vehicles: [], services: [], type: 'productos' as const };
             }
             setAnalysisResult(result);
             toast({ title: "¡Análisis Completo!", description: "Revisa los datos extraídos por la IA antes de guardarlos." });
@@ -72,49 +62,22 @@ export function MigracionPageContent() {
     };
 
     const handleConfirmAndSave = async () => {
-        if (!analysisResult) {
-            toast({ title: 'No hay resultado', description: 'Realiza un análisis primero.', variant: 'destructive' });
-            return;
-        }
-
+        if (!analysisResult) return toast({ title: 'No hay resultado', description: 'Realiza un análisis primero.', variant: 'destructive' });
         setIsSaving(true);
         let itemsAdded = 0;
-        let entityType = '';
+        
         try {
-            if (analysisResult.type === 'operaciones') {
-                entityType = 'Operaciones';
-                if(analysisResult.vehicles && analysisResult.vehicles.length > 0) {
-                     for (const vehicle of analysisResult.vehicles) {
-                        await inventoryService.addVehicle(vehicle as unknown as VehicleFormValues);
-                        itemsAdded++;
-                    }
-                }
-                if(analysisResult.services && analysisResult.services.length > 0) {
-                    await operationsService.saveMigratedServices(analysisResult.services);
-                    itemsAdded += analysisResult.services.length;
-                }
-            } else if (analysisResult.type === 'vehiculos') {
-                entityType = 'Vehículos';
-                if (analysisResult.vehicles && analysisResult.vehicles.length > 0) {
-                    for (const vehicle of analysisResult.vehicles) {
-                        await inventoryService.addVehicle(vehicle as unknown as VehicleFormValues);
-                        itemsAdded++;
-                    }
-                }
+            if (analysisResult.type === 'operaciones' && analysisResult.services.length > 0) {
+                // The new service handles both vehicle creation and service saving.
+                await operationsService.saveMigratedServices(analysisResult.services);
+                itemsAdded = analysisResult.services.length;
             } else if (analysisResult.type === 'productos' && analysisResult.products) {
-                entityType = 'Productos';
-                if (analysisResult.products && analysisResult.products.length > 0) {
+                if (analysisResult.products.length > 0) {
                     for (const product of analysisResult.products) {
                         await inventoryService.addItem(product as any);
                         itemsAdded++;
                     }
                 }
-            } else if (analysisResult.type === 'servicios') {
-                entityType = 'Servicios';
-                 if (analysisResult.services && analysisResult.services.length > 0) {
-                    await operationsService.saveMigratedServices(analysisResult.services);
-                    itemsAdded = analysisResult.services.length;
-                 }
             }
             toast({ title: "¡Migración Exitosa!", description: `Se guardaron ${itemsAdded} registros en la base de datos.` });
             setAnalysisResult(null);
@@ -132,12 +95,10 @@ export function MigracionPageContent() {
         
         let summaryText = '';
         if(analysisResult.type === 'operaciones') summaryText = `Se encontraron ${analysisResult.vehicles.length} vehículos y ${analysisResult.services.length} servicios.`;
-        if (analysisResult.type === 'vehiculos') summaryText = `Se encontraron ${analysisResult.vehicles.length} vehículos.`;
-        if (analysisResult.type === 'productos') summaryText = `Se encontraron ${analysisResult.products.length} productos.`;
-        if (analysisResult.type === 'servicios') summaryText = `Se encontraron ${analysisResult.services.length} servicios.`;
+        if (analysisResult.type === 'productos' && analysisResult.products) summaryText = `Se encontraron ${analysisResult.products.length} productos.`;
         
         const renderDate = (dateString: string) => {
-            const possibleFormats = ['M/d/yy', 'MM/dd/yy', 'M-d-yy', 'MM-dd-yy', 'yyyy-MM-dd'];
+            const possibleFormats = ['M/d/yy', 'MM/dd/yy', 'M-d-yy', 'MM-dd-yy', 'yyyy-MM-dd', 'dd/MM/yyyy'];
             for (const fmt of possibleFormats) {
                 const parsed = parse(dateString, fmt, new Date());
                 if(isValid(parsed)) return format(parsed, 'dd MMM, yyyy');
@@ -198,14 +159,12 @@ export function MigracionPageContent() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                      <Select value={migrationType} onValueChange={(v) => setMigrationType(v as MigrationType)}>
-                        <SelectTrigger className="w-full md:w-1/2">
+                        <SelectTrigger className="w-full md:w-1/2 bg-white">
                             <SelectValue placeholder="Seleccionar tipo de migración" />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="operaciones"><div className="flex items-center gap-2"><Briefcase className="h-4 w-4"/>Operaciones (Vehículos + Servicios)</div></SelectItem>
-                            <SelectItem value="vehiculos"><div className="flex items-center gap-2"><Car className="h-4 w-4"/>Solo Vehículos</div></SelectItem>
-                            <SelectItem value="productos"><div className="flex items-center gap-2"><Package className="h-4 w-4"/>Solo Productos</div></SelectItem>
-                            <SelectItem value="servicios"><div className="flex items-center gap-2"><Wrench className="h-4 w-4"/>Solo Servicios</div></SelectItem>
+                            <SelectItem value="operaciones"><div className="flex items-center gap-2"><Briefcase className="h-4 w-4"/>Operaciones (Vehículos y Servicios)</div></SelectItem>
+                            <SelectItem value="productos"><div className="flex items-center gap-2"><Package className="h-4 w-4"/>Solo Productos de Inventario</div></SelectItem>
                         </SelectContent>
                     </Select>
                     <Textarea
