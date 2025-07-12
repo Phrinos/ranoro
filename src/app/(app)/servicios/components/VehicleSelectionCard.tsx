@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
-import { Car as CarIcon, AlertCircle, User, Fingerprint, History } from 'lucide-react';
+import { Car as CarIcon, AlertCircle, User, Fingerprint, History, Phone } from 'lucide-react';
 import type { Vehicle, ServiceRecord } from '@/types';
 import { format, isValid, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -149,7 +149,7 @@ export function VehicleSelectionCard({
                             {...field}
                             value={vehicleLicensePlateSearch}
                             onChange={(e) => {
-                                setVehicleLicensePlateSearch(e.target.value.toUpperCase());
+                                setVehicleLicensePlateSearch(e.target.value);
                                 field.onChange(e.target.value.toUpperCase());
                             }}
                             disabled={isReadOnly}
@@ -206,8 +206,8 @@ export function VehicleSelectionCard({
                             <p className="font-bold text-lg">{selectedVehicle.licensePlate} - {selectedVehicle.make} {selectedVehicle.model} {selectedVehicle.year}</p>
                         </div>
                         <div className="space-y-1 pt-1">
-                            <p className="flex items-center gap-2"><User className="h-4 w-4 text-muted-foreground" /> {selectedVehicle.ownerName} - {selectedVehicle.ownerPhone}</p>
-                            <p className="flex items-center gap-2"><Fingerprint className="h-4 w-4 text-muted-foreground" /> {selectedVehicle.vin || 'VIN no registrado'}</p>
+                            <p className="flex items-center gap-2"><User className="h-4 w-4 text-muted-foreground" /> {selectedVehicle.ownerName}</p>
+                            <p className="flex items-center gap-2"><Phone className="h-4 w-4 text-muted-foreground" /> {selectedVehicle.ownerPhone || 'Tel. no registrado'}</p>
                         </div>
                         <div className="text-xs pt-2 mt-auto border-t space-y-1">
                             <p className="font-semibold flex items-center gap-1"><History className="h-3 w-3" /> Historial Reciente:</p>
