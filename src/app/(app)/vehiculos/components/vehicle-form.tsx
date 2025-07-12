@@ -22,7 +22,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { DollarSign } from "lucide-react";
 
 const vehicleFormSchema = z.object({
-  make: z.string().min(2, "La marca debe tener al menos 2 caracteres."),
+  make: z.string().min(2, "La marca es obligatoria."),
   model: z.string().min(1, "El modelo es obligatorio."),
   year: z.coerce.number().min(1900, "El año debe ser posterior a 1900.").max(2040, `El año no puede ser mayor a 2040.`),
   vin: z.string().length(17, "El VIN debe tener 17 caracteres.").optional().or(z.literal('')),
@@ -32,10 +32,10 @@ const vehicleFormSchema = z.object({
   ownerPhone: z.string().min(7, "Ingrese un número de teléfono válido."),
   ownerEmail: z.string().email("Ingrese un correo electrónico válido.").optional().or(z.literal('')),
   notes: z.string().optional(),
-  dailyRentalCost: z.preprocess((val) => val === "" ? null : val, z.coerce.number().nullable().optional()),
-  gpsMonthlyCost: z.preprocess((val) => val === "" ? null : val, z.coerce.number().nullable().optional()),
-  adminMonthlyCost: z.preprocess((val) => val === "" ? null : val, z.coerce.number().nullable().optional()),
-  insuranceMonthlyCost: z.preprocess((val) => val === "" ? null : val, z.coerce.number().nullable().optional()),
+  dailyRentalCost: z.preprocess((val) => (val === "" || val === undefined) ? null : val, z.coerce.number().nullable().optional()),
+  gpsMonthlyCost: z.preprocess((val) => (val === "" || val === undefined) ? null : val, z.coerce.number().nullable().optional()),
+  adminMonthlyCost: z.preprocess((val) => (val === "" || val === undefined) ? null : val, z.coerce.number().nullable().optional()),
+  insuranceMonthlyCost: z.preprocess((val) => (val === "" || val === undefined) ? null : val, z.coerce.number().nullable().optional()),
 });
 
 export type VehicleFormValues = z.infer<typeof vehicleFormSchema>;
@@ -90,7 +90,15 @@ export function VehicleForm({ initialData, onSubmit, onClose }: VehicleFormProps
   }, [initialData, form]);
 
   const handleFormSubmit = async (values: VehicleFormValues) => {
-    await onSubmit(values);
+    // The preprocess in Zod now handles converting empty strings to null for optional numbers.
+    const submissionData = {
+      ...values,
+      dailyRentalCost: values.dailyRentalCost === null ? undefined : values.dailyRentalCost,
+      gpsMonthlyCost: values.gpsMonthlyCost === null ? undefined : values.gpsMonthlyCost,
+      adminMonthlyCost: values.adminMonthlyCost === null ? undefined : values.adminMonthlyCost,
+      insuranceMonthlyCost: values.insuranceMonthlyCost === null ? undefined : values.insuranceMonthlyCost,
+    };
+    await onSubmit(submissionData);
   };
 
   return (
@@ -258,11 +266,11 @@ export function VehicleForm({ initialData, onSubmit, onClose }: VehicleFormProps
               <CardDescription>Establece los costos de renta y deducciones para este vehículo de la flotilla.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <FormField control={form.control} name="dailyRentalCost" render={({ field }) => ( <FormItem><FormLabel>Costo de Renta Diario</FormLabel><FormControl><div className="relative"><DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" /><Input type="number" step="0.01" placeholder="250.00" {...field} value={field.value ?? ''} className="pl-8" /></div></FormControl><FormMessage/></FormItem> )}/>
+              <FormField control={form.control} name="dailyRentalCost" render={({ field }) => ( <FormItem><FormLabel>Costo de Renta Diario</FormLabel><FormControl><div className="relative"><DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" /><Input type="number" step="0.01" placeholder="250.00" {...field} value={field.value ?? ''} /></div></FormControl><FormMessage/></FormItem> )}/>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                 <FormField control={form.control} name="gpsMonthlyCost" render={({ field }) => ( <FormItem><FormLabel>Deducción GPS (Mensual)</FormLabel><FormControl><div className="relative"><DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" /><Input type="number" step="0.01" placeholder="150.00" {...field} value={field.value ?? ''} className="pl-8" /></div></FormControl><FormMessage/></FormItem> )}/>
-                 <FormField control={form.control} name="adminMonthlyCost" render={({ field }) => ( <FormItem><FormLabel>Deducción Admin (Mensual)</FormLabel><FormControl><div className="relative"><DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" /><Input type="number" step="0.01" placeholder="200.00" {...field} value={field.value ?? ''} className="pl-8" /></div></FormControl><FormMessage/></FormItem> )}/>
-                 <FormField control={form.control} name="insuranceMonthlyCost" render={({ field }) => ( <FormItem><FormLabel>Deducción Seguro (Mensual)</FormLabel><FormControl><div className="relative"><DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" /><Input type="number" step="0.01" placeholder="250.00" {...field} value={field.value ?? ''} className="pl-8" /></div></FormControl><FormMessage/></FormItem> )}/>
+                 <FormField control={form.control} name="gpsMonthlyCost" render={({ field }) => ( <FormItem><FormLabel>Deducción GPS (Mensual)</FormLabel><FormControl><div className="relative"><DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" /><Input type="number" step="0.01" placeholder="150.00" {...field} value={field.value ?? ''} /></div></FormControl><FormMessage/></FormItem> )}/>
+                 <FormField control={form.control} name="adminMonthlyCost" render={({ field }) => ( <FormItem><FormLabel>Deducción Admin (Mensual)</FormLabel><FormControl><div className="relative"><DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" /><Input type="number" step="0.01" placeholder="200.00" {...field} value={field.value ?? ''} /></div></FormControl><FormMessage/></FormItem> )}/>
+                 <FormField control={form.control} name="insuranceMonthlyCost" render={({ field }) => ( <FormItem><FormLabel>Deducción Seguro (Mensual)</FormLabel><FormControl><div className="relative"><DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" /><Input type="number" step="0.01" placeholder="250.00" {...field} value={field.value ?? ''} /></div></FormControl><FormMessage/></FormItem> )}/>
               </div>
             </CardContent>
           </Card>
