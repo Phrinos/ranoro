@@ -81,29 +81,9 @@ function VehiculosPageComponent() {
     };
 
     const handleSaveVehicle = async (data: VehicleFormValues) => {
-        if (!db) return toast({ title: "Error de base de datos", variant: "destructive" });
         try {
-            const dataToSave: Partial<Vehicle> = {};
-            // Filter out undefined values to prevent Firestore errors
-            Object.keys(data).forEach(key => {
-                const typedKey = key as keyof VehicleFormValues;
-                if (data[typedKey] !== undefined) {
-                    (dataToSave as any)[typedKey] = data[typedKey];
-                }
-            });
-
-
-            if (editingVehicle) {
-                const vehicleRef = doc(db, "vehicles", editingVehicle.id);
-                await updateDoc(vehicleRef, dataToSave);
-                toast({ title: "Vehículo Actualizado", description: `Se ha actualizado ${data.make} ${data.model}.` });
-            } else {
-                await addDoc(collection(db, "vehicles"), {
-                    ...dataToSave,
-                    year: Number(data.year), // Ensure year is a number
-                });
-                toast({ title: "Vehículo Creado", description: `Se ha agregado ${data.make} ${data.model}.` });
-            }
+            await inventoryService.saveVehicle(data, editingVehicle?.id);
+            toast({ title: `Vehículo ${editingVehicle ? 'Actualizado' : 'Creado'}` });
             setIsVehicleDialogOpen(false);
             setEditingVehicle(null);
         } catch (error) {

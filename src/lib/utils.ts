@@ -64,22 +64,15 @@ export const capitalizeSentences = (str: string): string => {
  * @param file The image file to process.
  * @param maxWidth The maximum width of the output image.
  * @param quality The quality of the output JPEG image (0 to 1).
+ * @param format The desired output format.
  * @returns A promise that resolves with the data URL of the optimized image.
  */
-export const optimizeImage = (file: File, maxWidth: number, quality: number = 0.8): Promise<string> => {
+export const optimizeImage = (fileOrDataUrl: File | string, maxWidth: number, quality: number = 0.8, format: 'image/jpeg' | 'image/png' = 'image/jpeg'): Promise<string> => {
   return new Promise((resolve, reject) => {
-    if (!file.type.startsWith('image/')) {
-        return reject(new Error('El archivo no es una imagen.'));
-    }
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      if (!event.target?.result) {
-        return reject(new Error('FileReader event target result is null.'));
-      }
+    const processImage = (dataUrl: string) => {
       const img = new Image();
       img.onload = () => {
         const canvas = document.createElement('canvas');
-        
         let width = img.width;
         let height = img.height;
 
@@ -93,23 +86,31 @@ export const optimizeImage = (file: File, maxWidth: number, quality: number = 0.
         canvas.height = height;
 
         const ctx = canvas.getContext('2d');
-        if (!ctx) {
-          return reject(new Error('Could not get canvas context'));
-        }
+        if (!ctx) return reject(new Error('Could not get canvas context'));
+        
         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
         
-        // Determine the output format based on the original file type to preserve transparency
-        const outputFormat = file.type === 'image/png' ? 'image/png' : 'image/jpeg';
-        
-        // Get the data URL of the resized image
-        const dataUrl = canvas.toDataURL(outputFormat, outputFormat === 'image/jpeg' ? quality : undefined);
-        resolve(dataUrl);
+        const outputDataUrl = canvas.toDataURL(format, quality);
+        resolve(outputDataUrl);
       };
       img.onerror = (err) => reject(err);
-      img.src = event.target.result as string;
+      img.src = dataUrl;
     };
-    reader.onerror = (err) => reject(err);
-    reader.readAsDataURL(file);
+
+    if (typeof fileOrDataUrl === 'string') {
+      processImage(fileOrDataUrl);
+    } else { // It's a File object
+      if (!fileOrDataUrl.type.startsWith('image/')) {
+        return reject(new Error('El archivo no es una imagen.'));
+      }
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        if (!event.target?.result) return reject(new Error('FileReader event target result is null.'));
+        processImage(event.target.result as string);
+      };
+      reader.onerror = (err) => reject(err);
+      reader.readAsDataURL(fileOrDataUrl);
+    }
   });
 };
 

@@ -85,11 +85,11 @@ export function RegisterPaymentDialog({
         toast({ title: 'Error', description: 'Por favor, seleccione un conductor.', variant: 'destructive' });
         return;
     }
-    if (amount === '' || amount <= 0) {
+    if (amount === '' || Number(amount) <= 0) {
         toast({ title: 'Error', description: 'Por favor, ingrese un monto válido.', variant: 'destructive' });
         return;
     }
-    if (needsMileageUpdate && (mileage === '' || mileage < 0)) {
+    if (needsMileageUpdate && (mileage === '' || Number(mileage) < 0)) {
         toast({ title: 'Error', description: 'El kilometraje es obligatorio y debe ser un número positivo.', variant: 'destructive' });
         return;
     }
