@@ -47,7 +47,7 @@ export function ServiceDetailsCard({
   onGenerateQuoteWithAI,
   isGeneratingQuote,
 }: ServiceDetailsCardProps) {
-  const { control, watch, setValue } = useFormContext<ServiceFormValues>();
+  const { control, watch, setValue, getValues } = useFormContext<ServiceFormValues>();
   const { fields: serviceItemsFields, append: appendServiceItem, remove: removeServiceItem } = useFieldArray({ control, name: "serviceItems" });
   
   const watchedStatus = watch('status');
@@ -63,9 +63,12 @@ export function ServiceDetailsCard({
   };
   
   const showAppointmentFields = useMemo(() => {
-    // Only show if status is 'Agendado'
-    return watchedStatus === 'Agendado';
-  }, [watchedStatus]);
+    const status = getValues('status');
+    const date = getValues('serviceDate');
+    if (status === 'Agendado') return true;
+    if ((status === 'En Taller' || status === 'Entregado') && date) return true;
+    return false;
+  }, [watchedStatus, serviceDate, getValues]);
 
 
   return (
@@ -80,7 +83,9 @@ export function ServiceDetailsCard({
               <FormField control={control} name="subStatus" render={({ field }) => ( <FormItem><FormLabel>Sub-Estado Taller</FormLabel><Select onValueChange={field.onChange} value={field.value} disabled={isReadOnly}><FormControl><SelectTrigger><SelectValue placeholder="Seleccione sub-estado..." /></SelectTrigger></FormControl><SelectContent>{["En Espera de Refacciones", "Reparando", "Completado"].map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent></Select></FormItem> )}/>
           )}
           <FormField control={control} name="serviceType" render={({ field }) => ( <FormItem><FormLabel>Tipo de Servicio</FormLabel><Select onValueChange={handleServiceTypeChange} value={field.value || 'Servicio General'} disabled={isReadOnly}><FormControl><SelectTrigger><SelectValue placeholder="Seleccione un tipo" /></SelectTrigger></FormControl><SelectContent>{serviceTypes.map((type) => <SelectItem key={type.id} value={type.name}>{type.name}</SelectItem>)}</SelectContent></Select></FormItem> )}/>
-          <FormField control={control} name="technicianId" render={({ field }) => ( <FormItem><FormLabel>Técnico Asignado</FormLabel><Select onValueChange={field.onChange} value={field.value} disabled={isReadOnly}><FormControl><SelectTrigger><SelectValue placeholder="Seleccione un técnico..." /></SelectTrigger></FormControl><SelectContent>{technicians.filter((t) => !t.isArchived).map((technician) => ( <SelectItem key={technician.id} value={technician.id}>{technician.name} - {technician.specialty}</SelectItem> ))}</SelectContent></Select><FormMessage /></FormItem> )}/>
+          {(watchedStatus === 'En Taller' || watchedStatus === 'Entregado') && (
+            <FormField control={control} name="technicianId" render={({ field }) => ( <FormItem><FormLabel>Técnico Asignado</FormLabel><Select onValueChange={field.onChange} value={field.value} disabled={isReadOnly}><FormControl><SelectTrigger><SelectValue placeholder="Seleccione un técnico..." /></SelectTrigger></FormControl><SelectContent>{technicians.filter((t) => !t.isArchived).map((technician) => ( <SelectItem key={technician.id} value={technician.id}>{technician.name} - {technician.specialty}</SelectItem> ))}</SelectContent></Select><FormMessage /></FormItem> )}/>
+          )}
         </div>
         
         {showAppointmentFields && (
