@@ -68,7 +68,8 @@ export function ServiceDialog({
 
   useEffect(() => {
     if(open) {
-      setFormStatus(service?.status || quote?.status);
+      const data = service || quote;
+      setFormStatus(data?.status);
     }
   }, [open, service, quote]);
 
@@ -191,8 +192,8 @@ export function ServiceDialog({
         </DialogHeader>
         <div className="flex-grow overflow-y-auto -mx-6 px-6 print:overflow-visible">
           <ServiceForm
-            initialDataService={mode === 'service' ? service : null}
-            initialDataQuote={quote || (mode === 'quote' ? (service as any) : null)}
+            initialDataService={service}
+            initialDataQuote={quote}
             vehicles={vehicles} 
             technicians={technicians}
             inventoryItems={inventoryItems}

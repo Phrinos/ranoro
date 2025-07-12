@@ -87,6 +87,17 @@ function HistorialCotizacionesPageComponent() {
     }
   }, [toast]);
   
+  const handleDeleteQuote = useCallback(async (id: string) => {
+    if (!window.confirm("¿Seguro que quieres eliminar esta cotización? Esta acción no se puede deshacer.")) return;
+    try {
+      await operationsService.deleteService(id);
+      toast({ title: "Cotización Eliminada", variant: "destructive" });
+      setIsFormDialogOpen(false);
+    } catch (e) {
+      toast({ title: "Error", description: "No se pudo eliminar la cotización.", variant: "destructive"});
+    }
+  }, [toast]);
+
   const handleVehicleCreated = useCallback(async (newVehicle: Omit<Vehicle, 'id'>) => {
       await inventoryService.addVehicle(newVehicle as VehicleFormValues);
       toast({ title: "Vehículo Creado" });
@@ -144,6 +155,7 @@ function HistorialCotizacionesPageComponent() {
             serviceTypes={serviceTypes}
             mode="quote" 
             onSave={handleSaveQuote}
+            onDelete={handleDeleteQuote}
         />
       )}
       

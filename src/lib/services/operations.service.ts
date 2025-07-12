@@ -12,6 +12,7 @@ import {
   getDocs,
   getDoc,
   setDoc,
+  deleteDoc,
 } from 'firebase/firestore';
 import { db } from '../firebaseClient';
 import type { ServiceRecord, QuoteRecord, SaleReceipt, Vehicle, CashDrawerTransaction, InitialCashBalance, InventoryItem, RentalPayment, VehicleExpense, OwnerWithdrawal } from "@/types";
@@ -47,19 +48,16 @@ const onServicesUpdatePromise = async (): Promise<ServiceRecord[]> => {
 const saveService = async (data: Partial<ServiceRecord>): Promise<ServiceRecord> => {
     if (!db) throw new Error("Database not initialized.");
     
-    // Determine if it's an update or creation based on the presence of an ID
-    const isEditing = !!data.id;
-    const docId = data.id || nanoid(); // Use existing ID or generate a new one
-    
-    // Create a reference to the document
+    const docId = data.id || nanoid();
     const docRef = doc(db, 'serviceRecords', docId);
+    
+    // Create a clean data object to avoid Firestore errors with undefined values
+    const cleanedData = Object.fromEntries(
+        Object.entries(data).filter(([_, v]) => v !== undefined)
+    );
 
-    // Using setDoc with { merge: true } for both create and update.
-    // This simplifies the logic: if the doc doesn't exist, it's created. 
-    // If it exists, fields in `data` will be merged/overwritten.
-    await setDoc(docRef, data, { merge: true });
+    await setDoc(docRef, { ...cleanedData, id: docId }, { merge: true });
 
-    // Retrieve the full, updated document to return it
     const newDocSnap = await getDoc(docRef);
     if (!newDocSnap.exists()) {
       throw new Error("Failed to save or retrieve the service document.");
@@ -87,6 +85,13 @@ const cancelService = async (serviceId: string, reason: string): Promise<void> =
         cancellationReason: reason,
     });
 };
+
+const deleteService = async (serviceId: string): Promise<void> => {
+    if(!db) throw new Error("Database not connected");
+    const serviceRef = doc(db, "serviceRecords", serviceId);
+    await deleteDoc(serviceRef);
+};
+
 
 const completeService = async (serviceId: string, paymentDetails: { paymentMethod: any, cardFolio?: string, transferFolio?: string }): Promise<ServiceRecord> => {
     if(!db) throw new Error("Database not connected");
@@ -328,6 +333,7 @@ export const operationsService = {
     saveService,
     updateService,
     cancelService,
+    deleteService,
     completeService,
     saveMigratedServices,
     getServicesForVehicle,
