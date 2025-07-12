@@ -394,11 +394,6 @@ export function ServiceForm({
         values.receptionDateTime = new Date();
     }
     
-    // Clean up subStatus if the status is not 'En Taller'
-    if (values.status !== 'En Taller') {
-      delete values.subStatus;
-    }
-    
     const dataToSave = {
         ...values,
         id: values.id || `SRV-${generateUniqueId()}`,
@@ -407,6 +402,7 @@ export function ServiceForm({
         description: (values.serviceItems || []).map(item => item.name).join(', ') || 'Servicio',
         technicianId: values.technicianId || null,
         status: values.status || 'Agendado',
+        mileage: values.mileage ?? null,
         totalCost: totalCost, 
         totalSuppliesWorkshopCost: totalSuppliesWorkshopCost, 
         serviceProfit,
@@ -421,12 +417,16 @@ export function ServiceForm({
         serviceAdvisorName: freshUserRef.current.name,
         serviceAdvisorSignatureDataUrl: freshUserRef.current.signatureDataUrl,
         workshopInfo: (workshopInfo && Object.keys(workshopInfo).length > 0) ? workshopInfo as WorkshopInfo : undefined,
-    } as ServiceRecord;
+    };
+    
+    if (dataToSave.status !== 'En Taller') {
+      delete (dataToSave as Partial<ServiceFormValues>).subStatus;
+    }
     
     if (db) {
-        await savePublicDocument('service', dataToSave, localVehicles.find(v => v.id === getValues('vehicleId')) || null, workshopInfo);
+        await savePublicDocument('service', dataToSave as ServiceRecord, localVehicles.find(v => v.id === getValues('vehicleId')) || null, workshopInfo);
     }
-    await onSubmit(dataToSave);
+    await onSubmit(dataToSave as ServiceRecord);
     toast({ title: `${!initialData?.id ? 'Creado' : 'Actualizado'} con Éxito` });
     onClose();
   }, [isReadOnly, onClose, getValues, onSubmit, toast, technicians, totalCost, serviceProfit, workshopInfo, initialData, localVehicles, currentInventoryItems, totalSuppliesWorkshopCost, trigger]);
