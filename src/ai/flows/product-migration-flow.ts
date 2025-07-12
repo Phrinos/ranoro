@@ -9,10 +9,10 @@ import { z } from 'zod';
 
 const ExtractedProductSchema = z.object({
   sku: z.string().optional().describe('The SKU or product code.'),
-  name: z.string().describe('The name of the product.'),
-  quantity: z.number().describe('The current stock quantity.'),
-  unitPrice: z.number().describe('The purchase price for the workshop.'),
-  sellingPrice: z.number().describe('The selling price to the customer.'),
+  name: z.string().describe('The name of the product. This is a mandatory field.'),
+  quantity: z.coerce.number().describe('The current stock quantity.'),
+  unitPrice: z.coerce.number().describe('The purchase price for the workshop.'),
+  sellingPrice: z.coerce.number().describe('The selling price to the customer.'),
 });
 export type ExtractedProduct = z.infer<typeof ExtractedProductSchema>;
 
@@ -37,10 +37,16 @@ const migrateProductsPrompt = ai.definePrompt({
   output: { schema: ProductMigrationOutputSchema },
   prompt: `You are a data migration specialist. Your task is to analyze the provided CSV-formatted text and extract inventory product information.
 
-The CSV will have columns for 'codigo', 'nombre', 'existencias', 'precio de compra', and 'precio de venta'. You must map these to 'sku', 'name', 'quantity', 'unitPrice', and 'sellingPrice' respectively.
-
-- Clean up the data: trim whitespace, convert numbers correctly.
-- For each row in the CSV, create one product object.
+**Instructions:**
+1.  **Identify Columns**: Intelligently map the columns from the CSV to the required fields. Common mappings are:
+    *   'nombre', 'producto', 'descripción' -> 'name' (MANDATORY)
+    *   'codigo', 'sku', 'clave' -> 'sku'
+    *   'existencias', 'cantidad', 'stock', 'cant.' -> 'quantity'
+    *   'precio de compra', 'costo', 'precio compra' -> 'unitPrice'
+    *   'precio de venta', 'precio publico', 'precio venta' -> 'sellingPrice'
+2.  **Extract Data**: For each row in the CSV, create one product object.
+3.  **Mandatory Name**: The 'name' field is absolutely mandatory. If a row does not have a value that can be identified as a product name, you must ignore that row.
+4.  **Clean Data**: Trim whitespace from all text fields. Convert numbers correctly, treating missing or non-numeric values as 0.
 
 Analyze the following CSV content and return the data in the specified JSON format.
 

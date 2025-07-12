@@ -7,12 +7,16 @@ import {
   addDoc,
   query,
   where,
+  writeBatch,
+  getDocs,
 } from 'firebase/firestore';
 import { db } from '../firebaseClient';
-import type { ServiceRecord, QuoteRecord, SaleReceipt } from "@/types";
+import type { ServiceRecord, QuoteRecord, SaleReceipt, Vehicle } from "@/types";
 import { savePublicDocument } from '@/lib/public-document';
 import { inventoryService } from './inventory.service';
 import { nanoid } from 'nanoid';
+import type { ExtractedService } from '@/ai/flows/service-migration-flow';
+import { format, parse, isValid } from 'date-fns';
 
 // --- Services ---
 
@@ -75,6 +79,62 @@ const completeService = async (serviceId: string, paymentDetails: { paymentMetho
     return { id: serviceId, ...updatedServiceData } as ServiceRecord;
 };
 
+const saveMigratedServices = async (services: ExtractedService[]): Promise<void> => {
+    if (!db) throw new Error("Database not initialized.");
+    const vehiclesSnapshot = await getDocs(collection(db, 'vehicles'));
+    const vehicles = vehiclesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Vehicle));
+    const vehicleMap = new Map(vehicles.map(v => [v.licensePlate, v.id]));
+    
+    const batch = writeBatch(db);
+
+    for (const service of services) {
+        const vehicleId = vehicleMap.get(service.vehicleLicensePlate);
+        if (!vehicleId) {
+            console.warn(`Skipping service for unknown vehicle plate: ${service.vehicleLicensePlate}`);
+            continue;
+        }
+
+        let parsedDate: Date | null = null;
+        const possibleFormats = ['M/d/yy', 'MM/dd/yy', 'M-d-yy', 'MM-dd-yy', 'yyyy-MM-dd', 'dd/MM/yyyy'];
+        for (const fmt of possibleFormats) {
+            const dt = parse(service.serviceDate, fmt, new Date());
+            if (isValid(dt)) {
+                parsedDate = dt;
+                break;
+            }
+        }
+        
+        if (!parsedDate) {
+            console.warn(`Skipping service with unparseable date: ${service.serviceDate}`);
+            continue;
+        }
+
+        const serviceRecord: Omit<ServiceRecord, 'id'> = {
+            vehicleId: vehicleId,
+            vehicleIdentifier: service.vehicleLicensePlate,
+            serviceDate: parsedDate.toISOString(),
+            description: service.description,
+            totalCost: service.totalCost,
+            status: 'Completado', // Assume migrated services are complete
+            deliveryDateTime: parsedDate.toISOString(), // Use serviceDate as delivery for historical data
+            subTotal: service.totalCost / 1.16,
+            taxAmount: service.totalCost - (service.totalCost / 1.16),
+            serviceProfit: 0, // Cannot be calculated from historical data
+            totalSuppliesCost: 0,
+            technicianId: 'N/A',
+            serviceItems: [{
+                id: 'migrated-item',
+                name: service.description,
+                price: service.totalCost,
+                suppliesUsed: []
+            }],
+        };
+        const newDocRef = doc(collection(db, "serviceRecords"));
+        batch.set(newDocRef, serviceRecord);
+    }
+    await batch.commit();
+}
+
 // --- Sales ---
 const onSalesUpdate = (callback: (sales: SaleReceipt[]) => void): (() => void) => {
     const q = query(collection(db, "sales"));
@@ -95,4 +155,5 @@ export const operationsService = {
     cancelService,
     completeService,
     onSalesUpdate,
+    saveMigratedServices,
 };
