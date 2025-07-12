@@ -206,8 +206,8 @@ export function ServiceForm({
   const [isCancelAlertOpen, setIsCancelAlertOpen] = useState(false);
   
   const freshUserRef = useRef<User | null>(null);
-  const initialData = mode === 'service' ? initialDataService : initialDataQuote;
-  const originalStatusRef = useRef(initialData?.status);
+  
+  const originalStatusRef = useRef(initialDataService?.status || initialDataQuote?.status);
   
   const form = useForm<ServiceFormValues>({
     resolver: zodResolver(serviceFormSchemaBase),
@@ -278,8 +278,25 @@ useEffect(() => {
     refreshCurrentUser();
     const storedWorkshopInfo = typeof window !== "undefined" ? localStorage.getItem("workshopTicketInfo") : null;
     if (storedWorkshopInfo) setWorkshopInfo(JSON.parse(storedWorkshopInfo));
-
+    
     const dataToLoad = mode === 'service' ? initialDataService : initialDataQuote;
+    
+    if (!dataToLoad) { // This is a new record
+      const defaultStatus = mode === 'quote' ? 'Cotizacion' : 'En Taller';
+      const defaultServiceType = serviceTypes.length > 0 ? serviceTypes[0].name : 'Servicio General';
+      form.reset({
+        status: defaultStatus,
+        serviceType: defaultServiceType,
+        serviceItems: [{ id: nanoid(), name: '', price: undefined, suppliesUsed: [] }],
+        serviceAdvisorId: freshUserRef.current?.id || '',
+        serviceAdvisorName: freshUserRef.current?.name || '',
+        serviceAdvisorSignatureDataUrl: freshUserRef.current?.signatureDataUrl || '',
+        photoReports: [{ id: `rep_recepcion_${Date.now()}`, date: new Date().toISOString(), description: "Notas de la Recepción", photos: [] }],
+      });
+      return;
+    }
+    
+    // This is an existing record
     const parseDate = (date: any) => date && (typeof date.toDate === 'function' ? date.toDate() : (typeof date === 'string' ? parseISO(date) : date));
     
     let photoReportsData = (dataToLoad as ServiceRecord)?.photoReports || [];
@@ -292,9 +309,6 @@ useEffect(() => {
         serviceItemsData = [{ id: nanoid(), name: '', price: undefined, suppliesUsed: [] }];
     }
 
-    const defaultStatus = mode === 'quote' ? 'Cotizacion' : 'En Taller';
-    const defaultServiceType = serviceTypes.length > 0 ? serviceTypes[0].name : 'Servicio General';
-    
     form.reset({
         id: dataToLoad?.id,
         publicId: (dataToLoad as any)?.publicId,
@@ -318,9 +332,9 @@ useEffect(() => {
         serviceAdvisorSignatureDataUrl: dataToLoad?.serviceAdvisorSignatureDataUrl || freshUserRef.current?.signatureDataUrl || '',
         photoReports: photoReportsData,
         serviceItems: serviceItemsData,
-        status: dataToLoad?.status || defaultStatus,
-        subStatus: (dataToLoad as ServiceRecord)?.subStatus || undefined,
-        serviceType: dataToLoad?.serviceType || defaultServiceType,
+        status: dataToLoad?.status,
+        subStatus: (dataToLoad as ServiceRecord)?.subStatus,
+        serviceType: dataToLoad?.serviceType,
     });
 
 }, [initialDataService, initialDataQuote, mode, form, isReadOnly, refreshCurrentUser, serviceTypes]);
@@ -411,9 +425,12 @@ useEffect(() => {
         values.receptionDateTime = new Date();
     }
     
+    // This is the CRITICAL part for fixing the update issue
+    const idToSave = (mode === 'service' ? initialDataService?.id : initialDataQuote?.id) || undefined;
+
     const finalData = {
         ...values,
-        id: initialData?.id, // Ensure ID is passed for updates
+        id: idToSave,
         description: (values.serviceItems || []).map(item => item.name).join(', ') || 'Servicio',
         totalCost,
         totalSuppliesWorkshopCost,
@@ -435,7 +452,7 @@ useEffect(() => {
     
     await onSubmit(cleanedData as ServiceRecord);
     onClose();
-  }, [isReadOnly, onClose, getValues, onSubmit, toast, technicians, totalCost, serviceProfit, workshopInfo, localVehicles, currentInventoryItems, totalSuppliesWorkshopCost, trigger, initialData]);
+  }, [isReadOnly, onClose, getValues, onSubmit, toast, technicians, totalCost, serviceProfit, workshopInfo, localVehicles, currentInventoryItems, totalSuppliesWorkshopCost, trigger, mode, initialDataService, initialDataQuote]);
 
   const handlePrintSheet = useCallback(() => {
     const serviceData = form.getValues() as ServiceRecord;
@@ -594,7 +611,7 @@ useEffect(() => {
           <div className="fixed bottom-0 left-0 right-0 z-20 bg-background/95 border-t p-3 md:pl-[var(--sidebar-width)] print:hidden">
             <div className="container mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
                 <div className="flex justify-between items-center">
-                    {!isReadOnly && initialData?.id ? (
+                    {!isReadOnly && (initialDataService?.id || initialDataQuote?.id) ? (
                         <AlertDialog open={isCancelAlertOpen} onOpenChange={setIsCancelAlertOpen}>
                             <AlertDialogTrigger asChild>
                                 <Button type="button" variant="destructive">
@@ -629,7 +646,7 @@ useEffect(() => {
                             <>
                                 <Button type="button" variant="outline" onClick={onClose}>Cancelar</Button>
                                 <Button type="submit" disabled={form.formState.isSubmitting || !getValues('vehicleId')}>
-                                    {form.formState.isSubmitting ? "Guardando..." : (initialData?.id ? "Actualizar" : "Crear")}
+                                    {form.formState.isSubmitting ? "Guardando..." : (initialDataService?.id || initialDataQuote?.id ? "Actualizar" : "Crear")}
                                 </Button>
                             </>
                         )}
@@ -674,4 +691,3 @@ useEffect(() => {
     </>
   );
 }
-
