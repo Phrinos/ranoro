@@ -1,23 +1,20 @@
 rules_version = '2';
-
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Allow read/write access for any authenticated user.
-    // This is a common setup for development. For production, you'd want
-    // to implement more granular, role-based security rules.
-    match /{document=**} {
-      allow read, write: if request.auth != null;
-    }
-
-    // Public collections can be read by anyone, even unauthenticated users.
+    // Regla para colecciones que necesitan acceso público de solo lectura
     match /publicServices/{serviceId} {
-      allow get: if true;
-      allow list, write: if request.auth != null; // Only authenticated users can write/list
+      allow read: if true;
+      allow write: if request.auth != null; // Solo usuarios autenticados pueden escribir
     }
     
     match /publicOwnerReports/{reportId} {
-        allow get: if true;
-        allow list, write: if request.auth != null;
+      allow read: if true;
+      allow write: if request.auth != null; // Solo usuarios autenticados pueden escribir
+    }
+
+    // Regla para el resto de las colecciones: Requiere autenticación
+    match /{document=**} {
+      allow read, write: if request.auth != null;
     }
   }
 }
