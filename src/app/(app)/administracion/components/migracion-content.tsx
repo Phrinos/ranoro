@@ -7,20 +7,22 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Car, Package, BrainCircuit, Upload, Loader2, CheckCircle, AlertTriangle, Database } from 'lucide-react';
+import { Car, Package, BrainCircuit, Upload, Loader2, CheckCircle, AlertTriangle, Database, Wrench } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import type { ExtractedVehicle as ExtractedGenericVehicle, ExtractedService } from '@/ai/flows/data-migration-flow';
 import type { ExtractedVehicleForMigration } from '@/ai/flows/vehicle-migration-flow';
 import type { ExtractedProduct } from '@/ai/flows/product-migration-flow';
-import { migrateData } from '@/ai/flows/data-migration-flow';
+import type { ExtractedService } from '@/ai/flows/service-migration-flow'; // New
 import { migrateVehicles } from '@/ai/flows/vehicle-migration-flow';
 import { migrateProducts } from '@/ai/flows/product-migration-flow';
+import { migrateServices } from '@/ai/flows/service-migration-flow'; // New
 import { useToast } from '@/hooks/use-toast';
 import * as xlsx from 'xlsx';
-import { inventoryService } from '@/lib/services';
+import { inventoryService, operationsService } from '@/lib/services';
 import type { VehicleFormValues } from '@/app/(app)/vehiculos/components/vehicle-form';
+import { formatCurrency } from '@/lib/utils';
+import { format, parse, isValid } from 'date-fns';
 
-type AnalysisResult = | { type: 'generic'; vehicles: ExtractedGenericVehicle[]; services: ExtractedService[]; } | { type: 'vehicles'; vehicles: ExtractedVehicleForMigration[]; } | { type: 'products'; products: ExtractedProduct[]; };
+type AnalysisResult = | { type: 'vehicles'; vehicles: ExtractedVehicleForMigration[]; } | { type: 'products'; products: ExtractedProduct[]; } | { type: 'services'; services: ExtractedService[]; };
 
 export function MigracionPageContent() {
     const [workbook, setWorkbook] = useState<any | null>(null);
@@ -32,7 +34,7 @@ export function MigracionPageContent() {
     const [isSaving, setIsSaving] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
-    const [activeTab, setActiveTab] = useState<'vehiculos' | 'productos' | 'ia'>('vehiculos');
+    const [activeTab, setActiveTab] = useState<'vehiculos' | 'productos' | 'servicios'>('vehiculos');
     const { toast } = useToast();
 
     const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -82,15 +84,15 @@ export function MigracionPageContent() {
 
         try {
             let result;
-            if (activeTab === 'ia') {
-                const rawResult = await migrateData({ csvContent: fileContent });
-                result = { ...rawResult, type: 'generic' as const };
-            } else if (activeTab === 'vehiculos') {
+            if (activeTab === 'vehiculos') {
                 const rawResult = await migrateVehicles({ csvContent: fileContent });
                 result = { ...rawResult, type: 'vehicles' as const };
-            } else { // productos
+            } else if (activeTab === 'productos') {
                 const rawResult = await migrateProducts({ csvContent: fileContent });
                 result = { ...rawResult, type: 'products' as const };
+            } else { // servicios
+                const rawResult = await migrateServices({ csvContent: fileContent });
+                result = { ...rawResult, type: 'services' as const };
             }
             setAnalysisResult(result);
             toast({ title: "¡Análisis Completo!", description: "Revisa los datos extraídos por la IA antes de guardarlos." });
@@ -112,7 +114,7 @@ export function MigracionPageContent() {
         let itemsAdded = 0;
         let entityType = '';
         try {
-            if (analysisResult.type === 'vehicles' || analysisResult.type === 'generic') {
+            if (analysisResult.type === 'vehicles') {
                 entityType = 'Vehículos';
                 if (analysisResult.vehicles && analysisResult.vehicles.length > 0) {
                     for (const vehicle of analysisResult.vehicles) {
@@ -128,6 +130,12 @@ export function MigracionPageContent() {
                         itemsAdded++;
                     }
                 }
+            } else if (analysisResult.type === 'services') {
+                entityType = 'Servicios';
+                 if (analysisResult.services && analysisResult.services.length > 0) {
+                    await operationsService.saveMigratedServices(analysisResult.services);
+                    itemsAdded = analysisResult.services.length;
+                 }
             }
             toast({ title: "¡Migración Exitosa!", description: `Se guardaron ${itemsAdded} ${entityType.toLowerCase()} en la base de datos.` });
             setAnalysisResult(null); // Clear results after saving
@@ -141,17 +149,19 @@ export function MigracionPageContent() {
     
     const renderAnalysisResult = () => {
         if (!analysisResult) return null;
+        
         let summaryText = '';
-        let vehicleData: (ExtractedGenericVehicle | ExtractedVehicleForMigration)[] = [];
-
-        if (analysisResult.type === 'generic') {
-            summaryText = `Se encontraron ${analysisResult.vehicles.length} vehículos y ${analysisResult.services.length} servicios.`;
-            vehicleData = analysisResult.vehicles;
-        } else if (analysisResult.type === 'vehicles') {
-            summaryText = `Se encontraron ${analysisResult.vehicles.length} vehículos.`;
-            vehicleData = analysisResult.vehicles;
-        } else if (analysisResult.type === 'products') {
-            summaryText = `Se encontraron ${analysisResult.products.length} productos.`;
+        if (analysisResult.type === 'vehicles') summaryText = `Se encontraron ${analysisResult.vehicles.length} vehículos.`;
+        if (analysisResult.type === 'products') summaryText = `Se encontraron ${analysisResult.products.length} productos.`;
+        if (analysisResult.type === 'services') summaryText = `Se encontraron ${analysisResult.services.length} servicios.`;
+        
+        const renderDate = (dateString: string) => {
+            const possibleFormats = ['M/d/yy', 'MM/dd/yy', 'M-d-yy', 'MM-dd-yy', 'yyyy-MM-dd'];
+            for (const fmt of possibleFormats) {
+                const parsed = parse(dateString, fmt, new Date());
+                if(isValid(parsed)) return format(parsed, 'dd MMM, yyyy');
+            }
+            return dateString; // fallback
         }
 
         return (
@@ -161,56 +171,19 @@ export function MigracionPageContent() {
                     <CardDescription>{summaryText} Revisa los datos a continuación y confirma para guardar.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                    {(analysisResult.type === 'generic' || analysisResult.type === 'vehicles') && vehicleData.length > 0 && (
+                    {analysisResult.type === 'vehicles' && analysisResult.vehicles.length > 0 && (
                         <div className="rounded-md border h-64 overflow-auto">
-                            <Table>
-                                <TableHeader className="sticky top-0 bg-muted">
-                                    <TableRow>
-                                        <TableHead>Placa</TableHead>
-                                        <TableHead>Marca</TableHead>
-                                        <TableHead>Modelo</TableHead>
-                                        <TableHead>Año</TableHead>
-                                        <TableHead>Propietario</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {vehicleData.map((v, i) => (
-                                        <TableRow key={i}>
-                                            <TableCell className="font-semibold">{(v as ExtractedGenericVehicle).licensePlate || 'N/A'}</TableCell>
-                                            <TableCell>{v.make}</TableCell>
-                                            <TableCell>{v.model}</TableCell>
-                                            <TableCell>{v.year}</TableCell>
-                                            <TableCell>{v.ownerName}</TableCell>
-                                        </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
+                            <Table><TableHeader className="sticky top-0 bg-muted"><TableRow><TableHead>Placa</TableHead><TableHead>Marca</TableHead><TableHead>Modelo</TableHead><TableHead>Año</TableHead><TableHead>Propietario</TableHead></TableRow></TableHeader><TableBody>{analysisResult.vehicles.map((v, i) => ( <TableRow key={i}><TableCell className="font-semibold">{v.licensePlate || 'N/A'}</TableCell><TableCell>{v.make}</TableCell><TableCell>{v.model}</TableCell><TableCell>{v.year}</TableCell><TableCell>{v.ownerName}</TableCell></TableRow> ))}</TableBody></Table>
                         </div>
                     )}
-                     {(analysisResult.type === 'products') && analysisResult.products.length > 0 && (
+                     {analysisResult.type === 'products' && analysisResult.products.length > 0 && (
                         <div className="rounded-md border h-64 overflow-auto">
-                           <Table>
-                                <TableHeader className="sticky top-0 bg-muted">
-                                    <TableRow>
-                                        <TableHead>SKU</TableHead>
-                                        <TableHead>Nombre</TableHead>
-                                        <TableHead>Cantidad</TableHead>
-                                        <TableHead>Precio Compra</TableHead>
-                                        <TableHead>Precio Venta</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {analysisResult.products.map((p, i) => (
-                                        <TableRow key={i}>
-                                            <TableCell>{p.sku || 'N/A'}</TableCell>
-                                            <TableCell>{p.name}</TableCell>
-                                            <TableCell>{p.quantity}</TableCell>
-                                            <TableCell>{p.unitPrice}</TableCell>
-                                            <TableCell>{p.sellingPrice}</TableCell>
-                                        </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
+                           <Table><TableHeader className="sticky top-0 bg-muted"><TableRow><TableHead>SKU</TableHead><TableHead>Nombre</TableHead><TableHead>Cantidad</TableHead><TableHead>Precio Compra</TableHead><TableHead>Precio Venta</TableHead></TableRow></TableHeader><TableBody>{analysisResult.products.map((p, i) => ( <TableRow key={i}><TableCell>{p.sku || 'N/A'}</TableCell><TableCell>{p.name}</TableCell><TableCell>{p.quantity}</TableCell><TableCell>{formatCurrency(p.unitPrice)}</TableCell><TableCell>{formatCurrency(p.sellingPrice)}</TableCell></TableRow> ))}</TableBody></Table>
+                        </div>
+                    )}
+                    {analysisResult.type === 'services' && analysisResult.services.length > 0 && (
+                        <div className="rounded-md border h-64 overflow-auto">
+                           <Table><TableHeader className="sticky top-0 bg-muted"><TableRow><TableHead>Placa</TableHead><TableHead>Fecha</TableHead><TableHead>Descripción</TableHead><TableHead className="text-right">Costo</TableHead></TableRow></TableHeader><TableBody>{analysisResult.services.map((s, i) => ( <TableRow key={i}><TableCell>{s.vehicleLicensePlate}</TableCell><TableCell>{renderDate(s.serviceDate)}</TableCell><TableCell>{s.description}</TableCell><TableCell className="text-right">{formatCurrency(s.totalCost)}</TableCell></TableRow> ))}</TableBody></Table>
                         </div>
                     )}
                     <div className="mt-4 flex justify-end">
@@ -236,24 +209,7 @@ export function MigracionPageContent() {
                 <CardContent className="space-y-6">
                     <div className="flex items-center justify-center w-full">
                         <label htmlFor="file-upload" className="flex flex-col items-center justify-center w-full h-36 border-2 border-dashed rounded-lg cursor-pointer bg-card hover:bg-muted/50">
-                            {isAnalyzing ? (
-                                <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                                    <Loader2 className="w-8 h-8 mb-4 text-primary animate-spin" />
-                                    <p className="mb-2 text-sm text-muted-foreground">Procesando...</p>
-                                </div>
-                            ) : fileName ? (
-                                <div className="flex flex-col items-center justify-center pt-5 pb-6 text-center">
-                                    <CheckCircle className="w-8 h-8 mb-4 text-green-500"/>
-                                    <p className="mb-2 text-sm text-foreground"><span className="font-semibold">Archivo cargado:</span></p>
-                                    <p className="text-xs text-muted-foreground truncate max-w-[200px]">{fileName}</p>
-                                </div>
-                            ) : (
-                                <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                                    <Upload className="w-8 h-8 mb-4 text-muted-foreground" />
-                                    <p className="mb-2 text-sm text-muted-foreground"><span className="font-semibold">Haz clic para subir</span> o arrastra</p>
-                                    <p className="text-xs text-muted-foreground">Sólo archivos .XLSX</p>
-                                </div>
-                            )}
+                            {isAnalyzing ? ( <div className="flex flex-col items-center justify-center pt-5 pb-6"><Loader2 className="w-8 h-8 mb-4 text-primary animate-spin" /><p className="mb-2 text-sm text-muted-foreground">Procesando...</p></div> ) : fileName ? ( <div className="flex flex-col items-center justify-center pt-5 pb-6 text-center"><CheckCircle className="w-8 h-8 mb-4 text-green-500"/><p className="mb-2 text-sm text-foreground"><span className="font-semibold">Archivo cargado:</span></p><p className="text-xs text-muted-foreground truncate max-w-[200px]">{fileName}</p></div> ) : ( <div className="flex flex-col items-center justify-center pt-5 pb-6"><Upload className="w-8 h-8 mb-4 text-muted-foreground" /><p className="mb-2 text-sm text-muted-foreground"><span className="font-semibold">Haz clic para subir</span> o arrastra</p><p className="text-xs text-muted-foreground">Sólo archivos .XLSX</p></div> )}
                              <Input id="file-upload" type="file" className="hidden" accept=".xlsx" onChange={handleFileChange} disabled={isAnalyzing} />
                         </label>
                     </div>
@@ -271,15 +227,19 @@ export function MigracionPageContent() {
         </div>
         <div className="lg:col-span-2">
             <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="w-full">
-                <TabsList className="grid w-full grid-cols-2">
+                <TabsList className="grid w-full grid-cols-3">
                     <TabsTrigger value="vehiculos"><Car className="mr-2 h-4 w-4"/>Vehículos</TabsTrigger>
                     <TabsTrigger value="productos"><Package className="mr-2 h-4 w-4"/>Productos</TabsTrigger>
+                    <TabsTrigger value="servicios"><Wrench className="mr-2 h-4 w-4"/>Servicios</TabsTrigger>
                 </TabsList>
                 <TabsContent value="vehiculos">
                     <Card><CardHeader><CardTitle>Migración de Vehículos</CardTitle><CardDescription>Usa esta opción si tu hoja contiene solo información de vehículos (nombre, tel, marca, modelo, año, y **placa**).</CardDescription></CardHeader><CardContent><Button type="button" className="w-full" onClick={(e) => handleAnalyze(e as any)} disabled={!fileContent || isAnalyzing}>{isAnalyzing ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <BrainCircuit className="mr-2 h-4 w-4"/>} Analizar Datos de Vehículos</Button></CardContent></Card>
                 </TabsContent>
                 <TabsContent value="productos">
                     <Card><CardHeader><CardTitle>Migración de Productos</CardTitle><CardDescription>Usa esta opción si tu hoja contiene solo información de productos (código, nombre, existencias, precios).</CardDescription></CardHeader><CardContent><Button type="button" className="w-full" onClick={(e) => handleAnalyze(e as any)} disabled={!fileContent || isAnalyzing}>{isAnalyzing ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <BrainCircuit className="mr-2 h-4 w-4"/>} Analizar Datos de Productos</Button></CardContent></Card>
+                </TabsContent>
+                <TabsContent value="servicios">
+                    <Card><CardHeader><CardTitle>Migración de Servicios</CardTitle><CardDescription>Usa esta opción si tu hoja contiene un historial de servicios (placa del vehículo, descripción, fecha y costo).</CardDescription></CardHeader><CardContent><Button type="button" className="w-full" onClick={(e) => handleAnalyze(e as any)} disabled={!fileContent || isAnalyzing}>{isAnalyzing ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <BrainCircuit className="mr-2 h-4 w-4"/>} Analizar Datos de Servicios</Button></CardContent></Card>
                 </TabsContent>
             </Tabs>
              
