@@ -35,7 +35,7 @@ export function useTableManager<T extends { [key: string]: any }>({
       );
     }
 
-    if (dateRange?.from) {
+    if (dateRange && dateRange.from) { // Corrected: Check if dateRange and dateRange.from exist
       const from = startOfDay(dateRange.from);
       const to = dateRange.to ? endOfDay(dateRange.to) : endOfDay(dateRange.from);
       data = data.filter(item => {
@@ -76,6 +76,10 @@ export function useTableManager<T extends { [key: string]: any }>({
             return (b.totalAmount ?? b.totalCost ?? 0) - (a.totalAmount ?? a.totalCost ?? 0);
         case 'total_asc':
             return (a.totalAmount ?? a.totalCost ?? 0) - (b.totalAmount ?? b.totalCost ?? 0);
+        case 'plate_asc':
+             return (a.licensePlate || '').localeCompare(b.licensePlate || '');
+        case 'plate_desc':
+             return (b.licensePlate || '').localeCompare(a.licensePlate || '');
         case 'date_desc':
         default:
           return compareDesc(dateA!, dateB!);
