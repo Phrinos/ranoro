@@ -14,9 +14,9 @@ import {
 import { ServiceForm } from "./service-form";
 import type { ServiceRecord, Vehicle, Technician, InventoryItem, QuoteRecord, User, ServiceTypeRecord } from "@/types";
 import { useToast } from "@/hooks/use-toast"; 
-import { persistToFirestore, placeholderServiceRecords, logAudit, AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
 import { db } from '@/lib/firebaseClient.js';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { operationsService } from '@/lib/services';
 
 
 interface ServiceDialogProps {
@@ -113,8 +113,6 @@ export function ServiceDialog({
         }
         
         if (changed && db) {
-          // This should now trigger a re-render in the parent through the onSave prop if available
-          // or directly update firestore
           const serviceDocRef = doc(db, "serviceRecords", service.id);
           await setDoc(serviceDocRef, { 
               customerSignatureReception: serviceToUpdate.customerSignatureReception,
@@ -135,17 +133,23 @@ export function ServiceDialog({
     }
 
     try {
-      if (onSave) {
-        await onSave(formData);
-      }
-      onOpenChange(false);
+        if(formData.id) {
+            await operationsService.updateService(formData.id, formData);
+        } else {
+            await operationsService.addService(formData);
+        }
+        toast({ title: `Registro ${formData.id ? 'actualizado' : 'creado'} con éxito.` });
+        if (onSave) {
+            await onSave(formData);
+        }
+        onOpenChange(false);
     } catch (error) {
-      console.error(`Error saving ${mode} from dialog:`, error);
-      toast({
-        title: `Error al Guardar ${mode === 'quote' ? 'Cotización' : 'Servicio'}`,
-        description: `Ocurrió un problema al intentar guardar desde el diálogo.`,
-        variant: "destructive",
-      });
+        console.error(`Error saving ${mode} from dialog:`, error);
+        toast({
+            title: `Error al Guardar ${mode === 'quote' ? 'Cotización' : 'Servicio'}`,
+            description: `Ocurrió un problema al intentar guardar desde el diálogo.`,
+            variant: "destructive",
+        });
     }
   };
   
