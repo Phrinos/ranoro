@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useFieldArray, useFormContext } from "react-hook-form";
@@ -62,9 +63,9 @@ export function ServiceDetailsCard({
   };
   
   const showAppointmentFields = useMemo(() => {
-    // Show if a date has been set, OR if the status is one that implies an appointment.
-    return !!serviceDate || ['Agendado', 'En Taller', 'Entregado', 'Cancelado'].includes(watchedStatus || '');
-  }, [serviceDate, watchedStatus]);
+    // Show if the status is one that implies an appointment, including quotes.
+    return ['Cotizacion', 'Agendado', 'En Taller', 'Entregado', 'Cancelado'].includes(watchedStatus || '');
+  }, [watchedStatus]);
 
 
   return (
