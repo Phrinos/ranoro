@@ -60,7 +60,7 @@ const migrateDataPrompt = ai.definePrompt({
   prompt: `You are an expert data migration specialist for an auto repair shop. Your task is to analyze the provided CSV-formatted text and extract vehicle and service information.
 
 **CRITICAL INSTRUCTIONS:**
-1.  **EXTRACT THE LICENSE PLATE (PLACA)**: The 'licensePlate' field is the most important piece of information and is **MANDATORY**. Look for columns named 'Placa', 'Patente', 'Matrícula', or 'LicensePlate'. You MUST extract this value for every vehicle. If a row does not seem to have a license plate, it is not a valid vehicle record.
+1.  **EXTRACT THE LICENSE PLATE (PLACA)**: The 'licensePlate' field is the most important piece of information and is **MANDATORY**. Look for columns named 'Placa', 'Patente', 'Matrícula', or 'LicensePlate'. If no such column exists, look for values that match the pattern of a license plate (e.g., a combination of 6 to 8 uppercase letters and numbers). You MUST extract this value for every vehicle. If a row does not seem to have a license plate, it is not a valid vehicle record.
 2.  **Identify Unique Vehicles**: Based on the extracted license plate, create only ONE vehicle entry in the 'vehicles' array for each unique license plate. Use the information from the most complete row for that vehicle.
 3.  **Extract All Services**: Create a service entry in the 'services' array for EVERY service record you find. Each service must be linked to a vehicle via its 'vehicleLicensePlate'.
 4.  **Handle Data Variations**: The CSV column headers might vary. Be flexible. Look for headers like 'Marca'/'Make', 'Modelo'/'Model', 'Año'/'Year', 'Cliente'/'OwnerName', 'Fecha'/'Date', 'Descripción'/'Description', 'Costo'/'Total'.
