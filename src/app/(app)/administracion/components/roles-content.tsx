@@ -2,10 +2,10 @@
 "use client";
 
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormDescription, FormMessage } from "@/components/ui/form";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from '@/hooks/use-toast';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -14,27 +14,50 @@ import type { AppRole, User } from '@/types';
 import { PlusCircle, Trash2, Edit, Search, Shield } from 'lucide-react';
 import { Checkbox } from "@/components/ui/checkbox";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { adminService } from '@/lib/services/admin.service';
 
-const ALL_AVAILABLE_PERMISSIONS = [
-    { id: 'dashboard:view', label: 'Ver Panel Principal' },
-    { id: 'services:create', label: 'Crear Servicios/Cotizaciones' },
-    { id: 'services:edit', label: 'Editar Servicios' },
-    { id: 'services:view_history', label: 'Ver Historial de Servicios' },
-    { id: 'inventory:manage', label: 'Gestionar Inventario (Añadir/Editar/Borrar)' },
-    { id: 'inventory:view', label: 'Ver Inventario' },
-    { id: 'pos:create_sale', label: 'Registrar Ventas (POS)' },
-    { id: 'pos:view_sales', label: 'Ver Registro de Ventas' },
-    { id: 'finances:view_report', label: 'Ver Reporte Financiero' },
-    { id: 'technicians:manage', label: 'Gestionar Personal (Técnicos/Admin)' },
-    { id: 'vehicles:manage', label: 'Gestionar Vehículos' },
-    { id: 'fleet:manage', label: 'Gestionar Flotilla (Vehículos y Conductores)' },
-    { id: 'users:manage', label: 'Gestionar Usuarios (Admin)' },
-    { id: 'roles:manage', label: 'Gestionar Roles y Permisos (Admin)' },
-    { id: 'ticket_config:manage', label: 'Configurar Ticket (Admin)' },
-    { id: 'workshop:manage', label: 'Gestionar Información del Taller (Admin)' },
-    { id: 'audits:view', label: 'Ver Auditoría de Acciones (Admin)' },
+const PERMISSION_GROUPS = [
+    {
+        groupName: "General",
+        permissions: [
+            { id: 'dashboard:view', label: 'Ver Panel Principal' },
+        ]
+    },
+    {
+        groupName: "Servicios y Cotizaciones",
+        permissions: [
+            { id: 'services:create', label: 'Crear Servicios/Cotizaciones' },
+            { id: 'services:edit', label: 'Editar Servicios' },
+            { id: 'services:view_history', label: 'Ver Historial de Servicios' },
+        ]
+    },
+    {
+        groupName: "Inventario y Ventas",
+        permissions: [
+            { id: 'inventory:manage', label: 'Gestionar Inventario (Añadir/Editar/Borrar)' },
+            { id: 'inventory:view', label: 'Ver Inventario' },
+            { id: 'pos:create_sale', label: 'Registrar Ventas (POS)' },
+            { id: 'pos:view_sales', label: 'Ver Registro de Ventas' },
+        ]
+    },
+    {
+        groupName: "Administración",
+        permissions: [
+            { id: 'vehicles:manage', label: 'Gestionar Vehículos' },
+            { id: 'technicians:manage', label: 'Gestionar Personal (Técnicos/Admin)' },
+            { id: 'fleet:manage', label: 'Gestionar Flotilla (Vehículos y Conductores)' },
+            { id: 'finances:view_report', label: 'Ver Reporte Financiero' },
+            { id: 'audits:view', label: 'Ver Auditoría de Acciones (Admin)' },
+            { id: 'users:manage', label: 'Gestionar Usuarios (Admin)' },
+            { id: 'roles:manage', label: 'Gestionar Roles y Permisos (Admin)' },
+            { id: 'ticket_config:manage', label: 'Configurar Ticket (Admin)' },
+            { id: 'workshop:manage', label: 'Gestionar Información del Taller (Admin)' },
+        ]
+    },
 ];
+
+const ALL_PERMISSIONS = PERMISSION_GROUPS.flatMap(group => group.permissions);
 
 const roleFormSchema = z.object({
   name: z.string().min(2, "El nombre del rol debe tener al menos 2 caracteres."),
@@ -161,40 +184,73 @@ export function RolesPageContent({ currentUser, initialRoles }: { currentUser: U
             </Card>
             {isFormOpen && (
                  <Card className="mt-8" ref={formCardRef}>
-                    <CardHeader><CardTitle>{editingRole ? 'Editar Rol' : 'Crear Nuevo Rol'}</CardTitle></CardHeader>
+                    <CardHeader>
+                        <CardTitle>{editingRole ? 'Editar Rol' : 'Crear Nuevo Rol'}</CardTitle>
+                        <CardDescription>Asigna un nombre y selecciona los permisos que tendrá este rol.</CardDescription>
+                    </CardHeader>
                     <CardContent>
                         <Form {...form}>
                             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                                 <FormField control={form.control} name="name" render={({ field }) => ( <FormItem><FormLabel>Nombre del Rol</FormLabel><FormControl><Input placeholder="Ej: Recepcionista" {...field} /></FormControl><FormMessage /></FormItem> )}/>
-                                <FormField control={form.control} name="permissions" render={() => (
-                                    <FormItem>
-                                        <FormLabel>Permisos</FormLabel>
-                                        <Card>
-                                            <CardContent className="p-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                                                {ALL_AVAILABLE_PERMISSIONS.map((permission) => (
-                                                    <FormField key={permission.id} control={form.control} name="permissions" render={({ field }) => (
-                                                        <FormItem className="flex flex-row items-center space-x-3 space-y-0">
-                                                            <FormControl>
-                                                                <Checkbox
-                                                                    checked={field.value?.includes(permission.id)}
-                                                                    onCheckedChange={(checked) => {
-                                                                        const currentPermissions = field.value || [];
-                                                                        const newPermissions = checked
-                                                                            ? [...currentPermissions, permission.id]
-                                                                            : currentPermissions.filter(value => value !== permission.id);
-                                                                        return field.onChange(newPermissions);
-                                                                    }}
-                                                                />
-                                                            </FormControl>
-                                                            <FormLabel className="font-normal">{permission.label}</FormLabel>
-                                                        </FormItem>
-                                                    )}/>
-                                                ))}
-                                            </CardContent>
-                                        </Card>
-                                        <FormDescription>Seleccione los permisos para este rol.</FormDescription>
-                                    </FormItem>
-                                )}/>
+                                
+                                <FormItem>
+                                    <FormLabel>Permisos</FormLabel>
+                                    <Card>
+                                        <CardContent className="p-0">
+                                            <Accordion type="multiple" className="w-full" defaultValue={PERMISSION_GROUPS.map(g => g.groupName)}>
+                                                {PERMISSION_GROUPS.map((group) => {
+                                                    const groupPermissionIds = group.permissions.map(p => p.id);
+                                                    const selectedPermissions = form.watch('permissions') || [];
+                                                    const areAllSelected = groupPermissionIds.every(id => selectedPermissions.includes(id));
+                                                    
+                                                    const handleSelectAll = (checked: boolean) => {
+                                                        const currentPermissions = form.getValues('permissions') || [];
+                                                        let newPermissions: string[];
+                                                        if (checked) {
+                                                            newPermissions = [...new Set([...currentPermissions, ...groupPermissionIds])];
+                                                        } else {
+                                                            newPermissions = currentPermissions.filter(id => !groupPermissionIds.includes(id));
+                                                        }
+                                                        form.setValue('permissions', newPermissions, { shouldDirty: true });
+                                                    };
+
+                                                    return (
+                                                        <AccordionItem value={group.groupName} key={group.groupName}>
+                                                            <AccordionTrigger className="px-4 py-2 hover:no-underline hover:bg-muted/50">
+                                                                <div className="flex items-center gap-4">
+                                                                     <Checkbox checked={areAllSelected} onCheckedChange={handleSelectAll} onClick={(e) => e.stopPropagation()}/>
+                                                                    <span className="font-semibold text-base">{group.groupName}</span>
+                                                                </div>
+                                                            </AccordionTrigger>
+                                                            <AccordionContent className="p-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 border-t">
+                                                                {group.permissions.map((permission) => (
+                                                                    <FormField key={permission.id} control={form.control} name="permissions" render={({ field }) => (
+                                                                        <FormItem className="flex flex-row items-center space-x-3 space-y-0">
+                                                                            <FormControl>
+                                                                                <Checkbox
+                                                                                    checked={field.value?.includes(permission.id)}
+                                                                                    onCheckedChange={(checked) => {
+                                                                                        const currentPermissions = field.value || [];
+                                                                                        const newPermissions = checked
+                                                                                            ? [...currentPermissions, permission.id]
+                                                                                            : currentPermissions.filter(value => value !== permission.id);
+                                                                                        return field.onChange(newPermissions);
+                                                                                    }}
+                                                                                />
+                                                                            </FormControl>
+                                                                            <FormLabel className="font-normal">{permission.label}</FormLabel>
+                                                                        </FormItem>
+                                                                    )}/>
+                                                                ))}
+                                                            </AccordionContent>
+                                                        </AccordionItem>
+                                                    );
+                                                })}
+                                            </Accordion>
+                                        </CardContent>
+                                    </Card>
+                                </FormItem>
+
                                 <div className="flex justify-end gap-2">
                                     <Button type="button" variant="outline" onClick={() => setIsFormOpen(false)}>Cancelar</Button>
                                     <Button type="submit">{editingRole ? 'Actualizar Rol' : 'Crear Rol'}</Button>
@@ -207,3 +263,5 @@ export function RolesPageContent({ currentUser, initialRoles }: { currentUser: U
         </div>
     );
 }
+
+    
