@@ -133,14 +133,10 @@ export function ServiceDialog({
     }
 
     try {
-        if(formData.id) {
-            await operationsService.updateService(formData.id, formData);
-        } else {
-            await operationsService.addService(formData);
-        }
+        const savedRecord = await operationsService.saveService(formData);
         toast({ title: `Registro ${formData.id ? 'actualizado' : 'creado'} con éxito.` });
         if (onSave) {
-            await onSave(formData);
+            await onSave(savedRecord);
         }
         onOpenChange(false);
     } catch (error) {

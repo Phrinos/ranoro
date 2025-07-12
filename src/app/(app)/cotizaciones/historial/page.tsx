@@ -79,7 +79,7 @@ function HistorialCotizacionesPageComponent() {
 
   const handleSaveQuote = useCallback(async (data: ServiceRecord | QuoteRecord) => {
     try {
-        await operationsService.updateService(data.id!, data);
+        await operationsService.saveService(data);
         toast({ title: "Cotización actualizada." });
         setIsFormDialogOpen(false);
     } catch(e) {
