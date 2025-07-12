@@ -217,7 +217,8 @@ export default function DashboardPage() {
               .map(s => ({
                 description: s.description || '',
                 serviceDate: s.serviceDate,
-                deliveryDateTime: s.deliveryDateTime,
+                // Only include deliveryDateTime if it's a valid string
+                ...(s.deliveryDateTime && { deliveryDateTime: s.deliveryDateTime }),
             })),
         });
         setCapacityInfo(result);
