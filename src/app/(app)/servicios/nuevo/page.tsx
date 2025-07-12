@@ -89,7 +89,7 @@ export default function NuevoServicioPage() {
           break;
         case 'En Taller':
         case 'Entregado':
-          setRedirectPath('/servicios/historial');
+          setRedirectPath('/tablero');
           break;
         default:
           setRedirectPath('/tablero'); // Fallback to dashboard

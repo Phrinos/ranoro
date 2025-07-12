@@ -394,39 +394,50 @@ export function ServiceForm({
         values.receptionDateTime = new Date();
     }
     
-    const dataToSave = {
-        ...values,
-        id: values.id || `SRV-${generateUniqueId()}`,
-        publicId: values.publicId || `s_${generateUniqueId().toLowerCase()}`,
+    // Sanitize data before saving
+    const dataToSave = { ...values };
+    Object.keys(dataToSave).forEach(key => {
+        const typedKey = key as keyof ServiceFormValues;
+        if (dataToSave[typedKey] === undefined || dataToSave[typedKey] === '') {
+            (dataToSave as any)[typedKey] = null;
+        }
+    });
+
+    if (dataToSave.status !== 'En Taller') {
+      delete (dataToSave as Partial<ServiceFormValues>).subStatus;
+    }
+
+    
+    const finalData = {
+        ...dataToSave,
+        id: dataToSave.id || `SRV-${generateUniqueId()}`,
+        publicId: dataToSave.publicId || `s_${generateUniqueId().toLowerCase()}`,
         vehicleId: getValues('vehicleId')!,
-        description: (values.serviceItems || []).map(item => item.name).join(', ') || 'Servicio',
-        technicianId: values.technicianId || null,
-        status: values.status || 'Agendado',
-        mileage: values.mileage ?? null,
-        totalCost: totalCost, 
-        totalSuppliesWorkshopCost: totalSuppliesWorkshopCost, 
+        description: (dataToSave.serviceItems || []).map(item => item.name).join(', ') || 'Servicio',
+        technicianId: dataToSave.technicianId || null,
+        status: dataToSave.status || 'Agendado',
+        mileage: dataToSave.mileage ?? null,
+        totalCost,
+        totalSuppliesWorkshopCost,
         serviceProfit,
-        serviceDate: values.serviceDate ? values.serviceDate.toISOString() : new Date().toISOString(),
-        quoteDate: values.quoteDate?.toISOString() || null, 
-        receptionDateTime: values.receptionDateTime?.toISOString() || null,
-        deliveryDateTime: values.deliveryDateTime?.toISOString() || null,
+        serviceDate: dataToSave.serviceDate ? dataToSave.serviceDate.toISOString() : new Date().toISOString(),
+        quoteDate: dataToSave.quoteDate ? dataToSave.quoteDate.toISOString() : null, 
+        receptionDateTime: dataToSave.receptionDateTime ? dataToSave.receptionDateTime.toISOString() : null,
+        deliveryDateTime: dataToSave.deliveryDateTime ? dataToSave.deliveryDateTime.toISOString() : null,
         vehicleIdentifier: getValues('vehicleLicensePlateSearch') || 'N/A',
-        technicianName: technicians.find(t => t.id === values.technicianId)?.name || null,
-        subTotal: totalCost / (1 + IVA_RATE), taxAmount: totalCost - (totalCost / (1 + IVA_RATE)),
+        technicianName: technicians.find(t => t.id === dataToSave.technicianId)?.name || null,
+        subTotal: totalCost / (1 + IVA_RATE),
+        taxAmount: totalCost - (totalCost / (1 + IVA_RATE)),
         serviceAdvisorId: freshUserRef.current.id,
         serviceAdvisorName: freshUserRef.current.name,
         serviceAdvisorSignatureDataUrl: freshUserRef.current.signatureDataUrl,
         workshopInfo: (workshopInfo && Object.keys(workshopInfo).length > 0) ? workshopInfo as WorkshopInfo : undefined,
     };
     
-    if (dataToSave.status !== 'En Taller') {
-      delete (dataToSave as Partial<ServiceFormValues>).subStatus;
-    }
-    
     if (db) {
-        await savePublicDocument('service', dataToSave as ServiceRecord, localVehicles.find(v => v.id === getValues('vehicleId')) || null, workshopInfo);
+        await savePublicDocument('service', finalData as ServiceRecord, localVehicles.find(v => v.id === getValues('vehicleId')) || null, workshopInfo);
     }
-    await onSubmit(dataToSave as ServiceRecord);
+    await onSubmit(finalData as ServiceRecord);
     toast({ title: `${!initialData?.id ? 'Creado' : 'Actualizado'} con Éxito` });
     onClose();
   }, [isReadOnly, onClose, getValues, onSubmit, toast, technicians, totalCost, serviceProfit, workshopInfo, initialData, localVehicles, currentInventoryItems, totalSuppliesWorkshopCost, trigger]);
