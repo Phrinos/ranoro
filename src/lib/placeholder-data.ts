@@ -63,22 +63,8 @@ export const placeholderUsers: User[] = [defaultSuperAdmin];
 // =======================================
 // ===         DATA HYDRATION          ===
 // =======================================
-
-// This promise resolves when the initial data load is complete.
-// Components can await this to ensure they have data before rendering.
-export let hydrateReady: Promise<void> = Promise.resolve();
-if (typeof window !== 'undefined') {
-    hydrateReady = new Promise((resolve) => {
-        const checkData = () => {
-            if (placeholderVehicles.length > 0 && placeholderServiceRecords.length > 0) {
-                resolve();
-            } else {
-                window.addEventListener('databaseUpdated', () => resolve(), { once: true });
-            }
-        };
-        checkData();
-    });
-}
+// Deprecated hydrateReady logic removed. Hydration is now handled by individual page components.
+export const hydrateReady: Promise<void> = Promise.resolve();
 
 
 // =======================================

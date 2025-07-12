@@ -7,7 +7,7 @@ import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { PlusCircle, List, Calendar as CalendarIcon, FileCheck, Eye, Loader2, Edit, CheckCircle, Printer, MessageSquare } from "lucide-react";
 import { ServiceDialog } from "../components/service-dialog";
-import type { ServiceRecord, Vehicle, Technician, QuoteRecord, InventoryItem, CapacityAnalysisOutput, WorkshopInfo } from "@/types";
+import type { ServiceRecord, Vehicle, Technician, QuoteRecord, InventoryItem, CapacityAnalysisOutput, WorkshopInfo, ServiceTypeRecord } from "@/types";
 import { useToast } from "@/hooks/use-toast";
 import { format, parseISO, isToday, isTomorrow, compareAsc, isValid, startOfDay, endOfDay } from "date-fns";
 import { es } from 'date-fns/locale';
@@ -15,7 +15,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import Link from "next/link";
-import { placeholderServiceRecords, placeholderVehicles, placeholderTechnicians, placeholderInventory, persistToFirestore, hydrateReady, logAudit } from "@/lib/placeholder-data";
+import { placeholderServiceRecords, placeholderVehicles, placeholderTechnicians, placeholderInventory, placeholderServiceTypes, persistToFirestore, logAudit } from "@/lib/placeholder-data";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ServiceCalendar } from '../components/service-calendar';
 import { analyzeWorkshopCapacity } from '@/ai/flows/capacity-analysis-flow';
@@ -24,6 +24,7 @@ import { cn } from "@/lib/utils";
 import { StatusTracker } from "../components/StatusTracker";
 import { UnifiedPreviewDialog } from '@/components/shared/unified-preview-dialog';
 import { ServiceAppointmentCard } from '../components/ServiceAppointmentCard';
+import { inventoryService, personnelService, operationsService } from '@/lib/services';
 
 
 const handleAiError = (error: any, toast: any, context: string): string => {
@@ -43,8 +44,8 @@ function AgendaPageComponent() {
   const [vehicles, setVehicles] = useState<Vehicle[]>([]); 
   const [technicians, setTechnicians] = useState<Technician[]>([]); 
   const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]); 
-  const [hydrated, setHydrated] = useState(false);
-  const [version, setVersion] = useState(0);
+  const [serviceTypes, setServiceTypes] = useState<ServiceTypeRecord[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   const [agendaView, setAgendaView] = useState('lista');
   const [isServiceDialogOpen, setIsServiceDialogOpen] = useState(false);
@@ -58,48 +59,42 @@ function AgendaPageComponent() {
   const [serviceForPreview, setServiceForPreview] = useState<ServiceRecord | null>(null);
 
   useEffect(() => {
-    const handleDbUpdate = () => setVersion(v => v + 1);
-    hydrateReady.then(() => {
-      setHydrated(true);
-      setAllServices([...placeholderServiceRecords]);
-      setVehicles([...placeholderVehicles]);
-      setTechnicians([...placeholderTechnicians]);
-      setInventoryItems([...placeholderInventory]);
-    });
-    window.addEventListener('databaseUpdated', handleDbUpdate);
-    return () => window.removeEventListener('databaseUpdated', handleDbUpdate);
+    const unsubs: (() => void)[] = [];
+    setIsLoading(true);
+
+    unsubs.push(operationsService.onServicesUpdate(setAllServices));
+    unsubs.push(inventoryService.onVehiclesUpdate(setVehicles));
+    unsubs.push(personnelService.onTechniciansUpdate(setTechnicians));
+    unsubs.push(inventoryService.onItemsUpdate(setInventoryItems));
+    unsubs.push(inventoryService.onServiceTypesUpdate((data) => {
+        setServiceTypes(data);
+        setIsLoading(false); // Mark loading false after the last data set arrives
+    }));
+
+    return () => unsubs.forEach(unsub => unsub());
   }, []);
   
   useEffect(() => {
-    if (hydrated) {
-      setAllServices([...placeholderServiceRecords]);
-      setVehicles([...placeholderVehicles]);
-      setTechnicians([...placeholderTechnicians]);
-      setInventoryItems([...placeholderInventory]);
-    }
-  }, [hydrated, version]);
-
-  useEffect(() => {
-    if (agendaView === 'lista') {
+    if (agendaView === 'lista' && !isLoading) {
       const runCapacityAnalysis = async () => {
         setIsCapacityLoading(true);
         setCapacityError(null);
         try {
-          const servicesForToday = placeholderServiceRecords.filter(s => {
+          const servicesForToday = allServices.filter(s => {
             if (!s.serviceDate || typeof s.serviceDate !== 'string') return false;
             return isValid(parseISO(s.serviceDate)) && isToday(parseISO(s.serviceDate)) && s.status !== 'Completado' && s.status !== 'Cancelado';
           });
           
           if (servicesForToday.length === 0) {
-              setCapacityInfo({ totalRequiredHours: 0, totalAvailableHours: placeholderTechnicians.reduce((sum, t) => sum + (t.standardHoursPerDay || 8), 0), recommendation: "Taller disponible", capacityPercentage: 0 });
+              setCapacityInfo({ totalRequiredHours: 0, totalAvailableHours: technicians.reduce((sum, t) => sum + (t.standardHoursPerDay || 8), 0), recommendation: "Taller disponible", capacityPercentage: 0 });
               setIsCapacityLoading(false);
               return;
           }
 
           const result = await analyzeWorkshopCapacity({
             servicesForDay: servicesForToday.map(s => ({ description: s.description || '' })),
-            technicians: placeholderTechnicians.filter(t => !t.isArchived).map(t => ({ id: t.id, standardHoursPerDay: t.standardHoursPerDay || 8 })),
-            serviceHistory: placeholderServiceRecords.filter(s => s.serviceDate).map(s => ({ description: s.description || '', serviceDate: s.serviceDate, deliveryDateTime: s.deliveryDateTime })),
+            technicians: technicians.filter(t => !t.isArchived).map(t => ({ id: t.id, standardHoursPerDay: t.standardHoursPerDay || 8 })),
+            serviceHistory: allServices.filter(s => s.serviceDate).map(s => ({ description: s.description || '', serviceDate: s.serviceDate, deliveryDateTime: s.deliveryDateTime })),
           });
           setCapacityInfo(result);
         } catch (e) {
@@ -110,15 +105,16 @@ function AgendaPageComponent() {
       };
       runCapacityAnalysis();
     }
-  }, [agendaView, toast]);
+  }, [agendaView, toast, isLoading, allServices, technicians]);
 
   const { scheduledServices, todayServices, tomorrowServices } = useMemo(() => {
+    if (isLoading) return { scheduledServices: [], todayServices: [], tomorrowServices: [] };
     const scheduled = allServices.filter(s => s.status === 'Agendado' || (s.status === 'Reparando' && !s.deliveryDateTime));
     const today = new Date();
     const todayS = scheduled.filter(s => isToday(parseISO(s.serviceDate))).sort((a, b) => compareAsc(parseISO(a.serviceDate), parseISO(b.serviceDate)));
     const tomorrowS = scheduled.filter(s => isTomorrow(parseISO(s.serviceDate))).sort((a, b) => compareAsc(parseISO(a.serviceDate), parseISO(b.serviceDate)));
     return { scheduledServices: scheduled, todayServices: todayS, tomorrowServices: tomorrowS };
-  }, [allServices]);
+  }, [allServices, isLoading]);
 
   const totalEarningsToday = useMemo(() => {
     return todayServices.reduce((sum, s) => sum + (s.totalCost || 0), 0);
@@ -187,8 +183,13 @@ function AgendaPageComponent() {
     );
 };
 
-  if (!hydrated) {
-    return <div className="text-center py-10">Cargando datos...</div>;
+  if (isLoading) {
+    return (
+        <div className="flex justify-center items-center h-64">
+            <Loader2 className="h-8 w-8 animate-spin" />
+            <span className="ml-3">Cargando datos...</span>
+        </div>
+    );
   }
 
   return (
@@ -245,6 +246,7 @@ function AgendaPageComponent() {
           vehicles={vehicles}
           technicians={technicians}
           inventoryItems={inventoryItems}
+          serviceTypes={serviceTypes}
           onVehicleCreated={handleVehicleCreated}
           onCancelService={handleCancelService}
           mode="service"
@@ -257,6 +259,8 @@ function AgendaPageComponent() {
           open={isSheetOpen}
           onOpenChange={setIsSheetOpen}
           service={serviceForPreview}
+          vehicle={vehicles.find(v => v.id === serviceForPreview.vehicleId) || null}
+          associatedQuote={null} // Pass the associated quote if available
         />
       )}
     </>
