@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Car, Package, BrainCircuit, Upload, Loader2, CheckCircle, AlertTriangle, Database, Wrench, ArrowRight } from 'lucide-react';
+import { Car, Package, BrainCircuit, Upload, Loader2, CheckCircle, AlertTriangle, Database, Wrench, ArrowRight, ClipboardPaste } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import type { ExtractedVehicleForMigration } from '@/ai/flows/vehicle-migration-flow';
 import type { ExtractedProduct } from '@/ai/flows/product-migration-flow';
@@ -22,6 +22,7 @@ import type { VehicleFormValues } from '@/app/(app)/vehiculos/components/vehicle
 import { formatCurrency } from '@/lib/utils';
 import { format, parse, isValid } from 'date-fns';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 
 type AnalysisResult = | { type: 'vehicles'; vehicles: ExtractedVehicleForMigration[]; } | { type: 'products'; products: ExtractedProduct[]; } | { type: 'services'; services: ExtractedService[]; };
 
@@ -57,6 +58,7 @@ export function MigracionPageContent() {
     const [sheetNames, setSheetNames] = useState<string[]>([]);
     const [selectedSheet, setSelectedSheet] = useState<string>('');
     const [fileContent, setFileContent] = useState<string | null>(null);
+    const [pastedText, setPastedText] = useState<string>('');
     const [fileName, setFileName] = useState<string>('');
     const [isAnalyzing, setIsAnalyzing] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
@@ -99,6 +101,7 @@ export function MigracionPageContent() {
         setError(null);
         setFileName(file.name);
         setAnalysisResult(null);
+        setPastedText(''); // Clear pasted text when a file is uploaded
 
         try {
             const data = await file.arrayBuffer();
@@ -113,6 +116,25 @@ export function MigracionPageContent() {
             setError("No se pudo leer el archivo. Asegúrese de que sea un .xlsx válido.");
         }
     };
+
+    const handlePastedTextChange = (text: string) => {
+        setPastedText(text);
+        setFileContent(null); // Clear file content
+        setFileName('');
+        setWorkbook(null);
+        setSheetNames([]);
+        setSelectedSheet('');
+
+        if (text) {
+            // Attempt to parse headers from pasted text (assuming CSV/TSV)
+            const firstLine = text.split('\n')[0];
+            const headers = firstLine.split(/[\t,]/).map(h => h.trim().replace(/"/g, ''));
+            setDetectedHeaders(headers);
+            autoMapColumns(headers);
+        } else {
+            setDetectedHeaders([]);
+        }
+    }
 
     const handleSheetChange = (sheetName: string, wb?: any) => {
         const currentWorkbook = wb || workbook;
@@ -133,8 +155,9 @@ export function MigracionPageContent() {
 
     const handleAnalyze = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
-        if (!fileContent) {
-            toast({ title: 'No hay datos', description: 'Por favor cargue un archivo y seleccione una hoja.', variant: 'destructive' });
+        const contentToAnalyze = pastedText || fileContent;
+        if (!contentToAnalyze) {
+            toast({ title: 'No hay datos', description: 'Por favor cargue un archivo, seleccione una hoja o pegue texto.', variant: 'destructive' });
             return;
         }
 
@@ -145,13 +168,13 @@ export function MigracionPageContent() {
             let result;
             const mappingJson = JSON.stringify(columnMapping);
             if (activeTab === 'vehiculos') {
-                const rawResult = await migrateVehicles({ csvContent: fileContent });
+                const rawResult = await migrateVehicles({ csvContent: contentToAnalyze });
                 result = { ...rawResult, type: 'vehicles' as const };
             } else if (activeTab === 'productos') {
-                const rawResult = await migrateProducts({ csvContent: fileContent });
+                const rawResult = await migrateProducts({ csvContent: contentToAnalyze });
                 result = { ...rawResult, type: 'products' as const };
             } else { // servicios
-                const rawResult = await migrateServices({ csvContent: fileContent, mapping: mappingJson });
+                const rawResult = await migrateServices({ csvContent: contentToAnalyze, mapping: mappingJson });
                 result = { ...rawResult, type: 'services' as const };
             }
             setAnalysisResult(result);
@@ -264,27 +287,42 @@ export function MigracionPageContent() {
 
     return (
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-1 space-y-4">
+        <div className="lg:col-span-3 space-y-4">
             <Card className="shadow-lg">
-                <CardHeader><CardTitle>1. Cargar Archivo</CardTitle><CardDescription>Sube un archivo <code>.xlsx</code> con tu historial.</CardDescription></CardHeader>
-                <CardContent>
-                    <div className="flex items-center justify-center w-full">
-                        <label htmlFor="file-upload" className="flex flex-col items-center justify-center w-full h-36 border-2 border-dashed rounded-lg cursor-pointer bg-card hover:bg-muted/50">
-                            {fileName ? ( <div className="flex flex-col items-center justify-center pt-5 pb-6 text-center"><CheckCircle className="w-8 h-8 mb-4 text-green-500"/><p className="mb-2 text-sm text-foreground"><span className="font-semibold">Archivo cargado:</span></p><p className="text-xs text-muted-foreground truncate max-w-[200px]">{fileName}</p></div> ) : ( <div className="flex flex-col items-center justify-center pt-5 pb-6"><Upload className="w-8 h-8 mb-4 text-muted-foreground" /><p className="mb-2 text-sm text-muted-foreground"><span className="font-semibold">Haz clic para subir</span> o arrastra</p><p className="text-xs text-muted-foreground">Sólo archivos .XLSX</p></div> )}
-                             <Input id="file-upload" type="file" className="hidden" accept=".xlsx" onChange={handleFileChange} />
-                        </label>
+                <CardHeader><CardTitle>1. Cargar o Pegar Datos</CardTitle><CardDescription>Sube un archivo <code>.xlsx</code> o pega el texto directamente desde tu hoja de cálculo.</CardDescription></CardHeader>
+                <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <Label htmlFor="file-upload" className="font-semibold">Opción A: Cargar Archivo</Label>
+                        <div className="flex items-center justify-center w-full mt-2">
+                            <label htmlFor="file-upload" className="flex flex-col items-center justify-center w-full h-36 border-2 border-dashed rounded-lg cursor-pointer bg-card hover:bg-muted/50">
+                                {fileName ? ( <div className="flex flex-col items-center justify-center pt-5 pb-6 text-center"><CheckCircle className="w-8 h-8 mb-4 text-green-500"/><p className="mb-2 text-sm text-foreground"><span className="font-semibold">Archivo cargado:</span></p><p className="text-xs text-muted-foreground truncate max-w-[200px]">{fileName}</p></div> ) : ( <div className="flex flex-col items-center justify-center pt-5 pb-6"><Upload className="w-8 h-8 text-muted-foreground" /><p className="mb-2 text-sm text-muted-foreground"><span className="font-semibold">Haz clic para subir</span> o arrastra</p><p className="text-xs text-muted-foreground">Sólo archivos .XLSX</p></div> )}
+                                <Input id="file-upload" type="file" className="hidden" accept=".xlsx" onChange={handleFileChange} />
+                            </label>
+                        </div>
+                        {sheetNames.length > 0 && (
+                            <Select onValueChange={(value) => handleSheetChange(value)} value={selectedSheet} className="mt-4">
+                                <SelectTrigger className="mt-4"><SelectValue placeholder="Seleccione una hoja" /></SelectTrigger>
+                                <SelectContent>{sheetNames.map(name => <SelectItem key={name} value={name}>{name}</SelectItem>)}</SelectContent>
+                            </Select>
+                        )}
+                        {error && <p className="mt-2 text-sm text-destructive">{error}</p>}
                     </div>
-                    {sheetNames.length > 0 && (
-                        <Select onValueChange={(value) => handleSheetChange(value)} value={selectedSheet} className="mt-4">
-                            <SelectTrigger className="mt-4"><SelectValue placeholder="Seleccione una hoja" /></SelectTrigger>
-                            <SelectContent>{sheetNames.map(name => <SelectItem key={name} value={name}>{name}</SelectItem>)}</SelectContent>
-                        </Select>
-                    )}
-                    {error && <p className="mt-2 text-sm text-destructive">{error}</p>}
+                     <div>
+                        <Label htmlFor="paste-area" className="font-semibold">Opción B: Pegar Texto</Label>
+                        <div className="flex items-center justify-center w-full mt-2">
+                             <Textarea
+                                id="paste-area"
+                                placeholder="Pega aquí tus datos desde Excel, Sheets o un archivo CSV..."
+                                className="h-44"
+                                value={pastedText}
+                                onChange={(e) => handlePastedTextChange(e.target.value)}
+                            />
+                        </div>
+                    </div>
                 </CardContent>
             </Card>
         </div>
-        <div className="lg:col-span-2 space-y-4">
+        <div className="lg:col-span-3 space-y-4">
             <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="w-full">
                 <TabsList className="grid w-full grid-cols-3">
                     <TabsTrigger value="vehiculos"><Car className="mr-2 h-4 w-4"/>Vehículos</TabsTrigger>
@@ -314,7 +352,7 @@ export function MigracionPageContent() {
                  <Card className="mt-4">
                     <CardHeader><CardTitle>3. Analizar y Guardar</CardTitle><CardDescription>La IA usará tu mapeo para extraer los datos. Luego podrás revisarlos antes de guardarlos.</CardDescription></CardHeader>
                     <CardContent>
-                        <Button type="submit" className="w-full" disabled={!fileContent || isAnalyzing}>
+                        <Button type="submit" className="w-full" disabled={!fileContent && !pastedText || isAnalyzing}>
                             {isAnalyzing ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <BrainCircuit className="mr-2 h-4 w-4"/>} Analizar Datos con IA
                         </Button>
                     </CardContent>
