@@ -123,12 +123,13 @@ const serviceFormSchemaBase = z.object({
   serviceAdvisorSignatureDataUrl: z.string().optional(),
   photoReports: z.array(photoReportGroupSchema).optional(),
 }).refine(data => {
-    if (data.status && data.status !== 'Cotizacion' && !data.serviceDate) {
+    // A service being 'Agendado' (Scheduled) must have a service date.
+    if (data.status === 'Agendado' && !data.serviceDate) {
         return false;
     }
     return true;
 }, {
-    message: "La fecha programada no es válida.",
+    message: "La fecha de la cita es obligatoria para el estado 'Agendado'.",
     path: ["serviceDate"],
 });
 
@@ -270,8 +271,9 @@ export function ServiceForm({
         subStatus: (data as ServiceRecord)?.subStatus || undefined,
         publicId: (data as any)?.publicId, vehicleId: data?.vehicleId ? String(data.vehicleId) : undefined,
         vehicleLicensePlateSearch: data?.vehicleIdentifier || "",
-        serviceDate: isValid(parseDate(data?.serviceDate)) ? parseDate(data.serviceDate) : undefined,
-        quoteDate: isValid(parseDate(data?.quoteDate)) ? parseDate(data.quoteDate) : undefined, 
+        // Ensure new records have a default valid date
+        serviceDate: parseDate(data?.serviceDate) || new Date(),
+        quoteDate: parseDate(data?.quoteDate) || new Date(),
         receptionDateTime: isValid(parseDate((data as ServiceRecord)?.receptionDateTime)) ? parseDate((data as ServiceRecord)?.receptionDateTime) : undefined,
         deliveryDateTime: isValid(parseDate((data as ServiceRecord)?.deliveryDateTime)) ? parseDate((data as ServiceRecord)?.deliveryDateTime) : undefined,
         mileage: data?.mileage || undefined,
