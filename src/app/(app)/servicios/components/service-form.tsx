@@ -33,7 +33,7 @@ import { ServiceDetailsCard } from "./ServiceDetailsCard";
 import { Textarea } from "@/components/ui/textarea";
 import { db } from '@/lib/firebaseClient.js';
 import { doc } from 'firebase/firestore';
-import { Card } from "@/components/ui/card";
+import { Card, CardHeader, CardContent } from "@/components/ui/card";
 
 
 const supplySchema = z.object({
@@ -446,58 +446,82 @@ export function ServiceForm({
     onClose();
   }, [onDelete, onCancelService, mode, initialDataQuote, initialDataService, cancellationReason, toast, onClose]);
 
+  const availableTabs = [
+    { value: 'servicio', label: 'Detalles', icon: Wrench, condition: true },
+    { value: 'recepcion', label: 'Rec. y Ent.', icon: CheckCircle, condition: showReceptionTab },
+    { value: 'reporte', label: 'Fotos', icon: Camera, condition: showReportTab },
+    { value: 'seguridad', label: 'Revisión', icon: ShieldCheck, condition: showChecklistTab },
+  ].filter(tab => tab.condition);
+
   return (
     <>
       <Form {...form}>
         <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-6 pb-24">
           <Tabs defaultValue="servicio" className="w-full">
             <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm -mx-6 px-6 pt-2">
-              <div className="flex justify-between items-center gap-2 mb-2 border-b">
-                <TabsList className="bg-transparent p-0 w-max -mb-px">
-                  <TabsTrigger value="servicio" className="text-sm sm:text-base data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none flex items-center gap-2 py-3 px-3 sm:px-4"><Wrench className="h-4 w-4 shrink-0"/> Detalles</TabsTrigger>
-                  {showReceptionTab && <TabsTrigger value="recepcion" className="text-sm sm:text-base data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none flex items-center gap-2 py-3 px-3 sm:px-4"><CheckCircle className="h-4 w-4 shrink-0"/> Rec. y Ent.</TabsTrigger>}
-                  {showReportTab && <TabsTrigger value="reporte" className="text-sm sm:text-base data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none flex items-center gap-2 py-3 px-3 sm:px-4"><Camera className="h-4 w-4 shrink-0"/> Fotos</TabsTrigger>}
-                  {showChecklistTab && <TabsTrigger value="seguridad" className="text-sm sm:text-base data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none flex items-center gap-2 py-3 px-3 sm:px-4"><ShieldCheck className="h-4 w-4 shrink-0"/> Revisión</TabsTrigger>}
-                </TabsList>
-                {!isReadOnly && <Button type="button" onClick={handlePrintSheet} variant="ghost" size="icon" title="Vista Previa"><Eye className="h-5 w-5" /></Button>}
-              </div>
+                <div className="flex justify-between items-center mb-2">
+                    <TabsList className={cn("grid w-full mb-0", `grid-cols-${availableTabs.length}`)}>
+                        {availableTabs.map(tab => (
+                            <TabsTrigger key={tab.value} value={tab.value} className="text-xs sm:text-sm">
+                                <tab.icon className="h-4 w-4 mr-1.5 shrink-0"/>
+                                <span className="hidden sm:inline">{tab.label}</span>
+                                <span className="sm:hidden">{tab.label.substring(0,5)}</span>
+                            </TabsTrigger>
+                        ))}
+                    </TabsList>
+                    <div className="ml-2">
+                        {!isReadOnly && (
+                            <Button type="button" onClick={handlePrintSheet} variant="ghost" size="icon" title="Vista Previa">
+                                <Eye className="h-5 w-5" />
+                            </Button>
+                        )}
+                    </div>
+                </div>
             </div>
-            
+
             <TabsContent value="servicio" className="mt-4">
                <Card className="shadow-none border-none p-0">
-                  <div className="space-y-6">
-                    <VehicleSelectionCard isReadOnly={isReadOnly} localVehicles={localVehicles} serviceHistory={serviceHistory} onVehicleSelected={() => {}} onOpenNewVehicleDialog={() => { setNewVehicleInitialData({ licensePlate: getValues('vehicleLicensePlateSearch') || "" }); setIsVehicleDialogOpen(true); }}/>
-                    <ServiceDetailsCard
-                      isReadOnly={isReadOnly}
-                      technicians={technicians}
-                      inventoryItems={currentInventoryItems}
-                      serviceTypes={serviceTypes}
-                      mode={mode}
-                      totalCost={totalCost}
-                      totalSuppliesWorkshopCost={totalSuppliesWorkshopCost}
-                      serviceProfit={serviceProfit}
-                      onGenerateQuoteWithAI={handleGenerateQuoteWithAI}
-                      isGeneratingQuote={isGeneratingQuote}
-                    />
-                  </div>
+                  <CardContent className="p-0">
+                    <div className="space-y-6">
+                        <VehicleSelectionCard isReadOnly={isReadOnly} localVehicles={localVehicles} serviceHistory={serviceHistory} onVehicleSelected={() => {}} onOpenNewVehicleDialog={() => { setNewVehicleInitialData({ licensePlate: getValues('vehicleLicensePlateSearch') || "" }); setIsVehicleDialogOpen(true); }}/>
+                        <ServiceDetailsCard
+                        isReadOnly={isReadOnly}
+                        technicians={technicians}
+                        inventoryItems={currentInventoryItems}
+                        serviceTypes={serviceTypes}
+                        mode={mode}
+                        totalCost={totalCost}
+                        totalSuppliesWorkshopCost={totalSuppliesWorkshopCost}
+                        serviceProfit={serviceProfit}
+                        onGenerateQuoteWithAI={handleGenerateQuoteWithAI}
+                        isGeneratingQuote={isGeneratingQuote}
+                        />
+                    </div>
+                  </CardContent>
                </Card>
             </TabsContent>
             
             <TabsContent value="recepcion" className="mt-4">
                <Card className="shadow-none border-none p-0">
-                  <ReceptionAndDelivery isReadOnly={isReadOnly} isEnhancingText={isEnhancingText} handleEnhanceText={handleEnhanceText} />
+                 <CardContent className="p-0">
+                    <ReceptionAndDelivery isReadOnly={isReadOnly} isEnhancingText={isEnhancingText} handleEnhanceText={handleEnhanceText} />
+                 </CardContent>
                </Card>
             </TabsContent>
             
             <TabsContent value="reporte" className="mt-4">
               <Card className="shadow-none border-none p-0">
-                {/* Photo Report Content */}
+                 <CardContent className="p-0">
+                    {/* Photo Report Content */}
+                 </CardContent>
               </Card>
             </TabsContent>
             
             <TabsContent value="seguridad" className="mt-4">
                <Card className="shadow-none border-none p-0">
-                  <SafetyChecklist control={control} isReadOnly={isReadOnly} onSignatureClick={() => setIsTechSignatureDialogOpen(true)} signatureDataUrl={form.watch('safetyInspection.technicianSignature')} isEnhancingText={isEnhancingText} handleEnhanceText={handleEnhanceText} serviceId={watchedId || ''} onPhotoUploaded={handleChecklistPhotoUpload} onViewImage={handleViewImage}/>
+                 <CardContent className="p-0">
+                    <SafetyChecklist control={control} isReadOnly={isReadOnly} onSignatureClick={() => setIsTechSignatureDialogOpen(true)} signatureDataUrl={form.watch('safetyInspection.technicianSignature')} isEnhancingText={isEnhancingText} handleEnhanceText={handleEnhanceText} serviceId={watchedId || ''} onPhotoUploaded={handleChecklistPhotoUpload} onViewImage={handleViewImage}/>
+                 </CardContent>
                </Card>
             </TabsContent>
           </Tabs>
