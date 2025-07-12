@@ -167,9 +167,9 @@ export function MigracionPageContent() {
       <div className="space-y-6">
         <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="w-full">
             <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="vehiculos"><Car className="mr-2 h-4 w-4"/>Vehículos</TabsTrigger>
-                <TabsTrigger value="productos"><Package className="mr-2 h-4 w-4"/>Productos</TabsTrigger>
-                <TabsTrigger value="servicios"><Wrench className="mr-2 h-4 w-4"/>Servicios</TabsTrigger>
+                <TabsTrigger value="vehiculos" className="data-[state=active]:bg-white data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm"><Car className="mr-2 h-4 w-4"/>Vehículos</TabsTrigger>
+                <TabsTrigger value="productos" className="data-[state=active]:bg-white data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm"><Package className="mr-2 h-4 w-4"/>Productos</TabsTrigger>
+                <TabsTrigger value="servicios" className="data-[state=active]:bg-white data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm"><Wrench className="mr-2 h-4 w-4"/>Servicios</TabsTrigger>
             </TabsList>
         </Tabs>
 

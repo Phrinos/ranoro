@@ -61,7 +61,7 @@ export function AuditoriaPageContent({ initialLogs }: { initialLogs: AuditLog[] 
             <Input
               type="search"
               placeholder="Buscar por usuario, acción o descripción..."
-              className="w-full rounded-lg bg-background pl-8 md:w-full lg:w-2/3"
+              className="w-full rounded-lg bg-card pl-8 md:w-full lg:w-2/3"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -70,7 +70,7 @@ export function AuditoriaPageContent({ initialLogs }: { initialLogs: AuditLog[] 
           <PopoverTrigger asChild>
             <Button
               variant={"outline"}
-              className={cn("w-full md:w-[280px] justify-start text-left font-normal", !dateRange && "text-muted-foreground")}
+              className={cn("w-full md:w-[280px] justify-start text-left font-normal bg-card", !dateRange && "text-muted-foreground")}
             >
               <CalendarIcon className="mr-2 h-4 w-4" />
               {dateRange?.from ? (dateRange.to ? `${format(dateRange.from, "dd LLL, y", {locale: es})} - ${format(dateRange.to, "dd LLL, y", {locale: es})}` : format(dateRange.from, "dd LLL, y", {locale: es})) : "Filtrar por fecha"}
