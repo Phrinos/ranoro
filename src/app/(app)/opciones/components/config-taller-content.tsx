@@ -10,11 +10,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Save, Upload, Loader2, Building, MapPin, User, Phone, Briefcase, Crop } from 'lucide-react';
+import { Save, Upload, Loader2, Building, User, Crop } from 'lucide-react';
 import type { WorkshopInfo } from '@/types';
 import { useToast } from '@/hooks/use-toast';
-import { storage } from '@/lib/firebaseClient.js';
+import { storage, db } from '@/lib/firebaseClient.js';
 import { ref, uploadString, getDownloadURL } from 'firebase/storage';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { optimizeImage, capitalizeWords } from '@/lib/utils';
 import Image from 'next/image';
 import ReactCrop, { centerCrop, makeAspectCrop, type Crop } from 'react-image-crop';
@@ -22,6 +23,7 @@ import 'react-image-crop/dist/ReactCrop.css';
 
 
 const LOCALSTORAGE_KEY = "workshopTicketInfo";
+const FIRESTORE_DOC_ID = "main"; // Document ID for the single config
 
 const tallerSchema = z.object({
   name: z.string().min(1, "El nombre del taller es obligatorio"),
@@ -36,20 +38,6 @@ const tallerSchema = z.object({
 
 type TallerFormValues = z.infer<typeof tallerSchema>;
 
-const defaultWorkshopInfo: WorkshopInfo = {
-    name: "RANORO",
-    phone: "4491425323",
-    addressLine1: "Av. de la Convencion de 1914 No. 1421",
-    addressLine2: "Jardines de la Concepcion, C.P. 20267",
-    cityState: "Aguascalientes, Ags.",
-    googleMapsUrl: "https://maps.app.goo.gl/ABCDEFG",
-    logoUrl: "/ranoro-logo.png",
-    contactPersonName: "Arturo Valdelamar",
-    contactPersonPhone: "4493930914",
-    contactPersonRole: "Gerente General"
-};
-
-
 export function ConfigTallerPageContent() {
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -61,37 +49,47 @@ export function ConfigTallerPageContent() {
   const imgRef = useRef<HTMLImageElement>(null);
   const previewCanvasRef = useRef<HTMLCanvasElement>(null);
 
-
   const form = useForm<TallerFormValues>({
     resolver: zodResolver(tallerSchema),
-    defaultValues: defaultWorkshopInfo,
+    defaultValues: {
+        name: "RANORO", phone: "", addressLine1: "", logoUrl: "/ranoro-logo.png"
+    },
   });
 
   const watchedLogoUrl = form.watch('logoUrl');
 
   useEffect(() => {
-    const stored = typeof window !== "undefined" ? localStorage.getItem(LOCALSTORAGE_KEY) : null;
-    if (stored) {
-      try {
-        form.reset(JSON.parse(stored));
-      } catch {
-        form.reset(defaultWorkshopInfo);
-      }
-    }
+    // Load config from Firestore first, then fallback to localStorage
+    const loadConfig = async () => {
+        if (!db) return;
+        const configRef = doc(db, 'workshopConfig', FIRESTORE_DOC_ID);
+        const docSnap = await getDoc(configRef);
+        if (docSnap.exists()) {
+            form.reset(docSnap.data());
+        } else {
+            const stored = localStorage.getItem(LOCALSTORAGE_KEY);
+            if (stored) {
+                try {
+                    form.reset(JSON.parse(stored));
+                } catch { /* ignore parsing errors */ }
+            }
+        }
+    };
+    loadConfig();
   }, [form]);
 
-  const onSubmit = (data: TallerFormValues) => {
+  const onSubmit = async (data: TallerFormValues) => {
     try {
-      const stored = localStorage.getItem(LOCALSTORAGE_KEY);
-      const existingData = stored ? JSON.parse(stored) : {};
+      // 1. Save to localStorage for quick UI updates on ticket config page
+      localStorage.setItem(LOCALSTORAGE_KEY, JSON.stringify(data));
       
-      const newData: WorkshopInfo = {
-        ...existingData, // Keep existing settings like font sizes, boldness, etc.
-        ...data, // Overwrite with new data from this form
-      };
-      
-      localStorage.setItem(LOCALSTORAGE_KEY, JSON.stringify(newData));
-      toast({ title: "Información guardada", description: "Se actualizaron los datos del taller y del ticket.", duration: 3000 });
+      // 2. Save to Firestore for persistence
+      if (db) {
+        const configRef = doc(db, 'workshopConfig', FIRESTORE_DOC_ID);
+        await setDoc(configRef, data, { merge: true });
+      }
+
+      toast({ title: "Información guardada", description: "Se actualizaron los datos del taller.", duration: 3000 });
     } catch {
       toast({ title: "Error al guardar", variant: "destructive", duration: 3000 });
     }
@@ -99,20 +97,17 @@ export function ConfigTallerPageContent() {
 
   const onSelectFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
-      setCrop(undefined); // Makes crop preview update between images.
+      setCrop(undefined);
       const reader = new FileReader();
       reader.addEventListener('load', () => setImgSrc(reader.result?.toString() || ''));
       reader.readAsDataURL(e.target.files[0]);
       setIsCropping(true);
     }
-    if (e.target) e.target.value = ""; // Reset input
+    if (e.target) e.target.value = "";
   };
   
   const handleCropComplete = () => {
-    if (!previewCanvasRef.current || !imgRef.current) {
-        toast({ title: "Error de recorte", description: "No se pudo procesar la imagen.", variant: "destructive" });
-        return;
-    }
+    if (!previewCanvasRef.current) return toast({ title: "Error de recorte", variant: "destructive" });
     const canvas = previewCanvasRef.current;
     const croppedDataUrl = canvas.toDataURL('image/png');
     uploadCroppedImage(croppedDataUrl);
@@ -127,7 +122,8 @@ export function ConfigTallerPageContent() {
     
     try {
       const storageRef = ref(storage, `workshop-logos/main-logo-${Date.now()}.png`);
-      await uploadString(storageRef, dataUrl, 'data_url');
+      const optimizedUrl = await optimizeImage(dataUrl, 400, 0.9, 'image/png'); // Ensure PNG for transparency
+      await uploadString(storageRef, optimizedUrl, 'data_url');
       const downloadURL = await getDownloadURL(storageRef);
       form.setValue('logoUrl', downloadURL, { shouldDirty: true });
       toast({ title: '¡Logo actualizado!', description: 'La nueva imagen se ha cargado correctamente.' });
@@ -141,49 +137,34 @@ export function ConfigTallerPageContent() {
 
 
   useEffect(() => {
-    if (!completedCrop || !previewCanvasRef.current || !imgRef.current) {
-      return;
-    }
-
+    if (!completedCrop || !previewCanvasRef.current || !imgRef.current) return;
     const image = imgRef.current;
     const canvas = previewCanvasRef.current;
     const scaleX = image.naturalWidth / image.width;
     const scaleY = image.naturalHeight / image.height;
     
     const ctx = canvas.getContext('2d');
-    if (!ctx) { throw new Error('No 2d context'); }
+    if (!ctx) throw new Error('No 2d context');
 
-    const pixelRatio = window.devicePixelRatio;
-    canvas.width = Math.floor(completedCrop.width * scaleX * pixelRatio);
-    canvas.height = Math.floor(completedCrop.height * scaleY * pixelRatio);
-    
-    ctx.scale(pixelRatio, pixelRatio);
-    ctx.imageSmoothingQuality = 'high';
-    
-    const cropX = completedCrop.x * scaleX;
-    const cropY = completedCrop.y * scaleY;
-    const cropWidth = completedCrop.width * scaleX;
-    const cropHeight = completedCrop.height * scaleY;
+    canvas.width = Math.floor(completedCrop.width * scaleX);
+    canvas.height = Math.floor(completedCrop.height * scaleY);
     
     ctx.drawImage(
       image,
-      cropX, cropY, cropWidth, cropHeight,
+      completedCrop.x * scaleX, completedCrop.y * scaleY,
+      completedCrop.width * scaleX, completedCrop.height * scaleY,
       0, 0,
       completedCrop.width * scaleX, completedCrop.height * scaleY
     );
   }, [completedCrop]);
   
   function centerAspectCrop(mediaWidth: number, mediaHeight: number, aspect: number): Crop {
-    return centerCrop(
-      makeAspectCrop({ unit: '%', width: 90 }, aspect, mediaWidth, mediaHeight),
-      mediaWidth, mediaHeight
-    );
+    return centerCrop(makeAspectCrop({ unit: '%', width: 90 }, aspect, mediaWidth, mediaHeight), mediaWidth, mediaHeight);
   }
 
   function onImageLoad(e: React.SyntheticEvent<HTMLImageElement>) {
     const { width, height } = e.currentTarget;
-    const aspect = 16 / 9; // Define desired aspect ratio
-    setCrop(centerAspectCrop(width, height, aspect));
+    setCrop(centerAspectCrop(width, height, 16 / 9));
   }
 
 
@@ -194,7 +175,7 @@ export function ConfigTallerPageContent() {
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
           <CardHeader>
             <CardTitle>Información del Taller</CardTitle>
-            <CardDescription>Estos datos se utilizarán en documentos, reportes y en la configuración del ticket.</CardDescription>
+            <CardDescription>Estos datos se utilizarán en documentos y reportes. Se guardan en la nube.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             <Card>
@@ -249,31 +230,16 @@ export function ConfigTallerPageContent() {
             </DialogHeader>
             <div className="my-4">
               {imgSrc && (
-                  <ReactCrop
-                    crop={crop}
-                    onChange={(_, percentCrop) => setCrop(percentCrop)}
-                    onComplete={(c) => setCompletedCrop(c)}
-                    aspect={16 / 9}
-                    minHeight={100}
-                  >
-                    <img
-                      ref={imgRef}
-                      alt="Crop me"
-                      src={imgSrc}
-                      onLoad={onImageLoad}
-                      style={{ maxHeight: '70vh' }}
-                    />
+                  <ReactCrop crop={crop} onChange={(_, percentCrop) => setCrop(percentCrop)} onComplete={(c) => setCompletedCrop(c)} aspect={16 / 9} minHeight={100}>
+                    <img ref={imgRef} alt="Crop me" src={imgSrc} onLoad={onImageLoad} style={{ maxHeight: '70vh' }} />
                   </ReactCrop>
               )}
-               {!!completedCrop && (
-                  <canvas ref={previewCanvasRef} className="hidden" />
-              )}
+               {!!completedCrop && (<canvas ref={previewCanvasRef} className="hidden" />)}
             </div>
             <DialogFooter>
                 <Button variant="outline" onClick={() => setIsCropping(false)}>Cancelar</Button>
                 <Button onClick={handleCropComplete} disabled={!completedCrop?.width}>
-                    <Crop className="mr-2 h-4 w-4"/>
-                    Recortar y Guardar
+                    <Crop className="mr-2 h-4 w-4"/>Recortar y Guardar
                 </Button>
             </DialogFooter>
         </DialogContent>

@@ -5,13 +5,13 @@ import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { 
-    LayoutGrid, Wrench, FileText, Receipt, Package, DollarSign, Users, Settings, Truck
+    LayoutDashboard, Wrench, FileText, Receipt, Package, DollarSign, Users, Settings, Truck
 } from 'lucide-react';
 
 const manualSections = [
     { 
         title: "Panel Principal (Dashboard)", 
-        icon: LayoutGrid, 
+        icon: LayoutDashboard, 
         content: (<>
             <p>Es tu centro de mando. Te ofrece una visión rápida del estado de tu taller y acceso a herramientas de IA.</p>
             <ul className="list-disc pl-5 mt-2 space-y-2">
@@ -24,7 +24,7 @@ const manualSections = [
                     </ul>
                 </li>
                 <li><strong>Asistente de Compras (IA):</strong> Analiza los servicios de hoy y genera una orden de compra optimizada con las refacciones necesarias, agrupadas por proveedor.</li>
-                <li><strong>Análisis de Inventario (IA):</strong> Revisa tu historial de consumo y stock para recomendarte qué y cuánto reordenar, evitando compras innecesarias.</li>
+                <li><strong>Análisis de Inventario (IA):</strong> Revisa tu historial de consumo y stock para recomendarte qué y cuándo reordenar, evitando compras innecesarias.</li>
                 <li><strong>Gráficos de Rendimiento:</strong> Visualiza la rentabilidad mensual, los tipos de servicios más comunes y tus principales fuentes de ingreso.</li>
             </ul>
         </>), 
