@@ -80,28 +80,36 @@ export function MigracionPageContent() {
             let vehiclesAddedCount = 0;
             if (activeTab === 'ia') {
                 const result = await migrateData({ csvContent: fileContent });
-                for (const vehicle of result.vehicles) {
-                    await inventoryService.addVehicle(vehicle as unknown as VehicleFormValues);
-                    vehiclesAddedCount++;
+                if (!result.vehicles || result.vehicles.length === 0) {
+                   toast({ title: 'Migración Completa', description: `La IA no encontró vehículos para agregar.` });
+                } else {
+                    for (const vehicle of result.vehicles) {
+                        await inventoryService.addVehicle(vehicle as unknown as VehicleFormValues);
+                        vehiclesAddedCount++;
+                    }
                 }
-                // Note: Service records are ignored in this simplified flow
-                // as they require more complex logic to associate with newly created vehicles.
                 setMigrationResult({ ...result, type: 'generic', vehiclesAdded: vehiclesAddedCount, servicesAdded: 0 });
             
             } else if (activeTab === 'vehiculos') {
                 const result = await migrateVehicles({ csvContent: fileContent });
-                for (const vehicle of result.vehicles) {
-                    await inventoryService.addVehicle(vehicle as unknown as VehicleFormValues);
-                    vehiclesAddedCount++;
+                 if (!result.vehicles || result.vehicles.length === 0) {
+                   toast({ title: 'Migración Completa', description: `La IA no encontró vehículos para agregar.` });
+                } else {
+                    for (const vehicle of result.vehicles) {
+                        await inventoryService.addVehicle(vehicle as unknown as VehicleFormValues);
+                        vehiclesAddedCount++;
+                    }
                 }
                 setMigrationResult({ ...result, type: 'vehicles', vehiclesAdded: vehiclesAddedCount });
 
             } else { // productos
                 const result = await migrateProducts({ csvContent: fileContent });
                 let productsAddedCount = 0;
-                for (const product of result.products) {
-                    await inventoryService.addItem(product as any);
-                    productsAddedCount++;
+                if (result.products && result.products.length > 0) {
+                    for (const product of result.products) {
+                        await inventoryService.addItem(product as any);
+                        productsAddedCount++;
+                    }
                 }
                 setMigrationResult({ ...result, type: 'products', productsAdded: productsAddedCount });
             }
@@ -160,13 +168,13 @@ export function MigracionPageContent() {
                     <TabsTrigger value="ia"><BrainCircuit className="mr-2 h-4 w-4"/>Análisis IA</TabsTrigger>
                 </TabsList>
                 <TabsContent value="vehiculos">
-                    <Card><CardHeader><CardTitle>Migración de Vehículos</CardTitle><CardDescription>Usa esta opción si tu hoja contiene solo información de vehículos (nombre, tel, marca, modelo, año).</CardDescription></CardHeader><CardContent><Button className="w-full" onClick={(e) => handleSubmit(e as any)}>Iniciar Migración de Vehículos</Button></CardContent></Card>
+                    <Card><CardHeader><CardTitle>Migración de Vehículos</CardTitle><CardDescription>Usa esta opción si tu hoja contiene solo información de vehículos (nombre, tel, marca, modelo, año, y **placa**).</CardDescription></CardHeader><CardContent><Button className="w-full" onClick={(e) => handleSubmit(e as any)}>Iniciar Migración de Vehículos</Button></CardContent></Card>
                 </TabsContent>
                 <TabsContent value="productos">
                     <Card><CardHeader><CardTitle>Migración de Productos</CardTitle><CardDescription>Usa esta opción si tu hoja contiene solo información de productos (código, nombre, existencias, precios).</CardDescription></CardHeader><CardContent><Button className="w-full" onClick={(e) => handleSubmit(e as any)}>Iniciar Migración de Productos</Button></CardContent></Card>
                 </TabsContent>
                 <TabsContent value="ia">
-                    <Card><CardHeader><CardTitle>Migración con IA</CardTitle><CardDescription>La IA analizará la hoja para extraer vehículos e historial de servicios de forma automática.</CardDescription></CardHeader><CardContent><Button className="w-full" onClick={(e) => handleSubmit(e as any)}>Iniciar Migración con IA</Button></CardContent></Card>
+                    <Card><CardHeader><CardTitle>Migración con IA</CardTitle><CardDescription>La IA analizará la hoja para extraer vehículos (**incluyendo placas**) e historial de servicios de forma automática.</CardDescription></CardHeader><CardContent><Button className="w-full" onClick={(e) => handleSubmit(e as any)}>Iniciar Migración con IA</Button></CardContent></Card>
                 </TabsContent>
             </Tabs>
              {migrationResult && (
