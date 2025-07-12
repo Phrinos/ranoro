@@ -98,8 +98,11 @@ export const optimizeImage = (file: File, maxWidth: number, quality: number = 0.
         }
         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
         
+        // Determine the output format based on the original file type to preserve transparency
+        const outputFormat = file.type === 'image/png' ? 'image/png' : 'image/jpeg';
+        
         // Get the data URL of the resized image
-        const dataUrl = canvas.toDataURL('image/jpeg', quality);
+        const dataUrl = canvas.toDataURL(outputFormat, outputFormat === 'image/jpeg' ? quality : undefined);
         resolve(dataUrl);
       };
       img.onerror = (err) => reject(err);
