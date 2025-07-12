@@ -32,6 +32,7 @@ const ALL_AVAILABLE_PERMISSIONS = [
     { id: 'users:manage', label: 'Gestionar Usuarios (Admin)' },
     { id: 'roles:manage', label: 'Gestionar Roles y Permisos (Admin)' },
     { id: 'ticket_config:manage', label: 'Configurar Ticket (Admin)' },
+    { id: 'workshop:manage', label: 'Gestionar Información del Taller (Admin)' },
     { id: 'audits:view', label: 'Ver Auditoría de Acciones (Admin)' },
 ];
 
