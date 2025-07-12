@@ -281,12 +281,12 @@ export function ServiceForm({
     }
 
     form.reset({
-        id: data?.id || `SRV-${generateUniqueId()}`,
-        status: data?.status || (mode === 'quote' ? 'Cotizacion' : undefined), // Default to Cotizacion in quote mode
+        id: data?.id, // Keep ID undefined for new records
+        status: data?.status || (mode === 'quote' ? 'Cotizacion' : undefined),
         subStatus: (data as ServiceRecord)?.subStatus || undefined,
         publicId: (data as any)?.publicId, vehicleId: data?.vehicleId ? String(data.vehicleId) : undefined,
         vehicleLicensePlateSearch: data?.vehicleIdentifier || "",
-        serviceDate: data?.serviceDate ? parseDate(data.serviceDate) : undefined, // Keep it undefined for new
+        serviceDate: data?.serviceDate ? parseDate(data.serviceDate) : undefined,
         quoteDate: data?.quoteDate ? parseDate(data.quoteDate) : (mode === 'quote' ? new Date() : undefined),
         receptionDateTime: isValid(parseDate((data as ServiceRecord)?.receptionDateTime)) ? parseDate((data as ServiceRecord)?.receptionDateTime) : undefined,
         deliveryDateTime: isValid(parseDate((data as ServiceRecord)?.deliveryDateTime)) ? parseDate((data as ServiceRecord)?.deliveryDateTime) : undefined,
@@ -395,22 +395,17 @@ export function ServiceForm({
     }
     
     // Sanitize data before saving
-    const dataToSave = { ...values };
+    const dataToSave: Partial<ServiceFormValues> = { ...values };
     Object.keys(dataToSave).forEach(keyStr => {
         const key = keyStr as keyof typeof dataToSave;
         if (dataToSave[key] === undefined || dataToSave[key] === '') {
-            (dataToSave as any)[key] = null;
+            delete (dataToSave as any)[key];
         }
     });
-
-    if (dataToSave.status !== 'En Taller') {
-      delete (dataToSave as Partial<ServiceFormValues>).subStatus;
-    }
-
     
     const finalData = {
         ...dataToSave,
-        id: dataToSave.id || `SRV-${generateUniqueId()}`,
+        id: dataToSave.id, // ID is handled by the calling component
         publicId: dataToSave.publicId || `s_${generateUniqueId().toLowerCase()}`,
         vehicleId: getValues('vehicleId')!,
         description: (dataToSave.serviceItems || []).map(item => item.name).join(', ') || 'Servicio',
