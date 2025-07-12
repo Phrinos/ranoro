@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -40,6 +40,11 @@ export function UsuariosPageContent({ currentUser, initialUsers, initialRoles }:
     resolver: zodResolver(userFormSchema),
     defaultValues: { name: '', email: '', phone: '', role: 'Tecnico' },
   });
+
+  useEffect(() => {
+    setUsers(initialUsers);
+    setAvailableRoles(initialRoles);
+  }, [initialUsers, initialRoles]);
   
   useEffect(() => {
     if (isFormOpen && formCardRef.current) {
@@ -56,18 +61,18 @@ export function UsuariosPageContent({ currentUser, initialUsers, initialRoles }:
   
   const canEditOrDelete = (user: User): boolean => {
     if (!currentUser) return false;
-    if (currentUser.role === 'Superadmin') return user.id !== currentUser.id;
-    if (currentUser.role === 'Admin') return user.role !== 'Superadmin' && user.id !== currentUser.id;
+    if (currentUser.role === 'Superadministrador') return user.id !== currentUser.id;
+    if (currentUser.role === 'Admin') return user.role !== 'Superadministrador' && user.id !== currentUser.id;
     return false;
   };
   
   const assignableRoles = useMemo(() => {
-    if (currentUser?.role === 'Superadmin') return availableRoles;
-    if (currentUser?.role === 'Admin') return availableRoles.filter(r => r.name !== 'Superadmin');
+    if (currentUser?.role === 'Superadministrador') return availableRoles;
+    if (currentUser?.role === 'Admin') return availableRoles.filter(r => r.name !== 'Superadministrador');
     return [];
   }, [currentUser, availableRoles]);
 
-  const handleOpenForm = (userToEdit?: User) => {
+  const handleOpenForm = useCallback((userToEdit?: User) => {
     if (userToEdit) {
       setEditingUser(userToEdit);
       form.reset({
@@ -81,25 +86,24 @@ export function UsuariosPageContent({ currentUser, initialUsers, initialRoles }:
       form.reset({ name: '', email: '', phone: '', role: 'Tecnico' });
     }
     setIsFormOpen(true);
-  };
+  }, [form]);
 
   const onSubmit = async (data: UserFormValues) => {
     if (!currentUser) return;
     const isEditing = !!editingUser;
     
-    const userData: User = {
-        id: editingUser?.id || '', // Will be ignored on creation
+    const userData: Partial<User> = {
+        id: editingUser?.id, // Pass ID for update, will be undefined for create
         ...data,
     };
     
     try {
-        const savedUser = await adminService.saveUser(userData, currentUser);
-        const updatedUsers = isEditing
-            ? users.map(u => u.id === savedUser.id ? savedUser : u)
-            : [...users, savedUser];
-        setUsers(updatedUsers);
+        await adminService.saveUser(userData, currentUser);
+        
         toast({ title: `Usuario ${isEditing ? 'actualizado' : 'creado'}` });
         setIsFormOpen(false);
+        // The parent will refetch data, causing this component to re-render
+        window.dispatchEvent(new CustomEvent('databaseUpdated'));
     } catch (error: any) {
         toast({ title: "Error al guardar", description: error.message, variant: 'destructive'});
     }
@@ -109,8 +113,8 @@ export function UsuariosPageContent({ currentUser, initialUsers, initialRoles }:
     if (!currentUser) return;
     try {
         await adminService.deleteUser(userId, currentUser);
-        setUsers(prev => prev.filter(u => u.id !== userId));
         toast({ title: "Usuario eliminado." });
+        window.dispatchEvent(new CustomEvent('databaseUpdated'));
     } catch (error: any) {
         toast({ title: "Error al eliminar", description: error.message, variant: 'destructive'});
     }
@@ -151,7 +155,7 @@ export function UsuariosPageContent({ currentUser, initialUsers, initialRoles }:
                       {filteredUsers.map(user => (
                         <TableRow key={user.id}>
                           <TableCell className="font-medium">{user.name}</TableCell><TableCell>{user.email}</TableCell><TableCell>{user.phone || 'N/A'}</TableCell>
-                          <TableCell><span className={`px-2 py-1 text-xs rounded-full font-medium ${ user.role === 'Superadmin' ? 'bg-red-100 text-red-700' : user.role === 'Admin' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-700' }`}>{user.role}</span></TableCell>
+                          <TableCell><span className={`px-2 py-1 text-xs rounded-full font-medium ${ user.role === 'Superadministrador' ? 'bg-red-100 text-red-700' : user.role === 'Admin' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-700' }`}>{user.role}</span></TableCell>
                           <TableCell className="text-right">
                             {canEditOrDelete(user) && ( <> <Button variant="ghost" size="icon" onClick={() => handleOpenForm(user)} className="mr-2"><Edit className="h-4 w-4" /></Button><AlertDialog><AlertDialogTrigger asChild><Button variant="ghost" size="icon"><Trash2 className="h-4 w-4 text-destructive" /></Button></AlertDialogTrigger><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>¿Eliminar Usuario?</AlertDialogTitle><AlertDialogDescription>¿Seguro que quieres eliminar a "{user.name}"? Esta acción es permanente.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Cancelar</AlertDialogCancel><AlertDialogAction onClick={() => handleDeleteUser(user.id)} className="bg-destructive hover:bg-destructive/90">Sí, Eliminar</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog></>)}
                           </TableCell>
@@ -170,12 +174,12 @@ export function UsuariosPageContent({ currentUser, initialUsers, initialRoles }:
 
         {isFormOpen && (
             <Card className="mt-8" ref={formCardRef}>
-                <CardHeader><CardTitle>{editingUser ? 'Editar Usuario' : 'Crear Nuevo Usuario'}</CardTitle></CardHeader>
+                <CardHeader><CardTitle>{editingUser ? 'Editar Usuario' : 'Crear Nuevo Usuario'}</CardTitle><CardDescription>{editingUser ? `Para cambiar la contraseña, debe hacerse directamente en Firebase Authentication por seguridad.` : 'La contraseña se establecerá en la consola de Firebase después de crear el usuario.'}</CardDescription></CardHeader>
                 <CardContent>
                     <Form {...form}>
                         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                             <FormField control={form.control} name="name" render={({ field }) => ( <FormItem><FormLabel>Nombre</FormLabel><FormControl><Input placeholder="Nombre completo" {...field} onChange={e => field.onChange(capitalizeWords(e.target.value))} /></FormControl><FormMessage /></FormItem> )}/>
-                            <FormField control={form.control} name="email" render={({ field }) => ( <FormItem><FormLabel>Email</FormLabel><FormControl><Input type="email" placeholder="correo@ejemplo.com" {...field} disabled={!!editingUser} /></FormControl><FormDescription>El email se usará para identificar al usuario, no se puede cambiar.</FormDescription><FormMessage /></FormItem> )}/>
+                            <FormField control={form.control} name="email" render={({ field }) => ( <FormItem><FormLabel>Email</FormLabel><FormControl><Input type="email" placeholder="correo@ejemplo.com" {...field} disabled={!!editingUser} /></FormControl><FormDescription>El email se usará para iniciar sesión y no se puede cambiar después de la creación.</FormDescription><FormMessage /></FormItem> )}/>
                             <FormField control={form.control} name="phone" render={({ field }) => ( <FormItem><FormLabel>Teléfono (Opcional)</FormLabel><FormControl><Input placeholder="4491234567" {...field} /></FormControl><FormMessage /></FormItem> )}/>
                             <FormField control={form.control} name="role" render={({ field }) => ( <FormItem><FormLabel>Rol</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Seleccione un rol" /></SelectTrigger></FormControl><SelectContent>{assignableRoles.map(role => ( <SelectItem key={role.id} value={role.name}>{role.name}</SelectItem> ))}</SelectContent></Select><FormMessage /></FormItem> )}/>
                             <div className="flex justify-end gap-2">

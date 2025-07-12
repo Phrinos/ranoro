@@ -21,7 +21,7 @@ import {
 import { onAuthStateChanged, updatePassword, reauthenticateWithCredential, EmailAuthProvider } from 'firebase/auth';
 import { auth, storage, db } from '@/lib/firebaseClient.js';
 import { ref, uploadString, getDownloadURL } from 'firebase/storage';
-import { AUTH_USER_LOCALSTORAGE_KEY, placeholderAppRoles, persistToFirestore, logAudit } from '@/lib/placeholder-data';
+import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
 import { adminService, inventoryService } from '@/lib/services';
 import { SignatureDialog } from '@/app/(app)/servicios/components/signature-dialog';
 import Image from "next/legacy/image";
@@ -140,10 +140,40 @@ function PerfilPageContent() {
         <CardContent>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              <FormField control={form.control} name="name" render={({ field }) => (<FormItem><FormLabel>Nombre Completo</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/>
-              <FormField control={form.control} name="email" render={({ field }) => (<FormItem><FormLabel>Correo Electrónico</FormLabel><FormControl><Input type="email" {...field} disabled /></FormControl><FormDescription>El correo electrónico no se puede cambiar.</FormDescription><FormMessage /></FormItem>)}/>
-              <FormField control={form.control} name="phone" render={({ field }) => (<FormItem><FormLabel>Teléfono (Opcional)</FormLabel><FormControl><Input type="tel" {...field} /></FormControl><FormMessage /></FormItem>)}/>
-              <Card className="pt-4 mt-4 border-dashed"><CardContent className="space-y-2"><FormLabel>Firma del Asesor</FormLabel><FormDescription>Esta firma se usará en los documentos generados.</FormDescription><div className="mt-2 p-2 min-h-[100px] border rounded-md bg-muted/50 flex items-center justify-center">{form.watch('signatureDataUrl') ? <img src={form.watch('signatureDataUrl')!} alt="Firma guardada" style={{ maxWidth: '250px', maxHeight: '125px', objectFit: 'contain' }}/> : <span className="text-sm text-muted-foreground">No hay firma.</span>}</div><Button type="button" variant="outline" onClick={() => setIsSignatureDialogOpen(true)} className="w-full"><Signature className="mr-2 h-4 w-4" />{form.watch('signatureDataUrl') ? 'Cambiar Firma' : 'Capturar Firma'}</Button></CardContent></Card>
+              <FormField control={form.control} name="name" render={({ field }) => (
+                <FormItem>
+                    <FormLabel>Nombre Completo</FormLabel>
+                    <FormControl><Input {...field} /></FormControl>
+                    <FormMessage />
+                </FormItem>
+              )}/>
+              <FormField control={form.control} name="email" render={({ field }) => (
+                <FormItem>
+                    <FormLabel>Correo Electrónico</FormLabel>
+                    <FormControl><Input type="email" {...field} disabled /></FormControl>
+                    <FormDescription>El correo electrónico no se puede cambiar.</FormDescription>
+                    <FormMessage />
+                </FormItem>
+              )}/>
+              <FormField control={form.control} name="phone" render={({ field }) => (
+                <FormItem>
+                    <FormLabel>Teléfono (Opcional)</FormLabel>
+                    <FormControl><Input type="tel" {...field} /></FormControl>
+                    <FormMessage />
+                </FormItem>
+              )}/>
+              <Card className="pt-4 mt-4 border-dashed">
+                <CardContent className="space-y-2">
+                    <FormLabel>Firma del Asesor</FormLabel>
+                    <FormDescription>Esta firma se usará en los documentos generados.</FormDescription>
+                    <div className="mt-2 p-2 min-h-[100px] border rounded-md bg-muted/50 flex items-center justify-center">
+                        {form.watch('signatureDataUrl') ? <img src={form.watch('signatureDataUrl')!} alt="Firma guardada" style={{ maxWidth: '250px', maxHeight: '125px', objectFit: 'contain' }}/> : <span className="text-sm text-muted-foreground">No hay firma.</span>}
+                    </div>
+                    <Button type="button" variant="outline" onClick={() => setIsSignatureDialogOpen(true)} className="w-full">
+                        <Signature className="mr-2 h-4 w-4" />{form.watch('signatureDataUrl') ? 'Cambiar Firma' : 'Capturar Firma'}
+                    </Button>
+                </CardContent>
+              </Card>
               <CardDescription className="pt-6">Cambiar contraseña (dejar en blanco para no modificar)</CardDescription>
               <FormField control={form.control} name="currentPassword" render={({ field }) => (<FormItem><FormLabel>Contraseña Actual</FormLabel><FormControl><Input type="password" {...field} placeholder="••••••••" /></FormControl><FormMessage /></FormItem>)}/>
               <FormField control={form.control} name="newPassword" render={({ field }) => (<FormItem><FormLabel>Nueva Contraseña</FormLabel><FormControl><Input type="password" {...field} placeholder="••••••••" /></FormControl><FormMessage /></FormItem>)}/>
@@ -563,8 +593,13 @@ function OpcionesPageComponent() {
                     console.error("Failed to parse authUser for options page:", e);
                 }
             }
-            setRoles(placeholderAppRoles);
         }
+        
+        const fetchRoles = async () => {
+            const fetchedRoles = await adminService.getRoles();
+            setRoles(fetchedRoles);
+        };
+        fetchRoles();
     }, []);
 
     const userPermissions = useMemo(() => {

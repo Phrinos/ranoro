@@ -1,7 +1,7 @@
 
-
 import {
   collection,
+  onSnapshot,
   getDocs,
   addDoc,
   doc,
@@ -19,12 +19,13 @@ const logAudit = async (
   details: { entityType?: AuditLog['entityType']; entityId?: string; userId: string; userName: string; }
 ): Promise<void> => {
   if (!db) return;
-  await addDoc(collection(db, 'auditLogs'), {
+  const newLog = {
     ...details,
     actionType,
     description,
-    date: serverTimestamp(),
-  });
+    date: new Date().toISOString(), // Use client-side ISO string for consistency
+  };
+  await addDoc(collection(db, 'auditLogs'), newLog);
 };
 
 const getUsers = async (): Promise<User[]> => {
@@ -48,7 +49,7 @@ const getAuditLogs = async (): Promise<AuditLog[]> => {
     return auditLogsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as AuditLog));
 };
 
-const saveUser = async (user: User, adminUser: User): Promise<User> => {
+const saveUser = async (user: Partial<User>, adminUser: User): Promise<User> => {
     if (!db) throw new Error("Database not initialized.");
     
     const isEditing = !!user.id;
@@ -72,7 +73,8 @@ const saveUser = async (user: User, adminUser: User): Promise<User> => {
     await logAudit(isEditing ? 'Editar' : 'Crear', description, { entityType: 'Usuario', entityId: userId, userId: adminUser.id, userName: adminUser.name });
     
     // Return the full user object including the ID
-    return { id: userId, ...userData };
+    const savedUserDoc = await getDoc(doc(db, 'users', userId));
+    return { id: userId, ...savedUserDoc.data() } as User;
 };
 
 
@@ -87,29 +89,32 @@ const deleteUser = async (userId: string, adminUser: User): Promise<void> => {
     await logAudit('Eliminar', `Eliminó al usuario "${userName}".`, { entityType: 'Usuario', entityId: userId, userId: adminUser.id, userName: adminUser.name });
 };
 
-const saveRole = async (role: AppRole, adminUser: User): Promise<AppRole> => {
+const saveRole = async (role: Omit<AppRole, 'id'>, adminUser: User, roleId?: string): Promise<AppRole> => {
     if (!db) throw new Error("Database not initialized.");
-    let id = role.id;
-    const { id: _, ...roleData } = role;
-    const isEditing = !!id;
-    const description = `Se ${isEditing ? 'actualizó el' : 'creó la nueva'} categoría de inventario: "${role.name}".`;
+    const isEditing = !!roleId;
+    const description = `Se ${isEditing ? 'actualizó el' : 'creó la nueva'} rol: "${role.name}".`;
+    let id = roleId;
 
     if (isEditing) {
-        await updateDoc(doc(db, 'appRoles', id), roleData);
+        await updateDoc(doc(db, 'appRoles', id!), role);
     } else {
-        const newRoleRef = await addDoc(collection(db, 'appRoles'), roleData);
+        const newRoleRef = await addDoc(collection(db, 'appRoles'), role);
         id = newRoleRef.id;
     }
     
     await logAudit(isEditing ? 'Editar' : 'Crear', description, { entityType: 'Rol', entityId: id, userId: adminUser.id, userName: adminUser.name });
-    return { id, ...roleData };
+    return { id, ...role };
 };
 
 const deleteRole = async (roleId: string, adminUser: User): Promise<void> => {
     if (!db) throw new Error("Database not initialized.");
-    const roleDoc = doc(db, 'appRoles', roleId);
-    await deleteDoc(roleDoc);
-    await logAudit('Eliminar', `Se eliminó el rol con ID "${roleId}".`, { entityType: 'Rol', entityId: roleId, userId: adminUser.id, userName: adminUser.name });
+    const roleDocRef = doc(db, 'appRoles', roleId);
+    
+    const roleDoc = await getDoc(roleDocRef);
+    const roleName = roleDoc.exists() ? roleDoc.data().name : `ID ${roleId}`;
+
+    await deleteDoc(roleDocRef);
+    await logAudit('Eliminar', `Se eliminó el rol "${roleName}".`, { entityType: 'Rol', entityId: roleId, userId: adminUser.id, userName: adminUser.name });
 };
 
 const updateUserProfile = async (user: User): Promise<User> => {
