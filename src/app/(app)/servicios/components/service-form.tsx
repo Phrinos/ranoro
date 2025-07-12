@@ -158,9 +158,13 @@ interface ServiceFormProps {
 const IVA_RATE = 0.16;
 
 function cleanObject(obj: any): any {
-    return JSON.parse(JSON.stringify(obj, (key, value) => {
-        return (value === undefined || value === '') ? null : value;
-    }));
+    const newObj: any = {};
+    for (const key in obj) {
+        if (obj[key] !== undefined && obj[key] !== '') {
+            newObj[key] = obj[key];
+        }
+    }
+    return newObj;
 }
 
 
@@ -268,24 +272,24 @@ export function ServiceForm({
       originalStatusRef.current = currentStatus;
   }, [watchedStatus, getValues, setValue]);
 
-  useEffect(() => {
-    const data = initialData;
+useEffect(() => {
     refreshCurrentUser();
     const storedWorkshopInfo = typeof window !== "undefined" ? localStorage.getItem("workshopTicketInfo") : null;
     if (storedWorkshopInfo) setWorkshopInfo(JSON.parse(storedWorkshopInfo));
-    
+
+    const data = initialDataService || initialDataQuote;
     const parseDate = (date: any) => date && (typeof date.toDate === 'function' ? date.toDate() : (typeof date === 'string' ? parseISO(date) : date));
-    
+
     let photoReportsData = (data as ServiceRecord)?.photoReports || [];
     if (!isReadOnly && (!photoReportsData || photoReportsData.length === 0)) {
         photoReportsData = [{ id: `rep_recepcion_${Date.now()}`, date: new Date().toISOString(), description: "Notas de la Recepción", photos: [] }];
     }
-    
+
     let serviceItemsData = data?.serviceItems || [];
     if (serviceItemsData.length === 0 && !isReadOnly) {
         serviceItemsData = [{ id: nanoid(), name: '', price: undefined, suppliesUsed: [] }];
     }
-    
+
     const defaultStatus = mode === 'quote' ? 'Cotizacion' : 'En Taller';
     const defaultServiceType = serviceTypes.length > 0 ? serviceTypes[0].name : 'Servicio General';
     
@@ -306,7 +310,7 @@ export function ServiceForm({
         customerItems: (data as ServiceRecord)?.customerItems || '',
         customerSignatureReception: (data as ServiceRecord)?.customerSignatureReception || undefined,
         customerSignatureDelivery: (data as ServiceRecord)?.customerSignatureDelivery || undefined,
-        safetyInspection: data?.safetyInspection || {}, 
+        safetyInspection: data?.safetyInspection || {},
         serviceAdvisorId: data?.serviceAdvisorId || freshUserRef.current?.id || '',
         serviceAdvisorName: data?.serviceAdvisorName || freshUserRef.current?.name || '',
         serviceAdvisorSignatureDataUrl: data?.serviceAdvisorSignatureDataUrl || freshUserRef.current?.signatureDataUrl || '',
@@ -316,8 +320,8 @@ export function ServiceForm({
         subStatus: (data as ServiceRecord)?.subStatus || undefined,
         serviceType: data?.serviceType || defaultServiceType,
     });
-    
-  }, [initialData, mode, form, isReadOnly, refreshCurrentUser, serviceTypes]);
+
+}, [initialDataService, initialDataQuote, mode, form, isReadOnly, refreshCurrentUser, serviceTypes]);
   
   const handlePhotoUploadComplete = useCallback(
     (reportIndex: number, url: string) => {
@@ -407,8 +411,6 @@ export function ServiceForm({
     
     const finalData = {
         ...values,
-        id: initialData?.id,
-        publicId: (initialData as ServiceRecord)?.publicId,
         description: (values.serviceItems || []).map(item => item.name).join(', ') || 'Servicio',
         totalCost,
         totalSuppliesWorkshopCost,
@@ -426,6 +428,7 @@ export function ServiceForm({
         serviceAdvisorSignatureDataUrl: freshUserRef.current.signatureDataUrl,
     };
     
+    // Clean object before submitting to remove undefined fields which Firestore doesn't like.
     const cleanedData = cleanObject(finalData);
     
     await onSubmit(cleanedData as ServiceRecord);
