@@ -158,21 +158,9 @@ interface ServiceFormProps {
 const IVA_RATE = 0.16;
 
 function cleanObject(obj: any): any {
-  if (obj === null || obj === undefined) return null;
-  if (typeof obj !== 'object') return obj;
-
-  if (Array.isArray(obj)) {
-    return obj.map(cleanObject).filter(v => v !== undefined);
-  }
-
-  const newObj: { [key: string]: any } = {};
-  for (const key in obj) {
-    if (obj[key] !== undefined) {
-      newObj[key] = cleanObject(obj[key]);
-    }
-  }
-
-  return newObj;
+    return JSON.parse(JSON.stringify(obj, (key, value) => {
+        return (value === undefined || value === '') ? null : value;
+    }));
 }
 
 
@@ -297,7 +285,10 @@ export function ServiceForm({
     if (serviceItemsData.length === 0 && !isReadOnly) {
         serviceItemsData = [{ id: nanoid(), name: '', price: undefined, suppliesUsed: [] }];
     }
-
+    
+    const defaultStatus = mode === 'quote' ? 'Cotizacion' : 'En Taller';
+    const defaultServiceType = serviceTypes.length > 0 ? serviceTypes[0].name : 'Servicio General';
+    
     form.reset({
         id: data?.id,
         publicId: (data as any)?.publicId,
@@ -321,9 +312,9 @@ export function ServiceForm({
         serviceAdvisorSignatureDataUrl: data?.serviceAdvisorSignatureDataUrl || freshUserRef.current?.signatureDataUrl || '',
         photoReports: photoReportsData,
         serviceItems: serviceItemsData,
-        status: data?.status || (mode === 'quote' ? 'Cotizacion' : 'En Taller'),
+        status: data?.status || defaultStatus,
         subStatus: (data as ServiceRecord)?.subStatus || undefined,
-        serviceType: data?.serviceType || (serviceTypes.length > 0 ? serviceTypes[0].name : 'Servicio General'),
+        serviceType: data?.serviceType || defaultServiceType,
     });
     
   }, [initialData, mode, form, isReadOnly, refreshCurrentUser, serviceTypes]);
@@ -410,13 +401,14 @@ export function ServiceForm({
     if (!getValues('vehicleId')) return toast({ title: "Vehículo no seleccionado", variant: "destructive" });
     if (!(await trigger())) return toast({ title: "Formulario Incompleto", variant: "destructive" });
 
-    // Handle automatic timestamps
     if(originalStatusRef.current !== 'En Taller' && values.status === 'En Taller' && !values.receptionDateTime) {
         values.receptionDateTime = new Date();
     }
     
     const finalData = {
         ...values,
+        id: initialData?.id,
+        publicId: (initialData as ServiceRecord)?.publicId,
         description: (values.serviceItems || []).map(item => item.name).join(', ') || 'Servicio',
         totalCost,
         totalSuppliesWorkshopCost,
@@ -435,13 +427,10 @@ export function ServiceForm({
     };
     
     const cleanedData = cleanObject(finalData);
-
-    if (db && cleanedData.publicId) {
-        await savePublicDocument('service', cleanedData as ServiceRecord, localVehicles.find(v => v.id === getValues('vehicleId')) || null, workshopInfo);
-    }
+    
     await onSubmit(cleanedData as ServiceRecord);
     onClose();
-  }, [isReadOnly, onClose, getValues, onSubmit, toast, technicians, totalCost, serviceProfit, workshopInfo, localVehicles, currentInventoryItems, totalSuppliesWorkshopCost, trigger]);
+  }, [isReadOnly, onClose, getValues, onSubmit, toast, technicians, totalCost, serviceProfit, workshopInfo, localVehicles, currentInventoryItems, totalSuppliesWorkshopCost, trigger, initialData]);
 
   const handlePrintSheet = useCallback(() => {
     const serviceData = form.getValues() as ServiceRecord;
@@ -630,5 +619,3 @@ export function ServiceForm({
     </>
   );
 }
-
-
