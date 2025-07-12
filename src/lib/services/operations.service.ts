@@ -10,6 +10,7 @@ import {
   where,
   writeBatch,
   getDocs,
+  getDoc,
 } from 'firebase/firestore';
 import { db } from '../firebaseClient';
 import type { ServiceRecord, QuoteRecord, SaleReceipt, Vehicle, CashDrawerTransaction, InitialCashBalance, InventoryItem, RentalPayment, VehicleExpense, OwnerWithdrawal } from "@/types";
@@ -42,10 +43,21 @@ const onServicesUpdatePromise = async (): Promise<ServiceRecord[]> => {
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ServiceRecord));
 }
 
-const addService = async (data: Partial<ServiceRecord>): Promise<string> => {
+const addService = async (data: Partial<ServiceRecord>): Promise<ServiceRecord> => {
     if (!db) throw new Error("Database not initialized.");
-    const docRef = await addDoc(collection(db, 'serviceRecords'), data);
-    return docRef.id;
+    
+    // Explicitly remove id property before adding, as addDoc generates it.
+    const { id, ...serviceData } = data;
+
+    const docRef = await addDoc(collection(db, 'serviceRecords'), serviceData);
+    
+    // Fetch the newly created document to return the full object with the ID
+    const newDocSnap = await getDoc(docRef);
+    if (!newDocSnap.exists()) {
+      throw new Error("Failed to retrieve newly created service document.");
+    }
+    
+    return { id: newDocSnap.id, ...newDocSnap.data() } as ServiceRecord;
 };
 
 
@@ -56,7 +68,11 @@ const updateService = async (serviceId: string, data: Partial<ServiceRecord>): P
     
     // For simplicity, returning the partial data. A full implementation
     // would fetch the updated document to return the complete object.
-    return { id: serviceId, ...data } as ServiceRecord;
+    const updatedDocSnap = await getDoc(serviceRef);
+    if (!updatedDocSnap.exists()) {
+      throw new Error(`Failed to retrieve updated service document with ID: ${serviceId}`);
+    }
+    return { id: updatedDocSnap.id, ...updatedDocSnap.data() } as ServiceRecord;
 };
 
 const cancelService = async (serviceId: string, reason: string): Promise<void> => {

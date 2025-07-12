@@ -26,7 +26,7 @@ export default function NuevoServicioPage() {
   const [isLoading, setIsLoading] = useState(true);
 
   const [dialogStep, setDialogStep] = useState<DialogStep>('form');
-  const [redirectPath, setRedirectPath] = useState('/tablero'); 
+  const [redirectPath, setRedirectPath] = useState('/dashboard'); 
   
   useEffect(() => {
     const loadData = async () => {
@@ -87,7 +87,7 @@ export default function NuevoServicioPage() {
         setRedirectPath('/servicios/historial');
         break;
       default:
-        setRedirectPath('/dashboard');
+        setRedirectPath('/tablero');
     }
 
     setDialogStep('closed');
@@ -96,7 +96,7 @@ export default function NuevoServicioPage() {
 
   const handleFormDialogClose = () => { 
      if (dialogStep === 'form') { 
-      setRedirectPath('/dashboard'); 
+      setRedirectPath('/tablero'); 
       setDialogStep('closed');
     }
   };
