@@ -16,12 +16,12 @@ import * as z from 'zod';
 import type { User, SaleReceipt, AppRole, WorkshopInfo, ServiceTypeRecord } from '@/types';
 import { 
     Save, Signature, BookOpen, Settings, UserCircle, Upload, Loader2, Bold, Shield, MessageSquare, Copy, Download, Printer,
-    LayoutDashboard, Wrench, FileText, Receipt, Package, DollarSign, Users, Shapes, Edit, Trash2, PlusCircle
+    LayoutDashboard, Wrench, FileText, Receipt, Package, DollarSign, Users, Shapes, Edit, Trash2, PlusCircle, Building
 } from 'lucide-react';
 import { onAuthStateChanged, updatePassword, reauthenticateWithCredential, EmailAuthProvider } from 'firebase/auth';
 import { auth, storage, db } from '@/lib/firebaseClient.js';
 import { ref, uploadString, getDownloadURL } from 'firebase/storage';
-import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
+import { AUTH_USER_LOCALSTORAGE_KEY, placeholderAppRoles, defaultSuperAdmin } from '@/lib/placeholder-data';
 import { adminService, inventoryService } from '@/lib/services';
 import { SignatureDialog } from '@/app/(app)/servicios/components/signature-dialog';
 import Image from "next/legacy/image";
@@ -34,6 +34,9 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+
+// Import new component
+import { ConfigTallerPageContent } from './components/config-taller-content';
 
 // --- Schema and content from /perfil ---
 const profileSchema = z.object({
@@ -383,90 +386,16 @@ function ConfiguracionTicketPageContent() {
         <div className="lg:col-span-1">
             <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                    <Card>
-                        <CardHeader><CardTitle>Encabezado y Logo</CardTitle></CardHeader>
-                        <CardContent className="space-y-4">
-                            <FormField control={form.control} name="blankLinesTop" render={({ field }) => (<FormItem><FormLabel>Líneas en Blanco (Arriba)</FormLabel><FormControl><Input type="number" min={0} max={10} {...field} value={field.value || 0} /></FormControl></FormItem>)}/>
-                            <FormItem>
-                                <FormLabel>Subir Logo</FormLabel>
-                                <Button type="button" variant="outline" className="w-full" onClick={() => fileInputRef.current?.click()} disabled={isUploading}>
-                                    {isUploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Upload className="mr-2 h-4 w-4" />}
-                                    {isUploading ? "Subiendo..." : "Seleccionar Imagen"}
-                                </Button>
-                                <input type="file" ref={fileInputRef} className="hidden" accept="image/png, image/jpeg, image/webp" onChange={handleImageUpload} />
-                                <FormDescription>El logo actual se mostrará en la vista previa.</FormDescription>
-                            </FormItem>
-                            <FormField control={form.control} name="logoWidth" render={({ field }) => (<FormItem><FormLabel>Ancho del Logo: {field.value || defaultWorkshopInfo.logoWidth}px</FormLabel><FormControl><Slider value={[field.value || defaultWorkshopInfo.logoWidth || 120]} onValueChange={(value) => field.onChange(value[0])} min={40} max={250} step={5} /></FormControl></FormItem>)}/>
-                        </CardContent>
-                    </Card>
-
-                    <Card>
-                        <CardHeader><CardTitle>Información del Negocio</CardTitle></CardHeader>
-                        <CardContent className="space-y-4">
-                            <TextFieldWithBoldness name="name" label="Nombre del Taller" control={form.control} />
-                            <TextFieldWithBoldness name="phone" label="Teléfono" control={form.control} />
-                            <TextFieldWithBoldness name="addressLine1" label="Dirección (Línea 1)" control={form.control} />
-                            <TextFieldWithBoldness name="addressLine2" label="Dirección (Línea 2)" control={form.control} />
-                            <TextFieldWithBoldness name="cityState" label="Ciudad, Estado, C.P." control={form.control} />
-                            <FormField control={form.control} name="headerFontSize" render={({ field }) => (<FormItem><FormLabel>Tamaño Fuente (Encabezado): {field.value || defaultWorkshopInfo.headerFontSize}px</FormLabel><FormControl><Slider value={[field.value || defaultWorkshopInfo.headerFontSize || 10]} onValueChange={(value) => field.onChange(value[0])} min={8} max={16} step={1} /></FormControl></FormItem>)}/>
-                        </CardContent>
-                    </Card>
-
-                    <Card>
-                        <CardHeader><CardTitle>Estilo del Texto del Ticket</CardTitle></CardHeader>
-                        <CardContent className="space-y-4">
-                           <FormField control={form.control} name="bodyFontSize" render={({ field }) => (<FormItem><FormLabel>Tamaño Fuente (Cuerpo): {field.value || defaultWorkshopInfo.bodyFontSize}px</FormLabel><FormControl><Slider value={[field.value || defaultWorkshopInfo.bodyFontSize || 10]} onValueChange={(value) => field.onChange(value[0])} min={8} max={16} step={1} /></FormControl></FormItem>)}/>
-                           <FormField control={form.control} name="itemsFontSize" render={({ field }) => (<FormItem><FormLabel>Tamaño Fuente (Artículos): {field.value || defaultWorkshopInfo.itemsFontSize}px</FormLabel><FormControl><Slider value={[field.value || defaultWorkshopInfo.itemsFontSize || 10]} onValueChange={(value) => field.onChange(value[0])} min={8} max={16} step={1} /></FormControl></FormItem>)}/>
-                           <FormField control={form.control} name="totalsFontSize" render={({ field }) => (<FormItem><FormLabel>Tamaño Fuente (Totales): {field.value || defaultWorkshopInfo.totalsFontSize}px</FormLabel><FormControl><Slider value={[field.value || defaultWorkshopInfo.totalsFontSize || 10]} onValueChange={(value) => field.onChange(value[0])} min={8} max={16} step={1} /></FormControl></FormItem>)}/>
-                        </CardContent>
-                    </Card>
-                    
-                    <Card>
-                        <CardHeader><CardTitle>Mensajes de Pie de Página</CardTitle></CardHeader>
-                        <CardContent className="space-y-4">
-                            <TextFieldWithBoldness name="footerLine1" label="Línea de Agradecimiento" control={form.control} />
-                            <TextFieldWithBoldness name="footerLine2" label="Línea de Contacto" control={form.control} />
-                            <FormField control={form.control} name="footerFontSize" render={({ field }) => (<FormItem><FormLabel>Tamaño Fuente (Pie): {field.value || defaultWorkshopInfo.footerFontSize}px</FormLabel><FormControl><Slider value={[field.value || defaultWorkshopInfo.footerFontSize || 10]} onValueChange={(value) => field.onChange(value[0])} min={8} max={16} step={1} /></FormControl></FormItem>)}/>
-                        </CardContent>
-                    </Card>
-                    
-                    <Card>
-                        <CardHeader><CardTitle>Pie de Ticket y Espaciado Final</CardTitle></CardHeader>
-                        <CardContent className="space-y-4">
-                             <TextFieldWithBoldness name="fixedFooterText" label="Texto Final" control={form.control} isTextarea />
-                             <FormField control={form.control} name="blankLinesBottom" render={({ field }) => (<FormItem><FormLabel>Líneas en Blanco (Abajo)</FormLabel><FormControl><Input type="number" min={0} max={10} {...field} value={field.value || 0}/></FormControl></FormItem>)}/>
-                        </CardContent>
-                    </Card>
-
-                    <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
-                    <Save className="mr-2 h-4 w-4" /> {form.formState.isSubmitting ? "Guardando…" : "Guardar Cambios"}
-                    </Button>
+                    <Card><CardHeader><CardTitle>Encabezado y Logo</CardTitle></CardHeader><CardContent className="space-y-4"><FormField control={form.control} name="blankLinesTop" render={({ field }) => (<FormItem><FormLabel>Líneas en Blanco (Arriba)</FormLabel><FormControl><Input type="number" min={0} max={10} {...field} value={field.value || 0} /></FormControl></FormItem>)}/><FormItem><FormLabel>Subir Logo</FormLabel><Button type="button" variant="outline" className="w-full" onClick={() => fileInputRef.current?.click()} disabled={isUploading}>{isUploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Upload className="mr-2 h-4 w-4" />}{isUploading ? "Subiendo..." : "Seleccionar Imagen"}</Button><input type="file" ref={fileInputRef} className="hidden" accept="image/png, image/jpeg, image/webp" onChange={handleImageUpload} /><FormDescription>El logo actual se mostrará en la vista previa.</FormDescription></FormItem><FormField control={form.control} name="logoWidth" render={({ field }) => (<FormItem><FormLabel>Ancho del Logo: {field.value || defaultWorkshopInfo.logoWidth}px</FormLabel><FormControl><Slider value={[field.value || defaultWorkshopInfo.logoWidth || 120]} onValueChange={(value) => field.onChange(value[0])} min={40} max={250} step={5} /></FormControl></FormItem>)}/></CardContent></Card>
+                    <Card><CardHeader><CardTitle>Información del Negocio</CardTitle></CardHeader><CardContent className="space-y-4"><TextFieldWithBoldness name="name" label="Nombre del Taller" control={form.control} /><TextFieldWithBoldness name="phone" label="Teléfono" control={form.control} /><TextFieldWithBoldness name="addressLine1" label="Dirección (Línea 1)" control={form.control} /><TextFieldWithBoldness name="addressLine2" label="Dirección (Línea 2)" control={form.control} /><TextFieldWithBoldness name="cityState" label="Ciudad, Estado, C.P." control={form.control} /><FormField control={form.control} name="headerFontSize" render={({ field }) => (<FormItem><FormLabel>Tamaño Fuente (Encabezado): {field.value || defaultWorkshopInfo.headerFontSize}px</FormLabel><FormControl><Slider value={[field.value || defaultWorkshopInfo.headerFontSize || 10]} onValueChange={(value) => field.onChange(value[0])} min={8} max={16} step={1} /></FormControl></FormItem>)}/></CardContent></Card>
+                    <Card><CardHeader><CardTitle>Estilo del Texto del Ticket</CardTitle></CardHeader><CardContent className="space-y-4"><FormField control={form.control} name="bodyFontSize" render={({ field }) => (<FormItem><FormLabel>Tamaño Fuente (Cuerpo): {field.value || defaultWorkshopInfo.bodyFontSize}px</FormLabel><FormControl><Slider value={[field.value || defaultWorkshopInfo.bodyFontSize || 10]} onValueChange={(value) => field.onChange(value[0])} min={8} max={16} step={1} /></FormControl></FormItem>)}/><FormField control={form.control} name="itemsFontSize" render={({ field }) => (<FormItem><FormLabel>Tamaño Fuente (Artículos): {field.value || defaultWorkshopInfo.itemsFontSize}px</FormLabel><FormControl><Slider value={[field.value || defaultWorkshopInfo.itemsFontSize || 10]} onValueChange={(value) => field.onChange(value[0])} min={8} max={16} step={1} /></FormControl></FormItem>)}/><FormField control={form.control} name="totalsFontSize" render={({ field }) => (<FormItem><FormLabel>Tamaño Fuente (Totales): {field.value || defaultWorkshopInfo.totalsFontSize}px</FormLabel><FormControl><Slider value={[field.value || defaultWorkshopInfo.totalsFontSize || 10]} onValueChange={(value) => field.onChange(value[0])} min={8} max={16} step={1} /></FormControl></FormItem>)}/></CardContent></Card>
+                    <Card><CardHeader><CardTitle>Mensajes de Pie de Página</CardTitle></CardHeader><CardContent className="space-y-4"><TextFieldWithBoldness name="footerLine1" label="Línea de Agradecimiento" control={form.control} /><TextFieldWithBoldness name="footerLine2" label="Línea de Contacto" control={form.control} /><FormField control={form.control} name="footerFontSize" render={({ field }) => (<FormItem><FormLabel>Tamaño Fuente (Pie): {field.value || defaultWorkshopInfo.footerFontSize}px</FormLabel><FormControl><Slider value={[field.value || defaultWorkshopInfo.footerFontSize || 10]} onValueChange={(value) => field.onChange(value[0])} min={8} max={16} step={1} /></FormControl></FormItem>)}/></CardContent></Card>
+                    <Card><CardHeader><CardTitle>Pie de Ticket y Espaciado Final</CardTitle></CardHeader><CardContent className="space-y-4"><TextFieldWithBoldness name="fixedFooterText" label="Texto Final" control={form.control} isTextarea /><FormField control={form.control} name="blankLinesBottom" render={({ field }) => (<FormItem><FormLabel>Líneas en Blanco (Abajo)</FormLabel><FormControl><Input type="number" min={0} max={10} {...field} value={field.value || 0}/></FormControl></FormItem>)}/></CardContent></Card>
+                    <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}><Save className="mr-2 h-4 w-4" />{form.formState.isSubmitting ? "Guardando…" : "Guardar Cambios"}</Button>
                 </form>
             </Form>
         </div>
-
-        <div className="lg:col-span-2">
-             <Card className="shadow-lg sticky top-24">
-                <CardHeader className="flex flex-row items-center justify-between">
-                    <div>
-                        <CardTitle>Vista Previa del Ticket</CardTitle>
-                        <CardDescription>Así se verá tu ticket impreso.</CardDescription>
-                    </div>
-                    <Button onClick={handlePrint} variant="outline">
-                        <Printer className="mr-2 h-4 w-4"/>Imprimir
-                    </Button>
-                </CardHeader>
-                <CardContent className="bg-gray-200 dark:bg-gray-800 p-4 sm:p-8 flex justify-center overflow-auto">
-                    <div id="ticket-preview-printable" className="w-[300px] bg-white shadow-lg">
-                        <TicketContent
-                            ref={ticketContentRef}
-                            sale={sampleSale}
-                            previewWorkshopInfo={watchedValues as WorkshopInfo}
-                        />
-                    </div>
-                </CardContent>
-            </Card>
-        </div>
+        <div className="lg:col-span-2"><Card className="shadow-lg sticky top-24"><CardHeader className="flex flex-row items-center justify-between"><div><CardTitle>Vista Previa del Ticket</CardTitle><CardDescription>Así se verá tu ticket impreso.</CardDescription></div><Button onClick={handlePrint} variant="outline"><Printer className="mr-2 h-4 w-4"/>Imprimir</Button></CardHeader><CardContent className="bg-gray-200 dark:bg-gray-800 p-4 sm:p-8 flex justify-center overflow-auto"><div id="ticket-preview-printable" className="w-[300px] bg-white shadow-lg"><TicketContent ref={ticketContentRef} sale={sampleSale} previewWorkshopInfo={watchedValues as WorkshopInfo} /></div></CardContent></Card></div>
     </div>
   );
 }
@@ -590,6 +519,8 @@ function OpcionesPageComponent() {
             const authUserString = localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY);
             if (authUserString) {
               setCurrentUser(JSON.parse(authUserString));
+            } else {
+              setCurrentUser(defaultSuperAdmin);
             }
             const fetchedRoles = await adminService.getRoles();
             setRoles(fetchedRoles);
@@ -603,7 +534,14 @@ function OpcionesPageComponent() {
     }, []);
 
     const userPermissions = useMemo(() => {
-        if (!currentUser || roles.length === 0) return new Set<string>();
+        if (!currentUser || roles.length === 0) {
+            // If current user is the default super admin, give all permissions
+            if (currentUser?.id === defaultSuperAdmin.id) {
+                const superAdminRole = placeholderAppRoles.find(r => r.id === 'superadmin_role');
+                return new Set(superAdminRole?.permissions || []);
+            }
+            return new Set<string>();
+        }
         const userRole = roles.find(r => r && r.name === currentUser.role);
         return new Set(userRole?.permissions || []);
     }, [currentUser, roles]);
@@ -625,11 +563,14 @@ function OpcionesPageComponent() {
         </div>
         
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 mb-6">
+            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-5 mb-6">
                 <TabsTrigger value="perfil" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground flex items-center gap-2"><UserCircle className="h-5 w-5"/>Mi Perfil</TabsTrigger>
-                <TabsTrigger value="manual" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground flex items-center gap-2"><BookOpen className="h-5 w-5"/>Manual de Usuario</TabsTrigger>
+                <TabsTrigger value="manual" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground flex items-center gap-2"><BookOpen className="h-5 w-5"/>Manual</TabsTrigger>
+                {userPermissions.has('workshop:manage') && (
+                    <TabsTrigger value="taller" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground flex items-center gap-2"><Building className="h-5 w-5"/>Mi Taller</TabsTrigger>
+                )}
                 {userPermissions.has('ticket_config:manage') && (
-                    <TabsTrigger value="ticket" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground flex items-center gap-2"><Settings className="h-5 w-5"/>Configurar Ticket</TabsTrigger>
+                    <TabsTrigger value="ticket" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground flex items-center gap-2"><Settings className="h-5 w-5"/>Ticket</TabsTrigger>
                 )}
                  {userPermissions.has('roles:manage') && (
                     <TabsTrigger value="service_types" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground flex items-center gap-2"><Shapes className="h-5 w-5"/>Tipos de Servicio</TabsTrigger>
@@ -641,6 +582,11 @@ function OpcionesPageComponent() {
             <TabsContent value="manual" className="mt-0">
                 <ManualUsuarioPageContent />
             </TabsContent>
+            {userPermissions.has('workshop:manage') && (
+              <TabsContent value="taller" className="mt-0">
+                  <ConfigTallerPageContent />
+              </TabsContent>
+            )}
             {userPermissions.has('ticket_config:manage') && (
                 <TabsContent value="ticket" className="mt-0">
                     <ConfiguracionTicketPageContent />

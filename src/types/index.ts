@@ -26,6 +26,10 @@ export interface WorkshopInfo {
   footerLine2Bold?: boolean;
   fixedFooterText?: string;
   fixedFooterTextBold?: boolean;
+  googleMapsUrl?: string;
+  contactPersonName?: string;
+  contactPersonPhone?: string;
+  contactPersonRole?: string;
 }
 
 export interface VehiclePaperwork {
