@@ -200,9 +200,6 @@ export function AppSidebar({
               variant="ghost"
               className="h-auto w-full justify-start gap-2 py-2 text-left text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground group-data-[collapsible=icon]:h-12 group-data-[collapsible=icon]:w-12 group-data-[collapsible=icon]:justify-center"
             >
-              <Avatar className="h-8 w-8">
-                  <AvatarFallback>{currentUser?.name?.[0]?.toUpperCase() || 'U'}</AvatarFallback>
-              </Avatar>
               <div className="group-data-[collapsible=icon]:hidden flex flex-col items-start">
                   <span className="text-sm font-semibold leading-none">
                       {currentUser?.name || "Mi Cuenta"}
@@ -210,6 +207,11 @@ export function AppSidebar({
                   <span className="text-xs text-sidebar-foreground/80 leading-none">
                       {currentUser?.role || 'Rol'}
                   </span>
+              </div>
+              <div className="hidden group-data-[collapsible=icon]:flex items-center justify-center h-8 w-8 rounded-full bg-sidebar-accent">
+                 <span className="text-sm font-semibold">
+                    {currentUser?.name?.[0]?.toUpperCase() || 'U'}
+                 </span>
               </div>
             </Button>
           </DropdownMenuTrigger>
