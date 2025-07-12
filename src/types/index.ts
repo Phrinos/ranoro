@@ -390,6 +390,7 @@ export interface MonthlyFixedExpense {
   id: string;
   name: string;
   amount: number;
+  notes?: string;
 }
 
 export interface CashDrawerTransaction {

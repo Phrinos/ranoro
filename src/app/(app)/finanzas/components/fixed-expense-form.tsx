@@ -14,12 +14,14 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import type { MonthlyFixedExpense } from "@/types";
 import { DollarSign } from "lucide-react";
 
 const fixedExpenseFormSchema = z.object({
   name: z.string().min(2, "El nombre del gasto debe tener al menos 2 caracteres."),
   amount: z.coerce.number().min(0, "El monto no puede ser negativo."),
+  notes: z.string().optional(),
 });
 
 export type FixedExpenseFormValues = z.infer<typeof fixedExpenseFormSchema>;
@@ -36,6 +38,7 @@ export function FixedExpenseForm({ initialData, onSubmit, onClose }: FixedExpens
     defaultValues: initialData || {
       name: "",
       amount: undefined,
+      notes: "",
     },
   });
 
@@ -70,6 +73,22 @@ export function FixedExpenseForm({ initialData, onSubmit, onClose }: FixedExpens
                   <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input type="number" step="0.01" placeholder="15000.00" {...field} value={field.value ?? ''} className="pl-8" />
                 </div>
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="notes"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Notas (Opcional)</FormLabel>
+              <FormControl>
+                <Textarea
+                  placeholder="Detalles adicionales sobre el gasto (ej: contrato #123, pago de luz CFE...)"
+                  {...field}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
