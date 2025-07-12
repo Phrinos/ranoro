@@ -84,18 +84,21 @@ export const TicketContent = React.forwardRef<HTMLDivElement, TicketContentProps
         {Array.from({ length: blankLinesTop || 0 }).map((_, i) => <div key={`top-${i}`} style={{ height: `10px` }}>&nbsp;</div>)}
 
         <div className="text-center mb-1 space-y-0 leading-tight">
-          <img 
-            src={workshopInfo.logoUrl} 
-            alt="Logo" 
-            className="mx-auto mb-1" 
-            style={{ width: logoWidth ? `${logoWidth}px` : '120px' }}
-            data-ai-hint="workshop logo"
-          />
+          {workshopInfo.logoUrl && (
+            <img 
+              src={workshopInfo.logoUrl} 
+              alt="Logo" 
+              className="mx-auto mb-1" 
+              style={{ width: logoWidth ? `${logoWidth}px` : '120px' }}
+              data-ai-hint="workshop logo"
+              crossOrigin="anonymous"
+            />
+          )}
           <div style={{ fontSize: `${headerFontSize}px` }}>
               <p className={cn({"font-bold": nameBold})}>{name}</p>
               <p className={cn({"font-bold": addressLine1Bold})}>{addressLine1}</p>
               {addressLine2 && <p className={cn({"font-bold": addressLine2Bold})}>{addressLine2}</p>}
-              <p className={cn({"font-bold": cityStateBold})}>{cityState}</p>
+              {cityState && <p className={cn({"font-bold": cityStateBold})}>{cityState}</p>}
               <p className={cn({"font-bold": phoneBold})}>Tel: {phone}</p>
           </div>
         </div>

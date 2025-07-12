@@ -82,8 +82,16 @@ export function ConfigTallerPageContent() {
 
   const onSubmit = (data: TallerFormValues) => {
     try {
-      localStorage.setItem(LOCALSTORAGE_KEY, JSON.stringify(data));
-      toast({ title: "Información guardada", description: "Se actualizaron los datos del taller.", duration: 3000 });
+      const stored = localStorage.getItem(LOCALSTORAGE_KEY);
+      const existingData = stored ? JSON.parse(stored) : {};
+      
+      const newData: WorkshopInfo = {
+        ...existingData, // Keep existing settings like font sizes, boldness, etc.
+        ...data, // Overwrite with new data from this form
+      };
+      
+      localStorage.setItem(LOCALSTORAGE_KEY, JSON.stringify(newData));
+      toast({ title: "Información guardada", description: "Se actualizaron los datos del taller y del ticket.", duration: 3000 });
     } catch {
       toast({ title: "Error al guardar", variant: "destructive", duration: 3000 });
     }
@@ -186,7 +194,7 @@ export function ConfigTallerPageContent() {
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
           <CardHeader>
             <CardTitle>Información del Taller</CardTitle>
-            <CardDescription>Estos datos se utilizarán en documentos y reportes públicos.</CardDescription>
+            <CardDescription>Estos datos se utilizarán en documentos, reportes y en la configuración del ticket.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             <Card>
