@@ -582,31 +582,40 @@ function OpcionesPageComponent() {
     const [activeTab, setActiveTab] = useState(defaultTab);
     const [currentUser, setCurrentUser] = useState<User | null>(null);
     const [roles, setRoles] = useState<AppRole[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
-        if (typeof window !== "undefined") {
+      const loadData = async () => {
+        try {
             const authUserString = localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY);
             if (authUserString) {
-                try {
-                    setCurrentUser(JSON.parse(authUserString));
-                } catch (e) {
-                    console.error("Failed to parse authUser for options page:", e);
-                }
+              setCurrentUser(JSON.parse(authUserString));
             }
-        }
-        
-        const fetchRoles = async () => {
             const fetchedRoles = await adminService.getRoles();
             setRoles(fetchedRoles);
-        };
-        fetchRoles();
+        } catch (error) {
+            console.error("Error loading options page data:", error);
+        } finally {
+            setIsLoading(false);
+        }
+      };
+      loadData();
     }, []);
 
     const userPermissions = useMemo(() => {
-        if (!currentUser || !roles.length) return new Set<string>();
+        if (!currentUser || roles.length === 0) return new Set<string>();
         const userRole = roles.find(r => r && r.name === currentUser.role);
         return new Set(userRole?.permissions || []);
     }, [currentUser, roles]);
+    
+    if (isLoading) {
+      return (
+        <div className="flex justify-center items-center h-64">
+          <Loader2 className="h-8 w-8 animate-spin" />
+          <span className="ml-3">Cargando opciones...</span>
+        </div>
+      );
+    }
 
     return (
       <>
