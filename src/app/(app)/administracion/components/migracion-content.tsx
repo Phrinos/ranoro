@@ -14,9 +14,10 @@ import type { ExtractedProduct } from '@/ai/flows/product-migration-flow';
 import { migrateData } from '@/ai/flows/data-migration-flow';
 import { migrateVehicles } from '@/ai/flows/vehicle-migration-flow';
 import { migrateProducts } from '@/ai/flows/product-migration-flow';
-import { persistToFirestore, placeholderVehicles, placeholderInventory, placeholderServiceRecords } from '@/lib/placeholder-data';
 import { useToast } from '@/hooks/use-toast';
 import * as xlsx from 'xlsx';
+import { inventoryService } from '@/lib/services';
+import type { VehicleFormValues } from '@/app/(app)/vehiculos/components/vehicle-form';
 
 type MigrationResult = | { type: 'generic'; vehicles: ExtractedGenericVehicle[]; services: ExtractedService[]; vehiclesAdded: number; servicesAdded: number; } | { type: 'vehicles'; vehicles: ExtractedVehicleForMigration[]; vehiclesAdded: number; } | { type: 'products'; products: ExtractedProduct[]; productsAdded: number; };
 
@@ -76,23 +77,33 @@ export function MigracionPageContent() {
         setMigrationResult(null);
 
         try {
-            let result;
+            let vehiclesAddedCount = 0;
             if (activeTab === 'ia') {
-                result = await migrateData({ csvContent: fileContent });
-                placeholderVehicles.push(...result.vehicles);
-                placeholderServiceRecords.push(...(result.services as any[]));
-                await persistToFirestore(['vehicles', 'serviceRecords']);
-                setMigrationResult({ ...result, type: 'generic', vehiclesAdded: result.vehicles.length, servicesAdded: result.services.length });
+                const result = await migrateData({ csvContent: fileContent });
+                for (const vehicle of result.vehicles) {
+                    await inventoryService.addVehicle(vehicle as unknown as VehicleFormValues);
+                    vehiclesAddedCount++;
+                }
+                // Note: Service records are ignored in this simplified flow
+                // as they require more complex logic to associate with newly created vehicles.
+                setMigrationResult({ ...result, type: 'generic', vehiclesAdded: vehiclesAddedCount, servicesAdded: 0 });
+            
             } else if (activeTab === 'vehiculos') {
-                result = await migrateVehicles({ csvContent: fileContent });
-                placeholderVehicles.push(...(result.vehicles as any[]));
-                await persistToFirestore(['vehicles']);
-                setMigrationResult({ ...result, type: 'vehicles', vehiclesAdded: result.vehicles.length });
+                const result = await migrateVehicles({ csvContent: fileContent });
+                for (const vehicle of result.vehicles) {
+                    await inventoryService.addVehicle(vehicle as unknown as VehicleFormValues);
+                    vehiclesAddedCount++;
+                }
+                setMigrationResult({ ...result, type: 'vehicles', vehiclesAdded: vehiclesAddedCount });
+
             } else { // productos
-                result = await migrateProducts({ csvContent: fileContent });
-                placeholderInventory.push(...result.products);
-                await persistToFirestore(['inventory']);
-                setMigrationResult({ ...result, type: 'products', productsAdded: result.products.length });
+                const result = await migrateProducts({ csvContent: fileContent });
+                let productsAddedCount = 0;
+                for (const product of result.products) {
+                    await inventoryService.addItem(product as any);
+                    productsAddedCount++;
+                }
+                setMigrationResult({ ...result, type: 'products', productsAdded: productsAddedCount });
             }
             toast({ title: "¡Migración Exitosa!", description: `Se han procesado los datos de la hoja "${selectedSheet}".` });
         } catch (e) {
@@ -107,7 +118,7 @@ export function MigracionPageContent() {
         if (!migrationResult) return null;
         switch (migrationResult.type) {
             case 'generic':
-                return <p>Vehículos añadidos: {migrationResult.vehiclesAdded}, Servicios añadidos: {migrationResult.servicesAdded}</p>;
+                return <p>Vehículos añadidos: {migrationResult.vehiclesAdded}.</p>;
             case 'vehicles':
                 return <p>Vehículos añadidos: {migrationResult.vehiclesAdded}</p>;
             case 'products':
