@@ -35,7 +35,7 @@ export function useTableManager<T extends { [key: string]: any }>({
       );
     }
 
-    if (dateRange && dateRange.from) { // Corrected: Check if dateRange and dateRange.from exist
+    if (dateRange && dateRange.from) { 
       const from = startOfDay(dateRange.from);
       const to = dateRange.to ? endOfDay(dateRange.to) : endOfDay(dateRange.from);
       data = data.filter(item => {
@@ -52,38 +52,40 @@ export function useTableManager<T extends { [key: string]: any }>({
       }
     });
     
-    // Generic sorter - can be expanded
+    // Generic sorter
     data.sort((a, b) => {
-      // Safe date parsing for sorting
-      const safeParse = (dateString: any): Date | null => {
-          if (!dateString || typeof dateString !== 'string') return null;
-          const parsed = parseISO(dateString);
-          return isValid(parsed) ? parsed : null;
-      };
+      const [sortKey, sortDirection] = sortOption.split('_');
+      const isAsc = sortDirection === 'asc';
 
-      const dateA = safeParse(a[dateFilterKey]);
-      const dateB = safeParse(b[dateFilterKey]);
-      
-      // Treat items without a valid date as "older"
-      if (!dateA && dateB) return 1;
-      if (dateA && !dateB) return -1;
-      if (!dateA && !dateB) return 0;
-      
-      switch (sortOption) {
-        case 'date_asc':
-          return compareAsc(dateA!, dateB!);
-        case 'total_desc':
-            return (b.totalAmount ?? b.totalCost ?? 0) - (a.totalAmount ?? a.totalCost ?? 0);
-        case 'total_asc':
-            return (a.totalAmount ?? a.totalCost ?? 0) - (b.totalAmount ?? b.totalCost ?? 0);
-        case 'plate_asc':
-             return (a.licensePlate || '').localeCompare(b.licensePlate || '');
-        case 'plate_desc':
-             return (b.licensePlate || '').localeCompare(a.licensePlate || '');
-        case 'date_desc':
-        default:
-          return compareDesc(dateA!, dateB!);
+      const valA = a[sortKey];
+      const valB = b[sortKey];
+
+      // Date sorting
+      if (sortKey.toLowerCase().includes('date')) {
+        const dateA = valA ? parseISO(valA) : new Date(0);
+        const dateB = valB ? parseISO(valB) : new Date(0);
+        if (!isValid(dateA)) return 1;
+        if (!isValid(dateB)) return -1;
+        return isAsc ? compareAsc(dateA, dateB) : compareDesc(dateA, dateB);
       }
+      
+      // Numeric sorting
+      if (typeof valA === 'number' && typeof valB === 'number') {
+        return isAsc ? valA - valB : valB - valA;
+      }
+
+      // String sorting (case-insensitive)
+      if (typeof valA === 'string' && typeof valB === 'string') {
+        return isAsc
+          ? valA.localeCompare(valB, undefined, { sensitivity: 'base' })
+          : valB.localeCompare(valA, undefined, { sensitivity: 'base' });
+      }
+
+      // Fallback for mixed or null/undefined types
+      if (valA == null) return 1;
+      if (valB == null) return -1;
+      
+      return 0; // No change if types are weird
     });
 
     return data;
