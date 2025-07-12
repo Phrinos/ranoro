@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState } from 'react';
@@ -16,7 +17,7 @@ import { useToast } from "@/hooks/use-toast";
 interface AdministrativeStaffDialogProps {
   trigger?: React.ReactNode;
   staffMember?: AdministrativeStaff | null;
-  onSave?: (data: AdministrativeStaffFormValues) => Promise<void>;
+  onSave?: (data: AdministrativeStaffFormValues) => void;
   open?: boolean;
   onOpenChange?: (isOpen: boolean) => void;
 }
@@ -38,7 +39,7 @@ export function AdministrativeStaffDialog({
   const handleSubmit = async (values: AdministrativeStaffFormValues) => {
     try {
       if (onSave) {
-        await onSave(values);
+        onSave(values); // The parent now handles async logic and toast
       }
       onOpenChange(false);
     } catch (error) {

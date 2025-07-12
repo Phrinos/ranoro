@@ -2,12 +2,11 @@
 "use client";
 
 import { useParams, useRouter } from 'next/navigation';
-import { placeholderTechnicians, placeholderTechnicianMonthlyPerformance, persistToFirestore } from '@/lib/placeholder-data';
 import type { Technician, TechnicianMonthlyPerformance } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { Archive, Edit, ShieldAlert, User, Phone, CalendarDays, DollarSign, Percent, StickyNote, ArrowLeft, BarChart3 } from 'lucide-react';
+import { Archive, Edit, ShieldAlert, User, Phone, CalendarDays, DollarSign, Percent, StickyNote, ArrowLeft, BarChart3, Loader2 } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
@@ -27,6 +26,8 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { personnelService } from '@/lib/services';
+import { placeholderTechnicianMonthlyPerformance } from '@/lib/placeholder-data'; // Keep for now
 
 export default function TechnicianDetailPage() {
   const params = useParams();
@@ -40,61 +41,43 @@ export default function TechnicianDetailPage() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
   useEffect(() => {
-    const foundTechnician = placeholderTechnicians.find(t => t.id === technicianId);
-    setTechnician(foundTechnician || null);
-
-    if (foundTechnician) {
-      const techPerformance = placeholderTechnicianMonthlyPerformance.filter(p => p.technicianId === foundTechnician.id);
-      setPerformance(techPerformance);
-    }
+    const fetchTechnician = async () => {
+        const tech = await personnelService.getTechnicianById(technicianId);
+        setTechnician(tech || null);
+        if (tech) {
+            // TODO: Fetch real performance data when available
+            const techPerformance = placeholderTechnicianMonthlyPerformance.filter(p => p.technicianId === tech.id);
+            setPerformance(techPerformance);
+        }
+    };
+    fetchTechnician();
   }, [technicianId]);
 
-  const handleSaveEditedTechnician = (formData: TechnicianFormValues) => {
+  const handleSaveEditedTechnician = async (formData: TechnicianFormValues) => {
     if (!technician) return;
-
-    const updatedTechnicianData: Partial<Technician> = {
-        ...formData,
-        hireDate: formData.hireDate ? new Date(formData.hireDate).toISOString().split('T')[0] : undefined,
-        monthlySalary: Number(formData.monthlySalary) || undefined,
-        commissionRate: formData.commissionRate ? Number(formData.commissionRate) : undefined,
-        standardHoursPerDay: formData.standardHoursPerDay ? Number(formData.standardHoursPerDay) : undefined,
-    };
-    
-    const updatedTechnician = { ...technician, ...updatedTechnicianData } as Technician;
-    setTechnician(updatedTechnician);
-
-    const pIndex = placeholderTechnicians.findIndex(t => t.id === updatedTechnician.id);
-    if (pIndex !== -1) {
-      placeholderTechnicians[pIndex] = updatedTechnician;
+    try {
+        const updatedTechnician = await personnelService.saveTechnician(formData, technician.id);
+        setTechnician(updatedTechnician);
+        setIsEditDialogOpen(false);
+        toast({ title: "Staff Técnico Actualizado" });
+    } catch(e) {
+        toast({ title: "Error al actualizar", variant: "destructive" });
     }
-    
-    persistToFirestore(['technicians']);
-
-    setIsEditDialogOpen(false);
-    toast({
-      title: "Staff Técnico Actualizado",
-      description: `Los datos de ${updatedTechnician.name} han sido actualizados.`,
-    });
   };
 
-  const handleArchiveTechnician = () => {
+  const handleArchiveTechnician = async () => {
     if (!technician) return;
-    const techIndex = placeholderTechnicians.findIndex(t => t.id === technician.id);
-    if (techIndex > -1) {
-      placeholderTechnicians[techIndex].isArchived = true;
+    try {
+        await personnelService.archiveTechnician(technician.id, true);
+        toast({ title: "Staff Archivado" });
+        router.push('/personal?tab=tecnicos');
+    } catch(e) {
+        toast({ title: "Error al archivar", variant: "destructive" });
     }
-
-    persistToFirestore(['technicians']);
-
-    toast({
-      title: "Staff Archivado",
-      description: `El registro de ${technician.name} ha sido archivado.`,
-    });
-    router.push('/tecnicos');
   };
 
   if (technician === undefined) {
-    return <div className="container mx-auto py-8 text-center">Cargando datos del miembro del staff...</div>;
+    return <div className="container mx-auto py-8 text-center"><Loader2 className="h-8 w-8 animate-spin" /></div>;
   }
 
   if (!technician) {
@@ -102,9 +85,8 @@ export default function TechnicianDetailPage() {
       <div className="container mx-auto py-8 text-center">
          <ShieldAlert className="mx-auto h-16 w-16 text-destructive mb-4" />
         <h1 className="text-2xl font-bold">Miembro del Staff Técnico no encontrado</h1>
-        <p className="text-muted-foreground">No se pudo encontrar un miembro del staff con el ID: {technicianId}.</p>
         <Button asChild className="mt-6">
-          <Link href="/tecnicos">Volver a Staff Técnico</Link>
+          <Link href="/personal?tab=tecnicos">Volver a Staff Técnico</Link>
         </Button>
       </div>
     );

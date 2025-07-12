@@ -1,5 +1,4 @@
 
-
 import {
   collection,
   onSnapshot,
@@ -33,19 +32,39 @@ const onTechniciansUpdatePromise = async (): Promise<Technician[]> => {
 
 
 const getTechnicianById = async (id: string): Promise<Technician | undefined> => {
+    if (!db) throw new Error("Database not initialized.");
     const docRef = doc(db, 'technicians', id);
     const docSnap = await getDoc(docRef);
     return docSnap.exists() ? { id: docSnap.id, ...docSnap.data() } as Technician : undefined;
 };
 
-const addTechnician = async (data: TechnicianFormValues): Promise<Technician> => {
-    const newTechnicianData = {
+const saveTechnician = async (data: TechnicianFormValues, id?: string): Promise<Technician> => {
+    if (!db) throw new Error("Database not initialized.");
+    const dataToSave = {
         ...data,
-        isArchived: false,
+        hireDate: data.hireDate ? new Date(data.hireDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+        monthlySalary: Number(data.monthlySalary) || 0,
+        commissionRate: Number(data.commissionRate) || 0,
+        standardHoursPerDay: Number(data.standardHoursPerDay) || 8,
     };
-    const docRef = await addDoc(collection(db, 'technicians'), newTechnicianData);
-    return { id: docRef.id, ...newTechnicianData };
+
+    if (id) {
+        await updateDoc(doc(db, 'technicians', id), dataToSave);
+        return { id, ...dataToSave, isArchived: false }; // Assume update keeps it active
+    } else {
+        const fullData = { ...dataToSave, isArchived: false };
+        const docRef = await addDoc(collection(db, 'technicians'), fullData);
+        return { id: docRef.id, ...fullData };
+    }
 };
+
+const addTechnician = (data: TechnicianFormValues) => saveTechnician(data); // Alias for clarity
+
+const archiveTechnician = async (id: string, isArchived: boolean): Promise<void> => {
+    if (!db) throw new Error("Database not initialized.");
+    await updateDoc(doc(db, 'technicians', id), { isArchived });
+};
+
 
 // --- Administrative Staff ---
 
@@ -57,18 +76,43 @@ const onAdminStaffUpdate = (callback: (staff: AdministrativeStaff[]) => void): (
     return unsubscribe;
 };
 
-const addAdminStaff = async (data: AdministrativeStaffFormValues): Promise<AdministrativeStaff> => {
-    const newStaffData = {
+const getAdminStaffById = async (id: string): Promise<AdministrativeStaff | undefined> => {
+    if (!db) throw new Error("Database not initialized.");
+    const docRef = doc(db, 'administrativeStaff', id);
+    const docSnap = await getDoc(docRef);
+    return docSnap.exists() ? { id: docSnap.id, ...docSnap.data() } as AdministrativeStaff : undefined;
+}
+
+const saveAdminStaff = async (data: AdministrativeStaffFormValues, id?: string): Promise<AdministrativeStaff> => {
+    if (!db) throw new Error("Database not initialized.");
+    const dataToSave = {
         ...data,
-        isArchived: false,
+        hireDate: data.hireDate ? new Date(data.hireDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+        monthlySalary: Number(data.monthlySalary) || 0,
+        commissionRate: Number(data.commissionRate) || 0,
     };
-    const docRef = await addDoc(collection(db, 'administrativeStaff'), newStaffData);
-    return { id: docRef.id, ...newStaffData };
+    if (id) {
+        await updateDoc(doc(db, 'administrativeStaff', id), dataToSave);
+        return { id, ...dataToSave, isArchived: false };
+    } else {
+        const fullData = { ...dataToSave, isArchived: false };
+        const docRef = await addDoc(collection(db, 'administrativeStaff'), fullData);
+        return { id: docRef.id, ...fullData };
+    }
 };
+
+const addAdminStaff = (data: AdministrativeStaffFormValues) => saveAdminStaff(data); // Alias
+
+const archiveAdminStaff = async (id: string, isArchived: boolean): Promise<void> => {
+    if (!db) throw new Error("Database not initialized.");
+    await updateDoc(doc(db, 'administrativeStaff', id), { isArchived });
+};
+
 
 // --- Drivers ---
 
 const onDriversUpdate = (callback: (drivers: Driver[]) => void): (() => void) => {
+    if (!db) return () => {};
     const unsubscribe = onSnapshot(collection(db, "drivers"), (snapshot) => {
         callback(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Driver)));
     });
@@ -76,6 +120,7 @@ const onDriversUpdate = (callback: (drivers: Driver[]) => void): (() => void) =>
 };
 
 const saveDriver = async (data: DriverFormValues, existingId?: string): Promise<Driver> => {
+    if (!db) throw new Error("Database not initialized.");
     if (existingId) {
         const docRef = doc(db, 'drivers', existingId);
         await updateDoc(docRef, data);
@@ -92,9 +137,14 @@ export const personnelService = {
     onTechniciansUpdate,
     onTechniciansUpdatePromise,
     getTechnicianById,
+    saveTechnician,
     addTechnician,
+    archiveTechnician,
     onAdminStaffUpdate,
+    getAdminStaffById,
+    saveAdminStaff,
     addAdminStaff,
+    archiveAdminStaff,
     onDriversUpdate,
     saveDriver
 };

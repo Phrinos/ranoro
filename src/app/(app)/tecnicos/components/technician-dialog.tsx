@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState } from 'react';
@@ -16,7 +17,7 @@ import { useToast } from "@/hooks/use-toast";
 interface TechnicianDialogProps {
   trigger?: React.ReactNode;
   technician?: Technician | null;
-  onSave?: (data: TechnicianFormValues) => Promise<void>;
+  onSave?: (data: TechnicianFormValues) => void;
   open?: boolean;
   onOpenChange?: (isOpen: boolean) => void;
 }
@@ -38,7 +39,7 @@ export function TechnicianDialog({
   const handleSubmit = async (values: TechnicianFormValues) => {
     try {
       if (onSave) {
-        await onSave(values);
+        onSave(values); // Parent handles async and toast
       }
       onOpenChange(false);
     } catch (error) {

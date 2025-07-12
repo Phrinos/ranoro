@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { useState, useMemo, useEffect, useCallback, Suspense } from 'react';
@@ -8,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { Input } from "@/components/ui/input";
-import { PlusCircle, ListFilter, TrendingUp, DollarSign as DollarSignIcon, CalendarIcon as CalendarDateIcon, BadgeCent, Users, Search, Archive, UserCheck, UserX } from "lucide-react";
+import { PlusCircle, UserCheck, UserX, Search } from "lucide-react";
 import { TechniciansTable } from "../tecnicos/components/technicians-table";
 import { AdministrativeStaffTable } from "../administrativos/components/administrative-staff-table";
 import { TechnicianDialog } from "../tecnicos/components/technician-dialog";
@@ -23,10 +22,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { cn } from "@/lib/utils";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2 } from 'lucide-react';
+import { Loader2, DollarSign as DollarSignIcon, CalendarIcon as CalendarDateIcon, BadgeCent } from 'lucide-react';
 import { personnelService } from '@/lib/services/personnel.service';
 import { operationsService } from '@/lib/services/operations.service';
-import { IVA_RATE } from '@/lib/placeholder-data'; // Use a central constant if needed
 
 interface AggregatedTechnicianPerformance {
   technicianId: string;
@@ -63,6 +61,10 @@ function PersonalPageComponent() {
 
   const [filterDateRange, setFilterDateRange] = useState<DateRange | undefined>(undefined);
   
+  const [isTechnicianDialogOpen, setIsTechnicianDialogOpen] = useState(false);
+  const [isStaffDialogOpen, setIsStaffDialogOpen] = useState(false);
+
+
   useEffect(() => {
     const unsubs: (() => void)[] = [];
     setIsLoading(true);
@@ -81,13 +83,23 @@ function PersonalPageComponent() {
   }, []);
   
   const handleSaveTechnician = async (data: TechnicianFormValues) => {
-    await personnelService.addTechnician(data);
-    toast({ title: "Técnico Creado" });
+    try {
+      await personnelService.addTechnician(data);
+      toast({ title: "Técnico Creado" });
+      setIsTechnicianDialogOpen(false);
+    } catch (e) {
+      toast({ title: "Error al crear técnico", variant: "destructive" });
+    }
   };
   
   const handleSaveAdminStaff = async (data: AdministrativeStaffFormValues) => {
-    await personnelService.addAdminStaff(data);
-    toast({ title: "Staff Administrativo Creado" });
+    try {
+      await personnelService.addAdminStaff(data);
+      toast({ title: "Staff Administrativo Creado" });
+      setIsStaffDialogOpen(false);
+    } catch (e) {
+      toast({ title: "Error al crear staff", variant: "destructive" });
+    }
   };
   
   const {
@@ -243,7 +255,7 @@ function PersonalPageComponent() {
                         <CardDescription>Visualiza y gestiona al personal técnico.</CardDescription>
                       </div>
                       <div className="flex items-center gap-2 w-full sm:w-auto">
-                        <TechnicianDialog trigger={<Button className="w-full sm:w-auto"><PlusCircle className="mr-2 h-4 w-4" />Nuevo Técnico</Button>} onSave={handleSaveTechnician}/>
+                        <Button className="w-full sm:w-auto" onClick={() => setIsTechnicianDialogOpen(true)}><PlusCircle className="mr-2 h-4 w-4" />Nuevo Técnico</Button>
                       </div>
                   </div>
                    <div className="pt-4 flex flex-col sm:flex-row items-center justify-between gap-2 w-full">
@@ -269,7 +281,7 @@ function PersonalPageComponent() {
                           <CardDescription>Visualiza y gestiona al personal administrativo.</CardDescription>
                       </div>
                        <div className="flex items-center gap-2 w-full sm:w-auto">
-                        <AdministrativeStaffDialog trigger={<Button className="w-full sm:w-auto"><PlusCircle className="mr-2 h-4 w-4" />Nuevo Staff</Button>} onSave={handleSaveAdminStaff}/>
+                        <Button className="w-full sm:w-auto" onClick={() => setIsStaffDialogOpen(true)}><PlusCircle className="mr-2 h-4 w-4" />Nuevo Staff</Button>
                       </div>
                   </div>
                   <div className="pt-4 flex flex-col sm:flex-row items-center justify-between gap-2 w-full">
@@ -287,6 +299,8 @@ function PersonalPageComponent() {
             </Card>
         </TabsContent>
       </Tabs>
+      <TechnicianDialog open={isTechnicianDialogOpen} onOpenChange={setIsTechnicianDialogOpen} onSave={handleSaveTechnician} />
+      <AdministrativeStaffDialog open={isStaffDialogOpen} onOpenChange={setIsStaffDialogOpen} onSave={handleSaveAdminStaff} />
     </>
   );
 }
@@ -295,4 +309,3 @@ export default function PersonalPageWrapper() {
     return (<Suspense fallback={<div>Cargando...</div>}><PersonalPageComponent /></Suspense>)
 }
 
-    

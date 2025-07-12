@@ -2,7 +2,6 @@
 "use client";
 
 import { useParams, useRouter } from 'next/navigation';
-import { placeholderAdministrativeStaff, persistToFirestore } from '@/lib/placeholder-data';
 import type { AdministrativeStaff } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -25,6 +24,8 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { personnelService } from '@/lib/services';
+import { Loader2 } from 'lucide-react';
 
 
 export default function AdministrativeStaffDetailPage() {
@@ -35,62 +36,42 @@ export default function AdministrativeStaffDetailPage() {
   const [staffMember, setStaffMember] = useState<AdministrativeStaff | null | undefined>(undefined);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
-  if (!params || !params.id) {
-    return <div>Error: ID de staff no proporcionado.</div>;
-  }
   const staffId = params.id as string; 
 
   useEffect(() => {
-    const foundStaff = placeholderAdministrativeStaff.find(s => s.id === staffId);
-    setStaffMember(foundStaff || null);
+    const fetchStaff = async () => {
+        const staff = await personnelService.getAdminStaffById(staffId);
+        setStaffMember(staff || null);
+    };
+    fetchStaff();
   }, [staffId]);
 
   const handleSaveEditedStaff = async (formData: AdministrativeStaffFormValues) => {
     if (!staffMember) return;
-
-    const updatedStaffData: Partial<AdministrativeStaff> = {
-        ...formData,
-        hireDate: formData.hireDate ? new Date(formData.hireDate).toISOString().split('T')[0] : undefined,
-        monthlySalary: Number(formData.monthlySalary) || undefined,
-        commissionRate: formData.commissionRate ? Number(formData.commissionRate) : undefined,
-    };
-    
-    const updatedStaffMember = { ...staffMember, ...updatedStaffData } as AdministrativeStaff;
-    setStaffMember(updatedStaffMember);
-
-    const pIndex = placeholderAdministrativeStaff.findIndex(s => s.id === updatedStaffMember.id);
-    if (pIndex !== -1) {
-      placeholderAdministrativeStaff[pIndex] = updatedStaffMember;
+    try {
+        const updatedStaffMember = await personnelService.saveAdminStaff(formData, staffMember.id);
+        setStaffMember(updatedStaffMember);
+        setIsEditDialogOpen(false);
+        toast({ title: "Staff Administrativo Actualizado" });
+    } catch (e) {
+        toast({ title: "Error al actualizar", variant: "destructive" });
     }
-    
-    await persistToFirestore(['administrativeStaff']);
-
-    setIsEditDialogOpen(false);
-    toast({
-      title: "Staff Administrativo Actualizado",
-      description: `Los datos de ${updatedStaffMember.name} han sido actualizados.`,
-    });
   };
 
   const handleArchiveStaff = async () => {
     if (!staffMember) return;
-    const staffIndex = placeholderAdministrativeStaff.findIndex(s => s.id === staffMember.id);
-    if (staffIndex > -1) {
-      placeholderAdministrativeStaff[staffIndex].isArchived = true;
+    try {
+      await personnelService.archiveAdminStaff(staffMember.id, true);
+      toast({ title: "Staff Archivado" });
+      router.push('/personal?tab=administrativos'); 
+    } catch (e) {
+      toast({ title: "Error al archivar", variant: "destructive" });
     }
-    
-    await persistToFirestore(['administrativeStaff']);
-
-    toast({
-      title: "Staff Archivado",
-      description: `El registro de ${staffMember.name} ha sido archivado.`,
-    });
-    router.push('/administrativos'); 
   };
 
 
   if (staffMember === undefined) {
-    return <div className="container mx-auto py-8 text-center">Cargando datos del staff...</div>;
+    return <div className="container mx-auto py-8 text-center"><Loader2 className="h-8 w-8 animate-spin" /></div>;
   }
 
   if (!staffMember) {
@@ -98,9 +79,8 @@ export default function AdministrativeStaffDetailPage() {
       <div className="container mx-auto py-8 text-center">
          <ShieldAlert className="mx-auto h-16 w-16 text-destructive mb-4" />
         <h1 className="text-2xl font-bold">Staff Administrativo no encontrado</h1>
-        <p className="text-muted-foreground">No se pudo encontrar un registro con el ID: {staffId}.</p>
         <Button asChild className="mt-6">
-          <Link href="/administrativos">Volver a Staff Administrativo</Link>
+          <Link href="/personal?tab=administrativos">Volver a Staff Administrativo</Link>
         </Button>
       </div>
     );
