@@ -80,14 +80,19 @@ export default function NuevoServicioPage() {
       });
 
       // Set redirect path based on status
-      if (data.status === 'Cotizacion') {
-        setRedirectPath('/cotizaciones/historial');
-      } else if (data.status === 'Agendado') {
-        setRedirectPath('/servicios/agenda');
-      } else if (data.status === 'En Taller') {
-        setRedirectPath('/tablero');
-      } else {
-        setRedirectPath('/servicios/historial');
+      switch (data.status) {
+        case 'Cotizacion':
+          setRedirectPath('/cotizaciones/historial');
+          break;
+        case 'Agendado':
+          setRedirectPath('/servicios/agenda');
+          break;
+        case 'En Taller':
+        case 'Entregado':
+          setRedirectPath('/servicios/historial');
+          break;
+        default:
+          setRedirectPath('/tablero'); // Fallback to dashboard
       }
 
       setDialogStep('closed'); // Trigger redirect after saving
