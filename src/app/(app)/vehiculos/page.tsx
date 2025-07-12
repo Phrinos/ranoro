@@ -4,8 +4,6 @@
 
 import { useState, useMemo, useEffect, useCallback, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { collection, onSnapshot } from 'firebase/firestore';
-import { db } from '@/lib/firebaseClient';
 import { Button } from "@/components/ui/button";
 import { PlusCircle } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
@@ -21,8 +19,10 @@ import { PriceListTable } from '../precios/components/price-list-table';
 import { TableToolbar } from '@/components/shared/table-toolbar';
 import { Loader2 } from 'lucide-react';
 import { useTableManager } from '@/hooks/useTableManager';
-import { addDoc, updateDoc, doc, deleteDoc } from 'firebase/firestore';
+import { inventoryService } from '@/lib/services';
 import { sanitizeObjectForFirestore } from '@/lib/utils';
+import { collection, onSnapshot, doc, updateDoc, addDoc, deleteDoc } from 'firebase/firestore';
+import { db } from '@/lib/firebaseClient';
 
 function VehiculosPageComponent() {
     const searchParams = useSearchParams();
@@ -42,16 +42,12 @@ function VehiculosPageComponent() {
   
     useEffect(() => {
         setIsLoading(true);
-        const unsubscribeVehicles = onSnapshot(collection(db, "vehicles"), (snapshot) => {
-            const vehiclesData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Vehicle[];
-            setAllVehicles(vehiclesData);
+        const unsubscribeVehicles = inventoryService.onVehiclesUpdate((data) => {
+            setAllVehicles(data);
             setIsLoading(false);
         });
 
-        const unsubscribePriceLists = onSnapshot(collection(db, "vehiclePriceLists"), (snapshot) => {
-            const priceListsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as VehiclePriceList));
-            setPriceLists(priceListsData);
-        });
+        const unsubscribePriceLists = inventoryService.onPriceListsUpdate(setPriceLists);
 
         return () => {
             unsubscribeVehicles();
@@ -76,18 +72,11 @@ function VehiculosPageComponent() {
 
     const handleSaveVehicle = async (data: VehicleFormValues) => {
         try {
-            // Sanitize data to prevent Firestore errors with `undefined`
-            const dataToSave = {
-                ...data,
-                dailyRentalCost: data.dailyRentalCost ?? null,
-                gpsMonthlyCost: data.gpsMonthlyCost ?? null,
-                adminMonthlyCost: data.adminMonthlyCost ?? null,
-                insuranceMonthlyCost: data.insuranceMonthlyCost ?? null,
-            };
+            const dataToSave = sanitizeObjectForFirestore(data);
 
             if (editingVehicle) {
                 const vehicleRef = doc(db, "vehicles", editingVehicle.id);
-                await updateDoc(vehicleRef, dataToSave as any); // Cast data to any to satisfy UpdateData type
+                await updateDoc(vehicleRef, dataToSave);
                 toast({ title: "Vehículo Actualizado", description: `Se ha actualizado ${data.make} ${data.model}.` });
             } else {
                 await addDoc(collection(db, "vehicles"), {
@@ -111,13 +100,7 @@ function VehiculosPageComponent() {
 
     const handleSavePriceListRecord = async (formData: PriceListFormValues) => {
         try {
-            const dataToSave = sanitizeObjectForFirestore({ ...formData, years: formData.years.sort((a: number,b: number) => a-b) });
-            if(editingPriceRecord) {
-                const priceListRef = doc(db, "vehiclePriceLists", editingPriceRecord.id);
-                await updateDoc(priceListRef, dataToSave);
-            } else {
-                await addDoc(collection(db, "vehiclePriceLists"), dataToSave);
-            }
+            await inventoryService.savePriceList(formData, editingPriceRecord?.id);
             toast({ title: `Precotización ${editingPriceRecord ? 'Actualizada' : 'Creada'}` });
             setIsPriceListDialogOpen(false);
         } catch (error) {
@@ -128,7 +111,7 @@ function VehiculosPageComponent() {
     
     const handleDeletePriceListRecord = async (recordId: string) => {
         try {
-            await deleteDoc(doc(db, "vehiclePriceLists", recordId));
+            await inventoryService.deletePriceList(recordId);
             toast({ title: "Registro Eliminado", variant: 'destructive' });
         } catch (error) {
             console.error("Error deleting price list record: ", error);
