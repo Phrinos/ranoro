@@ -14,11 +14,11 @@ import { z } from 'zod';
 // Schema for a single vehicle extracted from the data
 const ExtractedVehicleSchema = z.object({
   licensePlate: z.string().describe('The license plate of the vehicle. This is a crucial, unique identifier. This field is mandatory and must be extracted.'),
-  make: z.string().describe('The make or brand of the vehicle (e.g., Ford, Nissan).'),
-  model: z.string().describe('The model of the vehicle (e.g., F-150, Sentra).'),
-  year: z.number().describe('The manufacturing year of the vehicle.'),
-  ownerName: z.string().describe("The full name of the vehicle's owner."),
-  ownerPhone: z.string().optional().describe("The owner's contact phone number."),
+  make: z.string().default('').describe('The make or brand of the vehicle (e.g., Ford, Nissan).'),
+  model: z.string().default('').describe('The model of the vehicle (e.g., F-150, Sentra).'),
+  year: z.coerce.number().default(0).describe('The manufacturing year of the vehicle.'),
+  ownerName: z.string().default('').describe("The full name of the vehicle's owner."),
+  ownerPhone: z.string().default('').describe("The owner's contact phone number."),
 });
 export type ExtractedVehicle = z.infer<typeof ExtractedVehicleSchema>;
 
@@ -26,8 +26,8 @@ export type ExtractedVehicle = z.infer<typeof ExtractedVehicleSchema>;
 const ExtractedServiceSchema = z.object({
   vehicleLicensePlate: z.string().describe('The license plate of the vehicle that received the service.'),
   serviceDate: z.string().describe('The date the service was performed, in YYYY-MM-DD format.'),
-  description: z.string().describe('A brief description of the service performed.'),
-  totalCost: z.number().describe('The total cost charged for the service.'),
+  description: z.string().default('').describe('A brief description of the service performed.'),
+  totalCost: z.coerce.number().default(0).describe('The total cost charged for the service.'),
 });
 export type ExtractedService = z.infer<typeof ExtractedServiceSchema>;
 
@@ -79,7 +79,7 @@ This is the most critical step. The license plate ('placa') is the MANDATORY, UN
 
 **Step 4: Clean and Format Data.**
 - Clean the data as you extract it: trim whitespace, convert years and costs to numbers, and ensure all dates are in YYYY-MM-DD format.
-- If a value for an optional field (like 'ownerPhone') is missing, omit it from the final JSON object.
+- **IMPORTANT:** If a value for a field is missing or empty, you MUST return it as an empty string ("") for text fields, or 0 for numeric fields (like year or cost). Do not omit the field from the JSON.
 - **CRITICAL:** Every vehicle in the output 'vehicles' array and every service in the 'services' array must have a valid 'licensePlate' or 'vehicleLicensePlate' field, respectively. Rows without a discernible license plate should be ignored.
 
 **CSV Data to Analyze:**

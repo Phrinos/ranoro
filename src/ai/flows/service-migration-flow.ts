@@ -10,8 +10,8 @@ import { z } from 'zod';
 const ExtractedServiceSchema = z.object({
   vehicleLicensePlate: z.string().describe('The license plate of the vehicle that received the service. This is mandatory for linking the service.'),
   serviceDate: z.string().describe('The date the service was performed. Must be a valid date format (e.g., YYYY-MM-DD, MM/DD/YY).'),
-  description: z.string().describe('A brief description of the service performed.'),
-  totalCost: z.coerce.number().describe('The total cost charged for the service.'),
+  description: z.string().default('').describe('A brief description of the service performed.'),
+  totalCost: z.coerce.number().default(0).describe('The total cost charged for the service.'),
 });
 export type ExtractedService = z.infer<typeof ExtractedServiceSchema>;
 
@@ -41,6 +41,7 @@ const migrateServicesPrompt = ai.definePrompt({
 2.  **Extract Data**: For each row in the CSV, create one service object in the 'services' array using the headers defined in the mapping.
 3.  **Mandatory Fields**: Every service record MUST have a valid 'vehicleLicensePlate', 'serviceDate', 'description', and 'totalCost'. If a row is missing data in a column that is mapped to a mandatory field, you must ignore that row entirely.
 4.  **Clean Data**: Trim whitespace from all text fields. Convert 'totalCost' to a number. Ensure 'serviceDate' is preserved in its original format from the CSV.
+5.  **Default Values**: If a field is empty or missing in the source data, you MUST return it with a default value: an empty string ("") for 'description', and 0 for 'totalCost'. Do not omit fields.
 
 Analyze the following CSV content and return the data in the specified JSON format.
 
@@ -68,4 +69,3 @@ const migrateServicesFlow = ai.defineFlow(
     return output;
   }
 );
-

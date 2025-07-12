@@ -9,11 +9,11 @@ import { z } from 'zod';
 
 const ExtractedVehicleSchema = z.object({
   licensePlate: z.string().describe('The license plate of the vehicle. This is a crucial, unique identifier. It is mandatory.'),
-  make: z.string().describe('The make or brand of the vehicle (e.g., Ford, Nissan).'),
-  model: z.string().describe('The model of the vehicle (e.g., F-150, Sentra).'),
-  year: z.number().describe('The manufacturing year of the vehicle.'),
-  ownerName: z.string().describe("The full name of the vehicle's owner."),
-  ownerPhone: z.string().optional().describe("The owner's contact phone number."),
+  make: z.string().default('').describe('The make or brand of the vehicle (e.g., Ford, Nissan).'),
+  model: z.string().default('').describe('The model of the vehicle (e.g., F-150, Sentra).'),
+  year: z.coerce.number().default(0).describe('The manufacturing year of the vehicle.'),
+  ownerName: z.string().default('').describe("The full name of the vehicle's owner."),
+  ownerPhone: z.string().default('').describe("The owner's contact phone number."),
 });
 export type ExtractedVehicleForMigration = z.infer<typeof ExtractedVehicleSchema>;
 
@@ -47,6 +47,7 @@ const migrateVehiclesPrompt = ai.definePrompt({
 2.  **Extract Data**: For each row in the CSV, create one vehicle object.
 3.  **Mandatory License Plate**: The 'licensePlate' field is absolutely mandatory. If a row does not have a value that can be identified as a license plate, you must ignore that row entirely. A license plate is typically 6 to 8 alphanumeric characters.
 4.  **Clean Data**: Trim whitespace from all text fields. Convert 'year' to a number.
+5.  **Default Values**: If a field (other than the mandatory licensePlate) is empty or missing, you MUST return it with a default value: an empty string ("") for text fields (like 'make', 'model'), and 0 for the 'year' field. Do not omit fields from the JSON output.
 
 Analyze the following CSV content and return the data in the specified JSON format.
 
