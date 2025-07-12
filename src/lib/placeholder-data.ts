@@ -71,6 +71,7 @@ export const placeholderAppRoles: AppRole[] = [
       "roles:manage",
       "ticket_config:manage",
       "audits:view",
+      "workshop:manage", // Add the new permission here as well
     ],
   },
   {
@@ -93,6 +94,7 @@ export const placeholderAppRoles: AppRole[] = [
       "roles:manage",
       "ticket_config:manage",
       "audits:view",
+      "workshop:manage",
     ],
   },
   {
