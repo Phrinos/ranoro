@@ -67,7 +67,7 @@ type RoleFormValues = z.infer<typeof roleFormSchema>;
 
 export function RolesPageContent({ currentUser, initialRoles }: { currentUser: User | null, initialRoles: AppRole[] }) {
     const { toast } = useToast();
-    const [roles, setRoles] = useState<AppRole[]>(initialRoles);
+    const roles = initialRoles;
     const [editingRole, setEditingRole] = useState<AppRole | null>(null);
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
@@ -77,8 +77,6 @@ export function RolesPageContent({ currentUser, initialRoles }: { currentUser: U
       resolver: zodResolver(roleFormSchema), 
       defaultValues: { name: '', permissions: [] } 
     });
-
-    useEffect(() => { setRoles(initialRoles); }, [initialRoles]);
     
     useEffect(() => { 
         if (isFormOpen && formCardRef.current) {
@@ -106,7 +104,6 @@ export function RolesPageContent({ currentUser, initialRoles }: { currentUser: U
             await adminService.saveRole({ ...data, permissions: data.permissions || [] }, currentUser, editingRole?.id);
             toast({ title: `Rol ${editingRole ? 'actualizado' : 'creado'} con éxito.` });
             setIsFormOpen(false);
-            window.dispatchEvent(new CustomEvent('databaseUpdated'));
         } catch (error: any) {
             toast({ title: "Error al guardar rol", description: error.message, variant: 'destructive' });
         }
@@ -120,7 +117,6 @@ export function RolesPageContent({ currentUser, initialRoles }: { currentUser: U
         try {
             await adminService.deleteRole(roleId, currentUser);
             toast({ title: 'Rol eliminado.' });
-            window.dispatchEvent(new CustomEvent('databaseUpdated'));
         } catch (error: any) {
             toast({ title: 'Error al eliminar rol', description: error.message, variant: 'destructive' });
         }

@@ -63,24 +63,19 @@ function ResumenFinancieroPageComponent() {
 
 
     useEffect(() => {
-        const unsubs: (() => void)[] = [];
         setIsLoading(true);
-
-        const loadAllData = async () => {
-          const promises = [
+        const unsubs: (() => void)[] = [
             operationsService.onSalesUpdate(setAllSales),
             operationsService.onServicesUpdate(setAllServices),
             inventoryService.onItemsUpdate(setAllInventory),
             inventoryService.onServiceTypesUpdate(setServiceTypes),
             personnelService.onTechniciansUpdate(setAllTechnicians),
             personnelService.onAdminStaffUpdate(setAllAdminStaff),
-            inventoryService.onFixedExpensesUpdate(setFixedExpenses)
-          ];
-          unsubs.push(...promises);
-          setIsLoading(false);
-        }
-        
-        loadAllData();
+            inventoryService.onFixedExpensesUpdate((expenses) => {
+                setFixedExpenses(expenses);
+                setIsLoading(false); // Consider loading finished after the last subscription is active
+            })
+        ];
         
         const now = new Date();
         setDateRange({ from: startOfMonth(now), to: endOfMonth(now) });

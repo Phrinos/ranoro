@@ -29,8 +29,8 @@ type UserFormValues = z.infer<typeof userFormSchema>;
 
 export function UsuariosPageContent({ currentUser, initialUsers, initialRoles }: { currentUser: User | null, initialUsers: User[], initialRoles: AppRole[] }) {
   const { toast } = useToast();
-  const [users, setUsers] = useState<User[]>(initialUsers);
-  const [availableRoles, setAvailableRoles] = useState<AppRole[]>(initialRoles);
+  const users = initialUsers;
+  const availableRoles = initialRoles;
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -40,11 +40,6 @@ export function UsuariosPageContent({ currentUser, initialUsers, initialRoles }:
     resolver: zodResolver(userFormSchema),
     defaultValues: { name: '', email: '', phone: '', role: 'Tecnico' },
   });
-
-  useEffect(() => {
-    setUsers(initialUsers);
-    setAvailableRoles(initialRoles);
-  }, [initialUsers, initialRoles]);
   
   useEffect(() => {
     if (isFormOpen && formCardRef.current) {
@@ -102,8 +97,6 @@ export function UsuariosPageContent({ currentUser, initialUsers, initialRoles }:
         
         toast({ title: `Usuario ${isEditing ? 'actualizado' : 'creado'}` });
         setIsFormOpen(false);
-        // The parent will refetch data, causing this component to re-render
-        window.dispatchEvent(new CustomEvent('databaseUpdated'));
     } catch (error: any) {
         toast({ title: "Error al guardar", description: error.message, variant: 'destructive'});
     }
@@ -114,7 +107,6 @@ export function UsuariosPageContent({ currentUser, initialUsers, initialRoles }:
     try {
         await adminService.deleteUser(userId, currentUser);
         toast({ title: "Usuario eliminado." });
-        window.dispatchEvent(new CustomEvent('databaseUpdated'));
     } catch (error: any) {
         toast({ title: "Error al eliminar", description: error.message, variant: 'destructive'});
     }

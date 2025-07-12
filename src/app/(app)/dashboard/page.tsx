@@ -6,8 +6,8 @@ import dynamic from "next/dynamic";
 import { parseISO, isToday, isValid, isSameDay } from "date-fns";
 import { PageHeader } from "@/components/page-header";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { placeholderServiceRecords, placeholderInventory, placeholderSales, calculateSaleProfit, placeholderTechnicians, hydrateReady } from "@/lib/placeholder-data";
-import type { User, CapacityAnalysisOutput, PurchaseRecommendation } from "@/types";
+import { placeholderServiceRecords, placeholderInventory, placeholderSales, calculateSaleProfit, placeholderTechnicians, AUTH_USER_LOCALSTORAGE_KEY } from "@/lib/placeholder-data";
+import type { User, CapacityAnalysisOutput, PurchaseRecommendation, ServiceRecord, SaleReceipt, InventoryItem, Technician } from "@/types";
 import { BrainCircuit, Loader2, ShoppingCart, AlertTriangle, Printer, Wrench, DollarSign, PackageSearch, CheckCircle } from "lucide-react"; 
 import { useToast } from "@/hooks/use-toast";
 import { getPurchaseRecommendations } from '@/ai/flows/purchase-recommendation-flow';
@@ -18,6 +18,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { analyzeInventory, type InventoryRecommendation } from '@/ai/flows/inventory-analysis-flow';
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { operationsService, inventoryService, personnelService } from '@/lib/services';
 
 
 const ChartLoadingSkeleton = () => (
@@ -93,6 +94,12 @@ export default function DashboardPage() {
   const [analysisError, setAnalysisError] = useState<string | null>(null);
   const [analysisResult, setAnalysisResult] = useState<InventoryRecommendation[] | null>(null);
 
+  // States for real-time data
+  const [allServices, setAllServices] = useState<ServiceRecord[]>([]);
+  const [allSales, setAllSales] = useState<SaleReceipt[]>([]);
+  const [allInventory, setAllInventory] = useState<InventoryItem[]>([]);
+  const [allTechnicians, setAllTechnicians] = useState<Technician[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   const [kpiData, setKpiData] = useState({
     dailyRevenue: 0,
@@ -105,79 +112,90 @@ export default function DashboardPage() {
   const [isCapacityLoading, setIsCapacityLoading] = useState(true);
   const [capacityError, setCapacityError] = useState<string | null>(null);
   
+  // Real-time data subscriptions
+  useEffect(() => {
+    setIsLoading(true);
+    const unsubs = [
+      operationsService.onServicesUpdate(setAllServices),
+      operationsService.onSalesUpdate(setAllSales),
+      inventoryService.onItemsUpdate(setAllInventory),
+      personnelService.onTechniciansUpdate((techs) => {
+        setAllTechnicians(techs);
+        setIsLoading(false); // Mark as loaded after last subscription is set up
+      })
+    ];
+    return () => unsubs.forEach(unsub => unsub());
+  }, []);
+
   const calculateKpiData = useCallback(() => {
     const clientToday = new Date();
     
-    const repairingServices = placeholderServiceRecords.filter(s => s.status === 'Reparando');
-    const scheduledTodayServices = placeholderServiceRecords.filter(s => {
+    const repairingServices = allServices.filter(s => s.status === 'Reparando');
+    const scheduledTodayServices = allServices.filter(s => {
       if (s.status !== 'Agendado' || !s.serviceDate || typeof s.serviceDate !== 'string') return false;
       const serviceDay = parseISO(s.serviceDate);
       return isValid(serviceDay) && isToday(serviceDay);
     });
 
-    const salesToday = placeholderSales.filter(s => s.saleDate && isValid(parseISO(s.saleDate)) && isSameDay(parseISO(s.saleDate), clientToday));
-    const servicesCompletedToday = placeholderServiceRecords.filter(s => s.status === 'Completado' && s.deliveryDateTime && isValid(parseISO(s.deliveryDateTime)) && isSameDay(parseISO(s.deliveryDateTime), clientToday));
+    const salesToday = allSales.filter(s => s.saleDate && isValid(parseISO(s.saleDate)) && isSameDay(parseISO(s.saleDate), clientToday));
+    const servicesCompletedToday = allServices.filter(s => s.status === 'Completado' && s.deliveryDateTime && isValid(parseISO(s.deliveryDateTime)) && isSameDay(parseISO(s.deliveryDateTime), clientToday));
     
     const revenueFromSales = salesToday.reduce((sum, s) => sum + s.totalAmount, 0);
     const revenueFromServices = servicesCompletedToday.reduce((sum, s) => sum + (s.totalCost || 0), 0);
     
-    const profitFromSales = salesToday.reduce((sum, s) => sum + calculateSaleProfit(s, placeholderInventory), 0);
+    const profitFromSales = salesToday.reduce((sum, s) => sum + calculateSaleProfit(s, allInventory), 0);
     const profitFromServices = servicesCompletedToday.reduce((sum, s) => sum + (s.serviceProfit || 0), 0);
 
     setKpiData({
         dailyRevenue: revenueFromSales + revenueFromServices,
         dailyProfit: profitFromSales + profitFromServices,
         activeServices: repairingServices.length + scheduledTodayServices.length,
-        lowStockAlerts: placeholderInventory.filter(item => !item.isService && item.quantity <= item.lowStockThreshold).length
+        lowStockAlerts: allInventory.filter(item => !item.isService && item.quantity <= item.lowStockThreshold).length
     });
-  }, []);
+  }, [allServices, allSales, allInventory]);
 
 
   useEffect(() => {
-    const init = async () => {
-        await hydrateReady; // Wait for hydration to complete
-        if (typeof window !== 'undefined') {
-          const authUserString = localStorage.getItem('authUser');
-          if (authUserString) {
-            try {
-              const authUser: User = JSON.parse(authUserString);
-              setUserName(authUser.name);
-            } catch (e) {
-              console.error("Failed to parse authUser for dashboard welcome message:", e);
-              setUserName(null);
-            }
-          } else {
-             setUserName(null);
-          }
-          const stored = localStorage.getItem('workshopTicketInfo');
-          if (stored) {
-            try {
-              const info = JSON.parse(stored);
-              if (info.name) setWorkshopName(info.name);
-            } catch (e) {
-              console.error("Failed to parse workshop info", e);
-            }
-          }
+    if (!isLoading) {
+      calculateKpiData();
+    }
+    if (typeof window !== 'undefined') {
+      const authUserString = localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY);
+      if (authUserString) {
+        try {
+          const authUser: User = JSON.parse(authUserString);
+          setUserName(authUser.name);
+        } catch (e) {
+          console.error("Failed to parse authUser for dashboard welcome message:", e);
+          setUserName(null);
         }
-        calculateKpiData();
-    };
-    init();
-  }, [calculateKpiData]);
+      } else {
+          setUserName(null);
+      }
+      const stored = localStorage.getItem('workshopTicketInfo');
+      if (stored) {
+        try {
+          const info = JSON.parse(stored);
+          if (info.name) setWorkshopName(info.name);
+        } catch (e) { console.error("Failed to parse workshop info", e); }
+      }
+    }
+  }, [isLoading, calculateKpiData]);
   
   useEffect(() => {
     const runCapacityAnalysis = async () => {
-      await hydrateReady;
+      if (isLoading) return;
       setIsCapacityLoading(true);
       setCapacityError(null);
       try {
-        const servicesForToday = placeholderServiceRecords.filter(s => {
+        const servicesForToday = allServices.filter(s => {
           if (!s.serviceDate || typeof s.serviceDate !== 'string') return false;
           const serviceDay = parseISO(s.serviceDate);
           return isValid(serviceDay) && isToday(serviceDay) && s.status !== 'Completado' && s.status !== 'Cancelado';
         });
 
         if (servicesForToday.length === 0) {
-            const totalAvailable = placeholderTechnicians
+            const totalAvailable = allTechnicians
                 .filter(t => !t.isArchived)
                 .reduce((sum, t) => sum + (t.standardHoursPerDay || 8), 0);
             
@@ -193,8 +211,8 @@ export default function DashboardPage() {
 
         const result = await analyzeWorkshopCapacity({
             servicesForDay: servicesForToday.map(s => ({ description: s.description || '' })),
-            technicians: placeholderTechnicians.filter(t => !t.isArchived).map(t => ({ id: t.id, standardHoursPerDay: t.standardHoursPerDay || 8 })),
-            serviceHistory: placeholderServiceRecords
+            technicians: allTechnicians.filter(t => !t.isArchived).map(t => ({ id: t.id, standardHoursPerDay: t.standardHoursPerDay || 8 })),
+            serviceHistory: allServices
               .filter(s => s.serviceDate && typeof s.serviceDate === 'string')
               .map(s => ({
                 description: s.description || '',
@@ -210,7 +228,7 @@ export default function DashboardPage() {
       }
     };
     runCapacityAnalysis();
-  }, [toast]);
+  }, [toast, allServices, allTechnicians, isLoading]);
   
   const handleGeneratePurchaseOrder = async () => {
     setIsPurchaseLoading(true);
@@ -218,7 +236,7 @@ export default function DashboardPage() {
     setPurchaseRecommendations(null);
 
     try {
-      const servicesForToday = placeholderServiceRecords.filter(s => {
+      const servicesForToday = allServices.filter(s => {
         if (!s.serviceDate || typeof s.serviceDate !== 'string') return false;
         const serviceDay = parseISO(s.serviceDate);
         return isValid(serviceDay) && isToday(serviceDay) && s.status !== 'Completado' && s.status !== 'Cancelado';
@@ -232,10 +250,10 @@ export default function DashboardPage() {
       
       const input = {
         scheduledServices: servicesForToday.map(s => ({ id: s.id, description: s.description || '' })),
-        inventoryItems: placeholderInventory.map(i => ({ id: i.id, name: i.name, quantity: i.quantity, supplier: i.supplier })),
-        serviceHistory: placeholderServiceRecords.map(s => ({
+        inventoryItems: allInventory.map(i => ({ id: i.id, name: i.name, quantity: i.quantity, supplier: i.supplier })),
+        serviceHistory: allServices.map(s => ({
             description: s.description || '',
-            suppliesUsed: (s.serviceItems || []).flatMap(item => item.suppliesUsed || []).map(sup => ({ supplyName: sup.supplyName || placeholderInventory.find(i => i.id === sup.supplyId)?.name || 'Unknown' }))
+            suppliesUsed: (s.serviceItems || []).flatMap(item => item.suppliesUsed || []).map(sup => ({ supplyName: sup.supplyName || allInventory.find(i => i.id === sup.supplyId)?.name || 'Unknown' }))
         }))
       };
 
@@ -257,14 +275,14 @@ export default function DashboardPage() {
     setAnalysisResult(null);
 
     try {
-      const inventoryForAI = placeholderInventory.map(item => ({
+      const inventoryForAI = allInventory.map(item => ({
         id: item.id,
         name: item.name,
         quantity: item.quantity,
         lowStockThreshold: item.lowStockThreshold,
       }));
 
-      const servicesForAI = placeholderServiceRecords.map(service => ({
+      const servicesForAI = allServices.map(service => ({
         serviceDate: service.serviceDate,
         suppliesUsed: (service.serviceItems || []).flatMap(item => item.suppliesUsed || []).map(supply => ({
           supplyId: supply.supplyId,

@@ -6,7 +6,7 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { PageHeader } from '@/components/page-header';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import type { ServiceRecord, Vehicle, Technician, ServiceSubStatus } from '@/types';
+import type { ServiceRecord, Vehicle, Technician, ServiceSubStatus, ServiceTypeRecord, InventoryItem } from '@/types';
 import { ServiceDialog } from '../servicios/components/service-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Eye, ChevronLeft, ChevronRight, PlusCircle } from 'lucide-react';
@@ -98,23 +98,24 @@ export default function TableroPage() {
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [technicians, setTechnicians] = useState<Technician[]>([]);
   const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
+  const [serviceTypes, setServiceTypes] = useState<ServiceTypeRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   const [isServiceDialogOpen, setIsServiceDialogOpen] = useState(false);
   const [editingService, setEditingService] = useState<ServiceRecord | null>(null);
 
   useEffect(() => {
-    const unsubs: (() => void)[] = [];
     setIsLoading(true);
-
-    unsubs.push(operationsService.onServicesUpdate(setServices));
-    unsubs.push(inventoryService.onVehiclesUpdate(setVehicles));
-    unsubs.push(personnelService.onTechniciansUpdate(setTechnicians));
-    unsubs.push(inventoryService.onItemsUpdate((data) => {
-        setInventoryItems(data);
-        setIsLoading(false);
-    }));
-
+    const unsubs = [
+      operationsService.onServicesUpdate(setServices),
+      inventoryService.onVehiclesUpdate(setVehicles),
+      personnelService.onTechniciansUpdate(setTechnicians),
+      inventoryService.onItemsUpdate(setInventoryItems),
+      inventoryService.onServiceTypesUpdate((data) => {
+          setServiceTypes(data);
+          setIsLoading(false);
+      }),
+    ];
     return () => unsubs.forEach(unsub => unsub());
   }, []);
 
@@ -181,15 +182,15 @@ export default function TableroPage() {
     
     if (newIndex !== currentIndex) {
         const newColumnId = columnOrder[newIndex];
-        const updatedService = { ...service };
+        const updatedService: Partial<ServiceRecord> = {};
         
         if (newColumnId === 'Agendado') {
             updatedService.status = 'Agendado';
-            delete updatedService.subStatus;
+            updatedService.subStatus = undefined;
         } else {
             updatedService.status = 'En Taller';
             updatedService.subStatus = newColumnId as ServiceSubStatus;
-            if (newColumnId === 'Completado' && !updatedService.deliveryDateTime) {
+            if (newColumnId === 'Completado' && !service.deliveryDateTime) {
                 updatedService.deliveryDateTime = new Date().toISOString();
             }
         }
@@ -268,6 +269,7 @@ export default function TableroPage() {
           vehicles={vehicles}
           technicians={technicians}
           inventoryItems={inventoryItems}
+          serviceTypes={serviceTypes}
           mode="service"
           onSave={handleSaveService}
         />
