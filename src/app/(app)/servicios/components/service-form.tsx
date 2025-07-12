@@ -35,6 +35,7 @@ import { db } from '@/lib/firebaseClient.js';
 import { doc } from 'firebase/firestore';
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { nanoid } from 'nanoid';
+import { operationsService } from '@/lib/services';
 
 
 const supplySchema = z.object({
@@ -157,8 +158,6 @@ interface ServiceFormProps {
 
 const IVA_RATE = 0.16;
 
-const generateUniqueId = () => (Date.now().toString(36) + Math.random().toString(36).slice(2, 9)).toUpperCase();
-
 export function ServiceForm({
   initialDataService,
   initialDataQuote,
@@ -278,12 +277,12 @@ export function ServiceForm({
     
     let serviceItemsData = data?.serviceItems || [];
     if (serviceItemsData.length === 0 && !isReadOnly) {
-        serviceItemsData = [{ id: `item_${Date.now()}`, name: '', price: undefined, suppliesUsed: [] }];
+        serviceItemsData = [{ id: nanoid(), name: '', price: undefined, suppliesUsed: [] }];
     }
 
     form.reset({
         id: data?.id,
-        status: data?.status || (mode === 'quote' ? 'Cotizacion' : undefined),
+        status: data?.status || 'Cotizacion',
         subStatus: (data as ServiceRecord)?.subStatus || undefined,
         publicId: (data as any)?.publicId, vehicleId: data?.vehicleId ? String(data.vehicleId) : undefined,
         vehicleLicensePlateSearch: data?.vehicleIdentifier || "",
@@ -396,32 +395,35 @@ export function ServiceForm({
     }
     
     // Sanitize data before saving
-    const dataToSave: Partial<ServiceFormValues> = { ...values };
-    Object.keys(dataToSave).forEach(keyStr => {
-        const key = keyStr as keyof typeof dataToSave;
-        if (dataToSave[key] === undefined || (typeof dataToSave[key] === 'string' && dataToSave[key].trim() === '')) {
-            (dataToSave as any)[key] = null;
-        }
-    });
+    let dataToSave: Partial<ServiceFormValues> = { ...values };
     
+    // Convert undefined/empty strings to null for Firestore compatibility
+    Object.keys(dataToSave).forEach(keyStr => {
+      const key = keyStr as keyof typeof dataToSave;
+      if (dataToSave[key] === undefined || dataToSave[key] === '') {
+          (dataToSave as any)[key] = null;
+      }
+    });
+
     const finalData = {
         ...dataToSave,
-        id: dataToSave.id,
-        publicId: dataToSave.publicId || `s_${generateUniqueId().toLowerCase()}`,
+        id: values.id,
+        publicId: values.publicId || `s_${nanoid(12).toLowerCase()}`,
         vehicleId: getValues('vehicleId')!,
-        description: (dataToSave.serviceItems || []).map(item => item.name).join(', ') || 'Servicio',
-        technicianId: dataToSave.technicianId || null,
-        status: dataToSave.status || 'Agendado',
-        mileage: dataToSave.mileage ?? null,
+        description: (values.serviceItems || []).map(item => item.name).join(', ') || 'Servicio',
+        technicianId: values.technicianId || null,
+        status: values.status,
+        serviceType: values.serviceType,
+        mileage: values.mileage ?? null,
         totalCost,
         totalSuppliesWorkshopCost,
         serviceProfit,
-        serviceDate: dataToSave.serviceDate ? dataToSave.serviceDate.toISOString() : null,
-        quoteDate: dataToSave.quoteDate ? dataToSave.quoteDate.toISOString() : null, 
-        receptionDateTime: dataToSave.receptionDateTime ? dataToSave.receptionDateTime.toISOString() : null,
-        deliveryDateTime: dataToSave.deliveryDateTime ? dataToSave.deliveryDateTime.toISOString() : null,
+        serviceDate: values.serviceDate ? values.serviceDate.toISOString() : null,
+        quoteDate: values.quoteDate ? values.quoteDate.toISOString() : null, 
+        receptionDateTime: values.receptionDateTime ? values.receptionDateTime.toISOString() : null,
+        deliveryDateTime: values.deliveryDateTime ? values.deliveryDateTime.toISOString() : null,
         vehicleIdentifier: getValues('vehicleLicensePlateSearch') || 'N/A',
-        technicianName: technicians.find(t => t.id === dataToSave.technicianId)?.name || null,
+        technicianName: technicians.find(t => t.id === values.technicianId)?.name || null,
         subTotal: totalCost / (1 + IVA_RATE),
         taxAmount: totalCost - (totalCost / (1 + IVA_RATE)),
         serviceAdvisorId: freshUserRef.current.id,
