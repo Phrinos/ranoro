@@ -282,12 +282,12 @@ export function ServiceForm({
 
     form.reset({
         id: data?.id || `SRV-${generateUniqueId()}`,
-        status: data?.status || undefined, // Start with undefined status for new records
+        status: data?.status || (mode === 'quote' ? 'Cotizacion' : undefined), // Default to Cotizacion in quote mode
         subStatus: (data as ServiceRecord)?.subStatus || undefined,
         publicId: (data as any)?.publicId, vehicleId: data?.vehicleId ? String(data.vehicleId) : undefined,
         vehicleLicensePlateSearch: data?.vehicleIdentifier || "",
-        serviceDate: data?.serviceDate ? parseDate(data.serviceDate) : undefined,
-        quoteDate: data?.quoteDate ? parseDate(data.quoteDate) : new Date(),
+        serviceDate: data?.serviceDate ? parseDate(data.serviceDate) : undefined, // Keep it undefined for new
+        quoteDate: data?.quoteDate ? parseDate(data.quoteDate) : (mode === 'quote' ? new Date() : undefined),
         receptionDateTime: isValid(parseDate((data as ServiceRecord)?.receptionDateTime)) ? parseDate((data as ServiceRecord)?.receptionDateTime) : undefined,
         deliveryDateTime: isValid(parseDate((data as ServiceRecord)?.deliveryDateTime)) ? parseDate((data as ServiceRecord)?.deliveryDateTime) : undefined,
         mileage: data?.mileage || undefined,
@@ -396,10 +396,10 @@ export function ServiceForm({
     
     // Sanitize data before saving
     const dataToSave = { ...values };
-    Object.keys(dataToSave).forEach(key => {
-        const typedKey = key as keyof ServiceFormValues;
-        if (dataToSave[typedKey] === undefined || dataToSave[typedKey] === '') {
-            (dataToSave as any)[typedKey] = null;
+    Object.keys(dataToSave).forEach(keyStr => {
+        const key = keyStr as keyof typeof dataToSave;
+        if (dataToSave[key] === undefined || dataToSave[key] === '') {
+            (dataToSave as any)[key] = null;
         }
     });
 
@@ -420,7 +420,7 @@ export function ServiceForm({
         totalCost,
         totalSuppliesWorkshopCost,
         serviceProfit,
-        serviceDate: dataToSave.serviceDate ? dataToSave.serviceDate.toISOString() : new Date().toISOString(),
+        serviceDate: dataToSave.serviceDate ? dataToSave.serviceDate.toISOString() : null,
         quoteDate: dataToSave.quoteDate ? dataToSave.quoteDate.toISOString() : null, 
         receptionDateTime: dataToSave.receptionDateTime ? dataToSave.receptionDateTime.toISOString() : null,
         deliveryDateTime: dataToSave.deliveryDateTime ? dataToSave.deliveryDateTime.toISOString() : null,
@@ -431,10 +431,10 @@ export function ServiceForm({
         serviceAdvisorId: freshUserRef.current.id,
         serviceAdvisorName: freshUserRef.current.name,
         serviceAdvisorSignatureDataUrl: freshUserRef.current.signatureDataUrl,
-        workshopInfo: (workshopInfo && Object.keys(workshopInfo).length > 0) ? workshopInfo as WorkshopInfo : undefined,
+        workshopInfo: (workshopInfo && Object.keys(workshopInfo).length > 0) ? workshopInfo as WorkshopInfo : null,
     };
     
-    if (db) {
+    if (db && finalData.publicId) {
         await savePublicDocument('service', finalData as ServiceRecord, localVehicles.find(v => v.id === getValues('vehicleId')) || null, workshopInfo);
     }
     await onSubmit(finalData as ServiceRecord);
