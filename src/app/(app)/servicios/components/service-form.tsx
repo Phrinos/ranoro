@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -26,7 +25,7 @@ import { SafetyChecklist } from './SafetyChecklist';
 import { UnifiedPreviewDialog } from '@/components/shared/unified-preview-dialog';
 import { VehicleSelectionCard } from './VehicleSelectionCard';
 import { ReceptionAndDelivery } from './ReceptionAndDelivery';
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription } from '../ui/dialog';
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import Image from "next/legacy/image";
 import { Download } from "lucide-react";
 import { ServiceDetailsCard } from "./ServiceDetailsCard";
@@ -398,7 +397,7 @@ export function ServiceForm({
         technicianId: values.technicianId || '',
         status: values.status || 'Agendado',
         totalCost: totalCost, 
-        totalSuppliesCost: totalSuppliesWorkshopCost, 
+        totalSuppliesWorkshopCost: totalSuppliesWorkshopCost, 
         serviceProfit,
         serviceDate: values.serviceDate ? values.serviceDate.toISOString() : new Date().toISOString(),
         quoteDate: values.quoteDate?.toISOString(), 
