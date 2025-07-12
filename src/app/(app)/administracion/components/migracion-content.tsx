@@ -188,7 +188,30 @@ export function MigracionPageContent() {
                         </div>
                     )}
                      {(analysisResult.type === 'products') && analysisResult.products.length > 0 && (
-                        <p>Vista previa para productos aún no implementada.</p>
+                        <div className="rounded-md border h-64 overflow-auto">
+                           <Table>
+                                <TableHeader className="sticky top-0 bg-muted">
+                                    <TableRow>
+                                        <TableHead>SKU</TableHead>
+                                        <TableHead>Nombre</TableHead>
+                                        <TableHead>Cantidad</TableHead>
+                                        <TableHead>Precio Compra</TableHead>
+                                        <TableHead>Precio Venta</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {analysisResult.products.map((p, i) => (
+                                        <TableRow key={i}>
+                                            <TableCell>{p.sku || 'N/A'}</TableCell>
+                                            <TableCell>{p.name}</TableCell>
+                                            <TableCell>{p.quantity}</TableCell>
+                                            <TableCell>{p.unitPrice}</TableCell>
+                                            <TableCell>{p.sellingPrice}</TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        </div>
                     )}
                     <div className="mt-4 flex justify-end">
                         <Button onClick={handleConfirmAndSave} disabled={isSaving}>
