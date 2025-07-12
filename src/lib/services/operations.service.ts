@@ -73,7 +73,8 @@ const updateService = async (serviceId: string, data: Partial<ServiceRecord>): P
 };
 
 const addService = async (data: Partial<ServiceRecord>): Promise<ServiceRecord> => {
-    // Ensure ID is not passed to the save function for creation
+    // The saveService function handles both creation and updates now.
+    // We just ensure the ID is not present for creation.
     const { id, ...serviceData } = data;
     return saveService(serviceData);
 };
@@ -313,6 +314,13 @@ const addOwnerWithdrawal = async (data: Omit<OwnerWithdrawal, 'id' | 'date'>): P
     return { id: docRef.id, ...newWithdrawal };
 };
 
+const getServicesForVehicle = async (vehicleId: string): Promise<ServiceRecord[]> => {
+  if (!db) return [];
+  const q = query(collection(db, "serviceRecords"), where("vehicleId", "==", vehicleId));
+  const querySnapshot = await getDocs(q);
+  return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ServiceRecord));
+};
+
 export const operationsService = {
     onServicesUpdate,
     onServicesUpdatePromise,
@@ -322,6 +330,7 @@ export const operationsService = {
     cancelService,
     completeService,
     saveMigratedServices,
+    getServicesForVehicle,
     onSalesUpdate,
     registerSale,
     onCashTransactionsUpdate,

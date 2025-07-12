@@ -399,18 +399,19 @@ export function ServiceForm({
     
     // Sanitize data before saving
     let dataToSave: Partial<ServiceFormValues> = { ...values };
-    
-    // Convert undefined/empty strings to null for Firestore compatibility
+
+    // Remove any keys with undefined or empty string values, except for required ones
     Object.keys(dataToSave).forEach(keyStr => {
-      const key = keyStr as keyof typeof dataToSave;
-      if (dataToSave[key] === undefined || dataToSave[key] === '') {
+        const key = keyStr as keyof typeof dataToSave;
+        const value = dataToSave[key];
+        if (value === undefined || value === '') {
           (dataToSave as any)[key] = null;
-      }
+        }
     });
 
     const finalData = {
         ...dataToSave,
-        id: values.id || nanoid(),
+        id: values.id,
         publicId: values.publicId || `s_${nanoid(12).toLowerCase()}`,
         vehicleId: getValues('vehicleId')!,
         description: (values.serviceItems || []).map(item => item.name).join(', ') || 'Servicio',
@@ -432,13 +433,13 @@ export function ServiceForm({
         serviceAdvisorName: freshUserRef.current.name,
         serviceAdvisorSignatureDataUrl: freshUserRef.current.signatureDataUrl,
         workshopInfo: (workshopInfo && Object.keys(workshopInfo).length > 0) ? workshopInfo as WorkshopInfo : null,
+        mileage: dataToSave.mileage || null
     };
-    
-    // Remove subStatus if status is not 'En Taller'
-    if (finalData.status !== 'En Taller') {
-      delete (finalData as any).subStatus;
-    }
 
+    if (finalData.status !== 'En Taller') {
+      (finalData as any).subStatus = null;
+    }
+    
     if (db && finalData.publicId) {
         await savePublicDocument('service', finalData as ServiceRecord, localVehicles.find(v => v.id === getValues('vehicleId')) || null, workshopInfo);
     }
@@ -634,4 +635,5 @@ export function ServiceForm({
     </>
   );
 }
+
 
