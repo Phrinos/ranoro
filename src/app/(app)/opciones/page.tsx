@@ -21,7 +21,7 @@ import {
 import { onAuthStateChanged, updatePassword, reauthenticateWithCredential, EmailAuthProvider } from 'firebase/auth';
 import { auth, storage, db } from '@/lib/firebaseClient.js';
 import { ref, uploadString, getDownloadURL } from 'firebase/storage';
-import { AUTH_USER_LOCALSTORAGE_KEY, placeholderAppRoles, defaultSuperAdmin } from '@/lib/placeholder-data';
+import { AUTH_USER_LOCALSTORAGE_KEY, placeholderAppRoles, defaultSuperAdmin, persistToFirestore } from '@/lib/placeholder-data';
 import { adminService, inventoryService } from '@/lib/services';
 import { SignatureDialog } from '@/app/(app)/servicios/components/signature-dialog';
 import Image from "next/legacy/image";
@@ -534,13 +534,11 @@ function OpcionesPageComponent() {
     }, []);
 
     const userPermissions = useMemo(() => {
-        if (!currentUser || roles.length === 0) {
-            // If current user is the default super admin, give all permissions
-            if (currentUser?.id === defaultSuperAdmin.id) {
-                const superAdminRole = placeholderAppRoles.find(r => r.id === 'superadmin_role');
-                return new Set(superAdminRole?.permissions || []);
-            }
-            return new Set<string>();
+        if (!currentUser) return new Set<string>();
+        // If roles haven't loaded yet, but we are the default superadmin, grant all permissions.
+        if (currentUser.id === defaultSuperAdmin.id && roles.length === 0) {
+            const superAdminRole = placeholderAppRoles.find(r => r.name === 'Superadministrador');
+            return new Set(superAdminRole?.permissions || []);
         }
         const userRole = roles.find(r => r && r.name === currentUser.role);
         return new Set(userRole?.permissions || []);
