@@ -153,7 +153,6 @@ export function VehicleSelectionCard({
                                 field.onChange(e.target.value.toUpperCase());
                             }}
                             disabled={isReadOnly}
-                            className="uppercase"
                             onKeyDown={handleVehiclePlateKeyDown}
                         />
                         </FormControl>
