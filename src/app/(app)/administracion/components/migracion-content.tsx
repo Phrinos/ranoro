@@ -271,19 +271,15 @@ export function MigracionPageContent() {
         </div>
         <div className="lg:col-span-2">
             <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="w-full">
-                <TabsList className="grid w-full grid-cols-3">
+                <TabsList className="grid w-full grid-cols-2">
                     <TabsTrigger value="vehiculos"><Car className="mr-2 h-4 w-4"/>Vehículos</TabsTrigger>
                     <TabsTrigger value="productos"><Package className="mr-2 h-4 w-4"/>Productos</TabsTrigger>
-                    <TabsTrigger value="ia"><BrainCircuit className="mr-2 h-4 w-4"/>Análisis IA</TabsTrigger>
                 </TabsList>
                 <TabsContent value="vehiculos">
                     <Card><CardHeader><CardTitle>Migración de Vehículos</CardTitle><CardDescription>Usa esta opción si tu hoja contiene solo información de vehículos (nombre, tel, marca, modelo, año, y **placa**).</CardDescription></CardHeader><CardContent><Button type="button" className="w-full" onClick={(e) => handleAnalyze(e as any)} disabled={!fileContent || isAnalyzing}>{isAnalyzing ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <BrainCircuit className="mr-2 h-4 w-4"/>} Analizar Datos de Vehículos</Button></CardContent></Card>
                 </TabsContent>
                 <TabsContent value="productos">
                     <Card><CardHeader><CardTitle>Migración de Productos</CardTitle><CardDescription>Usa esta opción si tu hoja contiene solo información de productos (código, nombre, existencias, precios).</CardDescription></CardHeader><CardContent><Button type="button" className="w-full" onClick={(e) => handleAnalyze(e as any)} disabled={!fileContent || isAnalyzing}>{isAnalyzing ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <BrainCircuit className="mr-2 h-4 w-4"/>} Analizar Datos de Productos</Button></CardContent></Card>
-                </TabsContent>
-                <TabsContent value="ia">
-                    <Card><CardHeader><CardTitle>Migración con IA</CardTitle><CardDescription>La IA analizará la hoja para extraer vehículos (**incluyendo placas**) e historial de servicios de forma automática.</CardDescription></CardHeader><CardContent><Button type="button" className="w-full" onClick={(e) => handleAnalyze(e as any)} disabled={!fileContent || isAnalyzing}>{isAnalyzing ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <BrainCircuit className="mr-2 h-4 w-4"/>} Analizar con IA</Button></CardContent></Card>
                 </TabsContent>
             </Tabs>
              
