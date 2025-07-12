@@ -9,10 +9,11 @@ import type { ServiceRecord, Vehicle, Technician, InventoryItem, QuoteRecord, Se
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
-import { inventoryService, personnelService } from '@/lib/services';
+import { inventoryService, personnelService, operationsService } from '@/lib/services';
 import { addDoc, collection } from 'firebase/firestore';
 import { db } from '@/lib/firebaseClient';
 import type { VehicleFormValues } from '../../vehiculos/components/vehicle-form';
+
 
 type DialogStep = 'form' | 'closed';
 
@@ -27,6 +28,7 @@ export default function NuevoServicioPage() {
   const [isLoading, setIsLoading] = useState(true);
 
   const [dialogStep, setDialogStep] = useState<DialogStep>('form');
+  const [redirectPath, setRedirectPath] = useState('/tablero'); // Default redirect
   
   useEffect(() => {
     const loadData = async () => {
@@ -64,9 +66,9 @@ export default function NuevoServicioPage() {
 
   useEffect(() => {
     if (dialogStep === 'closed') {
-      router.push('/servicios/agenda'); // Redirect to agenda list
+      router.push(redirectPath); 
     }
-  }, [dialogStep, router]);
+  }, [dialogStep, router, redirectPath]);
   
   const handleSaveComplete = async (data: ServiceRecord | QuoteRecord) => {
     if (!db) return;
@@ -74,9 +76,21 @@ export default function NuevoServicioPage() {
       const docRef = await addDoc(collection(db, "serviceRecords"), data);
       toast({
         title: "Registro Creado",
-        description: `Se ha creado la cotización/servicio #${docRef.id}.`
+        description: `Se ha creado el registro #${docRef.id}.`
       });
-      setDialogStep('closed'); // Close and redirect after saving
+
+      // Set redirect path based on status
+      if (data.status === 'Cotizacion') {
+        setRedirectPath('/cotizaciones/historial');
+      } else if (data.status === 'Agendado') {
+        setRedirectPath('/servicios/agenda');
+      } else if (data.status === 'En Taller') {
+        setRedirectPath('/tablero');
+      } else {
+        setRedirectPath('/servicios/historial');
+      }
+
+      setDialogStep('closed'); // Trigger redirect after saving
     } catch (e) {
       console.error("Error creating record: ", e);
       toast({ title: 'Error al Guardar', variant: 'destructive' });
@@ -86,6 +100,7 @@ export default function NuevoServicioPage() {
 
   const handleFormDialogClose = () => { 
      if (dialogStep === 'form') { 
+      setRedirectPath('/tablero'); // If closed without saving, go to dashboard
       setDialogStep('closed');
     }
   };
@@ -103,12 +118,10 @@ export default function NuevoServicioPage() {
   };
 
   if (isLoading) {
-    return (
-        <div className="flex h-64 w-full items-center justify-center">
+      return <div className="flex h-64 w-full items-center justify-center">
             <Loader2 className="h-8 w-8 animate-spin" />
             <span className="ml-3 text-lg">Cargando datos...</span>
-        </div>
-    );
+        </div>;
   }
 
   return (

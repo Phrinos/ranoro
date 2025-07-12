@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { usePathname } from 'next/navigation';
@@ -86,7 +87,7 @@ const BASE_NAV_STRUCTURE: ReadonlyArray<Omit<NavigationEntry, 'isActive'>> = [
   { 
     label: 'Servicios', 
     path: '/servicios/historial', 
-    icon: History, 
+    icon: Wrench, 
     groupTag: "Mi Taller",
     permissions: ['services:view_history']
   },
