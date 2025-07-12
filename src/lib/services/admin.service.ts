@@ -8,6 +8,7 @@ import {
   updateDoc,
   deleteDoc,
   serverTimestamp,
+  getDoc,
 } from 'firebase/firestore';
 import { db } from '../firebaseClient';
 import type { User, AppRole, AuditLog } from "@/types";
@@ -49,28 +50,41 @@ const getAuditLogs = async (): Promise<AuditLog[]> => {
 
 const saveUser = async (user: User, adminUser: User): Promise<User> => {
     if (!db) throw new Error("Database not initialized.");
-    let id = user.id;
-    const { id: _, ...userData } = user;
-    const isEditing = !!id;
+    
+    const isEditing = !!user.id;
+    let userId = user.id;
+
+    // Destructure to separate id and password from the data to be saved
+    const { id, password, ...userData } = user;
+    
     const description = `Se ${isEditing ? 'actualizó el perfil del' : 'creó el'} usuario "${user.name}" (Email: ${user.email}).`;
 
     if (isEditing) {
-        await updateDoc(doc(db, 'users', id), userData);
+        if(!userId) throw new Error("User ID is missing for an update operation.");
+        const userRef = doc(db, 'users', userId);
+        await updateDoc(userRef, userData);
     } else {
-        const newUserRef = await addDoc(collection(db, 'users'), userData);
-        id = newUserRef.id;
+        // For creation, add createdAt timestamp
+        const newUserRef = await addDoc(collection(db, 'users'), { ...userData, createdAt: new Date().toISOString() });
+        userId = newUserRef.id;
     }
     
-    await logAudit(isEditing ? 'Editar' : 'Crear', description, { entityType: 'Usuario', entityId: id, userId: adminUser.id, userName: adminUser.name });
-    return { id, ...userData };
+    await logAudit(isEditing ? 'Editar' : 'Crear', description, { entityType: 'Usuario', entityId: userId, userId: adminUser.id, userName: adminUser.name });
+    
+    // Return the full user object including the ID
+    return { id: userId, ...userData };
 };
+
 
 const deleteUser = async (userId: string, adminUser: User): Promise<void> => {
     if (!db) throw new Error("Database not initialized.");
-    const userDoc = doc(db, 'users', userId);
-    // You might want to fetch the user to log their name before deletion
-    await deleteDoc(userDoc);
-    await logAudit('Eliminar', `Eliminó al usuario con ID "${userId}".`, { entityType: 'Usuario', entityId: userId, userId: adminUser.id, userName: adminUser.name });
+    const userDocRef = doc(db, 'users', userId);
+    
+    const userDoc = await getDoc(userDocRef);
+    const userName = userDoc.exists() ? userDoc.data().name : `ID ${userId}`;
+
+    await deleteDoc(userDocRef);
+    await logAudit('Eliminar', `Eliminó al usuario "${userName}".`, { entityType: 'Usuario', entityId: userId, userId: adminUser.id, userName: adminUser.name });
 };
 
 const saveRole = async (role: AppRole, adminUser: User): Promise<AppRole> => {
