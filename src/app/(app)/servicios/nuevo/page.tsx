@@ -69,39 +69,34 @@ export default function NuevoServicioPage() {
   }, [dialogStep, router, redirectPath]);
   
   const handleSaveComplete = async (data: ServiceRecord | QuoteRecord) => {
-    try {
-      const docId = await operationsService.addService(data);
-      toast({
-        title: "Registro Creado",
-        description: `Se ha creado el registro #${docId}.`
-      });
+    // The dialog now handles the save logic. This function primarily handles the redirect.
+    toast({
+      title: "Registro Creado",
+      description: `Se ha creado el registro #${data.id}.`
+    });
 
-      switch (data.status) {
-        case 'Cotizacion':
-          setRedirectPath('/cotizaciones/historial');
-          break;
-        case 'Agendado':
-          setRedirectPath('/servicios/agenda');
-          break;
-        case 'En Taller':
-        case 'Entregado':
-          setRedirectPath('/tablero');
-          break;
-        default:
-          setRedirectPath('/tablero');
-      }
-
-      setDialogStep('closed');
-    } catch (e) {
-      console.error("Error creating record: ", e);
-      toast({ title: 'Error al Guardar', description: 'No se pudo crear el registro.', variant: 'destructive' });
+    switch (data.status) {
+      case 'Cotizacion':
+        setRedirectPath('/cotizaciones/historial');
+        break;
+      case 'Agendado':
+        setRedirectPath('/servicios/agenda');
+        break;
+      case 'En Taller':
+      case 'Entregado':
+        setRedirectPath('/servicios/historial');
+        break;
+      default:
+        setRedirectPath('/dashboard');
     }
+
+    setDialogStep('closed');
   };
 
 
   const handleFormDialogClose = () => { 
      if (dialogStep === 'form') { 
-      setRedirectPath('/tablero'); 
+      setRedirectPath('/dashboard'); 
       setDialogStep('closed');
     }
   };

@@ -1,4 +1,5 @@
 
+
 import {
   collection,
   onSnapshot,
@@ -40,6 +41,13 @@ const onServicesUpdatePromise = async (): Promise<ServiceRecord[]> => {
     const snapshot = await getDocs(collection(db, "serviceRecords"));
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ServiceRecord));
 }
+
+const addService = async (data: Partial<ServiceRecord>): Promise<string> => {
+    if (!db) throw new Error("Database not initialized.");
+    const docRef = await addDoc(collection(db, 'serviceRecords'), data);
+    return docRef.id;
+};
+
 
 const updateService = async (serviceId: string, data: Partial<ServiceRecord>): Promise<ServiceRecord> => {
     if(!db) throw new Error("Database not connected");
@@ -288,6 +296,7 @@ const addOwnerWithdrawal = async (data: Omit<OwnerWithdrawal, 'id' | 'date'>): P
 export const operationsService = {
     onServicesUpdate,
     onServicesUpdatePromise,
+    addService,
     updateService,
     cancelService,
     completeService,
