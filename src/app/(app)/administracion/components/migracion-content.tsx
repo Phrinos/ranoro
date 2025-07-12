@@ -4,15 +4,13 @@
 import React, { useState, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Car, Package, BrainCircuit, Loader2, CheckCircle, Database, Wrench } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Car, Package, BrainCircuit, Loader2, CheckCircle, Database, Wrench, Briefcase } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import type { ExtractedVehicleForMigration } from '@/ai/flows/vehicle-migration-flow';
-import type { ExtractedProduct } from '@/ai/flows/product-migration-flow';
-import type { ExtractedService } from '@/ai/flows/service-migration-flow';
-import { migrateVehicles } from '@/ai/flows/vehicle-migration-flow';
-import { migrateProducts } from '@/ai/flows/product-migration-flow';
-import { migrateServices } from '@/ai/flows/service-migration-flow';
+import { migrateVehicles, type ExtractedVehicleForMigration } from '@/ai/flows/vehicle-migration-flow';
+import { migrateProducts, type ExtractedProduct } from '@/ai/flows/product-migration-flow';
+import { migrateServices, type ExtractedService } from '@/ai/flows/service-migration-flow';
+import { migrateData, type MigrateDataOutput } from '@/ai/flows/data-migration-flow';
 import { useToast } from '@/hooks/use-toast';
 import { inventoryService, operationsService } from '@/lib/services';
 import type { VehicleFormValues } from '@/app/(app)/vehiculos/components/vehicle-form';
@@ -21,14 +19,15 @@ import { format, parse, isValid } from 'date-fns';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 
-type AnalysisResult = | { type: 'vehicles'; vehicles: ExtractedVehicleForMigration[]; } | { type: 'products'; products: ExtractedProduct[]; } | { type: 'services'; services: ExtractedService[]; };
+type MigrationType = 'operaciones' | 'vehiculos' | 'productos' | 'servicios';
+type AnalysisResult = MigrateDataOutput & { type: MigrationType };
 
 export function MigracionPageContent() {
     const [pastedText, setPastedText] = useState<string>('');
     const [isAnalyzing, setIsAnalyzing] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
-    const [activeTab, setActiveTab] = useState<'vehiculos' | 'productos' | 'servicios'>('vehiculos');
+    const [migrationType, setMigrationType] = useState<MigrationType>('operaciones');
     
     const { toast } = useToast();
     
@@ -49,15 +48,18 @@ export function MigracionPageContent() {
 
         try {
             let result;
-            if (activeTab === 'vehiculos') {
+            if (migrationType === 'operaciones') {
+                const rawResult = await migrateData({ csvContent: pastedText });
+                result = { ...rawResult, type: 'operaciones' as const };
+            } else if (migrationType === 'vehiculos') {
                 const rawResult = await migrateVehicles({ csvContent: pastedText });
-                result = { ...rawResult, type: 'vehicles' as const };
-            } else if (activeTab === 'productos') {
+                result = { ...rawResult, vehicles: rawResult.vehicles, services: [], type: 'vehiculos' as const };
+            } else if (migrationType === 'productos') {
                 const rawResult = await migrateProducts({ csvContent: pastedText });
-                result = { ...rawResult, type: 'products' as const };
+                result = { ...rawResult, products: rawResult.products, vehicles: [], services: [], type: 'productos' as const };
             } else { // servicios
                 const rawResult = await migrateServices({ csvContent: pastedText });
-                result = { ...rawResult, type: 'services' as const };
+                result = { ...rawResult, vehicles: [], services: rawResult.services, type: 'servicios' as const };
             }
             setAnalysisResult(result);
             toast({ title: "¡Análisis Completo!", description: "Revisa los datos extraídos por la IA antes de guardarlos." });
@@ -79,7 +81,19 @@ export function MigracionPageContent() {
         let itemsAdded = 0;
         let entityType = '';
         try {
-            if (analysisResult.type === 'vehicles') {
+            if (analysisResult.type === 'operaciones') {
+                entityType = 'Operaciones';
+                if(analysisResult.vehicles && analysisResult.vehicles.length > 0) {
+                     for (const vehicle of analysisResult.vehicles) {
+                        await inventoryService.addVehicle(vehicle as unknown as VehicleFormValues);
+                        itemsAdded++;
+                    }
+                }
+                if(analysisResult.services && analysisResult.services.length > 0) {
+                    await operationsService.saveMigratedServices(analysisResult.services);
+                    itemsAdded += analysisResult.services.length;
+                }
+            } else if (analysisResult.type === 'vehiculos') {
                 entityType = 'Vehículos';
                 if (analysisResult.vehicles && analysisResult.vehicles.length > 0) {
                     for (const vehicle of analysisResult.vehicles) {
@@ -87,7 +101,7 @@ export function MigracionPageContent() {
                         itemsAdded++;
                     }
                 }
-            } else if (analysisResult.type === 'products') {
+            } else if (analysisResult.type === 'productos' && analysisResult.products) {
                 entityType = 'Productos';
                 if (analysisResult.products && analysisResult.products.length > 0) {
                     for (const product of analysisResult.products) {
@@ -95,14 +109,14 @@ export function MigracionPageContent() {
                         itemsAdded++;
                     }
                 }
-            } else if (analysisResult.type === 'services') {
+            } else if (analysisResult.type === 'servicios') {
                 entityType = 'Servicios';
                  if (analysisResult.services && analysisResult.services.length > 0) {
                     await operationsService.saveMigratedServices(analysisResult.services);
                     itemsAdded = analysisResult.services.length;
                  }
             }
-            toast({ title: "¡Migración Exitosa!", description: `Se guardaron ${itemsAdded} ${entityType.toLowerCase()} en la base de datos.` });
+            toast({ title: "¡Migración Exitosa!", description: `Se guardaron ${itemsAdded} registros en la base de datos.` });
             setAnalysisResult(null);
             setPastedText('');
         } catch(e) {
@@ -117,9 +131,10 @@ export function MigracionPageContent() {
         if (!analysisResult) return null;
         
         let summaryText = '';
-        if (analysisResult.type === 'vehicles') summaryText = `Se encontraron ${analysisResult.vehicles.length} vehículos.`;
-        if (analysisResult.type === 'products') summaryText = `Se encontraron ${analysisResult.products.length} productos.`;
-        if (analysisResult.type === 'services') summaryText = `Se encontraron ${analysisResult.services.length} servicios.`;
+        if(analysisResult.type === 'operaciones') summaryText = `Se encontraron ${analysisResult.vehicles.length} vehículos y ${analysisResult.services.length} servicios.`;
+        if (analysisResult.type === 'vehiculos') summaryText = `Se encontraron ${analysisResult.vehicles.length} vehículos.`;
+        if (analysisResult.type === 'productos') summaryText = `Se encontraron ${analysisResult.products.length} productos.`;
+        if (analysisResult.type === 'servicios') summaryText = `Se encontraron ${analysisResult.services.length} servicios.`;
         
         const renderDate = (dateString: string) => {
             const possibleFormats = ['M/d/yy', 'MM/dd/yy', 'M-d-yy', 'MM-dd-yy', 'yyyy-MM-dd'];
@@ -129,6 +144,10 @@ export function MigracionPageContent() {
             }
             return dateString; // fallback
         }
+        
+        const hasVehicles = analysisResult.vehicles && analysisResult.vehicles.length > 0;
+        const hasServices = analysisResult.services && analysisResult.services.length > 0;
+        const hasProducts = analysisResult.products && analysisResult.products.length > 0;
 
         return (
              <Card className="mt-6">
@@ -137,19 +156,25 @@ export function MigracionPageContent() {
                     <CardDescription>{summaryText} Revisa los datos a continuación y confirma para guardar.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                    {analysisResult.type === 'vehicles' && analysisResult.vehicles.length > 0 && (
-                        <div className="rounded-md border h-64 overflow-auto">
-                            <Table><TableHeader className="sticky top-0 bg-muted"><TableRow><TableHead>Placa</TableHead><TableHead>Marca</TableHead><TableHead>Modelo</TableHead><TableHead>Año</TableHead><TableHead>Propietario</TableHead></TableRow></TableHeader><TableBody>{analysisResult.vehicles.map((v, i) => ( <TableRow key={i}><TableCell className="font-semibold">{v.licensePlate || 'N/A'}</TableCell><TableCell>{v.make}</TableCell><TableCell>{v.model}</TableCell><TableCell>{v.year}</TableCell><TableCell>{v.ownerName}</TableCell></TableRow> ))}</TableBody></Table>
+                    {hasVehicles && (
+                        <div className="mb-4">
+                            <h3 className="font-semibold mb-2">Vehículos Detectados</h3>
+                            <div className="rounded-md border h-48 overflow-auto">
+                                <Table><TableHeader className="sticky top-0 bg-muted"><TableRow><TableHead>Placa</TableHead><TableHead>Marca</TableHead><TableHead>Modelo</TableHead><TableHead>Año</TableHead><TableHead>Propietario</TableHead></TableRow></TableHeader><TableBody>{analysisResult.vehicles.map((v, i) => ( <TableRow key={i}><TableCell className="font-semibold">{v.licensePlate || 'N/A'}</TableCell><TableCell>{v.make}</TableCell><TableCell>{v.model}</TableCell><TableCell>{v.year}</TableCell><TableCell>{v.ownerName}</TableCell></TableRow> ))}</TableBody></Table>
+                            </div>
                         </div>
                     )}
-                     {analysisResult.type === 'products' && analysisResult.products.length > 0 && (
+                    {hasServices && (
+                         <div className="mb-4">
+                            <h3 className="font-semibold mb-2">Servicios Detectados</h3>
+                            <div className="rounded-md border h-48 overflow-auto">
+                               <Table><TableHeader className="sticky top-0 bg-muted"><TableRow><TableHead>Placa</TableHead><TableHead>Fecha</TableHead><TableHead>Descripción</TableHead><TableHead className="text-right">Costo</TableHead></TableRow></TableHeader><TableBody>{analysisResult.services.map((s, i) => ( <TableRow key={i}><TableCell>{s.vehicleLicensePlate}</TableCell><TableCell>{renderDate(s.serviceDate)}</TableCell><TableCell>{s.description}</TableCell><TableCell className="text-right">{formatCurrency(s.totalCost)}</TableCell></TableRow> ))}</TableBody></Table>
+                            </div>
+                        </div>
+                    )}
+                     {hasProducts && (
                         <div className="rounded-md border h-64 overflow-auto">
                            <Table><TableHeader className="sticky top-0 bg-muted"><TableRow><TableHead>SKU</TableHead><TableHead>Nombre</TableHead><TableHead>Cantidad</TableHead><TableHead>Precio Compra</TableHead><TableHead>Precio Venta</TableHead></TableRow></TableHeader><TableBody>{analysisResult.products.map((p, i) => ( <TableRow key={i}><TableCell>{p.sku || 'N/A'}</TableCell><TableCell>{p.name}</TableCell><TableCell>{p.quantity}</TableCell><TableCell>{formatCurrency(p.unitPrice)}</TableCell><TableCell>{formatCurrency(p.sellingPrice)}</TableCell></TableRow> ))}</TableBody></Table>
-                        </div>
-                    )}
-                    {analysisResult.type === 'services' && analysisResult.services.length > 0 && (
-                        <div className="rounded-md border h-64 overflow-auto">
-                           <Table><TableHeader className="sticky top-0 bg-muted"><TableRow><TableHead>Placa</TableHead><TableHead>Fecha</TableHead><TableHead>Descripción</TableHead><TableHead className="text-right">Costo</TableHead></TableRow></TableHeader><TableBody>{analysisResult.services.map((s, i) => ( <TableRow key={i}><TableCell>{s.vehicleLicensePlate}</TableCell><TableCell>{renderDate(s.serviceDate)}</TableCell><TableCell>{s.description}</TableCell><TableCell className="text-right">{formatCurrency(s.totalCost)}</TableCell></TableRow> ))}</TableBody></Table>
                         </div>
                     )}
                     <div className="mt-4 flex justify-end">
@@ -165,21 +190,24 @@ export function MigracionPageContent() {
 
     return (
       <div className="space-y-6">
-        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="w-full">
-            <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="vehiculos" className="data-[state=active]:bg-white data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm"><Car className="mr-2 h-4 w-4"/>Vehículos</TabsTrigger>
-                <TabsTrigger value="productos" className="data-[state=active]:bg-white data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm"><Package className="mr-2 h-4 w-4"/>Productos</TabsTrigger>
-                <TabsTrigger value="servicios" className="data-[state=active]:bg-white data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm"><Wrench className="mr-2 h-4 w-4"/>Servicios</TabsTrigger>
-            </TabsList>
-        </Tabs>
-
         <form onSubmit={handleAnalyze}>
             <Card className="shadow-lg">
                 <CardHeader>
-                    <CardTitle>1. Pegar Datos</CardTitle>
-                    <CardDescription>Pega aquí el texto directamente desde tu hoja de cálculo (Excel, Google Sheets, etc.).</CardDescription>
+                    <CardTitle>1. Seleccionar Tipo y Pegar Datos</CardTitle>
+                    <CardDescription>Elige qué tipo de datos quieres migrar y pega el texto desde tu hoja de cálculo.</CardDescription>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="space-y-4">
+                     <Select value={migrationType} onValueChange={(v) => setMigrationType(v as MigrationType)}>
+                        <SelectTrigger className="w-full md:w-1/2">
+                            <SelectValue placeholder="Seleccionar tipo de migración" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="operaciones"><div className="flex items-center gap-2"><Briefcase className="h-4 w-4"/>Operaciones (Vehículos + Servicios)</div></SelectItem>
+                            <SelectItem value="vehiculos"><div className="flex items-center gap-2"><Car className="h-4 w-4"/>Solo Vehículos</div></SelectItem>
+                            <SelectItem value="productos"><div className="flex items-center gap-2"><Package className="h-4 w-4"/>Solo Productos</div></SelectItem>
+                            <SelectItem value="servicios"><div className="flex items-center gap-2"><Wrench className="h-4 w-4"/>Solo Servicios</div></SelectItem>
+                        </SelectContent>
+                    </Select>
                     <Textarea
                         id="paste-area"
                         placeholder="Copia y pega aquí tus datos..."
