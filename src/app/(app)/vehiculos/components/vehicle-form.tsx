@@ -32,10 +32,10 @@ const vehicleFormSchema = z.object({
   ownerPhone: z.string().min(7, "Ingrese un número de teléfono válido."),
   ownerEmail: z.string().email("Ingrese un correo electrónico válido.").optional().or(z.literal('')),
   notes: z.string().optional(),
-  dailyRentalCost: z.preprocess((val) => (val === "" || val === undefined) ? null : val, z.coerce.number().nullable().optional()),
-  gpsMonthlyCost: z.preprocess((val) => (val === "" || val === undefined) ? null : val, z.coerce.number().nullable().optional()),
-  adminMonthlyCost: z.preprocess((val) => (val === "" || val === undefined) ? null : val, z.coerce.number().nullable().optional()),
-  insuranceMonthlyCost: z.preprocess((val) => (val === "" || val === undefined) ? null : val, z.coerce.number().nullable().optional()),
+  dailyRentalCost: z.coerce.number().optional().nullable(),
+  gpsMonthlyCost: z.coerce.number().optional().nullable(),
+  adminMonthlyCost: z.coerce.number().optional().nullable(),
+  insuranceMonthlyCost: z.coerce.number().optional().nullable(),
 });
 
 export type VehicleFormValues = z.infer<typeof vehicleFormSchema>;
@@ -90,13 +90,13 @@ export function VehicleForm({ initialData, onSubmit, onClose }: VehicleFormProps
   }, [initialData, form]);
 
   const handleFormSubmit = async (values: VehicleFormValues) => {
-    // The preprocess in Zod now handles converting empty strings to null for optional numbers.
+    // Sanitize optional numeric fields: convert empty strings or NaN from coercion to null.
     const submissionData = {
       ...values,
-      dailyRentalCost: values.dailyRentalCost === null ? undefined : values.dailyRentalCost,
-      gpsMonthlyCost: values.gpsMonthlyCost === null ? undefined : values.gpsMonthlyCost,
-      adminMonthlyCost: values.adminMonthlyCost === null ? undefined : values.adminMonthlyCost,
-      insuranceMonthlyCost: values.insuranceMonthlyCost === null ? undefined : values.insuranceMonthlyCost,
+      dailyRentalCost: values.dailyRentalCost || null,
+      gpsMonthlyCost: values.gpsMonthlyCost || null,
+      adminMonthlyCost: values.adminMonthlyCost || null,
+      insuranceMonthlyCost: values.insuranceMonthlyCost || null,
     };
     await onSubmit(submissionData);
   };
