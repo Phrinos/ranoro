@@ -6,6 +6,7 @@ import {
   getDoc,
   addDoc,
   updateDoc,
+  getDocs,
 } from 'firebase/firestore';
 import { db } from '../firebaseClient';
 import type { Technician, AdministrativeStaff, Driver } from "@/types";
@@ -21,6 +22,13 @@ const onTechniciansUpdate = (callback: (technicians: Technician[]) => void): (()
     });
     return unsubscribe;
 };
+
+const onTechniciansUpdatePromise = async (): Promise<Technician[]> => {
+    if (!db) return [];
+    const snapshot = await getDocs(collection(db, "technicians"));
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Technician));
+};
+
 
 const getTechnicianById = async (id: string): Promise<Technician | undefined> => {
     const docRef = doc(db, 'technicians', id);
@@ -79,6 +87,7 @@ const saveDriver = async (data: DriverFormValues, existingId?: string): Promise<
 
 export const personnelService = {
     onTechniciansUpdate,
+    onTechniciansUpdatePromise,
     getTechnicianById,
     addTechnician,
     onAdminStaffUpdate,

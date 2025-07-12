@@ -1,15 +1,16 @@
 
-
 "use client";
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { PageHeader } from "@/components/page-header";
 import { ServiceDialog } from "../components/service-dialog";
-import { UnifiedPreviewDialog } from '@/components/shared/unified-preview-dialog';
-import { placeholderVehicles, placeholderTechnicians, placeholderInventory, persistToFirestore, hydrateReady } from "@/lib/placeholder-data"; 
-import type { ServiceRecord, Vehicle, Technician, InventoryItem, QuoteRecord } from '@/types'; 
+import type { ServiceRecord, Vehicle, Technician, InventoryItem, QuoteRecord, ServiceTypeRecord } from '@/types'; 
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from 'next/navigation';
+import { Loader2 } from 'lucide-react';
+import { inventoryService, personnelService } from '@/lib/services';
+import { doc, addDoc, collection } from 'firebase/firestore';
+import { db } from '@/lib/firebaseClient';
 
 type DialogStep = 'form' | 'preview' | 'closed';
 
@@ -20,31 +21,69 @@ export default function NuevoServicioPage() {
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [technicians, setTechnicians] = useState<Technician[]>([]);
   const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
-  const [hydrated, setHydrated] = useState(false);
+  const [serviceTypes, setServiceTypes] = useState<ServiceTypeRecord[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   const [dialogStep, setDialogStep] = useState<DialogStep>('form');
   const [lastSavedRecord, setLastSavedRecord] = useState<ServiceRecord | null>(null);
   
   useEffect(() => {
-    hydrateReady.then(() => {
-      setVehicles([...placeholderVehicles]);
-      setTechnicians([...placeholderTechnicians]);
-      setInventoryItems([...placeholderInventory]);
-      setHydrated(true);
-    });
-  }, []);
+    const loadData = async () => {
+        try {
+            const [
+                vehiclesData, 
+                techniciansData, 
+                inventoryData,
+                serviceTypesData
+            ] = await Promise.all([
+                inventoryService.onVehiclesUpdatePromise(),
+                personnelService.onTechniciansUpdatePromise(),
+                inventoryService.onItemsUpdatePromise(),
+                inventoryService.onServiceTypesUpdatePromise()
+            ]);
+            
+            setVehicles(vehiclesData);
+            setTechnicians(techniciansData);
+            setInventoryItems(inventoryData);
+            setServiceTypes(serviceTypesData);
+        } catch (error) {
+            console.error("Failed to load initial data:", error);
+            toast({
+                title: 'Error de Carga',
+                description: 'No se pudieron cargar los datos necesarios. Intente recargar la página.',
+                variant: 'destructive',
+            });
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    loadData();
+  }, [toast]);
 
   useEffect(() => {
     if (dialogStep === 'closed') {
-      router.push('/cotizaciones/historial'); // Redirect to quotes list
+      router.push('/servicios/agenda'); // Redirect to agenda list
     }
   }, [dialogStep, router]);
-
-  const handleSaveComplete = (data: ServiceRecord | QuoteRecord) => {
-    const savedRecord = data as ServiceRecord;
-    setLastSavedRecord(savedRecord);
-    setDialogStep('preview');
+  
+  const handleSaveComplete = async (data: ServiceRecord | QuoteRecord) => {
+    if (!db) return;
+    try {
+      const docRef = await addDoc(collection(db, "serviceRecords"), data);
+      const savedRecord = { ...data, id: docRef.id } as ServiceRecord;
+      setLastSavedRecord(savedRecord);
+      setDialogStep('preview');
+      toast({
+        title: "Registro Creado",
+        description: `Se ha creado la cotización/servicio #${docRef.id}.`
+      });
+    } catch (e) {
+      console.error("Error creating record: ", e);
+      toast({ title: 'Error al Guardar', variant: 'destructive' });
+    }
   };
+
 
   const handleFormDialogClose = () => { 
      if (dialogStep === 'form') { 
@@ -57,14 +96,26 @@ export default function NuevoServicioPage() {
     setDialogStep('closed'); 
   };
   
-  const handleVehicleCreated = (newVehicle: Vehicle) => {
-    setVehicles(prev => [...prev, newVehicle]);
-    placeholderVehicles.push(newVehicle); // Also update the global placeholder
-    persistToFirestore(['vehicles']);
+  const handleVehicleCreated = async (newVehicleData: Omit<Vehicle, 'id'>) => {
+    if (!db) return;
+    try {
+      const docRef = await addDoc(collection(db, "vehicles"), newVehicleData);
+      const newVehicle = { id: docRef.id, ...newVehicleData };
+      setVehicles(prev => [...prev, newVehicle]);
+      toast({ title: 'Vehículo Creado', description: `${newVehicle.make} ${newVehicle.model} ha sido agregado.`});
+    } catch (e) {
+      console.error("Error creating vehicle:", e);
+      toast({ title: 'Error al crear vehículo', variant: 'destructive'});
+    }
   };
 
-  if (!hydrated) {
-    return <div className="text-center py-10">Cargando...</div>;
+  if (isLoading) {
+    return (
+        <div className="flex h-64 w-full items-center justify-center">
+            <Loader2 className="h-8 w-8 animate-spin" />
+            <span className="ml-3 text-lg">Cargando datos...</span>
+        </div>
+    );
   }
 
   return (
@@ -83,10 +134,8 @@ export default function NuevoServicioPage() {
           vehicles={vehicles}
           technicians={technicians}
           inventoryItems={inventoryItems}
-          onSave={async (data) => {
-            handleSaveComplete(data as ServiceRecord);
-          }}
-          onVehicleCreated={handleVehicleCreated}
+          onSave={handleSaveComplete}
+          onVehicleCreated={(data) => handleVehicleCreated(data as Omit<Vehicle, 'id'>)}
           mode="quote"
         />
       )}
@@ -96,10 +145,16 @@ export default function NuevoServicioPage() {
           open={true}
           onOpenChange={(isOpen) => !isOpen && handlePreviewDialogClose()}
           service={lastSavedRecord}
+          vehicle={vehicles.find(v => v.id === lastSavedRecord.vehicleId) || null}
+          associatedQuote={null} // It's a new record, no previous quote
         />
       )}
 
-      {dialogStep === 'closed' && <p className="text-center text-muted-foreground">Redireccionando...</p>}
+      {dialogStep === 'closed' && (
+        <div className="text-center p-8">
+          <p className="text-muted-foreground">Redireccionando...</p>
+        </div>
+      )}
     </>
   );
 }
