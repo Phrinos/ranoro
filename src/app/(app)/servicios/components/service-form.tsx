@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -145,7 +146,7 @@ interface ServiceFormProps {
   onSubmit: (data: ServiceRecord | QuoteRecord) => Promise<void>;
   onClose: () => void;
   isReadOnly?: boolean;
-  onVehicleCreated?: (newVehicle: Vehicle) => void; 
+  onVehicleCreated?: (newVehicle: Omit<Vehicle, 'id'>) => void; 
   mode?: 'service' | 'quote';
   onDelete?: (id: string) => void;
   onCancelService?: (serviceId: string, reason: string) => void;
@@ -334,14 +335,13 @@ export function ServiceForm({
 
   const handleSaveNewVehicle = useCallback(async (vehicleData: VehicleFormValues) => {
     if (!onVehicleCreated) return;
-    const newVehicle: Vehicle = {
-      id: generateUniqueId(), // Firestore will generate its own ID, this is temporary
+    const newVehicle: Omit<Vehicle, 'id'> = {
       ...vehicleData,
       year: Number(vehicleData.year),
     };
     onVehicleCreated(newVehicle);
-    setLocalVehicles(prev => [...prev, newVehicle]);
-    setValue('vehicleId', String(newVehicle.id), { shouldValidate: true });
+    // The parent will now handle adding to DB and updating state
+    setValue('vehicleId', `new_${vehicleData.licensePlate}`, { shouldValidate: true });
     setValue('vehicleLicensePlateSearch', newVehicle.licensePlate);
     setIsVehicleDialogOpen(false);
     toast({ title: "Vehículo Registrado", description: `Se registró ${newVehicle.make} ${newVehicle.model} (${newVehicle.licensePlate}).`});
