@@ -21,7 +21,7 @@ import { Label } from "@/components/ui/label";
 import { enhanceText } from '@/ai/flows/text-enhancement-flow';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SignatureDialog } from './signature-dialog';
-import { savePublicDocument } from "@/lib/public-document";
+import { savePublicDocument } from '@/lib/public-document';
 import { SafetyChecklist } from './SafetyChecklist';
 import { UnifiedPreviewDialog } from '@/components/shared/unified-preview-dialog';
 import { VehicleSelectionCard } from './VehicleSelectionCard';
@@ -36,6 +36,7 @@ import { doc } from 'firebase/firestore';
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { nanoid } from 'nanoid';
 import { operationsService } from '@/lib/services';
+import { suggestQuote } from '@/ai/flows/quote-suggestion-flow';
 
 
 const supplySchema = z.object({
@@ -162,8 +163,6 @@ function cleanObject(obj: any): any {
     const newObj: any = {};
     for (const key in obj) {
         if (obj[key] !== undefined) {
-             // Firestore cannot handle 'undefined'. Convert to 'null' or omit.
-             // Omit is better to avoid storing unnecessary null fields.
             newObj[key] = obj[key];
         }
     }
@@ -280,15 +279,15 @@ useEffect(() => {
     const storedWorkshopInfo = typeof window !== "undefined" ? localStorage.getItem("workshopTicketInfo") : null;
     if (storedWorkshopInfo) setWorkshopInfo(JSON.parse(storedWorkshopInfo));
 
-    const data = mode === 'service' ? initialDataService : initialDataQuote;
+    const dataToLoad = mode === 'service' ? initialDataService : initialDataQuote;
     const parseDate = (date: any) => date && (typeof date.toDate === 'function' ? date.toDate() : (typeof date === 'string' ? parseISO(date) : date));
-
-    let photoReportsData = (data as ServiceRecord)?.photoReports || [];
+    
+    let photoReportsData = (dataToLoad as ServiceRecord)?.photoReports || [];
     if (!isReadOnly && (!photoReportsData || photoReportsData.length === 0)) {
         photoReportsData = [{ id: `rep_recepcion_${Date.now()}`, date: new Date().toISOString(), description: "Notas de la Recepción", photos: [] }];
     }
 
-    let serviceItemsData = data?.serviceItems || [];
+    let serviceItemsData = dataToLoad?.serviceItems || [];
     if (serviceItemsData.length === 0 && !isReadOnly) {
         serviceItemsData = [{ id: nanoid(), name: '', price: undefined, suppliesUsed: [] }];
     }
@@ -297,31 +296,31 @@ useEffect(() => {
     const defaultServiceType = serviceTypes.length > 0 ? serviceTypes[0].name : 'Servicio General';
     
     form.reset({
-        id: data?.id,
-        publicId: (data as any)?.publicId,
-        vehicleId: data?.vehicleId ? String(data.vehicleId) : undefined,
-        vehicleLicensePlateSearch: data?.vehicleIdentifier || "",
-        serviceDate: data?.serviceDate ? parseDate(data.serviceDate) : undefined,
-        quoteDate: data?.quoteDate ? parseDate(data.quoteDate) : (mode === 'quote' ? new Date() : undefined),
-        receptionDateTime: isValid(parseDate((data as ServiceRecord)?.receptionDateTime)) ? parseDate((data as ServiceRecord)?.receptionDateTime) : undefined,
-        deliveryDateTime: isValid(parseDate((data as ServiceRecord)?.deliveryDateTime)) ? parseDate((data as ServiceRecord)?.deliveryDateTime) : undefined,
-        mileage: data?.mileage || undefined,
-        notes: data?.notes || "",
-        technicianId: (data as ServiceRecord)?.technicianId || (data as QuoteRecord)?.preparedByTechnicianId || undefined,
-        vehicleConditions: (data as ServiceRecord)?.vehicleConditions || "",
-        fuelLevel: (data as ServiceRecord)?.fuelLevel || undefined,
-        customerItems: (data as ServiceRecord)?.customerItems || '',
-        customerSignatureReception: (data as ServiceRecord)?.customerSignatureReception || null,
-        customerSignatureDelivery: (data as ServiceRecord)?.customerSignatureDelivery || null,
-        safetyInspection: data?.safetyInspection || {},
-        serviceAdvisorId: data?.serviceAdvisorId || freshUserRef.current?.id || '',
-        serviceAdvisorName: data?.serviceAdvisorName || freshUserRef.current?.name || '',
-        serviceAdvisorSignatureDataUrl: data?.serviceAdvisorSignatureDataUrl || freshUserRef.current?.signatureDataUrl || '',
+        id: dataToLoad?.id,
+        publicId: (dataToLoad as any)?.publicId,
+        vehicleId: dataToLoad?.vehicleId ? String(dataToLoad.vehicleId) : undefined,
+        vehicleLicensePlateSearch: dataToLoad?.vehicleIdentifier || "",
+        serviceDate: dataToLoad?.serviceDate ? parseDate(dataToLoad.serviceDate) : undefined,
+        quoteDate: dataToLoad?.quoteDate ? parseDate(dataToLoad.quoteDate) : (mode === 'quote' ? new Date() : undefined),
+        receptionDateTime: isValid(parseDate((dataToLoad as ServiceRecord)?.receptionDateTime)) ? parseDate((dataToLoad as ServiceRecord)?.receptionDateTime) : undefined,
+        deliveryDateTime: isValid(parseDate((dataToLoad as ServiceRecord)?.deliveryDateTime)) ? parseDate((dataToLoad as ServiceRecord)?.deliveryDateTime) : undefined,
+        mileage: dataToLoad?.mileage || undefined,
+        notes: dataToLoad?.notes || "",
+        technicianId: (dataToLoad as ServiceRecord)?.technicianId || (dataToLoad as QuoteRecord)?.preparedByTechnicianId || undefined,
+        vehicleConditions: (dataToLoad as ServiceRecord)?.vehicleConditions || "",
+        fuelLevel: (dataToLoad as ServiceRecord)?.fuelLevel || undefined,
+        customerItems: (dataToLoad as ServiceRecord)?.customerItems || '',
+        customerSignatureReception: (dataToLoad as ServiceRecord)?.customerSignatureReception || null,
+        customerSignatureDelivery: (dataToLoad as ServiceRecord)?.customerSignatureDelivery || null,
+        safetyInspection: dataToLoad?.safetyInspection || {},
+        serviceAdvisorId: dataToLoad?.serviceAdvisorId || freshUserRef.current?.id || '',
+        serviceAdvisorName: dataToLoad?.serviceAdvisorName || freshUserRef.current?.name || '',
+        serviceAdvisorSignatureDataUrl: dataToLoad?.serviceAdvisorSignatureDataUrl || freshUserRef.current?.signatureDataUrl || '',
         photoReports: photoReportsData,
         serviceItems: serviceItemsData,
-        status: data?.status || defaultStatus,
-        subStatus: (data as ServiceRecord)?.subStatus || undefined,
-        serviceType: data?.serviceType || defaultServiceType,
+        status: dataToLoad?.status || defaultStatus,
+        subStatus: (dataToLoad as ServiceRecord)?.subStatus || undefined,
+        serviceType: dataToLoad?.serviceType || defaultServiceType,
     });
 
 }, [initialDataService, initialDataQuote, mode, form, isReadOnly, refreshCurrentUser, serviceTypes]);
@@ -414,6 +413,7 @@ useEffect(() => {
     
     const finalData = {
         ...values,
+        id: initialData?.id, // Ensure ID is passed for updates
         description: (values.serviceItems || []).map(item => item.name).join(', ') || 'Servicio',
         totalCost,
         totalSuppliesWorkshopCost,
@@ -431,7 +431,6 @@ useEffect(() => {
         serviceAdvisorSignatureDataUrl: freshUserRef.current.signatureDataUrl,
     };
     
-    // Clean object before submitting to remove undefined fields which Firestore doesn't like.
     const cleanedData = cleanObject(finalData);
     
     await onSubmit(cleanedData as ServiceRecord);
@@ -444,12 +443,62 @@ useEffect(() => {
     setIsPreviewOpen(true);
   }, [form]);
 
-  const handleGenerateQuoteWithAI = useCallback(async () => {
+ const handleGenerateQuoteWithAI = useCallback(async () => {
+    const values = getValues();
+    const vehicle = localVehicles.find(v => v.id === values.vehicleId);
+    if (!vehicle) {
+        toast({ title: "Vehículo no seleccionado", description: "Seleccione un vehículo antes de usar la IA.", variant: "destructive" });
+        return;
+    }
+    if (!values.serviceItems || values.serviceItems.length === 0 || !values.serviceItems[0].name) {
+        toast({ title: "Descripción requerida", description: "Escriba el nombre del servicio principal para que la IA genere una cotización.", variant: "destructive" });
+        return;
+    }
+
     setIsGeneratingQuote(true);
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    console.warn("handleGenerateQuoteWithAI should be passed from the parent.");
-    setIsGeneratingQuote(false);
-  }, []);
+    try {
+        const result = await suggestQuote({
+            vehicleInfo: { make: vehicle.make, model: vehicle.model, year: vehicle.year },
+            serviceDescription: values.serviceItems[0].name,
+            serviceHistory: serviceHistory.map(s => ({
+                description: s.description || '',
+                suppliesUsed: (s.serviceItems || []).flatMap(si => si.suppliesUsed || []).map(sup => ({ supplyName: sup.supplyName || '', quantity: sup.quantity })),
+                totalCost: s.totalCost || 0,
+            })),
+            inventory: currentInventoryItems.map(i => ({ id: i.id, name: i.name, sellingPrice: i.sellingPrice })),
+        });
+        
+        // Update form state with AI suggestions
+        const newServiceItems = [...values.serviceItems];
+        newServiceItems[0].price = result.estimatedTotalCost;
+        
+        const suppliesForFirstItem = result.suppliesProposed.map(sp => {
+            const inventoryItem = currentInventoryItems.find(i => i.id === sp.supplyId);
+            return {
+                supplyId: sp.supplyId,
+                quantity: sp.quantity,
+                supplyName: inventoryItem?.name || 'Desconocido',
+                unitPrice: inventoryItem?.unitPrice || 0,
+                sellingPrice: inventoryItem?.sellingPrice || 0,
+                isService: inventoryItem?.isService || false,
+                unitType: inventoryItem?.unitType || 'units'
+            };
+        });
+        
+        newServiceItems[0].suppliesUsed = suppliesForFirstItem;
+
+        setValue('serviceItems', newServiceItems);
+        setValue('notes', result.reasoning, { shouldDirty: true });
+
+        toast({ title: "Cotización Sugerida", description: "La IA ha rellenado el formulario. Revise y ajuste si es necesario." });
+    } catch (e) {
+        console.error("AI Quote Generation Error:", e);
+        toast({ title: "Error de IA", description: "No se pudo generar la cotización.", variant: "destructive" });
+    } finally {
+        setIsGeneratingQuote(false);
+    }
+}, [getValues, localVehicles, serviceHistory, currentInventoryItems, toast, setValue]);
+
   
   const handleConfirmDelete = useCallback(() => {
     if (onDelete && mode === 'quote' && initialDataQuote?.id) {
