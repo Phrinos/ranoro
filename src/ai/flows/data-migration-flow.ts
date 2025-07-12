@@ -57,18 +57,32 @@ const migrateDataPrompt = ai.definePrompt({
   name: 'migrateDataPrompt',
   input: { schema: MigrateDataInputSchema },
   output: { schema: MigrateDataOutputSchema },
-  prompt: `You are an expert data migration specialist for an auto repair shop. Your task is to analyze the provided CSV-formatted text and extract vehicle and service information.
+  prompt: `You are an expert data migration specialist for an auto repair shop. Your task is to analyze the provided CSV-formatted text and extract vehicle and service information into a structured JSON format. Follow these steps meticulously:
 
-**CRITICAL INSTRUCTIONS:**
-1.  **EXTRACT THE LICENSE PLATE (PLACA)**: The 'licensePlate' field is the most important piece of information and is **MANDATORY**. Look for columns named 'Placa', 'Patente', 'Matrícula', or 'LicensePlate'. If no such column exists, look for values that match the pattern of a license plate (e.g., a combination of 6 to 8 uppercase letters and numbers). You MUST extract this value for every vehicle. If a row does not seem to have a license plate, it is not a valid vehicle record.
-2.  **Identify Unique Vehicles**: Based on the extracted license plate, create only ONE vehicle entry in the 'vehicles' array for each unique license plate. Use the information from the most complete row for that vehicle.
-3.  **Extract All Services**: Create a service entry in the 'services' array for EVERY service record you find. Each service must be linked to a vehicle via its 'vehicleLicensePlate'.
-4.  **Handle Data Variations**: The CSV column headers might vary. Be flexible. Look for headers like 'Marca'/'Make', 'Modelo'/'Model', 'Año'/'Year', 'Cliente'/'OwnerName', 'Fecha'/'Date', 'Descripción'/'Description', 'Costo'/'Total'.
-5.  **Data Cleaning**: Clean up the data. Trim whitespace. Convert years and costs to numbers. Ensure dates are in YYYY-MM-DD format. If a value is missing for an optional field like 'ownerPhone', omit it.
+**Step 1: Identify the License Plate Column.**
+This is the most critical step. The license plate ('placa') is the MANDATORY, UNIQUE IDENTIFIER for every vehicle.
+- First, look for a column header that is explicitly named 'Placa', 'Patente', 'Matrícula', or 'LicensePlate'.
+- If no such header exists, analyze the data in each column. The license plate column will contain values that are typically 6 to 8 characters long, consisting of a mix of uppercase letters and numbers.
+- Once you have identified the license plate column, you MUST use it as the source for the 'licensePlate' field for vehicles and the 'vehicleLicensePlate' field for services. If you cannot identify a license plate column, do not proceed and return an empty result.
 
-Analyze the following CSV-formatted content and return the data in the specified JSON format.
+**Step 2: Extract and Consolidate Unique Vehicles.**
+- Iterate through each row of the CSV.
+- For each row, extract the license plate using the column you identified in Step 1.
+- If you encounter a license plate for the first time, create a new vehicle object in the 'vehicles' array.
+- If you see a license plate that already exists in your 'vehicles' array, DO NOT create a new vehicle. You can update the existing vehicle record if the current row has more complete information (e.g., a phone number that was missing before).
+- For each vehicle, extract other relevant information by mapping columns like 'Marca' to 'make', 'Modelo' to 'model', 'Año' to 'year', 'Cliente' to 'ownerName', etc.
 
-CSV Content:
+**Step 3: Extract All Service Records.**
+- For EVERY row in the CSV that represents a service, create a corresponding entry in the 'services' array.
+- Each service record MUST be linked to a vehicle via its 'vehicleLicensePlate', using the value from the column identified in Step 1.
+- Extract service details like 'Fecha'/'Date' for 'serviceDate', 'Descripción'/'Description' for 'description', and 'Costo'/'Total' for 'totalCost'.
+
+**Step 4: Clean and Format Data.**
+- Clean the data as you extract it: trim whitespace, convert years and costs to numbers, and ensure all dates are in YYYY-MM-DD format.
+- If a value for an optional field (like 'ownerPhone') is missing, omit it from the final JSON object.
+- **CRITICAL:** Every vehicle in the output 'vehicles' array and every service in the 'services' array must have a valid 'licensePlate' or 'vehicleLicensePlate' field, respectively. Rows without a discernible license plate should be ignored.
+
+**CSV Data to Analyze:**
 \`\`\`csv
 {{{csvContent}}}
 \`\`\`
@@ -83,7 +97,7 @@ const migrateDataFlow = ai.defineFlow(
   },
   async (input) => {
     const { output } = await migrateDataPrompt(input, {
-        config: { temperature: 0.1 } // Lower temperature for more deterministic data extraction
+        config: { temperature: 0.0 } // Use zero temperature for maximum determinism and rule-following
     });
     
     if (!output) {
