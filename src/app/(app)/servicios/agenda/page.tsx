@@ -15,7 +15,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import Link from "next/link";
-import { placeholderServiceRecords, placeholderVehicles, placeholderTechnicians, placeholderInventory, placeholderServiceTypes, persistToFirestore, logAudit } from "@/lib/placeholder-data";
+import { placeholderServiceRecords, placeholderTechnicians, placeholderInventory, placeholderServiceTypes, persistToFirestore, logAudit } from "@/lib/placeholder-data";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ServiceCalendar } from '../components/service-calendar';
 import { analyzeWorkshopCapacity } from '@/ai/flows/capacity-analysis-flow';
@@ -141,22 +141,17 @@ function AgendaPageComponent() {
     }
   }, [toast]);
 
-  const handleVehicleCreated = useCallback(async (newVehicle: Vehicle) => {
-    placeholderVehicles.push(newVehicle);
-    await persistToFirestore(['vehicles']);
-  }, []);
+  const handleVehicleCreated = useCallback(async (newVehicle: Omit<Vehicle, 'id'>) => {
+      await inventoryService.addVehicle(newVehicle as VehicleFormValues);
+      toast({ title: "Vehículo Creado" });
+  }, [toast]);
   
   const handleConfirmAppointment = useCallback(async (serviceId: string) => {
-    const serviceIndex = placeholderServiceRecords.findIndex(s => s.id === serviceId);
-    if (serviceIndex !== -1) {
-      placeholderServiceRecords[serviceIndex].appointmentStatus = 'Confirmada';
-      setAllServices(prev => prev.map(s => s.id === serviceId ? { ...s, appointmentStatus: 'Confirmada' } : s));
-      await persistToFirestore(['serviceRecords']);
-      toast({
-        title: "Cita Confirmada",
-        description: `La cita para ${placeholderServiceRecords[serviceIndex].vehicleIdentifier} ha sido marcada como confirmada.`,
-      });
-    }
+    await operationsService.updateService(serviceId, { appointmentStatus: 'Confirmada' });
+    toast({
+      title: "Cita Confirmada",
+      description: `La cita para el servicio #${serviceId} ha sido marcada como confirmada.`,
+    });
   }, [toast]);
   
   const handleSaveService = useCallback(async (data: QuoteRecord | ServiceRecord) => {

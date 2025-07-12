@@ -12,6 +12,7 @@ import { Loader2 } from 'lucide-react';
 import { inventoryService, personnelService } from '@/lib/services';
 import { addDoc, collection } from 'firebase/firestore';
 import { db } from '@/lib/firebaseClient';
+import type { VehicleFormValues } from '../../vehiculos/components/vehicle-form';
 
 type DialogStep = 'form' | 'closed';
 
@@ -92,10 +93,9 @@ export default function NuevoServicioPage() {
   const handleVehicleCreated = async (newVehicleData: Omit<Vehicle, 'id'>) => {
     if (!db) return;
     try {
-      const docRef = await addDoc(collection(db, "vehicles"), newVehicleData);
-      const newVehicle = { id: docRef.id, ...newVehicleData };
-      setVehicles(prev => [...prev, newVehicle]);
-      toast({ title: 'Vehículo Creado', description: `${newVehicle.make} ${newVehicle.model} ha sido agregado.`});
+        const addedVehicle = await inventoryService.addVehicle(newVehicleData as VehicleFormValues);
+        setVehicles(prev => [...prev, addedVehicle]);
+        toast({ title: 'Vehículo Creado', description: `${addedVehicle.make} ${addedVehicle.model} ha sido agregado.`});
     } catch (e) {
       console.error("Error creating vehicle:", e);
       toast({ title: 'Error al crear vehículo', variant: 'destructive'});

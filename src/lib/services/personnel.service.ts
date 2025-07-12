@@ -1,4 +1,5 @@
 
+
 import {
   collection,
   onSnapshot,
@@ -17,6 +18,7 @@ import type { DriverFormValues } from "@/app/(app)/conductores/components/driver
 // --- Technicians ---
 
 const onTechniciansUpdate = (callback: (technicians: Technician[]) => void): (() => void) => {
+    if (!db) return () => {};
     const unsubscribe = onSnapshot(collection(db, "technicians"), (snapshot) => {
         callback(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Technician)));
     });
@@ -48,6 +50,7 @@ const addTechnician = async (data: TechnicianFormValues): Promise<Technician> =>
 // --- Administrative Staff ---
 
 const onAdminStaffUpdate = (callback: (staff: AdministrativeStaff[]) => void): (() => void) => {
+    if (!db) return () => {};
     const unsubscribe = onSnapshot(collection(db, "administrativeStaff"), (snapshot) => {
         callback(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as AdministrativeStaff)));
     });
