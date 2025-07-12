@@ -91,7 +91,7 @@ const capacityAnalysisFlow = ai.defineFlow(
         const startDate = parseISO(item.serviceDate);
         const endDate = parseISO(item.deliveryDateTime);
         if (!isValid(startDate) || !isValid(endDate)) {
-          return null; // Ignore invalid date entries
+          return { description: item.description, durationInHours: 1 }; // Default if dates are invalid
         }
         const durationInMinutes = differenceInMinutes(endDate, startDate);
         // Only include reasonable durations to avoid skewing the data
