@@ -5,27 +5,22 @@
 import React, { useState, useEffect, useMemo, useCallback, Suspense, useRef } from "react";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, List, Calendar as CalendarIcon, FileCheck, Eye, Loader2, Edit, CheckCircle, Printer, MessageSquare } from "lucide-react";
+import { PlusCircle, List, Calendar as CalendarIcon, FileCheck, Eye, Loader2, Edit, CheckCircle, Printer, MessageSquare, Ban } from "lucide-react";
 import { ServiceDialog } from "../components/service-dialog";
-import type { ServiceRecord, Vehicle, Technician, QuoteRecord, InventoryItem, CapacityAnalysisOutput, WorkshopInfo, ServiceTypeRecord } from "@/types";
+import type { ServiceRecord, Vehicle, Technician, QuoteRecord, InventoryItem, CapacityAnalysisOutput, ServiceTypeRecord } from "@/types";
 import { useToast } from "@/hooks/use-toast";
-import { format, parseISO, isToday, isTomorrow, compareAsc, isValid, startOfDay, endOfDay } from "date-fns";
+import { format, parseISO, isToday, isTomorrow, compareAsc, isValid } from "date-fns";
 import { es } from 'date-fns/locale';
-import { useRouter, useSearchParams } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
-import Link from "next/link";
-import { placeholderServiceRecords, placeholderTechnicians, placeholderInventory, placeholderServiceTypes, persistToFirestore, logAudit } from "@/lib/placeholder-data";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ServiceCalendar } from '../components/service-calendar';
 import { analyzeWorkshopCapacity } from '@/ai/flows/capacity-analysis-flow';
 import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
-import { StatusTracker } from "../components/StatusTracker";
 import { UnifiedPreviewDialog } from '@/components/shared/unified-preview-dialog';
 import { ServiceAppointmentCard } from '../components/ServiceAppointmentCard';
 import { inventoryService, personnelService, operationsService } from '@/lib/services';
-
+import type { VehicleFormValues } from "../../vehiculos/components/vehicle-form";
+import { CompleteServiceDialog } from '../components/CompleteServiceDialog';
 
 const handleAiError = (error: any, toast: any, context: string): string => {
     console.error(`AI Error in ${context}:`, error);
@@ -34,7 +29,7 @@ const handleAiError = (error: any, toast: any, context: string): string => {
         message = "El modelo de IA está sobrecargado. Por favor, inténtelo de nuevo más tarde.";
     }
     toast({ title: "Error de IA", description: message, variant: "destructive" });
-    return message; // Return the user-friendly message
+    return message;
 };
 
 function AgendaPageComponent() {
@@ -57,6 +52,9 @@ function AgendaPageComponent() {
   
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [serviceForPreview, setServiceForPreview] = useState<ServiceRecord | null>(null);
+  
+  const [serviceToComplete, setServiceToComplete] = useState<ServiceRecord | null>(null);
+  const [isCompleteDialogOpen, setIsCompleteDialogOpen] = useState(false);
 
   useEffect(() => {
     const unsubs: (() => void)[] = [];
@@ -68,7 +66,7 @@ function AgendaPageComponent() {
     unsubs.push(inventoryService.onItemsUpdate(setInventoryItems));
     unsubs.push(inventoryService.onServiceTypesUpdate((data) => {
         setServiceTypes(data);
-        setIsLoading(false); // Mark loading false after the last data set arrives
+        setIsLoading(false);
     }));
 
     return () => unsubs.forEach(unsub => unsub());
@@ -109,10 +107,10 @@ function AgendaPageComponent() {
 
   const { scheduledServices, todayServices, tomorrowServices } = useMemo(() => {
     if (isLoading) return { scheduledServices: [], todayServices: [], tomorrowServices: [] };
-    const scheduled = allServices.filter(s => s.status === 'Agendado' || (s.status === 'Reparando' && !s.deliveryDateTime));
+    const scheduled = allServices.filter(s => s.status === 'Agendado' || (s.status === 'En Taller' && !s.deliveryDateTime));
     const today = new Date();
-    const todayS = scheduled.filter(s => isToday(parseISO(s.serviceDate))).sort((a, b) => compareAsc(parseISO(a.serviceDate), parseISO(b.serviceDate)));
-    const tomorrowS = scheduled.filter(s => isTomorrow(parseISO(s.serviceDate))).sort((a, b) => compareAsc(parseISO(a.serviceDate), parseISO(b.serviceDate)));
+    const todayS = scheduled.filter(s => s.serviceDate && isValid(parseISO(s.serviceDate)) && isToday(parseISO(s.serviceDate))).sort((a, b) => compareAsc(parseISO(a.serviceDate!), parseISO(b.serviceDate!)));
+    const tomorrowS = scheduled.filter(s => s.serviceDate && isValid(parseISO(s.serviceDate)) && isTomorrow(parseISO(s.serviceDate))).sort((a, b) => compareAsc(parseISO(a.serviceDate!), parseISO(b.serviceDate!)));
     return { scheduledServices: scheduled, todayServices: todayS, tomorrowServices: tomorrowS };
   }, [allServices, isLoading]);
 
@@ -120,7 +118,7 @@ function AgendaPageComponent() {
     return todayServices.reduce((sum, s) => sum + (s.totalCost || 0), 0);
   }, [todayServices]);
 
-  const handleOpenServiceDialog = useCallback((service: ServiceRecord) => {
+  const handleOpenServiceDialog = useCallback((service: ServiceRecord | null) => {
     setEditingService(service);
     setIsServiceDialogOpen(true);
   }, []);
@@ -131,14 +129,8 @@ function AgendaPageComponent() {
   }, []);
   
   const handleCancelService = useCallback(async (serviceId: string, reason: string) => {
-    const pIndex = placeholderServiceRecords.findIndex(s => s.id === serviceId);
-    if (pIndex !== -1) {
-      placeholderServiceRecords[pIndex].status = 'Cancelado';
-      placeholderServiceRecords[pIndex].cancellationReason = reason;
-      await logAudit('Cancelar', `Canceló el servicio #${serviceId} por: ${reason}`, { entityType: 'Servicio', entityId: serviceId });
-      await persistToFirestore(['serviceRecords', 'auditLogs']);
-      toast({ title: "Servicio Cancelado" });
-    }
+    await operationsService.cancelService(serviceId, reason);
+    toast({ title: "Servicio Cancelado" });
   }, [toast]);
 
   const handleVehicleCreated = useCallback(async (newVehicle: Omit<Vehicle, 'id'>) => {
@@ -154,10 +146,29 @@ function AgendaPageComponent() {
     });
   }, [toast]);
   
-  const handleSaveService = useCallback(async (data: QuoteRecord | ServiceRecord) => {
-      // The ServiceDialog now handles persistence. We just need to close the dialog.
+  const handleSaveService = useCallback(async (data: ServiceRecord | QuoteRecord) => {
+      if ('status' in data) {
+        if(data.id) {
+            await operationsService.updateService(data.id, data);
+        } else {
+            await operationsService.addService(data);
+        }
+      }
       setIsServiceDialogOpen(false);
   }, []);
+
+  const handleOpenCompleteDialog = useCallback((service: ServiceRecord) => {
+    setServiceToComplete(service);
+    setIsCompleteDialogOpen(true);
+  }, []);
+  
+  const handleConfirmCompletion = useCallback(async (service: ServiceRecord, paymentDetails: any) => {
+    await operationsService.completeService(service.id, paymentDetails);
+    toast({
+      title: "Servicio Completado",
+      description: `El servicio para ${service.vehicleIdentifier} ha sido marcado como entregado.`,
+    });
+  }, [toast]);
 
   const renderCapacityBadge = () => {
     if (isCapacityLoading) return <Loader2 className="h-5 w-5 animate-spin" />;
@@ -218,7 +229,7 @@ function AgendaPageComponent() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {todayServices.length > 0 ? todayServices.map(service => (<ServiceAppointmentCard key={service.id} service={service} vehicles={vehicles} onEdit={() => handleOpenServiceDialog(service)} onConfirm={() => handleConfirmAppointment(service.id)} onView={() => handleShowPreview(service)} />)) : <p className="text-muted-foreground text-center py-4">No hay citas para hoy.</p>}
+              {todayServices.length > 0 ? todayServices.map(service => (<ServiceAppointmentCard key={service.id} service={service} vehicles={vehicles} onEdit={() => handleOpenServiceDialog(service)} onConfirm={() => handleConfirmAppointment(service.id)} onView={() => handleShowPreview(service)} onComplete={() => handleOpenCompleteDialog(service)} onCancel={() => { const reason = prompt('Motivo de cancelación:'); if(reason) handleCancelService(service.id, reason)}}/>)) : <p className="text-muted-foreground text-center py-4">No hay citas para hoy.</p>}
             </CardContent>
           </Card>
            <Card>
@@ -229,7 +240,7 @@ function AgendaPageComponent() {
           </Card>
         </TabsContent>
         <TabsContent value="calendario">
-          <ServiceCalendar services={scheduledServices} vehicles={vehicles} technicians={technicians} onServiceClick={handleOpenServiceDialog} />
+          <ServiceCalendar services={scheduledServices} vehicles={vehicles} technicians={technicians} onServiceClick={(s) => handleOpenServiceDialog(s)} />
         </TabsContent>
       </Tabs>
 
@@ -255,7 +266,16 @@ function AgendaPageComponent() {
           onOpenChange={setIsSheetOpen}
           service={serviceForPreview}
           vehicle={vehicles.find(v => v.id === serviceForPreview.vehicleId) || null}
-          associatedQuote={null} // Pass the associated quote if available
+          associatedQuote={null}
+        />
+      )}
+      
+      {serviceToComplete && (
+        <CompleteServiceDialog
+            open={isCompleteDialogOpen}
+            onOpenChange={setIsCompleteDialogOpen}
+            service={serviceToComplete}
+            onConfirm={handleConfirmCompletion}
         />
       )}
     </>
