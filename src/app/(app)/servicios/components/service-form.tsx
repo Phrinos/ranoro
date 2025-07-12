@@ -118,8 +118,8 @@ const serviceFormSchemaBase = z.object({
   vehicleConditions: z.string().optional(),
   fuelLevel: z.string().optional(),
   customerItems: z.string().optional(),
-  customerSignatureReception: z.string().optional(),
-  customerSignatureDelivery: z.string().optional(),
+  customerSignatureReception: z.string().optional().nullable(),
+  customerSignatureDelivery: z.string().optional().nullable(),
   safetyInspection: safetyInspectionSchema.optional(),
   serviceAdvisorId: z.string().optional(),
   serviceAdvisorName: z.string().optional(),
@@ -279,7 +279,12 @@ useEffect(() => {
     const storedWorkshopInfo = typeof window !== "undefined" ? localStorage.getItem("workshopTicketInfo") : null;
     if (storedWorkshopInfo) setWorkshopInfo(JSON.parse(storedWorkshopInfo));
     
-    const dataToLoad = mode === 'service' ? initialDataService : initialDataQuote;
+    let dataToLoad;
+    if (mode === 'service') {
+        dataToLoad = initialDataService;
+    } else {
+        dataToLoad = initialDataQuote;
+    }
     
     if (!dataToLoad) { // This is a new record
       const defaultStatus = mode === 'quote' ? 'Cotizacion' : 'En Taller';
@@ -426,7 +431,7 @@ useEffect(() => {
     }
     
     // This is the CRITICAL part for fixing the update issue
-    const idToSave = (mode === 'service' ? initialDataService?.id : initialDataQuote?.id) || undefined;
+    const idToSave = initialDataService?.id || initialDataQuote?.id || undefined;
 
     const finalData = {
         ...values,
@@ -448,7 +453,13 @@ useEffect(() => {
         serviceAdvisorSignatureDataUrl: freshUserRef.current.signatureDataUrl,
     };
     
-    const cleanedData = cleanObject(finalData);
+    // Ensure no undefined values are sent to Firestore
+    const cleanedData = Object.entries(finalData).reduce((acc, [key, value]) => {
+      if (value !== undefined) {
+        acc[key] = value;
+      }
+      return acc;
+    }, {} as any);
     
     await onSubmit(cleanedData as ServiceRecord);
     onClose();
