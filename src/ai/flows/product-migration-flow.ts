@@ -8,11 +8,11 @@ import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 
 const ExtractedProductSchema = z.object({
-  sku: z.string().optional().describe('The SKU or product code.'),
+  sku: z.string().default('').describe('The SKU or product code.'),
   name: z.string().describe('The name of the product. This is a mandatory field.'),
-  quantity: z.coerce.number().describe('The current stock quantity.'),
-  unitPrice: z.coerce.number().describe('The purchase price for the workshop.'),
-  sellingPrice: z.coerce.number().describe('The selling price to the customer.'),
+  quantity: z.coerce.number().default(0).describe('The current stock quantity.'),
+  unitPrice: z.coerce.number().default(0).describe('The purchase price for the workshop.'),
+  sellingPrice: z.coerce.number().default(0).describe('The selling price to the customer.'),
 });
 export type ExtractedProduct = z.infer<typeof ExtractedProductSchema>;
 
@@ -47,6 +47,7 @@ const migrateProductsPrompt = ai.definePrompt({
 2.  **Extract Data**: For each row in the CSV, create one product object.
 3.  **Mandatory Name**: The 'name' field is absolutely mandatory. If a row does not have a value that can be identified as a product name, you must ignore that row.
 4.  **Clean Data**: Trim whitespace from all text fields. Convert numbers correctly, treating missing or non-numeric values as 0.
+5.  **Default Values**: If a field is empty or missing in the source data, you MUST return it with a default value: an empty string ("") for text fields (like 'sku'), and 0 for numeric fields (like 'quantity' or prices). Do not omit fields.
 
 Analyze the following CSV content and return the data in the specified JSON format.
 
