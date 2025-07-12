@@ -210,7 +210,11 @@ export function ServiceForm({
     if (onStatusChange) {
       onStatusChange(watchedStatus);
     }
-  }, [watchedStatus, onStatusChange]);
+     // When status changes to 'Agendado', set serviceDate if it's not already set
+    if (watchedStatus === 'Agendado' && !getValues('serviceDate')) {
+        setValue('serviceDate', new Date());
+    }
+  }, [watchedStatus, onStatusChange, getValues, setValue]);
 
   const { totalCost, totalSuppliesWorkshopCost, serviceProfit } = useMemo(() => {
     let calculatedTotalCost = 0;
@@ -278,13 +282,12 @@ export function ServiceForm({
 
     form.reset({
         id: data?.id || `SRV-${generateUniqueId()}`,
-        status: data?.status || (mode === 'quote' ? 'Cotizacion' : 'Agendado'),
+        status: data?.status || undefined, // Start with undefined status for new records
         subStatus: (data as ServiceRecord)?.subStatus || undefined,
         publicId: (data as any)?.publicId, vehicleId: data?.vehicleId ? String(data.vehicleId) : undefined,
         vehicleLicensePlateSearch: data?.vehicleIdentifier || "",
-        // Ensure new records have a default valid date
-        serviceDate: parseDate(data?.serviceDate) || new Date(),
-        quoteDate: parseDate(data?.quoteDate) || new Date(),
+        serviceDate: data?.serviceDate ? parseDate(data.serviceDate) : undefined,
+        quoteDate: data?.quoteDate ? parseDate(data.quoteDate) : new Date(),
         receptionDateTime: isValid(parseDate((data as ServiceRecord)?.receptionDateTime)) ? parseDate((data as ServiceRecord)?.receptionDateTime) : undefined,
         deliveryDateTime: isValid(parseDate((data as ServiceRecord)?.deliveryDateTime)) ? parseDate((data as ServiceRecord)?.deliveryDateTime) : undefined,
         mileage: data?.mileage || undefined,
