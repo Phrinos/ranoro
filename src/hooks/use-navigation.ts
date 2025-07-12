@@ -138,13 +138,6 @@ const BASE_NAV_STRUCTURE: ReadonlyArray<Omit<NavigationEntry, 'isActive'>> = [
     groupTag: "Análisis",
     permissions: ['finances:view_report']
   },
-  {
-    label: 'Reportes',
-    path: '/finanzas/reporte',
-    icon: BarChartHorizontal,
-    groupTag: "Análisis",
-    permissions: ['finances:view_report']
-  },
 
   // Opciones
   {
