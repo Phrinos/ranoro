@@ -394,29 +394,34 @@ export function ServiceForm({
         values.receptionDateTime = new Date();
     }
     
-    const dataToSave: ServiceRecord = {
+    // Clean up subStatus if the status is not 'En Taller'
+    if (values.status !== 'En Taller') {
+      delete values.subStatus;
+    }
+    
+    const dataToSave = {
         ...values,
         id: values.id || `SRV-${generateUniqueId()}`,
         publicId: values.publicId || `s_${generateUniqueId().toLowerCase()}`,
         vehicleId: getValues('vehicleId')!,
         description: (values.serviceItems || []).map(item => item.name).join(', ') || 'Servicio',
-        technicianId: values.technicianId || '',
+        technicianId: values.technicianId || null,
         status: values.status || 'Agendado',
         totalCost: totalCost, 
         totalSuppliesWorkshopCost: totalSuppliesWorkshopCost, 
         serviceProfit,
         serviceDate: values.serviceDate ? values.serviceDate.toISOString() : new Date().toISOString(),
-        quoteDate: values.quoteDate?.toISOString(), 
-        receptionDateTime: values.receptionDateTime?.toISOString(),
-        deliveryDateTime: values.deliveryDateTime?.toISOString(),
+        quoteDate: values.quoteDate?.toISOString() || null, 
+        receptionDateTime: values.receptionDateTime?.toISOString() || null,
+        deliveryDateTime: values.deliveryDateTime?.toISOString() || null,
         vehicleIdentifier: getValues('vehicleLicensePlateSearch') || 'N/A',
-        technicianName: technicians.find(t => t.id === values.technicianId)?.name || 'N/A',
+        technicianName: technicians.find(t => t.id === values.technicianId)?.name || null,
         subTotal: totalCost / (1 + IVA_RATE), taxAmount: totalCost - (totalCost / (1 + IVA_RATE)),
         serviceAdvisorId: freshUserRef.current.id,
         serviceAdvisorName: freshUserRef.current.name,
         serviceAdvisorSignatureDataUrl: freshUserRef.current.signatureDataUrl,
         workshopInfo: (workshopInfo && Object.keys(workshopInfo).length > 0) ? workshopInfo as WorkshopInfo : undefined,
-    };
+    } as ServiceRecord;
     
     if (db) {
         await savePublicDocument('service', dataToSave, localVehicles.find(v => v.id === getValues('vehicleId')) || null, workshopInfo);
@@ -462,7 +467,7 @@ export function ServiceForm({
       <Form {...form}>
         <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-6 pb-24">
           <Tabs defaultValue="servicio" className="w-full">
-             <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm -mx-6 px-6 pt-2 pb-2 border-b">
+            <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm -mx-6 px-6 pt-2 pb-2 border-b">
                 <div className="flex justify-between items-center">
                     <TabsList className={cn("grid w-full mb-0", `grid-cols-${availableTabs.length}`)}>
                         {availableTabs.map(tab => (
