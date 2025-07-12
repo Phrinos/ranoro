@@ -66,6 +66,7 @@ export function ServiceDetailsCard({
     const status = getValues('status');
     const date = getValues('serviceDate');
     if (status === 'Agendado') return true;
+    // Keep showing if it was scheduled and now is in progress or done
     if ((status === 'En Taller' || status === 'Entregado') && date) return true;
     return false;
   }, [watchedStatus, serviceDate, getValues]);
@@ -82,7 +83,21 @@ export function ServiceDetailsCard({
           {watchedStatus === 'En Taller' && (
               <FormField control={control} name="subStatus" render={({ field }) => ( <FormItem><FormLabel>Sub-Estado Taller</FormLabel><Select onValueChange={field.onChange} value={field.value} disabled={isReadOnly}><FormControl><SelectTrigger><SelectValue placeholder="Seleccione sub-estado..." /></SelectTrigger></FormControl><SelectContent>{["En Espera de Refacciones", "Reparando", "Completado"].map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent></Select></FormItem> )}/>
           )}
-          <FormField control={control} name="serviceType" render={({ field }) => ( <FormItem><FormLabel>Tipo de Servicio</FormLabel><Select onValueChange={handleServiceTypeChange} value={field.value || 'Servicio General'} disabled={isReadOnly}><FormControl><SelectTrigger><SelectValue placeholder="Seleccione un tipo" /></SelectTrigger></FormControl><SelectContent>{serviceTypes.map((type) => <SelectItem key={type.id} value={type.name}>{type.name}</SelectItem>)}</SelectContent></Select></FormItem> )}/>
+          <FormField control={control} name="serviceType" render={({ field }) => (
+            <FormItem><FormLabel>Tipo de Servicio</FormLabel>
+              <Select onValueChange={handleServiceTypeChange} value={field.value || 'Servicio General'} disabled={isReadOnly}>
+                <FormControl><SelectTrigger><SelectValue placeholder="Seleccione un tipo" /></SelectTrigger></FormControl>
+                <SelectContent>
+                  {serviceTypes
+                    .slice() // Create a shallow copy to avoid mutating the original prop array
+                    .sort((a, b) => a.name.localeCompare(b.name))
+                    .map((type) => (
+                      <SelectItem key={type.id} value={type.name}>{type.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </FormItem> 
+          )}/>
           {(watchedStatus === 'En Taller' || watchedStatus === 'Entregado') && (
             <FormField control={control} name="technicianId" render={({ field }) => ( <FormItem><FormLabel>Técnico Asignado</FormLabel><Select onValueChange={field.onChange} value={field.value} disabled={isReadOnly}><FormControl><SelectTrigger><SelectValue placeholder="Seleccione un técnico..." /></SelectTrigger></FormControl><SelectContent>{technicians.filter((t) => !t.isArchived).map((technician) => ( <SelectItem key={technician.id} value={technician.id}>{technician.name} - {technician.specialty}</SelectItem> ))}</SelectContent></Select><FormMessage /></FormItem> )}/>
           )}
