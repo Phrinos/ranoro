@@ -117,7 +117,7 @@ export function RolesPageContent({ currentUser, initialRoles }: { currentUser: U
                 <Input
                     type="search"
                     placeholder="Buscar por nombre de rol..."
-                    className="w-full rounded-lg bg-background pl-8 md:w-1/2 lg:w-1/3"
+                    className="w-full rounded-lg bg-card pl-8 md:w-1/2 lg:w-1/3"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                 />
