@@ -46,16 +46,20 @@ const onServicesUpdatePromise = async (): Promise<ServiceRecord[]> => {
 
 const saveService = async (data: Partial<ServiceRecord>): Promise<ServiceRecord> => {
     if (!db) throw new Error("Database not initialized.");
-
-    const isEditing = !!data.id;
-    const docId = data.id || nanoid();
     
+    // Determine if it's an update or creation based on the presence of an ID
+    const isEditing = !!data.id;
+    const docId = data.id || nanoid(); // Use existing ID or generate a new one
+    
+    // Create a reference to the document
     const docRef = doc(db, 'serviceRecords', docId);
 
     // Using setDoc with { merge: true } for both create and update.
-    // This simplifies the logic: if the doc doesn't exist, it's created. If it exists, it's merged/updated.
+    // This simplifies the logic: if the doc doesn't exist, it's created. 
+    // If it exists, fields in `data` will be merged/overwritten.
     await setDoc(docRef, data, { merge: true });
 
+    // Retrieve the full, updated document to return it
     const newDocSnap = await getDoc(docRef);
     if (!newDocSnap.exists()) {
       throw new Error("Failed to save or retrieve the service document.");
@@ -70,8 +74,6 @@ const updateService = async (serviceId: string, data: Partial<ServiceRecord>): P
 };
 
 const addService = async (data: Partial<ServiceRecord>): Promise<ServiceRecord> => {
-    // The saveService function handles both creation and updates now.
-    // We just ensure the ID is not present for creation.
     const { id, ...serviceData } = data;
     return saveService(serviceData);
 };
@@ -342,4 +344,5 @@ export const operationsService = {
     addVehicleExpense,
     addOwnerWithdrawal,
 };
+
 

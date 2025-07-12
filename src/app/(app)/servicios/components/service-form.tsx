@@ -27,7 +27,7 @@ import { UnifiedPreviewDialog } from '@/components/shared/unified-preview-dialog
 import { VehicleSelectionCard } from './VehicleSelectionCard';
 import { ReceptionAndDelivery } from './ReceptionAndDelivery';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import Image from "next/legacy/image";
+import Image from "next/image";
 import { Download } from "lucide-react";
 import { ServiceDetailsCard } from "./ServiceDetailsCard";
 import { Textarea } from "@/components/ui/textarea";
@@ -125,7 +125,6 @@ const serviceFormSchemaBase = z.object({
   serviceAdvisorSignatureDataUrl: z.string().optional(),
   photoReports: z.array(photoReportGroupSchema).optional(),
 }).refine(data => {
-    // A service being 'Agendado' (Scheduled) must have a service date.
     if (data.status === 'Agendado' && !data.serviceDate) {
         return false;
     }
@@ -158,17 +157,22 @@ interface ServiceFormProps {
 
 const IVA_RATE = 0.16;
 
-// Helper to remove undefined properties from an object, which Firestore doesn't support.
-function cleanDataForFirestore(data: Record<string, any>) {
-  const cleanedData: Record<string, any> = {};
-  for (const key in data) {
-    if (data[key] !== undefined) {
-      cleanedData[key] = data[key];
-    } else {
-      cleanedData[key] = null; // Explicitly set undefined to null for Firestore
+function cleanObject(obj: any): any {
+  if (obj === null || obj === undefined) return null;
+  if (typeof obj !== 'object') return obj;
+
+  if (Array.isArray(obj)) {
+    return obj.map(cleanObject).filter(v => v !== undefined);
+  }
+
+  const newObj: { [key: string]: any } = {};
+  for (const key in obj) {
+    if (obj[key] !== undefined) {
+      newObj[key] = cleanObject(obj[key]);
     }
   }
-  return cleanedData;
+
+  return newObj;
 }
 
 
@@ -317,7 +321,7 @@ export function ServiceForm({
         serviceAdvisorSignatureDataUrl: data?.serviceAdvisorSignatureDataUrl || freshUserRef.current?.signatureDataUrl || '',
         photoReports: photoReportsData,
         serviceItems: serviceItemsData,
-        status: data?.status || 'Cotizacion',
+        status: data?.status || (mode === 'quote' ? 'Cotizacion' : 'En Taller'),
         subStatus: (data as ServiceRecord)?.subStatus || undefined,
         serviceType: data?.serviceType || (serviceTypes.length > 0 ? serviceTypes[0].name : 'Servicio General'),
     });
@@ -411,14 +415,9 @@ export function ServiceForm({
         values.receptionDateTime = new Date();
     }
     
-    const finalData = cleanDataForFirestore({
+    const finalData = {
         ...values,
-        id: values.id,
-        publicId: values.publicId || `s_${nanoid(12).toLowerCase()}`,
-        vehicleId: getValues('vehicleId')!,
         description: (values.serviceItems || []).map(item => item.name).join(', ') || 'Servicio',
-        status: values.status,
-        serviceType: values.serviceType,
         totalCost,
         totalSuppliesWorkshopCost,
         serviceProfit,
@@ -427,19 +426,20 @@ export function ServiceForm({
         receptionDateTime: values.receptionDateTime ? values.receptionDateTime.toISOString() : null,
         deliveryDateTime: values.deliveryDateTime ? values.deliveryDateTime.toISOString() : null,
         vehicleIdentifier: getValues('vehicleLicensePlateSearch') || 'N/A',
-        technicianId: values.technicianId || null,
         technicianName: technicians.find(t => t.id === values.technicianId)?.name || null,
         subTotal: totalCost / (1 + IVA_RATE),
         taxAmount: totalCost - (totalCost / (1 + IVA_RATE)),
         serviceAdvisorId: freshUserRef.current.id,
         serviceAdvisorName: freshUserRef.current.name,
         serviceAdvisorSignatureDataUrl: freshUserRef.current.signatureDataUrl,
-    });
+    };
     
-    if (db && finalData.publicId) {
-        await savePublicDocument('service', finalData as ServiceRecord, localVehicles.find(v => v.id === getValues('vehicleId')) || null, workshopInfo);
+    const cleanedData = cleanObject(finalData);
+
+    if (db && cleanedData.publicId) {
+        await savePublicDocument('service', cleanedData as ServiceRecord, localVehicles.find(v => v.id === getValues('vehicleId')) || null, workshopInfo);
     }
-    await onSubmit(finalData as ServiceRecord);
+    await onSubmit(cleanedData as ServiceRecord);
     onClose();
   }, [isReadOnly, onClose, getValues, onSubmit, toast, technicians, totalCost, serviceProfit, workshopInfo, localVehicles, currentInventoryItems, totalSuppliesWorkshopCost, trigger]);
 
@@ -630,4 +630,5 @@ export function ServiceForm({
     </>
   );
 }
+
 
