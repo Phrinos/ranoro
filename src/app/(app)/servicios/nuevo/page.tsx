@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -9,10 +10,10 @@ import { useToast } from "@/hooks/use-toast";
 import { useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 import { inventoryService, personnelService } from '@/lib/services';
-import { doc, addDoc, collection } from 'firebase/firestore';
+import { addDoc, collection } from 'firebase/firestore';
 import { db } from '@/lib/firebaseClient';
 
-type DialogStep = 'form' | 'preview' | 'closed';
+type DialogStep = 'form' | 'closed';
 
 export default function NuevoServicioPage() {
   const { toast } = useToast(); 
@@ -25,7 +26,6 @@ export default function NuevoServicioPage() {
   const [isLoading, setIsLoading] = useState(true);
 
   const [dialogStep, setDialogStep] = useState<DialogStep>('form');
-  const [lastSavedRecord, setLastSavedRecord] = useState<ServiceRecord | null>(null);
   
   useEffect(() => {
     const loadData = async () => {
@@ -71,13 +71,11 @@ export default function NuevoServicioPage() {
     if (!db) return;
     try {
       const docRef = await addDoc(collection(db, "serviceRecords"), data);
-      const savedRecord = { ...data, id: docRef.id } as ServiceRecord;
-      setLastSavedRecord(savedRecord);
-      setDialogStep('preview');
       toast({
         title: "Registro Creado",
         description: `Se ha creado la cotización/servicio #${docRef.id}.`
       });
+      setDialogStep('closed'); // Close and redirect after saving
     } catch (e) {
       console.error("Error creating record: ", e);
       toast({ title: 'Error al Guardar', variant: 'destructive' });
@@ -87,13 +85,8 @@ export default function NuevoServicioPage() {
 
   const handleFormDialogClose = () => { 
      if (dialogStep === 'form') { 
-      router.push('/dashboard'); 
+      setDialogStep('closed');
     }
-  };
-  
-  const handlePreviewDialogClose = () => {
-    setLastSavedRecord(null); 
-    setDialogStep('closed'); 
   };
   
   const handleVehicleCreated = async (newVehicleData: Omit<Vehicle, 'id'>) => {
@@ -134,22 +127,13 @@ export default function NuevoServicioPage() {
           vehicles={vehicles}
           technicians={technicians}
           inventoryItems={inventoryItems}
+          serviceTypes={serviceTypes}
           onSave={handleSaveComplete}
-          onVehicleCreated={(data) => handleVehicleCreated(data as Omit<Vehicle, 'id'>)}
+          onVehicleCreated={handleVehicleCreated}
           mode="quote"
         />
       )}
       
-      {dialogStep === 'preview' && lastSavedRecord && (
-        <UnifiedPreviewDialog
-          open={true}
-          onOpenChange={(isOpen) => !isOpen && handlePreviewDialogClose()}
-          service={lastSavedRecord}
-          vehicle={vehicles.find(v => v.id === lastSavedRecord.vehicleId) || null}
-          associatedQuote={null} // It's a new record, no previous quote
-        />
-      )}
-
       {dialogStep === 'closed' && (
         <div className="text-center p-8">
           <p className="text-muted-foreground">Redireccionando...</p>

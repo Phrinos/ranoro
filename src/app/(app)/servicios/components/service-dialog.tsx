@@ -12,7 +12,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { ServiceForm } from "./service-form";
-import type { ServiceRecord, Vehicle, Technician, InventoryItem, QuoteRecord, User } from "@/types";
+import type { ServiceRecord, Vehicle, Technician, InventoryItem, QuoteRecord, User, ServiceTypeRecord } from "@/types";
 import { useToast } from "@/hooks/use-toast"; 
 import { persistToFirestore, placeholderServiceRecords, logAudit, AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
 import { db } from '@/lib/firebaseClient.js';
@@ -26,11 +26,12 @@ interface ServiceDialogProps {
   vehicles: Vehicle[]; 
   technicians: Technician[]; 
   inventoryItems: InventoryItem[]; 
+  serviceTypes: ServiceTypeRecord[];
   onSave?: (data: ServiceRecord | QuoteRecord) => Promise<void>; 
   isReadOnly?: boolean; 
   open?: boolean; 
   onOpenChange?: (isOpen: boolean) => void; 
-  onVehicleCreated?: (newVehicle: Vehicle) => void; 
+  onVehicleCreated?: (newVehicle: Omit<Vehicle, 'id'>) => void; 
   mode?: 'service' | 'quote'; // New mode prop
   onDelete?: (id: string) => void; // For quote deletion
   onCancelService?: (serviceId: string, reason: string) => void;
@@ -44,6 +45,7 @@ export function ServiceDialog({
   vehicles, 
   technicians, 
   inventoryItems, 
+  serviceTypes,
   onSave, 
   isReadOnly = false,
   open: controlledOpen,
@@ -181,6 +183,8 @@ export function ServiceDialog({
             vehicles={vehicles} 
             technicians={technicians}
             inventoryItems={inventoryItems}
+            serviceTypes={serviceTypes}
+            serviceHistory={[]} // Assuming this can be empty or fetched inside ServiceForm if needed
             onSubmit={internalOnSave}
             onClose={() => onOpenChange(false)}
             isReadOnly={isReadOnly}
@@ -188,7 +192,6 @@ export function ServiceDialog({
             mode={mode}
             onDelete={onDelete}
             onCancelService={onCancelService}
-            onViewQuoteRequest={onViewQuoteRequest}
           />
         </div>
       </DialogContent>
