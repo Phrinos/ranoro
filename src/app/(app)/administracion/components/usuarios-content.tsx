@@ -2,7 +2,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form";
@@ -174,7 +174,10 @@ export function UsuariosPageContent({ currentUser, initialUsers, initialRoles }:
 
         {isFormOpen && (
             <Card className="mt-8" ref={formCardRef}>
-                <CardHeader><CardTitle>{editingUser ? 'Editar Usuario' : 'Crear Nuevo Usuario'}</CardTitle><CardDescription>{editingUser ? `Para cambiar la contraseña, debe hacerse directamente en Firebase Authentication por seguridad.` : 'La contraseña se establecerá en la consola de Firebase después de crear el usuario.'}</CardDescription></CardHeader>
+                <CardHeader>
+                    <CardTitle>{editingUser ? 'Editar Usuario' : 'Crear Nuevo Usuario'}</CardTitle>
+                    <CardDescription>{editingUser ? `Para cambiar la contraseña, debe hacerse directamente en Firebase Authentication por seguridad.` : 'La contraseña se establecerá en la consola de Firebase después de crear el usuario.'}</CardDescription>
+                </CardHeader>
                 <CardContent>
                     <Form {...form}>
                         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">

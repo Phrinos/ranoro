@@ -9,6 +9,8 @@ import {
   deleteDoc,
   serverTimestamp,
   getDoc,
+  query,
+  orderBy
 } from 'firebase/firestore';
 import { db } from '../firebaseClient';
 import type { User, AppRole, AuditLog } from "@/types";
@@ -45,7 +47,9 @@ const getRoles = async (): Promise<AppRole[]> => {
 const getAuditLogs = async (): Promise<AuditLog[]> => {
     if (!db) return [];
     const auditLogsCollection = collection(db, 'auditLogs');
-    const auditLogsSnapshot = await getDocs(auditLogsCollection);
+    // Sort by date descending when fetching
+    const q = query(auditLogsCollection, orderBy("date", "desc"));
+    const auditLogsSnapshot = await getDocs(q);
     return auditLogsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as AuditLog));
 };
 
@@ -102,8 +106,8 @@ const saveRole = async (role: Omit<AppRole, 'id'>, adminUser: User, roleId?: str
         id = newRoleRef.id;
     }
     
-    await logAudit(isEditing ? 'Editar' : 'Crear', description, { entityType: 'Rol', entityId: id, userId: adminUser.id, userName: adminUser.name });
-    return { id, ...role };
+    await logAudit(isEditing ? 'Editar' : 'Crear', description, { entityType: 'Rol', entityId: id!, userId: adminUser.id, userName: adminUser.name });
+    return { id: id!, ...role };
 };
 
 const deleteRole = async (roleId: string, adminUser: User): Promise<void> => {
