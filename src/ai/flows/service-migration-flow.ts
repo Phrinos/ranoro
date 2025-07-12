@@ -17,6 +17,7 @@ export type ExtractedService = z.infer<typeof ExtractedServiceSchema>;
 
 const ServiceMigrationInputSchema = z.object({
   csvContent: z.string().describe('The full string content of a spreadsheet sheet, formatted as CSV.'),
+  mapping: z.string().describe('A JSON string representing the mapping from CSV headers to required fields. Example: {"vehicleLicensePlate": "Placa del Coche", "serviceDate": "Fecha"}'),
 });
 
 const ServiceMigrationOutputSchema = z.object({
@@ -32,16 +33,13 @@ const migrateServicesPrompt = ai.definePrompt({
   name: 'migrateServicesPrompt',
   input: { schema: ServiceMigrationInputSchema },
   output: { schema: ServiceMigrationOutputSchema },
-  prompt: `You are a data migration specialist for an auto repair shop. Your task is to analyze the provided CSV-formatted text and extract service history information.
+  prompt: `You are a data migration specialist for an auto repair shop. Your task is to analyze the provided CSV-formatted text and extract service history information, using a predefined column mapping.
 
 **Instructions:**
-1.  **Identify Columns**: Intelligently map the columns from the CSV to the required fields. Common mappings are:
-    *   'Placa', 'Patente' -> 'vehicleLicensePlate' (MANDATORY)
-    *   'Fecha', 'Date' -> 'serviceDate' (MANDATORY)
-    *   'Descripción', 'Trabajo Realizado', 'Concepto' -> 'description' (MANDATORY)
-    *   'Costo', 'Total', 'Importe' -> 'totalCost' (MANDATORY)
-2.  **Extract Data**: For each row in the CSV that represents a service, create one service object in the 'services' array.
-3.  **Mandatory Fields**: Every service record MUST have a valid 'vehicleLicensePlate', 'serviceDate', 'description', and 'totalCost'. If a row is missing any of these critical pieces of information, you must ignore that row entirely.
+1.  **Use the Provided Mapping**: You have been given a JSON mapping object that tells you exactly which CSV column header corresponds to each required data field. You MUST adhere to this mapping.
+    *   Mapping: {{{mapping}}}
+2.  **Extract Data**: For each row in the CSV, create one service object in the 'services' array using the headers defined in the mapping.
+3.  **Mandatory Fields**: Every service record MUST have a valid 'vehicleLicensePlate', 'serviceDate', 'description', and 'totalCost'. If a row is missing data in a column that is mapped to a mandatory field, you must ignore that row entirely.
 4.  **Clean Data**: Trim whitespace from all text fields. Convert 'totalCost' to a number. Ensure 'serviceDate' is preserved in its original format from the CSV.
 
 Analyze the following CSV content and return the data in the specified JSON format.
@@ -70,3 +68,4 @@ const migrateServicesFlow = ai.defineFlow(
     return output;
   }
 );
+

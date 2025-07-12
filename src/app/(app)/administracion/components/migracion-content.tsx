@@ -1,28 +1,56 @@
 
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Car, Package, BrainCircuit, Upload, Loader2, CheckCircle, AlertTriangle, Database, Wrench } from 'lucide-react';
+import { Car, Package, BrainCircuit, Upload, Loader2, CheckCircle, AlertTriangle, Database, Wrench, ArrowRight } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import type { ExtractedVehicleForMigration } from '@/ai/flows/vehicle-migration-flow';
 import type { ExtractedProduct } from '@/ai/flows/product-migration-flow';
-import type { ExtractedService } from '@/ai/flows/service-migration-flow'; // New
+import type { ExtractedService } from '@/ai/flows/service-migration-flow';
 import { migrateVehicles } from '@/ai/flows/vehicle-migration-flow';
 import { migrateProducts } from '@/ai/flows/product-migration-flow';
-import { migrateServices } from '@/ai/flows/service-migration-flow'; // New
+import { migrateServices } from '@/ai/flows/service-migration-flow';
 import { useToast } from '@/hooks/use-toast';
 import * as xlsx from 'xlsx';
 import { inventoryService, operationsService } from '@/lib/services';
 import type { VehicleFormValues } from '@/app/(app)/vehiculos/components/vehicle-form';
 import { formatCurrency } from '@/lib/utils';
 import { format, parse, isValid } from 'date-fns';
+import { Label } from '@/components/ui/label';
 
 type AnalysisResult = | { type: 'vehicles'; vehicles: ExtractedVehicleForMigration[]; } | { type: 'products'; products: ExtractedProduct[]; } | { type: 'services'; services: ExtractedService[]; };
+
+type Mapping = Record<string, string>;
+
+const VEHICLE_FIELDS = [
+    { key: 'licensePlate', label: 'Placa (Obligatorio)', example: 'ABC-123' },
+    { key: 'make', label: 'Marca', example: 'Nissan' },
+    { key: 'model', label: 'Modelo', example: 'Sentra' },
+    { key: 'year', label: 'Año', example: '2020' },
+    { key: 'ownerName', label: 'Propietario', example: 'Juan Pérez' },
+    { key: 'ownerPhone', label: 'Teléfono', example: '555-1234' },
+];
+
+const PRODUCT_FIELDS = [
+    { key: 'name', label: 'Nombre (Obligatorio)', example: 'Filtro de Aceite' },
+    { key: 'sku', label: 'SKU / Código', example: 'FA-001' },
+    { key: 'quantity', label: 'Cantidad', example: '50' },
+    { key: 'unitPrice', label: 'Precio Compra', example: '120.50' },
+    { key: 'sellingPrice', label: 'Precio Venta', example: '180.00' },
+];
+
+const SERVICE_FIELDS = [
+    { key: 'vehicleLicensePlate', label: 'Placa Vehículo (Obligatorio)', example: 'XYZ-456' },
+    { key: 'serviceDate', label: 'Fecha Servicio (Obligatorio)', example: '15/07/2023' },
+    { key: 'description', label: 'Descripción (Obligatorio)', example: 'Cambio de aceite y filtro' },
+    { key: 'totalCost', label: 'Costo Total (Obligatorio)', example: '850.00' },
+];
+
 
 export function MigracionPageContent() {
     const [workbook, setWorkbook] = useState<any | null>(null);
@@ -35,29 +63,54 @@ export function MigracionPageContent() {
     const [error, setError] = useState<string | null>(null);
     const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
     const [activeTab, setActiveTab] = useState<'vehiculos' | 'productos' | 'servicios'>('vehiculos');
+    
+    // New state for column mapping
+    const [detectedHeaders, setDetectedHeaders] = useState<string[]>([]);
+    const [columnMapping, setColumnMapping] = useState<Mapping>({});
+    
     const { toast } = useToast();
+    
+    const getCurrentFields = () => {
+        switch(activeTab) {
+            case 'vehiculos': return VEHICLE_FIELDS;
+            case 'productos': return PRODUCT_FIELDS;
+            case 'servicios': return SERVICE_FIELDS;
+            default: return [];
+        }
+    };
+    
+    const autoMapColumns = (headers: string[]) => {
+        const mapping: Mapping = {};
+        const fields = getCurrentFields();
+        fields.forEach(field => {
+            const lowerKey = field.key.toLowerCase();
+            const foundHeader = headers.find(h => h.toLowerCase().replace(/ /g,'').includes(lowerKey));
+            if (foundHeader) {
+                mapping[field.key] = foundHeader;
+            }
+        });
+        setColumnMapping(mapping);
+    };
 
     const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
         if (!file) return;
 
-        setIsAnalyzing(true);
         setError(null);
         setFileName(file.name);
-        setAnalysisResult(null); // Reset previous results
+        setAnalysisResult(null);
 
         try {
             const data = await file.arrayBuffer();
             const wb = xlsx.read(data);
             setWorkbook(wb);
             setSheetNames(wb.SheetNames);
-            setSelectedSheet(wb.SheetNames[0]);
-            handleSheetChange(wb.SheetNames[0], wb);
+            if(wb.SheetNames.length > 0){
+                handleSheetChange(wb.SheetNames[0], wb);
+            }
         } catch (e) {
             console.error("Error al leer el archivo:", e);
             setError("No se pudo leer el archivo. Asegúrese de que sea un .xlsx válido.");
-        } finally {
-            setIsAnalyzing(false);
         }
     };
 
@@ -67,9 +120,15 @@ export function MigracionPageContent() {
 
         setSelectedSheet(sheetName);
         const worksheet = currentWorkbook.Sheets[sheetName];
+        
+        // Extract headers
+        const headers: any[] = xlsx.utils.sheet_to_json(worksheet, { header: 1 })[0] || [];
+        setDetectedHeaders(headers.map(String));
+        
         const csvContent = xlsx.utils.sheet_to_csv(worksheet);
         setFileContent(csvContent);
-        setAnalysisResult(null); // Reset results when sheet changes
+        setAnalysisResult(null);
+        autoMapColumns(headers.map(String));
     };
 
     const handleAnalyze = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -84,6 +143,7 @@ export function MigracionPageContent() {
 
         try {
             let result;
+            const mappingJson = JSON.stringify(columnMapping);
             if (activeTab === 'vehiculos') {
                 const rawResult = await migrateVehicles({ csvContent: fileContent });
                 result = { ...rawResult, type: 'vehicles' as const };
@@ -91,7 +151,7 @@ export function MigracionPageContent() {
                 const rawResult = await migrateProducts({ csvContent: fileContent });
                 result = { ...rawResult, type: 'products' as const };
             } else { // servicios
-                const rawResult = await migrateServices({ csvContent: fileContent });
+                const rawResult = await migrateServices({ csvContent: fileContent, mapping: mappingJson });
                 result = { ...rawResult, type: 'services' as const };
             }
             setAnalysisResult(result);
@@ -138,13 +198,17 @@ export function MigracionPageContent() {
                  }
             }
             toast({ title: "¡Migración Exitosa!", description: `Se guardaron ${itemsAdded} ${entityType.toLowerCase()} en la base de datos.` });
-            setAnalysisResult(null); // Clear results after saving
+            setAnalysisResult(null);
         } catch(e) {
              console.error("Error al guardar en DB:", e);
              toast({ title: 'Error al Guardar', description: `No se pudieron guardar los datos. ${e instanceof Error ? e.message : ''}`, variant: 'destructive' });
         } finally {
             setIsSaving(false);
         }
+    };
+
+    const handleMappingChange = (fieldKey: string, header: string) => {
+        setColumnMapping(prev => ({...prev, [fieldKey]: header}));
     };
     
     const renderAnalysisResult = () => {
@@ -199,55 +263,67 @@ export function MigracionPageContent() {
 
     return (
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-1">
-          <form onSubmit={handleAnalyze}>
+        <div className="lg:col-span-1 space-y-4">
             <Card className="shadow-lg">
-                <CardHeader>
-                    <CardTitle>1. Cargar Archivo</CardTitle>
-                    <CardDescription>Sube un archivo <code>.xlsx</code> con tu historial.</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6">
+                <CardHeader><CardTitle>1. Cargar Archivo</CardTitle><CardDescription>Sube un archivo <code>.xlsx</code> con tu historial.</CardDescription></CardHeader>
+                <CardContent>
                     <div className="flex items-center justify-center w-full">
                         <label htmlFor="file-upload" className="flex flex-col items-center justify-center w-full h-36 border-2 border-dashed rounded-lg cursor-pointer bg-card hover:bg-muted/50">
-                            {isAnalyzing ? ( <div className="flex flex-col items-center justify-center pt-5 pb-6"><Loader2 className="w-8 h-8 mb-4 text-primary animate-spin" /><p className="mb-2 text-sm text-muted-foreground">Procesando...</p></div> ) : fileName ? ( <div className="flex flex-col items-center justify-center pt-5 pb-6 text-center"><CheckCircle className="w-8 h-8 mb-4 text-green-500"/><p className="mb-2 text-sm text-foreground"><span className="font-semibold">Archivo cargado:</span></p><p className="text-xs text-muted-foreground truncate max-w-[200px]">{fileName}</p></div> ) : ( <div className="flex flex-col items-center justify-center pt-5 pb-6"><Upload className="w-8 h-8 mb-4 text-muted-foreground" /><p className="mb-2 text-sm text-muted-foreground"><span className="font-semibold">Haz clic para subir</span> o arrastra</p><p className="text-xs text-muted-foreground">Sólo archivos .XLSX</p></div> )}
-                             <Input id="file-upload" type="file" className="hidden" accept=".xlsx" onChange={handleFileChange} disabled={isAnalyzing} />
+                            {fileName ? ( <div className="flex flex-col items-center justify-center pt-5 pb-6 text-center"><CheckCircle className="w-8 h-8 mb-4 text-green-500"/><p className="mb-2 text-sm text-foreground"><span className="font-semibold">Archivo cargado:</span></p><p className="text-xs text-muted-foreground truncate max-w-[200px]">{fileName}</p></div> ) : ( <div className="flex flex-col items-center justify-center pt-5 pb-6"><Upload className="w-8 h-8 mb-4 text-muted-foreground" /><p className="mb-2 text-sm text-muted-foreground"><span className="font-semibold">Haz clic para subir</span> o arrastra</p><p className="text-xs text-muted-foreground">Sólo archivos .XLSX</p></div> )}
+                             <Input id="file-upload" type="file" className="hidden" accept=".xlsx" onChange={handleFileChange} />
                         </label>
                     </div>
-
                     {sheetNames.length > 0 && (
-                        <Select onValueChange={(value) => handleSheetChange(value)} value={selectedSheet}>
-                            <SelectTrigger><SelectValue placeholder="Seleccione una hoja" /></SelectTrigger>
+                        <Select onValueChange={(value) => handleSheetChange(value)} value={selectedSheet} className="mt-4">
+                            <SelectTrigger className="mt-4"><SelectValue placeholder="Seleccione una hoja" /></SelectTrigger>
                             <SelectContent>{sheetNames.map(name => <SelectItem key={name} value={name}>{name}</SelectItem>)}</SelectContent>
                         </Select>
                     )}
-                    {error && <p className="text-sm text-destructive">{error}</p>}
+                    {error && <p className="mt-2 text-sm text-destructive">{error}</p>}
                 </CardContent>
             </Card>
-          </form>
         </div>
-        <div className="lg:col-span-2">
+        <div className="lg:col-span-2 space-y-4">
             <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="w-full">
                 <TabsList className="grid w-full grid-cols-3">
                     <TabsTrigger value="vehiculos"><Car className="mr-2 h-4 w-4"/>Vehículos</TabsTrigger>
                     <TabsTrigger value="productos"><Package className="mr-2 h-4 w-4"/>Productos</TabsTrigger>
                     <TabsTrigger value="servicios"><Wrench className="mr-2 h-4 w-4"/>Servicios</TabsTrigger>
                 </TabsList>
-                <TabsContent value="vehiculos">
-                    <Card><CardHeader><CardTitle>Migración de Vehículos</CardTitle><CardDescription>Usa esta opción si tu hoja contiene solo información de vehículos (nombre, tel, marca, modelo, año, y **placa**).</CardDescription></CardHeader><CardContent><Button type="button" className="w-full" onClick={(e) => handleAnalyze(e as any)} disabled={!fileContent || isAnalyzing}>{isAnalyzing ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <BrainCircuit className="mr-2 h-4 w-4"/>} Analizar Datos de Vehículos</Button></CardContent></Card>
-                </TabsContent>
-                <TabsContent value="productos">
-                    <Card><CardHeader><CardTitle>Migración de Productos</CardTitle><CardDescription>Usa esta opción si tu hoja contiene solo información de productos (código, nombre, existencias, precios).</CardDescription></CardHeader><CardContent><Button type="button" className="w-full" onClick={(e) => handleAnalyze(e as any)} disabled={!fileContent || isAnalyzing}>{isAnalyzing ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <BrainCircuit className="mr-2 h-4 w-4"/>} Analizar Datos de Productos</Button></CardContent></Card>
-                </TabsContent>
-                <TabsContent value="servicios">
-                    <Card><CardHeader><CardTitle>Migración de Servicios</CardTitle><CardDescription>Usa esta opción si tu hoja contiene un historial de servicios (placa del vehículo, descripción, fecha y costo).</CardDescription></CardHeader><CardContent><Button type="button" className="w-full" onClick={(e) => handleAnalyze(e as any)} disabled={!fileContent || isAnalyzing}>{isAnalyzing ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <BrainCircuit className="mr-2 h-4 w-4"/>} Analizar Datos de Servicios</Button></CardContent></Card>
-                </TabsContent>
             </Tabs>
+            
+             <form onSubmit={handleAnalyze}>
+                <Card>
+                    <CardHeader><CardTitle>2. Mapeo de Columnas</CardTitle><CardDescription>Indica qué columna de tu archivo corresponde a cada campo del sistema.</CardDescription></CardHeader>
+                    <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {getCurrentFields().map(field => (
+                            <div key={field.key} className="space-y-1">
+                                <Label>{field.label}</Label>
+                                <Select value={columnMapping[field.key] || ''} onValueChange={(value) => handleMappingChange(field.key, value)}>
+                                    <SelectTrigger><SelectValue placeholder={`Seleccionar: ${field.example}`} /></SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="">-- No Mapear --</SelectItem>
+                                        {detectedHeaders.map(header => <SelectItem key={header} value={header}>{header}</SelectItem>)}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        ))}
+                    </CardContent>
+                </Card>
+                 <Card className="mt-4">
+                    <CardHeader><CardTitle>3. Analizar y Guardar</CardTitle><CardDescription>La IA usará tu mapeo para extraer los datos. Luego podrás revisarlos antes de guardarlos.</CardDescription></CardHeader>
+                    <CardContent>
+                        <Button type="submit" className="w-full" disabled={!fileContent || isAnalyzing}>
+                            {isAnalyzing ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <BrainCircuit className="mr-2 h-4 w-4"/>} Analizar Datos con IA
+                        </Button>
+                    </CardContent>
+                </Card>
+             </form>
              
             {isAnalyzing && (
                 <Card className="mt-6">
                     <CardContent className="flex items-center justify-center p-8 text-muted-foreground">
-                        <Loader2 className="h-6 w-6 animate-spin mr-3"/>
-                        <p>La IA está analizando los datos, por favor espere...</p>
+                        <Loader2 className="h-6 w-6 animate-spin mr-3"/><p>La IA está analizando los datos, por favor espere...</p>
                     </CardContent>
                 </Card>
             )}
@@ -258,3 +334,4 @@ export function MigracionPageContent() {
       </div>
     );
 }
+
