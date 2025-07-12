@@ -59,9 +59,19 @@ export function ServiceDialog({
   const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
   const { toast } = useToast();
 
+  // State for dynamic title based on form's status
+  const [formStatus, setFormStatus] = useState<ServiceRecord['status'] | undefined>(service?.status || quote?.status);
+
   const isControlled = controlledOpen !== undefined && setControlledOpen !== undefined;
   const open = isControlled ? controlledOpen : uncontrolledOpen;
   const onOpenChange = isControlled ? setControlledOpen : setUncontrolledOpen;
+
+  useEffect(() => {
+    if(open) {
+      setFormStatus(service?.status || quote?.status);
+    }
+  }, [open, service, quote]);
+
 
   // Mark signatures as "viewed" when the dialog opens
   useEffect(() => {
@@ -102,7 +112,7 @@ export function ServiceDialog({
           changed = true;
         }
         
-        if (changed) {
+        if (changed && db) {
           // This should now trigger a re-render in the parent through the onSave prop if available
           // or directly update firestore
           const serviceDocRef = doc(db, "serviceRecords", service.id);
@@ -141,7 +151,7 @@ export function ServiceDialog({
   
   const getDynamicTitles = () => {
     const currentRecord = service || quote;
-    const status = currentRecord?.status;
+    const status = formStatus || currentRecord?.status;
 
     if (isReadOnly) {
         switch (status) {
@@ -160,11 +170,14 @@ export function ServiceDialog({
     }
     
     // Creating new record
-    return { 
-        title: mode === 'quote' ? "Nueva Cotización" : "Nuevo Servicio", 
-        description: mode === 'quote' ? "Completa la información para una nueva cotización." : "Completa la información para una nueva orden de servicio." 
-    };
+    switch (status) {
+        case 'Cotizacion': return { title: "Nueva Cotización", description: "Completa la información para una nueva cotización." };
+        case 'Agendado': return { title: "Nueva Cita", description: "Completa la información para una nueva cita." };
+        case 'En Taller': return { title: "Nuevo Servicio", description: "Completa la información para una nueva orden de servicio." };
+        default: return { title: "Nuevo Registro", description: "Selecciona un estado para continuar." };
+    }
   };
+
 
   const { title: dialogTitle, description: dialogDescription } = getDynamicTitles();
       
@@ -192,6 +205,7 @@ export function ServiceDialog({
             mode={mode}
             onDelete={onDelete}
             onCancelService={onCancelService}
+            onStatusChange={setFormStatus} // Pass the setter function
           />
         </div>
       </DialogContent>

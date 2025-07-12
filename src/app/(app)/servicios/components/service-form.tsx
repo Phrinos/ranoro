@@ -3,10 +3,10 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm, useFieldArray, useWatch } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import * as z from "zod";
 import { Button } from "@/components/ui/button";
-import { Form, FormControl, FormField, FormItem, FormLabel } from "@/components/ui/form";
+import { Form } from "@/components/ui/form";
 import { Ban, Camera, CheckCircle, Eye, Loader2, PlusCircle, ShieldCheck, Signature, Trash2, Wrench } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { parseISO, isValid } from 'date-fns';
@@ -22,18 +22,17 @@ import { enhanceText } from '@/ai/flows/text-enhancement-flow';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SignatureDialog } from './signature-dialog';
 import { savePublicDocument } from "@/lib/public-document";
-import { PhotoUploader } from "./PhotoUploader";
 import { SafetyChecklist } from './SafetyChecklist';
 import { UnifiedPreviewDialog } from '@/components/shared/unified-preview-dialog';
 import { VehicleSelectionCard } from './VehicleSelectionCard';
 import { ReceptionAndDelivery } from './ReceptionAndDelivery';
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription } from '../ui/dialog';
 import Image from "next/legacy/image";
 import { Download } from "lucide-react";
 import { ServiceDetailsCard } from "./ServiceDetailsCard";
 import { Textarea } from "@/components/ui/textarea";
 import { db } from '@/lib/firebaseClient.js';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc } from 'firebase/firestore';
 
 
 const supplySchema = z.object({
@@ -151,6 +150,7 @@ interface ServiceFormProps {
   mode?: 'service' | 'quote';
   onDelete?: (id: string) => void;
   onCancelService?: (serviceId: string, reason: string) => void;
+  onStatusChange?: (newStatus?: ServiceRecord['status']) => void;
 }
 
 const IVA_RATE = 0.16;
@@ -172,6 +172,7 @@ export function ServiceForm({
   mode = 'service',
   onDelete,
   onCancelService,
+  onStatusChange,
 }: ServiceFormProps) {
   const { toast } = useToast();
   
@@ -204,6 +205,12 @@ export function ServiceForm({
   const watchedStatus = watch('status');
   const watchedServiceItems = useWatch({ control, name: "serviceItems" });
 
+  useEffect(() => {
+    if (onStatusChange) {
+      onStatusChange(watchedStatus);
+    }
+  }, [watchedStatus, onStatusChange]);
+
   const { totalCost, totalSuppliesWorkshopCost, serviceProfit } = useMemo(() => {
     let calculatedTotalCost = 0;
     let workshopCost = 0;
@@ -226,7 +233,9 @@ export function ServiceForm({
   }, [watchedServiceItems]);
 
   const showReceptionTab = useMemo(() => mode === 'service' && watchedStatus !== 'Cotizacion' && watchedStatus !== 'Agendado', [mode, watchedStatus]);
-  const showReportTab = useMemo(() => mode === 'service' && watchedStatus !== 'Agendado' && watchedStatus !== 'Cotizacion', [mode, watchedStatus]);
+  const showReportTab = useMemo(() => mode === 'service' && (watchedStatus === 'En Taller' || watchedStatus === 'Entregado' || watchedStatus === 'Cancelado'), [mode, watchedStatus]);
+  const showChecklistTab = useMemo(() => mode === 'service' && (watchedStatus === 'En Taller' || watchedStatus === 'Entregado' || watchedStatus === 'Cancelado'), [mode, watchedStatus]);
+
 
   useEffect(() => { setLocalVehicles(parentVehicles); }, [parentVehicles]);
   useEffect(() => { setCurrentInventoryItems(inventoryItemsProp); }, [inventoryItemsProp]);
@@ -404,7 +413,9 @@ export function ServiceForm({
         workshopInfo: (workshopInfo && Object.keys(workshopInfo).length > 0) ? workshopInfo as WorkshopInfo : undefined,
     };
     
-    await savePublicDocument('service', dataToSave, localVehicles.find(v => v.id === getValues('vehicleId')) || null, workshopInfo);
+    if (db) {
+        await savePublicDocument('service', dataToSave, localVehicles.find(v => v.id === getValues('vehicleId')) || null, workshopInfo);
+    }
     await onSubmit(dataToSave);
     toast({ title: `${!initialData?.id ? 'Creado' : 'Actualizado'} con Éxito` });
     onClose();
@@ -445,7 +456,7 @@ export function ServiceForm({
                   <TabsTrigger value="servicio" className="text-sm sm:text-base data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none flex items-center gap-2 py-3 px-3 sm:px-4"><Wrench className="h-4 w-4 shrink-0"/> Detalles</TabsTrigger>
                   {showReceptionTab && <TabsTrigger value="recepcion" className="text-sm sm:text-base data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none flex items-center gap-2 py-3 px-3 sm:px-4"><CheckCircle className="h-4 w-4 shrink-0"/> Rec. y Ent.</TabsTrigger>}
                   {showReportTab && <TabsTrigger value="reporte" className="text-sm sm:text-base data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none flex items-center gap-2 py-3 px-3 sm:px-4"><Camera className="h-4 w-4 shrink-0"/> Fotos</TabsTrigger>}
-                  {showReceptionTab && <TabsTrigger value="seguridad" className="text-sm sm:text-base data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none flex items-center gap-2 py-3 px-3 sm:px-4"><ShieldCheck className="h-4 w-4 shrink-0"/> Revisión</TabsTrigger>}
+                  {showChecklistTab && <TabsTrigger value="seguridad" className="text-sm sm:text-base data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none flex items-center gap-2 py-3 px-3 sm:px-4"><ShieldCheck className="h-4 w-4 shrink-0"/> Revisión</TabsTrigger>}
                 </TabsList>
                 {!isReadOnly && <Button type="button" onClick={handlePrintSheet} variant="ghost" size="icon" title="Vista Previa"><Eye className="h-5 w-5" /></Button>}
               </div>
