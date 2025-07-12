@@ -22,6 +22,7 @@ import { TableToolbar } from '@/components/shared/table-toolbar';
 import { Loader2 } from 'lucide-react';
 import { useTableManager } from '@/hooks/useTableManager';
 import { addDoc, updateDoc, doc, deleteDoc } from 'firebase/firestore';
+import { sanitizeObjectForFirestore } from '@/lib/utils';
 
 function VehiculosPageComponent() {
     const searchParams = useSearchParams();
@@ -75,13 +76,22 @@ function VehiculosPageComponent() {
 
     const handleSaveVehicle = async (data: VehicleFormValues) => {
         try {
+            // Sanitize data to prevent Firestore errors with `undefined`
+            const dataToSave = {
+                ...data,
+                dailyRentalCost: data.dailyRentalCost ?? null,
+                gpsMonthlyCost: data.gpsMonthlyCost ?? null,
+                adminMonthlyCost: data.adminMonthlyCost ?? null,
+                insuranceMonthlyCost: data.insuranceMonthlyCost ?? null,
+            };
+
             if (editingVehicle) {
                 const vehicleRef = doc(db, "vehicles", editingVehicle.id);
-                await updateDoc(vehicleRef, data as any); // Cast data to any to satisfy UpdateData type
+                await updateDoc(vehicleRef, dataToSave as any); // Cast data to any to satisfy UpdateData type
                 toast({ title: "Vehículo Actualizado", description: `Se ha actualizado ${data.make} ${data.model}.` });
             } else {
                 await addDoc(collection(db, "vehicles"), {
-                    ...data,
+                    ...dataToSave,
                     year: Number(data.year),
                 });
                 toast({ title: "Vehículo Creado", description: `Se ha agregado ${data.make} ${data.model}.` });
@@ -90,7 +100,7 @@ function VehiculosPageComponent() {
             setEditingVehicle(null);
         } catch (error) {
             console.error("Error saving vehicle: ", error);
-            toast({ title: "Error", description: "No se pudo guardar el vehículo.", variant: "destructive" });
+            toast({ title: "Error", description: `No se pudo guardar el vehículo. ${error instanceof Error ? error.message : ''}`, variant: "destructive" });
         }
     };
 
@@ -101,11 +111,12 @@ function VehiculosPageComponent() {
 
     const handleSavePriceListRecord = async (formData: PriceListFormValues) => {
         try {
+            const dataToSave = sanitizeObjectForFirestore({ ...formData, years: formData.years.sort((a: number,b: number) => a-b) });
             if(editingPriceRecord) {
                 const priceListRef = doc(db, "vehiclePriceLists", editingPriceRecord.id);
-                await updateDoc(priceListRef, { ...formData, years: formData.years.sort((a: number,b: number) => a-b) } as any); // Cast data to any
+                await updateDoc(priceListRef, dataToSave);
             } else {
-                await addDoc(collection(db, "vehiclePriceLists"), { ...formData, years: formData.years.sort((a: number,b: number) => a-b) } as any); // Cast data to any
+                await addDoc(collection(db, "vehiclePriceLists"), dataToSave);
             }
             toast({ title: `Precotización ${editingPriceRecord ? 'Actualizada' : 'Creada'}` });
             setIsPriceListDialogOpen(false);
@@ -151,6 +162,7 @@ function VehiculosPageComponent() {
                                 searchPlaceholder="Buscar por placa, marca, modelo, propietario..."
                                 onDateRangeChange={() => {}} // No date filter on this tab
                                 onSortOptionChange={() => {}} // No sort on this tab
+                                sortOption=""
                             />
                             <Button onClick={() => handleOpenVehicleDialog()} className="ml-4">
                                 <PlusCircle className="mr-2 h-4 w-4" /> Registrar Nuevo Vehículo
