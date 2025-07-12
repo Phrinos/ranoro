@@ -282,18 +282,18 @@ export function ServiceForm({
 
     form.reset({
         id: data?.id,
-        status: data?.status || 'Cotizacion',
-        subStatus: (data as ServiceRecord)?.subStatus || undefined,
-        publicId: (data as any)?.publicId, vehicleId: data?.vehicleId ? String(data.vehicleId) : undefined,
+        publicId: (data as any)?.publicId,
+        vehicleId: data?.vehicleId ? String(data.vehicleId) : undefined,
         vehicleLicensePlateSearch: data?.vehicleIdentifier || "",
         serviceDate: data?.serviceDate ? parseDate(data.serviceDate) : undefined,
         quoteDate: data?.quoteDate ? parseDate(data.quoteDate) : (mode === 'quote' ? new Date() : undefined),
         receptionDateTime: isValid(parseDate((data as ServiceRecord)?.receptionDateTime)) ? parseDate((data as ServiceRecord)?.receptionDateTime) : undefined,
         deliveryDateTime: isValid(parseDate((data as ServiceRecord)?.deliveryDateTime)) ? parseDate((data as ServiceRecord)?.deliveryDateTime) : undefined,
         mileage: data?.mileage || undefined,
-        notes: data?.notes || "", technicianId: (data as ServiceRecord)?.technicianId || (data as QuoteRecord)?.preparedByTechnicianId || undefined,
-        serviceType: data?.serviceType || serviceTypes[0]?.name || 'Servicio General',
-        vehicleConditions: (data as ServiceRecord)?.vehicleConditions || "", fuelLevel: (data as ServiceRecord)?.fuelLevel || undefined,
+        notes: data?.notes || "",
+        technicianId: (data as ServiceRecord)?.technicianId || (data as QuoteRecord)?.preparedByTechnicianId || undefined,
+        vehicleConditions: (data as ServiceRecord)?.vehicleConditions || "",
+        fuelLevel: (data as ServiceRecord)?.fuelLevel || undefined,
         customerItems: (data as ServiceRecord)?.customerItems || '',
         customerSignatureReception: (data as ServiceRecord)?.customerSignatureReception || undefined,
         customerSignatureDelivery: (data as ServiceRecord)?.customerSignatureDelivery || undefined,
@@ -303,6 +303,9 @@ export function ServiceForm({
         serviceAdvisorSignatureDataUrl: data?.serviceAdvisorSignatureDataUrl || freshUserRef.current?.signatureDataUrl || '',
         photoReports: photoReportsData,
         serviceItems: serviceItemsData,
+        status: data?.status || 'Cotizacion',
+        subStatus: (data as ServiceRecord)?.subStatus || undefined,
+        serviceType: data?.serviceType || (serviceTypes.length > 0 ? serviceTypes[0].name : 'Servicio General'),
     });
     
   }, [initialData, mode, form, isReadOnly, refreshCurrentUser, serviceTypes, getValues, setValue]);
@@ -407,14 +410,12 @@ export function ServiceForm({
 
     const finalData = {
         ...dataToSave,
-        id: values.id,
+        id: values.id || nanoid(),
         publicId: values.publicId || `s_${nanoid(12).toLowerCase()}`,
         vehicleId: getValues('vehicleId')!,
         description: (values.serviceItems || []).map(item => item.name).join(', ') || 'Servicio',
-        technicianId: values.technicianId || null,
         status: values.status,
         serviceType: values.serviceType,
-        mileage: values.mileage ?? null,
         totalCost,
         totalSuppliesWorkshopCost,
         serviceProfit,
@@ -423,6 +424,7 @@ export function ServiceForm({
         receptionDateTime: values.receptionDateTime ? values.receptionDateTime.toISOString() : null,
         deliveryDateTime: values.deliveryDateTime ? values.deliveryDateTime.toISOString() : null,
         vehicleIdentifier: getValues('vehicleLicensePlateSearch') || 'N/A',
+        technicianId: values.technicianId || null,
         technicianName: technicians.find(t => t.id === values.technicianId)?.name || null,
         subTotal: totalCost / (1 + IVA_RATE),
         taxAmount: totalCost - (totalCost / (1 + IVA_RATE)),
@@ -432,6 +434,11 @@ export function ServiceForm({
         workshopInfo: (workshopInfo && Object.keys(workshopInfo).length > 0) ? workshopInfo as WorkshopInfo : null,
     };
     
+    // Remove subStatus if status is not 'En Taller'
+    if (finalData.status !== 'En Taller') {
+      delete (finalData as any).subStatus;
+    }
+
     if (db && finalData.publicId) {
         await savePublicDocument('service', finalData as ServiceRecord, localVehicles.find(v => v.id === getValues('vehicleId')) || null, workshopInfo);
     }
@@ -627,3 +634,4 @@ export function ServiceForm({
     </>
   );
 }
+
