@@ -70,7 +70,7 @@ This is the most critical step. The license plate ('placa') is the MANDATORY, UN
 - For each row, extract the license plate using the column you identified in Step 1.
 - If you encounter a license plate for the first time, create a new vehicle object in the 'vehicles' array.
 - If you see a license plate that already exists in your 'vehicles' array, DO NOT create a new vehicle. You can update the existing vehicle record if the current row has more complete information (e.g., a phone number that was missing before).
-- For each vehicle, extract other relevant information by mapping columns like 'Marca' to 'make', 'Modelo' to 'model', 'Año' to 'year', 'Cliente' to 'ownerName', etc.
+- For each vehicle, extract other relevant information by mapping columns like 'Marca' to 'make', 'Modelo' to 'model', 'Año'/'Anio' to 'year', 'Cliente' to 'ownerName', etc.
 
 **Step 3: Extract All Service Records.**
 - For EVERY row in the CSV that represents a service, create a corresponding entry in the 'services' array.
@@ -82,6 +82,7 @@ This is the most critical step. The license plate ('placa') is the MANDATORY, UN
 - **CRITICAL: Format all text fields to be consistently capitalized. 'make', 'model', and 'ownerName' should be in "Title Case" (e.g., "Nissan Sentra"). 'licensePlate' should be in ALL CAPS. 'description' should start with a capital letter.**
 - **IMPORTANT:** If a value for a field is missing or empty, you MUST return it as an empty string ("") for text fields, or 0 for numeric fields (like year or cost). Do not omit the field from the JSON.
 - **CRITICAL:** Every vehicle in the output 'vehicles' array and every service in the 'services' array must have a valid 'licensePlate' or 'vehicleLicensePlate' field, respectively. Rows without a discernible license plate should be ignored.
+- **YEAR FIELD:** Look for columns named 'Año' or 'Anio'. If the cell contains a number, use it. If it's a non-numeric string, try to parse a four-digit number from it. Only use 0 if the cell is completely empty or cannot be converted to a number.
 
 **CSV Data to Analyze:**
 \`\`\`csv
