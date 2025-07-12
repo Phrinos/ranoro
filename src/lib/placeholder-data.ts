@@ -50,7 +50,75 @@ export const placeholderSales: SaleReceipt[] = [];
 export const placeholderTechnicians: Technician[] = [];
 export const placeholderAdministrativeStaff: AdministrativeStaff[] = [];
 export const placeholderFixedMonthlyExpenses: MonthlyFixedExpense[] = [];
-export const placeholderAppRoles: AppRole[] = [];
+export const placeholderAppRoles: AppRole[] = [
+    {
+    id: "superadmin_role",
+    name: "Superadmin",
+    permissions: [
+      "dashboard:view",
+      "services:create",
+      "services:edit",
+      "services:view_history",
+      "inventory:manage",
+      "inventory:view",
+      "pos:create_sale",
+      "pos:view_sales",
+      "finances:view_report",
+      "technicians:manage",
+      "vehicles:manage",
+      "fleet:manage",
+      "users:manage",
+      "roles:manage",
+      "ticket_config:manage",
+      "audits:view",
+    ],
+  },
+  {
+    id: "admin_role",
+    name: "Admin",
+    permissions: [
+      "dashboard:view",
+      "services:create",
+      "services:edit",
+      "services:view_history",
+      "inventory:manage",
+      "inventory:view",
+      "pos:create_sale",
+      "pos:view_sales",
+      "finances:view_report",
+      "technicians:manage",
+      "vehicles:manage",
+      "fleet:manage",
+      "users:manage",
+      "roles:manage",
+      "ticket_config:manage",
+      "audits:view",
+    ],
+  },
+  {
+    id: "tech_role",
+    name: "Tecnico",
+    permissions: [
+      "dashboard:view",
+      "services:edit",
+      "services:view_history",
+      "inventory:view",
+    ],
+  },
+  {
+    id: "recepcion_role",
+    name: "Recepcionista",
+    permissions: [
+      "dashboard:view",
+      "services:create",
+      "services:view_history",
+      "inventory:view",
+      "pos:create_sale",
+      "pos:view_sales",
+      "vehicles:manage"
+    ],
+  },
+];
 export const placeholderCategories: InventoryCategory[] = [];
 export const placeholderSuppliers: Supplier[] = [];
 export const placeholderInitialCashBalance: InitialCashBalance = { date: '', amount: 0, userId: '', userName: '' };
