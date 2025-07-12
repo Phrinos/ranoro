@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,11 +10,11 @@ import { useToast } from '@/hooks/use-toast';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import type { AppRole } from '@/types';
+import type { AppRole, User } from '@/types';
 import { PlusCircle, Trash2, Edit, Search, Shield } from 'lucide-react';
-import { placeholderAppRoles, persistToFirestore } from '@/lib/placeholder-data';
 import { Checkbox } from "@/components/ui/checkbox";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { adminService } from '@/lib/services/admin.service';
 
 const ALL_AVAILABLE_PERMISSIONS = [
     { id: 'dashboard:view', label: 'Ver Panel Principal' },
@@ -41,9 +41,9 @@ const roleFormSchema = z.object({
 });
 type RoleFormValues = z.infer<typeof roleFormSchema>;
 
-export function RolesPageContent() {
+export function RolesPageContent({ currentUser, initialRoles }: { currentUser: User | null, initialRoles: AppRole[] }) {
     const { toast } = useToast();
-    const [roles, setRoles] = useState<AppRole[]>([]);
+    const [roles, setRoles] = useState<AppRole[]>(initialRoles);
     const [editingRole, setEditingRole] = useState<AppRole | null>(null);
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
@@ -54,7 +54,7 @@ export function RolesPageContent() {
       defaultValues: { name: '', permissions: [] } 
     });
 
-    useEffect(() => { setRoles(placeholderAppRoles); }, []);
+    useEffect(() => { setRoles(initialRoles); }, [initialRoles]);
     
     useEffect(() => { 
         if (isFormOpen && formCardRef.current) {
@@ -64,7 +64,7 @@ export function RolesPageContent() {
     
     const filteredRoles = useMemo(() => roles.filter(role => role.name.toLowerCase().includes(searchTerm.toLowerCase())), [roles, searchTerm]);
     
-    const handleOpenForm = (roleToEdit?: AppRole) => {
+    const handleOpenForm = useCallback((roleToEdit?: AppRole) => {
         if (roleToEdit) {
             setEditingRole(roleToEdit);
             form.reset({ name: roleToEdit.name, permissions: roleToEdit.permissions });
@@ -73,36 +73,32 @@ export function RolesPageContent() {
             form.reset({ name: '', permissions: [] });
         }
         setIsFormOpen(true);
-    };
+    }, [form]);
     
     const onSubmit = async (data: RoleFormValues) => {
-        const isNew = !editingRole;
-        const newRole: AppRole = {
-            id: isNew ? `role_${Date.now()}` : editingRole!.id,
-            name: data.name,
-            permissions: data.permissions || [],
-        };
+        if (!currentUser) return toast({ title: "No autenticado", variant: "destructive" });
         
-        if (isNew) {
-            placeholderAppRoles.push(newRole);
-        } else {
-            const index = placeholderAppRoles.findIndex(r => r.id === newRole.id);
-            if (index > -1) placeholderAppRoles[index] = newRole;
+        try {
+            await adminService.saveRole({ ...data, permissions: data.permissions || [] }, currentUser, editingRole?.id);
+            toast({ title: `Rol ${editingRole ? 'actualizado' : 'creado'} con éxito.` });
+            setIsFormOpen(false);
+            window.dispatchEvent(new CustomEvent('databaseUpdated'));
+        } catch (error: any) {
+            toast({ title: "Error al guardar rol", description: error.message, variant: 'destructive' });
         }
-
-        await persistToFirestore(['appRoles']);
-        setRoles([...placeholderAppRoles]);
-        toast({ title: `Rol ${isNew ? 'creado' : 'actualizado'} con éxito.` });
-        setIsFormOpen(false);
     };
     
     const handleDeleteRole = async (roleId: string) => {
-        const index = placeholderAppRoles.findIndex(r => r.id === roleId);
-        if (index > -1) {
-            placeholderAppRoles.splice(index, 1);
-            await persistToFirestore(['appRoles']);
-            setRoles([...placeholderAppRoles]);
+        if (!currentUser) return toast({ title: "No autenticado", variant: "destructive" });
+        if (roleId === 'superadmin_role' || roleId === 'admin_role' || roleId === 'tech_role') {
+            return toast({ title: "Rol protegido", description: "No se pueden eliminar los roles base.", variant: 'destructive' });
+        }
+        try {
+            await adminService.deleteRole(roleId, currentUser);
             toast({ title: 'Rol eliminado.' });
+            window.dispatchEvent(new CustomEvent('databaseUpdated'));
+        } catch (error: any) {
+            toast({ title: 'Error al eliminar rol', description: error.message, variant: 'destructive' });
         }
     };
 

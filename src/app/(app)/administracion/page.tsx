@@ -24,24 +24,33 @@ function AdministracionPageComponent() {
     const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
-    useEffect(() => {
-        const authUserString = localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY);
-        if (authUserString) setCurrentUser(JSON.parse(authUserString));
+    const fetchData = useCallback(async () => {
+        try {
+            const authUserString = localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY);
+            if (authUserString) setCurrentUser(JSON.parse(authUserString));
 
-        Promise.all([
-            adminService.getUsers(),
-            adminService.getRoles(),
-            adminService.getAuditLogs(),
-        ]).then(([usersData, rolesData, auditLogsData]) => {
+            const [usersData, rolesData, auditLogsData] = await Promise.all([
+                adminService.getUsers(),
+                adminService.getRoles(),
+                adminService.getAuditLogs(),
+            ]);
             setUsers(usersData);
             setRoles(rolesData);
             setAuditLogs(auditLogsData);
-            setIsLoading(false);
-        }).catch(error => {
+        } catch (error) {
             console.error("Failed to fetch admin data:", error);
+        } finally {
             setIsLoading(false);
-        });
+        }
     }, []);
+
+    useEffect(() => {
+        fetchData();
+        // Add a global event listener to refetch data when persistence happens elsewhere
+        const handleDbUpdate = () => fetchData();
+        window.addEventListener('databaseUpdated', handleDbUpdate);
+        return () => window.removeEventListener('databaseUpdated', handleDbUpdate);
+    }, [fetchData]);
     
     if (isLoading) {
         return <div className="flex justify-center items-center h-64"><Loader2 className="h-8 w-8 animate-spin" /></div>;
@@ -65,10 +74,10 @@ function AdministracionPageComponent() {
                     <UsuariosPageContent currentUser={currentUser} initialUsers={users} initialRoles={roles} />
                 </TabsContent>
                 <TabsContent value="roles" className="mt-0">
-                    <RolesPageContent />
+                    <RolesPageContent currentUser={currentUser} initialRoles={roles} />
                 </TabsContent>
                  <TabsContent value="auditoria" className="mt-0">
-                    <AuditoriaPageContent />
+                    <AuditoriaPageContent initialLogs={auditLogs} />
                 </TabsContent>
                 <TabsContent value="migracion" className="mt-0">
                     <MigracionPageContent />

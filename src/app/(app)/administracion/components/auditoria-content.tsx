@@ -8,7 +8,6 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { Button } from "@/components/ui/button";
 import { Search, Calendar as CalendarIcon } from 'lucide-react';
-import { placeholderAuditLogs } from '@/lib/placeholder-data';
 import type { AuditLog } from '@/types';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -17,15 +16,14 @@ import { format, parseISO, compareDesc, isValid, startOfDay, endOfDay, isWithinI
 import { es } from 'date-fns/locale';
 import type { DateRange } from 'react-day-picker';
 
-export function AuditoriaPageContent() {
-  const [logs, setLogs] = useState<AuditLog[]>([]);
+export function AuditoriaPageContent({ initialLogs }: { initialLogs: AuditLog[] }) {
+  const [logs, setLogs] = useState<AuditLog[]>(initialLogs);
   const [searchTerm, setSearchTerm] = useState('');
   const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
 
   useEffect(() => {
-    // This will be updated if placeholder-data changes via the main page's event listener
-    setLogs(placeholderAuditLogs);
-  }, []);
+    setLogs(initialLogs);
+  }, [initialLogs]);
 
   const filteredLogs = useMemo(() => {
     let filtered = [...logs];
@@ -107,7 +105,7 @@ export function AuditoriaPageContent() {
                 {filteredLogs.length > 0 ? (
                   filteredLogs.map(log => (
                     <TableRow key={log.id}>
-                      <TableCell className="font-mono text-xs">{format(parseISO(log.date), "dd/MM/yy, HH:mm:ss", { locale: es })}</TableCell>
+                      <TableCell className="font-mono text-xs">{log.date ? format(parseISO(log.date), "dd/MM/yy, HH:mm:ss", { locale: es }) : "Fecha no disponible"}</TableCell>
                       <TableCell className="font-medium">{log.userName}</TableCell>
                       <TableCell><Badge variant={log.actionType === 'Eliminar' || log.actionType === 'Cancelar' ? 'destructive' : 'secondary'}>{log.actionType}</Badge></TableCell>
                       <TableCell>{log.description}</TableCell>
