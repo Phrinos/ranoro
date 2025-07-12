@@ -19,6 +19,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import type { AdministrativeStaff } from "@/types";
 import { DollarSign } from "lucide-react";
+import { capitalizeWords } from "@/lib/utils";
 
 const administrativeStaffFormSchema = z.object({
   name: z.string().min(3, "El nombre debe tener al menos 3 caracteres."),
@@ -82,7 +83,7 @@ export function AdministrativeStaffForm({ initialData, onSubmit, onClose }: Admi
               <FormItem>
                 <FormLabel>Nombre Completo</FormLabel>
                 <FormControl>
-                  <Input placeholder="Ej: Ana López" {...field} />
+                  <Input placeholder="Ej: Ana López" {...field} onChange={(e) => field.onChange(capitalizeWords(e.target.value))} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -95,7 +96,7 @@ export function AdministrativeStaffForm({ initialData, onSubmit, onClose }: Admi
               <FormItem>
                 <FormLabel>Rol o Área</FormLabel>
                 <FormControl>
-                  <Input placeholder="Ej: Gerente, Recepción" {...field} />
+                  <Input placeholder="Ej: Gerente, Recepción" {...field} onChange={(e) => field.onChange(capitalizeWords(e.target.value))} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
