@@ -63,9 +63,9 @@ export function ServiceDetailsCard({
   };
   
   const showAppointmentFields = useMemo(() => {
-    // Show if the status is one that implies an appointment, including quotes.
-    return ['Cotizacion', 'Agendado', 'En Taller', 'Entregado', 'Cancelado'].includes(watchedStatus || '');
-  }, [watchedStatus]);
+    // Show appointment fields ONLY if status is 'Agendado' OR if a serviceDate has already been set (meaning it was scheduled at some point).
+    return watchedStatus === 'Agendado' || (!!serviceDate && isValid(serviceDate));
+  }, [watchedStatus, serviceDate]);
 
 
   return (
