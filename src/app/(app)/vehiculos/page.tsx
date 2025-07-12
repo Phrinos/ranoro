@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState, useMemo, useEffect, useCallback, Suspense } from 'react';
@@ -79,7 +80,7 @@ function VehiculosPageComponent() {
                 await updateDoc(vehicleRef, data as any); // Cast data to any to satisfy UpdateData type
                 toast({ title: "Vehículo Actualizado", description: `Se ha actualizado ${data.make} ${data.model}.` });
             } else {
-                await addDoc(collection(db, "database/main/vehicles"), {
+                await addDoc(collection(db, "vehicles"), {
                     ...data,
                     year: Number(data.year),
                 });
@@ -143,21 +144,21 @@ function VehiculosPageComponent() {
 
                 <TabsContent value="vehiculos" className="mt-0">
                     <div className="space-y-4">
-                        <Button onClick={() => handleOpenVehicleDialog()}>
-                            <PlusCircle className="mr-2 h-4 w-4" /> Registrar Nuevo Vehículo
-                        </Button>
-                        <TableToolbar 
-                            searchTerm={tableManager.searchTerm}
-                            onSearchTermChange={tableManager.setSearchTerm}
-                            searchPlaceholder="Buscar por placa, marca, modelo, propietario..."
-                            dateRange={undefined}
-                            onDateRangeChange={() => {}} // No date filter on this tab
-                            sortOption={''}
-                            onSortOptionChange={() => {}} // No sort on this tab
-                        />
+                        <div className="flex justify-between items-center">
+                            <TableToolbar 
+                                searchTerm={tableManager.searchTerm}
+                                onSearchTermChange={tableManager.setSearchTerm}
+                                searchPlaceholder="Buscar por placa, marca, modelo, propietario..."
+                                onDateRangeChange={() => {}} // No date filter on this tab
+                                onSortOptionChange={() => {}} // No sort on this tab
+                            />
+                            <Button onClick={() => handleOpenVehicleDialog()} className="ml-4">
+                                <PlusCircle className="mr-2 h-4 w-4" /> Registrar Nuevo Vehículo
+                            </Button>
+                        </div>
                         <Card>
                             <CardContent className="pt-6">
-                                <VehiclesTable vehicles={filteredVehicles} onEdit={handleOpenVehicleDialog} />
+                                <VehiclesTable vehicles={filteredVehicles} />
                             </CardContent>
                         </Card>
                     </div>
