@@ -190,7 +190,7 @@ const SafetyChecklistDisplay = ({
             {inspection.technicianSignature && (
                  <div className="mt-8 border-t pt-4 text-center flex flex-col items-center">
                     <div className="h-24 w-full max-w-[200px] relative">
-                        <img src={normalizeDataUrl(inspection.technicianSignature)} alt="Firma del técnico" style={{ objectFit: 'contain', width: '100%', height: '100%' }} crossOrigin="anonymous"/>
+                        <img src={normalizeDataUrl(inspection.technicianSignature)} alt="Firma del técnico" style={{ objectFit: 'contain', width: '100%', height: '100%' }} />
                     </div>
                     <div className="border-t-2 border-black mt-2 pt-1 w-64 text-center">
                         <p className="text-xs font-bold">FIRMA DEL TÉCNICO</p>
@@ -403,7 +403,7 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
                   <h3 className="font-bold uppercase text-center text-sm">AUTORIZO QUE SE REALICEN ESTOS SERVICIOS</h3>
                   {service.customerSignatureReception ? (
                       <div className="w-full h-full flex items-center justify-center">
-                          <img src={normalizeDataUrl(service.customerSignatureReception)} alt="Firma del cliente" style={{objectFit: 'contain', width: '200px', height: '100px'}} crossOrigin="anonymous" />
+                          <img src={normalizeDataUrl(service.customerSignatureReception)} alt="Firma del cliente" style={{objectFit: 'contain', width: '200px', height: '100px'}} />
                       </div>
                   ) : (
                     <div className="flex flex-col items-center justify-end flex-grow w-full">
@@ -429,7 +429,7 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
                     <div className="h-14 flex-grow flex items-center justify-center">
                         {service.serviceAdvisorSignatureDataUrl && (
                             <div className="relative w-full h-full max-w-[200px]">
-                                <img src={normalizeDataUrl(service.serviceAdvisorSignatureDataUrl)} alt="Firma del asesor" style={{ objectFit: 'contain', width: '100%', height: '100%' }} crossOrigin="anonymous"/>
+                                <img src={normalizeDataUrl(service.serviceAdvisorSignatureDataUrl)} alt="Firma del asesor" style={{ objectFit: 'contain', width: '100%', height: '100%' }} />
                             </div>
                         )}
                     </div>
@@ -441,7 +441,7 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
                    <div className="h-full flex-grow flex flex-col items-center justify-center">
                        {service.customerSignatureDelivery ? (
                          <div className="relative w-48 h-24">
-                           <img src={normalizeDataUrl(service.customerSignatureDelivery)} alt="Firma de conformidad" style={{ objectFit: 'contain', width: '100%', height: '100%' }} crossOrigin="anonymous"/>
+                           <img src={normalizeDataUrl(service.customerSignatureDelivery)} alt="Firma de conformidad" style={{ objectFit: 'contain', width: '100%', height: '100%' }} />
                          </div>
                        ) : (
                          isPublicView && showSignDelivery && onSignClick && (

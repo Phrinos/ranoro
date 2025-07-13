@@ -37,7 +37,7 @@ function HistorialServiciosPageComponent() {
   const [editingService, setEditingService] = useState<ServiceRecord | null>(null);
 
   const [isSheetOpen, setIsSheetOpen] = useState(false);
-  const [previewData, setPreviewData] = useState<{ service: ServiceRecord } | null>(null);
+  const [serviceForPreview, setServiceForPreview] = useState<ServiceRecord | null>(null);
 
   const [serviceToComplete, setServiceToComplete] = useState<ServiceRecord | null>(null);
   const [isCompleteDialogOpen, setIsCompleteDialogOpen] = useState(false);
@@ -148,7 +148,7 @@ function HistorialServiciosPageComponent() {
   );
 
   const handleShowPreview = useCallback((service: ServiceRecord) => {
-    setPreviewData({ service });
+    setServiceForPreview(service);
     setIsSheetOpen(true);
   }, []);
 
@@ -318,13 +318,11 @@ function HistorialServiciosPageComponent() {
         />
       )}
 
-      {isSheetOpen && previewData && (
+      {isSheetOpen && serviceForPreview && (
         <UnifiedPreviewDialog
           open={isSheetOpen}
           onOpenChange={setIsSheetOpen}
-          service={previewData.service}
-          vehicle={vehicles.find(v => v.id === previewData.service.vehicleId) || null}
-          associatedQuote={null}
+          service={serviceForPreview}
         />
       )}
     </>

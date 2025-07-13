@@ -199,6 +199,7 @@ export function ServiceForm({
       quoteDate: formData.quoteDate?.toISOString(),
       receptionDateTime: formData.receptionDateTime?.toISOString(),
       deliveryDateTime: formData.deliveryDateTime?.toISOString(),
+      serviceAdvisorSignatureDataUrl: formData.serviceAdvisorSignatureDataUrl,
     } as ServiceRecord;
     setServiceForPreview(serviceDataForPreview);
     setIsPreviewOpen(true);
@@ -216,7 +217,6 @@ export function ServiceForm({
               isReadOnly={isReadOnly}
               status={watch('status')}
             />
-
             <ServiceFormBody
               isReadOnly={isReadOnly}
               localVehicles={localVehicles}

@@ -69,7 +69,7 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
               height={50}
               style={{ objectFit: 'contain' }}
               data-ai-hint="workshop logo"
-              crossOrigin="anonymous"
+              
             />
             <h2 className="text-2xl sm:text-3xl font-semibold text-primary text-left sm:text-right w-full sm:w-auto">COTIZACIÓN</h2>
           </div>
@@ -194,7 +194,7 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
                                 src={normalizeDataUrl(quote.serviceAdvisorSignatureDataUrl)} 
                                 alt="Firma del asesor"
                                 style={{ maxHeight: '100%', maxWidth: '100%', objectFit: 'contain' }}
-                                crossOrigin="anonymous"
+                                
                             />
                         )}
                     </div>

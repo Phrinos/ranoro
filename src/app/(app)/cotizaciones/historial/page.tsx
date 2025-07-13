@@ -30,10 +30,7 @@ function HistorialCotizacionesPageComponent() {
   const [selectedQuote, setSelectedQuote] = useState<QuoteRecord | null>(null);
 
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
-  const [previewData, setPreviewData] = useState<{
-    service: ServiceRecord;
-    vehicle?: Vehicle;
-  } | null>(null);
+  const [serviceForPreview, setServiceForPreview] = useState<ServiceRecord | null>(null);
 
   useEffect(() => {
     setIsLoading(true);
@@ -65,12 +62,9 @@ function HistorialCotizacionesPageComponent() {
   });
 
   const handleViewQuote = useCallback((quote: QuoteRecord) => {
-    setPreviewData({ 
-        service: quote,
-        vehicle: vehicles.find(v => v.id === quote.vehicleId) 
-    });
+    setServiceForPreview(quote);
     setIsPreviewOpen(true);
-  }, [vehicles]);
+  }, []);
   
   const handleEditQuote = useCallback((quote: QuoteRecord) => { 
     setSelectedQuote(quote); 
@@ -159,12 +153,11 @@ function HistorialCotizacionesPageComponent() {
         />
       )}
       
-      {isPreviewOpen && previewData && (
+      {isPreviewOpen && serviceForPreview && (
         <UnifiedPreviewDialog
           open={isPreviewOpen}
           onOpenChange={setIsPreviewOpen}
-          service={previewData.service}
-          vehicle={previewData.vehicle || null}
+          service={serviceForPreview}
         />
       )}
     </>
