@@ -11,7 +11,7 @@ function Redirector() {
 
 export default function PreciosRedirectPage() {
     return (
-        <Suspense fallback={<div>Cargando...</div>}>
+        <Suspense fallback={<div>Redireccionando...</div>}>
             <Redirector />
         </Suspense>
     );
