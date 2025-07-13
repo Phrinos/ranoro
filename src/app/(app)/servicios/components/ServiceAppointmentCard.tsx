@@ -35,7 +35,7 @@ const getAppointmentStatus = (service: ServiceRecord): { label: string; variant:
     if (service.appointmentStatus === 'Confirmada') {
         return { label: 'Confirmada', variant: 'success' };
     }
-    return { label: 'Creada', variant: 'lightRed' };
+    return { label: 'Sin confirmar', variant: 'lightRed' };
 };
 
 export const ServiceAppointmentCard = React.memo(({
@@ -91,7 +91,7 @@ export const ServiceAppointmentCard = React.memo(({
                         {!isQuote && <Badge variant={appointmentStatus.variant} className="mb-1">{appointmentStatus.label}</Badge>}
                         <p className="text-xs text-muted-foreground">Asesor: {service.serviceAdvisorName || 'N/A'}</p>
                         <div className="flex justify-center items-center gap-1">
-                            {onConfirm && !isDone && !isQuote && appointmentStatus.label === 'Creada' && (
+                            {onConfirm && !isDone && !isQuote && appointmentStatus.label === 'Sin confirmar' && (
                                 <Button variant="ghost" size="icon" onClick={onConfirm} title="Confirmar Cita">
                                     <CheckCircle className="h-4 w-4 text-green-600" />
                                 </Button>
