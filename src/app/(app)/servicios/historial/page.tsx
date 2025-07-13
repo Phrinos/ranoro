@@ -22,7 +22,8 @@ import { writeBatch } from 'firebase/firestore';
 import { TicketContent } from '@/components/ticket-content';
 import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
 import { Button } from "@/components/ui/button";
-import { Printer } from "lucide-react";
+import { Printer, Copy } from "lucide-react";
+import html2canvas from 'html2canvas';
 
 function HistorialServiciosPageComponent() {
   const { toast } = useToast();
@@ -224,6 +225,23 @@ function HistorialServiciosPageComponent() {
     },
     [toast]
   );
+  
+  const handleCopyAsImage = useCallback(async () => {
+    if (!ticketContentRef.current) return;
+    try {
+      const canvas = await html2canvas(ticketContentRef.current, { scale: 2.5, backgroundColor: null });
+      canvas.toBlob((blob) => {
+        if (blob) {
+          navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+          toast({ title: "Copiado", description: "La imagen del ticket ha sido copiada." });
+        }
+      });
+    } catch (e) {
+      console.error("Error copying image:", e);
+      toast({ title: "Error", description: "No se pudo copiar la imagen del ticket.", variant: "destructive" });
+    }
+  }, [toast]);
+
 
   if (isLoading) {
     return (
@@ -364,7 +382,16 @@ function HistorialServiciosPageComponent() {
             open={isTicketDialogOpen}
             onOpenChange={setIsTicketDialogOpen}
             title="Ticket de Servicio"
-            footerActions={<Button onClick={() => window.print()}><Printer className="mr-2 h-4 w-4"/>Imprimir</Button>}
+            footerActions={
+              <div className="flex flex-col sm:flex-row gap-2">
+                <Button variant="outline" onClick={handleCopyAsImage}>
+                    <Copy className="mr-2 h-4 w-4"/> Copiar Imagen
+                </Button>
+                <Button onClick={() => window.print()}>
+                    <Printer className="mr-2 h-4 w-4"/>Imprimir
+                </Button>
+             </div>
+            }
         >
           <TicketContent
             ref={ticketContentRef}
