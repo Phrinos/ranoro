@@ -1,6 +1,5 @@
 
 
-
 import {
   collection,
   onSnapshot,
@@ -72,6 +71,11 @@ const saveService = async (data: Partial<ServiceRecord>): Promise<ServiceRecord>
         data.publicId = nanoid(12);
     }
     
+    // Auto-set delivery date on completion
+    if (data.status === 'Entregado' && !data.deliveryDateTime) {
+      data.deliveryDateTime = new Date().toISOString();
+    }
+
     // Final check to ensure problematic fields are null, not undefined or empty.
     const fieldsToNullify: (keyof ServiceRecord)[] = ['customerSignatureReception', 'customerSignatureDelivery', 'technicianName'];
     fieldsToNullify.forEach(key => {
@@ -350,7 +354,7 @@ const onVehicleExpensesUpdatePromise = async (): Promise<VehicleExpense[]> => {
     if (!db) return [];
     const snapshot = await getDocs(collection(db, "vehicleExpenses"));
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as VehicleExpense));
-};
+}
 
 const addVehicleExpense = async (data: Omit<VehicleExpense, 'id' | 'date' | 'vehicleLicensePlate'>): Promise<VehicleExpense> => {
     if (!db) throw new Error("Database not initialized.");
