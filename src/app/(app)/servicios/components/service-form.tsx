@@ -1,3 +1,4 @@
+
 /* app/(app)/servicios/components/service-form.tsx */
 'use client'
 
@@ -295,15 +296,29 @@ export function ServiceForm(props:Props){
   
   const IVA = 0.16;
   const formSubmitWrapper = (values: ServiceFormValues) => {
-      const dataToSubmit = {
-          ...values,
-          totalCost: totalCost,
-          totalSuppliesWorkshopCost: totalSuppliesWorkshopCost,
-          serviceProfit: serviceProfit,
-          subTotal: totalCost / (1 + IVA),
-          taxAmount: totalCost - (totalCost / (1 + IVA)),
-      };
-      onSubmit(cleanObjectForFirestore(dataToSubmit));
+    // Clone and convert dates to ISO strings for Firestore
+    const dataToSubmit: any = { ...values };
+    if (dataToSubmit.serviceDate instanceof Date) {
+      dataToSubmit.serviceDate = dataToSubmit.serviceDate.toISOString();
+    }
+    if (dataToSubmit.quoteDate instanceof Date) {
+      dataToSubmit.quoteDate = dataToSubmit.quoteDate.toISOString();
+    }
+    if (dataToSubmit.receptionDateTime instanceof Date) {
+      dataToSubmit.receptionDateTime = dataToSubmit.receptionDateTime.toISOString();
+    }
+    if (dataToSubmit.deliveryDateTime instanceof Date) {
+      dataToSubmit.deliveryDateTime = dataToSubmit.deliveryDateTime.toISOString();
+    }
+    
+    // Add calculated totals
+    dataToSubmit.totalCost = totalCost;
+    dataToSubmit.totalSuppliesWorkshopCost = totalSuppliesWorkshopCost;
+    dataToSubmit.serviceProfit = serviceProfit;
+    dataToSubmit.subTotal = totalCost / (1 + IVA);
+    dataToSubmit.taxAmount = totalCost - (totalCost / (1 + IVA));
+    
+    onSubmit(cleanObjectForFirestore(dataToSubmit));
   };
   
   const cleanObjectForFirestore = (obj: any): any => {

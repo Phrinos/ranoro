@@ -9,8 +9,8 @@ import { PlusCircle, List, Calendar as CalendarIcon, FileCheck, Eye, Loader2, Ed
 import { ServiceDialog } from "../components/dialog";
 import type { ServiceRecord, Vehicle, Technician, QuoteRecord, InventoryItem, CapacityAnalysisOutput, ServiceTypeRecord, WorkshopInfo } from "@/types";
 import { useToast } from "@/hooks/use-toast";
-import { format, isToday, isTomorrow, compareAsc, isSameDay, addDays } from "date-fns";
-import { toZonedTime, zonedTimeToUtc } from "date-fns-tz";
+import { format, isToday, isTomorrow, compareAsc, isSameDay, addDays, parseISO, isValid } from "date-fns";
+import { toZonedTime } from "date-fns-tz";
 import { es } from 'date-fns/locale';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -23,7 +23,6 @@ import { inventoryService, personnelService, operationsService } from '@/lib/ser
 import type { VehicleFormValues } from "../../vehiculos/components/vehicle-form";
 import { CompleteServiceDialog } from '../components/CompleteServiceDialog';
 import { parseDate } from '@/lib/forms';
-import { isValid, parseISO } from 'date-fns';
 
 const handleAiError = (error: any, toast: any, context: string): string => {
     console.error(`AI Error in ${context}:`, error);
@@ -97,8 +96,8 @@ function AgendaPageComponent() {
         (s.status === 'Agendado' || s.status === 'En Taller') && !s.deliveryDateTime
     );
   
-    const now = new Date();
-    const today = toZonedTime(now, workshopTimezone);
+    const nowInTimezone = toZonedTime(new Date(), workshopTimezone);
+    const today = nowInTimezone;
     const tomorrow = addDays(today, 1);
   
     const byDateAsc = (a: ServiceRecord, b: ServiceRecord) => {
