@@ -62,7 +62,7 @@ export function ServiceDetailsCard({
   };
   
   const showAppointmentFields = useMemo(() => {
-    return watchedStatus === 'Agendado';
+    return watchedStatus === 'Agendado' || watchedStatus === 'En Taller' || watchedStatus === 'Entregado';
   }, [watchedStatus]);
 
   const showTechnicianField = useMemo(() => {
