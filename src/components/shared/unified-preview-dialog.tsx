@@ -14,7 +14,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import Image from "next/image";
 import { inventoryService, operationsService } from '@/lib/services';
 import { cn } from '@/lib/utils';
-import { isQuote } from 'node:util/types';
 
 
 interface UnifiedPreviewDialogProps {
