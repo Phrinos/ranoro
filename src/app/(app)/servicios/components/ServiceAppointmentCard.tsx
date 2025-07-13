@@ -9,7 +9,7 @@ import { StatusTracker } from "./StatusTracker";
 import type { ServiceRecord, Vehicle, Technician } from '@/types';
 import { format, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { Edit, CheckCircle, Ban, DollarSign, User, Phone, TrendingUp, Clock, Wrench, Printer } from 'lucide-react';
+import { Edit, CheckCircle, Ban, DollarSign, User, Phone, TrendingUp, Clock, Wrench, Eye } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 import { parseDate } from '@/lib/forms';
 import { cn } from '@/lib/utils';
@@ -122,9 +122,13 @@ export const ServiceAppointmentCard = React.memo(({
                         </div>
                     </div>
                     <div className="p-4 flex flex-col justify-center items-center text-center border-t md:border-t-0 md:border-l w-full md:w-56 flex-shrink-0 space-y-2">
-                        {isCancelled && <Badge variant="destructive" className="mb-1 font-bold">CANCELADO</Badge>}
-                        {(isWorkshop || isCompleted) && <Badge variant={getStatusBadgeVariant(service.status)} className="mb-1">{service.status}</Badge>}
-                        {!isQuote && !isDone && !isWorkshop && <Badge variant={appointmentStatus.variant} className="mb-1">{appointmentStatus.label}</Badge>}
+                        {isCancelled ? (
+                            <Badge variant="destructive" className="mb-1 font-bold">CANCELADO</Badge>
+                        ) : (isWorkshop || isCompleted) ? (
+                            <Badge variant={getStatusBadgeVariant(service.status)} className="mb-1">{service.status}</Badge>
+                        ) : !isQuote ? (
+                            <Badge variant={appointmentStatus.variant} className="mb-1">{appointmentStatus.label}</Badge>
+                        ) : null}
                         
                         <p className="text-xs text-muted-foreground">Asesor: {service.serviceAdvisorName || 'N/A'}</p>
                         {technicianName && <p className="text-xs text-muted-foreground">Técnico: {technicianName}</p>}
@@ -140,7 +144,7 @@ export const ServiceAppointmentCard = React.memo(({
                                     <DollarSign className="h-4 w-4 text-green-600" />
                                 </Button>
                             )}
-                            <Button variant="ghost" size="icon" onClick={onView} title="Imprimir Documento"><Printer className="h-4 w-4" /></Button>
+                            <Button variant="ghost" size="icon" onClick={onView} title="Ver Documento"><Eye className="h-4 w-4" /></Button>
                             <Button variant="ghost" size="icon" onClick={onEdit} title="Editar Servicio"><Edit className="h-4 w-4" /></Button>
                         </div>
                     </div>
