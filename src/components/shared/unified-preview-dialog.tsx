@@ -93,7 +93,7 @@ Hola ${vehicle.ownerName || 'Cliente'}, gracias por confiar en Ranoro. Te propor
           <ServiceSheetContent
             ref={contentRef}
             service={service}
-            quote={associatedQuote}
+            associatedQuote={associatedQuote}
             vehicle={vehicle || undefined}
             workshopInfo={workshopInfo as WorkshopInfo}
             onViewImage={handleViewImage}
