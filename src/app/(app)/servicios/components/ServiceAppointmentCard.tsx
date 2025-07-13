@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import React from 'react';
@@ -10,7 +9,7 @@ import { StatusTracker } from "./StatusTracker";
 import type { ServiceRecord, Vehicle, Technician } from '@/types';
 import { format, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { Edit, Eye, CheckCircle, Ban, DollarSign, User, Phone, TrendingUp, Clock, Wrench } from 'lucide-react';
+import { Edit, Eye, CheckCircle, Ban, DollarSign, User, Phone, TrendingUp, Clock, Wrench, Printer } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 import { parseDate } from '@/lib/forms';
 import { cn } from '@/lib/utils';
@@ -104,13 +103,19 @@ export const ServiceAppointmentCard = React.memo(({
                             {getServiceDescriptionText(service)}
                         </p>
                     </div>
-                    <div className="p-3 flex flex-col justify-center items-center text-center w-full md:w-48 flex-shrink-0">
-                         <div className="flex flex-col items-center">
+                    <div className="p-3 flex flex-col md:flex-row justify-between items-center w-full md:w-auto md:min-w-[12rem]">
+                        {isCompleted && service.paymentMethod && (
+                            <div className="text-center md:text-left md:pr-4">
+                                <p className="text-xs text-muted-foreground mb-1">Pagado con</p>
+                                <p className="font-semibold text-base">{service.paymentMethod}</p>
+                                {(service.cardFolio || service.transferFolio) && (
+                                <p className="text-xs text-muted-foreground">Folio: {service.cardFolio || service.transferFolio}</p>
+                                )}
+                            </div>
+                        )}
+                        <div className="flex flex-col items-center md:items-end">
                             <p className="text-xs text-muted-foreground mb-1">Costo Cliente</p>
                             <p className="font-bold text-2xl text-primary">{formatCurrency(service.totalCost)}</p>
-                        </div>
-                        <div className="flex flex-col items-center mt-2">
-                             <p className="text-xs text-muted-foreground mb-1">Ganancia</p>
                             <p className="font-semibold text-base text-green-600 flex items-center gap-1">
                                 <TrendingUp className="h-4 w-4" /> {formatCurrency(service.serviceProfit)}
                             </p>
@@ -135,7 +140,7 @@ export const ServiceAppointmentCard = React.memo(({
                                     <DollarSign className="h-4 w-4 text-green-600" />
                                 </Button>
                             )}
-                            <Button variant="ghost" size="icon" onClick={onView} title="Vista Previa"><Eye className="h-4 w-4" /></Button>
+                            <Button variant="ghost" size="icon" onClick={onView} title="Vista Previa"><Printer className="h-4 w-4" /></Button>
                             <Button variant="ghost" size="icon" onClick={onEdit} title="Editar Servicio"><Edit className="h-4 w-4" /></Button>
                         </div>
                     </div>
