@@ -1,5 +1,4 @@
 
-
 export interface WorkshopInfo {
   name: string;
   nameBold?: boolean;
@@ -231,7 +230,7 @@ export interface ServiceRecord {
   cardFolio?: string;
   transferFolio?: string;
   nextServiceInfo?: {
-    date: string; // ISO String
+    date: string;
     mileage?: number;
   };
   photoReports?: PhotoReportGroup[];
