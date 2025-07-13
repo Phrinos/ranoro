@@ -92,34 +92,66 @@ Hola ${vehicle.ownerName || 'Cliente'}, gracias por confiar en Ranoro. Te propor
     if (!viewingImageUrl) return;
     window.open(viewingImageUrl, '_blank')?.focus();
   };
+  
+   const handlePrint = () => {
+    const printableArea = document.getElementById('printable-area-preview');
+    if (printableArea) {
+      const printWindow = window.open('', '_blank');
+      if (printWindow) {
+        // You might need to add stylesheets here if they are not inline
+        printWindow.document.write('<html><head><title>Imprimir</title>');
+        const styles = Array.from(document.styleSheets)
+            .map(s => `<link rel="stylesheet" href="${s.href}">`)
+            .join('');
+        printWindow.document.write(styles);
+        printWindow.document.write('<style>@media print { body { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; } .printable-content { margin: 0; padding: 0; } }</style></head><body>');
+        printWindow.document.write(printableArea.innerHTML);
+        printWindow.document.write('</body></html>');
+
+        printWindow.document.close();
+        printWindow.focus();
+        setTimeout(() => {
+            printWindow.print();
+            printWindow.close();
+        }, 500); // Delay to allow styles to load
+      }
+    }
+  };
+
 
   return (
     <>
-      <PrintTicketDialog
-        open={open}
-        onOpenChange={onOpenChange}
-        title="Vista Previa Unificada"
-        onDialogClose={() => {}}
-        dialogContentClassName="printable-quote-dialog max-w-4xl"
-        footerActions={
-          <div className="flex flex-col sm:flex-row gap-2">
-            <Button onClick={handleShareService} variant="outline"><MessageSquare className="mr-2 h-4 w-4" /> Copiar para WhatsApp</Button>
-            <Button onClick={() => window.print()}><Printer className="mr-2 h-4 w-4" /> Imprimir Documento</Button>
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="max-w-4xl max-h-[95vh] flex flex-col p-0">
+          <DialogHeader className="p-6 pb-2 flex-shrink-0">
+            <DialogTitle>Vista Previa Unificada</DialogTitle>
+            <DialogDescription>Contenido del documento listo para imprimir o compartir.</DialogDescription>
+          </DialogHeader>
+          
+          <div id="printable-area-preview" className="flex-grow overflow-y-auto px-6 bg-muted/30">
+            {isLoading ? (
+                <div className="flex justify-center items-center h-[50vh]"><Loader2 className="mr-2 h-8 w-8 animate-spin" /> Cargando...</div>
+            ) : (
+              <div className="bg-white shadow-lg my-4">
+                <ServiceSheetContent
+                  ref={contentRef}
+                  service={service}
+                  vehicle={vehicle || undefined}
+                  workshopInfo={workshopInfo as WorkshopInfo}
+                  onViewImage={handleViewImage}
+                />
+              </div>
+            )}
           </div>
-        }
-      >
-        {isLoading ? (
-            <div className="flex justify-center items-center h-[50vh]"><Loader2 className="mr-2 h-8 w-8 animate-spin" /> Cargando...</div>
-        ) : (
-          <ServiceSheetContent
-            ref={contentRef}
-            service={service}
-            vehicle={vehicle || undefined}
-            workshopInfo={workshopInfo as WorkshopInfo}
-            onViewImage={handleViewImage}
-          />
-        )}
-      </PrintTicketDialog>
+          
+          <DialogFooter className="p-6 pt-4 border-t flex-shrink-0 bg-background sm:justify-end">
+            <div className="flex flex-col sm:flex-row gap-2">
+                <Button onClick={handleShareService} variant="outline"><MessageSquare className="mr-2 h-4 w-4" /> Copiar para WhatsApp</Button>
+                <Button onClick={handlePrint}><Printer className="mr-2 h-4 w-4" /> Imprimir Documento</Button>
+            </div>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={isImageViewerOpen} onOpenChange={setIsImageViewerOpen}>
         <DialogContent className="max-w-4xl p-2">
