@@ -29,34 +29,37 @@ export const parseDate = (d: any): Date | null => {
 };
 
 /**
- * Recursively prepares an object for Firestore. It converts Date objects to ISO strings
- * and removes properties with `undefined` values, replacing them with `null`.
+ * Recursively prepares a plain JavaScript object for Firestore.
+ * Converts Date objects to ISO strings.
+ * IMPORTANT: It does NOT handle `undefined`. The calling function is responsible for ensuring
+ * no `undefined` values are passed in the object.
  * @param obj The object or array to clean.
  * @returns A new object or array ready for Firestore.
  */
 export const cleanObjectForFirestore = (obj: any): any => {
-  if (obj === undefined) {
-    return null; // Top-level undefined becomes null
-  }
   if (obj === null || typeof obj !== 'object') {
     return obj;
   }
 
-  // Handle Date objects explicitly and convert to ISO string
+  // Handle Date objects
   if (obj instanceof Date) {
     return obj.toISOString();
   }
 
+  // Handle Arrays
   if (Array.isArray(obj)) {
-    return obj.map(cleanObjectForFirestore).filter(v => v !== undefined); // Filter out undefined from arrays
+    return obj.map(cleanObjectForFirestore);
   }
-  
-  return Object.entries(obj).reduce((acc, [key, value]) => {
-    if (value !== undefined) {
-      acc[key] = cleanObjectForFirestore(value);
-    } else {
-      acc[key] = null; // Explicitly set undefined properties to null
+
+  // Handle Objects
+  const cleanedObj: { [key: string]: any } = {};
+  for (const key in obj) {
+    if (obj.hasOwnProperty(key)) {
+      const value = obj[key];
+      // We explicitly DO NOT check for undefined here.
+      // The calling service is responsible for transforming undefined to null.
+      cleanedObj[key] = cleanObjectForFirestore(value);
     }
-    return acc;
-  }, {} as any);
+  }
+  return cleanedObj;
 };
