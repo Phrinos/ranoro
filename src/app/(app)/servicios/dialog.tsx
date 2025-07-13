@@ -192,20 +192,17 @@ export function ServiceDialog({
         <div className="flex-grow overflow-y-auto -mx-6 px-6 print:overflow-visible">
           <ServiceForm
             initialDataService={service}
-            initialDataQuote={quote}
             vehicles={vehicles} 
             technicians={technicians}
             inventoryItems={inventoryItems}
             serviceTypes={serviceTypes}
-            serviceHistory={[]} // Assuming this can be empty or fetched inside ServiceForm if needed
             onSubmit={internalOnSave}
             onClose={() => onOpenChange(false)}
             isReadOnly={isReadOnly}
-            onVehicleCreated={onVehicleCreated} 
             mode={mode}
             onDelete={onDelete}
             onCancelService={onCancelService}
-            onStatusChange={setFormStatus} // Pass the setter function
+            onStatusChange={setFormStatus}
           />
         </div>
       </DialogContent>
