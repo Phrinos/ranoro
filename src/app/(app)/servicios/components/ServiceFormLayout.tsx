@@ -1,4 +1,3 @@
-
 // src/app/(app)/servicios/components/ServiceFormLayout.tsx
 
 'use client';
@@ -31,7 +30,7 @@ export function ServiceFormHeader({ onPreview, isReadOnly, status, activeTab, on
     { value: 'seguridad', label: 'Revisión',   icon: ShieldCheck,  show: showAdv },
   ].filter((t) => t.show);
 
-  // Define grid class based on number of tabs to avoid dynamic class generation
+  // Determine grid class based on number of tabs to avoid dynamic class generation
   const gridColsClass = 
     tabs.length === 4 ? 'grid-cols-4' :
     tabs.length === 3 ? 'grid-cols-3' :
