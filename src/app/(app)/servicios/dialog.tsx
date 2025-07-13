@@ -59,72 +59,9 @@ export function ServiceDialog({
   const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
   const { toast } = useToast();
 
-  // State for dynamic title based on form's status
-  const [formStatus, setFormStatus] = useState<ServiceRecord['status'] | undefined>(service?.status || quote?.status);
-
   const isControlled = controlledOpen !== undefined && setControlledOpen !== undefined;
   const open = isControlled ? controlledOpen : uncontrolledOpen;
   const onOpenChange = isControlled ? setControlledOpen : setUncontrolledOpen;
-
-  useEffect(() => {
-    if(open) {
-      setFormStatus(service?.status || quote?.status);
-    }
-  }, [open, service, quote]);
-
-
-  // Mark signatures as "viewed" when the dialog opens
-  useEffect(() => {
-    const syncAndMarkAsViewed = async () => {
-      if (open && service && service.id && mode === 'service') {
-        let changed = false;
-        let serviceToUpdate = { ...service };
-
-        // Sync from public document first
-        if (service.publicId && db) {
-          try {
-            const publicDocRef = doc(db, 'publicServices', service.publicId);
-            const publicDocSnap = await getDoc(publicDocRef);
-
-            if (publicDocSnap.exists()) {
-              const publicData = publicDocSnap.data() as ServiceRecord;
-              if (publicData.customerSignatureReception && !serviceToUpdate.customerSignatureReception) {
-                serviceToUpdate.customerSignatureReception = publicData.customerSignatureReception;
-                changed = true;
-              }
-              if (publicData.customerSignatureDelivery && !serviceToUpdate.customerSignatureDelivery) {
-                serviceToUpdate.customerSignatureDelivery = publicData.customerSignatureDelivery;
-                changed = true;
-              }
-            }
-          } catch (e) {
-            console.error("Failed to sync signatures from public doc:", e);
-          }
-        }
-
-        // Now, mark as viewed
-        if (serviceToUpdate.customerSignatureReception && !serviceToUpdate.receptionSignatureViewed) {
-          serviceToUpdate.receptionSignatureViewed = true;
-          changed = true;
-        }
-        if (serviceToUpdate.customerSignatureDelivery && !serviceToUpdate.deliverySignatureViewed) {
-          serviceToUpdate.deliverySignatureViewed = true;
-          changed = true;
-        }
-        
-        if (changed && db) {
-          const serviceDocRef = doc(db, "serviceRecords", service.id);
-          await setDoc(serviceDocRef, { 
-              customerSignatureReception: serviceToUpdate.customerSignatureReception,
-              customerSignatureDelivery: serviceToUpdate.customerSignatureDelivery,
-              receptionSignatureViewed: serviceToUpdate.receptionSignatureViewed,
-              deliverySignatureViewed: serviceToUpdate.deliverySignatureViewed,
-           }, { merge: true });
-        }
-      }
-    };
-    syncAndMarkAsViewed();
-  }, [open, service, mode]);
 
   const internalOnSave = async (formData: ServiceRecord | QuoteRecord) => {
     if (isReadOnly) {
@@ -151,7 +88,7 @@ export function ServiceDialog({
   
   const getDynamicTitles = () => {
     const currentRecord = service || quote;
-    const status = formStatus || currentRecord?.status;
+    const status = currentRecord?.status;
 
     if (isReadOnly) {
         switch (status) {
@@ -190,7 +127,18 @@ export function ServiceDialog({
           <DialogDescription>{dialogDescription}</DialogDescription>
         </DialogHeader>
         <div className="flex-grow overflow-y-auto -mx-6 px-6 print:overflow-visible">
-          
+          <ServiceForm
+            initialDataService={service}
+            vehicles={vehicles} 
+            technicians={technicians}
+            inventoryItems={inventoryItems}
+            serviceTypes={serviceTypes}
+            onSubmit={internalOnSave}
+            onClose={() => onOpenChange(false)}
+            isReadOnly={isReadOnly}
+            mode={mode}
+            onCancelService={onCancelService}
+          />
         </div>
       </DialogContent>
     </Dialog>

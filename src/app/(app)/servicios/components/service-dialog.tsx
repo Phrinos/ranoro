@@ -68,45 +68,6 @@ export function ServiceDialog({
   const open = isControlled ? controlledOpen : uncontrolledOpen;
   const onOpenChange = isControlled ? setControlledOpen : setUncontrolledOpen;
   
-  useEffect(() => {
-    const syncAndMarkAsViewed = async () => {
-      if (open && service && service.id && mode === 'service') {
-        let changed = false;
-        let serviceToUpdate = { ...service };
-
-        if (service.publicId && db) {
-          try {
-            const publicDocRef = doc(db, 'publicServices', service.publicId);
-            const publicDocSnap = await getDoc(publicDocRef);
-            if (publicDocSnap.exists()) {
-              const publicData = publicDocSnap.data() as ServiceRecord;
-              if (publicData.customerSignatureReception && !serviceToUpdate.customerSignatureReception) {
-                serviceToUpdate.customerSignatureReception = publicData.customerSignatureReception; changed = true;
-              }
-              if (publicData.customerSignatureDelivery && !serviceToUpdate.customerSignatureDelivery) {
-                serviceToUpdate.customerSignatureDelivery = publicData.customerSignatureDelivery; changed = true;
-              }
-            }
-          } catch (e) { console.error("Failed to sync signatures from public doc:", e); }
-        }
-
-        if (serviceToUpdate.customerSignatureReception && !serviceToUpdate.receptionSignatureViewed) { serviceToUpdate.receptionSignatureViewed = true; changed = true; }
-        if (serviceToUpdate.customerSignatureDelivery && !serviceToUpdate.deliverySignatureViewed) { serviceToUpdate.deliverySignatureViewed = true; changed = true; }
-        
-        if (changed && db) {
-          const serviceDocRef = doc(db, "serviceRecords", service.id);
-          await setDoc(serviceDocRef, { 
-              customerSignatureReception: serviceToUpdate.customerSignatureReception,
-              customerSignatureDelivery: serviceToUpdate.customerSignatureDelivery,
-              receptionSignatureViewed: serviceToUpdate.receptionSignatureViewed,
-              deliverySignatureViewed: serviceToUpdate.deliverySignatureViewed,
-           }, { merge: true });
-        }
-      }
-    };
-    syncAndMarkAsViewed();
-  }, [open, service, mode]);
-
   const internalOnSave = async (formData: ServiceRecord | QuoteRecord) => {
     if (isReadOnly) { onOpenChange(false); return; }
     try {

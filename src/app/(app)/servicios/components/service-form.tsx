@@ -172,7 +172,6 @@ export function ServiceForm(props:Props){
   const form = useForm<ServiceFormValues>({
     resolver: zodResolver(serviceFormSchema),
     defaultValues,
-    values: defaultValues,
   });
   
   const { control, setValue, watch, formState, handleSubmit } = form;
@@ -296,20 +295,15 @@ export function ServiceForm(props:Props){
   
   const IVA = 0.16;
   const formSubmitWrapper = (values: ServiceFormValues) => {
-    // Clone and convert dates to ISO strings for Firestore
     const dataToSubmit: any = { ...values };
-    if (dataToSubmit.serviceDate instanceof Date) {
-      dataToSubmit.serviceDate = dataToSubmit.serviceDate.toISOString();
-    }
-    if (dataToSubmit.quoteDate instanceof Date) {
-      dataToSubmit.quoteDate = dataToSubmit.quoteDate.toISOString();
-    }
-    if (dataToSubmit.receptionDateTime instanceof Date) {
-      dataToSubmit.receptionDateTime = dataToSubmit.receptionDateTime.toISOString();
-    }
-    if (dataToSubmit.deliveryDateTime instanceof Date) {
-      dataToSubmit.deliveryDateTime = dataToSubmit.deliveryDateTime.toISOString();
-    }
+    
+    // Ensure all date fields are converted to ISO strings for Firestore
+    const dateFields: (keyof ServiceFormValues)[] = ['serviceDate', 'quoteDate', 'receptionDateTime', 'deliveryDateTime'];
+    dateFields.forEach(field => {
+        if (dataToSubmit[field] instanceof Date) {
+            dataToSubmit[field] = dataToSubmit[field].toISOString();
+        }
+    });
     
     // Add calculated totals
     dataToSubmit.totalCost = totalCost;

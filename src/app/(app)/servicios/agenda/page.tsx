@@ -6,7 +6,7 @@ import React, { useState, useEffect, useMemo, useCallback, Suspense, useRef } fr
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { PlusCircle, List, Calendar as CalendarIcon, FileCheck, Eye, Loader2, Edit, CheckCircle, Printer, MessageSquare, Ban, DollarSign } from "lucide-react";
-import { ServiceDialog } from "../components/dialog";
+import { ServiceDialog } from "../components/service-dialog";
 import type { ServiceRecord, Vehicle, Technician, QuoteRecord, InventoryItem, CapacityAnalysisOutput, ServiceTypeRecord, WorkshopInfo } from "@/types";
 import { useToast } from "@/hooks/use-toast";
 import { format, isToday, isTomorrow, compareAsc, isSameDay, addDays, parseISO, isValid } from "date-fns";
@@ -91,15 +91,15 @@ function AgendaPageComponent() {
       return { scheduledServices: [], todayServices: [], tomorrowServices: [], futureServices: [] };
     }
   
-    const scheduled = allServices.filter(s => {
-      const status = s.status;
-      // An active service is one that is scheduled for later, or is already in the workshop but not yet delivered.
-      return (status === 'Agendado' || status === 'En Taller') && !s.deliveryDateTime;
-    });
-  
     const nowInTimezone = toZonedTime(new Date(), workshopTimezone);
     const today = nowInTimezone;
     const tomorrow = addDays(today, 1);
+  
+    // Filter for services that are relevant to the agenda (not yet delivered/cancelled)
+    const scheduled = allServices.filter(s => {
+      const status = s.status;
+      return (status === 'Agendado' || status === 'En Taller') && !s.deliveryDateTime;
+    });
   
     const byDateAsc = (a: ServiceRecord, b: ServiceRecord) => {
       const dateA = parseDate(a.serviceDate);
@@ -111,18 +111,27 @@ function AgendaPageComponent() {
   
     const isSame = (d: Date | null, ref: Date) => d && isValid(d) && isSameDay(d, ref);
   
-    const todayS = scheduled
-      .filter((s) => isSame(parseDate(s.serviceDate), today))
-      .sort(byDateAsc);
+    // Services for today include 'Agendado' for today AND any service currently 'En Taller'
+    const todayS = allServices.filter(s => {
+        if (s.status === 'Agendado' && isSame(parseDate(s.serviceDate), today)) {
+            return true;
+        }
+        if (s.status === 'En Taller' && !s.deliveryDateTime) {
+            return true;
+        }
+        return false;
+    }).sort(byDateAsc);
   
+    // Only 'Agendado' services for tomorrow
     const tomorrowS = scheduled
-      .filter((s) => isSame(parseDate(s.serviceDate), tomorrow))
+      .filter((s) => s.status === 'Agendado' && isSame(parseDate(s.serviceDate), tomorrow))
       .sort(byDateAsc);
   
+    // Only 'Agendado' services for the future
     const futureS = scheduled
       .filter((s) => {
         const d = parseDate(s.serviceDate);
-        return d && isValid(d) && d > tomorrow && !isSameDay(d, tomorrow);
+        return s.status === 'Agendado' && d && isValid(d) && d > tomorrow && !isSameDay(d, tomorrow);
       })
       .sort(byDateAsc);
   
