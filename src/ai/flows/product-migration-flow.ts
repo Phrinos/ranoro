@@ -19,10 +19,11 @@ export type ExtractedProduct = z.infer<typeof ExtractedProductSchema>;
 
 const ProductMigrationInputSchema = z.object({
   csvContent: z.string().describe('The full string content of a spreadsheet sheet, formatted as CSV.'),
+  existingProductNames: z.array(z.string()).optional().describe('A list of product names that already exist in the database. These should be omitted.'),
 });
 
 const ProductMigrationOutputSchema = z.object({
-  products: z.array(ExtractedProductSchema).describe('A list of products found in the data.'),
+  products: z.array(ExtractedProductSchema).describe('A list of new products found in the data.'),
 });
 export type ProductMigrationOutput = z.infer<typeof ProductMigrationOutputSchema>;
 
@@ -38,13 +39,14 @@ const migrateProductsPrompt = ai.definePrompt({
   prompt: `You are a data migration specialist. Your task is to analyze the provided CSV-formatted text and extract inventory product information.
 
 **Instructions:**
+0.  **Check for Existing Products**: You have a list of existing product names: \`{{json existingProductNames}}\`. If you extract a product name from the CSV that is already in this list, **you MUST ignore that row** and not include it in the output. Only extract products that are new.
 1.  **Identify Columns**: Intelligently map the columns from the CSV to the required fields. Common mappings are:
     *   'nombre', 'producto', 'descripción' -> 'name' (MANDATORY)
     *   'codigo', 'sku', 'clave' -> 'sku'
     *   'existencias', 'cantidad', 'stock', 'cant.' -> 'quantity'
     *   'precio de compra', 'costo', 'precio compra' -> 'unitPrice'
     *   'precio de venta', 'precio publico', 'precio venta' -> 'sellingPrice'
-2.  **Extract Data**: For each row in the CSV, create one product object.
+2.  **Extract Data**: For each row in the CSV, create one product object, but only if its name is not in the \`existingProductNames\` list.
 3.  **Mandatory Name**: The 'name' field is absolutely mandatory. If a row does not have a value that can be identified as a product name, you must ignore that row.
 4.  **Clean and Format Data**: 
     *   Trim whitespace from all text fields.

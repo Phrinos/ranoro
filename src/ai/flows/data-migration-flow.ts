@@ -34,6 +34,7 @@ export type ExtractedService = z.infer<typeof ExtractedServiceSchema>;
 // Input schema for the migration flow
 const MigrateDataInputSchema = z.object({
   csvContent: z.string().describe('The full string content of a spreadsheet sheet, formatted as CSV.'),
+  existingLicensePlates: z.array(z.string()).optional().describe('A list of license plates that already exist in the database. These should be omitted from the output.'),
 });
 export type MigrateDataInput = z.infer<typeof MigrateDataInputSchema>;
 
@@ -59,18 +60,24 @@ const migrateDataPrompt = ai.definePrompt({
   output: { schema: MigrateDataOutputSchema },
   prompt: `You are an expert data migration specialist for an auto repair shop. Your task is to analyze the provided CSV-formatted text and extract vehicle and service information into a structured JSON format. Follow these steps meticulously:
 
+**Step 0: Check for Existing Records.**
+You have been provided with a list of license plates that already exist in the database: \`{{json existingLicensePlates}}\`.
+- **CRITICAL**: When you extract a license plate from the CSV, you MUST check if it exists in the \`existingLicensePlates\` list.
+- If the license plate ALREADY EXISTS, you MUST IGNORE that vehicle. Do NOT include it in the final 'vehicles' output array.
+- You can still process services associated with that existing license plate, but the vehicle itself should not be created again.
+
 **Step 1: Identify the License Plate Column.**
 This is the most critical step. The license plate ('placa') is the MANDATORY, UNIQUE IDENTIFIER for every vehicle.
 - First, look for a column header that is explicitly named 'Placa', 'Patente', 'Matrícula', or 'LicensePlate'.
 - If no such header exists, analyze the data in each column. The license plate column will contain values that are typically 6 to 8 characters long, consisting of a mix of uppercase letters and numbers.
 - Once you have identified the license plate column, you MUST use it as the source for the 'licensePlate' field for vehicles and the 'vehicleLicensePlate' field for services. If you cannot identify a license plate column, do not proceed and return an empty result.
 
-**Step 2: Extract and Consolidate Unique Vehicles.**
+**Step 2: Extract and Consolidate Unique NEW Vehicles.**
 - Iterate through each row of the CSV.
-- For each row, extract the license plate using the column you identified in Step 1.
-- If you encounter a license plate for the first time, create a new vehicle object in the 'vehicles' array.
-- If you see a license plate that already exists in your 'vehicles' array, DO NOT create a new vehicle. You can update the existing vehicle record if the current row has more complete information (e.g., a phone number that was missing before).
-- For each vehicle, extract other relevant information by mapping columns like 'Marca' to 'make', 'Modelo' to 'model', 'Año'/'Anio' to 'year', 'Cliente' to 'ownerName', etc.
+- For each row, extract the license plate.
+- **Check if this license plate is in the \`existingLicensePlates\` list. If it is, SKIP creating a vehicle for this row.**
+- If the license plate is new (not in the existing list) and you encounter it for the first time in this CSV, create a new vehicle object in the 'vehicles' array.
+- If you see a new license plate that you already added to your 'vehicles' array *during this session*, DO NOT create a new vehicle. You can update the existing record if the current row has more complete information.
 
 **Step 3: Extract All Service Records.**
 - For EVERY row in the CSV that represents a service, create a corresponding entry in the 'services' array.
@@ -79,8 +86,8 @@ This is the most critical step. The license plate ('placa') is the MANDATORY, UN
 
 **Step 4: Clean and Format Data.**
 - **Clean the data as you extract it: trim whitespace, convert years and costs to numbers.**
-- **CRITICAL: PRESERVE DATE FORMAT.** For the 'serviceDate' field, you MUST extract the date exactly as it appears in the source CSV (e.g., '15/01/24', '2024-01-15'). Do NOT reformat it to YYYY-MM-DD.
-- **CRITICAL: Format all text fields to be consistently capitalized. 'make', 'model', and 'ownerName' should be in "Title Case" (e.g., "Nissan Sentra"). 'licensePlate' should be in ALL CAPS. 'description' should start with a capital letter.**
+- **CRITICAL: PRESERVE DATE FORMAT.** For the 'serviceDate' field, you MUST extract the date exactly as it appears in the source CSV. Do NOT reformat it to YYYY-MM-DD.
+- **CRITICAL: Format all text fields to be consistently capitalized. 'make', 'model', and 'ownerName' should be in "Title Case". 'licensePlate' should be in ALL CAPS. 'description' should start with a capital letter.**
 - **IMPORTANT:** If a value for a field is missing or empty, you MUST return it as an empty string ("") for text fields, or 0 for numeric fields (like year or cost). Do not omit the field from the JSON.
 - **CRITICAL:** Every vehicle in the output 'vehicles' array and every service in the 'services' array must have a valid 'licensePlate' or 'vehicleLicensePlate' field, respectively. Rows without a discernible license plate should be ignored.
 - **YEAR FIELD (CRITICAL):** Look for columns named 'Año' or 'Anio'. If the cell contains a numerical value (e.g., 2020, '2020), you MUST extract that number for the 'year' field. Only use 0 if the cell is completely empty or contains non-numeric text. Do not default to 0 if a year is present.

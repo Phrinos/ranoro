@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -14,6 +14,7 @@ import { inventoryService, operationsService } from '@/lib/services';
 import { formatCurrency } from '@/lib/utils';
 import { format, parse, isValid } from 'date-fns';
 import { Textarea } from '@/components/ui/textarea';
+import type { Vehicle, InventoryItem } from '@/types';
 
 type MigrationType = 'operaciones' | 'productos';
 type AnalysisResult = MigrateDataOutput & { products?: ExtractedProduct[] } & { type: MigrationType };
@@ -25,7 +26,24 @@ export function MigracionPageContent() {
     const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
     const [migrationType, setMigrationType] = useState<MigrationType>('operaciones');
     
+    // State to hold existing data
+    const [existingVehicles, setExistingVehicles] = useState<Vehicle[]>([]);
+    const [existingInventory, setExistingInventory] = useState<InventoryItem[]>([]);
+    const [isLoadingData, setIsLoadingData] = useState(true);
+
     const { toast } = useToast();
+
+    useEffect(() => {
+        setIsLoadingData(true);
+        const unsubs = [
+            inventoryService.onVehiclesUpdate(setExistingVehicles),
+            inventoryService.onItemsUpdate((items) => {
+                setExistingInventory(items);
+                setIsLoadingData(false);
+            }),
+        ];
+        return () => unsubs.forEach(unsub => unsub());
+    }, []);
     
     const handlePastedTextChange = (text: string) => {
         setPastedText(text);
@@ -45,14 +63,22 @@ export function MigracionPageContent() {
         try {
             let result;
             if (migrationType === 'operaciones') {
-                const rawResult = await migrateData({ csvContent: pastedText });
+                const existingPlates = existingVehicles.map(v => v.licensePlate);
+                const rawResult = await migrateData({ 
+                    csvContent: pastedText,
+                    existingLicensePlates: existingPlates,
+                });
                 result = { ...rawResult, type: 'operaciones' as const };
             } else { // productos
-                const rawResult = await migrateProducts({ csvContent: pastedText });
+                const existingProductNames = existingInventory.map(p => p.name);
+                const rawResult = await migrateProducts({ 
+                    csvContent: pastedText,
+                    existingProductNames: existingProductNames,
+                });
                 result = { products: rawResult.products, vehicles: [], services: [], type: 'productos' as const };
             }
             setAnalysisResult(result);
-            toast({ title: "¡Análisis Completo!", description: "Revisa los datos extraídos por la IA antes de guardarlos." });
+            toast({ title: "¡Análisis Completo!", description: "Revisa los datos nuevos extraídos por la IA antes de guardarlos." });
         } catch (e) {
             console.error("Error en el análisis:", e);
             toast({ title: 'Error en Análisis', description: `La IA no pudo procesar los datos. ${e instanceof Error ? e.message : ''}`, variant: 'destructive' });
@@ -67,10 +93,10 @@ export function MigracionPageContent() {
         let itemsAdded = 0;
         
         try {
-            if (analysisResult.type === 'operaciones' && analysisResult.services.length > 0) {
-                // The new service handles both vehicle creation and service saving.
-                await operationsService.saveMigratedServices(analysisResult.services);
-                itemsAdded = analysisResult.services.length;
+            if (analysisResult.type === 'operaciones' && (analysisResult.services.length > 0 || analysisResult.vehicles.length > 0)) {
+                // The service handles both vehicle creation and service saving.
+                await operationsService.saveMigratedServices(analysisResult.services, analysisResult.vehicles);
+                itemsAdded = (analysisResult.vehicles?.length || 0) + (analysisResult.services?.length || 0);
             } else if (analysisResult.type === 'productos' && analysisResult.products) {
                 if (analysisResult.products.length > 0) {
                     for (const product of analysisResult.products) {
@@ -79,7 +105,7 @@ export function MigracionPageContent() {
                     }
                 }
             }
-            toast({ title: "¡Migración Exitosa!", description: `Se guardaron ${itemsAdded} registros en la base de datos.` });
+            toast({ title: "¡Migración Exitosa!", description: `Se guardaron ${itemsAdded} registros nuevos en la base de datos.` });
             setAnalysisResult(null);
             setPastedText('');
         } catch(e) {
@@ -94,8 +120,8 @@ export function MigracionPageContent() {
         if (!analysisResult) return null;
         
         let summaryText = '';
-        if(analysisResult.type === 'operaciones') summaryText = `Se encontraron ${analysisResult.vehicles.length} vehículos y ${analysisResult.services.length} servicios.`;
-        if (analysisResult.type === 'productos' && analysisResult.products) summaryText = `Se encontraron ${analysisResult.products.length} productos.`;
+        if(analysisResult.type === 'operaciones') summaryText = `Se encontraron ${analysisResult.vehicles.length} vehículos y ${analysisResult.services.length} servicios nuevos. Los registros existentes fueron omitidos.`;
+        if (analysisResult.type === 'productos' && analysisResult.products) summaryText = `Se encontraron ${analysisResult.products.length} productos nuevos. Los registros existentes fueron omitidos.`;
         
         const renderDate = (dateString: string) => {
             const possibleFormats = ['M/d/yy', 'MM/dd/yy', 'M-d-yy', 'MM-dd-yy', 'yyyy-MM-dd', 'dd/MM/yyyy'];
@@ -109,6 +135,7 @@ export function MigracionPageContent() {
         const hasVehicles = analysisResult.vehicles && analysisResult.vehicles.length > 0;
         const hasServices = analysisResult.services && analysisResult.services.length > 0;
         const hasProducts = analysisResult.products && analysisResult.products.length > 0;
+        const hasDataToSave = hasVehicles || hasServices || hasProducts;
 
         return (
              <Card className="mt-6">
@@ -138,12 +165,18 @@ export function MigracionPageContent() {
                            <Table><TableHeader className="sticky top-0 bg-muted"><TableRow><TableHead>SKU</TableHead><TableHead>Nombre</TableHead><TableHead>Cantidad</TableHead><TableHead>Precio Compra</TableHead><TableHead>Precio Venta</TableHead></TableRow></TableHeader><TableBody>{analysisResult.products.map((p, i) => ( <TableRow key={i}><TableCell>{p.sku || 'N/A'}</TableCell><TableCell>{p.name}</TableCell><TableCell>{p.quantity}</TableCell><TableCell>{formatCurrency(p.unitPrice)}</TableCell><TableCell>{formatCurrency(p.sellingPrice)}</TableCell></TableRow> ))}</TableBody></Table>
                         </div>
                     )}
-                    <div className="mt-4 flex justify-end">
-                        <Button onClick={handleConfirmAndSave} disabled={isSaving}>
-                            {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Database className="mr-2 h-4 w-4" />}
-                            Confirmar y Guardar en Base de Datos
-                        </Button>
-                    </div>
+                    {hasDataToSave ? (
+                        <div className="mt-4 flex justify-end">
+                            <Button onClick={handleConfirmAndSave} disabled={isSaving}>
+                                {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Database className="mr-2 h-4 w-4" />}
+                                Confirmar y Guardar en Base de Datos
+                            </Button>
+                        </div>
+                    ) : (
+                        <div className="mt-4 text-center text-muted-foreground">
+                            No se encontraron registros nuevos para guardar.
+                        </div>
+                    )}
                 </CardContent>
             </Card>
         );
@@ -180,20 +213,22 @@ export function MigracionPageContent() {
             <Card className="mt-4">
                 <CardHeader>
                     <CardTitle>2. Analizar y Guardar</CardTitle>
-                    <CardDescription>La IA analizará el texto pegado. Luego podrás revisar los datos antes de guardarlos en el sistema.</CardDescription>
+                    <CardDescription>La IA analizará el texto pegado, omitiendo registros que ya existen en tu sistema. Luego podrás revisar los datos nuevos antes de guardarlos.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <Button type="submit" className="w-full" disabled={!pastedText || isAnalyzing}>
-                        {isAnalyzing ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <BrainCircuit className="mr-2 h-4 w-4"/>} Analizar Datos con IA
+                    <Button type="submit" className="w-full" disabled={!pastedText || isAnalyzing || isLoadingData}>
+                        {isAnalyzing || isLoadingData ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <BrainCircuit className="mr-2 h-4 w-4"/>} 
+                        {isLoadingData ? 'Cargando datos existentes...' : (isAnalyzing ? 'Analizando...' : 'Analizar Datos con IA')}
                     </Button>
                 </CardContent>
             </Card>
         </form>
              
-        {isAnalyzing && (
+        {(isAnalyzing || isLoadingData) && (
             <Card className="mt-6">
                 <CardContent className="flex items-center justify-center p-8 text-muted-foreground">
-                    <Loader2 className="h-6 w-6 animate-spin mr-3"/><p>La IA está analizando los datos, por favor espere...</p>
+                    <Loader2 className="h-6 w-6 animate-spin mr-3"/>
+                    <p>{isLoadingData ? 'Cargando datos existentes para comparación...' : 'La IA está analizando los datos, por favor espere...'}</p>
                 </CardContent>
             </Card>
         )}
