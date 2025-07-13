@@ -11,16 +11,17 @@ import { ServiceSheetContent } from '@/components/service-sheet-content';
 import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../ui/dialog';
 import Image from "next/image";
-import { inventoryService } from '@/lib/services'; // Import the service
+import { inventoryService } from '@/lib/services'; 
 
 interface UnifiedPreviewDialogProps {
   open: boolean;
   onOpenChange: (isOpen: boolean) => void;
   service: ServiceRecord;
+  vehicle?: Vehicle | null; // Making vehicle optional
   associatedQuote?: QuoteRecord | null;
 }
 
-export function UnifiedPreviewDialog({ open, onOpenChange, service, associatedQuote }: UnifiedPreviewDialogProps) {
+export function UnifiedPreviewDialog({ open, onOpenChange, service, vehicle: initialVehicle, associatedQuote }: UnifiedPreviewDialogProps) {
   const { toast } = useToast();
   const [workshopInfo, setWorkshopInfo] = useState<WorkshopInfo | {}>({});
   const contentRef = useRef<HTMLDivElement>(null);
@@ -28,7 +29,7 @@ export function UnifiedPreviewDialog({ open, onOpenChange, service, associatedQu
   const [isImageViewerOpen, setIsImageViewerOpen] = useState(false);
   const [viewingImageUrl, setViewingImageUrl] = useState<string | null>(null);
   
-  const [vehicle, setVehicle] = useState<Vehicle | null>(null);
+  const [vehicle, setVehicle] = useState<Vehicle | null | undefined>(initialVehicle);
 
   useEffect(() => {
     if (open) {
@@ -37,15 +38,18 @@ export function UnifiedPreviewDialog({ open, onOpenChange, service, associatedQu
         setWorkshopInfo(JSON.parse(storedWorkshopInfo));
       }
       
-      const fetchVehicle = async () => {
-          if (service.vehicleId) {
+      const fetchVehicleIfNeeded = async () => {
+          // If vehicle is not passed as a prop, or if the service's vehicleId doesn't match, fetch it.
+          if ((!initialVehicle || initialVehicle.id !== service.vehicleId) && service.vehicleId) {
               const v = await inventoryService.getVehicleById(service.vehicleId);
               setVehicle(v || null);
+          } else {
+              setVehicle(initialVehicle); // Use the one passed in props
           }
       };
-      fetchVehicle();
+      fetchVehicleIfNeeded();
     }
-  }, [open, service.vehicleId]);
+  }, [open, service, initialVehicle]);
 
   const handleShareService = useCallback(() => {
     if (!service || !service.publicId) {
@@ -122,7 +126,7 @@ Hola ${vehicle.ownerName || 'Cliente'}, gracias por confiar en Ranoro. Te propor
           </DialogHeader>
           <div className="relative aspect-video w-full">
             {viewingImageUrl && (
-              <Image src={viewingImageUrl} alt="Vista ampliada de evidencia" layout="fill" objectFit="contain" crossOrigin="anonymous" />
+              <Image src={viewingImageUrl} alt="Vista ampliada de evidencia" fill className="object-contain" crossOrigin="anonymous" />
             )}
           </div>
           <DialogFooter className="mt-2 print:hidden">
