@@ -144,11 +144,11 @@ const completeService = async (service: ServiceRecord, paymentDetails: { payment
       ...paymentDetails,
     };
     
-    batch.update(serviceRef, updatedServiceData);
+    batch.update(serviceRef, cleanObjectForFirestore(updatedServiceData));
     
     if (service.publicId) {
         const publicDocRef = doc(db, 'publicServices', service.publicId);
-        batch.update(publicDocRef, updatedServiceData);
+        batch.update(publicDocRef, cleanObjectForFirestore(updatedServiceData));
     }
 };
 
@@ -191,7 +191,7 @@ const saveMigratedServices = async (services: ExtractedService[]): Promise<void>
             totalCost: service.totalCost, status: 'Completado', 
             deliveryDateTime: parsedDate.toISOString(), subTotal: service.totalCost / 1.16,
             taxAmount: service.totalCost - (service.totalCost / 1.16),
-            serviceProfit: 0, totalSuppliesCost: 0, technicianId: 'N/A',
+            serviceProfit: 0, totalSuppliesWorkshopCost: 0, technicianId: 'N/A',
             serviceItems: [{ id: 'migrated-item', name: service.description, price: service.totalCost, suppliesUsed: [] }],
         };
         const newDocRef = doc(collection(db, "serviceRecords"));
