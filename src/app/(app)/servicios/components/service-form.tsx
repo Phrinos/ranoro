@@ -125,7 +125,7 @@ export function ServiceForm(props:Props){
                 {
                   id: `rep_recepcion_${Date.now()}`,
                   date: now.toISOString(),
-                  description: 'Notas de la Recepción',
+                  description: 'Fotografias de la recepcion del vehiculo',
                   photos: [],
                 },
               ],
@@ -151,7 +151,7 @@ export function ServiceForm(props:Props){
       photoReports: [{
         id: `rep_recepcion_${Date.now()}`,
         date: now.toISOString(),
-        description: 'Notas de la Recepción',
+        description: 'Fotografias de la recepcion del vehiculo',
         photos: [],
       }],
       serviceAdvisorId: authUser?.id,
@@ -189,7 +189,7 @@ export function ServiceForm(props:Props){
   const [isGeneratingQuote, setIsGeneratingQuote] = useState(false)
   const [isEnhancingText, setIsEnhancingText] = useState<string | null>(null)
 
-  const handleEnhanceText = useCallback(async (fieldName: keyof ServiceFormValues | `photoReports.${number}.description` | `safetyInspection.inspectionNotes`) => {
+  const handleEnhanceText = useCallback(async (fieldName: keyof ServiceFormValues | `photoReports.${number}.description` | `safetyInspection.${keyof SafetyInspection}.notes` | `safetyInspection.inspectionNotes`) => {
     setIsEnhancingText(fieldName);
     const textToEnhance = form.getValues(fieldName as any);
     const contextMap = {
@@ -328,7 +328,7 @@ export function ServiceForm(props:Props){
                          control={control}
                          isReadOnly={props.isReadOnly}
                          isEnhancingText={isEnhancingText}
-                         handleEnhanceText={handleEnhanceText}
+                         handleEnhanceText={handleEnhanceText as any}
                        />
                     </TabsContent>
                     <TabsContent value="photoreport" className="mt-0">
@@ -347,7 +347,7 @@ export function ServiceForm(props:Props){
                             onSignatureClick={() => setSignatureType('advisor')}
                             signatureDataUrl={watch('serviceAdvisorSignatureDataUrl')}
                             isEnhancingText={isEnhancingText}
-                            handleEnhanceText={handleEnhanceText}
+                            handleEnhanceText={handleEnhanceText as any}
                             serviceId={initData?.id || 'new'}
                             onPhotoUploaded={handleChecklistPhotoUploaded}
                             onViewImage={handleViewImage}
@@ -406,7 +406,7 @@ const PhotoReportTab = ({ control, isReadOnly, serviceId, onPhotoUploaded, onVie
                                     </button>
                                 ))}
                             </div>
-                            {!isReadOnly && <PhotoUploader reportIndex={index} serviceId={serviceId} onUploadComplete={onPhotoUploaded} photosLength={(watch(`photoReports.${index}.photos`) || []).length} />}
+                            {!isReadOnly && <PhotoUploader reportIndex={index} serviceId={serviceId} onUploadComplete={onPhotoUploaded} photosLength={(watch(`photoReports.${index}.photos`) || []).length} maxPhotos={10} />}
                         </div>
                      </Card>
                 ))}
