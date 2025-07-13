@@ -218,11 +218,6 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
   ({ service, associatedQuote, vehicle, workshopInfo: workshopInfoProp, onViewImage, isPublicView, showSignReception, showSignDelivery, onSignClick, isSigning }, ref) => {
     const effectiveWorkshopInfo = { ...initialWorkshopInfo, ...workshopInfoProp };
     
-    const formatCurrency = (amount: number | undefined) => {
-        if (amount === undefined) return '$0.00';
-        return `$${amount.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-    };
-
     const serviceDateInput = service.serviceDate;
     let serviceDate: Date;
     if (typeof serviceDateInput === 'string') {
@@ -256,6 +251,7 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
     const driverDebt = driver ? calculateDriverDebt(driver, placeholderRentalPayments, [vehicle]) : { totalDebt: 0 };
     // --- END DEBT CALCULATION ---
 
+    // This is the core logic fix: determine which object holds the quote data.
     const quoteToDisplay = service.status === 'Cotizacion' ? service : associatedQuote;
     
     const showOrder = service.status !== 'Cotizacion' && service.status !== 'Agendado';
@@ -524,18 +520,17 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
       </div>
     ) : null;
     
-    // Default view with tabs for other states
     return (
       <div ref={ref} data-format="letter" className="font-sans bg-white text-black text-sm">
         {/* For Screen View */}
         <div className="print:hidden p-0 sm:p-2 md:p-4 shadow-lg">
           <Tabs defaultValue={defaultTabValue} className="w-full">
-            <TabsList className={cn('grid w-full', `grid-cols-${tabs.length}`)}>
+            <TabsList className={cn('grid w-full', `grid-cols-${tabs.length || 1}`)}>
                 {tabs.map(tab => <TabsTrigger key={tab.value} value={tab.value}>{tab.label}</TabsTrigger>)}
             </TabsList>
             
             <TabsContent value="quote">
-              {showQuote ? <QuoteContent quote={quoteToDisplay} vehicle={vehicle} workshopInfo={effectiveWorkshopInfo} /> : null}
+              {showQuote ? <QuoteContent quote={quoteToDisplay!} vehicle={vehicle} workshopInfo={effectiveWorkshopInfo} /> : null}
             </TabsContent>
             <TabsContent value="order" className="mt-4">{ServiceOrderContent}</TabsContent>
             <TabsContent value="checklist" className="mt-4">
