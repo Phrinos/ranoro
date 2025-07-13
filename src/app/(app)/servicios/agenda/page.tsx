@@ -91,10 +91,11 @@ function AgendaPageComponent() {
       return { scheduledServices: [], todayServices: [], tomorrowServices: [], futureServices: [] };
     }
   
-    // Include services that are either scheduled or already in the workshop but not yet delivered.
-    const scheduled = allServices.filter(s => 
-        (s.status === 'Agendado' || s.status === 'En Taller') && !s.deliveryDateTime
-    );
+    const scheduled = allServices.filter(s => {
+      const status = s.status;
+      // An active service is one that is scheduled for later, or is already in the workshop but not yet delivered.
+      return (status === 'Agendado' || status === 'En Taller') && !s.deliveryDateTime;
+    });
   
     const nowInTimezone = toZonedTime(new Date(), workshopTimezone);
     const today = nowInTimezone;
