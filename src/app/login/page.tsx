@@ -194,7 +194,7 @@ export default function LoginPage() {
       <div className="flex items-center justify-center py-12 bg-gray-50 dark:bg-gray-900">
         <Card className="mx-4 w-full sm:mx-auto sm:w-[420px] max-w-full animate-fade-in-up shadow-xl transition-all">
           <CardHeader className="text-center">
-             <Link href="/" className="mb-4">
+            <Link href="/" className="mb-4 inline-block">
               <Image
                   src="/ranoro-logo.png"
                   alt="Ranoro Logo"
@@ -205,6 +205,7 @@ export default function LoginPage() {
                   data-ai-hint="ranoro logo"
               />
             </Link>
+            <p className="text-sm text-muted-foreground -mt-2">Tu Taller en un App</p>
           </CardHeader>
           <CardContent>
               <Tabs defaultValue="login" className="w-full">
