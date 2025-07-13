@@ -22,9 +22,8 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader,
   AlertDialogTitle, AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
-import {
-  Dialog, DialogContent as UiDialogContent, DialogFooter as UiDialogFooter,
+import { Card, CardContent } from '@/components/ui/card'
+import { Dialog, DialogContent as UiDialogContent, DialogFooter as UiDialogFooter,
   DialogHeader as UiDialogHeader, DialogTitle as UiDialogTitle
 } from '@/components/ui/dialog'
 import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form'
@@ -56,19 +55,17 @@ import { useServiceTotals } from '@/hooks/use-service-form-hooks'
 
 /* ░░░░░░  COMPONENTE  ░░░░░░ */
 interface Props {
-  initialDataService?: ServiceRecord | null;
+  initialDataService?: ServiceRecord|null
   children?: React.ReactNode;
-  vehicles: Vehicle[];
-  technicians: Technician[];
-  inventoryItems: InventoryItem[];
-  serviceTypes: ServiceTypeRecord[];
-  onSubmit: (d: ServiceRecord | QuoteRecord) => Promise<void>;
-  onClose: () => void;
-  isReadOnly?: boolean;
-  mode?: 'service' | 'quote';
-  onDelete?: (id: string) => void;
-  onCancelService?: (id: string, r: string) => void;
-  onStatusChange?: (s?: ServiceRecord['status']) => void;
+  vehicles:Vehicle[]; technicians:Technician[]; inventoryItems:InventoryItem[]
+  serviceTypes:ServiceTypeRecord[]
+  onSubmit:(d:ServiceRecord|QuoteRecord)=>Promise<void>
+  onClose:()=>void
+  isReadOnly?:boolean
+  mode?:'service'|'quote'
+  onDelete?:(id:string)=>void
+  onCancelService?:(id:string,r:string)=>void
+  onStatusChange?:(s?:ServiceRecord['status'])=>void
 }
 
 export function ServiceForm(props:Props){
@@ -259,9 +256,10 @@ export function ServiceForm(props:Props){
   }, [form]);
 
   const handleChecklistPhotoUploaded = useCallback((itemName: string, urls: string[]) => {
-      const currentCheckValue = form.getValues(itemName as keyof ServiceFormValues) as SafetyCheckValue || { status: 'na', photos: [] };
-      const updatedPhotos = [...currentCheckValue.photos, ...urls];
-      form.setValue(itemName as any, { ...currentCheckValue, photos: updatedPhotos });
+      const fieldName: `safetyInspection.${keyof SafetyInspection}` = `safetyInspection.${itemName as keyof SafetyInspection}`;
+      const currentCheckValue = form.getValues(fieldName) as SafetyCheckValue || { status: 'na', photos: [] };
+      const updatedPhotos = [...(currentCheckValue.photos || []), ...urls];
+      form.setValue(fieldName, { ...currentCheckValue, photos: updatedPhotos });
   }, [form]);
 
   const handleViewImage = (url: string) => {
@@ -296,13 +294,13 @@ export function ServiceForm(props:Props){
                 />
 
                 <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                    <TabsList className="grid w-full grid-cols-4">
+                    <TabsList className={cn("grid w-full mb-4", "grid-cols-4")}>
                         <TabsTrigger value="details" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Detalles</TabsTrigger>
                         <TabsTrigger value="reception" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Recepción/Entrega</TabsTrigger>
                         <TabsTrigger value="photoreport" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Fotos</TabsTrigger>
                         <TabsTrigger value="checklist" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Revisión</TabsTrigger>
                     </TabsList>
-                    <TabsContent value="details" className="mt-4">
+                    <TabsContent value="details" className="mt-0">
                         <ServiceDetailsCard
                             isReadOnly={props.isReadOnly}
                             technicians={technicians}
@@ -316,7 +314,7 @@ export function ServiceForm(props:Props){
                             isGeneratingQuote={isGeneratingQuote}
                         />
                     </TabsContent>
-                    <TabsContent value="reception" className="mt-4">
+                    <TabsContent value="reception" className="mt-0">
                        <ReceptionAndDelivery 
                          control={control}
                          isReadOnly={props.isReadOnly}
@@ -324,7 +322,7 @@ export function ServiceForm(props:Props){
                          handleEnhanceText={handleEnhanceText}
                        />
                     </TabsContent>
-                    <TabsContent value="photoreport" className="mt-4">
+                    <TabsContent value="photoreport" className="mt-0">
                          <PhotoReportTab
                             control={control}
                             isReadOnly={props.isReadOnly}
@@ -333,7 +331,7 @@ export function ServiceForm(props:Props){
                             onViewImage={handleViewImage}
                          />
                     </TabsContent>
-                    <TabsContent value="checklist" className="mt-4">
+                    <TabsContent value="checklist" className="mt-0">
                         <SafetyChecklist
                             control={control}
                             isReadOnly={props.isReadOnly}
