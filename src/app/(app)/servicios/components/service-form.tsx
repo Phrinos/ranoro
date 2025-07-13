@@ -12,6 +12,13 @@ import {
   Ban, Camera, CheckCircle, Download, Eye, ShieldCheck, Trash2, Wrench, BrainCircuit, Loader2, PlusCircle, Signature,
   CalendarIcon
 } from 'lucide-react'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
 import { parseISO, format, setHours, setMinutes, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
 
@@ -21,13 +28,6 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader,
   AlertDialogTitle, AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card'
 import {
   Dialog,
   DialogContent as UiDialogContent,
@@ -264,10 +264,10 @@ export function ServiceForm(props:Props){
     form.setValue(`photoReports.${reportIndex}.photos`, [...currentPhotos, url]);
   }, [form]);
 
-  const handleChecklistPhotoUploaded = useCallback((itemName: string, urls: string[]) => {
+  const handleChecklistPhotoUploaded = useCallback((itemName: string, url: string) => {
       const fieldName: `safetyInspection.${keyof SafetyInspection}` = `safetyInspection.${itemName as keyof SafetyInspection}`;
       const currentCheckValue = form.getValues(fieldName) as SafetyCheckValue || { status: 'na', photos: [] };
-      const updatedPhotos = [...(currentCheckValue.photos || []), ...urls];
+      const updatedPhotos = [...(currentCheckValue.photos || []), url];
       form.setValue(fieldName, { ...currentCheckValue, photos: updatedPhotos });
   }, [form]);
 
@@ -304,10 +304,10 @@ export function ServiceForm(props:Props){
 
                 <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                     <TabsList className={cn("grid w-full mb-4 sticky top-0 z-10 bg-background py-2", "grid-cols-4")}>
-                        <TabsTrigger value="details" className="data-[state=active]:bg-destructive data-[state=active]:text-destructive-foreground">Detalles</TabsTrigger>
-                        <TabsTrigger value="reception" className="data-[state=active]:bg-destructive data-[state=active]:text-destructive-foreground">Recepción/Entrega</TabsTrigger>
-                        <TabsTrigger value="photoreport" className="data-[state=active]:bg-destructive data-[state=active]:text-destructive-foreground">Fotos</TabsTrigger>
-                        <TabsTrigger value="checklist" className="data-[state=active]:bg-destructive data-[state=active]:text-destructive-foreground">Revisión</TabsTrigger>
+                        <TabsTrigger value="details" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Detalles</TabsTrigger>
+                        <TabsTrigger value="reception" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Recepción/Entrega</TabsTrigger>
+                        <TabsTrigger value="photoreport" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Fotos</TabsTrigger>
+                        <TabsTrigger value="checklist" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Revisión</TabsTrigger>
                     </TabsList>
                     <TabsContent value="details" className="mt-0">
                         <ServiceDetailsCard
