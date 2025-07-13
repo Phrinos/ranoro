@@ -349,9 +349,9 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
             {service.serviceType !== 'Cambio de Aceite' && (
               <div className="border-2 border-black p-2 rounded-md flex flex-col justify-between items-center">
                 <h3 className="font-bold uppercase text-center text-sm">AUTORIZO SERVICIOS</h3>
-                <div className="flex-grow flex items-center justify-center w-full">
+                <div className="flex-grow flex items-center justify-center w-full min-h-[60px]">
                   {service.customerSignatureReception ? (
-                      <div className="relative w-full h-16">
+                      <div className="relative w-full h-full">
                           <Image src={normalizeDataUrl(service.customerSignatureReception)} alt="Firma del cliente" layout="fill" objectFit="contain" unoptimized />
                       </div>
                   ) : (
@@ -375,25 +375,27 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
         
         <footer className="mt-auto pt-2 text-xs">
            <div className="grid grid-cols-2 gap-2 text-center mb-1">
-               <div className="flex flex-col justify-end relative h-14">
+               <div className="flex flex-col justify-end relative min-h-[60px]">
                     {service.status === 'Cancelado' && (
                         <div className="absolute top-0 left-0 right-0 flex justify-center">
                             <Badge variant="destructive" className="text-base font-bold">CANCELADO</Badge>
                         </div>
                     )}
-                    <div className="absolute top-0 left-0 right-0 h-14 flex items-center justify-center -mb-8">
+                    <div className="absolute top-0 left-0 right-0 h-full flex items-center justify-center">
                         {service.serviceAdvisorSignatureDataUrl && (
-                            <Image src={normalizeDataUrl(service.serviceAdvisorSignatureDataUrl)} alt="Firma del asesor" width={100} height={40} style={{ objectFit: 'contain' }} unoptimized/>
+                            <Image src={normalizeDataUrl(service.serviceAdvisorSignatureDataUrl)} alt="Firma del asesor" width={100} height={60} style={{ objectFit: 'contain' }} unoptimized/>
                         )}
                     </div>
                     <div className="border-t-2 border-black pt-1 w-full text-center mt-auto">
                         <p className="font-bold text-[8px]">ASESOR: {service.serviceAdvisorName?.toUpperCase() || ''}</p>
                     </div>
                 </div>
-                <div className="flex flex-col justify-end relative h-14">
-                   <div className="absolute top-0 left-0 right-0 h-14 flex items-center justify-center -mb-8">
+                <div className="flex flex-col justify-end min-h-[60px]">
+                   <div className="h-full flex-grow flex flex-col items-center justify-center">
                        {service.customerSignatureDelivery ? (
-                         <Image src={normalizeDataUrl(service.customerSignatureDelivery)} alt="Firma de conformidad" width={100} height={40} style={{ objectFit: 'contain' }} unoptimized/>
+                         <div className="relative w-full h-full">
+                           <Image src={normalizeDataUrl(service.customerSignatureDelivery)} alt="Firma de conformidad" layout="fill" objectFit="contain" unoptimized/>
+                         </div>
                        ) : (
                          isPublicView && showSignDelivery && onSignClick && (
                             <Button onClick={() => onSignClick('delivery')} disabled={isSigning} className="bg-green-600 hover:bg-green-700 h-8 text-xs">

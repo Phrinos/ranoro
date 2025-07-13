@@ -90,15 +90,20 @@ function HistorialServiciosPageComponent() {
             return true;
         }
 
-        // Include services that were delivered today
-        const deliveryDate = parseDate(s.deliveryDateTime);
-        if ((status === "Entregado" || status === "Completado") && deliveryDate && isValid(deliveryDate) && isSameDay(deliveryDate, today)) {
+        // Include services that were delivered or cancelled today
+        const actionDate = parseDate(s.deliveryDateTime) || parseDate(s.serviceDate);
+        if ((status === "Entregado" || status === "Cancelado") && actionDate && isValid(actionDate) && isSameDay(actionDate, today)) {
           return true;
         }
 
         return false;
       })
       .sort((a, b) => {
+        // Sort by status first: Cancelled services go to the bottom
+        if (a.status === 'Cancelado' && b.status !== 'Cancelado') return 1;
+        if (a.status !== 'Cancelado' && b.status === 'Cancelado') return -1;
+        
+        // Then sort by date
         const dateA = a.serviceDate ? parseDate(a.serviceDate)?.getTime() ?? 0 : 0;
         const dateB = b.serviceDate ? parseDate(b.serviceDate)?.getTime() ?? 0 : 0;
         return dateA - dateB;
