@@ -1,4 +1,3 @@
-
 // src/hooks/use-service-form-hooks.ts
 
 import { useEffect, useMemo } from 'react';
@@ -69,21 +68,21 @@ export function useInitServiceForm(form: UseFormReturn<ServiceFormValues>, { ini
     const isEditing = initData && 'id' in initData && initData.id;
     const firstType = serviceTypes[0]?.name ?? 'Servicio General';
     
-    let baseData: Partial<ServiceFormValues>;
+    let defaultValues: Partial<ServiceFormValues>;
 
     if (isEditing) {
-      baseData = {
+      defaultValues = {
         ...initData,
-        // Ensure serviceItems and photoReports are always arrays
-        serviceItems: initData.serviceItems?.length ? initData.serviceItems : [],
-        photoReports: initData.photoReports?.length ? initData.photoReports : [],
+        serviceDate: initData.serviceDate ? parseDate(initData.serviceDate) : undefined,
+        quoteDate: initData.quoteDate ? parseDate(initData.quoteDate) : undefined,
+        receptionDateTime: initData.receptionDateTime ? parseDate(initData.receptionDateTime) : undefined,
+        deliveryDateTime: initData.deliveryDateTime ? parseDate(initData.deliveryDateTime) : undefined,
       };
     } else {
-      // For a new record, set clear, reliable defaults.
       const authUserString = typeof window !== 'undefined' ? localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY) : null;
       const currentUser = authUserString ? JSON.parse(authUserString) as User : null;
 
-      baseData = {
+      defaultValues = {
         status: 'Cotizacion',
         serviceType: firstType,
         serviceDate: new Date(),
@@ -96,15 +95,14 @@ export function useInitServiceForm(form: UseFormReturn<ServiceFormValues>, { ini
       };
     }
 
-    // Process dates to ensure they are Date objects
-    const finalData = {
-      ...baseData,
-      serviceDate: baseData.serviceDate ? parseDate(baseData.serviceDate) : undefined,
-      quoteDate: baseData.quoteDate ? parseDate(baseData.quoteDate) : undefined,
-      receptionDateTime: baseData.receptionDateTime ? parseDate(baseData.receptionDateTime) : undefined,
-      deliveryDateTime: baseData.deliveryDateTime ? parseDate(baseData.deliveryDateTime) : undefined,
-    };
+    // Ensure status and serviceType always have a valid default for new records
+    if (!defaultValues.status) {
+        defaultValues.status = 'Cotizacion';
+    }
+    if (!defaultValues.serviceType) {
+        defaultValues.serviceType = firstType;
+    }
     
-    reset(finalData);
+    reset(defaultValues);
   }, [initData, serviceTypes, reset]);
 }
