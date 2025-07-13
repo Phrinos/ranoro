@@ -15,6 +15,7 @@ import { Button } from '@/components/ui/button';
 import { placeholderDrivers, placeholderRentalPayments } from '@/lib/placeholder-data';
 import Image from 'next/image';
 import { parseDate } from '@/lib/forms';
+import { Badge } from '@/components/ui/badge';
 
 const initialWorkshopInfo: WorkshopInfo = {
   name: "RANORO",
@@ -375,6 +376,11 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
         <footer className="mt-auto pt-2 text-xs">
            <div className="grid grid-cols-2 gap-2 text-center mb-1">
                <div className="flex flex-col justify-end relative h-14">
+                    {service.status === 'Cancelado' && (
+                        <div className="absolute top-0 left-0 right-0 flex justify-center">
+                            <Badge variant="destructive" className="text-base font-bold">CANCELADO</Badge>
+                        </div>
+                    )}
                     <div className="absolute top-0 left-0 right-0 h-14 flex items-center justify-center -mb-8">
                         {service.serviceAdvisorSignatureDataUrl && (
                             <Image src={normalizeDataUrl(service.serviceAdvisorSignatureDataUrl)} alt="Firma del asesor" width={100} height={40} style={{ objectFit: 'contain' }} unoptimized/>
