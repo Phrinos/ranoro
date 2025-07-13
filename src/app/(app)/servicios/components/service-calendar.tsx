@@ -11,6 +11,17 @@ import { es } from 'date-fns/locale';
 import { Wrench, Clock, CheckCircle, CalendarCheck } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
+// Helper function to safely parse a date that might be a string or a Date object
+const safeParseISO = (date: string | Date | undefined): Date => {
+  if (!date) return new Date(0); // Return an invalid date if input is null/undefined
+  if (date instanceof Date) return date;
+  if (typeof date === 'string') {
+    const parsed = parseISO(date);
+    return parsed;
+  }
+  return new Date(0); // Return an invalid date for other types
+};
+
 interface ServiceCalendarProps {
   services: ServiceRecord[];
   vehicles: Vehicle[];
@@ -20,16 +31,6 @@ interface ServiceCalendarProps {
 
 export function ServiceCalendar({ services, vehicles, technicians, onServiceClick }: ServiceCalendarProps) {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
-  
-  const safeParseISO = React.useCallback((date: string | Date | undefined): Date => {
-    if (!date) return new Date(0);
-    if (date instanceof Date) return date;
-    if (typeof date === 'string') {
-        const parsed = parseISO(date);
-        return parsed;
-    }
-    return new Date(0);
-  }, []);
 
   const eventsByDate = useMemo(() => {
     const map = new Map<string, ServiceRecord[]>();
@@ -44,7 +45,7 @@ export function ServiceCalendar({ services, vehicles, technicians, onServiceClic
       }
     });
     return map;
-  }, [services, safeParseISO]);
+  }, [services]);
 
   const selectedDayServices = useMemo(() => {
     if (!selectedDate) return [];
