@@ -22,6 +22,9 @@ import { inventoryService, personnelService, operationsService } from '@/lib/ser
 import type { VehicleFormValues } from "../../vehiculos/components/vehicle-form";
 import { CompleteServiceDialog } from '../components/CompleteServiceDialog';
 import { parseDate } from '@/lib/forms';
+import { db } from '@/lib/firebaseClient';
+import { writeBatch } from 'firebase/firestore';
+
 
 const handleAiError = (error: any, toast: any, context: string): string => {
     console.error(`AI Error in ${context}:`, error);
@@ -221,11 +224,21 @@ function AgendaPageComponent() {
   }, []);
   
   const handleConfirmCompletion = useCallback(async (service: ServiceRecord, paymentDetails: any) => {
-    await operationsService.completeService(service, paymentDetails);
-    toast({
-      title: "Servicio Completado",
-      description: `El servicio para ${service.vehicleIdentifier} ha sido marcado como entregado.`,
-    });
+    if (!db) return toast({ title: "Error de base de datos", variant: "destructive"});
+    try {
+        const batch = writeBatch(db);
+        await operationsService.completeService(service, paymentDetails, batch);
+        await batch.commit();
+        setIsCompleteDialogOpen(false);
+        toast({
+            title: "Servicio Completado",
+            description: `El servicio para ${service.vehicleIdentifier} ha sido marcado como entregado.`,
+        });
+    } catch (e) {
+        console.error(e);
+        setIsCompleteDialogOpen(false);
+        toast({ title: "Error al Completar", description: `No se pudo completar el servicio.`, variant: "destructive" });
+    }
   }, [toast]);
 
   const renderCapacityBadge = () => {

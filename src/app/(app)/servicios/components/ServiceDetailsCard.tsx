@@ -21,6 +21,7 @@ import { format, setHours, setMinutes, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { useState, useEffect, useMemo } from 'react';
 import { formatCurrency } from "@/lib/utils";
+import { Textarea } from "@/components/ui/textarea";
 
 interface ServiceDetailsCardProps {
   isReadOnly?: boolean;
@@ -33,6 +34,8 @@ interface ServiceDetailsCardProps {
   serviceProfit: number;
   onGenerateQuoteWithAI: () => void;
   isGeneratingQuote: boolean;
+  isEnhancingText: string | null;
+  handleEnhanceText: (fieldName: keyof ServiceFormValues) => void;
 }
 
 export function ServiceDetailsCard({
@@ -46,6 +49,8 @@ export function ServiceDetailsCard({
   serviceProfit,
   onGenerateQuoteWithAI,
   isGeneratingQuote,
+  isEnhancingText,
+  handleEnhanceText,
 }: ServiceDetailsCardProps) {
   const { control, watch, setValue, getValues, formState: { errors } } = useFormContext<ServiceFormValues>();
   const { fields: serviceItemsFields, append: appendServiceItem, remove: removeServiceItem } = useFieldArray({ control, name: "serviceItems" });
@@ -119,7 +124,34 @@ export function ServiceDetailsCard({
           {!isReadOnly && (<Button type="button" variant="outline" onClick={() => appendServiceItem({ id: `item_${Date.now()}`, name: '', price: undefined, suppliesUsed: [] })}><PlusCircle className="mr-2 h-4 w-4"/> Añadir Trabajo</Button>)}
           {mode === 'quote' && !isReadOnly && (<Button type="button" variant="secondary" onClick={onGenerateQuoteWithAI} disabled={isGeneratingQuote}>{isGeneratingQuote ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <BrainCircuit className="mr-2 h-4 w-4" />}Sugerir Cotización con IA</Button>)}
         </div>
+        
+        <Separator className="my-6"/>
 
+        <FormField
+            control={control}
+            name="notes"
+            render={({ field }) => (
+                <FormItem>
+                    <FormLabel className="flex justify-between items-center w-full">
+                        <span>Notas del Servicio</span>
+                        {!isReadOnly && (
+                            <Button type="button" size="sm" variant="ghost" onClick={() => handleEnhanceText("notes")} disabled={isEnhancingText === "notes" || !field.value}>
+                                {isEnhancingText === "notes" ? <Loader2 className="animate-spin h-4 w-4" /> : <BrainCircuit className="h-4 w-4" />}
+                                <span className="ml-2 hidden sm:inline">Mejorar</span>
+                            </Button>
+                        )}
+                    </FormLabel>
+                    <FormControl>
+                        <Textarea
+                            placeholder="Notas internas, para el cliente, o detalles adicionales..."
+                            disabled={isReadOnly}
+                            {...field}
+                        />
+                    </FormControl>
+                </FormItem>
+            )}
+        />
+        
         <Separator className="my-6"/>
         
         <div>

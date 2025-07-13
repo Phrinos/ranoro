@@ -12,7 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Printer, Copy } from 'lucide-react';
-import { inventoryService } from '@/lib/services';
+import { inventoryService, operationsService } from '@/lib/services';
 import { Loader2 } from 'lucide-react';
 import type { InventoryItemFormValues } from '../../inventario/components/inventory-item-form';
 
@@ -119,6 +119,7 @@ export default function NuevaVentaPage() {
         title="Registrar Nueva Venta"
         description="Complete los artículos y detalles para la nueva venta."
       />
+      
       {dialogStep === 'pos' && (
         <PosForm
           inventoryItems={currentInventoryItems} 

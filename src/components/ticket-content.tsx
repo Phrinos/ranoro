@@ -161,10 +161,10 @@ export const TicketContent = React.forwardRef<HTMLDivElement, TicketContentProps
             </div>
         </div>
         
-        {sale?.paymentMethod && (
+        {operation?.paymentMethod && (
             <>
                 {renderDashedLine()}
-                <div className="text-center" style={{ fontSize: `${bodyFontSize}px` }}>Pagado con: {sale.paymentMethod}</div>
+                <div className="text-center" style={{ fontSize: `${bodyFontSize}px` }}>Pagado con: {operation.paymentMethod}</div>
             </>
         )}
 
