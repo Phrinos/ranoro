@@ -7,9 +7,10 @@ import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { PlusCircle, List, Calendar as CalendarIcon, FileCheck, Eye, Loader2, Edit, CheckCircle, Printer, MessageSquare, Ban, DollarSign } from "lucide-react";
 import { ServiceDialog } from "../components/dialog";
-import type { ServiceRecord, Vehicle, Technician, QuoteRecord, InventoryItem, CapacityAnalysisOutput, ServiceTypeRecord } from "@/types";
+import type { ServiceRecord, Vehicle, Technician, QuoteRecord, InventoryItem, CapacityAnalysisOutput, ServiceTypeRecord, WorkshopInfo } from "@/types";
 import { useToast } from "@/hooks/use-toast";
-import { format, parseISO, isToday, isTomorrow, compareAsc, isValid, isSameDay } from "date-fns";
+import { format, parseISO, isToday, isTomorrow, compareAsc, isValid, isSameDay, addDays } from "date-fns";
+import { utcToZonedTime, zonedTimeToUtc } from "date-fns-tz";
 import { es } from 'date-fns/locale';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -35,14 +36,14 @@ const handleAiError = (error: any, toast: any, context: string): string => {
 
 // Helper function to safely parse a date that might be a string or a Date object
 const safeParseISO = (date: any): Date => {
-  if (!date) return new Date(0); // Return an invalid date if input is null/undefined
+  if (!date) return new Date('invalid');
   if (date instanceof Date) return date;
-  if (typeof date.toDate === 'function') return date.toDate(); // Firestore Timestamp
+  if (typeof date.toDate === 'function') return date.toDate();
   if (typeof date === 'string') {
-    const parsed = parseISO(date);
-    return parsed;
+    const d = new Date(date);
+    return isNaN(d.getTime()) ? parseISO(date) : d;
   }
-  return new Date(0); // Return an invalid date for other types
+  return new Date('invalid');
 };
 
 
@@ -69,10 +70,22 @@ function AgendaPageComponent() {
   
   const [serviceToComplete, setServiceToComplete] = useState<ServiceRecord | null>(null);
   const [isCompleteDialogOpen, setIsCompleteDialogOpen] = useState(false);
+  const [workshopTimezone, setWorkshopTimezone] = useState('America/Mexico_City');
+
 
   useEffect(() => {
     const unsubs: (() => void)[] = [];
     setIsLoading(true);
+
+    const storedInfo = localStorage.getItem("workshopTicketInfo");
+    if (storedInfo) {
+      try {
+        const info = JSON.parse(storedInfo) as WorkshopInfo;
+        if (info.timezone) setWorkshopTimezone(info.timezone);
+      } catch (e) {
+        console.error("Failed to parse workshop info from localStorage", e);
+      }
+    }
 
     unsubs.push(operationsService.onServicesUpdate(setAllServices));
     unsubs.push(inventoryService.onVehiclesUpdate(setVehicles));
@@ -86,16 +99,52 @@ function AgendaPageComponent() {
     return () => unsubs.forEach(unsub => unsub());
   }, []);
   
+  const { scheduledServices, todayServices, tomorrowServices, futureServices } = useMemo(() => {
+    if (isLoading) return { scheduledServices: [], todayServices: [], tomorrowServices: [], futureServices: [] };
+    
+    const scheduled = allServices.filter(s => 
+      (s.status === 'Agendado' || (s.status === 'En Taller' && !s.deliveryDateTime)) && s.serviceDate
+    );
+    
+    const now = new Date();
+    const today = utcToZonedTime(now, workshopTimezone);
+    const tomorrow = addDays(today, 1);
+    
+    const byDateAsc = (a: ServiceRecord, b: ServiceRecord) => 
+      compareAsc(safeParseISO(a.serviceDate), safeParseISO(b.serviceDate));
+      
+    const isSame = (d: Date, ref: Date) => isValid(d) && isSameDay(d, ref);
+
+    const todayS = scheduled
+      .filter(s => isSame(utcToZonedTime(safeParseISO(s.serviceDate), workshopTimezone), today))
+      .sort(byDateAsc);
+      
+    const tomorrowS = scheduled
+      .filter(s => isSame(utcToZonedTime(safeParseISO(s.serviceDate), workshopTimezone), tomorrow))
+      .sort(byDateAsc);
+      
+    const futureS = scheduled
+      .filter(s => {
+        const d = utcToZonedTime(safeParseISO(s.serviceDate), workshopTimezone);
+        return isValid(d) && d > tomorrow && !isSameDay(d, tomorrow);
+      })
+      .sort(byDateAsc);
+
+    return { 
+      scheduledServices: scheduled, 
+      todayServices: todayS, 
+      tomorrowServices: tomorrowS, 
+      futureServices: futureS 
+    };
+  }, [allServices, isLoading, workshopTimezone]);
+
   useEffect(() => {
     if (agendaView === 'lista' && !isLoading) {
       const runCapacityAnalysis = async () => {
         setIsCapacityLoading(true);
         setCapacityError(null);
         try {
-          const servicesForToday = allServices.filter(s => {
-            const serviceDay = safeParseISO(s.serviceDate);
-            return isValid(serviceDay) && isToday(serviceDay) && s.status !== 'Completado' && s.status !== 'Cancelado';
-          });
+          const servicesForToday = todayServices;
           
           if (servicesForToday.length === 0) {
               setCapacityInfo({ totalRequiredHours: 0, totalAvailableHours: technicians.reduce((sum, t) => sum + (t.standardHoursPerDay || 8), 0), recommendation: "Taller disponible", capacityPercentage: 0 });
@@ -123,32 +172,7 @@ function AgendaPageComponent() {
       };
       runCapacityAnalysis();
     }
-  }, [agendaView, toast, isLoading, allServices, technicians]);
-
-  const { scheduledServices, todayServices, tomorrowServices, futureServices } = useMemo(() => {
-    if (isLoading) return { scheduledServices: [], todayServices: [], tomorrowServices: [], futureServices: [] };
-    const scheduled = allServices.filter(s => s.status === 'Agendado' || (s.status === 'En Taller' && !s.deliveryDateTime));
-    const now = new Date();
-    
-    const todayS = scheduled.filter(s => {
-        const serviceDay = safeParseISO(s.serviceDate);
-        return isValid(serviceDay) && isSameDay(serviceDay, now);
-    }).sort((a, b) => compareAsc(safeParseISO(a.serviceDate), safeParseISO(b.serviceDate)));
-
-    const tomorrowDate = new Date();
-    tomorrowDate.setDate(now.getDate() + 1);
-    const tomorrowS = scheduled.filter(s => {
-        const serviceDay = safeParseISO(s.serviceDate);
-        return isValid(serviceDay) && isSameDay(serviceDay, tomorrowDate);
-    }).sort((a, b) => compareAsc(safeParseISO(a.serviceDate), safeParseISO(b.serviceDate)));
-
-    const futureS = scheduled.filter(s => {
-        const serviceDay = safeParseISO(s.serviceDate);
-        return isValid(serviceDay) && !isSameDay(serviceDay, now) && !isSameDay(serviceDay, tomorrowDate);
-    }).sort((a,b) => compareAsc(safeParseISO(a.serviceDate), safeParseISO(b.serviceDate)));
-
-    return { scheduledServices: scheduled, todayServices: todayS, tomorrowServices: tomorrowS, futureServices: futureS };
-  }, [allServices, isLoading]);
+  }, [agendaView, toast, isLoading, allServices, technicians, todayServices]);
 
   const totalEarningsToday = useMemo(() => {
     return todayServices.reduce((sum, s) => sum + (s.totalCost || 0), 0);
@@ -329,5 +353,6 @@ export default function AgendaPageWrapper() {
     </Suspense>
   );
 }
+
 
 
