@@ -38,9 +38,10 @@ export default function ServiceSheetLayout({
                   alt="Ranoro Logo"
                   width={140}
                   height={40}
-                  className="dark:invert h-auto"
+                  className="dark:invert w-auto h-auto"
                   style={{ width: '120px', height: 'auto' }}
                   data-ai-hint="ranoro logo"
+                  priority
                 />
              </Link>
            </div>
