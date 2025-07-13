@@ -15,13 +15,14 @@ import { CalendarIcon, PlusCircle, BrainCircuit, Loader2 } from "lucide-react";
 import { ServiceItemCard } from './ServiceItemCard';
 import { Separator } from "@/components/ui/separator";
 import type { ServiceFormValues } from "@/schemas/service-form";
-import type { Technician, InventoryItem, ServiceTypeRecord } from "@/types";
+import type { Technician, InventoryItem, ServiceTypeRecord, InventoryCategory, Supplier } from "@/types";
 import { cn } from "@/lib/utils";
 import { format, setHours, setMinutes, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { useState, useEffect, useMemo } from 'react';
 import { formatCurrency } from "@/lib/utils";
 import { Textarea } from "@/components/ui/textarea";
+import type { InventoryItemFormValues } from "../../inventario/components/inventory-item-form";
 
 interface ServiceDetailsCardProps {
   isReadOnly?: boolean;
@@ -34,8 +35,11 @@ interface ServiceDetailsCardProps {
   serviceProfit: number;
   onGenerateQuoteWithAI: () => void;
   isGeneratingQuote: boolean;
-  isEnhancingText: string | null;
-  handleEnhanceText: (fieldName: keyof ServiceFormValues) => void;
+  isEnhancingText?: string | null;
+  handleEnhanceText?: (fieldName: keyof ServiceFormValues) => void;
+  onNewInventoryItemCreated: (formData: InventoryItemFormValues) => Promise<InventoryItem>;
+  categories: InventoryCategory[];
+  suppliers: Supplier[];
 }
 
 export function ServiceDetailsCard({
@@ -51,6 +55,9 @@ export function ServiceDetailsCard({
   isGeneratingQuote,
   isEnhancingText,
   handleEnhanceText,
+  onNewInventoryItemCreated,
+  categories,
+  suppliers
 }: ServiceDetailsCardProps) {
   const { control, watch, setValue, getValues, formState: { errors } } = useFormContext<ServiceFormValues>();
   const { fields: serviceItemsFields, append: appendServiceItem, remove: removeServiceItem } = useFieldArray({ control, name: "serviceItems" });
@@ -120,7 +127,19 @@ export function ServiceDetailsCard({
         <Separator className="my-6"/>
 
         <div className="space-y-4">
-          {serviceItemsFields.map((field, index) => <ServiceItemCard key={field.id} serviceIndex={index} removeServiceItem={removeServiceItem} isReadOnly={isReadOnly} inventoryItems={inventoryItems} mode={mode} />)}
+          {serviceItemsFields.map((field, index) => (
+              <ServiceItemCard 
+                key={field.id} 
+                serviceIndex={index} 
+                removeServiceItem={removeServiceItem} 
+                isReadOnly={isReadOnly} 
+                inventoryItems={inventoryItems} 
+                mode={mode}
+                onNewInventoryItemCreated={onNewInventoryItemCreated}
+                categories={categories}
+                suppliers={suppliers}
+              />
+          ))}
           {!isReadOnly && (<Button type="button" variant="outline" onClick={() => appendServiceItem({ id: `item_${Date.now()}`, name: '', price: undefined, suppliesUsed: [] })}><PlusCircle className="mr-2 h-4 w-4"/> Añadir Trabajo</Button>)}
           {mode === 'quote' && !isReadOnly && (<Button type="button" variant="secondary" onClick={onGenerateQuoteWithAI} disabled={isGeneratingQuote}>{isGeneratingQuote ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <BrainCircuit className="mr-2 h-4 w-4" />}Sugerir Cotización con IA</Button>)}
         </div>
@@ -134,7 +153,7 @@ export function ServiceDetailsCard({
                 <FormItem>
                     <FormLabel className="flex justify-between items-center w-full">
                         <span>Notas del Servicio</span>
-                        {!isReadOnly && (
+                        {!isReadOnly && handleEnhanceText && (
                             <Button type="button" size="sm" variant="ghost" onClick={() => handleEnhanceText("notes")} disabled={isEnhancingText === "notes" || !field.value}>
                                 {isEnhancingText === "notes" ? <Loader2 className="animate-spin h-4 w-4" /> : <BrainCircuit className="h-4 w-4" />}
                                 <span className="ml-2 hidden sm:inline">Mejorar</span>

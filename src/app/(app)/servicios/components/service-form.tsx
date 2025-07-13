@@ -46,7 +46,7 @@ import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data'
 
 import type {
   ServiceRecord, Vehicle, Technician, InventoryItem,
-  QuoteRecord, User, ServiceTypeRecord, SafetyInspection, PhotoReportGroup, ServiceItem as ServiceItemType, SafetyCheckValue
+  QuoteRecord, User, ServiceTypeRecord, SafetyInspection, PhotoReportGroup, ServiceItem as ServiceItemType, SafetyCheckValue, InventoryCategory, Supplier
 } from '@/types'
 
 import { VehicleDialog } from '../../vehiculos/components/vehicle-dialog'
@@ -63,6 +63,8 @@ import { PhotoUploader } from './PhotoUploader';
 import { serviceFormSchema } from '@/schemas/service-form';
 import { parseDate } from '@/lib/forms';
 import { useServiceTotals } from '@/hooks/use-service-form-hooks'
+import { inventoryService } from "@/lib/services";
+import type { InventoryItemFormValues } from "../../inventario/components/inventory-item-form";
 
 /* ░░░░░░  COMPONENTE  ░░░░░░ */
 interface Props {
@@ -204,6 +206,14 @@ export function ServiceForm(props:Props){
   const [viewingImageUrl, setViewingImageUrl] = useState<string | null>(null)
   const [isGeneratingQuote, setIsGeneratingQuote] = useState(false)
   const [isEnhancingText, setIsEnhancingText] = useState<string | null>(null)
+  
+  const [allCategories, setAllCategories] = useState<InventoryCategory[]>([]);
+  const [allSuppliers, setAllSuppliers] = useState<Supplier[]>([]);
+
+  useEffect(() => {
+    inventoryService.onCategoriesUpdate(setAllCategories);
+    inventoryService.onSuppliersUpdate(setAllSuppliers);
+  }, []);
 
   const handleEnhanceText = useCallback(async (fieldName: keyof ServiceFormValues | `photoReports.${number}.description` | `safetyInspection.${keyof SafetyInspection}.notes` | `safetyInspection.inspectionNotes`) => {
     setIsEnhancingText(fieldName);
@@ -274,6 +284,14 @@ export function ServiceForm(props:Props){
     console.log("Creating vehicle:", newVehicleData);
     // This part should be handled by the parent page now.
   }, [])
+
+  const handleNewInventoryItemCreated = useCallback(async (formData: InventoryItemFormValues): Promise<InventoryItem> => {
+    const newItem = await inventoryService.addItem(formData);
+    // The data source for inventoryItems is now the parent, which should update via listener.
+    // No need to manually update state here.
+    toast({ title: "Producto Creado", description: `"${newItem.name}" ha sido agregado al inventario.` });
+    return newItem;
+  }, [toast]);
   
   const handlePhotoUploaded = useCallback((reportIndex: number, url: string) => {
     const currentPhotos = form.getValues(`photoReports.${reportIndex}.photos`) || [];
@@ -354,6 +372,11 @@ export function ServiceForm(props:Props){
                             serviceProfit={serviceProfit}
                             onGenerateQuoteWithAI={handleGenerateQuote}
                             isGeneratingQuote={isGeneratingQuote}
+                            isEnhancingText={isEnhancingText}
+                            handleEnhanceText={handleEnhanceText as any}
+                            onNewInventoryItemCreated={handleNewInventoryItemCreated}
+                            categories={allCategories}
+                            suppliers={allSuppliers}
                         />
                     </TabsContent>
                     <TabsContent value="reception" className="mt-0">
