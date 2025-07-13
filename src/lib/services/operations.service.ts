@@ -45,6 +45,22 @@ const onServicesUpdatePromise = async (): Promise<ServiceRecord[]> => {
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ServiceRecord));
 }
 
+const getQuoteById = async (id: string): Promise<QuoteRecord | null> => {
+    if (!db) throw new Error("Database not initialized.");
+    const docRef = doc(db, 'serviceRecords', id);
+    const docSnap = await getDoc(docRef);
+    if (docSnap.exists()) {
+        const data = docSnap.data();
+        if (data.status === 'Cotizacion') {
+            return { id: docSnap.id, ...data } as QuoteRecord;
+        }
+    }
+    // A service might have been converted from a quote. For now, we assume quote and service have same ID.
+    // If a service with status != 'Cotizacion' is found, we can decide if we want to return it as a "source quote".
+    // For now, only return if the status is explicitly 'Cotizacion'.
+    return null;
+};
+
 const saveService = async (data: Partial<ServiceRecord>): Promise<ServiceRecord> => {
     if (!db) throw new Error("Database not initialized.");
     
@@ -93,9 +109,8 @@ const deleteService = async (serviceId: string): Promise<void> => {
 };
 
 
-const completeService = async (serviceId: string, paymentDetails: { paymentMethod: any, cardFolio?: string, transferFolio?: string }): Promise<ServiceRecord> => {
-    if(!db) throw new Error("Database not connected");
-    const serviceRef = doc(db, "serviceRecords", serviceId);
+const completeService = async (service: ServiceRecord, paymentDetails: { paymentMethod: any, cardFolio?: string, transferFolio?: string }, batch: ReturnType<typeof writeBatch>): Promise<void> => {
+    const serviceRef = doc(db, "serviceRecords", service.id);
     
     const updatedServiceData = {
       status: 'Entregado',
@@ -103,10 +118,7 @@ const completeService = async (serviceId: string, paymentDetails: { paymentMetho
       ...paymentDetails,
     };
     
-    await updateDoc(serviceRef, updatedServiceData);
-    
-    const updatedDoc = await getDoc(serviceRef);
-    return { id: updatedDoc.id, ...(updatedDoc.data() as Omit<ServiceRecord, 'id'>) };
+    batch.update(serviceRef, updatedServiceData);
 };
 
 const saveMigratedServices = async (services: ExtractedService[]): Promise<void> => {
@@ -337,6 +349,7 @@ export const operationsService = {
     completeService,
     saveMigratedServices,
     getServicesForVehicle,
+    getQuoteById,
     onSalesUpdate,
     registerSale,
     onCashTransactionsUpdate,
@@ -350,5 +363,6 @@ export const operationsService = {
     addVehicleExpense,
     addOwnerWithdrawal,
 };
+
 
 
