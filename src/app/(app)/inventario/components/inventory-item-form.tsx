@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useEffect } from 'react';
@@ -84,7 +85,12 @@ export function InventoryItemForm({ initialData, onSubmit, onClose, categories, 
       category: categories.length > 0 ? categories[0].name : "",
       supplier: suppliers.length > 0 ? suppliers[0].name : "",
       rendimiento: '',
-      ...initialData, // This will safely override defaults with provided data
+      ...initialData,
+       // Handle numeric fields that might be undefined/null in initialData
+      quantity: initialData?.quantity ?? '',
+      unitPrice: initialData?.unitPrice ?? '',
+      sellingPrice: initialData?.sellingPrice ?? '',
+      rendimiento: initialData?.rendimiento ?? '',
     },
   });
 

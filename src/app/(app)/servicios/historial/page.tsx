@@ -1,5 +1,6 @@
 
 
+
 "use client";
 
 import React, { useState, useEffect, useMemo, useCallback, Suspense } from "react";
@@ -162,12 +163,14 @@ function HistorialServiciosPageComponent() {
         paymentMethod: any;
         cardFolio?: string;
         transferFolio?: string;
-      }
+      },
+      nextServiceInfo?: { date: string, mileage?: number }
     ) => {
        if(!db) return toast({ title: "Error de base de datos", variant: "destructive"});
       try {
         const batch = writeBatch(db);
-        await operationsService.completeService(service, paymentDetails, batch);
+        const dataToUpdate = { ...paymentDetails, nextServiceInfo };
+        await operationsService.completeService(service, dataToUpdate, batch);
         await batch.commit();
 
         toast({
@@ -176,6 +179,8 @@ function HistorialServiciosPageComponent() {
         });
       } catch (e) {
         toast({ title: "Error", description: "No se pudo completar el servicio.", variant: "destructive"});
+      } finally {
+        setIsCompleteDialogOpen(false);
       }
     },
     [toast]
@@ -314,6 +319,7 @@ function HistorialServiciosPageComponent() {
           onOpenChange={setIsCompleteDialogOpen}
           service={serviceToComplete}
           onConfirm={handleConfirmCompletion}
+          inventoryItems={inventoryItems}
         />
       )}
 

@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -23,9 +24,10 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import type { ServiceRecord, PaymentMethod } from "@/types";
+import type { ServiceRecord, PaymentMethod, InventoryItem } from "@/types";
 import { Wallet, CreditCard, Send, WalletCards, ArrowRightLeft } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
+import { addDays } from "date-fns";
 
 const paymentMethods: [PaymentMethod, ...PaymentMethod[]] = [
   "Efectivo",
@@ -71,14 +73,16 @@ interface CompleteServiceDialogProps {
   open: boolean;
   onOpenChange: (isOpen: boolean) => void;
   service: ServiceRecord;
-  onConfirm: (service: ServiceRecord, paymentDetails: CompleteServiceFormValues) => void;
+  onConfirm: (service: ServiceRecord, paymentDetails: CompleteServiceFormValues, nextServiceInfo?: { date: string, mileage?: number }) => void;
+  inventoryItems: InventoryItem[];
 }
 
 export function CompleteServiceDialog({
   open,
   onOpenChange,
   service,
-  onConfirm
+  onConfirm,
+  inventoryItems,
 }: CompleteServiceDialogProps) {
   const form = useForm<CompleteServiceFormValues>({
     resolver: zodResolver(completeServiceSchema),
@@ -92,7 +96,30 @@ export function CompleteServiceDialog({
   const selectedPaymentMethod = form.watch("paymentMethod");
 
   const handleFormSubmit = (values: CompleteServiceFormValues) => {
-    onConfirm(service, values);
+    let nextServiceInfo: { date: string, mileage?: number } | undefined = undefined;
+    
+    const serviceType = service.serviceType?.toLowerCase() || '';
+    if (serviceType.includes('afinación') || serviceType.includes('cambio de aceite')) {
+        const today = new Date();
+        const nextServiceDate = addDays(today, 183);
+        
+        const oilItem = service.serviceItems
+            .flatMap(item => item.suppliesUsed)
+            .map(supply => inventoryItems.find(inv => inv.id === supply.supplyId))
+            .find(invItem => invItem?.category.toLowerCase().includes('aceite') && invItem.rendimiento);
+
+        let nextMileage: number | undefined = undefined;
+        if (oilItem && service.mileage && oilItem.rendimiento) {
+            nextMileage = service.mileage + oilItem.rendimiento;
+        }
+
+        nextServiceInfo = {
+            date: nextServiceDate.toISOString(),
+            mileage: nextMileage,
+        };
+    }
+    
+    onConfirm(service, values, nextServiceInfo);
     onOpenChange(false);
   };
   
