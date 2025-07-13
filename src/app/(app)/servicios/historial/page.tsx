@@ -1,9 +1,8 @@
 
 
-
 "use client";
 
-import React, { useState, useEffect, useMemo, useCallback, Suspense } from "react";
+import React, { useState, useEffect, useMemo, useCallback, Suspense, useRef } from "react";
 import { useSearchParams, useRouter } from 'next/navigation';
 import { ServiceDialog } from "../components/service-dialog";
 import { UnifiedPreviewDialog } from '@/components/shared/unified-preview-dialog';
@@ -22,6 +21,8 @@ import { parseDate } from '@/lib/forms';
 import { writeBatch } from 'firebase/firestore';
 import { TicketContent } from '@/components/ticket-content';
 import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
+import { Button } from "@/components/ui/button";
+import { Printer } from "lucide-react";
 
 function HistorialServiciosPageComponent() {
   const { toast } = useToast();
@@ -49,6 +50,7 @@ function HistorialServiciosPageComponent() {
   const [isTicketDialogOpen, setIsTicketDialogOpen] = useState(false);
   const [serviceForTicket, setServiceForTicket] = useState<ServiceRecord | null>(null);
   const [workshopInfo, setWorkshopInfo] = useState<WorkshopInfo | null>(null);
+  const ticketContentRef = useRef<HTMLDivElement>(null);
 
 
   useEffect(() => {
@@ -360,6 +362,7 @@ function HistorialServiciosPageComponent() {
             footerActions={<Button onClick={() => window.print()}><Printer className="mr-2 h-4 w-4"/>Imprimir</Button>}
         >
           <TicketContent
+            ref={ticketContentRef}
             service={serviceForTicket}
             vehicle={vehicles.find(v => v.id === serviceForTicket.vehicleId)}
             technician={technicians.find(t => t.id === serviceForTicket.technicianId)}
