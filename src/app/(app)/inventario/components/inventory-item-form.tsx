@@ -70,14 +70,7 @@ interface InventoryItemFormProps {
 export function InventoryItemForm({ initialData, onSubmit, onClose, categories, suppliers, onNewSupplier, onNewCategory }: InventoryItemFormProps) {
   const form = useForm<InventoryItemFormValues>({
     resolver: zodResolver(inventoryItemFormSchema),
-    defaultValues: initialData ? {
-        ...initialData,
-        unitType: initialData.unitType || 'units',
-        rendimiento: initialData.rendimiento ?? '',
-        quantity: initialData.quantity ?? '',
-        unitPrice: initialData.unitPrice ?? '',
-        sellingPrice: initialData.sellingPrice ?? '',
-    } : {
+    defaultValues: {
       name: "",
       brand: "",
       sku: "",
@@ -88,9 +81,10 @@ export function InventoryItemForm({ initialData, onSubmit, onClose, categories, 
       sellingPrice: '',
       lowStockThreshold: 5,
       unitType: 'units',
-      category: categories.length > 0 ? categories[0].name : "", 
+      category: categories.length > 0 ? categories[0].name : "",
       supplier: suppliers.length > 0 ? suppliers[0].name : "",
       rendimiento: '',
+      ...initialData, // This will safely override defaults with provided data
     },
   });
 
