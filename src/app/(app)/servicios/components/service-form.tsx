@@ -37,7 +37,6 @@ import { Eye, PlusCircle, Trash2 } from 'lucide-react'
 
 interface ServiceFormProps {
   initialDataService?: ServiceRecord | null
-  initialDataQuote?: Partial<QuoteRecord> | null
   vehicles: Vehicle[]
   technicians: Technician[]
   inventoryItems: InventoryItem[]
@@ -55,7 +54,6 @@ interface ServiceFormProps {
 
 export function ServiceForm({
   initialDataService,
-  initialDataQuote,
   vehicles,
   technicians,
   inventoryItems,

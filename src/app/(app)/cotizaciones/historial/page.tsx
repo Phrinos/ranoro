@@ -15,6 +15,7 @@ import { ServiceAppointmentCard } from "../../servicios/components/ServiceAppoin
 import { Loader2 } from "lucide-react";
 import { operationsService, inventoryService, personnelService } from '@/lib/services';
 import type { VehicleFormValues } from "../../vehiculos/components/vehicle-form";
+import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 
 function HistorialCotizacionesPageComponent() {
   const { toast } = useToast();
@@ -27,7 +28,7 @@ function HistorialCotizacionesPageComponent() {
   const [isLoading, setIsLoading] = useState(true);
   
   const [isFormDialogOpen, setIsFormDialogOpen] = useState(false);
-  const [selectedQuote, setSelectedQuote] = useState<QuoteRecord | null>(null);
+  const [selectedQuote, setSelectedQuote] = useState<ServiceRecord | null>(null);
 
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [serviceForPreview, setServiceForPreview] = useState<ServiceRecord | null>(null);
@@ -61,12 +62,12 @@ function HistorialCotizacionesPageComponent() {
     initialSortOption: 'date_desc',
   });
 
-  const handleViewQuote = useCallback((quote: QuoteRecord) => {
+  const handleViewQuote = useCallback((quote: ServiceRecord) => {
     setServiceForPreview(quote);
     setIsPreviewOpen(true);
   }, []);
   
-  const handleEditQuote = useCallback((quote: QuoteRecord) => { 
+  const handleEditQuote = useCallback((quote: ServiceRecord) => { 
     setSelectedQuote(quote); 
     setIsFormDialogOpen(true); 
   }, []);
@@ -81,20 +82,14 @@ function HistorialCotizacionesPageComponent() {
     }
   }, [toast]);
   
-  const handleDeleteQuote = useCallback(async (id: string) => {
-    if (!window.confirm("¿Seguro que quieres eliminar esta cotización? Esta acción no se puede deshacer.")) return;
+  const handleCancelQuote = useCallback(async (id: string, reason: string) => {
     try {
-      await operationsService.deleteService(id);
-      toast({ title: "Cotización Eliminada", variant: "destructive" });
+      await operationsService.cancelService(id, reason);
+      toast({ title: "Cotización Cancelada", variant: "destructive" });
       setIsFormDialogOpen(false);
     } catch (e) {
-      toast({ title: "Error", description: "No se pudo eliminar la cotización.", variant: "destructive"});
+      toast({ title: "Error", description: "No se pudo cancelar la cotización.", variant: "destructive"});
     }
-  }, [toast]);
-
-  const handleVehicleCreated = useCallback(async (newVehicle: Omit<Vehicle, 'id'>) => {
-      await inventoryService.addVehicle(newVehicle as VehicleFormValues);
-      toast({ title: "Vehículo Creado" });
   }, [toast]);
 
 
@@ -131,6 +126,12 @@ function HistorialCotizacionesPageComponent() {
               vehicles={vehicles}
               onEdit={() => handleEditQuote(quote)}
               onView={() => handleViewQuote(quote)}
+              onCancel={() => {
+                const reason = prompt("Motivo de la cancelación (opcional):");
+                if (reason !== null) { // User clicked OK
+                  handleCancelQuote(quote.id, reason);
+                }
+              }}
             />
           ))
         ) : (
@@ -149,7 +150,7 @@ function HistorialCotizacionesPageComponent() {
             serviceTypes={serviceTypes}
             mode="quote" 
             onSave={handleSaveQuote}
-            onDelete={handleDeleteQuote}
+            onCancelService={(id, reason) => handleCancelQuote(id, reason)}
         />
       )}
       
