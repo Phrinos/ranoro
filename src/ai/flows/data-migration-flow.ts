@@ -25,7 +25,7 @@ export type ExtractedVehicle = z.infer<typeof ExtractedVehicleSchema>;
 // Schema for a single service record extracted from the data
 const ExtractedServiceSchema = z.object({
   vehicleLicensePlate: z.string().describe('The license plate of the vehicle that received the service.'),
-  serviceDate: z.string().describe('The date the service was performed. Must be a valid date format (e.g., YYYY-MM-DD, MM/DD/YY). The original format must be preserved.'),
+  serviceDate: z.string().describe("The date the service was performed. It is CRITICAL to preserve the original format from the source data (e.g., '1/31/25', '31-Ene-2025'). DO NOT reformat it to 'YYYY-MM-DD'."),
   description: z.string().default('').describe('A brief description of the service performed.'),
   totalCost: z.coerce.number().default(0).describe('The total cost charged for the service.'),
 });
@@ -82,11 +82,11 @@ This is the most critical step. The license plate ('placa') is the MANDATORY, UN
 **Step 3: Extract All Service Records.**
 - For EVERY row in the CSV that represents a service, create a corresponding entry in the 'services' array.
 - Each service record MUST be linked to a vehicle via its 'vehicleLicensePlate', using the value from the column identified in Step 1.
-- Extract service details like 'Fecha'/'Date' for 'serviceDate', 'Descripción'/'Description' for 'description', and 'Costo'/'Total' for 'totalCost'.
+- Extract service details like 'Fecha'/'Date' for 'serviceDate', 'Descripción'/'Description'/'Concepto de la reparacion' for 'description', and 'Costo'/'Total'/'COSTO TOTAL' for 'totalCost'.
 
 **Step 4: Clean and Format Data.**
 - **Clean the data as you extract it: trim whitespace, convert years and costs to numbers.**
-- **CRITICAL: PRESERVE DATE FORMAT.** For the 'serviceDate' field, you MUST extract the date exactly as it appears in the source CSV. Do NOT reformat it to YYYY-MM-DD.
+- **CRITICAL: PRESERVE DATE FORMAT.** For the 'serviceDate' field, you MUST extract the date exactly as it appears in the source CSV (e.g., '31/01/2025', '1/31/25'). Do NOT reformat it to 'YYYY-MM-DD'.
 - **CRITICAL: Format all text fields to be consistently capitalized. 'make', 'model', and 'ownerName' should be in "Title Case". 'licensePlate' should be in ALL CAPS. 'description' should start with a capital letter.**
 - **IMPORTANT:** If a value for a field is missing or empty, you MUST return it as an empty string ("") for text fields, or 0 for numeric fields (like year or cost). Do not omit the field from the JSON.
 - **CRITICAL:** Every vehicle in the output 'vehicles' array and every service in the 'services' array must have a valid 'licensePlate' or 'vehicleLicensePlate' field, respectively. Rows without a discernible license plate should be ignored.
