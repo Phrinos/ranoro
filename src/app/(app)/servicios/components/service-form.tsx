@@ -146,7 +146,7 @@ export function ServiceForm(props:Props){
       technicianName: null, 
       customerSignatureReception: null,
       customerSignatureDelivery: null,
-      serviceAdvisorSignatureDataUrl: authUser?.signatureDataUrl || null,
+      serviceAdvisorSignatureDataUrl: authUser?.signatureDataUrl || '',
       serviceItems: [{
         id: nanoid(),
         name: firstType,
@@ -290,6 +290,22 @@ export function ServiceForm(props:Props){
     setViewingImageUrl(url);
     setIsImageViewerOpen(true);
   };
+
+  const handleSignatureSave = (signatureDataUrl: string) => {
+    if (signatureType) {
+      const fieldName = signatureType === 'advisor'
+        ? 'serviceAdvisorSignatureDataUrl'
+        : signatureType === 'reception'
+        ? 'customerSignatureReception'
+        : 'customerSignatureDelivery';
+      
+      const safeValue = signatureDataUrl?.trim() ? signatureDataUrl : null;
+      form.setValue(fieldName, safeValue, { shouldDirty: true });
+      setIsSignatureDialogOpen(false);
+      setSignatureType(null);
+      toast({ title: "Firma capturada correctamente." });
+    }
+  };
   
   const IVA = 0.16;
   const formSubmitWrapper = (values: ServiceFormValues) => {
@@ -384,6 +400,12 @@ export function ServiceForm(props:Props){
         onSave={onVehicleCreated}
       />
       
+      <SignatureDialog
+        open={!!signatureType}
+        onOpenChange={(isOpen) => !isOpen && setSignatureType(null)}
+        onSave={handleSignatureSave}
+      />
+
       <Dialog open={isImageViewerOpen} onOpenChange={setIsImageViewerOpen}>
         <UiDialogContent className="max-w-4xl p-2">
             <UiDialogHeader className="print:hidden"><UiDialogTitle>Vista Previa de Imagen</UiDialogTitle></UiDialogHeader>
