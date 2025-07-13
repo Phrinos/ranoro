@@ -116,13 +116,16 @@ export const optimizeImage = (fileOrDataUrl: File | string, maxWidth: number, qu
 
 /**
  * Normalizes a base64 string or data URL to ensure it has the correct data URL prefix.
- * @param raw The raw signature string, which might be a full data URL or just base64 data.
- * @returns A valid data URL string, or an empty string if the input is empty.
+ * Also handles Firebase Storage URLs.
+ * @param raw The raw signature string, which might be a full data URL, base64 data, or a Firebase URL.
+ * @returns A valid URL string, or an empty string if the input is empty.
  */
 export function normalizeDataUrl(raw?: string) {
   if (!raw) return "";
-  // If it already starts with "data:", it's a valid data URL.
-  if (raw.startsWith("data:")) return raw;
+  // If it's a Firebase Storage URL, return it directly.
+  if (raw.startsWith("https://firebasestorage.googleapis.com")) return raw;
+  // If it's already a valid data URL, return it.
+  if (raw.startsWith("data:image/png;base64,")) return raw;
   // Otherwise, assume it's a raw base64 string and prepend the PNG header.
   return `data:image/png;base64,${raw}`;
 }
