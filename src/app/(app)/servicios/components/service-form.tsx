@@ -1,246 +1,346 @@
 
 
 'use client'
-/* ————————————————————————————————
- *  FORMULARIO servicio / cotización
- *  – Inicializa correctamente “nuevo” (Cotizacion)
- *  – Carga datos al editar
- *  – Vista previa unificada funcional
- *  ———————————————————————————————— */
 
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useForm, useWatch, type Control } from 'react-hook-form'
-import * as z from 'zod'
-
-import Image from 'next/image'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useForm } from 'react-hook-form'
 import { nanoid } from 'nanoid'
-import { Ban, Camera, CheckCircle, Download, Eye, ShieldCheck, Trash2, Wrench } from 'lucide-react'
-import { parseISO } from 'date-fns'
-
-import { Button } from '@/components/ui/button'
-import { AlertDialog, AlertDialogTrigger, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from '@/components/ui/alert-dialog'
-import { Card, CardContent } from '@/components/ui/card'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog'
-import { Form } from '@/components/ui/form'
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
-import { Textarea } from '@/components/ui/textarea'
-
 import { useToast } from '@/hooks/use-toast'
-import { cn } from '@/lib/utils'
-import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data'
-import { parseDate } from '@/lib/forms';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 
-import type { ServiceRecord, Vehicle, Technician, InventoryItem, QuoteRecord, User, ServiceTypeRecord } from '@/types'
-
+import { Form } from '@/components/ui/form'
 import { VehicleDialog } from '../../vehiculos/components/vehicle-dialog'
-import type { VehicleFormValues } from '../../vehiculos/components/vehicle-form'
-import { ServiceDetailsCard } from './ServiceDetailsCard'
-import { VehicleSelectionCard } from './VehicleSelectionCard'
-import { ReceptionAndDelivery } from './ReceptionAndDelivery'
-import { SafetyChecklist } from './SafetyChecklist'
 import { SignatureDialog } from './signature-dialog'
 import { UnifiedPreviewDialog } from '@/components/shared/unified-preview-dialog'
-import { ConfirmDialog } from '@/components/shared/ConfirmDialog'
+import { VehicleSelectionCard } from './VehicleSelectionCard'
+import { ServiceDetailsCard } from './ServiceDetailsCard'
+import { ReceptionAndDelivery } from './ReceptionAndDelivery'
+import { SafetyChecklist } from './SafetyChecklist'
+import { PhotoUploader } from './PhotoUploader'
 
-/* ══ 1. Validación ════════════════════════════════════ */
+import { ServiceFormHeader, ServiceFormFooter } from './ServiceFormLayout';
+import { useServiceStatusWatcher, useServiceTotals, useInitServiceForm } from '@/hooks/use-service-form-hooks'
+import { suggestQuote } from '@/ai/flows/quote-suggestion-flow';
+import { enhanceText } from '@/ai/flows/text-enhancement-flow';
 
-const serviceFormSchema = z.object({
-  id: z.string().optional(),
-  status: z.enum(['Cotizacion', 'Agendado', 'En Taller', 'Entregado', 'Cancelado']),
-  serviceType: z.string(),
-  vehicleId: z.string().optional(),
-  vehicleLicensePlateSearch: z.string().optional(),
-  serviceDate: z.date().optional(),
-  serviceItems: z.array(z.object({
-    id: z.string(),
-    name: z.string(),
-    price: z.coerce.number().optional(),
-    suppliesUsed: z.array(z.any()),
-  })).min(1),
-  photoReports: z.array(z.object({ id: z.string(), date: z.string(), photos: z.array(z.string()) })),
-  /* … resto omitido (no se valida en vista previa) … */
-})
-export type ServiceFormValues = z.infer<typeof serviceFormSchema>
+import type { Vehicle, Technician, InventoryItem, ServiceTypeRecord, ServiceRecord, QuoteRecord, PhotoReportGroup } from '@/types'
+import type { VehicleFormValues } from '../../vehiculos/components/vehicle-form'
+import { serviceFormSchema, type ServiceFormValues } from '@/schemas/service-form'
+import { Tabs, TabsContent } from '@/components/ui/tabs'
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Textarea } from '@/components/ui/textarea'
+import { Dialog, DialogContent } from '@/components/ui/dialog'
+import Image from "next/image";
+import { FormField, FormItem, FormLabel, FormControl } from '@/components/ui/form'
+import { Eye, PlusCircle, Trash2 } from 'lucide-react'
 
-/* ══ 2. Componente ════════════════════════════════════ */
-interface Props {
+interface ServiceFormProps {
   initialDataService?: ServiceRecord | null
+  initialDataQuote?: Partial<QuoteRecord> | null
   vehicles: Vehicle[]
   technicians: Technician[]
   inventoryItems: InventoryItem[]
   serviceTypes: ServiceTypeRecord[]
-  onSubmit(data: ServiceRecord | QuoteRecord): Promise<void>
-  onClose(): void
+  serviceHistory?: ServiceRecord[]
+  onSubmit: (data: ServiceRecord | QuoteRecord) => Promise<void>
+  onClose: () => void
   isReadOnly?: boolean
+  onVehicleCreated?: (newVehicle: Omit<Vehicle, 'id'>) => void
   mode?: 'service' | 'quote'
-  onDelete?: (id: string) => void;
-  onCancelService?: (id: string, reason: string) => void;
-  onStatusChange?: (s?: ServiceRecord['status']) => void;
+  onDelete?: (id: string) => void
+  onCancelService?: (id: string, reason: string) => void
+  onStatusChange?: (s?: ServiceRecord['status']) => void
 }
 
-export function ServiceForm ({
+export function ServiceForm({
   initialDataService,
+  initialDataQuote,
   vehicles,
   technicians,
   inventoryItems,
   serviceTypes,
+  serviceHistory = [],
   onSubmit,
   onClose,
   isReadOnly = false,
+  onVehicleCreated,
   mode = 'service',
   onDelete,
   onCancelService,
   onStatusChange,
-}: Props) {
+}: ServiceFormProps) {
   const { toast } = useToast()
-  /* —— defaults —— */
-  const firstType = serviceTypes[0]?.name ?? 'Servicio General'
-  const currentUser: User | null = (() => { try { return JSON.parse(localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY) ?? 'null') } catch { return null } })()
-  const editing = initialDataService
-
+  
   const form = useForm<ServiceFormValues>({
     resolver: zodResolver(serviceFormSchema),
-    defaultValues: editing ? {
-      ...editing,
-      serviceDate: editing.serviceDate ? parseDate(editing.serviceDate) ?? undefined : undefined,
-      serviceItems: editing.serviceItems?.length ? editing.serviceItems : [{ id: nanoid(), name: firstType, price: editing.totalCost, suppliesUsed: [] }],
-      photoReports: editing.photoReports?.length ? editing.photoReports : [{ id: `rep_${Date.now()}`, date: new Date().toISOString(), photos: [] }],
-      serviceType: editing.serviceType ?? firstType,
-    } : {
-      status: 'Cotizacion',
-      serviceType: firstType,
-      serviceItems: [{ id: nanoid(), name: firstType, price: undefined, suppliesUsed: [] }],
-      photoReports: [{ id: `rep_${Date.now()}`, date: new Date().toISOString(), photos: [] }],
-      serviceAdvisorId: currentUser?.id,
-      serviceAdvisorName: currentUser?.name,
-      serviceAdvisorSignatureDataUrl: currentUser?.signatureDataUrl,
-    } as any,
     mode: 'onBlur',
   })
+  const { control, handleSubmit, getValues, setValue, watch, formState } = form;
 
-  const { getValues, formState, watch } = form
-  const status = watch('status')
-  const items = watch('serviceItems')
-  const totalCost = useMemo(() => items.reduce((s, i) => s + (Number(i.price) || 0), 0), [items])
+  // Initialize form with default or existing data
+  useInitServiceForm(form, { initData: initialDataService || initialDataQuote, serviceTypes });
 
-  /* —— vista previa —— */
-  const [previewOpen, setPreviewOpen] = useState(false)
-  const [previewData, setPreviewData] = useState<ServiceRecord | null>(null)
+  // Custom hooks for form logic
+  const { totalCost, totalSuppliesWorkshopCost, serviceProfit } = useServiceTotals(form);
+  useServiceStatusWatcher(form, onStatusChange);
 
-  const openPreview = () => {
-    setPreviewData({
-      ...(getValues() as unknown as ServiceRecord),
-      totalCost,
-    })
-    setPreviewOpen(true)
-  }
+  const [activeTab, setActiveTab] = useState('servicio');
+  const [isVehicleDialogOpen, setIsVehicleDialogOpen] = useState(false);
+  const [isSignatureDialogOpen, setIsSignatureDialogOpen] = useState(false);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [isGeneratingQuote, setIsGeneratingQuote] = useState(false);
+  const [isEnhancingText, setIsEnhancingText] = useState<string | null>(null);
+  const [isImageViewerOpen, setIsImageViewerOpen] = useState(false);
+  const [viewingImageUrl, setViewingImageUrl] = useState<string | null>('');
 
-  /* —— guardar —— */
-  const save = async (v: ServiceFormValues) => {
-    if (isReadOnly) { onClose(); return }
-    try {
-      await onSubmit({ ...v, totalCost } as ServiceRecord)
-      onClose()
-    } catch {
-      toast({ title: 'Error al guardar', variant: 'destructive' })
+  const status = watch('status');
+  const serviceId = watch('id') || 'new';
+
+  useEffect(() => {
+    if (status === 'En Taller' && !getValues('receptionDateTime')) {
+        setValue('receptionDateTime', new Date(), { shouldDirty: true });
     }
-  }
+  }, [status, getValues, setValue]);
 
-  /* —— tabs dinámicos —— */
-  const showAdv = ['En Taller', 'Entregado', 'Cancelado'].includes(status)
-  const tabs = [{ id: 'servicio', label: 'Detalles', icon: Wrench },
-    ...(showAdv ? [
-      { id: 'recepcion', label: 'Rec./Ent.' },
-      { id: 'reporte', label: 'Fotos' },
-      { id: 'seguridad', label: 'Revisión' },
-    ] : [])]
+  const handleOpenPreview = () => { setIsPreviewOpen(true); };
+  const handleOpenVehicleDialog = () => { setIsVehicleDialogOpen(true); };
+  const handleSignatureClick = () => { setIsSignatureDialogOpen(true); };
 
-  /* —— UI —— */
+  const handleSave = (data: ServiceFormValues) => {
+    const finalData = {
+        ...data,
+        totalCost,
+        totalSuppliesWorkshopCost,
+        serviceProfit,
+    };
+    onSubmit(finalData as ServiceRecord);
+  };
+
+  const handleEnhanceText = async (fieldName: 'notes' | 'vehicleConditions' | 'customerItems' | 'safetyInspection.inspectionNotes' | `photoReports.${number}.description`) => {
+    const currentValue = getValues(fieldName);
+    if (!currentValue) return;
+    setIsEnhancingText(fieldName);
+    try {
+        const enhanced = await enhanceText({ text: currentValue, context: "Descripción del Servicio" });
+        setValue(fieldName, enhanced, { shouldDirty: true });
+        toast({ title: 'Texto mejorado con IA' });
+    } catch (e) {
+        toast({ title: 'Error de IA', description: 'No se pudo mejorar el texto.', variant: 'destructive' });
+    } finally {
+        setIsEnhancingText(null);
+    }
+  };
+
+  const handleGenerateQuote = async () => {
+    const vehicleId = getValues('vehicleId');
+    const description = getValues('description');
+    if (!vehicleId || !description) {
+        toast({ title: "Faltan datos", description: "Seleccione un vehículo y añada una descripción del servicio.", variant: "destructive" });
+        return;
+    }
+    
+    const vehicle = vehicles.find(v => v.id === vehicleId);
+    if (!vehicle) return;
+
+    setIsGeneratingQuote(true);
+    try {
+        const result = await suggestQuote({
+            vehicleInfo: { make: vehicle.make, model: vehicle.model, year: vehicle.year },
+            serviceDescription: description,
+            serviceHistory: serviceHistory.map(s => ({
+                description: s.description || '',
+                totalCost: s.totalCost || 0,
+                suppliesUsed: (s.serviceItems || []).flatMap(i => i.suppliesUsed || []).map(su => ({
+                    supplyName: su.supplyName || '',
+                    quantity: su.quantity
+                }))
+            })),
+            inventory: inventoryItems.map(i => ({ id: i.id, name: i.name, sellingPrice: i.sellingPrice }))
+        });
+
+        const newServiceItems = result.suppliesProposed.map(sp => {
+            const inventoryItem = inventoryItems.find(i => i.id === sp.supplyId);
+            return {
+                id: nanoid(),
+                name: inventoryItem?.name || 'Insumo Sugerido',
+                price: inventoryItem?.sellingPrice || 0, // Placeholder, will need adjustment
+                suppliesUsed: [{
+                    supplyId: sp.supplyId,
+                    supplyName: inventoryItem?.name || '',
+                    quantity: sp.quantity,
+                    unitPrice: inventoryItem?.unitPrice || 0,
+                    sellingPrice: inventoryItem?.sellingPrice || 0,
+                    unitType: inventoryItem?.unitType || 'units',
+                }]
+            };
+        });
+
+        setValue('serviceItems', newServiceItems as any);
+        setValue('totalCost', result.estimatedTotalCost, { shouldDirty: true });
+        toast({ title: "Cotización Sugerida por IA", description: result.reasoning, duration: 6000 });
+
+    } catch (e: any) {
+        toast({ title: "Error al generar cotización", description: e.message, variant: "destructive" });
+    } finally {
+        setIsGeneratingQuote(false);
+    }
+  };
+
+  const handlePhotoUpload = useCallback((reportIndex: number, url: string) => {
+    const photoReports = getValues('photoReports') || [];
+    const currentReport = photoReports[reportIndex];
+    if (currentReport) {
+        const updatedPhotos = [...(currentReport.photos || []), url];
+        setValue(`photoReports.${reportIndex}.photos`, updatedPhotos, { shouldDirty: true });
+    }
+  }, [getValues, setValue]);
+
+  const handleViewImage = useCallback((url: string) => {
+    setViewingImageUrl(url);
+    setIsImageViewerOpen(true);
+  }, []);
+
   return (
     <>
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(save)} className="space-y-6 pb-24">
-          {/* Header Tabs */}
-          <Tabs defaultValue="servicio">
-            <div className="sticky top-0 bg-background/95 backdrop-blur border-b -mx-6 px-6 py-2 z-10 flex justify-between">
-              <TabsList className={cn('grid w-full', `grid-cols-${tabs.length}`)}>
-                {tabs.map(t => (
-                  <TabsTrigger key={t.id} value={t.id} className="text-xs sm:text-sm flex items-center gap-1.5">
-                    {t.icon && <t.icon className="h-4 w-4" />}{t.label}
-                  </TabsTrigger>
-                ))}
-              </TabsList>
-              {!isReadOnly && (
-                <Button type="button" variant="ghost" size="icon" onClick={openPreview} title="Vista previa">
-                  <Eye className="h-5 w-5" />
-                </Button>
-              )}
-            </div>
-
-            {/* TAB contenido */}
-            <TabsContent value="servicio" className="mt-6">
-              <Card className="shadow-none"><CardContent className="p-0 space-y-6">
-                <VehicleSelectionCard
-                  isReadOnly={isReadOnly}
-                  localVehicles={vehicles}
-                  serviceHistory={[]}
-                  onVehicleSelected={() => { }}
-                  onOpenNewVehicleDialog={() => { }}
+        <form onSubmit={handleSubmit(handleSave)} className="pb-24">
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
+             <ServiceFormHeader
+                onPreview={handleOpenPreview}
+                isReadOnly={isReadOnly}
+                status={status}
+                activeTab={activeTab}
+                onTabChange={setActiveTab}
+             />
+              
+             <TabsContent value="servicio" className="mt-6">
+                <Card className="shadow-none border-none p-0"><CardContent className="p-0 space-y-6">
+                    <VehicleSelectionCard
+                        isReadOnly={isReadOnly}
+                        localVehicles={vehicles}
+                        serviceHistory={serviceHistory}
+                        onVehicleSelected={() => {}}
+                        onOpenNewVehicleDialog={handleOpenVehicleDialog}
+                    />
+                    <ServiceDetailsCard
+                        isReadOnly={isReadOnly}
+                        technicians={technicians}
+                        inventoryItems={inventoryItems}
+                        serviceTypes={serviceTypes}
+                        mode={mode}
+                        totalCost={totalCost}
+                        totalSuppliesWorkshopCost={totalSuppliesWorkshopCost}
+                        serviceProfit={serviceProfit}
+                        onGenerateQuoteWithAI={handleGenerateQuote}
+                        isGeneratingQuote={isGeneratingQuote}
+                    />
+                </CardContent></Card>
+            </TabsContent>
+            
+            <TabsContent value="recepcion" className="mt-6">
+                <ReceptionAndDelivery
+                    control={control}
+                    isReadOnly={isReadOnly}
+                    isEnhancingText={isEnhancingText}
+                    handleEnhanceText={handleEnhanceText}
                 />
-
-                <ServiceDetailsCard
-                  isReadOnly={isReadOnly}
-                  technicians={technicians}
-                  inventoryItems={inventoryItems}
-                  serviceTypes={serviceTypes}
-                  mode={mode}
-                  totalCost={totalCost}
-                  totalSuppliesWorkshopCost={0}
-                  serviceProfit={0}
-                  onGenerateQuoteWithAI={() => toast({ title: 'IA no implementada' })}
-                  isGeneratingQuote={false}
-                />
-              </CardContent></Card>
+            </TabsContent>
+            
+            <TabsContent value="reporte" className="mt-6">
+              <PhotoReportTab
+                control={control}
+                isReadOnly={isReadOnly}
+                isEnhancingText={isEnhancingText}
+                handleEnhanceText={handleEnhanceText}
+                serviceId={serviceId}
+                onPhotoUploaded={handlePhotoUpload}
+                onViewImage={handleViewImage}
+              />
             </TabsContent>
 
-            {showAdv && (
-              <>
-                <TabsContent value="recepcion" className="mt-6"><ReceptionAndDelivery control={form.control} isReadOnly={isReadOnly} isEnhancingText={null} handleEnhanceText={() => {}} /></TabsContent>
-                <TabsContent value="reporte" className="mt-6">Fotos…</TabsContent>
-                <TabsContent value="seguridad" className="mt-6"><SafetyChecklist control={form.control as Control<any>} isReadOnly={isReadOnly} onSignatureClick={() => {}} serviceId={getValues('id') || 'new'} onPhotoUploaded={() => {}} onViewImage={() => {}} isEnhancingText={null} handleEnhanceText={() => {}} /></TabsContent>
-              </>
-            )}
-          </Tabs>
-
-          {/* action bar */}
-          <div className="fixed bottom-0 inset-x-0 bg-background/95 border-t p-3 flex justify-end gap-2 print:hidden">
-            {onDelete && editing?.id && (
-                <ConfirmDialog
-                    triggerButton={<Button variant="destructive" type="button">Eliminar</Button>}
-                    title="¿Eliminar Registro?"
-                    description="Esta acción no se puede deshacer y eliminará permanentemente este registro. ¿Está seguro?"
-                    onConfirm={() => onDelete(editing.id!)}
+            <TabsContent value="seguridad" className="mt-6">
+                 <SafetyChecklist
+                    control={control}
+                    isReadOnly={isReadOnly}
+                    onSignatureClick={handleSignatureClick}
+                    signatureDataUrl={watch('safetyInspection.technicianSignature')}
+                    isEnhancingText={isEnhancingText}
+                    handleEnhanceText={handleEnhanceText}
+                    serviceId={serviceId}
+                    onPhotoUploaded={(itemName, urls) => {
+                       const currentVal = getValues(`safetyInspection.${itemName as keyof ServiceFormValues['safetyInspection']}`);
+                       setValue(`safetyInspection.${itemName as keyof ServiceFormValues['safetyInspection']}`, {
+                         ...(currentVal || { status: 'na' }),
+                         photos: [...(currentVal?.photos || []), ...urls]
+                       }, { shouldDirty: true });
+                    }}
+                    onViewImage={handleViewImage}
                 />
-            )}
-            <div className="flex-grow" />
-            <Button variant="outline" type="button" onClick={onClose}>Cancelar</Button>
-            <Button disabled={formState.isSubmitting || !getValues('vehicleId')} type="submit">
-              {formState.isSubmitting ? 'Guardando…' : editing ? 'Actualizar' : 'Crear'}
-            </Button>
-          </div>
+            </TabsContent>
+          </Tabs>
+          
+          <ServiceFormFooter
+            isEditing={!!initialDataService?.id || !!initialDataQuote?.id}
+            isReadOnly={isReadOnly}
+            isSubmitting={formState.isSubmitting}
+            status={status}
+            onClose={onClose}
+            onCancelService={(reason) => onCancelService && initialDataService?.id && onCancelService(initialDataService.id, reason)}
+            onDelete={() => onDelete && initialDataService?.id && onDelete(initialDataService.id)}
+          />
         </form>
       </Form>
 
-      {/* —— Vista previa —— */}
-      {previewData && (
-        <UnifiedPreviewDialog
-          open={previewOpen}
-          onOpenChange={setPreviewOpen}
-          service={previewData}
-          vehicle={vehicles.find(v => v.id === previewData.vehicleId) ?? null}
-        />
-      )}
+      <VehicleDialog open={isVehicleDialogOpen} onOpenChange={setIsVehicleDialogOpen} onSave={onVehicleCreated} />
+      
+      <SignatureDialog open={isSignatureDialogOpen} onOpenChange={setIsSignatureDialogOpen} onSave={(sig) => { setValue('safetyInspection.technicianSignature', sig, { shouldDirty: true }); setIsSignatureDialogOpen(false); }} />
+
+      <UnifiedPreviewDialog open={isPreviewOpen} onOpenChange={setIsPreviewOpen} service={getValues() as ServiceRecord} vehicle={vehicles.find(v => v.id === watch('vehicleId'))} />
+      
+      <Dialog open={isImageViewerOpen} onOpenChange={setIsImageViewerOpen}>
+        <DialogContent className="max-w-4xl p-2">
+            <div className="relative aspect-video w-full"><Image src={viewingImageUrl || ''} alt="Vista ampliada" fill className="object-contain" /></div>
+        </DialogContent>
+      </Dialog>
     </>
   )
+}
+
+// Separate component for the Photo Report Tab
+const PhotoReportTab = ({ control, isReadOnly, isEnhancingText, handleEnhanceText, serviceId, onPhotoUploaded, onViewImage }: any) => {
+    const { fields, append, remove } = useFieldArray({ control, name: 'photoReports' });
+    const { watch } = useFormContext();
+    return (
+        <Card>
+            <CardHeader><CardTitle>Reporte Fotográfico</CardTitle><CardDescription>Documenta el proceso con imágenes. Puedes crear varios reportes.</CardDescription></CardHeader>
+            <CardContent className="space-y-6">
+                {fields.map((report, index) => (
+                     <Card key={report.id} className="p-4 bg-muted/30">
+                        <div className="flex justify-between items-center mb-2">
+                            <h4 className="font-semibold">Reporte #{index + 1}</h4>
+                            {!isReadOnly && <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)}><Trash2 className="h-4 w-4 text-destructive"/></Button>}
+                        </div>
+                        <div className="space-y-4">
+                            <FormField control={control} name={`photoReports.${index}.description`} render={({ field }) => (
+                                <FormItem><FormLabel>Descripción</FormLabel><FormControl><Textarea placeholder="Describa el propósito de estas fotos..." {...field} disabled={isReadOnly}/></FormControl></FormItem>
+                            )}/>
+                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                                {watch(`photoReports.${index}.photos`)?.map((photoUrl: string, photoIndex: number) => (
+                                    <div key={photoIndex} className="relative aspect-video bg-muted rounded-md overflow-hidden group">
+                                        <Image src={photoUrl} alt={`Foto ${photoIndex + 1}`} layout="fill" objectFit="cover" />
+                                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                            <Button variant="ghost" size="icon" onClick={() => onViewImage(photoUrl)} className="text-white hover:bg-white/20 hover:text-white"><Eye/></Button>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                            <PhotoUploader reportIndex={index} serviceId={serviceId} onUploadComplete={onPhotoUploaded} photosLength={watch(`photoReports.${index}.photos`)?.length || 0} disabled={isReadOnly} maxPhotos={3}/>
+                        </div>
+                     </Card>
+                ))}
+                {!isReadOnly && <Button type="button" variant="outline" onClick={() => append({ id: `rep_${Date.now()}`, date: new Date().toISOString(), description: '', photos: []})}><PlusCircle className="mr-2 h-4 w-4"/>Nuevo Reporte</Button>}
+            </CardContent>
+        </Card>
+    );
 }
