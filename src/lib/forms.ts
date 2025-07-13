@@ -39,7 +39,7 @@ export const cleanObjectForFirestore = (obj: any): any => {
     return obj === undefined ? null : obj;
   }
 
-  // Handle Date objects explicitly
+  // Handle Date objects explicitly and convert to ISO string
   if (obj instanceof Date) {
     return obj.toISOString();
   }
