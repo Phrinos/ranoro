@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import type { ServiceRecord, Vehicle, QuoteRecord, WorkshopInfo, SafetyInspection, SafetyCheckStatus, PhotoReportGroup, Driver } from '@/types';
@@ -13,6 +14,7 @@ import { QuoteContent } from '@/components/quote-content';
 import { Button } from '@/components/ui/button';
 import { placeholderDrivers, placeholderRentalPayments } from '@/lib/placeholder-data';
 import Image from 'next/image';
+import { parseDate } from '@/lib/forms';
 
 const initialWorkshopInfo: WorkshopInfo = {
   name: "RANORO",
@@ -99,16 +101,8 @@ const SafetyChecklistDisplay = ({
   vehicle?: Vehicle;
   onViewImage: (url: string) => void;
 }) => {
-    const serviceDateInput = service.serviceDate;
-    let serviceDate: Date;
-    if (typeof serviceDateInput === 'string') {
-      serviceDate = parseISO(serviceDateInput);
-    } else if (serviceDateInput instanceof Date) {
-      serviceDate = serviceDateInput;
-    } else {
-      serviceDate = new Date(NaN); // Invalid date
-    }
-    const formattedServiceDate = isValid(serviceDate) ? format(serviceDate, "dd 'de' MMMM 'de' yyyy", { locale: es }) : 'N/A';
+    const serviceDate = parseDate(service.serviceDate);
+    const formattedServiceDate = serviceDate && isValid(serviceDate) ? format(serviceDate, "dd 'de' MMMM 'de' yyyy", { locale: es }) : 'N/A';
 
     return (
         <div className="mt-4 print:mt-0">
@@ -221,16 +215,8 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
 
     const effectiveWorkshopInfo = { ...initialWorkshopInfo, ...workshopInfoProp };
     
-    const serviceDateInput = service.serviceDate;
-    let serviceDate: Date;
-    if (typeof serviceDateInput === 'string') {
-      serviceDate = parseISO(serviceDateInput);
-    } else if (serviceDateInput instanceof Date) {
-      serviceDate = serviceDateInput;
-    } else {
-      serviceDate = new Date(NaN); // Invalid date
-    }
-    const formattedServiceDate = isValid(serviceDate) ? format(serviceDate, "dd 'de' MMMM 'de' yyyy, HH:mm 'hrs'", { locale: es }) : 'N/A';
+    const serviceDate = parseDate(service.serviceDate);
+    const formattedServiceDate = serviceDate && isValid(serviceDate) ? format(serviceDate, "dd 'de' MMMM 'de' yyyy, HH:mm 'hrs'", { locale: es }) : 'N/A';
 
     const fuelLevelMap: Record<string, number> = {
         'Vacío': 0, '1/8': 12.5, '1/4': 25, '3/8': 37.5, '1/2': 50,
@@ -263,17 +249,15 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
     if (showChecklist) tabs.push({ value: 'checklist', label: 'Revisión' });
     if (showPhotoReport) tabs.push({ value: 'photoreport', label: 'Reporte Fotográfico' });
     
-    let defaultTabValue = 'order';
-    if(service.status === 'Cotizacion' || service.status === 'Agendado') {
-        defaultTabValue = 'quote';
-    }
+    const isQuoteOrAppointment = service.status === 'Cotizacion' || service.status === 'Agendado';
+    const defaultTabValue = isQuoteOrAppointment ? 'quote' : 'order';
 
 
     const ServiceOrderContent = (
       <div className="flex flex-col min-h-[10in]">
         <header className="mb-4 pb-2 border-b-2 border-black">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
-            <img src={effectiveWorkshopInfo.logoUrl} alt={`${effectiveWorkshopInfo.name} Logo`} style={{ width: '150px', height: 'auto' }} data-ai-hint="workshop logo" />
+            <Image src={effectiveWorkshopInfo.logoUrl} alt={`${effectiveWorkshopInfo.name} Logo`} width={150} height={40} style={{ width: '150px', height: 'auto' }} data-ai-hint="workshop logo" />
             <div className="text-left sm:text-right">
               <h1 className="text-lg sm:text-xl font-bold">ORDEN DE SERVICIO</h1>
               <p className="font-mono text-sm sm:text-base">Folio: <span className="font-bold">{service.id}</span></p>
@@ -518,26 +502,6 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
       </div>
     ) : null;
 
-    const isQuoteOrAppointment = service.status === 'Cotizacion' || service.status === 'Agendado';
-
-    if (isQuoteOrAppointment) {
-      return (
-        <div ref={ref} data-format="letter" className="font-sans bg-white text-black text-sm">
-          <div className="p-0 sm:p-2 md:p-4 print:p-0">
-            {quote ?
-              <QuoteContent 
-                ref={null}
-                quote={quote} 
-                vehicle={vehicle} 
-                workshopInfo={effectiveWorkshopInfo} 
-              />
-              : <div className='text-center p-8 text-muted-foreground'>No hay información de cotización para mostrar.</div>
-            }
-          </div>
-        </div>
-      );
-    }
-    
     return (
       <div ref={ref} data-format="letter" className="font-sans bg-white text-black text-sm">
         {/* For Screen View */}
@@ -606,5 +570,3 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
   }
 );
 ServiceSheetContent.displayName = "ServiceSheetContent";
-
-    

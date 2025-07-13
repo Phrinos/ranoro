@@ -11,6 +11,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { AlertCircle } from 'lucide-react';
 import { placeholderDrivers, placeholderRentalPayments } from '@/lib/placeholder-data';
 import Image from 'next/image';
+import { parseDate } from '@/lib/forms';
 
 const initialWorkshopInfo: WorkshopInfo = {
   name: "RANORO",
@@ -40,11 +41,11 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
     
     const now = new Date();
     const formattedPrintDate = format(now, "dd 'de' MMMM 'de' yyyy, HH:mm:ss", { locale: es });
-    const quoteDate = parseISO(quote.quoteDate ?? "");
-    const formattedQuoteDate = isValid(quoteDate) ? format(quoteDate, "dd 'de' MMMM 'de' yyyy", { locale: es }) : 'N/A';
+    const quoteDate = parseDate(quote.quoteDate);
+    const formattedQuoteDate = quoteDate && isValid(quoteDate) ? format(quoteDate, "dd 'de' MMMM 'de' yyyy", { locale: es }) : 'N/A';
     
     const validityDays = 15; 
-    const validityDate = isValid(quoteDate) ? format(addDays(quoteDate, validityDays), "dd 'de' MMMM 'de' yyyy", { locale: es }) : 'N/A';
+    const validityDate = quoteDate && isValid(quoteDate) ? format(addDays(quoteDate, validityDays), "dd 'de' MMMM 'de' yyyy", { locale: es }) : 'N/A';
     
     const driver: Driver | undefined = vehicle?.isFleetVehicle 
         ? placeholderDrivers.find(d => d.assignedVehicleId === vehicle.id) 
