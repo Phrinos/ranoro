@@ -7,7 +7,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from '@/components/ui/button';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { Eye, Wrench, CheckCircle, ShieldCheck, Ban } from 'lucide-react';
+import { Eye, Wrench, CheckCircle, ShieldCheck, Ban, Camera } from 'lucide-react';
 import type { ServiceRecord } from '@/types';
 import { cn } from '@/lib/utils';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
@@ -16,21 +16,32 @@ interface ServiceFormHeaderProps {
   onPreview: () => void;
   isReadOnly?: boolean;
   status?: ServiceRecord['status'];
+  activeTab: string;
+  onTabChange: (value: string) => void;
 }
 
-export function ServiceFormHeader({ onPreview, isReadOnly, status }: ServiceFormHeaderProps) {
+export function ServiceFormHeader({ onPreview, isReadOnly, status, activeTab, onTabChange }: ServiceFormHeaderProps) {
   const showAdv = status && ['En Taller', 'Entregado', 'Cancelado'].includes(status);
   
   const tabs = [
     { value: 'servicio', label: 'Detalles', icon: Wrench, show: true },
-    { value: 'recepcion', label: 'Rec. y Ent.', icon: CheckCircle,  show: showAdv },
+    { value: 'recepcion', label: 'Rec./Ent.', icon: CheckCircle,  show: showAdv },
+    { value: 'reporte', label: 'Fotos', icon: Camera, show: showAdv },
     { value: 'seguridad', label: 'Revisión',   icon: ShieldCheck,  show: showAdv },
   ].filter((t) => t.show);
 
+  // Define grid class based on number of tabs to avoid dynamic class generation
+  const gridColsClass = 
+    tabs.length === 4 ? 'grid-cols-4' :
+    tabs.length === 3 ? 'grid-cols-3' :
+    tabs.length === 2 ? 'grid-cols-2' :
+    'grid-cols-1';
+
   return (
+    <Tabs value={activeTab} onValueChange={onTabChange}>
       <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm -mx-6 px-6 pt-2 pb-2 border-b">
         <div className="flex justify-between items-center">
-          <TabsList className={cn('grid w-full mb-0', `grid-cols-${tabs.length}`)}>
+          <TabsList className={cn('grid w-full mb-0', gridColsClass)}>
             {tabs.map((t) => (
               <TabsTrigger key={t.value} value={t.value} className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs sm:text-sm flex items-center gap-2">
                 <t.icon className="h-4 w-4 mr-1.5 shrink-0" />
@@ -47,6 +58,7 @@ export function ServiceFormHeader({ onPreview, isReadOnly, status }: ServiceForm
           )}
         </div>
       </div>
+    </Tabs>
   );
 }
 
