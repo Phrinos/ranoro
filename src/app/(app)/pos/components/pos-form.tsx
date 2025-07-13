@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Receipt } from "lucide-react";
 import type { InventoryItem, PaymentMethod, SaleReceipt, InventoryCategory, Supplier } from "@/types";
 import { useToast } from "@/hooks/use-toast";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { AddItemDialog } from "./add-item-dialog";
 import { InventoryItemDialog } from "../../inventario/components/inventory-item-dialog";
 import type { InventoryItemFormValues } from "../../inventario/components/inventory-item-form";
@@ -55,7 +55,7 @@ type POSFormValues = z.infer<typeof posFormSchema>;
 interface POSFormProps {
   inventoryItems: InventoryItem[];
   onSaleComplete: (saleData: SaleReceipt) => void;
-  onInventoryItemCreated?: (newItem: InventoryItem) => void;
+  onInventoryItemCreated: (formData: InventoryItemFormValues) => Promise<InventoryItem>;
 }
 
 export function PosForm({ inventoryItems: parentInventoryItems, onSaleComplete, onInventoryItemCreated }: POSFormProps) {
@@ -63,7 +63,6 @@ export function PosForm({ inventoryItems: parentInventoryItems, onSaleComplete, 
   const [isAddItemDialogOpen, setIsAddItemDialogOpen] = useState(false);
   const [isNewInventoryItemDialogOpen, setIsNewInventoryItemDialogOpen] = useState(false);
   const [newItemInitialData, setNewItemInitialData] = useState<Partial<InventoryItemFormValues> | null>(null);
-  const [searchTermForNewItem, setSearchTermForNewItem] = useState('');
   
   const [allCategories, setAllCategories] = useState<InventoryCategory[]>([]);
   const [allSuppliers, setAllSuppliers] = useState<Supplier[]>([]);
@@ -109,9 +108,20 @@ export function PosForm({ inventoryItems: parentInventoryItems, onSaleComplete, 
     if (!db) return;
     const batch = writeBatch(db);
     try {
-      await operationsService.registerSale(values, parentInventoryItems, batch);
+      const saleId = await operationsService.registerSale(values, parentInventoryItems, batch);
       await batch.commit();
-      onSaleComplete(values as unknown as SaleReceipt); // This is a bit of a hack, the service should return the full object
+
+      const newSaleReceipt: SaleReceipt = {
+        id: saleId,
+        saleDate: new Date().toISOString(),
+        ...values,
+        subTotal: 0, // Recalculate or get from service
+        tax: 0,
+        totalAmount: values.items.reduce((sum, item) => sum + item.totalPrice, 0),
+        status: 'Completado'
+      };
+
+      onSaleComplete(newSaleReceipt);
     } catch(e) {
       console.error(e);
       toast({ title: "Error al Registrar Venta", variant: "destructive"});
@@ -133,7 +143,6 @@ export function PosForm({ inventoryItems: parentInventoryItems, onSaleComplete, 
   };
   
   const handleRequestNewItem = (searchTerm: string) => {
-      setSearchTermForNewItem(searchTerm);
       setNewItemInitialData({
           name: searchTerm,
           category: allCategories.length > 0 ? allCategories[0].name : "",
@@ -144,8 +153,7 @@ export function PosForm({ inventoryItems: parentInventoryItems, onSaleComplete, 
   };
   
   const handleNewItemSaved = async (formData: InventoryItemFormValues) => {
-    const newItem = await inventoryService.addItem(formData);
-    if(onInventoryItemCreated) onInventoryItemCreated(newItem);
+    const newItem = await onInventoryItemCreated(formData);
     handleAddItem(newItem, 1);
     toast({ title: "Nuevo Ítem Creado y Añadido." });
     setIsNewInventoryItemDialogOpen(false);

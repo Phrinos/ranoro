@@ -101,11 +101,11 @@ export default function NuevaVentaPage() {
     }
   };
 
-  const handleInventoryItemCreated = (newItem: InventoryItem) => {
+  const handleInventoryItemCreated = async (formData: InventoryItemFormValues): Promise<InventoryItem> => {
+    const newItem = await inventoryService.addItem(formData);
     // The main listener in the parent component (`pos/page.tsx`) already handles this
-    // via onSnapshot. However, if we need immediate UI updates before Firestore syncs,
-    // we can update the local state here.
-    setCurrentInventoryItems(prev => [...prev, newItem]);
+    // via onSnapshot, so we don't need to update local state here.
+    return newItem;
   };
 
 

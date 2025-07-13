@@ -47,14 +47,10 @@ export default function NuevoServicioPage() {
       const savedRecord = await operationsService.saveService(data);
       toast({ title: 'Registro Creado', description: `El registro #${savedRecord.id} se ha guardado.` });
       
-      // Conditional redirect/preview logic
-      if (savedRecord.status === 'Agendado') {
-        router.push('/servicios/agenda');
-      } else {
-        // For 'Cotizacion' or 'En Taller', show preview
-        setServiceForPreview(savedRecord);
-        setIsPreviewOpen(true);
-      }
+      // Open the preview dialog immediately after saving a new record
+      setServiceForPreview(savedRecord);
+      setIsPreviewOpen(true);
+      
     } catch (error) {
       console.error('Error creating service:', error);
       toast({ title: 'Error al Guardar', description: 'No se pudo crear el nuevo registro.', variant: 'destructive' });
@@ -99,9 +95,12 @@ export default function NuevoServicioPage() {
           open={isPreviewOpen}
           onOpenChange={(isOpen) => {
               setIsPreviewOpen(isOpen);
-              // If dialog is closed, redirect to history
+              // If dialog is closed, redirect to the appropriate history page
               if (!isOpen) {
-                  router.push('/servicios/historial');
+                  const targetPath = serviceForPreview.status === 'Cotizacion' 
+                      ? '/cotizaciones/historial' 
+                      : '/servicios/historial';
+                  router.push(targetPath);
               }
           }}
           service={serviceForPreview}
