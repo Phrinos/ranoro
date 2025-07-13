@@ -14,7 +14,7 @@ import { Button } from "@/components/ui/button";
 import { CalendarIcon, PlusCircle, BrainCircuit, Loader2 } from "lucide-react";
 import { ServiceItemCard } from './ServiceItemCard';
 import { Separator } from "@/components/ui/separator";
-import type { ServiceFormValues } from "./service-form";
+import type { ServiceFormValues } from "@/schemas/service-form";
 import type { Technician, InventoryItem, ServiceTypeRecord } from "@/types";
 import { cn } from "@/lib/utils";
 import { format, setHours, setMinutes, isValid } from 'date-fns';
@@ -81,7 +81,7 @@ export function ServiceDetailsCard({
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <FormField control={control} name="status" render={({ field }) => ( <FormItem><FormLabel>Estado</FormLabel><Select onValueChange={field.onChange} value={field.value} disabled={isReadOnly || watchedStatus === 'Entregado'}><FormControl><SelectTrigger className="font-bold"><SelectValue placeholder="Seleccione un estado" /></SelectTrigger></FormControl><SelectContent>{["Cotizacion", "Agendado", "En Taller", "Entregado"].map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )}/>
+          <FormField control={control} name="status" render={({ field }) => ( <FormItem><FormLabel>Estado</FormLabel><Select onValueChange={field.onChange} value={field.value} disabled={isReadOnly || watchedStatus === 'Entregado'}><FormControl><SelectTrigger className="font-bold"><SelectValue placeholder="Seleccione un estado" /></SelectTrigger></FormControl><SelectContent>{["Cotizacion", "Agendado", "En Taller", "Entregado"].map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent></Select></FormItem> )}/>
           {watchedStatus === 'En Taller' && (
               <FormField control={control} name="subStatus" render={({ field }) => ( <FormItem><FormLabel>Sub-Estado Taller</FormLabel><Select onValueChange={field.onChange} value={field.value} disabled={isReadOnly}><FormControl><SelectTrigger><SelectValue placeholder="Seleccione sub-estado..." /></SelectTrigger></FormControl><SelectContent>{["En Espera de Refacciones", "Reparando", "Completado"].map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent></Select></FormItem> )}/>
           )}
@@ -101,7 +101,7 @@ export function ServiceDetailsCard({
             </FormItem> 
           )}/>
           {showTechnicianField && (
-            <FormField control={control} name="technicianId" render={({ field }) => ( <FormItem><FormLabel>Técnico Asignado</FormLabel><Select onValueChange={field.onChange} value={field.value} disabled={isReadOnly}><FormControl><SelectTrigger><SelectValue placeholder="Seleccione un técnico..." /></SelectTrigger></FormControl><SelectContent>{technicians.filter((t) => !t.isArchived).map((technician) => ( <SelectItem key={technician.id} value={technician.id}>{technician.name} - {technician.specialty}</SelectItem> ))}</SelectContent></Select><FormMessage /></FormItem> )}/>
+            <FormField control={control} name="technicianId" render={({ field }) => ( <FormItem><FormLabel>Técnico Asignado</FormLabel><Select onValueChange={field.onChange} value={field.value} disabled={isReadOnly}><FormControl><SelectTrigger><SelectValue placeholder="Seleccione un técnico..." /></SelectTrigger></FormControl><SelectContent>{technicians.filter((t) => !t.isArchived).map((technician) => ( <SelectItem key={technician.id} value={technician.id}>{technician.name} - {technician.specialty}</SelectItem> ))}</SelectContent></Select></FormItem> )}/>
           )}
         </div>
         

@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -146,18 +147,18 @@ const FormMessage = React.forwardRef<
   HTMLParagraphElement,
   React.HTMLAttributes<HTMLParagraphElement>
 >(({ className, children, ...props }, ref) => {
-  const { error, formMessageId } = useFormField()
+  const { error } = useFormField()
   const body = error ? String(error?.message ?? "") : children
 
   if (!body) {
     return null
   }
 
+  // Hide the component if there's no message body to render
   return (
     <p
       ref={ref}
-      id={formMessageId}
-      className={cn("text-sm font-medium text-destructive", className)}
+      className={cn("hidden", className)} // Changed to hidden
       {...props}
     >
       {body}

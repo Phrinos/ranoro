@@ -27,7 +27,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Signature, BrainCircuit, Loader2, CheckCircle, Clock } from "lucide-react";
-import type { ServiceFormValues } from "./service-form";
+import type { ServiceFormValues } from "@/schemas/service-form";
 import { format, parseISO, isValid } from "date-fns";
 import { es } from "date-fns/locale";
 

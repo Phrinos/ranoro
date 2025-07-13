@@ -12,7 +12,7 @@ import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { AddSupplyDialog } from './add-supply-dialog';
 import { capitalizeWords, formatCurrency } from '@/lib/utils';
-import type { ServiceFormValues } from "./service-form";
+import type { ServiceFormValues } from "@/schemas/service-form";
 
 // Sub-component for a single Service Item card
 interface ServiceItemCardProps {
