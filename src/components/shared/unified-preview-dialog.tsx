@@ -10,22 +10,23 @@ import { ServiceSheetContent } from '@/components/service-sheet-content';
 import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../ui/dialog';
 import Image from "next/image";
+import { inventoryService } from '@/lib/services'; // Import the service
 
 interface UnifiedPreviewDialogProps {
   open: boolean;
   onOpenChange: (isOpen: boolean) => void;
   service: ServiceRecord;
-  vehicle: Vehicle | null;
-  associatedQuote?: QuoteRecord | null;
 }
 
-export function UnifiedPreviewDialog({ open, onOpenChange, service, vehicle, associatedQuote }: UnifiedPreviewDialogProps) {
+export function UnifiedPreviewDialog({ open, onOpenChange, service }: UnifiedPreviewDialogProps) {
   const { toast } = useToast();
   const [workshopInfo, setWorkshopInfo] = useState<WorkshopInfo | {}>({});
   const contentRef = useRef<HTMLDivElement>(null);
 
   const [isImageViewerOpen, setIsImageViewerOpen] = useState(false);
   const [viewingImageUrl, setViewingImageUrl] = useState<string | null>(null);
+  
+  const [vehicle, setVehicle] = useState<Vehicle | null>(null);
 
   useEffect(() => {
     if (open) {
@@ -33,8 +34,16 @@ export function UnifiedPreviewDialog({ open, onOpenChange, service, vehicle, ass
       if (storedWorkshopInfo) {
         setWorkshopInfo(JSON.parse(storedWorkshopInfo));
       }
+      
+      const fetchVehicle = async () => {
+          if (service.vehicleId) {
+              const v = await inventoryService.getVehicleById(service.vehicleId);
+              setVehicle(v || null);
+          }
+      };
+      fetchVehicle();
     }
-  }, [open]);
+  }, [open, service.vehicleId]);
 
   const handleShareService = useCallback(() => {
     if (!service || !service.publicId) {
@@ -89,11 +98,11 @@ Hola ${vehicle.ownerName || 'Cliente'}, gracias por confiar en Ranoro. Te propor
           </div>
         }
       >
-        {service && (
+        {service && vehicle !== undefined && (
           <ServiceSheetContent
             ref={contentRef}
             service={service}
-            associatedQuote={associatedQuote}
+            associatedQuote={null} // Quote data is part of the service object itself now
             vehicle={vehicle || undefined}
             workshopInfo={workshopInfo as WorkshopInfo}
             onViewImage={handleViewImage}

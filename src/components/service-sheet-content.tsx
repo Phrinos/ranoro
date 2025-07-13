@@ -248,7 +248,7 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
         ? placeholderDrivers.find(d => d.assignedVehicleId === vehicle.id) 
         : undefined;
 
-    const driverDebt = driver ? calculateDriverDebt(driver, placeholderRentalPayments, [vehicle]) : { totalDebt: 0 };
+    const driverDebt = driver && vehicle ? calculateDriverDebt(driver, placeholderRentalPayments, [vehicle]) : { totalDebt: 0, rentalDebt: 0, depositDebt: 0, manualDebt: 0 };
     // --- END DEBT CALCULATION ---
 
     // This is the core logic fix: determine which object holds the quote data.

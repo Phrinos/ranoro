@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import type { QuoteRecord, Vehicle, Technician, WorkshopInfo, Driver, RentalPayment } from '@/types';
@@ -7,7 +8,6 @@ import { es } from 'date-fns/locale';
 import React from 'react';
 import { cn, capitalizeWords, normalizeDataUrl, calculateDriverDebt, formatCurrency } from "@/lib/utils";
 import { Card, CardContent } from '@/components/ui/card';
-import Image from "next/legacy/image";
 import { AlertCircle } from 'lucide-react';
 import { placeholderDrivers, placeholderRentalPayments } from '@/lib/placeholder-data';
 
