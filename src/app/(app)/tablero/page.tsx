@@ -131,7 +131,8 @@ export default function TableroPage() {
     };
 
     services.forEach(service => {
-        if(service.status === 'Agendado' && service.serviceDate && isValid(parseISO(service.serviceDate)) && isToday(parseISO(service.serviceDate))) {
+        // Only include services scheduled for today and that have been confirmed
+        if(service.status === 'Agendado' && service.appointmentStatus === 'Confirmada' && service.serviceDate && isValid(parseISO(service.serviceDate)) && isToday(parseISO(service.serviceDate))) {
             columns['Agendado'].services.push(service);
         } else if (service.status === 'En Taller') {
             switch(service.subStatus) {

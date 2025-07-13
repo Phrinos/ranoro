@@ -3,7 +3,7 @@
 'use client'
 
 import { zodResolver } from "@hookform/resolvers/zod"
-import { useForm, useWatch, Controller, type Control, useFieldArray, FormProvider } from "react-hook-form"
+import { useForm, useWatch, Controller, useFieldArray, FormProvider } from "react-hook-form"
 import * as z from 'zod'
 
 import Image from 'next/image'
@@ -52,7 +52,7 @@ import { enhanceText } from '@/ai/flows/text-enhancement-flow'
 import { PhotoUploader } from './PhotoUploader';
 import { serviceFormSchema } from '@/schemas/service-form';
 import { parseDate } from '@/lib/forms';
-import { useServiceTotals } from '@/hooks/use-service-form-hooks'
+import { useServiceTotals, useInitServiceForm } from '@/hooks/use-service-form-hooks'
 
 // Separate component for the Photo Report Tab
 const PhotoReportTab = ({ control, isReadOnly, serviceId, onPhotoUploaded, onViewImage }: any) => {
@@ -117,65 +117,25 @@ export function ServiceForm(props:Props){
   const initData = initialDataService ?? null
   const { toast } = useToast()
   
-  const defaultValues = useMemo<ServiceFormValues>(() => {
-    const firstType = serviceTypes[0]?.name ?? 'Servicio General';
-    const now = new Date();
-  
-    if (initData && 'id' in initData) {
-      return {
-        ...initData,
-        status: initData.status ?? 'Cotizacion',
-        serviceType: initData.serviceType ?? firstType,
-        serviceDate:       initData.serviceDate       ? parseDate(initData.serviceDate)       : undefined,
-        quoteDate:         initData.quoteDate         ? parseDate(initData.quoteDate)         : undefined,
-        receptionDateTime: initData.receptionDateTime ? parseDate(initData.receptionDateTime) : undefined,
-        deliveryDateTime:  initData.deliveryDateTime  ? parseDate(initData.deliveryDateTime)  : undefined,
-        serviceItems: initData.serviceItems?.length
-          ? initData.serviceItems
-          : [{ id: nanoid(), name: initData.serviceType ?? firstType, price: initData.totalCost, suppliesUsed: [] }],
-        photoReports: initData.photoReports?.length
-          ? initData.photoReports
-          : [{ id: `rep_recepcion_${Date.now()}`, date: now.toISOString(), description: 'Notas de la Recepción', photos: [] }],
-      } as ServiceFormValues;
-    }
-  
-    const authUser = (() => {
-      try { return JSON.parse(localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY) ?? 'null') as User | null }
-      catch { return null }
-    })();
-  
-    return {
-      status: 'Cotizacion',
-      serviceType: firstType,
-      serviceDate: new Date(),
-      quoteDate:   new Date(),
-      serviceItems: [{
-        id: nanoid(),
-        name: firstType,
-        price: undefined,
-        suppliesUsed: [],
-      }],
-      photoReports: [{
-        id: `rep_recepcion_${Date.now()}`,
-        date: new Date().toISOString(),
-        description: 'Notas de la Recepción',
-        photos: [],
-      }],
-      serviceAdvisorId: authUser?.id,
-      serviceAdvisorName: authUser?.name,
-      serviceAdvisorSignatureDataUrl: authUser?.signatureDataUrl ?? '',
-    } as ServiceFormValues;
-  }, [initData, serviceTypes]);
-
-
   const form = useForm<ServiceFormValues>({
     resolver: zodResolver(serviceFormSchema),
-    defaultValues,
-    values: defaultValues,
-  })
+  });
+
+  useInitServiceForm(form, { initData, serviceTypes });
 
   const { control, setValue, watch, formState, handleSubmit } = form;
   const { totalCost, totalSuppliesWorkshopCost, serviceProfit } = useServiceTotals(form);
+  
+  const watchedStatus = watch('status');
+
+  useEffect(() => {
+    const subscription = watch((value, { name, type }) => {
+      if (name === 'status' && value.status === 'En Taller' && !value.receptionDateTime) {
+        setValue('receptionDateTime', new Date());
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, [watch, setValue]);
   
   const [activeTab, setActiveTab] = useState('details')
   const [isNewVehicleDialogOpen, setIsNewVehicleDialogOpen] = useState(false)
@@ -301,10 +261,10 @@ export function ServiceForm(props:Props){
 
                 <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                     <TabsList className="grid w-full grid-cols-4">
-                        <TabsTrigger value="details">Detalles</TabsTrigger>
-                        <TabsTrigger value="reception">Recepción/Entrega</TabsTrigger>
-                        <TabsTrigger value="photoreport">Fotos</TabsTrigger>
-                        <TabsTrigger value="checklist">Revisión</TabsTrigger>
+                        <TabsTrigger value="details" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Detalles</TabsTrigger>
+                        <TabsTrigger value="reception" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Recepción/Entrega</TabsTrigger>
+                        <TabsTrigger value="photoreport" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Fotos</TabsTrigger>
+                        <TabsTrigger value="checklist" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Revisión</TabsTrigger>
                     </TabsList>
                     <TabsContent value="details" className="mt-4">
                         <ServiceDetailsCard
