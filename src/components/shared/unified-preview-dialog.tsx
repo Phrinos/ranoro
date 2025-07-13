@@ -18,11 +18,22 @@ import { cn } from '@/lib/utils';
 interface UnifiedPreviewDialogProps {
   open: boolean;
   onOpenChange: (isOpen: boolean) => void;
-  service: ServiceRecord;
+  service?: ServiceRecord;
   vehicle?: Vehicle | null;
+  documentType?: 'service' | 'text';
+  textContent?: string;
+  title?: string;
 }
 
-export function UnifiedPreviewDialog({ open, onOpenChange, service, vehicle: initialVehicle }: UnifiedPreviewDialogProps) {
+export function UnifiedPreviewDialog({ 
+  open, 
+  onOpenChange, 
+  service, 
+  vehicle: initialVehicle,
+  documentType = 'service',
+  textContent,
+  title
+}: UnifiedPreviewDialogProps) {
   const { toast } = useToast();
   const [workshopInfo, setWorkshopInfo] = useState<WorkshopInfo | {}>({});
   const contentRef = useRef<HTMLDivElement>(null);
@@ -33,10 +44,10 @@ export function UnifiedPreviewDialog({ open, onOpenChange, service, vehicle: ini
   const [vehicle, setVehicle] = useState<Vehicle | null | undefined>(initialVehicle);
   const [isLoading, setIsLoading] = useState(true);
 
-  const showOrder = service.status !== 'Cotizacion' && service.status !== 'Agendado';
-  const showQuote = !!(service.status === 'Cotizacion' || service.status === 'Agendado');
-  const showChecklist = !!service.safetyInspection && Object.keys(service.safetyInspection).some(k => k !== 'inspectionNotes' && k !== 'technicianSignature' && (service.safetyInspection as any)[k]?.status !== 'na' && (service.safetyInspection as any)[k]?.status !== undefined);
-  const showPhotoReport = !!service.photoReports && service.photoReports.length > 0 && service.photoReports.some(r => r.photos.length > 0);
+  const showOrder = service && service.status !== 'Cotizacion' && service.status !== 'Agendado';
+  const showQuote = service && (service.status === 'Cotizacion' || service.status === 'Agendado');
+  const showChecklist = service && !!service.safetyInspection && Object.keys(service.safetyInspection).some(k => k !== 'inspectionNotes' && k !== 'technicianSignature' && (service.safetyInspection as any)[k]?.status !== 'na' && (service.safetyInspection as any)[k]?.status !== undefined);
+  const showPhotoReport = service && !!service.photoReports && service.photoReports.length > 0 && service.photoReports.some(r => r.photos.length > 0);
   
   const tabs = [];
   if (showQuote) tabs.push({ value: 'quote', label: 'Cotización', icon: Eye });
@@ -44,7 +55,7 @@ export function UnifiedPreviewDialog({ open, onOpenChange, service, vehicle: ini
   if (showChecklist) tabs.push({ value: 'checklist', label: 'Revisión', icon: ShieldCheck });
   if (showPhotoReport) tabs.push({ value: 'photoreport', label: 'Fotos', icon: Camera });
     
-  const defaultTabValue = service.status === 'Cotizacion' || service.status === 'Agendado' ? 'quote' : 'order';
+  const defaultTabValue = service && (service.status === 'Cotizacion' || service.status === 'Agendado') ? 'quote' : 'order';
   const [activeTab, setActiveTab] = useState(defaultTabValue);
 
   const gridColsClass = 
@@ -56,28 +67,32 @@ export function UnifiedPreviewDialog({ open, onOpenChange, service, vehicle: ini
 
   useEffect(() => {
     if (open) {
-      setActiveTab(defaultTabValue);
-      const storedWorkshopInfo = localStorage.getItem("workshopTicketInfo");
-      if (storedWorkshopInfo) {
-        setWorkshopInfo(JSON.parse(storedWorkshopInfo));
-      }
-      
-      const fetchData = async () => {
-          setIsLoading(true);
+      if (documentType === 'service') {
+        setActiveTab(defaultTabValue);
+        const storedWorkshopInfo = localStorage.getItem("workshopTicketInfo");
+        if (storedWorkshopInfo) {
+          setWorkshopInfo(JSON.parse(storedWorkshopInfo));
+        }
+        
+        const fetchData = async () => {
+            setIsLoading(true);
 
-          if (!initialVehicle && service.vehicleId) {
-            const fetchedVehicle = await inventoryService.getVehicleById(service.vehicleId);
-            setVehicle(fetchedVehicle || null);
-          } else if (initialVehicle !== undefined) {
-            setVehicle(initialVehicle);
-          }
-          
-          setIsLoading(false);
-      };
-      
-      fetchData();
+            if (!initialVehicle && service?.vehicleId) {
+              const fetchedVehicle = await inventoryService.getVehicleById(service.vehicleId);
+              setVehicle(fetchedVehicle || null);
+            } else if (initialVehicle !== undefined) {
+              setVehicle(initialVehicle);
+            }
+            
+            setIsLoading(false);
+        };
+        
+        fetchData();
+      } else {
+        setIsLoading(false);
+      }
     }
-  }, [open, service, initialVehicle, defaultTabValue]);
+  }, [open, service, initialVehicle, defaultTabValue, documentType]);
 
   const handleShareService = useCallback(() => {
     if (!service || !service.publicId) {
@@ -140,19 +155,23 @@ En el enlace podrás:
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="max-w-4xl max-h-[95vh] flex flex-col p-0">
           <DialogHeader className="p-6 pb-2 flex-shrink-0">
-            <DialogTitle>Vista Previa Unificada</DialogTitle>
-            <DialogDescription>Contenido del documento listo para imprimir o compartir.</DialogDescription>
-             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full pt-2">
-                <TabsList className={`grid w-full ${gridColsClass}`}>
-                    {tabs.map(tab => <TabsTrigger key={tab.value} value={tab.value} className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">{tab.label}</TabsTrigger>)}
-                </TabsList>
-            </Tabs>
+            <DialogTitle>{title || 'Vista Previa Unificada'}</DialogTitle>
+            <DialogDescription>
+              {documentType === 'service' ? 'Contenido del documento listo para imprimir o compartir.' : 'Contenido del documento.'}
+            </DialogDescription>
+            {documentType === 'service' && (
+              <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full pt-2">
+                  <TabsList className={`grid w-full ${gridColsClass}`}>
+                      {tabs.map(tab => <TabsTrigger key={tab.value} value={tab.value} className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">{tab.label}</TabsTrigger>)}
+                  </TabsList>
+              </Tabs>
+            )}
           </DialogHeader>
           
           <div id="printable-area-preview" className="flex-grow overflow-y-auto px-6 bg-muted/30">
             {isLoading ? (
                 <div className="flex justify-center items-center h-[50vh]"><Loader2 className="mr-2 h-8 w-8 animate-spin" /> Cargando...</div>
-            ) : (
+            ) : documentType === 'service' && service ? (
               <div className="bg-white shadow-lg my-4">
                 <ServiceSheetContent
                   ref={contentRef}
@@ -163,12 +182,16 @@ En el enlace podrás:
                   activeTab={activeTab}
                 />
               </div>
+            ) : (
+              <div className="prose dark:prose-invert max-w-none bg-white p-6 my-4 shadow-lg" dangerouslySetInnerHTML={{ __html: textContent || '' }} />
             )}
           </div>
           
           <DialogFooter className="p-6 pt-4 border-t flex-shrink-0 bg-background sm:justify-end">
             <div className="flex flex-col sm:flex-row gap-2">
+              {documentType === 'service' && (
                 <Button onClick={handleShareService} variant="outline"><MessageSquare className="mr-2 h-4 w-4" /> Copiar para WhatsApp</Button>
+              )}
                 <Button onClick={handlePrint}><Printer className="mr-2 h-4 w-4" /> Imprimir Documento</Button>
             </div>
           </DialogFooter>
