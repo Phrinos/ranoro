@@ -198,7 +198,6 @@ export function ServiceForm({
             />
 
             <ServiceFormBody
-              form={form}
               isReadOnly={isReadOnly}
               localVehicles={localVehicles}
               serviceHistory={serviceHistory}
