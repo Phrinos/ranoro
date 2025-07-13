@@ -10,6 +10,7 @@ import { cn, capitalizeWords, normalizeDataUrl, calculateDriverDebt, formatCurre
 import { Card, CardContent } from '@/components/ui/card';
 import { AlertCircle } from 'lucide-react';
 import { placeholderDrivers, placeholderRentalPayments } from '@/lib/placeholder-data';
+import Image from 'next/image';
 
 const initialWorkshopInfo: WorkshopInfo = {
   name: "RANORO",
@@ -60,14 +61,13 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
       >
         <header className="mb-4 pb-2 border-b-2 border-black">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-             <img 
+             <Image 
               src={effectiveWorkshopInfo.logoUrl} 
               alt={`${effectiveWorkshopInfo.name} Logo`} 
               width={150}
               height={50}
               style={{ objectFit: 'contain' }}
               data-ai-hint="workshop logo"
-              crossOrigin="anonymous"
             />
             <h2 className="text-2xl sm:text-3xl font-semibold text-primary text-left sm:text-right w-full sm:w-auto">COTIZACIÓN</h2>
           </div>
@@ -199,11 +199,13 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
                 <div className="text-right flex flex-col items-center justify-end mt-4 sm:mt-0">
                     <div className="relative flex justify-center items-center h-16 w-40 mb-1">
                         {quote.serviceAdvisorSignatureDataUrl && (
-                           <img
-                                src={normalizeDataUrl(quote.serviceAdvisorSignatureDataUrl)} 
+                           <Image
+                                src={normalizeDataUrl(quote.serviceAdvisorSignatureDataUrl)}
                                 alt="Firma del asesor"
-                                style={{ maxHeight: '100%', maxWidth: '100%', objectFit: 'contain' }}
-                                crossOrigin="anonymous"
+                                width={160}
+                                height={64}
+                                style={{ objectFit: 'contain' }}
+                                unoptimized
                             />
                         )}
                     </div>
