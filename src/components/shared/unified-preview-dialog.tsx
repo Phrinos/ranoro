@@ -5,7 +5,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
 import { Button } from '@/components/ui/button';
-import { Printer, MessageSquare, Download } from 'lucide-react';
+import { Printer, MessageSquare, Download, Loader2 } from 'lucide-react';
 import type { ServiceRecord, Vehicle, QuoteRecord, WorkshopInfo } from '@/types';
 import { ServiceSheetContent } from '@/components/service-sheet-content';
 import { useToast } from '@/hooks/use-toast';
@@ -17,10 +17,9 @@ interface UnifiedPreviewDialogProps {
   open: boolean;
   onOpenChange: (isOpen: boolean) => void;
   service: ServiceRecord;
-  vehicle?: Vehicle | null; // Making vehicle optional
 }
 
-export function UnifiedPreviewDialog({ open, onOpenChange, service, vehicle: initialVehicle }: UnifiedPreviewDialogProps) {
+export function UnifiedPreviewDialog({ open, onOpenChange, service }: UnifiedPreviewDialogProps) {
   const { toast } = useToast();
   const [workshopInfo, setWorkshopInfo] = useState<WorkshopInfo | {}>({});
   const contentRef = useRef<HTMLDivElement>(null);
@@ -28,8 +27,9 @@ export function UnifiedPreviewDialog({ open, onOpenChange, service, vehicle: ini
   const [isImageViewerOpen, setIsImageViewerOpen] = useState(false);
   const [viewingImageUrl, setViewingImageUrl] = useState<string | null>(null);
   
-  const [vehicle, setVehicle] = useState<Vehicle | null | undefined>(initialVehicle);
+  const [vehicle, setVehicle] = useState<Vehicle | null | undefined>(undefined);
   const [associatedQuote, setAssociatedQuote] = useState<QuoteRecord | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     if (open) {
@@ -39,26 +39,32 @@ export function UnifiedPreviewDialog({ open, onOpenChange, service, vehicle: ini
       }
       
       const fetchData = async () => {
-          // 1. Fetch Vehicle if not provided or incorrect
-          if ((!initialVehicle || initialVehicle.id !== service.vehicleId) && service.vehicleId) {
-              const v = await inventoryService.getVehicleById(service.vehicleId);
-              setVehicle(v || null);
-          } else {
-              setVehicle(initialVehicle);
-          }
-
-          // 2. Determine and fetch associated quote if necessary
-          if (service.status !== 'Cotizacion') {
-              const quote = await operationsService.getQuoteById(service.id);
-              setAssociatedQuote(quote || null);
-          } else {
-              setAssociatedQuote(null); // It's a quote itself, no separate associated quote
+          setIsLoading(true);
+          try {
+              if (service.vehicleId) {
+                  const v = await inventoryService.getVehicleById(service.vehicleId);
+                  setVehicle(v || null);
+              } else {
+                  setVehicle(null);
+              }
+              
+              if (service.status !== 'Cotizacion' && service.id) {
+                 const quote = await operationsService.getQuoteById(service.id);
+                 setAssociatedQuote(quote || null);
+              } else {
+                 setAssociatedQuote(null);
+              }
+          } catch (e) {
+              console.error("Error fetching preview data:", e);
+              toast({ title: "Error", description: "No se pudieron cargar todos los datos.", variant: "destructive"});
+          } finally {
+              setIsLoading(false);
           }
       };
       
       fetchData();
     }
-  }, [open, service, initialVehicle]);
+  }, [open, service, toast]);
 
   const handleShareService = useCallback(() => {
     if (!service || !service.publicId) {
@@ -97,6 +103,8 @@ Hola ${vehicle.ownerName || 'Cliente'}, gracias por confiar en Ranoro. Te propor
     if (!viewingImageUrl) return;
     window.open(viewingImageUrl, '_blank')?.focus();
   };
+  
+  const quoteToDisplay = service.status === 'Cotizacion' ? service : associatedQuote;
 
   return (
     <>
@@ -113,11 +121,13 @@ Hola ${vehicle.ownerName || 'Cliente'}, gracias por confiar en Ranoro. Te propor
           </div>
         }
       >
-        {service && vehicle !== undefined && (
+        {isLoading ? (
+            <div className="flex justify-center items-center h-[50vh]"><Loader2 className="mr-2 h-8 w-8 animate-spin" /> Cargando...</div>
+        ) : (
           <ServiceSheetContent
             ref={contentRef}
             service={service}
-            associatedQuote={associatedQuote}
+            associatedQuote={quoteToDisplay}
             vehicle={vehicle || undefined}
             workshopInfo={workshopInfo as WorkshopInfo}
             onViewImage={handleViewImage}

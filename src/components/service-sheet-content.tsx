@@ -243,15 +243,12 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
     };
     const fuelColor = getFuelColorClass(fuelPercentage);
     
-    // --- DEBT CALCULATION ---
     const driver: Driver | undefined = vehicle?.isFleetVehicle 
         ? placeholderDrivers.find(d => d.assignedVehicleId === vehicle.id) 
         : undefined;
 
     const driverDebt = driver && vehicle ? calculateDriverDebt(driver, placeholderRentalPayments, [vehicle]) : { totalDebt: 0, rentalDebt: 0, depositDebt: 0, manualDebt: 0 };
-    // --- END DEBT CALCULATION ---
-
-    // This is the core logic fix: determine which object holds the quote data.
+    
     const quoteToDisplay = service.status === 'Cotizacion' ? service : associatedQuote;
     
     const showOrder = service.status !== 'Cotizacion' && service.status !== 'Agendado';
@@ -520,7 +517,6 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
       </div>
     ) : null;
     
-    // Default view with tabs for other states
     return (
       <div ref={ref} data-format="letter" className="font-sans bg-white text-black text-sm">
         {/* For Screen View */}
