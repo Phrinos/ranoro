@@ -184,7 +184,7 @@ const SafetyChecklistDisplay = ({
             {inspection.technicianSignature && (
                  <div className="mt-8 border-t pt-4 text-center flex flex-col items-center">
                     <div className="h-24 w-full max-w-[200px] relative">
-                        <Image src={normalizeDataUrl(inspection.technicianSignature)} alt="Firma del técnico" width={200} height={96} style={{ objectFit: 'contain' }} unoptimized/>
+                        <Image src={normalizeDataUrl(inspection.technicianSignature)} alt="Firma del técnico" unoptimized width={200} height={96} style={{ objectFit: 'contain' }}/>
                     </div>
                     <div className="border-t-2 border-black mt-2 pt-1 w-64 text-center">
                         <p className="text-xs font-bold">FIRMA DEL TÉCNICO</p>
@@ -240,7 +240,7 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
       <div className="flex flex-col min-h-full">
         <header className="mb-2 pb-2 border-b-2 border-black">
           <div className="flex justify-between items-start gap-2">
-            <Image src={effectiveWorkshopInfo.logoUrl} alt={`${effectiveWorkshopInfo.name} Logo`} width={150} height={40} style={{ width: '150px', height: 'auto' }} data-ai-hint="workshop logo" />
+            <Image src={effectiveWorkshopInfo.logoUrl} alt={`${effectiveWorkshopInfo.name} Logo`} width={150} height={40} style={{ width: '150px', height: 'auto' }} data-ai-hint="workshop logo" unoptimized />
             <div className="text-right">
               <h1 className="text-xl font-bold">ORDEN DE SERVICIO</h1>
               <p className="font-mono text-base">Folio: <span className="font-bold">{service.id}</span></p>

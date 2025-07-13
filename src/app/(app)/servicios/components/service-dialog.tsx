@@ -10,13 +10,12 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-  DialogFooter,
 } from "@/components/ui/dialog";
 import { ServiceForm } from "./service-form";
 import type { ServiceRecord, Vehicle, Technician, InventoryItem, QuoteRecord, User, ServiceTypeRecord } from "@/types";
 import { useToast } from "@/hooks/use-toast"; 
 import { db } from '@/lib/firebaseClient.js';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
 import { operationsService } from '@/lib/services';
 import { Button } from '@/components/ui/button';
 import { Ban, Eye } from 'lucide-react';
@@ -60,68 +59,59 @@ export function ServiceDialog({
   const { toast } = useToast();
   
   const [localService, setLocalService] = useState(initialService);
-
   const [isCancelAlertOpen, setIsCancelAlertOpen] = useState(false);
   const [cancellationReason, setCancellationReason] = useState('');
-  
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
   const isControlled = controlledOpen !== undefined && setControlledOpen !== undefined;
   const open = isControlled ? controlledOpen : uncontrolledOpen;
   const onOpenChange = isControlled ? setControlledOpen : setUncontrolledOpen;
-  
-  useEffect(() => {
-    const syncAndMarkAsViewed = async () => {
-      if (open && initialService && initialService.id && db) {
-        let serviceToUpdate = { ...initialService };
-        let changed = false;
 
-        if (initialService.publicId) {
+  useEffect(() => {
+    // This effect now ONLY syncs data when the dialog opens.
+    // The form itself will react to changes in `localService`.
+    if (open) {
+      const syncSignatures = async () => {
+        if (initialService && initialService.id && initialService.publicId && db) {
           try {
             const publicDocRef = doc(db, 'publicServices', initialService.publicId);
             const publicDocSnap = await getDoc(publicDocRef);
-
+            
             if (publicDocSnap.exists()) {
               const publicData = publicDocSnap.data() as ServiceRecord;
-              if (publicData.customerSignatureReception && !serviceToUpdate.customerSignatureReception) {
-                serviceToUpdate.customerSignatureReception = publicData.customerSignatureReception;
-                changed = true;
+              const updates: Partial<ServiceRecord> = {};
+              let needsUpdate = false;
+
+              if (publicData.customerSignatureReception && !initialService.customerSignatureReception) {
+                updates.customerSignatureReception = publicData.customerSignatureReception;
+                needsUpdate = true;
               }
-              if (publicData.customerSignatureDelivery && !serviceToUpdate.customerSignatureDelivery) {
-                serviceToUpdate.customerSignatureDelivery = publicData.customerSignatureDelivery;
-                changed = true;
+              if (publicData.customerSignatureDelivery && !initialService.customerSignatureDelivery) {
+                updates.customerSignatureDelivery = publicData.customerSignatureDelivery;
+                needsUpdate = true;
+              }
+
+              if (needsUpdate) {
+                // Update the main service record in Firestore
+                const mainServiceRef = doc(db, 'serviceRecords', initialService.id);
+                await updateDoc(mainServiceRef, updates);
+                
+                // Update the local state to trigger a re-render of the form
+                setLocalService(prev => ({ ...prev, ...updates } as ServiceRecord));
+                
+                toast({ title: "Firmas sincronizadas", description: "Se han cargado nuevas firmas del cliente." });
               }
             }
           } catch (e) {
             console.error("Failed to sync signatures from public doc:", e);
           }
         }
+      };
 
-        if (serviceToUpdate.customerSignatureReception && !serviceToUpdate.receptionSignatureViewed) {
-          serviceToUpdate.receptionSignatureViewed = true;
-          changed = true;
-        }
-        if (serviceToUpdate.customerSignatureDelivery && !serviceToUpdate.deliverySignatureViewed) {
-          serviceToUpdate.deliverySignatureViewed = true;
-          changed = true;
-        }
-        
-        if (changed) {
-          const serviceDocRef = doc(db, "serviceRecords", initialService.id);
-          await setDoc(serviceDocRef, {
-            customerSignatureReception: serviceToUpdate.customerSignatureReception,
-            customerSignatureDelivery: serviceToUpdate.customerSignatureDelivery,
-            receptionSignatureViewed: serviceToUpdate.receptionSignatureViewed,
-            deliverySignatureViewed: serviceToUpdate.deliverySignatureViewed,
-          }, { merge: true });
-           setLocalService(serviceToUpdate); // Update local state
-        }
-      }
-    };
-    
-    setLocalService(initialService); // Set initial state
-    syncAndMarkAsViewed(); // Then try to sync
-  }, [open, initialService]);
+      setLocalService(initialService);
+      syncSignatures();
+    }
+  }, [open, initialService, toast]);
 
 
   const internalOnSave = async (formData: ServiceRecord | QuoteRecord) => {

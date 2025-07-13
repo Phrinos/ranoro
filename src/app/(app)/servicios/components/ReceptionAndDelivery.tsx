@@ -30,6 +30,7 @@ import { Signature, BrainCircuit, Loader2, CheckCircle, Clock } from "lucide-rea
 import type { ServiceFormValues } from "@/schemas/service-form";
 import { format, parseISO, isValid } from "date-fns";
 import { es } from "date-fns/locale";
+import { normalizeDataUrl } from "@/lib/utils";
 
 const fuelLevels = [
   "Vacío",
@@ -170,22 +171,23 @@ export const ReceptionAndDelivery = ({
           
           <div className="pt-4 border-t">
             <FormLabel className="font-semibold text-base">Firma de Recepción</FormLabel>
-            <div className="mt-2 p-3 min-h-[50px] border rounded-md bg-muted/50 flex items-center justify-center">
-              {customerSignatureReception ? (
-                <div className="text-center text-green-600">
-                  <CheckCircle className="mx-auto h-6 w-6 mb-1"/>
-                  <p className="font-semibold">Firma Capturada</p>
-                </div>
-              ) : (
-                <div className="text-center text-muted-foreground">
-                  <Clock className="mx-auto h-6 w-6 mb-1"/>
-                  <p>Firma Pendiente</p>
-                </div>
-              )}
+            <div className="mt-2 p-3 min-h-[100px] border rounded-md bg-muted/50 flex items-center justify-center">
+                {customerSignatureReception ? (
+                    <div 
+                        className="w-full h-full max-w-[250px] aspect-[2.5/1] bg-contain bg-no-repeat bg-center"
+                        style={{ backgroundImage: `url(${normalizeDataUrl(customerSignatureReception)})` }}
+                        aria-label="Firma de recepción capturada"
+                    ></div>
+                ) : (
+                    <div className="text-center text-muted-foreground">
+                        <Clock className="mx-auto h-6 w-6 mb-1"/>
+                        <p>Firma Pendiente</p>
+                    </div>
+                )}
             </div>
-             {!isReadOnly && !customerSignatureReception && (
+             {!isReadOnly && (
               <Button type="button" variant="outline" className="w-full mt-2" onClick={() => onOpenSignature('reception')}>
-                <Signature className="mr-2 h-4 w-4" />Capturar Firma de Recepción
+                <Signature className="mr-2 h-4 w-4" />{customerSignatureReception ? 'Cambiar Firma de Recepción' : 'Capturar Firma de Recepción'}
               </Button>
             )}
           </div>
@@ -209,12 +211,13 @@ export const ReceptionAndDelivery = ({
             </div>
             <div>
               <FormLabel className="font-semibold text-base">Firma de Conformidad</FormLabel>
-              <div className="mt-2 p-3 min-h-[50px] border rounded-md bg-muted/50 flex items-center justify-center">
+              <div className="mt-2 p-3 min-h-[100px] border rounded-md bg-muted/50 flex items-center justify-center">
                 {customerSignatureDelivery ? (
-                  <div className="text-center text-green-600">
-                    <CheckCircle className="mx-auto h-6 w-6 mb-1"/>
-                    <p className="font-semibold">Firma Capturada</p>
-                  </div>
+                   <div 
+                        className="w-full h-full max-w-[250px] aspect-[2.5/1] bg-contain bg-no-repeat bg-center"
+                        style={{ backgroundImage: `url(${normalizeDataUrl(customerSignatureDelivery)})` }}
+                        aria-label="Firma de entrega capturada"
+                    ></div>
                 ) : (
                   <div className="text-center text-muted-foreground">
                     <Clock className="mx-auto h-6 w-6 mb-1"/>
@@ -222,9 +225,9 @@ export const ReceptionAndDelivery = ({
                   </div>
                 )}
               </div>
-              {!isReadOnly && !customerSignatureDelivery && (
+              {!isReadOnly && (
                 <Button type="button" variant="outline" className="w-full mt-2" onClick={() => onOpenSignature('delivery')}>
-                  <Signature className="mr-2 h-4 w-4" />Capturar Firma de Entrega
+                  <Signature className="mr-2 h-4 w-4" />{customerSignatureDelivery ? 'Cambiar Firma de Entrega' : 'Capturar Firma de Entrega'}
                 </Button>
               )}
             </div>

@@ -108,7 +108,8 @@ export function ServiceForm(props:Props){
         deliveryDateTime: initialDataService.deliveryDateTime ? parseDate(initialDataService.deliveryDateTime) : undefined,
         customerSignatureReception: initialDataService.customerSignatureReception || null,
         customerSignatureDelivery: initialDataService.customerSignatureDelivery || null,
-        technicianName: initialDataService.technicianName || null,
+        technicianName: initialDataService.technicianName || null, 
+        serviceAdvisorSignatureDataUrl: initialDataService.serviceAdvisorSignatureDataUrl || '',
         serviceItems:
           initialDataService.serviceItems?.length
             ? initialDataService.serviceItems
@@ -293,21 +294,19 @@ export function ServiceForm(props:Props){
 
   const handleSignatureSave = (signatureDataUrl: string) => {
     if (signatureType) {
-      const fieldName = signatureType === 'advisor'
-        ? 'serviceAdvisorSignatureDataUrl'
-        : signatureType === 'reception'
-        ? 'customerSignatureReception'
-        : 'customerSignatureDelivery';
-      
-      const safeValue = signatureDataUrl?.trim() ? signatureDataUrl : null;
-      form.setValue(fieldName, safeValue, { shouldDirty: true });
-      setIsSignatureDialogOpen(false);
-      setSignatureType(null);
-      toast({ title: "Firma capturada correctamente." });
+        const fieldName: 'serviceAdvisorSignatureDataUrl' | 'customerSignatureReception' | 'customerSignatureDelivery' =
+            signatureType === 'advisor' ? 'serviceAdvisorSignatureDataUrl' :
+            signatureType === 'reception' ? 'customerSignatureReception' :
+            'customerSignatureDelivery';
+        
+        const safeValue = signatureDataUrl?.trim() ? signatureDataUrl : null;
+        form.setValue(fieldName, safeValue, { shouldDirty: true });
+        setIsSignatureDialogOpen(false);
+        setSignatureType(null);
+        toast({ title: "Firma capturada correctamente." });
     }
-  };
-  
-  const IVA = 0.16;
+};
+
   const formSubmitWrapper = (values: ServiceFormValues) => {
     const dataToSubmit: any = { ...values };
     
@@ -315,6 +314,8 @@ export function ServiceForm(props:Props){
     dataToSubmit.totalCost = totalCost;
     dataToSubmit.totalSuppliesWorkshopCost = totalSuppliesWorkshopCost;
     dataToSubmit.serviceProfit = serviceProfit;
+    
+    const IVA = 0.16;
     dataToSubmit.subTotal = totalCost / (1 + IVA);
     dataToSubmit.taxAmount = totalCost - (totalCost / (1 + IVA));
 
