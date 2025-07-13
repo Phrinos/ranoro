@@ -21,6 +21,7 @@ import { ServiceAppointmentCard } from '../components/ServiceAppointmentCard';
 import { inventoryService, personnelService, operationsService } from '@/lib/services';
 import type { VehicleFormValues } from "../../vehiculos/components/vehicle-form";
 import { CompleteServiceDialog } from '../components/CompleteServiceDialog';
+import { parseDate } from '@/lib/forms';
 
 const handleAiError = (error: any, toast: any, context: string): string => {
     console.error(`AI Error in ${context}:`, error);
@@ -108,8 +109,8 @@ function AgendaPageComponent() {
               .filter(s => s.serviceDate)
               .map(s => ({
                   description: s.description || '',
-                  serviceDate: typeof s.serviceDate === 'string' ? s.serviceDate : s.serviceDate?.toISOString(),
-                  deliveryDateTime: s.deliveryDateTime ? (typeof s.deliveryDateTime === 'string' ? s.deliveryDateTime : s.deliveryDateTime.toISOString()) : undefined,
+                  serviceDate: parseDate(s.serviceDate)?.toISOString(),
+                  deliveryDateTime: parseDate(s.deliveryDateTime)?.toISOString(),
               })),
           });
           setCapacityInfo(result);
