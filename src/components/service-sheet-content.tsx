@@ -351,7 +351,7 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
                 <h3 className="font-bold uppercase text-center text-sm">AUTORIZO SERVICIOS</h3>
                 <div className="flex-grow flex items-center justify-center w-full">
                   {service.customerSignatureReception ? (
-                      <div className="relative w-full max-w-[200px] h-16">
+                      <div className="relative w-full h-16">
                           <Image src={normalizeDataUrl(service.customerSignatureReception)} alt="Firma del cliente" layout="fill" objectFit="contain" unoptimized />
                       </div>
                   ) : (
