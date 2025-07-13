@@ -79,7 +79,7 @@ export function ServiceForm({
   const { control, handleSubmit, getValues, setValue, watch, formState } = form;
 
   // Initialize form with default or existing data
-  useInitServiceForm(form, { initData: initialDataService || initialDataQuote, serviceTypes });
+  useInitServiceForm(form, { initData: initialDataService, serviceTypes });
 
   // Custom hooks for form logic
   const { totalCost, totalSuppliesWorkshopCost, serviceProfit } = useServiceTotals(form);
@@ -98,6 +98,7 @@ export function ServiceForm({
   const serviceId = watch('id') || 'new';
 
   useEffect(() => {
+    // Set reception date only the first time status changes to 'En Taller'
     if (status === 'En Taller' && !getValues('receptionDateTime')) {
         setValue('receptionDateTime', new Date(), { shouldDirty: true });
     }
@@ -281,7 +282,7 @@ export function ServiceForm({
           </Tabs>
           
           <ServiceFormFooter
-            isEditing={!!initialDataService?.id || !!initialDataQuote?.id}
+            isEditing={!!initialDataService?.id}
             isReadOnly={isReadOnly}
             isSubmitting={formState.isSubmitting}
             status={status}
