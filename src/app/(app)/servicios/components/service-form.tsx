@@ -19,7 +19,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
-import { parseISO, format, setHours, setMinutes, isValid } from 'date-fns';
+import { format, setHours, setMinutes, isValid, addDays } from 'date-fns';
 import { es } from 'date-fns/locale';
 
 import { Button } from '@/components/ui/button'
@@ -98,13 +98,19 @@ export function ServiceForm(props:Props){
     const firstType = serviceTypes[0]?.name ?? 'Servicio General';
     const now = new Date();
 
+    const getInitialStatus = (): ServiceRecord['status'] => {
+      if (initData) return initData.status ?? 'Cotizacion';
+      if (mode === 'quote') return 'Cotizacion';
+      return 'En Taller';
+    };
+
     if (initData) {
       return {
         ...initData,
-        status: initData.status ?? 'Cotizacion',
+        status: getInitialStatus(),
         serviceType: initData.serviceType ?? firstType,
         serviceDate: initData.serviceDate ? parseDate(initData.serviceDate) : undefined,
-        quoteDate: initData.quoteDate ? parseDate(initData.quoteDate) : undefined,
+        quoteDate: initData.quoteDate ? parseDate(initData.quoteDate) : (getInitialStatus() === 'Cotizacion' ? now : undefined),
         receptionDateTime: initData.receptionDateTime ? parseDate(initData.receptionDateTime) : undefined,
         deliveryDateTime: initData.deliveryDateTime ? parseDate(initData.deliveryDateTime) : undefined,
         serviceItems:
@@ -114,7 +120,7 @@ export function ServiceForm(props:Props){
                 {
                   id: nanoid(),
                   name: initData.serviceType ?? firstType,
-                  price: initData.totalCost,
+                  price: initData.totalCost ?? undefined,
                   suppliesUsed: [],
                 },
               ],
@@ -136,12 +142,14 @@ export function ServiceForm(props:Props){
         try { return JSON.parse(localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY) ?? 'null') as User | null }
         catch { return null }
     })();
+    
+    const initialStatus = getInitialStatus();
 
     return {
-      status: 'Cotizacion',
+      status: initialStatus,
       serviceType: firstType,
-      serviceDate: now,
-      quoteDate:   now,
+      serviceDate: initialStatus === 'Agendado' ? new Date() : undefined,
+      quoteDate: initialStatus === 'Cotizacion' ? now : undefined,
       serviceItems: [{
         id: nanoid(),
         name: firstType,
@@ -158,7 +166,7 @@ export function ServiceForm(props:Props){
       serviceAdvisorName: authUser?.name,
       serviceAdvisorSignatureDataUrl: authUser?.signatureDataUrl ?? '',
     } as ServiceFormValues;
-  }, [initData, serviceTypes]);
+  }, [initData, serviceTypes, mode]);
 
   const form = useForm<ServiceFormValues>({
     resolver: zodResolver(serviceFormSchema),
@@ -170,11 +178,17 @@ export function ServiceForm(props:Props){
   const { totalCost, totalSuppliesWorkshopCost, serviceProfit } = useServiceTotals(form);
   
   const watchedStatus = watch('status');
+  const watchedServiceType = watch('serviceType');
 
   useEffect(() => {
     const subscription = watch((value, { name, type }) => {
+      // Set reception date automatically when moving to 'En Taller'
       if (name === 'status' && value.status === 'En Taller' && !value.receptionDateTime) {
         setValue('receptionDateTime', new Date());
+      }
+      // If service type changes and the first service item name is empty, set it
+      if (name === 'serviceType' && value.serviceItems?.[0]?.name === '') {
+        setValue('serviceItems.0.name', value.serviceType || '');
       }
     });
     return () => subscription.unsubscribe();
@@ -286,7 +300,22 @@ export function ServiceForm(props:Props){
           subTotal: totalCost / (1 + IVA),
           taxAmount: totalCost - (totalCost / (1 + IVA)),
       };
-      onSubmit(dataToSubmit);
+      onSubmit(cleanObjectForFirestore(dataToSubmit));
+  };
+  
+  const cleanObjectForFirestore = (obj: any): any => {
+    if (obj === null || typeof obj !== 'object') {
+        return obj === undefined ? null : obj;
+    }
+    if (Array.isArray(obj)) {
+        return obj.map(cleanObjectForFirestore).filter(v => v !== null); // Filter out nulls from arrays too
+    }
+    return Object.entries(obj).reduce((acc, [key, value]) => {
+        if (value !== undefined) {
+            acc[key] = cleanObjectForFirestore(value);
+        }
+        return acc;
+    }, {} as any);
   };
 
   return (
