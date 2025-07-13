@@ -45,6 +45,7 @@ interface Props {
   technicians: Technician[]
   inventoryItems: InventoryItem[]
   serviceTypes: ServiceTypeRecord[]
+  serviceHistory: any[];
   onSubmit: (data: ServiceRecord | QuoteRecord) => Promise<void>
   onClose: () => void
   isReadOnly?: boolean
@@ -55,7 +56,7 @@ interface Props {
   onStatusChange?: (s?: ServiceRecord['status']) => void
 }
 
-export function ServiceForm({
+export function ServiceForm ({
   initialDataService,
   initialDataQuote,
   vehicles: parentVehicles,
@@ -107,6 +108,7 @@ export function ServiceForm({
 
   const [isPreviewOpen, setIsPreviewOpen] = useState(false)
   const [serviceForPreview, setServiceForPreview] = useState<ServiceRecord | null>(null);
+  const [vehicleForPreview, setVehicleForPreview] = useState<Vehicle | null>(null);
 
   const [isVehicleDialogOpen, setIsVehicleDialogOpen] = useState(false)
   const [newVehicleInitialData, setNewVehicleInitialData] =
@@ -126,10 +128,11 @@ export function ServiceForm({
 
   useEffect(() => {
     if (!initData) {
+      const firstType = serviceTypes[0]?.name ?? 'Servicio General';
       reset({
         status: mode === 'quote' ? 'Cotizacion' : 'En Taller',
-        serviceType: serviceTypes[0]?.name ?? 'Servicio General',
-        serviceItems: [{ id: nanoid(), name: serviceTypes[0]?.name ?? 'Servicio General', price: undefined, suppliesUsed: [] }],
+        serviceType: firstType,
+        serviceItems: [{ id: nanoid(), name: '', price: undefined, suppliesUsed: [] }],
         photoReports: [{ id: `rep_recepcion_${Date.now()}`, date: new Date().toISOString(), description: 'Notas de la Recepción', photos: [] }],
         serviceDate: new Date(),
         quoteDate: mode === 'quote' ? new Date() : undefined,
@@ -203,7 +206,6 @@ export function ServiceForm({
             supplyId: sp.supplyId,
             quantity: sp.quantity,
             supplyName: inv?.name ?? 'Desconocido',
-            isService: inv?.isService ?? false,
             unitType: inv?.unitType ?? 'units',
             unitPrice: inv?.unitPrice ?? 0,
             sellingPrice: inv?.sellingPrice ?? 0,
@@ -239,7 +241,11 @@ export function ServiceForm({
       deliveryDateTime: formData.deliveryDateTime?.toISOString(),
       serviceAdvisorSignatureDataUrl: formData.serviceAdvisorSignatureDataUrl,
     } as ServiceRecord;
+
+    const vehicleDataForPreview = localVehicles.find(v => v.id === formData.vehicleId);
+
     setServiceForPreview(serviceDataForPreview);
+    setVehicleForPreview(vehicleDataForPreview || null);
     setIsPreviewOpen(true);
   };
 
@@ -302,6 +308,7 @@ export function ServiceForm({
           open={isPreviewOpen}
           onOpenChange={setIsPreviewOpen}
           service={serviceForPreview}
+          vehicle={vehicleForPreview}
         />
       )}
     </>
