@@ -1,4 +1,3 @@
-
 // src/hooks/use-service-form-hooks.ts
 
 import { useEffect, useMemo } from 'react';
@@ -68,7 +67,7 @@ export function useInitServiceForm(form: UseFormReturn<ServiceFormValues>, { ini
   useEffect(() => {
     let defaultValues: Partial<ServiceFormValues>;
 
-    if (initData) {
+    if (initData && 'id' in initData) {
       // Editing existing data
       defaultValues = {
         ...initData,

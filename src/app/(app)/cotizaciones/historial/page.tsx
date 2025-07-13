@@ -142,7 +142,7 @@ function HistorialCotizacionesPageComponent() {
          <ServiceDialog 
             open={isFormDialogOpen} 
             onOpenChange={setIsFormDialogOpen} 
-            quote={selectedQuote} 
+            service={selectedQuote} 
             vehicles={vehicles} 
             technicians={technicians} 
             inventoryItems={inventoryItems} 

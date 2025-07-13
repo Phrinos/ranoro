@@ -31,8 +31,8 @@ interface ServiceDialogProps {
   open?: boolean; 
   onOpenChange?: (isOpen: boolean) => void; 
   onVehicleCreated?: (newVehicle: Omit<Vehicle, 'id'>) => void; 
-  mode?: 'service' | 'quote'; // New mode prop
-  onDelete?: (id: string) => void; // For quote deletion
+  mode?: 'service' | 'quote';
+  onDelete?: (id: string) => void;
   onCancelService?: (serviceId: string, reason: string) => void;
   onViewQuoteRequest?: (serviceId: string) => void;
 }
@@ -49,7 +49,7 @@ export function ServiceDialog({
   open: controlledOpen,
   onOpenChange: setControlledOpen,
   onVehicleCreated,
-  mode = 'service', // Default to service mode
+  mode = 'service',
   onDelete,
   onCancelService,
 }: ServiceDialogProps) {
@@ -62,14 +62,11 @@ export function ServiceDialog({
   const open = isControlled ? controlledOpen : uncontrolledOpen;
   const onOpenChange = isControlled ? setControlledOpen : setUncontrolledOpen;
   
-  const quote = service?.status === 'Cotizacion' ? service : undefined;
-
   useEffect(() => {
     if (open) {
-      const initialRecord = service;
-      setCurrentStatus(initialRecord?.status);
+      setCurrentStatus(service?.status);
     }
-  }, [open, service, quote]);
+  }, [open, service]);
 
 
   // Mark signatures as "viewed" when the dialog opens
@@ -149,8 +146,7 @@ export function ServiceDialog({
   };
   
   const getDynamicTitles = () => {
-    const currentRecord = service;
-    const status = currentStatus || currentRecord?.status;
+    const status = currentStatus || service?.status;
 
     if (isReadOnly) {
         switch (status) {
@@ -160,7 +156,7 @@ export function ServiceDialog({
         }
     }
 
-    if (currentRecord?.id) { // Editing existing record
+    if (service?.id) { // Editing existing record
         switch (status) {
             case 'Cotizacion': return { title: "Editar Cotización", description: "Actualiza los detalles de la cotización." };
             case 'Agendado': return { title: "Editar Cita", description: "Actualiza los detalles de la cita." };
