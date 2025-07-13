@@ -361,6 +361,7 @@ export function ServiceForm(props:Props){
                          isReadOnly={props.isReadOnly}
                          isEnhancingText={isEnhancingText}
                          handleEnhanceText={handleEnhanceText as any}
+                         onOpenSignature={(kind) => setSignatureType(kind)}
                        />
                     </TabsContent>
                     <TabsContent value="photoreport" className="mt-0">

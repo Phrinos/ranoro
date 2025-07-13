@@ -55,6 +55,7 @@ interface ReceptionAndDeliveryProps {
       | "safetyInspection.inspectionNotes"
       | `photoReports.${number}.description`
   ) => void;
+  onOpenSignature: (kind: 'reception' | 'delivery') => void;
 }
 
 export const ReceptionAndDelivery = ({
@@ -62,6 +63,7 @@ export const ReceptionAndDelivery = ({
   isReadOnly,
   isEnhancingText,
   handleEnhanceText,
+  onOpenSignature
 }: ReceptionAndDeliveryProps) => {
   const { watch } = useFormContext<ServiceFormValues>();
   const customerSignatureReception = watch("customerSignatureReception");
@@ -181,6 +183,11 @@ export const ReceptionAndDelivery = ({
                 </div>
               )}
             </div>
+             {!isReadOnly && !customerSignatureReception && (
+              <Button type="button" variant="outline" className="w-full mt-2" onClick={() => onOpenSignature('reception')}>
+                <Signature className="mr-2 h-4 w-4" />Capturar Firma de Recepción
+              </Button>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -194,7 +201,6 @@ export const ReceptionAndDelivery = ({
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-            {/* donde esta esta informacion? */}
             <div className="space-y-2">
                 <FormLabel>Fecha y Hora de Entrega</FormLabel>
                 <div className="p-2 border rounded-md bg-muted/50 flex items-center justify-center text-sm font-medium h-10">
@@ -216,6 +222,11 @@ export const ReceptionAndDelivery = ({
                   </div>
                 )}
               </div>
+              {!isReadOnly && !customerSignatureDelivery && (
+                <Button type="button" variant="outline" className="w-full mt-2" onClick={() => onOpenSignature('delivery')}>
+                  <Signature className="mr-2 h-4 w-4" />Capturar Firma de Entrega
+                </Button>
+              )}
             </div>
         </CardContent>
       </Card>
