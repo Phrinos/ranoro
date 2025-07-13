@@ -45,7 +45,6 @@ interface Props {
   technicians: Technician[]
   inventoryItems: InventoryItem[]
   serviceTypes: ServiceTypeRecord[]
-  serviceHistory: ServiceRecord[]
   onSubmit: (data: ServiceRecord | QuoteRecord) => Promise<void>
   onClose: () => void
   isReadOnly?: boolean
@@ -94,7 +93,7 @@ export function ServiceForm({
     }, [initData]),
   })
   
-  const { control, setValue, getValues, trigger, formState, watch, reset } = form
+  const { control, setValue, getValues, formState, watch, reset, handleSubmit } = form
 
   /* -------------------------- CUSTOM HOOKS -------------------------- */
   useServiceStatusWatcher(form, onStatusChange)
@@ -130,7 +129,7 @@ export function ServiceForm({
       reset({
         status: mode === 'quote' ? 'Cotizacion' : 'En Taller',
         serviceType: serviceTypes[0]?.name ?? 'Servicio General',
-        serviceItems: [{ id: nanoid(), name: '', price: undefined, suppliesUsed: [] }],
+        serviceItems: [{ id: nanoid(), name: serviceTypes[0]?.name ?? 'Servicio General', price: undefined, suppliesUsed: [] }],
         photoReports: [{ id: `rep_recepcion_${Date.now()}`, date: new Date().toISOString(), description: 'Notas de la Recepción', photos: [] }],
         serviceDate: new Date(),
         quoteDate: mode === 'quote' ? new Date() : undefined,
@@ -147,7 +146,7 @@ export function ServiceForm({
   const handleSubmitInternal = useCallback(async (formValues: ServiceFormValues) => {
     if (isReadOnly) return onClose()
 
-    const isValid = await trigger()
+    const isValid = await form.trigger()
     if (!isValid) {
       toast({ title: 'Formulario incompleto', variant: 'destructive' })
       return
@@ -175,7 +174,7 @@ export function ServiceForm({
 
     await onSubmit(cleanObjectForFirestore(finalData) as ServiceRecord)
     onClose()
-  },[isReadOnly, onClose, trigger, toast, localVehicles, initData, technicians, totalCost, totalSuppliesWorkshopCost, serviceProfit, onSubmit])
+  },[isReadOnly, onClose, form, toast, localVehicles, initData, technicians, totalCost, totalSuppliesWorkshopCost, serviceProfit, onSubmit])
 
   const handleGenerateQuote = useCallback(async () => {
     const vehicle = localVehicles.find((v) => v.id === getValues('vehicleId'))
