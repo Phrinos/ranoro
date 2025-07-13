@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React, { useState, useEffect, useRef } from 'react';
@@ -24,17 +25,17 @@ import 'react-image-crop/dist/ReactCrop.css';
 
 const TIMEZONE_OPTIONS = [
   // Americas
-  { value: 'America/Mexico_City', label: 'Ciudad de México (CST/CDT)' },
-  { value: 'America/Cancun', label: 'Cancún (EST)' },
-  { value: 'America/Tijuana', label: 'Tijuana (PST/PDT)' },
-  { value: 'America/Bogota', label: 'Bogotá, Lima, Quito (EST)' },
-  { value: 'America/Santiago', label: 'Santiago (CLT/CLST)' },
-  { value: 'America/Buenos_Aires', label: 'Buenos Aires (ART)' },
-  { value: 'America/Caracas', label: 'Caracas (VET)' },
-  { value: 'America/Los_Angeles', label: 'Los Ángeles (PST/PDT)' },
-  { value: 'America/New_York', label: 'Nueva York (EST/EDT)' },
+  { value: 'America/Mexico_City', label: '(GMT-6) Ciudad de México (CST/CDT)' },
+  { value: 'America/Cancun', label: '(GMT-5) Cancún (EST)' },
+  { value: 'America/Tijuana', label: '(GMT-8) Tijuana (PST/PDT)' },
+  { value: 'America/Bogota', label: '(GMT-5) Bogotá, Lima, Quito' },
+  { value: 'America/Santiago', label: '(GMT-4) Santiago (CLT/CLST)' },
+  { value: 'America/Buenos_Aires', label: '(GMT-3) Buenos Aires (ART)' },
+  { value: 'America/Caracas', label: '(GMT-4) Caracas (VET)' },
+  { value: 'America/Los_Angeles', label: '(GMT-8) Los Ángeles (PST/PDT)' },
+  { value: 'America/New_York', label: '(GMT-5) Nueva York (EST/EDT)' },
   // Europe
-  { value: 'Europe/Madrid', label: 'Madrid, París (CET/CEST)' },
+  { value: 'Europe/Madrid', label: '(GMT+1) Madrid, París (CET/CEST)' },
 ];
 
 const LOCALSTORAGE_KEY = "workshopTicketInfo";
@@ -277,3 +278,4 @@ export function ConfigTallerPageContent() {
     </>
   );
 }
+
