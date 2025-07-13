@@ -390,10 +390,10 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
         <footer className="mt-auto pt-4 text-xs">
            <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 text-center mb-4">
                <div className="pt-2 flex flex-col justify-end">
-                    <div className="min-h-[56px] flex-grow flex items-center justify-center">
+                    <div className="min-h-[28px] flex-grow flex items-center justify-center">
                         {service.serviceAdvisorSignatureDataUrl && (
-                            <div className="relative w-full h-full max-w-[200px]">
-                                <Image src={normalizeDataUrl(service.serviceAdvisorSignatureDataUrl)} alt="Firma del asesor" width={200} height={56} style={{ objectFit: 'contain' }} unoptimized/>
+                            <div className="relative w-full h-full max-w-[100px]">
+                                <Image src={normalizeDataUrl(service.serviceAdvisorSignatureDataUrl)} alt="Firma del asesor" width={100} height={28} style={{ objectFit: 'contain' }} unoptimized/>
                             </div>
                         )}
                     </div>
@@ -401,11 +401,11 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
                         <p className="font-bold">ASESOR DE SERVICIO: {service.serviceAdvisorName?.toUpperCase() || '________________________________'}</p>
                     </div>
                 </div>
-                <div className="min-h-[130px] flex flex-col justify-end">
+                <div className="min-h-[65px] flex flex-col justify-end">
                    <div className="h-full flex-grow flex flex-col items-center justify-center">
                        {service.customerSignatureDelivery ? (
-                         <div className="relative w-48 h-24">
-                           <Image src={normalizeDataUrl(service.customerSignatureDelivery)} alt="Firma de conformidad" width={192} height={96} style={{ objectFit: 'contain' }} unoptimized/>
+                         <div className="relative w-24 h-12">
+                           <Image src={normalizeDataUrl(service.customerSignatureDelivery)} alt="Firma de conformidad" width={96} height={48} style={{ objectFit: 'contain' }} unoptimized/>
                          </div>
                        ) : (
                          isPublicView && showSignDelivery && onSignClick && (
