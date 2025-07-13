@@ -9,7 +9,7 @@ import { PlusCircle, List, Calendar as CalendarIcon, FileCheck, Eye, Loader2, Ed
 import { ServiceDialog } from "../components/dialog";
 import type { ServiceRecord, Vehicle, Technician, QuoteRecord, InventoryItem, CapacityAnalysisOutput, ServiceTypeRecord, WorkshopInfo } from "@/types";
 import { useToast } from "@/hooks/use-toast";
-import { format, parseISO, isToday, isTomorrow, compareAsc, isValid, isSameDay, addDays } from "date-fns";
+import { format, isToday, isTomorrow, compareAsc, isSameDay, addDays } from "date-fns";
 import { toZonedTime, zonedTimeToUtc } from "date-fns-tz";
 import { es } from 'date-fns/locale';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -23,6 +23,7 @@ import { inventoryService, personnelService, operationsService } from '@/lib/ser
 import type { VehicleFormValues } from "../../vehiculos/components/vehicle-form";
 import { CompleteServiceDialog } from '../components/CompleteServiceDialog';
 import { parseDate } from '@/lib/forms';
+import { isValid, parseISO } from 'date-fns';
 
 const handleAiError = (error: any, toast: any, context: string): string => {
     console.error(`AI Error in ${context}:`, error);
@@ -87,46 +88,49 @@ function AgendaPageComponent() {
   }, []);
   
   const { scheduledServices, todayServices, tomorrowServices, futureServices } = useMemo(() => {
-    if (isLoading) return { scheduledServices: [], todayServices: [], tomorrowServices: [], futureServices: [] };
-    
+    if (isLoading) {
+      return { scheduledServices: [], todayServices: [], tomorrowServices: [], futureServices: [] };
+    }
+  
+    // Include services that are either scheduled or already in the workshop but not yet delivered.
     const scheduled = allServices.filter(s => 
-      (s.status === 'Agendado' || (s.status === 'En Taller' && !s.deliveryDateTime)) && s.serviceDate
+        (s.status === 'Agendado' || s.status === 'En Taller') && !s.deliveryDateTime
     );
-    
+  
     const now = new Date();
     const today = toZonedTime(now, workshopTimezone);
     const tomorrow = addDays(today, 1);
-    
+  
     const byDateAsc = (a: ServiceRecord, b: ServiceRecord) => {
-        const dateA = parseDate(a.serviceDate);
-        const dateB = parseDate(b.serviceDate);
-        if (!dateA) return 1;
-        if (!dateB) return -1;
-        return compareAsc(dateA, dateB);
+      const dateA = parseDate(a.serviceDate);
+      const dateB = parseDate(b.serviceDate);
+      if (!dateA) return 1;
+      if (!dateB) return -1;
+      return compareAsc(dateA, dateB);
     };
-      
+  
     const isSame = (d: Date | null, ref: Date) => d && isValid(d) && isSameDay(d, ref);
-
+  
     const todayS = scheduled
-      .filter(s => isSame(toZonedTime(parseDate(s.serviceDate), workshopTimezone), today))
+      .filter((s) => isSame(parseDate(s.serviceDate), today))
       .sort(byDateAsc);
-      
+  
     const tomorrowS = scheduled
-      .filter(s => isSame(toZonedTime(parseDate(s.serviceDate), workshopTimezone), tomorrow))
+      .filter((s) => isSame(parseDate(s.serviceDate), tomorrow))
       .sort(byDateAsc);
-      
+  
     const futureS = scheduled
-      .filter(s => {
-        const d = toZonedTime(parseDate(s.serviceDate), workshopTimezone);
+      .filter((s) => {
+        const d = parseDate(s.serviceDate);
         return d && isValid(d) && d > tomorrow && !isSameDay(d, tomorrow);
       })
       .sort(byDateAsc);
-
-    return { 
-      scheduledServices: scheduled, 
-      todayServices: todayS, 
-      tomorrowServices: tomorrowS, 
-      futureServices: futureS 
+  
+    return {
+      scheduledServices: scheduled,
+      todayServices: todayS,
+      tomorrowServices: tomorrowS,
+      futureServices: futureS,
     };
   }, [allServices, isLoading, workshopTimezone]);
 
