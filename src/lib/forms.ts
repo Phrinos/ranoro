@@ -56,9 +56,8 @@ export const cleanObjectForFirestore = (obj: any): any => {
   for (const key in obj) {
     if (obj.hasOwnProperty(key)) {
       const value = obj[key];
-      // We explicitly DO NOT check for undefined here.
-      // The calling service is responsible for transforming undefined to null.
-      cleanedObj[key] = cleanObjectForFirestore(value);
+      // Explicitly check for undefined and convert to null
+      cleanedObj[key] = value === undefined ? null : cleanObjectForFirestore(value);
     }
   }
   return cleanedObj;
