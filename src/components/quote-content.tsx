@@ -92,7 +92,7 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
               <div className="rounded-md border border-gray-700 overflow-hidden">
                 <h3 className="font-semibold text-sm text-white bg-gray-700 p-2">Datos del Cliente:</h3>
                 <div className="space-y-0.5 p-3 bg-gray-50 text-sm">
-                  <p><span className="font-semibold">Nombre:</span> <span className="font-bold">{vehicle?.ownerName?.toUpperCase() || ''}</span></p>
+                  <p><span className="font-semibold">Nombre:</span> <span className="font-bold">{vehicle?.ownerName || ''}</span></p>
                   <p><span className="font-semibold">Teléfono:</span> <span className="font-bold">{vehicle?.ownerPhone || ''}</span></p>
                   {vehicle?.ownerEmail && <p><span className="font-semibold">Email:</span> <span className="font-bold">{vehicle.ownerEmail}</span></p>}
                 </div>
