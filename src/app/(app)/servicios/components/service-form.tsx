@@ -10,7 +10,7 @@ import { useCallback, useMemo, useState, useEffect, useRef } from 'react'
 import { nanoid } from 'nanoid'
 import {
   Ban, Camera, CheckCircle, Download, Eye, ShieldCheck, Trash2, Wrench, BrainCircuit, Loader2, PlusCircle, Signature,
-  CalendarIcon
+  CalendarIcon, CardDescription, CardHeader, CardTitle
 } from 'lucide-react'
 import { parseISO, format, setHours, setMinutes, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -24,9 +24,6 @@ import {
 import {
   Card,
   CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
 } from '@/components/ui/card'
 import {
   Dialog,
@@ -141,7 +138,7 @@ export function ServiceForm(props:Props){
       status: 'Cotizacion',
       serviceType: firstType,
       serviceDate: now,
-      quoteDate: now,
+      quoteDate:   now,
       serviceItems: [{
         id: nanoid(),
         name: firstType,
@@ -163,7 +160,7 @@ export function ServiceForm(props:Props){
   const form = useForm<ServiceFormValues>({
     resolver: zodResolver(serviceFormSchema),
     defaultValues,
-    values: defaultValues, // This ensures the form is reactive to changes in defaultValues
+    values: defaultValues,
   });
   
   const { control, setValue, watch, formState, handleSubmit } = form;
@@ -303,7 +300,7 @@ export function ServiceForm(props:Props){
                 />
 
                 <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                    <TabsList className={cn("grid w-full mb-4", "data-[state=active]:bg-destructive data-[state=active]:text-destructive-foreground", "grid-cols-4")}>
+                    <TabsList className={cn("grid w-full mb-4 sticky top-0 z-10 bg-background py-2", "data-[state=active]:bg-destructive data-[state=active]:text-destructive-foreground", "grid-cols-4")}>
                         <TabsTrigger value="details" className="data-[state=active]:bg-destructive data-[state=active]:text-primary-foreground">Detalles</TabsTrigger>
                         <TabsTrigger value="reception" className="data-[state=active]:bg-destructive data-[state=active]:text-primary-foreground">Recepción/Entrega</TabsTrigger>
                         <TabsTrigger value="photoreport" className="data-[state=active]:bg-destructive data-[state=active]:text-primary-foreground">Fotos</TabsTrigger>
