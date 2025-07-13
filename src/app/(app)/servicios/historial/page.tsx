@@ -11,13 +11,14 @@ import { TableToolbar } from "@/components/shared/table-toolbar";
 import type { ServiceRecord, Vehicle, Technician, InventoryItem, QuoteRecord, ServiceTypeRecord } from "@/types";
 import { useToast } from "@/hooks/use-toast";
 import { useTableManager } from "@/hooks/useTableManager";
-import { isSameDay, parseISO, isValid } from "date-fns";
+import { isSameDay, isValid } from "date-fns";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ServiceAppointmentCard } from "../components/ServiceAppointmentCard";
 import { Loader2 } from "lucide-react";
 import { operationsService, inventoryService, personnelService } from '@/lib/services';
 import { collection, onSnapshot, doc, getDoc, updateDoc, addDoc, writeBatch } from 'firebase/firestore';
 import { db } from '@/lib/firebaseClient';
+import { parseDate } from '@/lib/forms';
 
 function HistorialServiciosPageComponent() {
   const { toast } = useToast();
@@ -80,12 +81,12 @@ function HistorialServiciosPageComponent() {
       .filter((s) => {
         const status = s.status as string;
         const deliveryDate = s.deliveryDateTime
-          ? parseISO(s.deliveryDateTime)
+          ? parseDate(s.deliveryDateTime)
           : null;
         const isDeliveredToday =
           deliveryDate && isValid(deliveryDate) && isSameDay(deliveryDate, today);
 
-        const serviceDate = s.serviceDate ? parseISO(s.serviceDate) : null;
+        const serviceDate = s.serviceDate ? parseDate(s.serviceDate) : null;
         const isScheduledForToday =
           serviceDate && isValid(serviceDate) && isSameDay(serviceDate, today);
 
@@ -97,11 +98,9 @@ function HistorialServiciosPageComponent() {
         return false;
       })
       .sort((a, b) => {
-        const dateA = a.serviceDate ? parseISO(a.serviceDate) : new Date(0);
-        const dateB = b.serviceDate ? parseISO(b.serviceDate) : new Date(0);
-        return isValid(dateA) && isValid(dateB)
-          ? dateA.getTime() - dateB.getTime()
-          : 0;
+        const dateA = a.serviceDate ? parseDate(a.serviceDate)?.getTime() ?? 0 : 0;
+        const dateB = b.serviceDate ? parseDate(b.serviceDate)?.getTime() ?? 0 : 0;
+        return dateA - dateB;
       });
   }, [allServices]);
 
@@ -302,7 +301,6 @@ function HistorialServiciosPageComponent() {
           technicians={technicians}
           inventoryItems={inventoryItems}
           serviceTypes={serviceTypes}
-          onVehicleCreated={handleVehicleCreated}
           onCancelService={handleCancelService}
           mode="service"
           onSave={handleSaveService}
