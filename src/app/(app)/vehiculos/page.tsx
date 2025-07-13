@@ -5,8 +5,8 @@
 import { useState, useMemo, useEffect, useCallback, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Button } from "@/components/ui/button";
-import { PlusCircle } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
+import { PlusCircle, Car, AlertTriangle, Activity, CalendarX, BarChart3 } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import type { Vehicle, VehiclePriceList } from "@/types";
 import type { VehicleFormValues } from "./components/vehicle-form";
 import { useToast } from "@/hooks/use-toast";
@@ -20,8 +20,7 @@ import { TableToolbar } from '@/components/shared/table-toolbar';
 import { Loader2 } from 'lucide-react';
 import { useTableManager } from '@/hooks/useTableManager';
 import { inventoryService } from '@/lib/services';
-import { collection, onSnapshot, doc, updateDoc, addDoc, deleteDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebaseClient';
+import { differenceInMonths, parseISO, isValid } from 'date-fns';
 
 const vehicleSortOptions = [
     { value: 'lastServiceDate_desc', label: 'Último Servicio (Más Reciente)' },
@@ -36,7 +35,7 @@ const vehicleSortOptions = [
 
 function VehiculosPageComponent() {
     const searchParams = useSearchParams();
-    const defaultTab = searchParams.get('tab') || 'vehiculos';
+    const defaultTab = searchParams.get('tab') || 'resumen';
     const { toast } = useToast();
     
     const [activeTab, setActiveTab] = useState(defaultTab);
@@ -74,6 +73,32 @@ function VehiculosPageComponent() {
       dateFilterKey: 'lastServiceDate',
       initialSortOption: 'lastServiceDate_desc', // Default sort
     });
+
+    const vehicleSummary = useMemo(() => {
+        const now = new Date();
+        const total = allVehicles.length;
+        let recent = 0;
+        let inactive6Months = 0;
+        let inactive12Months = 0;
+
+        allVehicles.forEach(v => {
+            if (v.lastServiceDate) {
+                const lastService = parseISO(v.lastServiceDate);
+                if (isValid(lastService)) {
+                    const monthsSinceService = differenceInMonths(now, lastService);
+                    if (monthsSinceService <= 1) recent++;
+                    if (monthsSinceService >= 6) inactive6Months++;
+                    if (monthsSinceService >= 12) inactive12Months++;
+                }
+            } else {
+                // Si no tiene fecha de último servicio, cuenta como inactivo
+                inactive6Months++;
+                inactive12Months++;
+            }
+        });
+
+        return { total, recent, inactive6Months, inactive12Months };
+    }, [allVehicles]);
     
     const handleOpenVehicleDialog = (vehicle: Vehicle | null = null) => {
         setEditingVehicle(vehicle);
@@ -82,7 +107,7 @@ function VehiculosPageComponent() {
 
     const handleSaveVehicle = async (data: VehicleFormValues) => {
         try {
-            await inventoryService.addVehicle(data);
+            await inventoryService.saveVehicle(data, editingVehicle?.id);
             toast({ title: `Vehículo ${editingVehicle ? 'Actualizado' : 'Creado'}` });
             setIsVehicleDialogOpen(false);
             setEditingVehicle(null);
@@ -130,10 +155,20 @@ function VehiculosPageComponent() {
             </div>
             
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                <TabsList className="grid w-full grid-cols-2 mb-6">
+                <TabsList className="grid w-full grid-cols-3 mb-6">
+                    <TabsTrigger value="resumen" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Resumen</TabsTrigger>
                     <TabsTrigger value="vehiculos" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Lista de Vehículos</TabsTrigger>
                     <TabsTrigger value="precotizaciones" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Precotizaciones</TabsTrigger>
                 </TabsList>
+
+                <TabsContent value="resumen" className="mt-0">
+                    <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+                        <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Total de Vehículos</CardTitle><Car className="h-4 w-4 text-muted-foreground"/></CardHeader><CardContent><div className="text-2xl font-bold">{vehicleSummary.total}</div><p className="text-xs text-muted-foreground">Vehículos en la base de datos.</p></CardContent></Card>
+                        <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Actividad Reciente</CardTitle><Activity className="h-4 w-4 text-muted-foreground"/></CardHeader><CardContent><div className="text-2xl font-bold">{vehicleSummary.recent}</div><p className="text-xs text-muted-foreground">Visitaron el taller en los últimos 30 días.</p></CardContent></Card>
+                        <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Vehículos Inactivos</CardTitle><CalendarX className="h-4 w-4 text-orange-500"/></CardHeader><CardContent><div className="text-2xl font-bold text-orange-600">{vehicleSummary.inactive6Months}</div><p className="text-xs text-muted-foreground">Sin servicio por más de 6 meses.</p></CardContent></Card>
+                        <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Vehículos en Riesgo</CardTitle><AlertTriangle className="h-4 w-4 text-red-500"/></CardHeader><CardContent><div className="text-2xl font-bold text-red-600">{vehicleSummary.inactive12Months}</div><p className="text-xs text-muted-foreground">Sin servicio por más de 12 meses.</p></CardContent></Card>
+                    </div>
+                </TabsContent>
 
                 <TabsContent value="vehiculos" className="mt-0">
                     <div className="space-y-4">
@@ -206,3 +241,4 @@ export default function VehiculosPageWrapper() {
         </Suspense>
     );
 }
+
