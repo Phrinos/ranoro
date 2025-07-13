@@ -28,7 +28,6 @@ export function ServiceFormHeader({ onPreview, isReadOnly, status }: ServiceForm
   ].filter((t) => t.show);
 
   return (
-    <Tabs defaultValue="servicio" className="w-full">
       <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm -mx-6 px-6 pt-2 pb-2 border-b">
         <div className="flex justify-between items-center">
           <TabsList className={cn('grid w-full mb-0', `grid-cols-${tabs.length}`)}>
@@ -48,7 +47,6 @@ export function ServiceFormHeader({ onPreview, isReadOnly, status }: ServiceForm
           )}
         </div>
       </div>
-    </Tabs>
   );
 }
 

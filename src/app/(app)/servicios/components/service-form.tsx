@@ -34,6 +34,7 @@ import { ServiceFormBody } from './ServiceFormBody'
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog'
 import { VehicleDialog } from '../../vehiculos/components/vehicle-dialog'
 import type { VehicleFormValues } from '../../vehiculos/components/vehicle-form'
+import { Tabs } from '@/components/ui/tabs'
 
 interface Props {
   initialDataService?: ServiceRecord | null
@@ -189,30 +190,31 @@ export function ServiceForm({
     <>
       <FormProvider {...form}>
         <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
-          
-          <ServiceFormHeader
-            onPreview={() => setIsPreviewOpen(true)}
-            isReadOnly={isReadOnly}
-            status={watch('status')}
-          />
+          <Tabs defaultValue="servicio" className="w-full">
+            <ServiceFormHeader
+              onPreview={() => setIsPreviewOpen(true)}
+              isReadOnly={isReadOnly}
+              status={watch('status')}
+            />
 
-          <ServiceFormBody
-            form={form}
-            isReadOnly={isReadOnly}
-            localVehicles={localVehicles}
-            serviceHistory={serviceHistory}
-            openNewVehicleDialog={openNewVehicleDialog}
-            technicians={technicians}
-            inventoryItems={currentInventoryItems}
-            serviceTypes={serviceTypes}
-            mode={mode}
-            totalCost={totalCost}
-            totalSuppliesWorkshopCost={totalSuppliesWorkshopCost}
-            serviceProfit={serviceProfit}
-            handleGenerateQuote={handleGenerateQuote}
-            isGeneratingQuote={isGeneratingQuote}
-          />
-          
+            <ServiceFormBody
+              form={form}
+              isReadOnly={isReadOnly}
+              localVehicles={localVehicles}
+              serviceHistory={serviceHistory}
+              openNewVehicleDialog={openNewVehicleDialog}
+              technicians={technicians}
+              inventoryItems={currentInventoryItems}
+              serviceTypes={serviceTypes}
+              mode={mode}
+              totalCost={totalCost}
+              totalSuppliesWorkshopCost={totalSuppliesWorkshopCost}
+              serviceProfit={serviceProfit}
+              handleGenerateQuote={handleGenerateQuote}
+              isGeneratingQuote={isGeneratingQuote}
+            />
+          </Tabs>
+
           <ServiceFormFooter
             isEditing={isEditing}
             isReadOnly={isReadOnly}
