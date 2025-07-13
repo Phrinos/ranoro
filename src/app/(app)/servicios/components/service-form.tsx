@@ -51,20 +51,7 @@ import { enhanceText } from '@/ai/flows/text-enhancement-flow'
 import { PhotoUploader } from './PhotoUploader';
 import { serviceFormSchema } from '@/schemas/service-form';
 import { parseDate } from '@/lib/forms';
-import { useInitServiceForm, useServiceTotals } from '@/hooks/use-service-form-hooks'
-
-/* ░░░░░░  COMPONENTE  ░░░░░░ */
-
-interface Props {
-  initialDataService?: ServiceRecord|null
-  vehicles:Vehicle[]; technicians:Technician[]; inventoryItems:InventoryItem[]
-  serviceTypes:ServiceTypeRecord[]
-  onSubmit:(d:ServiceRecord|QuoteRecord)=>Promise<void>
-  children?: React.ReactNode;
-  isReadOnly?:boolean
-  mode?:'service'|'quote'
-  onClose:()=>void
-}
+import { useServiceTotals } from '@/hooks/use-service-form-hooks'
 
 // Separate component for the Photo Report Tab
 const PhotoReportTab = ({ control, isReadOnly, serviceId, onPhotoUploaded, onViewImage }: any) => {
@@ -102,26 +89,91 @@ const PhotoReportTab = ({ control, isReadOnly, serviceId, onPhotoUploaded, onVie
     );
 };
 
+/* ░░░░░░  COMPONENTE  ░░░░░░ */
+interface Props {
+  initialDataService?: ServiceRecord | null;
+  children?: React.ReactNode;
+  vehicles: Vehicle[];
+  technicians: Technician[];
+  inventoryItems: InventoryItem[];
+  serviceTypes: ServiceTypeRecord[];
+  onSubmit: (d: ServiceRecord | QuoteRecord) => Promise<void>;
+  onClose: () => void;
+  isReadOnly?: boolean;
+  mode?: 'service' | 'quote';
+  onDelete?: (id: string) => void;
+  onCancelService?: (id: string, r: string) => void;
+  onStatusChange?: (s?: ServiceRecord['status']) => void;
+}
 
 export function ServiceForm(props:Props){
   const {
-    initialDataService,
-    serviceTypes,
+    initialDataService, serviceTypes,
     vehicles:parentVehicles, technicians, inventoryItems:invItems,
-    onSubmit, children
+    onSubmit, children, onClose, isReadOnly = false, mode = 'service'
   } = props
 
   const initData = initialDataService ?? null
   const { toast } = useToast()
+  
+  const defaultValues = useMemo<ServiceFormValues>(() => {
+    const firstType = serviceTypes[0]?.name ?? 'Servicio General';
+    const now = new Date();
+  
+    if (initData && 'id' in initData) {
+      return {
+        ...initData,
+        status: initData.status ?? 'Cotizacion',
+        serviceType: initData.serviceType ?? firstType,
+        serviceDate:       initData.serviceDate       ? parseDate(initData.serviceDate)       : undefined,
+        quoteDate:         initData.quoteDate         ? parseDate(initData.quoteDate)         : undefined,
+        receptionDateTime: initData.receptionDateTime ? parseDate(initData.receptionDateTime) : undefined,
+        deliveryDateTime:  initData.deliveryDateTime  ? parseDate(initData.deliveryDateTime)  : undefined,
+        serviceItems: initData.serviceItems?.length
+          ? initData.serviceItems
+          : [{ id: nanoid(), name: initData.serviceType ?? firstType, price: initData.totalCost, suppliesUsed: [] }],
+        photoReports: initData.photoReports?.length
+          ? initData.photoReports
+          : [{ id: `rep_recepcion_${Date.now()}`, date: now.toISOString(), description: 'Notas de la Recepción', photos: [] }],
+      } as ServiceFormValues;
+    }
+  
+    const authUser = (() => {
+      try { return JSON.parse(localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY) ?? 'null') as User | null }
+      catch { return null }
+    })();
+  
+    return {
+      status: 'Cotizacion',
+      serviceType: firstType,
+      serviceDate: new Date(),
+      quoteDate:   new Date(),
+      serviceItems: [{
+        id: nanoid(),
+        name: firstType,
+        price: undefined,
+        suppliesUsed: [],
+      }],
+      photoReports: [{
+        id: `rep_recepcion_${Date.now()}`,
+        date: new Date().toISOString(),
+        description: 'Notas de la Recepción',
+        photos: [],
+      }],
+      serviceAdvisorId: authUser?.id,
+      serviceAdvisorName: authUser?.name,
+      serviceAdvisorSignatureDataUrl: authUser?.signatureDataUrl ?? '',
+    } as ServiceFormValues;
+  }, [initData, serviceTypes]);
+
 
   const form = useForm<ServiceFormValues>({
     resolver: zodResolver(serviceFormSchema),
+    defaultValues,
+    values: defaultValues,
   })
 
-  useInitServiceForm(form, { initData, serviceTypes });
-
   const { control, setValue, watch, formState, handleSubmit } = form;
-
   const { totalCost, totalSuppliesWorkshopCost, serviceProfit } = useServiceTotals(form);
   
   const [activeTab, setActiveTab] = useState('details')
@@ -279,8 +331,6 @@ export function ServiceForm(props:Props){
                          <PhotoReportTab
                             control={control}
                             isReadOnly={props.isReadOnly}
-                            isEnhancingText={isEnhancingText}
-                            handleEnhanceText={handleEnhanceText}
                             serviceId={initData?.id || 'new'}
                             onPhotoUploaded={handlePhotoUploaded}
                             onViewImage={handleViewImage}
