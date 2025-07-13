@@ -164,6 +164,10 @@ export function ServiceDialog({
 
   const { title: dialogTitle, description: dialogDescription } = getDynamicTitles();
   const canBeCancelled = currentService?.id && currentService.status !== 'Cancelado' && currentService.status !== 'Entregado';
+  
+  // Create a dynamic key for the form that changes when a signature is added.
+  const formKey = `${currentService?.id}-${currentService?.customerSignatureReception}-${currentService?.customerSignatureDelivery}`;
+
 
   return (
     <>
@@ -182,6 +186,7 @@ export function ServiceDialog({
               )}
             </DialogHeader>
             <ServiceForm
+            key={formKey} // Force re-mount of the form when signatures change
             initialDataService={currentService}
             vehicles={vehicles} 
             technicians={technicians}
