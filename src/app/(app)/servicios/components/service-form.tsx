@@ -3,7 +3,7 @@
 'use client'
 
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useForm } from 'react-hook-form'
+import { useForm, FormProvider } from 'react-hook-form'
 import { nanoid } from 'nanoid'
 import { useToast } from '@/hooks/use-toast'
 import React, { useState, useEffect, useCallback, useRef } from 'react'
@@ -15,7 +15,6 @@ import {
   DialogTitle,
   DialogFooter
 } from "@/components/ui/dialog"
-import { Form } from '@/components/ui/form'
 import { VehicleDialog } from '../../vehiculos/components/vehicle-dialog'
 import { SignatureDialog } from './signature-dialog'
 import { UnifiedPreviewDialog } from '@/components/shared/unified-preview-dialog'
@@ -89,7 +88,7 @@ export function ServiceForm({
   const [isGeneratingQuote, setIsGeneratingQuote] = useState(false);
   const [isEnhancingText, setIsEnhancingText] = useState<string | null>(null);
   const [isImageViewerOpen, setIsImageViewerOpen] = useState(false);
-  const [viewingImageUrl, setViewingImageUrl] = useState<string | null>('');
+  const [viewingImageUrl, setViewingImageUrl] = useState<string | null>(null);
   
   const status = watch('status');
   const serviceId = watch('id') || 'new';
@@ -169,7 +168,7 @@ export function ServiceForm({
     const currentReport = photoReports[reportIndex];
     if (currentReport) {
         const updatedPhotos = [...(currentReport.photos || []), url];
-        setValue(`photoReports.${index}.photos`, updatedPhotos, { shouldDirty: true });
+        setValue(`photoReports.${reportIndex}.photos`, updatedPhotos, { shouldDirty: true });
     }
   }, [getValues, setValue]);
 
@@ -186,10 +185,15 @@ export function ServiceForm({
     { value: 'seguridad', label: 'Revisión',   icon: ShieldCheck,  show: showAdvancedTabs },
   ].filter((t) => t.show);
   
-  const gridColsClass = `grid-cols-${tabs.length}`;
+  const gridColsClass = 
+    tabs.length === 4 ? 'grid-cols-4' :
+    tabs.length === 3 ? 'grid-cols-3' :
+    tabs.length === 2 ? 'grid-cols-2' :
+    'grid-cols-1';
 
   return (
     <>
+    <FormProvider {...form}>
       <DialogHeader className="p-6 pb-2">
           <DialogTitle>{dialogTitle}</DialogTitle>
           <DialogDescription>{dialogDescription}</DialogDescription>
@@ -212,13 +216,7 @@ export function ServiceForm({
           </Tabs>
       </div>
       
-      <Form {...form}>
-        <form id="service-form" onSubmit={handleSubmit(handleSave)}>
-          {/* Main content is now inside the ServiceForm component */}
-        </form>
-      </Form>
-      
-      <div className="flex-grow overflow-y-auto px-6">
+      <form id="service-form" onSubmit={handleSubmit(handleSave)} className="flex-grow overflow-y-auto px-6">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsContent value="servicio" className="mt-6">
                 <Card className="shadow-none border-none p-0"><CardContent className="p-0 space-y-6">
@@ -230,11 +228,12 @@ export function ServiceForm({
             <TabsContent value="reporte" className="mt-6"><PhotoReportTab control={control} isReadOnly={isReadOnly} isEnhancingText={isEnhancingText} handleEnhanceText={handleEnhanceText} serviceId={serviceId} onPhotoUploaded={handlePhotoUpload} onViewImage={handleViewImage} /></TabsContent>
             <TabsContent value="seguridad" className="mt-6"><SafetyChecklist control={control} isReadOnly={isReadOnly} onSignatureClick={handleSignatureClick} signatureDataUrl={watch('safetyInspection.technicianSignature')} isEnhancingText={isEnhancingText} handleEnhanceText={handleEnhanceText} serviceId={serviceId} onPhotoUploaded={(itemName, urls) => { const currentVal = getValues(`safetyInspection.${itemName as keyof ServiceFormValues['safetyInspection']}`); setValue(`safetyInspection.${itemName as keyof ServiceFormValues['safetyInspection']}`, { ...(currentVal || { status: 'na' }), photos: [...(currentVal?.photos || []), ...urls] }, { shouldDirty: true }); }} onViewImage={handleViewImage} /></TabsContent>
         </Tabs>
-      </div>
+      </form>
       
       <DialogFooter className="p-6 pt-4 border-t">
           {children}
       </DialogFooter>
+    </FormProvider>
 
       <VehicleDialog open={isVehicleDialogOpen} onOpenChange={setIsVehicleDialogOpen} onSave={(data) => { console.log("New vehicle data:", data); setIsVehicleDialogOpen(false); }} />
       <SignatureDialog open={isSignatureDialogOpen} onOpenChange={setIsSignatureDialogOpen} onSave={(sig) => { setValue('safetyInspection.technicianSignature', sig, { shouldDirty: true }); setIsSignatureDialogOpen(false); }} />
@@ -283,4 +282,3 @@ const PhotoReportTab = ({ control, isReadOnly, isEnhancingText, handleEnhanceTex
         </Card>
     );
 }
-
