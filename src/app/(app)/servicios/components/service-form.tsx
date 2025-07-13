@@ -3,7 +3,7 @@
 'use client'
 
 import { zodResolver } from '@hookform/resolvers/zod'
-import { FormProvider, useForm, useFieldArray } from 'react-hook-form'
+import { FormProvider, useForm, useFieldArray, useFormContext } from 'react-hook-form'
 import { nanoid } from 'nanoid'
 import { useToast } from '@/hooks/use-toast'
 import React, { useState, useEffect, useCallback, useRef } from 'react'
@@ -24,14 +24,14 @@ import { ReceptionAndDelivery } from './ReceptionAndDelivery'
 import { SafetyChecklist } from './SafetyChecklist'
 import { PhotoUploader } from './PhotoUploader'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Card, CardContent } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import Image from "next/image";
 import { Eye, Loader2 } from 'lucide-react'
-import { Wrench, CheckCircle, ShieldCheck, Camera } from 'lucide-react'
+import { Wrench, CheckCircle, ShieldCheck, Camera, Trash2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
-import { useServiceStatusWatcher, useServiceTotals, useInitServiceForm } from '@/hooks/use-service-form-hooks'
+import { useServiceTotals, useInitServiceForm } from '@/hooks/use-service-form-hooks'
 import { suggestQuote } from '@/ai/flows/quote-suggestion-flow';
 import { enhanceText } from '@/ai/flows/text-enhancement-flow';
 
