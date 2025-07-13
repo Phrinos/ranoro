@@ -39,7 +39,7 @@ export default function ServiceSheetLayout({
                   width={140}
                   height={40}
                   className="dark:invert h-auto"
-                  style={{ width: '120px', height: 'auto' }}
+                  style={{ width: 'auto', height: 'auto' }}
                   data-ai-hint="ranoro logo"
                 />
              </Link>
