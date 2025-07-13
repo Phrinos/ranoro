@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import type { SaleReceipt, ServiceRecord, Vehicle, Technician, ServiceItem, WorkshopInfo } from '@/types';

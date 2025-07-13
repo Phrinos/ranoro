@@ -140,7 +140,7 @@ export function ServiceDetailsCard({
                 suppliers={suppliers}
               />
           ))}
-          {!isReadOnly && (<Button type="button" variant="outline" onClick={() => appendServiceItem({ id: `item_${Date.now()}`, name: '', price: undefined, suppliesUsed: [] })}><PlusCircle className="mr-2 h-4 w-4"/> Añadir Trabajo</Button>)}
+          {!isReadOnly && (<Button type="button" variant="outline" onClick={() => appendServiceItem({ id: `item_${Date.now()}`, name: '', price: 0, suppliesUsed: [] })}><PlusCircle className="mr-2 h-4 w-4"/> Añadir Trabajo</Button>)}
           {mode === 'quote' && !isReadOnly && (<Button type="button" variant="secondary" onClick={onGenerateQuoteWithAI} disabled={isGeneratingQuote}>{isGeneratingQuote ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <BrainCircuit className="mr-2 h-4 w-4" />}Sugerir Cotización con IA</Button>)}
         </div>
         
