@@ -206,6 +206,7 @@ export function ServiceForm(props:Props){
   const [viewingImageUrl, setViewingImageUrl] = useState<string | null>(null)
   const [isGeneratingQuote, setIsGeneratingQuote] = useState(false)
   const [isEnhancingText, setIsEnhancingText] = useState<string | null>(null)
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   
   const [allCategories, setAllCategories] = useState<InventoryCategory[]>([]);
   const [allSuppliers, setAllSuppliers] = useState<Supplier[]>([]);
@@ -354,12 +355,19 @@ export function ServiceForm(props:Props){
                 />
 
                 <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                    <TabsList className={cn("grid w-full mb-4 sticky top-0 z-10 bg-background py-2", "grid-cols-4")}>
-                        <TabsTrigger value="details" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Detalles</TabsTrigger>
-                        <TabsTrigger value="reception" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Recepción/Entrega</TabsTrigger>
-                        <TabsTrigger value="photoreport" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Fotos</TabsTrigger>
-                        <TabsTrigger value="checklist" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Revisión</TabsTrigger>
-                    </TabsList>
+                    <div className="flex justify-between items-center mb-4 sticky top-0 z-10 bg-background py-2">
+                        <TabsList className={cn("grid w-full", "grid-cols-4")}>
+                            <TabsTrigger value="details" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Detalles</TabsTrigger>
+                            <TabsTrigger value="reception" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Recepción/Entrega</TabsTrigger>
+                            <TabsTrigger value="photoreport" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Fotos</TabsTrigger>
+                            <TabsTrigger value="checklist" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Revisión</TabsTrigger>
+                        </TabsList>
+                        {initialDataService && (
+                            <Button variant="outline" size="icon" className="ml-2" onClick={() => setIsPreviewOpen(true)}>
+                                <Eye className="h-4 w-4" />
+                            </Button>
+                        )}
+                    </div>
                     <TabsContent value="details" className="mt-0">
                         <ServiceDetailsCard
                             isReadOnly={props.isReadOnly}
@@ -431,6 +439,14 @@ export function ServiceForm(props:Props){
         onSave={handleSignatureSave}
       />
 
+       {isPreviewOpen && initialDataService && (
+        <UnifiedPreviewDialog
+            open={isPreviewOpen}
+            onOpenChange={setIsPreviewOpen}
+            service={initialDataService}
+        />
+      )}
+
       <Dialog open={isImageViewerOpen} onOpenChange={setIsImageViewerOpen}>
         <UiDialogContent className="max-w-4xl p-2">
             <UiDialogHeader className="print:hidden"><UiDialogTitle>Vista Previa de Imagen</UiDialogTitle></UiDialogHeader>
@@ -464,7 +480,7 @@ const PhotoReportTab = ({ control, isReadOnly, serviceId, onPhotoUploaded, onVie
                             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                                 {(watch(`photoReports.${index}.photos`) || []).map((photoUrl: string, pIndex: number) => (
                                     <button type="button" key={pIndex} className="relative aspect-video w-full bg-muted rounded-md overflow-hidden group" onClick={() => onViewImage(photoUrl)}>
-                                        <Image src={photoUrl} alt={`Foto ${pIndex + 1}`} fill objectFit="cover" className="transition-transform duration-300 group-hover:scale-105" data-ai-hint="car service photo"/>
+                                        <Image src={photoUrl} alt={`Foto ${pIndex + 1}`} fill objectFit="cover" className="transition-transform duration-300 group-hover:scale-105" data-ai-hint="car damage photo"/>
                                         <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity group-hover:opacity-100"><Eye className="h-6 w-6 text-white" /></div>
                                     </button>
                                 ))}
