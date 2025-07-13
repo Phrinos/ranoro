@@ -134,7 +134,7 @@ export function ServiceDialog({
 
     try {
         const savedRecord = await operationsService.saveService(formData);
-        toast({ title: `Registro ${formData.id ? 'actualizado' : 'creado'} con éxito.` });
+        toast({ title: 'Registro ' + (formData.id ? 'actualizado' : 'creado') + ' con éxito.' });
         if (onSave) {
             await onSave(savedRecord);
         }
@@ -197,7 +197,6 @@ export function ServiceDialog({
             technicians={technicians}
             inventoryItems={inventoryItems}
             serviceTypes={serviceTypes}
-            serviceHistory={[]} // Assuming this can be empty or fetched inside ServiceForm if needed
             onSubmit={internalOnSave}
             onClose={() => onOpenChange(false)}
             isReadOnly={isReadOnly}
