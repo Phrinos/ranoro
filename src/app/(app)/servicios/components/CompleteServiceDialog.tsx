@@ -103,7 +103,7 @@ export function CompleteServiceDialog({
         const today = new Date();
         const nextServiceDate = addDays(today, 183);
         
-        const oilItem = service.serviceItems
+        const oilItem = (service.serviceItems || [])
             .flatMap(item => item.suppliesUsed)
             .map(supply => inventoryItems.find(inv => inv.id === supply.supplyId))
             .find(invItem => invItem?.category.toLowerCase().includes('aceite') && invItem.rendimiento);
@@ -120,7 +120,6 @@ export function CompleteServiceDialog({
     }
     
     onConfirm(service, values, nextServiceInfo);
-    onOpenChange(false);
   };
   
   return (

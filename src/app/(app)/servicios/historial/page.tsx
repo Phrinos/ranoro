@@ -192,6 +192,11 @@ function HistorialServiciosPageComponent() {
             title: "Servicio Completado",
             description: `El servicio para ${service.vehicleIdentifier} ha sido marcado como entregado.`,
         });
+        
+        // After successfully completing, open ticket dialog
+        const updatedService = { ...service, ...dataToUpdate, status: 'Entregado' } as ServiceRecord;
+        handlePrintTicket(updatedService);
+
       } catch (e) {
         toast({ title: "Error", description: "No se pudo completar el servicio.", variant: "destructive"});
       } finally {
