@@ -287,19 +287,19 @@ function AgendaPageComponent() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {todayServices.length > 0 ? todayServices.map(service => (<ServiceAppointmentCard key={service.id} service={service} vehicles={vehicles} onEdit={() => handleOpenServiceDialog(service)} onConfirm={() => handleConfirmAppointment(service.id)} onView={() => handleShowPreview(service)} onComplete={() => handleOpenCompleteDialog(service)} onCancel={() => { const reason = prompt('Motivo de cancelación:'); if(reason) handleCancelService(service.id, reason)}}/>)) : <p className="text-muted-foreground text-center py-4">No hay citas para hoy.</p>}
+              {todayServices.length > 0 ? todayServices.map(service => (<ServiceAppointmentCard key={service.id} service={service} vehicles={vehicles} technicians={technicians} onEdit={() => handleOpenServiceDialog(service)} onConfirm={() => handleConfirmAppointment(service.id)} onView={() => handleShowPreview(service)} onComplete={() => handleOpenCompleteDialog(service)} onCancel={() => { const reason = prompt('Motivo de cancelación:'); if(reason) handleCancelService(service.id, reason)}}/>)) : <p className="text-muted-foreground text-center py-4">No hay citas para hoy.</p>}
             </CardContent>
           </Card>
            <Card>
             <CardHeader><CardTitle>Citas para Mañana</CardTitle></CardHeader>
             <CardContent>
-              {tomorrowServices.length > 0 ? tomorrowServices.map(service => (<ServiceAppointmentCard key={service.id} service={service} vehicles={vehicles} onEdit={() => handleOpenServiceDialog(service)} onConfirm={() => handleConfirmAppointment(service.id)} onView={() => handleShowPreview(service)} />)) : <p className="text-muted-foreground text-center py-4">No hay citas para mañana.</p>}
+              {tomorrowServices.length > 0 ? tomorrowServices.map(service => (<ServiceAppointmentCard key={service.id} service={service} vehicles={vehicles} technicians={technicians} onEdit={() => handleOpenServiceDialog(service)} onConfirm={() => handleConfirmAppointment(service.id)} onView={() => handleShowPreview(service)} />)) : <p className="text-muted-foreground text-center py-4">No hay citas para mañana.</p>}
             </CardContent>
           </Card>
            <Card>
             <CardHeader><CardTitle>Próximas Citas</CardTitle></CardHeader>
             <CardContent>
-              {futureServices.length > 0 ? futureServices.map(service => (<ServiceAppointmentCard key={service.id} service={service} vehicles={vehicles} onEdit={() => handleOpenServiceDialog(service)} onConfirm={() => handleConfirmAppointment(service.id)} onView={() => handleShowPreview(service)} />)) : <p className="text-muted-foreground text-center py-4">No hay citas futuras agendadas.</p>}
+              {futureServices.length > 0 ? futureServices.map(service => (<ServiceAppointmentCard key={service.id} service={service} vehicles={vehicles} technicians={technicians} onEdit={() => handleOpenServiceDialog(service)} onConfirm={() => handleConfirmAppointment(service.id)} onView={() => handleShowPreview(service)} />)) : <p className="text-muted-foreground text-center py-4">No hay citas futuras agendadas.</p>}
             </CardContent>
           </Card>
         </TabsContent>
