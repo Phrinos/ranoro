@@ -9,7 +9,7 @@ import { StatusTracker } from "./StatusTracker";
 import type { ServiceRecord, Vehicle } from '@/types';
 import { format, parseISO, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { Edit, Eye, CheckCircle, Ban, DollarSign } from 'lucide-react';
+import { Edit, Eye, CheckCircle, Ban, DollarSign, User, Phone } from 'lucide-react';
 
 interface ServiceAppointmentCardProps {
     service: ServiceRecord;
@@ -62,6 +62,12 @@ export const ServiceAppointmentCard = React.memo(({
                         <StatusTracker status={service.status} />
                     </div>
                     <div className="p-4 flex flex-col justify-center flex-grow space-y-2 text-left border-y md:border-y-0 md:border-x">
+                        {vehicle && (
+                            <div className="flex items-center gap-4 text-sm text-muted-foreground mb-1">
+                                <div className="flex items-center gap-1.5"><User className="h-4 w-4" /> <span className="font-medium">{vehicle.ownerName}</span></div>
+                                <div className="flex items-center gap-1.5"><Phone className="h-4 w-4" /> <span>{vehicle.ownerPhone}</span></div>
+                            </div>
+                        )}
                         <p className="font-bold text-2xl text-black">{vehicle ? `${vehicle.licensePlate} - ${vehicle.make} ${vehicle.model}` : 'N/A'}</p>
                         <p className="text-sm text-foreground">
                             {getServiceDescriptionText(service)}
