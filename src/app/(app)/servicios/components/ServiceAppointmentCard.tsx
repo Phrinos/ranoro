@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React from 'react';
@@ -9,7 +10,8 @@ import { StatusTracker } from "./StatusTracker";
 import type { ServiceRecord, Vehicle } from '@/types';
 import { format, parseISO, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { Edit, Eye, CheckCircle, Ban, DollarSign, User, Phone } from 'lucide-react';
+import { Edit, Eye, CheckCircle, Ban, DollarSign, User, Phone, TrendingUp } from 'lucide-react';
+import { formatCurrency } from '@/lib/utils';
 
 interface ServiceAppointmentCardProps {
     service: ServiceRecord;
@@ -73,12 +75,18 @@ export const ServiceAppointmentCard = React.memo(({
                             {getServiceDescriptionText(service)}
                         </p>
                     </div>
-                    {!isQuote && (
-                        <div className="p-3 flex flex-col justify-center items-center text-center w-full md:w-48 flex-shrink-0">
-                            <p className="text-xs text-muted-foreground">Hora de Cita</p>
-                            <p className="font-bold text-2xl text-black">{isValid(serviceDate) ? format(serviceDate, "HH:mm", { locale: es }) : '--:--'}</p>
+                    <div className="p-3 flex flex-col justify-center items-center text-center w-full md:w-48 flex-shrink-0">
+                         <div className="flex flex-col items-center">
+                            <p className="text-xs text-muted-foreground mb-1">Costo Cliente</p>
+                            <p className="font-bold text-2xl text-primary">{formatCurrency(service.totalCost)}</p>
                         </div>
-                    )}
+                        <div className="flex flex-col items-center mt-2">
+                             <p className="text-xs text-muted-foreground mb-1">Ganancia</p>
+                            <p className="font-semibold text-base text-green-600 flex items-center gap-1">
+                                <TrendingUp className="h-4 w-4" /> {formatCurrency(service.serviceProfit)}
+                            </p>
+                        </div>
+                    </div>
                     <div className="p-4 flex flex-col justify-center items-center text-center border-t md:border-t-0 md:border-l w-full md:w-56 flex-shrink-0 space-y-2">
                         {!isQuote && <Badge variant={appointmentStatus.variant} className="mb-1">{appointmentStatus.label}</Badge>}
                         <p className="text-xs text-muted-foreground">Asesor: {service.serviceAdvisorName || 'N/A'}</p>
