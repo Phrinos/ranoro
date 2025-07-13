@@ -1,9 +1,10 @@
 
+
 "use client";
 
 import { useFieldArray, useFormContext, type Control } from "react-hook-form";
 import { Button } from "@/components/ui/button";
-import { FormField, FormItem, FormLabel, FormControl } from "@/components/ui/form";
+import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Card } from '@/components/ui/card';
 import { Plus, PlusCircle, Trash2, Wrench } from "lucide-react";
@@ -11,21 +12,20 @@ import type { InventoryItem, ServiceSupply } from "@/types";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { AddSupplyDialog } from './add-supply-dialog';
-import { capitalizeWords, formatCurrency } from '@/lib/utils';
+import { capitalizeWords, formatCurrency, cn } from '@/lib/utils';
 import type { ServiceFormValues } from "@/schemas/service-form";
 
 // Sub-component for a single Service Item card
 interface ServiceItemCardProps {
   serviceIndex: number;
-  control: Control<ServiceFormValues>;
   removeServiceItem: (index: number) => void;
   isReadOnly?: boolean;
   inventoryItems: InventoryItem[];
   mode: 'service' | 'quote';
 }
 
-export function ServiceItemCard({ serviceIndex, control, removeServiceItem, isReadOnly, inventoryItems, mode }: ServiceItemCardProps) {
-    const { getValues, setValue } = useFormContext<ServiceFormValues>();
+export function ServiceItemCard({ serviceIndex, removeServiceItem, isReadOnly, inventoryItems, mode }: ServiceItemCardProps) {
+    const { control, getValues, setValue, formState: { errors } } = useFormContext<ServiceFormValues>();
     const { fields, append, remove } = useFieldArray({
         control,
         name: `serviceItems.${serviceIndex}.suppliesUsed`
@@ -33,6 +33,8 @@ export function ServiceItemCard({ serviceIndex, control, removeServiceItem, isRe
     const { toast } = useToast();
 
     const [isAddSupplyDialogOpen, setIsAddSupplyDialogOpen] = useState(false);
+    
+    const serviceItemErrors = errors.serviceItems?.[serviceIndex];
     
     const handleAddSupply = (supply: ServiceSupply) => {
         append(supply);
@@ -76,13 +78,14 @@ export function ServiceItemCard({ serviceIndex, control, removeServiceItem, isRe
                     name={`serviceItems.${serviceIndex}.name`}
                     render={({ field }) => (
                         <FormItem>
-                            <FormLabel>Nombre del Servicio</FormLabel>
+                            <FormLabel className={cn(serviceItemErrors?.name && "text-destructive")}>Nombre del Servicio</FormLabel>
                             <FormControl>
                                 <Input
                                     placeholder="Afinación Mayor"
                                     {...field}
                                     disabled={isReadOnly}
                                     onChange={(e) => field.onChange(capitalizeWords(e.target.value))}
+                                    className={cn(serviceItemErrors?.name && "border-destructive focus-visible:ring-destructive")}
                                 />
                             </FormControl>
                         </FormItem>

@@ -1,3 +1,4 @@
+
 // src/schemas/service-form.ts
 import * as z from 'zod';
 
@@ -64,7 +65,7 @@ export const safetyInspectionSchema = z.object({
 export const serviceFormSchema = z.object({
     id: z.string().optional(),
     publicId: z.string().optional(),
-    vehicleId: z.string().optional(),
+    vehicleId: z.string().min(1, 'Debe seleccionar un vehículo.'),
     vehicleIdentifier: z.string().optional(),
     vehicleLicensePlateSearch: z.string().optional(),
     serviceDate: z.date().optional(),
@@ -76,7 +77,7 @@ export const serviceFormSchema = z.object({
     technicianId: z.string().optional(),
     technicianName: z.string().nullable().optional(),
     serviceItems: z.array(serviceItemSchema).min(1, 'Debe agregar al menos un ítem de servicio.'),
-    status: z.enum(['Cotizacion', 'Agendado', 'En Taller', 'Entregado', 'Cancelado']).optional(),
+    status: z.enum(['Cotizacion', 'Agendado', 'En Taller', 'Entregado', 'Cancelado']),
     subStatus: z.enum(['En Espera de Refacciones', 'Reparando', 'Completado']).optional(),
     serviceType: z.string().optional(),
     vehicleConditions: z.string().optional(),

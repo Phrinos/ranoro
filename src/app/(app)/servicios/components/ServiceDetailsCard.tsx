@@ -47,7 +47,7 @@ export function ServiceDetailsCard({
   onGenerateQuoteWithAI,
   isGeneratingQuote,
 }: ServiceDetailsCardProps) {
-  const { control, watch, setValue, getValues } = useFormContext<ServiceFormValues>();
+  const { control, watch, setValue, getValues, formState: { errors } } = useFormContext<ServiceFormValues>();
   const { fields: serviceItemsFields, append: appendServiceItem, remove: removeServiceItem } = useFieldArray({ control, name: "serviceItems" });
   
   const watchedStatus = watch('status');
@@ -81,17 +81,17 @@ export function ServiceDetailsCard({
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <FormField control={control} name="status" render={({ field }) => ( <FormItem><FormLabel>Estado</FormLabel><Select onValueChange={field.onChange} value={field.value} disabled={isReadOnly || watchedStatus === 'Entregado'}><FormControl><SelectTrigger className="font-bold"><SelectValue placeholder="Seleccione un estado" /></SelectTrigger></FormControl><SelectContent>{["Cotizacion", "Agendado", "En Taller", "Entregado"].map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent></Select></FormItem> )}/>
+          <FormField control={control} name="status" render={({ field }) => ( <FormItem><FormLabel className={cn(errors.status && "text-destructive")}>Estado</FormLabel><Select onValueChange={field.onChange} value={field.value} disabled={isReadOnly || watchedStatus === 'Entregado'}><FormControl><SelectTrigger className={cn("font-bold", errors.status && "border-destructive focus-visible:ring-destructive")}><SelectValue placeholder="Seleccione un estado" /></SelectTrigger></FormControl><SelectContent>{["Cotizacion", "Agendado", "En Taller", "Entregado"].map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent></Select></FormItem> )}/>
           {watchedStatus === 'En Taller' && (
               <FormField control={control} name="subStatus" render={({ field }) => ( <FormItem><FormLabel>Sub-Estado Taller</FormLabel><Select onValueChange={field.onChange} value={field.value} disabled={isReadOnly}><FormControl><SelectTrigger><SelectValue placeholder="Seleccione sub-estado..." /></SelectTrigger></FormControl><SelectContent>{["En Espera de Refacciones", "Reparando", "Completado"].map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent></Select></FormItem> )}/>
           )}
           <FormField control={control} name="serviceType" render={({ field }) => (
-            <FormItem><FormLabel>Tipo de Servicio</FormLabel>
+            <FormItem><FormLabel className={cn(errors.serviceType && "text-destructive")}>Tipo de Servicio</FormLabel>
               <Select onValueChange={handleServiceTypeChange} value={field.value || 'Servicio General'} disabled={isReadOnly}>
-                <FormControl><SelectTrigger><SelectValue placeholder="Seleccione un tipo" /></SelectTrigger></FormControl>
+                <FormControl><SelectTrigger className={cn(errors.serviceType && "border-destructive focus-visible:ring-destructive")}><SelectValue placeholder="Seleccione un tipo" /></SelectTrigger></FormControl>
                 <SelectContent>
                   {serviceTypes
-                    .slice() // Create a shallow copy to avoid mutating the original prop array
+                    .slice() 
                     .sort((a, b) => a.name.localeCompare(b.name))
                     .map((type) => (
                       <SelectItem key={type.id} value={type.name}>{type.name}</SelectItem>
@@ -107,7 +107,7 @@ export function ServiceDetailsCard({
         
         {showAppointmentFields && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t items-end">
-                <Controller name="serviceDate" control={control} render={({ field }) => ( <FormItem className="flex flex-col"><FormLabel>Fecha {watchedStatus === 'Cotizacion' ? 'de Cotización' : 'de Cita'}</FormLabel><Popover open={isServiceDatePickerOpen} onOpenChange={setIsServiceDatePickerOpen}><PopoverTrigger asChild disabled={isReadOnly}><Button variant="outline" className={cn("justify-start text-left font-normal", !field.value && "text-muted-foreground")} disabled={isReadOnly}>{field.value ? format(field.value, "PPP", { locale: es }) : <span>Seleccione fecha</span>}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value} onSelect={(date) => { field.onChange(date ? setMinutes(setHours(date, (field.value || new Date()).getHours()), (field.value || new Date()).getMinutes()) : undefined); setIsServiceDatePickerOpen(false); }} disabled={isReadOnly} initialFocus locale={es}/></PopoverContent></Popover></FormItem> )}/>
+                <Controller name="serviceDate" control={control} render={({ field }) => ( <FormItem className="flex flex-col"><FormLabel className={cn(errors.serviceDate && "text-destructive")}>Fecha {watchedStatus === 'Cotizacion' ? 'de Cotización' : 'de Cita'}</FormLabel><Popover open={isServiceDatePickerOpen} onOpenChange={setIsServiceDatePickerOpen}><PopoverTrigger asChild disabled={isReadOnly}><Button variant="outline" className={cn("justify-start text-left font-normal", !field.value && "text-muted-foreground", errors.serviceDate && "border-destructive focus-visible:ring-destructive")} disabled={isReadOnly}>{field.value ? format(field.value, "PPP", { locale: es }) : <span>Seleccione fecha</span>}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value} onSelect={(date) => { field.onChange(date ? setMinutes(setHours(date, (field.value || new Date()).getHours()), (field.value || new Date()).getMinutes()) : undefined); setIsServiceDatePickerOpen(false); }} disabled={isReadOnly} initialFocus locale={es}/></PopoverContent></Popover></FormItem> )}/>
                 {showTimePicker && <Controller name="serviceDate" control={control} render={({ field }) => ( <FormItem><FormControl><Input type="time" value={field.value && isValid(field.value) ? format(field.value, 'HH:mm') : ""} onChange={(e) => { if (!e.target.value) return; const [h, m] = e.target.value.split(':').map(Number); field.onChange(setMinutes(setHours(field.value || new Date(), h), m)); }} disabled={isReadOnly}/></FormControl></FormItem> )}/>}
             </div>
         )}
@@ -115,7 +115,7 @@ export function ServiceDetailsCard({
         <Separator className="my-6"/>
 
         <div className="space-y-4">
-          {serviceItemsFields.map((field, index) => <ServiceItemCard key={field.id} serviceIndex={index} control={control} removeServiceItem={removeServiceItem} isReadOnly={isReadOnly} inventoryItems={inventoryItems} mode={mode} />)}
+          {serviceItemsFields.map((field, index) => <ServiceItemCard key={field.id} serviceIndex={index} removeServiceItem={removeServiceItem} isReadOnly={isReadOnly} inventoryItems={inventoryItems} mode={mode} />)}
           {!isReadOnly && (<Button type="button" variant="outline" onClick={() => appendServiceItem({ id: `item_${Date.now()}`, name: '', price: undefined, suppliesUsed: [] })}><PlusCircle className="mr-2 h-4 w-4"/> Añadir Trabajo</Button>)}
           {mode === 'quote' && !isReadOnly && (<Button type="button" variant="secondary" onClick={onGenerateQuoteWithAI} disabled={isGeneratingQuote}>{isGeneratingQuote ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <BrainCircuit className="mr-2 h-4 w-4" />}Sugerir Cotización con IA</Button>)}
         </div>
