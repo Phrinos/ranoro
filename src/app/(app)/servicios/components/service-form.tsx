@@ -29,9 +29,8 @@ import { serviceFormSchema, type ServiceFormValues } from '@/schemas/service-for
 import { cleanObjectForFirestore } from '@/lib/forms'
 import { generateQuoteWithAI } from '@/lib/services/quote.service'
 
-import { ServiceFormHeader } from './ServiceFormLayout'
+import { ServiceFormHeader, ServiceFormFooter } from './ServiceFormLayout'
 import { ServiceFormBody } from './ServiceFormBody'
-import { ServiceFormFooter } from './ServiceFormLayout'
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog'
 import { VehicleDialog } from '../../vehiculos/components/vehicle-dialog'
 import type { VehicleFormValues } from '../../vehiculos/components/vehicle-form'
@@ -78,7 +77,7 @@ export function ServiceForm({
   const form = useForm<ServiceFormValues>({
     resolver: zodResolver(serviceFormSchema),
   })
-  const { control, setValue, getValues, trigger, formState } = form
+  const { control, setValue, getValues, trigger, formState, watch } = form
 
   /* -------------------------- CUSTOM HOOKS -------------------------- */
   useInitServiceForm(form, { initData, serviceTypes })
