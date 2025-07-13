@@ -1,4 +1,5 @@
 
+
 import type {Metadata} from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
@@ -17,7 +18,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="es">
+    <html lang="es" suppressHydrationWarning>
       <body className={`${inter.className} font-body antialiased`}>
         {children}
         <Toaster />
@@ -25,3 +26,5 @@ export default function RootLayout({
     </html>
   );
 }
+
+    
