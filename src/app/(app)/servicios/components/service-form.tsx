@@ -1,4 +1,5 @@
 
+
 /* app/(app)/servicios/components/service-form.tsx */
 'use client'
 
@@ -60,7 +61,7 @@ import { suggestQuote } from '@/ai/flows/quote-suggestion-flow'
 import { enhanceText } from '@/ai/flows/text-enhancement-flow'
 import { PhotoUploader } from './PhotoUploader';
 import { serviceFormSchema } from '@/schemas/service-form';
-import { parseDate, cleanObjectForFirestore } from '@/lib/forms';
+import { parseDate } from '@/lib/forms';
 import { useServiceTotals } from '@/hooks/use-service-form-hooks'
 
 /* ░░░░░░  COMPONENTE  ░░░░░░ */
@@ -147,7 +148,7 @@ export function ServiceForm(props:Props){
       status: initialStatus,
       serviceType: firstType,
       serviceDate: initialStatus === 'Agendado' ? new Date() : undefined,
-      quoteDate: initialStatus === 'Cotizacion' ? now : undefined,
+      quoteDate: initialStatus === 'Cotizacion' ? new Date() : undefined,
       serviceItems: [{
         id: nanoid(),
         name: firstType,
@@ -156,7 +157,7 @@ export function ServiceForm(props:Props){
       }],
       photoReports: [{
         id: `rep_recepcion_${Date.now()}`,
-        date: now.toISOString(),
+        date: new Date().toISOString(),
         description: 'Fotografias de la recepcion del vehiculo',
         photos: [],
       }],
@@ -301,8 +302,23 @@ export function ServiceForm(props:Props){
     dataToSubmit.subTotal = totalCost / (1 + IVA);
     dataToSubmit.taxAmount = totalCost - (totalCost / (1 + IVA));
     
-    // The cleanObjectForFirestore will now handle Date to ISO string conversion.
-    onSubmit(cleanObjectForFirestore(dataToSubmit));
+    // Convert Date objects to local ISO-like strings
+    Object.keys(dataToSubmit).forEach(key => {
+        if (dataToSubmit[key] instanceof Date) {
+            const date = dataToSubmit[key] as Date;
+            // Get local date parts
+            const year = date.getFullYear();
+            const month = (date.getMonth() + 1).toString().padStart(2, '0');
+            const day = date.getDate().toString().padStart(2, '0');
+            const hours = date.getHours().toString().padStart(2, '0');
+            const minutes = date.getMinutes().toString().padStart(2, '0');
+            const seconds = date.getSeconds().toString().padStart(2, '0');
+            // Construct string without timezone conversion
+            dataToSubmit[key] = `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`;
+        }
+    });
+
+    onSubmit(dataToSubmit);
   };
 
   return (
