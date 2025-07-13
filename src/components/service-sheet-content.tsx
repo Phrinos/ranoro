@@ -212,7 +212,7 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
     
     const effectiveWorkshopInfo = { ...initialWorkshopInfo, ...workshopInfoProp };
     
-    const serviceDate = parseDate(service.serviceDate);
+    const serviceDate = parseDate(service.receptionDateTime) || parseDate(service.serviceDate);
     const formattedServiceDate = serviceDate && isValid(serviceDate) ? format(serviceDate, "dd 'de' MMMM 'de' yyyy, HH:mm 'hrs'", { locale: es }) : 'N/A';
 
     const fuelLevelMap: Record<string, number> = {

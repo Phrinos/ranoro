@@ -34,19 +34,6 @@ const handleAiError = (error: any, toast: any, context: string): string => {
     return message;
 };
 
-// Helper function to safely parse a date that might be a string or a Date object
-const safeParseISO = (date: any): Date => {
-  if (!date) return new Date('invalid');
-  if (date instanceof Date) return date;
-  if (typeof date.toDate === 'function') return date.toDate();
-  if (typeof date === 'string') {
-    const d = new Date(date);
-    return isNaN(d.getTime()) ? parseISO(date) : d;
-  }
-  return new Date('invalid');
-};
-
-
 function AgendaPageComponent() {
   const { toast } = useToast();
   
@@ -110,23 +97,28 @@ function AgendaPageComponent() {
     const today = toZonedTime(now, workshopTimezone);
     const tomorrow = addDays(today, 1);
     
-    const byDateAsc = (a: ServiceRecord, b: ServiceRecord) => 
-      compareAsc(safeParseISO(a.serviceDate), safeParseISO(b.serviceDate));
+    const byDateAsc = (a: ServiceRecord, b: ServiceRecord) => {
+        const dateA = parseDate(a.serviceDate);
+        const dateB = parseDate(b.serviceDate);
+        if (!dateA) return 1;
+        if (!dateB) return -1;
+        return compareAsc(dateA, dateB);
+    };
       
-    const isSame = (d: Date, ref: Date) => isValid(d) && isSameDay(d, ref);
+    const isSame = (d: Date | null, ref: Date) => d && isValid(d) && isSameDay(d, ref);
 
     const todayS = scheduled
-      .filter(s => isSame(toZonedTime(safeParseISO(s.serviceDate), workshopTimezone), today))
+      .filter(s => isSame(toZonedTime(parseDate(s.serviceDate), workshopTimezone), today))
       .sort(byDateAsc);
       
     const tomorrowS = scheduled
-      .filter(s => isSame(toZonedTime(safeParseISO(s.serviceDate), workshopTimezone), tomorrow))
+      .filter(s => isSame(toZonedTime(parseDate(s.serviceDate), workshopTimezone), tomorrow))
       .sort(byDateAsc);
       
     const futureS = scheduled
       .filter(s => {
-        const d = toZonedTime(safeParseISO(s.serviceDate), workshopTimezone);
-        return isValid(d) && d > tomorrow && !isSameDay(d, tomorrow);
+        const d = toZonedTime(parseDate(s.serviceDate), workshopTimezone);
+        return d && isValid(d) && d > tomorrow && !isSameDay(d, tomorrow);
       })
       .sort(byDateAsc);
 
@@ -353,7 +345,3 @@ export default function AgendaPageWrapper() {
     </Suspense>
   );
 }
-
-
-
-
