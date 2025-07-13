@@ -206,7 +206,6 @@ export function ServiceDialog({
             open={isPreviewOpen}
             onOpenChange={setIsPreviewOpen}
             service={service}
-            vehicle={vehicles.find(v => v.id === service.vehicleId)}
         />
       )}
 

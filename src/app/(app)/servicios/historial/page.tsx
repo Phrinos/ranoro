@@ -137,13 +137,6 @@ function HistorialServiciosPageComponent() {
     [toast]
   );
 
-  const handleVehicleCreated = useCallback(
-    async (newVehicle: any) => {
-      await inventoryService.addVehicle(newVehicle);
-    },
-    []
-  );
-
   const handleShowPreview = useCallback((service: ServiceRecord) => {
     setServiceForPreview(service);
     setIsSheetOpen(true);
