@@ -300,8 +300,17 @@ export function ServiceForm(props:Props){
     // Ensure all date fields are converted to ISO strings for Firestore
     const dateFields: (keyof ServiceFormValues)[] = ['serviceDate', 'quoteDate', 'receptionDateTime', 'deliveryDateTime'];
     dateFields.forEach(field => {
-        if (dataToSubmit[field] instanceof Date) {
-            dataToSubmit[field] = dataToSubmit[field].toISOString();
+        const dateValue = dataToSubmit[field];
+        if (dateValue instanceof Date && isValid(dateValue)) {
+            dataToSubmit[field] = dateValue.toISOString();
+        } else if (typeof dateValue === 'string') {
+            // It might already be a string, ensure it's valid ISO
+            const parsed = parseISO(dateValue);
+            if(isValid(parsed)){
+              dataToSubmit[field] = parsed.toISOString();
+            } else {
+              dataToSubmit[field] = null; // Or handle invalid string
+            }
         }
     });
     

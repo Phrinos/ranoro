@@ -1,6 +1,6 @@
 // src/lib/forms.ts
 
-import { parseISO } from 'date-fns';
+import { parseISO, isValid } from 'date-fns';
 
 export const IVA_RATE = 0.16;
 
@@ -16,12 +16,12 @@ export const parseDate = (d: any): Date | null => {
   if (typeof d === 'number') return new Date(d); // Milliseconds timestamp
   if (typeof d === 'string') {
       const parsed = parseISO(d);
-      if (!isNaN(parsed.getTime())) {
+      if (isValid(parsed)) {
           return parsed;
       }
       // Fallback for non-ISO date strings, though not recommended.
       const directParsed = new Date(d);
-      if (!isNaN(directParsed.getTime())) {
+      if (isValid(directParsed)) {
           return directParsed;
       }
   }
@@ -39,11 +39,14 @@ export const cleanObjectForFirestore = (obj: any): any => {
     return obj;
   }
   if (Array.isArray(obj)) {
-    return obj.map(cleanObjectForFirestore);
+    return obj.map(cleanObjectForFirestore).filter(v => v !== undefined);
   }
   return Object.entries(obj).reduce((acc, [key, value]) => {
     if (value !== undefined) {
-      acc[key] = cleanObjectForFirestore(value);
+      const cleanedValue = cleanObjectForFirestore(value);
+      if (cleanedValue !== undefined) {
+        acc[key] = cleanedValue;
+      }
     }
     return acc;
   }, {} as any);
