@@ -71,7 +71,15 @@ const saveService = async (data: Partial<ServiceRecord>): Promise<ServiceRecord>
         data.publicId = nanoid(12);
     }
     
-    const cleanedData = cleanObjectForFirestore(data);
+    // Explicitly set potentially undefined fields to null before cleaning
+    const dataWithNulls = {
+      ...data,
+      customerSignatureReception: data.customerSignatureReception || null,
+      customerSignatureDelivery: data.customerSignatureDelivery || null,
+      technicianName: data.technicianName || null,
+    };
+    
+    const cleanedData = cleanObjectForFirestore(dataWithNulls);
 
     if (isNew) {
       await setDoc(docRef, { ...cleanedData, id: docId });

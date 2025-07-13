@@ -1,4 +1,3 @@
-
 // src/schemas/service-form.ts
 import * as z from 'zod';
 
@@ -84,8 +83,8 @@ export const serviceFormSchema = z.object({
     vehicleConditions: z.string().optional(),
     fuelLevel: z.string().optional(),
     customerItems: z.string().optional(),
-    customerSignatureReception: z.string().nullable().optional(),
-    customerSignatureDelivery: z.string().nullable().optional(),
+    customerSignatureReception: z.string().nullable().optional().transform(v => v || null),
+    customerSignatureDelivery: z.string().nullable().optional().transform(v => v || null),
     receptionSignatureViewed: z.boolean().optional(),
     deliverySignatureViewed: z.boolean().optional(),
     safetyInspection: safetyInspectionSchema.optional(),
