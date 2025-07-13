@@ -52,43 +52,7 @@ import { enhanceText } from '@/ai/flows/text-enhancement-flow'
 import { PhotoUploader } from './PhotoUploader';
 import { serviceFormSchema } from '@/schemas/service-form';
 import { parseDate } from '@/lib/forms';
-import { useServiceTotals, useInitServiceForm } from '@/hooks/use-service-form-hooks'
-
-// Separate component for the Photo Report Tab
-const PhotoReportTab = ({ control, isReadOnly, serviceId, onPhotoUploaded, onViewImage }: any) => {
-    const { fields, append, remove } = useFieldArray({ control, name: 'photoReports' });
-    const { watch } = useFormContext();
-    return (
-        <Card>
-            <CardHeader><CardTitle>Reporte Fotográfico</CardTitle><CardDescription>Documenta el proceso con imágenes. Puedes crear varios reportes.</CardDescription></CardHeader>
-            <CardContent className="space-y-4">
-                {fields.map((field, index) => (
-                     <Card key={field.id} className="p-4 bg-muted/30">
-                         <div className="flex justify-between items-start mb-4">
-                            <h4 className="text-base font-semibold">Reporte #{index + 1}</h4>
-                            {!isReadOnly && <Button type="button" variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => remove(index)}><Trash2 className="h-4 w-4"/></Button>}
-                        </div>
-                        <div className="space-y-4">
-                            <FormField control={control} name={`photoReports.${index}.description`} render={({ field }) => (
-                                <FormItem><FormLabel>Descripción</FormLabel><FormControl><Textarea placeholder="Describa el propósito de estas fotos..." {...field} disabled={isReadOnly}/></FormControl></FormItem>
-                            )}/>
-                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                                {(watch(`photoReports.${index}.photos`) || []).map((photoUrl: string, pIndex: number) => (
-                                    <button type="button" key={pIndex} className="relative aspect-video w-full bg-muted rounded-md overflow-hidden group" onClick={() => onViewImage(photoUrl)}>
-                                        <Image src={photoUrl} alt={`Foto ${pIndex + 1}`} fill objectFit="cover" className="transition-transform duration-300 group-hover:scale-105" data-ai-hint="car service photo"/>
-                                        <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity group-hover:opacity-100"><Eye className="h-6 w-6 text-white" /></div>
-                                    </button>
-                                ))}
-                            </div>
-                            {!isReadOnly && <PhotoUploader reportIndex={index} serviceId={serviceId} onUploadComplete={onPhotoUploaded} photosLength={(watch(`photoReports.${index}.photos`) || []).length} />}
-                        </div>
-                     </Card>
-                ))}
-                {!isReadOnly && <Button type="button" variant="outline" onClick={() => append({ id: `rep_${Date.now()}`, date: new Date().toISOString(), description: '', photos: []})}><PlusCircle className="mr-2 h-4 w-4"/>Nuevo Reporte</Button>}
-            </CardContent>
-        </Card>
-    );
-};
+import { useServiceTotals } from '@/hooks/use-service-form-hooks'
 
 /* ░░░░░░  COMPONENTE  ░░░░░░ */
 interface Props {
@@ -109,20 +73,93 @@ interface Props {
 
 export function ServiceForm(props:Props){
   const {
-    initialDataService, serviceTypes,
-    vehicles:parentVehicles, technicians, inventoryItems:invItems,
-    onSubmit, children, onClose, isReadOnly = false, mode = 'service'
-  } = props
+    initialDataService,
+    serviceTypes,
+    vehicles:parentVehicles,
+    technicians,
+    inventoryItems:invItems,
+    onSubmit,
+    children,
+    onClose,
+    isReadOnly = false,
+    mode = 'service'
+  } = props;
 
-  const initData = initialDataService ?? null
-  const { toast } = useToast()
+  const initData = initialDataService ?? null;
+  const { toast } = useToast();
   
+  const defaultValues = useMemo<ServiceFormValues>(() => {
+    const firstType = serviceTypes[0]?.name ?? 'Servicio General';
+    const now = new Date();
+
+    if (initData) {
+      return {
+        ...initData,
+        status: initData.status ?? 'Cotizacion',
+        serviceType: initData.serviceType ?? firstType,
+        serviceDate: initData.serviceDate ? parseDate(initData.serviceDate) : undefined,
+        quoteDate: initData.quoteDate ? parseDate(initData.quoteDate) : undefined,
+        receptionDateTime: initData.receptionDateTime ? parseDate(initData.receptionDateTime) : undefined,
+        deliveryDateTime: initData.deliveryDateTime ? parseDate(initData.deliveryDateTime) : undefined,
+        serviceItems:
+          initData.serviceItems?.length
+            ? initData.serviceItems
+            : [
+                {
+                  id: nanoid(),
+                  name: initData.serviceType ?? firstType,
+                  price: initData.totalCost,
+                  suppliesUsed: [],
+                },
+              ],
+        photoReports:
+          initData.photoReports?.length
+            ? initData.photoReports
+            : [
+                {
+                  id: `rep_recepcion_${Date.now()}`,
+                  date: now.toISOString(),
+                  description: 'Notas de la Recepción',
+                  photos: [],
+                },
+              ],
+      } as ServiceFormValues;
+    }
+
+    const authUser = (() => {
+        try { return JSON.parse(localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY) ?? 'null') as User | null }
+        catch { return null }
+    })();
+
+    return {
+      status: 'Cotizacion',
+      serviceType: firstType,
+      serviceDate: now,
+      quoteDate: now,
+      serviceItems: [{
+        id: nanoid(),
+        name: firstType,
+        price: undefined,
+        suppliesUsed: [],
+      }],
+      photoReports: [{
+        id: `rep_recepcion_${Date.now()}`,
+        date: now.toISOString(),
+        description: 'Notas de la Recepción',
+        photos: [],
+      }],
+      serviceAdvisorId: authUser?.id,
+      serviceAdvisorName: authUser?.name,
+      serviceAdvisorSignatureDataUrl: authUser?.signatureDataUrl ?? '',
+    } as ServiceFormValues;
+  }, [initData, serviceTypes]);
+
   const form = useForm<ServiceFormValues>({
     resolver: zodResolver(serviceFormSchema),
+    defaultValues,
+    values: defaultValues, // This ensures the form is reactive to changes in defaultValues
   });
-
-  useInitServiceForm(form, { initData, serviceTypes });
-
+  
   const { control, setValue, watch, formState, handleSubmit } = form;
   const { totalCost, totalSuppliesWorkshopCost, serviceProfit } = useServiceTotals(form);
   
@@ -245,7 +282,6 @@ export function ServiceForm(props:Props){
       onSubmit(dataToSubmit);
   };
 
-
   return (
     <>
       <FormProvider {...form}>
@@ -336,3 +372,39 @@ export function ServiceForm(props:Props){
     </>
   );
 }
+
+// Photo Report Tab Component
+const PhotoReportTab = ({ control, isReadOnly, serviceId, onPhotoUploaded, onViewImage }: any) => {
+    const { fields, append, remove } = useFieldArray({ control, name: 'photoReports' });
+    const { watch } = useFormContext();
+    return (
+        <Card>
+            <CardHeader><CardTitle>Reporte Fotográfico</CardTitle><CardDescription>Documenta el proceso con imágenes. Puedes crear varios reportes.</CardDescription></CardHeader>
+            <CardContent className="space-y-4">
+                {fields.map((field, index) => (
+                     <Card key={field.id} className="p-4 bg-muted/30">
+                         <div className="flex justify-between items-start mb-4">
+                            <h4 className="text-base font-semibold">Reporte #{index + 1}</h4>
+                            {!isReadOnly && <Button type="button" variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => remove(index)}><Trash2 className="h-4 w-4"/></Button>}
+                        </div>
+                        <div className="space-y-4">
+                            <FormField control={control} name={`photoReports.${index}.description`} render={({ field }) => (
+                                <FormItem><FormLabel>Descripción</FormLabel><FormControl><Textarea placeholder="Describa el propósito de estas fotos..." {...field} disabled={isReadOnly}/></FormControl></FormItem>
+                            )}/>
+                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                                {(watch(`photoReports.${index}.photos`) || []).map((photoUrl: string, pIndex: number) => (
+                                    <button type="button" key={pIndex} className="relative aspect-video w-full bg-muted rounded-md overflow-hidden group" onClick={() => onViewImage(photoUrl)}>
+                                        <Image src={photoUrl} alt={`Foto ${pIndex + 1}`} fill objectFit="cover" className="transition-transform duration-300 group-hover:scale-105" data-ai-hint="car service photo"/>
+                                        <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity group-hover:opacity-100"><Eye className="h-6 w-6 text-white" /></div>
+                                    </button>
+                                ))}
+                            </div>
+                            {!isReadOnly && <PhotoUploader reportIndex={index} serviceId={serviceId} onUploadComplete={onPhotoUploaded} photosLength={(watch(`photoReports.${index}.photos`) || []).length} />}
+                        </div>
+                     </Card>
+                ))}
+                {!isReadOnly && <Button type="button" variant="outline" onClick={() => append({ id: `rep_${Date.now()}`, date: new Date().toISOString(), description: '', photos: []})}><PlusCircle className="mr-2 h-4 w-4"/>Nuevo Reporte</Button>}
+            </CardContent>
+        </Card>
+    );
+};
