@@ -196,11 +196,10 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
                 <div className="text-right flex flex-col items-center justify-end mt-4 sm:mt-0">
                     <div className="relative flex justify-center items-center h-16 w-40 mb-1">
                         {quote.serviceAdvisorSignatureDataUrl && (
-                           <Image
+                           <img
                                 src={normalizeDataUrl(quote.serviceAdvisorSignatureDataUrl)} 
                                 alt="Firma del asesor"
-                                layout="fill"
-                                objectFit="contain"
+                                style={{ maxHeight: '100%', maxWidth: '100%', objectFit: 'contain' }}
                                 crossOrigin="anonymous"
                             />
                         )}
