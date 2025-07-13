@@ -1,7 +1,8 @@
 
+
 "use client";
 
-import { useState, useMemo, useEffect, useCallback, Suspense } from 'react';
+import { useState, useMemo, useEffect, useCallback, Suspense, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -308,3 +309,4 @@ function PersonalPageComponent() {
 export default function PersonalPageWrapper() {
     return (<Suspense fallback={<div>Cargando...</div>}><PersonalPageComponent /></Suspense>)
 }
+

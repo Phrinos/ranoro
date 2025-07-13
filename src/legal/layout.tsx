@@ -1,4 +1,5 @@
 
+
 import Link from 'next/link';
 import Image from "next/image";
 import { Button } from '@/components/ui/button';
@@ -16,7 +17,8 @@ export default function LegalLayout({
             <Image
               src="/ranoro-logo.png"
               alt="Ranoro Logo"
-
+              width={140}
+              height={40}
               className="dark:invert h-auto"
               style={{width: '140px', height: 'auto'}}
               data-ai-hint="ranoro logo"

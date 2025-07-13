@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import Link from 'next/link';
@@ -145,7 +146,7 @@ export default function LandingPage() {
             <AnimatedDiv><p className="mt-6 max-w-xl text-lg text-gray-200 text-shadow">
               Desde la recepción hasta la facturación, Ranoro centraliza tus operaciones y usa IA para que tomes decisiones más rentables.
             </p></AnimatedDiv>
-            <AnimatedDiv><div className="mt-8 flex flex-col sm:flex-row justify-start items-center gap-4">
+            <AnimatedDiv><div className="mt-8 flex flex-col sm:flex-row justify-start items-start gap-4">
               <Button size="lg" asChild>
                 <Link href="/login">Pruébalo gratis por 14 días</Link>
               </Button>
