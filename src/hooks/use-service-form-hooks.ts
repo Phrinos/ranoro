@@ -1,3 +1,4 @@
+
 // src/hooks/use-service-form-hooks.ts
 
 import { useEffect, useMemo } from 'react';
@@ -65,30 +66,29 @@ export function useInitServiceForm(form: UseFormReturn<ServiceFormValues>, { ini
   const { reset } = form;
 
   useEffect(() => {
-    let defaultValues: Partial<ServiceFormValues>;
+    const isEditing = initData && 'id' in initData && initData.id;
 
-    if (initData && 'id' in initData) {
-      // Editing existing data
-      defaultValues = {
-        ...initData,
-        serviceDate: initData.serviceDate ? parseDate(initData.serviceDate) : new Date(),
-        quoteDate: initData.quoteDate ? parseDate(initData.quoteDate) : undefined,
-        receptionDateTime: initData.receptionDateTime ? parseDate(initData.receptionDateTime) : undefined,
-        deliveryDateTime: initData.deliveryDateTime ? parseDate(initData.deliveryDateTime) : undefined,
-        serviceItems: initData.serviceItems?.length ? initData.serviceItems : [{ id: nanoid(), name: '', price: undefined, suppliesUsed: [] }],
-        photoReports: initData.photoReports?.length ? initData.photoReports : [{ id: `rep_recepcion_${Date.now()}`, date: new Date().toISOString(), description: 'Notas de la Recepción', photos: [] }],
-      };
-    } else {
-      // Creating a new record
-      defaultValues = {
+    const defaultValues: Partial<ServiceFormValues> = {
+        // Set guaranteed defaults for creation
         status: 'Cotizacion',
         serviceType: serviceTypes[0]?.name ?? 'Servicio General',
-        serviceItems: [{ id: nanoid(), name: serviceTypes[0]?.name ?? 'Servicio General', price: undefined, suppliesUsed: [] }],
-        photoReports: [{ id: `rep_recepcion_${Date.now()}`, date: new Date().toISOString(), description: 'Notas de la Recepción', photos: [] }],
-        serviceDate: new Date(),
-        quoteDate: new Date(),
-      };
-      
+        
+        // Merge with initial data if it exists (for editing)
+        ...initData,
+        
+        // Ensure dates are Date objects, not strings or Timestamps
+        serviceDate: initData?.serviceDate ? parseDate(initData.serviceDate) : new Date(),
+        quoteDate: initData?.quoteDate ? parseDate(initData.quoteDate) : (isEditing ? undefined : new Date()),
+        receptionDateTime: initData?.receptionDateTime ? parseDate(initData.receptionDateTime) : undefined,
+        deliveryDateTime: initData?.deliveryDateTime ? parseDate(initData.deliveryDateTime) : undefined,
+
+        // Ensure serviceItems and photoReports always exist
+        serviceItems: initData?.serviceItems?.length ? initData.serviceItems : [{ id: nanoid(), name: serviceTypes[0]?.name ?? 'Servicio General', price: undefined, suppliesUsed: [] }],
+        photoReports: initData?.photoReports?.length ? initData.photoReports : [{ id: `rep_recepcion_${Date.now()}`, date: new Date().toISOString(), description: 'Notas de la Recepción', photos: [] }],
+    };
+
+    if (!isEditing) {
+      // For new records, also set the service advisor
       const authUserString = typeof window !== 'undefined' ? localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY) : null;
       if (authUserString) {
           const currentUser = JSON.parse(authUserString) as User;
