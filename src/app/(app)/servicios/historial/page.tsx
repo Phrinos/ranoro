@@ -80,18 +80,21 @@ function HistorialServiciosPageComponent() {
     return allServices
       .filter((s) => {
         const status = s.status as string;
-        const deliveryDate = parseDate(s.deliveryDateTime);
-        const isDeliveredToday =
-          deliveryDate && isValid(deliveryDate) && isSameDay(deliveryDate, today);
+        
+        // Include services currently in the workshop, regardless of their original serviceDate
+        if (status === "En Taller" || s.subStatus === "Reparando" || s.subStatus === "En Espera de Refacciones") return true;
 
+        // Include services scheduled for today
         const serviceDate = parseDate(s.serviceDate);
-        const isScheduledForToday =
-          serviceDate && isValid(serviceDate) && isSameDay(serviceDate, today);
+        if (status === "Agendado" && serviceDate && isValid(serviceDate) && isSameDay(serviceDate, today)) {
+            return true;
+        }
 
-        if (status === "En Taller" || status === "Reparando") return true;
-        if ((status === "Entregado" || status === "Completado") && isDeliveredToday)
+        // Include services that were delivered today
+        const deliveryDate = parseDate(s.deliveryDateTime);
+        if ((status === "Entregado" || status === "Completado") && deliveryDate && isValid(deliveryDate) && isSameDay(deliveryDate, today)) {
           return true;
-        if (status === "Agendado" && isScheduledForToday) return true;
+        }
 
         return false;
       })
