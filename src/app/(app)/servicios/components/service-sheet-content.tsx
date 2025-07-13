@@ -7,13 +7,14 @@ import { format, parseISO, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
 import React from 'react';
 import { cn, normalizeDataUrl, calculateDriverDebt, formatCurrency } from "@/lib/utils";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { TabsContent } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Check, Eye, Signature, Loader2, AlertCircle } from 'lucide-react';
 import { QuoteContent } from '@/components/quote-content';
 import { Button } from '@/components/ui/button';
 import { placeholderDrivers, placeholderRentalPayments } from '@/lib/placeholder-data';
 import Image from 'next/image';
+import { parseDate } from '@/lib/forms';
 
 const initialWorkshopInfo: WorkshopInfo = {
   name: "RANORO",
@@ -100,16 +101,8 @@ const SafetyChecklistDisplay = ({
   vehicle?: Vehicle;
   onViewImage: (url: string) => void;
 }) => {
-    const serviceDateInput = service.serviceDate;
-    let serviceDate: Date;
-    if (typeof serviceDateInput === 'string') {
-      serviceDate = parseISO(serviceDateInput);
-    } else if (serviceDateInput instanceof Date) {
-      serviceDate = serviceDateInput;
-    } else {
-      serviceDate = new Date(NaN); // Invalid date
-    }
-    const formattedServiceDate = isValid(serviceDate) ? format(serviceDate, "dd 'de' MMMM 'de' yyyy", { locale: es }) : 'N/A';
+    const serviceDate = parseDate(service.serviceDate);
+    const formattedServiceDate = serviceDate && isValid(serviceDate) ? format(serviceDate, "dd 'de' MMMM 'de' yyyy", { locale: es }) : 'N/A';
 
     return (
         <div className="mt-4 print:mt-0">
@@ -203,7 +196,6 @@ const SafetyChecklistDisplay = ({
 
 interface ServiceSheetContentProps {
   service: ServiceRecord;
-  quote?: QuoteRecord | null;
   vehicle?: Vehicle;
   workshopInfo?: WorkshopInfo;
   onViewImage?: (url: string) => void;
@@ -212,26 +204,16 @@ interface ServiceSheetContentProps {
   showSignDelivery?: boolean;
   onSignClick?: (type: 'reception' | 'delivery') => void;
   isSigning?: boolean;
+  activeTab: string;
 }
 
 export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheetContentProps>(
-  ({ service, quote: associatedQuote, vehicle, workshopInfo: workshopInfoProp, onViewImage, isPublicView, showSignReception, showSignDelivery, onSignClick, isSigning }, ref) => {
+  ({ service, vehicle, workshopInfo: workshopInfoProp, onViewImage, isPublicView, showSignReception, showSignDelivery, onSignClick, isSigning, activeTab }, ref) => {
     
-    // Determine which object to use as the quote. It can be the service itself or an associated record.
-    const quote = service.status === 'Cotizacion' || service.status === 'Agendado' ? service : associatedQuote;
-
     const effectiveWorkshopInfo = { ...initialWorkshopInfo, ...workshopInfoProp };
     
-    const serviceDateInput = service.serviceDate;
-    let serviceDate: Date;
-    if (typeof serviceDateInput === 'string') {
-      serviceDate = parseISO(serviceDateInput);
-    } else if (serviceDateInput instanceof Date) {
-      serviceDate = serviceDateInput;
-    } else {
-      serviceDate = new Date(NaN); // Invalid date
-    }
-    const formattedServiceDate = isValid(serviceDate) ? format(serviceDate, "dd 'de' MMMM 'de' yyyy, HH:mm 'hrs'", { locale: es }) : 'N/A';
+    const serviceDate = parseDate(service.serviceDate);
+    const formattedServiceDate = serviceDate && isValid(serviceDate) ? format(serviceDate, "dd 'de' MMMM 'de' yyyy, HH:mm 'hrs'", { locale: es }) : 'N/A';
 
     const fuelLevelMap: Record<string, number> = {
         'Vacío': 0, '1/8': 12.5, '1/4': 25, '3/8': 37.5, '1/2': 50,
@@ -253,21 +235,6 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
 
     const driverDebt = driver && vehicle ? calculateDriverDebt(driver, placeholderRentalPayments, [vehicle]) : { totalDebt: 0, rentalDebt: 0, depositDebt: 0, manualDebt: 0 };
     
-    const showOrder = service.status !== 'Cotizacion' && service.status !== 'Agendado';
-    const showQuote = !!quote;
-    const showChecklist = !!service.safetyInspection && Object.keys(service.safetyInspection).some(k => k !== 'inspectionNotes' && k !== 'technicianSignature' && (service.safetyInspection as any)[k]?.status !== 'na' && (service.safetyInspection as any)[k]?.status !== undefined);
-    const showPhotoReport = !!service.photoReports && service.photoReports.length > 0 && service.photoReports.some(r => r.photos.length > 0);
-    
-    const tabs = [];
-    if (showQuote) tabs.push({ value: 'quote', label: 'Cotización' });
-    if (showOrder) tabs.push({ value: 'order', label: 'Orden de Servicio' });
-    if (showChecklist) tabs.push({ value: 'checklist', label: 'Revisión' });
-    if (showPhotoReport) tabs.push({ value: 'photoreport', label: 'Reporte Fotográfico' });
-    
-    const isQuoteOrAppointment = service.status === 'Cotizacion' || service.status === 'Agendado';
-    const defaultTabValue = isQuoteOrAppointment ? 'quote' : 'order';
-
-
     const ServiceOrderContent = (
       <div className="flex flex-col min-h-[10in]">
         <header className="mb-4 pb-2 border-b-2 border-black">
@@ -468,7 +435,7 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
       </div>
     );
 
-    const PhotoReportContent = showPhotoReport ? (
+    const PhotoReportContent = (
       <div className="mt-4 print:mt-0">
         <header className="mb-4 pb-2 border-b-2 border-black">
           <div className="flex justify-between items-center">
@@ -515,89 +482,33 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
           ))}
         </div>
       </div>
-    ) : null;
+    );
 
-    if (isQuoteOrAppointment) {
-      return (
-        <div ref={ref} data-format="letter" className="font-sans bg-white text-black text-sm">
-          <div className="p-0 sm:p-2 md:p-4 print:p-0">
-            {quote ?
-              <QuoteContent 
-                ref={null}
-                quote={quote} 
-                vehicle={vehicle} 
-                workshopInfo={effectiveWorkshopInfo} 
-              />
-              : <div className='text-center p-8 text-muted-foreground'>No hay información de cotización para mostrar.</div>
-            }
-          </div>
-        </div>
-      );
-    }
+    const renderActiveTabContent = () => {
+        switch (activeTab) {
+            case 'quote':
+                return (service.status === 'Cotizacion' || service.status === 'Agendado')
+                  ? <QuoteContent quote={service} vehicle={vehicle} workshopInfo={effectiveWorkshopInfo} />
+                  : null;
+            case 'order':
+                return ServiceOrderContent;
+            case 'checklist':
+                return service.safetyInspection
+                  ? <SafetyChecklistDisplay inspection={service.safetyInspection} workshopInfo={effectiveWorkshopInfo} service={service} vehicle={vehicle} onViewImage={onViewImage || (() => {})} />
+                  : null;
+            case 'photoreport':
+                return service.photoReports && service.photoReports.length > 0 && service.photoReports.some(r => r.photos.length > 0)
+                  ? PhotoReportContent
+                  : null;
+            default:
+                const isQuoteOrAppointment = service.status === 'Cotizacion' || service.status === 'Agendado';
+                return isQuoteOrAppointment ? <QuoteContent quote={service} vehicle={vehicle} workshopInfo={effectiveWorkshopInfo} /> : ServiceOrderContent;
+        }
+    };
     
     return (
       <div ref={ref} data-format="letter" className="font-sans bg-white text-black text-sm">
-        {/* For Screen View */}
-        <div className="print:hidden p-0 sm:p-2 md:p-4 shadow-lg">
-          <Tabs defaultValue={defaultTabValue} className="w-full">
-            <TabsList className={cn('grid w-full', `grid-cols-${tabs.length || 1}`)}>
-                {tabs.map(tab => <TabsTrigger key={tab.value} value={tab.value}>{tab.label}</TabsTrigger>)}
-            </TabsList>
-            
-            <TabsContent value="quote" className="mt-4">
-              {showQuote ? <QuoteContent quote={quote!} vehicle={vehicle} workshopInfo={effectiveWorkshopInfo} /> : null}
-            </TabsContent>
-            <TabsContent value="order" className="mt-4">{ServiceOrderContent}</TabsContent>
-            <TabsContent value="checklist" className="mt-4">
-              {showChecklist ? <SafetyChecklistDisplay 
-                inspection={service.safetyInspection!}
-                workshopInfo={effectiveWorkshopInfo}
-                service={service}
-                vehicle={vehicle}
-                onViewImage={onViewImage || (() => {})}
-              /> : null}
-            </TabsContent>
-             <TabsContent value="photoreport" className="mt-4">
-               {showPhotoReport ? PhotoReportContent : null}
-            </TabsContent>
-          </Tabs>
-        </div>
-
-        {/* For Print View */}
-        <div className="hidden print:block">
-          {showQuote && (
-              <div className="p-4 md:p-8">
-                  <QuoteContent
-                      quote={quote!}
-                      vehicle={vehicle}
-                      workshopInfo={effectiveWorkshopInfo}
-                  />
-              </div>
-          )}
-          {showOrder && (
-              <div className={cn("p-4 md:p-8", showQuote && "break-before-page")}>
-                {ServiceOrderContent}
-              </div>
-          )}
-          {showChecklist && (
-            <>
-              <div className="break-before-page" />
-              <div className="p-4 md:p-8"><SafetyChecklistDisplay 
-                inspection={service.safetyInspection!}
-                workshopInfo={effectiveWorkshopInfo}
-                service={service}
-                vehicle={vehicle}
-                onViewImage={onViewImage || (() => {})}
-              /></div>
-            </>
-          )}
-          {showPhotoReport && (
-             <>
-              <div className="break-before-page" />
-              <div className="p-4 md:p-8">{PhotoReportContent}</div>
-            </>
-          )}
-        </div>
+        {renderActiveTabContent()}
       </div>
     );
   }

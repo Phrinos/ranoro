@@ -13,6 +13,7 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
+  DialogFooter
 } from "@/components/ui/dialog"
 import { Form } from '@/components/ui/form'
 import { VehicleDialog } from '../../vehiculos/components/vehicle-dialog'
@@ -23,8 +24,26 @@ import { ServiceDetailsCard } from './ServiceDetailsCard'
 import { ReceptionAndDelivery } from './ReceptionAndDelivery'
 import { SafetyChecklist } from './SafetyChecklist'
 import { PhotoUploader } from './PhotoUploader'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Textarea } from '@/components/ui/textarea'
+import Image from "next/image";
+import { FormField, FormItem, FormLabel, FormControl } from '@/components/ui/form'
+import { Eye, PlusCircle, Trash2, Ban, Wrench, CheckCircle, ShieldCheck, Camera } from 'lucide-react'
+import { cn } from '@/lib/utils'
 
-import { ServiceFormHeader, ServiceFormFooter } from './ServiceFormLayout';
 import { useServiceStatusWatcher, useServiceTotals, useInitServiceForm } from '@/hooks/use-service-form-hooks'
 import { suggestQuote } from '@/ai/flows/quote-suggestion-flow';
 import { enhanceText } from '@/ai/flows/text-enhancement-flow';
@@ -32,13 +51,6 @@ import { enhanceText } from '@/ai/flows/text-enhancement-flow';
 import type { Vehicle, Technician, InventoryItem, ServiceTypeRecord, ServiceRecord, QuoteRecord, PhotoReportGroup } from '@/types'
 import type { VehicleFormValues } from '../../vehiculos/components/vehicle-form'
 import { serviceFormSchema, type ServiceFormValues } from '@/schemas/service-form'
-import { Tabs, TabsContent } from '@/components/ui/tabs'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Textarea } from '@/components/ui/textarea'
-import Image from "next/image";
-import { FormField, FormItem, FormLabel, FormControl } from '@/components/ui/form'
-import { Eye, PlusCircle, Trash2 } from 'lucide-react'
 
 interface ServiceFormProps {
   initialDataService?: ServiceRecord | null
@@ -53,7 +65,7 @@ interface ServiceFormProps {
   mode?: 'service' | 'quote'
   onDelete?: (id: string) => void
   onCancelService?: (id: string, reason: string) => void
-  onStatusChange?: (s?: ServiceRecord['status']) => void
+  onStatusChange?: (s?: ServiceFormValues['status']) => void
   dialogTitle: string;
   dialogDescription: string;
 }
@@ -98,6 +110,8 @@ export function ServiceForm({
   const [isEnhancingText, setIsEnhancingText] = useState<string | null>(null);
   const [isImageViewerOpen, setIsImageViewerOpen] = useState(false);
   const [viewingImageUrl, setViewingImageUrl] = useState<string | null>('');
+  const [isCancelAlertOpen, setIsCancelAlertOpen] = useState(false);
+  const [cancellationReason, setCancellationReason] = useState('');
 
   const status = watch('status');
   const serviceId = watch('id') || 'new';
@@ -206,27 +220,54 @@ export function ServiceForm({
     setViewingImageUrl(url);
     setIsImageViewerOpen(true);
   }, []);
+  
+  const showAdvancedTabs = status && ['En Taller', 'Entregado', 'Cancelado'].includes(status);
+  
+  const tabs = [
+    { value: 'servicio', label: 'Detalles', icon: Wrench, show: true },
+    { value: 'recepcion', label: 'Rec./Ent.', icon: CheckCircle,  show: showAdvancedTabs },
+    { value: 'reporte', label: 'Fotos', icon: Camera, show: showAdvancedTabs },
+    { value: 'seguridad', label: 'Revisión',   icon: ShieldCheck,  show: showAdvancedTabs },
+  ].filter((t) => t.show);
+  
+  const gridColsClass = 
+    tabs.length === 4 ? 'grid-cols-4' :
+    tabs.length === 3 ? 'grid-cols-3' :
+    tabs.length === 2 ? 'grid-cols-2' :
+    'grid-cols-1';
+
+  const canBeCancelled = initialDataService?.id && status !== 'Cancelado' && status !== 'Entregado';
+
 
   return (
     <>
       <Form {...form}>
         <form onSubmit={handleSubmit(handleSave)} className="flex flex-col h-full">
+            {/* Header: Fixed */}
             <div className="flex-shrink-0 p-6 pb-0">
                 <DialogHeader>
                     <DialogTitle>{dialogTitle}</DialogTitle>
                     <DialogDescription>{dialogDescription}</DialogDescription>
                 </DialogHeader>
-                <div className="pt-4">
-                    <ServiceFormHeader
-                        onPreview={handleOpenPreview}
-                        isReadOnly={isReadOnly}
-                        status={status}
-                        activeTab={activeTab}
-                        onTabChange={setActiveTab}
-                    />
+                 <div className="pt-4 sticky top-0 bg-background z-10 -mx-6 px-6 pb-2 border-b">
+                     <Tabs value={activeTab} onValueChange={setActiveTab}>
+                      <div className="flex justify-between items-center">
+                        <TabsList className={cn('grid w-full mb-0', gridColsClass)}>
+                          {tabs.map((t) => (
+                            <TabsTrigger key={t.value} value={t.value} className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs sm:text-sm flex items-center gap-2">
+                              <t.icon className="h-4 w-4 mr-1.5 shrink-0" />
+                              <span className="hidden sm:inline">{t.label}</span>
+                              <span className="sm:hidden">{t.label.slice(0, 5)}</span>
+                            </TabsTrigger>
+                          ))}
+                        </TabsList>
+                        {!isReadOnly && ( <Button type="button" onClick={handleOpenPreview} variant="ghost" size="icon" title="Vista previa"><Eye className="h-5 w-5" /></Button>)}
+                      </div>
+                    </Tabs>
                 </div>
             </div>
 
+            {/* Content: Scrollable */}
             <div className="flex-grow overflow-y-auto px-6">
                 <Tabs value={activeTab} onValueChange={setActiveTab}>
                     <TabsContent value="servicio" className="mt-6">
@@ -296,15 +337,43 @@ export function ServiceForm({
                 </Tabs>
             </div>
             
+            {/* Footer: Fixed */}
             <div className="flex-shrink-0 p-6 pt-4 border-t bg-background">
-                <ServiceFormFooter
-                    isEditing={!!initialDataService?.id}
-                    isReadOnly={isReadOnly}
-                    isSubmitting={formState.isSubmitting}
-                    status={status}
-                    onClose={onClose}
-                    onCancelService={(reason) => onCancelService && initialDataService?.id && onCancelService(initialDataService.id, reason)}
-                />
+                <div className="flex justify-between items-center">
+                    <div>
+                    {canBeCancelled && onCancelService && (
+                        <AlertDialog open={isCancelAlertOpen} onOpenChange={setIsCancelAlertOpen}>
+                        <AlertDialogTrigger asChild>
+                            <Button variant="outline" type="button" className="text-destructive border-destructive/50 hover:bg-destructive/10 hover:text-destructive">
+                            <Ban className="mr-2 h-4 w-4" /> Cancelar Servicio
+                            </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                            <AlertDialogHeader><AlertDialogTitle>¿Está seguro de cancelar este servicio?</AlertDialogTitle><AlertDialogDescription>Esta acción no se puede deshacer. El estado se cambiará a "Cancelado".</AlertDialogDescription></AlertDialogHeader>
+                            <Textarea placeholder="Motivo de la cancelación (opcional)..." value={cancellationReason} onChange={(e) => setCancellationReason(e.target.value)} />
+                            <AlertDialogFooter>
+                            <AlertDialogCancel onClick={() => setCancellationReason('')}>Cerrar</AlertDialogCancel>
+                            <AlertDialogAction onClick={() => { onCancelService(initialDataService!.id!, cancellationReason); onClose(); }} className="bg-destructive hover:bg-destructive/90">
+                                Sí, Cancelar Servicio
+                            </AlertDialogAction>
+                            </AlertDialogFooter>
+                        </AlertDialogContent>
+                        </AlertDialog>
+                    )}
+                    </div>
+                    <div className="flex gap-2">
+                    {isReadOnly ? (
+                        <Button variant="outline" type="button" onClick={onClose}>Cerrar</Button>
+                    ) : (
+                        <>
+                        <Button variant="outline" type="button" onClick={onClose}>Cancelar</Button>
+                        <Button type="submit" disabled={formState.isSubmitting}>
+                            {formState.isSubmitting ? 'Guardando…' : initialDataService?.id ? 'Actualizar' : 'Crear'}
+                        </Button>
+                        </>
+                    )}
+                    </div>
+                </div>
             </div>
         </form>
       </Form>
