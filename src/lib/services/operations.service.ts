@@ -392,4 +392,3 @@ export const operationsService = {
     addVehicleExpense,
     addOwnerWithdrawal,
 };
-
