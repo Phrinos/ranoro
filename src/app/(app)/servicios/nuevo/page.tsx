@@ -10,8 +10,9 @@ import { PageHeader } from "@/components/page-header";
 import { ServiceForm } from "../components/service-form";
 import { operationsService, inventoryService, personnelService } from '@/lib/services';
 import type { ServiceRecord, Vehicle, Technician, InventoryItem, ServiceTypeRecord, QuoteRecord } from "@/types";
-import type { VehicleFormValues } from '../../vehiculos/components/vehicle-form';
 import { Button } from '@/components/ui/button';
+import { UnifiedPreviewDialog } from '@/components/shared/unified-preview-dialog';
+
 
 // This page now renders the form for creating a new service record locally.
 export default function NuevoServicioPage() {
@@ -23,6 +24,10 @@ export default function NuevoServicioPage() {
   const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
   const [serviceTypes, setServiceTypes] = useState<ServiceTypeRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  
+  const [serviceForPreview, setServiceForPreview] = useState<ServiceRecord | null>(null);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+
 
   useEffect(() => {
     const unsubs = [
@@ -41,7 +46,15 @@ export default function NuevoServicioPage() {
     try {
       const savedRecord = await operationsService.saveService(data);
       toast({ title: 'Registro Creado', description: `El registro #${savedRecord.id} se ha guardado.` });
-      router.push('/servicios/historial');
+      
+      // Conditional redirect/preview logic
+      if (savedRecord.status === 'Agendado') {
+        router.push('/servicios/agenda');
+      } else {
+        // For 'Cotizacion' or 'En Taller', show preview
+        setServiceForPreview(savedRecord);
+        setIsPreviewOpen(true);
+      }
     } catch (error) {
       console.error('Error creating service:', error);
       toast({ title: 'Error al Guardar', description: 'No se pudo crear el nuevo registro.', variant: 'destructive' });
@@ -80,6 +93,20 @@ export default function NuevoServicioPage() {
             </Button>
         </div>
       </ServiceForm>
+      
+      {serviceForPreview && (
+        <UnifiedPreviewDialog
+          open={isPreviewOpen}
+          onOpenChange={(isOpen) => {
+              setIsPreviewOpen(isOpen);
+              // If dialog is closed, redirect to history
+              if (!isOpen) {
+                  router.push('/servicios/historial');
+              }
+          }}
+          service={serviceForPreview}
+        />
+      )}
     </>
   );
 }
