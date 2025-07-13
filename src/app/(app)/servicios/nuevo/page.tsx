@@ -69,7 +69,6 @@ export default function NuevoServicioPage() {
         technicians={technicians}
         inventoryItems={inventoryItems}
         serviceTypes={serviceTypes}
-        serviceHistory={[]}
         onSubmit={handleSaveNewService}
         onClose={() => router.push('/servicios/historial')}
         mode="service" // Default mode, can be changed internally by status
