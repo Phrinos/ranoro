@@ -249,8 +249,7 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
     if (showChecklist) tabs.push({ value: 'checklist', label: 'Revisión' });
     if (showPhotoReport) tabs.push({ value: 'photoreport', label: 'Reporte Fotográfico' });
     
-    const isQuoteOrAppointment = service.status === 'Cotizacion' || service.status === 'Agendado';
-    const defaultTabValue = isQuoteOrAppointment ? 'quote' : 'order';
+    const defaultTabValue = service.status === 'Cotizacion' || service.status === 'Agendado' ? 'quote' : 'order';
 
 
     const ServiceOrderContent = (
@@ -407,7 +406,7 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
         
         <footer className="mt-auto pt-4 text-xs">
            <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 text-center mb-4">
-               <div className="pt-2 min-h-[80px] flex flex-col justify-between">
+               <div className="pt-2 min-h-[80px] flex flex-col justify-end">
                     <div className="h-14 flex-grow flex items-center justify-center">
                         {service.serviceAdvisorSignatureDataUrl && (
                             <div className="relative w-full h-full max-w-[200px]">
@@ -502,13 +501,35 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
       </div>
     ) : null;
 
+    const isQuoteOrAppointment = service.status === 'Cotizacion' || service.status === 'Agendado';
+
+    if (isQuoteOrAppointment) {
+      return (
+        <div ref={ref} data-format="letter" className="font-sans bg-white text-black text-sm">
+          <div className="p-0 sm:p-2 md:p-4 print:p-0">
+            {quote ?
+              <QuoteContent 
+                ref={null}
+                quote={quote} 
+                vehicle={vehicle} 
+                workshopInfo={effectiveWorkshopInfo} 
+              />
+              : <div className='text-center p-8 text-muted-foreground'>No hay información de cotización para mostrar.</div>
+            }
+          </div>
+        </div>
+      );
+    }
+    
     return (
       <div ref={ref} data-format="letter" className="font-sans bg-white text-black text-sm">
         {/* For Screen View */}
         <div className="print:hidden p-0 sm:p-2 md:p-4 shadow-lg">
           <Tabs defaultValue={defaultTabValue} className="w-full">
             <TabsList className={cn('grid w-full', `grid-cols-${tabs.length || 1}`)}>
-                {tabs.map(tab => <TabsTrigger key={tab.value} value={tab.value}>{tab.label}</TabsTrigger>)}
+                {tabs.map(tab => (
+                  <TabsTrigger key={tab.value} value={tab.value} className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">{tab.label}</TabsTrigger>
+                ))}
             </TabsList>
             
             <TabsContent value="quote" className="mt-4">

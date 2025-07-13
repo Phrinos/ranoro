@@ -67,37 +67,44 @@ export function useInitServiceForm(form: UseFormReturn<ServiceFormValues>, { ini
 
   useEffect(() => {
     const isEditing = initData && 'id' in initData && initData.id;
-
-    const defaultValues: Partial<ServiceFormValues> = {
-        // Set guaranteed defaults for creation
-        status: 'Cotizacion',
-        serviceType: serviceTypes[0]?.name ?? 'Servicio General',
-        
-        // Merge with initial data if it exists (for editing)
-        ...initData,
-        
-        // Ensure dates are Date objects, not strings or Timestamps
-        serviceDate: initData?.serviceDate ? parseDate(initData.serviceDate) : new Date(),
-        quoteDate: initData?.quoteDate ? parseDate(initData.quoteDate) : (isEditing ? undefined : new Date()),
-        receptionDateTime: initData?.receptionDateTime ? parseDate(initData.receptionDateTime) : undefined,
-        deliveryDateTime: initData?.deliveryDateTime ? parseDate(initData.deliveryDateTime) : undefined,
-
-        // Ensure serviceItems and photoReports always exist
-        serviceItems: initData?.serviceItems?.length ? initData.serviceItems : [{ id: nanoid(), name: serviceTypes[0]?.name ?? 'Servicio General', price: undefined, suppliesUsed: [] }],
-        photoReports: initData?.photoReports?.length ? initData.photoReports : [{ id: `rep_recepcion_${Date.now()}`, date: new Date().toISOString(), description: 'Notas de la Recepción', photos: [] }],
-    };
-
-    if (!isEditing) {
-      // For new records, also set the service advisor
-      const authUserString = typeof window !== 'undefined' ? localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY) : null;
-      if (authUserString) {
-          const currentUser = JSON.parse(authUserString) as User;
-          defaultValues.serviceAdvisorId = currentUser.id;
-          defaultValues.serviceAdvisorName = currentUser.name;
-          defaultValues.serviceAdvisorSignatureDataUrl = currentUser.signatureDataUrl || '';
-      }
-    }
+    const firstType = serviceTypes[0]?.name ?? 'Servicio General';
     
-    reset(defaultValues);
+    let baseData: Partial<ServiceFormValues>;
+
+    if (isEditing) {
+      baseData = {
+        ...initData,
+        // Ensure serviceItems and photoReports are always arrays
+        serviceItems: initData.serviceItems?.length ? initData.serviceItems : [],
+        photoReports: initData.photoReports?.length ? initData.photoReports : [],
+      };
+    } else {
+      // For a new record, set clear, reliable defaults.
+      const authUserString = typeof window !== 'undefined' ? localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY) : null;
+      const currentUser = authUserString ? JSON.parse(authUserString) as User : null;
+
+      baseData = {
+        status: 'Cotizacion',
+        serviceType: firstType,
+        serviceDate: new Date(),
+        quoteDate: new Date(),
+        serviceItems: [{ id: nanoid(), name: firstType, price: undefined, suppliesUsed: [] }],
+        photoReports: [{ id: `rep_recepcion_${Date.now()}`, date: new Date().toISOString(), description: 'Notas de la Recepción', photos: [] }],
+        serviceAdvisorId: currentUser?.id,
+        serviceAdvisorName: currentUser?.name,
+        serviceAdvisorSignatureDataUrl: currentUser?.signatureDataUrl || '',
+      };
+    }
+
+    // Process dates to ensure they are Date objects
+    const finalData = {
+      ...baseData,
+      serviceDate: baseData.serviceDate ? parseDate(baseData.serviceDate) : undefined,
+      quoteDate: baseData.quoteDate ? parseDate(baseData.quoteDate) : undefined,
+      receptionDateTime: baseData.receptionDateTime ? parseDate(baseData.receptionDateTime) : undefined,
+      deliveryDateTime: baseData.deliveryDateTime ? parseDate(baseData.deliveryDateTime) : undefined,
+    };
+    
+    reset(finalData);
   }, [initData, serviceTypes, reset]);
 }
