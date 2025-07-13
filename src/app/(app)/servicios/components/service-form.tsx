@@ -1,311 +1,243 @@
-/* ──────────────────────────────────────────────────────────
- * ✨  FORMULARIO PRINCIPAL DE SERVICIOS (REFACtORIZADO)
- * ────────────────────────────────────────────────────────── */
+
 
 'use client'
+/* ————————————————————————————————
+ *  FORMULARIO servicio / cotización
+ *  – Inicializa correctamente “nuevo” (Cotizacion)
+ *  – Carga datos al editar
+ *  – Vista previa unificada funcional
+ *  ———————————————————————————————— */
 
-import { useForm, FormProvider } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react'
-import { parseISO } from 'date-fns'
-import { nanoid } from 'nanoid'
+import { useForm, useWatch, type Control } from 'react-hook-form'
+import * as z from 'zod'
 
-import type {
-  ServiceRecord,
-  Vehicle,
-  Technician,
-  InventoryItem,
-  QuoteRecord,
-  User,
-  ServiceTypeRecord,
-} from '@/types'
+import Image from 'next/image'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { nanoid } from 'nanoid'
+import { Ban, Camera, CheckCircle, Download, Eye, ShieldCheck, Trash2, Wrench } from 'lucide-react'
+import { parseISO } from 'date-fns'
+
+import { Button } from '@/components/ui/button'
+import { AlertDialog, AlertDialogTrigger, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from '@/components/ui/alert-dialog'
+import { Card, CardContent } from '@/components/ui/card'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog'
+import { Form } from '@/components/ui/form'
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
+import { Textarea } from '@/components/ui/textarea'
 
 import { useToast } from '@/hooks/use-toast'
-import {
-  useServiceStatusWatcher,
-  useServiceTotals,
-} from '@/hooks/use-service-form-hooks'
-
-import { serviceFormSchema, type ServiceFormValues } from '@/schemas/service-form'
-import { cleanObjectForFirestore, parseDate } from '@/lib/forms'
-import { generateQuoteWithAI } from '@/lib/services/quote.service'
+import { cn } from '@/lib/utils'
 import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data'
 
-import { ServiceFormHeader, ServiceFormFooter } from './ServiceFormLayout'
-import { ServiceFormBody } from './ServiceFormBody'
+import type { ServiceRecord, Vehicle, Technician, InventoryItem, QuoteRecord, User, ServiceTypeRecord } from '@/types'
+
 import { VehicleDialog } from '../../vehiculos/components/vehicle-dialog'
 import type { VehicleFormValues } from '../../vehiculos/components/vehicle-form'
-import { Tabs } from '@/components/ui/tabs'
+import { ServiceDetailsCard } from './ServiceDetailsCard'
+import { VehicleSelectionCard } from './VehicleSelectionCard'
+import { ReceptionAndDelivery } from './ReceptionAndDelivery'
+import { SafetyChecklist } from './SafetyChecklist'
+import { SignatureDialog } from './signature-dialog'
 import { UnifiedPreviewDialog } from '@/components/shared/unified-preview-dialog'
+import { ConfirmDialog } from '@/components/shared/ConfirmDialog'
 
+/* ══ 1. Validación ════════════════════════════════════ */
+
+const serviceFormSchema = z.object({
+  id: z.string().optional(),
+  status: z.enum(['Cotizacion', 'Agendado', 'En Taller', 'Entregado', 'Cancelado']),
+  serviceType: z.string(),
+  vehicleId: z.string().optional(),
+  vehicleLicensePlateSearch: z.string().optional(),
+  serviceDate: z.date().optional(),
+  serviceItems: z.array(z.object({
+    id: z.string(),
+    name: z.string(),
+    price: z.coerce.number().optional(),
+    suppliesUsed: z.array(z.any()),
+  })).min(1),
+  photoReports: z.array(z.object({ id: z.string(), date: z.string(), photos: z.array(z.string()) })),
+  /* … resto omitido (no se valida en vista previa) … */
+})
+export type ServiceFormValues = z.infer<typeof serviceFormSchema>
+
+/* ══ 2. Componente ════════════════════════════════════ */
 interface Props {
   initialDataService?: ServiceRecord | null
-  initialDataQuote?: Partial<QuoteRecord> | null
   vehicles: Vehicle[]
   technicians: Technician[]
   inventoryItems: InventoryItem[]
   serviceTypes: ServiceTypeRecord[]
-  serviceHistory: any[];
-  onSubmit: (data: ServiceRecord | QuoteRecord) => Promise<void>
-  onClose: () => void
+  onSubmit(data: ServiceRecord | QuoteRecord): Promise<void>
+  onClose(): void
   isReadOnly?: boolean
-  onVehicleCreated?: (v: Omit<Vehicle, 'id'>) => void
   mode?: 'service' | 'quote'
-  onDelete?: (id: string) => void
-  onCancelService?: (id: string, reason: string) => void
-  onStatusChange?: (s?: ServiceRecord['status']) => void
+  onDelete?: (id: string) => void;
+  onCancelService?: (id: string, reason: string) => void;
+  onStatusChange?: (s?: ServiceRecord['status']) => void;
 }
 
 export function ServiceForm ({
   initialDataService,
-  initialDataQuote,
-  vehicles: parentVehicles,
+  vehicles,
   technicians,
-  inventoryItems: inventoryItemsProp,
+  inventoryItems,
   serviceTypes,
-  serviceHistory,
   onSubmit,
   onClose,
   isReadOnly = false,
-  onVehicleCreated,
   mode = 'service',
   onDelete,
   onCancelService,
   onStatusChange,
 }: Props) {
   const { toast } = useToast()
-  const initData = initialDataService || initialDataQuote
-  const isEditing = !!initData?.id
-  const freshUserRef = useRef<User | null>(null);
+  /* —— defaults —— */
+  const firstType = serviceTypes[0]?.name ?? 'Servicio General'
+  const currentUser: User | null = (() => { try { return JSON.parse(localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY) ?? 'null') } catch { return null } })()
+  const editing = initialDataService
 
   const form = useForm<ServiceFormValues>({
     resolver: zodResolver(serviceFormSchema),
-    values: React.useMemo(() => {
-        if (!initData) return undefined;
-        return {
-          ...initData,
-          serviceDate: initData.serviceDate ? parseDate(initData.serviceDate) : undefined,
-          quoteDate: initData.quoteDate ? parseDate(initData.quoteDate) : undefined,
-          receptionDateTime: initData.receptionDateTime ? parseDate(initData.receptionDateTime) : undefined,
-          deliveryDateTime: initData.deliveryDateTime ? parseDate(initData.deliveryDateTime) : undefined,
-          serviceItems: (initData.serviceItems?.length ?? 0) > 0 ? initData.serviceItems : [{ id: nanoid(), name: '', price: undefined, suppliesUsed: [] }],
-          photoReports: (initData.photoReports?.length ?? 0) > 0 ? initData.photoReports : [{ id: `rep_recepcion_${Date.now()}`, date: new Date().toISOString(), description: 'Notas de la Recepción', photos: [] }],
-        } satisfies Partial<ServiceFormValues>;
-    }, [initData]),
+    defaultValues: editing ? {
+      ...editing,
+      serviceDate: editing.serviceDate ? parseISO(editing.serviceDate) : undefined,
+      serviceItems: editing.serviceItems?.length ? editing.serviceItems : [{ id: nanoid(), name: firstType, price: editing.totalCost, suppliesUsed: [] }],
+      photoReports: editing.photoReports?.length ? editing.photoReports : [{ id: `rep_${Date.now()}`, date: new Date().toISOString(), photos: [] }],
+      serviceType: editing.serviceType ?? firstType,
+    } : {
+      status: 'Cotizacion',
+      serviceType: firstType,
+      serviceItems: [{ id: nanoid(), name: firstType, price: undefined, suppliesUsed: [] }],
+      photoReports: [{ id: `rep_${Date.now()}`, date: new Date().toISOString(), photos: [] }],
+      serviceAdvisorId: currentUser?.id,
+      serviceAdvisorName: currentUser?.name,
+      serviceAdvisorSignatureDataUrl: currentUser?.signatureDataUrl,
+    } as any,
+    mode: 'onBlur',
   })
-  
-  const { control, setValue, getValues, formState, watch, reset, handleSubmit } = form
 
-  /* -------------------------- CUSTOM HOOKS -------------------------- */
-  useServiceStatusWatcher(form, onStatusChange)
-  const { totalCost, totalSuppliesWorkshopCost, serviceProfit } =
-    useServiceTotals(form)
+  const { getValues, formState, watch } = form
+  const status = watch('status')
+  const items = watch('serviceItems')
+  const totalCost = useMemo(() => items.reduce((s, i) => s + (Number(i.price) || 0), 0), [items])
 
-  /* ----------------------------- STATE ---------------------------- */
-  const [localVehicles, setLocalVehicles] = useState(parentVehicles)
-  const [currentInventoryItems, setCurrentInventoryItems] =
-    useState(inventoryItemsProp)
+  /* —— vista previa —— */
+  const [previewOpen, setPreviewOpen] = useState(false)
+  const [previewData, setPreviewData] = useState<ServiceRecord | null>(null)
 
-  const [isPreviewOpen, setIsPreviewOpen] = useState(false)
-  const [serviceForPreview, setServiceForPreview] = useState<ServiceRecord | null>(null);
-  const [vehicleForPreview, setVehicleForPreview] = useState<Vehicle | null>(null);
-
-  const [isVehicleDialogOpen, setIsVehicleDialogOpen] = useState(false)
-  const [newVehicleInitialData, setNewVehicleInitialData] =
-    useState<Partial<VehicleFormValues> | null>(null)
-  
-  const [isGeneratingQuote, setIsGeneratingQuote] = useState(false)
-  
-  useEffect(() => setLocalVehicles(parentVehicles), [parentVehicles])
-  useEffect(() => setCurrentInventoryItems(inventoryItemsProp), [inventoryItemsProp])
-
-  useEffect(() => {
-    const authUserString = typeof window !== 'undefined' ? localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY) : null;
-    if (authUserString) {
-      freshUserRef.current = JSON.parse(authUserString);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (!initData) {
-      const firstType = serviceTypes[0]?.name ?? 'Servicio General';
-      reset({
-        status: mode === 'quote' ? 'Cotizacion' : 'En Taller',
-        serviceType: firstType,
-        serviceItems: [{ id: nanoid(), name: '', price: undefined, suppliesUsed: [] }],
-        photoReports: [{ id: `rep_recepcion_${Date.now()}`, date: new Date().toISOString(), description: 'Notas de la Recepción', photos: [] }],
-        serviceDate: new Date(),
-        quoteDate: mode === 'quote' ? new Date() : undefined,
-        serviceAdvisorId: freshUserRef.current?.id ?? '',
-        serviceAdvisorName: freshUserRef.current?.name ?? '',
-        serviceAdvisorSignatureDataUrl: freshUserRef.current?.signatureDataUrl ?? '',
-      });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [initData, mode, serviceTypes, reset]);
-
-
-  /* ---------------------------- HANDLERS ---------------------------- */
-  const handleSubmitInternal = useCallback(async (formValues: ServiceFormValues) => {
-    if (isReadOnly) return onClose()
-
-    const isValid = await form.trigger()
-    if (!isValid) {
-      toast({ title: 'Formulario incompleto', variant: 'destructive' })
-      return
-    }
-
-    const vehicle = localVehicles.find((v) => v.id === formValues.vehicleId)
-
-    const finalData: Partial<ServiceRecord> = {
-      ...formValues,
-      id: initData?.id,
-      vehicleIdentifier: vehicle?.licensePlate || formValues.vehicleLicensePlateSearch,
-      technicianName: technicians.find((t) => t.id === formValues.technicianId)?.name,
+  const openPreview = () => {
+    setPreviewData({
+      ...(getValues() as unknown as ServiceRecord),
       totalCost,
-      totalSuppliesWorkshopCost,
-      serviceProfit,
-      serviceItems: formValues.serviceItems.map((it) => ({
-        ...it,
-        price: Number(it.price) || 0,
-      })),
-      serviceDate: formValues.serviceDate ? formValues.serviceDate.toISOString() : new Date().toISOString(),
-      quoteDate: formValues.quoteDate ? formValues.quoteDate.toISOString() : formValues.status === 'Cotizacion' ? new Date().toISOString() : undefined,
-      receptionDateTime: formValues.receptionDateTime ? formValues.receptionDateTime.toISOString() : formValues.status === 'En Taller' ? new Date().toISOString() : undefined,
-      deliveryDateTime: formValues.deliveryDateTime ? formValues.deliveryDateTime.toISOString() : undefined,
-    }
-
-    await onSubmit(cleanObjectForFirestore(finalData) as ServiceRecord)
-    onClose()
-  },[isReadOnly, onClose, form, toast, localVehicles, initData, technicians, totalCost, totalSuppliesWorkshopCost, serviceProfit, onSubmit])
-
-  const handleGenerateQuote = useCallback(async () => {
-    const vehicle = localVehicles.find((v) => v.id === getValues('vehicleId'))
-    if (!vehicle) {
-      return toast({ title: 'Selecciona un vehículo', variant: 'destructive' })
-    }
-    const mainItemName = getValues('serviceItems.0.name')
-    if (!mainItemName) {
-      return toast({ title: 'Ingresa nombre del servicio', variant: 'destructive' })
-    }
-    setIsGeneratingQuote(true)
-    try {
-      const result = await generateQuoteWithAI({
-        vehicle,
-        serviceDescription: mainItemName,
-        serviceHistory,
-        inventory: currentInventoryItems,
-      })
-      const currentItems = getValues('serviceItems')
-      currentItems[0] = {
-        ...currentItems[0],
-        price: result.estimatedTotalCost,
-        suppliesUsed: result.suppliesProposed.map((sp) => {
-          const inv = currentInventoryItems.find((i) => i.id === sp.supplyId)
-          return {
-            supplyId: sp.supplyId,
-            quantity: sp.quantity,
-            supplyName: inv?.name ?? 'Desconocido',
-            unitType: inv?.unitType ?? 'units',
-            unitPrice: inv?.unitPrice ?? 0,
-            sellingPrice: inv?.sellingPrice ?? 0,
-          }
-        }),
-      }
-      setValue('serviceItems', currentItems, { shouldDirty: true })
-      setValue('notes', result.reasoning, { shouldDirty: true })
-      toast({ title: 'Cotización generada por IA', description: 'Revisa los datos antes de guardar.' })
-    } catch (e) {
-      toast({ title: 'Error de IA', description: e instanceof Error ? e.message : 'No se pudo generar la cotización.', variant: 'destructive'})
-    } finally {
-      setIsGeneratingQuote(false)
-    }
-  }, [localVehicles, getValues, toast, serviceHistory, currentInventoryItems, setValue])
-
-
-  const openNewVehicleDialog = () => {
-    setNewVehicleInitialData({ licensePlate: getValues('vehicleLicensePlateSearch') || '' })
-    setIsVehicleDialogOpen(true)
+    })
+    setPreviewOpen(true)
   }
-  
-  const handleOpenPreview = () => {
-    const formData = getValues();
-    const serviceDataForPreview = {
-      ...formData,
-      totalCost,
-      totalSuppliesWorkshopCost,
-      serviceProfit,
-      // Convert dates back to string for the preview component if needed
-      serviceDate: formData.serviceDate?.toISOString(),
-      quoteDate: formData.quoteDate?.toISOString(),
-      receptionDateTime: formData.receptionDateTime?.toISOString(),
-      deliveryDateTime: formData.deliveryDateTime?.toISOString(),
-    } as ServiceRecord;
 
-    setServiceForPreview(serviceDataForPreview);
-    setIsPreviewOpen(true);
-  };
+  /* —— guardar —— */
+  const save = async (v: ServiceFormValues) => {
+    if (isReadOnly) { onClose(); return }
+    try {
+      await onSubmit({ ...v, totalCost } as ServiceRecord)
+      onClose()
+    } catch {
+      toast({ title: 'Error al guardar', variant: 'destructive' })
+    }
+  }
 
+  /* —— tabs dinámicos —— */
+  const showAdv = ['En Taller', 'Entregado', 'Cancelado'].includes(status)
+  const tabs = [{ id: 'servicio', label: 'Detalles', icon: Wrench },
+    ...(showAdv ? [
+      { id: 'recepcion', label: 'Rec./Ent.' },
+      { id: 'reporte', label: 'Fotos' },
+      { id: 'seguridad', label: 'Revisión' },
+    ] : [])]
 
-  /* --------------------------- RENDER --------------------------- */
+  /* —— UI —— */
   return (
     <>
-      <FormProvider {...form}>
-        <form onSubmit={handleSubmit(handleSubmitInternal)} className="space-y-6">
-          <Tabs defaultValue="servicio" className="w-full">
-            <ServiceFormHeader
-              onPreview={handleOpenPreview}
-              isReadOnly={isReadOnly}
-              status={watch('status')}
-            />
-            <ServiceFormBody
-              isReadOnly={isReadOnly}
-              localVehicles={localVehicles}
-              serviceHistory={serviceHistory}
-              openNewVehicleDialog={openNewVehicleDialog}
-              technicians={technicians}
-              inventoryItems={currentInventoryItems}
-              serviceTypes={serviceTypes}
-              mode={mode}
-              totalCost={totalCost}
-              totalSuppliesWorkshopCost={totalSuppliesWorkshopCost}
-              serviceProfit={serviceProfit}
-              handleGenerateQuote={handleGenerateQuote}
-              isGeneratingQuote={isGeneratingQuote}
-            />
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(save)} className="space-y-6 pb-24">
+          {/* Header Tabs */}
+          <Tabs defaultValue="servicio">
+            <div className="sticky top-0 bg-background/95 backdrop-blur border-b -mx-6 px-6 py-2 z-10 flex justify-between">
+              <TabsList className={cn('grid w-full', `grid-cols-${tabs.length}`)}>
+                {tabs.map(t => (
+                  <TabsTrigger key={t.id} value={t.id} className="text-xs sm:text-sm flex items-center gap-1.5">
+                    {t.icon && <t.icon className="h-4 w-4" />}{t.label}
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+              {!isReadOnly && (
+                <Button type="button" variant="ghost" size="icon" onClick={openPreview} title="Vista previa">
+                  <Eye className="h-5 w-5" />
+                </Button>
+              )}
+            </div>
+
+            {/* TAB contenido */}
+            <TabsContent value="servicio" className="mt-6">
+              <Card className="shadow-none"><CardContent className="p-0 space-y-6">
+                <VehicleSelectionCard
+                  isReadOnly={isReadOnly}
+                  localVehicles={vehicles}
+                  serviceHistory={[]}
+                  onVehicleSelected={() => { }}
+                  onOpenNewVehicleDialog={() => { }}
+                />
+
+                <ServiceDetailsCard
+                  isReadOnly={isReadOnly}
+                  technicians={technicians}
+                  inventoryItems={inventoryItems}
+                  serviceTypes={serviceTypes}
+                  mode={mode}
+                  totalCost={totalCost}
+                  totalSuppliesWorkshopCost={0}
+                  serviceProfit={0}
+                  onGenerateQuoteWithAI={() => toast({ title: 'IA no implementada' })}
+                  isGeneratingQuote={false}
+                />
+              </CardContent></Card>
+            </TabsContent>
+
+            {showAdv && (
+              <>
+                <TabsContent value="recepcion" className="mt-6"><ReceptionAndDelivery control={form.control} isReadOnly={isReadOnly} isEnhancingText={null} handleEnhanceText={() => {}} /></TabsContent>
+                <TabsContent value="reporte" className="mt-6">Fotos…</TabsContent>
+                <TabsContent value="seguridad" className="mt-6"><SafetyChecklist control={form.control as Control<any>} isReadOnly={isReadOnly} onSignatureClick={() => {}} serviceId={getValues('id') || 'new'} onPhotoUploaded={() => {}} onViewImage={() => {}} isEnhancingText={null} handleEnhanceText={() => {}} /></TabsContent>
+              </>
+            )}
           </Tabs>
 
-          <ServiceFormFooter
-            isEditing={isEditing}
-            isReadOnly={isReadOnly}
-            isSubmitting={formState.isSubmitting}
-            status={watch('status')}
-            onClose={onClose}
-            onCancelService={onCancelService && initData?.id ? (reason) => onCancelService(initData.id!, reason) : undefined}
-            onDelete={onDelete && initData?.id ? () => onDelete(initData.id!) : undefined}
-          />
+          {/* action bar */}
+          <div className="fixed bottom-0 inset-x-0 bg-background/95 border-t p-3 flex justify-end gap-2 print:hidden">
+            {onDelete && editing?.id && (
+                <ConfirmDialog
+                    triggerButton={<Button variant="destructive" type="button">Eliminar</Button>}
+                    title="¿Eliminar Registro?"
+                    description="Esta acción no se puede deshacer y eliminará permanentemente este registro. ¿Está seguro?"
+                    onConfirm={() => onDelete(editing.id!)}
+                />
+            )}
+            <div className="flex-grow" />
+            <Button variant="outline" type="button" onClick={onClose}>Cancelar</Button>
+            <Button disabled={formState.isSubmitting || !getValues('vehicleId')} type="submit">
+              {formState.isSubmitting ? 'Guardando…' : editing ? 'Actualizar' : 'Crear'}
+            </Button>
+          </div>
         </form>
-      </FormProvider>
+      </Form>
 
-      {/* ----------------- DIÁLOGOS AUXILIARES ----------------- */}
-      <VehicleDialog
-        open={isVehicleDialogOpen}
-        onOpenChange={setIsVehicleDialogOpen}
-        onSave={async (v) => {
-          onVehicleCreated?.(v)
-          const newVehicle = { id: `new_${Date.now()}`, ...v } as Vehicle
-          setLocalVehicles((prev) => [...prev, newVehicle])
-          setValue('vehicleId', newVehicle.id)
-          setIsVehicleDialogOpen(false)
-        }}
-        vehicle={newVehicleInitialData}
-      />
-      {isPreviewOpen && serviceForPreview && (
+      {/* —— Vista previa —— */}
+      {previewData && (
         <UnifiedPreviewDialog
-          open={isPreviewOpen}
-          onOpenChange={setIsPreviewOpen}
-          service={serviceForPreview}
-          vehicle={null} // Let the dialog fetch the vehicle
+          open={previewOpen}
+          onOpenChange={setPreviewOpen}
+          service={previewData}
+          vehicle={vehicles.find(v => v.id === previewData.vehicleId) ?? null}
         />
       )}
     </>

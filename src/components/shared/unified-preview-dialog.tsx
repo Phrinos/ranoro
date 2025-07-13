@@ -28,7 +28,6 @@ export function UnifiedPreviewDialog({ open, onOpenChange, service, vehicle: ini
   const [isImageViewerOpen, setIsImageViewerOpen] = useState(false);
   const [viewingImageUrl, setViewingImageUrl] = useState<string | null>(null);
   
-  const [associatedQuote, setAssociatedQuote] = useState<QuoteRecord | null>(null);
   const [vehicle, setVehicle] = useState<Vehicle | null>(initialVehicle || null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -42,20 +41,11 @@ export function UnifiedPreviewDialog({ open, onOpenChange, service, vehicle: ini
       const fetchData = async () => {
           setIsLoading(true);
 
-          // 1. Fetch vehicle if not provided
           if (!initialVehicle && service.vehicleId) {
             const fetchedVehicle = await inventoryService.getVehicleById(service.vehicleId);
             setVehicle(fetchedVehicle || null);
           } else {
             setVehicle(initialVehicle || null);
-          }
-          
-          // 2. Determine and fetch associated quote if necessary
-          if (service.status !== 'Cotizacion') {
-              const quote = await operationsService.getQuoteById(service.id);
-              setAssociatedQuote(quote || null);
-          } else {
-              setAssociatedQuote(null); // It's a quote itself, no separate associated quote
           }
           
           setIsLoading(false);
@@ -124,7 +114,6 @@ Hola ${vehicle.ownerName || 'Cliente'}, gracias por confiar en Ranoro. Te propor
           <ServiceSheetContent
             ref={contentRef}
             service={service}
-            associatedQuote={associatedQuote}
             vehicle={vehicle || undefined}
             workshopInfo={workshopInfo as WorkshopInfo}
             onViewImage={handleViewImage}

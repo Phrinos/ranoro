@@ -22,7 +22,6 @@ import { operationsService } from '@/lib/services';
 interface ServiceDialogProps {
   trigger?: React.ReactNode;
   service?: ServiceRecord | null; 
-  quote?: Partial<QuoteRecord> | null; // For quote mode initialization
   vehicles: Vehicle[]; 
   technicians: Technician[]; 
   inventoryItems: InventoryItem[]; 
@@ -41,7 +40,6 @@ interface ServiceDialogProps {
 export function ServiceDialog({ 
   trigger, 
   service, 
-  quote,
   vehicles, 
   technicians, 
   inventoryItems, 
@@ -54,7 +52,6 @@ export function ServiceDialog({
   mode = 'service', // Default to service mode
   onDelete,
   onCancelService,
-  onViewQuoteRequest,
 }: ServiceDialogProps) {
   const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
   const { toast } = useToast();
@@ -64,10 +61,12 @@ export function ServiceDialog({
   const isControlled = controlledOpen !== undefined && setControlledOpen !== undefined;
   const open = isControlled ? controlledOpen : uncontrolledOpen;
   const onOpenChange = isControlled ? setControlledOpen : setUncontrolledOpen;
+  
+  const quote = service?.status === 'Cotizacion' ? service : undefined;
 
   useEffect(() => {
     if (open) {
-      const initialRecord = service || quote;
+      const initialRecord = service;
       setCurrentStatus(initialRecord?.status);
     }
   }, [open, service, quote]);
@@ -150,7 +149,7 @@ export function ServiceDialog({
   };
   
   const getDynamicTitles = () => {
-    const currentRecord = service || quote;
+    const currentRecord = service;
     const status = currentStatus || currentRecord?.status;
 
     if (isReadOnly) {
@@ -192,20 +191,17 @@ export function ServiceDialog({
         <div className="flex-grow overflow-y-auto -mx-6 px-6 print:overflow-visible">
           <ServiceForm
             initialDataService={service}
-            initialDataQuote={quote}
             vehicles={vehicles} 
             technicians={technicians}
             inventoryItems={inventoryItems}
             serviceTypes={serviceTypes}
-            serviceHistory={[]} // Assuming this can be empty or fetched inside ServiceForm if needed
             onSubmit={internalOnSave}
             onClose={() => onOpenChange(false)}
             isReadOnly={isReadOnly}
-            onVehicleCreated={onVehicleCreated} 
             mode={mode}
             onDelete={onDelete}
             onCancelService={onCancelService}
-            onStatusChange={setCurrentStatus} // Pass the setter function
+            onStatusChange={setCurrentStatus}
           />
         </div>
       </DialogContent>
