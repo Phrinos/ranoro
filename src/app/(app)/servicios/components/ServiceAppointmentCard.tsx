@@ -50,6 +50,7 @@ export const ServiceAppointmentCard = React.memo(({
     const serviceDate = service.serviceDate ? parseISO(service.serviceDate) : new Date();
 
     const isDone = service.status === 'Entregado' || service.status === 'Cancelado';
+    const isQuote = service.status === 'Cotizacion';
 
     return (
         <Card className="shadow-sm overflow-hidden mb-4">
@@ -66,15 +67,17 @@ export const ServiceAppointmentCard = React.memo(({
                             {getServiceDescriptionText(service)}
                         </p>
                     </div>
-                    <div className="p-3 flex flex-col justify-center items-center text-center w-full md:w-48 flex-shrink-0">
-                        <p className="text-xs text-muted-foreground">Hora de Cita</p>
-                        <p className="font-bold text-2xl text-black">{isValid(serviceDate) ? format(serviceDate, "HH:mm", { locale: es }) : '--:--'}</p>
-                    </div>
+                    {!isQuote && (
+                        <div className="p-3 flex flex-col justify-center items-center text-center w-full md:w-48 flex-shrink-0">
+                            <p className="text-xs text-muted-foreground">Hora de Cita</p>
+                            <p className="font-bold text-2xl text-black">{isValid(serviceDate) ? format(serviceDate, "HH:mm", { locale: es }) : '--:--'}</p>
+                        </div>
+                    )}
                     <div className="p-4 flex flex-col justify-center items-center text-center border-t md:border-t-0 md:border-l w-full md:w-56 flex-shrink-0 space-y-2">
-                        <Badge variant={appointmentStatus.variant} className="mb-1">{appointmentStatus.label}</Badge>
+                        {!isQuote && <Badge variant={appointmentStatus.variant} className="mb-1">{appointmentStatus.label}</Badge>}
                         <p className="text-xs text-muted-foreground">Asesor: {service.serviceAdvisorName || 'N/A'}</p>
                         <div className="flex justify-center items-center gap-1">
-                            {onConfirm && !isDone && appointmentStatus.label === 'Creada' && (
+                            {onConfirm && !isDone && !isQuote && appointmentStatus.label === 'Creada' && (
                                 <Button variant="ghost" size="icon" onClick={onConfirm} title="Confirmar Cita">
                                     <CheckCircle className="h-4 w-4 text-green-600" />
                                 </Button>
