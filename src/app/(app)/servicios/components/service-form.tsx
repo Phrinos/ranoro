@@ -28,7 +28,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button'
 import Image from "next/image";
 import { Eye, Loader2 } from 'lucide-react'
-import { Wrench, CheckCircle, ShieldCheck, Camera, Trash2 } from 'lucide-react'
+import { Wrench, CheckCircle, ShieldCheck, Camera, Trash2, PlusCircle } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 import { useServiceTotals, useInitServiceForm } from '@/hooks/use-service-form-hooks'
