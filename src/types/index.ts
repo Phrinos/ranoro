@@ -30,6 +30,7 @@ export interface WorkshopInfo {
   contactPersonName?: string;
   contactPersonPhone?: string;
   contactPersonRole?: string;
+  timezone?: string;
 }
 
 export interface VehiclePaperwork {

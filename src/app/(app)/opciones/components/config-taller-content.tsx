@@ -8,9 +8,10 @@ import * as z from 'zod';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Save, Upload, Loader2, Building, User, Crop } from 'lucide-react';
+import { Save, Upload, Loader2, Building, User, Crop, Globe } from 'lucide-react';
 import type { WorkshopInfo } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { storage, db } from '@/lib/firebaseClient.js';
@@ -21,6 +22,20 @@ import Image from 'next/image';
 import ReactCrop, { centerCrop, makeAspectCrop, type Crop as ReactCropType } from 'react-image-crop';
 import 'react-image-crop/dist/ReactCrop.css';
 
+const TIMEZONE_OPTIONS = [
+  // Americas
+  { value: 'America/Mexico_City', label: 'Ciudad de México (CST/CDT)' },
+  { value: 'America/Cancun', label: 'Cancún (EST)' },
+  { value: 'America/Tijuana', label: 'Tijuana (PST/PDT)' },
+  { value: 'America/Bogota', label: 'Bogotá, Lima, Quito (EST)' },
+  { value: 'America/Santiago', label: 'Santiago (CLT/CLST)' },
+  { value: 'America/Buenos_Aires', label: 'Buenos Aires (ART)' },
+  { value: 'America/Caracas', label: 'Caracas (VET)' },
+  { value: 'America/Los_Angeles', label: 'Los Ángeles (PST/PDT)' },
+  { value: 'America/New_York', label: 'Nueva York (EST/EDT)' },
+  // Europe
+  { value: 'Europe/Madrid', label: 'Madrid, París (CET/CEST)' },
+];
 
 const LOCALSTORAGE_KEY = "workshopTicketInfo";
 const FIRESTORE_DOC_ID = "main"; // Document ID for the single config
@@ -31,6 +46,7 @@ const tallerSchema = z.object({
   addressLine1: z.string().min(5, "La dirección es obligatoria"),
   googleMapsUrl: z.string().url("Ingrese una URL válida de Google Maps.").optional().or(z.literal('')),
   logoUrl: z.string().url("Debe proporcionar una URL del logo o subir una imagen."),
+  timezone: z.string().optional(),
   contactPersonName: z.string().optional(),
   contactPersonPhone: z.string().optional(),
   contactPersonRole: z.string().optional(),
@@ -52,7 +68,7 @@ export function ConfigTallerPageContent() {
   const form = useForm<TallerFormValues>({
     resolver: zodResolver(tallerSchema),
     defaultValues: {
-        name: "RANORO", phone: "", addressLine1: "", logoUrl: "/ranoro-logo.png"
+        name: "RANORO", phone: "", addressLine1: "", logoUrl: "/ranoro-logo.png", timezone: 'America/Mexico_City'
     },
   });
 
@@ -80,7 +96,7 @@ export function ConfigTallerPageContent() {
 
   const onSubmit = async (data: TallerFormValues) => {
     try {
-      // 1. Save to localStorage for quick UI updates on ticket config page
+      // 1. Save to localStorage for quick UI updates
       localStorage.setItem(LOCALSTORAGE_KEY, JSON.stringify(data));
       
       // 2. Save to Firestore for persistence
@@ -201,7 +217,21 @@ export function ConfigTallerPageContent() {
               <CardContent className="space-y-4">
                 <FormField control={form.control} name="name" render={({ field }) => (<FormItem><FormLabel>Nombre del Taller</FormLabel><FormControl><Input placeholder="Mi Taller Mecánico" {...field} /></FormControl><FormMessage /></FormItem>)} />
                 <FormField control={form.control} name="addressLine1" render={({ field }) => (<FormItem><FormLabel>Dirección</FormLabel><FormControl><Input placeholder="Calle Principal 123, Colonia" {...field} onChange={(e) => field.onChange(capitalizeWords(e.target.value))} /></FormControl><FormMessage /></FormItem>)} />
-                <FormField control={form.control} name="phone" render={({ field }) => (<FormItem><FormLabel>Teléfono Principal</FormLabel><FormControl><Input placeholder="4491234567" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField control={form.control} name="phone" render={({ field }) => (<FormItem><FormLabel>Teléfono Principal</FormLabel><FormControl><Input placeholder="4491234567" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                  <FormField control={form.control} name="timezone" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Zona Horaria del Taller</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl><SelectTrigger><SelectValue placeholder="Seleccione una zona horaria" /></SelectTrigger></FormControl>
+                        <SelectContent>
+                          {TIMEZONE_OPTIONS.map(opt => <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+                </div>
                 <FormField control={form.control} name="googleMapsUrl" render={({ field }) => (<FormItem><FormLabel>Enlace de Google Maps (Opcional)</FormLabel><FormControl><Input placeholder="https://maps.app.goo.gl/..." {...field} /></FormControl><FormMessage /></FormItem>)} />
               </CardContent>
             </Card>
