@@ -61,8 +61,7 @@ export function ServiceDialog({
   const [localService, setLocalService] = useState(initialService);
   const [isCancelAlertOpen, setIsCancelAlertOpen] = useState(false);
   const [cancellationReason, setCancellationReason] = useState('');
-  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
-
+  
   const isControlled = controlledOpen !== undefined && setControlledOpen !== undefined;
   const open = isControlled ? controlledOpen : uncontrolledOpen;
   const onOpenChange = isControlled ? setControlledOpen : setUncontrolledOpen;
@@ -159,11 +158,6 @@ export function ServiceDialog({
                   <DialogTitle>{dialogTitle}</DialogTitle>
                   <DialogDescription>{dialogDescription}</DialogDescription>
               </div>
-              {localService && (
-                  <Button variant="outline" size="icon" onClick={() => setIsPreviewOpen(true)}>
-                      <Eye className="h-4 w-4" />
-                  </Button>
-              )}
             </DialogHeader>
             <ServiceForm
               initialDataService={localService}
@@ -201,14 +195,6 @@ export function ServiceDialog({
         </DialogContent>
       </Dialog>
       
-      {isPreviewOpen && localService && (
-        <UnifiedPreviewDialog
-            open={isPreviewOpen}
-            onOpenChange={setIsPreviewOpen}
-            service={localService}
-        />
-      )}
-
       <AlertDialog open={isCancelAlertOpen} onOpenChange={setIsCancelAlertOpen}>
           <AlertDialogContent>
               <AlertDialogHeader><AlertDialogTitle>¿Está seguro de cancelar este servicio?</AlertDialogTitle><AlertDialogDescription>Esta acción no se puede deshacer. El estado se cambiará a "Cancelado".</AlertDialogDescription></AlertDialogHeader>
