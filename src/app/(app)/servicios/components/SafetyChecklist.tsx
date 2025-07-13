@@ -73,7 +73,7 @@ const ChecklistItemPhotoUploader = ({
 }: { 
     itemName: string, 
     serviceId: string, 
-    onUpload: (itemName: string, urls: string[]) => void, 
+    onUpload: (itemName: string, url: string) => void, 
     photos: string[], 
     isReadOnly?: boolean,
     onViewImage: (url: string) => void 
@@ -83,29 +83,24 @@ const ChecklistItemPhotoUploader = ({
     const [isUploading, setIsUploading] = useState(false);
 
     const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
-        const files = event.target.files;
+        const file = event.target.files?.[0];
         if (fileInputRef.current) fileInputRef.current.value = '';
-        if (!files || files.length === 0) return;
+        if (!file) return;
 
-        const totalPhotos = photos.length + files.length;
-        if (totalPhotos > 2) {
+        if (photos.length >= 2) {
           toast({ title: 'Límite de Fotos Excedido', description: 'Solo puede subir un máximo de 2 fotos por punto de revisión.', variant: 'destructive' });
           return;
         }
 
         setIsUploading(true);
-        toast({ title: `Subiendo ${files.length} foto(s)...` });
+        toast({ title: `Subiendo foto...` });
         
-        const uploadPromises = Array.from(files).map(async (file) => {
+        try {
             const optimizedUrl = await optimizeImage(file, 800);
             const storageRef = ref(storage, `service-photos/${serviceId}/checklist/${itemName}/${Date.now()}.jpg`);
             await uploadString(storageRef, optimizedUrl, 'data_url');
-            return getDownloadURL(storageRef);
-        });
-
-        try {
-            const downloadURLs = await Promise.all(uploadPromises);
-            onUpload(itemName, downloadURLs);
+            const downloadURL = await getDownloadURL(storageRef);
+            onUpload(itemName, downloadURL);
         } catch (error) {
             console.error("Error uploading photo:", error);
             toast({ title: 'Error al subir foto', variant: 'destructive' });
@@ -142,9 +137,8 @@ const ChecklistItemPhotoUploader = ({
                       ref={fileInputRef} 
                       onChange={handleFileChange} 
                       accept="image/*" 
-                      capture="environment" // Only allow camera
+                      capture="environment" 
                       className="hidden" 
-                      multiple 
                     />
                  </>
             )}
@@ -159,7 +153,7 @@ const SafetyCheckRow = ({ name, label, control, isReadOnly, serviceId, onPhotoUp
     control: Control<ServiceFormValues>; 
     isReadOnly?: boolean; 
     serviceId: string; 
-    onPhotoUploaded: (itemName: string, urls: string[]) => void;
+    onPhotoUploaded: (itemName: string, url: string) => void;
     onViewImage: (url: string) => void;
 }) => {
   return (
@@ -196,7 +190,7 @@ const SafetyCheckRow = ({ name, label, control, isReadOnly, serviceId, onPhotoUp
               ))}
             </div>
           </div>
-          {(field.value?.status === 'atencion' || field.value?.status === 'inmediata') && (
+          {(field.value?.status === 'atencion' || field.value?.status === 'inmediata' || field.value?.status === 'ok') && (
             <div className="pl-4 mt-2">
               <ChecklistItemPhotoUploader
                 itemName={name.split('.').pop()!}
@@ -223,7 +217,7 @@ export const SafetyChecklist = ({ control, isReadOnly, onSignatureClick, signatu
   isEnhancingText: string | null;
   handleEnhanceText: (fieldName: 'notes' | 'vehicleConditions' | 'customerItems' | 'safetyInspection.inspectionNotes' | `photoReports.${number}.description`) => void;
   serviceId: string;
-  onPhotoUploaded: (itemName: string, urls: string[]) => void;
+  onPhotoUploaded: (itemName: string, url: string) => void;
   onViewImage: (url: string) => void;
 }) => {
   return (
