@@ -10,7 +10,7 @@ import { StatusTracker } from "./StatusTracker";
 import type { ServiceRecord, Vehicle } from '@/types';
 import { format, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { Edit, Eye, CheckCircle, Ban, DollarSign, User, Phone, TrendingUp } from 'lucide-react';
+import { Edit, Eye, CheckCircle, Ban, DollarSign, User, Phone, TrendingUp, Clock } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 import { parseDate } from '@/lib/forms';
 
@@ -54,6 +54,7 @@ export const ServiceAppointmentCard = React.memo(({
 
     const isDone = service.status === 'Entregado' || service.status === 'Cancelado';
     const isQuote = service.status === 'Cotizacion';
+    const isScheduled = service.status === 'Agendado';
 
     return (
         <Card className="shadow-sm overflow-hidden mb-4">
@@ -61,6 +62,14 @@ export const ServiceAppointmentCard = React.memo(({
                 <div className="flex flex-col md:flex-row text-sm">
                     <div className="p-4 flex flex-col justify-center items-center text-center w-full md:w-48 flex-shrink-0">
                         <p className="font-semibold text-xl text-foreground">{isValid(serviceDate) ? format(serviceDate, "dd MMM yyyy", { locale: es }) : "Fecha inválida"}</p>
+                        {isScheduled && (
+                            <div className="flex items-center gap-1.5 text-muted-foreground mt-1">
+                                <Clock className="h-4 w-4" />
+                                <span className="text-base font-semibold">
+                                    {isValid(serviceDate) ? format(serviceDate, "HH:mm 'hrs'", { locale: es }) : 'N/A'}
+                                </span>
+                            </div>
+                        )}
                         <p className="text-muted-foreground text-xs mt-1">Folio: {service.id}</p>
                         <StatusTracker status={service.status} />
                     </div>
