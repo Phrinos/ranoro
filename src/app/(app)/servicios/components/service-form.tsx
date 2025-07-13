@@ -1,4 +1,3 @@
-
 /* app/(app)/servicios/components/service-form.tsx */
 'use client'
 
@@ -22,9 +21,19 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader,
   AlertDialogTitle, AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
-import { Card, CardContent } from '@/components/ui/card'
-import { Dialog, DialogContent as UiDialogContent, DialogFooter as UiDialogFooter,
-  DialogHeader as UiDialogHeader, DialogTitle as UiDialogTitle
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
+import {
+  Dialog,
+  DialogContent as UiDialogContent,
+  DialogFooter as UiDialogFooter,
+  DialogHeader as UiDialogHeader,
+  DialogTitle as UiDialogTitle,
 } from '@/components/ui/dialog'
 import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -294,11 +303,11 @@ export function ServiceForm(props:Props){
                 />
 
                 <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                    <TabsList className={cn("grid w-full mb-4", "grid-cols-4")}>
-                        <TabsTrigger value="details" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Detalles</TabsTrigger>
-                        <TabsTrigger value="reception" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Recepción/Entrega</TabsTrigger>
-                        <TabsTrigger value="photoreport" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Fotos</TabsTrigger>
-                        <TabsTrigger value="checklist" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Revisión</TabsTrigger>
+                    <TabsList className={cn("grid w-full mb-4", "data-[state=active]:bg-destructive data-[state=active]:text-destructive-foreground", "grid-cols-4")}>
+                        <TabsTrigger value="details" className="data-[state=active]:bg-destructive data-[state=active]:text-primary-foreground">Detalles</TabsTrigger>
+                        <TabsTrigger value="reception" className="data-[state=active]:bg-destructive data-[state=active]:text-primary-foreground">Recepción/Entrega</TabsTrigger>
+                        <TabsTrigger value="photoreport" className="data-[state=active]:bg-destructive data-[state=active]:text-primary-foreground">Fotos</TabsTrigger>
+                        <TabsTrigger value="checklist" className="data-[state=active]:bg-destructive data-[state=active]:text-primary-foreground">Revisión</TabsTrigger>
                     </TabsList>
                     <TabsContent value="details" className="mt-0">
                         <ServiceDetailsCard
