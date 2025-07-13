@@ -34,6 +34,9 @@ import { cn } from '@/lib/utils'
 import { useServiceTotals, useInitServiceForm } from '@/hooks/use-service-form-hooks'
 import { suggestQuote } from '@/ai/flows/quote-suggestion-flow';
 import { enhanceText } from '@/ai/flows/text-enhancement-flow';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Textarea } from '@/components/ui/textarea';
+
 
 import type { Vehicle, Technician, InventoryItem, ServiceTypeRecord, ServiceRecord, QuoteRecord } from '@/types'
 import type { VehicleFormValues } from '../../vehiculos/components/vehicle-form'
