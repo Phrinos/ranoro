@@ -194,6 +194,7 @@ export const ReceptionAndDelivery = ({
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
+            {/* donde esta esta informacion? */}
             <div className="space-y-2">
                 <FormLabel>Fecha y Hora de Entrega</FormLabel>
                 <div className="p-2 border rounded-md bg-muted/50 flex items-center justify-center text-sm font-medium h-10">
