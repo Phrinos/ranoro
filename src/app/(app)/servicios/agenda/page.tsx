@@ -34,9 +34,10 @@ const handleAiError = (error: any, toast: any, context: string): string => {
 };
 
 // Helper function to safely parse a date that might be a string or a Date object
-const safeParseISO = (date: string | Date | undefined): Date => {
+const safeParseISO = (date: any): Date => {
   if (!date) return new Date(0); // Return an invalid date if input is null/undefined
   if (date instanceof Date) return date;
+  if (typeof date.toDate === 'function') return date.toDate(); // Firestore Timestamp
   if (typeof date === 'string') {
     const parsed = parseISO(date);
     return parsed;
@@ -124,10 +125,10 @@ function AgendaPageComponent() {
     }
   }, [agendaView, toast, isLoading, allServices, technicians]);
 
-  const { scheduledServices, todayServices, tomorrowServices } = useMemo(() => {
-    if (isLoading) return { scheduledServices: [], todayServices: [], tomorrowServices: [] };
+  const { scheduledServices, todayServices, tomorrowServices, futureServices } = useMemo(() => {
+    if (isLoading) return { scheduledServices: [], todayServices: [], tomorrowServices: [], futureServices: [] };
     const scheduled = allServices.filter(s => s.status === 'Agendado' || (s.status === 'En Taller' && !s.deliveryDateTime));
-    const today = new Date();
+    
     const todayS = scheduled.filter(s => {
         const serviceDay = safeParseISO(s.serviceDate);
         return isValid(serviceDay) && isToday(serviceDay);
@@ -138,7 +139,12 @@ function AgendaPageComponent() {
         return isValid(serviceDay) && isTomorrow(serviceDay);
     }).sort((a, b) => compareAsc(safeParseISO(a.serviceDate), safeParseISO(b.serviceDate)));
 
-    return { scheduledServices: scheduled, todayServices: todayS, tomorrowServices: tomorrowS };
+    const futureS = scheduled.filter(s => {
+        const serviceDay = safeParseISO(s.serviceDate);
+        return isValid(serviceDay) && !isToday(serviceDay) && !isTomorrow(serviceDay);
+    }).sort((a,b) => compareAsc(safeParseISO(a.serviceDate), safeParseISO(b.serviceDate)));
+
+    return { scheduledServices: scheduled, todayServices: todayS, tomorrowServices: tomorrowS, futureServices: futureS };
   }, [allServices, isLoading]);
 
   const totalEarningsToday = useMemo(() => {
@@ -263,6 +269,12 @@ function AgendaPageComponent() {
             <CardHeader><CardTitle>Citas para Mañana</CardTitle></CardHeader>
             <CardContent>
               {tomorrowServices.length > 0 ? tomorrowServices.map(service => (<ServiceAppointmentCard key={service.id} service={service} vehicles={vehicles} onEdit={() => handleOpenServiceDialog(service)} onConfirm={() => handleConfirmAppointment(service.id)} onView={() => handleShowPreview(service)} />)) : <p className="text-muted-foreground text-center py-4">No hay citas para mañana.</p>}
+            </CardContent>
+          </Card>
+           <Card>
+            <CardHeader><CardTitle>Próximas Citas</CardTitle></CardHeader>
+            <CardContent>
+              {futureServices.length > 0 ? futureServices.map(service => (<ServiceAppointmentCard key={service.id} service={service} vehicles={vehicles} onEdit={() => handleOpenServiceDialog(service)} onConfirm={() => handleConfirmAppointment(service.id)} onView={() => handleShowPreview(service)} />)) : <p className="text-muted-foreground text-center py-4">No hay citas futuras agendadas.</p>}
             </CardContent>
           </Card>
         </TabsContent>
