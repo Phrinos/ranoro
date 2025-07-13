@@ -2,7 +2,7 @@
 
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -44,7 +44,7 @@ interface ServiceDialogProps {
 
 export function ServiceDialog({ 
   trigger, 
-  service, 
+  service: initialService, 
   vehicles, 
   technicians, 
   inventoryItems, 
@@ -59,7 +59,7 @@ export function ServiceDialog({
   const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
   const { toast } = useToast();
   
-  const [currentService, setCurrentService] = useState(service);
+  const [localService, setLocalService] = useState(initialService);
 
   const [isCancelAlertOpen, setIsCancelAlertOpen] = useState(false);
   const [cancellationReason, setCancellationReason] = useState('');
@@ -70,17 +70,15 @@ export function ServiceDialog({
   const open = isControlled ? controlledOpen : uncontrolledOpen;
   const onOpenChange = isControlled ? setControlledOpen : setUncontrolledOpen;
   
-   // Sync signatures and update local state when dialog opens or service prop changes
   useEffect(() => {
     const syncAndMarkAsViewed = async () => {
-      if (open && service && service.id && db) {
-        let serviceToUpdate = { ...service };
+      if (open && initialService && initialService.id && db) {
+        let serviceToUpdate = { ...initialService };
         let changed = false;
 
-        // Sync from public document first
-        if (service.publicId) {
+        if (initialService.publicId) {
           try {
-            const publicDocRef = doc(db, 'publicServices', service.publicId);
+            const publicDocRef = doc(db, 'publicServices', initialService.publicId);
             const publicDocSnap = await getDoc(publicDocRef);
 
             if (publicDocSnap.exists()) {
@@ -99,7 +97,6 @@ export function ServiceDialog({
           }
         }
 
-        // Now, check if signatures need to be marked as viewed
         if (serviceToUpdate.customerSignatureReception && !serviceToUpdate.receptionSignatureViewed) {
           serviceToUpdate.receptionSignatureViewed = true;
           changed = true;
@@ -109,25 +106,22 @@ export function ServiceDialog({
           changed = true;
         }
         
-        // If there were any changes, update the main document in Firestore
         if (changed) {
-          const serviceDocRef = doc(db, "serviceRecords", service.id);
+          const serviceDocRef = doc(db, "serviceRecords", initialService.id);
           await setDoc(serviceDocRef, {
             customerSignatureReception: serviceToUpdate.customerSignatureReception,
             customerSignatureDelivery: serviceToUpdate.customerSignatureDelivery,
             receptionSignatureViewed: serviceToUpdate.receptionSignatureViewed,
             deliverySignatureViewed: serviceToUpdate.deliverySignatureViewed,
           }, { merge: true });
+           setLocalService(serviceToUpdate); // Update local state
         }
-        
-        // Update the local state to reflect the changes immediately in the dialog
-        setCurrentService(serviceToUpdate);
-      } else {
-        setCurrentService(service);
       }
     };
-    syncAndMarkAsViewed();
-  }, [open, service]);
+    
+    setLocalService(initialService); // Set initial state
+    syncAndMarkAsViewed(); // Then try to sync
+  }, [open, initialService]);
 
 
   const internalOnSave = async (formData: ServiceRecord | QuoteRecord) => {
@@ -144,7 +138,7 @@ export function ServiceDialog({
   };
   
   const getDynamicTitles = () => {
-    const status = currentService?.status;
+    const status = localService?.status;
     if (isReadOnly) {
         switch (status) {
             case 'Cotizacion': return { title: "Detalles de la Cotización", description: "Visualizando los detalles de la cotización." };
@@ -152,7 +146,7 @@ export function ServiceDialog({
             default: return { title: "Detalles del Servicio", description: "Visualizando los detalles de la orden de servicio." };
         }
     }
-    if (currentService?.id) {
+    if (localService?.id) {
         switch (status) {
             case 'Cotizacion': return { title: "Editar Cotización", description: "Actualiza los detalles de la cotización." };
             case 'Agendado': return { title: "Editar Cita", description: "Actualiza los detalles de la cita." };
@@ -163,12 +157,8 @@ export function ServiceDialog({
   };
 
   const { title: dialogTitle, description: dialogDescription } = getDynamicTitles();
-  const canBeCancelled = currentService?.id && currentService.status !== 'Cancelado' && currentService.status !== 'Entregado';
+  const canBeCancelled = localService?.id && localService.status !== 'Cancelado' && localService.status !== 'Entregado';
   
-  // Create a dynamic key for the form that changes when a signature is added.
-  const formKey = `${currentService?.id}-${currentService?.customerSignatureReception}-${currentService?.customerSignatureDelivery}`;
-
-
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
@@ -179,23 +169,22 @@ export function ServiceDialog({
                   <DialogTitle>{dialogTitle}</DialogTitle>
                   <DialogDescription>{dialogDescription}</DialogDescription>
               </div>
-              {currentService && (
+              {localService && (
                   <Button variant="outline" size="icon" onClick={() => setIsPreviewOpen(true)}>
                       <Eye className="h-4 w-4" />
                   </Button>
               )}
             </DialogHeader>
             <ServiceForm
-            key={formKey} // Force re-mount of the form when signatures change
-            initialDataService={currentService}
-            vehicles={vehicles} 
-            technicians={technicians}
-            inventoryItems={inventoryItems}
-            serviceTypes={serviceTypes}
-            onSubmit={internalOnSave}
-            onClose={() => onOpenChange(false)}
-            isReadOnly={isReadOnly}
-            mode={mode}
+              initialDataService={localService}
+              vehicles={vehicles} 
+              technicians={technicians}
+              inventoryItems={inventoryItems}
+              serviceTypes={serviceTypes}
+              onSubmit={internalOnSave}
+              onClose={() => onOpenChange(false)}
+              isReadOnly={isReadOnly}
+              mode={mode}
             >
                 <div className="flex justify-between items-center w-full">
                     <div>
@@ -212,7 +201,7 @@ export function ServiceDialog({
                         <>
                             <Button variant="outline" type="button" onClick={() => onOpenChange(false)}>Cancelar</Button>
                             <Button type="submit" form="service-form">
-                                {currentService?.id ? 'Actualizar' : 'Crear'}
+                                {localService?.id ? 'Actualizar' : 'Crear'}
                             </Button>
                         </>
                         )}
@@ -222,11 +211,11 @@ export function ServiceDialog({
         </DialogContent>
       </Dialog>
       
-      {isPreviewOpen && currentService && (
+      {isPreviewOpen && localService && (
         <UnifiedPreviewDialog
             open={isPreviewOpen}
             onOpenChange={setIsPreviewOpen}
-            service={currentService}
+            service={localService}
         />
       )}
 
@@ -236,7 +225,7 @@ export function ServiceDialog({
               <Textarea placeholder="Motivo de la cancelación (opcional)..." value={cancellationReason} onChange={(e) => setCancellationReason(e.target.value)} />
               <AlertDialogFooter>
                   <AlertDialogCancel onClick={() => setCancellationReason('')}>Cerrar</AlertDialogCancel>
-                  <AlertDialogAction onClick={() => { if(currentService?.id && onCancelService) { onCancelService(currentService.id, cancellationReason); onOpenChange(false); } }} className="bg-destructive hover:bg-destructive/90">
+                  <AlertDialogAction onClick={() => { if(localService?.id && onCancelService) { onCancelService(localService.id, cancellationReason); onOpenChange(false); } }} className="bg-destructive hover:bg-destructive/90">
                       Sí, Cancelar Servicio
                   </AlertDialogAction>
               </AlertDialogFooter>
