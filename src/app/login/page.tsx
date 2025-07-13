@@ -205,7 +205,7 @@ export default function LoginPage() {
                   data-ai-hint="ranoro logo"
               />
             </Link>
-            <p className="text-sm text-muted-foreground -mt-2">Tu Taller en un App</p>
+            <p className="text-lg italic text-foreground -mt-2">Tu Taller en un App</p>
           </CardHeader>
           <CardContent>
               <Tabs defaultValue="login" className="w-full">
