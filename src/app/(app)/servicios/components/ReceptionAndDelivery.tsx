@@ -3,7 +3,7 @@
 "use client";
 
 import React from "react";
-import { useFormContext } from "react-hook-form";
+import { useFormContext, type Control } from "react-hook-form";
 import {
   FormField,
   FormItem,
@@ -44,6 +44,7 @@ const fuelLevels = [
 ];
 
 interface ReceptionAndDeliveryProps {
+  control: Control<ServiceFormValues>;
   isReadOnly?: boolean;
   isEnhancingText: string | null;
   handleEnhanceText: (
@@ -57,11 +58,12 @@ interface ReceptionAndDeliveryProps {
 }
 
 export const ReceptionAndDelivery = ({
+  control,
   isReadOnly,
   isEnhancingText,
   handleEnhanceText,
 }: ReceptionAndDeliveryProps) => {
-  const { control, watch } = useFormContext<ServiceFormValues>();
+  const { watch } = useFormContext<ServiceFormValues>();
   const customerSignatureReception = watch("customerSignatureReception");
   const customerSignatureDelivery = watch("customerSignatureDelivery");
 
