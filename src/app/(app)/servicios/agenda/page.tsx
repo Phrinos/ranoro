@@ -6,10 +6,10 @@ import React, { useState, useEffect, useMemo, useCallback, Suspense, useRef } fr
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { PlusCircle, List, Calendar as CalendarIcon, FileCheck, Eye, Loader2, Edit, CheckCircle, Printer, MessageSquare, Ban, DollarSign } from "lucide-react";
-import { ServiceDialog } from "../components/service-dialog";
+import { ServiceDialog } from "../components/dialog";
 import type { ServiceRecord, Vehicle, Technician, QuoteRecord, InventoryItem, CapacityAnalysisOutput, ServiceTypeRecord } from "@/types";
 import { useToast } from "@/hooks/use-toast";
-import { format, parseISO, isToday, isTomorrow, compareAsc, isValid } from "date-fns";
+import { format, parseISO, isToday, isTomorrow, compareAsc, isValid, isSameDay } from "date-fns";
 import { es } from 'date-fns/locale';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -128,20 +128,23 @@ function AgendaPageComponent() {
   const { scheduledServices, todayServices, tomorrowServices, futureServices } = useMemo(() => {
     if (isLoading) return { scheduledServices: [], todayServices: [], tomorrowServices: [], futureServices: [] };
     const scheduled = allServices.filter(s => s.status === 'Agendado' || (s.status === 'En Taller' && !s.deliveryDateTime));
+    const now = new Date();
     
     const todayS = scheduled.filter(s => {
         const serviceDay = safeParseISO(s.serviceDate);
-        return isValid(serviceDay) && isToday(serviceDay);
+        return isValid(serviceDay) && isSameDay(serviceDay, now);
     }).sort((a, b) => compareAsc(safeParseISO(a.serviceDate), safeParseISO(b.serviceDate)));
 
+    const tomorrowDate = new Date();
+    tomorrowDate.setDate(now.getDate() + 1);
     const tomorrowS = scheduled.filter(s => {
         const serviceDay = safeParseISO(s.serviceDate);
-        return isValid(serviceDay) && isTomorrow(serviceDay);
+        return isValid(serviceDay) && isSameDay(serviceDay, tomorrowDate);
     }).sort((a, b) => compareAsc(safeParseISO(a.serviceDate), safeParseISO(b.serviceDate)));
 
     const futureS = scheduled.filter(s => {
         const serviceDay = safeParseISO(s.serviceDate);
-        return isValid(serviceDay) && !isToday(serviceDay) && !isTomorrow(serviceDay);
+        return isValid(serviceDay) && !isSameDay(serviceDay, now) && !isSameDay(serviceDay, tomorrowDate);
     }).sort((a,b) => compareAsc(safeParseISO(a.serviceDate), safeParseISO(b.serviceDate)));
 
     return { scheduledServices: scheduled, todayServices: todayS, tomorrowServices: tomorrowS, futureServices: futureS };
@@ -326,3 +329,4 @@ export default function AgendaPageWrapper() {
     </Suspense>
   );
 }
+
