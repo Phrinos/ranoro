@@ -236,7 +236,7 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
     const driverDebt = driver && vehicle ? calculateDriverDebt(driver, placeholderRentalPayments, [vehicle]) : { totalDebt: 0, rentalDebt: 0, depositDebt: 0, manualDebt: 0 };
     
     const ServiceOrderContent = (
-      <div className="flex flex-col h-full">
+      <div className="flex flex-col min-h-full">
         <header className="mb-4 pb-2 border-b-2 border-black">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
             <img src={effectiveWorkshopInfo.logoUrl} alt={`${effectiveWorkshopInfo.name} Logo`} style={{ width: '150px', height: 'auto' }} data-ai-hint="workshop logo" />
@@ -388,7 +388,7 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
         </main>
         
         <footer className="mt-auto pt-4 text-xs">
-           <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 text-center mb-4">
+           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-center mb-2">
                <div className="pt-2 flex flex-col justify-end">
                     <div className="min-h-[28px] flex-grow flex items-center justify-center">
                         {service.serviceAdvisorSignatureDataUrl && (
@@ -398,7 +398,7 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
                         )}
                     </div>
                     <div className="border-t-2 border-black pt-1 w-full text-center">
-                        <p className="font-bold">ASESOR DE SERVICIO: {service.serviceAdvisorName?.toUpperCase() || '________________________________'}</p>
+                        <p className="font-bold">ASESOR: {service.serviceAdvisorName?.toUpperCase() || '________________'}</p>
                     </div>
                 </div>
                 <div className="min-h-[65px] flex flex-col justify-end">
@@ -417,7 +417,7 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
                        )}
                    </div>
                    <div className="border-t-2 border-black pt-1 w-full text-center mt-auto">
-                       <p className="font-bold">RECIBO DE CONFORMIDAD: {vehicle?.ownerName?.toUpperCase() || '________________________________'}</p>
+                       <p className="font-bold">RECIBÍ DE CONFORMIDAD: {vehicle?.ownerName?.toUpperCase() || '________________'}</p>
                    </div>
                </div>
            </div>
