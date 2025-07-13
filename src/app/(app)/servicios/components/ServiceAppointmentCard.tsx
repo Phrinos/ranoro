@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import React from 'react';
@@ -10,7 +9,7 @@ import { StatusTracker } from "./StatusTracker";
 import type { ServiceRecord, Vehicle } from '@/types';
 import { format, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { Edit, Eye, CheckCircle, Ban, DollarSign, User, Phone, TrendingUp, Clock } from 'lucide-react';
+import { Edit, Eye, CheckCircle, Ban, DollarSign, User, Phone, TrendingUp, Clock, Wrench } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 import { parseDate } from '@/lib/forms';
 
@@ -50,26 +49,30 @@ export const ServiceAppointmentCard = React.memo(({
 }: ServiceAppointmentCardProps) => {
     const vehicle = vehicles.find(v => v.id === service.vehicleId);
     const appointmentStatus = getAppointmentStatus(service);
-    const serviceDate = parseDate(service.serviceDate) || new Date();
+    
+    // Use receptionDateTime if available (for 'En Taller'), otherwise use serviceDate
+    const displayDate = parseDate(service.receptionDateTime) || parseDate(service.serviceDate) || new Date();
 
     const isDone = service.status === 'Entregado' || service.status === 'Cancelado';
     const isQuote = service.status === 'Cotizacion';
     const isScheduled = service.status === 'Agendado';
+    const isWorkshop = service.status === 'En Taller';
 
     return (
         <Card className="shadow-sm overflow-hidden mb-4">
             <CardContent className="p-0">
                 <div className="flex flex-col md:flex-row text-sm">
                     <div className="p-4 flex flex-col justify-center items-center text-center w-full md:w-48 flex-shrink-0">
-                        <p className="font-semibold text-xl text-foreground">{isValid(serviceDate) ? format(serviceDate, "dd MMM yyyy", { locale: es }) : "Fecha inválida"}</p>
-                        {isScheduled && (
-                            <div className="flex items-center gap-1.5 text-muted-foreground mt-1">
-                                <Clock className="h-4 w-4" />
+                        <p className="font-semibold text-xl text-foreground">{isValid(displayDate) ? format(displayDate, "dd MMM yyyy", { locale: es }) : "Fecha inválida"}</p>
+                        <div className="flex items-center gap-1.5 text-muted-foreground mt-1">
+                             {isScheduled && <Clock className="h-4 w-4" />}
+                             {isWorkshop && <Wrench className="h-4 w-4" />}
+                             {(isScheduled || isWorkshop) && (
                                 <span className="text-base font-semibold">
-                                    {isValid(serviceDate) ? format(serviceDate, "HH:mm 'hrs'", { locale: es }) : 'N/A'}
+                                    {isValid(displayDate) ? format(displayDate, "HH:mm 'hrs'", { locale: es }) : 'N/A'}
                                 </span>
-                            </div>
-                        )}
+                             )}
+                        </div>
                         <p className="text-muted-foreground text-xs mt-1">Folio: {service.id}</p>
                         <StatusTracker status={service.status} />
                     </div>
@@ -98,7 +101,7 @@ export const ServiceAppointmentCard = React.memo(({
                         </div>
                     </div>
                     <div className="p-4 flex flex-col justify-center items-center text-center border-t md:border-t-0 md:border-l w-full md:w-56 flex-shrink-0 space-y-2">
-                        {!isQuote && <Badge variant={appointmentStatus.variant} className="mb-1">{appointmentStatus.label}</Badge>}
+                        {!isQuote && !isDone && <Badge variant={appointmentStatus.variant} className="mb-1">{appointmentStatus.label}</Badge>}
                         <p className="text-xs text-muted-foreground">Asesor: {service.serviceAdvisorName || 'N/A'}</p>
                         <div className="flex justify-center items-center gap-1">
                             {onConfirm && !isDone && !isQuote && service.appointmentStatus !== 'Confirmada' && (
