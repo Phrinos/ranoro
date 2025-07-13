@@ -213,6 +213,9 @@ export default function LoginPage() {
                   <TabsTrigger value="register" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Registrarse</TabsTrigger>
                 </TabsList>
                 <TabsContent value="login">
+                    <CardDescription className="text-center pt-4">
+                        Ingresa tus credenciales para acceder al sistema.
+                    </CardDescription>
                     <form onSubmit={handleLogin} className="space-y-4 pt-4">
                         <div className="grid gap-2 text-left">
                             <Label htmlFor="email-login">Correo Electrónico</Label>
@@ -242,6 +245,9 @@ export default function LoginPage() {
                     </div>
                 </TabsContent>
                 <TabsContent value="register">
+                   <CardDescription className="text-center pt-4">
+                      Crea tu cuenta para empezar a optimizar tu taller.
+                   </CardDescription>
                    <form onSubmit={handleRegister} className="space-y-4 pt-4">
                         <div className="grid gap-2 text-left">
                             <Label htmlFor="name-register">Nombre Completo</Label>
