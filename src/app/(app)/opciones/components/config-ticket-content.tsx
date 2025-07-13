@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React, { useState, useEffect, useRef } from 'react';
@@ -126,15 +127,30 @@ export function ConfiguracionTicketPageContent() {
   };
   
   const handlePrint = () => {
+    const content = document.getElementById('ticket-preview-printable')?.innerHTML;
+    if (!content) return;
+
     const printWindow = window.open('', '_blank');
     if (printWindow) {
-      printWindow.document.write('<html><head><title>Imprimir Ticket</title><style>@media print { body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } .printable-content { margin: 0; padding: 0; } }</style></head><body>');
-      const printableContent = document.getElementById('ticket-preview-printable');
-      if (printableContent) printWindow.document.write(printableContent.innerHTML);
+      printWindow.document.write('<html><head><title>Imprimir Ticket</title>');
+      
+      const stylesheets = Array.from(document.getElementsByTagName('link'));
+      stylesheets.forEach(sheet => {
+          if (sheet.rel === 'stylesheet' && sheet.href) {
+            printWindow.document.write(`<link rel="stylesheet" href="${sheet.href}">`);
+          }
+      });
+      
+      printWindow.document.write('<style>@media print { body { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; } .printable-content { margin: 0; padding: 0; } }</style></head><body>');
+      printWindow.document.write(content);
       printWindow.document.write('</body></html>');
+      
       printWindow.document.close();
       printWindow.focus();
-      setTimeout(() => { printWindow.print(); printWindow.close(); }, 250);
+      setTimeout(() => {
+        printWindow.print();
+        printWindow.close();
+      }, 250);
     }
   };
 
@@ -172,7 +188,22 @@ export function ConfiguracionTicketPageContent() {
                 </form>
             </Form>
         </div>
-        <div className="lg:col-span-2"><Card className="shadow-lg sticky top-24"><CardHeader className="flex flex-row items-center justify-between"><div><CardTitle>Vista Previa del Ticket</CardTitle><CardDescription>Así se verá tu ticket impreso.</CardDescription></div><Button onClick={handlePrint} variant="outline"><Printer className="mr-2 h-4 w-4"/>Imprimir</Button></CardHeader><CardContent className="bg-gray-200 dark:bg-gray-800 p-4 sm:p-8 flex justify-center overflow-auto"><div id="ticket-preview-printable" className="w-[300px] bg-white shadow-lg"><TicketContent ref={ticketContentRef} sale={sampleSale} previewWorkshopInfo={watchedValues as WorkshopInfo} /></div></CardContent></Card></div>
+        <div className="lg:col-span-2">
+            <Card className="shadow-lg sticky top-24">
+                <CardHeader className="flex flex-row items-center justify-between">
+                    <div>
+                        <CardTitle>Vista Previa del Ticket</CardTitle>
+                        <CardDescription>Así se verá tu ticket impreso.</CardDescription>
+                    </div>
+                    <Button onClick={handlePrint} variant="outline"><Printer className="mr-2 h-4 w-4"/>Imprimir</Button>
+                </CardHeader>
+                <CardContent className="bg-gray-200 dark:bg-gray-800 p-4 sm:p-8 flex justify-center overflow-auto">
+                    <div id="ticket-preview-printable" className="w-[300px] bg-white shadow-lg">
+                        <TicketContent ref={ticketContentRef} sale={sampleSale} previewWorkshopInfo={watchedValues as WorkshopInfo} />
+                    </div>
+                </CardContent>
+            </Card>
+        </div>
     </div>
   );
 }

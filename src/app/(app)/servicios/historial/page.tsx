@@ -242,6 +242,34 @@ function HistorialServiciosPageComponent() {
       toast({ title: "Error", description: "No se pudo copiar la imagen del ticket.", variant: "destructive" });
     }
   }, [toast]);
+  
+  const handlePrint = () => {
+    const content = ticketContentRef.current?.innerHTML;
+    if (!content) return;
+    
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+      printWindow.document.write('<html><head><title>Imprimir Ticket</title>');
+      
+      // Link to the main stylesheet
+      const stylesheets = Array.from(document.getElementsByTagName('link'));
+      stylesheets.forEach(sheet => {
+          printWindow.document.write(sheet.outerHTML);
+      });
+      
+      printWindow.document.write('<style>@media print { body { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; } .printable-content { margin: 0; padding: 0; } }</style></head><body class="bg-white">');
+      printWindow.document.write(content);
+      printWindow.document.write('</body></html>');
+      
+      printWindow.document.close();
+      printWindow.focus();
+      // Use a timeout to ensure styles are loaded before printing
+      setTimeout(() => {
+        printWindow.print();
+        printWindow.close();
+      }, 500);
+    }
+  };
 
 
   if (isLoading) {
@@ -386,11 +414,11 @@ function HistorialServiciosPageComponent() {
             title="Ticket de Servicio"
             dialogContentClassName="sm:max-w-md"
             footerActions={<>
-                <div className="flex flex-col sm:flex-row gap-2">
+                <div className="flex flex-col-reverse sm:flex-row gap-2">
                     <Button variant="outline" onClick={handleCopyAsImage} className="w-full sm:w-auto">
                         <Copy className="mr-2 h-4 w-4"/> Copiar Imagen
                     </Button>
-                    <Button onClick={() => window.print()} className="w-full sm:w-auto">
+                    <Button onClick={handlePrint} className="w-full sm:w-auto">
                         <Printer className="mr-2 h-4 w-4"/>Imprimir
                     </Button>
                 </div>
