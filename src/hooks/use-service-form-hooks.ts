@@ -1,4 +1,3 @@
-
 // src/hooks/use-service-form-hooks.ts
 
 import { useEffect, useMemo } from 'react';
@@ -46,43 +45,78 @@ interface InitFormOptions {
  * @param form - The react-hook-form instance.
  * @param options - Options including initial data and service types.
  */
-export function useInitServiceForm(form: UseFormReturn<ServiceFormValues>, { initData, serviceTypes }: InitFormOptions) {
+export function useInitServiceForm(
+  form: UseFormReturn<ServiceFormValues>,
+  { initData, serviceTypes }: InitFormOptions,
+) {
   const { reset } = form;
 
   useEffect(() => {
-    const isEditing = initData && 'id' in initData && initData.id;
-    const firstType = serviceTypes.length > 0 ? serviceTypes[0].name : 'Servicio General';
-    
-    let defaultValues: Partial<ServiceFormValues>;
+    const firstType = serviceTypes[0]?.name ?? 'Servicio General';
+    const authUserString =
+      typeof window !== 'undefined'
+        ? localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY)
+        : null;
+    const currentUser = authUserString
+      ? (JSON.parse(authUserString) as User)
+      : null;
 
-    if (isEditing) {
-      defaultValues = {
+    /* ---------- CUANDO EDITO UN REGISTRO EXISTENTE ---------- */
+    if (initData && 'id' in initData && initData.id) {
+      reset({
         ...initData,
-        serviceDate: initData.serviceDate ? parseDate(initData.serviceDate) : undefined,
-        quoteDate: initData.quoteDate ? parseDate(initData.quoteDate) : undefined,
-        receptionDateTime: initData.receptionDateTime ? parseDate(initData.receptionDateTime) : undefined,
-        deliveryDateTime: initData.deliveryDateTime ? parseDate(initData.deliveryDateTime) : undefined,
-        // Ensure status and serviceType are not undefined if they exist in initData
-        status: initData.status || 'Cotizacion',
-        serviceType: initData.serviceType || firstType,
-      };
-    } else {
-      const authUserString = typeof window !== 'undefined' ? localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY) : null;
-      const currentUser = authUserString ? JSON.parse(authUserString) as User : null;
-
-      defaultValues = {
-        status: 'Cotizacion',
-        serviceType: firstType,
-        serviceDate: new Date(),
-        quoteDate: new Date(),
-        serviceItems: [{ id: nanoid(), name: firstType, price: undefined, suppliesUsed: [] }],
-        photoReports: [{ id: `rep_recepcion_${Date.now()}`, date: new Date().toISOString(), description: 'Notas de la Recepción', photos: [] }],
-        serviceAdvisorId: currentUser?.id,
-        serviceAdvisorName: currentUser?.name,
-        serviceAdvisorSignatureDataUrl: currentUser?.signatureDataUrl || '',
-      };
+        status:          initData.status        ?? 'Cotizacion',
+        serviceType:     initData.serviceType   ?? firstType,
+        serviceItems:
+          initData.serviceItems?.length
+            ? initData.serviceItems
+            : [
+                {
+                  id: nanoid(),
+                  name: initData.serviceType ?? firstType,
+                  price: initData.totalCost,
+                  suppliesUsed: [],
+                },
+              ],
+        serviceDate:        initData.serviceDate        ? parseDate(initData.serviceDate)        : undefined,
+        quoteDate:          initData.quoteDate          ? parseDate(initData.quoteDate)          : undefined,
+        receptionDateTime:  initData.receptionDateTime  ? parseDate(initData.receptionDateTime)  : undefined,
+        deliveryDateTime:   initData.deliveryDateTime   ? parseDate(initData.deliveryDateTime)   : undefined,
+        photoReports:
+          initData.photoReports?.length
+            ? initData.photoReports
+            : [
+                {
+                  id: `rep_recepcion_${Date.now()}`,
+                  date: new Date().toISOString(),
+                  description: 'Notas de la Recepción',
+                  photos: [],
+                },
+              ],
+      });
+      return;
     }
-    
-    reset(defaultValues);
+
+    /* ---------- NUEVO REGISTRO ---------- */
+    reset({
+      status: 'Cotizacion',
+      serviceType: firstType,
+      serviceDate: new Date(),
+      quoteDate: new Date(),
+      serviceItems: [
+        { id: nanoid(), name: firstType, price: undefined, suppliesUsed: [] },
+      ],
+      photoReports: [
+        {
+          id: `rep_recepcion_${Date.now()}`,
+          date: new Date().toISOString(),
+          description: 'Notas de la Recepción',
+          photos: [],
+        },
+      ],
+      serviceAdvisorId: currentUser?.id,
+      serviceAdvisorName: currentUser?.name,
+      serviceAdvisorSignatureDataUrl: currentUser?.signatureDataUrl ?? '',
+    });
   }, [initData, serviceTypes, reset]);
 }
