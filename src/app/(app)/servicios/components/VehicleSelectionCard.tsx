@@ -5,7 +5,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useFormContext } from "react-hook-form";
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { FormField, FormItem, FormLabel, FormControl } from "@/components/ui/form";
+import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -14,6 +14,7 @@ import { Car as CarIcon, AlertCircle, User, Fingerprint, History, Phone } from '
 import type { Vehicle, ServiceRecord } from '@/types';
 import { format, isValid, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { cn } from '@/lib/utils';
 
 interface VehicleSelectionCardProps {
   isReadOnly?: boolean;
@@ -30,7 +31,7 @@ export function VehicleSelectionCard({
   onVehicleSelected,
   onOpenNewVehicleDialog,
 }: VehicleSelectionCardProps) {
-  const { control, setValue, getValues, watch } = useFormContext();
+  const { control, setValue, getValues, watch, formState: { errors } } = useFormContext();
   const { toast } = useToast();
 
   const [vehicleLicensePlateSearch, setVehicleLicensePlateSearch] = useState(getValues('vehicleLicensePlateSearch') || "");
@@ -139,21 +140,23 @@ export function VehicleSelectionCard({
               <div className="relative">
                 <FormField
                     control={control}
-                    name="vehicleLicensePlateSearch"
+                    name="vehicleId"
                     render={({ field }) => (
                     <FormItem>
-                        <FormLabel>Placa del Vehículo</FormLabel>
+                        <FormLabel className={cn(errors.vehicleId && "text-destructive")}>Placa del Vehículo</FormLabel>
                         <FormControl>
                         <Input
                             placeholder="Buscar / Ingresar Placas"
-                            {...field}
-                            value={vehicleLicensePlateSearch}
                             onChange={(e) => {
                                 setVehicleLicensePlateSearch(e.target.value);
-                                field.onChange(e.target.value.toUpperCase());
+                                field.onChange(undefined);
+                                setSelectedVehicle(null);
+                                setVehicleNotFound(false);
                             }}
+                            value={vehicleLicensePlateSearch}
                             disabled={isReadOnly}
                             onKeyDown={handleVehiclePlateKeyDown}
+                            className={cn(errors.vehicleId && "border-destructive focus-visible:ring-destructive")}
                         />
                         </FormControl>
                     </FormItem>

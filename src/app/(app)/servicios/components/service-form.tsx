@@ -6,7 +6,9 @@
 
 import { useForm, FormProvider } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useEffect, useState, useCallback, useMemo } from 'react'
+import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react'
+import { parseISO } from 'date-fns'
+import { nanoid } from 'nanoid'
 
 import type {
   ServiceRecord,
@@ -20,18 +22,17 @@ import type {
 
 import { useToast } from '@/hooks/use-toast'
 import {
-  useInitServiceForm,
   useServiceStatusWatcher,
   useServiceTotals,
 } from '@/hooks/use-service-form-hooks'
 
 import { serviceFormSchema, type ServiceFormValues } from '@/schemas/service-form'
-import { cleanObjectForFirestore } from '@/lib/forms'
+import { cleanObjectForFirestore, parseDate } from '@/lib/forms'
 import { generateQuoteWithAI } from '@/lib/services/quote.service'
+import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data'
 
 import { ServiceFormHeader, ServiceFormFooter } from './ServiceFormLayout'
 import { ServiceFormBody } from './ServiceFormBody'
-import { ConfirmDialog } from '@/components/shared/ConfirmDialog'
 import { VehicleDialog } from '../../vehiculos/components/vehicle-dialog'
 import type { VehicleFormValues } from '../../vehiculos/components/vehicle-form'
 import { Tabs } from '@/components/ui/tabs'
@@ -75,14 +76,27 @@ export function ServiceForm({
   const { toast } = useToast()
   const initData = initialDataService || initialDataQuote
   const isEditing = !!initData?.id
+  const freshUserRef = useRef<User | null>(null);
 
   const form = useForm<ServiceFormValues>({
     resolver: zodResolver(serviceFormSchema),
+    values: React.useMemo(() => {
+        if (!initData) return undefined;
+        return {
+          ...initData,
+          serviceDate: initData.serviceDate ? parseDate(initData.serviceDate) : undefined,
+          quoteDate: initData.quoteDate ? parseDate(initData.quoteDate) : undefined,
+          receptionDateTime: initData.receptionDateTime ? parseDate(initData.receptionDateTime) : undefined,
+          deliveryDateTime: initData.deliveryDateTime ? parseDate(initData.deliveryDateTime) : undefined,
+          serviceItems: (initData.serviceItems?.length ?? 0) > 0 ? initData.serviceItems : [{ id: nanoid(), name: '', price: undefined, suppliesUsed: [] }],
+          photoReports: (initData.photoReports?.length ?? 0) > 0 ? initData.photoReports : [{ id: `rep_recepcion_${Date.now()}`, date: new Date().toISOString(), description: 'Notas de la Recepción', photos: [] }],
+        } satisfies Partial<ServiceFormValues>;
+    }, [initData]),
   })
-  const { control, setValue, getValues, trigger, formState, watch } = form
+  
+  const { control, setValue, getValues, trigger, formState, watch, reset } = form
 
   /* -------------------------- CUSTOM HOOKS -------------------------- */
-  useInitServiceForm(form, { initData, serviceTypes })
   useServiceStatusWatcher(form, onStatusChange)
   const { totalCost, totalSuppliesWorkshopCost, serviceProfit } =
     useServiceTotals(form)
@@ -103,6 +117,31 @@ export function ServiceForm({
   
   useEffect(() => setLocalVehicles(parentVehicles), [parentVehicles])
   useEffect(() => setCurrentInventoryItems(inventoryItemsProp), [inventoryItemsProp])
+
+  useEffect(() => {
+    const authUserString = typeof window !== 'undefined' ? localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY) : null;
+    if (authUserString) {
+      freshUserRef.current = JSON.parse(authUserString);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!initData) {
+      reset({
+        status: mode === 'quote' ? 'Cotizacion' : 'En Taller',
+        serviceType: serviceTypes[0]?.name ?? 'Servicio General',
+        serviceItems: [{ id: nanoid(), name: '', price: undefined, suppliesUsed: [] }],
+        photoReports: [{ id: `rep_recepcion_${Date.now()}`, date: new Date().toISOString(), description: 'Notas de la Recepción', photos: [] }],
+        serviceDate: new Date(),
+        quoteDate: mode === 'quote' ? new Date() : undefined,
+        serviceAdvisorId: freshUserRef.current?.id ?? '',
+        serviceAdvisorName: freshUserRef.current?.name ?? '',
+        serviceAdvisorSignatureDataUrl: freshUserRef.current?.signatureDataUrl ?? '',
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initData, mode, serviceTypes, reset]);
+
 
   /* ---------------------------- HANDLERS ---------------------------- */
   const handleSubmit = useCallback(async (formValues: ServiceFormValues) => {
