@@ -25,7 +25,7 @@ const initialWorkshopInfo: WorkshopInfo = {
   logoUrl: "/ranoro-logo.png",
   footerLine1: "¡Gracias por su preferencia!",
   footerLine2: "Para dudas o aclaraciones, no dude en contactarnos.",
-  fixedFooterText: "© 2024 Ranoro®\nSistema de Administracion de Talleres\nTodos los derechos reservados - Diseñado y Desarrollado por Arturo Valdelamar +524493930914",
+  fixedFooterText: "© 2025 Ranoro®\nSistema de Administracion de Talleres\nTodos los derechos reservados - Diseñado y Desarrollado por Arturo Valdelamar +524493930914",
 };
 
 const inspectionGroups = [
@@ -239,7 +239,7 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
       <div className="flex flex-col min-h-[10in]">
         <header className="mb-4 pb-2 border-b-2 border-black">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
-            <Image src={effectiveWorkshopInfo.logoUrl} alt={`${effectiveWorkshopInfo.name} Logo`} width={150} height={40} style={{ height: 'auto' }} data-ai-hint="workshop logo" />
+            <Image src={effectiveWorkshopInfo.logoUrl} alt={`${effectiveWorkshopInfo.name} Logo`} width={150} height={40} style={{ width: '150px', height: 'auto' }} data-ai-hint="workshop logo" />
             <div className="text-left sm:text-right">
               <h1 className="text-lg sm:text-xl font-bold">ORDEN DE SERVICIO</h1>
               <p className="font-mono text-sm sm:text-base">Folio: <span className="font-bold">{service.id}</span></p>
@@ -264,7 +264,7 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
                 <div className="border-2 border-black rounded-md overflow-hidden md:col-span-1">
                     <h3 className="font-bold p-1 bg-gray-700 text-white text-xs text-center">DATOS DEL CLIENTE</h3>
                     <div className="space-y-0.5 p-2">
-                        <p><span className="font-semibold">Nombre:</span> <span className="font-bold">{vehicle?.ownerName?.toUpperCase() || ''}</span></p>
+                        <p><span className="font-semibold">Nombre:</span> <span className="font-bold">{vehicle?.ownerName || ''}</span></p>
                         <p><span className="font-semibold">Teléfono:</span> <span className="font-bold">{vehicle?.ownerPhone || ''}</span></p>
                         {vehicle?.ownerEmail && <p><span className="font-semibold">Email:</span> <span className="font-bold">{vehicle.ownerEmail}</span></p>}
                     </div>
@@ -378,7 +378,7 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
                             </Button>
                         )}
                         <div className="border-t-2 border-black mt-auto pt-1 text-center w-full">
-                            <p className="text-xs font-semibold">{vehicle?.ownerName?.toUpperCase() || '________________________________'}</p>
+                            <p className="text-xs font-semibold">{vehicle?.ownerName || '________________________________'}</p>
                         </div>
                     </div>
                   )}
@@ -390,10 +390,10 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
         <footer className="mt-auto pt-4 text-xs">
            <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 text-center mb-4">
                <div className="pt-2 flex flex-col justify-end">
-                    <div className="h-14 flex-grow flex items-center justify-center">
+                    <div className="min-h-[28px] flex-grow flex items-center justify-center">
                         {service.serviceAdvisorSignatureDataUrl && (
-                            <div className="relative w-full h-full max-w-[200px]">
-                                <Image src={normalizeDataUrl(service.serviceAdvisorSignatureDataUrl)} alt="Firma del asesor" fill sizes="160px" style=({ objectFit: 'contain' }) unoptimized/>
+                            <div className="relative w-full h-full max-w-[100px]">
+                                <Image src={normalizeDataUrl(service.serviceAdvisorSignatureDataUrl)} alt="Firma del asesor" width={100} height={28} style={{ objectFit: 'contain' }} unoptimized/>
                             </div>
                         )}
                     </div>
@@ -401,11 +401,11 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
                         <p className="font-bold">ASESOR DE SERVICIO: {service.serviceAdvisorName?.toUpperCase() || '________________________________'}</p>
                     </div>
                 </div>
-                <div className="min-h-[130px] flex flex-col justify-end">
+                <div className="min-h-[65px] flex flex-col justify-end">
                    <div className="h-full flex-grow flex flex-col items-center justify-center">
                        {service.customerSignatureDelivery ? (
-                         <div className="relative w-48 h-24">
-                           <Image src={normalizeDataUrl(service.customerSignatureDelivery)} alt="Firma de conformidad" width={192} height={96} style={{ objectFit: 'contain' }} unoptimized/>
+                         <div className="relative w-24 h-12">
+                           <Image src={normalizeDataUrl(service.customerSignatureDelivery)} alt="Firma de conformidad" width={96} height={48} style={{ objectFit: 'contain' }} unoptimized/>
                          </div>
                        ) : (
                          isPublicView && showSignDelivery && onSignClick && (
@@ -417,7 +417,7 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
                        )}
                    </div>
                    <div className="border-t-2 border-black pt-1 w-full text-center mt-auto">
-                       <p className="font-bold">RECIBO DE CONFORMIDAD: {vehicle?.ownerName?.toUpperCase() || '________________________________'}</p>
+                       <p className="font-bold">RECIBO DE CONFORMIDAD: {vehicle?.ownerName || '________________________________'}</p>
                    </div>
                </div>
            </div>
@@ -487,7 +487,7 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
     const renderActiveTabContent = () => {
         switch (activeTab) {
             case 'quote':
-                return (service.status === 'Cotizacion' || service.status === 'Agendado')
+                return service.status === 'Cotizacion' || service.status === 'Agendado'
                   ? <QuoteContent quote={service} vehicle={vehicle} workshopInfo={effectiveWorkshopInfo} />
                   : null;
             case 'order':
@@ -501,8 +501,7 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
                   ? PhotoReportContent
                   : null;
             default:
-                const isQuoteOrAppointment = service.status === 'Cotizacion' || service.status === 'Agendado';
-                return isQuoteOrAppointment ? <QuoteContent quote={service} vehicle={vehicle} workshopInfo={effectiveWorkshopInfo} /> : ServiceOrderContent;
+                return ServiceOrderContent;
         }
     };
     
