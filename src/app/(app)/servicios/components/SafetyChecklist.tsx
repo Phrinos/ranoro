@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React, { useState, useEffect, useRef } from 'react';
@@ -8,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { FormField, FormItem, FormLabel, FormControl } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
 import { Check, Signature, BrainCircuit, Loader2, Camera, Trash2, Eye } from "lucide-react";
-import type { ServiceFormValues } from "./service-form";
+import type { ServiceFormValues } from "@/schemas/service-form";
 import type { SafetyInspection, SafetyCheckStatus, SafetyCheckValue } from '@/types';
 import { cn } from "@/lib/utils";
 import Image from "next/legacy/image";

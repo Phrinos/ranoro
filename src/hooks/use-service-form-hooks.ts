@@ -1,3 +1,4 @@
+
 // src/hooks/use-service-form-hooks.ts
 
 import { useEffect, useMemo } from 'react';
@@ -83,7 +84,7 @@ export function useInitServiceForm(form: UseFormReturn<ServiceFormValues>, { ini
       defaultValues = {
         status: 'Cotizacion',
         serviceType: serviceTypes[0]?.name ?? 'Servicio General',
-        serviceItems: [{ id: nanoid(), name: '', price: undefined, suppliesUsed: [] }],
+        serviceItems: [{ id: nanoid(), name: serviceTypes[0]?.name ?? 'Servicio General', price: undefined, suppliesUsed: [] }],
         photoReports: [{ id: `rep_recepcion_${Date.now()}`, date: new Date().toISOString(), description: 'Notas de la Recepción', photos: [] }],
         serviceDate: new Date(),
         quoteDate: new Date(),
