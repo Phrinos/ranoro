@@ -62,7 +62,6 @@ const getQuoteById = async (id: string): Promise<QuoteRecord | null> => {
 const saveService = async (data: Partial<ServiceRecord>): Promise<ServiceRecord> => {
     if (!db) throw new Error("Database not initialized.");
     
-    const isNew = !data.id;
     const docId = data.id || nanoid();
     const docRef = doc(db, 'serviceRecords', docId);
 
@@ -75,23 +74,21 @@ const saveService = async (data: Partial<ServiceRecord>): Promise<ServiceRecord>
     if (data.status === 'Entregado' && !data.deliveryDateTime) {
       data.deliveryDateTime = new Date().toISOString();
     }
-
+    
     // Final check to ensure problematic fields are null, not undefined or empty.
     const fieldsToNullify: (keyof ServiceRecord)[] = ['customerSignatureReception', 'customerSignatureDelivery', 'technicianName'];
     fieldsToNullify.forEach(key => {
-        if (!data[key]) { // This checks for undefined, null, and empty string
+        if (!data[key]) {
             (data as any)[key] = null;
         }
     });
     
-    // Clean the object just before writing to Firestore
-    const cleanedData = cleanObjectForFirestore(data);
+    // Clean the object for Firestore compatibility.
+    const cleanedData = cleanObjectForFirestore({ ...data, id: docId });
 
-    if (isNew) {
-      await setDoc(docRef, cleanedData);
-    } else {
-      await updateDoc(docRef, cleanedData);
-    }
+    // Use setDoc with merge: true to handle both creation and updates safely.
+    // This creates the document if it doesn't exist, and updates/merges fields if it does.
+    await setDoc(docRef, cleanedData, { merge: true });
     
     const newDocSnap = await getDoc(docRef);
     if (!newDocSnap.exists()) {
