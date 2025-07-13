@@ -1,5 +1,8 @@
 
+
 import type { Metadata } from 'next';
+import Image from 'next/image';
+import Link from 'next/link';
 
 export const metadata: Metadata = {
   title: 'Detalle de Servicio - Ranoro',
@@ -27,6 +30,21 @@ export default function ServiceSheetLayout({
 }) {
   return (
     <div className="bg-muted/40 min-h-screen">
+        <header className="py-2 px-4 sm:px-6 bg-background/80 backdrop-blur-sm sticky top-0 z-50 border-b print:hidden">
+           <div className="container mx-auto flex justify-between items-center">
+             <Link href="/login">
+                <Image
+                  src="/ranoro-logo.png"
+                  alt="Ranoro Logo"
+                  width={140}
+                  height={40}
+                  className="dark:invert h-auto"
+                  style={{ width: '120px', height: 'auto' }}
+                  data-ai-hint="ranoro logo"
+                />
+             </Link>
+           </div>
+        </header>
         <main className="p-2 sm:p-4 md:py-8">
             {children}
         </main>

@@ -137,7 +137,7 @@ export default function NuevaVentaPage() {
           onDialogClose={handlePreviewDialogClose}
           dialogContentClassName="printable-content"
           footerActions={
-             <div className="flex gap-2">
+             <div className="flex flex-col sm:flex-row gap-2">
                 <Button variant="outline" onClick={handleCopyAsImage}>
                     <Copy className="mr-2 h-4 w-4"/> Copiar Imagen
                 </Button>
