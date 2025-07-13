@@ -173,6 +173,18 @@ const addVehicle = async (data: VehicleFormValues): Promise<Vehicle> => {
     return { id: docRef.id, ...newVehicleData } as Vehicle;
 };
 
+const saveVehicle = async (data: VehicleFormValues, id?: string): Promise<Vehicle> => {
+    if (!db) throw new Error("Database not initialized.");
+    const dataToSave = { ...data, year: Number(data.year) };
+    if (id) {
+        await updateDoc(doc(db, 'vehicles', id), dataToSave);
+        return { id, ...dataToSave };
+    } else {
+        const docRef = await addDoc(collection(db, 'vehicles'), dataToSave);
+        return { id: docRef.id, ...dataToSave };
+    }
+};
+
 // --- Price Lists ---
 
 const onPriceListsUpdate = (callback: (lists: VehiclePriceList[]) => void): (() => void) => {
@@ -232,6 +244,7 @@ export const inventoryService = {
     onVehiclesUpdatePromise,
     getVehicleById,
     addVehicle,
+    saveVehicle,
     onPriceListsUpdate,
     savePriceList,
     deletePriceList,
