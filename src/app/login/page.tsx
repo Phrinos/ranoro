@@ -209,8 +209,8 @@ export default function LoginPage() {
           <CardContent>
               <Tabs defaultValue="login" className="w-full">
                 <TabsList className="grid w-full grid-cols-2">
-                  <TabsTrigger value="login">Iniciar Sesión</TabsTrigger>
-                  <TabsTrigger value="register">Registrarse</TabsTrigger>
+                  <TabsTrigger value="login" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Iniciar Sesión</TabsTrigger>
+                  <TabsTrigger value="register" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Registrarse</TabsTrigger>
                 </TabsList>
                 <TabsContent value="login">
                     <form onSubmit={handleLogin} className="space-y-4 pt-4">
