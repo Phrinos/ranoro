@@ -5,13 +5,17 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
 import { Button } from '@/components/ui/button';
-import { Printer, MessageSquare, Download, Loader2, Eye } from 'lucide-react';
+import { Printer, MessageSquare, Download, Loader2, Eye, Wrench, CheckCircle, ShieldCheck, Camera } from 'lucide-react';
 import type { ServiceRecord, Vehicle, QuoteRecord, WorkshopInfo } from '@/types';
 import { ServiceSheetContent } from '@/components/service-sheet-content';
 import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../ui/dialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import Image from "next/image";
-import { inventoryService, operationsService } from '@/lib/services'; 
+import { inventoryService, operationsService } from '@/lib/services';
+import { cn } from '@/lib/utils';
+import { isQuote } from 'node:util/types';
+
 
 interface UnifiedPreviewDialogProps {
   open: boolean;
@@ -31,8 +35,30 @@ export function UnifiedPreviewDialog({ open, onOpenChange, service, vehicle: ini
   const [vehicle, setVehicle] = useState<Vehicle | null>(initialVehicle || null);
   const [isLoading, setIsLoading] = useState(true);
 
+  const showOrder = service.status !== 'Cotizacion' && service.status !== 'Agendado';
+  const showQuote = !!(service.status === 'Cotizacion' || service.status === 'Agendado');
+  const showChecklist = !!service.safetyInspection && Object.keys(service.safetyInspection).some(k => k !== 'inspectionNotes' && k !== 'technicianSignature' && (service.safetyInspection as any)[k]?.status !== 'na' && (service.safetyInspection as any)[k]?.status !== undefined);
+  const showPhotoReport = !!service.photoReports && service.photoReports.length > 0 && service.photoReports.some(r => r.photos.length > 0);
+  
+  const tabs = [];
+  if (showQuote) tabs.push({ value: 'quote', label: 'Cotización', icon: Eye });
+  if (showOrder) tabs.push({ value: 'order', label: 'Orden', icon: Wrench });
+  if (showChecklist) tabs.push({ value: 'checklist', label: 'Revisión', icon: ShieldCheck });
+  if (showPhotoReport) tabs.push({ value: 'photoreport', label: 'Fotos', icon: Camera });
+    
+  const defaultTabValue = service.status === 'Cotizacion' || service.status === 'Agendado' ? 'quote' : 'order';
+  const [activeTab, setActiveTab] = useState(defaultTabValue);
+
+  const gridColsClass = 
+    tabs.length === 4 ? 'grid-cols-4' :
+    tabs.length === 3 ? 'grid-cols-3' :
+    tabs.length === 2 ? 'grid-cols-2' :
+    'grid-cols-1';
+
+
   useEffect(() => {
     if (open) {
+      setActiveTab(defaultTabValue);
       const storedWorkshopInfo = localStorage.getItem("workshopTicketInfo");
       if (storedWorkshopInfo) {
         setWorkshopInfo(JSON.parse(storedWorkshopInfo));
@@ -53,7 +79,7 @@ export function UnifiedPreviewDialog({ open, onOpenChange, service, vehicle: ini
       
       fetchData();
     }
-  }, [open, service, initialVehicle]);
+  }, [open, service, initialVehicle, defaultTabValue]);
 
   const handleShareService = useCallback(() => {
     if (!service || !service.publicId) {
@@ -126,6 +152,11 @@ Hola ${vehicle.ownerName || 'Cliente'}, gracias por confiar en Ranoro. Te propor
           <DialogHeader className="p-6 pb-2 flex-shrink-0">
             <DialogTitle>Vista Previa Unificada</DialogTitle>
             <DialogDescription>Contenido del documento listo para imprimir o compartir.</DialogDescription>
+             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full pt-2">
+                <TabsList className={cn('grid w-full', gridColsClass)}>
+                    {tabs.map(tab => <TabsTrigger key={tab.value} value={tab.value} className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">{tab.label}</TabsTrigger>)}
+                </TabsList>
+            </Tabs>
           </DialogHeader>
           
           <div id="printable-area-preview" className="flex-grow overflow-y-auto px-6 bg-muted/30">
@@ -139,6 +170,7 @@ Hola ${vehicle.ownerName || 'Cliente'}, gracias por confiar en Ranoro. Te propor
                   vehicle={vehicle || undefined}
                   workshopInfo={workshopInfo as WorkshopInfo}
                   onViewImage={handleViewImage}
+                  activeTab={activeTab}
                 />
               </div>
             )}
