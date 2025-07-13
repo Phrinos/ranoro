@@ -1,68 +1,86 @@
 
 "use client";
 
-import { useEffect, useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from 'lucide-react';
-import { operationsService } from '@/lib/services';
-import type { User } from '@/types';
-import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
-import { nanoid } from 'nanoid';
+import { PageHeader } from "@/components/page-header";
+import { ServiceForm } from "../components/service-form";
+import { operationsService, inventoryService, personnelService } from '@/lib/services';
+import type { ServiceRecord, Vehicle, Technician, InventoryItem, ServiceTypeRecord, QuoteRecord } from "@/types";
+import type { VehicleFormValues } from '../../vehiculos/components/vehicle-form';
 
-// This page now acts as a "creator" that immediately generates a new service record
-// and then redirects to the main service history page to edit it.
-export default function NuevoServicioRedirectPage() {
+// This page now renders the form for creating a new service record locally.
+export default function NuevoServicioPage() {
   const router = useRouter();
   const { toast } = useToast();
-  const [isCreating, setIsCreating] = useState(true);
+
+  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
+  const [technicians, setTechnicians] = useState<Technician[]>([]);
+  const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
+  const [serviceTypes, setServiceTypes] = useState<ServiceTypeRecord[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const createAndRedirect = async () => {
-      try {
-        const authUserString = localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY);
-        const currentUser: User | null = authUserString ? JSON.parse(authUserString) : null;
-        
-        if (!currentUser) {
-            throw new Error("No se pudo identificar al usuario.");
-        }
+    const unsubs = [
+      inventoryService.onVehiclesUpdate(setVehicles),
+      personnelService.onTechniciansUpdate(setTechnicians),
+      inventoryService.onItemsUpdate(setInventoryItems),
+      inventoryService.onServiceTypesUpdate((data) => {
+        setServiceTypes(data);
+        setIsLoading(false);
+      }),
+    ];
+    return () => unsubs.forEach(unsub => unsub());
+  }, []);
 
-        const newServiceId = nanoid();
-        const newServiceData = {
-          id: newServiceId,
-          status: 'Cotizacion',
-          quoteDate: new Date().toISOString(),
-          serviceDate: new Date().toISOString(),
-          serviceItems: [],
-          serviceAdvisorId: currentUser.id,
-          serviceAdvisorName: currentUser.name,
-          serviceAdvisorSignatureDataUrl: currentUser.signatureDataUrl || '',
-        };
+  const handleSaveNewService = async (data: ServiceRecord | QuoteRecord) => {
+    try {
+      const savedRecord = await operationsService.saveService(data);
+      toast({ title: 'Registro Creado', description: `El registro #${savedRecord.id} se ha guardado.` });
+      router.push('/servicios/historial');
+    } catch (error) {
+      console.error('Error creating service:', error);
+      toast({ title: 'Error al Guardar', description: 'No se pudo crear el nuevo registro.', variant: 'destructive' });
+    }
+  };
 
-        // Create the document in Firestore
-        await operationsService.saveService(newServiceData);
+  const handleVehicleCreated = async (newVehicleData: VehicleFormValues) => {
+    try {
+      await inventoryService.addVehicle(newVehicleData);
+      toast({ title: 'Vehículo Creado' });
+    } catch (error) {
+       toast({ title: 'Error al Crear Vehículo', variant: 'destructive' });
+    }
+  };
 
-        // Redirect to the history page with parameters to open the new service in edit mode
-        router.push(`/servicios/historial?id=${newServiceId}&edit=true`);
-        
-      } catch (error) {
-        console.error("Failed to create new service:", error);
-        toast({
-          title: 'Error al Crear',
-          description: 'No se pudo crear el nuevo registro. Redireccionando al dashboard.',
-          variant: 'destructive',
-        });
-        router.push('/dashboard');
-      }
-    };
-
-    createAndRedirect();
-  }, [router, toast]);
+  if (isLoading) {
+    return (
+      <div className="flex h-64 w-full items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin" />
+        <span className="ml-3 text-lg">Cargando datos...</span>
+      </div>
+    );
+  }
 
   return (
-    <div className="flex h-64 w-full items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin" />
-        <span className="ml-3 text-lg">Creando nuevo registro...</span>
-    </div>
+    <>
+      <PageHeader
+        title="Nuevo Servicio / Cotización"
+        description="Complete la información. El registro se guardará en la base de datos al finalizar."
+      />
+      <ServiceForm
+        vehicles={vehicles}
+        technicians={technicians}
+        inventoryItems={inventoryItems}
+        serviceTypes={serviceTypes}
+        serviceHistory={[]}
+        onSubmit={handleSaveNewService}
+        onClose={() => router.push('/servicios/historial')}
+        onVehicleCreated={handleVehicleCreated}
+        mode="service" // Default mode, can be changed internally by status
+      />
+    </>
   );
 }

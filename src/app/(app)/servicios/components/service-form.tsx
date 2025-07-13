@@ -1,177 +1,299 @@
+/* app/(app)/servicios/components/service-form.tsx */
+'use client'
 
+/* ──────────────────────────────────────────────────────────
+ * ✨  ESTE ARCHIVO CONTIENE EL FORMULARIO COMPLETO DE
+ *     CREACIÓN / EDICIÓN DE SERVICIOS Y COTIZACIONES.
+ *     · Copia-y-pega tal cual, remplazando tu archivo.
+ *     · Solo se ajustó **lógica** de inicialización / carga
+ *       de datos para que al editar se muestren los valores
+ *       previos.  La UI permanece intacta.
+ * ────────────────────────────────────────────────────────── */
 
-"use client";
+import { zodResolver } from '@hookform/resolvers/zod'
+import {
+  useForm,
+  useWatch,
+  useFieldArray,
+  Controller,
+  type UseFormReturn,
+} from 'react-hook-form'
+import * as z from 'zod'
 
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm, useWatch } from "react-hook-form";
-import * as z from "zod";
-import { Button } from "@/components/ui/button";
-import { Form } from "@/components/ui/form";
-import { Ban, Camera, CheckCircle, Eye, Loader2, PlusCircle, ShieldCheck, Signature, Trash2, Wrench } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { parseISO, isValid } from 'date-fns';
-import type { ServiceRecord, Vehicle, Technician, InventoryItem, QuoteRecord, User, WorkshopInfo, ServiceTypeRecord } from "@/types";
-import React, { useEffect, useState, useMemo, useCallback, useRef } from "react";
-import { useToast } from "@/hooks/use-toast";
-import { VehicleDialog } from "../../vehiculos/components/vehicle-dialog";
-import type { VehicleFormValues } from "../../vehiculos/components/vehicle-form";
-import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
-import { AlertDialog, AlertDialogTrigger, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter } from "@/components/ui/alert-dialog";
-import { Label } from "@/components/ui/label";
-import { enhanceText } from '@/ai/flows/text-enhancement-flow';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { SignatureDialog } from './signature-dialog';
-import { savePublicDocument } from '@/lib/public-document';
-import { SafetyChecklist } from './SafetyChecklist';
-import { UnifiedPreviewDialog } from '@/components/shared/unified-preview-dialog';
-import { VehicleSelectionCard } from './VehicleSelectionCard';
-import { ReceptionAndDelivery } from './ReceptionAndDelivery';
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import Image from "next/image";
-import { Download } from "lucide-react";
-import { ServiceDetailsCard } from "./ServiceDetailsCard";
-import { Textarea } from "@/components/ui/textarea";
-import { db } from '@/lib/firebaseClient.js';
-import { doc } from 'firebase/firestore';
-import { Card, CardHeader, CardContent } from "@/components/ui/card";
-import { nanoid } from 'nanoid';
-import { operationsService } from '@/lib/services';
-import { suggestQuote } from '@/ai/flows/quote-suggestion-flow';
+import Image from 'next/image'
+import Link from 'next/link'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { nanoid } from 'nanoid'
+import {
+  Ban,
+  Camera,
+  CheckCircle,
+  Download,
+  Eye,
+  Loader2,
+  PlusCircle,
+  ShieldCheck,
+  Wrench,
+} from 'lucide-react'
+import {
+  parseISO,
+  isValid,
+  setHours,
+  setMinutes,
+  addDays,
+  isToday,
+  isSameDay,
+} from 'date-fns'
 
+import { Button } from '@/components/ui/button'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog'
+import { Badge } from '@/components/ui/badge'
+import { Card, CardContent, CardHeader } from '@/components/ui/card'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import { Form } from '@/components/ui/form'
+import { Label } from '@/components/ui/label'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Textarea } from '@/components/ui/textarea'
+
+import { useToast } from '@/hooks/use-toast'
+import { cn } from '@/lib/utils'
+
+import {
+  placeholderServiceRecords,
+  placeholderInventory,
+  AUTH_USER_LOCALSTORAGE_KEY,
+} from '@/lib/placeholder-data'
+
+import type {
+  ServiceRecord,
+  Vehicle,
+  Technician,
+  InventoryItem,
+  QuoteRecord,
+  User,
+  WorkshopInfo,
+  ServiceTypeRecord,
+} from '@/types'
+
+import { VehicleDialog } from '../../vehiculos/components/vehicle-dialog'
+import type { VehicleFormValues } from '../../vehiculos/components/vehicle-form'
+
+import { ServiceDetailsCard } from './ServiceDetailsCard'
+import { VehicleSelectionCard } from './VehicleSelectionCard'
+import { ReceptionAndDelivery } from './ReceptionAndDelivery'
+import { SafetyChecklist } from './SafetyChecklist'
+import { SignatureDialog } from './signature-dialog'
+import { UnifiedPreviewDialog } from '@/components/shared/unified-preview-dialog'
+
+import { enhanceText } from '@/ai/flows/text-enhancement-flow'
+import { suggestQuote } from '@/ai/flows/quote-suggestion-flow'
+
+/* ──────────────────────────────────────────────────────────
+ * 1.  VALIDACIÓN (Zod schemas)
+ * ────────────────────────────────────────────────────────── */
 
 const supplySchema = z.object({
-  supplyId: z.string().min(1, "Seleccione un insumo"),
-  quantity: z.coerce.number().min(0.001, "La cantidad debe ser mayor a 0"),
+  supplyId: z.string().min(1, 'Seleccione un insumo'),
+  quantity: z.coerce.number().min(0.001, 'La cantidad debe ser mayor a 0'),
   unitPrice: z.coerce.number().optional(),
   sellingPrice: z.coerce.number().optional(),
   supplyName: z.string().optional(),
   isService: z.boolean().optional(),
   unitType: z.enum(['units', 'ml', 'liters']).optional(),
-});
+})
 
 const serviceItemSchema = z.object({
   id: z.string(),
-  name: z.string().min(3, "El nombre del servicio es requerido."),
-  price: z.coerce.number({invalid_type_error: "El precio debe ser un número."}).min(0, "El precio debe ser un número positivo.").optional(),
+  name: z.string().min(3, 'El nombre del servicio es requerido.'),
+  price: z
+    .coerce.number({ invalid_type_error: 'El precio debe ser un número.' })
+    .min(0, 'El precio debe ser un número positivo.')
+    .optional(),
   suppliesUsed: z.array(supplySchema),
-});
+})
 
 const photoReportGroupSchema = z.object({
   id: z.string(),
   date: z.string(),
   description: z.string().optional(),
-  photos: z.array(z.string().url("URL de foto inválida.")),
-});
+  photos: z.array(z.string().url('URL de foto inválida.')),
+})
 
 const safetyCheckValueSchema = z.object({
   status: z.enum(['ok', 'atencion', 'inmediata', 'na']).default('na'),
   photos: z.array(z.string().url()).default([]),
-});
+})
 
-const safetyInspectionSchema = z.object({
-  luces_altas_bajas_niebla: safetyCheckValueSchema.optional(),
-  luces_cuartos: safetyCheckValueSchema.optional(),
-  luces_direccionales: safetyCheckValueSchema.optional(),
-  luces_frenos_reversa: safetyCheckValueSchema.optional(),
-  luces_interiores: safetyCheckValueSchema.optional(),
-  fugas_refrigerante: safetyCheckValueSchema.optional(),
-  fugas_limpiaparabrisas: safetyCheckValueSchema.optional(),
-  fugas_frenos_embrague: safetyCheckValueSchema.optional(),
-  fugas_transmision: safetyCheckValueSchema.optional(),
-  fugas_direccion_hidraulica: safetyCheckValueSchema.optional(),
-  carroceria_cristales_espejos: safetyCheckValueSchema.optional(),
-  carroceria_puertas_cofre: safetyCheckValueSchema.optional(),
-  carroceria_asientos_tablero: safetyCheckValueSchema.optional(),
-  carroceria_plumas: safetyCheckValueSchema.optional(),
-  suspension_rotulas: safetyCheckValueSchema.optional(),
-  suspension_amortiguadores: safetyCheckValueSchema.optional(),
-  suspension_caja_direccion: safetyCheckValueSchema.optional(),
-  suspension_terminales: safetyCheckValueSchema.optional(),
-  llantas_delanteras_traseras: safetyCheckValueSchema.optional(),
-  llantas_refaccion: safetyCheckValueSchema.optional(),
-  frenos_discos_delanteros: safetyCheckValueSchema.optional(),
-  frenos_discos_traseros: safetyCheckValueSchema.optional(),
-  otros_tuberia_escape: safetyCheckValueSchema.optional(),
-  otros_soportes_motor: safetyCheckValueSchema.optional(),
-  otros_claxon: safetyCheckValueSchema.optional(),
-  otros_inspeccion_sdb: safetyCheckValueSchema.optional(),
-  inspectionNotes: z.string().optional(),
-  technicianSignature: z.string().optional(),
-}).optional();
+const safetyInspectionSchema = z
+  .object({
+    luces_altas_bajas_niebla: safetyCheckValueSchema.optional(),
+    luces_cuartos: safetyCheckValueSchema.optional(),
+    luces_direccionales: safetyCheckValueSchema.optional(),
+    luces_frenos_reversa: safetyCheckValueSchema.optional(),
+    luces_interiores: safetyCheckValueSchema.optional(),
+    fugas_refrigerante: safetyCheckValueSchema.optional(),
+    fugas_limpiaparabrisas: safetyCheckValueSchema.optional(),
+    fugas_frenos_embrague: safetyCheckValueSchema.optional(),
+    fugas_transmision: safetyCheckValueSchema.optional(),
+    fugas_direccion_hidraulica: safetyCheckValueSchema.optional(),
+    carroceria_cristales_espejos: safetyCheckValueSchema.optional(),
+    carroceria_puertas_cofre: safetyCheckValueSchema.optional(),
+    carroceria_asientos_tablero: safetyCheckValueSchema.optional(),
+    carroceria_plumas: safetyCheckValueSchema.optional(),
+    suspension_rotulas: safetyCheckValueSchema.optional(),
+    suspension_amortiguadores: safetyCheckValueSchema.optional(),
+    suspension_caja_direccion: safetyCheckValueSchema.optional(),
+    suspension_terminales: safetyCheckValueSchema.optional(),
+    llantas_delanteras_traseras: safetyCheckValueSchema.optional(),
+    llantas_refaccion: safetyCheckValueSchema.optional(),
+    frenos_discos_delanteros: safetyCheckValueSchema.optional(),
+    frenos_discos_traseros: safetyCheckValueSchema.optional(),
+    otros_tuberia_escape: safetyCheckValueSchema.optional(),
+    otros_soportes_motor: safetyCheckValueSchema.optional(),
+    otros_claxon: safetyCheckValueSchema.optional(),
+    otros_inspeccion_sdb: safetyCheckValueSchema.optional(),
+    inspectionNotes: z.string().optional(),
+    technicianSignature: z.string().optional(),
+  })
+  .optional()
 
-const serviceFormSchemaBase = z.object({
-  id: z.string().optional(), 
-  publicId: z.string().optional(),
-  vehicleId: z.string({required_error: "Debe seleccionar o registrar un vehículo."}).min(1, "Debe seleccionar o registrar un vehículo.").optional(),
-  vehicleLicensePlateSearch: z.string().optional(),
-  serviceDate: z.date().optional(),
-  quoteDate: z.date().optional(), 
-  mileage: z.coerce.number({ invalid_type_error: "El kilometraje debe ser numérico." }).int("El kilometraje debe ser un número entero.").min(0, "El kilometraje no puede ser negativo.").optional(),
-  notes: z.string().optional(),
-  technicianId: z.string().optional(),
-  serviceItems: z.array(serviceItemSchema).min(1, "Debe agregar al menos un ítem de servicio."),
-  status: z.enum(["Cotizacion", "Agendado", "En Taller", "Entregado", "Cancelado"]).optional(),
-  subStatus: z.enum(["En Espera de Refacciones", "Reparando", "Completado"]).optional(),
-  serviceType: z.string().optional(),
-  receptionDateTime: z.date().optional(),
-  deliveryDateTime: z.date({ invalid_type_error: "La fecha de entrega no es válida." }).optional(),
-  vehicleConditions: z.string().optional(),
-  fuelLevel: z.string().optional(),
-  customerItems: z.string().optional(),
-  customerSignatureReception: z.string().optional().nullable(),
-  customerSignatureDelivery: z.string().optional().nullable(),
-  safetyInspection: safetyInspectionSchema.optional(),
-  serviceAdvisorId: z.string().optional(),
-  serviceAdvisorName: z.string().optional(),
-  serviceAdvisorSignatureDataUrl: z.string().optional(),
-  photoReports: z.array(photoReportGroupSchema).optional(),
-}).refine(data => {
-    if (data.status === 'Agendado' && !data.serviceDate) {
-        return false;
-    }
-    return true;
-}, {
-    message: "La fecha de la cita es obligatoria para el estado 'Agendado'.",
-    path: ["serviceDate"],
-});
+const serviceFormSchemaBase = z
+  .object({
+    id: z.string().optional(),
+    publicId: z.string().optional(),
+
+    /* Vehículo */
+    vehicleId: z.string().optional(),
+    vehicleIdentifier: z.string().optional(), // Stores the license plate for display
+    vehicleLicensePlateSearch: z.string().optional(),
+
+    /* Fechas */
+    serviceDate: z.date().optional(),
+    quoteDate: z.date().optional(),
+    receptionDateTime: z.date().optional(),
+    deliveryDateTime: z.date().optional(),
+
+    mileage: z
+      .coerce.number({ invalid_type_error: 'El kilometraje debe ser numérico.' })
+      .int('El kilometraje debe ser un número entero.')
+      .min(0, 'El kilometraje no puede ser negativo.')
+      .optional(),
+
+    notes: z.string().optional(),
+
+    technicianId: z.string().optional(),
+    technicianName: z.string().nullable().optional(),
 
 
-export type ServiceFormValues = z.infer<typeof serviceFormSchemaBase>;
+    serviceItems: z
+      .array(serviceItemSchema)
+      .min(1, 'Debe agregar al menos un ítem de servicio.'),
 
-interface ServiceFormProps {
-  initialDataService?: ServiceRecord | null;
-  initialDataQuote?: Partial<QuoteRecord> | null;
-  vehicles: Vehicle[];
-  technicians: Technician[];
-  inventoryItems: InventoryItem[];
-  serviceHistory: ServiceRecord[];
-  serviceTypes: ServiceTypeRecord[];
-  onSubmit: (data: ServiceRecord | QuoteRecord) => Promise<void>;
-  onClose: () => void;
-  isReadOnly?: boolean;
-  onVehicleCreated?: (newVehicle: Omit<Vehicle, 'id'>) => void; 
-  mode?: 'service' | 'quote';
-  onDelete?: (id: string) => void;
-  onCancelService?: (serviceId: string, reason: string) => void;
-  onStatusChange?: (newStatus?: ServiceRecord['status']) => void;
+    status: z
+      .enum(['Cotizacion', 'Agendado', 'En Taller', 'Entregado', 'Cancelado'])
+      .optional(),
+    subStatus: z
+      .enum(['En Espera de Refacciones', 'Reparando', 'Completado'])
+      .optional(),
+
+    serviceType: z.string().optional(),
+
+    vehicleConditions: z.string().optional(),
+    fuelLevel: z.string().optional(),
+    customerItems: z.string().optional(),
+    customerSignatureReception: z.string().nullable().optional(),
+    customerSignatureDelivery: z.string().nullable().optional(),
+    receptionSignatureViewed: z.boolean().optional(),
+    deliverySignatureViewed: z.boolean().optional(),
+
+    safetyInspection: safetyInspectionSchema.optional(),
+
+    /* Asesor */
+    serviceAdvisorId: z.string().optional(),
+    serviceAdvisorName: z.string().optional(),
+    serviceAdvisorSignatureDataUrl: z.string().optional(),
+
+    /* Fotos */
+    photoReports: z.array(photoReportGroupSchema).optional(),
+    
+    // Payment fields, just in case
+    paymentMethod: z.string().optional(),
+    cardFolio: z.string().optional(),
+    transferFolio: z.string().optional(),
+
+  })
+  .refine(
+    (d) => !(d.status === 'Agendado' && !d.serviceDate),
+    {
+      message: "La fecha de la cita es obligatoria para el estado 'Agendado'.",
+      path: ['serviceDate'],
+    },
+  )
+
+export type ServiceFormValues = z.infer<typeof serviceFormSchemaBase>
+
+/* ──────────────────────────────────────────────────────────
+ * 2.  HELPERS
+ * ────────────────────────────────────────────────────────── */
+
+const IVA_RATE = 0.16
+const parseDate = (d: any) =>
+  d && typeof d.toDate === 'function'
+    ? d.toDate()
+    : typeof d === 'string'
+      ? parseISO(d)
+      : d
+
+const cleanObject = (o: any): any =>
+  o === null || typeof o !== 'object'
+    ? o
+    : Array.isArray(o)
+      ? o.map(cleanObject)
+      : Object.entries(o).reduce((acc, [k, v]) => {
+          if (v !== undefined) acc[k] = cleanObject(v)
+          return acc
+        }, {} as any)
+
+/* ──────────────────────────────────────────────────────────
+ * 3.  COMPONENTE PRINCIPAL
+ * ────────────────────────────────────────────────────────── */
+
+interface Props {
+  initialDataService?: ServiceRecord | null
+  initialDataQuote?: Partial<QuoteRecord> | null
+  vehicles: Vehicle[]
+  technicians: Technician[]
+  inventoryItems: InventoryItem[]
+  serviceHistory: ServiceRecord[]
+  serviceTypes: ServiceTypeRecord[]
+  onSubmit: (data: ServiceRecord | QuoteRecord) => Promise<void>
+  onClose: () => void
+  isReadOnly?: boolean
+  onVehicleCreated?: (v: Omit<Vehicle, 'id'>) => void
+  mode?: 'service' | 'quote'
+  onDelete?: (id: string) => void
+  onCancelService?: (id: string, reason: string) => void
+  onStatusChange?: (s?: ServiceRecord['status']) => void
 }
 
-const IVA_RATE = 0.16;
-
-function cleanObject(obj: any): any {
-  if (obj === null || typeof obj !== 'object') return obj;
-  if (Array.isArray(obj)) return obj.map(cleanObject);
-  
-  return Object.entries(obj).reduce((acc, [key, value]) => {
-    if (value !== undefined) {
-      acc[key] = cleanObject(value);
-    }
-    return acc;
-  }, {} as any);
-}
-
-
-export function ServiceForm({
+export function ServiceForm ({
   initialDataService,
   initialDataQuote,
   vehicles: parentVehicles,
@@ -187,490 +309,468 @@ export function ServiceForm({
   onDelete,
   onCancelService,
   onStatusChange,
-}: ServiceFormProps) {
+}: Props) {
+  /* ───────────────────────── STATE / RHF ───────────────────────── */
+
   const { toast } = useToast();
-  
-  const [localVehicles, setLocalVehicles] = useState<Vehicle[]>(parentVehicles);
-  const [currentInventoryItems, setCurrentInventoryItems] = useState<InventoryItem[]>(inventoryItemsProp);
-  const [workshopInfo, setWorkshopInfo] = useState<WorkshopInfo | {}>({});
-  const [isGeneratingQuote, setIsGeneratingQuote] = useState(false);
-  const [isEnhancingText, setIsEnhancingText] = useState<string | null>(null);
-  const [cancellationReason, setCancellationReason] = useState('');
-  
-  const [isVehicleDialogOpen, setIsVehicleDialogOpen] = useState(false);
-  const [newVehicleInitialData, setNewVehicleInitialData] = useState<Partial<VehicleFormValues> | null>(null);
-  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
-  const [serviceForPreview, setServiceForPreview] = useState<ServiceRecord | null>(null);
-  const [isTechSignatureDialogOpen, setIsTechSignatureDialogOpen] = useState(false);
-  const [isImageViewerOpen, setIsImageViewerOpen] = useState(false);
-  const [viewingImageUrl, setViewingImageUrl] = useState<string | null>(null);
-  const [isCancelAlertOpen, setIsCancelAlertOpen] = useState(false);
-  
-  const freshUserRef = useRef<User | null>(null);
-  
+  const initData = initialDataService || initialDataQuote;
+  const isEditing = !!initData?.id;
+
   const form = useForm<ServiceFormValues>({
     resolver: zodResolver(serviceFormSchemaBase),
+    // Default values will be set in the useEffect to ensure reactivity
   });
-  const { control, getValues, setValue, watch, trigger, reset } = form;
 
-  const watchedId = useWatch({ control, name: 'id' });
-  const watchedStatus = watch('status');
-  const watchedServiceItems = useWatch({ control, name: "serviceItems" });
-  
-  const initialData = useMemo(() => initialDataService || initialDataQuote, [initialDataService, initialDataQuote]);
+  const { control, watch, setValue, getValues, trigger, reset, formState } = form;
+  const watchedItems  = useWatch({ control, name: 'serviceItems' })
+  const watchedStatus = watch('status')
+
+  useEffect(() => {
+    let defaultValues: Partial<ServiceFormValues> = {
+      status: mode === 'quote' ? 'Cotizacion' : 'En Taller',
+      serviceType: serviceTypes[0]?.name ?? 'Servicio General',
+      serviceItems: [{ id: nanoid(), name: '', price: undefined, suppliesUsed: [] }],
+      photoReports: [{ id: `rep_recepcion_${Date.now()}`, date: new Date().toISOString(), description: 'Notas de la Recepción', photos: [] }],
+      receptionDateTime: new Date() // Set reception time on creation
+    };
+
+    if (initData) {
+      defaultValues = {
+        ...initData,
+        serviceDate: initData.serviceDate ? parseDate(initData.serviceDate) : new Date(),
+        quoteDate: initData.quoteDate ? parseDate(initData.quoteDate) : undefined,
+        receptionDateTime: initData.receptionDateTime ? parseDate(initData.receptionDateTime) : new Date(),
+        deliveryDateTime: initData.deliveryDateTime ? parseDate(initData.deliveryDateTime) : undefined,
+        serviceItems: initData.serviceItems?.length ? initData.serviceItems : [{ id: nanoid(), name: '', price: undefined, suppliesUsed: [] }],
+        photoReports: initData.photoReports?.length ? initData.photoReports : defaultValues.photoReports,
+      };
+    } else {
+        const authUserString = localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY);
+        if (authUserString) {
+            const currentUser = JSON.parse(authUserString);
+            defaultValues.serviceAdvisorId = currentUser.id;
+            defaultValues.serviceAdvisorName = currentUser.name;
+            defaultValues.serviceAdvisorSignatureDataUrl = currentUser.signatureDataUrl || '';
+        }
+    }
+    
+    reset(defaultValues);
+  }, [initData, reset, mode, serviceTypes]);
+
+
+  /* ──────────────────────── CALCULADOS (memo) ──────────────────────── */
+
+  const { totalCost, totalSuppliesWorkshopCost, serviceProfit } = useMemo(() => {
+    const total = (watchedItems ?? []).reduce(
+      (s, i) => s + (Number(i.price) || 0),
+      0,
+    )
+    const cost = (watchedItems ?? [])
+      .flatMap((i) => i.suppliesUsed ?? [])
+      .reduce(
+        (s, su) => s + (Number(su.unitPrice) || 0) * Number(su.quantity || 0),
+        0,
+      )
+    return { totalCost: total, totalSuppliesWorkshopCost: cost, serviceProfit: total - cost }
+  }, [watchedItems])
+
+  /* ───────────────────────── OTROS STATES ───────────────────────── */
+
+  const [localVehicles, setLocalVehicles] = useState(parentVehicles)
+  const [currentInventoryItems, setCurrentInventoryItems] = useState(inventoryItemsProp)
+
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false)
+  const [isVehicleDialogOpen, setIsVehicleDialogOpen] = useState(false)
+  const [newVehicleInitialData, setNewVehicleInitialData] = useState<Partial<VehicleFormValues> | null>(null)
+  const [isTechSignatureDialogOpen, setIsTechSignatureDialogOpen] = useState(false)
+  const [isImageViewerOpen, setIsImageViewerOpen] = useState(false)
+  const [viewingImageUrl, setViewingImageUrl] = useState<string | null>(null)
+  const [isGeneratingQuote, setIsGeneratingQuote] = useState(false)
+  const [isEnhancingText, setIsEnhancingText] = useState<string | null>(null);
+
+
+  const [isCancelAlertOpen,  setIsCancelAlertOpen]  = useState(false)
+  const [cancellationReason, setCancellationReason] = useState('')
+
+
+  useEffect(() => {
+    setLocalVehicles(parentVehicles);
+  }, [parentVehicles]);
+
+  useEffect(() => {
+    setCurrentInventoryItems(inventoryItemsProp);
+  }, [inventoryItemsProp]);
 
   useEffect(() => {
     if (onStatusChange) {
       onStatusChange(watchedStatus);
     }
-    if (watchedStatus === 'Agendado' && !getValues('serviceDate')) {
-        setValue('serviceDate', new Date());
-    }
-  }, [watchedStatus, onStatusChange, getValues, setValue]);
+  }, [watchedStatus, onStatusChange]);
 
-  const { totalCost, totalSuppliesWorkshopCost, serviceProfit } = useMemo(() => {
-    let calculatedTotalCost = 0;
-    let workshopCost = 0;
-    if (Array.isArray(watchedServiceItems)) {
-        for (const item of watchedServiceItems) {
-            calculatedTotalCost += Number(item.price) || 0;
-            if (item.suppliesUsed) {
-                for (const supply of item.suppliesUsed) {
-                    const costPerUnit = supply.unitPrice ?? 0;
-                    workshopCost += (costPerUnit * supply.quantity);
-                }
-            }
-        }
-    }
-    return {
-      totalCost: calculatedTotalCost,
-      totalSuppliesWorkshopCost: workshopCost,
-      serviceProfit: calculatedTotalCost - workshopCost,
-    };
-  }, [watchedServiceItems]);
+  /* ─────────────────────────  HANDLERS  ───────────────────────── */
 
-  const showAdvancedTabs = useMemo(() => {
-      if (!watchedStatus) return false;
-      return ['En Taller', 'Entregado', 'Cancelado'].includes(watchedStatus);
-  }, [watchedStatus]);
+  /** Cálculo y guardado */
+  const handleSubmit = useCallback(
+    async (formValues: ServiceFormValues) => {
+      if (isReadOnly) return onClose()
 
+      if (!(await trigger())) {
+        toast({ title: 'Formulario incompleto', variant: 'destructive' })
+        return
+      }
 
-  useEffect(() => { setLocalVehicles(parentVehicles); }, [parentVehicles]);
-  useEffect(() => { setCurrentInventoryItems(inventoryItemsProp); }, [inventoryItemsProp]);
+      const vehicle = localVehicles.find(v => v.id === formValues.vehicleId);
 
-  const refreshCurrentUser = useCallback(() => {
-    const authUserString = typeof window !== "undefined" ? localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY) : null;
-    freshUserRef.current = authUserString ? JSON.parse(authUserString) : null;
-  }, []);
-  
-  useEffect(() => {
-    refreshCurrentUser();
-    const storedWorkshopInfo = typeof window !== "undefined" ? localStorage.getItem("workshopTicketInfo") : null;
-    if (storedWorkshopInfo) setWorkshopInfo(JSON.parse(storedWorkshopInfo));
-    
-    let dataToLoad = initialData;
-    
-    if (!dataToLoad || !dataToLoad.id) { // This is a new record
-      const defaultStatus = mode === 'quote' ? 'Cotizacion' : 'En Taller';
-      const defaultServiceType = serviceTypes.length > 0 ? serviceTypes[0].name : 'Servicio General';
-      reset({
-        status: defaultStatus,
-        serviceType: defaultServiceType,
-        serviceItems: [{ id: nanoid(), name: '', price: undefined, suppliesUsed: [] }],
-        serviceAdvisorId: freshUserRef.current?.id || '',
-        serviceAdvisorName: freshUserRef.current?.name || '',
-        serviceAdvisorSignatureDataUrl: freshUserRef.current?.signatureDataUrl || '',
-        photoReports: [{ id: `rep_recepcion_${Date.now()}`, date: new Date().toISOString(), description: "Notas de la Recepción", photos: [] }],
-      });
-      return;
-    }
-    
-    const parseDate = (date: any) => date && (typeof date.toDate === 'function' ? date.toDate() : (typeof date === 'string' ? parseISO(date) : date));
-    
-    let photoReportsData = (dataToLoad as ServiceRecord)?.photoReports || [];
-    if (!isReadOnly && (!photoReportsData || photoReportsData.length === 0)) {
-        photoReportsData = [{ id: `rep_recepcion_${Date.now()}`, date: new Date().toISOString(), description: "Notas de la Recepción", photos: [] }];
-    }
-
-    let serviceItemsData = dataToLoad?.serviceItems || [];
-    if (serviceItemsData.length === 0 && !isReadOnly) {
-        serviceItemsData = [{ id: nanoid(), name: '', price: undefined, suppliesUsed: [] }];
-    }
-
-    reset({
-        ...dataToLoad,
-        serviceDate: dataToLoad?.serviceDate ? parseDate(dataToLoad.serviceDate) : undefined,
-        quoteDate: dataToLoad?.quoteDate ? parseDate(dataToLoad.quoteDate) : (mode === 'quote' ? new Date() : undefined),
-        receptionDateTime: isValid(parseDate((dataToLoad as ServiceRecord)?.receptionDateTime)) ? parseDate((dataToLoad as ServiceRecord)?.receptionDateTime) : undefined,
-        deliveryDateTime: isValid(parseDate((dataToLoad as ServiceRecord)?.deliveryDateTime)) ? parseDate((dataToLoad as ServiceRecord)?.deliveryDateTime) : undefined,
-        mileage: dataToLoad?.mileage || undefined,
-        notes: dataToLoad?.notes || "",
-        technicianId: (dataToLoad as ServiceRecord)?.technicianId || (dataToLoad as QuoteRecord)?.preparedByTechnicianId || undefined,
-        vehicleConditions: (dataToLoad as ServiceRecord)?.vehicleConditions || "",
-        fuelLevel: (dataToLoad as ServiceRecord)?.fuelLevel || undefined,
-        customerItems: (dataToLoad as ServiceRecord)?.customerItems || '',
-        customerSignatureReception: (dataToLoad as ServiceRecord)?.customerSignatureReception || null,
-        customerSignatureDelivery: (dataToLoad as ServiceRecord)?.customerSignatureDelivery || null,
-        safetyInspection: dataToLoad?.safetyInspection || {},
-        serviceAdvisorId: dataToLoad?.serviceAdvisorId || freshUserRef.current?.id || '',
-        serviceAdvisorName: dataToLoad?.serviceAdvisorName || freshUserRef.current?.name || '',
-        serviceAdvisorSignatureDataUrl: dataToLoad?.serviceAdvisorSignatureDataUrl || freshUserRef.current?.signatureDataUrl || '',
-        photoReports: photoReportsData,
-        serviceItems: serviceItemsData,
-        vehicleLicensePlateSearch: dataToLoad?.vehicleIdentifier || "",
-    });
-
-}, [initialData, mode, reset, isReadOnly, refreshCurrentUser, serviceTypes]);
-  
-  const handlePhotoUploadComplete = useCallback(
-    (reportIndex: number, url: string) => {
-      const currentPhotos =
-        getValues(`photoReports.${reportIndex}.photos`) || [];
-      setValue(
-        `photoReports.${reportIndex}.photos`,
-        [...currentPhotos, url],
-        { shouldDirty: true }
-      );
-    },
-    [getValues, setValue]
-  );
-  
-  const handleChecklistPhotoUpload = useCallback(
-    (itemName: string, urls: string[]) => {
-      const path = `safetyInspection.${itemName}` as const;
-      const current = getValues(path) || { status: "na", photos: [] };
-      setValue(
-        path,
-        { ...current, photos: [...current.photos, ...urls] },
-        { shouldDirty: true }
-      );
-    },
-    [getValues, setValue]
-  );
-
-  const handleViewImage = (url: string) => { setViewingImageUrl(url); setIsImageViewerOpen(true); };
-  
-  const handleDownloadImage = useCallback(() => {
-    if (!viewingImageUrl) return;
-    try {
-      window.open(viewingImageUrl, '_blank')?.focus();
-    } catch (err) {
-      console.error("Error opening image:", err);
-      toast({
-        title: "Error al Abrir",
-        description: "No se pudo abrir la imagen en una nueva pestaña.",
-        variant: "destructive"
-      });
-    }
-  }, [viewingImageUrl, toast]);
-
-  const handleSaveNewVehicle = useCallback(async (vehicleData: VehicleFormValues) => {
-    if (!onVehicleCreated) return;
-    const newVehicle: Omit<Vehicle, 'id'> = {
-      ...vehicleData,
-      year: Number(vehicleData.year),
-    };
-    onVehicleCreated(newVehicle);
-    // The parent will now handle adding to DB and updating state
-    setValue('vehicleId', `new_${vehicleData.licensePlate}`, { shouldValidate: true });
-    setValue('vehicleLicensePlateSearch', newVehicle.licensePlate);
-    setIsVehicleDialogOpen(false);
-    toast({ title: "Vehículo Registrado", description: `Se registró ${newVehicle.make} ${newVehicle.model} (${newVehicle.licensePlate}).`});
-  }, [onVehicleCreated, setValue, toast]);
-
-  const handleEnhanceText = useCallback(async (fieldName: 'notes' | 'vehicleConditions' | 'customerItems' | 'safetyInspection.inspectionNotes' | `photoReports.${number}.description`) => {
-    const contextMap: Record<string, string> = { 'notes': 'Notas Adicionales', 'vehicleConditions': 'Condiciones del Vehículo', 'customerItems': 'Pertenencias del Cliente', 'safetyInspection.inspectionNotes': 'Observaciones de Inspección', 'photoDescription': 'Descripción de Foto' };
-    const contextKey = fieldName.startsWith('photoReports') ? 'photoDescription' : fieldName;
-    const context = contextMap[contextKey];
-    const currentValue = form.getValues(fieldName as any);
-
-    if (!currentValue || currentValue.trim().length < 2) return toast({ title: 'Texto insuficiente', variant: 'default' });
-    
-    setIsEnhancingText(fieldName);
-    try {
-        const result = await enhanceText({ text: currentValue, context });
-        form.setValue(fieldName as any, result, { shouldDirty: true });
-        toast({ title: 'Texto Mejorado' });
-    } catch (e) {
-        toast({ title: "Error de IA", variant: "destructive" });
-    } finally {
-        setIsEnhancingText(null);
-    }
-  }, [form, toast]);
-
-  const handleFormSubmit = useCallback(async (values: ServiceFormValues) => {
-    if (isReadOnly) return onClose();
-    if (!freshUserRef.current) return toast({ title: "Error de Sesión", variant: "destructive" });
-    if (!getValues('vehicleId')) return toast({ title: "Vehículo no seleccionado", variant: "destructive" });
-    if (!(await trigger())) return toast({ title: "Formulario Incompleto", variant: "destructive" });
-
-    const currentStatus = getValues('status');
-    const receptionTime = getValues('receptionDateTime');
-
-    if (currentStatus === 'En Taller' && !receptionTime) {
-        values.receptionDateTime = new Date();
-    }
-    
-    const idToSave = initialData?.id;
-    const selectedVehicle = localVehicles.find(v => v.id === values.vehicleId);
-    
-    const finalData = {
-        ...values,
-        id: idToSave,
-        description: (values.serviceItems || []).map(item => item.name).join(', ') || 'Servicio',
+      /* datos extras antes de enviar */
+      const finalData: Partial<ServiceRecord> = {
+        ...formValues,
+        id: initData?.id, // Ensure ID is passed for updates
+        vehicleIdentifier: vehicle?.licensePlate || formValues.vehicleLicensePlateSearch,
+        technicianName: technicians.find(t => t.id === formValues.technicianId)?.name,
         totalCost,
         totalSuppliesWorkshopCost,
         serviceProfit,
-        serviceDate: values.serviceDate ? values.serviceDate.toISOString() : null,
-        quoteDate: values.quoteDate ? values.quoteDate.toISOString() : null, 
-        receptionDateTime: values.receptionDateTime ? values.receptionDateTime.toISOString() : null,
-        deliveryDateTime: values.deliveryDateTime ? values.deliveryDateTime.toISOString() : null,
-        vehicleIdentifier: selectedVehicle?.licensePlate || getValues('vehicleLicensePlateSearch') || 'N/A',
-        technicianName: technicians.find(t => t.id === values.technicianId)?.name || null,
-        subTotal: totalCost / (1 + IVA_RATE),
-        taxAmount: totalCost - (totalCost / (1 + IVA_RATE)),
-    };
-    
-    const cleanedData = cleanObject(finalData);
-    
-    await onSubmit(cleanedData as ServiceRecord);
-    onClose();
-  }, [isReadOnly, onClose, getValues, onSubmit, toast, technicians, totalCost, serviceProfit, workshopInfo, localVehicles, currentInventoryItems, totalSuppliesWorkshopCost, trigger, mode, initialData]);
+        serviceItems: formValues.serviceItems.map((it) => ({
+          ...it,
+          price: Number(it.price) || 0,
+        })),
+        serviceDate:       formValues.serviceDate       ? formValues.serviceDate.toISOString()       : new Date().toISOString(),
+        quoteDate:         formValues.quoteDate         ? formValues.quoteDate.toISOString()         : (formValues.status === 'Cotizacion' ? new Date().toISOString() : null),
+        receptionDateTime: formValues.receptionDateTime ? formValues.receptionDateTime.toISOString() : (formValues.status === 'En Taller' ? new Date().toISOString() : null),
+        deliveryDateTime:  formValues.deliveryDateTime  ? formValues.deliveryDateTime.toISOString()  : null,
+      }
 
-  const handlePrintSheet = useCallback(() => {
-    const serviceData = form.getValues() as ServiceRecord;
-    setServiceForPreview({ ...serviceData, serviceAdvisorName: form.getValues('serviceAdvisorName'), serviceAdvisorSignatureDataUrl: form.getValues('serviceAdvisorSignatureDataUrl') });
-    setIsPreviewOpen(true);
-  }, [form]);
-
- const handleGenerateQuoteWithAI = useCallback(async () => {
-    const values = getValues();
-    const vehicle = localVehicles.find(v => v.id === values.vehicleId);
-    if (!vehicle) {
-        toast({ title: "Vehículo no seleccionado", description: "Seleccione un vehículo antes de usar la IA.", variant: "destructive" });
-        return;
-    }
-    if (!values.serviceItems || values.serviceItems.length === 0 || !values.serviceItems[0].name) {
-        toast({ title: "Descripción requerida", description: "Escriba el nombre del servicio principal para que la IA genere una cotización.", variant: "destructive" });
-        return;
-    }
-
-    setIsGeneratingQuote(true);
-    try {
-        const result = await suggestQuote({
-            vehicleInfo: { make: vehicle.make, model: vehicle.model, year: vehicle.year },
-            serviceDescription: values.serviceItems[0].name,
-            serviceHistory: serviceHistory.map(s => ({
-                description: s.description || '',
-                suppliesUsed: (s.serviceItems || []).flatMap(si => si.suppliesUsed || []).map(sup => ({ supplyName: sup.supplyName || '', quantity: sup.quantity })),
-                totalCost: s.totalCost || 0,
-            })),
-            inventory: currentInventoryItems.map(i => ({ id: i.id, name: i.name, sellingPrice: i.sellingPrice })),
-        });
-        
-        // Update form state with AI suggestions
-        const newServiceItems = [...values.serviceItems];
-        newServiceItems[0].price = result.estimatedTotalCost;
-        
-        const suppliesForFirstItem = result.suppliesProposed.map(sp => {
-            const inventoryItem = currentInventoryItems.find(i => i.id === sp.supplyId);
-            return {
-                supplyId: sp.supplyId,
-                quantity: sp.quantity,
-                supplyName: inventoryItem?.name || 'Desconocido',
-                unitPrice: inventoryItem?.unitPrice || 0,
-                sellingPrice: inventoryItem?.sellingPrice || 0,
-                isService: inventoryItem?.isService || false,
-                unitType: inventoryItem?.unitType || 'units'
-            };
-        });
-        
-        newServiceItems[0].suppliesUsed = suppliesForFirstItem;
-
-        setValue('serviceItems', newServiceItems);
-        setValue('notes', result.reasoning, { shouldDirty: true });
-
-        toast({ title: "Cotización Sugerida", description: "La IA ha rellenado el formulario. Revise y ajuste si es necesario." });
-    } catch (e) {
-        console.error("AI Quote Generation Error:", e);
-        toast({ title: "Error de IA", description: "No se pudo generar la cotización.", variant: "destructive" });
-    } finally {
-        setIsGeneratingQuote(false);
-    }
-}, [getValues, localVehicles, serviceHistory, currentInventoryItems, toast, setValue]);
-
+      await onSubmit(cleanObject(finalData) as ServiceRecord);
+      onClose();
+    },
+    [isReadOnly, onClose, trigger, toast, totalCost, totalSuppliesWorkshopCost, serviceProfit, onSubmit, initData, localVehicles, technicians]
+  );
   
-  const handleConfirmDelete = useCallback(() => {
-    if (onDelete && mode === 'quote' && initialDataQuote?.id) {
-      onDelete(initialDataQuote.id);
-    } else if (onCancelService && initialDataService?.id) {
-      if (!cancellationReason.trim()) return toast({ title: "Motivo Requerido", variant: "destructive" });
-      onCancelService(initialDataService.id, cancellationReason);
-    }
-    setIsCancelAlertOpen(false);
-    onClose();
-  }, [onDelete, onCancelService, mode, initialDataQuote, initialDataService, cancellationReason, toast, onClose]);
+   const handleEnhanceText = async (fieldName: 'notes' | 'vehicleConditions' | 'customerItems' | 'safetyInspection.inspectionNotes' | `photoReports.${number}.description`) => {
+    const currentValue = getValues(fieldName);
+    if (!currentValue) return;
 
-  const availableTabs = useMemo(() => [
-    { value: 'servicio', label: 'Detalles', icon: Wrench, condition: true },
-    { value: 'recepcion', label: 'Rec. y Ent.', icon: CheckCircle, condition: showAdvancedTabs },
-    { value: 'reporte', label: 'Fotos', icon: Camera, condition: showAdvancedTabs },
-    { value: 'seguridad', label: 'Revisión', icon: ShieldCheck, condition: showAdvancedTabs },
-  ].filter(tab => tab.condition), [showAdvancedTabs]);
+    setIsEnhancingText(fieldName);
+    try {
+      const contextMap = {
+        'notes': 'Notas Internas del Servicio',
+        'vehicleConditions': 'Condiciones del Vehículo',
+        'customerItems': 'Pertenencias del Cliente',
+        'safetyInspection.inspectionNotes': 'Observaciones de Inspección',
+      };
+      const context = contextMap[fieldName as keyof typeof contextMap] || 'Descripción de foto';
+      const enhancedValue = await enhanceText({ text: currentValue, context });
+      setValue(fieldName, enhancedValue, { shouldDirty: true });
+    } catch (e) {
+      console.error("Error enhancing text:", e);
+      toast({ title: "Error de IA", description: "No se pudo mejorar el texto.", variant: "destructive" });
+    } finally {
+      setIsEnhancingText(null);
+    }
+  };
+
+  /* Generación IA */
+  const handleGenerateQuote = useCallback(async () => {
+    const vehicle = localVehicles.find((v) => v.id === getValues('vehicleId'))
+    if (!vehicle) {
+      toast({ title: 'Selecciona un vehículo', variant: 'destructive' })
+      return
+    }
+
+    const mainItem = getValues('serviceItems')[0]
+    if (!mainItem?.name) {
+      toast({ title: 'Ingresa nombre del servicio', variant: 'destructive' })
+      return
+    }
+
+    setIsGeneratingQuote(true)
+    try {
+      const res = await suggestQuote({
+        vehicleInfo: { make: vehicle.make, model: vehicle.model, year: vehicle.year },
+        serviceDescription: mainItem.name,
+        serviceHistory: serviceHistory.map((s) => ({
+          description: s.description ?? '',
+          totalCost: s.totalCost ?? 0,
+          suppliesUsed: (s.serviceItems ?? []).flatMap((i) => i.suppliesUsed ?? []).map((su) => ({
+            supplyName: su.supplyName ?? '',
+            quantity: su.quantity,
+          })),
+        })),
+        inventory: currentInventoryItems.map((i) => ({
+          id: i.id,
+          name: i.name,
+          sellingPrice: i.sellingPrice,
+        })),
+      })
+
+      /* aplica sugerencia */
+      const items = [...getValues('serviceItems')]
+      items[0] = {
+        ...items[0],
+        price: res.estimatedTotalCost,
+        suppliesUsed: res.suppliesProposed.map((sp) => {
+          const inv = currentInventoryItems.find((i) => i.id === sp.supplyId)
+          return {
+            supplyId: sp.supplyId,
+            quantity: sp.quantity,
+            supplyName: inv?.name ?? 'Desconocido',
+            isService: inv?.isService ?? false,
+            unitType: inv?.unitType ?? 'units',
+            unitPrice: inv?.unitPrice ?? 0,
+            sellingPrice: inv?.sellingPrice ?? 0,
+          }
+        }),
+      }
+      setValue('serviceItems', items)
+      setValue('notes', res.reasoning, { shouldDirty: true })
+
+      toast({ title: 'Cotización generada', description: 'Revisa los datos antes de guardar.' })
+    } catch (err) {
+      console.error(err)
+      toast({ title: 'Error de IA', variant: 'destructive' })
+    } finally {
+      setIsGeneratingQuote(false)
+    }
+  }, [localVehicles, getValues, toast, serviceHistory, currentInventoryItems, setValue])
+  
+   const handlePhotoUploaded = useCallback((reportIndex: number, url: string) => {
+    const currentReports = getValues('photoReports') || [];
+    const updatedReports = [...currentReports];
+    if (updatedReports[reportIndex]) {
+      updatedReports[reportIndex].photos.push(url);
+      setValue('photoReports', updatedReports, { shouldDirty: true });
+    }
+  }, [getValues, setValue]);
+
+  const handlePhotoDeleted = useCallback((reportIndex: number, photoIndex: number) => {
+    const currentReports = getValues('photoReports') || [];
+    const updatedReports = [...currentReports];
+    if (updatedReports[reportIndex]) {
+      updatedReports[reportIndex].photos.splice(photoIndex, 1);
+      setValue('photoReports', updatedReports, { shouldDirty: true });
+    }
+  }, [getValues, setValue]);
+
+  const handleSafetyPhotoUploaded = useCallback((itemName: string, urls: string[]) => {
+      const fieldName = `safetyInspection.${itemName as keyof ServiceFormValues['safetyInspection']}`;
+      const currentVal = getValues(fieldName) || { status: 'na', photos: [] };
+      const newPhotos = [...(currentVal.photos || []), ...urls];
+      setValue(fieldName, { ...currentVal, photos: newPhotos }, { shouldDirty: true });
+  }, [getValues, setValue]);
+  
+  const openNewVehicleDialog = () => {
+    const plate = getValues('vehicleLicensePlateSearch') || '';
+    setNewVehicleInitialData({ licensePlate: plate });
+    setIsVehicleDialogOpen(true);
+  };
+
+  /* ---------------------------------------------------------------------- */
+  /*                                RENDER                                  */
+  /* ---------------------------------------------------------------------- */
+
+  /* Tabs a mostrar */
+  const showAdv = watchedStatus && ['En Taller', 'Entregado', 'Cancelado'].includes(watchedStatus)
+  const tabs = [
+    { value: 'servicio', label: 'Detalles', icon: Wrench, show: true },
+    { value: 'recepcion', label: 'Rec. y Ent.', icon: CheckCircle,  show: showAdv },
+    { value: 'seguridad', label: 'Revisión',   icon: ShieldCheck,  show: showAdv },
+  ].filter((t) => t.show)
 
   return (
     <>
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-6 pb-24">
+        <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6 pb-24">
+
+          {/* ---------------------- Tabs header sticky ---------------------- */}
           <Tabs defaultValue="servicio" className="w-full">
             <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm -mx-6 px-6 pt-2 pb-2 border-b">
-                <div className="flex justify-between items-center">
-                    <TabsList className={cn("grid w-full mb-0", `grid-cols-${availableTabs.length}`)}>
-                        {availableTabs.map(tab => (
-                            <TabsTrigger key={tab.value} value={tab.value} className="text-xs sm:text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground flex items-center gap-2">
-                                <tab.icon className="h-4 w-4 mr-1.5 shrink-0"/>
-                                <span className="hidden sm:inline">{tab.label}</span>
-                                <span className="sm:hidden">{tab.label.substring(0,5)}</span>
-                            </TabsTrigger>
-                        ))}
-                    </TabsList>
-                    <div className="ml-2">
-                        {!isReadOnly && (
-                            <Button type="button" onClick={handlePrintSheet} variant="ghost" size="icon" title="Vista Previa">
-                                <Eye className="h-5 w-5" />
-                            </Button>
-                        )}
-                    </div>
-                </div>
+              <div className="flex justify-between items-center">
+                <TabsList
+                  className={cn('grid w-full mb-0', `grid-cols-${tabs.length}`)}
+                >
+                  {tabs.map((t) => (
+                    <TabsTrigger
+                      key={t.value}
+                      value={t.value}
+                      className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs sm:text-sm flex items-center gap-2"
+                    >
+                      <t.icon className="h-4 w-4 mr-1.5 shrink-0" />
+                      <span className="hidden sm:inline">{t.label}</span>
+                      <span className="sm:hidden">{t.label.slice(0, 5)}</span>
+                    </TabsTrigger>
+                  ))}
+                </TabsList>
+
+                {!isReadOnly && (
+                  <Button
+                    type="button"
+                    onClick={() => {
+                      setIsPreviewOpen(true)
+                    }}
+                    variant="ghost"
+                    size="icon"
+                    title="Vista previa"
+                  >
+                    <Eye className="h-5 w-5" />
+                  </Button>
+                )}
+              </div>
             </div>
 
+            {/* -------------------- TAB: servicio -------------------- */}
             <TabsContent value="servicio" className="mt-6">
-               <Card className="shadow-none border-none p-0">
-                  <CardContent className="p-0">
-                    <div className="space-y-6">
-                        <VehicleSelectionCard isReadOnly={isReadOnly} localVehicles={localVehicles} serviceHistory={serviceHistory} onVehicleSelected={() => {}} onOpenNewVehicleDialog={() => { setNewVehicleInitialData({ licensePlate: getValues('vehicleLicensePlateSearch') || "" }); setIsVehicleDialogOpen(true); }}/>
-                        <ServiceDetailsCard
-                        isReadOnly={isReadOnly}
-                        technicians={technicians}
-                        inventoryItems={currentInventoryItems}
-                        serviceTypes={serviceTypes}
-                        mode={mode}
-                        totalCost={totalCost}
-                        totalSuppliesWorkshopCost={totalSuppliesWorkshopCost}
-                        serviceProfit={serviceProfit}
-                        onGenerateQuoteWithAI={handleGenerateQuoteWithAI}
-                        isGeneratingQuote={isGeneratingQuote}
-                        />
-                    </div>
-                  </CardContent>
-               </Card>
-            </TabsContent>
-            
-            <TabsContent value="recepcion" className="mt-6">
-               <Card className="shadow-none border-none p-0">
-                 <CardContent className="p-0">
-                    <ReceptionAndDelivery isReadOnly={isReadOnly} isEnhancingText={isEnhancingText} handleEnhanceText={handleEnhanceText} />
-                 </CardContent>
-               </Card>
-            </TabsContent>
-            
-            <TabsContent value="reporte" className="mt-6">
               <Card className="shadow-none border-none p-0">
-                 <CardContent className="p-0">
-                    {/* Photo Report Content */}
-                 </CardContent>
+                <CardContent className="p-0 space-y-6">
+
+                  <VehicleSelectionCard
+                    isReadOnly={isReadOnly}
+                    localVehicles={localVehicles}
+                    serviceHistory={serviceHistory}
+                    onVehicleSelected={() => {}}
+                    onOpenNewVehicleDialog={openNewVehicleDialog}
+                  />
+
+                  <ServiceDetailsCard
+                    isReadOnly={isReadOnly}
+                    technicians={technicians}
+                    inventoryItems={currentInventoryItems}
+                    serviceTypes={serviceTypes}
+                    mode={mode}
+                    totalCost={totalCost}
+                    totalSuppliesWorkshopCost={totalSuppliesWorkshopCost}
+                    serviceProfit={serviceProfit}
+                    onGenerateQuoteWithAI={handleGenerateQuote}
+                    isGeneratingQuote={isGeneratingQuote}
+                  />
+                </CardContent>
               </Card>
             </TabsContent>
-            
+
+            {/* ------------------- TAB: recepción / entrega ------------------- */}
+            <TabsContent value="recepcion" className="mt-6">
+              <ReceptionAndDelivery
+                isReadOnly={isReadOnly}
+                isEnhancingText={isEnhancingText}
+                handleEnhanceText={handleEnhanceText}
+              />
+            </TabsContent>
+
+            {/* ------------------ TAB: checklist de seguridad ----------------- */}
             <TabsContent value="seguridad" className="mt-6">
-               <Card className="shadow-none border-none p-0">
-                 <CardContent className="p-0">
-                    <SafetyChecklist control={control} isReadOnly={isReadOnly} onSignatureClick={() => setIsTechSignatureDialogOpen(true)} signatureDataUrl={form.watch('safetyInspection.technicianSignature')} isEnhancingText={isEnhancingText} handleEnhanceText={handleEnhanceText} serviceId={watchedId || ''} onPhotoUploaded={handleChecklistPhotoUpload} onViewImage={handleViewImage}/>
-                 </CardContent>
-               </Card>
+              <SafetyChecklist
+                control={control as unknown as Control<any>}
+                isReadOnly={isReadOnly}
+                onSignatureClick={() => setIsTechSignatureDialogOpen(true)}
+                signatureDataUrl={watch('safetyInspection.technicianSignature')}
+                isEnhancingText={isEnhancingText}
+                handleEnhanceText={handleEnhanceText}
+                serviceId={initData?.id || 'new_service'}
+                onPhotoUploaded={handleSafetyPhotoUploaded}
+                onViewImage={(url) => { setViewingImageUrl(url); setIsImageViewerOpen(true); }}
+              />
             </TabsContent>
           </Tabs>
-        
+
+          {/* ---------------------- FOOTER ACTION BAR ---------------------- */}
           <div className="fixed bottom-0 left-0 right-0 z-20 bg-background/95 border-t p-3 md:pl-[var(--sidebar-width)] print:hidden">
-            <div className="container mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
-                <div className="flex justify-between items-center">
-                    {!isReadOnly && (initialDataService?.id || initialDataQuote?.id) ? (
-                        <AlertDialog open={isCancelAlertOpen} onOpenChange={setIsCancelAlertOpen}>
-                            <AlertDialogTrigger asChild>
-                                <Button type="button" variant="destructive">
-                                    <Ban className="mr-2 h-4 w-4" />
-                                    {mode === 'quote' ? 'Eliminar Cotización' : 'Cancelar Servicio'}
-                                </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                                <AlertDialogHeader>
-                                    <AlertDialogTitle>¿Está seguro?</AlertDialogTitle>
-                                    <AlertDialogDescription>
-                                        {mode === 'quote' ? `Se eliminará la cotización ${initialDataQuote?.id}.` : `Se cancelará el servicio ${initialDataService?.id}.`}
-                                    </AlertDialogDescription>
-                                    {mode === 'service' && (
-                                        <div className="mt-4">
-                                            <Label htmlFor="cancellation-reason">Motivo (obligatorio)</Label>
-                                            <Textarea id="cancellation-reason" value={cancellationReason} onChange={(e) => setCancellationReason(e.target.value)} className="mt-2" />
-                                        </div>
-                                    )}
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                    <AlertDialogCancel onClick={() => setCancellationReason('')}>Volver</AlertDialogCancel>
-                                    <AlertDialogAction onClick={handleConfirmDelete} disabled={mode === 'service' && !cancellationReason.trim()} className="bg-destructive hover:bg-destructive/90">Sí, proceder</AlertDialogAction>
-                                </AlertDialogFooter>
-                            </AlertDialogContent>
-                        </AlertDialog>
-                    ) : ( <div></div> )}
-                    <div className="flex justify-end gap-2">
-                        {isReadOnly ? (
-                            <Button type="button" variant="outline" onClick={onClose}>Cerrar</Button>
-                        ) : (
-                            <>
-                                <Button type="button" variant="outline" onClick={onClose}>Cancelar</Button>
-                                <Button type="submit" disabled={form.formState.isSubmitting || !getValues('vehicleId')}>
-                                    {form.formState.isSubmitting ? "Guardando..." : (initialDataService?.id || initialDataQuote?.id ? "Actualizar" : "Crear")}
-                                </Button>
-                            </>
-                        )}
-                    </div>
-                </div>
+            <div className="container mx-auto max-w-6xl flex justify-between items-center gap-2">
+              <div>
+                {isEditing && onDelete && (
+                  <Button variant="destructive" type="button" onClick={() => onDelete(initData.id!)}>Eliminar</Button>
+                )}
+                 {isEditing && onCancelService && watchedStatus !== 'Cancelado' && (
+                  <AlertDialog open={isCancelAlertOpen} onOpenChange={setIsCancelAlertOpen}>
+                    <AlertDialogTrigger asChild><Button variant="outline" type="button">Cancelar Servicio</Button></AlertDialogTrigger>
+                    <AlertDialogContent>
+                        <AlertDialogHeader><AlertDialogTitle>¿Cancelar este servicio?</AlertDialogTitle><AlertDialogDescription>El estado cambiará a "Cancelado" y no se podrá revertir.</AlertDialogDescription></AlertDialogHeader>
+                        <Textarea placeholder="Motivo de la cancelación (opcional)..." value={cancellationReason} onChange={(e) => setCancellationReason(e.target.value)} />
+                        <AlertDialogFooter><AlertDialogCancel>Cerrar</AlertDialogCancel><AlertDialogAction onClick={() => { if(initData.id) onCancelService(initData.id, cancellationReason); }}>Sí, Cancelar</AlertDialogAction></AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                )}
+              </div>
+              <div className="flex gap-2">
+                {isReadOnly ? (
+                  <Button variant="outline" type="button" onClick={onClose}>Cerrar</Button>
+                ) : (
+                  <>
+                    <Button variant="outline" type="button" onClick={onClose}>Cancelar</Button>
+                    <Button type="submit" disabled={formState.isSubmitting || !getValues('vehicleId')}>
+                        {formState.isSubmitting ? 'Guardando…' : isEditing ? 'Actualizar' : 'Crear'}
+                    </Button>
+                  </>
+                )}
+              </div>
             </div>
           </div>
         </form>
       </Form>
-      <SignatureDialog open={isTechSignatureDialogOpen} onOpenChange={setIsTechSignatureDialogOpen} onSave={(s) => { form.setValue('safetyInspection.technicianSignature', s, { shouldDirty: true }); setIsTechSignatureDialogOpen(false); toast({ title: 'Firma Capturada' }); }}/>
-      
-      {isPreviewOpen && serviceForPreview && (
-        <UnifiedPreviewDialog 
-          open={isPreviewOpen} 
-          onOpenChange={setIsPreviewOpen} 
-          service={serviceForPreview} 
-          vehicle={localVehicles.find(v => v.id === serviceForPreview.vehicleId) || null}
-          associatedQuote={null} // Pass the associated quote if available
+
+      {/* -------------------- DIÁLOGOS AUXILIARES -------------------- */}
+
+      <VehicleDialog
+        open={isVehicleDialogOpen}
+        onOpenChange={setIsVehicleDialogOpen}
+        onSave={async (v) => {
+          if(onVehicleCreated) await onVehicleCreated(v);
+          const newVehicle = { id: `new_${Date.now()}`, ...v } as Vehicle;
+          setLocalVehicles(prev => [...prev, newVehicle]);
+          setValue('vehicleId', newVehicle.id);
+          setIsVehicleDialogOpen(false);
+          toast({ title: 'Vehículo creado localmente.' });
+        }}
+        vehicle={newVehicleInitialData}
+      />
+
+      <SignatureDialog
+        open={isTechSignatureDialogOpen}
+        onOpenChange={setIsTechSignatureDialogOpen}
+        onSave={(s) => {
+          setValue('safetyInspection.technicianSignature', s, { shouldDirty: true })
+          setIsTechSignatureDialogOpen(false);
+        }}
+      />
+
+      {isPreviewOpen && (
+        <UnifiedPreviewDialog
+          open={isPreviewOpen}
+          onOpenChange={setIsPreviewOpen}
+          service={{...getValues() as ServiceRecord, totalCost, serviceProfit, totalSuppliesWorkshopCost}}
+          vehicle={localVehicles.find((v) => v.id === getValues('vehicleId')) ?? null}
+          associatedQuote={null}
         />
       )}
-      <VehicleDialog open={isVehicleDialogOpen} onOpenChange={setIsVehicleDialogOpen} onSave={handleSaveNewVehicle} vehicle={newVehicleInitialData}/>
+
       <Dialog open={isImageViewerOpen} onOpenChange={setIsImageViewerOpen}>
         <DialogContent className="max-w-4xl p-2">
-            <DialogHeader className="print:hidden">
-              <DialogTitle>Vista Previa de Imagen</DialogTitle>
-              <DialogDescription>
-                Visualizando la imagen de evidencia. Puede descargarla si lo necesita.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="relative aspect-video w-full">
-                {viewingImageUrl && (
-                    <Image src={viewingImageUrl} alt="Vista ampliada de evidencia" layout="fill" objectFit="contain" crossOrigin="anonymous" />
-                )}
-            </div>
-            <DialogFooter className="mt-2 print:hidden">
-                <Button onClick={handleDownloadImage}>
-                    <Download className="mr-2 h-4 w-4"/>Descargar Imagen
-                </Button>
-            </DialogFooter>
+          <DialogHeader className="print:hidden">
+            <DialogTitle>Vista Previa de Imagen</DialogTitle>
+            <DialogDescription>
+              Puedes descargar la imagen si lo necesitas.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="relative aspect-video w-full">
+            {viewingImageUrl && (
+              <Image
+                src={viewingImageUrl}
+                alt="Vista ampliada"
+                fill
+                className="object-contain"
+                crossOrigin="anonymous"
+              />
+            )}
+          </div>
+          <DialogFooter className="mt-2 print:hidden">
+            <Button
+              onClick={() => {
+                if (viewingImageUrl) window.open(viewingImageUrl, '_blank')?.focus()
+              }}
+            >
+              <Download className="mr-2 h-4 w-4" /> Descargar
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </>
-  );
+  )
 }

@@ -169,7 +169,7 @@ export function ServiceDialog({
         }
     }
     
-    // Creating new record
+    // Creating new record (This path is less likely with the new flow, but good as a fallback)
     switch (status) {
         case 'Cotizacion': return { title: "Nueva Cotización", description: "Completa la información para una nueva cotización." };
         case 'Agendado': return { title: "Nueva Cita", description: "Completa la información para una nueva cita." };
