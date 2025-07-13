@@ -49,7 +49,7 @@ function HistorialCotizacionesPageComponent() {
   }, []);
   
   const quotesData = useMemo(() => {
-    return allServices.filter(service => service.status === 'Cotizacion' || !!service.quoteDate);
+    return allServices.filter(service => service.status === 'Cotizacion');
   }, [allServices]);
 
   const {
