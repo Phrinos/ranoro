@@ -21,7 +21,7 @@ interface ServiceFormHeaderProps {
 }
 
 export function ServiceFormHeader({ onPreview, isReadOnly, status, activeTab, onTabChange }: ServiceFormHeaderProps) {
-  const showAdv = status && ['En Taller', 'Entregado', 'Cancelado'].includes(status);
+  const showAdv = status === 'En Taller' || status === 'Entregado' || status === 'Cancelado';
   
   const tabs = [
     { value: 'servicio', label: 'Detalles', icon: Wrench, show: true },
