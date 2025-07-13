@@ -382,12 +382,13 @@ function HistorialServiciosPageComponent() {
             open={isTicketDialogOpen}
             onOpenChange={setIsTicketDialogOpen}
             title="Ticket de Servicio"
+            dialogContentClassName="sm:max-w-md"
             footerActions={
-              <div className="flex flex-col sm:flex-row gap-2">
-                <Button variant="outline" onClick={handleCopyAsImage}>
+              <div className="flex flex-col sm:flex-row gap-2 w-full">
+                <Button variant="outline" onClick={handleCopyAsImage} className="w-full">
                     <Copy className="mr-2 h-4 w-4"/> Copiar Imagen
                 </Button>
-                <Button onClick={() => window.print()}>
+                <Button onClick={() => window.print()} className="w-full">
                     <Printer className="mr-2 h-4 w-4"/>Imprimir
                 </Button>
              </div>
