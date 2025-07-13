@@ -20,7 +20,7 @@ import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { operationsService } from '@/lib/services';
 import { Button } from '@/components/ui/button';
 import { Ban } from 'lucide-react';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger, AlertDialogFooter } from "@/components/ui/alert-dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogHeader, AlertDialogTitle, AlertDialogFooter } from "@/components/ui/alert-dialog";
 import { Textarea } from "@/components/ui/textarea";
 
 interface ServiceDialogProps {
@@ -166,7 +166,6 @@ export function ServiceDialog({
           dialogTitle={dialogTitle}
           dialogDescription={dialogDescription}
         >
-            {/* Pass footer content as children */}
             <div className="flex justify-between items-center w-full">
                 <div>
                   {canBeCancelled && onCancelService && (
@@ -207,4 +206,3 @@ export function ServiceDialog({
     </>
   );
 }
-
