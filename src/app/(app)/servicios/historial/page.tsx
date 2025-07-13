@@ -16,9 +16,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ServiceAppointmentCard } from "../components/ServiceAppointmentCard";
 import { Loader2 } from "lucide-react";
 import { operationsService, inventoryService, personnelService } from '@/lib/services';
-import { collection, onSnapshot, doc, getDoc, updateDoc, addDoc, writeBatch } from 'firebase/firestore';
 import { db } from '@/lib/firebaseClient';
 import { parseDate } from '@/lib/forms';
+import { writeBatch } from 'firebase/firestore';
 
 function HistorialServiciosPageComponent() {
   const { toast } = useToast();
