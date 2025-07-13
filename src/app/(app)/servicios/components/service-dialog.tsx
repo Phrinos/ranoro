@@ -59,7 +59,6 @@ export function ServiceDialog({
   const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
   const { toast } = useToast();
 
-  const [currentStatus, setCurrentStatus] = useState<ServiceRecord['status'] | undefined>();
   const [isCancelAlertOpen, setIsCancelAlertOpen] = useState(false);
   const [cancellationReason, setCancellationReason] = useState('');
   
@@ -69,12 +68,6 @@ export function ServiceDialog({
   const open = isControlled ? controlledOpen : uncontrolledOpen;
   const onOpenChange = isControlled ? setControlledOpen : setUncontrolledOpen;
   
-  useEffect(() => {
-    if (open) {
-      setCurrentStatus(service?.status);
-    }
-  }, [open, service]);
-
   useEffect(() => {
     const syncAndMarkAsViewed = async () => {
       if (open && service && service.id && mode === 'service') {
@@ -128,7 +121,7 @@ export function ServiceDialog({
   };
   
   const getDynamicTitles = () => {
-    const status = currentStatus || service?.status;
+    const status = service?.status;
     if (isReadOnly) {
         switch (status) {
             case 'Cotizacion': return { title: "Detalles de la Cotización", description: "Visualizando los detalles de la cotización." };
