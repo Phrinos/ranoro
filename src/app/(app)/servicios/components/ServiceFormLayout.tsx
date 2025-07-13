@@ -1,3 +1,4 @@
+
 // src/app/(app)/servicios/components/ServiceFormLayout.tsx
 
 'use client';
@@ -39,24 +40,22 @@ export function ServiceFormHeader({ onPreview, isReadOnly, status, activeTab, on
 
   return (
     <Tabs value={activeTab} onValueChange={onTabChange}>
-      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm -mx-6 px-6 pt-2 pb-2 border-b">
-        <div className="flex justify-between items-center">
-          <TabsList className={cn('grid w-full mb-0', gridColsClass)}>
-            {tabs.map((t) => (
-              <TabsTrigger key={t.value} value={t.value} className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs sm:text-sm flex items-center gap-2">
-                <t.icon className="h-4 w-4 mr-1.5 shrink-0" />
-                <span className="hidden sm:inline">{t.label}</span>
-                <span className="sm:hidden">{t.label.slice(0, 5)}</span>
-              </TabsTrigger>
-            ))}
-          </TabsList>
+      <div className="flex justify-between items-center">
+        <TabsList className={cn('grid w-full mb-0', gridColsClass)}>
+          {tabs.map((t) => (
+            <TabsTrigger key={t.value} value={t.value} className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs sm:text-sm flex items-center gap-2">
+              <t.icon className="h-4 w-4 mr-1.5 shrink-0" />
+              <span className="hidden sm:inline">{t.label}</span>
+              <span className="sm:hidden">{t.label.slice(0, 5)}</span>
+            </TabsTrigger>
+          ))}
+        </TabsList>
 
-          {!isReadOnly && (
-            <Button type="button" onClick={onPreview} variant="ghost" size="icon" title="Vista previa">
-              <Eye className="h-5 w-5" />
-            </Button>
-          )}
-        </div>
+        {!isReadOnly && (
+          <Button type="button" onClick={onPreview} variant="ghost" size="icon" title="Vista previa">
+            <Eye className="h-5 w-5" />
+          </Button>
+        )}
       </div>
     </Tabs>
   );
@@ -70,7 +69,6 @@ interface ServiceFormFooterProps {
     status?: ServiceRecord['status'];
     onClose: () => void;
     onCancelService?: (reason: string) => void;
-    onDelete?: () => void;
 }
   
 export function ServiceFormFooter({
@@ -80,7 +78,6 @@ export function ServiceFormFooter({
     status,
     onClose,
     onCancelService,
-    onDelete,
 }: ServiceFormFooterProps) {
     const [isCancelAlertOpen, setIsCancelAlertOpen] = useState(false);
     const [cancellationReason, setCancellationReason] = useState('');
@@ -88,7 +85,7 @@ export function ServiceFormFooter({
     const canBeCancelled = isEditing && status !== 'Cancelado' && status !== 'Entregado';
   
     return (
-      <div className="flex justify-between items-center mt-8">
+      <div className="flex justify-between items-center">
         <div>
           {canBeCancelled && onCancelService && (
             <AlertDialog open={isCancelAlertOpen} onOpenChange={setIsCancelAlertOpen}>
@@ -111,14 +108,6 @@ export function ServiceFormFooter({
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>
-          )}
-          {isEditing && onDelete && (
-            <ConfirmDialog
-              triggerButton={<Button variant="destructive" type="button" className="ml-2">Eliminar</Button>}
-              title="¿Eliminar Registro?"
-              description="Esta acción no se puede deshacer y eliminará permanentemente este registro. ¿Está seguro?"
-              onConfirm={onDelete}
-            />
           )}
         </div>
         <div className="flex gap-2">

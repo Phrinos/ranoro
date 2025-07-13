@@ -6,8 +6,14 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
 import { nanoid } from 'nanoid'
 import { useToast } from '@/hooks/use-toast'
-import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react'
-
+import React, { useState, useEffect, useCallback, useRef } from 'react'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import { Form } from '@/components/ui/form'
 import { VehicleDialog } from '../../vehiculos/components/vehicle-dialog'
 import { SignatureDialog } from './signature-dialog'
@@ -30,7 +36,6 @@ import { Tabs, TabsContent } from '@/components/ui/tabs'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
-import { Dialog, DialogContent } from '@/components/ui/dialog'
 import Image from "next/image";
 import { FormField, FormItem, FormLabel, FormControl } from '@/components/ui/form'
 import { Eye, PlusCircle, Trash2 } from 'lucide-react'
@@ -45,11 +50,12 @@ interface ServiceFormProps {
   onSubmit: (data: ServiceRecord | QuoteRecord) => Promise<void>
   onClose: () => void
   isReadOnly?: boolean
-  onVehicleCreated?: (newVehicle: Omit<Vehicle, 'id'>) => void
   mode?: 'service' | 'quote'
   onDelete?: (id: string) => void
   onCancelService?: (id: string, reason: string) => void
   onStatusChange?: (s?: ServiceRecord['status']) => void
+  dialogTitle: string;
+  dialogDescription: string;
 }
 
 export function ServiceForm({
@@ -62,11 +68,12 @@ export function ServiceForm({
   onSubmit,
   onClose,
   isReadOnly = false,
-  onVehicleCreated,
   mode = 'service',
   onDelete,
   onCancelService,
   onStatusChange,
+  dialogTitle,
+  dialogDescription
 }: ServiceFormProps) {
   const { toast } = useToast()
   
@@ -203,95 +210,110 @@ export function ServiceForm({
   return (
     <>
       <Form {...form}>
-        <form onSubmit={handleSubmit(handleSave)} className="pb-24">
-          <Tabs value={activeTab} onValueChange={setActiveTab}>
-             <ServiceFormHeader
-                onPreview={handleOpenPreview}
-                isReadOnly={isReadOnly}
-                status={status}
-                activeTab={activeTab}
-                onTabChange={setActiveTab}
-             />
-              
-             <TabsContent value="servicio" className="mt-6">
-                <Card className="shadow-none border-none p-0"><CardContent className="p-0 space-y-6">
-                    <VehicleSelectionCard
+        <form onSubmit={handleSubmit(handleSave)} className="flex flex-col h-full">
+            <div className="flex-shrink-0 p-6 pb-0">
+                <DialogHeader>
+                    <DialogTitle>{dialogTitle}</DialogTitle>
+                    <DialogDescription>{dialogDescription}</DialogDescription>
+                </DialogHeader>
+                <div className="pt-4">
+                    <ServiceFormHeader
+                        onPreview={handleOpenPreview}
                         isReadOnly={isReadOnly}
-                        localVehicles={vehicles}
-                        serviceHistory={serviceHistory}
-                        onVehicleSelected={() => {}}
-                        onOpenNewVehicleDialog={handleOpenVehicleDialog}
+                        status={status}
+                        activeTab={activeTab}
+                        onTabChange={setActiveTab}
                     />
-                    <ServiceDetailsCard
-                        isReadOnly={isReadOnly}
-                        technicians={technicians}
-                        inventoryItems={inventoryItems}
-                        serviceTypes={serviceTypes}
-                        mode={mode}
-                        totalCost={totalCost}
-                        totalSuppliesWorkshopCost={totalSuppliesWorkshopCost}
-                        serviceProfit={serviceProfit}
-                        onGenerateQuoteWithAI={handleGenerateQuote}
-                        isGeneratingQuote={isGeneratingQuote}
-                    />
-                </CardContent></Card>
-            </TabsContent>
-            
-            <TabsContent value="recepcion" className="mt-6">
-                <ReceptionAndDelivery
-                    control={control}
-                    isReadOnly={isReadOnly}
-                    isEnhancingText={isEnhancingText}
-                    handleEnhanceText={handleEnhanceText}
-                />
-            </TabsContent>
-            
-            <TabsContent value="reporte" className="mt-6">
-              <PhotoReportTab
-                control={control}
-                isReadOnly={isReadOnly}
-                isEnhancingText={isEnhancingText}
-                handleEnhanceText={handleEnhanceText}
-                serviceId={serviceId}
-                onPhotoUploaded={handlePhotoUpload}
-                onViewImage={handleViewImage}
-              />
-            </TabsContent>
+                </div>
+            </div>
 
-            <TabsContent value="seguridad" className="mt-6">
-                 <SafetyChecklist
-                    control={control}
+            <div className="flex-grow overflow-y-auto px-6">
+                <Tabs value={activeTab} onValueChange={setActiveTab}>
+                    <TabsContent value="servicio" className="mt-6">
+                        <Card className="shadow-none border-none p-0"><CardContent className="p-0 space-y-6">
+                            <VehicleSelectionCard
+                                isReadOnly={isReadOnly}
+                                localVehicles={vehicles}
+                                serviceHistory={serviceHistory}
+                                onVehicleSelected={() => {}}
+                                onOpenNewVehicleDialog={handleOpenVehicleDialog}
+                            />
+                            <ServiceDetailsCard
+                                isReadOnly={isReadOnly}
+                                technicians={technicians}
+                                inventoryItems={inventoryItems}
+                                serviceTypes={serviceTypes}
+                                mode={mode}
+                                totalCost={totalCost}
+                                totalSuppliesWorkshopCost={totalSuppliesWorkshopCost}
+                                serviceProfit={serviceProfit}
+                                onGenerateQuoteWithAI={handleGenerateQuote}
+                                isGeneratingQuote={isGeneratingQuote}
+                            />
+                        </CardContent></Card>
+                    </TabsContent>
+                    
+                    <TabsContent value="recepcion" className="mt-6">
+                        <ReceptionAndDelivery
+                            control={control}
+                            isReadOnly={isReadOnly}
+                            isEnhancingText={isEnhancingText}
+                            handleEnhanceText={handleEnhanceText}
+                        />
+                    </TabsContent>
+                    
+                    <TabsContent value="reporte" className="mt-6">
+                      <PhotoReportTab
+                        control={control}
+                        isReadOnly={isReadOnly}
+                        isEnhancingText={isEnhancingText}
+                        handleEnhanceText={handleEnhanceText}
+                        serviceId={serviceId}
+                        onPhotoUploaded={handlePhotoUpload}
+                        onViewImage={handleViewImage}
+                      />
+                    </TabsContent>
+
+                    <TabsContent value="seguridad" className="mt-6">
+                         <SafetyChecklist
+                            control={control}
+                            isReadOnly={isReadOnly}
+                            onSignatureClick={handleSignatureClick}
+                            signatureDataUrl={watch('safetyInspection.technicianSignature')}
+                            isEnhancingText={isEnhancingText}
+                            handleEnhanceText={handleEnhanceText}
+                            serviceId={serviceId}
+                            onPhotoUploaded={(itemName, urls) => {
+                               const currentVal = getValues(`safetyInspection.${itemName as keyof ServiceFormValues['safetyInspection']}`);
+                               setValue(`safetyInspection.${itemName as keyof ServiceFormValues['safetyInspection']}`, {
+                                 ...(currentVal || { status: 'na' }),
+                                 photos: [...(currentVal?.photos || []), ...urls]
+                               }, { shouldDirty: true });
+                            }}
+                            onViewImage={handleViewImage}
+                        />
+                    </TabsContent>
+                </Tabs>
+            </div>
+            
+            <div className="flex-shrink-0 p-6 pt-4 border-t bg-background">
+                <ServiceFormFooter
+                    isEditing={!!initialDataService?.id}
                     isReadOnly={isReadOnly}
-                    onSignatureClick={handleSignatureClick}
-                    signatureDataUrl={watch('safetyInspection.technicianSignature')}
-                    isEnhancingText={isEnhancingText}
-                    handleEnhanceText={handleEnhanceText}
-                    serviceId={serviceId}
-                    onPhotoUploaded={(itemName, urls) => {
-                       const currentVal = getValues(`safetyInspection.${itemName as keyof ServiceFormValues['safetyInspection']}`);
-                       setValue(`safetyInspection.${itemName as keyof ServiceFormValues['safetyInspection']}`, {
-                         ...(currentVal || { status: 'na' }),
-                         photos: [...(currentVal?.photos || []), ...urls]
-                       }, { shouldDirty: true });
-                    }}
-                    onViewImage={handleViewImage}
+                    isSubmitting={formState.isSubmitting}
+                    status={status}
+                    onClose={onClose}
+                    onCancelService={(reason) => onCancelService && initialDataService?.id && onCancelService(initialDataService.id, reason)}
                 />
-            </TabsContent>
-          </Tabs>
-          
-          <ServiceFormFooter
-            isEditing={!!initialDataService?.id}
-            isReadOnly={isReadOnly}
-            isSubmitting={formState.isSubmitting}
-            status={status}
-            onClose={onClose}
-            onCancelService={(reason) => onCancelService && initialDataService?.id && onCancelService(initialDataService.id, reason)}
-            onDelete={() => onDelete && initialDataService?.id && onDelete(initialDataService.id)}
-          />
+            </div>
         </form>
       </Form>
 
-      <VehicleDialog open={isVehicleDialogOpen} onOpenChange={setIsVehicleDialogOpen} onSave={onVehicleCreated} />
+      <VehicleDialog open={isVehicleDialogOpen} onOpenChange={setIsVehicleDialogOpen} onSave={(data) => {
+        // Mock onVehicleCreated locally for now
+        console.log("New vehicle data:", data);
+        setIsVehicleDialogOpen(false);
+      }} />
       
       <SignatureDialog open={isSignatureDialogOpen} onOpenChange={setIsSignatureDialogOpen} onSave={(sig) => { setValue('safetyInspection.technicianSignature', sig, { shouldDirty: true }); setIsSignatureDialogOpen(false); }} />
 
