@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React from 'react';
@@ -9,6 +10,8 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Wallet, CreditCard, Send, WalletCards, ArrowRightLeft } from 'lucide-react';
 import type { PaymentMethod } from '@/types';
+import { cn } from '@/lib/utils';
+
 
 const paymentMethods: [PaymentMethod, ...PaymentMethod[]] = [
   "Efectivo",
@@ -26,76 +29,74 @@ const paymentMethodIcons: Record<PaymentMethod, React.ElementType> = {
   "Tarjeta+Transferencia": ArrowRightLeft,
 };
 
-export function PaymentSection() {
-  const { control, watch } = useFormContext();
+export function PaymentSection({ isReadOnly = false }: { isReadOnly?: boolean }) {
+  const { control, watch, formState: { errors } } = useFormContext();
   const selectedPaymentMethod = watch("paymentMethod");
 
   return (
-    <Card>
-      <CardContent className="pt-6 space-y-4">
-        <FormField
-          control={control}
-          name="customerName"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Nombre del Cliente</FormLabel>
+    <div className="space-y-4">
+      <FormField
+        control={control}
+        name="customerName"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Nombre del Cliente</FormLabel>
+            <FormControl>
+              <Input placeholder="Ej: Cliente Mostrador" {...field} disabled={isReadOnly} />
+            </FormControl>
+          </FormItem>
+        )}
+      />
+      <FormField
+        control={control}
+        name="paymentMethod"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Método de Pago</FormLabel>
+            <Select onValueChange={field.onChange} value={field.value} disabled={isReadOnly}>
               <FormControl>
-                <Input placeholder="Ej: Cliente Mostrador" {...field} />
+                <SelectTrigger><SelectValue placeholder="Seleccione método de pago" /></SelectTrigger>
               </FormControl>
-            </FormItem>
-          )}
-        />
+              <SelectContent>
+                {paymentMethods.map(method => {
+                  const Icon = paymentMethodIcons[method];
+                  return (
+                    <SelectItem key={method} value={method}>
+                      <div className="flex items-center gap-2"><Icon className="h-4 w-4" /><span>{method}</span></div>
+                    </SelectItem>
+                  );
+                })}
+              </SelectContent>
+            </Select>
+          </FormItem>
+        )}
+      />
+      {(selectedPaymentMethod === "Tarjeta" || selectedPaymentMethod === "Tarjeta+Transferencia") && (
         <FormField
           control={control}
-          name="paymentMethod"
+          name="cardFolio"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Método de Pago</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
-                <FormControl>
-                  <SelectTrigger><SelectValue placeholder="Seleccione método de pago" /></SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  {paymentMethods.map(method => {
-                    const Icon = paymentMethodIcons[method];
-                    return (
-                      <SelectItem key={method} value={method}>
-                        <div className="flex items-center gap-2"><Icon className="h-4 w-4" /><span>{method}</span></div>
-                      </SelectItem>
-                    );
-                  })}
-                </SelectContent>
-              </Select>
+              <FormLabel className={cn(errors.cardFolio && "text-destructive")}>Folio Terminal (Tarjeta)</FormLabel>
+              <FormControl><Input placeholder="Ingrese folio de la transacción" {...field} disabled={isReadOnly} className={cn(errors.cardFolio && "border-destructive focus-visible:ring-destructive")} /></FormControl>
+              <FormMessage />
             </FormItem>
           )}
         />
-        {(selectedPaymentMethod === "Tarjeta" || selectedPaymentMethod === "Tarjeta+Transferencia") && (
-          <FormField
-            control={control}
-            name="cardFolio"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Folio Terminal (Tarjeta)</FormLabel>
-                <FormControl><Input placeholder="Ingrese folio de la transacción" {...field} /></FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        )}
-        {(selectedPaymentMethod === "Transferencia" || selectedPaymentMethod === "Efectivo+Transferencia" || selectedPaymentMethod === "Tarjeta+Transferencia") && (
-          <FormField
-            control={control}
-            name="transferFolio"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Folio Transferencia</FormLabel>
-                <FormControl><Input placeholder="Referencia de la transferencia" {...field} /></FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        )}
-      </CardContent>
-    </Card>
+      )}
+      {(selectedPaymentMethod === "Transferencia" || selectedPaymentMethod === "Efectivo+Transferencia" || selectedPaymentMethod === "Tarjeta+Transferencia") && (
+        <FormField
+          control={control}
+          name="transferFolio"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel className={cn(errors.transferFolio && "text-destructive")}>Folio Transferencia</FormLabel>
+              <FormControl><Input placeholder="Referencia de la transferencia" {...field} disabled={isReadOnly} className={cn(errors.transferFolio && "border-destructive focus-visible:ring-destructive")} /></FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      )}
+    </div>
   );
 }
