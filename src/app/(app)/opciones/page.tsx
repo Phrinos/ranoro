@@ -30,27 +30,19 @@ function OpcionesPageComponent() {
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
-      const loadData = async () => {
         setIsLoading(true);
-        try {
-            const authUserString = localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY);
-            setCurrentUser(authUserString ? JSON.parse(authUserString) : defaultSuperAdmin);
-            
-            const [fetchedRoles, fetchedServiceTypes] = await Promise.all([
-                adminService.getRoles(),
-                inventoryService.onServiceTypesUpdatePromise()
-            ]);
-            
-            setRoles(fetchedRoles);
-            setServiceTypes(fetchedServiceTypes);
+        const authUserString = localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY);
+        setCurrentUser(authUserString ? JSON.parse(authUserString) : defaultSuperAdmin);
+        
+        const unsubs = [
+            adminService.onRolesUpdate(setRoles),
+            inventoryService.onServiceTypesUpdate(setServiceTypes)
+        ];
 
-        } catch (error) {
-            console.error("Error loading options page data:", error);
-        } finally {
-            setIsLoading(false);
-        }
-      };
-      loadData();
+        // Consider loading finished once subscriptions are set up
+        setIsLoading(false);
+        
+        return () => unsubs.forEach(unsub => unsub());
     }, []);
 
     const userPermissions = useMemo(() => {
