@@ -59,7 +59,7 @@ export function ServiceDialog({
   const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
   const { toast } = useToast();
   
-  const [localService, setLocalService] = useState(service);
+  const [currentService, setCurrentService] = useState(service);
 
   const [isCancelAlertOpen, setIsCancelAlertOpen] = useState(false);
   const [cancellationReason, setCancellationReason] = useState('');
@@ -121,9 +121,9 @@ export function ServiceDialog({
         }
         
         // Update the local state to reflect the changes immediately in the dialog
-        setLocalService(serviceToUpdate);
+        setCurrentService(serviceToUpdate);
       } else {
-        setLocalService(service);
+        setCurrentService(service);
       }
     };
     syncAndMarkAsViewed();
@@ -144,7 +144,7 @@ export function ServiceDialog({
   };
   
   const getDynamicTitles = () => {
-    const status = localService?.status;
+    const status = currentService?.status;
     if (isReadOnly) {
         switch (status) {
             case 'Cotizacion': return { title: "Detalles de la Cotización", description: "Visualizando los detalles de la cotización." };
@@ -152,7 +152,7 @@ export function ServiceDialog({
             default: return { title: "Detalles del Servicio", description: "Visualizando los detalles de la orden de servicio." };
         }
     }
-    if (localService?.id) {
+    if (currentService?.id) {
         switch (status) {
             case 'Cotizacion': return { title: "Editar Cotización", description: "Actualiza los detalles de la cotización." };
             case 'Agendado': return { title: "Editar Cita", description: "Actualiza los detalles de la cita." };
@@ -163,7 +163,7 @@ export function ServiceDialog({
   };
 
   const { title: dialogTitle, description: dialogDescription } = getDynamicTitles();
-  const canBeCancelled = localService?.id && localService.status !== 'Cancelado' && localService.status !== 'Entregado';
+  const canBeCancelled = currentService?.id && currentService.status !== 'Cancelado' && currentService.status !== 'Entregado';
 
   return (
     <>
@@ -175,14 +175,14 @@ export function ServiceDialog({
                   <DialogTitle>{dialogTitle}</DialogTitle>
                   <DialogDescription>{dialogDescription}</DialogDescription>
               </div>
-              {localService && (
+              {currentService && (
                   <Button variant="outline" size="icon" onClick={() => setIsPreviewOpen(true)}>
                       <Eye className="h-4 w-4" />
                   </Button>
               )}
             </DialogHeader>
             <ServiceForm
-            initialDataService={localService}
+            initialDataService={currentService}
             vehicles={vehicles} 
             technicians={technicians}
             inventoryItems={inventoryItems}
@@ -207,7 +207,7 @@ export function ServiceDialog({
                         <>
                             <Button variant="outline" type="button" onClick={() => onOpenChange(false)}>Cancelar</Button>
                             <Button type="submit" form="service-form">
-                                {localService?.id ? 'Actualizar' : 'Crear'}
+                                {currentService?.id ? 'Actualizar' : 'Crear'}
                             </Button>
                         </>
                         )}
@@ -217,11 +217,11 @@ export function ServiceDialog({
         </DialogContent>
       </Dialog>
       
-      {isPreviewOpen && localService && (
+      {isPreviewOpen && currentService && (
         <UnifiedPreviewDialog
             open={isPreviewOpen}
             onOpenChange={setIsPreviewOpen}
-            service={localService}
+            service={currentService}
         />
       )}
 
@@ -231,7 +231,7 @@ export function ServiceDialog({
               <Textarea placeholder="Motivo de la cancelación (opcional)..." value={cancellationReason} onChange={(e) => setCancellationReason(e.target.value)} />
               <AlertDialogFooter>
                   <AlertDialogCancel onClick={() => setCancellationReason('')}>Cerrar</AlertDialogCancel>
-                  <AlertDialogAction onClick={() => { if(localService?.id && onCancelService) { onCancelService(localService.id, cancellationReason); onOpenChange(false); } }} className="bg-destructive hover:bg-destructive/90">
+                  <AlertDialogAction onClick={() => { if(currentService?.id && onCancelService) { onCancelService(currentService.id, cancellationReason); onOpenChange(false); } }} className="bg-destructive hover:bg-destructive/90">
                       Sí, Cancelar Servicio
                   </AlertDialogAction>
               </AlertDialogFooter>
