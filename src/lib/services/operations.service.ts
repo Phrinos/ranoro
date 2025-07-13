@@ -71,8 +71,8 @@ const saveService = async (data: Partial<ServiceRecord>): Promise<ServiceRecord>
         data.publicId = nanoid(12);
     }
     
-    // Explicitly set potentially undefined fields to null before cleaning
-    const dataWithNulls = {
+    // Explicitly ensure optional fields that might be undefined are null
+    const dataWithNulls: Partial<ServiceRecord> = {
       ...data,
       customerSignatureReception: data.customerSignatureReception || null,
       customerSignatureDelivery: data.customerSignatureDelivery || null,

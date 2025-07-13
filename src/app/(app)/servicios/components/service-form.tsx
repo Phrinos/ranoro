@@ -106,6 +106,8 @@ export function ServiceForm(props:Props){
         quoteDate: initialDataService.quoteDate ? parseDate(initialDataService.quoteDate) : (status === 'Cotizacion' ? now : undefined),
         receptionDateTime: initialDataService.receptionDateTime ? parseDate(initialDataService.receptionDateTime) : undefined,
         deliveryDateTime: initialDataService.deliveryDateTime ? parseDate(initialDataService.deliveryDateTime) : undefined,
+        customerSignatureReception: initialDataService.customerSignatureReception || null,
+        customerSignatureDelivery: initialDataService.customerSignatureDelivery || null,
         serviceItems:
           initialDataService.serviceItems?.length
             ? initialDataService.serviceItems
@@ -140,6 +142,8 @@ export function ServiceForm(props:Props){
       status: 'Cotizacion',
       serviceType: firstType,
       quoteDate: now,
+      customerSignatureReception: null,
+      customerSignatureDelivery: null,
       serviceItems: [{
         id: nanoid(),
         name: firstType,
