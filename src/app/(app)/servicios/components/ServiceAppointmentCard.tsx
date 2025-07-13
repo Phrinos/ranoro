@@ -136,7 +136,7 @@ export const ServiceAppointmentCard = React.memo(({
                         {technicianName && <p className="text-xs text-muted-foreground">Técnico: {technicianName}</p>}
 
                         <div className="flex justify-center items-center gap-1">
-                            {onConfirm && !isDone && !isQuote && service.appointmentStatus !== 'Confirmada' && (
+                            {onConfirm && service.status === 'Agendado' && service.appointmentStatus !== 'Confirmada' && (
                                 <Button variant="ghost" size="icon" onClick={onConfirm} title="Confirmar Cita">
                                     <CheckCircle className="h-4 w-4 text-green-600" />
                                 </Button>
