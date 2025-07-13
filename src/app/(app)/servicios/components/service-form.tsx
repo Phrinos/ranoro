@@ -35,6 +35,7 @@ import { ConfirmDialog } from '@/components/shared/ConfirmDialog'
 import { VehicleDialog } from '../../vehiculos/components/vehicle-dialog'
 import type { VehicleFormValues } from '../../vehiculos/components/vehicle-form'
 import { Tabs } from '@/components/ui/tabs'
+import { UnifiedPreviewDialog } from '@/components/shared/unified-preview-dialog'
 
 interface Props {
   initialDataService?: ServiceRecord | null
@@ -92,6 +93,8 @@ export function ServiceForm({
     useState(inventoryItemsProp)
 
   const [isPreviewOpen, setIsPreviewOpen] = useState(false)
+  const [serviceForPreview, setServiceForPreview] = useState<ServiceRecord | null>(null);
+
   const [isVehicleDialogOpen, setIsVehicleDialogOpen] = useState(false)
   const [newVehicleInitialData, setNewVehicleInitialData] =
     useState<Partial<VehicleFormValues> | null>(null)
@@ -184,6 +187,23 @@ export function ServiceForm({
     setNewVehicleInitialData({ licensePlate: getValues('vehicleLicensePlateSearch') || '' })
     setIsVehicleDialogOpen(true)
   }
+  
+  const handleOpenPreview = () => {
+    const formData = getValues();
+    const serviceDataForPreview = {
+      ...formData,
+      totalCost: totalCost,
+      totalSuppliesWorkshopCost: totalSuppliesWorkshopCost,
+      serviceProfit: serviceProfit,
+      serviceDate: formData.serviceDate?.toISOString(),
+      quoteDate: formData.quoteDate?.toISOString(),
+      receptionDateTime: formData.receptionDateTime?.toISOString(),
+      deliveryDateTime: formData.deliveryDateTime?.toISOString(),
+    } as ServiceRecord;
+    setServiceForPreview(serviceDataForPreview);
+    setIsPreviewOpen(true);
+  };
+
 
   /* --------------------------- RENDER --------------------------- */
   return (
@@ -192,7 +212,7 @@ export function ServiceForm({
         <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
           <Tabs defaultValue="servicio" className="w-full">
             <ServiceFormHeader
-              onPreview={() => setIsPreviewOpen(true)}
+              onPreview={handleOpenPreview}
               isReadOnly={isReadOnly}
               status={watch('status')}
             />
@@ -239,6 +259,15 @@ export function ServiceForm({
         }}
         vehicle={newVehicleInitialData}
       />
+      {isPreviewOpen && serviceForPreview && (
+        <UnifiedPreviewDialog
+          open={isPreviewOpen}
+          onOpenChange={setIsPreviewOpen}
+          service={serviceForPreview}
+          vehicle={localVehicles.find(v => v.id === serviceForPreview.vehicleId) || null}
+          associatedQuote={null} // Quote data is part of the service object itself now
+        />
+      )}
     </>
   )
 }

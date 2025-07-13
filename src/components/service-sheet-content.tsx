@@ -520,6 +520,7 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
       </div>
     ) : null;
     
+    // Default view with tabs for other states
     return (
       <div ref={ref} data-format="letter" className="font-sans bg-white text-black text-sm">
         {/* For Screen View */}

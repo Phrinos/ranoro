@@ -9,7 +9,7 @@ import type { ServiceRecord, Vehicle, QuoteRecord, WorkshopInfo } from '@/types'
 import { ServiceSheetContent } from '@/components/service-sheet-content';
 import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../ui/dialog';
-import Image from "next/legacy/image";
+import Image from "next/image";
 
 interface UnifiedPreviewDialogProps {
   open: boolean;
