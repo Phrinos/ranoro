@@ -8,10 +8,11 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { StatusTracker } from "./StatusTracker";
 import type { ServiceRecord, Vehicle } from '@/types';
-import { format, parseISO, isValid } from 'date-fns';
+import { format, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Edit, Eye, CheckCircle, Ban, DollarSign, User, Phone, TrendingUp } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
+import { parseDate } from '@/lib/forms';
 
 interface ServiceAppointmentCardProps {
     service: ServiceRecord;
@@ -49,7 +50,7 @@ export const ServiceAppointmentCard = React.memo(({
 }: ServiceAppointmentCardProps) => {
     const vehicle = vehicles.find(v => v.id === service.vehicleId);
     const appointmentStatus = getAppointmentStatus(service);
-    const serviceDate = service.serviceDate ? parseISO(service.serviceDate) : new Date();
+    const serviceDate = parseDate(service.serviceDate) || new Date();
 
     const isDone = service.status === 'Entregado' || service.status === 'Cancelado';
     const isQuote = service.status === 'Cotizacion';
