@@ -178,18 +178,21 @@ export function ServiceForm(props:Props){
   const { totalCost, totalSuppliesWorkshopCost, serviceProfit } = useServiceTotals(form);
   
   const watchedStatus = watch('status');
-  const watchedServiceType = watch('serviceType');
 
   useEffect(() => {
     const subscription = watch((value, { name, type }) => {
-      // Set reception date automatically when moving to 'En Taller'
-      if (name === 'status' && value.status === 'En Taller' && !value.receptionDateTime) {
-        setValue('receptionDateTime', new Date());
-      }
-      // If service type changes and the first service item name is empty, set it
-      if (name === 'serviceType' && value.serviceItems?.[0]?.name === '') {
-        setValue('serviceItems.0.name', value.serviceType || '');
-      }
+        if (name === 'status') {
+            const currentStatus = value.status;
+            // From Quote to Scheduled
+            if (currentStatus === 'Agendado' && !value.serviceDate) {
+                setValue('serviceDate', new Date());
+                setValue('appointmentStatus', 'Creada'); // Default to not confirmed
+            }
+            // Entering Workshop
+            if (currentStatus === 'En Taller' && !value.receptionDateTime) {
+                setValue('receptionDateTime', new Date());
+            }
+        }
     });
     return () => subscription.unsubscribe();
   }, [watch, setValue]);
