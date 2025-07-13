@@ -389,8 +389,8 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
         
         <footer className="mt-auto pt-4 text-xs">
            <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 text-center mb-4">
-               <div className="pt-2 min-h-[80px] flex flex-col justify-end">
-                    <div className="h-14 flex-grow flex items-center justify-center">
+               <div className="pt-2 flex flex-col justify-end">
+                    <div className="min-h-[56px] flex-grow flex items-center justify-center">
                         {service.serviceAdvisorSignatureDataUrl && (
                             <div className="relative w-full h-full max-w-[200px]">
                                 <Image src={normalizeDataUrl(service.serviceAdvisorSignatureDataUrl)} alt="Firma del asesor" width={200} height={56} style={{ objectFit: 'contain' }} unoptimized/>
