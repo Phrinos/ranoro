@@ -142,9 +142,9 @@ export function ServiceForm(props:Props){
       status: 'Cotizacion',
       serviceType: firstType,
       quoteDate: now,
-      technicianName: null, // Initialize as null
-      customerSignatureReception: null, // Initialize as null
-      customerSignatureDelivery: null, // Initialize as null
+      technicianName: null, 
+      customerSignatureReception: null,
+      customerSignatureDelivery: null,
       serviceItems: [{
         id: nanoid(),
         name: firstType,
@@ -173,7 +173,7 @@ export function ServiceForm(props:Props){
   
   const watchedStatus = watch('status');
 
-  // Effect to reset the form when initialDataService changes. This is key for updating the form after async operations in the parent.
+  // Effect to reset the form when initialDataService changes.
   useEffect(() => {
     if (initialDataService) {
       reset(defaultValues);

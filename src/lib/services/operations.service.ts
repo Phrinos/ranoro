@@ -71,8 +71,7 @@ const saveService = async (data: Partial<ServiceRecord>): Promise<ServiceRecord>
         data.publicId = nanoid(12);
     }
     
-    // Explicitly ensure optional fields that might be undefined are null
-    // This is a critical step to prevent Firestore errors.
+    // Explicitly ensure optional fields that might be undefined are null.
     const dataWithNulls: Partial<ServiceRecord> = {
       ...data,
       customerSignatureReception: data.customerSignatureReception || null,
