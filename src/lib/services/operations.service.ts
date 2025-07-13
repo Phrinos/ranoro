@@ -1,5 +1,6 @@
 
 
+
 import {
   collection,
   onSnapshot,
@@ -144,13 +145,13 @@ const deleteService = async (serviceId: string): Promise<void> => {
 };
 
 
-const completeService = async (service: ServiceRecord, paymentDetails: { paymentMethod: any, cardFolio?: string, transferFolio?: string }, batch: ReturnType<typeof writeBatch>): Promise<void> => {
+const completeService = async (service: ServiceRecord, paymentAndNextServiceDetails: Partial<ServiceRecord>, batch: ReturnType<typeof writeBatch>): Promise<void> => {
     const serviceRef = doc(db, "serviceRecords", service.id);
     
     const updatedServiceData = {
       status: 'Entregado',
       deliveryDateTime: new Date().toISOString(),
-      ...paymentDetails,
+      ...paymentAndNextServiceDetails,
     };
     
     batch.update(serviceRef, cleanObjectForFirestore(updatedServiceData));

@@ -1,5 +1,6 @@
 
 
+
 "use client";
 
 import React, { useState, useEffect, useMemo, useCallback, Suspense, useRef } from "react";
@@ -223,11 +224,12 @@ function AgendaPageComponent() {
     setIsCompleteDialogOpen(true);
   }, []);
   
-  const handleConfirmCompletion = useCallback(async (service: ServiceRecord, paymentDetails: any) => {
+  const handleConfirmCompletion = useCallback(async (service: ServiceRecord, paymentDetails: any, nextServiceInfo?: { date: string, mileage?: number }) => {
     if (!db) return toast({ title: "Error de base de datos", variant: "destructive"});
     try {
         const batch = writeBatch(db);
-        await operationsService.completeService(service, paymentDetails, batch);
+        const dataToUpdate = { ...paymentDetails, nextServiceInfo };
+        await operationsService.completeService(service, dataToUpdate, batch);
         await batch.commit();
         setIsCompleteDialogOpen(false);
         toast({
@@ -349,6 +351,7 @@ function AgendaPageComponent() {
             onOpenChange={setIsCompleteDialogOpen}
             service={serviceToComplete}
             onConfirm={handleConfirmCompletion}
+            inventoryItems={inventoryItems}
         />
       )}
     </>

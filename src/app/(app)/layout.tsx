@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import {
@@ -66,13 +67,13 @@ export default function AppLayout({
     
     // El listener de serviceRecords para notificaciones de firma
     const q = query(
-      collection(db, "serviceRecords"),
+      collection(db, "publicServices"),
       where("status", "in", ["Entregado", "En Taller"])
     );
 
     const unsubscribeServices = onSnapshot(q, (snapshot) => {
       const unreadServices = snapshot.docs
-        .map((doc) => ({ id: doc.id, ...doc.data() } as ServiceRecord))
+        .map((doc) => ({ id: doc.data().id, ...doc.data() } as ServiceRecord))
         .filter(
           (s) =>
             (s.customerSignatureReception && !s.receptionSignatureViewed) ||
@@ -93,6 +94,7 @@ export default function AppLayout({
     const batch = writeBatch(db);
     newSignatureServices.forEach((service) => {
       const serviceRef = doc(db, "serviceRecords", service.id);
+      const publicServiceRef = doc(db, "publicServices", service.publicId!);
       const updateData: { receptionSignatureViewed?: boolean; deliverySignatureViewed?: boolean } = {};
       if (service.customerSignatureReception && !service.receptionSignatureViewed) {
         updateData.receptionSignatureViewed = true;
@@ -101,6 +103,7 @@ export default function AppLayout({
         updateData.deliverySignatureViewed = true;
       }
       batch.update(serviceRef, updateData);
+      batch.update(publicServiceRef, updateData);
     });
     
     await batch.commit();
