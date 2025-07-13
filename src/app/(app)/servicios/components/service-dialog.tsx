@@ -22,6 +22,7 @@ import { Ban, Eye } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogHeader, AlertDialogTitle, AlertDialogFooter } from "@/components/ui/alert-dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { UnifiedPreviewDialog } from '@/components/shared/unified-preview-dialog';
+import { CompleteServiceDialog } from './CompleteServiceDialog';
 
 
 interface ServiceDialogProps {
@@ -39,6 +40,7 @@ interface ServiceDialogProps {
   onDelete?: (id: string) => void;
   onCancelService?: (serviceId: string, reason: string) => void;
   onViewQuoteRequest?: (serviceId: string) => void;
+  onComplete?: (service: ServiceRecord, paymentDetails: any, nextServiceInfo?: any) => void;
 }
 
 export function ServiceDialog({ 
@@ -48,7 +50,8 @@ export function ServiceDialog({
   technicians, 
   inventoryItems, 
   serviceTypes,
-  onSave, 
+  onSave,
+  onComplete,
   isReadOnly = false,
   open: controlledOpen,
   onOpenChange: setControlledOpen,
@@ -61,14 +64,15 @@ export function ServiceDialog({
   const [localService, setLocalService] = useState(initialService);
   const [isCancelAlertOpen, setIsCancelAlertOpen] = useState(false);
   const [cancellationReason, setCancellationReason] = useState('');
+  const [serviceToComplete, setServiceToComplete] = useState<ServiceRecord | null>(null);
+  const [fullFormDataForCompletion, setFullFormDataForCompletion] = useState<any>(null);
+  const [isCompleteDialogOpen, setIsCompleteDialogOpen] = useState(false);
   
   const isControlled = controlledOpen !== undefined && setControlledOpen !== undefined;
   const open = isControlled ? controlledOpen : uncontrolledOpen;
   const onOpenChange = isControlled ? setControlledOpen : setUncontrolledOpen;
 
   useEffect(() => {
-    // This effect now ONLY syncs data when the dialog opens.
-    // The form itself will react to changes in `localService`.
     if (open) {
       const syncSignatures = async () => {
         if (initialService && initialService.id && initialService.publicId && db) {
@@ -91,11 +95,9 @@ export function ServiceDialog({
               }
 
               if (needsUpdate) {
-                // Update the main service record in Firestore
                 const mainServiceRef = doc(db, 'serviceRecords', initialService.id);
                 await updateDoc(mainServiceRef, updates);
                 
-                // Update the local state to trigger a re-render of the form
                 setLocalService(prev => ({ ...prev, ...updates } as ServiceRecord));
                 
                 toast({ title: "Firmas sincronizadas", description: "Se han cargado nuevas firmas del cliente." });
@@ -115,6 +117,15 @@ export function ServiceDialog({
 
   const internalOnSave = async (formData: ServiceRecord | QuoteRecord) => {
     if (isReadOnly) { onOpenChange(false); return; }
+
+    // If status is being changed to "Entregado", open the completion dialog instead of saving directly.
+    if ('status' in formData && formData.status === 'Entregado' && localService?.status !== 'Entregado') {
+        setFullFormDataForCompletion(formData); // Save current form state
+        setServiceToComplete(formData as ServiceRecord);
+        setIsCompleteDialogOpen(true);
+        return;
+    }
+
     try {
         const savedRecord = await operationsService.saveService(formData);
         toast({ title: `Registro ${formData.id ? 'actualizado' : 'creado'} con éxito.` });
@@ -207,6 +218,17 @@ export function ServiceDialog({
               </AlertDialogFooter>
           </AlertDialogContent>
       </AlertDialog>
+
+      {serviceToComplete && onComplete && (
+        <CompleteServiceDialog
+          open={isCompleteDialogOpen}
+          onOpenChange={setIsCompleteDialogOpen}
+          service={serviceToComplete}
+          onConfirm={onComplete}
+          inventoryItems={inventoryItems}
+          fullFormData={fullFormDataForCompletion}
+        />
+      )}
     </>
   );
 }
