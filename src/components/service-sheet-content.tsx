@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import type { ServiceRecord, Vehicle, QuoteRecord, WorkshopInfo, SafetyInspection, SafetyCheckStatus, PhotoReportGroup, Driver } from '@/types';
@@ -519,6 +518,8 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
       </div>
     ) : null;
 
+    const isQuoteOrAppointment = service.status === 'Cotizacion' || service.status === 'Agendado';
+
     if (isQuoteOrAppointment) {
       return (
         <div ref={ref} data-format="letter" className="font-sans bg-white text-black text-sm">
@@ -605,3 +606,5 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
   }
 );
 ServiceSheetContent.displayName = "ServiceSheetContent";
+
+    
