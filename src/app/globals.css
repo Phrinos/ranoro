@@ -107,6 +107,11 @@
 }
 
 @media print {
+  @page {
+    margin: 0;
+    size: letter;
+  }
+
   body {
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
@@ -127,10 +132,11 @@
     position: absolute;
     left: 0;
     top: 0;
-    margin: 1cm !important;
-    padding: 0;
-    width: calc(100% - 2cm);
+    margin: 0 !important;
+    padding: 1cm !important;
+    width: 100%;
     height: auto;
+    box-shadow: none !important;
   }
 
   /* --- Styles specific to thermal receipt printing --- */

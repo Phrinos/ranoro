@@ -176,7 +176,7 @@ export default function PublicServiceSheetPage() {
             <Button variant="outline" onClick={() => window.print()}><Printer className="mr-2 h-4 w-4"/> Imprimir</Button>
         </CardContent>
       </Card>
-      <div id="printable-area" className="bg-white mx-auto shadow-2xl printable-content max-w-4xl">
+      <div id="printable-area" className="w-[8.5in] h-[11in] bg-white mx-auto shadow-2xl p-8 printable-content">
         <ServiceSheetContent
           ref={serviceSheetRef}
           service={service}
