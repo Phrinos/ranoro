@@ -6,7 +6,7 @@ import type { ServiceRecord, Vehicle, QuoteRecord, WorkshopInfo, SafetyInspectio
 import { format, parseISO, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
 import React from 'react';
-import { cn, normalizeDataUrl, calculateDriverDebt } from "@/lib/utils";
+import { cn, normalizeDataUrl, calculateDriverDebt, formatCurrency } from "@/lib/utils";
 import Image from "next/legacy/image";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -203,7 +203,7 @@ const SafetyChecklistDisplay = ({
 
 interface ServiceSheetContentProps {
   service: ServiceRecord;
-  quote?: QuoteRecord | null;
+  associatedQuote?: QuoteRecord | null;
   vehicle?: Vehicle;
   workshopInfo?: WorkshopInfo;
   onViewImage?: (url: string) => void;
@@ -215,7 +215,7 @@ interface ServiceSheetContentProps {
 }
 
 export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheetContentProps>(
-  ({ service, quote, vehicle, workshopInfo: workshopInfoProp, onViewImage, isPublicView, showSignReception, showSignDelivery, onSignClick, isSigning }, ref) => {
+  ({ service, associatedQuote, vehicle, workshopInfo: workshopInfoProp, onViewImage, isPublicView, showSignReception, showSignDelivery, onSignClick, isSigning }, ref) => {
     const effectiveWorkshopInfo = { ...initialWorkshopInfo, ...workshopInfoProp };
     
     const formatCurrency = (amount: number | undefined) => {
@@ -256,8 +256,10 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
     const driverDebt = driver ? calculateDriverDebt(driver, placeholderRentalPayments, [vehicle]) : { totalDebt: 0 };
     // --- END DEBT CALCULATION ---
 
+    const quoteToDisplay = service.status === 'Cotizacion' ? service : associatedQuote;
+    
     const showOrder = service.status !== 'Cotizacion' && service.status !== 'Agendado';
-    const showQuote = !!quote;
+    const showQuote = !!quoteToDisplay;
     const showChecklist = !!service.safetyInspection && Object.keys(service.safetyInspection).some(k => k !== 'inspectionNotes' && k !== 'technicianSignature' && (service.safetyInspection as any)[k]?.status !== 'na' && (service.safetyInspection as any)[k]?.status !== undefined);
     const showPhotoReport = !!service.photoReports && service.photoReports.length > 0 && service.photoReports.some(r => r.photos.length > 0);
     
@@ -521,24 +523,6 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
         </div>
       </div>
     ) : null;
-
-    // View for "Cotizacion" or "Agendado" state
-    if (service.status === 'Cotizacion' || service.status === 'Agendado') {
-      return (
-        <div ref={ref} data-format="letter" className="font-sans bg-white text-black text-sm">
-          <div className="p-0 sm:p-2 md:p-4 print:p-0">
-            {showQuote ? (
-              <QuoteContent 
-                ref={null} // QuoteContent doesn't need a ref here
-                quote={quote} 
-                vehicle={vehicle} 
-                workshopInfo={effectiveWorkshopInfo} 
-              />
-            ) : <p className="text-center p-8">No hay información de cotización para mostrar.</p>}
-          </div>
-        </div>
-      );
-    }
     
     // Default view with tabs for other states
     return (
@@ -551,7 +535,7 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
             </TabsList>
             
             <TabsContent value="quote">
-              {showQuote ? <QuoteContent quote={quote!} vehicle={vehicle} workshopInfo={effectiveWorkshopInfo} /> : null}
+              {showQuote ? <QuoteContent quote={quoteToDisplay} vehicle={vehicle} workshopInfo={effectiveWorkshopInfo} /> : null}
             </TabsContent>
             <TabsContent value="order" className="mt-4">{ServiceOrderContent}</TabsContent>
             <TabsContent value="checklist" className="mt-4">
@@ -574,7 +558,7 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
           {showQuote && (
               <div className="p-4 md:p-8">
                   <QuoteContent
-                      quote={quote!}
+                      quote={quoteToDisplay!}
                       vehicle={vehicle}
                       workshopInfo={effectiveWorkshopInfo}
                   />
