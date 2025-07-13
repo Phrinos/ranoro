@@ -16,7 +16,7 @@ import Image from "next/image";
 import { useToast } from "@/hooks/use-toast";
 import { optimizeImage } from "@/lib/utils";
 import { storage } from "@/lib/firebaseClient";
-import { ref, uploadString, getDownloadURL } from "firebase/storage";
+import { ref, uploadString, getDownloadURL } from 'firebase/storage';
 import { PhotoUploader } from './PhotoUploader';
 
 
@@ -147,20 +147,32 @@ const ChecklistItemPhotoUploader = ({
 };
 
 
-const SafetyCheckRow = ({ name, label, control, isReadOnly, serviceId, onPhotoUploaded, onViewImage }: { 
-    name: string; 
-    label: string; 
-    control: Control<ServiceFormValues>; 
-    isReadOnly?: boolean; 
-    serviceId: string; 
-    onPhotoUploaded: (itemName: string, url: string) => void;
-    onViewImage: (url: string) => void;
+const SafetyCheckRow = ({ 
+  name, 
+  label, 
+  control, 
+  isReadOnly, 
+  serviceId, 
+  onPhotoUploaded, 
+  onViewImage,
+  isEnhancingText,
+  handleEnhanceText,
+}: { 
+  name: string;
+  label: string;
+  control: Control<ServiceFormValues>;
+  isReadOnly?: boolean;
+  serviceId: string;
+  onPhotoUploaded: (itemName: string, url: string) => void;
+  onViewImage: (url: string) => void;
+  isEnhancingText: string | null;
+  handleEnhanceText: (fieldName: any) => void;
 }) => {
   return (
     <Controller
       name={name as any}
       control={control}
-      defaultValue={{ status: 'na', photos: [] }}
+      defaultValue={{ status: 'na', photos: [], notes: '' }}
       render={({ field }) => (
         <div className="py-2 border-b last:border-none">
           <div className="flex items-center justify-between">
@@ -175,7 +187,7 @@ const SafetyCheckRow = ({ name, label, control, isReadOnly, serviceId, onPhotoUp
                   type="button"
                   key={status.value}
                   title={status.title}
-                  onClick={() => !isReadOnly && field.onChange({ ...(field.value || { photos: [] }), status: status.value })}
+                  onClick={() => !isReadOnly && field.onChange({ ...(field.value || { photos: [], notes: '' }), status: status.value })}
                   disabled={isReadOnly}
                   className={cn(
                     "h-7 w-7 rounded-full border-2 transition-all",
@@ -191,7 +203,32 @@ const SafetyCheckRow = ({ name, label, control, isReadOnly, serviceId, onPhotoUp
             </div>
           </div>
           {(field.value?.status === 'atencion' || field.value?.status === 'inmediata' || field.value?.status === 'ok') && (
-            <div className="pl-4 mt-2">
+            <div className="pl-4 mt-2 space-y-2">
+              <FormField
+                control={control}
+                name={`${name}.notes` as any}
+                render={({ field: notesField }) => (
+                  <FormItem>
+                     <div className="flex justify-between items-center">
+                        <FormLabel className="text-xs">Notas de este punto</FormLabel>
+                        {!isReadOnly && (
+                            <Button type="button" size="xs" variant="ghost" onClick={() => handleEnhanceText(`${name}.notes`)} disabled={isEnhancingText === `${name}.notes` || !notesField.value}>
+                                {isEnhancingText === `${name}.notes` ? <Loader2 className="animate-spin h-3 w-3" /> : <BrainCircuit className="h-3 w-3" />}
+                            </Button>
+                        )}
+                    </div>
+                    <FormControl>
+                      <Textarea
+                        placeholder="Describa el hallazgo..."
+                        rows={2}
+                        className="text-xs"
+                        disabled={isReadOnly}
+                        {...notesField}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
               <ChecklistItemPhotoUploader
                 itemName={name.split('.').pop()!}
                 serviceId={serviceId}
@@ -215,7 +252,7 @@ export const SafetyChecklist = ({ control, isReadOnly, onSignatureClick, signatu
   onSignatureClick: () => void;
   signatureDataUrl?: string;
   isEnhancingText: string | null;
-  handleEnhanceText: (fieldName: 'notes' | 'vehicleConditions' | 'customerItems' | 'safetyInspection.inspectionNotes' | `photoReports.${number}.description`) => void;
+  handleEnhanceText: (fieldName: 'notes' | 'vehicleConditions' | 'customerItems' | 'safetyInspection.inspectionNotes' | `photoReports.${number}.description` | `safetyInspection.${string}.notes`) => void;
   serviceId: string;
   onPhotoUploaded: (itemName: string, url: string) => void;
   onViewImage: (url: string) => void;
@@ -253,6 +290,8 @@ export const SafetyChecklist = ({ control, isReadOnly, onSignatureClick, signatu
                     serviceId={serviceId}
                     onPhotoUploaded={onPhotoUploaded}
                     onViewImage={onViewImage}
+                    isEnhancingText={isEnhancingText}
+                    handleEnhanceText={handleEnhanceText}
                   />
                 ))}
               </div>

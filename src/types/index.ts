@@ -145,6 +145,7 @@ export type SafetyCheckStatus = 'ok' | 'atencion' | 'inmediata' | 'na';
 export interface SafetyCheckValue {
   status: SafetyCheckStatus;
   photos: string[];
+  notes?: string;
 }
 
 export interface SafetyInspection {
@@ -203,7 +204,7 @@ export interface ServiceRecord {
   subTotal: number; 
   taxAmount: number;
   totalCost: number; // Final, tax-inclusive price for services OR estimated price for quotes
-  totalSuppliesCost: number; 
+  totalSuppliesWorkshopCost: number; 
   serviceProfit: number; 
   status: ServiceStatus;
   subStatus?: ServiceSubStatus;
