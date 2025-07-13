@@ -80,13 +80,11 @@ function HistorialServiciosPageComponent() {
     return allServices
       .filter((s) => {
         const status = s.status as string;
-        const deliveryDate = s.deliveryDateTime
-          ? parseDate(s.deliveryDateTime)
-          : null;
+        const deliveryDate = parseDate(s.deliveryDateTime);
         const isDeliveredToday =
           deliveryDate && isValid(deliveryDate) && isSameDay(deliveryDate, today);
 
-        const serviceDate = s.serviceDate ? parseDate(s.serviceDate) : null;
+        const serviceDate = parseDate(s.serviceDate);
         const isScheduledForToday =
           serviceDate && isValid(serviceDate) && isSameDay(serviceDate, today);
 
