@@ -9,7 +9,7 @@ import { PlusCircle, List, Calendar as CalendarIcon, FileCheck, Eye, Loader2, Ed
 import { ServiceDialog } from "../components/service-dialog";
 import type { ServiceRecord, Vehicle, Technician, QuoteRecord, InventoryItem, CapacityAnalysisOutput, ServiceTypeRecord, WorkshopInfo } from "@/types";
 import { useToast } from "@/hooks/use-toast";
-import { format, isToday, isTomorrow, compareAsc, isSameDay, addDays, parseISO, isValid } from "date-fns";
+import { format, isTomorrow, compareAsc, isSameDay, addDays, parseISO, isValid } from "date-fns";
 import { es } from 'date-fns/locale';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -78,7 +78,7 @@ function AgendaPageComponent() {
     if (isLoading) {
       return { scheduledServices: [], todayServices: [], tomorrowServices: [], futureServices: [] };
     }
-  
+    
     const now = new Date();
     const today = now;
     const tomorrow = addDays(today, 1);
@@ -98,6 +98,7 @@ function AgendaPageComponent() {
 
     // Today's services are those 'En Taller' OR scheduled for today OR delivered today.
     const todayS = allServices.filter(s => {
+      // Include services 'En Taller' regardless of date
       if (s.status === 'En Taller') {
         return true;
       }
