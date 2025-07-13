@@ -18,7 +18,7 @@ import { ref, uploadString, getDownloadURL } from 'firebase/storage';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { optimizeImage, capitalizeWords } from '@/lib/utils';
 import Image from 'next/image';
-import ReactCrop, { centerCrop, makeAspectCrop, type Crop } from 'react-image-crop';
+import ReactCrop, { centerCrop, makeAspectCrop, type Crop as ReactCropType } from 'react-image-crop';
 import 'react-image-crop/dist/ReactCrop.css';
 
 
@@ -44,8 +44,8 @@ export function ConfigTallerPageContent() {
   const [isUploading, setIsUploading] = useState(false);
   const [isCropping, setIsCropping] = useState(false);
   const [imgSrc, setImgSrc] = useState('');
-  const [crop, setCrop] = useState<Crop>();
-  const [completedCrop, setCompletedCrop] = useState<Crop>();
+  const [crop, setCrop] = useState<ReactCropType>();
+  const [completedCrop, setCompletedCrop] = useState<ReactCropType>();
   const imgRef = useRef<HTMLImageElement>(null);
   const previewCanvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -154,11 +154,11 @@ export function ConfigTallerPageContent() {
       completedCrop.x * scaleX, completedCrop.y * scaleY,
       completedCrop.width * scaleX, completedCrop.height * scaleY,
       0, 0,
-      completedCrop.width * scaleX, completedCrop.height * scaleY
+      canvas.width, canvas.height
     );
   }, [completedCrop]);
   
-  function centerAspectCrop(mediaWidth: number, mediaHeight: number, aspect: number): Crop {
+  function centerAspectCrop(mediaWidth: number, mediaHeight: number, aspect: number): ReactCropType {
     return centerCrop(makeAspectCrop({ unit: '%', width: 90 }, aspect, mediaWidth, mediaHeight), mediaWidth, mediaHeight);
   }
 
