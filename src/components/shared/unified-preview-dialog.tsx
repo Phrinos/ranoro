@@ -17,9 +17,10 @@ interface UnifiedPreviewDialogProps {
   open: boolean;
   onOpenChange: (isOpen: boolean) => void;
   service: ServiceRecord;
+  vehicle: Vehicle | null; // Receive vehicle directly
 }
 
-export function UnifiedPreviewDialog({ open, onOpenChange, service }: UnifiedPreviewDialogProps) {
+export function UnifiedPreviewDialog({ open, onOpenChange, service, vehicle }: UnifiedPreviewDialogProps) {
   const { toast } = useToast();
   const [workshopInfo, setWorkshopInfo] = useState<WorkshopInfo | {}>({});
   const contentRef = useRef<HTMLDivElement>(null);
@@ -27,9 +28,8 @@ export function UnifiedPreviewDialog({ open, onOpenChange, service }: UnifiedPre
   const [isImageViewerOpen, setIsImageViewerOpen] = useState(false);
   const [viewingImageUrl, setViewingImageUrl] = useState<string | null>(null);
   
-  const [vehicle, setVehicle] = useState<Vehicle | null | undefined>(undefined);
   const [associatedQuote, setAssociatedQuote] = useState<QuoteRecord | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     if (open) {
@@ -38,33 +38,27 @@ export function UnifiedPreviewDialog({ open, onOpenChange, service }: UnifiedPre
         setWorkshopInfo(JSON.parse(storedWorkshopInfo));
       }
       
-      const fetchData = async () => {
-          setIsLoading(true);
-          try {
-              if (service.vehicleId) {
-                  const v = await inventoryService.getVehicleById(service.vehicleId);
-                  setVehicle(v || null);
-              } else {
-                  setVehicle(null);
-              }
-              
-              if (service.status !== 'Cotizacion' && service.id) {
-                 const quote = await operationsService.getQuoteById(service.id);
-                 setAssociatedQuote(quote || null);
-              } else {
-                 setAssociatedQuote(null); // It's a quote itself, no separate associated quote
-              }
-          } catch (e) {
-              console.error("Error fetching preview data:", e);
-              toast({ title: "Error", description: "No se pudieron cargar todos los datos.", variant: "destructive"});
-          } finally {
-              setIsLoading(false);
+      const fetchAssociatedQuote = async () => {
+          if (service.status !== 'Cotizacion' && service.id) {
+            setIsLoading(true);
+            try {
+               const quote = await operationsService.getQuoteById(service.id);
+               setAssociatedQuote(quote || null);
+            } catch (e) {
+               console.error("Error fetching associated quote:", e);
+               setAssociatedQuote(null);
+            } finally {
+               setIsLoading(false);
+            }
+          } else {
+             setAssociatedQuote(null);
+             setIsLoading(false);
           }
       };
       
-      fetchData();
+      fetchAssociatedQuote();
     }
-  }, [open, service, toast]);
+  }, [open, service]);
 
   const handleShareService = useCallback(() => {
     if (!service || !service.publicId) {
@@ -103,8 +97,6 @@ Hola ${vehicle.ownerName || 'Cliente'}, gracias por confiar en Ranoro. Te propor
     if (!viewingImageUrl) return;
     window.open(viewingImageUrl, '_blank')?.focus();
   };
-  
-  const quoteToDisplay = service.status === 'Cotizacion' ? service : associatedQuote;
 
   return (
     <>
@@ -127,7 +119,7 @@ Hola ${vehicle.ownerName || 'Cliente'}, gracias por confiar en Ranoro. Te propor
           <ServiceSheetContent
             ref={contentRef}
             service={service}
-            associatedQuote={quoteToDisplay}
+            associatedQuote={associatedQuote}
             vehicle={vehicle || undefined}
             workshopInfo={workshopInfo as WorkshopInfo}
             onViewImage={handleViewImage}
