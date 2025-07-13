@@ -11,17 +11,16 @@ import { ServiceSheetContent } from '@/components/service-sheet-content';
 import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../ui/dialog';
 import Image from "next/image";
-import { inventoryService } from '@/lib/services'; 
+import { inventoryService, operationsService } from '@/lib/services'; 
 
 interface UnifiedPreviewDialogProps {
   open: boolean;
   onOpenChange: (isOpen: boolean) => void;
   service: ServiceRecord;
   vehicle?: Vehicle | null; // Making vehicle optional
-  associatedQuote?: QuoteRecord | null;
 }
 
-export function UnifiedPreviewDialog({ open, onOpenChange, service, vehicle: initialVehicle, associatedQuote }: UnifiedPreviewDialogProps) {
+export function UnifiedPreviewDialog({ open, onOpenChange, service, vehicle: initialVehicle }: UnifiedPreviewDialogProps) {
   const { toast } = useToast();
   const [workshopInfo, setWorkshopInfo] = useState<WorkshopInfo | {}>({});
   const contentRef = useRef<HTMLDivElement>(null);
@@ -30,6 +29,7 @@ export function UnifiedPreviewDialog({ open, onOpenChange, service, vehicle: ini
   const [viewingImageUrl, setViewingImageUrl] = useState<string | null>(null);
   
   const [vehicle, setVehicle] = useState<Vehicle | null | undefined>(initialVehicle);
+  const [associatedQuote, setAssociatedQuote] = useState<QuoteRecord | null>(null);
 
   useEffect(() => {
     if (open) {
@@ -38,16 +38,25 @@ export function UnifiedPreviewDialog({ open, onOpenChange, service, vehicle: ini
         setWorkshopInfo(JSON.parse(storedWorkshopInfo));
       }
       
-      const fetchVehicleIfNeeded = async () => {
-          // If vehicle is not passed as a prop, or if the service's vehicleId doesn't match, fetch it.
+      const fetchData = async () => {
+          // 1. Fetch Vehicle if not provided or incorrect
           if ((!initialVehicle || initialVehicle.id !== service.vehicleId) && service.vehicleId) {
               const v = await inventoryService.getVehicleById(service.vehicleId);
               setVehicle(v || null);
           } else {
-              setVehicle(initialVehicle); // Use the one passed in props
+              setVehicle(initialVehicle);
+          }
+
+          // 2. Determine and fetch associated quote if necessary
+          if (service.status !== 'Cotizacion') {
+              const quote = await operationsService.getQuoteById(service.id);
+              setAssociatedQuote(quote || null);
+          } else {
+              setAssociatedQuote(null); // It's a quote itself, no separate associated quote
           }
       };
-      fetchVehicleIfNeeded();
+      
+      fetchData();
     }
   }, [open, service, initialVehicle]);
 
