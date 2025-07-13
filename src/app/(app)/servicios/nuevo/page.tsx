@@ -9,7 +9,7 @@ import { Loader2 } from 'lucide-react';
 import { PageHeader } from "@/components/page-header";
 import { ServiceForm } from "../components/service-form";
 import { operationsService, inventoryService, personnelService } from '@/lib/services';
-import type { ServiceRecord, Vehicle, Technician, InventoryItem, ServiceTypeRecord, QuoteRecord } from "@/types";
+import type { ServiceRecord, Vehicle, Technician, InventoryItem, ServiceTypeRecord, QuoteRecord, WorkshopInfo } from "@/types";
 import { Button } from '@/components/ui/button';
 import { UnifiedPreviewDialog } from '@/components/shared/unified-preview-dialog';
 
@@ -59,12 +59,7 @@ export default function NuevoServicioPage() {
 
 
   if (isLoading) {
-    return (
-      <div className="flex h-64 w-full items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin" />
-        <span className="ml-3 text-lg">Cargando datos...</span>
-      </div>
-    );
+      return <div className="flex h-64 w-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /><span className="ml-3 text-lg">Cargando datos...</span></div>;
   }
 
   return (
