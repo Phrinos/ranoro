@@ -3,14 +3,13 @@
 'use client'
 
 import { zodResolver } from '@hookform/resolvers/zod'
-import { FormProvider, useForm, useFieldArray, useFormContext } from 'react-hook-form'
+import { FormProvider, useForm, useFieldArray } from 'react-hook-form'
 import { nanoid } from 'nanoid'
 import { useToast } from '@/hooks/use-toast'
 import React, { useState, useEffect, useCallback, useRef } from 'react'
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogFooter
@@ -26,9 +25,8 @@ import { PhotoUploader } from './PhotoUploader'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import Image from "next/image";
-import { Eye, Loader2 } from 'lucide-react'
-import { Wrench, CheckCircle, ShieldCheck, Camera, Trash2, PlusCircle } from 'lucide-react'
+import Image from "next/legacy/image";
+import { Eye, Loader2, Wrench, CheckCircle, ShieldCheck, Camera, Trash2, PlusCircle } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 import { useServiceTotals, useInitServiceForm } from '@/hooks/use-service-form-hooks'
@@ -39,7 +37,6 @@ import { Textarea } from '@/components/ui/textarea';
 
 
 import type { Vehicle, Technician, InventoryItem, ServiceTypeRecord, ServiceRecord, QuoteRecord } from '@/types'
-import type { VehicleFormValues } from '../../vehiculos/components/vehicle-form'
 import { serviceFormSchema, type ServiceFormValues } from '@/schemas/service-form'
 
 interface ServiceFormProps {
@@ -53,8 +50,6 @@ interface ServiceFormProps {
   onClose: () => void
   isReadOnly?: boolean
   mode?: 'service' | 'quote'
-  dialogTitle: string;
-  dialogDescription: string;
   children?: React.ReactNode; // For footer actions
 }
 
@@ -69,8 +64,6 @@ export function ServiceForm({
   onClose,
   isReadOnly = false,
   mode = 'service',
-  dialogTitle,
-  dialogDescription,
   children
 }: ServiceFormProps) {
   const { toast } = useToast()
@@ -197,11 +190,6 @@ export function ServiceForm({
   return (
     <>
       <FormProvider {...form}>
-        <DialogHeader className="p-6 pb-2">
-            <DialogTitle>{dialogTitle}</DialogTitle>
-            <DialogDescription>{dialogDescription}</DialogDescription>
-        </DialogHeader>
-
         <div className="border-b px-6 pb-2">
             <Tabs value={activeTab} onValueChange={setActiveTab}>
               <div className="flex justify-between items-center">
@@ -251,7 +239,6 @@ export function ServiceForm({
 // Separate component for the Photo Report Tab
 const PhotoReportTab = ({ control, isReadOnly, isEnhancingText, handleEnhanceText, serviceId, onPhotoUploaded, onViewImage }: any) => {
     const { fields, append, remove } = useFieldArray({ control, name: 'photoReports' });
-    const { watch } = useFormContext();
     return (
         <Card>
             <CardHeader><CardTitle>Reporte Fotográfico</CardTitle><CardDescription>Documenta el proceso con imágenes. Puedes crear varios reportes.</CardDescription></CardHeader>
@@ -285,3 +272,4 @@ const PhotoReportTab = ({ control, isReadOnly, isEnhancingText, handleEnhanceTex
         </Card>
     );
 }
+

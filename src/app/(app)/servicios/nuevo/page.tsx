@@ -11,6 +11,7 @@ import { ServiceForm } from "../components/service-form";
 import { operationsService, inventoryService, personnelService } from '@/lib/services';
 import type { ServiceRecord, Vehicle, Technician, InventoryItem, ServiceTypeRecord, QuoteRecord } from "@/types";
 import type { VehicleFormValues } from '../../vehiculos/components/vehicle-form';
+import { Button } from '@/components/ui/button';
 
 // This page now renders the form for creating a new service record locally.
 export default function NuevoServicioPage() {
@@ -47,14 +48,6 @@ export default function NuevoServicioPage() {
     }
   };
 
-  const handleVehicleCreated = async (newVehicleData: VehicleFormValues) => {
-    try {
-      await inventoryService.addVehicle(newVehicleData);
-      toast({ title: 'Vehículo Creado' });
-    } catch (error) {
-       toast({ title: 'Error al Crear Vehículo', variant: 'destructive' });
-    }
-  };
 
   if (isLoading) {
     return (
@@ -79,9 +72,15 @@ export default function NuevoServicioPage() {
         serviceHistory={[]}
         onSubmit={handleSaveNewService}
         onClose={() => router.push('/servicios/historial')}
-        onVehicleCreated={handleVehicleCreated}
         mode="service" // Default mode, can be changed internally by status
-      />
+      >
+        <div className="flex justify-end gap-2">
+            <Button variant="outline" type="button" onClick={() => router.push('/servicios/historial')}>Cancelar</Button>
+            <Button type="submit" form="service-form">
+                Crear Registro
+            </Button>
+        </div>
+      </ServiceForm>
     </>
   );
 }

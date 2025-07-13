@@ -34,7 +34,6 @@ interface ServiceDialogProps {
   isReadOnly?: boolean; 
   open?: boolean; 
   onOpenChange?: (isOpen: boolean) => void; 
-  onVehicleCreated?: (newVehicle: Omit<Vehicle, 'id'>) => void; 
   mode?: 'service' | 'quote';
   onDelete?: (id: string) => void;
   onCancelService?: (serviceId: string, reason: string) => void;
@@ -52,9 +51,7 @@ export function ServiceDialog({
   isReadOnly = false,
   open: controlledOpen,
   onOpenChange: setControlledOpen,
-  onVehicleCreated,
   mode = 'service',
-  onDelete,
   onCancelService,
 }: ServiceDialogProps) {
   const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
@@ -153,6 +150,10 @@ export function ServiceDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       {trigger && !isControlled && <DialogTrigger asChild onClick={() => onOpenChange(true)}>{trigger}</DialogTrigger>}
       <DialogContent className="sm:max-w-[600px] md:max-w-[800px] lg:max-w-[900px] xl:max-w-6xl flex flex-col max-h-[90vh] print:hidden p-0">
+        <DialogHeader className="p-6 pb-2 flex-shrink-0">
+            <DialogTitle>{dialogTitle}</DialogTitle>
+            <DialogDescription>{dialogDescription}</DialogDescription>
+        </DialogHeader>
         <ServiceForm
           initialDataService={service}
           vehicles={vehicles} 
@@ -163,8 +164,6 @@ export function ServiceDialog({
           onClose={() => onOpenChange(false)}
           isReadOnly={isReadOnly}
           mode={mode}
-          dialogTitle={dialogTitle}
-          dialogDescription={dialogDescription}
         >
             <div className="flex justify-between items-center w-full">
                 <div>
