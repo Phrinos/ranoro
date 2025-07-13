@@ -89,18 +89,21 @@ export function InventoryItemDialog({
 
   
   const initialFormData = item ? {
-    name: 'name' in item ? item.name || '' : '',
-    sku: 'sku' in item ? item.sku || '' : '',
-    description: 'description' in item ? item.description || '' : '',
-    quantity: 'quantity' in item ? item.quantity || 0 : 0,
-    unitPrice: 'unitPrice' in item ? item.unitPrice || 0 : 0,
-    sellingPrice: 'sellingPrice' in item ? item.sellingPrice || 0 : 0,
-    lowStockThreshold: 'lowStockThreshold' in item ? item.lowStockThreshold || 5 : 5,
-    unitType: 'unitType' in item ? item.unitType || 'units' : 'units',
-    category: 'category' in item ? item.category || (categories.length > 0 ? categories[0].name : '') : (categories.length > 0 ? categories[0].name : ''),
-    supplier: 'supplier' in item ? item.supplier || (suppliers.length > 0 ? suppliers[0].name : '') : (suppliers.length > 0 ? suppliers[0].name : ''),
+    ...item,
+    name: item.name || '',
+    sku: item.sku || '',
+    description: item.description || '',
+    quantity: item.quantity ?? 0, // Ensure defined value
+    unitPrice: item.unitPrice ?? 0, // Ensure defined value
+    sellingPrice: item.sellingPrice ?? 0, // Ensure defined value
+    lowStockThreshold: item.lowStockThreshold ?? 5,
+    unitType: item.unitType || 'units',
+    category: item.category || (categories.length > 0 ? categories[0].name : ''),
+    supplier: item.supplier || (suppliers.length > 0 ? suppliers[0].name : ''),
+    rendimiento: item.rendimiento ?? 0, // Ensure defined value
     ...(isEditing && 'id' in item && {id: item.id})
   } : null;
+
 
   return (
     <>

@@ -73,7 +73,10 @@ export function InventoryItemForm({ initialData, onSubmit, onClose, categories, 
     defaultValues: initialData ? {
         ...initialData,
         unitType: initialData.unitType || 'units',
-        rendimiento: 'rendimiento' in initialData ? initialData.rendimiento : undefined
+        rendimiento: initialData.rendimiento ?? '',
+        quantity: initialData.quantity ?? '',
+        unitPrice: initialData.unitPrice ?? '',
+        sellingPrice: initialData.sellingPrice ?? '',
     } : {
       name: "",
       brand: "",
