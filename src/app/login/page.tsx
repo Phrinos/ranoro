@@ -200,7 +200,7 @@ export default function LoginPage() {
                   alt="Ranoro Logo"
                   width={180}
                   height={45}
-                  className="mx-auto h-auto dark:invert"
+                  className="mx-auto dark:invert w-auto h-auto"
                   style={{width: 'auto', height: 'auto'}}
                   data-ai-hint="ranoro logo"
               />
