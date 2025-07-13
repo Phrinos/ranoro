@@ -37,7 +37,7 @@ export const parseDate = (d: any): Date | null => {
  * @returns A new object or array ready for Firestore.
  */
 export const cleanObjectForFirestore = (obj: any): any => {
-  if (obj === null || typeof obj !== 'object') {
+  if (obj === null || obj === undefined || typeof obj !== 'object') {
     // Return primitives directly (string, number, boolean, null)
     if (obj === '') return null; // Convert empty strings to null
     return obj;

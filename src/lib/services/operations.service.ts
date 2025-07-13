@@ -72,6 +72,7 @@ const saveService = async (data: Partial<ServiceRecord>): Promise<ServiceRecord>
     }
     
     // Explicitly ensure optional fields that might be undefined are null
+    // This is a critical step to prevent Firestore errors.
     const dataWithNulls: Partial<ServiceRecord> = {
       ...data,
       customerSignatureReception: data.customerSignatureReception || null,
@@ -79,10 +80,11 @@ const saveService = async (data: Partial<ServiceRecord>): Promise<ServiceRecord>
       technicianName: data.technicianName || null,
     };
     
+    // Clean the object just before writing to Firestore
     const cleanedData = cleanObjectForFirestore(dataWithNulls);
 
     if (isNew) {
-      await setDoc(docRef, { ...cleanedData, id: docId });
+      await setDoc(docRef, cleanedData);
     } else {
       await updateDoc(docRef, cleanedData);
     }
