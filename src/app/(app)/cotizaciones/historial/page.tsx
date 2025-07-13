@@ -124,6 +124,7 @@ function HistorialCotizacionesPageComponent() {
               key={quote.id}
               service={quote}
               vehicles={vehicles}
+              technicians={technicians}
               onEdit={() => handleEditQuote(quote)}
               onView={() => handleViewQuote(quote)}
             />
