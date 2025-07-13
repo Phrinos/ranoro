@@ -2,7 +2,8 @@
 'use client'
 
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useForm, useWatch, Controller, type Control, useFieldArray, useFormContext } from 'react-hook-form'
+import { useForm, useWatch, Controller, type Control, useFieldArray, FormProvider } from 'react-hook-form'
+import * as z from 'zod'
 
 import Image from 'next/image'
 import { useCallback, useMemo, useState, useEffect, useRef } from 'react'
@@ -25,7 +26,7 @@ import {
   Dialog, DialogContent as UiDialogContent, DialogFooter as UiDialogFooter,
   DialogHeader as UiDialogHeader, DialogTitle as UiDialogTitle
 } from '@/components/ui/dialog'
-import { Form, FormProvider, FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form'
+import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Textarea } from '@/components/ui/textarea'
 import { useToast } from '@/hooks/use-toast'
@@ -50,51 +51,7 @@ import { enhanceText } from '@/ai/flows/text-enhancement-flow'
 import { PhotoUploader } from './PhotoUploader';
 import { serviceFormSchema } from '@/schemas/service-form';
 import { parseDate } from '@/lib/forms';
-
-export type ServiceFormValues = z.infer<typeof serviceFormSchema>;
-
-/* ░░░░░░  HELPERS ░░░░░░ */
-
-function computeDefaults(
-  init: ServiceRecord|Partial<QuoteRecord>|null,
-  serviceTypes: ServiceTypeRecord[],
-): Partial<ServiceFormValues> {
-  const firstType = serviceTypes[0]?.name ?? 'Servicio General'
-  const now = new Date()
-  if (init && 'id' in init && init.id) {          // edición
-    return {
-      ...init,
-      status     : init.status     ?? 'Cotizacion',
-      serviceType: init.serviceType?? firstType,
-      serviceDate: init.serviceDate? parseDate(init.serviceDate):undefined,
-      quoteDate  : init.quoteDate  ? parseDate(init.quoteDate)  :undefined,
-      receptionDateTime: init.receptionDateTime?parseDate(init.receptionDateTime):undefined,
-      deliveryDateTime : init.deliveryDateTime ?parseDate(init.deliveryDateTime) :undefined,
-      serviceItems: init.serviceItems?.length
-        ? init.serviceItems
-        : [{ id:nanoid(), name:init.serviceType??firstType, price:init.totalCost, suppliesUsed:[] }],
-      photoReports: init.photoReports?.length
-        ? init.photoReports
-        : [{ id:`rep_recepcion_${Date.now()}`, date:now.toISOString(), description:'Notas de la Recepción', photos:[] }],
-    }
-  }
-
-  const u:User|undefined = typeof window!=='undefined'
-    ? JSON.parse(localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY) || 'null')
-    : undefined
-
-  return {
-    status:'Cotizacion',
-    serviceType:firstType,
-    serviceDate: now,
-    quoteDate  : now,
-    serviceItems:[{ id:nanoid(), name:firstType, price:undefined, suppliesUsed:[] }],
-    photoReports:[{ id:`rep_recepcion_${Date.now()}`, date:now.toISOString(), description:'Notas de la Recepción', photos:[] }],
-    serviceAdvisorId : u?.id,
-    serviceAdvisorName: u?.name,
-    serviceAdvisorSignatureDataUrl: u?.signatureDataUrl ?? '',
-  }
-}
+import { useInitServiceForm, useServiceTotals } from '@/hooks/use-service-form-hooks'
 
 /* ░░░░░░  COMPONENTE  ░░░░░░ */
 
@@ -103,14 +60,14 @@ interface Props {
   vehicles:Vehicle[]; technicians:Technician[]; inventoryItems:InventoryItem[]
   serviceTypes:ServiceTypeRecord[]
   onSubmit:(d:ServiceRecord|QuoteRecord)=>Promise<void>
-  onClose:()=>void
+  children?: React.ReactNode;
   isReadOnly?:boolean
   mode?:'service'|'quote'
-  children?: React.ReactNode;
+  onClose:()=>void
 }
 
 // Separate component for the Photo Report Tab
-const PhotoReportTab = ({ control, isReadOnly, isEnhancingText, handleEnhanceText, serviceId, onPhotoUploaded, onViewImage }: any) => {
+const PhotoReportTab = ({ control, isReadOnly, serviceId, onPhotoUploaded, onViewImage }: any) => {
     const { fields, append, remove } = useFieldArray({ control, name: 'photoReports' });
     const { watch } = useFormContext();
     return (
@@ -121,7 +78,7 @@ const PhotoReportTab = ({ control, isReadOnly, isEnhancingText, handleEnhanceTex
                      <Card key={field.id} className="p-4 bg-muted/30">
                          <div className="flex justify-between items-start mb-4">
                             <h4 className="text-base font-semibold">Reporte #{index + 1}</h4>
-                            <Button type="button" variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => remove(index)}><Trash2 className="h-4 w-4"/></Button>
+                            {!isReadOnly && <Button type="button" variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => remove(index)}><Trash2 className="h-4 w-4"/></Button>}
                         </div>
                         <div className="space-y-4">
                             <FormField control={control} name={`photoReports.${index}.description`} render={({ field }) => (
@@ -145,9 +102,11 @@ const PhotoReportTab = ({ control, isReadOnly, isEnhancingText, handleEnhanceTex
     );
 };
 
+
 export function ServiceForm(props:Props){
   const {
-    initialDataService, serviceTypes,
+    initialDataService,
+    serviceTypes,
     vehicles:parentVehicles, technicians, inventoryItems:invItems,
     onSubmit, children
   } = props
@@ -157,11 +116,13 @@ export function ServiceForm(props:Props){
 
   const form = useForm<ServiceFormValues>({
     resolver: zodResolver(serviceFormSchema),
-    defaultValues: computeDefaults(initData, serviceTypes),
   })
 
-  const { control, setValue, watch, formState } = form;
-  const watchedServiceItems = watch('serviceItems')
+  useInitServiceForm(form, { initData, serviceTypes });
+
+  const { control, setValue, watch, formState, handleSubmit } = form;
+
+  const { totalCost, totalSuppliesWorkshopCost, serviceProfit } = useServiceTotals(form);
   
   const [activeTab, setActiveTab] = useState('details')
   const [isNewVehicleDialogOpen, setIsNewVehicleDialogOpen] = useState(false)
@@ -171,12 +132,6 @@ export function ServiceForm(props:Props){
   const [viewingImageUrl, setViewingImageUrl] = useState<string | null>(null)
   const [isGeneratingQuote, setIsGeneratingQuote] = useState(false)
   const [isEnhancingText, setIsEnhancingText] = useState<string | null>(null)
-
-  const { totalCost, totalSuppliesWorkshopCost, serviceProfit } = useMemo(() => {
-    const total = (watchedServiceItems || []).reduce((s, i) => s + (Number(i.price) || 0), 0)
-    const cost = (watchedServiceItems || []).flatMap(i => i.suppliesUsed || []).reduce((s, su) => s + (Number(su.unitPrice) || 0) * Number(su.quantity || 0), 0)
-    return { totalCost: total, totalSuppliesWorkshopCost: cost, serviceProfit: total - cost }
-  }, [watchedServiceItems])
 
   const handleEnhanceText = useCallback(async (fieldName: keyof ServiceFormValues | `photoReports.${number}.description` | `safetyInspection.inspectionNotes`) => {
     setIsEnhancingText(fieldName);
@@ -264,6 +219,7 @@ export function ServiceForm(props:Props){
     setIsImageViewerOpen(true);
   };
   
+  const IVA = 0.16;
   const formSubmitWrapper = (values: ServiceFormValues) => {
       const dataToSubmit = {
           ...values,
@@ -280,7 +236,7 @@ export function ServiceForm(props:Props){
   return (
     <>
       <FormProvider {...form}>
-        <form id="service-form" onSubmit={form.handleSubmit(formSubmitWrapper)} className="flex-grow flex flex-col overflow-hidden">
+        <form id="service-form" onSubmit={handleSubmit(formSubmitWrapper)} className="flex-grow flex flex-col overflow-hidden">
             <div className="flex-grow overflow-y-auto px-6 space-y-6">
                 <VehicleSelectionCard
                     isReadOnly={props.isReadOnly}
