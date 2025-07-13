@@ -9,7 +9,7 @@ import { StatusTracker } from "./StatusTracker";
 import type { ServiceRecord, Vehicle, Technician } from '@/types';
 import { format, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { Edit, CheckCircle, Ban, DollarSign, User, Phone, TrendingUp, Clock, Wrench, Eye } from 'lucide-react';
+import { Edit, CheckCircle, Ban, DollarSign, User, Phone, TrendingUp, Clock, Wrench, Eye, Printer } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 import { parseDate } from '@/lib/forms';
 import { cn } from '@/lib/utils';
@@ -23,6 +23,7 @@ interface ServiceAppointmentCardProps {
     onConfirm?: () => void;
     onComplete?: () => void;
     onCancel?: () => void;
+    onPrintTicket?: () => void;
 }
 
 const getServiceDescriptionText = (service: ServiceRecord) => {
@@ -49,6 +50,7 @@ export const ServiceAppointmentCard = React.memo(({
     onConfirm,
     onComplete,
     onCancel,
+    onPrintTicket,
 }: ServiceAppointmentCardProps) => {
     const vehicle = vehicles.find(v => v.id === service.vehicleId);
     const appointmentStatus = getAppointmentStatus(service);
@@ -146,6 +148,11 @@ export const ServiceAppointmentCard = React.memo(({
                             )}
                             <Button variant="ghost" size="icon" onClick={onView} title="Ver Documento"><Eye className="h-4 w-4" /></Button>
                             <Button variant="ghost" size="icon" onClick={onEdit} title="Editar Servicio"><Edit className="h-4 w-4" /></Button>
+                             {onPrintTicket && service.status === 'Entregado' && (
+                                <Button variant="ghost" size="icon" onClick={onPrintTicket} title="Reimprimir Ticket">
+                                    <Printer className="h-4 w-4" />
+                                </Button>
+                            )}
                         </div>
                     </div>
                 </div>

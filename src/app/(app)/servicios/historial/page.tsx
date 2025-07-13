@@ -9,7 +9,7 @@ import { ServiceDialog } from "../components/service-dialog";
 import { UnifiedPreviewDialog } from '@/components/shared/unified-preview-dialog';
 import { CompleteServiceDialog } from "../components/CompleteServiceDialog";
 import { TableToolbar } from "@/components/shared/table-toolbar";
-import type { ServiceRecord, Vehicle, Technician, InventoryItem, QuoteRecord, ServiceTypeRecord } from "@/types";
+import type { ServiceRecord, Vehicle, Technician, InventoryItem, QuoteRecord, ServiceTypeRecord, WorkshopInfo } from "@/types";
 import { useToast } from "@/hooks/use-toast";
 import { useTableManager } from "@/hooks/useTableManager";
 import { isSameDay, isValid } from "date-fns";
@@ -20,6 +20,8 @@ import { operationsService, inventoryService, personnelService } from '@/lib/ser
 import { db } from '@/lib/firebaseClient';
 import { parseDate } from '@/lib/forms';
 import { writeBatch } from 'firebase/firestore';
+import { TicketContent } from '@/components/ticket-content';
+import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
 
 function HistorialServiciosPageComponent() {
   const { toast } = useToast();
@@ -43,6 +45,11 @@ function HistorialServiciosPageComponent() {
 
   const [serviceToComplete, setServiceToComplete] = useState<ServiceRecord | null>(null);
   const [isCompleteDialogOpen, setIsCompleteDialogOpen] = useState(false);
+  
+  const [isTicketDialogOpen, setIsTicketDialogOpen] = useState(false);
+  const [serviceForTicket, setServiceForTicket] = useState<ServiceRecord | null>(null);
+  const [workshopInfo, setWorkshopInfo] = useState<WorkshopInfo | null>(null);
+
 
   useEffect(() => {
     const unsubs = [
@@ -55,6 +62,12 @@ function HistorialServiciosPageComponent() {
           setIsLoading(false);
       }),
     ];
+
+    const storedWorkshopInfo = localStorage.getItem('workshopTicketInfo');
+    if (storedWorkshopInfo) {
+      try { setWorkshopInfo(JSON.parse(storedWorkshopInfo)); } catch (e) { console.error(e); }
+    }
+
 
     return () => unsubs.forEach((unsub) => unsub());
   }, []);
@@ -190,6 +203,12 @@ function HistorialServiciosPageComponent() {
     setEditingService(service);
     setIsEditDialogOpen(true);
   }, []);
+  
+  const handlePrintTicket = useCallback((service: ServiceRecord) => {
+    setServiceForTicket(service);
+    setIsTicketDialogOpen(true);
+  }, []);
+
 
   const handleConfirmAppointment = useCallback(
     async (service: ServiceRecord) => {
@@ -246,6 +265,7 @@ function HistorialServiciosPageComponent() {
                 onConfirm={() => handleConfirmAppointment(service)}
                 onView={() => handleShowPreview(service)}
                 onComplete={() => handleOpenCompleteDialog(service)}
+                 onPrintTicket={() => handlePrintTicket(service)}
                 onCancel={() => {
                   if (service.id) {
                     const reason = prompt("Motivo de la cancelación:");
@@ -282,6 +302,7 @@ function HistorialServiciosPageComponent() {
                 onConfirm={() => handleConfirmAppointment(service)}
                 onView={() => handleShowPreview(service)}
                 onComplete={() => handleOpenCompleteDialog(service)}
+                onPrintTicket={() => handlePrintTicket(service)}
                 onCancel={() => {
                   if (service.id) {
                     const reason = prompt("Motivo de la cancelación:");
@@ -329,6 +350,22 @@ function HistorialServiciosPageComponent() {
           onOpenChange={setIsSheetOpen}
           service={serviceForPreview}
         />
+      )}
+      
+       {serviceForTicket && (
+        <PrintTicketDialog
+            open={isTicketDialogOpen}
+            onOpenChange={setIsTicketDialogOpen}
+            title="Ticket de Servicio"
+            footerActions={<Button onClick={() => window.print()}><Printer className="mr-2 h-4 w-4"/>Imprimir</Button>}
+        >
+          <TicketContent
+            service={serviceForTicket}
+            vehicle={vehicles.find(v => v.id === serviceForTicket.vehicleId)}
+            technician={technicians.find(t => t.id === serviceForTicket.technicianId)}
+            previewWorkshopInfo={workshopInfo || undefined}
+          />
+        </PrintTicketDialog>
       )}
     </>
   );
