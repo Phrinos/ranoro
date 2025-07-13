@@ -59,8 +59,8 @@ export function ServiceDialog({
   const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
   const { toast } = useToast();
 
-  // State for dynamic title based on form's status
-  const [formStatus, setFormStatus] = useState<ServiceRecord['status'] | undefined>(service?.status || quote?.status);
+  const initialRecord = service || quote;
+  const [formStatus, setFormStatus] = useState<ServiceRecord['status'] | undefined>(initialRecord?.status);
 
   const isControlled = controlledOpen !== undefined && setControlledOpen !== undefined;
   const open = isControlled ? controlledOpen : uncontrolledOpen;
@@ -68,10 +68,9 @@ export function ServiceDialog({
 
   useEffect(() => {
     if(open) {
-      const data = service || quote;
-      setFormStatus(data?.status);
+      setFormStatus(initialRecord?.status);
     }
-  }, [open, service, quote]);
+  }, [open, initialRecord]);
 
 
   // Mark signatures as "viewed" when the dialog opens
