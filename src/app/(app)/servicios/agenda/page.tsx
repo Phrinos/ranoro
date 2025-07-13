@@ -10,7 +10,7 @@ import { ServiceDialog } from "../components/dialog";
 import type { ServiceRecord, Vehicle, Technician, QuoteRecord, InventoryItem, CapacityAnalysisOutput, ServiceTypeRecord, WorkshopInfo } from "@/types";
 import { useToast } from "@/hooks/use-toast";
 import { format, parseISO, isToday, isTomorrow, compareAsc, isValid, isSameDay, addDays } from "date-fns";
-import { utcToZonedTime, zonedTimeToUtc } from "date-fns-tz";
+import { toZonedTime, zonedTimeToUtc } from "date-fns-tz";
 import { es } from 'date-fns/locale';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -107,7 +107,7 @@ function AgendaPageComponent() {
     );
     
     const now = new Date();
-    const today = utcToZonedTime(now, workshopTimezone);
+    const today = toZonedTime(now, workshopTimezone);
     const tomorrow = addDays(today, 1);
     
     const byDateAsc = (a: ServiceRecord, b: ServiceRecord) => 
@@ -116,16 +116,16 @@ function AgendaPageComponent() {
     const isSame = (d: Date, ref: Date) => isValid(d) && isSameDay(d, ref);
 
     const todayS = scheduled
-      .filter(s => isSame(utcToZonedTime(safeParseISO(s.serviceDate), workshopTimezone), today))
+      .filter(s => isSame(toZonedTime(safeParseISO(s.serviceDate), workshopTimezone), today))
       .sort(byDateAsc);
       
     const tomorrowS = scheduled
-      .filter(s => isSame(utcToZonedTime(safeParseISO(s.serviceDate), workshopTimezone), tomorrow))
+      .filter(s => isSame(toZonedTime(safeParseISO(s.serviceDate), workshopTimezone), tomorrow))
       .sort(byDateAsc);
       
     const futureS = scheduled
       .filter(s => {
-        const d = utcToZonedTime(safeParseISO(s.serviceDate), workshopTimezone);
+        const d = toZonedTime(safeParseISO(s.serviceDate), workshopTimezone);
         return isValid(d) && d > tomorrow && !isSameDay(d, tomorrow);
       })
       .sort(byDateAsc);
@@ -353,6 +353,7 @@ export default function AgendaPageWrapper() {
     </Suspense>
   );
 }
+
 
 
 
