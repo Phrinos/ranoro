@@ -90,41 +90,36 @@ export function ServiceForm(props:Props){
     mode = 'service'
   } = props;
 
-  const initData = initialDataService ?? null;
   const { toast } = useToast();
   
   const defaultValues = useMemo<ServiceFormValues>(() => {
     const firstType = serviceTypes[0]?.name ?? 'Servicio General';
     const now = new Date();
+    const status = initialDataService?.status ?? 'Cotizacion';
 
-    const getInitialStatus = (): ServiceRecord['status'] => {
-      if (initData) return initData.status ?? 'Cotizacion';
-      return 'Cotizacion'; // Always default to Cotizacion for new records
-    };
-
-    if (initData) {
+    if (initialDataService) {
       return {
-        ...initData,
-        status: getInitialStatus(),
-        serviceType: initData.serviceType ?? firstType,
-        serviceDate: initData.serviceDate ? parseDate(initData.serviceDate) : undefined,
-        quoteDate: initData.quoteDate ? parseDate(initData.quoteDate) : (getInitialStatus() === 'Cotizacion' ? now : undefined),
-        receptionDateTime: initData.receptionDateTime ? parseDate(initData.receptionDateTime) : undefined,
-        deliveryDateTime: initData.deliveryDateTime ? parseDate(initData.deliveryDateTime) : undefined,
+        ...initialDataService,
+        status: status,
+        serviceType: initialDataService.serviceType ?? firstType,
+        serviceDate: initialDataService.serviceDate ? parseDate(initialDataService.serviceDate) : undefined,
+        quoteDate: initialDataService.quoteDate ? parseDate(initialDataService.quoteDate) : (status === 'Cotizacion' ? now : undefined),
+        receptionDateTime: initialDataService.receptionDateTime ? parseDate(initialDataService.receptionDateTime) : undefined,
+        deliveryDateTime: initialDataService.deliveryDateTime ? parseDate(initialDataService.deliveryDateTime) : undefined,
         serviceItems:
-          initData.serviceItems?.length
-            ? initData.serviceItems
+          initialDataService.serviceItems?.length
+            ? initialDataService.serviceItems
             : [
                 {
                   id: nanoid(),
-                  name: initData.serviceType ?? firstType,
-                  price: initData.totalCost ?? undefined,
+                  name: initialDataService.serviceType ?? firstType,
+                  price: initialDataService.totalCost ?? undefined,
                   suppliesUsed: [],
                 },
               ],
         photoReports:
-          initData.photoReports?.length
-            ? initData.photoReports
+          initialDataService.photoReports?.length
+            ? initialDataService.photoReports
             : [
                 {
                   id: `rep_recepcion_${Date.now()}`,
@@ -140,14 +135,11 @@ export function ServiceForm(props:Props){
         try { return JSON.parse(localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY) ?? 'null') as User | null }
         catch { return null }
     })();
-    
-    const initialStatus = getInitialStatus();
 
     return {
-      status: initialStatus,
+      status: 'Cotizacion',
       serviceType: firstType,
-      serviceDate: initialStatus === 'Agendado' ? new Date() : undefined,
-      quoteDate: initialStatus === 'Cotizacion' ? now : undefined,
+      quoteDate: now,
       serviceItems: [{
         id: nanoid(),
         name: firstType,
@@ -164,18 +156,23 @@ export function ServiceForm(props:Props){
       serviceAdvisorName: authUser?.name,
       serviceAdvisorSignatureDataUrl: authUser?.signatureDataUrl ?? '',
     } as ServiceFormValues;
-  }, [initData, serviceTypes, mode]);
+  }, [initialDataService, serviceTypes]);
 
   const form = useForm<ServiceFormValues>({
     resolver: zodResolver(serviceFormSchema),
     defaultValues,
   });
   
-  const { control, setValue, watch, formState, handleSubmit } = form;
+  const { control, setValue, watch, formState, handleSubmit, reset } = form;
   const { totalCost, totalSuppliesWorkshopCost, serviceProfit } = useServiceTotals(form);
   
   const watchedStatus = watch('status');
 
+  // Effect to reset the form when initialDataService changes. This is key for updating the form after async operations in the parent.
+  useEffect(() => {
+    reset(defaultValues);
+  }, [initialDataService, reset, defaultValues]);
+  
   useEffect(() => {
     const subscription = watch((value, { name, type }) => {
         if (name === 'status') {
@@ -350,7 +347,7 @@ export function ServiceForm(props:Props){
                          <PhotoReportTab
                             control={control}
                             isReadOnly={props.isReadOnly}
-                            serviceId={initData?.id || 'new'}
+                            serviceId={initialDataService?.id || 'new'}
                             onPhotoUploaded={handlePhotoUploaded}
                             onViewImage={handleViewImage}
                          />
@@ -363,7 +360,7 @@ export function ServiceForm(props:Props){
                             signatureDataUrl={watch('serviceAdvisorSignatureDataUrl')}
                             isEnhancingText={isEnhancingText}
                             handleEnhanceText={handleEnhanceText as any}
-                            serviceId={initData?.id || 'new'}
+                            serviceId={initialDataService?.id || 'new'}
                             onPhotoUploaded={handleChecklistPhotoUploaded}
                             onViewImage={handleViewImage}
                         />
