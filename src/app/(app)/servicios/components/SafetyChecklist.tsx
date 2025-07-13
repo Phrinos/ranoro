@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import React, { useState, useEffect, useRef } from 'react';
@@ -12,7 +11,7 @@ import { Check, Signature, BrainCircuit, Loader2, Camera, Trash2, Eye } from "lu
 import type { ServiceFormValues } from "@/schemas/service-form";
 import type { SafetyInspection, SafetyCheckStatus, SafetyCheckValue } from '@/types';
 import { cn } from "@/lib/utils";
-import Image from "next/legacy/image";
+import Image from "next/image";
 import { useToast } from "@/hooks/use-toast";
 import { optimizeImage } from "@/lib/utils";
 import { storage } from "@/lib/firebaseClient";
