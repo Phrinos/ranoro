@@ -233,7 +233,7 @@ function HistorialServiciosPageComponent() {
       canvas.toBlob((blob) => {
         if (blob) {
           navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
-          toast({ title: "Copiado", description: "La imagen del ticket ha sido copiada." });
+          toast({ title: "Copiado", description: "La imagen ha sido copiada." });
         }
       });
     } catch (e) {
