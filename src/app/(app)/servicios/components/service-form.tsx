@@ -144,7 +144,7 @@ export function ServiceForm({
 
 
   /* ---------------------------- HANDLERS ---------------------------- */
-  const handleSubmit = useCallback(async (formValues: ServiceFormValues) => {
+  const handleSubmitInternal = useCallback(async (formValues: ServiceFormValues) => {
     if (isReadOnly) return onClose()
 
     const isValid = await trigger()
@@ -249,7 +249,7 @@ export function ServiceForm({
   return (
     <>
       <FormProvider {...form}>
-        <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+        <form onSubmit={handleSubmit(handleSubmitInternal)} className="space-y-6">
           <Tabs defaultValue="servicio" className="w-full">
             <ServiceFormHeader
               onPreview={handleOpenPreview}
