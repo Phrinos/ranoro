@@ -1,6 +1,5 @@
 
 
-
 "use client";
 
 import type { ServiceRecord, Vehicle, QuoteRecord, WorkshopInfo, SafetyInspection, SafetyCheckStatus, PhotoReportGroup, Driver } from '@/types';
@@ -278,7 +277,7 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
                         {vehicle?.ownerEmail && <p><span className="font-semibold">Email:</span> <span className="font-bold">{vehicle.ownerEmail}</span></p>}
                     </div>
                 </div>
-                <div className={cn("col-span-2 grid grid-cols-1 gap-4", service.nextServiceInfo && "md:grid-cols-2")}>
+                <div className="col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="border-2 border-black rounded-md overflow-hidden">
                         <h3 className="font-bold p-1 bg-gray-700 text-white text-xs text-center">DATOS DEL VEHÍCULO</h3>
                         <div className="space-y-0.5 p-2">
@@ -371,7 +370,7 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
                 <h3 className="font-bold uppercase text-center text-sm">AUTORIZO SERVICIOS</h3>
                 <div className="flex-grow flex items-center justify-center w-full min-h-[80px]">
                   {service.customerSignatureReception ? (
-                      <div className="relative w-full h-full min-h-[20px]">
+                      <div className="relative w-full h-full">
                           <Image src={normalizeDataUrl(service.customerSignatureReception)} alt="Firma del cliente" layout="fill" objectFit="contain" unoptimized />
                       </div>
                   ) : (
