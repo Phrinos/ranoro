@@ -72,10 +72,11 @@ const saveService = async (data: Partial<ServiceRecord>): Promise<ServiceRecord>
     }
     
     // Final check to ensure problematic fields are null, not undefined or empty.
-    ['customerSignatureReception', 'customerSignatureDelivery', 'technicianName'].forEach(key => {
-        const k = key as keyof ServiceRecord;
-        const value = (data as any)[k];
-        (data as any)[k] = value?.trim() ? value : null;
+    const fieldsToNullify: (keyof ServiceRecord)[] = ['customerSignatureReception', 'customerSignatureDelivery', 'technicianName'];
+    fieldsToNullify.forEach(key => {
+        if (data[key] === undefined || data[key] === '') {
+            (data as any)[key] = null;
+        }
     });
     
     // Clean the object just before writing to Firestore
