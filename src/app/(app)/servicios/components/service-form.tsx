@@ -318,7 +318,6 @@ export function ServiceForm ({
 
   const form = useForm<ServiceFormValues>({
     resolver: zodResolver(serviceFormSchemaBase),
-    // Default values will be set in the useEffect to ensure reactivity
   });
 
   const { control, watch, setValue, getValues, trigger, reset, formState } = form;
@@ -327,24 +326,23 @@ export function ServiceForm ({
 
   useEffect(() => {
     let defaultValues: Partial<ServiceFormValues> = {
-      status: mode === 'quote' ? 'Cotizacion' : 'En Taller',
+      status: 'Cotizacion',
       serviceType: serviceTypes[0]?.name ?? 'Servicio General',
       serviceItems: [{ id: nanoid(), name: '', price: undefined, suppliesUsed: [] }],
       photoReports: [{ id: `rep_recepcion_${Date.now()}`, date: new Date().toISOString(), description: 'Notas de la Recepción', photos: [] }],
-      receptionDateTime: new Date() // Set reception time on creation
     };
-
+  
     if (initData) {
       defaultValues = {
         ...initData,
         serviceDate: initData.serviceDate ? parseDate(initData.serviceDate) : new Date(),
         quoteDate: initData.quoteDate ? parseDate(initData.quoteDate) : undefined,
-        receptionDateTime: initData.receptionDateTime ? parseDate(initData.receptionDateTime) : new Date(),
+        receptionDateTime: initData.receptionDateTime ? parseDate(initData.receptionDateTime) : undefined,
         deliveryDateTime: initData.deliveryDateTime ? parseDate(initData.deliveryDateTime) : undefined,
         serviceItems: initData.serviceItems?.length ? initData.serviceItems : [{ id: nanoid(), name: '', price: undefined, suppliesUsed: [] }],
         photoReports: initData.photoReports?.length ? initData.photoReports : defaultValues.photoReports,
       };
-    } else {
+    } else { // New record
         const authUserString = localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY);
         if (authUserString) {
             const currentUser = JSON.parse(authUserString);
@@ -352,10 +350,14 @@ export function ServiceForm ({
             defaultValues.serviceAdvisorName = currentUser.name;
             defaultValues.serviceAdvisorSignatureDataUrl = currentUser.signatureDataUrl || '';
         }
+        // For new service, set reception time if status is appropriate
+        if (defaultValues.status === 'En Taller') {
+          defaultValues.receptionDateTime = new Date();
+        }
     }
     
     reset(defaultValues);
-  }, [initData, reset, mode, serviceTypes]);
+  }, [initData, reset, serviceTypes]);
 
 
   /* ──────────────────────── CALCULADOS (memo) ──────────────────────── */
@@ -672,36 +674,48 @@ export function ServiceForm ({
           </Tabs>
 
           {/* ---------------------- FOOTER ACTION BAR ---------------------- */}
-          <div className="fixed bottom-0 left-0 right-0 z-20 bg-background/95 border-t p-3 md:pl-[var(--sidebar-width)] print:hidden">
-            <div className="container mx-auto max-w-6xl flex justify-between items-center gap-2">
+          <div className="flex justify-between items-center mt-8">
               <div>
-                {isEditing && onDelete && (
-                  <Button variant="destructive" type="button" onClick={() => onDelete(initData.id!)}>Eliminar</Button>
-                )}
-                 {isEditing && onCancelService && watchedStatus !== 'Cancelado' && (
-                  <AlertDialog open={isCancelAlertOpen} onOpenChange={setIsCancelAlertOpen}>
-                    <AlertDialogTrigger asChild><Button variant="outline" type="button">Cancelar Servicio</Button></AlertDialogTrigger>
-                    <AlertDialogContent>
-                        <AlertDialogHeader><AlertDialogTitle>¿Cancelar este servicio?</AlertDialogTitle><AlertDialogDescription>El estado cambiará a "Cancelado" y no se podrá revertir.</AlertDialogDescription></AlertDialogHeader>
-                        <Textarea placeholder="Motivo de la cancelación (opcional)..." value={cancellationReason} onChange={(e) => setCancellationReason(e.target.value)} />
-                        <AlertDialogFooter><AlertDialogCancel>Cerrar</AlertDialogCancel><AlertDialogAction onClick={() => { if(initData.id) onCancelService(initData.id, cancellationReason); }}>Sí, Cancelar</AlertDialogAction></AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                )}
+                  {isEditing && onCancelService && watchedStatus !== 'Cancelado' && watchedStatus !== 'Entregado' && (
+                      <AlertDialog open={isCancelAlertOpen} onOpenChange={setIsCancelAlertOpen}>
+                          <AlertDialogTrigger asChild>
+                              <Button variant="outline" type="button" className="text-destructive border-destructive/50 hover:bg-destructive/10 hover:text-destructive">
+                                  Cancelar Servicio
+                              </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                              <AlertDialogHeader>
+                                  <AlertDialogTitle>¿Está seguro de cancelar este servicio?</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                      Esta acción no se puede deshacer. El estado se cambiará a "Cancelado".
+                                  </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <Textarea placeholder="Motivo de la cancelación (opcional)..." value={cancellationReason} onChange={(e) => setCancellationReason(e.target.value)} />
+                              <AlertDialogFooter>
+                                  <AlertDialogCancel onClick={() => setCancellationReason('')}>Cerrar</AlertDialogCancel>
+                                  <AlertDialogAction onClick={() => { if (initData?.id) { onCancelService(initData.id, cancellationReason); } onClose(); }} className="bg-destructive hover:bg-destructive/90">
+                                      Sí, Cancelar Servicio
+                                  </AlertDialogAction>
+                              </AlertDialogFooter>
+                          </AlertDialogContent>
+                      </AlertDialog>
+                  )}
+                   {isEditing && onDelete && (
+                      <Button variant="destructive" type="button" onClick={() => onDelete(initData.id!)} className="ml-2">Eliminar</Button>
+                  )}
               </div>
               <div className="flex gap-2">
-                {isReadOnly ? (
-                  <Button variant="outline" type="button" onClick={onClose}>Cerrar</Button>
-                ) : (
-                  <>
-                    <Button variant="outline" type="button" onClick={onClose}>Cancelar</Button>
-                    <Button type="submit" disabled={formState.isSubmitting || !getValues('vehicleId')}>
-                        {formState.isSubmitting ? 'Guardando…' : isEditing ? 'Actualizar' : 'Crear'}
-                    </Button>
-                  </>
-                )}
+                  {isReadOnly ? (
+                      <Button variant="outline" type="button" onClick={onClose}>Cerrar</Button>
+                  ) : (
+                      <>
+                          <Button variant="outline" type="button" onClick={onClose}>Cancelar</Button>
+                          <Button type="submit" disabled={formState.isSubmitting || !getValues('vehicleId')}>
+                              {formState.isSubmitting ? 'Guardando…' : isEditing ? 'Actualizar' : 'Crear'}
+                          </Button>
+                      </>
+                  )}
               </div>
-            </div>
           </div>
         </form>
       </Form>
