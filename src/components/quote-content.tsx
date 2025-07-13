@@ -5,10 +5,11 @@ import type { QuoteRecord, Vehicle, Technician, WorkshopInfo, Driver, RentalPaym
 import { format, parseISO, isValid, addDays } from 'date-fns';
 import { es } from 'date-fns/locale';
 import React from 'react';
-import { cn, capitalizeWords, normalizeDataUrl, calculateDriverDebt } from "@/lib/utils";
+import { cn, capitalizeWords, normalizeDataUrl, calculateDriverDebt, formatCurrency } from "@/lib/utils";
 import { Card, CardContent } from '@/components/ui/card';
 import Image from "next/legacy/image";
 import { AlertCircle } from 'lucide-react';
+import { placeholderDrivers, placeholderRentalPayments } from '@/lib/placeholder-data';
 
 const initialWorkshopInfo: WorkshopInfo = {
   name: "RANORO",
@@ -28,35 +29,28 @@ interface QuoteContentProps {
   quote: QuoteRecord;
   vehicle?: Vehicle; 
   workshopInfo?: WorkshopInfo;
-  drivers?: Driver[];
-  rentalPayments?: RentalPayment[];
 }
 
 const IVA_RATE = 0.16; 
 
 export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
-  ({ quote, vehicle, workshopInfo: workshopInfoProp, drivers = [], rentalPayments = [] }, ref) => {
+  ({ quote, vehicle, workshopInfo: workshopInfoProp }, ref) => {
     const effectiveWorkshopInfo = { ...initialWorkshopInfo, ...workshopInfoProp };
     
     const now = new Date();
     const formattedPrintDate = format(now, "dd 'de' MMMM 'de' yyyy, HH:mm:ss", { locale: es });
     const quoteDate = parseISO(quote.quoteDate ?? "");
     const formattedQuoteDate = isValid(quoteDate) ? format(quoteDate, "dd 'de' MMMM 'de' yyyy", { locale: es }) : 'N/A';
-
-    const formatCurrency = (amount: number | undefined) => {
-      if (amount === undefined) return 'N/A';
-      return `$${amount.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-    };
     
     const validityDays = 15; 
     const validityDate = isValid(quoteDate) ? format(addDays(quoteDate, validityDays), "dd 'de' MMMM 'de' yyyy", { locale: es }) : 'N/A';
     
     // --- DEBT CALCULATION ---
     const driver: Driver | undefined = vehicle?.isFleetVehicle 
-        ? drivers.find(d => d.assignedVehicleId === vehicle.id) 
+        ? placeholderDrivers.find(d => d.assignedVehicleId === vehicle.id) 
         : undefined;
 
-    const driverDebt = driver && vehicle ? calculateDriverDebt(driver, rentalPayments, [vehicle]) : { totalDebt: 0, rentalDebt: 0, depositDebt: 0, manualDebt: 0 };
+    const driverDebt = driver && vehicle ? calculateDriverDebt(driver, placeholderRentalPayments, [vehicle]) : { totalDebt: 0, rentalDebt: 0, depositDebt: 0, manualDebt: 0 };
     // --- END DEBT CALCULATION ---
 
 
