@@ -249,6 +249,7 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
 
     const driverDebt = driver && vehicle ? calculateDriverDebt(driver, placeholderRentalPayments, [vehicle]) : { totalDebt: 0, rentalDebt: 0, depositDebt: 0, manualDebt: 0 };
     
+    // Updated logic: Determine which object holds the quote data.
     const quoteToDisplay = service.status === 'Cotizacion' ? service : associatedQuote;
     
     const showOrder = service.status !== 'Cotizacion' && service.status !== 'Agendado';

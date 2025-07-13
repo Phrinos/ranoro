@@ -52,7 +52,7 @@ export function UnifiedPreviewDialog({ open, onOpenChange, service }: UnifiedPre
                  const quote = await operationsService.getQuoteById(service.id);
                  setAssociatedQuote(quote || null);
               } else {
-                 setAssociatedQuote(null);
+                 setAssociatedQuote(null); // It's a quote itself, no separate associated quote
               }
           } catch (e) {
               console.error("Error fetching preview data:", e);
