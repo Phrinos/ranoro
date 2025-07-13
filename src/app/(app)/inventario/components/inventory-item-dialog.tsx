@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React, { useState, useCallback } from 'react';
@@ -21,7 +22,7 @@ import type { SupplierFormValues } from '../proveedores/components/supplier-form
 interface InventoryItemDialogProps {
   trigger?: React.ReactNode;
   item?: Partial<InventoryItemFormValues> | null; 
-  onSave?: (data: InventoryItemFormValues) => Promise<InventoryItem>; // Changed to return the created item
+  onSave?: (data: InventoryItemFormValues) => Promise<void>;
   open?: boolean;
   onOpenChange?: (isOpen: boolean) => void;
   categories: InventoryCategory[];

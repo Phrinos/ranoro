@@ -1,13 +1,13 @@
 
 "use client";
 
-import React, { useState, useMemo } from 'react';
+import React from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import type { InventoryItem } from '@/types';
-import { Search, ListFilter } from 'lucide-react';
+import { Search, ListFilter, PlusCircle } from 'lucide-react';
 import { InventoryTable } from './inventory-table';
 
 type InventorySortOption = 
@@ -20,13 +20,14 @@ type InventorySortOption =
 
 interface ProductosContentProps {
   inventoryItems: InventoryItem[];
+  onNewItem: () => void;
 }
 
-export function ProductosContent({ inventoryItems }: ProductosContentProps) {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [sortOption, setSortOption] = useState<InventorySortOption>("stock_status_name_asc");
+export function ProductosContent({ inventoryItems, onNewItem }: ProductosContentProps) {
+  const [searchTerm, setSearchTerm] = React.useState("");
+  const [sortOption, setSortOption] = React.useState<InventorySortOption>("stock_status_name_asc");
 
-  const filteredAndSortedItems = useMemo(() => {
+  const filteredAndSortedItems = React.useMemo(() => {
     let itemsToDisplay = [...inventoryItems];
     if (searchTerm) {
       itemsToDisplay = itemsToDisplay.filter(item => 
@@ -78,26 +79,31 @@ export function ProductosContent({ inventoryItems }: ProductosContentProps) {
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input type="search" placeholder="Buscar por nombre o SKU..." className="w-full rounded-lg bg-card pl-8" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
         </div>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" className="min-w-[150px] flex-1 sm:flex-initial bg-card">
-              <ListFilter className="mr-2 h-4 w-4" />Ordenar por
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuLabel>Ordenar por</DropdownMenuLabel>
-            <DropdownMenuRadioGroup value={sortOption} onValueChange={(value) => setSortOption(value as InventorySortOption)}>
-              <DropdownMenuRadioItem value="stock_status_name_asc">Estado de Stock</DropdownMenuRadioItem>
-              <DropdownMenuRadioItem value="name_asc">Nombre (A-Z)</DropdownMenuRadioItem>
-              <DropdownMenuRadioItem value="name_desc">Nombre (Z-A)</DropdownMenuRadioItem>
-              <DropdownMenuRadioItem value="quantity_desc">Cantidad (Mayor a Menor)</DropdownMenuRadioItem>
-              <DropdownMenuRadioItem value="quantity_asc">Cantidad (Menor a Mayor)</DropdownMenuRadioItem>
-              <DropdownMenuRadioItem value="price_desc">Precio (Mayor a Menor)</DropdownMenuRadioItem>
-              <DropdownMenuRadioItem value="price_asc">Precio (Menor a Mayor)</DropdownMenuRadioItem>
-              <DropdownMenuRadioItem value="type_asc">Tipo (Producto/Servicio)</DropdownMenuRadioItem>
-            </DropdownMenuRadioGroup>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <div className="flex gap-2 w-full sm:w-auto">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="min-w-[150px] flex-1 sm:flex-initial bg-card">
+                <ListFilter className="mr-2 h-4 w-4" />Ordenar por
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuLabel>Ordenar por</DropdownMenuLabel>
+              <DropdownMenuRadioGroup value={sortOption} onValueChange={(value) => setSortOption(value as InventorySortOption)}>
+                <DropdownMenuRadioItem value="stock_status_name_asc">Estado de Stock</DropdownMenuRadioItem>
+                <DropdownMenuRadioItem value="name_asc">Nombre (A-Z)</DropdownMenuRadioItem>
+                <DropdownMenuRadioItem value="name_desc">Nombre (Z-A)</DropdownMenuRadioItem>
+                <DropdownMenuRadioItem value="quantity_desc">Cantidad (Mayor a Menor)</DropdownMenuRadioItem>
+                <DropdownMenuRadioItem value="quantity_asc">Cantidad (Menor a Mayor)</DropdownMenuRadioItem>
+                <DropdownMenuRadioItem value="price_desc">Precio (Mayor a Menor)</DropdownMenuRadioItem>
+                <DropdownMenuRadioItem value="price_asc">Precio (Menor a Mayor)</DropdownMenuRadioItem>
+                <DropdownMenuRadioItem value="type_asc">Tipo (Producto/Servicio)</DropdownMenuRadioItem>
+              </DropdownMenuRadioGroup>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <Button onClick={onNewItem} className="w-full sm:w-auto">
+              <PlusCircle className="mr-2 h-4 w-4" /> Nuevo Producto / Servicio
+          </Button>
+        </div>
       </div>
       <Card>
         <CardContent className="pt-6">
