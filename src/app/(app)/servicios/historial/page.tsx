@@ -236,6 +236,7 @@ function HistorialServiciosPageComponent() {
                 key={service.id}
                 service={service}
                 vehicles={vehicles}
+                technicians={technicians}
                 onEdit={() => handleEditService(service)}
                 onConfirm={() => handleConfirmAppointment(service)}
                 onView={() => handleShowPreview(service)}
@@ -271,6 +272,7 @@ function HistorialServiciosPageComponent() {
                 key={service.id}
                 service={service}
                 vehicles={vehicles}
+                technicians={technicians}
                 onEdit={() => handleEditService(service)}
                 onConfirm={() => handleConfirmAppointment(service)}
                 onView={() => handleShowPreview(service)}

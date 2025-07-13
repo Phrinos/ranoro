@@ -7,16 +7,18 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { StatusTracker } from "./StatusTracker";
-import type { ServiceRecord, Vehicle } from '@/types';
+import type { ServiceRecord, Vehicle, Technician } from '@/types';
 import { format, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Edit, Eye, CheckCircle, Ban, DollarSign, User, Phone, TrendingUp, Clock, Wrench } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 import { parseDate } from '@/lib/forms';
+import { cn } from '@/lib/utils';
 
 interface ServiceAppointmentCardProps {
     service: ServiceRecord;
     vehicles: Vehicle[];
+    technicians: Technician[];
     onEdit: () => void;
     onView: () => void;
     onConfirm?: () => void;
@@ -42,6 +44,7 @@ const getAppointmentStatus = (service: ServiceRecord): { label: string; variant:
 export const ServiceAppointmentCard = React.memo(({
     service,
     vehicles,
+    technicians,
     onEdit,
     onView,
     onConfirm,
@@ -58,7 +61,18 @@ export const ServiceAppointmentCard = React.memo(({
     const isQuote = service.status === 'Cotizacion';
     const isScheduled = service.status === 'Agendado';
     const isWorkshop = service.status === 'En Taller';
+    const isCompleted = service.status === 'Entregado';
     const isCancelled = service.status === 'Cancelado';
+
+    const technicianName = technicians.find(t => t.id === service.technicianId)?.name;
+
+    const getStatusBadgeVariant = (status: ServiceRecord['status']) => {
+        switch(status) {
+            case 'En Taller': return 'secondary';
+            case 'Entregado': return 'success';
+            default: return 'outline';
+        }
+    };
 
     return (
         <Card className="shadow-sm overflow-hidden mb-4">
@@ -104,8 +118,12 @@ export const ServiceAppointmentCard = React.memo(({
                     </div>
                     <div className="p-4 flex flex-col justify-center items-center text-center border-t md:border-t-0 md:border-l w-full md:w-56 flex-shrink-0 space-y-2">
                         {isCancelled && <Badge variant="destructive" className="mb-1 font-bold">CANCELADO</Badge>}
-                        {!isQuote && !isDone && <Badge variant={appointmentStatus.variant} className="mb-1">{appointmentStatus.label}</Badge>}
+                        {(isWorkshop || isCompleted) && <Badge variant={getStatusBadgeVariant(service.status)} className="mb-1">{service.status}</Badge>}
+                        {!isQuote && !isDone && !isWorkshop && <Badge variant={appointmentStatus.variant} className="mb-1">{appointmentStatus.label}</Badge>}
+                        
                         <p className="text-xs text-muted-foreground">Asesor: {service.serviceAdvisorName || 'N/A'}</p>
+                        {technicianName && <p className="text-xs text-muted-foreground">Técnico: {technicianName}</p>}
+
                         <div className="flex justify-center items-center gap-1">
                             {onConfirm && !isDone && !isQuote && service.appointmentStatus !== 'Confirmada' && (
                                 <Button variant="ghost" size="icon" onClick={onConfirm} title="Confirmar Cita">
