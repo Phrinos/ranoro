@@ -1,5 +1,3 @@
-
-
 "use client";
 
 import React, { useState, useEffect } from 'react';
@@ -126,20 +124,17 @@ export function ServiceDialog({
           <DialogTitle>{dialogTitle}</DialogTitle>
           <DialogDescription>{dialogDescription}</DialogDescription>
         </DialogHeader>
-        <div className="flex-grow overflow-y-auto -mx-6 px-6 print:overflow-visible">
-          <ServiceForm
-            initialDataService={service}
-            vehicles={vehicles} 
-            technicians={technicians}
-            inventoryItems={inventoryItems}
-            serviceTypes={serviceTypes}
-            onSubmit={internalOnSave}
-            onClose={() => onOpenChange(false)}
-            isReadOnly={isReadOnly}
-            mode={mode}
-            onCancelService={onCancelService}
-          />
-        </div>
+        <ServiceForm
+          initialDataService={service}
+          vehicles={vehicles} 
+          technicians={technicians}
+          inventoryItems={inventoryItems}
+          serviceTypes={serviceTypes}
+          onSubmit={internalOnSave}
+          onClose={() => onOpenChange(false)}
+          isReadOnly={isReadOnly}
+          mode={mode}
+        />
       </DialogContent>
     </Dialog>
   );
