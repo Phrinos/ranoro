@@ -29,6 +29,7 @@ export const photoReportSchema = z.object({
 export const safetyCheckValueSchema = z.object({
   status: z.enum(['ok', 'atencion', 'inmediata', 'na']).default('na'),
   photos: z.array(z.string().url()).default([]),
+  notes: z.string().optional(),
 });
 
 export const safetyInspectionSchema = z.object({
