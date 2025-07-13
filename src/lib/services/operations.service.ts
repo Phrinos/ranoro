@@ -71,16 +71,19 @@ const saveService = async (data: Partial<ServiceRecord>): Promise<ServiceRecord>
         data.publicId = nanoid(12);
     }
     
-    // Explicitly ensure optional fields that might be undefined are null.
-    const dataWithNulls: Partial<ServiceRecord> = {
-      ...data,
-      customerSignatureReception: data.customerSignatureReception || null,
-      customerSignatureDelivery: data.customerSignatureDelivery || null,
-      technicianName: data.technicianName || null,
-    };
+    // Explicitly ensure optional signature fields are null if they are empty or just whitespace.
+    // This is the most critical step to prevent the Firestore error.
+    ['customerSignatureReception', 'customerSignatureDelivery', 'serviceAdvisorSignatureDataUrl'].forEach(key => {
+        const k = key as keyof ServiceRecord;
+        if (typeof data[k] === 'string' && !(data[k] as string).trim()) {
+            (data as any)[k] = null;
+        } else if (data[k] === undefined) {
+             (data as any)[k] = null;
+        }
+    });
     
     // Clean the object just before writing to Firestore
-    const cleanedData = cleanObjectForFirestore(dataWithNulls);
+    const cleanedData = cleanObjectForFirestore(data);
 
     if (isNew) {
       await setDoc(docRef, cleanedData);

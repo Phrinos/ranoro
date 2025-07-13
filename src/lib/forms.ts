@@ -29,25 +29,25 @@ export const parseDate = (d: any): Date | null => {
 };
 
 /**
- * Recursively prepares a plain JavaScript object for Firestore.
- * - Converts Date objects to ISO strings.
+ * Recursively cleans an object for Firestore.
  * - Removes any keys where the value is `undefined`.
- * - Converts any values that are an empty string `''` to `null`.
+ * - Converts Date objects to ISO strings.
+ * This is a safer, simplified version based on user feedback.
  * @param obj The object or array to clean.
  * @returns A new object or array ready for Firestore.
  */
 export const cleanObjectForFirestore = (obj: any): any => {
-  if (obj === null || obj === undefined || typeof obj !== 'object') {
-    // Return primitives directly (string, number, boolean, null)
-    if (obj === '') return null; // Convert empty strings to null
-    return obj;
+  if (obj === undefined) {
+    return undefined; // Will be filtered out
+  }
+  if (obj === null || typeof obj !== 'object') {
+    return obj; // Primitives are returned as-is
   }
 
-  // Handle Date objects
   if (obj instanceof Date) {
     return obj.toISOString();
   }
-
+  
   // Handle Arrays: process each item and filter out any resulting undefined values
   if (Array.isArray(obj)) {
     return obj
@@ -55,19 +55,10 @@ export const cleanObjectForFirestore = (obj: any): any => {
       .filter(item => item !== undefined);
   }
 
-  // Handle Objects
-  const cleanedObj: { [key: string]: any } = {};
-  for (const key in obj) {
-    if (Object.prototype.hasOwnProperty.call(obj, key)) {
-      const value = obj[key];
-      
-      // Skip undefined values entirely
-      if (value === undefined) {
-        continue;
-      }
-      
-      cleanedObj[key] = cleanObjectForFirestore(value);
-    }
-  }
-  return cleanedObj;
+  // Handle Objects: build a new object, omitting keys with undefined values
+  return Object.fromEntries(
+    Object.entries(obj)
+      .map(([key, value]) => [key, cleanObjectForFirestore(value)])
+      .filter(([, value]) => value !== undefined)
+  );
 };

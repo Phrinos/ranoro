@@ -108,6 +108,7 @@ export function ServiceForm(props:Props){
         deliveryDateTime: initialDataService.deliveryDateTime ? parseDate(initialDataService.deliveryDateTime) : undefined,
         customerSignatureReception: initialDataService.customerSignatureReception || null,
         customerSignatureDelivery: initialDataService.customerSignatureDelivery || null,
+        technicianName: initialDataService.technicianName || null,
         serviceItems:
           initialDataService.serviceItems?.length
             ? initialDataService.serviceItems
@@ -145,6 +146,7 @@ export function ServiceForm(props:Props){
       technicianName: null, 
       customerSignatureReception: null,
       customerSignatureDelivery: null,
+      serviceAdvisorSignatureDataUrl: authUser?.signatureDataUrl || null,
       serviceItems: [{
         id: nanoid(),
         name: firstType,
@@ -159,7 +161,6 @@ export function ServiceForm(props:Props){
       }],
       serviceAdvisorId: authUser?.id,
       serviceAdvisorName: authUser?.name,
-      serviceAdvisorSignatureDataUrl: authUser?.signatureDataUrl || '',
     } as ServiceFormValues;
   }, [initialDataService, serviceTypes]);
 
@@ -171,13 +172,9 @@ export function ServiceForm(props:Props){
   const { control, setValue, watch, formState, handleSubmit, reset } = form;
   const { totalCost, totalSuppliesWorkshopCost, serviceProfit } = useServiceTotals(form);
   
-  const watchedStatus = watch('status');
-
   // Effect to reset the form when initialDataService changes.
   useEffect(() => {
-    if (initialDataService) {
-      reset(defaultValues);
-    }
+    reset(defaultValues);
   }, [initialDataService, reset, defaultValues]);
   
   useEffect(() => {
