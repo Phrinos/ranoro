@@ -8,12 +8,15 @@ import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/comp
 import { Input } from "@/components/ui/input";
 import { Card } from '@/components/ui/card';
 import { Plus, PlusCircle, Trash2, Wrench } from "lucide-react";
-import type { InventoryItem, ServiceSupply } from "@/types";
+import type { InventoryItem, ServiceSupply, InventoryCategory, Supplier } from "@/types";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { AddSupplyDialog } from './add-supply-dialog';
 import { capitalizeWords, formatCurrency, cn } from '@/lib/utils';
 import type { ServiceFormValues } from "@/schemas/service-form";
+import { InventoryItemDialog } from '../../inventario/components/inventory-item-dialog';
+import type { InventoryItemFormValues } from '../../inventario/components/inventory-item-form';
+
 
 // Sub-component for a single Service Item card
 interface ServiceItemCardProps {
@@ -22,9 +25,21 @@ interface ServiceItemCardProps {
   isReadOnly?: boolean;
   inventoryItems: InventoryItem[];
   mode: 'service' | 'quote';
+  onNewInventoryItemCreated: (formData: InventoryItemFormValues) => Promise<InventoryItem>;
+  categories: InventoryCategory[];
+  suppliers: Supplier[];
 }
 
-export function ServiceItemCard({ serviceIndex, removeServiceItem, isReadOnly, inventoryItems, mode }: ServiceItemCardProps) {
+export function ServiceItemCard({ 
+    serviceIndex, 
+    removeServiceItem, 
+    isReadOnly, 
+    inventoryItems, 
+    mode,
+    onNewInventoryItemCreated,
+    categories,
+    suppliers
+}: ServiceItemCardProps) {
     const { control, getValues, setValue, formState: { errors } } = useFormContext<ServiceFormValues>();
     const { fields, append, remove } = useFieldArray({
         control,
@@ -33,6 +48,8 @@ export function ServiceItemCard({ serviceIndex, removeServiceItem, isReadOnly, i
     const { toast } = useToast();
 
     const [isAddSupplyDialogOpen, setIsAddSupplyDialogOpen] = useState(false);
+    const [isNewItemDialogOpen, setIsNewItemDialogOpen] = useState(false);
+    const [newItemSearchTerm, setNewItemSearchTerm] = useState('');
     
     const serviceItemErrors = errors.serviceItems?.[serviceIndex];
     
@@ -61,6 +78,32 @@ export function ServiceItemCard({ serviceIndex, removeServiceItem, isReadOnly, i
         }
 
         setValue(`${supplyPath}.quantity`, newQuantity, { shouldDirty: true });
+    };
+
+    const handleNewItemRequest = (searchTerm: string) => {
+        setNewItemSearchTerm(searchTerm);
+        setIsAddSupplyDialogOpen(false);
+        setIsNewItemDialogOpen(true);
+    };
+
+    const handleNewItemSaved = async (formData: InventoryItemFormValues) => {
+        try {
+            const newItem = await onNewInventoryItemCreated(formData);
+            append({
+                supplyId: newItem.id,
+                supplyName: newItem.name,
+                quantity: 1,
+                unitPrice: newItem.unitPrice,
+                sellingPrice: newItem.sellingPrice,
+                isService: newItem.isService,
+                unitType: newItem.unitType,
+            });
+            setIsNewItemDialogOpen(false);
+            toast({ title: 'Insumo Creado y Añadido' });
+        } catch (e) {
+            console.error(e);
+            toast({ title: 'Error', description: 'No se pudo crear el nuevo insumo.', variant: 'destructive' });
+        }
     };
 
     return (
@@ -143,6 +186,15 @@ export function ServiceItemCard({ serviceIndex, removeServiceItem, isReadOnly, i
                 onOpenChange={setIsAddSupplyDialogOpen}
                 inventoryItems={inventoryItems}
                 onAddSupply={handleAddSupply}
+                onNewItemRequest={handleNewItemRequest}
+            />
+            <InventoryItemDialog
+                open={isNewItemDialogOpen}
+                onOpenChange={setIsNewItemDialogOpen}
+                onSave={handleNewItemSaved}
+                item={{ name: newItemSearchTerm }}
+                categories={categories}
+                suppliers={suppliers}
             />
         </Card>
     );

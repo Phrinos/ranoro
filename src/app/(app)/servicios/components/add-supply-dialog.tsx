@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React, { useState, useMemo, useEffect } from 'react';
@@ -18,9 +19,10 @@ interface AddSupplyDialogProps {
   onOpenChange: (isOpen: boolean) => void;
   inventoryItems: InventoryItem[];
   onAddSupply: (supply: ServiceSupply) => void;
+  onNewItemRequest: (searchTerm: string) => void;
 }
 
-export function AddSupplyDialog({ open, onOpenChange, inventoryItems, onAddSupply }: AddSupplyDialogProps) {
+export function AddSupplyDialog({ open, onOpenChange, inventoryItems, onAddSupply, onNewItemRequest }: AddSupplyDialogProps) {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState('inventory');
   
@@ -42,7 +44,7 @@ export function AddSupplyDialog({ open, onOpenChange, inventoryItems, onAddSuppl
       (item) =>
         !item.isService &&
         (item.name.toLowerCase().includes(lowerSearchTerm) ||
-         item.sku.toLowerCase().includes(lowerSearchTerm))
+         (item.sku && item.sku.toLowerCase().includes(lowerSearchTerm)))
     );
   }, [searchTerm, inventoryItems]);
 
@@ -151,9 +153,17 @@ export function AddSupplyDialog({ open, onOpenChange, inventoryItems, onAddSuppl
                         </Button>
                       ))
                     ) : (
-                      <p className="p-4 text-center text-sm text-muted-foreground">
-                        No se encontraron productos.
-                      </p>
+                      <div className="p-4 text-center text-sm text-muted-foreground">
+                        {searchTerm ? (
+                            <div className="flex flex-col items-center gap-2">
+                                <span>No se encontraron productos.</span>
+                                <Button variant="link" size="sm" onClick={() => onNewItemRequest(searchTerm)}>
+                                    <PackagePlus className="mr-2 h-4 w-4"/>
+                                    Crear Nuevo Artículo "{searchTerm}"
+                                </Button>
+                            </div>
+                        ) : 'No hay productos para mostrar.'}
+                      </div>
                     )}
                   </div>
                 </ScrollArea>
