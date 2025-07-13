@@ -1,4 +1,5 @@
 
+
 @import "react-image-crop/dist/ReactCrop.css";
 
 @tailwind base;
@@ -126,16 +127,16 @@
     position: absolute;
     left: 0;
     top: 0;
-    margin: 0;
+    margin: 1cm !important;
     padding: 0;
-    width: 100%;
+    width: calc(100% - 2cm);
     height: auto;
   }
 
   /* --- Styles specific to thermal receipt printing --- */
   #printable-area [data-format="receipt"] {
       width: 80mm !important; 
-      margin: 0 auto; 
+      margin: 0 auto !important; 
       padding: 5mm 3mm !important;
       color: black !important;
       background: white !important;
@@ -146,6 +147,7 @@
       width: 100%;
       min-height: auto; 
       padding: 0;
+      margin: 0 !important;
       color: black !important;
       background: white !important;
   }

@@ -12,7 +12,7 @@ import { ShieldAlert, Printer, Loader2, Signature, Eye, Download, MessageSquare,
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
 import { SignatureDialog } from '@/app/(app)/servicios/components/signature-dialog';
-import { doc, setDoc, onSnapshot, getDoc, updateDoc } from 'firebase/firestore'; 
+import { doc, onSnapshot, getDoc, updateDoc } from 'firebase/firestore'; 
 import { db } from '@/lib/firebasePublic.js';
 import Image from "next/image";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
@@ -176,7 +176,7 @@ export default function PublicServiceSheetPage() {
             <Button variant="outline" onClick={() => window.print()}><Printer className="mr-2 h-4 w-4"/> Imprimir</Button>
         </CardContent>
       </Card>
-      <div id="printable-area-preview" className="bg-white mx-auto shadow-2xl printable-content max-w-4xl">
+      <div id="printable-area" className="bg-white mx-auto shadow-2xl printable-content max-w-4xl">
         <ServiceSheetContent
           ref={serviceSheetRef}
           service={service}
