@@ -208,22 +208,21 @@ export function ServiceForm({
   
   const freshUserRef = useRef<User | null>(null);
   
-  const originalStatusRef = useRef(initialDataService?.status || initialDataQuote?.status);
-  
   const form = useForm<ServiceFormValues>({
     resolver: zodResolver(serviceFormSchemaBase),
   });
-  const { control, getValues, setValue, watch, trigger } = form;
+  const { control, getValues, setValue, watch, trigger, reset } = form;
 
   const watchedId = useWatch({ control, name: 'id' });
   const watchedStatus = watch('status');
   const watchedServiceItems = useWatch({ control, name: "serviceItems" });
+  
+  const initialData = useMemo(() => initialDataService || initialDataQuote, [initialDataService, initialDataQuote]);
 
   useEffect(() => {
     if (onStatusChange) {
       onStatusChange(watchedStatus);
     }
-     // When status changes to 'Agendado', set serviceDate if it's not already set
     if (watchedStatus === 'Agendado' && !getValues('serviceDate')) {
         setValue('serviceDate', new Date());
     }
@@ -265,32 +264,16 @@ export function ServiceForm({
   }, []);
   
   useEffect(() => {
-      const currentStatus = getValues('status');
-      if (originalStatusRef.current !== 'En Taller' && currentStatus === 'En Taller') {
-          const currentSubStatus = getValues('subStatus');
-          if (!currentSubStatus) {
-              setValue('subStatus', 'Reparando');
-          }
-      }
-      originalStatusRef.current = currentStatus;
-  }, [watchedStatus, getValues, setValue]);
-
-useEffect(() => {
     refreshCurrentUser();
     const storedWorkshopInfo = typeof window !== "undefined" ? localStorage.getItem("workshopTicketInfo") : null;
     if (storedWorkshopInfo) setWorkshopInfo(JSON.parse(storedWorkshopInfo));
     
-    let dataToLoad;
-    if (mode === 'service') {
-        dataToLoad = initialDataService;
-    } else {
-        dataToLoad = initialDataQuote;
-    }
+    let dataToLoad = initialData;
     
     if (!dataToLoad || !dataToLoad.id) { // This is a new record
       const defaultStatus = mode === 'quote' ? 'Cotizacion' : 'En Taller';
       const defaultServiceType = serviceTypes.length > 0 ? serviceTypes[0].name : 'Servicio General';
-      form.reset({
+      reset({
         status: defaultStatus,
         serviceType: defaultServiceType,
         serviceItems: [{ id: nanoid(), name: '', price: undefined, suppliesUsed: [] }],
@@ -302,7 +285,6 @@ useEffect(() => {
       return;
     }
     
-    // This is an existing record
     const parseDate = (date: any) => date && (typeof date.toDate === 'function' ? date.toDate() : (typeof date === 'string' ? parseISO(date) : date));
     
     let photoReportsData = (dataToLoad as ServiceRecord)?.photoReports || [];
@@ -315,7 +297,7 @@ useEffect(() => {
         serviceItemsData = [{ id: nanoid(), name: '', price: undefined, suppliesUsed: [] }];
     }
 
-    form.reset({
+    reset({
         ...dataToLoad,
         serviceDate: dataToLoad?.serviceDate ? parseDate(dataToLoad.serviceDate) : undefined,
         quoteDate: dataToLoad?.quoteDate ? parseDate(dataToLoad.quoteDate) : (mode === 'quote' ? new Date() : undefined),
@@ -338,7 +320,7 @@ useEffect(() => {
         vehicleLicensePlateSearch: dataToLoad?.vehicleIdentifier || "",
     });
 
-}, [initialDataService, initialDataQuote, mode, form, isReadOnly, refreshCurrentUser, serviceTypes]);
+}, [initialData, mode, reset, isReadOnly, refreshCurrentUser, serviceTypes]);
   
   const handlePhotoUploadComplete = useCallback(
     (reportIndex: number, url: string) => {
@@ -422,11 +404,14 @@ useEffect(() => {
     if (!getValues('vehicleId')) return toast({ title: "Vehículo no seleccionado", variant: "destructive" });
     if (!(await trigger())) return toast({ title: "Formulario Incompleto", variant: "destructive" });
 
-    if(originalStatusRef.current !== 'En Taller' && values.status === 'En Taller' && !values.receptionDateTime) {
+    const currentStatus = getValues('status');
+    const receptionTime = getValues('receptionDateTime');
+
+    if (currentStatus === 'En Taller' && !receptionTime) {
         values.receptionDateTime = new Date();
     }
     
-    const idToSave = initialDataService?.id || initialDataQuote?.id;
+    const idToSave = initialData?.id;
     const selectedVehicle = localVehicles.find(v => v.id === values.vehicleId);
     
     const finalData = {
@@ -444,16 +429,13 @@ useEffect(() => {
         technicianName: technicians.find(t => t.id === values.technicianId)?.name || null,
         subTotal: totalCost / (1 + IVA_RATE),
         taxAmount: totalCost - (totalCost / (1 + IVA_RATE)),
-        serviceAdvisorId: freshUserRef.current.id,
-        serviceAdvisorName: freshUserRef.current.name,
-        serviceAdvisorSignatureDataUrl: freshUserRef.current.signatureDataUrl,
     };
     
     const cleanedData = cleanObject(finalData);
     
     await onSubmit(cleanedData as ServiceRecord);
     onClose();
-  }, [isReadOnly, onClose, getValues, onSubmit, toast, technicians, totalCost, serviceProfit, workshopInfo, localVehicles, currentInventoryItems, totalSuppliesWorkshopCost, trigger, mode, initialDataService, initialDataQuote]);
+  }, [isReadOnly, onClose, getValues, onSubmit, toast, technicians, totalCost, serviceProfit, workshopInfo, localVehicles, currentInventoryItems, totalSuppliesWorkshopCost, trigger, mode, initialData]);
 
   const handlePrintSheet = useCallback(() => {
     const serviceData = form.getValues() as ServiceRecord;

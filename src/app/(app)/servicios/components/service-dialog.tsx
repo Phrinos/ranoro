@@ -59,18 +59,18 @@ export function ServiceDialog({
   const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
   const { toast } = useToast();
 
-  const initialRecord = service || quote;
-  const [formStatus, setFormStatus] = useState<ServiceRecord['status'] | undefined>(initialRecord?.status);
+  const [currentStatus, setCurrentStatus] = useState<ServiceRecord['status'] | undefined>();
 
   const isControlled = controlledOpen !== undefined && setControlledOpen !== undefined;
   const open = isControlled ? controlledOpen : uncontrolledOpen;
   const onOpenChange = isControlled ? setControlledOpen : setUncontrolledOpen;
 
   useEffect(() => {
-    if(open) {
-      setFormStatus(initialRecord?.status);
+    if (open) {
+      const initialRecord = service || quote;
+      setCurrentStatus(initialRecord?.status);
     }
-  }, [open, initialRecord]);
+  }, [open, service, quote]);
 
 
   // Mark signatures as "viewed" when the dialog opens
@@ -151,7 +151,7 @@ export function ServiceDialog({
   
   const getDynamicTitles = () => {
     const currentRecord = service || quote;
-    const status = formStatus || currentRecord?.status;
+    const status = currentStatus || currentRecord?.status;
 
     if (isReadOnly) {
         switch (status) {
@@ -205,7 +205,7 @@ export function ServiceDialog({
             mode={mode}
             onDelete={onDelete}
             onCancelService={onCancelService}
-            onStatusChange={setFormStatus} // Pass the setter function
+            onStatusChange={setCurrentStatus} // Pass the setter function
           />
         </div>
       </DialogContent>
