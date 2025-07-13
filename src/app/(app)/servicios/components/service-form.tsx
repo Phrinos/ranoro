@@ -3,7 +3,7 @@
 'use client'
 
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useForm, FormProvider } from 'react-hook-form'
+import { FormProvider, useForm, useFieldArray } from 'react-hook-form'
 import { nanoid } from 'nanoid'
 import { useToast } from '@/hooks/use-toast'
 import React, { useState, useEffect, useCallback, useRef } from 'react'
@@ -193,47 +193,47 @@ export function ServiceForm({
 
   return (
     <>
-    <FormProvider {...form}>
-      <DialogHeader className="p-6 pb-2">
-          <DialogTitle>{dialogTitle}</DialogTitle>
-          <DialogDescription>{dialogDescription}</DialogDescription>
-      </DialogHeader>
+      <FormProvider {...form}>
+        <DialogHeader className="p-6 pb-2">
+            <DialogTitle>{dialogTitle}</DialogTitle>
+            <DialogDescription>{dialogDescription}</DialogDescription>
+        </DialogHeader>
 
-      <div className="border-b px-6 pb-2">
+        <div className="border-b px-6 pb-2">
+            <Tabs value={activeTab} onValueChange={setActiveTab}>
+              <div className="flex justify-between items-center">
+                <TabsList className={cn('grid w-full mb-0', gridColsClass)}>
+                  {tabs.map((t) => (
+                    <TabsTrigger key={t.value} value={t.value} className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs sm:text-sm flex items-center gap-2">
+                      <t.icon className="h-4 w-4 mr-1.5 shrink-0" />
+                      <span className="hidden sm:inline">{t.label}</span>
+                      <span className="sm:hidden">{t.label.slice(0, 5)}</span>
+                    </TabsTrigger>
+                  ))}
+                </TabsList>
+                {!isReadOnly && ( <Button type="button" onClick={handleOpenPreview} variant="ghost" size="icon" title="Vista previa"><Eye className="h-5 w-5" /></Button>)}
+              </div>
+            </Tabs>
+        </div>
+        
+        <form id="service-form" onSubmit={handleSubmit(handleSave)} className="flex-grow overflow-y-auto px-6">
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <div className="flex justify-between items-center">
-              <TabsList className={cn('grid w-full mb-0', gridColsClass)}>
-                {tabs.map((t) => (
-                  <TabsTrigger key={t.value} value={t.value} className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs sm:text-sm flex items-center gap-2">
-                    <t.icon className="h-4 w-4 mr-1.5 shrink-0" />
-                    <span className="hidden sm:inline">{t.label}</span>
-                    <span className="sm:hidden">{t.label.slice(0, 5)}</span>
-                  </TabsTrigger>
-                ))}
-              </TabsList>
-              {!isReadOnly && ( <Button type="button" onClick={handleOpenPreview} variant="ghost" size="icon" title="Vista previa"><Eye className="h-5 w-5" /></Button>)}
-            </div>
+              <TabsContent value="servicio" className="mt-6">
+                  <Card className="shadow-none border-none p-0"><CardContent className="p-0 space-y-6">
+                      <VehicleSelectionCard isReadOnly={isReadOnly} localVehicles={vehicles} serviceHistory={serviceHistory} onVehicleSelected={() => {}} onOpenNewVehicleDialog={handleOpenVehicleDialog} />
+                      <ServiceDetailsCard isReadOnly={isReadOnly} technicians={technicians} inventoryItems={inventoryItems} serviceTypes={serviceTypes} mode={mode} totalCost={totalCost} totalSuppliesWorkshopCost={totalSuppliesWorkshopCost} serviceProfit={serviceProfit} onGenerateQuoteWithAI={handleGenerateQuote} isGeneratingQuote={isGeneratingQuote} />
+                  </CardContent></Card>
+              </TabsContent>
+              <TabsContent value="recepcion" className="mt-6"><ReceptionAndDelivery control={control} isReadOnly={isReadOnly} isEnhancingText={isEnhancingText} handleEnhanceText={handleEnhanceText} /></TabsContent>
+              <TabsContent value="reporte" className="mt-6"><PhotoReportTab control={control} isReadOnly={isReadOnly} isEnhancingText={isEnhancingText} handleEnhanceText={handleEnhanceText} serviceId={serviceId} onPhotoUploaded={handlePhotoUpload} onViewImage={handleViewImage} /></TabsContent>
+              <TabsContent value="seguridad" className="mt-6"><SafetyChecklist control={control} isReadOnly={isReadOnly} onSignatureClick={handleSignatureClick} signatureDataUrl={watch('safetyInspection.technicianSignature')} isEnhancingText={isEnhancingText} handleEnhanceText={handleEnhanceText} serviceId={serviceId} onPhotoUploaded={(itemName, urls) => { const currentVal = getValues(`safetyInspection.${itemName as keyof ServiceFormValues['safetyInspection']}`); setValue(`safetyInspection.${itemName as keyof ServiceFormValues['safetyInspection']}`, { ...(currentVal || { status: 'na' }), photos: [...(currentVal?.photos || []), ...urls] }, { shouldDirty: true }); }} onViewImage={handleViewImage} /></TabsContent>
           </Tabs>
-      </div>
-      
-      <form id="service-form" onSubmit={handleSubmit(handleSave)} className="flex-grow overflow-y-auto px-6">
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsContent value="servicio" className="mt-6">
-                <Card className="shadow-none border-none p-0"><CardContent className="p-0 space-y-6">
-                    <VehicleSelectionCard isReadOnly={isReadOnly} localVehicles={vehicles} serviceHistory={serviceHistory} onVehicleSelected={() => {}} onOpenNewVehicleDialog={handleOpenVehicleDialog} />
-                    <ServiceDetailsCard isReadOnly={isReadOnly} technicians={technicians} inventoryItems={inventoryItems} serviceTypes={serviceTypes} mode={mode} totalCost={totalCost} totalSuppliesWorkshopCost={totalSuppliesWorkshopCost} serviceProfit={serviceProfit} onGenerateQuoteWithAI={handleGenerateQuote} isGeneratingQuote={isGeneratingQuote} />
-                </CardContent></Card>
-            </TabsContent>
-            <TabsContent value="recepcion" className="mt-6"><ReceptionAndDelivery control={control} isReadOnly={isReadOnly} isEnhancingText={isEnhancingText} handleEnhanceText={handleEnhanceText} /></TabsContent>
-            <TabsContent value="reporte" className="mt-6"><PhotoReportTab control={control} isReadOnly={isReadOnly} isEnhancingText={isEnhancingText} handleEnhanceText={handleEnhanceText} serviceId={serviceId} onPhotoUploaded={handlePhotoUpload} onViewImage={handleViewImage} /></TabsContent>
-            <TabsContent value="seguridad" className="mt-6"><SafetyChecklist control={control} isReadOnly={isReadOnly} onSignatureClick={handleSignatureClick} signatureDataUrl={watch('safetyInspection.technicianSignature')} isEnhancingText={isEnhancingText} handleEnhanceText={handleEnhanceText} serviceId={serviceId} onPhotoUploaded={(itemName, urls) => { const currentVal = getValues(`safetyInspection.${itemName as keyof ServiceFormValues['safetyInspection']}`); setValue(`safetyInspection.${itemName as keyof ServiceFormValues['safetyInspection']}`, { ...(currentVal || { status: 'na' }), photos: [...(currentVal?.photos || []), ...urls] }, { shouldDirty: true }); }} onViewImage={handleViewImage} /></TabsContent>
-        </Tabs>
-      </form>
-      
-      <DialogFooter className="p-6 pt-4 border-t">
-          {children}
-      </DialogFooter>
-    </FormProvider>
+        </form>
+        
+        <DialogFooter className="p-6 pt-4 border-t">
+            {children}
+        </DialogFooter>
+      </FormProvider>
 
       <VehicleDialog open={isVehicleDialogOpen} onOpenChange={setIsVehicleDialogOpen} onSave={(data) => { console.log("New vehicle data:", data); setIsVehicleDialogOpen(false); }} />
       <SignatureDialog open={isSignatureDialogOpen} onOpenChange={setIsSignatureDialogOpen} onSave={(sig) => { setValue('safetyInspection.technicianSignature', sig, { shouldDirty: true }); setIsSignatureDialogOpen(false); }} />
