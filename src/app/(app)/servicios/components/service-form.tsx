@@ -264,8 +264,6 @@ export function ServiceForm({
           open={isPreviewOpen}
           onOpenChange={setIsPreviewOpen}
           service={serviceForPreview}
-          vehicle={localVehicles.find(v => v.id === serviceForPreview.vehicleId) || null}
-          associatedQuote={null} // Quote data is part of the service object itself now
         />
       )}
     </>
