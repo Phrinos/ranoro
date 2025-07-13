@@ -62,7 +62,7 @@ export function PrintTicketDialog({
         </div>
 
         {footerActions && (
-          <DialogFooter className="print:hidden sm:justify-end">
+          <DialogFooter className="print:hidden flex-col sm:flex-row sm:justify-end gap-2">
             {footerActions}
           </DialogFooter>
         )}
