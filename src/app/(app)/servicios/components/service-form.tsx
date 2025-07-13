@@ -60,7 +60,7 @@ import { suggestQuote } from '@/ai/flows/quote-suggestion-flow'
 import { enhanceText } from '@/ai/flows/text-enhancement-flow'
 import { PhotoUploader } from './PhotoUploader';
 import { serviceFormSchema } from '@/schemas/service-form';
-import { parseDate } from '@/lib/forms';
+import { parseDate, cleanObjectForFirestore } from '@/lib/forms';
 import { useServiceTotals } from '@/hooks/use-service-form-hooks'
 
 /* ░░░░░░  COMPONENTE  ░░░░░░ */
@@ -73,9 +73,6 @@ interface Props {
   onClose:()=>void
   isReadOnly?:boolean
   mode?:'service'|'quote'
-  onDelete?:(id:string)=>void
-  onCancelService?:(id:string,r:string)=>void
-  onStatusChange?:(s?:ServiceRecord['status'])=>void
 }
 
 export function ServiceForm(props:Props){
@@ -297,23 +294,6 @@ export function ServiceForm(props:Props){
   const formSubmitWrapper = (values: ServiceFormValues) => {
     const dataToSubmit: any = { ...values };
     
-    // Ensure all date fields are converted to ISO strings for Firestore
-    const dateFields: (keyof ServiceFormValues)[] = ['serviceDate', 'quoteDate', 'receptionDateTime', 'deliveryDateTime'];
-    dateFields.forEach(field => {
-        const dateValue = dataToSubmit[field];
-        if (dateValue instanceof Date && isValid(dateValue)) {
-            dataToSubmit[field] = dateValue.toISOString();
-        } else if (typeof dateValue === 'string') {
-            // It might already be a string, ensure it's valid ISO
-            const parsed = parseISO(dateValue);
-            if(isValid(parsed)){
-              dataToSubmit[field] = parsed.toISOString();
-            } else {
-              dataToSubmit[field] = null; // Or handle invalid string
-            }
-        }
-    });
-    
     // Add calculated totals
     dataToSubmit.totalCost = totalCost;
     dataToSubmit.totalSuppliesWorkshopCost = totalSuppliesWorkshopCost;
@@ -321,22 +301,8 @@ export function ServiceForm(props:Props){
     dataToSubmit.subTotal = totalCost / (1 + IVA);
     dataToSubmit.taxAmount = totalCost - (totalCost / (1 + IVA));
     
+    // The cleanObjectForFirestore will now handle Date to ISO string conversion.
     onSubmit(cleanObjectForFirestore(dataToSubmit));
-  };
-  
-  const cleanObjectForFirestore = (obj: any): any => {
-    if (obj === null || typeof obj !== 'object') {
-        return obj === undefined ? null : obj;
-    }
-    if (Array.isArray(obj)) {
-        return obj.map(cleanObjectForFirestore).filter(v => v !== null); // Filter out nulls from arrays too
-    }
-    return Object.entries(obj).reduce((acc, [key, value]) => {
-        if (value !== undefined) {
-            acc[key] = cleanObjectForFirestore(value);
-        }
-        return acc;
-    }, {} as any);
   };
 
   return (

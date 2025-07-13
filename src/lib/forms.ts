@@ -29,18 +29,25 @@ export const parseDate = (d: any): Date | null => {
 };
 
 /**
- * Recursively removes properties with `undefined` values from an object or array.
- * This is useful for preparing data for Firestore, which doesn't accept `undefined`.
+ * Recursively prepares an object for Firestore. It converts Date objects to ISO strings
+ * and removes properties with `undefined` values.
  * @param obj The object or array to clean.
- * @returns A new object or array with `undefined` values removed.
+ * @returns A new object or array ready for Firestore.
  */
 export const cleanObjectForFirestore = (obj: any): any => {
   if (obj === null || typeof obj !== 'object') {
-    return obj;
+    return obj === undefined ? null : obj;
   }
+
+  // Handle Date objects explicitly
+  if (obj instanceof Date) {
+    return obj.toISOString();
+  }
+
   if (Array.isArray(obj)) {
-    return obj.map(cleanObjectForFirestore).filter(v => v !== undefined);
+    return obj.map(cleanObjectForFirestore).filter(v => v !== undefined && v !== null);
   }
+  
   return Object.entries(obj).reduce((acc, [key, value]) => {
     if (value !== undefined) {
       const cleanedValue = cleanObjectForFirestore(value);
