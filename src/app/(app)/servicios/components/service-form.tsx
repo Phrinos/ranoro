@@ -29,6 +29,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { useToast } from '@/hooks/use-toast'
 import { cn } from '@/lib/utils'
 import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data'
+import { parseDate } from '@/lib/forms';
 
 import type { ServiceRecord, Vehicle, Technician, InventoryItem, QuoteRecord, User, ServiceTypeRecord } from '@/types'
 
@@ -102,7 +103,7 @@ export function ServiceForm ({
     resolver: zodResolver(serviceFormSchema),
     defaultValues: editing ? {
       ...editing,
-      serviceDate: editing.serviceDate ? parseISO(editing.serviceDate) : undefined,
+      serviceDate: editing.serviceDate ? parseDate(editing.serviceDate) ?? undefined : undefined,
       serviceItems: editing.serviceItems?.length ? editing.serviceItems : [{ id: nanoid(), name: firstType, price: editing.totalCost, suppliesUsed: [] }],
       photoReports: editing.photoReports?.length ? editing.photoReports : [{ id: `rep_${Date.now()}`, date: new Date().toISOString(), photos: [] }],
       serviceType: editing.serviceType ?? firstType,
