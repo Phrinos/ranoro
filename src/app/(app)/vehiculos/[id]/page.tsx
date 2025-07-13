@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
@@ -95,6 +94,7 @@ export default function VehicleDetailPage() {
   }, [fetchVehicleAndServices]);
 
   const nextServiceInfo = useMemo(() => {
+    if (!services || services.length === 0) return null;
     const completedServicesWithNextInfo = services
       .filter((s) => s.status === "Completado" && s.nextServiceInfo && s.deliveryDateTime)
       .sort((a, b) => parseISO(b.deliveryDateTime!).getTime() - parseISO(a.deliveryDateTime!).getTime());
@@ -164,7 +164,27 @@ export default function VehicleDetailPage() {
         <TabsList className="grid w-full grid-cols-2 md:grid-cols-2 lg:w-1/3 mb-6"><TabsTrigger value="details" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Detalles</TabsTrigger><TabsTrigger value="services" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Servicios</TabsTrigger></TabsList>
         <TabsContent value="details">
             <div className="space-y-6"><Card><CardHeader className="flex flex-row items-center justify-between"><CardTitle>Datos del Vehículo</CardTitle><Button variant="outline" size="sm" onClick={() => setIsEditDialogOpen(true)}><Edit className="mr-2 h-4 w-4" />Editar</Button></CardHeader><CardContent className="space-y-2"><p><strong>Placa:</strong> {vehicle.licensePlate}</p><p><strong>Marca:</strong> {vehicle.make}</p><p><strong>Modelo:</strong> {vehicle.model}</p><p><strong>Año:</strong> {vehicle.year}</p><p><strong>VIN:</strong> {vehicle.vin || "N/A"}</p><p><strong>Color:</strong> {vehicle.color || "N/A"}</p>{vehicle.notes && (<div className="pt-2"><p className="font-semibold">Notas del Vehículo:</p><p className="text-sm text-muted-foreground whitespace-pre-wrap">{vehicle.notes}</p></div>)}</CardContent></Card>
-            {nextServiceInfo && (<Card className="border-blue-200 bg-blue-50 dark:bg-blue-900/30"><CardHeader><CardTitle className="flex items-center gap-2 text-lg text-blue-800 dark:text-blue-300"><CalendarCheck className="h-5 w-5" />Próximo Servicio Recomendado</CardTitle></CardHeader><CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4"><div><p className="font-semibold">Fecha:</p><p>{format(parseISO(nextServiceInfo.date),"dd 'de' MMMM 'de' yyyy",{ locale: es })}</p></div>{nextServiceInfo.mileage && (<div><p className="font-semibold">Kilometraje:</p><p>{nextServiceInfo.mileage.toLocaleString("es-MX")} km</p></div>)}</CardContent></Card>)}
+            {nextServiceInfo && (
+                <Card className="border-blue-200 bg-blue-50 dark:bg-blue-900/30">
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2 text-lg text-blue-800 dark:text-blue-300">
+                            <CalendarCheck className="h-5 w-5" />Próximo Servicio Recomendado
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <p className="font-semibold">Fecha:</p>
+                            <p>{format(parseISO(nextServiceInfo.date), "dd 'de' MMMM 'de' yyyy", { locale: es })}</p>
+                        </div>
+                        {nextServiceInfo.mileage && (
+                            <div>
+                                <p className="font-semibold">Kilometraje:</p>
+                                <p>{nextServiceInfo.mileage.toLocaleString("es-MX")} km</p>
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
+            )}
             <Card className="bg-amber-50 dark:bg-amber-950/50"><CardHeader><CardTitle>Datos del Propietario</CardTitle></CardHeader><CardContent className="space-y-2"><p><strong>Nombre:</strong> {vehicle.ownerName}</p><p><strong>Teléfono:</strong> {vehicle.ownerPhone || "N/A"}</p><p><strong>Email:</strong> {vehicle.ownerEmail || "N/A"}</p></CardContent></Card>
             </div>
         </TabsContent>
