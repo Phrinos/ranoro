@@ -180,26 +180,22 @@ export function ServiceDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       {trigger && !isControlled && <DialogTrigger asChild onClick={() => onOpenChange(true)}>{trigger}</DialogTrigger>}
       <DialogContent className="sm:max-w-[600px] md:max-w-[800px] lg:max-w-[900px] xl:max-w-6xl flex flex-col max-h-[90vh] print:hidden p-0">
-        <DialogHeader className="flex-shrink-0 p-6 pb-0">
-          <DialogTitle>{dialogTitle}</DialogTitle>
-          <DialogDescription>{dialogDescription}</DialogDescription>
-        </DialogHeader>
-        <div className="flex-grow overflow-y-auto px-6">
-          <ServiceForm
-            initialDataService={service}
-            vehicles={vehicles} 
-            technicians={technicians}
-            inventoryItems={inventoryItems}
-            serviceTypes={serviceTypes}
-            onSubmit={internalOnSave}
-            onClose={() => onOpenChange(false)}
-            isReadOnly={isReadOnly}
-            mode={mode}
-            onDelete={onDelete}
-            onCancelService={onCancelService}
-            onStatusChange={setCurrentStatus}
-          />
-        </div>
+        <ServiceForm
+          initialDataService={service}
+          vehicles={vehicles} 
+          technicians={technicians}
+          inventoryItems={inventoryItems}
+          serviceTypes={serviceTypes}
+          onSubmit={internalOnSave}
+          onClose={() => onOpenChange(false)}
+          isReadOnly={isReadOnly}
+          mode={mode}
+          onDelete={onDelete}
+          onCancelService={onCancelService}
+          onStatusChange={setCurrentStatus}
+          dialogTitle={dialogTitle}
+          dialogDescription={dialogDescription}
+        />
       </DialogContent>
     </Dialog>
   );
