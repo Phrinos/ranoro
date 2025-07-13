@@ -20,7 +20,7 @@ interface UnifiedPreviewDialogProps {
   open: boolean;
   onOpenChange: (isOpen: boolean) => void;
   service: ServiceRecord;
-  vehicle?: Vehicle | null; // Make vehicle optional
+  vehicle?: Vehicle | null;
 }
 
 export function UnifiedPreviewDialog({ open, onOpenChange, service, vehicle: initialVehicle }: UnifiedPreviewDialogProps) {
@@ -31,7 +31,7 @@ export function UnifiedPreviewDialog({ open, onOpenChange, service, vehicle: ini
   const [isImageViewerOpen, setIsImageViewerOpen] = useState(false);
   const [viewingImageUrl, setViewingImageUrl] = useState<string | null>(null);
   
-  const [vehicle, setVehicle] = useState<Vehicle | null>(initialVehicle || null);
+  const [vehicle, setVehicle] = useState<Vehicle | null | undefined>(initialVehicle);
   const [isLoading, setIsLoading] = useState(true);
 
   const showOrder = service.status !== 'Cotizacion' && service.status !== 'Agendado';
@@ -69,8 +69,8 @@ export function UnifiedPreviewDialog({ open, onOpenChange, service, vehicle: ini
           if (!initialVehicle && service.vehicleId) {
             const fetchedVehicle = await inventoryService.getVehicleById(service.vehicleId);
             setVehicle(fetchedVehicle || null);
-          } else {
-            setVehicle(initialVehicle || null);
+          } else if (initialVehicle !== undefined) {
+            setVehicle(initialVehicle);
           }
           
           setIsLoading(false);

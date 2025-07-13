@@ -19,9 +19,11 @@ import { db } from '@/lib/firebaseClient.js';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { operationsService } from '@/lib/services';
 import { Button } from '@/components/ui/button';
-import { Ban } from 'lucide-react';
+import { Ban, Eye } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogHeader, AlertDialogTitle, AlertDialogFooter } from "@/components/ui/alert-dialog";
 import { Textarea } from "@/components/ui/textarea";
+import { UnifiedPreviewDialog } from '@/components/shared/unified-preview-dialog';
+
 
 interface ServiceDialogProps {
   trigger?: React.ReactNode;
@@ -60,6 +62,8 @@ export function ServiceDialog({
   const [currentStatus, setCurrentStatus] = useState<ServiceRecord['status'] | undefined>();
   const [isCancelAlertOpen, setIsCancelAlertOpen] = useState(false);
   const [cancellationReason, setCancellationReason] = useState('');
+  
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
   const isControlled = controlledOpen !== undefined && setControlledOpen !== undefined;
   const open = isControlled ? controlledOpen : uncontrolledOpen;
@@ -147,61 +151,77 @@ export function ServiceDialog({
 
   return (
     <>
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      {trigger && !isControlled && <DialogTrigger asChild onClick={() => onOpenChange(true)}>{trigger}</DialogTrigger>}
-      <DialogContent className="sm:max-w-[600px] md:max-w-[800px] lg:max-w-[900px] xl:max-w-6xl flex flex-col max-h-[90vh] print:hidden p-0">
-        <DialogHeader className="p-6 pb-2 flex-shrink-0">
-            <DialogTitle>{dialogTitle}</DialogTitle>
-            <DialogDescription>{dialogDescription}</DialogDescription>
-        </DialogHeader>
-        <ServiceForm
-          initialDataService={service}
-          vehicles={vehicles} 
-          technicians={technicians}
-          inventoryItems={inventoryItems}
-          serviceTypes={serviceTypes}
-          onSubmit={internalOnSave}
-          onClose={() => onOpenChange(false)}
-          isReadOnly={isReadOnly}
-          mode={mode}
-        >
-            <div className="flex justify-between items-center w-full">
-                <div>
-                  {canBeCancelled && onCancelService && (
-                      <Button variant="outline" type="button" onClick={() => setIsCancelAlertOpen(true)} className="text-destructive border-destructive/50 hover:bg-destructive/10 hover:text-destructive">
-                          <Ban className="mr-2 h-4 w-4" /> Cancelar Servicio
-                      </Button>
-                  )}
-                </div>
-                <div className="flex gap-2">
-                    {isReadOnly ? (
-                      <Button variant="outline" type="button" onClick={() => onOpenChange(false)}>Cerrar</Button>
-                    ) : (
-                      <>
-                        <Button variant="outline" type="button" onClick={() => onOpenChange(false)}>Cancelar</Button>
-                        <Button type="submit" form="service-form">
-                            {service?.id ? 'Actualizar' : 'Crear'}
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        {trigger && !isControlled && <DialogTrigger asChild onClick={() => onOpenChange(true)}>{trigger}</DialogTrigger>}
+        <DialogContent className="sm:max-w-[600px] md:max-w-[800px] lg:max-w-[900px] xl:max-w-6xl flex flex-col max-h-[90vh] print:hidden p-0">
+            <DialogHeader className="p-6 pb-2 flex-shrink-0 flex flex-row justify-between items-start">
+              <div>
+                  <DialogTitle>{dialogTitle}</DialogTitle>
+                  <DialogDescription>{dialogDescription}</DialogDescription>
+              </div>
+              {service && (
+                  <Button variant="outline" size="icon" onClick={() => setIsPreviewOpen(true)}>
+                      <Eye className="h-4 w-4" />
+                  </Button>
+              )}
+            </DialogHeader>
+            <ServiceForm
+            initialDataService={service}
+            vehicles={vehicles} 
+            technicians={technicians}
+            inventoryItems={inventoryItems}
+            serviceTypes={serviceTypes}
+            onSubmit={internalOnSave}
+            onClose={() => onOpenChange(false)}
+            isReadOnly={isReadOnly}
+            mode={mode}
+            >
+                <div className="flex justify-between items-center w-full">
+                    <div>
+                    {canBeCancelled && onCancelService && (
+                        <Button variant="outline" type="button" onClick={() => setIsCancelAlertOpen(true)} className="text-destructive border-destructive/50 hover:bg-destructive/10 hover:text-destructive">
+                            <Ban className="mr-2 h-4 w-4" /> Cancelar Servicio
                         </Button>
-                      </>
                     )}
+                    </div>
+                    <div className="flex gap-2">
+                        {isReadOnly ? (
+                        <Button variant="outline" type="button" onClick={() => onOpenChange(false)}>Cerrar</Button>
+                        ) : (
+                        <>
+                            <Button variant="outline" type="button" onClick={() => onOpenChange(false)}>Cancelar</Button>
+                            <Button type="submit" form="service-form">
+                                {service?.id ? 'Actualizar' : 'Crear'}
+                            </Button>
+                        </>
+                        )}
+                    </div>
                 </div>
-            </div>
-        </ServiceForm>
-      </DialogContent>
-    </Dialog>
-    
-    <AlertDialog open={isCancelAlertOpen} onOpenChange={setIsCancelAlertOpen}>
-        <AlertDialogContent>
-            <AlertDialogHeader><AlertDialogTitle>¿Está seguro de cancelar este servicio?</AlertDialogTitle><AlertDialogDescription>Esta acción no se puede deshacer. El estado se cambiará a "Cancelado".</AlertDialogDescription></AlertDialogHeader>
-            <Textarea placeholder="Motivo de la cancelación (opcional)..." value={cancellationReason} onChange={(e) => setCancellationReason(e.target.value)} />
-            <AlertDialogFooter>
-                <AlertDialogCancel onClick={() => setCancellationReason('')}>Cerrar</AlertDialogCancel>
-                <AlertDialogAction onClick={() => { if(service?.id && onCancelService) { onCancelService(service.id, cancellationReason); onOpenChange(false); } }} className="bg-destructive hover:bg-destructive/90">
-                    Sí, Cancelar Servicio
-                </AlertDialogAction>
-            </AlertDialogFooter>
-        </AlertDialogContent>
-    </AlertDialog>
+            </ServiceForm>
+        </DialogContent>
+      </Dialog>
+      
+      {isPreviewOpen && service && (
+        <UnifiedPreviewDialog
+            open={isPreviewOpen}
+            onOpenChange={setIsPreviewOpen}
+            service={service}
+            vehicle={vehicles.find(v => v.id === service.vehicleId)}
+        />
+      )}
+
+      <AlertDialog open={isCancelAlertOpen} onOpenChange={setIsCancelAlertOpen}>
+          <AlertDialogContent>
+              <AlertDialogHeader><AlertDialogTitle>¿Está seguro de cancelar este servicio?</AlertDialogTitle><AlertDialogDescription>Esta acción no se puede deshacer. El estado se cambiará a "Cancelado".</AlertDialogDescription></AlertDialogHeader>
+              <Textarea placeholder="Motivo de la cancelación (opcional)..." value={cancellationReason} onChange={(e) => setCancellationReason(e.target.value)} />
+              <AlertDialogFooter>
+                  <AlertDialogCancel onClick={() => setCancellationReason('')}>Cerrar</AlertDialogCancel>
+                  <AlertDialogAction onClick={() => { if(service?.id && onCancelService) { onCancelService(service.id, cancellationReason); onOpenChange(false); } }} className="bg-destructive hover:bg-destructive/90">
+                      Sí, Cancelar Servicio
+                  </AlertDialogAction>
+              </AlertDialogFooter>
+          </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }
