@@ -47,9 +47,9 @@ export function PrintTicketDialog({
         else onOpenChange(true);
     }}>
       <DialogContent className={cn(
-        "sm:max-w-4xl",
+        "sm:max-w-md", // Default width for small modals
         "print:hidden", // Hide the entire dialog frame when printing
-        dialogContentClassName
+        dialogContentClassName // Allow overriding width
       )}>
         <DialogHeader className="print:hidden">
           <DialogTitle>{title}</DialogTitle>
@@ -57,7 +57,7 @@ export function PrintTicketDialog({
         </DialogHeader>
         
         {/* This wrapper is now what gets printed */}
-        <div id="printable-area" className="my-4 max-h-[70vh] overflow-y-auto bg-muted/50 p-4 rounded-md print:overflow-visible print:max-h-none print:bg-transparent print:p-0 print:m-0">
+        <div id="printable-area" className="my-4 max-h-[70vh] overflow-y-auto bg-muted/30 p-2 sm:p-4 rounded-md print:overflow-visible print:max-h-none print:bg-transparent print:p-0 print:m-0">
           {children}
         </div>
 

@@ -176,6 +176,60 @@
   }
 }
 
+@layer utilities {
+  /* For responsive ticket preview */
+  #printable-area > [data-format="receipt"] {
+      transform-origin: top center;
+      margin: 0 auto; /* Center the ticket */
+  }
+
+  @media (max-width: 340px) {
+    #printable-area > [data-format="receipt"] {
+      transform: scale(0.9);
+    }
+  }
+  @media (min-width: 341px) and (max-width: 640px) {
+    #printable-area > [data-format="receipt"] {
+      transform: scale(1);
+    }
+  }
+
+  #printable-area > [data-format="letter"] {
+      transform-origin: top center;
+      margin: 0 auto; /* Center the document */
+  }
+
+  @media (max-width: 890px) { /* 8.5in is roughly 816px, plus padding */
+    #printable-area > [data-format="letter"] {
+        transform: scale(0.9);
+    }
+  }
+  
+  @media (max-width: 790px) {
+    #printable-area > [data-format="letter"] {
+        transform: scale(0.8);
+    }
+  }
+
+  @media (max-width: 690px) {
+    #printable-area > [data-format="letter"] {
+        transform: scale(0.7);
+    }
+  }
+
+  @media (max-width: 590px) {
+    #printable-area > [data-format="letter"] {
+        transform: scale(0.5);
+    }
+  }
+
+  @media (max-width: 450px) {
+    #printable-area > [data-format="letter"] {
+        transform: scale(0.4);
+    }
+  }
+}
+
 
 /* Hide number input arrows */
 input::-webkit-outer-spin-button,
