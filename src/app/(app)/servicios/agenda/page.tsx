@@ -265,8 +265,6 @@ function AgendaPageComponent() {
           open={isSheetOpen}
           onOpenChange={setIsSheetOpen}
           service={serviceForPreview}
-          vehicle={vehicles.find(v => v.id === serviceForPreview.vehicleId) || null}
-          associatedQuote={null}
         />
       )}
       
