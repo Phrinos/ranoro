@@ -74,7 +74,7 @@ const saveService = async (data: Partial<ServiceRecord>): Promise<ServiceRecord>
     // Final check to ensure problematic fields are null, not undefined or empty.
     const fieldsToNullify: (keyof ServiceRecord)[] = ['customerSignatureReception', 'customerSignatureDelivery', 'technicianName'];
     fieldsToNullify.forEach(key => {
-        if (data[key] === undefined || data[key] === '') {
+        if (!data[key]) { // This checks for undefined, null, and empty string
             (data as any)[key] = null;
         }
     });

@@ -237,7 +237,14 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
     const driverDebt = driver && vehicle ? calculateDriverDebt(driver, placeholderRentalPayments, [vehicle]) : { totalDebt: 0, rentalDebt: 0, depositDebt: 0, manualDebt: 0 };
     
     const ServiceOrderContent = (
-      <div className="flex flex-col min-h-full">
+      <div className="flex flex-col min-h-full relative">
+        {service.status === 'Cancelado' && (
+          <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
+            <span className="text-red-500 text-7xl md:text-9xl font-black opacity-20 transform -rotate-12 select-none">
+              CANCELADO
+            </span>
+          </div>
+        )}
         <header className="mb-2 pb-2 border-b-2 border-black">
           <div className="flex justify-between items-start gap-2">
             <Image src={effectiveWorkshopInfo.logoUrl} alt={`${effectiveWorkshopInfo.name} Logo`} width={150} height={40} style={{ width: '150px', height: 'auto' }} data-ai-hint="workshop logo" unoptimized />
@@ -349,7 +356,7 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
             {service.serviceType !== 'Cambio de Aceite' && (
               <div className="border-2 border-black p-2 rounded-md flex flex-col justify-between items-center">
                 <h3 className="font-bold uppercase text-center text-sm">AUTORIZO SERVICIOS</h3>
-                <div className="flex-grow flex items-center justify-center w-full min-h-[60px]">
+                <div className="flex-grow flex items-center justify-center w-full min-h-[80px]">
                   {service.customerSignatureReception ? (
                       <div className="relative w-full h-full">
                           <Image src={normalizeDataUrl(service.customerSignatureReception)} alt="Firma del cliente" layout="fill" objectFit="contain" unoptimized />
@@ -375,22 +382,17 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
         
         <footer className="mt-auto pt-2 text-xs">
            <div className="grid grid-cols-2 gap-2 text-center mb-1">
-               <div className="flex flex-col justify-end relative min-h-[60px]">
-                    {service.status === 'Cancelado' && (
-                        <div className="absolute top-0 left-0 right-0 flex justify-center">
-                            <Badge variant="destructive" className="text-base font-bold">CANCELADO</Badge>
-                        </div>
-                    )}
+               <div className="flex flex-col justify-end relative min-h-[80px]">
                     <div className="absolute top-0 left-0 right-0 h-full flex items-center justify-center">
                         {service.serviceAdvisorSignatureDataUrl && (
-                            <Image src={normalizeDataUrl(service.serviceAdvisorSignatureDataUrl)} alt="Firma del asesor" width={100} height={60} style={{ objectFit: 'contain' }} unoptimized/>
+                            <Image src={normalizeDataUrl(service.serviceAdvisorSignatureDataUrl)} alt="Firma del asesor" width={120} height={80} style={{ objectFit: 'contain' }} unoptimized/>
                         )}
                     </div>
                     <div className="border-t-2 border-black pt-1 w-full text-center mt-auto">
                         <p className="font-bold text-[8px]">ASESOR: {service.serviceAdvisorName?.toUpperCase() || ''}</p>
                     </div>
                 </div>
-                <div className="flex flex-col justify-end min-h-[60px]">
+                <div className="flex flex-col justify-end min-h-[80px]">
                    <div className="h-full flex-grow flex flex-col items-center justify-center">
                        {service.customerSignatureDelivery ? (
                          <div className="relative w-full h-full">
