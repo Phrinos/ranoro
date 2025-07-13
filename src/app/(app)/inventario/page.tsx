@@ -41,6 +41,8 @@ function InventarioPageComponent() {
   const [isLoading, setIsLoading] = useState(true);
 
   const [isRegisterPurchaseOpen, setIsRegisterPurchaseOpen] = useState(false);
+  const [isItemDialogOpen, setIsItemDialogOpen] = useState(false);
+  const [editingItem, setEditingItem] = useState<Partial<InventoryItem> | null>(null);
 
   useEffect(() => {
     const unsubs: (() => void)[] = [];
@@ -54,6 +56,11 @@ function InventarioPageComponent() {
     }));
 
     return () => unsubs.forEach(unsub => unsub());
+  }, []);
+
+  const handleOpenItemDialog = useCallback(() => {
+    setEditingItem(null); // Ensure we're creating a new item
+    setIsItemDialogOpen(true);
   }, []);
 
   const handleSavePurchase = useCallback(async (data: PurchaseFormValues) => {
@@ -114,7 +121,15 @@ function InventarioPageComponent() {
     setIsRegisterPurchaseOpen(false);
   }, [toast, suppliers, inventoryItems]);
   
-  const handleInventoryItemCreated = useCallback(async (itemData: InventoryItemFormValues): Promise<InventoryItem> => {
+  const handleSaveItem = useCallback(async (itemData: InventoryItemFormValues) => {
+    // This is for new items from the "Productos" tab
+    await inventoryService.addItem(itemData);
+    toast({ title: "Producto Creado", description: `"${itemData.name}" ha sido agregado al inventario.` });
+    setIsItemDialogOpen(false); // Close dialog on success
+  }, [toast]);
+  
+  const handleInventoryItemCreatedFromPurchase = useCallback(async (itemData: InventoryItemFormValues): Promise<InventoryItem> => {
+      // This is for items created during a purchase registration
       const newItem = await inventoryService.addItem(itemData);
       toast({ title: "Producto Creado", description: `"${newItem.name}" ha sido agregado al inventario.` });
       return newItem;
@@ -148,7 +163,10 @@ function InventarioPageComponent() {
             />
         </TabsContent>
         <TabsContent value="productos">
-            <ProductosContent inventoryItems={inventoryItems} />
+            <ProductosContent 
+                inventoryItems={inventoryItems} 
+                onNewItem={handleOpenItemDialog}
+            />
         </TabsContent>
         <TabsContent value="categorias">
             <CategoriasContent categories={categories} inventoryItems={inventoryItems} />
@@ -167,8 +185,17 @@ function InventarioPageComponent() {
         suppliers={suppliers}
         inventoryItems={inventoryItems}
         onSave={handleSavePurchase}
-        onInventoryItemCreated={handleInventoryItemCreated}
+        onInventoryItemCreated={handleInventoryItemCreatedFromPurchase}
         categories={categories}
+      />
+
+      <InventoryItemDialog
+        open={isItemDialogOpen}
+        onOpenChange={setIsItemDialogOpen}
+        onSave={handleSaveItem}
+        item={editingItem}
+        categories={categories}
+        suppliers={suppliers}
       />
     </>
   );
