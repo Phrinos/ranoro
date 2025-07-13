@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React from 'react';
@@ -57,6 +58,7 @@ export const ServiceAppointmentCard = React.memo(({
     const isQuote = service.status === 'Cotizacion';
     const isScheduled = service.status === 'Agendado';
     const isWorkshop = service.status === 'En Taller';
+    const isCancelled = service.status === 'Cancelado';
 
     return (
         <Card className="shadow-sm overflow-hidden mb-4">
@@ -101,6 +103,7 @@ export const ServiceAppointmentCard = React.memo(({
                         </div>
                     </div>
                     <div className="p-4 flex flex-col justify-center items-center text-center border-t md:border-t-0 md:border-l w-full md:w-56 flex-shrink-0 space-y-2">
+                        {isCancelled && <Badge variant="destructive" className="mb-1 font-bold">CANCELADO</Badge>}
                         {!isQuote && !isDone && <Badge variant={appointmentStatus.variant} className="mb-1">{appointmentStatus.label}</Badge>}
                         <p className="text-xs text-muted-foreground">Asesor: {service.serviceAdvisorName || 'N/A'}</p>
                         <div className="flex justify-center items-center gap-1">
