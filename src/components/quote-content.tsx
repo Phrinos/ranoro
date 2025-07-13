@@ -45,13 +45,11 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
     const validityDays = 15; 
     const validityDate = isValid(quoteDate) ? format(addDays(quoteDate, validityDays), "dd 'de' MMMM 'de' yyyy", { locale: es }) : 'N/A';
     
-    // --- DEBT CALCULATION ---
     const driver: Driver | undefined = vehicle?.isFleetVehicle 
         ? placeholderDrivers.find(d => d.assignedVehicleId === vehicle.id) 
         : undefined;
 
     const driverDebt = driver && vehicle ? calculateDriverDebt(driver, placeholderRentalPayments, [vehicle]) : { totalDebt: 0, rentalDebt: 0, depositDebt: 0, manualDebt: 0 };
-    // --- END DEBT CALCULATION ---
 
 
     return (
@@ -69,7 +67,7 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
               height={50}
               style={{ objectFit: 'contain' }}
               data-ai-hint="workshop logo"
-              
+              crossOrigin="anonymous"
             />
             <h2 className="text-2xl sm:text-3xl font-semibold text-primary text-left sm:text-right w-full sm:w-auto">COTIZACIÓN</h2>
           </div>
@@ -123,6 +121,17 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
                 </ul>
             </div>
           )}
+
+           <section className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 text-xs">
+              <div className="border-2 border-black rounded-md overflow-hidden col-span-1">
+                 <h3 className="font-bold p-1 bg-gray-700 text-white text-xs text-center">CONDICIONES DEL VEHÍCULO</h3>
+                 <p className="whitespace-pre-wrap p-2 min-h-[50px] text-sm">{quote.vehicleConditions || 'No especificado.'}</p>
+              </div>
+              <div className="border-2 border-black rounded-md overflow-hidden col-span-1">
+                 <h3 className="font-bold p-1 bg-gray-700 text-white text-xs text-center">INVENTARIO DE PERTENENCIAS</h3>
+                 <p className="whitespace-pre-wrap p-2 min-h-[50px] text-sm">{quote.customerItems || 'No especificado.'}</p>
+              </div>
+            </section>
 
           <Card className="mt-4 mb-4 border-2 border-gray-200 overflow-hidden">
             <h3 className="font-semibold text-white bg-gray-700 p-2" style={{ fontSize: '14px' }}>TRABAJOS A REALIZAR (Precios con IVA)</h3>
@@ -194,7 +203,7 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
                                 src={normalizeDataUrl(quote.serviceAdvisorSignatureDataUrl)} 
                                 alt="Firma del asesor"
                                 style={{ maxHeight: '100%', maxWidth: '100%', objectFit: 'contain' }}
-                                
+                                crossOrigin="anonymous"
                             />
                         )}
                     </div>

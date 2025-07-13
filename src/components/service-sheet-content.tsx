@@ -203,7 +203,6 @@ const SafetyChecklistDisplay = ({
 
 interface ServiceSheetContentProps {
   service: ServiceRecord;
-  quote?: QuoteRecord | null;
   vehicle?: Vehicle;
   workshopInfo?: WorkshopInfo;
   onViewImage?: (url: string) => void;
@@ -215,7 +214,7 @@ interface ServiceSheetContentProps {
 }
 
 export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheetContentProps>(
-  ({ service, quote, vehicle, workshopInfo: workshopInfoProp, onViewImage, isPublicView, showSignReception, showSignDelivery, onSignClick, isSigning }, ref) => {
+  ({ service, vehicle, workshopInfo: workshopInfoProp, onViewImage, isPublicView, showSignReception, showSignDelivery, onSignClick, isSigning }, ref) => {
     const effectiveWorkshopInfo = { ...initialWorkshopInfo, ...workshopInfoProp };
     
     const serviceDateInput = service.serviceDate;
@@ -243,30 +242,27 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
     };
     const fuelColor = getFuelColorClass(fuelPercentage);
     
-    // --- DEBT CALCULATION ---
     const driver: Driver | undefined = vehicle?.isFleetVehicle 
         ? placeholderDrivers.find(d => d.assignedVehicleId === vehicle.id) 
         : undefined;
 
     const driverDebt = driver && vehicle ? calculateDriverDebt(driver, placeholderRentalPayments, [vehicle]) : { totalDebt: 0, rentalDebt: 0, depositDebt: 0, manualDebt: 0 };
-    // --- END DEBT CALCULATION ---
-
-    const showOrder = service.status !== 'Cotizacion' && service.status !== 'Agendado';
-    const showQuote = !!quote;
+    
+    const isQuoteOrAppointment = service.status === 'Cotizacion' || service.status === 'Agendado';
     const showChecklist = !!service.safetyInspection && Object.keys(service.safetyInspection).some(k => k !== 'inspectionNotes' && k !== 'technicianSignature' && (service.safetyInspection as any)[k]?.status !== 'na' && (service.safetyInspection as any)[k]?.status !== undefined);
     const showPhotoReport = !!service.photoReports && service.photoReports.length > 0 && service.photoReports.some(r => r.photos.length > 0);
     
     const tabs = [];
-    if (showQuote) tabs.push({ value: 'quote', label: 'Cotización' });
-    if (showOrder) tabs.push({ value: 'order', label: 'Orden de Servicio' });
+    if (isQuoteOrAppointment) {
+        tabs.push({ value: 'quote', label: 'Cotización' });
+    } else {
+        tabs.push({ value: 'order', label: 'Orden de Servicio' });
+    }
+
     if (showChecklist) tabs.push({ value: 'checklist', label: 'Revisión' });
     if (showPhotoReport) tabs.push({ value: 'photoreport', label: 'Reporte Fotográfico' });
     
-    let defaultTabValue = 'order';
-    if(service.status === 'Cotizacion' || service.status === 'Agendado') {
-        defaultTabValue = 'quote';
-    }
-
+    const defaultTabValue = isQuoteOrAppointment ? 'quote' : 'order';
 
     const ServiceOrderContent = (
       <div className="flex flex-col min-h-[10in]">
@@ -516,90 +512,75 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
         </div>
       </div>
     ) : null;
-    
-    // Default view with tabs for states other than Quote/Appointment in private view
-    if (service.status !== 'Cotizacion' && service.status !== 'Agendado') {
-        return (
-          <div ref={ref} data-format="letter" className="font-sans bg-white text-black text-sm">
-            {/* For Screen View */}
-            <div className="print:hidden p-0 sm:p-2 md:p-4 shadow-lg">
-              <Tabs defaultValue={defaultTabValue} className="w-full">
-                <TabsList className={cn('grid w-full', `grid-cols-${tabs.length || 1}`)}>
-                    {tabs.map(tab => <TabsTrigger key={tab.value} value={tab.value}>{tab.label}</TabsTrigger>)}
-                </TabsList>
-                
-                <TabsContent value="quote">
-                  {showQuote ? <QuoteContent quote={quote!} vehicle={vehicle} workshopInfo={effectiveWorkshopInfo} /> : null}
-                </TabsContent>
-                <TabsContent value="order" className="mt-4">{ServiceOrderContent}</TabsContent>
-                <TabsContent value="checklist" className="mt-4">
-                  {showChecklist ? <SafetyChecklistDisplay 
-                    inspection={service.safetyInspection!}
-                    workshopInfo={effectiveWorkshopInfo}
-                    service={service}
-                    vehicle={vehicle}
-                    onViewImage={onViewImage || (() => {})}
-                  /> : null}
-                </TabsContent>
-                <TabsContent value="photoreport" className="mt-4">
-                  {showPhotoReport ? PhotoReportContent : null}
-                </TabsContent>
-              </Tabs>
-            </div>
 
-            {/* For Print View */}
-            <div className="hidden print:block">
-              {showQuote && (
-                  <div className="p-4 md:p-8">
-                      <QuoteContent
-                          quote={quote!}
-                          vehicle={vehicle}
-                          workshopInfo={effectiveWorkshopInfo}
-                      />
-                  </div>
-              )}
-              {showOrder && (
-                  <div className={cn("p-4 md:p-8", showQuote && "break-before-page")}>
-                    {ServiceOrderContent}
-                  </div>
-              )}
-              {showChecklist && (
-                <>
-                  <div className="break-before-page" />
-                  <div className="p-4 md:p-8"><SafetyChecklistDisplay 
-                    inspection={service.safetyInspection!}
-                    workshopInfo={effectiveWorkshopInfo}
-                    service={service}
-                    vehicle={vehicle}
-                    onViewImage={onViewImage || (() => {})}
-                  /></div>
-                </>
-              )}
-              {showPhotoReport && (
-                <>
-                  <div className="break-before-page" />
-                  <div className="p-4 md:p-8">{PhotoReportContent}</div>
-                </>
-              )}
-            </div>
+    if (isQuoteOrAppointment) {
+      return (
+        <div ref={ref} data-format="letter" className="font-sans bg-white text-black text-sm">
+          <div className="p-0 sm:p-2 md:p-4 print:p-0">
+            <QuoteContent 
+              ref={null}
+              quote={service as QuoteRecord} 
+              vehicle={vehicle} 
+              workshopInfo={effectiveWorkshopInfo} 
+            />
           </div>
-        );
+        </div>
+      );
     }
     
-    // For Quote or Appointment status, always show the quote content directly.
     return (
-        <div ref={ref} data-format="letter" className="font-sans bg-white text-black text-sm">
-            <div className="p-0 sm:p-2 md:p-4 print:p-0">
-                {showQuote ? (
-                    <QuoteContent 
-                        ref={null}
-                        quote={quote!} 
-                        vehicle={vehicle} 
-                        workshopInfo={effectiveWorkshopInfo} 
-                    />
-                ) : <p className="text-center p-8">No hay información de cotización para mostrar.</p>}
-            </div>
+      <div ref={ref} data-format="letter" className="font-sans bg-white text-black text-sm">
+        {/* For Screen View */}
+        <div className="print:hidden p-0 sm:p-2 md:p-4 shadow-lg">
+          <Tabs defaultValue={defaultTabValue} className="w-full">
+            <TabsList className={cn('grid w-full', `grid-cols-${tabs.length || 1}`)}>
+                {tabs.map(tab => <TabsTrigger key={tab.value} value={tab.value}>{tab.label}</TabsTrigger>)}
+            </TabsList>
+            
+            <TabsContent value="order" className="mt-4">{ServiceOrderContent}</TabsContent>
+            
+            <TabsContent value="checklist" className="mt-4">
+              {showChecklist ? <SafetyChecklistDisplay 
+                inspection={service.safetyInspection!}
+                workshopInfo={effectiveWorkshopInfo}
+                service={service}
+                vehicle={vehicle}
+                onViewImage={onViewImage || (() => {})}
+              /> : null}
+            </TabsContent>
+             <TabsContent value="photoreport" className="mt-4">
+               {showPhotoReport ? PhotoReportContent : null}
+            </TabsContent>
+          </Tabs>
         </div>
+
+        {/* For Print View */}
+        <div className="hidden print:block">
+          {showOrder && (
+              <div className={cn("p-4 md:p-8")}>
+                {ServiceOrderContent}
+              </div>
+          )}
+          {showChecklist && (
+            <>
+              <div className="break-before-page" />
+              <div className="p-4 md:p-8"><SafetyChecklistDisplay 
+                inspection={service.safetyInspection!}
+                workshopInfo={effectiveWorkshopInfo}
+                service={service}
+                vehicle={vehicle}
+                onViewImage={onViewImage || (() => {})}
+              /></div>
+            </>
+          )}
+          {showPhotoReport && (
+             <>
+              <div className="break-before-page" />
+              <div className="p-4 md:p-8">{PhotoReportContent}</div>
+            </>
+          )}
+        </div>
+      </div>
     );
   }
 );
