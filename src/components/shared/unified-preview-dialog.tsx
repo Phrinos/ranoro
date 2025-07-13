@@ -3,10 +3,9 @@
 "use client";
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
 import { Button } from '@/components/ui/button';
-import { Printer, MessageSquare, Download, Loader2, Eye, Wrench, CheckCircle, ShieldCheck, Camera } from 'lucide-react';
-import type { ServiceRecord, Vehicle, QuoteRecord, WorkshopInfo } from '@/types';
+import { Printer, MessageSquare, Download, Loader2, Eye, Wrench, ShieldCheck, Camera } from 'lucide-react';
+import type { ServiceRecord, Vehicle, WorkshopInfo } from '@/types';
 import { ServiceSheetContent } from '@/components/service-sheet-content';
 import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../ui/dialog';
@@ -82,7 +81,7 @@ export function UnifiedPreviewDialog({ open, onOpenChange, service, vehicle: ini
 
   const handleShareService = useCallback(() => {
     if (!service || !service.publicId) {
-      toast({ title: "Enlace no disponible", description: 'No se ha podido generar el enlace público.', variant: "default" });
+      toast({ title: "Enlace no disponible", description: 'Asegúrese de que el servicio se haya guardado para generar un enlace.', variant: "default" });
       return;
     }
     if (!vehicle) {
@@ -91,22 +90,23 @@ export function UnifiedPreviewDialog({ open, onOpenChange, service, vehicle: ini
     }
     const shareUrl = `${window.location.origin}/s/${service.publicId}`;
     
-    const message = `${shareUrl}
+    const message = `Hola ${vehicle.ownerName || 'Cliente'}, gracias por confiar en ${workshopInfo.name || 'nuestro taller'}. 
+Te compartimos los detalles del servicio para tu vehículo ${vehicle.make} ${vehicle.model} (${vehicle.licensePlate}).
 
-Hola ${vehicle.ownerName || 'Cliente'}, gracias por confiar en Ranoro. Te proporcionamos los detalles del servicio de tu vehículo ${vehicle.make} ${vehicle.model} ${vehicle.year} placas ${vehicle.licensePlate}.
+➡️ Haz clic aquí para ver y firmar: ${shareUrl}
 
-• Haz clic en el enlace y encontrarás:
-  1️⃣ La cotización detallada.
-  2️⃣ La hoja de servicio para que firmes la entrega y recepción, además de las actualizaciones de estatus.
-  3️⃣ Las evidencias fotográficas cuando estén listas.
+En el enlace podrás:
+✅ Revisar y aprobar la cotización.
+✅ Ver la orden de servicio.
+✅ Consultar el reporte fotográfico.
+✅ Firmar de recibido y de conformidad.
 
-¡Cualquier duda, escríbenos!`;
-
+¡Cualquier duda, estamos a tus órdenes!`;
 
     navigator.clipboard.writeText(message).then(() => {
       toast({ title: 'Mensaje Copiado', description: 'El mensaje para WhatsApp ha sido copiado a tu portapapeles.' });
     });
-  }, [service, vehicle, toast]);
+  }, [service, vehicle, toast, workshopInfo]);
   
   const handleViewImage = (url: string) => {
     setViewingImageUrl(url);
@@ -118,27 +118,18 @@ Hola ${vehicle.ownerName || 'Cliente'}, gracias por confiar en Ranoro. Te propor
     window.open(viewingImageUrl, '_blank')?.focus();
   };
   
-   const handlePrint = () => {
+  const handlePrint = () => {
     const printableArea = document.getElementById('printable-area-preview');
     if (printableArea) {
       const printWindow = window.open('', '_blank');
       if (printWindow) {
-        // You might need to add stylesheets here if they are not inline
-        printWindow.document.write('<html><head><title>Imprimir</title>');
-        const styles = Array.from(document.styleSheets)
-            .map(s => `<link rel="stylesheet" href="${s.href}">`)
-            .join('');
-        printWindow.document.write(styles);
-        printWindow.document.write('<style>@media print { body { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; } .printable-content { margin: 0; padding: 0; } }</style></head><body>');
+        const styles = Array.from(document.styleSheets).map(s => `<link rel="stylesheet" href="${s.href}">`).join('');
+        printWindow.document.write(`<html><head><title>Imprimir</title>${styles}<style>@media print { body { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; } }</style></head><body>`);
         printWindow.document.write(printableArea.innerHTML);
         printWindow.document.write('</body></html>');
-
         printWindow.document.close();
         printWindow.focus();
-        setTimeout(() => {
-            printWindow.print();
-            printWindow.close();
-        }, 500); // Delay to allow styles to load
+        setTimeout(() => { printWindow.print(); printWindow.close(); }, 500);
       }
     }
   };
@@ -152,7 +143,7 @@ Hola ${vehicle.ownerName || 'Cliente'}, gracias por confiar en Ranoro. Te propor
             <DialogTitle>Vista Previa Unificada</DialogTitle>
             <DialogDescription>Contenido del documento listo para imprimir o compartir.</DialogDescription>
              <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full pt-2">
-                <TabsList className={cn('grid w-full', gridColsClass)}>
+                <TabsList className={`grid w-full ${gridColsClass}`}>
                     {tabs.map(tab => <TabsTrigger key={tab.value} value={tab.value} className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">{tab.label}</TabsTrigger>)}
                 </TabsList>
             </Tabs>
@@ -186,22 +177,11 @@ Hola ${vehicle.ownerName || 'Cliente'}, gracias por confiar en Ranoro. Te propor
 
       <Dialog open={isImageViewerOpen} onOpenChange={setIsImageViewerOpen}>
         <DialogContent className="max-w-4xl p-2">
-          <DialogHeader className="print:hidden">
-            <DialogTitle>Vista Previa de Imagen</DialogTitle>
-            <DialogDescription>
-              Visualizando la imagen de evidencia. Puede descargarla si lo necesita.
-            </DialogDescription>
-          </DialogHeader>
+          <DialogHeader className="print:hidden"><DialogTitle>Vista Previa de Imagen</DialogTitle></DialogHeader>
           <div className="relative aspect-video w-full">
-            {viewingImageUrl && (
-              <Image src={viewingImageUrl} alt="Vista ampliada de evidencia" fill className="object-contain" crossOrigin="anonymous" />
-            )}
+            {viewingImageUrl && (<Image src={viewingImageUrl} alt="Vista ampliada de evidencia" fill className="object-contain" crossOrigin="anonymous" />)}
           </div>
-          <DialogFooter className="mt-2 print:hidden">
-            <Button onClick={handleDownloadImage}>
-              <Download className="mr-2 h-4 w-4"/>Descargar Imagen
-            </Button>
-          </DialogFooter>
+          <DialogFooter className="mt-2 print:hidden"><Button onClick={handleDownloadImage}><Download className="mr-2 h-4 w-4"/>Descargar</Button></DialogFooter>
         </DialogContent>
       </Dialog>
     </>

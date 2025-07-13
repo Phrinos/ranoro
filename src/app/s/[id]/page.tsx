@@ -1,21 +1,23 @@
 
+
 "use client";
 
-import { useEffect, useState, useRef, useCallback } from 'react';
-import { useParams } from 'next/navigation';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useParams, useRouter } from 'next/navigation';
 import { ServiceSheetContent } from '@/components/service-sheet-content';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import type { ServiceRecord, Vehicle, QuoteRecord, WorkshopInfo } from '@/types';
-import { ShieldAlert, Printer, Loader2, Signature, Eye, Download } from 'lucide-react';
+import { ShieldAlert, Printer, Loader2, Signature, Eye, Download, MessageSquare, Check, Wrench, ShieldCheck, Camera } from 'lucide-react';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
 import { SignatureDialog } from '@/app/(app)/servicios/components/signature-dialog';
-import { doc, setDoc, onSnapshot, getDoc } from 'firebase/firestore'; 
+import { doc, setDoc, onSnapshot, getDoc, updateDoc } from 'firebase/firestore'; 
 import { db } from '@/lib/firebasePublic.js';
-import Image from "next/legacy/image";
+import Image from "next/image";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { QuoteContent } from '@/components/quote-content';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 
 export default function PublicServiceSheetPage() {
@@ -25,7 +27,6 @@ export default function PublicServiceSheetPage() {
   const serviceSheetRef = useRef<HTMLDivElement>(null);
 
   const [service, setService] = useState<ServiceRecord | null | undefined>(undefined);
-  const [quote, setQuote] = useState<QuoteRecord | null | undefined>(undefined);
   const [vehicle, setVehicle] = useState<Vehicle | null | undefined>(undefined);
   const [workshopInfo, setWorkshopInfo] = useState<WorkshopInfo | null | undefined>(undefined);
   const [error, setError] = useState<string | null>(null);
@@ -35,6 +36,26 @@ export default function PublicServiceSheetPage() {
 
   const [isImageViewerOpen, setIsImageViewerOpen] = useState(false);
   const [viewingImageUrl, setViewingImageUrl] = useState<string | null>(null);
+  
+  const showOrder = service?.status !== 'Cotizacion' && service?.status !== 'Agendado';
+  const showQuote = !!(service?.status === 'Cotizacion' || service?.status === 'Agendado');
+  const showChecklist = !!service?.safetyInspection && Object.keys(service.safetyInspection).some(k => k !== 'inspectionNotes' && k !== 'technicianSignature' && (service?.safetyInspection as any)[k]?.status !== 'na' && (service?.safetyInspection as any)[k]?.status !== undefined);
+  const showPhotoReport = !!service?.photoReports && service.photoReports.length > 0 && service.photoReports.some(r => r.photos.length > 0);
+  
+  const tabs = [];
+  if (showQuote) tabs.push({ value: 'quote', label: 'Cotización', icon: Eye });
+  if (showOrder) tabs.push({ value: 'order', label: 'Orden', icon: Wrench });
+  if (showChecklist) tabs.push({ value: 'checklist', label: 'Revisión', icon: ShieldCheck });
+  if (showPhotoReport) tabs.push({ value: 'photoreport', label: 'Fotos', icon: Camera });
+    
+  const defaultTabValue = service?.status === 'Cotizacion' || service?.status === 'Agendado' ? 'quote' : 'order';
+  const [activeTab, setActiveTab] = useState(defaultTabValue);
+
+  const gridColsClass = 
+    tabs.length === 4 ? 'grid-cols-4' :
+    tabs.length === 3 ? 'grid-cols-3' :
+    tabs.length === 2 ? 'grid-cols-2' :
+    'grid-cols-1';
 
   useEffect(() => {
     if (!publicId || !db) {
@@ -43,82 +64,25 @@ export default function PublicServiceSheetPage() {
       return;
     }
     
-    // Attempt to fetch from publicServices first
     const serviceRef = doc(db, 'publicServices', publicId);
     
-    const unsubscribe = onSnapshot(serviceRef, async (docSnap) => {
+    const unsubscribe = onSnapshot(serviceRef, (docSnap) => {
       if (docSnap.exists()) {
         const data = docSnap.data();
-        const processDates = (obj: any) => {
-          for (const key in obj) {
-            if (obj[key] && typeof obj[key].toDate === 'function') {
-              obj[key] = obj[key].toDate().toISOString();
-            } else if (typeof obj[key] === 'object' && obj[key] !== null) {
-              processDates(obj[key]);
-            }
-          }
-        };
-        processDates(data);
-
-        const serviceData = data as ServiceRecord & { vehicle?: Vehicle };
+        const serviceData = data as ServiceRecord;
         setService(serviceData);
         setVehicle(serviceData.vehicle || null);
         setWorkshopInfo(serviceData.workshopInfo || null);
         setError(null);
-        
-        // If it's a service, check if it has an associated quote
-        if(serviceData.status !== 'Cotizacion'){
-           try {
-              const quoteRef = doc(db, 'publicQuotes', serviceData.id);
-              const quoteSnap = await getDoc(quoteRef);
-              if (quoteSnap.exists()) {
-                 const quoteData = quoteSnap.data();
-                 processDates(quoteData);
-                 setQuote(quoteData as QuoteRecord);
-              } else {
-                 setQuote(null);
-              }
-           } catch(quoteError) {
-              console.error("Error fetching associated quote:", quoteError);
-              setQuote(null);
-           }
-        } else {
-          setQuote(serviceData); // If the service itself is a quote
-        }
-
+        setActiveTab(serviceData.status === 'Cotizacion' || serviceData.status === 'Agendado' ? 'quote' : 'order');
       } else {
-        // If not found in services, try quotes (for backward compatibility)
-        const quoteRef = doc(db, 'publicQuotes', publicId);
-        const quoteSnap = await getDoc(quoteRef);
-        if (quoteSnap.exists()) {
-            const data = quoteSnap.data();
-            const processDates = (obj: any) => {
-              for (const key in obj) {
-                if (obj[key] && typeof obj[key].toDate === 'function') {
-                  obj[key] = obj[key].toDate().toISOString();
-                } else if (typeof obj[key] === 'object' && obj[key] !== null) {
-                  processDates(obj[key]);
-                }
-              }
-            };
-            processDates(data);
-            const quoteData = data as QuoteRecord & { vehicle?: Vehicle };
-            setService(quoteData); // Treat it as a service record for the UI
-            setQuote(quoteData);
-            setVehicle(quoteData.vehicle || null);
-            setWorkshopInfo(quoteData.workshopInfo || null);
-            setError(null);
-        } else {
-            setError(`El documento con ID "${publicId}" no se encontró. Pudo haber sido eliminado o el enlace es incorrecto.`);
-            setService(null);
-            setQuote(null);
-        }
+        setError(`El documento con ID "${publicId}" no se encontró. Pudo haber sido eliminado o el enlace es incorrecto.`);
+        setService(null);
       }
     }, (err) => {
       console.error("Error with real-time listener:", err);
       setError("Ocurrió un error al intentar cargar el documento desde la base de datos. Por favor, intente más tarde.");
       setService(null);
-      setQuote(null);
     });
 
     return () => unsubscribe();
@@ -134,52 +98,21 @@ export default function PublicServiceSheetPage() {
       window.open(viewingImageUrl, '_blank')?.focus();
     } catch (err) {
       console.error("Error opening image:", err);
-      toast({
-        title: "Error al Abrir",
-        description: "No se pudo abrir la imagen en una nueva pestaña.",
-        variant: "destructive"
-      });
+      toast({ title: "Error al Abrir", variant: "destructive" });
     }
   }, [viewingImageUrl, toast]);
 
   const handleSaveSignature = async (signatureDataUrl: string) => {
-    if (!signatureType || !publicId) return;
+    if (!signatureType || !publicId || !db) return;
     setIsSigning(true);
     try {
-      if (!db) {
-        throw new Error("La base de datos no está inicializada.");
-      }
-      
       const fieldToUpdate = signatureType === 'reception' ? 'customerSignatureReception' : 'customerSignatureDelivery';
-      
-      // Optimistic UI update
-      setService(prevService => {
-          if (!prevService) return null;
-          return {
-              ...prevService,
-              [fieldToUpdate]: signatureDataUrl
-          };
-      });
-      setSignatureType(null);
-
-      // Save to Firestore
       const serviceRef = doc(db, 'publicServices', publicId);
-      await setDoc(serviceRef, { [fieldToUpdate]: signatureDataUrl }, { merge: true });
-
+      await updateDoc(serviceRef, { [fieldToUpdate]: signatureDataUrl });
+      setSignatureType(null); // Close dialog
       toast({ title: "Firma Guardada", description: "Su firma ha sido guardada exitosamente." });
-      
     } catch (error) {
-      toast({ title: "Error al Guardar", description: `No se pudo guardar la firma. ${error instanceof Error ? error.message : ''}`, variant: "destructive" });
-      // Revert optimistic update on error
-      setService(prevService => {
-          if (!prevService) return null;
-          const fieldToRevert = signatureType === 'reception' ? 'customerSignatureReception' : 'customerSignatureDelivery';
-          return {
-              ...prevService,
-              [fieldToRevert]: undefined
-          };
-      });
-
+      toast({ title: "Error al Guardar", variant: "destructive" });
     } finally {
       setIsSigning(false);
     }
@@ -230,29 +163,32 @@ export default function PublicServiceSheetPage() {
   return (
     <div className="container mx-auto">
       <Card className="max-w-4xl mx-auto mb-6 print:hidden">
-        <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div>
-            <CardTitle>Vista Pública: {service.status === 'Cotizacion' ? 'Cotización' : 'Orden de Servicio'} #{service.id}</CardTitle>
-            <CardDescription>Revise los detalles y firme digitalmente si es necesario.</CardDescription>
-          </div>
-          <div className="flex flex-wrap gap-2 justify-end">
-            <Button variant="outline" onClick={() => window.print()}><Printer className="mr-2 h-4 w-4"/> Imprimir</Button>
-          </div>
+        <CardHeader>
+          <CardTitle>Vista Pública: {service.status === 'Cotizacion' ? 'Cotización' : 'Orden de Servicio'} #{service.id}</CardTitle>
+          <CardDescription>Revise los detalles y firme digitalmente si es necesario.</CardDescription>
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full pt-2">
+                <TabsList className={`grid w-full ${gridColsClass}`}>
+                    {tabs.map(tab => <TabsTrigger key={tab.value} value={tab.value} className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">{tab.label}</TabsTrigger>)}
+                </TabsList>
+            </Tabs>
         </CardHeader>
+        <CardContent className="flex justify-end">
+            <Button variant="outline" onClick={() => window.print()}><Printer className="mr-2 h-4 w-4"/> Imprimir</Button>
+        </CardContent>
       </Card>
-      <div className="bg-white mx-auto shadow-2xl printable-content max-w-4xl">
-        <ServiceSheetContent 
-          ref={serviceSheetRef} 
+      <div id="printable-area-preview" className="bg-white mx-auto shadow-2xl printable-content max-w-4xl">
+        <ServiceSheetContent
+          ref={serviceSheetRef}
           service={service}
-          quote={quote || undefined}
-          vehicle={vehicle} 
-          workshopInfo={workshopInfo || undefined} 
+          vehicle={vehicle}
+          workshopInfo={workshopInfo || undefined}
           onViewImage={handleViewImage}
           isPublicView={true}
           showSignReception={showSignReception}
           showSignDelivery={showSignDelivery}
           onSignClick={handleOpenSignatureDialog}
           isSigning={isSigning}
+          activeTab={activeTab}
         />
       </div>
       <SignatureDialog
@@ -262,22 +198,11 @@ export default function PublicServiceSheetPage() {
       />
       <Dialog open={isImageViewerOpen} onOpenChange={setIsImageViewerOpen}>
         <DialogContent className="max-w-4xl p-2">
-            <DialogHeader className="print:hidden">
-              <DialogTitle>Vista Previa de Imagen</DialogTitle>
-              <DialogDescription>
-                Visualizando imagen de evidencia. Puede descargar una copia.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="relative aspect-video w-full">
-                {viewingImageUrl && (
-                    <Image src={viewingImageUrl} alt="Vista ampliada de evidencia" fill className="object-contain" crossOrigin="anonymous" />
-                )}
-            </div>
-            <DialogFooter className="mt-2 print:hidden">
-                <Button onClick={handleDownloadImage}>
-                    <Download className="mr-2 h-4 w-4"/>Descargar Imagen
-                </Button>
-            </DialogFooter>
+          <DialogHeader className="print:hidden"><DialogTitle>Vista Previa de Imagen</DialogTitle></DialogHeader>
+          <div className="relative aspect-video w-full">
+            {viewingImageUrl && (<Image src={viewingImageUrl} alt="Vista ampliada de evidencia" fill className="object-contain" crossOrigin="anonymous" />)}
+          </div>
+          <DialogFooter className="mt-2 print:hidden"><Button onClick={handleDownloadImage}><Download className="mr-2 h-4 w-4"/>Descargar</Button></DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

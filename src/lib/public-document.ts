@@ -1,11 +1,16 @@
 
 
-import { sanitizeObjectForFirestore } from './utils';
+import { db } from './firebasePublic';
+import { doc, setDoc } from 'firebase/firestore';
+import type { ServiceRecord, QuoteRecord, Vehicle, WorkshopInfo, PublicOwnerReport } from '@/types';
+import { cleanObjectForFirestore } from './forms';
 
-type DocumentData = {
-  id: string;
-  publicId: string;
-  [key: string]: any;
+
+type DocumentData = Partial<ServiceRecord> & {
+    id: string;
+    publicId: string;
+    vehicle?: Vehicle;
+    workshopInfo?: WorkshopInfo;
 };
 
 type Result = {
@@ -14,19 +19,51 @@ type Result = {
 };
 
 /**
- * Saves a document to a public collection.
- * In local mode, this function does nothing as there is no public Firestore instance.
- * It returns a successful promise to avoid breaking the application flow.
+ * Saves a document to a public collection in Firestore.
+ * This function is designed to be called from a server environment.
+ * It sanitizes the data before saving.
  */
 export const savePublicDocument = async (
   type: 'service' | 'quote' | 'ownerReport',
-  data: DocumentData,
-  vehicle: any,
-  workshopInfo: any
+  data: any,
+  vehicle?: Vehicle,
+  workshopInfo?: WorkshopInfo,
 ): Promise<Result> => {
-  console.log(`[LOCAL MODE] Simulating save of public document: type=${type}, id=${data.publicId}`);
-  // In a real scenario with a public-facing database, this is where you would
-  // write to a separate, non-authenticated Firestore instance.
-  // For local-only mode, we just return success.
-  return { success: true };
+  if (!db) {
+    return { success: false, error: 'Public Firestore is not initialized.' };
+  }
+
+  try {
+    const docId = data.publicId || data.id; // Use publicId if available, fallback to main id
+    let collectionName = '';
+    let publicData: any = {};
+
+    switch (type) {
+      case 'service':
+      case 'quote':
+        collectionName = 'publicServices';
+        publicData = {
+          ...data,
+          vehicle, // Embed vehicle data for public access
+          workshopInfo, // Embed workshop info
+        };
+        break;
+      case 'ownerReport':
+         collectionName = 'publicOwnerReports';
+         publicData = data;
+         break;
+      default:
+        return { success: false, error: 'Invalid document type specified.' };
+    }
+
+    const cleanedPublicData = cleanObjectForFirestore(publicData);
+    
+    const publicDocRef = doc(db, collectionName, docId);
+    await setDoc(publicDocRef, cleanedPublicData, { merge: true });
+    
+    return { success: true };
+  } catch (error) {
+    console.error(`Error saving public document (type: ${type}, id: ${data.id}):`, error);
+    return { success: false, error: error instanceof Error ? error.message : 'An unknown error occurred.' };
+  }
 };

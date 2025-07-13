@@ -15,13 +15,14 @@ import {
   deleteDoc,
 } from 'firebase/firestore';
 import { db } from '../firebaseClient';
-import type { ServiceRecord, QuoteRecord, SaleReceipt, Vehicle, CashDrawerTransaction, InitialCashBalance, InventoryItem, RentalPayment, VehicleExpense, OwnerWithdrawal } from "@/types";
+import type { ServiceRecord, QuoteRecord, SaleReceipt, Vehicle, CashDrawerTransaction, InitialCashBalance, InventoryItem, RentalPayment, VehicleExpense, OwnerWithdrawal, WorkshopInfo } from "@/types";
 import { savePublicDocument } from '@/lib/public-document';
 import { inventoryService } from './inventory.service';
 import { nanoid } from 'nanoid';
 import type { ExtractedService } from '@/ai/flows/data-migration-flow';
 import { format, parse, isValid, startOfDay, isSameDay } from 'date-fns';
 import { personnelService } from './personnel.service';
+import { cleanObjectForFirestore } from '@/lib/forms';
 
 
 // --- Services ---
@@ -55,24 +56,35 @@ const getQuoteById = async (id: string): Promise<QuoteRecord | null> => {
             return { id: docSnap.id, ...data } as QuoteRecord;
         }
     }
-    // A service might have been converted from a quote. For now, we assume quote and service have same ID.
-    // If a service with status != 'Cotizacion' is found, we can decide if we want to return it as a "source quote".
-    // For now, only return if the status is explicitly 'Cotizacion'.
     return null;
 };
 
 const saveService = async (data: Partial<ServiceRecord>): Promise<ServiceRecord> => {
     if (!db) throw new Error("Database not initialized.");
     
+    const isNew = !data.id;
     const docId = data.id || nanoid();
     const docRef = doc(db, 'serviceRecords', docId);
-    
-    // Create a clean data object to avoid Firestore errors with undefined values
-    const cleanedData = Object.fromEntries(
-        Object.entries(data).filter(([_, v]) => v !== undefined)
-    );
 
-    await setDoc(docRef, { ...cleanedData, id: docId }, { merge: true });
+    // Ensure a public ID exists for sharing
+    if (!data.publicId) {
+        data.publicId = nanoid(12);
+    }
+    
+    const cleanedData = cleanObjectForFirestore(data);
+
+    if (isNew) {
+      await setDoc(docRef, { ...cleanedData, id: docId });
+    } else {
+      await updateDoc(docRef, cleanedData);
+    }
+    
+    // Also save/update the public document
+    const vehicle = data.vehicleId ? await inventoryService.getVehicleById(data.vehicleId) : undefined;
+    const workshopInfoString = typeof window !== 'undefined' ? localStorage.getItem('workshopTicketInfo') : null;
+    const workshopInfo = workshopInfoString ? JSON.parse(workshopInfoString) as WorkshopInfo : undefined;
+
+    await savePublicDocument('service', { ...cleanedData, id: docId }, vehicle, workshopInfo);
 
     const newDocSnap = await getDoc(docRef);
     if (!newDocSnap.exists()) {
@@ -96,16 +108,28 @@ const addService = async (data: Partial<ServiceRecord>): Promise<ServiceRecord> 
 const cancelService = async (serviceId: string, reason: string): Promise<void> => {
     if(!db) throw new Error("Database not connected");
     const serviceRef = doc(db, "serviceRecords", serviceId);
-    await updateDoc(serviceRef, {
-        status: 'Cancelado',
-        cancellationReason: reason,
-    });
+    const data = { status: 'Cancelado', cancellationReason: reason };
+    await updateDoc(serviceRef, data);
+    
+    const serviceDoc = await getDoc(serviceRef);
+    const publicId = serviceDoc.data()?.publicId;
+    if (publicId) {
+        await updateDoc(doc(db, 'publicServices', publicId), data);
+    }
 };
 
 const deleteService = async (serviceId: string): Promise<void> => {
     if(!db) throw new Error("Database not connected");
     const serviceRef = doc(db, "serviceRecords", serviceId);
+    
+    const serviceDoc = await getDoc(serviceRef);
+    const publicId = serviceDoc.data()?.publicId;
+
     await deleteDoc(serviceRef);
+
+    if (publicId) {
+        await deleteDoc(doc(db, 'publicServices', publicId));
+    }
 };
 
 
@@ -119,6 +143,11 @@ const completeService = async (service: ServiceRecord, paymentDetails: { payment
     };
     
     batch.update(serviceRef, updatedServiceData);
+    
+    if (service.publicId) {
+        const publicDocRef = doc(db, 'publicServices', service.publicId);
+        batch.update(publicDocRef, updatedServiceData);
+    }
 };
 
 const saveMigratedServices = async (services: ExtractedService[]): Promise<void> => {
@@ -214,7 +243,7 @@ const registerSale = async (saleData: Omit<SaleReceipt, 'id' | 'saleDate'>, inve
             type: 'Entrada',
             amount: totalAmount,
             concept: `Venta POS #${newSaleRef.id.slice(0, 6)}`,
-            userId: 'system', // Replace with actual user ID
+            userId: 'system',
             userName: 'Sistema',
         });
     }
@@ -363,6 +392,4 @@ export const operationsService = {
     addVehicleExpense,
     addOwnerWithdrawal,
 };
-
-
 
