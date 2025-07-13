@@ -32,6 +32,18 @@ const handleAiError = (error: any, toast: any, context: string): string => {
     return message;
 };
 
+// Helper function to safely parse a date that might be a string or a Date object
+const safeParseISO = (date: string | Date | undefined): Date => {
+  if (!date) return new Date(0); // Return an invalid date if input is null/undefined
+  if (date instanceof Date) return date;
+  if (typeof date === 'string') {
+    const parsed = parseISO(date);
+    return parsed;
+  }
+  return new Date(0); // Return an invalid date for other types
+};
+
+
 function AgendaPageComponent() {
   const { toast } = useToast();
   
@@ -79,8 +91,8 @@ function AgendaPageComponent() {
         setCapacityError(null);
         try {
           const servicesForToday = allServices.filter(s => {
-            if (!s.serviceDate || typeof s.serviceDate !== 'string') return false;
-            return isValid(parseISO(s.serviceDate)) && isToday(parseISO(s.serviceDate)) && s.status !== 'Completado' && s.status !== 'Cancelado';
+            const serviceDay = safeParseISO(s.serviceDate);
+            return isValid(serviceDay) && isToday(serviceDay) && s.status !== 'Completado' && s.status !== 'Cancelado';
           });
           
           if (servicesForToday.length === 0) {
@@ -109,8 +121,16 @@ function AgendaPageComponent() {
     if (isLoading) return { scheduledServices: [], todayServices: [], tomorrowServices: [] };
     const scheduled = allServices.filter(s => s.status === 'Agendado' || (s.status === 'En Taller' && !s.deliveryDateTime));
     const today = new Date();
-    const todayS = scheduled.filter(s => s.serviceDate && isValid(parseISO(s.serviceDate)) && isToday(parseISO(s.serviceDate))).sort((a, b) => compareAsc(parseISO(a.serviceDate!), parseISO(b.serviceDate!)));
-    const tomorrowS = scheduled.filter(s => s.serviceDate && isValid(parseISO(s.serviceDate)) && isTomorrow(parseISO(s.serviceDate))).sort((a, b) => compareAsc(parseISO(a.serviceDate!), parseISO(b.serviceDate!)));
+    const todayS = scheduled.filter(s => {
+        const serviceDay = safeParseISO(s.serviceDate);
+        return isValid(serviceDay) && isToday(serviceDay);
+    }).sort((a, b) => compareAsc(safeParseISO(a.serviceDate), safeParseISO(b.serviceDate)));
+
+    const tomorrowS = scheduled.filter(s => {
+        const serviceDay = safeParseISO(s.serviceDate);
+        return isValid(serviceDay) && isTomorrow(serviceDay);
+    }).sort((a, b) => compareAsc(safeParseISO(a.serviceDate), safeParseISO(b.serviceDate)));
+
     return { scheduledServices: scheduled, todayServices: todayS, tomorrowServices: tomorrowS };
   }, [allServices, isLoading]);
 
