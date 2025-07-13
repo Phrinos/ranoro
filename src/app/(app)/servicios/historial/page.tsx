@@ -202,6 +202,7 @@ function HistorialServiciosPageComponent() {
         toast({ title: "Error", description: "No se pudo completar el servicio.", variant: "destructive"});
       } finally {
         setIsCompleteDialogOpen(false);
+        setIsEditDialogOpen(false); // Also close the main edit dialog
       }
     },
     [toast]
@@ -356,6 +357,7 @@ function HistorialServiciosPageComponent() {
           onCancelService={handleCancelService}
           mode="service"
           onSave={handleSaveService}
+          onComplete={handleConfirmCompletion}
         />
       )}
 
@@ -384,12 +386,14 @@ function HistorialServiciosPageComponent() {
             title="Ticket de Servicio"
             dialogContentClassName="sm:max-w-md"
             footerActions={<>
-                <Button variant="outline" onClick={handleCopyAsImage} className="w-full sm:w-auto">
-                    <Copy className="mr-2 h-4 w-4"/> Copiar Imagen
-                </Button>
-                <Button onClick={() => window.print()} className="w-full sm:w-auto">
-                    <Printer className="mr-2 h-4 w-4"/>Imprimir
-                </Button>
+                <div className="flex flex-col sm:flex-row gap-2">
+                    <Button variant="outline" onClick={handleCopyAsImage} className="w-full sm:w-auto">
+                        <Copy className="mr-2 h-4 w-4"/> Copiar Imagen
+                    </Button>
+                    <Button onClick={() => window.print()} className="w-full sm:w-auto">
+                        <Printer className="mr-2 h-4 w-4"/>Imprimir
+                    </Button>
+                </div>
             </>}
         >
           <TicketContent
