@@ -1,3 +1,4 @@
+
 // src/hooks/use-service-form-hooks.ts
 
 import { useEffect, useMemo } from 'react';
@@ -35,22 +36,6 @@ export function useServiceTotals(form: UseFormReturn<ServiceFormValues>) {
   }, [watchedItems]);
 }
 
-/**
- * Custom hook to watch the service status and trigger a callback on change.
- * @param form - The react-hook-form instance.
- * @param onStatusChange - Callback function to execute when status changes.
- */
-export function useServiceStatusWatcher(
-  form: UseFormReturn<ServiceFormValues>,
-  onStatusChange?: (status?: ServiceFormValues['status']) => void
-) {
-  const watchedStatus = useWatch({ control: form.control, name: 'status' });
-
-  useEffect(() => {
-    onStatusChange?.(watchedStatus);
-  }, [watchedStatus, onStatusChange]);
-}
-
 interface InitFormOptions {
     initData?: ServiceRecord | Partial<QuoteRecord> | null;
     serviceTypes: ServiceTypeRecord[];
@@ -66,7 +51,7 @@ export function useInitServiceForm(form: UseFormReturn<ServiceFormValues>, { ini
 
   useEffect(() => {
     const isEditing = initData && 'id' in initData && initData.id;
-    const firstType = serviceTypes[0]?.name ?? 'Servicio General';
+    const firstType = serviceTypes.length > 0 ? serviceTypes[0].name : 'Servicio General';
     
     let defaultValues: Partial<ServiceFormValues>;
 
@@ -77,6 +62,9 @@ export function useInitServiceForm(form: UseFormReturn<ServiceFormValues>, { ini
         quoteDate: initData.quoteDate ? parseDate(initData.quoteDate) : undefined,
         receptionDateTime: initData.receptionDateTime ? parseDate(initData.receptionDateTime) : undefined,
         deliveryDateTime: initData.deliveryDateTime ? parseDate(initData.deliveryDateTime) : undefined,
+        // Ensure status and serviceType are not undefined if they exist in initData
+        status: initData.status || 'Cotizacion',
+        serviceType: initData.serviceType || firstType,
       };
     } else {
       const authUserString = typeof window !== 'undefined' ? localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY) : null;
@@ -93,14 +81,6 @@ export function useInitServiceForm(form: UseFormReturn<ServiceFormValues>, { ini
         serviceAdvisorName: currentUser?.name,
         serviceAdvisorSignatureDataUrl: currentUser?.signatureDataUrl || '',
       };
-    }
-
-    // Ensure status and serviceType always have a valid default for new records
-    if (!defaultValues.status) {
-        defaultValues.status = 'Cotizacion';
-    }
-    if (!defaultValues.serviceType) {
-        defaultValues.serviceType = firstType;
     }
     
     reset(defaultValues);
