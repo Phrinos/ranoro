@@ -40,11 +40,11 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
     
     const now = new Date();
     const formattedPrintDate = format(now, "dd 'de' MMMM 'de' yyyy, HH:mm:ss", { locale: es });
-    const quoteDate = parseDate(quote.quoteDate);
-    const formattedQuoteDate = quoteDate && isValid(quoteDate) ? format(quoteDate, "dd 'de' MMMM 'de' yyyy", { locale: es }) : 'N/A';
+    const quoteDate = parseDate(quote.quoteDate) || now; // Fallback to now if quoteDate is not available
+    const formattedQuoteDate = isValid(quoteDate) ? format(quoteDate, "dd 'de' MMMM 'de' yyyy", { locale: es }) : 'N/A';
     
     const validityDays = 15; 
-    const validityDate = quoteDate && isValid(quoteDate) ? format(addDays(quoteDate, validityDays), "dd 'de' MMMM 'de' yyyy", { locale: es }) : 'N/A';
+    const validityDate = isValid(quoteDate) ? format(addDays(quoteDate, validityDays), "dd 'de' MMMM 'de' yyyy", { locale: es }) : 'N/A';
     
     const driver: Driver | undefined = vehicle?.isFleetVehicle 
         ? placeholderDrivers.find(d => d.assignedVehicleId === vehicle.id) 

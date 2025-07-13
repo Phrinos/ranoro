@@ -80,7 +80,7 @@ export default function NuevoServicioPage() {
         serviceTypes={serviceTypes}
         onSubmit={handleSaveNewService}
         onClose={() => router.push('/servicios/historial')}
-        mode="service" // Default mode, can be changed internally by status
+        mode="quote" // Start as a quote by default
       >
         <div className="flex justify-end gap-2">
             <Button variant="outline" type="button" onClick={() => router.push('/servicios/historial')}>Cancelar</Button>

@@ -99,8 +99,7 @@ export function ServiceForm(props:Props){
 
     const getInitialStatus = (): ServiceRecord['status'] => {
       if (initData) return initData.status ?? 'Cotizacion';
-      if (mode === 'quote') return 'Cotizacion';
-      return 'En Taller';
+      return 'Cotizacion'; // Always default to Cotizacion for new records
     };
 
     if (initData) {
@@ -148,7 +147,7 @@ export function ServiceForm(props:Props){
       status: initialStatus,
       serviceType: firstType,
       serviceDate: initialStatus === 'Agendado' ? new Date() : undefined,
-      quoteDate: initialStatus === 'Cotizacion' ? new Date() : undefined,
+      quoteDate: initialStatus === 'Cotizacion' ? now : undefined,
       serviceItems: [{
         id: nanoid(),
         name: firstType,
@@ -301,22 +300,6 @@ export function ServiceForm(props:Props){
     dataToSubmit.serviceProfit = serviceProfit;
     dataToSubmit.subTotal = totalCost / (1 + IVA);
     dataToSubmit.taxAmount = totalCost - (totalCost / (1 + IVA));
-    
-    // Convert Date objects to local ISO-like strings
-    Object.keys(dataToSubmit).forEach(key => {
-        if (dataToSubmit[key] instanceof Date) {
-            const date = dataToSubmit[key] as Date;
-            // Get local date parts
-            const year = date.getFullYear();
-            const month = (date.getMonth() + 1).toString().padStart(2, '0');
-            const day = date.getDate().toString().padStart(2, '0');
-            const hours = date.getHours().toString().padStart(2, '0');
-            const minutes = date.getMinutes().toString().padStart(2, '0');
-            const seconds = date.getSeconds().toString().padStart(2, '0');
-            // Construct string without timezone conversion
-            dataToSubmit[key] = `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`;
-        }
-    });
 
     onSubmit(dataToSubmit);
   };

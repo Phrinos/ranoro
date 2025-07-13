@@ -79,19 +79,21 @@ const saveService = async (data: Partial<ServiceRecord>): Promise<ServiceRecord>
       await updateDoc(docRef, cleanedData);
     }
     
-    // Also save/update the public document
-    const vehicle = data.vehicleId ? await inventoryService.getVehicleById(data.vehicleId) : undefined;
-    const workshopInfoString = typeof window !== 'undefined' ? localStorage.getItem('workshopTicketInfo') : null;
-    const workshopInfo = workshopInfoString ? JSON.parse(workshopInfoString) as WorkshopInfo : undefined;
-
-    await savePublicDocument('service', { ...cleanedData, id: docId }, vehicle, workshopInfo);
-
     const newDocSnap = await getDoc(docRef);
     if (!newDocSnap.exists()) {
       throw new Error("Failed to save or retrieve the service document.");
     }
+
+    const finalData = { id: newDocSnap.id, ...newDocSnap.data() } as ServiceRecord;
+
+    // Also save/update the public document in the background (no need to await)
+    const vehicle = finalData.vehicleId ? await inventoryService.getVehicleById(finalData.vehicleId) : undefined;
+    const workshopInfoString = typeof window !== 'undefined' ? localStorage.getItem('workshopTicketInfo') : null;
+    const workshopInfo = workshopInfoString ? JSON.parse(workshopInfoString) as WorkshopInfo : undefined;
+
+    savePublicDocument('service', finalData, vehicle, workshopInfo);
     
-    return { id: newDocSnap.id, ...newDocSnap.data() } as ServiceRecord;
+    return finalData;
 };
 
 
