@@ -87,7 +87,7 @@ export function ServiceDetailsCard({
           )}
           <FormField control={control} name="serviceType" render={({ field }) => (
             <FormItem><FormLabel className={cn(errors.serviceType && "text-destructive")}>Tipo de Servicio</FormLabel>
-              <Select onValueChange={handleServiceTypeChange} value={field.value || 'Servicio General'} disabled={isReadOnly}>
+              <Select onValueChange={handleServiceTypeChange} value={field.value} disabled={isReadOnly}>
                 <FormControl><SelectTrigger className={cn(errors.serviceType && "border-destructive focus-visible:ring-destructive")}><SelectValue placeholder="Seleccione un tipo" /></SelectTrigger></FormControl>
                 <SelectContent>
                   {serviceTypes
