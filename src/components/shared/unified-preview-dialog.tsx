@@ -9,9 +9,9 @@ import type { ServiceRecord, Vehicle, WorkshopInfo } from '@/types';
 import { ServiceSheetContent } from '@/components/service-sheet-content';
 import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../ui/dialog';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import Image from "next/image";
-import { inventoryService, operationsService } from '@/lib/services';
+import { inventoryService } from '@/lib/services';
 import { cn } from '@/lib/utils';
 
 
@@ -105,7 +105,7 @@ export function UnifiedPreviewDialog({
     }
     const shareUrl = `${window.location.origin}/s/${service.publicId}`;
     
-    const message = `Hola ${vehicle.ownerName || 'Cliente'}, gracias por confiar en ${workshopInfo.name || 'nuestro taller'}. 
+    const message = `Hola ${vehicle.ownerName || 'Cliente'}, gracias por confiar en ${(workshopInfo as WorkshopInfo).name || 'nuestro taller'}. 
 Te compartimos los detalles del servicio para tu vehículo ${vehicle.make} ${vehicle.model} (${vehicle.licensePlate}).
 
 ➡️ Haz clic aquí para ver y firmar: ${shareUrl}
@@ -134,12 +134,36 @@ En el enlace podrás:
   };
   
   const handlePrint = () => {
-    const printableArea = document.getElementById('printable-area-preview');
+    const printableArea = document.getElementById('printable-area');
     if (printableArea) {
       const printWindow = window.open('', '_blank');
       if (printWindow) {
-        const styles = Array.from(document.styleSheets).map(s => `<link rel="stylesheet" href="${s.href}">`).join('');
-        printWindow.document.write(`<html><head><title>Imprimir</title>${styles}<style>@media print { body { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; } }</style></head><body>`);
+        // Find all link tags in the current document
+        const stylesheets = Array.from(document.getElementsByTagName('link'));
+        let styles = '';
+        stylesheets.forEach(sheet => {
+          if (sheet.rel === 'stylesheet' && sheet.href) {
+            styles += `<link rel="stylesheet" href="${sheet.href}">`;
+          }
+        });
+
+        // Add custom print styles
+        const customStyles = `
+          <style>
+            @page { margin: 1cm; }
+            body { 
+              -webkit-print-color-adjust: exact !important; 
+              print-color-adjust: exact !important; 
+              background-color: white !important;
+            }
+            #printable-area {
+              background-color: white !important;
+              box-shadow: none !important;
+            }
+          </style>
+        `;
+
+        printWindow.document.write(`<html><head><title>Imprimir</title>${styles}${customStyles}</head><body>`);
         printWindow.document.write(printableArea.innerHTML);
         printWindow.document.write('</body></html>');
         printWindow.document.close();
@@ -168,7 +192,7 @@ En el enlace podrás:
             )}
           </DialogHeader>
           
-          <div id="printable-area-preview" className="flex-grow overflow-y-auto px-6 bg-muted/30">
+          <div id="printable-area" className="flex-grow overflow-y-auto px-6 bg-muted/30">
             {isLoading ? (
                 <div className="flex justify-center items-center h-[50vh]"><Loader2 className="mr-2 h-8 w-8 animate-spin" /> Cargando...</div>
             ) : documentType === 'service' && service ? (
