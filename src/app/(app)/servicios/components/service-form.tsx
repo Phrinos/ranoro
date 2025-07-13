@@ -232,20 +232,17 @@ export function ServiceForm ({
     const formData = getValues();
     const serviceDataForPreview = {
       ...formData,
-      totalCost: totalCost,
-      totalSuppliesWorkshopCost: totalSuppliesWorkshopCost,
-      serviceProfit: serviceProfit,
+      totalCost,
+      totalSuppliesWorkshopCost,
+      serviceProfit,
+      // Convert dates back to string for the preview component if needed
       serviceDate: formData.serviceDate?.toISOString(),
       quoteDate: formData.quoteDate?.toISOString(),
       receptionDateTime: formData.receptionDateTime?.toISOString(),
       deliveryDateTime: formData.deliveryDateTime?.toISOString(),
-      serviceAdvisorSignatureDataUrl: formData.serviceAdvisorSignatureDataUrl,
     } as ServiceRecord;
 
-    const vehicleDataForPreview = localVehicles.find(v => v.id === formData.vehicleId);
-
     setServiceForPreview(serviceDataForPreview);
-    setVehicleForPreview(vehicleDataForPreview || null);
     setIsPreviewOpen(true);
   };
 
@@ -308,7 +305,7 @@ export function ServiceForm ({
           open={isPreviewOpen}
           onOpenChange={setIsPreviewOpen}
           service={serviceForPreview}
-          vehicle={vehicleForPreview}
+          vehicle={null} // Let the dialog fetch the vehicle
         />
       )}
     </>

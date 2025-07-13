@@ -5,7 +5,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
 import { Button } from '@/components/ui/button';
-import { Printer, MessageSquare, Download, Loader2 } from 'lucide-react';
+import { Printer, MessageSquare, Download, Loader2, Eye } from 'lucide-react';
 import type { ServiceRecord, Vehicle, QuoteRecord, WorkshopInfo } from '@/types';
 import { ServiceSheetContent } from '@/components/service-sheet-content';
 import { useToast } from '@/hooks/use-toast';
@@ -17,10 +17,10 @@ interface UnifiedPreviewDialogProps {
   open: boolean;
   onOpenChange: (isOpen: boolean) => void;
   service: ServiceRecord;
-  vehicle: Vehicle | null; // Receive vehicle directly
+  vehicle?: Vehicle | null; // Make vehicle optional
 }
 
-export function UnifiedPreviewDialog({ open, onOpenChange, service, vehicle }: UnifiedPreviewDialogProps) {
+export function UnifiedPreviewDialog({ open, onOpenChange, service, vehicle: initialVehicle }: UnifiedPreviewDialogProps) {
   const { toast } = useToast();
   const [workshopInfo, setWorkshopInfo] = useState<WorkshopInfo | {}>({});
   const contentRef = useRef<HTMLDivElement>(null);
@@ -29,7 +29,8 @@ export function UnifiedPreviewDialog({ open, onOpenChange, service, vehicle }: U
   const [viewingImageUrl, setViewingImageUrl] = useState<string | null>(null);
   
   const [associatedQuote, setAssociatedQuote] = useState<QuoteRecord | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [vehicle, setVehicle] = useState<Vehicle | null>(initialVehicle || null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     if (open) {
@@ -38,27 +39,31 @@ export function UnifiedPreviewDialog({ open, onOpenChange, service, vehicle }: U
         setWorkshopInfo(JSON.parse(storedWorkshopInfo));
       }
       
-      const fetchAssociatedQuote = async () => {
-          if (service.status !== 'Cotizacion' && service.id) {
-            setIsLoading(true);
-            try {
-               const quote = await operationsService.getQuoteById(service.id);
-               setAssociatedQuote(quote || null);
-            } catch (e) {
-               console.error("Error fetching associated quote:", e);
-               setAssociatedQuote(null);
-            } finally {
-               setIsLoading(false);
-            }
+      const fetchData = async () => {
+          setIsLoading(true);
+
+          // 1. Fetch vehicle if not provided
+          if (!initialVehicle && service.vehicleId) {
+            const fetchedVehicle = await inventoryService.getVehicleById(service.vehicleId);
+            setVehicle(fetchedVehicle || null);
           } else {
-             setAssociatedQuote(null);
-             setIsLoading(false);
+            setVehicle(initialVehicle || null);
           }
+          
+          // 2. Determine and fetch associated quote if necessary
+          if (service.status !== 'Cotizacion') {
+              const quote = await operationsService.getQuoteById(service.id);
+              setAssociatedQuote(quote || null);
+          } else {
+              setAssociatedQuote(null); // It's a quote itself, no separate associated quote
+          }
+          
+          setIsLoading(false);
       };
       
-      fetchAssociatedQuote();
+      fetchData();
     }
-  }, [open, service]);
+  }, [open, service, initialVehicle]);
 
   const handleShareService = useCallback(() => {
     if (!service || !service.publicId) {
