@@ -123,17 +123,6 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
             </div>
           )}
 
-           <section className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 text-xs">
-              <div className="border-2 border-black rounded-md overflow-hidden col-span-1">
-                 <h3 className="font-bold p-1 bg-gray-700 text-white text-xs text-center">CONDICIONES DEL VEHÍCULO</h3>
-                 <p className="whitespace-pre-wrap p-2 min-h-[50px] text-sm">{quote.vehicleConditions || 'No especificado.'}</p>
-              </div>
-              <div className="border-2 border-black rounded-md overflow-hidden col-span-1">
-                 <h3 className="font-bold p-1 bg-gray-700 text-white text-xs text-center">INVENTARIO DE PERTENENCIAS</h3>
-                 <p className="whitespace-pre-wrap p-2 min-h-[50px] text-sm">{quote.customerItems || 'No especificado.'}</p>
-              </div>
-            </section>
-
           <Card className="mt-4 mb-4 border-2 border-gray-200 overflow-hidden">
             <h3 className="font-semibold text-white bg-gray-700 p-2" style={{ fontSize: '14px' }}>TRABAJOS A REALIZAR (Precios con IVA)</h3>
             <CardContent className="p-4 space-y-4">
