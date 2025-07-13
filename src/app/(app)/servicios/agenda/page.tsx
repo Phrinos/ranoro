@@ -5,7 +5,7 @@
 import React, { useState, useEffect, useMemo, useCallback, Suspense, useRef } from "react";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, List, Calendar as CalendarIcon, FileCheck, Eye, Loader2, Edit, CheckCircle, Printer, MessageSquare, Ban } from "lucide-react";
+import { PlusCircle, List, Calendar as CalendarIcon, FileCheck, Eye, Loader2, Edit, CheckCircle, Printer, MessageSquare, Ban, DollarSign } from "lucide-react";
 import { ServiceDialog } from "../components/service-dialog";
 import type { ServiceRecord, Vehicle, Technician, QuoteRecord, InventoryItem, CapacityAnalysisOutput, ServiceTypeRecord } from "@/types";
 import { useToast } from "@/hooks/use-toast";
@@ -104,7 +104,13 @@ function AgendaPageComponent() {
           const result = await analyzeWorkshopCapacity({
             servicesForDay: servicesForToday.map(s => ({ description: s.description || '' })),
             technicians: technicians.filter(t => !t.isArchived).map(t => ({ id: t.id, standardHoursPerDay: t.standardHoursPerDay || 8 })),
-            serviceHistory: allServices.filter(s => s.serviceDate).map(s => ({ description: s.description || '', serviceDate: s.serviceDate, deliveryDateTime: s.deliveryDateTime })),
+            serviceHistory: allServices
+              .filter(s => s.serviceDate)
+              .map(s => ({
+                  description: s.description || '',
+                  serviceDate: typeof s.serviceDate === 'string' ? s.serviceDate : s.serviceDate?.toISOString(),
+                  deliveryDateTime: s.deliveryDateTime ? (typeof s.deliveryDateTime === 'string' ? s.deliveryDateTime : s.deliveryDateTime.toISOString()) : undefined,
+              })),
           });
           setCapacityInfo(result);
         } catch (e) {
@@ -183,7 +189,7 @@ function AgendaPageComponent() {
   }, []);
   
   const handleConfirmCompletion = useCallback(async (service: ServiceRecord, paymentDetails: any) => {
-    await operationsService.completeService(service.id, paymentDetails);
+    await operationsService.completeService(service, paymentDetails);
     toast({
       title: "Servicio Completado",
       description: `El servicio para ${service.vehicleIdentifier} ha sido marcado como entregado.`,
@@ -273,9 +279,6 @@ function AgendaPageComponent() {
           technicians={technicians}
           inventoryItems={inventoryItems}
           serviceTypes={serviceTypes}
-          onVehicleCreated={handleVehicleCreated}
-          onCancelService={handleCancelService}
-          mode="service"
           onSave={handleSaveService}
         />
       )}
