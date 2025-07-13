@@ -5,16 +5,13 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from '@/hooks/use-toast';
 import type { InventoryCategory, InventoryItem, User } from '@/types';
 import { PlusCircle, Trash2, Edit, Search } from 'lucide-react';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogTrigger, AlertDialogFooter } from "@/components/ui/alert-dialog";
-import { logAudit, AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
-import { capitalizeWords } from '@/lib/utils';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter } from "@/components/ui/alert-dialog";
 import { inventoryService } from '@/lib/services';
+import { CategoryDialog } from './category-dialog';
 
 interface CategoriasContentProps {
   categories: InventoryCategory[];
@@ -27,7 +24,6 @@ export function CategoriasContent({ categories: initialCategories, inventoryItem
   const [searchTermCategories, setSearchTermCategories] = useState('');
   const [isCategoryDialogOpen, setIsCategoryDialogOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<InventoryCategory | null>(null);
-  const [currentCategoryName, setCurrentCategoryName] = useState('');
   const [categoryToDelete, setCategoryToDelete] = useState<InventoryCategory | null>(null);
 
   useEffect(() => {
@@ -45,25 +41,18 @@ export function CategoriasContent({ categories: initialCategories, inventoryItem
     return [...filtered].sort((a, b) => a.name.localeCompare(b.name));
   }, [categories, searchTermCategories]);
 
-  const handleOpenAddCategoryDialog = useCallback(() => { setEditingCategory(null); setCurrentCategoryName(''); setIsCategoryDialogOpen(true); }, []);
-  const handleOpenEditCategoryDialog = useCallback((category: InventoryCategory) => { setEditingCategory(category); setCurrentCategoryName(category.name); setIsCategoryDialogOpen(true); }, []);
+  const handleOpenAddCategoryDialog = useCallback(() => { setEditingCategory(null); setIsCategoryDialogOpen(true); }, []);
+  const handleOpenEditCategoryDialog = useCallback((category: InventoryCategory) => { setEditingCategory(category); setIsCategoryDialogOpen(true); }, []);
   
-  const handleSaveCategory = useCallback(async (e?: React.FormEvent) => {
-    e?.preventDefault();
-    const categoryName = currentCategoryName.trim();
-    if (!categoryName) return toast({ title: "Nombre Vacío", variant: "destructive" });
-    if (categories.some(cat => cat.name.toLowerCase() === categoryName.toLowerCase() && cat.id !== editingCategory?.id)) return toast({ title: "Categoría Duplicada", variant: "destructive" });
-
+  const handleSaveCategory = useCallback(async (name: string, id?: string) => {
     try {
-      await inventoryService.saveCategory({ name: categoryName }, editingCategory?.id);
-      toast({ title: `Categoría ${editingCategory ? 'Actualizada' : 'Agregada'}` });
-      setIsCategoryDialogOpen(false);
+      await inventoryService.saveCategory({ name }, id);
+      toast({ title: `Categoría ${id ? 'Actualizada' : 'Agregada'}` });
     } catch (error) {
       console.error("Error saving category:", error);
       toast({ title: "Error al guardar", description: "No se pudo guardar la categoría.", variant: "destructive" });
     }
-    
-  }, [currentCategoryName, categories, editingCategory, toast]);
+  }, [toast]);
 
   const handleDeleteCategory = useCallback(async () => {
     if (!categoryToDelete) return;
@@ -94,7 +83,13 @@ export function CategoriasContent({ categories: initialCategories, inventoryItem
                 ) : (<p className="text-muted-foreground text-center py-4">{searchTermCategories ? "No se encontraron categorías." : "No hay categorías registradas."}</p>)}
             </CardContent>
         </Card>
-        <Dialog open={isCategoryDialogOpen} onOpenChange={setIsCategoryDialogOpen}><DialogContent className="sm:max-w-[425px]"><form onSubmit={handleSaveCategory}><DialogHeader><DialogTitle>{editingCategory ? 'Editar Categoría' : 'Nueva Categoría'}</DialogTitle><DialogDescription>{editingCategory ? 'Modifica el nombre de la categoría.' : 'Ingresa el nombre para la nueva categoría.'}</DialogDescription></DialogHeader><div className="grid gap-4 py-4"><div className="grid grid-cols-4 items-center gap-4"><Label htmlFor="category-name" className="text-right">Nombre</Label><Input id="category-name" value={currentCategoryName} onChange={(e) => setCurrentCategoryName(capitalizeWords(e.target.value))} className="col-span-3" placeholder="Ej: Aceites" /></div></div><DialogFooter><Button type="button" variant="outline" onClick={() => setIsCategoryDialogOpen(false)}>Cancelar</Button><Button type="submit">{editingCategory ? 'Guardar Cambios' : 'Crear Categoría'}</Button></DialogFooter></form></DialogContent></Dialog>
+        <CategoryDialog
+          open={isCategoryDialogOpen}
+          onOpenChange={setIsCategoryDialogOpen}
+          category={editingCategory}
+          onSave={handleSaveCategory}
+          existingCategories={categories}
+        />
     </div>
   );
 }

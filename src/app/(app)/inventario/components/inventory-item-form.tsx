@@ -19,7 +19,7 @@ import { Input } from "@/components/ui/input";
 import type { InventoryCategory, Supplier } from "@/types";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { DollarSign } from "lucide-react";
+import { DollarSign, PlusCircle } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { capitalizeWords } from '@/lib/utils';
 
@@ -63,9 +63,11 @@ interface InventoryItemFormProps {
   onClose: () => void;
   categories: InventoryCategory[];
   suppliers: Supplier[];
+  onNewSupplier: () => void;
+  onNewCategory: () => void;
 }
 
-export function InventoryItemForm({ initialData, onSubmit, onClose, categories, suppliers }: InventoryItemFormProps) {
+export function InventoryItemForm({ initialData, onSubmit, onClose, categories, suppliers, onNewSupplier, onNewCategory }: InventoryItemFormProps) {
   const form = useForm<InventoryItemFormValues>({
     resolver: zodResolver(inventoryItemFormSchema),
     defaultValues: initialData ? {
@@ -91,10 +93,10 @@ export function InventoryItemForm({ initialData, onSubmit, onClose, categories, 
 
   const { watch, setValue } = form;
   const unitPrice = watch("unitPrice");
-
-  const isServiceWatch = form.watch("isService");
-  const unitTypeWatch = form.watch("unitType");
-  const categoryWatch = form.watch("category");
+  const isServiceWatch = watch("isService");
+  const unitTypeWatch = watch("unitType");
+  const categoryWatch = watch("category");
+  const suppliersWatch = watch("supplier"); // Watch for changes to update default
 
   useEffect(() => {
     if (unitPrice !== undefined && unitPrice >= 0) {
@@ -122,14 +124,19 @@ export function InventoryItemForm({ initialData, onSubmit, onClose, categories, 
     await onSubmit(submissionValues);
   };
   
-  useEffect(() => { 
+  useEffect(() => {
+    // Set default category if not set and categories are available
     if (!form.getValues('category') && categories.length > 0) {
       form.setValue('category', categories[0].name);
     }
+  }, [categories, form]);
+  
+  useEffect(() => {
+     // Set default supplier if not set and suppliers are available
     if (!form.getValues('supplier') && suppliers.length > 0) {
       form.setValue('supplier', suppliers[0].name);
     }
-  }, [categories, suppliers, form]);
+  }, [suppliers, form]);
 
 
   return (
@@ -148,16 +155,19 @@ export function InventoryItemForm({ initialData, onSubmit, onClose, categories, 
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Proveedor</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger><SelectValue placeholder="Seleccione un proveedor" /></SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {suppliers.map((supplier) => (
-                          <SelectItem key={supplier.id} value={supplier.name}>{supplier.name}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <div className="flex gap-2">
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger><SelectValue placeholder="Seleccione un proveedor" /></SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {suppliers.map((supplier) => (
+                            <SelectItem key={supplier.id} value={supplier.name}>{supplier.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Button type="button" variant="outline" size="icon" onClick={onNewSupplier}><PlusCircle className="h-4 w-4"/></Button>
+                    </div>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -168,16 +178,19 @@ export function InventoryItemForm({ initialData, onSubmit, onClose, categories, 
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Categoría</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger><SelectValue placeholder="Seleccione una categoría" /></SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {categories.map((category) => (
-                          <SelectItem key={category.id} value={category.name}>{category.name}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <div className="flex gap-2">
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger><SelectValue placeholder="Seleccione una categoría" /></SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {categories.map((category) => (
+                            <SelectItem key={category.id} value={category.name}>{category.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Button type="button" variant="outline" size="icon" onClick={onNewCategory}><PlusCircle className="h-4 w-4"/></Button>
+                    </div>
                     <FormMessage />
                   </FormItem>
                 )}
