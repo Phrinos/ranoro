@@ -164,7 +164,9 @@ function AgendaPageComponent() {
   const handleCancelService = useCallback(async (serviceId: string, reason: string) => {
     await operationsService.cancelService(serviceId, reason);
     toast({ title: "Servicio Cancelado" });
+    setIsServiceDialogOpen(false);
   }, [toast]);
+
 
   const handleVehicleCreated = useCallback(async (newVehicle: Omit<Vehicle, 'id'>) => {
       await inventoryService.addVehicle(newVehicle as VehicleFormValues);
@@ -293,6 +295,7 @@ function AgendaPageComponent() {
           inventoryItems={inventoryItems}
           serviceTypes={serviceTypes}
           onSave={handleSaveService}
+          onCancelService={handleCancelService}
         />
       )}
       
