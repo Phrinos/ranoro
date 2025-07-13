@@ -82,7 +82,7 @@ function VehiculosPageComponent() {
 
     const handleSaveVehicle = async (data: VehicleFormValues) => {
         try {
-            await inventoryService.saveVehicle(data, editingVehicle?.id);
+            await inventoryService.addVehicle(data);
             toast({ title: `Vehículo ${editingVehicle ? 'Actualizado' : 'Creado'}` });
             setIsVehicleDialogOpen(false);
             setEditingVehicle(null);

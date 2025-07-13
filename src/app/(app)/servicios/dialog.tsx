@@ -11,7 +11,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { ServiceForm } from "./service-form";
+import { ServiceForm } from "./components/service-form";
 import type { ServiceRecord, Vehicle, Technician, InventoryItem, QuoteRecord, User, ServiceTypeRecord } from "@/types";
 import { useToast } from "@/hooks/use-toast"; 
 import { db } from '@/lib/firebaseClient.js';
@@ -190,20 +190,7 @@ export function ServiceDialog({
           <DialogDescription>{dialogDescription}</DialogDescription>
         </DialogHeader>
         <div className="flex-grow overflow-y-auto -mx-6 px-6 print:overflow-visible">
-          <ServiceForm
-            initialDataService={service}
-            vehicles={vehicles} 
-            technicians={technicians}
-            inventoryItems={inventoryItems}
-            serviceTypes={serviceTypes}
-            onSubmit={internalOnSave}
-            onClose={() => onOpenChange(false)}
-            isReadOnly={isReadOnly}
-            mode={mode}
-            onDelete={onDelete}
-            onCancelService={onCancelService}
-            onStatusChange={setFormStatus}
-          />
+          
         </div>
       </DialogContent>
     </Dialog>

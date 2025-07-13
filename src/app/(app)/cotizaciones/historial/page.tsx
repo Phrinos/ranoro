@@ -126,12 +126,6 @@ function HistorialCotizacionesPageComponent() {
               vehicles={vehicles}
               onEdit={() => handleEditQuote(quote)}
               onView={() => handleViewQuote(quote)}
-              onCancel={() => {
-                const reason = prompt("Motivo de la cancelación (opcional):");
-                if (reason !== null) { // User clicked OK
-                  handleCancelQuote(quote.id, reason);
-                }
-              }}
             />
           ))
         ) : (
