@@ -22,8 +22,7 @@ const initialWorkshopInfo: WorkshopInfo = {
   logoUrl: "/ranoro-logo.png",
   footerLine1: "¡Gracias por su preferencia!",
   footerLine2: "Para dudas o aclaraciones, no dude en contactarnos.",
-  fixedFooterText: `© 2025 Ranoro® Sistema de Administracion de Talleres
-Todos los derechos reservados - Diseñado y Desarrollado por Arturo Valdelamar +524493930914`,
+  fixedFooterText: `© 2025 Ranoro®\nSistema de Administracion de Talleres\nTodos los derechos reservados - Diseñado y Desarrollado por Arturo Valdelamar +524493930914`,
 };
 
 
