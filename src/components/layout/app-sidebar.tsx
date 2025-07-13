@@ -41,10 +41,11 @@ import {
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import type { User, ServiceRecord, AppRole } from "@/types";
-import { format, parseISO } from 'date-fns';
+import { format, parseISO, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { parseDate } from '@/lib/forms';
 
 
 export function AppSidebar({
@@ -178,15 +179,20 @@ export function AppSidebar({
                 <DropdownMenuLabel>Notificaciones de Firma</DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 {newSignatureServices.length > 0 ? (
-                    newSignatureServices.map(service => (
-                        <DropdownMenuItem key={service.id} onSelect={() => router.push(`/servicios/historial`)}>
-                            <div className="flex flex-col">
-                                <span className="font-medium">Nueva firma para {service.vehicleIdentifier}</span>
-                                <span className="text-xs text-muted-foreground">{service.description}</span>
-                                <span className="text-xs text-muted-foreground">{format(parseISO(service.serviceDate), "dd MMM yyyy", { locale: es })}</span>
-                            </div>
-                        </DropdownMenuItem>
-                    ))
+                    newSignatureServices.map(service => {
+                        const serviceDate = parseDate(service.serviceDate);
+                        return (
+                          <DropdownMenuItem key={service.id} onSelect={() => router.push(`/servicios/historial?id=${service.id}&edit=true`)}>
+                              <div className="flex flex-col">
+                                  <span className="font-medium">Nueva firma para {service.vehicleIdentifier}</span>
+                                  <span className="text-xs text-muted-foreground">{service.description}</span>
+                                  <span className="text-xs text-muted-foreground">
+                                      {serviceDate && isValid(serviceDate) ? format(serviceDate, "dd MMM yyyy", { locale: es }) : 'Fecha no disponible'}
+                                  </span>
+                              </div>
+                          </DropdownMenuItem>
+                        )
+                    })
                 ) : (
                     <DropdownMenuItem disabled>No hay firmas nuevas</DropdownMenuItem>
                 )}
