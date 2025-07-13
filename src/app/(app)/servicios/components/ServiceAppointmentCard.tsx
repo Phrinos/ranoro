@@ -104,11 +104,6 @@ export const ServiceAppointmentCard = React.memo(({
                             )}
                             <Button variant="ghost" size="icon" onClick={onView} title="Vista Previa"><Eye className="h-4 w-4" /></Button>
                             <Button variant="ghost" size="icon" onClick={onEdit} title="Editar Servicio"><Edit className="h-4 w-4" /></Button>
-                            {onCancel && !isDone && (
-                                <Button variant="ghost" size="icon" onClick={onCancel} title="Cancelar Servicio">
-                                    <Ban className="h-4 w-4 text-destructive" />
-                                </Button>
-                            )}
                         </div>
                     </div>
                 </div>
