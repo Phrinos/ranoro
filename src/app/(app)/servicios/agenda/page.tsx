@@ -10,7 +10,6 @@ import { ServiceDialog } from "../components/service-dialog";
 import type { ServiceRecord, Vehicle, Technician, QuoteRecord, InventoryItem, CapacityAnalysisOutput, ServiceTypeRecord, WorkshopInfo } from "@/types";
 import { useToast } from "@/hooks/use-toast";
 import { format, isToday, isTomorrow, compareAsc, isSameDay, addDays, parseISO, isValid } from "date-fns";
-import { toZonedTime } from "date-fns-tz";
 import { es } from 'date-fns/locale';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -57,22 +56,11 @@ function AgendaPageComponent() {
   
   const [serviceToComplete, setServiceToComplete] = useState<ServiceRecord | null>(null);
   const [isCompleteDialogOpen, setIsCompleteDialogOpen] = useState(false);
-  const [workshopTimezone, setWorkshopTimezone] = useState('America/Mexico_City');
 
 
   useEffect(() => {
     const unsubs: (() => void)[] = [];
     setIsLoading(true);
-
-    const storedInfo = localStorage.getItem("workshopTicketInfo");
-    if (storedInfo) {
-      try {
-        const info = JSON.parse(storedInfo) as WorkshopInfo;
-        if (info.timezone) setWorkshopTimezone(info.timezone);
-      } catch (e) {
-        console.error("Failed to parse workshop info from localStorage", e);
-      }
-    }
 
     unsubs.push(operationsService.onServicesUpdate(setAllServices));
     unsubs.push(inventoryService.onVehiclesUpdate(setVehicles));
@@ -91,15 +79,9 @@ function AgendaPageComponent() {
       return { scheduledServices: [], todayServices: [], tomorrowServices: [], futureServices: [] };
     }
   
-    const nowInTimezone = toZonedTime(new Date(), workshopTimezone);
-    const today = nowInTimezone;
+    const now = new Date();
+    const today = now;
     const tomorrow = addDays(today, 1);
-  
-    // Filter for services that are relevant to the agenda (not yet delivered/cancelled)
-    const scheduled = allServices.filter(s => {
-      const status = s.status;
-      return (status === 'Agendado' || status === 'En Taller') && !s.deliveryDateTime;
-    });
   
     const byDateAsc = (a: ServiceRecord, b: ServiceRecord) => {
       const dateA = parseDate(a.serviceDate);
@@ -111,37 +93,45 @@ function AgendaPageComponent() {
   
     const isSame = (d: Date | null, ref: Date) => d && isValid(d) && isSameDay(d, ref);
   
-    // Services for today include 'Agendado' for today AND any service currently 'En Taller'
+    // Actives are any service not yet delivered or cancelled.
+    const activeServices = allServices.filter(s => s.status !== 'Entregado' && s.status !== 'Cancelado');
+
+    // Today's services are those 'En Taller' OR scheduled for today OR delivered today.
     const todayS = allServices.filter(s => {
-        if (s.status === 'Agendado' && isSame(parseDate(s.serviceDate), today)) {
-            return true;
-        }
-        if (s.status === 'En Taller' && !s.deliveryDateTime) {
-            return true;
-        }
-        return false;
+      if (s.status === 'En Taller') {
+        return true;
+      }
+      const serviceDay = parseDate(s.serviceDate);
+      if (s.status === 'Agendado' && isSame(serviceDay, today)) {
+        return true;
+      }
+      const deliveryDay = parseDate(s.deliveryDateTime);
+      if (s.status === 'Entregado' && isSame(deliveryDay, today)) {
+        return true;
+      }
+      return false;
     }).sort(byDateAsc);
   
-    // Only 'Agendado' services for tomorrow
-    const tomorrowS = scheduled
+    // Tomorrow's services are only those explicitly scheduled for tomorrow.
+    const tomorrowS = activeServices
       .filter((s) => s.status === 'Agendado' && isSame(parseDate(s.serviceDate), tomorrow))
       .sort(byDateAsc);
   
-    // Only 'Agendado' services for the future
-    const futureS = scheduled
+    // Future services are those scheduled after tomorrow.
+    const futureS = activeServices
       .filter((s) => {
         const d = parseDate(s.serviceDate);
-        return s.status === 'Agendado' && d && isValid(d) && d > tomorrow && !isSameDay(d, tomorrow);
+        return s.status === 'Agendado' && d && d > tomorrow && !isSameDay(d, tomorrow);
       })
       .sort(byDateAsc);
   
     return {
-      scheduledServices: scheduled,
+      scheduledServices: activeServices,
       todayServices: todayS,
       tomorrowServices: tomorrowS,
       futureServices: futureS,
     };
-  }, [allServices, isLoading, workshopTimezone]);
+  }, [allServices, isLoading]);
 
   useEffect(() => {
     if (agendaView === 'lista' && !isLoading) {
