@@ -134,11 +134,10 @@ En el enlace podrás:
   };
   
   const handlePrint = () => {
-    const printableArea = document.getElementById('printable-area');
+    const printableArea = document.getElementById('printable-area-dialog');
     if (printableArea) {
       const printWindow = window.open('', '_blank');
       if (printWindow) {
-        // Find all link tags in the current document
         const stylesheets = Array.from(document.getElementsByTagName('link'));
         let styles = '';
         stylesheets.forEach(sheet => {
@@ -146,23 +145,13 @@ En el enlace podrás:
             styles += `<link rel="stylesheet" href="${sheet.href}">`;
           }
         });
-
-        // Add custom print styles
         const customStyles = `
           <style>
-            @page { margin: 1cm; }
-            body { 
-              -webkit-print-color-adjust: exact !important; 
-              print-color-adjust: exact !important; 
-              background-color: white !important;
-            }
-            #printable-area {
-              background-color: white !important;
-              box-shadow: none !important;
-            }
+            @page { margin: 0; size: letter; }
+            body { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; background-color: white !important; }
+            #printable-area-dialog { background-color: white !important; box-shadow: none !important; margin: 0 !important; padding: 1cm !important; width: 100% !important; height: auto !important; }
           </style>
         `;
-
         printWindow.document.write(`<html><head><title>Imprimir</title>${styles}${customStyles}</head><body>`);
         printWindow.document.write(printableArea.innerHTML);
         printWindow.document.write('</body></html>');
@@ -192,23 +181,23 @@ En el enlace podrás:
             )}
           </DialogHeader>
           
-          <div id="printable-area" className="flex-grow overflow-y-auto px-6 bg-muted/30">
-            {isLoading ? (
-                <div className="flex justify-center items-center h-[50vh]"><Loader2 className="mr-2 h-8 w-8 animate-spin" /> Cargando...</div>
-            ) : documentType === 'service' && service ? (
-              <div className="bg-white shadow-lg my-4">
-                <ServiceSheetContent
-                  ref={contentRef}
-                  service={service}
-                  vehicle={vehicle || undefined}
-                  workshopInfo={workshopInfo as WorkshopInfo}
-                  onViewImage={handleViewImage}
-                  activeTab={activeTab}
-                />
-              </div>
-            ) : (
-              <div className="prose dark:prose-invert max-w-none bg-white p-6 my-4 shadow-lg" dangerouslySetInnerHTML={{ __html: textContent || '' }} />
-            )}
+          <div className="flex-grow overflow-y-auto px-6 bg-muted/30">
+             <div id="printable-area-dialog" className="w-[8.5in] h-[11in] bg-white mx-auto my-4 shadow-lg p-8">
+                {isLoading ? (
+                    <div className="flex justify-center items-center h-full"><Loader2 className="mr-2 h-8 w-8 animate-spin" /> Cargando...</div>
+                ) : documentType === 'service' && service ? (
+                    <ServiceSheetContent
+                    ref={contentRef}
+                    service={service}
+                    vehicle={vehicle || undefined}
+                    workshopInfo={workshopInfo as WorkshopInfo}
+                    onViewImage={handleViewImage}
+                    activeTab={activeTab}
+                    />
+                ) : (
+                <div className="prose dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: textContent || '' }} />
+                )}
+            </div>
           </div>
           
           <DialogFooter className="p-6 pt-4 border-t flex-shrink-0 bg-background sm:justify-end">
