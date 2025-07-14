@@ -185,7 +185,6 @@ export function ServiceForm(props:Props){
   const watchedStatus = watch('status');
   const watchedVehicleId = watch('vehicleId');
   
-  // Effect to reset the form when initialDataService changes.
   useEffect(() => {
     reset(defaultValues);
   }, [initialDataService, reset, defaultValues]);
@@ -194,12 +193,10 @@ export function ServiceForm(props:Props){
     const subscription = watch((value, { name, type }) => {
         if (name === 'status') {
             const currentStatus = value.status;
-            // From Quote to Scheduled
             if (currentStatus === 'Agendado' && !value.serviceDate) {
                 setValue('serviceDate', new Date());
-                setValue('appointmentStatus', 'Creada'); // Default to not confirmed
+                setValue('appointmentStatus', 'Creada');
             }
-            // Entering Workshop
             if (currentStatus === 'En Taller' && !value.receptionDateTime) {
                 setValue('receptionDateTime', new Date());
             }
@@ -266,7 +263,7 @@ export function ServiceForm(props:Props){
       const result = await suggestQuote({
         vehicleInfo: { make: vehicle.make, model: vehicle.model, year: vehicle.year },
         serviceDescription: values.serviceItems[0]?.name || '',
-        serviceHistory: [], // Pasar historial si está disponible
+        serviceHistory: [],
         inventory: invItems,
       })
       
@@ -299,13 +296,10 @@ export function ServiceForm(props:Props){
 
   const onVehicleCreated = useCallback(async (newVehicleData: VehicleFormValues) => {
     console.log("Creating vehicle:", newVehicleData);
-    // This part should be handled by the parent page now.
   }, [])
 
   const handleNewInventoryItemCreated = useCallback(async (formData: InventoryItemFormValues): Promise<InventoryItem> => {
     const newItem = await inventoryService.addItem(formData);
-    // The data source for inventoryItems is now the parent, which should update via listener.
-    // No need to manually update state here.
     toast({ title: "Producto Creado", description: `"${newItem.name}" ha sido agregado al inventario.` });
     return newItem;
   }, [toast]);
@@ -345,7 +339,6 @@ export function ServiceForm(props:Props){
   const formSubmitWrapper = (values: ServiceFormValues) => {
     const dataToSubmit: any = { ...values };
     
-    // Add calculated totals
     dataToSubmit.totalCost = totalCost;
     dataToSubmit.totalSuppliesWorkshopCost = totalSuppliesWorkshopCost;
     dataToSubmit.serviceProfit = serviceProfit;
@@ -358,6 +351,7 @@ export function ServiceForm(props:Props){
   };
   
   const nextServiceInfo = watch('nextServiceInfo');
+  const customerName = watch('customerName');
 
   return (
     <>
@@ -407,7 +401,7 @@ export function ServiceForm(props:Props){
                          isReadOnly={props.isReadOnly}
                          isEnhancingText={isEnhancingText}
                          handleEnhanceText={handleEnhanceText as any}
-                         onOpenSignature={(kind) => setSignatureType(kind)}
+                         onOpenSignature={(kind) => { setSignatureType(kind); setIsSignatureDialogOpen(true); }}
                        />
                     </TabsContent>
                     <TabsContent value="photoreport" className="mt-0">
@@ -423,7 +417,7 @@ export function ServiceForm(props:Props){
                         <SafetyChecklist
                             control={control}
                             isReadOnly={props.isReadOnly}
-                            onSignatureClick={() => setSignatureType('advisor')}
+                            onSignatureClick={() => { setSignatureType('advisor'); setIsSignatureDialogOpen(true); }}
                             signatureDataUrl={watch('serviceAdvisorSignatureDataUrl')}
                             isEnhancingText={isEnhancingText}
                             handleEnhanceText={handleEnhanceText as any}
@@ -445,7 +439,7 @@ export function ServiceForm(props:Props){
                                 <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <div>
                                         <p className="font-semibold">Fecha:</p>
-                                        <p>{format(parseISO(nextServiceInfo.date), "dd 'de' MMMM 'de' yyyy", { locale: es })}</p>
+                                        <p>{format(parseDate(nextServiceInfo.date)!, "dd 'de' MMMM 'de' yyyy", { locale: es })}</p>
                                     </div>
                                     {nextServiceInfo.mileage && (
                                         <div>
@@ -456,10 +450,7 @@ export function ServiceForm(props:Props){
                                 </CardContent>
                             </Card>
                         )}
-                        <Card>
-                            <CardHeader><CardTitle className="flex items-center gap-2"><Wallet/>Detalles de Pago</CardTitle></CardHeader>
-                            <CardContent><PaymentSection isReadOnly={isReadOnly} /></CardContent>
-                        </Card>
+                        <PaymentSection isReadOnly={isReadOnly} customerName={customerName}/>
                         <Card>
                             <CardHeader><CardTitle className="flex items-center gap-2"><DollarSign/>Resumen de Costos</CardTitle></CardHeader>
                             <CardContent>
@@ -488,8 +479,8 @@ export function ServiceForm(props:Props){
       />
       
       <SignatureDialog
-        open={!!signatureType}
-        onOpenChange={(isOpen) => !isOpen && setSignatureType(null)}
+        open={isSignatureDialogOpen}
+        onOpenChange={setIsSignatureDialogOpen}
         onSave={handleSignatureSave}
       />
 
@@ -513,7 +504,6 @@ export function ServiceForm(props:Props){
   );
 }
 
-// Photo Report Tab Component
 const PhotoReportTab = ({ control, isReadOnly, serviceId, onPhotoUploaded, onViewImage }: any) => {
     const { fields, append, remove } = useFieldArray({ control, name: 'photoReports' });
     const { watch } = useFormContext();

@@ -30,7 +30,7 @@ const paymentMethodIcons: Record<PaymentMethod, React.ElementType> = {
   "Tarjeta+Transferencia": ArrowRightLeft,
 };
 
-export function PaymentSection({ isReadOnly = false }: { isReadOnly?: boolean }) {
+export function PaymentSection({ isReadOnly = false, customerName }: { isReadOnly?: boolean, customerName?: string }) {
   const { control, watch, formState: { errors } } = useFormContext();
   const selectedPaymentMethod = watch("paymentMethod");
 
@@ -47,7 +47,13 @@ export function PaymentSection({ isReadOnly = false }: { isReadOnly?: boolean })
             <FormItem>
               <FormLabel>Nombre del Cliente</FormLabel>
               <FormControl>
-                <Input placeholder="Ej: Cliente Mostrador" {...field} onChange={(e) => field.onChange(capitalizeWords(e.target.value))} disabled={isReadOnly} />
+                <Input 
+                  placeholder="Ej: Cliente Mostrador" 
+                  {...field} 
+                  value={customerName || field.value}
+                  onChange={(e) => field.onChange(capitalizeWords(e.target.value))} 
+                  disabled={isReadOnly} 
+                />
               </FormControl>
             </FormItem>
           )}

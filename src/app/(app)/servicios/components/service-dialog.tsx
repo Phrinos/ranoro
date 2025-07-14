@@ -73,6 +73,10 @@ export function ServiceDialog({
   const onOpenChange = isControlled ? setControlledOpen : setUncontrolledOpen;
 
   useEffect(() => {
+    setLocalService(initialService);
+  }, [initialService]);
+
+  useEffect(() => {
     if (open) {
       const syncSignatures = async () => {
         if (initialService && initialService.id && initialService.publicId && db) {
@@ -114,13 +118,20 @@ export function ServiceDialog({
     }
   }, [open, initialService, toast]);
 
+  const handleInternalCompletion = async (service: ServiceRecord, paymentDetails: any, nextServiceInfo?: any) => {
+    if (onComplete) {
+      await onComplete(service, paymentDetails, nextServiceInfo);
+    }
+    // Update local state to reflect completion, which will cause the form to re-render
+    setLocalService(prev => ({ ...prev, ...paymentDetails, status: 'Entregado', nextServiceInfo } as ServiceRecord));
+    setIsCompleteDialogOpen(false);
+  };
 
   const internalOnSave = async (formData: ServiceRecord | QuoteRecord) => {
     if (isReadOnly) { onOpenChange(false); return; }
 
-    // If status is being changed to "Entregado", open the completion dialog instead of saving directly.
     if ('status' in formData && formData.status === 'Entregado' && localService?.status !== 'Entregado') {
-        setFullFormDataForCompletion(formData); // Save current form state
+        setFullFormDataForCompletion(formData);
         setServiceToComplete(formData as ServiceRecord);
         setIsCompleteDialogOpen(true);
         return;
@@ -219,12 +230,12 @@ export function ServiceDialog({
           </AlertDialogContent>
       </AlertDialog>
 
-      {serviceToComplete && onComplete && (
+      {serviceToComplete && (
         <CompleteServiceDialog
           open={isCompleteDialogOpen}
           onOpenChange={setIsCompleteDialogOpen}
           service={serviceToComplete}
-          onConfirm={onComplete}
+          onConfirm={handleInternalCompletion}
           inventoryItems={inventoryItems}
           fullFormData={fullFormDataForCompletion}
         />
