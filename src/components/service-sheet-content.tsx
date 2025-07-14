@@ -267,39 +267,39 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
         </header>
 
         <main className="flex-grow">
-            <section className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-2 text-xs">
-                <div className="border-2 border-black rounded-md overflow-hidden flex-1">
-                    <h3 className="font-bold p-1 bg-gray-700 text-white text-xs text-center">DATOS DEL CLIENTE</h3>
-                    <div className="space-y-0.5 p-2 text-sm">
-                        <p><span className="font-semibold">Nombre:</span> <span className="font-bold">{vehicle?.ownerName?.toUpperCase() || ''}</span></p>
-                        <p><span className="font-semibold">Teléfono:</span> <span className="font-bold">{vehicle?.ownerPhone || ''}</span></p>
-                        {vehicle?.ownerEmail && <p><span className="font-semibold">Email:</span> <span className="font-bold">{vehicle.ownerEmail}</span></p>}
-                    </div>
+          <section className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-2 text-xs">
+              <div className="border-2 border-black rounded-md overflow-hidden flex-1">
+                <h3 className="font-bold p-1 bg-gray-700 text-white text-xs text-center">DATOS DEL CLIENTE</h3>
+                <div className="space-y-0.5 p-2 text-sm">
+                  <p><span className="font-semibold">Nombre:</span> <span className="font-bold">{vehicle?.ownerName?.toUpperCase() || ''}</span></p>
+                  <p><span className="font-semibold">Teléfono:</span> <span className="font-bold">{vehicle?.ownerPhone || ''}</span></p>
+                  {vehicle?.ownerEmail && <p><span className="font-semibold">Email:</span> <span className="font-bold">{vehicle.ownerEmail}</span></p>}
                 </div>
-                <div className="border-2 border-black rounded-md overflow-hidden flex-1">
-                    <h3 className="font-bold p-1 bg-gray-700 text-white text-xs text-center">DATOS DEL VEHÍCULO</h3>
-                    <div className="space-y-0.5 p-2 text-sm">
-                        <p><span className="font-semibold">Vehículo:</span> <span className="font-bold">{vehicle ? `${vehicle.year} ${vehicle.make} ${vehicle.model}` : 'N/A'}</span></p>
-                        <p><span className="font-semibold">Placas:</span> <span className="font-bold">{vehicle?.licensePlate}</span></p>
-                        {vehicle?.color && <p><span className="font-semibold">Color:</span> <span className="font-bold">{vehicle.color}</span></p>}
-                        {service.mileage && <p><span className="font-semibold">Kilometraje:</span> <span className="font-bold">{service.mileage.toLocaleString('es-MX')} km</span></p>}
+              </div>
+              <div className="border-2 border-black rounded-md overflow-hidden flex-1">
+                  <h3 className="font-bold p-1 bg-gray-700 text-white text-xs text-center">DATOS DEL VEHÍCULO</h3>
+                  <div className="space-y-0.5 p-2 text-sm">
+                      <p><span className="font-semibold">Vehículo:</span> <span className="font-bold">{vehicle ? `${vehicle.year} ${vehicle.make} ${vehicle.model}` : 'N/A'}</span></p>
+                      <p><span className="font-semibold">Placas:</span> <span className="font-bold">{vehicle?.licensePlate || 'N/A'}</span></p>
+                      {vehicle?.color && <p><span className="font-semibold">Color:</span> <span className="font-bold">{vehicle.color}</span></p>}
+                      {service.mileage && <p><span className="font-semibold">Kilometraje:</span> <span className="font-bold">{service.mileage.toLocaleString('es-MX')} km</span></p>}
+                  </div>
+              </div>
+              {service.nextServiceInfo && service.status === 'Entregado' && (
+                  <div className="border-2 border-red-700 rounded-md overflow-hidden flex-1">
+                    <h3 className="font-bold p-1 bg-red-700 text-white text-xs text-center">PRÓXIMO SERVICIO</h3>
+                    <div className="p-2 space-y-1 text-center text-sm">
+                        <p className="text-[10px] font-semibold">Lo que ocurra primero</p>
+                        {service.nextServiceInfo.date && isValid(parseDate(service.nextServiceInfo.date)) && (
+                            <p className="font-bold">Fecha: {format(parseDate(service.nextServiceInfo.date)!, "dd/MMMM/yyyy", { locale: es })}</p>
+                        )}
+                        {service.nextServiceInfo.mileage && (
+                            <p className="font-bold">Kilometraje: {service.nextServiceInfo.mileage.toLocaleString('es-MX')} km</p>
+                        )}
                     </div>
-                </div>
-                {service.nextServiceInfo && service.status === 'Entregado' && (
-                    <div className="border-2 border-red-700 rounded-md overflow-hidden flex-1">
-                        <h3 className="font-bold p-1 bg-red-700 text-white text-xs text-center">PRÓXIMO SERVICIO</h3>
-                        <div className="p-2 space-y-1 text-center text-sm">
-                            <p className="text-[10px] font-semibold">Lo que ocurra primero</p>
-                            {service.nextServiceInfo.date && isValid(parseDate(service.nextServiceInfo.date)) && (
-                                <p className="font-bold">Fecha: {format(parseDate(service.nextServiceInfo.date)!, "dd/MMMM/yyyy", { locale: es })}</p>
-                            )}
-                            {service.nextServiceInfo.mileage && (
-                                <p className="font-bold">Kilometraje: {service.nextServiceInfo.mileage.toLocaleString('es-MX')} km</p>
-                            )}
-                        </div>
-                    </div>
-                )}
-            </section>
+                  </div>
+              )}
+          </section>
             
           {driverDebt.totalDebt > 0 && (
             <div className="my-2 p-2 border-2 border-red-500 bg-red-50 rounded-md text-red-800">
@@ -348,7 +348,7 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
                   <p className="whitespace-pre-wrap p-2 min-h-[10px] text-sm flex-grow">{service.customerItems || 'No especificado.'}</p>
               </div>
               <div className="border-2 border-black rounded-md overflow-hidden col-span-1 flex flex-col justify-center min-h-[60px]">
-                  <h3 className="font-bold p-1 bg-gray-700 text-white text-center text-xs">NIVEL DE COMBUSTIBLE</h3>
+                  <h3 className="font-bold p-1 bg-gray-700 text-white text-center text-xs">COMBUSTIBLE</h3>
                   <div className="flex-grow flex flex-col items-center justify-center p-2">
                     <div className="h-2 w-full bg-gray-200 rounded-full overflow-hidden border border-gray-300">
                         <div className={cn("h-full transition-all", fuelColor)} style={{ width: `${fuelPercentage}%` }} />
@@ -361,31 +361,6 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
                   </div>
               </div>
           </section>
-
-          {service.serviceType !== 'Cambio de Aceite' && (
-              <section className="border-2 border-black p-2 rounded-md flex flex-col justify-between items-center">
-                <h3 className="font-bold uppercase text-center text-sm">AUTORIZO SERVICIOS</h3>
-                <div className="flex-grow flex items-center justify-center w-full min-h-[80px]">
-                  {service.customerSignatureReception ? (
-                      <div className="relative w-full h-full">
-                          <Image src={normalizeDataUrl(service.customerSignatureReception)} alt="Firma del cliente" layout="fill" objectFit="contain" unoptimized />
-                      </div>
-                  ) : (
-                    <div className="flex flex-col items-center justify-end flex-grow w-full">
-                        {isPublicView && showSignReception && onSignClick && (
-                            <Button onClick={() => onSignClick('reception')} disabled={isSigning} className="mb-2">
-                            {isSigning ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Signature className="mr-2 h-4 w-4"/>}
-                            Firmar Aquí
-                            </Button>
-                        )}
-                        <div className="border-t-2 border-black mt-auto pt-1 text-center w-full">
-                            <p className="text-xs font-semibold">{vehicle?.ownerName?.toUpperCase() || '________________________________'}</p>
-                        </div>
-                    </div>
-                  )}
-                </div>
-              </section>
-          )}
         </main>
         
         <footer className="mt-auto pt-2 text-xs">
@@ -403,26 +378,48 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
                         <p className="font-bold text-[8px]">{service.serviceAdvisorName?.toUpperCase() || ''}</p>
                     </div>
                 </div>
-                <div className="border-2 border-black p-2 rounded-md flex flex-col justify-between items-center min-h-[110px]">
-                   <h3 className="font-bold uppercase text-center text-sm">RECIBÍ DE CONFORMIDAD</h3>
-                   <div className="flex-grow flex items-center justify-center w-full min-h-[60px]">
-                       {service.customerSignatureDelivery ? (
-                         <div className="relative w-full h-full">
-                           <Image src={normalizeDataUrl(service.customerSignatureDelivery)} alt="Firma de conformidad" layout="fill" objectFit="contain" unoptimized/>
-                         </div>
-                       ) : (
-                         isPublicView && showSignDelivery && onSignClick && (
-                            <Button onClick={() => onSignClick('delivery')} disabled={isSigning} className="bg-green-600 hover:bg-green-700 h-8 text-xs">
-                                {isSigning ? <Loader2 className="mr-2 h-3 w-3 animate-spin"/> : <Signature className="mr-2 h-3 w-3"/>}
-                                Firmar de Conformidad
-                            </Button>
-                         )
-                       )}
-                   </div>
-                   <div className="border-t-2 border-black pt-1 w-full text-center mt-auto">
-                       <p className="font-bold text-[8px]">{vehicle?.ownerName?.toUpperCase() || ''}</p>
-                   </div>
-               </div>
+                 <div className="grid grid-cols-2 gap-2 text-center">
+                    <div className="border-2 border-black p-2 rounded-md flex flex-col justify-between items-center">
+                        <h3 className="font-bold uppercase text-center text-sm">ENTRADA AL TALLER</h3>
+                        <div className="flex-grow flex items-center justify-center w-full min-h-[60px]">
+                            {service.customerSignatureReception ? (
+                                <div className="relative w-full h-full">
+                                    <Image src={normalizeDataUrl(service.customerSignatureReception)} alt="Firma de recepción" layout="fill" objectFit="contain" unoptimized />
+                                </div>
+                            ) : (
+                                isPublicView && showSignReception && onSignClick && (
+                                    <Button onClick={() => onSignClick('reception')} disabled={isSigning} className="mb-2">
+                                        {isSigning ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Signature className="mr-2 h-4 w-4"/>}
+                                        Firmar Aquí
+                                    </Button>
+                                )
+                            )}
+                        </div>
+                        <div className="border-t-2 border-black mt-auto pt-1 text-center w-full">
+                             <p className="text-xs font-semibold">{vehicle?.ownerName?.toUpperCase()}</p>
+                        </div>
+                    </div>
+                     <div className="border-2 border-black p-2 rounded-md flex flex-col justify-between items-center">
+                        <h3 className="font-bold uppercase text-center text-sm">SALIDA DEL TALLER</h3>
+                         <div className="flex-grow flex items-center justify-center w-full min-h-[60px]">
+                           {service.customerSignatureDelivery ? (
+                             <div className="relative w-full h-full">
+                               <Image src={normalizeDataUrl(service.customerSignatureDelivery)} alt="Firma de conformidad" layout="fill" objectFit="contain" unoptimized/>
+                             </div>
+                           ) : (
+                             isPublicView && showSignDelivery && onSignClick && (
+                                <Button onClick={() => onSignClick('delivery')} disabled={isSigning} className="bg-green-600 hover:bg-green-700 h-8 text-xs">
+                                    {isSigning ? <Loader2 className="mr-2 h-3 w-3 animate-spin"/> : <Signature className="mr-2 h-3 w-3"/>}
+                                    Firmar de Conformidad
+                                </Button>
+                             )
+                           )}
+                       </div>
+                        <div className="border-t-2 border-black mt-auto pt-1 text-center w-full">
+                            <p className="text-xs font-semibold">{vehicle?.ownerName?.toUpperCase()}</p>
+                        </div>
+                    </div>
+                </div>
            </div>
            <section className="mt-2">
                 <p className="text-[6px] text-justify leading-snug">
