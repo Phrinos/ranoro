@@ -312,6 +312,7 @@ export interface ServiceTypeRecord {
 export interface Supplier {
   id: string;
   name: string;
+  description?: string;
   contactPerson?: string;
   phone?: string;
   email?: string;
