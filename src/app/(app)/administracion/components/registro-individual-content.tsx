@@ -51,8 +51,8 @@ export function RegistroIndividualContent() {
       licensePlate: '',
       vehicleId: '',
       description: '',
-      totalCost: undefined,
-      suppliesCost: undefined,
+      totalCost: 0,
+      suppliesCost: 0,
       paymentMethod: 'Efectivo',
     },
   });
@@ -120,8 +120,8 @@ export function RegistroIndividualContent() {
           licensePlate: '', 
           vehicleId: '', 
           description: '', 
-          totalCost: undefined, 
-          suppliesCost: undefined 
+          totalCost: 0, 
+          suppliesCost: 0 
       });
       setSearchedVehicle(null);
     } catch (e) {
@@ -204,8 +204,8 @@ export function RegistroIndividualContent() {
             <div className="space-y-4 p-4 border rounded-md">
                 <h3 className="font-semibold">3. Costos y Pago</h3>
                  <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
-                     <FormField control={form.control} name="totalCost" render={({ field }) => ( <FormItem><FormLabel>Costo Total (Cliente)</FormLabel><div className="relative"><DollarSign className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" /><FormControl><Input type="number" step="0.01" placeholder="1200.00" {...field} value={field.value ?? ''} className="pl-8"/></FormControl></div><FormMessage /></FormItem> )}/>
-                     <FormField control={form.control} name="suppliesCost" render={({ field }) => ( <FormItem><FormLabel>Costo Insumos (Taller)</FormLabel><div className="relative"><DollarSign className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" /><FormControl><Input type="number" step="0.01" placeholder="750.00" {...field} value={field.value ?? ''} className="pl-8"/></FormControl></div><FormMessage /></FormItem> )}/>
+                     <FormField control={form.control} name="totalCost" render={({ field }) => ( <FormItem><FormLabel>Costo Total (Cliente)</FormLabel><div className="relative"><DollarSign className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" /><FormControl><Input type="number" step="0.01" placeholder="1200.00" {...field} value={field.value || ''} className="pl-8"/></FormControl></div><FormMessage /></FormItem> )}/>
+                     <FormField control={form.control} name="suppliesCost" render={({ field }) => ( <FormItem><FormLabel>Costo Insumos (Taller)</FormLabel><div className="relative"><DollarSign className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" /><FormControl><Input type="number" step="0.01" placeholder="750.00" {...field} value={field.value || ''} className="pl-8"/></FormControl></div><FormMessage /></FormItem> )}/>
                      <div><FormLabel>Ganancia</FormLabel><div className="h-10 flex items-center p-2 border rounded-md bg-muted/50 font-semibold">{formatCurrency(serviceProfit)}</div></div>
                       <FormField control={form.control} name="paymentMethod" render={({ field }) => ( <FormItem><FormLabel>Método de Pago</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Seleccione método"/></SelectTrigger></FormControl><SelectContent>{paymentMethods.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )}/>
                  </div>

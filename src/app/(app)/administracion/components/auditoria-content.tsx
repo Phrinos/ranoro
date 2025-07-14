@@ -20,6 +20,8 @@ export function AuditoriaPageContent({ initialLogs }: { initialLogs: AuditLog[] 
   const [logs, setLogs] = useState<AuditLog[]>(initialLogs);
   const [searchTerm, setSearchTerm] = useState('');
   const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+  const [tempDateRange, setTempDateRange] = useState<DateRange | undefined>(dateRange);
 
   useEffect(() => {
     setLogs(initialLogs);
@@ -47,6 +49,11 @@ export function AuditoriaPageContent({ initialLogs }: { initialLogs: AuditLog[] 
     return filtered;
   }, [logs, searchTerm, dateRange]);
 
+  const handleApplyDateFilter = () => {
+    setDateRange(tempDateRange);
+    setIsCalendarOpen(false);
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
@@ -66,7 +73,7 @@ export function AuditoriaPageContent({ initialLogs }: { initialLogs: AuditLog[] 
               onChange={(e) => setSearchTerm(e.target.value)}
             />
         </div>
-         <Popover>
+         <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
           <PopoverTrigger asChild>
             <Button
               variant={"outline"}
@@ -80,12 +87,16 @@ export function AuditoriaPageContent({ initialLogs }: { initialLogs: AuditLog[] 
             <Calendar
               initialFocus
               mode="range"
-              defaultMonth={dateRange?.from}
-              selected={dateRange}
-              onSelect={setDateRange}
+              defaultMonth={tempDateRange?.from}
+              selected={tempDateRange}
+              onSelect={setTempDateRange}
               numberOfMonths={2}
               locale={es}
+              showOutsideDays={false}
             />
+            <div className="p-2 border-t flex justify-end">
+              <Button size="sm" onClick={handleApplyDateFilter}>Aceptar</Button>
+            </div>
           </PopoverContent>
         </Popover>
       </div>
