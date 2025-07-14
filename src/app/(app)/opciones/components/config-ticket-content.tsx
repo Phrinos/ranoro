@@ -76,7 +76,7 @@ const defaultWorkshopInfo: WorkshopInfo = {
   blankLinesBottom: 0,
   footerLine1: "¡Gracias por su preferencia!", footerLine1Bold: true,
   footerLine2: "Para dudas o aclaraciones, no dude en contactarnos.", footerLine2Bold: false,
-  fixedFooterText: "Sistema de Administración de Talleres Ranoro®\nDiseñado y Desarrollado por Arturo Valdelamar", fixedFooterTextBold: false,
+  fixedFooterText: "© 2025 Ranoro® Sistema de Administracion de Talleres. Todos los derechos reservados - Diseñado y Desarrollado por Arturo Valdelamar +524493930914", fixedFooterTextBold: false,
 };
 
 const TextFieldWithBoldness = ({ name, label, control, isTextarea = false }: { name: keyof TicketForm; label: string; control: any; isTextarea?: boolean }) => (

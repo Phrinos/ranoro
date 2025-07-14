@@ -25,7 +25,7 @@ const initialWorkshopInfo: WorkshopInfo = {
   logoUrl: "/ranoro-logo.png",
   footerLine1: "¡Gracias por su preferencia!",
   footerLine2: "Para dudas o aclaraciones, no dude en contactarnos.",
-  fixedFooterText: "© 2025 Ranoro®\nSistema de Administracion de Talleres\nTodos los derechos reservados - Diseñado y Desarrollado por Arturo Valdelamar +524493930914",
+  fixedFooterText: "© 2025 Ranoro® Sistema de Administracion de Talleres. Todos los derechos reservados - Diseñado y Desarrollado por Arturo Valdelamar +524493930914",
 };
 
 const inspectionGroups = [
@@ -363,7 +363,7 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
               </div>
           </section>
           
-          <section className="grid grid-cols-3 gap-2 text-center mb-1 text-xs">
+           <section className="grid grid-cols-3 gap-2 mb-1 text-xs">
                 <div className="border-2 border-black rounded-md overflow-hidden flex flex-col justify-between items-center p-1 min-h-[120px] col-span-1">
                     <h3 className="font-bold p-1 w-full bg-gray-700 text-white text-xs text-center rounded-sm">ASESOR</h3>
                     <div className="flex-grow flex items-center justify-center w-full min-h-[50px]">
@@ -430,7 +430,7 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
            </section>
            {effectiveWorkshopInfo.fixedFooterText && (
             <div className="text-center mt-2 pt-2 border-t border-gray-200">
-              <p className="text-[8px] text-muted-foreground whitespace-pre-wrap">{effectiveWorkshopInfo.fixedFooterText}</p>
+              <p className="text-[9px] text-muted-foreground whitespace-pre-wrap">{effectiveWorkshopInfo.fixedFooterText}</p>
             </div>
           )}
         </footer>
