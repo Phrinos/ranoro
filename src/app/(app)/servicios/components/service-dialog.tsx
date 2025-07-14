@@ -29,6 +29,7 @@ interface ServiceDialogProps {
   inventoryItems: InventoryItem[]; 
   serviceTypes: ServiceTypeRecord[];
   onSave?: (data: ServiceRecord | QuoteRecord) => Promise<void>; 
+  onComplete?: (service: ServiceRecord, paymentDetails: any, nextServiceInfo?: any) => void;
   isReadOnly?: boolean; 
   open?: boolean; 
   onOpenChange?: (isOpen: boolean) => void; 
@@ -37,8 +38,6 @@ interface ServiceDialogProps {
   onDelete?: (id: string) => void; // For quote deletion
   onCancelService?: (serviceId: string, reason: string) => void;
   onViewQuoteRequest?: (serviceId: string) => void;
-  onComplete?: (service: ServiceRecord, paymentDetails: any, nextServiceInfo?: any) => void;
-  children?: React.ReactNode;
 }
 
 export function ServiceDialog({ 
@@ -59,7 +58,6 @@ export function ServiceDialog({
   onDelete,
   onCancelService,
   onViewQuoteRequest,
-  children,
 }: ServiceDialogProps) {
   const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
   const { toast } = useToast();
@@ -231,9 +229,7 @@ export function ServiceDialog({
           onVehicleCreated={onVehicleCreated} 
           mode={mode}
           onStatusChange={setFormStatus}
-        >
-             {children}
-        </ServiceForm>
+        />
       </DialogContent>
     </Dialog>
 
