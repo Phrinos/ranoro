@@ -50,13 +50,9 @@ import { parseDate } from '@/lib/forms';
 
 export function AppSidebar({
   currentUser,
-  newSignatureServices,
-  onNotificationsViewed,
   onLogout,
 }: {
   currentUser: User | null;
-  newSignatureServices: ServiceRecord[];
-  onNotificationsViewed: () => void;
   onLogout: () => void;
 }) {
   const navItems = useNavigation();
@@ -67,12 +63,6 @@ export function AppSidebar({
   const handleLogout = async () => {
     onLogout();
     router.push("/login");
-  };
-
-  const handleNotificationOpen = (isOpen: boolean) => {
-    if (isOpen && newSignatureServices.length > 0) {
-      onNotificationsViewed();
-    }
   };
 
   const groupedByTag = React.useMemo(() => {
@@ -151,54 +141,6 @@ export function AppSidebar({
         ))}
       </SidebarContent>
       <SidebarFooter className="mt-auto border-t border-sidebar-border p-2 flex flex-col gap-1">
-        {/* Notification Area */}
-        <DropdownMenu onOpenChange={handleNotificationOpen}>
-            <DropdownMenuTrigger asChild>
-                <Button
-                    variant="ghost"
-                    className="h-auto w-full justify-start gap-2 py-2 text-left text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground group-data-[collapsible=icon]:h-10 group-data-[collapsible=icon]:w-10 group-data-[collapsible=icon]:justify-center relative"
-                    title="Notificaciones"
-                >
-                    <Bell className="h-5 w-5" />
-                    <div className="group-data-[collapsible=icon]:hidden flex items-center justify-start gap-2">
-                        <span className="text-sm font-medium">Notificaciones</span>
-                        {newSignatureServices.length > 0 && (
-                            <Badge variant="destructive" className="h-5 animate-pulse">
-                                {newSignatureServices.length}
-                            </Badge>
-                        )}
-                    </div>
-                     {newSignatureServices.length > 0 && (
-                        <span className="hidden group-data-[collapsible=icon]:flex absolute top-1 right-1 h-4 w-4 items-center justify-center rounded-full bg-red-500 text-white text-[10px]">
-                            {newSignatureServices.length}
-                        </span>
-                    )}
-                </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" side="top" className="mb-1 w-72">
-                <DropdownMenuLabel>Notificaciones de Firma</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                {newSignatureServices.length > 0 ? (
-                    newSignatureServices.map(service => {
-                        const serviceDate = parseDate(service.serviceDate);
-                        return (
-                          <DropdownMenuItem key={service.id} onSelect={() => router.push(`/servicios/historial?id=${service.id}&edit=true`)}>
-                              <div className="flex flex-col">
-                                  <span className="font-medium">Nueva firma para {service.vehicleIdentifier}</span>
-                                  <span className="text-xs text-muted-foreground">{service.description}</span>
-                                  <span className="text-xs text-muted-foreground">
-                                      {serviceDate && isValid(serviceDate) ? format(serviceDate, "dd MMM yyyy", { locale: es }) : 'Fecha no disponible'}
-                                  </span>
-                              </div>
-                          </DropdownMenuItem>
-                        )
-                    })
-                ) : (
-                    <DropdownMenuItem disabled>No hay firmas nuevas</DropdownMenuItem>
-                )}
-            </DropdownMenuContent>
-        </DropdownMenu>
-
         {/* User Area */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
