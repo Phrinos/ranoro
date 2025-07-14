@@ -53,20 +53,21 @@ export function VehicleForm({ initialData, onSubmit, onClose }: VehicleFormProps
     defaultValues: initialData ?
     {
       ...initialData,
+      year: initialData.year || new Date().getFullYear(),
       ownerPhone: initialData.ownerPhone || "",
       ownerEmail: initialData.ownerEmail || "",
       color: initialData.color || "",
       vin: initialData.vin || "",
       notes: initialData.notes || "",
-      dailyRentalCost: initialData.dailyRentalCost ?? '',
-      gpsMonthlyCost: initialData.gpsMonthlyCost ?? '',
-      adminMonthlyCost: initialData.adminMonthlyCost ?? '',
-      insuranceMonthlyCost: initialData.insuranceMonthlyCost ?? '',
+      dailyRentalCost: initialData.dailyRentalCost ?? null,
+      gpsMonthlyCost: initialData.gpsMonthlyCost ?? null,
+      adminMonthlyCost: initialData.adminMonthlyCost ?? null,
+      insuranceMonthlyCost: initialData.insuranceMonthlyCost ?? null,
     }
     : {
       make: "",
       model: "",
-      year: undefined,
+      year: new Date().getFullYear(),
       vin: "",
       licensePlate: "",
       color: "",
@@ -74,17 +75,14 @@ export function VehicleForm({ initialData, onSubmit, onClose }: VehicleFormProps
       ownerPhone: "",
       ownerEmail: "",
       notes: "",
-      dailyRentalCost: '',
-      gpsMonthlyCost: '',
-      adminMonthlyCost: '',
-      insuranceMonthlyCost: '',
+      dailyRentalCost: null,
+      gpsMonthlyCost: null,
+      adminMonthlyCost: null,
+      insuranceMonthlyCost: null,
     },
   });
 
   useEffect(() => {
-    if (!initialData?.year) {
-      form.setValue('year', new Date().getFullYear());
-    }
     if(initialData?.licensePlate) {
         form.setValue('licensePlate', initialData.licensePlate);
     }
