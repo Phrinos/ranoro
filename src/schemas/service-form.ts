@@ -97,7 +97,7 @@ export const serviceFormSchema = z.object({
     cardFolio: z.string().optional(),
     transferFolio: z.string().optional(),
     nextServiceInfo: z.object({
-      date: z.string(),
+      date: z.string().optional(),
       mileage: z.number().optional()
     }).optional(),
     customerName: z.string().optional(),
