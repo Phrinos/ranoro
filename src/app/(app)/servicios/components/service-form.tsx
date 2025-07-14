@@ -189,10 +189,6 @@ export function ServiceForm(props:Props){
   
   const watchedStatus = watch('status');
   const watchedVehicleId = watch('vehicleId');
-  const watchedNotes = watch('notes');
-  const watchedVehicleConditions = watch('vehicleConditions');
-  const watchedCustomerItems = watch('customerItems');
-  const watchedInspectionNotes = watch('safetyInspection.inspectionNotes');
   
   useEffect(() => {
     reset(defaultValues);
@@ -408,7 +404,7 @@ export function ServiceForm(props:Props){
                                 onGenerateQuoteWithAI={handleGenerateQuote}
                                 isGeneratingQuote={isGeneratingQuote}
                                 isEnhancingText={isEnhancingText}
-                                handleEnhanceText={handleEnhanceText as any}
+                                handleEnhanceText={handleEnhanceText}
                                 onNewInventoryItemCreated={handleNewInventoryItemCreated}
                                 categories={allCategories}
                                 suppliers={allSuppliers}
@@ -563,3 +559,4 @@ const PhotoReportTab = ({ control, isReadOnly, serviceId, onPhotoUploaded, onVie
         </Card>
     );
 };
+

@@ -33,7 +33,7 @@ interface ServiceDetailsCardProps {
   onGenerateQuoteWithAI: () => void;
   isGeneratingQuote: boolean;
   isEnhancingText?: string | null;
-  handleEnhanceText?: (fieldName: keyof ServiceFormValues) => void;
+  handleEnhanceText?: (fieldName: keyof ServiceFormValues | `serviceItems.${number}.suppliesUsed.${number}.description`) => void;
   onNewInventoryItemCreated: (formData: InventoryItemFormValues) => Promise<InventoryItem>;
   categories: InventoryCategory[];
   suppliers: Supplier[];

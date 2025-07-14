@@ -284,7 +284,6 @@ export const SafetyChecklist = ({ isReadOnly, onSignatureClick, signatureDataUrl
                     key={item.name} 
                     name={item.name} 
                     label={item.label} 
-                    control={control} 
                     isReadOnly={isReadOnly} 
                     serviceId={serviceId}
                     onPhotoUploaded={onPhotoUploaded}
