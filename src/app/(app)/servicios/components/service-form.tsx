@@ -489,9 +489,9 @@ export function ServiceForm(props:Props){
                                             render={({ field }) => (
                                                 <FormItem>
                                                     <div className="flex gap-2 mb-2">
-                                                        <Button type="button" size="sm" variant="outline" onClick={() => setValue('nextServiceInfo.mileage', (getValues('mileage') || 0) + 10000)}>+10,000 km</Button>
-                                                        <Button type="button" size="sm" variant="outline" onClick={() => setValue('nextServiceInfo.mileage', (getValues('mileage') || 0) + 12000)}>+12,000 km</Button>
-                                                        <Button type="button" size="sm" variant="outline" onClick={() => setValue('nextServiceInfo.mileage', (getValues('mileage') || 0) + 15000)}>+15,000 km</Button>
+                                                        <Button type="button" size="sm" variant="outline" onClick={() => setValue('nextServiceInfo.mileage', Number(getValues('mileage') || 0) + 10000)}>+10,000 km</Button>
+                                                        <Button type="button" size="sm" variant="outline" onClick={() => setValue('nextServiceInfo.mileage', Number(getValues('mileage') || 0) + 12000)}>+12,000 km</Button>
+                                                        <Button type="button" size="sm" variant="outline" onClick={() => setValue('nextServiceInfo.mileage', Number(getValues('mileage') || 0) + 15000)}>+15,000 km</Button>
                                                     </div>
                                                     <FormLabel>Kilometraje Próximo Servicio</FormLabel>
                                                     <FormControl><Input type="number" placeholder="Ej: 135000" {...field} value={field.value ?? ''} disabled={isReadOnly} /></FormControl>
