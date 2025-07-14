@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState } from 'react';
@@ -8,15 +9,17 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import { SupplierForm, type SupplierFormValues } from "./supplier-form";
 import type { Supplier } from "@/types";
 import { useToast } from "@/hooks/use-toast";
+import { Button } from "@/components/ui/button";
 
 interface SupplierDialogProps {
   trigger?: React.ReactNode;
   supplier?: Supplier | null;
-  onSave: (data: SupplierFormValues) => Promise<void>; // Changed from onSave?:
+  onSave: (data: SupplierFormValues) => Promise<void>;
   open?: boolean;
   onOpenChange?: (isOpen: boolean) => void;
 }
@@ -29,6 +32,7 @@ export function SupplierDialog({
   onOpenChange: setControlledOpen 
 }: SupplierDialogProps) {
   const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
 
   const isControlled = controlledOpen !== undefined && setControlledOpen !== undefined;
@@ -36,9 +40,9 @@ export function SupplierDialog({
   const onOpenChange = isControlled ? setControlledOpen : setUncontrolledOpen;
 
   const handleSubmit = async (values: SupplierFormValues) => {
+    setIsSubmitting(true);
     try {
       await onSave(values);
-      // Toast message will be handled by the caller (Page)
       onOpenChange(false);
     } catch (error) {
       console.error("Error saving supplier:", error);
@@ -47,6 +51,8 @@ export function SupplierDialog({
         description: "No se pudo guardar el proveedor. Intente de nuevo.",
         variant: "destructive",
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -62,11 +68,19 @@ export function SupplierDialog({
         </DialogHeader>
         <div className="flex-grow overflow-y-auto -mx-6 px-6">
           <SupplierForm
+            id="supplier-form"
             initialData={supplier}
             onSubmit={handleSubmit}
-            onClose={() => onOpenChange(false)}
           />
         </div>
+        <DialogFooter className="flex-shrink-0">
+          <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+            Cancelar
+          </Button>
+          <Button type="submit" form="supplier-form" disabled={isSubmitting}>
+            {isSubmitting ? "Guardando..." : (supplier ? "Actualizar Proveedor" : "Crear Proveedor")}
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
