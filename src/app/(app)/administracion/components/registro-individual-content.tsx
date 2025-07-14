@@ -26,7 +26,7 @@ const individualServiceSchema = z.object({
   licensePlate: z.string().min(3, "La placa es obligatoria."),
   vehicleId: z.string().min(1, "Debe seleccionar un vehículo válido."),
   description: z.string().min(5, "La descripción del servicio es obligatoria."),
-  totalCost: z.coerce.number().min(0, "El costo total debe ser positivo."),
+  totalCost: z.coerce.number().min(0.01, "El costo total debe ser mayor a 0."),
   suppliesCost: z.coerce.number().min(0, "El costo de insumos debe ser positivo."),
   paymentMethod: z.string().min(1, "Seleccione un método de pago."),
 });
@@ -42,6 +42,7 @@ export function RegistroIndividualContent() {
   const [searchedVehicle, setSearchedVehicle] = useState<Vehicle | null>(null);
   const [vehicleNotFound, setVehicleNotFound] = useState(false);
   const [searchResults, setSearchResults] = useState<Vehicle[]>([]);
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   
   const form = useForm<FormValues>({
     resolver: zodResolver(individualServiceSchema),
@@ -50,8 +51,8 @@ export function RegistroIndividualContent() {
       licensePlate: '',
       vehicleId: '',
       description: '',
-      totalCost: 0,
-      suppliesCost: 0,
+      totalCost: undefined,
+      suppliesCost: undefined,
       paymentMethod: 'Efectivo',
     },
   });
@@ -60,7 +61,12 @@ export function RegistroIndividualContent() {
   const totalCost = watch('totalCost');
   const suppliesCost = watch('suppliesCost');
   const licensePlateSearch = watch('licensePlate');
-  const serviceProfit = useMemo(() => (totalCost || 0) - (suppliesCost || 0), [totalCost, suppliesCost]);
+  const serviceProfit = useMemo(() => {
+      const tc = totalCost || 0;
+      const sc = suppliesCost || 0;
+      return tc > 0 ? tc - sc : 0;
+  }, [totalCost, suppliesCost]);
+
 
   useEffect(() => {
     const unsubscribe = inventoryService.onVehiclesUpdate((data) => {
@@ -108,7 +114,15 @@ export function RegistroIndividualContent() {
     try {
       await operationsService.saveIndividualMigratedService(data);
       toast({ title: 'Servicio Registrado', description: `El servicio para ${data.licensePlate} ha sido guardado.` });
-      form.reset({ serviceDate: new Date(), paymentMethod: 'Efectivo', licensePlate: '', vehicleId: '', description: '', totalCost: 0, suppliesCost: 0 });
+      form.reset({ 
+          serviceDate: new Date(), 
+          paymentMethod: 'Efectivo', 
+          licensePlate: '', 
+          vehicleId: '', 
+          description: '', 
+          totalCost: undefined, 
+          suppliesCost: undefined 
+      });
       setSearchedVehicle(null);
     } catch (e) {
       console.error(e);
@@ -182,7 +196,7 @@ export function RegistroIndividualContent() {
             <div className="space-y-4 p-4 border rounded-md">
                 <h3 className="font-semibold">2. Detalles del Servicio</h3>
                 <div className="grid md:grid-cols-2 gap-4">
-                     <FormField control={form.control} name="serviceDate" render={({ field }) => ( <FormItem className="flex flex-col"><FormLabel>Fecha del Servicio</FormLabel><Popover><PopoverTrigger asChild><FormControl><Button variant="outline" className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}><CalendarIcon className="mr-2 h-4 w-4 opacity-50"/>{field.value ? format(field.value, "PPP", { locale: es }) : <span>Seleccione fecha</span>}</Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus locale={es}/></PopoverContent></Popover><FormMessage /></FormItem> )}/>
+                     <FormField control={form.control} name="serviceDate" render={({ field }) => ( <FormItem className="flex flex-col"><FormLabel>Fecha del Servicio</FormLabel><Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}><PopoverTrigger asChild><FormControl><Button variant="outline" className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}><CalendarIcon className="mr-2 h-4 w-4 opacity-50"/>{field.value ? format(field.value, "PPP", { locale: es }) : <span>Seleccione fecha</span>}</Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value} onSelect={(date) => { field.onChange(date); setIsCalendarOpen(false); }} initialFocus locale={es}/></PopoverContent></Popover><FormMessage /></FormItem> )}/>
                      <FormField control={form.control} name="description" render={({ field }) => ( <FormItem><FormLabel>Servicio Realizado</FormLabel><FormControl><Input placeholder="Ej: Cambio de balatas delanteras" {...field} /></FormControl><FormMessage /></FormItem> )}/>
                 </div>
             </div>
@@ -190,8 +204,8 @@ export function RegistroIndividualContent() {
             <div className="space-y-4 p-4 border rounded-md">
                 <h3 className="font-semibold">3. Costos y Pago</h3>
                  <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
-                     <FormField control={form.control} name="totalCost" render={({ field }) => ( <FormItem><FormLabel>Costo Total (Cliente)</FormLabel><div className="relative"><DollarSign className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" /><FormControl><Input type="number" step="0.01" placeholder="1200.00" {...field} className="pl-8"/></FormControl></div><FormMessage /></FormItem> )}/>
-                     <FormField control={form.control} name="suppliesCost" render={({ field }) => ( <FormItem><FormLabel>Costo Insumos (Taller)</FormLabel><div className="relative"><DollarSign className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" /><FormControl><Input type="number" step="0.01" placeholder="750.00" {...field} className="pl-8"/></FormControl></div><FormMessage /></FormItem> )}/>
+                     <FormField control={form.control} name="totalCost" render={({ field }) => ( <FormItem><FormLabel>Costo Total (Cliente)</FormLabel><div className="relative"><DollarSign className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" /><FormControl><Input type="number" step="0.01" placeholder="1200.00" {...field} value={field.value ?? ''} className="pl-8"/></FormControl></div><FormMessage /></FormItem> )}/>
+                     <FormField control={form.control} name="suppliesCost" render={({ field }) => ( <FormItem><FormLabel>Costo Insumos (Taller)</FormLabel><div className="relative"><DollarSign className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" /><FormControl><Input type="number" step="0.01" placeholder="750.00" {...field} value={field.value ?? ''} className="pl-8"/></FormControl></div><FormMessage /></FormItem> )}/>
                      <div><FormLabel>Ganancia</FormLabel><div className="h-10 flex items-center p-2 border rounded-md bg-muted/50 font-semibold">{formatCurrency(serviceProfit)}</div></div>
                       <FormField control={form.control} name="paymentMethod" render={({ field }) => ( <FormItem><FormLabel>Método de Pago</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Seleccione método"/></SelectTrigger></FormControl><SelectContent>{paymentMethods.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )}/>
                  </div>
