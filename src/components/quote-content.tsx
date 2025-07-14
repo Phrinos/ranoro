@@ -8,7 +8,7 @@ import { es } from 'date-fns/locale';
 import React from 'react';
 import { cn, capitalizeWords, normalizeDataUrl, calculateDriverDebt, formatCurrency } from "@/lib/utils";
 import { Card, CardContent } from '@/components/ui/card';
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, CalendarCheck } from 'lucide-react';
 import { placeholderDrivers, placeholderRentalPayments } from '@/lib/placeholder-data';
 import Image from 'next/image';
 import { parseDate } from '@/lib/forms';
@@ -89,22 +89,38 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
 
         <main className="flex-grow">
           <section className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-2">
-              <div className="rounded-md border border-gray-700 overflow-hidden">
-                <h3 className="font-semibold text-sm text-white bg-gray-700 p-2">Datos del Cliente:</h3>
-                <div className="space-y-0.5 p-3 bg-gray-50 text-sm">
+              <div className="border-2 border-black rounded-md overflow-hidden">
+                <h3 className="font-bold p-1 bg-gray-700 text-white text-xs text-center">DATOS DEL CLIENTE</h3>
+                <div className="space-y-0.5 p-2 text-sm">
                   <p><span className="font-semibold">Nombre:</span> <span className="font-bold">{vehicle?.ownerName?.toUpperCase() || ''}</span></p>
                   <p><span className="font-semibold">Teléfono:</span> <span className="font-bold">{vehicle?.ownerPhone || ''}</span></p>
                   {vehicle?.ownerEmail && <p><span className="font-semibold">Email:</span> <span className="font-bold">{vehicle.ownerEmail}</span></p>}
                 </div>
               </div>
-              <div className="rounded-md border border-gray-700 overflow-hidden">
-                <h3 className="font-semibold text-sm text-white bg-gray-700 p-2">Datos del Vehículo:</h3>
-                <div className="space-y-0.5 p-3 bg-gray-50 text-sm">
-                    <p><span className="font-semibold">Vehículo:</span> <span className="font-bold">{vehicle ? `${vehicle.year} ${vehicle.make} ${vehicle.model}` : 'N/A'}</span></p>
-                    <p><span className="font-semibold">Placas:</span> <span className="font-bold">{vehicle?.licensePlate || 'N/A'}</span></p>
-                    {vehicle?.color && <p><span className="font-semibold">Color:</span> <span className="font-bold">{vehicle.color}</span></p>}
-                    {quote.mileage !== undefined && <p><span className="font-semibold">Kilometraje:</span> <span className="font-bold">{quote.mileage.toLocaleString('es-ES')} km</span></p>}
+              <div className="grid grid-cols-1 gap-4">
+                <div className="border-2 border-black rounded-md overflow-hidden">
+                  <h3 className="font-bold p-1 bg-gray-700 text-white text-xs text-center">DATOS DEL VEHÍCULO</h3>
+                  <div className="space-y-0.5 p-2 text-sm">
+                      <p><span className="font-semibold">Vehículo:</span> <span className="font-bold">{vehicle ? `${vehicle.year} ${vehicle.make} ${vehicle.model}` : 'N/A'}</span></p>
+                      <p><span className="font-semibold">Placas:</span> <span className="font-bold">{vehicle?.licensePlate || 'N/A'}</span></p>
+                      {vehicle?.color && <p><span className="font-semibold">Color:</span> <span className="font-bold">{vehicle.color}</span></p>}
+                      {quote.mileage !== undefined && <p><span className="font-semibold">Kilometraje:</span> <span className="font-bold">{quote.mileage.toLocaleString('es-ES')} km</span></p>}
+                  </div>
                 </div>
+                 {quote.nextServiceInfo && quote.status === 'Entregado' && (
+                  <div className="border-2 border-red-700 rounded-md overflow-hidden">
+                    <h3 className="font-bold p-1 bg-red-700 text-white text-xs text-center">PRÓXIMO SERVICIO</h3>
+                    <div className="p-2 space-y-1 text-center text-sm">
+                        <p className="text-[10px] font-semibold">Lo que ocurra primero</p>
+                        {quote.nextServiceInfo.date && isValid(parseDate(quote.nextServiceInfo.date)) && (
+                            <p className="font-bold">Fecha: {format(parseDate(quote.nextServiceInfo.date)!, "dd/MMMM/yyyy", { locale: es })}</p>
+                        )}
+                        {quote.nextServiceInfo.mileage && (
+                            <p className="font-bold">Kilometraje: {quote.nextServiceInfo.mileage.toLocaleString('es-MX')} km</p>
+                        )}
+                    </div>
+                  </div>
+                )}
               </div>
           </section>
 
