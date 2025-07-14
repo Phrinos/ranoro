@@ -71,7 +71,6 @@ import Link from 'next/link';
 /* ░░░░░░  COMPONENTE  ░░░░░░ */
 interface Props {
   initialDataService?: ServiceRecord|null
-  children?: React.ReactNode;
   vehicles:Vehicle[]; technicians:Technician[]; inventoryItems:InventoryItem[]
   serviceTypes:ServiceTypeRecord[]
   onSubmit:(d:ServiceRecord|QuoteRecord)=>Promise<void>
@@ -89,7 +88,6 @@ export function ServiceForm(props:Props){
     technicians,
     inventoryItems:invItems,
     onSubmit,
-    children,
     onClose,
     isReadOnly = false,
     mode = 'service',
@@ -190,7 +188,6 @@ export function ServiceForm(props:Props){
   const watchedStatus = watch('status');
   const watchedVehicleId = watch('vehicleId');
   const nextServiceInfo = watch('nextServiceInfo');
-  const customerName = watch('customerName');
   
   useEffect(() => {
     reset(defaultValues);
@@ -210,9 +207,6 @@ export function ServiceForm(props:Props){
           }
           if (currentStatus === 'En Taller' && !watch('receptionDateTime')) {
               setValue('receptionDateTime', new Date());
-          }
-          if (currentStatus === 'Entregado' && !watch('deliveryDateTime')) {
-            setValue('deliveryDateTime', new Date());
           }
         }
     });
@@ -439,42 +433,58 @@ export function ServiceForm(props:Props){
                             />
                         </TabsContent>
                     </Tabs>
-                    {(watchedStatus === 'Entregado' && nextServiceInfo && isValid(parseDate(nextServiceInfo.date))) && (
-                        <div className="grid md:grid-cols-2 gap-6 mt-6">
-                            <Card className="border-blue-200 bg-blue-50 dark:bg-blue-900/30">
-                                <CardHeader className="flex flex-row items-center justify-between pb-2">
-                                    <CardTitle className="flex items-center gap-2 text-lg text-blue-800 dark:text-blue-300">
-                                        <CalendarCheck className="h-5 w-5" />Próximo Servicio
-                                    </CardTitle>
-                                    <Button asChild variant="ghost" size="icon" className="h-7 w-7">
-                                        <Link href={`/vehiculos/${watchedVehicleId}`}>
-                                            <Edit className="h-4 w-4" />
-                                        </Link>
-                                    </Button>
-                                </CardHeader>
-                                <CardContent>
-                                    <p className="text-xs text-blue-700 dark:text-blue-300 mb-2">Lo que ocurra primero:</p>
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1">
-                                        <div>
-                                            <p className="font-semibold">Fecha:</p>
-                                            <p>{format(parseDate(nextServiceInfo.date)!, "dd 'de' MMMM 'de' yyyy", { locale: es })}</p>
-                                        </div>
-                                        {nextServiceInfo.mileage && (
-                                            <div>
-                                                <p className="font-semibold">Kilometraje:</p>
-                                                <p>{nextServiceInfo.mileage.toLocaleString("es-MX")} km</p>
+                    {(watchedStatus === 'Entregado') && (
+                        <div className="grid md:grid-cols-5 gap-6 mt-6">
+                            <div className="md:col-span-3">
+                                <PaymentSection isReadOnly={isReadOnly} />
+                                 {(nextServiceInfo && isValid(parseDate(nextServiceInfo.date))) && (
+                                    <Card className="border-blue-200 bg-blue-50 dark:bg-blue-900/30 mt-6">
+                                        <CardHeader className="flex flex-row items-center justify-between pb-2">
+                                            <CardTitle className="flex items-center gap-2 text-lg text-blue-800 dark:text-blue-300">
+                                                <CalendarCheck className="h-5 w-5" />Próximo Servicio
+                                            </CardTitle>
+                                        </CardHeader>
+                                        <CardContent>
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1">
+                                                <div>
+                                                    <p className="font-semibold">Fecha:</p>
+                                                    <p>{format(parseDate(nextServiceInfo.date)!, "dd 'de' MMMM 'de' yyyy", { locale: es })}</p>
+                                                </div>
+                                                {nextServiceInfo.mileage && (
+                                                    <div>
+                                                        <p className="font-semibold">Kilometraje:</p>
+                                                        <p>{nextServiceInfo.mileage.toLocaleString("es-MX")} km</p>
+                                                    </div>
+                                                )}
                                             </div>
-                                        )}
-                                    </div>
-                                </CardContent>
-                            </Card>
-                            <PaymentSection isReadOnly={isReadOnly} customerName={customerName}/>
+                                        </CardContent>
+                                    </Card>
+                                )}
+                            </div>
+                            <div className="md:col-span-2">
+                                <Card>
+                                    <CardHeader><CardTitle className="text-lg">Totales</CardTitle></CardHeader>
+                                    <CardContent className="space-y-2 text-sm">
+                                        <div className="flex justify-between font-semibold"><p>Ganancia:</p><p className="text-green-600">{formatCurrency(serviceProfit)}</p></div>
+                                        <div className="flex justify-between"><p className="text-muted-foreground">Costo Insumos:</p><p>{formatCurrency(totalSuppliesWorkshopCost)}</p></div>
+                                        <div className="flex justify-between font-bold text-base pt-2 border-t"><p>Total Cliente (IVA Inc.):</p><p>{formatCurrency(totalCost)}</p></div>
+                                    </CardContent>
+                                </Card>
+                            </div>
                         </div>
                     )}
                 </div>
                 
                 <div className="p-6 pt-4 border-t flex-shrink-0 bg-background">
-                    {children}
+                    {!isReadOnly && (
+                        <div className="flex justify-end gap-2">
+                           <Button variant="outline" type="button" onClick={onClose}>Cancelar</Button>
+                           <Button type="submit" disabled={formState.isSubmitting}>
+                                {formState.isSubmitting ? <Loader2 className="animate-spin mr-2" /> : null}
+                                {initialDataService?.id ? 'Actualizar Registro' : 'Crear Registro'}
+                           </Button>
+                        </div>
+                    )}
                 </div>
             </form>
         </FormProvider>

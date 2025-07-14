@@ -76,14 +76,7 @@ export default function NuevoServicioPage() {
         onSubmit={handleSaveNewService}
         onClose={() => router.push('/servicios/historial')}
         mode="quote" // Start as a quote by default
-      >
-        <div className="flex justify-end gap-2">
-            <Button variant="outline" type="button" onClick={() => router.push('/servicios/historial')}>Cancelar</Button>
-            <Button type="submit" form="service-form">
-                Crear Registro
-            </Button>
-        </div>
-      </ServiceForm>
+      />
       
       {serviceForPreview && (
         <UnifiedPreviewDialog
