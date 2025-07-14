@@ -1,4 +1,5 @@
 
+
 export interface WorkshopInfo {
   name: string;
   nameBold?: boolean;

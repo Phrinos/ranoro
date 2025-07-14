@@ -95,6 +95,10 @@ export const serviceFormSchema = z.object({
     paymentMethod: z.string().optional(),
     cardFolio: z.string().optional(),
     transferFolio: z.string().optional(),
+    nextServiceInfo: z.object({
+      date: z.string(),
+      mileage: z.number().optional()
+    }).optional(),
 }).refine(
     (d) => !(d.status === 'Agendado' && !d.serviceDate),
     {
