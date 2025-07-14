@@ -206,6 +206,11 @@ const completeService = async (service: ServiceRecord, paymentAndNextServiceDeta
         batch.update(publicDocRef, cleanObjectForFirestore(updatedServiceData));
     }
 
+    if (service.vehicleId && paymentAndNextServiceDetails.nextServiceInfo) {
+      const vehicleRef = doc(db, 'vehicles', service.vehicleId);
+      batch.update(vehicleRef, { nextServiceInfo: paymentAndNextServiceDetails.nextServiceInfo });
+    }
+
     // Deduct inventory
     const allSupplies = service.serviceItems.flatMap(item => item.suppliesUsed || []);
     const inventoryUpdates = new Map<string, number>();

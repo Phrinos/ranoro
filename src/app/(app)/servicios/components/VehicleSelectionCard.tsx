@@ -39,14 +39,12 @@ export function VehicleSelectionCard({
   const [vehicleSearchResults, setVehicleSearchResults] = useState<Vehicle[]>([]);
   const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
   const [lastService, setLastService] = useState<ServiceRecord | null>(null);
-  const [nextServiceInfo, setNextServiceInfo] = useState<{ date: string; mileage?: number } | null>(null);
   const [vehicleNotFound, setVehicleNotFound] = useState(false);
   const [serviceHistory, setServiceHistory] = useState<ServiceRecord[]>([]);
 
   const vehicleId = watch('vehicleId');
 
   useEffect(() => {
-    // Fetch all services once
     operationsService.onServicesUpdate(setServiceHistory);
   }, []);
 
@@ -69,16 +67,9 @@ export function VehicleSelectionCard({
           
         const latestService = vehicleServices[0] || null;
         setLastService(latestService);
-
-        const lastCompletedServiceWithNextInfo = vehicleServices
-          .filter(s => s.status === 'Completado' && s.nextServiceInfo && s.deliveryDateTime)
-          .sort((a,b) => parseISO(b.deliveryDateTime!).getTime() - parseISO(a.deliveryDateTime!).getTime())[0];
-
-        setNextServiceInfo(lastCompletedServiceWithNextInfo?.nextServiceInfo || null);
       } else {
         setSelectedVehicle(null);
         setLastService(null);
-        setNextServiceInfo(null);
       }
     };
 
@@ -87,7 +78,6 @@ export function VehicleSelectionCard({
     } else {
         setSelectedVehicle(null);
         setLastService(null);
-        setNextServiceInfo(null);
     }
   }, [vehicleId, localVehicles, serviceHistory]);
 
@@ -105,7 +95,6 @@ export function VehicleSelectionCard({
       setValue('vehicleId', undefined);
       setVehicleNotFound(true);
       setLastService(null);
-      setNextServiceInfo(null);
       toast({ title: "Vehículo No Encontrado", description: "Puede registrarlo si es nuevo.", variant: "default" });
     }
   };
@@ -120,7 +109,6 @@ export function VehicleSelectionCard({
     setVehicleNotFound(false);
     setVehicleSearchResults([]);
     
-    // Explicitly trigger data fetch on selection
     const vehicleServices = serviceHistory
       .filter(s => s.vehicleId === vehicle.id)
       .sort((a, b) => {
@@ -134,11 +122,6 @@ export function VehicleSelectionCard({
     const latestService = vehicleServices[0] || null;
     setLastService(latestService);
     
-    const lastCompletedServiceWithNextInfo = vehicleServices
-        .filter(s => s.status === 'Completado' && s.nextServiceInfo && s.deliveryDateTime)
-        .sort((a,b) => parseISO(b.deliveryDateTime!).getTime() - parseISO(a.deliveryDateTime!).getTime())[0];
-        
-    setNextServiceInfo(lastCompletedServiceWithNextInfo?.nextServiceInfo || null);
     onVehicleSelected(vehicle);
   };
   
@@ -177,7 +160,7 @@ export function VehicleSelectionCard({
     return `${service.mileage ? `${service.mileage.toLocaleString('es-ES')} km - ` : ''}${format(relevantDate, "dd MMM yyyy", { locale: es })} - ${description}`;
   };
 
-  const formatNextServiceInfo = (info: { date: string; mileage?: number } | null): string => {
+  const formatNextServiceInfo = (info: { date: string; mileage?: number } | null | undefined): string => {
       if (!info || !info.date) return 'No programado.';
       const parsedDate = parseDate(info.date);
       if(!parsedDate || !isValid(parsedDate)) return 'Fecha inválida.';
@@ -282,7 +265,7 @@ export function VehicleSelectionCard({
                                 <span className="flex items-center gap-1"><CalendarCheck className="h-3 w-3 text-blue-500" /> Próximo Servicio:</span>
                                 <Button asChild variant="ghost" size="icon" className="h-5 w-5"><Link href={`/vehiculos/${selectedVehicle.id}`}><Edit className="h-3 w-3" /></Link></Button>
                             </div>
-                            <p className="text-muted-foreground truncate" title={formatNextServiceInfo(nextServiceInfo)}>{formatNextServiceInfo(nextServiceInfo)}</p>
+                            <p className="text-muted-foreground truncate" title={formatNextServiceInfo(selectedVehicle.nextServiceInfo)}>{formatNextServiceInfo(selectedVehicle.nextServiceInfo)}</p>
                         </div>
                     </div>
                 )}
