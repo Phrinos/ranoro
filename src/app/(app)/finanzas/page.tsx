@@ -22,7 +22,7 @@ import {
 import { es } from 'date-fns/locale';
 import { CalendarIcon, DollarSign, TrendingUp, TrendingDown, Pencil, BadgeCent, Search, LineChart, PackageSearch, ListFilter, Filter, Package as PackageIcon } from "lucide-react";
 import { cn, formatCurrency } from "@/lib/utils";
-import { FixedExpensesDialog } from "../finanzas/components/fixed-expenses-dialog"; 
+import { FixedExpensesDialog } from "./components/fixed-expenses-dialog"; 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { DateRange } from "react-day-picker";
 import { operationsService, inventoryService, personnelService } from '@/lib/services';
@@ -96,7 +96,7 @@ function FinanzasPageComponent() {
           const dateToParse = s.deliveryDateTime || s.serviceDate;
           if (!dateToParse) return false;
           const parsedDate = parseDate(dateToParse);
-          return s.status === 'Completado' && isValid(parsedDate) && isWithinInterval(parsedDate, { start: from, end: to });
+          return (s.status === 'Completado' || s.status === 'Entregado') && isValid(parsedDate) && isWithinInterval(parsedDate, { start: from, end: to });
         });
 
         const totalIncomeFromSales = salesInRange.reduce((sum, s) => sum + s.totalAmount, 0);
@@ -115,12 +115,12 @@ function FinanzasPageComponent() {
         servicesInRange.forEach(s => {
           const type = s.serviceType || 'Servicio General';
           if (!serviceIncomeBreakdown[type]) serviceIncomeBreakdown[type] = { income: 0, profit: 0, count: 0 };
-          serviceIncomeBreakdown[type].income += s.totalCost;
+          serviceIncomeBreakdown[type].income += (s.totalCost || 0);
           serviceIncomeBreakdown[type].profit += s.serviceProfit || 0;
           serviceIncomeBreakdown[type].count += 1;
         });
-
-        const totalIncomeFromServices = servicesInRange.reduce((sum, s) => sum + s.totalCost, 0);
+        
+        const totalIncomeFromServices = servicesInRange.reduce((sum, s) => sum + (s.totalCost || 0), 0);
         const totalProfitFromServices = servicesInRange.reduce((sum, s) => sum + (s.serviceProfit || 0), 0);
         
         const totalOperationalIncome = totalIncomeFromSales + totalIncomeFromServices;
