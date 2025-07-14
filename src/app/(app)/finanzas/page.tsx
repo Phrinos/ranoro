@@ -96,10 +96,17 @@ function ResumenFinancieroPageComponent() {
         if (isLoading || !dateRange?.from) return emptyState;
         
         const from = startOfDay(dateRange.from);
-        const to = dateRange.to ? endOfDay(dateRange.from) : endOfDay(dateRange.from);
+        const to = dateRange.to ? endOfDay(dateRange.to) : endOfDay(dateRange.from);
         
         const salesInRange = allSales.filter(s => s.status !== 'Cancelado' && isValid(parseISO(s.saleDate)) && isWithinInterval(parseISO(s.saleDate), { start: from, end: to }));
-        const servicesInRange = allServices.filter(s => s.status === 'Completado' && s.deliveryDateTime && isValid(parseISO(s.deliveryDateTime)) && isWithinInterval(parseISO(s.deliveryDateTime), { start: from, end: to }));
+        
+        const servicesInRange = allServices.filter(s => {
+          if (s.status !== 'Completado') return false;
+          const dateToParse = s.deliveryDateTime || s.serviceDate;
+          if (!dateToParse) return false;
+          const parsedDate = parseISO(dateToParse);
+          return isValid(parsedDate) && isWithinInterval(parsedDate, { start: from, end: to });
+        });
 
         const totalIncomeFromSales = salesInRange.reduce((sum, s) => sum + s.totalAmount, 0);
         const totalProfitFromSales = salesInRange.reduce((sum, s) => sum + calculateSaleProfit(s, allInventory), 0);
@@ -185,9 +192,8 @@ function ResumenFinancieroPageComponent() {
         const from = startOfDay(dateRange.from);
         const to = dateRange.to ? endOfDay(dateRange.to) : endOfDay(dateRange.from);
         let list = combinedOperations.filter(op => {
-            // For services, prioritize deliveryDateTime for filtering if it exists
-            const dateToParse = (op.originalObject as ServiceRecord).status === 'Completado' 
-                ? (op.originalObject as ServiceRecord).deliveryDateTime || op.date 
+            const dateToParse = (op.originalObject as SaleReceipt | ServiceRecord).status === 'Completado'
+                ? (op.originalObject as ServiceRecord).deliveryDateTime || op.date
                 : op.date;
             
             if (!dateToParse) return false;
@@ -362,4 +368,5 @@ export default function FinanzasPageWrapper() {
         </Suspense>
     );
 }
+
 
