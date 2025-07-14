@@ -40,7 +40,8 @@ import {
   Landmark,
   Shield,
   LayoutGrid,
-  CalendarDays
+  CalendarDays,
+  MessageSquare
 } from 'lucide-react';
 import type { User, AppRole } from '@/types';
 import { AUTH_USER_LOCALSTORAGE_KEY, defaultSuperAdmin, placeholderAppRoles } from '@/lib/placeholder-data';
@@ -163,6 +164,13 @@ const BASE_NAV_STRUCTURE: ReadonlyArray<Omit<NavigationEntry, 'isActive'>> = [
     permissions: ['dashboard:view'] // All users can see options
   },
   {
+    label: 'Mensajería',
+    path: '/mensajeria',
+    icon: MessageSquare,
+    groupTag: "Opciones",
+    permissions: ['messaging:manage']
+  },
+  {
     label: 'Administración',
     path: '/administracion',
     icon: Shield,
@@ -243,7 +251,7 @@ const useNavigation = (): NavigationEntry[] => {
     if (entry.path === '/vehiculos' && (pathname.startsWith('/vehiculos') || pathname.startsWith('/precios'))) isActive = true;
     if (entry.path === '/pos' && pathname.startsWith('/pos')) isActive = true;
     if (entry.path === '/personal' && (pathname.startsWith('/personal') || pathname.startsWith('/tecnicos') || pathname.startsWith('/administrativos'))) isActive = true;
-    if (entry.path === '/opciones' && (pathname.startsWith('/opciones') || pathname.startsWith('/perfil') || pathname.startsWith('/manual') || pathname.startsWith('/admin/configuracion-ticket'))) isActive = true;
+    if (entry.path === '/opciones' && (pathname.startsWith('/opciones') || pathname.startsWith('/perfil') || pathname.startsWith('/manual') || pathname.startsWith('/admin/configuracion-ticket') || pathname.startsWith('/mensajeria'))) isActive = true;
     if (entry.path === '/finanzas/resumen' && pathname.startsWith('/finanzas')) isActive = true;
     if (entry.path === '/administracion' && (pathname.startsWith('/administracion') || pathname.startsWith('/admin'))) isActive = true;
     if (entry.path === '/flotilla' && (pathname.startsWith('/flotilla') || pathname.startsWith('/conductores') || pathname.startsWith('/rentas'))) isActive = true;
@@ -254,6 +262,7 @@ const useNavigation = (): NavigationEntry[] => {
     if (entry.path === '/finanzas/resumen' && pathname.startsWith('/finanzas/reporte')) isActive = false;
     if (entry.path === '/flotilla' && pathname.startsWith('/rentas')) isActive = false;
     if (entry.path === '/pos' && pathname.startsWith('/pos/nuevo')) isActive = false;
+    if (entry.path === '/opciones' && pathname.startsWith('/mensajeria')) isActive = false;
 
 
     return { ...entry, isActive };
