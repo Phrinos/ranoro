@@ -68,7 +68,7 @@ function FinanzasPageComponent() {
             personnelService.onAdminStaffUpdate(setAllAdminStaff),
             inventoryService.onFixedExpensesUpdate((expenses) => {
                 setFixedExpenses(expenses);
-                setIsLoading(false); // Consider loading finished after the last subscription is active
+                setIsLoading(false);
             })
         ];
         
@@ -109,7 +109,6 @@ function FinanzasPageComponent() {
         
         const serviceIncomeBreakdown: Record<string, { income: number; profit: number; count: number }> = {};
 
-        // Process Sales
         if (salesInRange.length > 0) {
             serviceIncomeBreakdown['Venta'] = {
                 income: totalIncomeFromSales,
@@ -118,7 +117,6 @@ function FinanzasPageComponent() {
             };
         }
 
-        // Process Services
         servicesInRange.forEach(s => {
           const type = s.serviceType || 'Servicio General';
           if (!serviceIncomeBreakdown[type]) serviceIncomeBreakdown[type] = { income: 0, profit: 0, count: 0 };
@@ -330,4 +328,3 @@ export default function FinanzasPageWrapper() {
         </Suspense>
     );
 }
-

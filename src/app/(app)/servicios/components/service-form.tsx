@@ -41,7 +41,7 @@ import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from '
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Textarea } from '@/components/ui/textarea'
 import { useToast } from '@/hooks/use-toast'
-import { cn, formatCurrency as formatCurrencyUtil } from '@/lib/utils'
+import { cn, formatCurrency } from '@/lib/utils'
 import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data'
 
 import type {
@@ -189,6 +189,10 @@ export function ServiceForm(props:Props){
   
   const watchedStatus = watch('status');
   const watchedVehicleId = watch('vehicleId');
+  const watchedNotes = watch('notes');
+  const watchedVehicleConditions = watch('vehicleConditions');
+  const watchedCustomerItems = watch('customerItems');
+  const watchedInspectionNotes = watch('safetyInspection.inspectionNotes');
   
   useEffect(() => {
     reset(defaultValues);
@@ -209,9 +213,7 @@ export function ServiceForm(props:Props){
           if (currentStatus === 'En Taller' && !watch('receptionDateTime')) {
               setValue('receptionDateTime', new Date());
           }
-          if (currentStatus === 'Entregado' && !watch('deliveryDateTime')) {
-              setValue('deliveryDateTime', new Date());
-          }
+          // The deliveryDateTime is now set upon completion to avoid premature locking.
         }
     });
     return () => subscription.unsubscribe();
@@ -376,7 +378,7 @@ export function ServiceForm(props:Props){
   return (
     <>
       <FormProvider {...form}>
-        <form id="service-form" onSubmit={handleSubmit(formSubmitWrapper)} className="flex-grow flex flex-col overflow-hidden">
+        <form id="service-form" onSubmit={handleSubmit(formSubmitWrapper)} className="flex flex-col flex-grow overflow-hidden">
             <div className="flex-grow overflow-y-auto px-6 space-y-6">
                 <VehicleSelectionCard
                     isReadOnly={props.isReadOnly}
@@ -386,18 +388,13 @@ export function ServiceForm(props:Props){
                 />
 
                 <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                    <div className="flex justify-between items-center mb-4 sticky top-0 z-10 bg-background py-2">
+                    <div className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm py-2 -mx-6 px-6 mb-4 border-b">
                         <TabsList className={cn("grid w-full", "grid-cols-4")}>
                             <TabsTrigger value="details" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Detalles</TabsTrigger>
                             <TabsTrigger value="reception" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Recepción/Entrega</TabsTrigger>
                             <TabsTrigger value="photoreport" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Fotos</TabsTrigger>
                             <TabsTrigger value="checklist" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Revisión</TabsTrigger>
                         </TabsList>
-                        {initialDataService && (
-                            <Button variant="outline" size="icon" className="ml-2" onClick={() => setIsPreviewOpen(true)}>
-                                <Eye className="h-4 w-4" />
-                            </Button>
-                        )}
                     </div>
                     <TabsContent value="details" className="mt-0">
                         <ServiceDetailsCard
@@ -483,10 +480,10 @@ export function ServiceForm(props:Props){
                             <CardHeader><CardTitle className="flex items-center gap-2"><DollarSign/>Resumen de Costos</CardTitle></CardHeader>
                             <CardContent>
                                 <div className="space-y-1 text-sm">
-                                    <div className="flex justify-between font-bold text-lg text-primary"><span>Total (IVA Inc.):</span><span>{formatCurrencyUtil(totalCost)}</span></div>
-                                    <div className="flex justify-between text-xs"><span>(-) Costo Insumos:</span><span className="font-medium text-red-600 dark:text-red-400">{formatCurrencyUtil(totalSuppliesWorkshopCost)}</span></div>
+                                    <div className="flex justify-between font-bold text-lg text-primary"><span>Total (IVA Inc.):</span><span>{formatCurrency(totalCost)}</span></div>
+                                    <div className="flex justify-between text-xs"><span>(-) Costo Insumos:</span><span className="font-medium text-red-600 dark:text-red-400">{formatCurrency(totalSuppliesWorkshopCost)}</span></div>
                                     <hr className="my-1 border-dashed"/>
-                                    <div className="flex justify-between font-bold text-green-700 dark:text-green-400"><span>(=) Ganancia:</span><span>{formatCurrencyUtil(serviceProfit)}</span></div>
+                                    <div className="flex justify-between font-bold text-green-700 dark:text-green-400"><span>(=) Ganancia:</span><span>{formatCurrency(serviceProfit)}</span></div>
                                 </div>
                             </CardContent>
                         </Card>
@@ -552,7 +549,7 @@ const PhotoReportTab = ({ control, isReadOnly, serviceId, onPhotoUploaded, onVie
                             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                                 {(watch(`photoReports.${index}.photos`) || []).map((photoUrl: string, pIndex: number) => (
                                     <button type="button" key={pIndex} className="relative aspect-video w-full bg-muted rounded-md overflow-hidden group" onClick={() => onViewImage(photoUrl)}>
-                                        <Image src={photoUrl} alt={`Foto ${pIndex + 1}`} fill objectFit="cover" className="transition-transform duration-300 group-hover:scale-105" data-ai-hint="car damage photo"/>
+                                        <Image src={photoUrl} alt={`Foto ${pIndex + 1}`} fill className="object-contain" data-ai-hint="car damage photo"/>
                                         <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity group-hover:opacity-100"><Eye className="h-6 w-6 text-white" /></div>
                                     </button>
                                 ))}

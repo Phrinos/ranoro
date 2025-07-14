@@ -38,7 +38,7 @@ interface ServiceDialogProps {
   onCancelService?: (serviceId: string, reason: string) => void;
   onViewQuoteRequest?: (serviceId: string) => void;
   onComplete?: (service: ServiceRecord, paymentDetails: any, nextServiceInfo?: any) => void;
-  children?: React.ReactNode; // Added children prop
+  children?: React.ReactNode;
 }
 
 export function ServiceDialog({ 
@@ -59,12 +59,11 @@ export function ServiceDialog({
   onDelete,
   onCancelService,
   onViewQuoteRequest,
-  children, // Added children to destructuring
+  children,
 }: ServiceDialogProps) {
   const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
   const { toast } = useToast();
 
-  // State for dynamic title based on form's status
   const [formStatus, setFormStatus] = useState<ServiceRecord['status'] | undefined>(service?.status || quote?.status);
 
   const isControlled = controlledOpen !== undefined && setControlledOpen !== undefined;
@@ -82,16 +81,18 @@ export function ServiceDialog({
     }
   }, [open, service, quote]);
 
-
-  // Mark signatures as "viewed" when the dialog opens
   useEffect(() => {
     const syncAndMarkAsViewed = async () => {
-      if (open && service && service.id && mode === 'service') {
+      if (open && service?.id && mode === 'service') { // Only run if service exists
         let changed = false;
-        let serviceToUpdate = { ...service };
+        const serviceDocRef = doc(db, "serviceRecords", service.id);
+        const currentDocSnap = await getDoc(serviceDocRef);
 
-        // Sync from public document first
-        if (service.publicId && db) {
+        if (!currentDocSnap.exists()) return; // Don't try to update a non-existent doc
+
+        let serviceToUpdate = { ...currentDocSnap.data() } as ServiceRecord;
+
+        if (service.publicId) {
           try {
             const publicDocRef = doc(db, 'publicServices', service.publicId);
             const publicDocSnap = await getDoc(publicDocRef);
@@ -112,7 +113,6 @@ export function ServiceDialog({
           }
         }
 
-        // Now, mark as viewed
         if (serviceToUpdate.customerSignatureReception && !serviceToUpdate.receptionSignatureViewed) {
           serviceToUpdate.receptionSignatureViewed = true;
           changed = true;
@@ -122,8 +122,8 @@ export function ServiceDialog({
           changed = true;
         }
         
-        if (changed && db) {
-          const serviceDocRef = doc(db, "serviceRecords", service.id);
+        if (changed) {
+          // Use setDoc with merge to safely update or create fields
           await setDoc(serviceDocRef, { 
               customerSignatureReception: serviceToUpdate.customerSignatureReception,
               customerSignatureDelivery: serviceToUpdate.customerSignatureDelivery,
@@ -133,7 +133,9 @@ export function ServiceDialog({
         }
       }
     };
-    syncAndMarkAsViewed();
+    if (open) {
+      syncAndMarkAsViewed();
+    }
   }, [open, service, mode]);
   
   const handleInternalCompletion = async (service: ServiceRecord, paymentDetails: any, nextServiceInfo?: any) => {
@@ -141,7 +143,7 @@ export function ServiceDialog({
       const serviceWithAllData = { ...service, ...fullFormDataForCompletion, nextServiceInfo };
       await onComplete(serviceWithAllData, paymentDetails, nextServiceInfo);
     }
-    onOpenChange(false); // Close the main dialog
+    onOpenChange(false);
     setIsCompleteDialogOpen(false);
   };
 
