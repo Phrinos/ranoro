@@ -2,7 +2,7 @@
 
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { useFormContext, type Control } from "react-hook-form";
 import {
   FormField,
@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -26,10 +27,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Signature, BrainCircuit, Loader2, CheckCircle, Clock } from "lucide-react";
+import { Signature, BrainCircuit, Loader2, CheckCircle, Clock, Edit } from "lucide-react";
 import type { ServiceFormValues } from "@/schemas/service-form";
 import { format, parseISO, isValid } from "date-fns";
-import { es } from "date-fns/locale";
+import { es } from 'date-fns/locale';
 import { normalizeDataUrl } from "@/lib/utils";
 import { parseDate } from "@/lib/forms";
 
@@ -68,6 +69,8 @@ export const ReceptionAndDelivery = ({
   const { control, watch, getValues } = useFormContext<ServiceFormValues>();
   const customerSignatureReception = watch("customerSignatureReception");
   const customerSignatureDelivery = watch("customerSignatureDelivery");
+
+  const [isEditingDelivery, setIsEditingDelivery] = useState(false);
 
   const receptionDateTime = watch("receptionDateTime");
   const deliveryDateTime = watch("deliveryDateTime");
@@ -203,10 +206,34 @@ export const ReceptionAndDelivery = ({
         </CardHeader>
         <CardContent className="space-y-6">
             <div className="space-y-2">
-                <FormLabel>Fecha y Hora de Entrega</FormLabel>
-                <div className="p-2 border rounded-md bg-muted/50 flex items-center justify-center text-sm font-medium h-10">
-                    {formattedDeliveryDate || 'Pendiente'}
-                </div>
+                 <div className="flex justify-between items-center">
+                    <FormLabel>Fecha y Hora de Entrega</FormLabel>
+                    {!isReadOnly && (
+                        <Button type="button" variant="ghost" size="icon" onClick={() => setIsEditingDelivery(!isEditingDelivery)}>
+                            <Edit className="h-4 w-4" />
+                        </Button>
+                    )}
+                 </div>
+                 {isEditingDelivery ? (
+                    <FormField
+                      control={control}
+                      name="deliveryDateTime"
+                      render={({ field }) => (
+                        <FormControl>
+                           <Input
+                                type="datetime-local"
+                                value={field.value ? format(field.value, "yyyy-MM-dd'T'HH:mm") : ''}
+                                onChange={(e) => field.onChange(e.target.value ? new Date(e.target.value) : null)}
+                                disabled={isReadOnly}
+                            />
+                        </FormControl>
+                      )}
+                    />
+                 ) : (
+                    <div className="p-2 border rounded-md bg-muted/50 flex items-center justify-center text-sm font-medium h-10">
+                        {formattedDeliveryDate || 'Pendiente'}
+                    </div>
+                 )}
             </div>
             <div>
               <FormLabel className="font-semibold text-base">Firma de Conformidad</FormLabel>
