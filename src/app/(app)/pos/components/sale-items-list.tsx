@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React from 'react';
@@ -20,14 +21,14 @@ interface SaleItemsListProps {
 
 export function SaleItemsList({ onAddItem, inventoryItems }: SaleItemsListProps) {
   const { control, getValues, setValue } = useFormContext();
-  const { fields, remove } = useFieldArray({ control, name: "items" });
+  const { fields, remove, update } = useFieldArray({ control, name: "items" });
   const { toast } = useToast();
 
   const handleQuantityChange = (index: number, delta: number) => {
     const itemInSale = getValues(`items.${index}`);
     if (!itemInSale) return;
     
-    const newQuantity = itemInSale.quantity + delta;
+    const newQuantity = (Number(itemInSale.quantity) || 0) + delta;
     if (newQuantity <= 0) return;
 
     const itemDetails = inventoryItems.find(inv => inv.id === itemInSale.inventoryItemId);
@@ -36,7 +37,23 @@ export function SaleItemsList({ onAddItem, inventoryItems }: SaleItemsListProps)
       return;
     }
     
-    setValue(`items.${index}.quantity`, newQuantity, { shouldDirty: true, shouldValidate: true });
+    update(index, { ...itemInSale, quantity: newQuantity, totalPrice: newQuantity * itemInSale.unitPrice });
+  };
+  
+  const handleManualQuantitySet = (index: number, value: string) => {
+    const itemInSale = getValues(`items.${index}`);
+    if (!itemInSale) return;
+    
+    const newQuantity = Number(value);
+    if (isNaN(newQuantity) || newQuantity < 0) return;
+
+    const itemDetails = inventoryItems.find(inv => inv.id === itemInSale.inventoryItemId);
+    if (itemDetails && !itemDetails.isService && newQuantity > itemDetails.quantity) {
+      toast({ title: 'Stock Insuficiente', description: `Solo hay ${itemDetails.quantity} de ${itemDetails.name}.`, variant: 'destructive' });
+      return;
+    }
+    
+    update(index, { ...itemInSale, quantity: newQuantity, totalPrice: newQuantity * itemInSale.unitPrice });
   };
 
   return (
@@ -50,19 +67,26 @@ export function SaleItemsList({ onAddItem, inventoryItems }: SaleItemsListProps)
                 <div key={field.id} className="flex flex-col sm:flex-row items-start sm:items-center gap-2 p-3 border rounded-md bg-muted/20 dark:bg-muted/50">
                   <div className="flex-1 w-full sm:w-auto">
                     <FormLabel className="text-xs">Artículo</FormLabel>
-                    <Input readOnly value={`${getValues(`items.${index}.itemName`)} (${formatCurrency(getValues(`items.${index}.unitPrice`))} c/u)`} className="bg-muted/30 dark:bg-muted/60 border-none text-sm font-medium w-full mt-1"/>
+                    <Input readOnly value={`${field.itemName} (${formatCurrency(field.unitPrice)} c/u)`} className="bg-muted/30 dark:bg-muted/60 border-none text-sm font-medium w-full mt-1"/>
                   </div>
                   <div className="w-full sm:w-40">
                     <FormLabel className="text-xs">Cantidad</FormLabel>
                     <div className="flex items-center justify-center gap-1 mt-1">
                       <Button type="button" variant="outline" size="icon" className="h-8 w-8" onClick={() => handleQuantityChange(index, -1)}><Minus className="h-4 w-4" /></Button>
-                      <FormField control={control} name={`items.${index}.quantity`} render={({ field: qtyField }) => ( <Input type="number" step="any" min="0.001" {...qtyField} className="w-full text-center font-medium h-8" /> )}/>
+                      <Input 
+                        type="number" 
+                        step="any" 
+                        min="0.001" 
+                        value={field.quantity} 
+                        onChange={(e) => handleManualQuantitySet(index, e.target.value)} 
+                        className="w-full text-center font-medium h-8" 
+                      />
                       <Button type="button" variant="outline" size="icon" className="h-8 w-8" onClick={() => handleQuantityChange(index, 1)}><Plus className="h-4 w-4" /></Button>
                     </div>
                   </div>
                   <div className="w-full sm:w-28 mt-2 sm:mt-0 sm:self-end">
                     <FormLabel className="text-xs">Precio Total (IVA Inc.)</FormLabel>
-                    <Input readOnly value={formatCurrency(getValues(`items.${index}.totalPrice`))} className="bg-muted/50 dark:bg-muted/80 border-none text-sm font-medium mt-1"/>
+                    <Input readOnly value={formatCurrency(field.totalPrice)} className="bg-muted/50 dark:bg-muted/80 border-none text-sm font-medium mt-1"/>
                   </div>
                   <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)} aria-label="Eliminar artículo" className="sm:self-end mb-1"><Trash2 className="h-4 w-4 text-destructive" /></Button>
                 </div>
