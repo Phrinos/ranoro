@@ -13,6 +13,7 @@ import { Edit, CheckCircle, Ban, DollarSign, User, Phone, TrendingUp, Clock, Wre
 import { formatCurrency } from '@/lib/utils';
 import { parseDate } from '@/lib/forms';
 import { cn } from '@/lib/utils';
+import Link from 'next/link';
 
 interface ServiceAppointmentCardProps {
     service: ServiceRecord;
@@ -67,15 +68,15 @@ export const ServiceAppointmentCard = React.memo(({
     const vehicle = vehicles.find(v => v.id === service.vehicleId);
     const appointmentStatus = getAppointmentStatus(service);
     
-    // Use receptionDateTime if available (for 'En Taller'), otherwise use serviceDate
-    const displayDate = parseDate(service.receptionDateTime) || parseDate(service.serviceDate) || new Date();
-
     const isDone = service.status === 'Entregado' || service.status === 'Cancelado';
     const isQuote = service.status === 'Cotizacion';
     const isScheduled = service.status === 'Agendado';
     const isWorkshop = service.status === 'En Taller';
     const isCompleted = service.status === 'Entregado';
     const isCancelled = service.status === 'Cancelado';
+
+    // Prioritize reception date for workshop status, otherwise use service date
+    const displayDate = isWorkshop ? parseDate(service.receptionDateTime) || parseDate(service.serviceDate) || new Date() : parseDate(service.serviceDate) || new Date();
 
     const technicianName = technicians.find(t => t.id === service.technicianId)?.name;
 

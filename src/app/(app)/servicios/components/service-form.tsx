@@ -1,5 +1,4 @@
 
-
 /* app/(app)/servicios/components/service-form.tsx */
 'use client'
 
@@ -12,7 +11,7 @@ import { useCallback, useMemo, useState, useEffect, useRef } from 'react'
 import { nanoid } from 'nanoid'
 import {
   Ban, Camera, CheckCircle, Download, Eye, ShieldCheck, Trash2, Wrench, BrainCircuit, Loader2, PlusCircle, Signature,
-  CalendarIcon, Wallet, DollarSign, CalendarCheck
+  CalendarIcon, Wallet, DollarSign, CalendarCheck, Edit
 } from 'lucide-react'
 import {
   Card,
@@ -66,6 +65,7 @@ import { useServiceTotals } from '@/hooks/use-service-form-hooks'
 import { inventoryService } from "@/lib/services";
 import type { InventoryItemFormValues } from "../../inventario/components/inventory-item-form";
 import { PaymentSection } from '../../pos/components/payment-section';
+import Link from 'next/link';
 
 /* ░░░░░░  COMPONENTE  ░░░░░░ */
 interface Props {
@@ -201,10 +201,12 @@ export function ServiceForm(props:Props){
   }, [watchedStatus, watch, setValue]);
   
   useEffect(() => {
+    if (watchedVehicleId) {
       const selectedVehicle = parentVehicles.find(v => v.id === watchedVehicleId);
       if (selectedVehicle) {
-          setValue('customerName', selectedVehicle.ownerName);
+        setValue('customerName', selectedVehicle.ownerName);
       }
+    }
   }, [watchedVehicleId, parentVehicles, setValue]);
   
   const [activeTab, setActiveTab] = useState('details')
@@ -427,22 +429,30 @@ export function ServiceForm(props:Props){
                     <div className="grid md:grid-cols-2 gap-6 mt-6">
                         {nextServiceInfo && (
                             <Card className="border-blue-200 bg-blue-50 dark:bg-blue-900/30">
-                                <CardHeader>
+                                <CardHeader className="flex flex-row items-center justify-between pb-2">
                                     <CardTitle className="flex items-center gap-2 text-lg text-blue-800 dark:text-blue-300">
-                                        <CalendarCheck className="h-5 w-5" />Próximo Servicio Recomendado
+                                        <CalendarCheck className="h-5 w-5" />Próximo Servicio
                                     </CardTitle>
+                                    <Button asChild variant="ghost" size="icon" className="h-7 w-7">
+                                        <Link href={`/vehiculos/${watchedVehicleId}`}>
+                                            <Edit className="h-4 w-4" />
+                                        </Link>
+                                    </Button>
                                 </CardHeader>
-                                <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                    <div>
-                                        <p className="font-semibold">Fecha:</p>
-                                        <p>{format(parseDate(nextServiceInfo.date)!, "dd 'de' MMMM 'de' yyyy", { locale: es })}</p>
-                                    </div>
-                                    {nextServiceInfo.mileage && (
+                                <CardContent>
+                                    <p className="text-xs text-blue-700 dark:text-blue-300 mb-2">Lo que ocurra primero:</p>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1">
                                         <div>
-                                            <p className="font-semibold">Kilometraje:</p>
-                                            <p>{nextServiceInfo.mileage.toLocaleString("es-MX")} km</p>
+                                            <p className="font-semibold">Fecha:</p>
+                                            <p>{format(parseDate(nextServiceInfo.date)!, "dd 'de' MMMM 'de' yyyy", { locale: es })}</p>
                                         </div>
-                                    )}
+                                        {nextServiceInfo.mileage && (
+                                            <div>
+                                                <p className="font-semibold">Kilometraje:</p>
+                                                <p>{nextServiceInfo.mileage.toLocaleString("es-MX")} km</p>
+                                            </div>
+                                        )}
+                                    </div>
                                 </CardContent>
                             </Card>
                         )}
