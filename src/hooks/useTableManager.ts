@@ -3,7 +3,8 @@
 
 import { useState, useMemo } from 'react';
 import type { DateRange } from 'react-day-picker';
-import { isWithinInterval, parseISO, isValid, startOfDay, endOfDay, compareAsc, compareDesc } from 'date-fns';
+import { isWithinInterval, isValid, startOfDay, endOfDay, compareAsc, compareDesc } from 'date-fns';
+import { parseDate } from '@/lib/forms'; // Import the robust date parser
 
 interface UseTableManagerOptions<T> {
   initialData: T[];
@@ -40,8 +41,8 @@ export function useTableManager<T extends { [key: string]: any }>({
       const to = dateRange.to ? endOfDay(dateRange.to) : endOfDay(dateRange.from);
       data = data.filter(item => {
         const dateValue = item[dateFilterKey];
-        if (!dateValue || typeof dateValue !== 'string') return false;
-        const parsedDate = parseISO(dateValue);
+        if (!dateValue) return false;
+        const parsedDate = parseDate(dateValue); // Use robust parser
         return isValid(parsedDate) && isWithinInterval(parsedDate, { start: from, end: to });
       });
     }
@@ -62,10 +63,10 @@ export function useTableManager<T extends { [key: string]: any }>({
 
       // Date sorting
       if (sortKey.toLowerCase().includes('date')) {
-        const dateA = valA ? parseISO(valA) : new Date(0);
-        const dateB = valB ? parseISO(valB) : new Date(0);
-        if (!isValid(dateA)) return 1;
-        if (!isValid(dateB)) return -1;
+        const dateA = parseDate(valA); // Use robust parser
+        const dateB = parseDate(valB); // Use robust parser
+        if (!dateA || !isValid(dateA)) return 1;
+        if (!dateB || !isValid(dateB)) return -1;
         return isAsc ? compareAsc(dateA, dateB) : compareDesc(dateA, dateB);
       }
       

@@ -90,7 +90,10 @@ function FinanzasPageComponent() {
         const from = startOfDay(dateRange.from);
         const to = dateRange.to ? endOfDay(dateRange.to) : endOfDay(dateRange.from);
         
-        const salesInRange = allSales.filter(s => s.status !== 'Cancelado' && isValid(parseISO(s.saleDate)) && isWithinInterval(parseISO(s.saleDate), { start: from, end: to }));
+        const salesInRange = allSales.filter(s => {
+          const sDate = parseDate(s.saleDate);
+          return s.status !== 'Cancelado' && sDate && isValid(sDate) && isWithinInterval(sDate, { start: from, end: to });
+        });
         
         const servicesInRange = allServices.filter(s => {
           const dateToParse = s.deliveryDateTime || s.serviceDate;
@@ -353,4 +356,3 @@ export default function FinanzasPageWrapper() {
         </Suspense>
     );
 }
-

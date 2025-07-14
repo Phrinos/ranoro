@@ -3,7 +3,7 @@
 "use client";
 
 import { usePathname } from 'next/navigation';
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
   LayoutDashboard,
   List,
@@ -142,7 +142,7 @@ const BASE_NAV_STRUCTURE: ReadonlyArray<Omit<NavigationEntry, 'isActive'>> = [
   // Análisis
   {
     label: 'Finanzas',
-    path: '/finanzas/resumen',
+    path: '/finanzas',
     icon: Landmark,
     groupTag: "Análisis",
     permissions: ['finances:view_report']
@@ -252,14 +252,14 @@ const useNavigation = (): NavigationEntry[] => {
     if (entry.path === '/pos' && pathname.startsWith('/pos')) isActive = true;
     if (entry.path === '/personal' && (pathname.startsWith('/personal') || pathname.startsWith('/tecnicos') || pathname.startsWith('/administrativos'))) isActive = true;
     if (entry.path === '/opciones' && (pathname.startsWith('/opciones') || pathname.startsWith('/perfil') || pathname.startsWith('/manual') || pathname.startsWith('/admin/configuracion-ticket') || pathname.startsWith('/mensajeria'))) isActive = true;
-    if (entry.path === '/finanzas/resumen' && pathname.startsWith('/finanzas')) isActive = true;
+    if (entry.path === '/finanzas' && pathname.startsWith('/finanzas')) isActive = true;
     if (entry.path === '/administracion' && (pathname.startsWith('/administracion') || pathname.startsWith('/admin'))) isActive = true;
     if (entry.path === '/flotilla' && (pathname.startsWith('/flotilla') || pathname.startsWith('/conductores') || pathname.startsWith('/rentas'))) isActive = true;
     if (entry.path === '/rentas' && pathname.startsWith('/rentas')) isActive = true;
     
     // Deactivations for clarity
     if (entry.path === '/servicios/historial' && (pathname.startsWith('/servicios/agenda') || pathname.startsWith('/servicios/nuevo'))) isActive = false;
-    if (entry.path === '/finanzas/resumen' && pathname.startsWith('/finanzas/reporte')) isActive = false;
+    if (entry.path === '/finanzas' && pathname.startsWith('/finanzas/reporte')) isActive = false;
     if (entry.path === '/flotilla' && pathname.startsWith('/rentas')) isActive = false;
     if (entry.path === '/pos' && pathname.startsWith('/pos/nuevo')) isActive = false;
     if (entry.path === '/opciones' && pathname.startsWith('/mensajeria')) isActive = false;

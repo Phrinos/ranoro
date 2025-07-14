@@ -75,9 +75,9 @@ export function ServiceDialog({
 
   useEffect(() => {
     if(open) {
-      setFormStatus(service?.status || quote?.status);
+      setFormStatus(service?.status);
     }
-  }, [open, service, quote]);
+  }, [open, service]);
 
   useEffect(() => {
     const syncAndMarkAsViewed = async () => {

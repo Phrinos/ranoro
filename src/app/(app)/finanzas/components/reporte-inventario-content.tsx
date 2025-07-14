@@ -79,16 +79,19 @@ export function ReporteInventarioContent({ movements }: ReporteInventarioContent
               </TableHeader>
               <TableBody>
                 {filteredMovements.length > 0 ? (
-                  filteredMovements.map(movement => (
-                    <TableRow key={movement.id}>
-                      <TableCell>{format(parseDate(movement.date)!, "dd MMM yy, HH:mm", { locale: es })}</TableCell>
-                      <TableCell><Badge variant={getMovementTypeVariant(movement.type)}>{movement.type}</Badge></TableCell>
-                      <TableCell>{movement.relatedId}</TableCell>
-                      <TableCell>{movement.itemName}</TableCell>
-                      <TableCell className="text-right font-medium">{movement.quantity}</TableCell>
-                      <TableCell className="text-right font-semibold text-red-600">{formatCurrency(movement.totalCost)}</TableCell>
-                    </TableRow>
-                  ))
+                  filteredMovements.map(movement => {
+                    const movementDate = parseDate(movement.date);
+                    return (
+                        <TableRow key={movement.id}>
+                          <TableCell>{movementDate ? format(movementDate, "dd MMM yy, HH:mm", { locale: es }) : "Fecha no disponible"}</TableCell>
+                          <TableCell><Badge variant={getMovementTypeVariant(movement.type)}>{movement.type}</Badge></TableCell>
+                          <TableCell>{movement.relatedId}</TableCell>
+                          <TableCell>{movement.itemName}</TableCell>
+                          <TableCell className="text-right font-medium">{movement.quantity}</TableCell>
+                          <TableCell className="text-right font-semibold text-red-600">{formatCurrency(movement.totalCost)}</TableCell>
+                        </TableRow>
+                    );
+                  })
                 ) : (
                    <TableRow>
                     <TableCell colSpan={6}>
@@ -108,4 +111,3 @@ export function ReporteInventarioContent({ movements }: ReporteInventarioContent
     </div>
   );
 }
-
