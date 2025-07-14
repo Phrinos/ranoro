@@ -5,7 +5,7 @@ import React, { useState, useCallback, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Car, Package, BrainCircuit, Loader2, CheckCircle, Database, Wrench, Briefcase } from 'lucide-react';
+import { Car, Package, BrainCircuit, Loader2, CheckCircle, Database, Wrench, Briefcase, FileUp, FileText } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { migrateProducts, type ExtractedProduct } from '@/ai/flows/product-migration-flow';
 import { migrateData, type MigrateDataOutput } from '@/ai/flows/data-migration-flow';
@@ -15,6 +15,7 @@ import { formatCurrency } from '@/lib/utils';
 import { format, parse, isValid } from 'date-fns';
 import { Textarea } from '@/components/ui/textarea';
 import type { Vehicle, InventoryItem } from '@/types';
+import * as XLSX from 'xlsx';
 
 type MigrationType = 'operaciones' | 'productos';
 type AnalysisResult = MigrateDataOutput & { products?: ExtractedProduct[] } & { type: MigrationType };
@@ -26,7 +27,6 @@ export function MigracionPageContent() {
     const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
     const [migrationType, setMigrationType] = useState<MigrationType>('operaciones');
     
-    // State to hold existing data
     const [existingVehicles, setExistingVehicles] = useState<Vehicle[]>([]);
     const [existingInventory, setExistingInventory] = useState<InventoryItem[]>([]);
     const [isLoadingData, setIsLoadingData] = useState(true);
@@ -49,6 +49,34 @@ export function MigracionPageContent() {
         setPastedText(text);
         setAnalysisResult(null);
     }
+    
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            const data = event.target?.result;
+            if (typeof data !== 'string') {
+                const workbook = XLSX.read(data, { type: 'array' });
+                const firstSheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[firstSheetName];
+                const csv = XLSX.utils.sheet_to_csv(worksheet);
+                setPastedText(csv);
+            } else {
+                setPastedText(data);
+            }
+            toast({ title: "Archivo Cargado", description: "El contenido del archivo se ha pegado en el área de texto." });
+        };
+        reader.onerror = () => toast({ title: "Error", description: "No se pudo leer el archivo.", variant: "destructive" });
+        
+        if (file.name.endsWith('.csv')) {
+             reader.readAsText(file);
+        } else {
+             reader.readAsArrayBuffer(file);
+        }
+    };
+
 
     const handleAnalyze = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
@@ -94,7 +122,6 @@ export function MigracionPageContent() {
         
         try {
             if (analysisResult.type === 'operaciones' && (analysisResult.services.length > 0 || analysisResult.vehicles.length > 0)) {
-                // The service handles both vehicle creation and service saving.
                 await operationsService.saveMigratedServices(analysisResult.services, analysisResult.vehicles);
                 itemsAdded = (analysisResult.vehicles?.length || 0) + (analysisResult.services?.length || 0);
             } else if (analysisResult.type === 'productos' && analysisResult.products) {
@@ -187,8 +214,8 @@ export function MigracionPageContent() {
         <form onSubmit={handleAnalyze}>
             <Card className="shadow-lg">
                 <CardHeader>
-                    <CardTitle>1. Seleccionar Tipo y Pegar Datos</CardTitle>
-                    <CardDescription>Elige qué tipo de datos quieres migrar y pega el texto desde tu hoja de cálculo.</CardDescription>
+                    <CardTitle>1. Seleccionar Tipo y Cargar Datos</CardTitle>
+                    <CardDescription>Elige el tipo de migración y luego pega el texto o sube un archivo de hoja de cálculo.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                      <Select value={migrationType} onValueChange={(v) => setMigrationType(v as MigrationType)}>
@@ -200,20 +227,40 @@ export function MigracionPageContent() {
                             <SelectItem value="productos"><div className="flex items-center gap-2"><Package className="h-4 w-4"/>Solo Productos de Inventario</div></SelectItem>
                         </SelectContent>
                     </Select>
-                    <Textarea
-                        id="paste-area"
-                        placeholder="Copia y pega aquí tus datos..."
-                        className="h-44 font-mono text-xs"
-                        value={pastedText}
-                        onChange={(e) => handlePastedTextChange(e.target.value)}
-                    />
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
+                        <div className="space-y-2">
+                             <label htmlFor="paste-area" className="flex items-center gap-2 font-medium">
+                                <FileText className="h-4 w-4"/> Opción A: Pegar Texto
+                            </label>
+                            <Textarea
+                                id="paste-area"
+                                placeholder="Copia y pega aquí tus datos..."
+                                className="h-44 font-mono text-xs"
+                                value={pastedText}
+                                onChange={(e) => handlePastedTextChange(e.target.value)}
+                            />
+                        </div>
+                         <div className="space-y-2">
+                            <label htmlFor="file-upload" className="flex items-center gap-2 font-medium">
+                                <FileUp className="h-4 w-4"/> Opción B: Subir Archivo
+                            </label>
+                            <label htmlFor="file-upload" className="flex flex-col items-center justify-center w-full h-44 border-2 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
+                                <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                                    <p className="mb-2 text-sm text-gray-500"><span className="font-semibold">Click para subir</span> o arrastra y suelta</p>
+                                    <p className="text-xs text-gray-500">XLSX, XLS, CSV</p>
+                                </div>
+                                <input id="file-upload" type="file" className="hidden" onChange={handleFileChange} accept=".xlsx, .xls, .csv" />
+                            </label>
+                        </div>
+                    </div>
                 </CardContent>
             </Card>
 
             <Card className="mt-4">
                 <CardHeader>
                     <CardTitle>2. Analizar y Guardar</CardTitle>
-                    <CardDescription>La IA analizará el texto pegado, omitiendo registros que ya existen en tu sistema. Luego podrás revisar los datos nuevos antes de guardarlos.</CardDescription>
+                    <CardDescription>La IA analizará los datos, omitiendo registros existentes. Revisa el resultado antes de confirmar.</CardDescription>
                 </CardHeader>
                 <CardContent>
                     <Button type="submit" className="w-full" disabled={!pastedText || isAnalyzing || isLoadingData}>
