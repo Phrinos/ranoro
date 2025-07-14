@@ -193,7 +193,7 @@ const completeService = async (service: ServiceRecord, paymentAndNextServiceDeta
     
     const updatedServiceData = {
       status: 'Entregado',
-      deliveryDateTime: new Date().toISOString(),
+      deliveryDateTime: new Date().toISOString(), // Ensure deliveryDateTime is set on completion
       ...paymentAndNextServiceDetails,
     };
     

@@ -41,7 +41,7 @@ import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from '
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Textarea } from '@/components/ui/textarea'
 import { useToast } from '@/hooks/use-toast'
-import { cn, formatCurrency } from '@/lib/utils'
+import { cn, formatCurrency as formatCurrencyUtil } from '@/lib/utils'
 import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data'
 
 import type {
@@ -78,6 +78,7 @@ interface Props {
   onClose:()=>void
   isReadOnly?:boolean
   mode?:'service'|'quote'
+  onStatusChange?: (status: ServiceRecord['status']) => void;
 }
 
 export function ServiceForm(props:Props){
@@ -91,7 +92,8 @@ export function ServiceForm(props:Props){
     children,
     onClose,
     isReadOnly = false,
-    mode = 'service'
+    mode = 'service',
+    onStatusChange,
   } = props;
 
   const { toast } = useToast();
@@ -193,21 +195,27 @@ export function ServiceForm(props:Props){
   }, [initialDataService, reset, defaultValues]);
   
   useEffect(() => {
-    const currentStatus = watch('status');
-    // Set appointment date automatically if status changes to Agendado and no date is set
-    if (currentStatus === 'Agendado' && !watch('serviceDate')) {
-        setValue('serviceDate', new Date());
-        setValue('appointmentStatus', 'Creada');
-    }
-    // Set reception date automatically if status changes to En Taller and no date is set
-    if (currentStatus === 'En Taller' && !watch('receptionDateTime')) {
-        setValue('receptionDateTime', new Date());
-    }
-    // If status is changed to Entregado, set the delivery time
-    if (currentStatus === 'Entregado' && !watch('deliveryDateTime')) {
-        setValue('deliveryDateTime', new Date());
-    }
-}, [watchedStatus, watch, setValue]);
+    const subscription = watch((value, { name }) => {
+        if (name === 'status' && onStatusChange) {
+            onStatusChange(value.status as ServiceRecord['status']);
+        }
+        
+        if(name === 'status') {
+          const currentStatus = value.status;
+          if (currentStatus === 'Agendado' && !watch('serviceDate')) {
+              setValue('serviceDate', new Date());
+              setValue('appointmentStatus', 'Creada');
+          }
+          if (currentStatus === 'En Taller' && !watch('receptionDateTime')) {
+              setValue('receptionDateTime', new Date());
+          }
+          if (currentStatus === 'Entregado' && !watch('deliveryDateTime')) {
+              setValue('deliveryDateTime', new Date());
+          }
+        }
+    });
+    return () => subscription.unsubscribe();
+  }, [watch, onStatusChange, setValue]);
 
   
   useEffect(() => {
@@ -475,10 +483,10 @@ export function ServiceForm(props:Props){
                             <CardHeader><CardTitle className="flex items-center gap-2"><DollarSign/>Resumen de Costos</CardTitle></CardHeader>
                             <CardContent>
                                 <div className="space-y-1 text-sm">
-                                    <div className="flex justify-between font-bold text-lg text-primary"><span>Total (IVA Inc.):</span><span>{formatCurrency(totalCost)}</span></div>
-                                    <div className="flex justify-between text-xs"><span>(-) Costo Insumos:</span><span className="font-medium text-red-600 dark:text-red-400">{formatCurrency(totalSuppliesWorkshopCost)}</span></div>
+                                    <div className="flex justify-between font-bold text-lg text-primary"><span>Total (IVA Inc.):</span><span>{formatCurrencyUtil(totalCost)}</span></div>
+                                    <div className="flex justify-between text-xs"><span>(-) Costo Insumos:</span><span className="font-medium text-red-600 dark:text-red-400">{formatCurrencyUtil(totalSuppliesWorkshopCost)}</span></div>
                                     <hr className="my-1 border-dashed"/>
-                                    <div className="flex justify-between font-bold text-green-700 dark:text-green-400"><span>(=) Ganancia:</span><span>{formatCurrency(serviceProfit)}</span></div>
+                                    <div className="flex justify-between font-bold text-green-700 dark:text-green-400"><span>(=) Ganancia:</span><span>{formatCurrencyUtil(serviceProfit)}</span></div>
                                 </div>
                             </CardContent>
                         </Card>

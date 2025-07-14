@@ -100,7 +100,13 @@ export function CompleteServiceDialog({
     let nextServiceInfo: { date: string, mileage?: number } | undefined = undefined;
     
     const serviceType = service.serviceType?.toLowerCase() || '';
-    if (serviceType.includes('afinación') || serviceType.includes('cambio de aceite')) {
+    
+    const isMaintenanceService = (service.serviceItems || []).some(item => 
+        item.name.toLowerCase().includes('afinación') || 
+        item.name.toLowerCase().includes('cambio de aceite')
+    );
+
+    if (isMaintenanceService) {
         const today = new Date();
         const nextServiceDate = addMonths(today, 6);
         

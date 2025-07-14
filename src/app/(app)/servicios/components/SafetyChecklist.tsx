@@ -115,9 +115,9 @@ const ChecklistItemPhotoUploader = ({
                 {photos.map((url, index) => (
                     <button
                         type="button"
+                        onClick={() => onViewImage(url)}
                         key={index}
                         className="relative aspect-video w-full bg-muted rounded-md overflow-hidden group"
-                        onClick={() => onViewImage(url)}
                     >
                         <Image src={url} alt={`Foto ${index + 1}`} fill objectFit="cover" className="transition-transform duration-300 group-hover:scale-105"/>
                          <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity group-hover:opacity-100">

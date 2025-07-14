@@ -2,7 +2,7 @@
 
 "use client";
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -15,19 +15,15 @@ import { ServiceForm } from "./service-form";
 import type { ServiceRecord, Vehicle, Technician, InventoryItem, QuoteRecord, User, ServiceTypeRecord } from "@/types";
 import { useToast } from "@/hooks/use-toast"; 
 import { db } from '@/lib/firebaseClient.js';
-import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { operationsService } from '@/lib/services';
-import { Button } from '@/components/ui/button';
-import { Ban, Eye } from 'lucide-react';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogHeader, AlertDialogTitle, AlertDialogFooter } from "@/components/ui/alert-dialog";
-import { Textarea } from "@/components/ui/textarea";
-import { UnifiedPreviewDialog } from '@/components/shared/unified-preview-dialog';
 import { CompleteServiceDialog } from './CompleteServiceDialog';
 
 
 interface ServiceDialogProps {
   trigger?: React.ReactNode;
   service?: ServiceRecord | null; 
+  quote?: Partial<QuoteRecord> | null; // For quote mode initialization
   vehicles: Vehicle[]; 
   technicians: Technician[]; 
   inventoryItems: InventoryItem[]; 
@@ -36,8 +32,9 @@ interface ServiceDialogProps {
   isReadOnly?: boolean; 
   open?: boolean; 
   onOpenChange?: (isOpen: boolean) => void; 
-  mode?: 'service' | 'quote';
-  onDelete?: (id: string) => void;
+  onVehicleCreated?: (newVehicle: Omit<Vehicle, 'id'>) => void; 
+  mode?: 'service' | 'quote'; // New mode prop
+  onDelete?: (id: string) => void; // For quote deletion
   onCancelService?: (serviceId: string, reason: string) => void;
   onViewQuoteRequest?: (serviceId: string) => void;
   onComplete?: (service: ServiceRecord, paymentDetails: any, nextServiceInfo?: any) => void;
@@ -45,92 +42,115 @@ interface ServiceDialogProps {
 
 export function ServiceDialog({ 
   trigger, 
-  service: initialService, 
+  service, 
+  quote,
   vehicles, 
   technicians, 
   inventoryItems, 
   serviceTypes,
-  onSave,
+  onSave, 
   onComplete,
   isReadOnly = false,
   open: controlledOpen,
   onOpenChange: setControlledOpen,
-  mode = 'service',
+  onVehicleCreated,
+  mode = 'service', // Default to service mode
+  onDelete,
   onCancelService,
+  onViewQuoteRequest,
 }: ServiceDialogProps) {
   const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
   const { toast } = useToast();
-  
-  const [localService, setLocalService] = useState(initialService);
-  const [isCancelAlertOpen, setIsCancelAlertOpen] = useState(false);
-  const [cancellationReason, setCancellationReason] = useState('');
-  const [serviceToComplete, setServiceToComplete] = useState<ServiceRecord | null>(null);
-  const [fullFormDataForCompletion, setFullFormDataForCompletion] = useState<any>(null);
-  const [isCompleteDialogOpen, setIsCompleteDialogOpen] = useState(false);
-  
+
+  // State for dynamic title based on form's status
+  const [formStatus, setFormStatus] = useState<ServiceRecord['status'] | undefined>(service?.status || quote?.status);
+
   const isControlled = controlledOpen !== undefined && setControlledOpen !== undefined;
   const open = isControlled ? controlledOpen : uncontrolledOpen;
   const onOpenChange = isControlled ? setControlledOpen : setUncontrolledOpen;
+  
+  const [serviceToComplete, setServiceToComplete] = useState<ServiceRecord | null>(null);
+  const [isCompleteDialogOpen, setIsCompleteDialogOpen] = useState(false);
+  const [fullFormDataForCompletion, setFullFormDataForCompletion] = useState<any>(null);
+
 
   useEffect(() => {
-    setLocalService(initialService);
-  }, [initialService]);
+    if(open) {
+      setFormStatus(service?.status || quote?.status);
+    }
+  }, [open, service, quote]);
 
+
+  // Mark signatures as "viewed" when the dialog opens
   useEffect(() => {
-    if (open) {
-      const syncSignatures = async () => {
-        if (initialService && initialService.id && initialService.publicId && db) {
+    const syncAndMarkAsViewed = async () => {
+      if (open && service && service.id && mode === 'service') {
+        let changed = false;
+        let serviceToUpdate = { ...service };
+
+        // Sync from public document first
+        if (service.publicId && db) {
           try {
-            const publicDocRef = doc(db, 'publicServices', initialService.publicId);
+            const publicDocRef = doc(db, 'publicServices', service.publicId);
             const publicDocSnap = await getDoc(publicDocRef);
-            
+
             if (publicDocSnap.exists()) {
               const publicData = publicDocSnap.data() as ServiceRecord;
-              const updates: Partial<ServiceRecord> = {};
-              let needsUpdate = false;
-
-              if (publicData.customerSignatureReception && !initialService.customerSignatureReception) {
-                updates.customerSignatureReception = publicData.customerSignatureReception;
-                needsUpdate = true;
+              if (publicData.customerSignatureReception && !serviceToUpdate.customerSignatureReception) {
+                serviceToUpdate.customerSignatureReception = publicData.customerSignatureReception;
+                changed = true;
               }
-              if (publicData.customerSignatureDelivery && !initialService.customerSignatureDelivery) {
-                updates.customerSignatureDelivery = publicData.customerSignatureDelivery;
-                needsUpdate = true;
-              }
-
-              if (needsUpdate) {
-                const mainServiceRef = doc(db, 'serviceRecords', initialService.id);
-                await updateDoc(mainServiceRef, updates);
-                
-                setLocalService(prev => ({ ...prev, ...updates } as ServiceRecord));
-                
-                toast({ title: "Firmas sincronizadas", description: "Se han cargado nuevas firmas del cliente." });
+              if (publicData.customerSignatureDelivery && !serviceToUpdate.customerSignatureDelivery) {
+                serviceToUpdate.customerSignatureDelivery = publicData.customerSignatureDelivery;
+                changed = true;
               }
             }
           } catch (e) {
             console.error("Failed to sync signatures from public doc:", e);
           }
         }
-      };
 
-      setLocalService(initialService);
-      syncSignatures();
-    }
-  }, [open, initialService, toast]);
-
+        // Now, mark as viewed
+        if (serviceToUpdate.customerSignatureReception && !serviceToUpdate.receptionSignatureViewed) {
+          serviceToUpdate.receptionSignatureViewed = true;
+          changed = true;
+        }
+        if (serviceToUpdate.customerSignatureDelivery && !serviceToUpdate.deliverySignatureViewed) {
+          serviceToUpdate.deliverySignatureViewed = true;
+          changed = true;
+        }
+        
+        if (changed && db) {
+          const serviceDocRef = doc(db, "serviceRecords", service.id);
+          await setDoc(serviceDocRef, { 
+              customerSignatureReception: serviceToUpdate.customerSignatureReception,
+              customerSignatureDelivery: serviceToUpdate.customerSignatureDelivery,
+              receptionSignatureViewed: serviceToUpdate.receptionSignatureViewed,
+              deliverySignatureViewed: serviceToUpdate.deliverySignatureViewed,
+           }, { merge: true });
+        }
+      }
+    };
+    syncAndMarkAsViewed();
+  }, [open, service, mode]);
+  
   const handleInternalCompletion = async (service: ServiceRecord, paymentDetails: any, nextServiceInfo?: any) => {
     if (onComplete) {
       const serviceWithAllData = { ...service, ...fullFormDataForCompletion, nextServiceInfo };
       await onComplete(serviceWithAllData, paymentDetails, nextServiceInfo);
     }
-    setLocalService(prev => ({ ...prev, ...paymentDetails, status: 'Entregado', nextServiceInfo } as ServiceRecord));
+    onOpenChange(false); // Close the main dialog
     setIsCompleteDialogOpen(false);
   };
 
-  const internalOnSave = async (formData: ServiceRecord | QuoteRecord) => {
-    if (isReadOnly) { onOpenChange(false); return; }
 
-    if ('status' in formData && formData.status === 'Entregado' && localService?.status !== 'Entregado') {
+  const internalOnSave = async (formData: ServiceRecord | QuoteRecord) => {
+    if (isReadOnly) {
+      onOpenChange(false);
+      return;
+    }
+
+    if ('status' in formData && formData.status === 'Entregado' && service?.status !== 'Entregado') {
         setFullFormDataForCompletion(formData);
         setServiceToComplete(formData as ServiceRecord);
         setIsCompleteDialogOpen(true);
@@ -140,16 +160,24 @@ export function ServiceDialog({
     try {
         const savedRecord = await operationsService.saveService(formData);
         toast({ title: 'Registro ' + (formData.id ? 'actualizado' : 'creado') + ' con éxito.' });
-        if (onSave) { await onSave(savedRecord); }
+        if (onSave) {
+            await onSave(savedRecord);
+        }
         onOpenChange(false);
     } catch (error) {
         console.error(`Error saving ${mode} from dialog:`, error);
-        toast({ title: `Error al Guardar ${mode === 'quote' ? 'Cotización' : 'Servicio'}`, description: `Ocurrió un problema.`, variant: "destructive" });
+        toast({
+            title: `Error al Guardar ${mode === 'quote' ? 'Cotización' : 'Servicio'}`,
+            description: `Ocurrió un problema al intentar guardar desde el diálogo.`,
+            variant: "destructive",
+        });
     }
   };
   
   const getDynamicTitles = () => {
-    const status = localService?.status;
+    const currentRecord = service || quote;
+    const status = formStatus || currentRecord?.status;
+
     if (isReadOnly) {
         switch (status) {
             case 'Cotizacion': return { title: "Detalles de la Cotización", description: "Visualizando los detalles de la cotización." };
@@ -157,88 +185,64 @@ export function ServiceDialog({
             default: return { title: "Detalles del Servicio", description: "Visualizando los detalles de la orden de servicio." };
         }
     }
-    if (localService?.id) {
+
+    if (currentRecord?.id) { // Editing existing record
         switch (status) {
             case 'Cotizacion': return { title: "Editar Cotización", description: "Actualiza los detalles de la cotización." };
             case 'Agendado': return { title: "Editar Cita", description: "Actualiza los detalles de la cita." };
             default: return { title: "Editar Servicio", description: "Actualiza los detalles de la orden de servicio." };
         }
     }
-    return { title: "Nuevo Registro", description: "Completa la información para un nuevo registro." };
+    
+    // Creating new record
+    switch (status) {
+        case 'Cotizacion': return { title: "Nueva Cotización", description: "Completa la información para una nueva cotización." };
+        case 'Agendado': return { title: "Nueva Cita", description: "Completa la información para una nueva cita." };
+        case 'En Taller': return { title: "Nuevo Servicio", description: "Completa la información para una nueva orden de servicio." };
+        default: return { title: "Nuevo Registro", description: "Selecciona un estado para continuar." };
+    }
   };
 
+
   const { title: dialogTitle, description: dialogDescription } = getDynamicTitles();
-  const canBeCancelled = localService?.id && localService.status !== 'Cancelado' && localService.status !== 'Entregado';
-  
+      
   return (
     <>
-      <Dialog open={open} onOpenChange={onOpenChange}>
-        {trigger && !isControlled && <DialogTrigger asChild onClick={() => onOpenChange(true)}>{trigger}</DialogTrigger>}
-        <DialogContent className="sm:max-w-[600px] md:max-w-[800px] lg:max-w-[900px] xl:max-w-6xl flex flex-col max-h-[90vh] print:hidden p-0">
-            <DialogHeader className="p-6 pb-2 flex-shrink-0 flex flex-row justify-between items-start">
-              <div>
-                  <DialogTitle>{dialogTitle}</DialogTitle>
-                  <DialogDescription>{dialogDescription}</DialogDescription>
-              </div>
-            </DialogHeader>
-            <ServiceForm
-              initialDataService={localService}
-              vehicles={vehicles} 
-              technicians={technicians}
-              inventoryItems={inventoryItems}
-              serviceTypes={serviceTypes}
-              onSubmit={internalOnSave}
-              onClose={() => onOpenChange(false)}
-              isReadOnly={isReadOnly}
-              mode={mode}
-            >
-                <div className="flex justify-between items-center w-full">
-                    <div>
-                    {canBeCancelled && onCancelService && (
-                        <Button variant="outline" type="button" onClick={() => setIsCancelAlertOpen(true)} className="text-destructive border-destructive/50 hover:bg-destructive/10 hover:text-destructive">
-                            <Ban className="mr-2 h-4 w-4" /> Cancelar Servicio
-                        </Button>
-                    )}
-                    </div>
-                    <div className="flex gap-2">
-                        {isReadOnly ? (
-                        <Button variant="outline" type="button" onClick={() => onOpenChange(false)}>Cerrar</Button>
-                        ) : (
-                        <>
-                            <Button variant="outline" type="button" onClick={() => onOpenChange(false)}>Cancelar</Button>
-                            <Button type="submit" form="service-form">
-                                {localService?.id ? 'Actualizar' : 'Crear'}
-                            </Button>
-                        </>
-                        )}
-                    </div>
-                </div>
-            </ServiceForm>
-        </DialogContent>
-      </Dialog>
-      
-      <AlertDialog open={isCancelAlertOpen} onOpenChange={setIsCancelAlertOpen}>
-          <AlertDialogContent>
-              <AlertDialogHeader><AlertDialogTitle>¿Está seguro de cancelar este servicio?</AlertDialogTitle><AlertDialogDescription>Esta acción no se puede deshacer. El estado se cambiará a "Cancelado".</AlertDialogDescription></AlertDialogHeader>
-              <Textarea placeholder="Motivo de la cancelación (opcional)..." value={cancellationReason} onChange={(e) => setCancellationReason(e.target.value)} />
-              <AlertDialogFooter>
-                  <AlertDialogCancel onClick={() => setCancellationReason('')}>Cerrar</AlertDialogCancel>
-                  <AlertDialogAction onClick={() => { if(localService?.id && onCancelService) { onCancelService(localService.id, cancellationReason); onOpenChange(false); } }} className="bg-destructive hover:bg-destructive/90">
-                      Sí, Cancelar Servicio
-                  </AlertDialogAction>
-              </AlertDialogFooter>
-          </AlertDialogContent>
-      </AlertDialog>
-
-      {serviceToComplete && (
-        <CompleteServiceDialog
-          open={isCompleteDialogOpen}
-          onOpenChange={setIsCompleteDialogOpen}
-          service={serviceToComplete}
-          onConfirm={handleInternalCompletion}
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      {trigger && !isControlled && <DialogTrigger asChild onClick={() => onOpenChange(true)}>{trigger}</DialogTrigger>}
+      <DialogContent className="sm:max-w-[600px] md:max-w-[800px] lg:max-w-[900px] xl:max-w-6xl flex flex-col max-h-[90vh] print:hidden">
+        <DialogHeader className="flex-shrink-0">
+          <DialogTitle>{dialogTitle}</DialogTitle>
+          <DialogDescription>{dialogDescription}</DialogDescription>
+        </DialogHeader>
+        <ServiceForm
+          initialDataService={service}
+          vehicles={vehicles} 
+          technicians={technicians}
           inventoryItems={inventoryItems}
+          serviceTypes={serviceTypes}
+          onSubmit={internalOnSave}
+          onClose={() => onOpenChange(false)}
+          isReadOnly={isReadOnly}
+          onVehicleCreated={onVehicleCreated} 
+          mode={mode}
+          onStatusChange={setFormStatus} // Pass the setter function
+        >
+             {children}
+        </ServiceForm>
+      </DialogContent>
+    </Dialog>
+
+    {serviceToComplete && (
+        <CompleteServiceDialog
+            open={isCompleteDialogOpen}
+            onOpenChange={setIsCompleteDialogOpen}
+            service={serviceToComplete}
+            onConfirm={handleInternalCompletion}
+            inventoryItems={inventoryItems}
         />
       )}
     </>
   );
 }
+
