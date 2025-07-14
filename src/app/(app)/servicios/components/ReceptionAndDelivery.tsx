@@ -46,7 +46,6 @@ const fuelLevels = [
 ];
 
 interface ReceptionAndDeliveryProps {
-  control: Control<ServiceFormValues>;
   isReadOnly?: boolean;
   isEnhancingText: string | null;
   handleEnhanceText: (
@@ -61,13 +60,12 @@ interface ReceptionAndDeliveryProps {
 }
 
 export const ReceptionAndDelivery = ({
-  control,
   isReadOnly,
   isEnhancingText,
   handleEnhanceText,
   onOpenSignature
 }: ReceptionAndDeliveryProps) => {
-  const { watch, getValues } = useFormContext<ServiceFormValues>();
+  const { control, watch, getValues } = useFormContext<ServiceFormValues>();
   const customerSignatureReception = watch("customerSignatureReception");
   const customerSignatureDelivery = watch("customerSignatureDelivery");
 

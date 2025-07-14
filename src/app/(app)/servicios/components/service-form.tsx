@@ -4,7 +4,7 @@
 'use client'
 
 import { zodResolver } from "@hookform/resolvers/zod"
-import { useForm, useWatch, Controller, useFieldArray, FormProvider, useFormContext } from "react-hook-form"
+import { useForm, useWatch, Controller, useFieldArray, FormProvider } from "react-hook-form"
 import * as z from 'zod'
 
 import Image from 'next/image'
@@ -213,7 +213,9 @@ export function ServiceForm(props:Props){
           if (currentStatus === 'En Taller' && !watch('receptionDateTime')) {
               setValue('receptionDateTime', new Date());
           }
-          // The deliveryDateTime is now set upon completion to avoid premature locking.
+          if (currentStatus === 'Entregado' && !watch('deliveryDateTime')) {
+            setValue('deliveryDateTime', new Date());
+          }
         }
     });
     return () => subscription.unsubscribe();
@@ -377,125 +379,123 @@ export function ServiceForm(props:Props){
 
   return (
     <>
-      <FormProvider {...form}>
-        <form id="service-form" onSubmit={handleSubmit(formSubmitWrapper)} className="flex flex-col flex-grow overflow-hidden">
-            <div className="flex-grow overflow-y-auto px-6 space-y-6">
-                <VehicleSelectionCard
-                    isReadOnly={props.isReadOnly}
-                    localVehicles={parentVehicles}
-                    onVehicleSelected={(v) => setValue('vehicleIdentifier', v?.licensePlate)}
-                    onOpenNewVehicleDialog={() => setIsNewVehicleDialogOpen(true)}
-                />
+        <FormProvider {...form}>
+            <form id="service-form" onSubmit={handleSubmit(formSubmitWrapper)} className="flex flex-col flex-grow overflow-hidden">
+                <div className="flex-grow overflow-y-auto px-6 space-y-6">
+                    <VehicleSelectionCard
+                        isReadOnly={props.isReadOnly}
+                        localVehicles={parentVehicles}
+                        onVehicleSelected={(v) => setValue('vehicleIdentifier', v?.licensePlate)}
+                        onOpenNewVehicleDialog={() => setIsNewVehicleDialogOpen(true)}
+                    />
 
-                <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                    <div className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm py-2 -mx-6 px-6 mb-4 border-b">
-                        <TabsList className={cn("grid w-full", "grid-cols-4")}>
-                            <TabsTrigger value="details" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Detalles</TabsTrigger>
-                            <TabsTrigger value="reception" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Recepción/Entrega</TabsTrigger>
-                            <TabsTrigger value="photoreport" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Fotos</TabsTrigger>
-                            <TabsTrigger value="checklist" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Revisión</TabsTrigger>
-                        </TabsList>
-                    </div>
-                    <TabsContent value="details" className="mt-0">
-                        <ServiceDetailsCard
-                            isReadOnly={props.isReadOnly}
-                            technicians={technicians}
-                            inventoryItems={invItems}
-                            serviceTypes={serviceTypes}
-                            mode={props.mode || 'service'}
-                            onGenerateQuoteWithAI={handleGenerateQuote}
-                            isGeneratingQuote={isGeneratingQuote}
-                            isEnhancingText={isEnhancingText}
-                            handleEnhanceText={handleEnhanceText as any}
-                            onNewInventoryItemCreated={handleNewInventoryItemCreated}
-                            categories={allCategories}
-                            suppliers={allSuppliers}
-                        />
-                    </TabsContent>
-                    <TabsContent value="reception" className="mt-0">
-                       <ReceptionAndDelivery 
-                         control={control}
-                         isReadOnly={props.isReadOnly}
-                         isEnhancingText={isEnhancingText}
-                         handleEnhanceText={handleEnhanceText as any}
-                         onOpenSignature={(kind) => { setSignatureType(kind); setIsSignatureDialogOpen(true); }}
-                       />
-                    </TabsContent>
-                    <TabsContent value="photoreport" className="mt-0">
-                         <PhotoReportTab
-                            control={control}
-                            isReadOnly={props.isReadOnly}
-                            serviceId={initialDataService?.id || 'new'}
-                            onPhotoUploaded={handlePhotoUploaded}
-                            onViewImage={handleViewImage}
-                         />
-                    </TabsContent>
-                    <TabsContent value="checklist" className="mt-0">
-                        <SafetyChecklist
-                            control={control}
-                            isReadOnly={props.isReadOnly}
-                            onSignatureClick={() => { setSignatureType('advisor'); setIsSignatureDialogOpen(true); }}
-                            signatureDataUrl={watch('serviceAdvisorSignatureDataUrl')}
-                            isEnhancingText={isEnhancingText}
-                            handleEnhanceText={handleEnhanceText as any}
-                            serviceId={initialDataService?.id || 'new'}
-                            onPhotoUploaded={handleChecklistPhotoUploaded}
-                            onViewImage={handleViewImage}
-                        />
-                    </TabsContent>
-                </Tabs>
-                 {watchedStatus === 'Entregado' && (
-                    <div className="grid md:grid-cols-2 gap-6 mt-6">
-                        {nextServiceInfo && isValid(parseDate(nextServiceInfo.date)!) && (
-                            <Card className="border-blue-200 bg-blue-50 dark:bg-blue-900/30">
-                                <CardHeader className="flex flex-row items-center justify-between pb-2">
-                                    <CardTitle className="flex items-center gap-2 text-lg text-blue-800 dark:text-blue-300">
-                                        <CalendarCheck className="h-5 w-5" />Próximo Servicio
-                                    </CardTitle>
-                                    <Button asChild variant="ghost" size="icon" className="h-7 w-7">
-                                        <Link href={`/vehiculos/${watchedVehicleId}`}>
-                                            <Edit className="h-4 w-4" />
-                                        </Link>
-                                    </Button>
-                                </CardHeader>
-                                <CardContent>
-                                    <p className="text-xs text-blue-700 dark:text-blue-300 mb-2">Lo que ocurra primero:</p>
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1">
-                                        <div>
-                                            <p className="font-semibold">Fecha:</p>
-                                            <p>{format(parseDate(nextServiceInfo.date)!, "dd 'de' MMMM 'de' yyyy", { locale: es })}</p>
-                                        </div>
-                                        {nextServiceInfo.mileage && (
+                    <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                        <div className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm py-2 -mx-6 px-6 mb-4 border-b">
+                            <TabsList className={cn("grid w-full", "grid-cols-4")}>
+                                <TabsTrigger value="details" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Detalles</TabsTrigger>
+                                <TabsTrigger value="reception" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Recepción/Entrega</TabsTrigger>
+                                <TabsTrigger value="photoreport" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Fotos</TabsTrigger>
+                                <TabsTrigger value="checklist" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Revisión</TabsTrigger>
+                            </TabsList>
+                        </div>
+                        <TabsContent value="details" className="mt-0">
+                            <ServiceDetailsCard
+                                isReadOnly={props.isReadOnly}
+                                technicians={technicians}
+                                inventoryItems={invItems}
+                                serviceTypes={serviceTypes}
+                                mode={props.mode || 'service'}
+                                onGenerateQuoteWithAI={handleGenerateQuote}
+                                isGeneratingQuote={isGeneratingQuote}
+                                isEnhancingText={isEnhancingText}
+                                handleEnhanceText={handleEnhanceText as any}
+                                onNewInventoryItemCreated={handleNewInventoryItemCreated}
+                                categories={allCategories}
+                                suppliers={allSuppliers}
+                            />
+                        </TabsContent>
+                        <TabsContent value="reception" className="mt-0">
+                           <ReceptionAndDelivery 
+                             onOpenSignature={(kind) => { setSignatureType(kind); setIsSignatureDialogOpen(true); }}
+                             isReadOnly={props.isReadOnly}
+                             isEnhancingText={isEnhancingText}
+                             handleEnhanceText={handleEnhanceText as any}
+                           />
+                        </TabsContent>
+                        <TabsContent value="photoreport" className="mt-0">
+                             <PhotoReportTab
+                                control={control}
+                                isReadOnly={props.isReadOnly}
+                                serviceId={initialDataService?.id || 'new'}
+                                onPhotoUploaded={handlePhotoUploaded}
+                                onViewImage={handleViewImage}
+                             />
+                        </TabsContent>
+                        <TabsContent value="checklist" className="mt-0">
+                            <SafetyChecklist
+                                serviceId={initialDataService?.id || 'new'}
+                                isReadOnly={props.isReadOnly}
+                                onSignatureClick={() => { setSignatureType('advisor'); setIsSignatureDialogOpen(true); }}
+                                signatureDataUrl={watch('serviceAdvisorSignatureDataUrl')}
+                                isEnhancingText={isEnhancingText}
+                                handleEnhanceText={handleEnhanceText as any}
+                                onPhotoUploaded={handleChecklistPhotoUploaded}
+                                onViewImage={handleViewImage}
+                            />
+                        </TabsContent>
+                    </Tabs>
+                    {watchedStatus === 'Entregado' && (
+                        <div className="grid md:grid-cols-2 gap-6 mt-6">
+                            {nextServiceInfo && isValid(parseDate(nextServiceInfo.date)!) && (
+                                <Card className="border-blue-200 bg-blue-50 dark:bg-blue-900/30">
+                                    <CardHeader className="flex flex-row items-center justify-between pb-2">
+                                        <CardTitle className="flex items-center gap-2 text-lg text-blue-800 dark:text-blue-300">
+                                            <CalendarCheck className="h-5 w-5" />Próximo Servicio
+                                        </CardTitle>
+                                        <Button asChild variant="ghost" size="icon" className="h-7 w-7">
+                                            <Link href={`/vehiculos/${watchedVehicleId}`}>
+                                                <Edit className="h-4 w-4" />
+                                            </Link>
+                                        </Button>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <p className="text-xs text-blue-700 dark:text-blue-300 mb-2">Lo que ocurra primero:</p>
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1">
                                             <div>
-                                                <p className="font-semibold">Kilometraje:</p>
-                                                <p>{nextServiceInfo.mileage.toLocaleString("es-MX")} km</p>
+                                                <p className="font-semibold">Fecha:</p>
+                                                <p>{format(parseDate(nextServiceInfo.date)!, "dd 'de' MMMM 'de' yyyy", { locale: es })}</p>
                                             </div>
-                                        )}
+                                            {nextServiceInfo.mileage && (
+                                                <div>
+                                                    <p className="font-semibold">Kilometraje:</p>
+                                                    <p>{nextServiceInfo.mileage.toLocaleString("es-MX")} km</p>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            )}
+                            <PaymentSection isReadOnly={isReadOnly} customerName={customerName}/>
+                            <Card>
+                                <CardHeader><CardTitle className="flex items-center gap-2"><DollarSign/>Resumen de Costos</CardTitle></CardHeader>
+                                <CardContent>
+                                    <div className="space-y-1 text-sm">
+                                        <div className="flex justify-between font-bold text-lg text-primary"><span>Total (IVA Inc.):</span><span>{formatCurrency(totalCost)}</span></div>
+                                        <div className="flex justify-between text-xs"><span>(-) Costo Insumos:</span><span className="font-medium text-red-600 dark:text-red-400">{formatCurrency(totalSuppliesWorkshopCost)}</span></div>
+                                        <hr className="my-1 border-dashed"/>
+                                        <div className="flex justify-between font-bold text-green-700 dark:text-green-400"><span>(=) Ganancia:</span><span>{formatCurrency(serviceProfit)}</span></div>
                                     </div>
                                 </CardContent>
                             </Card>
-                        )}
-                        <PaymentSection isReadOnly={isReadOnly} customerName={customerName}/>
-                        <Card>
-                            <CardHeader><CardTitle className="flex items-center gap-2"><DollarSign/>Resumen de Costos</CardTitle></CardHeader>
-                            <CardContent>
-                                <div className="space-y-1 text-sm">
-                                    <div className="flex justify-between font-bold text-lg text-primary"><span>Total (IVA Inc.):</span><span>{formatCurrency(totalCost)}</span></div>
-                                    <div className="flex justify-between text-xs"><span>(-) Costo Insumos:</span><span className="font-medium text-red-600 dark:text-red-400">{formatCurrency(totalSuppliesWorkshopCost)}</span></div>
-                                    <hr className="my-1 border-dashed"/>
-                                    <div className="flex justify-between font-bold text-green-700 dark:text-green-400"><span>(=) Ganancia:</span><span>{formatCurrency(serviceProfit)}</span></div>
-                                </div>
-                            </CardContent>
-                        </Card>
-                    </div>
-                )}
-            </div>
-            
-            <div className="p-6 pt-4 border-t flex-shrink-0 bg-background">
-                {children}
-            </div>
-        </form>
-      </FormProvider>
+                        </div>
+                    )}
+                </div>
+                
+                <div className="p-6 pt-4 border-t flex-shrink-0 bg-background">
+                    {children}
+                </div>
+            </form>
+        </FormProvider>
 
       <VehicleDialog
         open={isNewVehicleDialogOpen}
