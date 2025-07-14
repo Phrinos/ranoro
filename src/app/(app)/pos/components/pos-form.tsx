@@ -167,12 +167,13 @@ export function PosForm({ inventoryItems: parentInventoryItems, onSaleComplete, 
     <>
       <FormProvider {...methods}>
         <form onSubmit={methods.handleSubmit(onSubmit)} className="space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2">
-              <SaleItemsList onAddItem={handleOpenAddItemDialog} inventoryItems={parentInventoryItems} />
-            </div>
-            <div className="space-y-6">
+          <SaleItemsList onAddItem={handleOpenAddItemDialog} inventoryItems={parentInventoryItems} />
+          
+          <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+            <div className="lg:col-span-3">
               <PaymentSection />
+            </div>
+            <div className="lg:col-span-2">
               <SaleSummary />
             </div>
           </div>
