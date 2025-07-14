@@ -374,7 +374,9 @@ export function ServiceForm(props:Props){
   };
 
   const showCancelButton = !isReadOnly && initialDataService?.id && initialDataService.status !== 'Entregado' && initialDataService.status !== 'Cancelado';
-  const showNextServiceCard = (watchedStatus === 'En Taller' && watchedSubStatus === 'Completado') || watchedStatus === 'Entregado';
+  const showNextServiceCard = useMemo(() => {
+    return (watchedStatus === 'En Taller' && watchedSubStatus === 'Completado') || watchedStatus === 'Entregado';
+  }, [watchedStatus, watchedSubStatus]);
 
 
   return (
@@ -606,5 +608,3 @@ const PhotoReportTab = ({ control, isReadOnly, serviceId, onPhotoUploaded, onVie
         </Card>
     );
 };
-
-
