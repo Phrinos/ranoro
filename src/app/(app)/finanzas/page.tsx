@@ -32,6 +32,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuLabel, DropdownMenuRadio
 import { operationsService, inventoryService, personnelService } from '@/lib/services';
 import { Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { parseDate } from '@/lib/forms';
 
 type OperationTypeFilter = "all" | string;
 
@@ -101,11 +102,10 @@ function ResumenFinancieroPageComponent() {
         const salesInRange = allSales.filter(s => s.status !== 'Cancelado' && isValid(parseISO(s.saleDate)) && isWithinInterval(parseISO(s.saleDate), { start: from, end: to }));
         
         const servicesInRange = allServices.filter(s => {
-          if (s.status !== 'Completado') return false;
-          const dateToParse = s.deliveryDateTime || s.serviceDate;
+          if (s.status !== 'Entregado') return false;
+          const dateToParse = parseDate(s.deliveryDateTime) || parseDate(s.serviceDate);
           if (!dateToParse) return false;
-          const parsedDate = parseISO(dateToParse);
-          return isValid(parsedDate) && isWithinInterval(parsedDate, { start: from, end: to });
+          return isValid(dateToParse) && isWithinInterval(dateToParse, { start: from, end: to });
         });
 
         const totalIncomeFromSales = salesInRange.reduce((sum, s) => sum + s.totalAmount, 0);
@@ -173,7 +173,7 @@ function ResumenFinancieroPageComponent() {
         }));
         
         const serviceOperations: FinancialOperation[] = allServices
-            .filter(s => s.status === 'Completado')
+            .filter(s => s.status === 'Entregado')
             .map(s => ({ 
                 id: s.id, 
                 date: s.deliveryDateTime || s.serviceDate, 
@@ -191,13 +191,12 @@ function ResumenFinancieroPageComponent() {
         if (isLoading || !dateRange?.from) return [];
         const from = startOfDay(dateRange.from);
         const to = dateRange.to ? endOfDay(dateRange.to) : endOfDay(dateRange.from);
+        
         let list = combinedOperations.filter(op => {
-            const dateToParse = (op.originalObject as any).status === 'Completado' && 'deliveryDateTime' in op.originalObject
-                ? (op.originalObject as ServiceRecord).deliveryDateTime
-                : op.date;
-            
+            const dateToParse = op.date;
             if (!dateToParse) return false;
-            const parsedDate = parseISO(dateToParse);
+            
+            const parsedDate = parseDate(dateToParse);
             return isValid(parsedDate) && isWithinInterval(parsedDate, { start: from, end: to });
         });
         
@@ -368,6 +367,4 @@ export default function FinanzasPageWrapper() {
         </Suspense>
     );
 }
-
-
 
