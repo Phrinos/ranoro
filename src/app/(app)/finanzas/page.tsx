@@ -105,8 +105,8 @@ function ResumenFinancieroPageComponent() {
         const servicesInRange = allServices.filter(s => {
           const dateToParse = s.deliveryDateTime || s.serviceDate;
           if (!dateToParse) return false;
-          const parsedDate = parseISO(dateToParse);
-          return s.status === 'Entregado' && isValid(parsedDate) && isWithinInterval(parsedDate, { start: from, end: to });
+          const parsedDate = parseDate(dateToParse);
+          return s.status === 'Completado' && isValid(parsedDate) && isWithinInterval(parsedDate, { start: from, end: to });
         });
 
         const totalIncomeFromSales = salesInRange.reduce((sum, s) => sum + s.totalAmount, 0);
@@ -193,7 +193,7 @@ function ResumenFinancieroPageComponent() {
         }));
         
         const serviceOperations: FinancialOperation[] = allServices
-            .filter(s => s.status === 'Entregado')
+            .filter(s => s.status === 'Completado')
             .map(s => ({ 
                 id: s.id, 
                 date: s.deliveryDateTime || s.serviceDate, 
@@ -434,6 +434,7 @@ export default function FinanzasPageWrapper() {
         </Suspense>
     );
 }
+
 
 
 
