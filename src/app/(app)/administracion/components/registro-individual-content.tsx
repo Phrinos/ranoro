@@ -45,6 +45,11 @@ export function RegistroIndividualContent() {
     resolver: zodResolver(individualServiceSchema),
     defaultValues: {
       serviceDate: new Date(),
+      licensePlate: '',
+      vehicleId: '',
+      description: '',
+      totalCost: 0,
+      suppliesCost: 0,
       paymentMethod: 'Efectivo',
     },
   });
@@ -69,11 +74,11 @@ export function RegistroIndividualContent() {
     const found = vehicles.find(v => v.licensePlate.toLowerCase() === plate.toLowerCase());
     if (found) {
       setSearchedVehicle(found);
-      setValue('vehicleId', found.id);
+      setValue('vehicleId', found.id, { shouldValidate: true });
       setVehicleNotFound(false);
     } else {
       setSearchedVehicle(null);
-      setValue('vehicleId', '');
+      setValue('vehicleId', '', { shouldValidate: true });
       setVehicleNotFound(true);
     }
   }, [form, vehicles, setValue]);
@@ -82,7 +87,7 @@ export function RegistroIndividualContent() {
     try {
       await operationsService.saveIndividualMigratedService(data);
       toast({ title: 'Servicio Registrado', description: `El servicio para ${data.licensePlate} ha sido guardado.` });
-      form.reset({ serviceDate: new Date(), paymentMethod: 'Efectivo', licensePlate: '', description: '', totalCost: 0, suppliesCost: 0 });
+      form.reset({ serviceDate: new Date(), paymentMethod: 'Efectivo', licensePlate: '', vehicleId: '', description: '', totalCost: 0, suppliesCost: 0 });
       setSearchedVehicle(null);
     } catch (e) {
       console.error(e);
@@ -167,3 +172,4 @@ export function RegistroIndividualContent() {
     </Card>
   );
 }
+
