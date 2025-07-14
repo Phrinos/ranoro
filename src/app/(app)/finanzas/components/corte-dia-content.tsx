@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { format, parseISO, isValid } from 'date-fns';
@@ -16,7 +17,6 @@ type WorkshopInfoType = typeof initialWorkshopInfo;
 const LOCALSTORAGE_KEY = 'workshopTicketInfo';
 
 interface CorteDiaData {
-  date: string;
   salesByPaymentMethod: Record<string, number>;
   totalSales: number;
   totalCompletedServices: number;
@@ -25,10 +25,11 @@ interface CorteDiaData {
 
 interface CorteDiaContentProps {
   reportData: CorteDiaData;
-  previewWorkshopInfo?: WorkshopInfoType; // For potential future use if ticket config applies here
+  date?: Date; // Make date optional but recommended
+  previewWorkshopInfo?: WorkshopInfoType;
 }
 
-export function CorteDiaContent({ reportData, previewWorkshopInfo }: CorteDiaContentProps) {
+export function CorteDiaContent({ reportData, date, previewWorkshopInfo }: CorteDiaContentProps) {
   const [workshopInfo, setWorkshopInfo] = useState<WorkshopInfoType>(initialWorkshopInfo);
 
   useEffect(() => {
@@ -68,9 +69,10 @@ export function CorteDiaContent({ reportData, previewWorkshopInfo }: CorteDiaCon
     <div className="border-t border-dashed border-neutral-400 my-1"></div>
   );
 
-  const reportDateFormatted = isValid(parseISO(reportData.date)) 
-    ? format(parseISO(reportData.date), "dd 'de' MMMM 'de' yyyy", { locale: es }) 
+  const reportDateFormatted = date && isValid(date)
+    ? format(date, "dd 'de' MMMM 'de' yyyy", { locale: es })
     : 'Fecha Inválida';
+
 
   return (
     <div 

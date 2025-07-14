@@ -223,14 +223,14 @@ export interface ServiceRecord {
   vehicleConditions?: string;
   fuelLevel?: string;
   customerItems?: string;
-  safetyInspection?: SafetyInspection;
-  serviceAdvisorId?: string;
-  serviceAdvisorName?: string;
-  serviceAdvisorSignatureDataUrl?: string; 
   customerSignatureReception?: string;
   customerSignatureDelivery?: string;
   receptionSignatureViewed?: boolean;
   deliverySignatureViewed?: boolean;
+  safetyInspection?: SafetyInspection;
+  serviceAdvisorId?: string;
+  serviceAdvisorName?: string;
+  serviceAdvisorSignatureDataUrl?: string; 
   workshopInfo?: WorkshopInfo;
   paymentMethod?: PaymentMethod;
   cardFolio?: string;

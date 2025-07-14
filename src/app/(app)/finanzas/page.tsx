@@ -11,7 +11,7 @@ import { Calendar } from "@/components/ui/calendar";
 import {
   calculateSaleProfit,
 } from "@/lib/placeholder-data";
-import type { MonthlyFixedExpense, InventoryItem, FinancialOperation, AggregatedInventoryItem, PaymentMethod, ServiceTypeRecord, SaleReceipt, ServiceRecord, Technician, AdministrativeStaff, InventoryMovement } from "@/types";
+import type { MonthlyFixedExpense, InventoryItem, FinancialOperation, PaymentMethod, ServiceTypeRecord, SaleReceipt, ServiceRecord, Technician, AdministrativeStaff, InventoryMovement } from "@/types";
 import {
   format,
   parseISO,
@@ -226,7 +226,7 @@ function FinanzasPageComponent() {
     }, [isLoading, allSales, allServices, allInventory]);
 
     const corteDiaData = useMemo(() => {
-        if (!corteDate) return { salesByPaymentMethod: {}, totalSales: 0, totalCompletedServices: 0, grandTotal: 0 };
+        if (!corteDate) return { date: '', salesByPaymentMethod: {}, totalSales: 0, totalCompletedServices: 0, grandTotal: 0 };
 
         const start = startOfDay(corteDate);
         const end = endOfDay(corteDate);
@@ -248,7 +248,13 @@ function FinanzasPageComponent() {
 
         const grandTotal = Object.values(salesByPaymentMethod).reduce((sum, amount) => sum + amount, 0) + totalCompletedServices;
         
-        return { salesByPaymentMethod, totalSales: salesToday.reduce((sum, s) => sum + s.totalAmount, 0), totalCompletedServices, grandTotal };
+        return { 
+            date: corteDate.toISOString(),
+            salesByPaymentMethod, 
+            totalSales: salesToday.reduce((sum, s) => sum + s.totalAmount, 0), 
+            totalCompletedServices, 
+            grandTotal 
+        };
     }, [corteDate, allSales, allServices]);
 
     const handleApplyDateFilter = () => {
@@ -412,4 +418,3 @@ export default function FinanzasPageWrapper() {
         </Suspense>
     );
 }
-
