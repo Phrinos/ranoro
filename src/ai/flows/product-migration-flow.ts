@@ -10,6 +10,8 @@ import { z } from 'zod';
 const ExtractedProductSchema = z.object({
   sku: z.string().default('').describe('The SKU or product code.'),
   name: z.string().describe('The name of the product. This is a mandatory field.'),
+  brand: z.string().default('').describe('The brand or manufacturer of the product.'),
+  category: z.string().default('').describe('The category for the product (e.g., Filtros, Aceites).'),
   quantity: z.coerce.number().default(0).describe('The current stock quantity.'),
   unitPrice: z.coerce.number().default(0).describe('The purchase price for the workshop.'),
   sellingPrice: z.coerce.number().default(0).describe('The selling price to the customer.'),
@@ -42,6 +44,8 @@ const migrateProductsPrompt = ai.definePrompt({
 0.  **Check for Existing Products**: You have a list of existing product names: \`{{json existingProductNames}}\`. If you extract a product name from the CSV that is already in this list, **you MUST ignore that row** and not include it in the output. Only extract products that are new.
 1.  **Identify Columns**: Intelligently map the columns from the CSV to the required fields. Common mappings are:
     *   'nombre', 'producto', 'descripción' -> 'name' (MANDATORY)
+    *   'marca', 'fabricante' -> 'brand'
+    *   'categoría', 'categoria' -> 'category'
     *   'codigo', 'sku', 'clave' -> 'sku'
     *   'existencias', 'cantidad', 'stock', 'cant.' -> 'quantity'
     *   'precio de compra', 'costo', 'precio compra' -> 'unitPrice'
@@ -51,8 +55,8 @@ const migrateProductsPrompt = ai.definePrompt({
 4.  **Clean and Format Data**: 
     *   Trim whitespace from all text fields.
     *   Convert numbers correctly, treating missing or non-numeric values as 0.
-    *   **Crucially, format text fields like 'name' and 'sku' to be consistent. For example, 'name' should be in Title Case (e.g., "Filtro De Aceite" instead of "filtro de aceite" or "FILTRO DE ACEITE").**
-5.  **Default Values**: If a field is empty or missing in the source data, you MUST return it with a default value: an empty string ("") for text fields (like 'sku'), and 0 for numeric fields (like 'quantity' or prices). Do not omit fields.
+    *   **Crucially, format text fields like 'name', 'brand', 'category' and 'sku' to be consistent. For example, 'name' should be in Title Case (e.g., "Filtro De Aceite" instead of "filtro de aceite" or "FILTRO DE ACEITE").**
+5.  **Default Values**: If a field is empty or missing in the source data (and not mandatory), you MUST return it with a default value: an empty string ("") for text fields (like 'sku', 'brand', 'category'), and 0 for numeric fields (like 'quantity' or prices). Do not omit fields.
 
 Analyze the following CSV content and return the data in the specified JSON format.
 
