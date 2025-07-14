@@ -59,27 +59,36 @@ export function MigracionPageContent() {
             const data = event.target?.result;
             let csvText = '';
             
-            if (file.name.endsWith('.csv') && typeof data === 'string') {
-                csvText = data;
-            } else if (data instanceof ArrayBuffer) {
-                const workbook = XLSX.read(data, { type: 'array' });
-                const firstSheetName = workbook.SheetNames[0];
-                const worksheet = workbook.Sheets[firstSheetName];
-                csvText = XLSX.utils.sheet_to_csv(worksheet);
-            } else {
-                 toast({ title: "Error de Formato", description: "No se pudo procesar el archivo. Intente con CSV o XLSX.", variant: "destructive" });
-                 return;
+            try {
+                if (file.name.endsWith('.csv') && typeof data === 'string') {
+                    csvText = data;
+                } else if (data instanceof ArrayBuffer) {
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const firstSheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[firstSheetName];
+                    csvText = XLSX.utils.sheet_to_csv(worksheet);
+                } else {
+                     toast({ title: "Error de Formato", description: "No se pudo procesar el archivo. Intente con CSV o XLSX.", variant: "destructive" });
+                     return;
+                }
+    
+                setPastedText(csvText);
+                toast({ title: "Archivo Cargado", description: "El contenido del archivo se ha pegado en el área de texto." });
+            } catch (error) {
+                console.error("Error processing file:", error);
+                toast({ title: "Error al Procesar", description: `No se pudo leer el contenido del archivo. ${error instanceof Error ? error.message : ''}`, variant: "destructive" });
             }
-
-            setPastedText(csvText);
-            toast({ title: "Archivo Cargado", description: "El contenido del archivo se ha pegado en el área de texto." });
         };
-        reader.onerror = () => toast({ title: "Error", description: "No se pudo leer el archivo.", variant: "destructive" });
         
+        reader.onerror = () => toast({ title: "Error de Lectura", description: "No se pudo leer el archivo.", variant: "destructive" });
+        
+        // Correctly choose read method based on file type
         if (file.name.endsWith('.csv')) {
              reader.readAsText(file);
-        } else { // Handles .xlsx, .xls
+        } else if (file.name.endsWith('.xlsx') || file.name.endsWith('.xls')) {
              reader.readAsArrayBuffer(file);
+        } else {
+             toast({ title: "Formato no Soportado", description: "Por favor, suba un archivo .csv, .xls, o .xlsx.", variant: "destructive" });
         }
     };
 
