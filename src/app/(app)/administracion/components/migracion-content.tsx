@@ -57,22 +57,28 @@ export function MigracionPageContent() {
         const reader = new FileReader();
         reader.onload = (event) => {
             const data = event.target?.result;
-            if (typeof data !== 'string') {
+            let csvText = '';
+            
+            if (file.name.endsWith('.csv') && typeof data === 'string') {
+                csvText = data;
+            } else if (data instanceof ArrayBuffer) {
                 const workbook = XLSX.read(data, { type: 'array' });
                 const firstSheetName = workbook.SheetNames[0];
                 const worksheet = workbook.Sheets[firstSheetName];
-                const csv = XLSX.utils.sheet_to_csv(worksheet);
-                setPastedText(csv);
+                csvText = XLSX.utils.sheet_to_csv(worksheet);
             } else {
-                setPastedText(data);
+                 toast({ title: "Error de Formato", description: "No se pudo procesar el archivo. Intente con CSV o XLSX.", variant: "destructive" });
+                 return;
             }
+
+            setPastedText(csvText);
             toast({ title: "Archivo Cargado", description: "El contenido del archivo se ha pegado en el área de texto." });
         };
         reader.onerror = () => toast({ title: "Error", description: "No se pudo leer el archivo.", variant: "destructive" });
         
         if (file.name.endsWith('.csv')) {
              reader.readAsText(file);
-        } else {
+        } else { // Handles .xlsx, .xls
              reader.readAsArrayBuffer(file);
         }
     };
@@ -189,7 +195,7 @@ export function MigracionPageContent() {
                     )}
                      {hasProducts && (
                         <div className="rounded-md border h-64 overflow-auto">
-                           <Table><TableHeader className="sticky top-0 bg-muted"><TableRow><TableHead>SKU</TableHead><TableHead>Nombre</TableHead><TableHead>Cantidad</TableHead><TableHead>Precio Compra</TableHead><TableHead>Precio Venta</TableHead></TableRow></TableHeader><TableBody>{analysisResult.products.map((p, i) => ( <TableRow key={i}><TableCell>{p.sku || 'N/A'}</TableCell><TableCell>{p.name}</TableCell><TableCell>{p.quantity}</TableCell><TableCell>{formatCurrency(p.unitPrice)}</TableCell><TableCell>{formatCurrency(p.sellingPrice)}</TableCell></TableRow> ))}</TableBody></Table>
+                           <Table><TableHeader className="sticky top-0 bg-muted"><TableRow><TableHead>SKU</TableHead><TableHead>Nombre</TableHead><TableHead>Marca</TableHead><TableHead>Categoría</TableHead><TableHead>Cantidad</TableHead><TableHead>Precio Compra</TableHead><TableHead>Precio Venta</TableHead></TableRow></TableHeader><TableBody>{analysisResult.products.map((p, i) => ( <TableRow key={i}><TableCell>{p.sku || 'N/A'}</TableCell><TableCell>{p.name}</TableCell><TableCell>{p.brand}</TableCell><TableCell>{p.category}</TableCell><TableCell>{p.quantity}</TableCell><TableCell>{formatCurrency(p.unitPrice)}</TableCell><TableCell>{formatCurrency(p.sellingPrice)}</TableCell></TableRow> ))}</TableBody></Table>
                         </div>
                     )}
                     {hasDataToSave ? (
