@@ -23,7 +23,7 @@ interface VehicleSelectionCardProps {
   isReadOnly?: boolean;
   localVehicles: Vehicle[];
   onVehicleSelected: (vehicle: Vehicle | null) => void;
-  onOpenNewVehicleDialog: () => void;
+  onOpenNewVehicleDialog: (plate?: string) => void;
 }
 
 export function VehicleSelectionCard({
@@ -281,7 +281,7 @@ export function VehicleSelectionCard({
               type="button"
               size="sm"
               variant="outline"
-              onClick={onOpenNewVehicleDialog}
+              onClick={() => onOpenNewVehicleDialog(vehicleLicensePlateSearch)}
               className="w-full sm:w-auto"
             >
               <CarIcon className="mr-2 h-4 w-4" /> Registrar Nuevo Vehículo

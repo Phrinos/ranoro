@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React, { useState, useEffect } from 'react';
@@ -52,6 +53,11 @@ export function VehicleDialog({
       });
     }
   };
+  
+  const dialogTitle = vehicle && 'id' in vehicle && vehicle.id ? "Editar Vehículo" : "Nuevo Vehículo";
+  const dialogDescription = vehicle && 'id' in vehicle && vehicle.id
+    ? "Actualiza los detalles del vehículo."
+    : "Completa la información para un nuevo vehículo.";
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -59,10 +65,8 @@ export function VehicleDialog({
       {open && (
         <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>{vehicle && 'id' in vehicle ? "Editar Vehículo" : "Nuevo Vehículo"}</DialogTitle>
-            <DialogDescription>
-              {vehicle && 'id' in vehicle ? "Actualiza los detalles del vehículo." : "Completa la información para un nuevo vehículo."}
-            </DialogDescription>
+            <DialogTitle>{dialogTitle}</DialogTitle>
+            <DialogDescription>{dialogDescription}</DialogDescription>
           </DialogHeader>
           <VehicleForm
             initialData={vehicle}

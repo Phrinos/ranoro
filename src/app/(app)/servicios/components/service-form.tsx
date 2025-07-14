@@ -80,7 +80,7 @@ interface Props {
   isReadOnly?:boolean
   mode?:'service'|'quote'
   onStatusChange?: (status: ServiceRecord['status']) => void;
-  onVehicleCreated?: (newVehicle: Omit<Vehicle, 'id'>) => void; 
+  onVehicleCreated?: (newVehicle: VehicleFormValues) => Promise<void>;
 }
 
 export function ServiceForm(props:Props){
@@ -231,6 +231,7 @@ export function ServiceForm(props:Props){
   
   const [activeTab, setActiveTab] = useState('details')
   const [isNewVehicleDialogOpen, setIsNewVehicleDialogOpen] = useState(false)
+  const [newVehicleInitialPlate, setNewVehicleInitialPlate] = useState<string | undefined>(undefined);
   const [isSignatureDialogOpen, setIsSignatureDialogOpen] = useState(false)
   const [signatureType, setSignatureType] = useState<'advisor' | 'reception' | 'delivery' | null>(null)
   const [isImageViewerOpen, setIsImageViewerOpen] = useState(false)
@@ -324,6 +325,11 @@ export function ServiceForm(props:Props){
     setIsNewVehicleDialogOpen(false);
   }, [onVehicleCreated]);
 
+  const handleOpenNewVehicleDialog = useCallback((plate?: string) => {
+    setNewVehicleInitialPlate(plate);
+    setIsNewVehicleDialogOpen(true);
+  }, []);
+
   const handleNewInventoryItemCreated = useCallback(async (formData: InventoryItemFormValues): Promise<InventoryItem> => {
     const newItem = await inventoryService.addItem(formData);
     toast({ title: "Producto Creado", description: `"${newItem.name}" ha sido agregado al inventario.` });
@@ -393,7 +399,7 @@ export function ServiceForm(props:Props){
                         isReadOnly={props.isReadOnly}
                         localVehicles={parentVehicles}
                         onVehicleSelected={(v) => setValue('vehicleIdentifier', v?.licensePlate)}
-                        onOpenNewVehicleDialog={() => setIsNewVehicleDialogOpen(true)}
+                        onOpenNewVehicleDialog={handleOpenNewVehicleDialog}
                     />
 
                     <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -551,6 +557,7 @@ export function ServiceForm(props:Props){
         open={isNewVehicleDialogOpen}
         onOpenChange={setIsNewVehicleDialogOpen}
         onSave={handleVehicleCreated}
+        vehicle={{ licensePlate: newVehicleInitialPlate }}
       />
       
       <SignatureDialog
