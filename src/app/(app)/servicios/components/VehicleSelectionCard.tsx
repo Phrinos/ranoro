@@ -189,7 +189,8 @@ export function VehicleSelectionCard({
                         <Input
                             placeholder="Buscar / Ingresar Placas"
                             onChange={(e) => {
-                                setVehicleLicensePlateSearch(e.target.value);
+                                const upperCaseValue = e.target.value.toUpperCase();
+                                setVehicleLicensePlateSearch(upperCaseValue);
                                 field.onChange(undefined);
                                 setSelectedVehicle(null);
                                 setVehicleNotFound(false);
