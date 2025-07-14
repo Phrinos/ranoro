@@ -41,7 +41,7 @@ import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from '
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Textarea } from '@/components/ui/textarea'
 import { useToast } from '@/hooks/use-toast'
-import { cn } from '@/lib/utils'
+import { cn, formatCurrency } from '@/lib/utils'
 import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data'
 
 import type {
@@ -183,6 +183,7 @@ export function ServiceForm(props:Props){
   const { totalCost, totalSuppliesWorkshopCost, serviceProfit } = useServiceTotals(form);
   
   const watchedStatus = watch('status');
+  const watchedVehicleId = watch('vehicleId');
   
   // Effect to reset the form when initialDataService changes.
   useEffect(() => {
@@ -203,9 +204,15 @@ export function ServiceForm(props:Props){
                 setValue('receptionDateTime', new Date());
             }
         }
+        if (name === 'vehicleId') {
+            const selectedVehicle = parentVehicles.find(v => v.id === value.vehicleId);
+            if(selectedVehicle) {
+                setValue('customerName', selectedVehicle.ownerName);
+            }
+        }
     });
     return () => subscription.unsubscribe();
-  }, [watch, setValue]);
+  }, [watch, setValue, parentVehicles]);
   
   const [activeTab, setActiveTab] = useState('details')
   const [isNewVehicleDialogOpen, setIsNewVehicleDialogOpen] = useState(false)
@@ -358,7 +365,6 @@ export function ServiceForm(props:Props){
                 <VehicleSelectionCard
                     isReadOnly={props.isReadOnly}
                     localVehicles={parentVehicles}
-                    serviceHistory={[]}
                     onVehicleSelected={(v) => form.setValue('vehicleIdentifier', v?.licensePlate)}
                     onOpenNewVehicleDialog={() => setIsNewVehicleDialogOpen(true)}
                 />
@@ -395,14 +401,6 @@ export function ServiceForm(props:Props){
                             categories={allCategories}
                             suppliers={allSuppliers}
                         />
-                         {watchedStatus === 'Entregado' && (
-                            <Card className="mt-6">
-                                <CardHeader><CardTitle className="flex items-center gap-2"><Wallet/>Detalles de Pago</CardTitle></CardHeader>
-                                <CardContent>
-                                    <PaymentSection />
-                                </CardContent>
-                            </Card>
-                        )}
                     </TabsContent>
                     <TabsContent value="reception" className="mt-0">
                        <ReceptionAndDelivery 
@@ -436,6 +434,25 @@ export function ServiceForm(props:Props){
                         />
                     </TabsContent>
                 </Tabs>
+                 {watchedStatus === 'Entregado' && (
+                    <div className="grid md:grid-cols-2 gap-6 mt-6">
+                        <Card>
+                            <CardHeader><CardTitle className="flex items-center gap-2"><Wallet/>Detalles de Pago</CardTitle></CardHeader>
+                            <CardContent><PaymentSection isReadOnly={isReadOnly} /></CardContent>
+                        </Card>
+                        <Card>
+                            <CardHeader><CardTitle className="flex items-center gap-2"><DollarSign/>Resumen de Costos</CardTitle></CardHeader>
+                            <CardContent>
+                                <div className="space-y-1 text-sm">
+                                    <div className="flex justify-between font-bold text-lg text-primary"><span>Total (IVA Inc.):</span><span>{formatCurrency(totalCost)}</span></div>
+                                    <div className="flex justify-between text-xs"><span>(-) Costo Insumos:</span><span className="font-medium text-red-600 dark:text-red-400">{formatCurrency(totalSuppliesWorkshopCost)}</span></div>
+                                    <hr className="my-1 border-dashed"/>
+                                    <div className="flex justify-between font-bold text-green-700 dark:text-green-400"><span>(=) Ganancia:</span><span>{formatCurrency(serviceProfit)}</span></div>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </div>
+                )}
             </div>
             
             <div className="p-6 pt-4 border-t flex-shrink-0 bg-background">

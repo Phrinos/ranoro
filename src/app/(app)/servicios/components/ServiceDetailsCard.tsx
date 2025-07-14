@@ -30,9 +30,6 @@ interface ServiceDetailsCardProps {
   inventoryItems: InventoryItem[];
   serviceTypes: ServiceTypeRecord[];
   mode: 'service' | 'quote';
-  totalCost: number;
-  totalSuppliesWorkshopCost: number;
-  serviceProfit: number;
   onGenerateQuoteWithAI: () => void;
   isGeneratingQuote: boolean;
   isEnhancingText?: string | null;
@@ -48,9 +45,6 @@ export function ServiceDetailsCard({
   inventoryItems,
   serviceTypes,
   mode,
-  totalCost,
-  totalSuppliesWorkshopCost,
-  serviceProfit,
   onGenerateQuoteWithAI,
   isGeneratingQuote,
   isEnhancingText,
@@ -172,13 +166,6 @@ export function ServiceDetailsCard({
                 </FormItem>
             )}
         />
-        
-        <Separator className="my-6"/>
-        
-        <div>
-          <h4 className="text-base font-semibold mb-2">Costo del Servicio</h4>
-          <div className="space-y-1 text-sm"><div className="flex justify-between font-bold text-lg text-primary"><span>Total (IVA Inc.):</span><span>{formatCurrency(totalCost)}</span></div><div className="flex justify-between text-xs"><span>(-) Costo Insumos:</span><span className="font-medium text-red-600 dark:text-red-400">{formatCurrency(totalSuppliesWorkshopCost)}</span></div><hr className="my-1 border-dashed"/><div className="flex justify-between font-bold text-green-700 dark:text-green-400"><span>(=) Ganancia:</span><span>{formatCurrency(serviceProfit)}</span></div></div>
-        </div>
       </CardContent>
     </Card>
   );
