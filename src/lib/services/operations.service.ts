@@ -1,5 +1,4 @@
 
-
 import {
   collection,
   onSnapshot,
@@ -246,6 +245,12 @@ const onSalesUpdate = (callback: (sales: SaleReceipt[]) => void): (() => void) =
     return unsubscribe;
 };
 
+const onSalesUpdatePromise = async (): Promise<SaleReceipt[]> => {
+    if (!db) return [];
+    const snapshot = await getDocs(collection(db, "sales"));
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as SaleReceipt));
+}
+
 const registerSale = async (saleData: Omit<SaleReceipt, 'id' | 'saleDate'>, inventoryItems: InventoryItem[], batch: ReturnType<typeof writeBatch>): Promise<string> => {
     const IVA_RATE = 0.16;
     const totalAmount = saleData.items.reduce((sum, item) => sum + (item.totalPrice || 0), 0);
@@ -414,6 +419,7 @@ export const operationsService = {
     getServicesForVehicle,
     getQuoteById,
     onSalesUpdate,
+    onSalesUpdatePromise,
     registerSale,
     onCashTransactionsUpdate,
     addCashTransaction,
