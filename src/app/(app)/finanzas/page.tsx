@@ -20,7 +20,7 @@ import {
   startOfDay, endOfDay, startOfWeek, endOfWeek, isSameDay, startOfMonth, endOfMonth, compareDesc, compareAsc
 } from "date-fns";
 import { es } from 'date-fns/locale';
-import { CalendarIcon, DollarSign, TrendingUp, TrendingDown, Pencil, BadgeCent, Search, LineChart, PackageSearch, ListFilter, Filter } from "lucide-react";
+import { CalendarIcon, DollarSign, TrendingUp, TrendingDown, Pencil, BadgeCent, Search, LineChart, PackageSearch, ListFilter, Filter, Package as PackageIcon } from "lucide-react";
 import { cn, formatCurrency } from "@/lib/utils";
 import { FixedExpensesDialog } from "../finanzas/components/fixed-expenses-dialog"; 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -91,7 +91,8 @@ function ResumenFinancieroPageComponent() {
             totalProfitFromSales: 0, totalProfitFromServices: 0, totalCostOfGoods: 0, totalOperationalProfit: 0, totalSalaries: 0, 
             totalTechnicianSalaries: 0, totalAdministrativeSalaries: 0, totalFixedExpenses: 0, totalMonthlyExpenses: 0, 
             totalTechnicianCommissions: 0, totalAdministrativeCommissions: 0, totalExpenses: 0, netProfit: 0, 
-            isProfitableForCommissions: false, serviceIncomeBreakdown: {} 
+            isProfitableForCommissions: false, serviceIncomeBreakdown: {},
+            totalInventoryValue: 0, totalUnitsSold: 0
         };
 
         if (isLoading || !dateRange?.from) return emptyState;
@@ -102,10 +103,10 @@ function ResumenFinancieroPageComponent() {
         const salesInRange = allSales.filter(s => s.status !== 'Cancelado' && isValid(parseISO(s.saleDate)) && isWithinInterval(parseISO(s.saleDate), { start: from, end: to }));
         
         const servicesInRange = allServices.filter(s => {
-          if (s.status !== 'Entregado') return false;
-          const dateToParse = parseDate(s.deliveryDateTime) || parseDate(s.serviceDate);
+          const dateToParse = s.deliveryDateTime || s.serviceDate;
           if (!dateToParse) return false;
-          return isValid(dateToParse) && isWithinInterval(dateToParse, { start: from, end: to });
+          const parsedDate = parseISO(dateToParse);
+          return s.status === 'Entregado' && isValid(parsedDate) && isWithinInterval(parsedDate, { start: from, end: to });
         });
 
         const totalIncomeFromSales = salesInRange.reduce((sum, s) => sum + s.totalAmount, 0);
@@ -138,6 +139,8 @@ function ResumenFinancieroPageComponent() {
         const totalOperationalProfit = totalProfitFromSales + totalProfitFromServices;
 
         const totalCostOfGoods = salesInRange.reduce((cost, s) => cost + s.items.reduce((c, i) => c + ((allInventory.find(inv => inv.id === i.inventoryItemId)?.unitPrice || 0) * i.quantity), 0), 0) + servicesInRange.reduce((cost, s) => cost + (s.totalSuppliesWorkshopCost || 0), 0);
+        
+        const totalUnitsSold = salesInRange.reduce((sum, s) => sum + s.items.reduce((count, item) => count + item.quantity, 0), 0) + servicesInRange.reduce((sum, s) => sum + (s.serviceItems || []).flatMap(si => si.suppliesUsed || []).reduce((count, supply) => count + supply.quantity, 0), 0);
 
         const totalTechnicianSalaries = allTechnicians.filter(t => !t.isArchived).reduce((sum, tech) => sum + (tech.monthlySalary || 0), 0);
         const totalAdministrativeSalaries = allAdminStaff.filter(s => !s.isArchived).reduce((sum, staff) => sum + (staff.monthlySalary || 0), 0);
@@ -166,12 +169,17 @@ function ResumenFinancieroPageComponent() {
             ? `${format(from, "dd MMM", { locale: es })} - ${format(to, "dd MMM, yyyy", { locale: es })}`
             : format(from, "dd 'de' MMMM, yyyy", { locale: es });
 
+        const totalInventoryValue = allInventory
+            .filter(item => !item.isService)
+            .reduce((sum, item) => sum + (item.quantity * item.unitPrice), 0);
+
         return { 
             monthYearLabel: dateLabel, totalOperationalIncome, totalIncomeFromSales, totalIncomeFromServices, 
             totalProfitFromSales, totalProfitFromServices, totalCostOfGoods, totalOperationalProfit,
             totalSalaries: totalBaseSalaries, totalTechnicianSalaries, totalAdministrativeSalaries, 
             totalFixedExpenses, totalMonthlyExpenses, totalTechnicianCommissions, totalAdministrativeCommissions,
-            totalExpenses, netProfit, isProfitableForCommissions, serviceIncomeBreakdown
+            totalExpenses, netProfit, isProfitableForCommissions, serviceIncomeBreakdown,
+            totalInventoryValue, totalUnitsSold
         };
     }, [dateRange, isLoading, allSales, allServices, allInventory, allTechnicians, allAdminStaff, fixedExpenses]);
     
@@ -324,9 +332,10 @@ function ResumenFinancieroPageComponent() {
                                     </div>
                                 ))}
                             </div>
-                            <div className="grid grid-cols-4 gap-4 items-center font-bold text-lg pt-4 border-t mt-4">
-                                <div className="col-span-3 text-right">Ganancia Bruta Operativa Total:</div>
-                                <div className="col-span-1 text-right text-xl text-green-600">{formatCurrency(financialSummary.totalOperationalProfit)}</div>
+                            <div className="grid grid-cols-4 gap-4 items-center font-bold text-base pt-4 border-t mt-4">
+                                <div className="col-span-2 text-right">Total Ingresos Brutos:</div>
+                                <div className="col-span-1 text-right text-lg">{formatCurrency(financialSummary.totalOperationalIncome)}</div>
+                                <div className="col-span-1 text-right text-lg text-green-600">{formatCurrency(financialSummary.totalOperationalProfit)}</div>
                             </div>
                         </CardContent>
                       </Card>
@@ -347,6 +356,31 @@ function ResumenFinancieroPageComponent() {
                               <div className="flex justify-between font-bold"><span className="text-foreground">Total Gastos Fijos:</span><span className="text-red-600">{formatCurrency(financialSummary.totalFixedExpenses)}</span></div>
                           </CardContent>
                       </Card>
+
+                      <Card className="lg:col-span-2">
+                        <CardHeader>
+                            <CardTitle className="text-xl flex items-center gap-2"><PackageIcon className="h-6 w-6 text-primary" />Resumen de Inventario</CardTitle>
+                            <CardDescription>Estado y movimiento del inventario en el período seleccionado.</CardDescription>
+                        </CardHeader>
+                        <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
+                            <div className="p-4 bg-muted/50 rounded-lg">
+                                <p className="text-sm font-medium text-muted-foreground">Valor Actual del Inventario</p>
+                                <p className="text-2xl font-bold">{formatCurrency(financialSummary.totalInventoryValue)}</p>
+                                <p className="text-xs text-muted-foreground">(A precio de costo)</p>
+                            </div>
+                            <div className="p-4 bg-muted/50 rounded-lg">
+                                <p className="text-sm font-medium text-muted-foreground">Costo de Insumos Utilizados</p>
+                                <p className="text-2xl font-bold text-orange-600">{formatCurrency(financialSummary.totalCostOfGoods)}</p>
+                                <p className="text-xs text-muted-foreground">(En el período seleccionado)</p>
+                            </div>
+                            <div className="p-4 bg-muted/50 rounded-lg">
+                                <p className="text-sm font-medium text-muted-foreground">Unidades Vendidas/Utilizadas</p>
+                                <p className="text-2xl font-bold">{financialSummary.totalUnitsSold.toLocaleString('es-MX')}</p>
+                                <p className="text-xs text-muted-foreground">(En el período seleccionado)</p>
+                            </div>
+                        </CardContent>
+                    </Card>
+
                     </div>
                 </TabsContent>
                 
@@ -400,5 +434,6 @@ export default function FinanzasPageWrapper() {
         </Suspense>
     );
 }
+
 
 
