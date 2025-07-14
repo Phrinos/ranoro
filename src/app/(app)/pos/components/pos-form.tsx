@@ -28,6 +28,7 @@ const saleItemSchema = z.object({
   unitPrice: z.coerce.number(),
   totalPrice: z.coerce.number(),
   isService: z.boolean().optional(),
+  unitType: z.enum(['units', 'ml', 'liters']).optional(),
 });
 
 const paymentMethods: [PaymentMethod, ...PaymentMethod[]] = [
@@ -55,7 +56,7 @@ type POSFormValues = z.infer<typeof posFormSchema>;
 interface POSFormProps {
   inventoryItems: InventoryItem[];
   onSaleComplete: (saleData: SaleReceipt) => void;
-  onInventoryItemCreated: (formData: InventoryItemFormValues) => Promise<InventoryItem>;
+  onInventoryItemCreated?: (formData: InventoryItemFormValues) => Promise<InventoryItem>;
 }
 
 export function PosForm({ inventoryItems: parentInventoryItems, onSaleComplete, onInventoryItemCreated }: POSFormProps) {
@@ -67,7 +68,7 @@ export function PosForm({ inventoryItems: parentInventoryItems, onSaleComplete, 
   const [allCategories, setAllCategories] = useState<InventoryCategory[]>([]);
   const [allSuppliers, setAllSuppliers] = useState<Supplier[]>([]);
 
-  const form = useForm<POSFormValues>({
+  const methods = useForm<POSFormValues>({
     resolver: zodResolver(posFormSchema),
     defaultValues: {
       items: [],
@@ -78,8 +79,8 @@ export function PosForm({ inventoryItems: parentInventoryItems, onSaleComplete, 
     },
   });
 
-  const { control, watch, setValue, getValues } = form;
-  const { fields, append, remove } = useFieldArray({ control, name: "items" });
+  const { control, watch, setValue, getValues } = methods;
+  const { append } = useFieldArray({ control, name: "items" });
   const watchedItems = watch("items");
 
   useEffect(() => {
@@ -138,6 +139,7 @@ export function PosForm({ inventoryItems: parentInventoryItems, onSaleComplete, 
         unitPrice: item.sellingPrice,
         totalPrice: item.sellingPrice * quantity,
         isService: item.isService || false,
+        unitType: item.unitType,
     });
     setIsAddItemDialogOpen(false);
   };
@@ -153,6 +155,7 @@ export function PosForm({ inventoryItems: parentInventoryItems, onSaleComplete, 
   };
   
   const handleNewItemSaved = async (formData: InventoryItemFormValues) => {
+    if (!onInventoryItemCreated) return;
     const newItem = await onInventoryItemCreated(formData);
     handleAddItem(newItem, 1);
     toast({ title: "Nuevo Ítem Creado y Añadido." });
@@ -162,8 +165,8 @@ export function PosForm({ inventoryItems: parentInventoryItems, onSaleComplete, 
 
   return (
     <>
-      <FormProvider {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+      <FormProvider {...methods}>
+        <form onSubmit={methods.handleSubmit(onSubmit)} className="space-y-6">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2">
               <SaleItemsList onAddItem={handleOpenAddItemDialog} inventoryItems={parentInventoryItems} />
@@ -184,7 +187,7 @@ export function PosForm({ inventoryItems: parentInventoryItems, onSaleComplete, 
         onNewItemRequest={handleRequestNewItem}
       />
       
-      {isNewInventoryItemDialogOpen && (
+      {isNewInventoryItemDialogOpen && onInventoryItemCreated && (
           <InventoryItemDialog
             open={isNewInventoryItemDialogOpen}
             onOpenChange={setIsNewInventoryItemDialogOpen}
