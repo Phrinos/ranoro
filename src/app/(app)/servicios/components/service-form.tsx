@@ -4,7 +4,7 @@
 'use client'
 
 import { zodResolver } from "@hookform/resolvers/zod"
-import { useForm, useWatch, Controller, useFieldArray, FormProvider } from "react-hook-form"
+import { useForm, useWatch, Controller, useFieldArray, FormProvider, useFormContext } from "react-hook-form"
 import * as z from 'zod'
 
 import Image from 'next/image'
