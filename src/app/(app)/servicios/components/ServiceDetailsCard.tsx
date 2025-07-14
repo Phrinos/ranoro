@@ -2,7 +2,7 @@
 
 "use client";
 
-import { useFieldArray, useFormContext } from "react-hook-form";
+import { useFieldArray, useFormContext, type Control } from "react-hook-form";
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -69,16 +69,15 @@ export function ServiceDetailsCard({
   };
   
   const showAppointmentFields = useMemo(() => {
-    // Only show if status is Agendado, or if it's an existing service in taller/entregado
-    return watchedStatus === 'Agendado' || (!!serviceId && (watchedStatus === 'En Taller' || watchedStatus === 'Entregado'));
-  }, [watchedStatus, serviceId]);
+    return watchedStatus === 'Agendado';
+  }, [watchedStatus]);
 
   const showTechnicianField = useMemo(() => {
     return watchedStatus === 'En Taller' || watchedStatus === 'Entregado';
   }, [watchedStatus]);
 
   const showTimePicker = useMemo(() => {
-    return watchedStatus !== 'Cotizacion'
+    return watchedStatus === 'Agendado';
   }, [watchedStatus]);
 
 
