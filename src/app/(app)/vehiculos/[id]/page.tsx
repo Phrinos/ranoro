@@ -211,7 +211,7 @@ export default function VehicleDetailPage() {
         <TabsContent value="services">
           <Card><CardHeader><CardTitle>Historial de Servicios</CardTitle><CardDescription>Servicios realizados a este vehículo. Haz clic en una fila para ver/editar.</CardDescription></CardHeader><CardContent>{services.length > 0 ? (<div className="rounded-md border"><Table><TableHeader className="bg-black"><TableRow><TableHead className="text-white">Fecha</TableHead><TableHead className="text-white">Kilometraje</TableHead><TableHead className="text-white">Descripción</TableHead><TableHead className="text-white">Técnico</TableHead><TableHead className="text-right text-white">Costo Total</TableHead><TableHead className="text-white">Estado</TableHead></TableRow></TableHeader><TableBody>
             {services.map((service) => { 
-                const relevantDate = service.deliveryDateTime ? parseISO(service.deliveryDateTime) : service.receptionDateTime ? parseISO(service.receptionDateTime) : service.serviceDate ? parseISO(service.serviceDate) : null;
+                const relevantDate = service.deliveryDateTime ? parseDate(service.deliveryDateTime) : service.receptionDateTime ? parseDate(service.receptionDateTime) : service.serviceDate ? parseDate(service.serviceDate) : null;
                 const formattedDate = relevantDate && isValid(relevantDate) ? format(relevantDate, "dd MMM yyyy, HH:mm", { locale: es }) : "N/A"; 
                 return (
                     <TableRow key={service.id} onClick={() => handleServiceRowClick(service)} className="cursor-pointer hover:bg-muted/50">

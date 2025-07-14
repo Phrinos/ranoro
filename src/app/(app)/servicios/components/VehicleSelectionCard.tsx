@@ -246,6 +246,11 @@ export function VehicleSelectionCard({
             <div>
                 {selectedVehicle && (
                     <div className="p-3 border rounded-md bg-amber-50 dark:bg-amber-950/50 text-sm space-y-2 h-full flex flex-col justify-center relative">
+                        <Button asChild variant="ghost" size="icon" className="absolute top-1 right-1 h-7 w-7">
+                            <Link href={`/vehiculos/${selectedVehicle.id}`} target="_blank" title="Ver perfil del vehículo">
+                                <Edit className="h-4 w-4" />
+                            </Link>
+                        </Button>
                         <div>
                             <p className="font-bold text-lg">{selectedVehicle.licensePlate} - {selectedVehicle.make} {selectedVehicle.model} {selectedVehicle.year}</p>
                         </div>
