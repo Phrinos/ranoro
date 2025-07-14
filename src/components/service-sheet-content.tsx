@@ -185,7 +185,7 @@ const SafetyChecklistDisplay = ({
                     <div className="h-24 w-full max-w-[200px] relative">
                         <Image src={normalizeDataUrl(inspection.technicianSignature)} alt="Firma del técnico" unoptimized width={200} height={96} style={{ objectFit: 'contain' }}/>
                     </div>
-                    <div className="border-t-2 border-black mt-2 pt-1 w-64 text-center">
+                    <div className="mt-2 pt-1 w-64 text-center">
                         <p className="text-xs font-bold">FIRMA DEL TÉCNICO</p>
                     </div>
                 </div>
@@ -267,7 +267,7 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
         </header>
 
         <main className="flex-grow">
-          <section className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-2 text-xs">
+           <section className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-2 text-xs">
               <div className="border-2 border-black rounded-md overflow-hidden flex-1">
                 <h3 className="font-bold p-1 bg-gray-700 text-white text-xs text-center">DATOS DEL CLIENTE</h3>
                 <div className="space-y-0.5 p-2 text-sm">
@@ -374,7 +374,7 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
                             </div>
                         )}
                     </div>
-                    <div className="border-t-2 border-black pt-1 w-full text-center mt-auto">
+                    <div className="pt-1 w-full text-center mt-auto">
                         <p className="font-bold text-[8px]">{service.serviceAdvisorName?.toUpperCase() || ''}</p>
                     </div>
                 </div>
@@ -395,7 +395,7 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
                                 )
                             )}
                         </div>
-                        <div className="border-t-2 border-black mt-auto pt-1 text-center w-full">
+                        <div className="w-full text-center mt-auto">
                              <p className="text-xs font-semibold">{vehicle?.ownerName?.toUpperCase()}</p>
                         </div>
                     </div>
@@ -415,7 +415,7 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
                              )
                            )}
                        </div>
-                        <div className="border-t-2 border-black mt-auto pt-1 text-center w-full">
+                        <div className="w-full text-center mt-auto">
                             <p className="text-xs font-semibold">{vehicle?.ownerName?.toUpperCase()}</p>
                         </div>
                     </div>
