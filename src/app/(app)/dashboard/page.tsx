@@ -1,13 +1,13 @@
 
 "use client";
 
-import React, { useEffect, useState, useRef, useMemo } from 'react';
+import React, { useEffect, useState, useRef, useMemo, useCallback } from 'react';
 import dynamic from 'next/dynamic';
-import { parseISO, isToday, isValid, isSameDay, startOfMonth, endOfMonth, subMonths } from 'date-fns';
+import { parseISO, isToday, isValid, isSameDay, startOfMonth, endOfMonth, subMonths, getDaysInMonth, endOfDay } from 'date-fns';
 import { PageHeader } from '@/components/page-header';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { calculateSaleProfit } from '@/lib/placeholder-data';
-import type { User, CapacityAnalysisOutput, PurchaseRecommendation, ServiceRecord, SaleReceipt, InventoryItem, Technician, InventoryRecommendation } from '@/types';
+import type { User, CapacityAnalysisOutput, PurchaseRecommendation, ServiceRecord, SaleReceipt, InventoryItem, Technician, InventoryRecommendation, ServiceTypeRecord } from '@/types';
 import { BrainCircuit, Loader2, ShoppingCart, AlertTriangle, Printer, Wrench, DollarSign, PackageSearch, CheckCircle } from 'lucide-react'; 
 import { useToast } from '@/hooks/use-toast';
 import { getPurchaseRecommendations } from '@/ai/flows/purchase-recommendation-flow';
@@ -24,6 +24,7 @@ import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { isWithinInterval } from 'date-fns';
+import { DashboardCharts } from './components/dashboard-charts';
 
 
 const ChartLoadingSkeleton = () => (
@@ -60,19 +61,6 @@ const ChartLoadingSkeleton = () => (
     </div>
 );
 
-const DashboardCharts = dynamic(
-  () => import('./components/dashboard-charts').then((mod) => mod.DashboardCharts),
-  { 
-    ssr: false,
-    loading: () => <ChartLoadingSkeleton />,
-  }
-);
-
-
-const formatCurrency = (amount: number) => {
-    return `$${amount.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-};
-
 const handleAiError = (error: any, toast: any, context: string): string => {
     console.error(`AI Error in ${context}:`, error);
     let message = `La IA no pudo completar la acción de ${context}.`;
@@ -83,6 +71,8 @@ const handleAiError = (error: any, toast: any, context: string): string => {
     return message; // Return the user-friendly message
 };
 
+type TimeRange = 'thisMonth' | 'last6Months' | 'last12Months';
+
 export default function DashboardPage() {
   const [userName, setUserName] = useState<string | null>(null);
   const { toast } = useToast();
@@ -92,8 +82,6 @@ export default function DashboardPage() {
   const [purchaseError, setPurchaseError] = useState<string | null>(null);
   const [isPurchaseOrderDialogOpen, setIsPurchaseOrderDialogOpen] = useState(false);
   const [workshopName, setWorkshopName] = useState<string>('RANORO');
-
-  const purchaseOrderRef = useRef<HTMLDivElement>(null);
   
   const [isAnalysisLoading, setIsAnalysisLoading] = useState(false);
   const [analysisError, setAnalysisError] = useState<string | null>(null);
@@ -109,6 +97,8 @@ export default function DashboardPage() {
   const [capacityInfo, setCapacityInfo] = useState<CapacityAnalysisOutput | null>(null);
   const [isCapacityLoading, setIsCapacityLoading] = useState(false);
   const [capacityError, setCapacityError] = useState<string | null>(null);
+
+  const [chartTimeRange, setChartTimeRange] = useState<TimeRange>('last6Months');
   
   // Real-time data subscriptions
   useEffect(() => {
@@ -310,47 +300,92 @@ export default function DashboardPage() {
     }
   };
   
-  const chartData = useMemo(() => {
-    const months = Array.from({ length: 6 }, (_, i) => subMonths(new Date(), i)).reverse();
+  const { chartData, serviceTypeDistribution, monthlyComparisonData } = useMemo(() => {
+    const today = new Date();
+    let monthsToProcess = 1;
+
+    switch (chartTimeRange) {
+        case 'thisMonth': monthsToProcess = 1; break;
+        case 'last6Months': monthsToProcess = 6; break;
+        case 'last12Months': monthsToProcess = 12; break;
+    }
+
+    const months = Array.from({ length: monthsToProcess }, (_, i) => subMonths(today, i)).reverse();
     
-    return months.map(monthDate => {
+    const chartDataResult = months.map(monthDate => {
       const monthStart = startOfMonth(monthDate);
       const monthEnd = endOfMonth(monthDate);
       
       const servicesInMonth = allServices.filter(s => {
-        const d = s.deliveryDateTime ? parseISO(s.deliveryDateTime) : null;
+        const d = parseDate(s.deliveryDateTime);
         return s.status === 'Entregado' && d && isValid(d) && isWithinInterval(d, { start: monthStart, end: monthEnd });
       });
 
       const salesInMonth = allSales.filter(s => {
-          const d = s.saleDate ? parseISO(s.saleDate) : null;
+          const d = parseDate(s.saleDate);
           return s.status !== 'Cancelado' && d && isValid(d) && isWithinInterval(d, {start: monthStart, end: monthEnd});
       });
-
+      
       const serviceRevenue = servicesInMonth.reduce((sum, s) => sum + (s.totalCost || 0), 0);
       const serviceProfit = servicesInMonth.reduce((sum, s) => sum + (s.serviceProfit || 0), 0);
+      const serviceCosts = servicesInMonth.reduce((sum, s) => sum + (s.totalSuppliesWorkshopCost || 0), 0);
       
       const salesRevenue = salesInMonth.reduce((sum, s) => sum + s.totalAmount, 0);
       const salesProfit = salesInMonth.reduce((sum, s) => sum + calculateSaleProfit(s, allInventory), 0);
-
+      const salesCosts = salesInMonth.reduce((cost, sale) => {
+        return cost + sale.items.reduce((itemCost, item) => {
+          const invItem = allInventory.find(i => i.id === item.inventoryItemId);
+          return itemCost + ((invItem?.unitPrice || 0) * item.quantity);
+        }, 0);
+      }, 0);
+      
       return {
         name: format(monthDate, 'MMM yy', { locale: es }),
         ingresos: serviceRevenue + salesRevenue,
         ganancia: serviceProfit + salesProfit,
+        costos: serviceCosts + salesCosts,
+        servicios: servicesInMonth.length + salesInMonth.length,
       };
     });
-  }, [allServices, allSales, allInventory]);
 
-  const serviceTypeDistribution = useMemo(() => {
-    const distribution: { [key: string]: number } = {};
-    allServices.forEach(s => {
-      if(s.status === 'Entregado') {
+    const serviceTypeDist = allServices.filter(s => {
+        const d = parseDate(s.deliveryDateTime);
+        return s.status === 'Entregado' && d && isValid(d) && isWithinInterval(d, { start: startOfMonth(months[0]), end: endOfMonth(today) });
+    }).reduce((acc, s) => {
         const type = s.serviceType || 'Servicio General';
-        distribution[type] = (distribution[type] || 0) + 1;
-      }
-    });
-    return Object.entries(distribution).map(([name, value]) => ({ name, value }));
-  }, [allServices]);
+        acc[type] = (acc[type] || 0) + 1;
+        return acc;
+    }, {} as Record<string, number>);
+
+    // Comparison Chart Data
+    const currentMonthStart = startOfMonth(today);
+    const lastMonthStart = startOfMonth(subMonths(today, 1));
+    const lastMonthEnd = endOfMonth(lastMonthStart);
+    
+    const calculateMetricsForPeriod = (start: Date, end: Date) => {
+        const services = allServices.filter(s => s.status === 'Entregado' && parseDate(s.deliveryDateTime) && isWithinInterval(parseDate(s.deliveryDateTime)!, { start, end }));
+        const sales = allSales.filter(s => s.status !== 'Cancelado' && parseDate(s.saleDate) && isWithinInterval(parseDate(s.saleDate)!, { start, end }));
+        const ingresos = services.reduce((sum, s) => sum + (s.totalCost || 0), 0) + sales.reduce((sum, s) => sum + s.totalAmount, 0);
+        const ganancia = services.reduce((sum, s) => sum + (s.serviceProfit || 0), 0) + sales.reduce((sum, s) => sum + calculateSaleProfit(s, allInventory), 0);
+        return { ingresos, ganancia, servicios: services.length + sales.length };
+    };
+
+    const currentMonthMetrics = calculateMetricsForPeriod(currentMonthStart, endOfDay(today));
+    const lastMonthMetrics = calculateMetricsForPeriod(lastMonthStart, lastMonthEnd);
+
+    const monthlyComparisonDataResult = [
+        { name: 'Ingresos', 'Mes Anterior': lastMonthMetrics.ingresos, 'Mes Actual': currentMonthMetrics.ingresos },
+        { name: 'Ganancia', 'Mes Anterior': lastMonthMetrics.ganancia, 'Mes Actual': currentMonthMetrics.ganancia },
+        { name: 'Servicios', 'Mes Anterior': lastMonthMetrics.servicios, 'Mes Actual': currentMonthMetrics.servicios },
+    ];
+
+
+    return {
+      chartData: chartDataResult,
+      serviceTypeDistribution: Object.entries(serviceTypeDist).map(([name, value]) => ({ name, value })),
+      monthlyComparisonData: monthlyComparisonDataResult,
+    };
+  }, [allServices, allSales, allInventory, chartTimeRange]);
 
 
   return (
@@ -423,7 +458,13 @@ export default function DashboardPage() {
         </Card>
       </div>
       
-      <DashboardCharts chartData={chartData} serviceTypeDistribution={serviceTypeDistribution} />
+      <div className="flex justify-center items-center gap-2 mb-6 bg-muted p-2 rounded-md">
+        <Button variant={chartTimeRange === 'thisMonth' ? 'default' : 'ghost'} onClick={() => setChartTimeRange('thisMonth')}>Este Mes</Button>
+        <Button variant={chartTimeRange === 'last6Months' ? 'default' : 'ghost'} onClick={() => setChartTimeRange('last6Months')}>Últimos 6 Meses</Button>
+        <Button variant={chartTimeRange === 'last12Months' ? 'default' : 'ghost'} onClick={() => setChartTimeRange('last12Months')}>Últimos 12 Meses</Button>
+      </div>
+      
+      {isLoading ? <ChartLoadingSkeleton /> : <DashboardCharts chartData={chartData} serviceTypeDistribution={serviceTypeDistribution} monthlyComparisonData={monthlyComparisonData} />}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
         <Card className="shadow-lg">
@@ -539,7 +580,6 @@ export default function DashboardPage() {
             }
           >
             <PurchaseOrderContent
-              ref={purchaseOrderRef}
               recommendations={purchaseRecommendations}
               workshopName={workshopName}
             />
