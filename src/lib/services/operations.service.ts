@@ -1,4 +1,5 @@
 
+
 import {
   collection,
   onSnapshot,
@@ -12,9 +13,10 @@ import {
   getDoc,
   setDoc,
   deleteDoc,
+  Timestamp
 } from 'firebase/firestore';
 import { db } from '../firebaseClient';
-import type { ServiceRecord, QuoteRecord, SaleReceipt, Vehicle, CashDrawerTransaction, InitialCashBalance, InventoryItem, RentalPayment, VehicleExpense, OwnerWithdrawal, WorkshopInfo } from "@/types";
+import type { ServiceRecord, QuoteRecord, SaleReceipt, Vehicle, CashDrawerTransaction, InitialCashBalance, InventoryItem, RentalPayment, VehicleExpense, OwnerWithdrawal, WorkshopInfo, ServiceSupply } from "@/types";
 import { savePublicDocument } from '@/lib/public-document';
 import { inventoryService } from './inventory.service';
 import { nanoid } from 'nanoid';
@@ -22,6 +24,7 @@ import type { ExtractedService, ExtractedVehicle } from '@/ai/flows/data-migrati
 import { format, parse, isValid, startOfDay, isSameDay } from 'date-fns';
 import { personnelService } from './personnel.service';
 import { cleanObjectForFirestore } from '@/lib/forms';
+import { logAudit } from '../placeholder-data';
 
 
 // --- Services ---
@@ -64,17 +67,63 @@ const saveService = async (data: Partial<ServiceRecord>): Promise<ServiceRecord>
     const docId = data.id || nanoid();
     const docRef = doc(db, 'serviceRecords', docId);
 
-    // Ensure a public ID exists for sharing
+    // If it's an existing record and it's already 'Entregado'
+    if (data.id && data.status === 'Entregado') {
+        const originalDocSnap = await getDoc(docRef);
+        if (originalDocSnap.exists()) {
+            const originalData = originalDocSnap.data() as ServiceRecord;
+            const originalSupplies = (originalData.serviceItems || []).flatMap(si => si.suppliesUsed || []);
+            const newSupplies = (data.serviceItems || []).flatMap(si => si.suppliesUsed || []);
+
+            const supplyChanges = new Map<string, number>();
+            
+            // Count original supplies
+            originalSupplies.forEach(s => {
+                supplyChanges.set(s.supplyId, (supplyChanges.get(s.supplyId) || 0) + s.quantity);
+            });
+            // Subtract new supplies
+            newSupplies.forEach(s => {
+                supplyChanges.set(s.supplyId, (supplyChanges.get(s.supplyId) || 0) - s.quantity);
+            });
+            
+            const batch = writeBatch(db);
+            let inventoryUpdated = false;
+
+            for (const [supplyId, quantityChange] of supplyChanges.entries()) {
+                if (quantityChange !== 0) { // If there's a net change
+                    const invItemRef = doc(db, 'inventory', supplyId);
+                    const invItemSnap = await getDoc(invItemRef);
+                    if (invItemSnap.exists()) {
+                        const invItem = invItemSnap.data() as InventoryItem;
+                        // a negative change means we ADDED items, so we need to DEDUCT from stock
+                        const newQuantity = invItem.quantity - (-quantityChange);
+                        batch.update(invItemRef, { quantity: newQuantity });
+                        inventoryUpdated = true;
+                    }
+                }
+            }
+
+            if (inventoryUpdated) {
+                await logAudit('Editar', `Se añadieron insumos a un servicio ya entregado. Vehículo: ${data.vehicleIdentifier || 'N/A'} (Folio: ${docId}).`, {
+                    entityType: 'Servicio',
+                    entityId: docId,
+                    userId: 'system', // Replace with actual user ID
+                    userName: 'Sistema',
+                });
+                await batch.commit();
+            }
+        }
+    }
+
+
     if (!data.publicId) {
         data.publicId = nanoid(12);
     }
     
-    // Auto-set delivery date on completion
     if (data.status === 'Entregado' && !data.deliveryDateTime) {
       data.deliveryDateTime = new Date().toISOString();
     }
     
-    // Final check to ensure problematic fields are null, not undefined or empty.
     const fieldsToNullify: (keyof ServiceRecord)[] = ['customerSignatureReception', 'customerSignatureDelivery', 'technicianName'];
     fieldsToNullify.forEach(key => {
         if (!data[key]) {
@@ -82,10 +131,8 @@ const saveService = async (data: Partial<ServiceRecord>): Promise<ServiceRecord>
         }
     });
     
-    // Clean the object for Firestore compatibility.
     const cleanedData = cleanObjectForFirestore({ ...data, id: docId });
 
-    // Use setDoc with merge: true to handle both creation and updates safely.
     await setDoc(docRef, cleanedData, { merge: true });
     
     const newDocSnap = await getDoc(docRef);
@@ -95,7 +142,6 @@ const saveService = async (data: Partial<ServiceRecord>): Promise<ServiceRecord>
 
     const finalData = { id: newDocSnap.id, ...newDocSnap.data() } as ServiceRecord;
 
-    // Also save/update the public document in the background (no need to await)
     const vehicle = finalData.vehicleId ? await inventoryService.getVehicleById(finalData.vehicleId) : undefined;
     const workshopInfoString = typeof window !== 'undefined' ? localStorage.getItem('workshopTicketInfo') : null;
     const workshopInfo = workshopInfoString ? JSON.parse(workshopInfoString) as WorkshopInfo : undefined;
