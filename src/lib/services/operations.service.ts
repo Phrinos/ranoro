@@ -122,10 +122,6 @@ const saveService = async (data: Partial<ServiceRecord>): Promise<ServiceRecord>
         data.publicId = nanoid(12);
     }
     
-    if (data.status === 'Entregado' && !data.deliveryDateTime) {
-      data.deliveryDateTime = new Date().toISOString();
-    }
-    
     const fieldsToNullify: (keyof ServiceRecord)[] = ['customerSignatureReception', 'customerSignatureDelivery', 'technicianName'];
     fieldsToNullify.forEach(key => {
         if (!data[key]) {
@@ -210,7 +206,14 @@ const completeService = async (service: ServiceRecord, paymentAndNextServiceDeta
 
     if (service.vehicleId && paymentAndNextServiceDetails.nextServiceInfo) {
       const vehicleRef = doc(db, 'vehicles', service.vehicleId);
-      batch.update(vehicleRef, { nextServiceInfo: paymentAndNextServiceDetails.nextServiceInfo });
+      batch.update(vehicleRef, { 
+        nextServiceInfo: paymentAndNextServiceDetails.nextServiceInfo,
+        lastServiceDate: new Date().toISOString(), // Also update last service date
+       });
+    } else if (service.vehicleId) {
+      // Still update last service date even if there's no next service info
+      const vehicleRef = doc(db, 'vehicles', service.vehicleId);
+      batch.update(vehicleRef, { lastServiceDate: new Date().toISOString() });
     }
 
     // Deduct inventory

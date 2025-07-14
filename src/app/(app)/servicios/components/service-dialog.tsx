@@ -120,7 +120,7 @@ export function ServiceDialog({
 
   const handleInternalCompletion = async (service: ServiceRecord, paymentDetails: any, nextServiceInfo?: any) => {
     if (onComplete) {
-      const serviceWithAllData = { ...service, ...fullFormDataForCompletion };
+      const serviceWithAllData = { ...service, ...fullFormDataForCompletion, nextServiceInfo };
       await onComplete(serviceWithAllData, paymentDetails, nextServiceInfo);
     }
     setLocalService(prev => ({ ...prev, ...paymentDetails, status: 'Entregado', nextServiceInfo } as ServiceRecord));
