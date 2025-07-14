@@ -67,6 +67,7 @@ import { inventoryService } from "@/lib/services";
 import type { InventoryItemFormValues } from "../../inventario/components/inventory-item-form";
 import { PaymentSection } from '../../pos/components/payment-section';
 import Link from 'next/link';
+import { Input } from "@/components/ui/input";
 
 /* ░░░░░░  COMPONENTE  ░░░░░░ */
 interface Props {
@@ -483,7 +484,7 @@ export function ServiceForm(props:Props){
 
                             <div className="grid md:grid-cols-5 gap-6">
                                 <div className="md:col-span-3">
-                                    <PaymentSection isReadOnly={isReadOnly} />
+                                    <PaymentSection isReadOnly={isReadOnly} customerName={getValues('customerName')} />
                                 </div>
                                 <div className="md:col-span-2">
                                     <Card>
@@ -491,9 +492,9 @@ export function ServiceForm(props:Props){
                                             <CardTitle className="text-lg">Totales</CardTitle>
                                         </CardHeader>
                                         <CardContent className="space-y-2">
-                                            <div className="flex justify-between font-semibold"><p>Ganancia:</p><p className="text-green-600">{formatCurrency(serviceProfit)}</p></div>
-                                            <div className="flex justify-between"><p className="text-muted-foreground">Costo Insumos:</p><p>{formatCurrency(totalSuppliesWorkshopCost)}</p></div>
-                                            <div className="flex justify-between font-bold text-base pt-2 border-t"><p>Total Cliente (IVA Inc.):</p><p>{formatCurrency(totalCost)}</p></div>
+                                            <div className="flex justify-between text-base"><p className="text-muted-foreground">Ganancia:</p><p className="font-semibold text-green-600">{formatCurrency(serviceProfit)}</p></div>
+                                            <div className="flex justify-between text-sm"><p className="text-muted-foreground">Costo Insumos:</p><p>{formatCurrency(totalSuppliesWorkshopCost)}</p></div>
+                                            <div className="flex justify-between font-bold text-xl pt-2 border-t"><p>Total Cliente (IVA Inc.):</p><p>{formatCurrency(totalCost)}</p></div>
                                         </CardContent>
                                     </Card>
                                 </div>
@@ -502,7 +503,7 @@ export function ServiceForm(props:Props){
                     )}
                 </div>
                 
-                <div className="p-6 pt-4 border-t flex-shrink-0 bg-background flex justify-between items-center">
+                 <div className="p-6 pt-4 border-t flex-shrink-0 bg-background flex justify-between items-center">
                     <div>
                         {showCancelButton && (
                             <AlertDialog>
@@ -537,15 +538,15 @@ export function ServiceForm(props:Props){
                             </AlertDialog>
                         )}
                     </div>
-                    {!isReadOnly && (
-                        <div className="flex justify-end gap-2">
-                           <Button variant="outline" type="button" onClick={onClose}>Cancelar</Button>
+                    <div className="flex justify-end gap-2">
+                       <Button variant="outline" type="button" onClick={onClose}>Cerrar</Button>
+                       {!isReadOnly && (
                            <Button type="submit" disabled={formState.isSubmitting}>
                                 {formState.isSubmitting ? <Loader2 className="animate-spin mr-2" /> : null}
                                 {initialDataService?.id ? 'Actualizar Registro' : 'Crear Registro'}
                            </Button>
-                        </div>
-                    )}
+                       )}
+                    </div>
                 </div>
             </form>
         </FormProvider>
@@ -616,3 +617,4 @@ const PhotoReportTab = ({ control, isReadOnly, serviceId, onPhotoUploaded, onVie
         </Card>
     );
 };
+
