@@ -88,8 +88,8 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
         </header>
 
         <main className="flex-grow">
-          <section className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-2">
-              <div className="border-2 border-black rounded-md overflow-hidden">
+          <section className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-2 text-xs">
+              <div className="border-2 border-black rounded-md overflow-hidden flex-1">
                 <h3 className="font-bold p-1 bg-gray-700 text-white text-xs text-center">DATOS DEL CLIENTE</h3>
                 <div className="space-y-0.5 p-2 text-sm">
                   <p><span className="font-semibold">Nombre:</span> <span className="font-bold">{vehicle?.ownerName?.toUpperCase() || ''}</span></p>
@@ -97,8 +97,7 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
                   {vehicle?.ownerEmail && <p><span className="font-semibold">Email:</span> <span className="font-bold">{vehicle.ownerEmail}</span></p>}
                 </div>
               </div>
-              <div className="grid grid-cols-1 gap-4">
-                <div className="border-2 border-black rounded-md overflow-hidden">
+              <div className="border-2 border-black rounded-md overflow-hidden flex-1">
                   <h3 className="font-bold p-1 bg-gray-700 text-white text-xs text-center">DATOS DEL VEHÍCULO</h3>
                   <div className="space-y-0.5 p-2 text-sm">
                       <p><span className="font-semibold">Vehículo:</span> <span className="font-bold">{vehicle ? `${vehicle.year} ${vehicle.make} ${vehicle.model}` : 'N/A'}</span></p>
@@ -106,9 +105,9 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
                       {vehicle?.color && <p><span className="font-semibold">Color:</span> <span className="font-bold">{vehicle.color}</span></p>}
                       {quote.mileage !== undefined && <p><span className="font-semibold">Kilometraje:</span> <span className="font-bold">{quote.mileage.toLocaleString('es-ES')} km</span></p>}
                   </div>
-                </div>
-                 {quote.nextServiceInfo && quote.status === 'Entregado' && (
-                  <div className="border-2 border-red-700 rounded-md overflow-hidden">
+              </div>
+              {quote.nextServiceInfo && quote.status === 'Entregado' && (
+                  <div className="border-2 border-red-700 rounded-md overflow-hidden flex-1">
                     <h3 className="font-bold p-1 bg-red-700 text-white text-xs text-center">PRÓXIMO SERVICIO</h3>
                     <div className="p-2 space-y-1 text-center text-sm">
                         <p className="text-[10px] font-semibold">Lo que ocurra primero</p>
@@ -120,8 +119,7 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
                         )}
                     </div>
                   </div>
-                )}
-              </div>
+              )}
           </section>
 
           {driverDebt.totalDebt > 0 && (
