@@ -6,7 +6,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { StatusTracker } from "./StatusTracker";
-import type { ServiceRecord, Vehicle, Technician } from '@/types';
+import type { ServiceRecord, Vehicle, Technician, PaymentMethod } from '@/types';
 import { format, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Edit, CheckCircle, Ban, DollarSign, User, Phone, TrendingUp, Clock, Wrench, Eye, Printer } from 'lucide-react';
@@ -40,6 +40,18 @@ const getAppointmentStatus = (service: ServiceRecord): { label: string; variant:
     }
     return { label: 'Sin confirmar', variant: 'lightRed' };
 };
+
+const getPaymentMethodVariant = (method?: PaymentMethod): 'success' | 'purple' | 'blue' | 'lightGreen' | 'lightPurple' | 'outline' => {
+  switch (method) {
+    case 'Efectivo': return 'success';
+    case 'Tarjeta': return 'purple';
+    case 'Transferencia': return 'blue';
+    case 'Efectivo+Transferencia': return 'lightGreen';
+    case 'Tarjeta+Transferencia': return 'lightPurple';
+    default: return 'outline';
+  }
+};
+
 
 export const ServiceAppointmentCard = React.memo(({
     service,
@@ -106,21 +118,21 @@ export const ServiceAppointmentCard = React.memo(({
                         </p>
                     </div>
                     <div className="p-3 grid grid-cols-2 md:grid-cols-1 md:w-auto md:min-w-[12rem]">
-                        {isCompleted && service.paymentMethod && (
-                            <div className="text-center md:text-left md:pr-4 col-span-1">
-                                <p className="text-xs text-muted-foreground mb-1">Pagado con</p>
-                                <p className="font-semibold text-base">{service.paymentMethod}</p>
-                                {(service.cardFolio || service.transferFolio) && (
-                                <p className="text-xs text-muted-foreground">Folio: {service.cardFolio || service.transferFolio}</p>
-                                )}
+                        <div className="flex flex-col items-center md:items-end col-span-2 space-y-1">
+                            <div>
+                                <p className="text-xs text-muted-foreground mb-1 text-right">Costo Cliente</p>
+                                <p className="font-bold text-2xl text-primary text-right">{formatCurrency(service.totalCost)}</p>
                             </div>
-                        )}
-                        <div className="flex flex-col items-center md:items-end col-span-1">
-                            <p className="text-xs text-muted-foreground mb-1">Costo Cliente</p>
-                            <p className="font-bold text-2xl text-primary">{formatCurrency(service.totalCost)}</p>
-                            <p className="font-semibold text-base text-green-600 flex items-center gap-1">
-                                <TrendingUp className="h-4 w-4" /> {formatCurrency(service.serviceProfit)}
-                            </p>
+                            <div>
+                                <p className="font-semibold text-base text-green-600 flex items-center gap-1 justify-end">
+                                    <TrendingUp className="h-4 w-4" /> {formatCurrency(service.serviceProfit)}
+                                </p>
+                            </div>
+                             {isCompleted && service.paymentMethod && (
+                                <Badge variant={getPaymentMethodVariant(service.paymentMethod)} className="mt-1">
+                                    {service.paymentMethod}
+                                </Badge>
+                             )}
                         </div>
                     </div>
                     <div className="p-4 flex flex-col justify-center items-center text-center border-t md:border-t-0 md:border-l w-full md:w-56 flex-shrink-0 space-y-2">
