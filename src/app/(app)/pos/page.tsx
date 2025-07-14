@@ -238,7 +238,7 @@ function PosPageComponent() {
     if (!ticketContentRef.current) return;
     const html2canvas = (await import('html2canvas')).default;
     try {
-      const canvas = await html2canvas(ticketContentRef.current, { scale: 2 });
+      const canvas = await html2canvas(ticketContentRef.current, { scale: 2.5, backgroundColor: null });
       canvas.toBlob((blob) => { if (blob) navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]); });
       toast({ title: "Copiado", description: "La imagen ha sido copiada." });
     } catch (e) { toast({ title: "Error", description: "No se pudo copiar la imagen.", variant: "destructive" }); }
