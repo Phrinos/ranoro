@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import React from 'react';
@@ -19,7 +18,7 @@ interface SaleItemsListProps {
   inventoryItems: InventoryItem[];
 }
 
-export const SaleItemsList = React.memo(({ onAddItem, inventoryItems }: SaleItemsListProps) => {
+export function SaleItemsList({ onAddItem, inventoryItems }: SaleItemsListProps) {
   const { control, getValues, setValue } = useFormContext();
   const { fields, remove } = useFieldArray({ control, name: "items" });
   const { toast } = useToast();
@@ -79,6 +78,4 @@ export const SaleItemsList = React.memo(({ onAddItem, inventoryItems }: SaleItem
       </CardContent>
     </Card>
   );
-});
-
-SaleItemsList.displayName = 'SaleItemsList';
+}
