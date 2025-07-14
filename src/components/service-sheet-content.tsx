@@ -1,3 +1,4 @@
+
 "use client";
 
 import type { ServiceRecord, Vehicle, QuoteRecord, WorkshopInfo, SafetyInspection, SafetyCheckStatus, PhotoReportGroup, Driver } from '@/types';
@@ -361,11 +362,11 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
                   </div>
               </div>
           </section>
-
-           <section className="grid grid-cols-3 gap-2 text-center mb-1 text-xs">
-                <div className="border-2 border-black rounded-md overflow-hidden flex flex-col justify-between items-center p-1 min-h-[180px] col-span-1">
+          
+          <section className="grid grid-cols-3 gap-2 text-center mb-1 text-xs">
+                <div className="border-2 border-black rounded-md overflow-hidden flex flex-col justify-between items-center p-1 min-h-[120px] col-span-1">
                     <h3 className="font-bold p-1 w-full bg-gray-700 text-white text-xs text-center rounded-sm">ASESOR</h3>
-                    <div className="flex-grow flex items-center justify-center w-full">
+                    <div className="flex-grow flex items-center justify-center w-full min-h-[50px]">
                         {service.serviceAdvisorSignatureDataUrl && (
                             <div className="relative w-full h-full">
                                 <Image src={normalizeDataUrl(service.serviceAdvisorSignatureDataUrl)} alt="Firma del asesor" layout="fill" objectFit="contain" unoptimized />
@@ -376,7 +377,7 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
                         <p className="font-bold text-[8px]">{service.serviceAdvisorName?.toUpperCase() || ''}</p>
                     </div>
                 </div>
-                <div className="border-2 border-black rounded-md overflow-hidden flex flex-col justify-between items-center p-1">
+                <div className="border-2 border-black rounded-md overflow-hidden flex flex-col justify-between items-center p-1 min-h-[120px]">
                     <h3 className="font-bold p-1 w-full bg-gray-700 text-white text-xs text-center rounded-sm">ENTRADA AL TALLER</h3>
                     <div className="flex-grow flex items-center justify-center w-full min-h-[50px]">
                         {service.customerSignatureReception ? (
@@ -392,11 +393,12 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
                             )
                         )}
                     </div>
-                    <div className="w-full text-center mt-auto">
-                        <p className="text-xs font-semibold">{vehicle?.ownerName?.toUpperCase()}</p>
+                    <div className="w-full text-center mt-auto pt-1">
+                        <p className="font-bold text-[8px]">{vehicle?.ownerName?.toUpperCase() || ''}</p>
+                        <p className="text-[7px] text-gray-600">Autorizo que se realicen estos servicios</p>
                     </div>
                 </div>
-                <div className="border-2 border-black rounded-md overflow-hidden flex flex-col justify-between items-center p-1">
+                <div className="border-2 border-black rounded-md overflow-hidden flex flex-col justify-between items-center p-1 min-h-[120px]">
                     <h3 className="font-bold p-1 w-full bg-gray-700 text-white text-xs text-center rounded-sm">SALIDA DEL TALLER</h3>
                     <div className="flex-grow flex items-center justify-center w-full min-h-[50px]">
                         {service.customerSignatureDelivery ? (
@@ -412,8 +414,9 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
                             )
                         )}
                     </div>
-                    <div className="w-full text-center mt-auto">
-                        <p className="text-xs font-semibold">{vehicle?.ownerName?.toUpperCase()}</p>
+                    <div className="w-full text-center mt-auto pt-1">
+                        <p className="font-bold text-[8px]">{vehicle?.ownerName?.toUpperCase() || ''}</p>
+                        <p className="text-[7px] text-gray-600">Recibo de conformidad</p>
                     </div>
                 </div>
            </section>
@@ -427,7 +430,7 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
            </section>
            {effectiveWorkshopInfo.fixedFooterText && (
             <div className="text-center mt-2 pt-2 border-t border-gray-200">
-              <p className="text-[7px] text-muted-foreground whitespace-pre-wrap">{effectiveWorkshopInfo.fixedFooterText}</p>
+              <p className="text-[8px] text-muted-foreground whitespace-pre-wrap">{effectiveWorkshopInfo.fixedFooterText}</p>
             </div>
           )}
         </footer>
