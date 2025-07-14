@@ -33,10 +33,10 @@ import { operationsService, inventoryService, personnelService } from '@/lib/ser
 import { Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { parseDate } from '@/lib/forms';
+import { ReporteOperacionesContent } from './components/reporte-operaciones-content';
 
-type OperationTypeFilter = "all" | string;
 
-function ResumenFinancieroPageComponent() {
+function FinanzasPageComponent() {
     const searchParams = useSearchParams();
     const defaultTab = searchParams.get('tab') || 'resumen';
     
@@ -56,16 +56,6 @@ function ResumenFinancieroPageComponent() {
     
     const [isCalendarOpen, setIsCalendarOpen] = useState(false);
     const [tempDateRange, setTempDateRange] = useState<DateRange | undefined>(dateRange);
-    
-    // States for reportes filtering/sorting
-    const [reporteOpSearchTerm, setReporteOpSearchTerm] = useState("");
-    const [reporteOpTypeFilter, setReporteOpTypeFilter] = useState<OperationTypeFilter>("all");
-    const [reporteOpSortOption, setReporteOpSortOption] = useState<string>("date_desc");
-    const [reporteOpPaymentMethodFilter, setReporteOpPaymentMethodFilter] = useState<PaymentMethod | 'all'>("all");
-    
-    const [reporteInvSearchTerm, setReporteInvSearchTerm] = useState("");
-    const [reporteInvSortOption, setReporteInvSortOption] = useState<string>("quantity_desc");
-
 
     useEffect(() => {
         setIsLoading(true);
@@ -187,100 +177,6 @@ function ResumenFinancieroPageComponent() {
             totalInventoryValue, totalUnitsSold
         };
     }, [dateRange, isLoading, allSales, allServices, allInventory, allTechnicians, allAdminStaff, fixedExpenses]);
-    
-    // --- Reportes Logic ---
-    const combinedOperations = useMemo((): FinancialOperation[] => {
-        if (isLoading) return [];
-        const saleOperations: FinancialOperation[] = allSales.map(s => ({
-            id: s.id, date: s.saleDate, type: 'Venta', 
-            description: s.items.map(i => i.itemName).join(', '), 
-            totalAmount: s.totalAmount, profit: calculateSaleProfit(s, allInventory), originalObject: s 
-        }));
-        
-        const serviceOperations: FinancialOperation[] = allServices
-            .filter(s => s.status === 'Completado')
-            .map(s => ({ 
-                id: s.id, 
-                date: s.deliveryDateTime || s.serviceDate, 
-                type: s.serviceType || 'Servicio General', 
-                description: s.description || (s.serviceItems || []).map(i => i.name).join(', '), 
-                totalAmount: s.totalCost, 
-                profit: s.serviceProfit || 0, 
-                originalObject: s 
-            }));
-            
-        return [...saleOperations, ...serviceOperations];
-    }, [isLoading, allSales, allServices, allInventory]);
-    
-    const filteredAndSortedOperations = useMemo(() => {
-        if (isLoading || !dateRange?.from) return [];
-        const from = startOfDay(dateRange.from);
-        const to = dateRange.to ? endOfDay(dateRange.to) : endOfDay(dateRange.from);
-        
-        let list = combinedOperations.filter(op => {
-            const dateToParse = op.date;
-            if (!dateToParse) return false;
-            
-            const parsedDate = parseDate(dateToParse);
-            return isValid(parsedDate) && isWithinInterval(parsedDate, { start: from, end: to });
-        });
-        
-        if (reporteOpTypeFilter !== 'all') { list = list.filter(op => op.type === reporteOpTypeFilter); }
-        if (reporteOpPaymentMethodFilter !== 'all') { list = list.filter(op => (op.originalObject as SaleReceipt | ServiceRecord).paymentMethod === reporteOpPaymentMethodFilter); }
-        if (reporteOpSearchTerm) { list = list.filter(op => op.id.toLowerCase().includes(reporteOpSearchTerm.toLowerCase()) || op.description.toLowerCase().includes(reporteOpSearchTerm.toLowerCase())); }
-        
-        list.sort((a,b) => {
-            switch (reporteOpSortOption) {
-                case 'date_asc': return compareAsc(parseISO(a.date!), parseISO(b.date!));
-                case 'amount_desc': return b.totalAmount - a.totalAmount;
-                case 'amount_asc': return a.totalAmount - b.totalAmount;
-                case 'profit_desc': return b.profit - a.profit;
-                case 'profit_asc': return a.profit - b.profit;
-                case 'date_desc': default: return compareDesc(parseISO(a.date!), parseISO(b.date!));
-            }
-        });
-        return list;
-    }, [combinedOperations, dateRange, reporteOpSearchTerm, reporteOpTypeFilter, reporteOpPaymentMethodFilter, isLoading, reporteOpSortOption]);
-
-    const aggregatedInventory = useMemo((): AggregatedInventoryItem[] => {
-        if (isLoading || !dateRange?.from) return [];
-        const from = startOfDay(dateRange.from);
-        const to = dateRange.to ? endOfDay(dateRange.to) : endOfDay(dateRange.from);
-        const allItemsSold = new Map<string, AggregatedInventoryItem>();
-        const processItem = (itemId: string, name: string, sku: string, quantity: number, revenue: number) => {
-            const existing = allItemsSold.get(itemId);
-            if (existing) { existing.totalQuantity += quantity; existing.totalRevenue += revenue; }
-            else { allItemsSold.set(itemId, { itemId, name, sku, totalQuantity: quantity, totalRevenue: revenue }); }
-        };
-        allSales.forEach(sale => { if (sale.status !== 'Cancelado' && isValid(parseISO(sale.saleDate)) && isWithinInterval(parseISO(sale.saleDate), { start: from, end: to })) { sale.items.forEach(item => { const invItem = allInventory.find(i => i.id === item.inventoryItemId); if (invItem && !invItem.isService) { processItem(invItem.id, invItem.name, invItem.sku, item.quantity, item.totalPrice); } }); } });
-        allServices.forEach(service => { if (service.status === 'Completado' && service.deliveryDateTime && isValid(parseISO(service.deliveryDateTime)) && isWithinInterval(parseISO(service.deliveryDateTime), { start: from, end: to })) { (service.serviceItems || []).forEach(sItem => { (sItem.suppliesUsed || []).forEach(supply => { const invItem = allInventory.find(i => i.id === supply.supplyId); if(invItem && !invItem.isService){ processItem(invItem.id, invItem.name, invItem.sku, supply.quantity, supply.sellingPrice ? supply.sellingPrice * supply.quantity : 0); } }); }); } });
-        return Array.from(allItemsSold.values());
-    }, [dateRange, isLoading, allSales, allServices, allInventory]);
-
-    const filteredAndSortedInventory = useMemo(() => {
-        let list = [...aggregatedInventory];
-        if (reporteInvSearchTerm) { list = list.filter(item => item.name.toLowerCase().includes(reporteInvSearchTerm.toLowerCase()) || item.sku.toLowerCase().includes(reporteInvSearchTerm.toLowerCase())); }
-        list.sort((a, b) => {
-            switch (reporteInvSortOption) {
-                case 'quantity_asc': return a.totalQuantity - b.totalQuantity;
-                case 'revenue_desc': return b.totalRevenue - a.totalRevenue;
-                case 'revenue_asc': return a.totalRevenue - b.totalRevenue;
-                case 'name_asc': return a.name.localeCompare(b.name);
-                case 'name_desc': return b.name.localeCompare(a.name);
-                case 'quantity_desc': default: return b.totalQuantity - a.totalQuantity;
-            }
-        });
-        return list;
-    }, [aggregatedInventory, reporteInvSearchTerm, reporteInvSortOption]);
-
-    const getOperationTypeVariant = (type: string) => {
-        switch (type) {
-            case 'Venta': return 'secondary'; case 'Servicio General': return 'default'; case 'Cambio de Aceite': return 'blue';
-            case 'Pintura': return 'purple'; default: return 'outline';
-        }
-    };
-    
-    const paymentMethods: PaymentMethod[] = ['Efectivo', 'Tarjeta', 'Transferencia', 'Efectivo+Transferencia', 'Tarjeta+Transferencia'];
 
     const handleApplyDateFilter = () => {
         setDateRange(tempDateRange);
@@ -319,10 +215,9 @@ function ResumenFinancieroPageComponent() {
             </div>
             
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                <TabsList className="grid w-full grid-cols-3 mb-6">
+                <TabsList className="grid w-full grid-cols-2 mb-6">
                     <TabsTrigger value="resumen" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Resumen Financiero</TabsTrigger>
                     <TabsTrigger value="reporte-operaciones" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Reporte de Operaciones</TabsTrigger>
-                    <TabsTrigger value="reporte-inventario" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Reporte de Inventario</TabsTrigger>
                 </TabsList>
                 
                  <TabsContent value="resumen" className="mt-0">
@@ -407,37 +302,15 @@ function ResumenFinancieroPageComponent() {
                     </div>
                 </TabsContent>
                 
-                <TabsContent value="reporte-operaciones" className="mt-0 space-y-4">
-                    <div className="space-y-2">
-                        <h2 className="text-2xl font-semibold tracking-tight">Detalle de Operaciones</h2>
-                        <p className="text-muted-foreground">Ventas y servicios completados en el período seleccionado.</p>
-                    </div>
-                    {dateFilterComponent}
-                    <div className="flex flex-col sm:flex-row items-center gap-4">
-                        <div className="relative flex-1 w-full"><Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" /><Input type="search" placeholder="Buscar por ID o descripción..." className="w-full rounded-lg bg-card pl-8" value={reporteOpSearchTerm} onChange={(e) => setReporteOpSearchTerm(e.target.value)} /></div>
-                        <div className="flex items-center gap-2 w-full sm:w-auto flex-wrap">
-                            <DropdownMenu><DropdownMenuTrigger asChild><Button variant="outline" className="flex-1 sm:flex-initial bg-card"><Filter className="mr-2 h-4 w-4" /><span>Tipo: {reporteOpTypeFilter === 'all' ? 'Todos' : reporteOpTypeFilter}</span></Button></DropdownMenuTrigger><DropdownMenuContent align="end"><DropdownMenuLabel>Filtrar por Tipo</DropdownMenuLabel><DropdownMenuRadioGroup value={reporteOpTypeFilter} onValueChange={(v) => setReporteOpTypeFilter(v as OperationTypeFilter)}><DropdownMenuRadioItem value="all">Todos</DropdownMenuRadioItem><DropdownMenuRadioItem value="Venta">Venta</DropdownMenuRadioItem>{serviceTypes.map((type) => (<DropdownMenuRadioItem key={type.id} value={type.name}>{type.name}</DropdownMenuRadioItem>))}</DropdownMenuRadioGroup></DropdownMenuContent></DropdownMenu>
-                            <DropdownMenu><DropdownMenuTrigger asChild><Button variant="outline" className="flex-1 sm:flex-initial bg-card"><Filter className="mr-2 h-4 w-4" /><span>Pago: {reporteOpPaymentMethodFilter === 'all' ? 'Todos' : reporteOpPaymentMethodFilter}</span></Button></DropdownMenuTrigger><DropdownMenuContent align="end"><DropdownMenuLabel>Filtrar por Método de Pago</DropdownMenuLabel><DropdownMenuRadioGroup value={reporteOpPaymentMethodFilter} onValueChange={(v) => setReporteOpPaymentMethodFilter(v as PaymentMethod | 'all')}><DropdownMenuRadioItem value="all">Todos</DropdownMenuRadioItem>{paymentMethods.map(method => (<DropdownMenuRadioItem key={method} value={method}>{method}</DropdownMenuRadioItem>))}</DropdownMenuRadioGroup></DropdownMenuContent></DropdownMenu>
-                            <DropdownMenu><DropdownMenuTrigger asChild><Button variant="outline" className="flex-1 sm:flex-initial bg-card"><ListFilter className="mr-2 h-4 w-4" /><span>Ordenar por</span></Button></DropdownMenuTrigger><DropdownMenuContent align="end"><DropdownMenuLabel>Ordenar por</DropdownMenuLabel><DropdownMenuRadioGroup value={reporteOpSortOption} onValueChange={setReporteOpSortOption}><DropdownMenuRadioItem value="date_desc">Fecha (Más Reciente)</DropdownMenuRadioItem><DropdownMenuRadioItem value="date_asc">Fecha (Más Antiguo)</DropdownMenuRadioItem><DropdownMenuRadioItem value="amount_desc">Monto (Mayor a Menor)</DropdownMenuRadioItem><DropdownMenuRadioItem value="amount_asc">Monto (Menor a Mayor)</DropdownMenuRadioItem><DropdownMenuRadioItem value="profit_desc">Ganancia (Mayor a Menor)</DropdownMenuRadioItem><DropdownMenuRadioItem value="profit_asc">Ganancia (Menor a Mayor)</DropdownMenuRadioItem></DropdownMenuRadioGroup></DropdownMenuContent></DropdownMenu>
-                        </div>
-                    </div>
-                    <Card><CardContent className="pt-6"><div className="rounded-md border overflow-x-auto"><Table><TableHeader className="bg-black"><TableRow><TableHead className="text-white">Fecha</TableHead><TableHead className="text-white">Tipo</TableHead><TableHead className="text-white">ID</TableHead><TableHead className="text-white">Descripción</TableHead><TableHead className="text-right text-white">Monto</TableHead><TableHead className="text-right text-white">Ganancia</TableHead><TableHead className="text-right text-white">Método Pago</TableHead></TableRow></TableHeader><TableBody>{filteredAndSortedOperations.length > 0 ? (filteredAndSortedOperations.map(op => (<TableRow key={`${op.type}-${op.id}`}><TableCell>{op.date ? format(parseISO(op.date), "dd MMM yy, HH:mm", { locale: es }) : 'N/A'}</TableCell><TableCell><Badge variant={getOperationTypeVariant(op.type)} className={cn(op.type === 'Venta' && 'bg-black text-white hover:bg-black/80')}>{op.type}</Badge></TableCell><TableCell>{op.id}</TableCell><TableCell className="max-w-xs truncate">{op.description}</TableCell><TableCell className="text-right font-semibold">{formatCurrency(op.totalAmount)}</TableCell><TableCell className="text-right font-semibold">{formatCurrency(op.profit)}</TableCell><TableCell className="text-right font-semibold">{(op.originalObject as any).paymentMethod || 'Efectivo'}</TableCell></TableRow>))) : (<TableRow><TableCell colSpan={7}><div className="flex flex-col items-center justify-center py-10 text-center text-muted-foreground"><LineChart className="h-12 w-12 mb-2" /><h3 className="text-lg font-semibold text-foreground">Sin Operaciones</h3><p className="text-sm">No se encontraron ventas o servicios en el período seleccionado.</p></div></TableCell></TableRow>)}</TableBody></Table></div></CardContent></Card>
+                <TabsContent value="reporte-operaciones" className="mt-0">
+                    <ReporteOperacionesContent
+                        allSales={allSales}
+                        allServices={allServices}
+                        allInventory={allInventory}
+                        serviceTypes={serviceTypes}
+                    />
                 </TabsContent>
 
-                <TabsContent value="reporte-inventario" className="mt-0 space-y-4">
-                     <div className="space-y-2">
-                        <h2 className="text-2xl font-semibold tracking-tight">Detalle de Salidas de Inventario</h2>
-                        <p className="text-muted-foreground">Productos y refacciones vendidos o utilizados en servicios en el período seleccionado.</p>
-                    </div>
-                     {dateFilterComponent}
-                    <div className="flex flex-col sm:flex-row items-center gap-4">
-                        <div className="relative flex-1 w-full"><Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" /><Input type="search" placeholder="Buscar por nombre o SKU..." className="w-full rounded-lg bg-card pl-8" value={reporteInvSearchTerm} onChange={(e) => setReporteInvSearchTerm(e.target.value)} /></div>
-                        <div className="flex items-center gap-2 w-full sm:w-auto flex-wrap">
-                            <DropdownMenu><DropdownMenuTrigger asChild><Button variant="outline" className="flex-1 sm:flex-initial bg-card"><ListFilter className="mr-2 h-4 w-4" /><span>Ordenar por</span></Button></DropdownMenuTrigger><DropdownMenuContent align="end"><DropdownMenuLabel>Ordenar por</DropdownMenuLabel><DropdownMenuRadioGroup value={reporteInvSortOption} onValueChange={setReporteInvSortOption}><DropdownMenuRadioItem value="quantity_desc">Unidades (Mayor a Menor)</DropdownMenuRadioItem><DropdownMenuRadioItem value="quantity_asc">Unidades (Menor a Mayor)</DropdownMenuRadioItem><DropdownMenuRadioItem value="revenue_desc">Ingreso (Mayor a Menor)</DropdownMenuRadioItem><DropdownMenuRadioItem value="revenue_asc">Ingreso (Menor a Mayor)</DropdownMenuRadioItem><DropdownMenuRadioItem value="name_asc">Nombre (A-Z)</DropdownMenuRadioItem><DropdownMenuRadioItem value="name_desc">Nombre (Z-A)</DropdownMenuRadioItem></DropdownMenuRadioGroup></DropdownMenuContent></DropdownMenu>
-                        </div>
-                    </div>
-                    <Card><CardContent className="pt-6"><div className="rounded-md border overflow-x-auto"><Table><TableHeader className="bg-black"><TableRow><TableHead className="text-white">SKU</TableHead><TableHead className="text-white">Producto</TableHead><TableHead className="text-right text-white">Unidades</TableHead><TableHead className="text-right text-white">Ingreso Generado</TableHead></TableRow></TableHeader><TableBody>{filteredAndSortedInventory.length > 0 ? (filteredAndSortedInventory.map(item => (<TableRow key={item.itemId}><TableCell>{item.sku}</TableCell><TableCell>{item.name}</TableCell><TableCell className="text-right">{item.totalQuantity}</TableCell><TableCell className="text-right">{formatCurrency(item.totalRevenue)}</TableCell></TableRow>))) : (<TableRow><TableCell colSpan={4}><div className="flex flex-col items-center justify-center py-10 text-center text-muted-foreground"><PackageSearch className="h-12 w-12 mb-2" /><h3 className="text-lg font-semibold text-foreground">Sin Movimientos de Inventario</h3><p className="text-sm">No se vendieron productos en el período seleccionado.</p></div></TableCell></TableRow>)}</TableBody></Table></div></CardContent></Card>
-                </TabsContent>
             </Tabs>
             
             <FixedExpensesDialog
@@ -453,7 +326,7 @@ function ResumenFinancieroPageComponent() {
 export default function FinanzasPageWrapper() {
     return (
         <Suspense fallback={<div className="flex h-64 justify-center items-center"><Loader2 className="h-8 w-8 animate-spin" /></div>}>
-            <ResumenFinancieroPageComponent />
+            <FinanzasPageComponent />
         </Suspense>
     );
 }
