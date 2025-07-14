@@ -559,4 +559,3 @@ const PhotoReportTab = ({ control, isReadOnly, serviceId, onPhotoUploaded, onVie
         </Card>
     );
 };
-
