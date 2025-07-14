@@ -27,7 +27,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import type { ServiceRecord, PaymentMethod, InventoryItem } from "@/types";
 import { Wallet, CreditCard, Send, WalletCards, ArrowRightLeft } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
-import { addDays } from "date-fns";
+import { addDays, addMonths, addYears } from "date-fns";
 import type { ServiceFormValues } from "@/schemas/service-form";
 
 const paymentMethods: [PaymentMethod, ...PaymentMethod[]] = [
@@ -106,10 +106,10 @@ export function CompleteServiceDialog({
     const serviceType = serviceData.serviceType?.toLowerCase() || '';
     if (serviceType.includes('afinación') || serviceType.includes('cambio de aceite')) {
         const today = new Date();
-        const nextServiceDate = addDays(today, 183);
+        const nextServiceDate = addMonths(today, 6);
         
         const oilItem = (serviceData.serviceItems || [])
-            .flatMap(item => item.suppliesUsed)
+            .flatMap(item => item.suppliesUsed || [])
             .map(supply => inventoryItems.find(inv => inv.id === supply?.supplyId))
             .find(invItem => invItem?.category.toLowerCase().includes('aceite') && invItem.rendimiento);
 
@@ -124,7 +124,6 @@ export function CompleteServiceDialog({
         };
     }
     
-    // Combine the original service data with payment and next service info
     const finalServiceData = { ...service, ...fullFormData };
 
     onConfirm(finalServiceData, values, nextServiceInfo);
