@@ -1,4 +1,5 @@
 
+
 /* app/(app)/servicios/components/service-form.tsx */
 'use client'
 
@@ -191,14 +192,17 @@ export function ServiceForm(props:Props){
   
   useEffect(() => {
     const currentStatus = watch('status');
+    // Set appointment date automatically if status changes to Agendado and no date is set
     if (currentStatus === 'Agendado' && !watch('serviceDate')) {
         setValue('serviceDate', new Date());
         setValue('appointmentStatus', 'Creada');
     }
+    // Set reception date automatically if status changes to En Taller and no date is set
     if (currentStatus === 'En Taller' && !watch('receptionDateTime')) {
         setValue('receptionDateTime', new Date());
     }
-  }, [watchedStatus, watch, setValue]);
+}, [watchedStatus, watch, setValue]);
+
   
   useEffect(() => {
     if (watchedVehicleId) {
@@ -544,3 +548,4 @@ const PhotoReportTab = ({ control, isReadOnly, serviceId, onPhotoUploaded, onVie
         </Card>
     );
 };
+
