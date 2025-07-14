@@ -17,15 +17,13 @@ import { Loader2 } from 'lucide-react';
 import type { InventoryItemFormValues } from '../../inventario/components/inventory-item-form';
 
 
-type DialogStep = 'pos' | 'print_preview' | 'closed';
-
 export default function NuevaVentaPage() {
   const { toast } = useToast(); 
   const router = useRouter();
   const ticketContentRef = useRef<HTMLDivElement>(null);
   
   const [currentInventoryItems, setCurrentInventoryItems] = useState<InventoryItem[]>([]);
-  const [dialogStep, setDialogStep] = useState<DialogStep>('pos');
+  const [isPrintPreviewOpen, setIsPrintPreviewOpen] = useState(false);
   const [currentSaleForTicket, setCurrentSaleForTicket] = useState<SaleReceipt | null>(null);
   const [workshopInfo, setWorkshopInfo] = useState<WorkshopInfo | undefined>(undefined);
   const [isLoading, setIsLoading] = useState(true);
@@ -42,26 +40,15 @@ export default function NuevaVentaPage() {
     return () => unsub();
   }, []);
 
-  useEffect(() => {
-    if (dialogStep === 'closed') {
-      router.push('/pos');
-    }
-  }, [dialogStep, router]);
-
   const handleSaleCompletion = (saleData: SaleReceipt) => {
     setCurrentSaleForTicket(saleData);
-    setDialogStep('print_preview'); 
+    setIsPrintPreviewOpen(true);
   };
 
-  const handlePosDialogExternalClose = () => { 
-     if (dialogStep === 'pos') { 
-      setDialogStep('closed');
-    }
-  };
-  
   const handlePreviewDialogClose = () => {
+    setIsPrintPreviewOpen(false);
     setCurrentSaleForTicket(null); 
-    setDialogStep('closed'); 
+    router.push('/pos');
   };
 
   const handlePrintTicket = () => {
@@ -104,7 +91,7 @@ export default function NuevaVentaPage() {
   const handleInventoryItemCreated = async (formData: InventoryItemFormValues): Promise<InventoryItem> => {
     const newItem = await inventoryService.addItem(formData);
     // The main listener in the parent component (`pos/page.tsx`) already handles this
-    // via onSnapshot, so we don't need to update local state here.
+    // via onSnapshot, so we don't need to manually update local state here.
     return newItem;
   };
 
@@ -120,17 +107,15 @@ export default function NuevaVentaPage() {
         description="Complete los artículos y detalles para la nueva venta."
       />
       
-      {dialogStep === 'pos' && (
-        <PosForm
-          inventoryItems={currentInventoryItems} 
-          onSaleComplete={handleSaleCompletion}
-          onInventoryItemCreated={handleInventoryItemCreated}
-        />
-      )}
+      <PosForm
+        inventoryItems={currentInventoryItems} 
+        onSaleComplete={handleSaleCompletion}
+        onInventoryItemCreated={handleInventoryItemCreated}
+      />
 
-      {dialogStep === 'print_preview' && currentSaleForTicket && (
+      {currentSaleForTicket && (
         <PrintTicketDialog
-          open={true} 
+          open={isPrintPreviewOpen} 
           onOpenChange={(isOpen) => { 
             if (!isOpen) handlePreviewDialogClose();
           }}
@@ -138,7 +123,7 @@ export default function NuevaVentaPage() {
           onDialogClose={handlePreviewDialogClose}
           dialogContentClassName="printable-content"
           footerActions={
-             <div className="flex flex-col sm:flex-row gap-2">
+             <div className="flex flex-col-reverse sm:flex-row gap-2">
                 <Button variant="outline" onClick={handleCopyAsImage}>
                     <Copy className="mr-2 h-4 w-4"/> Copiar Imagen
                 </Button>
@@ -150,12 +135,6 @@ export default function NuevaVentaPage() {
         >
           <TicketContent ref={ticketContentRef} sale={currentSaleForTicket} previewWorkshopInfo={workshopInfo} />
         </PrintTicketDialog>
-      )}
-      
-      {dialogStep === 'closed' && (
-        <div className="text-center p-8">
-          <p className="text-muted-foreground">Redireccionando...</p>
-        </div>
       )}
     </>
   );
