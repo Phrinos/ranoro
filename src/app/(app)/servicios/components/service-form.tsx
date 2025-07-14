@@ -189,6 +189,7 @@ export function ServiceForm(props:Props){
   const { totalCost, totalSuppliesWorkshopCost, serviceProfit } = useServiceTotals(form);
   
   const watchedStatus = watch('status');
+  const watchedSubStatus = watch('subStatus');
   const watchedVehicleId = watch('vehicleId');
   const watchedNextServiceInfo = watch('nextServiceInfo');
   
@@ -373,6 +374,7 @@ export function ServiceForm(props:Props){
   };
 
   const showCancelButton = !isReadOnly && initialDataService?.id && initialDataService.status !== 'Entregado' && initialDataService.status !== 'Cancelado';
+  const showNextServiceCard = (watchedStatus === 'En Taller' && watchedSubStatus === 'Completado') || watchedStatus === 'Entregado';
 
 
   return (
@@ -443,7 +445,7 @@ export function ServiceForm(props:Props){
                         </TabsContent>
                     </Tabs>
                     
-                    {watchedStatus === 'Entregado' && (
+                    {showNextServiceCard && (
                         <div className="space-y-6 mt-6">
                             <Card>
                                 <CardHeader>
@@ -453,16 +455,16 @@ export function ServiceForm(props:Props){
                                     </CardTitle>
                                 </CardHeader>
                                 <CardContent className="space-y-4">
-                                     <div className="flex gap-2 justify-end">
-                                        <Button type="button" size="sm" variant="outline" onClick={() => setValue('nextServiceInfo.date', addMonths(new Date(), 6).toISOString())}>6 Meses</Button>
-                                        <Button type="button" size="sm" variant="outline" onClick={() => setValue('nextServiceInfo.date', addYears(new Date(), 1).toISOString())}>1 Año</Button>
-                                    </div>
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                         <FormField
                                             control={control}
                                             name="nextServiceInfo.date"
                                             render={({ field }) => (
                                                 <FormItem>
+                                                    <div className="flex gap-2 mb-2">
+                                                        <Button type="button" size="sm" variant="outline" onClick={() => setValue('nextServiceInfo.date', addMonths(new Date(), 6).toISOString())}>6 Meses</Button>
+                                                        <Button type="button" size="sm" variant="outline" onClick={() => setValue('nextServiceInfo.date', addYears(new Date(), 1).toISOString())}>1 Año</Button>
+                                                    </div>
                                                     <FormLabel>Fecha Próximo Servicio</FormLabel>
                                                     <FormControl><Input type="date" value={field.value ? format(parseDate(field.value)!, 'yyyy-MM-dd') : ''} onChange={(e) => field.onChange(e.target.valueAsDate?.toISOString())} disabled={isReadOnly}/></FormControl>
                                                 </FormItem>
@@ -473,6 +475,11 @@ export function ServiceForm(props:Props){
                                             name="nextServiceInfo.mileage"
                                             render={({ field }) => (
                                                 <FormItem>
+                                                    <div className="flex gap-2 mb-2">
+                                                        <Button type="button" size="sm" variant="outline" onClick={() => setValue('nextServiceInfo.mileage', (getValues('mileage') || 0) + 10000)}>10,000 km</Button>
+                                                        <Button type="button" size="sm" variant="outline" onClick={() => setValue('nextServiceInfo.mileage', (getValues('mileage') || 0) + 12000)}>12,000 km</Button>
+                                                        <Button type="button" size="sm" variant="outline" onClick={() => setValue('nextServiceInfo.mileage', (getValues('mileage') || 0) + 15000)}>15,000 km</Button>
+                                                    </div>
                                                     <FormLabel>Kilometraje Próximo Servicio</FormLabel>
                                                     <FormControl><Input type="number" placeholder="Ej: 135000" {...field} value={field.value ?? ''} disabled={isReadOnly} /></FormControl>
                                                 </FormItem>
@@ -481,24 +488,6 @@ export function ServiceForm(props:Props){
                                     </div>
                                 </CardContent>
                             </Card>
-
-                            <div className="grid md:grid-cols-5 gap-6">
-                                <div className="md:col-span-3">
-                                    <PaymentSection isReadOnly={isReadOnly} customerName={getValues('customerName')} />
-                                </div>
-                                <div className="md:col-span-2">
-                                    <Card>
-                                        <CardHeader>
-                                            <CardTitle className="text-lg">Totales</CardTitle>
-                                        </CardHeader>
-                                        <CardContent className="space-y-2">
-                                            <div className="flex justify-between text-base"><p className="text-muted-foreground">Ganancia:</p><p className="font-semibold text-green-600">{formatCurrency(serviceProfit)}</p></div>
-                                            <div className="flex justify-between text-sm"><p className="text-muted-foreground">Costo Insumos:</p><p>{formatCurrency(totalSuppliesWorkshopCost)}</p></div>
-                                            <div className="flex justify-between font-bold text-xl pt-2 border-t"><p>Total Cliente (IVA Inc.):</p><p>{formatCurrency(totalCost)}</p></div>
-                                        </CardContent>
-                                    </Card>
-                                </div>
-                            </div>
                         </div>
                     )}
                 </div>
@@ -617,4 +606,5 @@ const PhotoReportTab = ({ control, isReadOnly, serviceId, onPhotoUploaded, onVie
         </Card>
     );
 };
+
 
