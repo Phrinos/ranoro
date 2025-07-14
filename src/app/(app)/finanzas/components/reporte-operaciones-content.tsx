@@ -56,7 +56,7 @@ export function ReporteOperacionesContent({ allSales, allServices, allInventory,
     }));
     
     const serviceOperations: FinancialOperation[] = allServices
-        .filter(s => s.status === 'Completado')
+        .filter(s => s.status === 'Entregado')
         .map(s => {
             // Prioritize delivery date for financials, but use service date as fallback (for migrated data)
             const dateToUse = s.deliveryDateTime || s.serviceDate;
