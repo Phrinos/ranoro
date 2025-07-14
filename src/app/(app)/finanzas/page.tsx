@@ -29,7 +29,6 @@ import { operationsService, inventoryService, personnelService } from '@/lib/ser
 import { Loader2 } from 'lucide-react';
 import { parseDate } from '@/lib/forms';
 import { ReporteOperacionesContent } from './components/reporte-operaciones-content';
-import { CorteDiaContent } from './components/corte-dia-content';
 import { ReporteInventarioContent } from './components/reporte-inventario-content';
 
 
@@ -39,7 +38,6 @@ function FinanzasPageComponent() {
     
     const [activeTab, setActiveTab] = useState(defaultTab);
     const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
-    const [corteDate, setCorteDate] = useState<Date | undefined>(new Date());
     const [isExpensesDialogOpen, setIsExpensesDialogOpen] = useState(false);
     
     const [isLoading, setIsLoading] = useState(true);
@@ -53,8 +51,6 @@ function FinanzasPageComponent() {
     
     const [isCalendarOpen, setIsCalendarOpen] = useState(false);
     const [tempDateRange, setTempDateRange] = useState<DateRange | undefined>(dateRange);
-
-    const [isCorteCalendarOpen, setIsCorteCalendarOpen] = useState(false);
 
     useEffect(() => {
         setIsLoading(true);
@@ -80,7 +76,6 @@ function FinanzasPageComponent() {
     }, []);
 
     const financialSummary = useMemo(() => {
-        // ... (existing financial summary logic remains the same)
         const emptyState = { 
             monthYearLabel: "Cargando...", totalOperationalIncome: 0, totalIncomeFromSales: 0, totalIncomeFromServices: 0,
             totalProfitFromSales: 0, totalProfitFromServices: 0, totalCostOfGoods: 0, totalOperationalProfit: 0, totalSalaries: 0, 
@@ -225,38 +220,6 @@ function FinanzasPageComponent() {
       return movements;
     }, [isLoading, allSales, allServices, allInventory]);
 
-    const corteDiaData = useMemo(() => {
-        if (!corteDate) return { date: '', salesByPaymentMethod: {}, totalSales: 0, totalCompletedServices: 0, grandTotal: 0 };
-
-        const start = startOfDay(corteDate);
-        const end = endOfDay(corteDate);
-
-        const salesToday = allSales.filter(s => isWithinInterval(parseDate(s.saleDate)!, { start, end }));
-        const servicesToday = allServices.filter(s => {
-            const date = parseDate(s.deliveryDateTime);
-            return s.status === 'Completado' && date && isWithinInterval(date, { start, end });
-        });
-
-        const salesByPaymentMethod: Record<string, number> = {};
-
-        salesToday.forEach(sale => {
-            const method = sale.paymentMethod || 'Efectivo';
-            salesByPaymentMethod[method] = (salesByPaymentMethod[method] || 0) + sale.totalAmount;
-        });
-        
-        const totalCompletedServices = servicesToday.reduce((sum, s) => sum + s.totalCost, 0);
-
-        const grandTotal = Object.values(salesByPaymentMethod).reduce((sum, amount) => sum + amount, 0) + totalCompletedServices;
-        
-        return { 
-            date: corteDate.toISOString(),
-            salesByPaymentMethod, 
-            totalSales: salesToday.reduce((sum, s) => sum + s.totalAmount, 0), 
-            totalCompletedServices, 
-            grandTotal 
-        };
-    }, [corteDate, allSales, allServices]);
-
     const handleApplyDateFilter = () => {
         setDateRange(tempDateRange);
         setIsCalendarOpen(false);
@@ -294,11 +257,10 @@ function FinanzasPageComponent() {
             </div>
             
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                <TabsList className="grid w-full grid-cols-4 mb-6">
+                <TabsList className="grid w-full grid-cols-3 mb-6">
                     <TabsTrigger value="resumen" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Resumen</TabsTrigger>
                     <TabsTrigger value="operaciones" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Operaciones</TabsTrigger>
                     <TabsTrigger value="inventario" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Inventario</TabsTrigger>
-                    <TabsTrigger value="corte" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Corte del Día</TabsTrigger>
                 </TabsList>
                 
                  <TabsContent value="resumen" className="mt-0">
@@ -369,34 +331,6 @@ function FinanzasPageComponent() {
 
                 <TabsContent value="inventario" className="mt-0">
                     <ReporteInventarioContent movements={inventoryMovements} />
-                </TabsContent>
-
-                <TabsContent value="corte" className="mt-0 space-y-4">
-                    <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-                        <div>
-                            <h2 className="text-2xl font-semibold tracking-tight">Corte del Día</h2>
-                            <p className="text-muted-foreground">Selecciona una fecha para generar el corte.</p>
-                        </div>
-                        <Popover open={isCorteCalendarOpen} onOpenChange={setIsCorteCalendarOpen}>
-                            <PopoverTrigger asChild>
-                                <Button variant={"outline"} className={cn("w-full sm:w-[240px] justify-start text-left font-normal bg-card", !corteDate && "text-muted-foreground")}>
-                                    <CalendarIcon className="mr-2 h-4 w-4" />
-                                    {corteDate ? format(corteDate, "PPP", { locale: es }) : <span>Seleccione fecha</span>}
-                                </Button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0" align="end">
-                                <Calendar mode="single" selected={corteDate} onSelect={(date) => { setCorteDate(date); setIsCorteCalendarOpen(false); }} initialFocus locale={es}/>
-                            </PopoverContent>
-                        </Popover>
-                    </div>
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Ticket de Corte para el {corteDate ? format(corteDate, "dd MMM, yyyy", { locale: es }) : ''}</CardTitle>
-                        </CardHeader>
-                        <CardContent className="flex justify-center bg-muted p-8">
-                             <CorteDiaContent reportData={corteDiaData} />
-                        </CardContent>
-                    </Card>
                 </TabsContent>
 
             </Tabs>
