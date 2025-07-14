@@ -51,19 +51,19 @@ export const SuppliersTable = React.memo(({ suppliers, onEdit, onDelete }: Suppl
             <TableHead className="font-bold text-white">Nombre</TableHead>
             <TableHead className="font-bold text-white">Contacto</TableHead>
             <TableHead className="font-bold text-white">Teléfono</TableHead>
-            <TableHead className="font-bold text-white">RFC</TableHead>
             <TableHead className="text-right font-bold text-white">Deuda</TableHead>
-            <TableHead className="font-bold text-white">Nota Deuda</TableHead>
             <TableHead className="text-right font-bold text-white">Acciones</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {suppliers.map((supplier) => (
             <TableRow key={supplier.id}>
-              <TableCell className="font-medium">{supplier.name}</TableCell>
+              <TableCell className="font-medium">
+                  <p>{supplier.name}</p>
+                  {supplier.description && <p className="text-xs text-muted-foreground">{supplier.description}</p>}
+              </TableCell>
               <TableCell>{supplier.contactPerson || 'N/A'}</TableCell>
               <TableCell>{supplier.phone || 'N/A'}</TableCell>
-              <TableCell>{supplier.rfc || 'N/A'}</TableCell>
               <TableCell className="text-right">
                 {supplier.debtAmount && supplier.debtAmount > 0 ? (
                   <Badge variant="destructive">${supplier.debtAmount.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</Badge>
@@ -71,7 +71,6 @@ export const SuppliersTable = React.memo(({ suppliers, onEdit, onDelete }: Suppl
                   <span className="text-muted-foreground">N/A</span>
                 )}
               </TableCell>
-              <TableCell>{supplier.debtNote || 'N/A'}</TableCell>
               <TableCell className="text-right">
                 <Button variant="ghost" size="icon" onClick={() => onEdit(supplier)} className="mr-2">
                   <Edit className="h-4 w-4" />

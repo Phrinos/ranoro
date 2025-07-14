@@ -50,6 +50,7 @@ const taxRegimeOptions = [
 
 const supplierFormSchema = z.object({
   name: z.string().min(2, "El nombre del proveedor es obligatorio."),
+  description: z.string().optional(),
   contactPerson: z.string().optional(),
   phone: z.string().optional(),
   email: z.string().email("Ingrese un correo electrónico válido.").optional().or(z.literal('')),
@@ -73,6 +74,7 @@ export function SupplierForm({ id, initialData, onSubmit }: SupplierFormProps) {
     resolver: zodResolver(supplierFormSchema),
     defaultValues: initialData || {
       name: "",
+      description: "",
       contactPerson: "",
       phone: "",
       email: "",
@@ -95,6 +97,19 @@ export function SupplierForm({ id, initialData, onSubmit }: SupplierFormProps) {
               <FormLabel>Nombre del Proveedor</FormLabel>
               <FormControl>
                 <Input placeholder="Ej: Repuestos Acme S.A." {...field} onChange={(e) => field.onChange(capitalizeWords(e.target.value))} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="description"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Descripción (Opcional)</FormLabel>
+              <FormControl>
+                <Textarea placeholder="Ej: Especialistas en partes de suspensión, entrega a domicilio..." {...field}/>
               </FormControl>
               <FormMessage />
             </FormItem>
