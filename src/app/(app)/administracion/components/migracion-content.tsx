@@ -50,6 +50,42 @@ export function MigracionPageContent() {
         setAnalysisResult(null);
     }
     
+    const runAnalysis = async (csvContent: string) => {
+        if (!csvContent) {
+            toast({ title: 'No hay datos', description: 'El contenido para analizar está vacío.', variant: 'destructive' });
+            return;
+        }
+
+        setIsAnalyzing(true);
+        setAnalysisResult(null);
+
+        try {
+            let result;
+            if (migrationType === 'operaciones') {
+                const existingPlates = existingVehicles.map(v => v.licensePlate);
+                const rawResult = await migrateData({ 
+                    csvContent: csvContent,
+                    existingLicensePlates: existingPlates,
+                });
+                result = { ...rawResult, type: 'operaciones' as const };
+            } else { // productos
+                const existingProductNames = existingInventory.map(p => p.name);
+                const rawResult = await migrateProducts({ 
+                    csvContent: csvContent,
+                    existingProductNames: existingProductNames,
+                });
+                result = { products: rawResult.products, vehicles: [], services: [], type: 'productos' as const };
+            }
+            setAnalysisResult(result);
+            toast({ title: "¡Análisis Completo!", description: "Revisa los datos nuevos extraídos por la IA antes de guardarlos." });
+        } catch (e) {
+            console.error("Error en el análisis:", e);
+            toast({ title: 'Error en Análisis', description: `La IA no pudo procesar los datos. ${e instanceof Error ? e.message : ''}`, variant: 'destructive' });
+        } finally {
+            setIsAnalyzing(false);
+        }
+    };
+    
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
@@ -72,8 +108,9 @@ export function MigracionPageContent() {
                      return;
                 }
     
-                setPastedText(csvText);
-                toast({ title: "Archivo Cargado", description: "El contenido del archivo se ha pegado en el área de texto." });
+                // Instead of pasting, directly run the analysis
+                runAnalysis(csvText);
+                
             } catch (error) {
                 console.error("Error processing file:", error);
                 toast({ title: "Error al Procesar", description: `No se pudo leer el contenido del archivo. ${error instanceof Error ? error.message : ''}`, variant: "destructive" });
@@ -82,7 +119,6 @@ export function MigracionPageContent() {
         
         reader.onerror = () => toast({ title: "Error de Lectura", description: "No se pudo leer el archivo.", variant: "destructive" });
         
-        // Correctly choose read method based on file type
         if (file.name.endsWith('.csv')) {
              reader.readAsText(file);
         } else if (file.name.endsWith('.xlsx') || file.name.endsWith('.xls')) {
@@ -90,44 +126,15 @@ export function MigracionPageContent() {
         } else {
              toast({ title: "Formato no Soportado", description: "Por favor, suba un archivo .csv, .xls, o .xlsx.", variant: "destructive" });
         }
+        
+        // Clear the file input so the same file can be re-uploaded
+        e.target.value = '';
     };
 
 
-    const handleAnalyze = async (event: React.FormEvent<HTMLFormElement>) => {
+    const handleAnalyzeFromText = (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
-        if (!pastedText) {
-            toast({ title: 'No hay datos', description: 'Por favor pegue texto para analizar.', variant: 'destructive' });
-            return;
-        }
-
-        setIsAnalyzing(true);
-        setAnalysisResult(null);
-
-        try {
-            let result;
-            if (migrationType === 'operaciones') {
-                const existingPlates = existingVehicles.map(v => v.licensePlate);
-                const rawResult = await migrateData({ 
-                    csvContent: pastedText,
-                    existingLicensePlates: existingPlates,
-                });
-                result = { ...rawResult, type: 'operaciones' as const };
-            } else { // productos
-                const existingProductNames = existingInventory.map(p => p.name);
-                const rawResult = await migrateProducts({ 
-                    csvContent: pastedText,
-                    existingProductNames: existingProductNames,
-                });
-                result = { products: rawResult.products, vehicles: [], services: [], type: 'productos' as const };
-            }
-            setAnalysisResult(result);
-            toast({ title: "¡Análisis Completo!", description: "Revisa los datos nuevos extraídos por la IA antes de guardarlos." });
-        } catch (e) {
-            console.error("Error en el análisis:", e);
-            toast({ title: 'Error en Análisis', description: `La IA no pudo procesar los datos. ${e instanceof Error ? e.message : ''}`, variant: 'destructive' });
-        } finally {
-            setIsAnalyzing(false);
-        }
+        runAnalysis(pastedText);
     };
 
     const handleConfirmAndSave = async () => {
@@ -226,7 +233,7 @@ export function MigracionPageContent() {
 
     return (
       <div className="space-y-6">
-        <form onSubmit={handleAnalyze}>
+        <form onSubmit={handleAnalyzeFromText}>
             <Card className="shadow-lg">
                 <CardHeader>
                     <CardTitle>1. Seleccionar Tipo y Cargar Datos</CardTitle>
@@ -258,7 +265,7 @@ export function MigracionPageContent() {
                         </div>
                          <div className="space-y-2">
                             <label htmlFor="file-upload" className="flex items-center gap-2 font-medium">
-                                <FileUp className="h-4 w-4"/> Opción B: Subir Archivo
+                                <FileUp className="h-4 w-4"/> Opción B: Subir Archivo (Análisis Automático)
                             </label>
                             <label htmlFor="file-upload" className="flex flex-col items-center justify-center w-full h-44 border-2 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
                                 <div className="flex flex-col items-center justify-center pt-5 pb-6">
@@ -275,12 +282,12 @@ export function MigracionPageContent() {
             <Card className="mt-4">
                 <CardHeader>
                     <CardTitle>2. Analizar y Guardar</CardTitle>
-                    <CardDescription>La IA analizará los datos, omitiendo registros existentes. Revisa el resultado antes de confirmar.</CardDescription>
+                    <CardDescription>Usa este botón para analizar el texto pegado. La subida de archivo inicia el análisis automáticamente.</CardDescription>
                 </CardHeader>
                 <CardContent>
                     <Button type="submit" className="w-full" disabled={!pastedText || isAnalyzing || isLoadingData}>
                         {isAnalyzing || isLoadingData ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <BrainCircuit className="mr-2 h-4 w-4"/>} 
-                        {isLoadingData ? 'Cargando datos existentes...' : (isAnalyzing ? 'Analizando...' : 'Analizar Datos con IA')}
+                        {isLoadingData ? 'Cargando datos existentes...' : (isAnalyzing ? 'Analizando...' : 'Analizar Texto Pegado con IA')}
                     </Button>
                 </CardContent>
             </Card>
