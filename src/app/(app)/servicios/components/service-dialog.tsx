@@ -38,6 +38,7 @@ interface ServiceDialogProps {
   onCancelService?: (serviceId: string, reason: string) => void;
   onViewQuoteRequest?: (serviceId: string) => void;
   onComplete?: (service: ServiceRecord, paymentDetails: any, nextServiceInfo?: any) => void;
+  children?: React.ReactNode; // Added children prop
 }
 
 export function ServiceDialog({ 
@@ -58,6 +59,7 @@ export function ServiceDialog({
   onDelete,
   onCancelService,
   onViewQuoteRequest,
+  children, // Added children to destructuring
 }: ServiceDialogProps) {
   const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
   const { toast } = useToast();
@@ -226,7 +228,7 @@ export function ServiceDialog({
           isReadOnly={isReadOnly}
           onVehicleCreated={onVehicleCreated} 
           mode={mode}
-          onStatusChange={setFormStatus} // Pass the setter function
+          onStatusChange={setFormStatus}
         >
              {children}
         </ServiceForm>
@@ -245,4 +247,3 @@ export function ServiceDialog({
     </>
   );
 }
-
