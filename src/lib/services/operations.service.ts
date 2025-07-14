@@ -95,10 +95,12 @@ const saveService = async (data: Partial<ServiceRecord>): Promise<ServiceRecord>
                     const invItemSnap = await getDoc(invItemRef);
                     if (invItemSnap.exists()) {
                         const invItem = invItemSnap.data() as InventoryItem;
-                        // a negative change means we ADDED items, so we need to DEDUCT from stock
-                        const newQuantity = invItem.quantity - (-quantityChange);
-                        batch.update(invItemRef, { quantity: newQuantity });
-                        inventoryUpdated = true;
+                        if (!invItem.isService) {
+                            // a negative change means we ADDED items, so we need to DEDUCT from stock
+                            const newQuantity = invItem.quantity - (-quantityChange);
+                            batch.update(invItemRef, { quantity: newQuantity });
+                            inventoryUpdated = true;
+                        }
                     }
                 }
             }
@@ -281,6 +283,53 @@ const saveMigratedServices = async (services: ExtractedService[], vehicles: Extr
     }
     await batch.commit();
 }
+
+const saveIndividualMigratedService = async (data: {
+    serviceDate: Date;
+    vehicleId: string;
+    description: string;
+    totalCost: number;
+    suppliesCost: number;
+    paymentMethod: string;
+}): Promise<ServiceRecord> => {
+    if (!db) throw new Error("Database not initialized.");
+
+    const vehicle = await inventoryService.getVehicleById(data.vehicleId);
+    if (!vehicle) throw new Error("Vehicle not found.");
+
+    const newService: Omit<ServiceRecord, 'id'> = {
+        vehicleId: data.vehicleId,
+        vehicleIdentifier: vehicle.licensePlate,
+        serviceDate: data.serviceDate.toISOString(),
+        description: data.description,
+        totalCost: data.totalCost,
+        totalSuppliesWorkshopCost: data.suppliesCost,
+        serviceProfit: data.totalCost - data.suppliesCost,
+        status: 'Completado',
+        deliveryDateTime: data.serviceDate.toISOString(),
+        subTotal: data.totalCost / 1.16,
+        taxAmount: data.totalCost - (data.totalCost / 1.16),
+        technicianId: 'system',
+        serviceAdvisorId: 'system',
+        serviceAdvisorName: 'Migración',
+        paymentMethod: data.paymentMethod as any,
+        serviceItems: [{
+            id: nanoid(),
+            name: data.description,
+            price: data.totalCost,
+            suppliesUsed: [],
+        }],
+    };
+
+    const docRef = await addDoc(collection(db, 'serviceRecords'), cleanObjectForFirestore(newService));
+
+    // Update vehicle's last service date
+    const vehicleRef = doc(db, "vehicles", data.vehicleId);
+    await updateDoc(vehicleRef, { lastServiceDate: data.serviceDate.toISOString() });
+    
+    return { id: docRef.id, ...newService };
+};
+
 
 // --- Sales ---
 const onSalesUpdate = (callback: (sales: SaleReceipt[]) => void): (() => void) => {
@@ -467,6 +516,7 @@ export const operationsService = {
     deleteService,
     completeService,
     saveMigratedServices,
+    saveIndividualMigratedService,
     getServicesForVehicle,
     getQuoteById,
     onSalesUpdate,

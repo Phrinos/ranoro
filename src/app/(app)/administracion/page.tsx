@@ -11,6 +11,7 @@ import { UsuariosPageContent } from "./components/usuarios-content";
 import { RolesPageContent } from "./components/roles-content";
 import { AuditoriaPageContent } from "./components/auditoria-content";
 import { MigracionPageContent } from "./components/migracion-content";
+import { RegistroIndividualContent } from './components/registro-individual-content';
 import { Loader2 } from "lucide-react";
 import { Shield, Users, BookOpen, DatabaseZap } from 'lucide-react';
 
@@ -78,7 +79,18 @@ function AdministracionPageComponent() {
                     <AuditoriaPageContent initialLogs={auditLogs} />
                 </TabsContent>
                 <TabsContent value="migracion" className="mt-0">
-                    <MigracionPageContent />
+                    <Tabs defaultValue="masiva" className="w-full">
+                        <TabsList className="grid w-full grid-cols-2">
+                            <TabsTrigger value="masiva">Migración Masiva (IA)</TabsTrigger>
+                            <TabsTrigger value="individual">Registro Individual</TabsTrigger>
+                        </TabsList>
+                        <TabsContent value="masiva" className="mt-4">
+                            <MigracionPageContent />
+                        </TabsContent>
+                        <TabsContent value="individual" className="mt-4">
+                            <RegistroIndividualContent />
+                        </TabsContent>
+                    </Tabs>
                 </TabsContent>
             </Tabs>
         </>
