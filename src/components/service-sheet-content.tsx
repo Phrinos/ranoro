@@ -1,4 +1,3 @@
-
 "use client";
 
 import type { ServiceRecord, Vehicle, QuoteRecord, WorkshopInfo, SafetyInspection, SafetyCheckStatus, PhotoReportGroup, Driver } from '@/types';
@@ -364,9 +363,9 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
         </main>
         
         <footer className="mt-auto pt-2 text-xs">
-           <div className="grid grid-cols-2 gap-2 text-center mb-1">
-               <div className="border-2 border-black p-2 rounded-md flex flex-col justify-between items-center min-h-[110px]">
-                    <h3 className="font-bold uppercase text-center text-sm">ASESOR</h3>
+           <div className="grid grid-cols-3 gap-2 text-center mb-1">
+               <div className="border-2 border-black rounded-md overflow-hidden flex flex-col justify-between items-center p-1 min-h-[90px]">
+                    <h3 className="font-bold p-1 w-full bg-gray-700 text-white text-xs text-center rounded-sm">ASESOR</h3>
                     <div className="flex-grow flex items-center justify-center w-full">
                         {service.serviceAdvisorSignatureDataUrl && (
                             <div className="relative w-full h-full">
@@ -374,50 +373,48 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
                             </div>
                         )}
                     </div>
-                    <div className="pt-1 w-full text-center mt-auto">
+                    <div className="w-full text-center mt-auto">
                         <p className="font-bold text-[8px]">{service.serviceAdvisorName?.toUpperCase() || ''}</p>
                     </div>
                 </div>
-                 <div className="grid grid-cols-2 gap-2 text-center">
-                    <div className="border-2 border-black p-2 rounded-md flex flex-col justify-between items-center">
-                        <h3 className="font-bold uppercase text-center text-sm">ENTRADA AL TALLER</h3>
-                        <div className="flex-grow flex items-center justify-center w-full min-h-[60px]">
-                            {service.customerSignatureReception ? (
-                                <div className="relative w-full h-full">
-                                    <Image src={normalizeDataUrl(service.customerSignatureReception)} alt="Firma de recepción" layout="fill" objectFit="contain" unoptimized />
-                                </div>
-                            ) : (
-                                isPublicView && showSignReception && onSignClick && (
-                                    <Button onClick={() => onSignClick('reception')} disabled={isSigning} className="mb-2">
-                                        {isSigning ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Signature className="mr-2 h-4 w-4"/>}
-                                        Firmar Aquí
-                                    </Button>
-                                )
-                            )}
-                        </div>
-                        <div className="w-full text-center mt-auto">
-                             <p className="text-xs font-semibold">{vehicle?.ownerName?.toUpperCase()}</p>
-                        </div>
+                <div className="border-2 border-black rounded-md overflow-hidden flex flex-col justify-between items-center p-1">
+                    <h3 className="font-bold p-1 w-full bg-gray-700 text-white text-xs text-center rounded-sm">ENTRADA AL TALLER</h3>
+                    <div className="flex-grow flex items-center justify-center w-full min-h-[50px]">
+                        {service.customerSignatureReception ? (
+                            <div className="relative w-full h-full">
+                                <Image src={normalizeDataUrl(service.customerSignatureReception)} alt="Firma de recepción" layout="fill" objectFit="contain" unoptimized />
+                            </div>
+                        ) : (
+                            isPublicView && showSignReception && onSignClick && (
+                                <Button onClick={() => onSignClick('reception')} disabled={isSigning} className="mb-2">
+                                    {isSigning ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Signature className="mr-2 h-4 w-4"/>}
+                                    Firmar Aquí
+                                </Button>
+                            )
+                        )}
                     </div>
-                     <div className="border-2 border-black p-2 rounded-md flex flex-col justify-between items-center">
-                        <h3 className="font-bold uppercase text-center text-sm">SALIDA DEL TALLER</h3>
-                         <div className="flex-grow flex items-center justify-center w-full min-h-[60px]">
-                           {service.customerSignatureDelivery ? (
-                             <div className="relative w-full h-full">
-                               <Image src={normalizeDataUrl(service.customerSignatureDelivery)} alt="Firma de conformidad" layout="fill" objectFit="contain" unoptimized/>
-                             </div>
-                           ) : (
-                             isPublicView && showSignDelivery && onSignClick && (
+                    <div className="w-full text-center mt-auto">
+                        <p className="text-xs font-semibold">{vehicle?.ownerName?.toUpperCase()}</p>
+                    </div>
+                </div>
+                <div className="border-2 border-black rounded-md overflow-hidden flex flex-col justify-between items-center p-1">
+                    <h3 className="font-bold p-1 w-full bg-gray-700 text-white text-xs text-center rounded-sm">SALIDA DEL TALLER</h3>
+                    <div className="flex-grow flex items-center justify-center w-full min-h-[50px]">
+                        {service.customerSignatureDelivery ? (
+                            <div className="relative w-full h-full">
+                            <Image src={normalizeDataUrl(service.customerSignatureDelivery)} alt="Firma de conformidad" layout="fill" objectFit="contain" unoptimized/>
+                            </div>
+                        ) : (
+                            isPublicView && showSignDelivery && onSignClick && (
                                 <Button onClick={() => onSignClick('delivery')} disabled={isSigning} className="bg-green-600 hover:bg-green-700 h-8 text-xs">
                                     {isSigning ? <Loader2 className="mr-2 h-3 w-3 animate-spin"/> : <Signature className="mr-2 h-3 w-3"/>}
                                     Firmar de Conformidad
                                 </Button>
-                             )
-                           )}
-                       </div>
-                        <div className="w-full text-center mt-auto">
-                            <p className="text-xs font-semibold">{vehicle?.ownerName?.toUpperCase()}</p>
-                        </div>
+                            )
+                        )}
+                    </div>
+                    <div className="w-full text-center mt-auto">
+                        <p className="text-xs font-semibold">{vehicle?.ownerName?.toUpperCase()}</p>
                     </div>
                 </div>
            </div>
