@@ -19,6 +19,7 @@ import type { Vehicle, PaymentMethod } from '@/types';
 import { cn, formatCurrency } from '@/lib/utils';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 const individualServiceSchema = z.object({
   serviceDate: z.date({ required_error: "La fecha es obligatoria." }),
@@ -40,6 +41,7 @@ export function RegistroIndividualContent() {
   const [isLoadingVehicles, setIsLoadingVehicles] = useState(true);
   const [searchedVehicle, setSearchedVehicle] = useState<Vehicle | null>(null);
   const [vehicleNotFound, setVehicleNotFound] = useState(false);
+  const [searchResults, setSearchResults] = useState<Vehicle[]>([]);
   
   const form = useForm<FormValues>({
     resolver: zodResolver(individualServiceSchema),
@@ -54,9 +56,10 @@ export function RegistroIndividualContent() {
     },
   });
 
-  const { watch, setValue } = form;
+  const { watch, setValue, getValues } = form;
   const totalCost = watch('totalCost');
   const suppliesCost = watch('suppliesCost');
+  const licensePlateSearch = watch('licensePlate');
   const serviceProfit = useMemo(() => (totalCost || 0) - (suppliesCost || 0), [totalCost, suppliesCost]);
 
   useEffect(() => {
@@ -66,22 +69,40 @@ export function RegistroIndividualContent() {
     });
     return () => unsubscribe();
   }, []);
+  
+  useEffect(() => {
+      if (!licensePlateSearch || licensePlateSearch.length < 2) {
+          setSearchResults([]);
+          return;
+      }
+       if (searchedVehicle && searchedVehicle.licensePlate === licensePlateSearch) {
+          setSearchResults([]);
+          return;
+      }
+      
+      const lowerSearch = licensePlateSearch.toLowerCase();
+      const results = vehicles.filter(v => 
+          v.licensePlate.toLowerCase().includes(lowerSearch) ||
+          v.make.toLowerCase().includes(lowerSearch) ||
+          v.model.toLowerCase().includes(lowerSearch) ||
+          v.ownerName.toLowerCase().includes(lowerSearch)
+      ).slice(0, 5);
+      
+      setSearchResults(results);
+      if (results.length === 0) {
+          setVehicleNotFound(true);
+      }
 
-  const handleSearchVehicle = useCallback(async () => {
-    const plate = form.getValues('licensePlate');
-    if (!plate) return;
-    
-    const found = vehicles.find(v => v.licensePlate.toLowerCase() === plate.toLowerCase());
-    if (found) {
-      setSearchedVehicle(found);
-      setValue('vehicleId', found.id, { shouldValidate: true });
-      setVehicleNotFound(false);
-    } else {
-      setSearchedVehicle(null);
-      setValue('vehicleId', '', { shouldValidate: true });
-      setVehicleNotFound(true);
-    }
-  }, [form, vehicles, setValue]);
+  }, [licensePlateSearch, vehicles, searchedVehicle]);
+
+
+  const handleSelectVehicle = useCallback((vehicle: Vehicle) => {
+    setSearchedVehicle(vehicle);
+    setValue('vehicleId', vehicle.id, { shouldValidate: true });
+    setValue('licensePlate', vehicle.licensePlate); // Update the input field as well
+    setVehicleNotFound(false);
+    setSearchResults([]); // Hide results after selection
+  }, [setValue]);
   
   const onSubmit = async (data: FormValues) => {
     try {
@@ -111,21 +132,37 @@ export function RegistroIndividualContent() {
                   name="licensePlate"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Placa del Vehículo</FormLabel>
-                      <div className="flex gap-2">
-                        <FormControl>
-                          <Input placeholder="Ej: ABC-123" {...field} onChange={(e) => field.onChange(e.target.value.toUpperCase())} />
-                        </FormControl>
-                        <Button type="button" onClick={handleSearchVehicle} disabled={isLoadingVehicles}>
-                          <Search className="mr-2 h-4 w-4" /> Buscar
-                        </Button>
+                      <FormLabel>Buscar Vehículo (Placa, Marca, Modelo, Propietario)</FormLabel>
+                      <div className="relative">
+                          <FormControl>
+                            <Input placeholder="Ej: ABC-123" {...field} onChange={(e) => {
+                                field.onChange(e.target.value.toUpperCase());
+                                setSearchedVehicle(null);
+                                setVehicleNotFound(false);
+                                setValue('vehicleId', '');
+                            }} />
+                          </FormControl>
+                         {searchResults.length > 0 && (
+                            <div className="absolute top-full mt-1 w-full z-10">
+                                <ScrollArea className="h-auto max-h-[150px] rounded-md border bg-background shadow-lg">
+                                    <div className="p-2">
+                                        {searchResults.map(v => (
+                                            <button type="button" key={v.id} onClick={() => handleSelectVehicle(v)} className="w-full text-left p-2 rounded-md hover:bg-muted">
+                                                <p className="font-semibold">{v.licensePlate}</p>
+                                                <p className="text-sm text-muted-foreground">{v.make} {v.model} - {v.ownerName}</p>
+                                            </button>
+                                        ))}
+                                    </div>
+                                </ScrollArea>
+                            </div>
+                         )}
                       </div>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
                 {isLoadingVehicles && <div className="flex items-center text-sm text-muted-foreground"><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Cargando vehículos...</div>}
-                {vehicleNotFound && <div className="flex items-center text-sm text-destructive"><AlertCircle className="mr-2 h-4 w-4" /> Vehículo no encontrado. Verifique la placa.</div>}
+                {vehicleNotFound && !searchedVehicle && <div className="flex items-center text-sm text-destructive"><AlertCircle className="mr-2 h-4 w-4" /> Vehículo no encontrado. Verifique los datos.</div>}
                 {searchedVehicle && (
                     <Card className="bg-muted/50">
                         <CardHeader className="p-4 flex flex-row items-center justify-between">
@@ -172,4 +209,3 @@ export function RegistroIndividualContent() {
     </Card>
   );
 }
-
