@@ -80,6 +80,7 @@ interface Props {
   isReadOnly?:boolean
   mode?:'service'|'quote'
   onStatusChange?: (status: ServiceRecord['status']) => void;
+  onVehicleCreated?: (newVehicle: Omit<Vehicle, 'id'>) => void; 
 }
 
 export function ServiceForm(props:Props){
@@ -95,6 +96,7 @@ export function ServiceForm(props:Props){
     isReadOnly = false,
     mode = 'service',
     onStatusChange,
+    onVehicleCreated,
   } = props;
 
   const { toast } = useToast();
@@ -315,9 +317,12 @@ export function ServiceForm(props:Props){
     }
   }, [getValues, setValue, parentVehicles, invItems, toast])
 
-  const onVehicleCreated = useCallback(async (newVehicleData: VehicleFormValues) => {
-    console.log("Creating vehicle:", newVehicleData);
-  }, [])
+  const handleVehicleCreated = useCallback(async (newVehicleData: VehicleFormValues) => {
+    if (onVehicleCreated) {
+      await onVehicleCreated(newVehicleData);
+    }
+    setIsNewVehicleDialogOpen(false);
+  }, [onVehicleCreated]);
 
   const handleNewInventoryItemCreated = useCallback(async (formData: InventoryItemFormValues): Promise<InventoryItem> => {
     const newItem = await inventoryService.addItem(formData);
@@ -545,7 +550,7 @@ export function ServiceForm(props:Props){
       <VehicleDialog
         open={isNewVehicleDialogOpen}
         onOpenChange={setIsNewVehicleDialogOpen}
-        onSave={onVehicleCreated}
+        onSave={handleVehicleCreated}
       />
       
       <SignatureDialog
