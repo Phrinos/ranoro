@@ -186,7 +186,7 @@ const SafetyChecklistDisplay = ({
                         <Image src={normalizeDataUrl(inspection.technicianSignature)} alt="Firma del técnico" unoptimized width={200} height={96} style={{ objectFit: 'contain' }}/>
                     </div>
                     <div className="mt-2 pt-1 w-64 text-center">
-                        <p className="text-xs font-bold">FIRMA DEL TÉCNICO</p>
+                        <p className="text-xs font-bold">FIRMA DEL TÉCNICO ({format(new Date(), "dd/MM/yyyy")})</p>
                     </div>
                 </div>
             )}
@@ -313,7 +313,7 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
 
           <section className="border-2 border-black rounded-md overflow-hidden mb-2">
               <h3 className="font-bold p-1 bg-gray-700 text-white text-xs text-center">TRABAJOS A REALIZAR</h3>
-              <div className="p-2 space-y-1 text-xs">
+              <div className="p-2 space-y-1 text-xs min-h-[8rem]">
                 {service.serviceItems && service.serviceItems.length > 0 ? (
                   service.serviceItems.map((item, index) => {
                       const isLastItem = index === service.serviceItems.length - 1;
@@ -362,8 +362,7 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
                   </div>
               </div>
           </section>
-          
-           <section className="grid grid-cols-3 gap-2 mb-1 text-xs">
+           <section className="mt-auto pt-2 grid grid-cols-3 gap-2 text-xs">
                 <div className="border-2 border-black rounded-md overflow-hidden flex flex-col justify-between items-center p-1 min-h-[120px] col-span-1">
                     <h3 className="font-bold p-1 w-full bg-gray-700 text-white text-xs text-center rounded-sm">ASESOR</h3>
                     <div className="flex-grow flex items-center justify-center w-full min-h-[50px]">
@@ -430,7 +429,7 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
            </section>
            {effectiveWorkshopInfo.fixedFooterText && (
             <div className="text-center mt-2 pt-2 border-t border-gray-200">
-              <p className="text-[9px] text-muted-foreground whitespace-pre-wrap">{effectiveWorkshopInfo.fixedFooterText}</p>
+              <p className="text-[10px] text-muted-foreground whitespace-pre-wrap">{effectiveWorkshopInfo.fixedFooterText}</p>
             </div>
           )}
         </footer>
