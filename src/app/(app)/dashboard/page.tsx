@@ -25,6 +25,7 @@ import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { isWithinInterval } from 'date-fns';
 import { DashboardCharts } from './components/dashboard-charts';
+import { formatCurrency } from '@/lib/utils';
 
 
 const ChartLoadingSkeleton = () => (
