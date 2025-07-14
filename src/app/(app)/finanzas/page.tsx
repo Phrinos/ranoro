@@ -458,7 +458,3 @@ export default function FinanzasPageWrapper() {
     );
 }
 
-
-
-
-
