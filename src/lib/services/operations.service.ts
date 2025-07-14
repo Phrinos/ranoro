@@ -225,14 +225,14 @@ const completeService = async (service: ServiceRecord, paymentAndNextServiceDeta
 
     const inventoryItems = await inventoryService.onItemsUpdatePromise();
 
-    inventoryUpdates.forEach((quantityToDeduct, itemId) => {
+    for (const [itemId, quantityToDeduct] of inventoryUpdates.entries()) {
         const item = inventoryItems.find(inv => inv.id === itemId);
         if(item) {
             const itemRef = doc(db, "inventory", itemId);
             const newQuantity = Math.max(0, item.quantity - quantityToDeduct);
             batch.update(itemRef, { quantity: newQuantity });
         }
-    });
+    }
 };
 
 const saveMigratedServices = async (services: ExtractedService[], vehicles: ExtractedVehicle[]): Promise<void> => {

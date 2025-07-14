@@ -21,7 +21,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
-import { format, setHours, setMinutes, isValid, addDays } from 'date-fns';
+import { format, setHours, setMinutes, isValid, addDays, addMonths, addYears } from 'date-fns';
 import { es } from 'date-fns/locale';
 
 import { Button } from '@/components/ui/button'
@@ -41,7 +41,7 @@ import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from '
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Textarea } from '@/components/ui/textarea'
 import { useToast } from '@/hooks/use-toast'
-import { cn, formatCurrency } from '@/lib/utils'
+import { cn } from '@/lib/utils'
 import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data'
 
 import type {
@@ -67,6 +67,7 @@ import { inventoryService } from "@/lib/services";
 import type { InventoryItemFormValues } from "../../inventario/components/inventory-item-form";
 import { PaymentSection } from '../../pos/components/payment-section';
 import Link from 'next/link';
+import { formatCurrency } from "@/lib/utils";
 
 /* ░░░░░░  COMPONENTE  ░░░░░░ */
 interface Props {
@@ -201,6 +202,10 @@ export function ServiceForm(props:Props){
     if (currentStatus === 'En Taller' && !watch('receptionDateTime')) {
         setValue('receptionDateTime', new Date());
     }
+    // If status is changed to Entregado, set the delivery time
+    if (currentStatus === 'Entregado' && !watch('deliveryDateTime')) {
+        setValue('deliveryDateTime', new Date());
+    }
 }, [watchedStatus, watch, setValue]);
 
   
@@ -231,20 +236,24 @@ export function ServiceForm(props:Props){
     inventoryService.onSuppliersUpdate(setAllSuppliers);
   }, []);
 
-  const handleEnhanceText = useCallback(async (fieldName: keyof ServiceFormValues | `photoReports.${number}.description` | `safetyInspection.${keyof SafetyInspection}.notes` | `safetyInspection.inspectionNotes`) => {
+  const handleEnhanceText = useCallback(async (fieldName: any) => {
     setIsEnhancingText(fieldName);
-    const textToEnhance = form.getValues(fieldName as any);
-    const contextMap = {
+    const textToEnhance = form.getValues(fieldName);
+    const contextMap: { [key: string]: string } = {
         notes: "Notas Generales del Servicio",
         vehicleConditions: "Condiciones del Vehículo",
         customerItems: "Pertenencias del Cliente",
         'safetyInspection.inspectionNotes': "Observaciones de Inspección",
     };
-    const context = (contextMap as any)[fieldName] || 'Descripción de Reporte Fotográfico';
     
+    let context = "Descripción de Reporte Fotográfico";
+    if (typeof fieldName === 'string') {
+        context = contextMap[fieldName] || (fieldName.includes('safetyInspection') ? 'Notas de Punto de Revisión' : context);
+    }
+
     try {
         const enhancedText = await enhanceText({ text: textToEnhance, context });
-        form.setValue(fieldName as any, enhancedText, { shouldDirty: true });
+        form.setValue(fieldName, enhancedText, { shouldDirty: true });
     } catch (e) {
         toast({ title: 'Error de IA', description: 'No se pudo mejorar el texto.', variant: 'destructive' });
     } finally {
@@ -431,7 +440,7 @@ export function ServiceForm(props:Props){
                 </Tabs>
                  {watchedStatus === 'Entregado' && (
                     <div className="grid md:grid-cols-2 gap-6 mt-6">
-                        {nextServiceInfo && (
+                        {nextServiceInfo && isValid(parseDate(nextServiceInfo.date)) && (
                             <Card className="border-blue-200 bg-blue-50 dark:bg-blue-900/30">
                                 <CardHeader className="flex flex-row items-center justify-between pb-2">
                                     <CardTitle className="flex items-center gap-2 text-lg text-blue-800 dark:text-blue-300">
@@ -548,4 +557,3 @@ const PhotoReportTab = ({ control, isReadOnly, serviceId, onPhotoUploaded, onVie
         </Card>
     );
 };
-

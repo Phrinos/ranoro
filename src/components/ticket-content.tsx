@@ -7,6 +7,7 @@ import { format, parseISO, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
 import React from 'react';
 import { cn } from "@/lib/utils";
+import { parseDate } from '@/lib/forms';
 
 const initialWorkshopInfo: WorkshopInfo = {
   name: "RANORO",
@@ -179,7 +180,7 @@ export const TicketContent = React.forwardRef<HTMLDivElement, TicketContentProps
             </>
         )}
 
-        {service?.nextServiceInfo && (
+        {service?.nextServiceInfo && isValid(parseDate(service.nextServiceInfo.date)) && (
           <>
               {renderDashedLine()}
               <div className="mt-1 text-center" style={{ fontSize: `${bodyFontSize}px` }}>
@@ -220,4 +221,3 @@ export const TicketContent = React.forwardRef<HTMLDivElement, TicketContentProps
 );
 
 TicketContent.displayName = "TicketContent";
-
