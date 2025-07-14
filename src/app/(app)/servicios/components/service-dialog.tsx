@@ -225,8 +225,8 @@ export function ServiceDialog({
           serviceTypes={serviceTypes}
           onSubmit={internalOnSave}
           onClose={() => onOpenChange(false)}
+          onCancelService={onCancelService}
           isReadOnly={isReadOnly}
-          onVehicleCreated={onVehicleCreated} 
           mode={mode}
           onStatusChange={setFormStatus}
         />

@@ -75,6 +75,7 @@ interface Props {
   serviceTypes:ServiceTypeRecord[]
   onSubmit:(d:ServiceRecord|QuoteRecord)=>Promise<void>
   onClose:()=>void
+  onCancelService?: (serviceId: string, reason: string) => void;
   isReadOnly?:boolean
   mode?:'service'|'quote'
   onStatusChange?: (status: ServiceRecord['status']) => void;
@@ -89,6 +90,7 @@ export function ServiceForm(props:Props){
     inventoryItems:invItems,
     onSubmit,
     onClose,
+    onCancelService,
     isReadOnly = false,
     mode = 'service',
     onStatusChange,
@@ -187,7 +189,7 @@ export function ServiceForm(props:Props){
   
   const watchedStatus = watch('status');
   const watchedVehicleId = watch('vehicleId');
-  const nextServiceInfo = watch('nextServiceInfo');
+  const watchedNextServiceInfo = watch('nextServiceInfo');
   
   useEffect(() => {
     reset(defaultValues);
@@ -232,6 +234,7 @@ export function ServiceForm(props:Props){
   const [isGeneratingQuote, setIsGeneratingQuote] = useState(false)
   const [isEnhancingText, setIsEnhancingText] = useState<string | null>(null)
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [cancellationReason, setCancellationReason] = useState("");
   
   const [allCategories, setAllCategories] = useState<InventoryCategory[]>([]);
   const [allSuppliers, setAllSuppliers] = useState<Supplier[]>([]);
@@ -339,10 +342,12 @@ export function ServiceForm(props:Props){
 
   const handleSignatureSave = (signatureDataUrl: string) => {
     if (signatureType) {
-        const fieldName: 'serviceAdvisorSignatureDataUrl' | 'customerSignatureReception' | 'customerSignatureDelivery' =
+        const fieldName: 'serviceAdvisorSignatureDataUrl' | 'customerSignatureReception' | 'customerSignatureDelivery' | null =
             signatureType === 'advisor' ? 'serviceAdvisorSignatureDataUrl' :
             signatureType === 'reception' ? 'customerSignatureReception' :
-            'customerSignatureDelivery';
+            signatureType === 'delivery' ? 'customerSignatureDelivery' : null;
+
+        if (!fieldName) return;
         
         const safeValue = signatureDataUrl?.trim() ? signatureDataUrl : null;
         setValue(fieldName, safeValue, { shouldDirty: true });
@@ -350,7 +355,7 @@ export function ServiceForm(props:Props){
         setSignatureType(null);
         toast({ title: "Firma capturada correctamente." });
     }
-};
+  };
 
   const formSubmitWrapper = (values: ServiceFormValues) => {
     const dataToSubmit: any = { ...values };
@@ -365,6 +370,9 @@ export function ServiceForm(props:Props){
 
     onSubmit(dataToSubmit);
   };
+
+  const showCancelButton = !isReadOnly && initialDataService?.id && initialDataService.status !== 'Entregado' && initialDataService.status !== 'Cancelado';
+
 
   return (
     <>
@@ -433,11 +441,12 @@ export function ServiceForm(props:Props){
                             />
                         </TabsContent>
                     </Tabs>
-                    {(watchedStatus === 'Entregado') && (
+                    
+                    {watchedStatus === 'Entregado' && (
                         <div className="grid md:grid-cols-5 gap-6 mt-6">
                             <div className="md:col-span-3">
                                 <PaymentSection isReadOnly={isReadOnly} />
-                                 {(nextServiceInfo && isValid(parseDate(nextServiceInfo.date))) && (
+                                {watchedNextServiceInfo && isValid(parseDate(watchedNextServiceInfo.date)) && (
                                     <Card className="border-blue-200 bg-blue-50 dark:bg-blue-900/30 mt-6">
                                         <CardHeader className="flex flex-row items-center justify-between pb-2">
                                             <CardTitle className="flex items-center gap-2 text-lg text-blue-800 dark:text-blue-300">
@@ -448,12 +457,12 @@ export function ServiceForm(props:Props){
                                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1">
                                                 <div>
                                                     <p className="font-semibold">Fecha:</p>
-                                                    <p>{format(parseDate(nextServiceInfo.date)!, "dd 'de' MMMM 'de' yyyy", { locale: es })}</p>
+                                                    <p>{format(parseDate(watchedNextServiceInfo.date)!, "dd 'de' MMMM 'de' yyyy", { locale: es })}</p>
                                                 </div>
-                                                {nextServiceInfo.mileage && (
+                                                {watchedNextServiceInfo.mileage && (
                                                     <div>
                                                         <p className="font-semibold">Kilometraje:</p>
-                                                        <p>{nextServiceInfo.mileage.toLocaleString("es-MX")} km</p>
+                                                        <p>{watchedNextServiceInfo.mileage.toLocaleString("es-MX")} km</p>
                                                     </div>
                                                 )}
                                             </div>
@@ -475,7 +484,41 @@ export function ServiceForm(props:Props){
                     )}
                 </div>
                 
-                <div className="p-6 pt-4 border-t flex-shrink-0 bg-background">
+                <div className="p-6 pt-4 border-t flex-shrink-0 bg-background flex justify-between items-center">
+                    <div>
+                        {showCancelButton && (
+                            <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                    <Button type="button" variant="destructive">
+                                        <Ban className="mr-2 h-4 w-4" />
+                                        Cancelar Servicio
+                                    </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                        <AlertDialogTitle>¿Estás seguro de cancelar este servicio?</AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                            Esta acción es permanente. Por favor, especifica un motivo para la cancelación.
+                                        </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <Textarea 
+                                        placeholder="Motivo de la cancelación..."
+                                        value={cancellationReason}
+                                        onChange={(e) => setCancellationReason(e.target.value)}
+                                    />
+                                    <AlertDialogFooter>
+                                        <AlertDialogCancel onClick={() => setCancellationReason('')}>Cerrar</AlertDialogCancel>
+                                        <AlertDialogAction
+                                            disabled={!cancellationReason.trim()}
+                                            onClick={() => onCancelService?.(initialDataService!.id, cancellationReason)}
+                                        >
+                                            Confirmar Cancelación
+                                        </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                </AlertDialogContent>
+                            </AlertDialog>
+                        )}
+                    </div>
                     {!isReadOnly && (
                         <div className="flex justify-end gap-2">
                            <Button variant="outline" type="button" onClick={onClose}>Cancelar</Button>
