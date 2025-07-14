@@ -68,6 +68,10 @@ export interface Vehicle {
   paperwork?: VehiclePaperwork[];
   currentMileage?: number;
   lastMileageUpdate?: string; // ISO String
+  nextServiceInfo?: {
+    date: string; // ISO String
+    mileage?: number;
+  };
 }
 
 export interface ManualDebtEntry {
@@ -132,6 +136,7 @@ export interface ServiceSupply {
   unitPrice: number; // Costo para el taller
   sellingPrice?: number; // Precio de venta al cliente (opcional)
   unitType?: 'units' | 'ml' | 'liters';
+  isService?: boolean;
 }
 
 export interface ServiceItem {
@@ -329,6 +334,8 @@ export interface SaleItem {
   quantity: number;
   unitPrice: number; // Final selling price per unit (tax-inclusive)
   totalPrice: number; // quantity * unitPrice (final total for this line item, tax-inclusive)
+  isService?: boolean;
+  unitType?: 'units' | 'ml' | 'liters';
 }
 
 export type PaymentMethod = 'Efectivo' | 'Tarjeta' | 'Transferencia' | 'Efectivo+Transferencia' | 'Tarjeta+Transferencia';
@@ -510,4 +517,15 @@ export interface CapacityAnalysisOutput {
   totalAvailableHours: number;
   capacityPercentage: number;
   recommendation: string;
+}
+
+export interface InventoryMovement {
+  id: string;
+  date: string; // ISO String
+  type: 'Venta' | 'Servicio';
+  relatedId: string; // ID of the sale or service
+  itemName: string;
+  quantity: number;
+  unitCost: number;
+  totalCost: number;
 }
