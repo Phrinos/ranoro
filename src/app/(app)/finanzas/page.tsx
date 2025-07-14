@@ -101,9 +101,10 @@ function FinanzasPageComponent() {
 
         const totalIncomeFromSales = salesInRange.reduce((sum, s) => sum + s.totalAmount, 0);
         const totalProfitFromSales = salesInRange.reduce((sum, s) => sum + calculateSaleProfit(s, allInventory), 0);
+        const totalIncomeFromServices = servicesInRange.reduce((sum, s) => sum + (s.totalCost || 0), 0);
+        const totalProfitFromServices = servicesInRange.reduce((sum, s) => sum + (s.serviceProfit || 0), 0);
         
         const serviceIncomeBreakdown: Record<string, { income: number; profit: number; count: number }> = {};
-
         if (salesInRange.length > 0) {
             serviceIncomeBreakdown['Venta'] = {
                 income: totalIncomeFromSales,
@@ -111,7 +112,6 @@ function FinanzasPageComponent() {
                 count: salesInRange.length
             };
         }
-
         servicesInRange.forEach(s => {
           const type = s.serviceType || 'Servicio General';
           if (!serviceIncomeBreakdown[type]) serviceIncomeBreakdown[type] = { income: 0, profit: 0, count: 0 };
@@ -119,9 +119,6 @@ function FinanzasPageComponent() {
           serviceIncomeBreakdown[type].profit += s.serviceProfit || 0;
           serviceIncomeBreakdown[type].count += 1;
         });
-        
-        const totalIncomeFromServices = servicesInRange.reduce((sum, s) => sum + (s.totalCost || 0), 0);
-        const totalProfitFromServices = servicesInRange.reduce((sum, s) => sum + (s.serviceProfit || 0), 0);
         
         const totalOperationalIncome = totalIncomeFromSales + totalIncomeFromServices;
         const totalOperationalProfit = totalProfitFromSales + totalProfitFromServices;
@@ -136,13 +133,17 @@ function FinanzasPageComponent() {
         const totalFixedExpenses = fixedExpenses.reduce((sum, expense) => sum + expense.amount, 0);
         const totalMonthlyExpenses = totalBaseSalaries + totalFixedExpenses;
         
-        let totalTechnicianCommissions = 0;
-        let totalAdministrativeCommissions = 0;
+        // Check for profitability before calculating commissions
         const isProfitableForCommissions = totalOperationalProfit > totalMonthlyExpenses;
         
+        let totalTechnicianCommissions = 0;
+        let totalAdministrativeCommissions = 0;
+
         if (isProfitableForCommissions) {
           allTechnicians.filter(t => !t.isArchived).forEach(tech => {
-            totalTechnicianCommissions += servicesInRange.filter(s => s.technicianId === tech.id).reduce((sum, s) => sum + (s.serviceProfit || 0), 0) * (tech.commissionRate || 0);
+            totalTechnicianCommissions += servicesInRange
+              .filter(s => s.technicianId === tech.id)
+              .reduce((sum, s) => sum + (s.serviceProfit || 0), 0) * (tech.commissionRate || 0);
           });
           
           allAdminStaff.filter(s => !s.isArchived).forEach(admin => {
@@ -352,3 +353,4 @@ export default function FinanzasPageWrapper() {
         </Suspense>
     );
 }
+
