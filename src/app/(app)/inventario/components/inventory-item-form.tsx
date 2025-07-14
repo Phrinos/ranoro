@@ -1,5 +1,6 @@
 
 
+
 "use client";
 
 import { useEffect } from 'react';
@@ -77,20 +78,15 @@ export function InventoryItemForm({ initialData, onSubmit, onClose, categories, 
       sku: "",
       description: "",
       isService: false,
-      quantity: '',
-      unitPrice: '',
-      sellingPrice: '',
+      quantity: undefined,
+      unitPrice: undefined,
+      sellingPrice: undefined,
       lowStockThreshold: 5,
       unitType: 'units',
       category: categories.length > 0 ? categories[0].name : "",
       supplier: suppliers.length > 0 ? suppliers[0].name : "",
-      rendimiento: '',
+      rendimiento: undefined,
       ...initialData,
-       // Handle numeric fields that might be undefined/null in initialData
-      quantity: initialData?.quantity ?? '',
-      unitPrice: initialData?.unitPrice ?? '',
-      sellingPrice: initialData?.sellingPrice ?? '',
-      rendimiento: initialData?.rendimiento ?? '',
     },
   });
 

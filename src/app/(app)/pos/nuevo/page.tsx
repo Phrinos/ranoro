@@ -2,106 +2,121 @@
 
 "use client";
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { useForm, FormProvider } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
 import { PageHeader } from "@/components/page-header";
 import { PosForm } from "../components/pos-form";
-import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
-import { TicketContent } from '@/components/ticket-content';
-import type { SaleReceipt, InventoryItem, WorkshopInfo } from '@/types'; 
+import type { SaleReceipt, InventoryItem, PaymentMethod, InventoryCategory, Supplier } from '@/types'; 
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from 'next/navigation';
-import { Button } from '@/components/ui/button';
-import { Printer, Copy } from 'lucide-react';
 import { inventoryService, operationsService } from '@/lib/services';
 import { Loader2 } from 'lucide-react';
 import type { InventoryItemFormValues } from '../../inventario/components/inventory-item-form';
+import { db } from '@/lib/firebaseClient';
+import { writeBatch, doc } from 'firebase/firestore';
 
+// --- Schema Definitions ---
+const saleItemSchema = z.object({
+  inventoryItemId: z.string().min(1, "Seleccione un artículo."),
+  itemName: z.string(),
+  quantity: z.coerce.number().min(0.001, "La cantidad debe ser mayor a 0."),
+  unitPrice: z.coerce.number(),
+  totalPrice: z.coerce.number(),
+  isService: z.boolean().optional(),
+  unitType: z.enum(['units', 'ml', 'liters']).optional(),
+});
+
+const paymentMethods: [PaymentMethod, ...PaymentMethod[]] = [
+  "Efectivo", "Tarjeta", "Transferencia", "Efectivo+Transferencia", "Tarjeta+Transferencia"
+];
+
+const posFormSchema = z.object({
+  items: z.array(saleItemSchema).min(1, "Debe agregar al menos un artículo a la venta."),
+  customerName: z.string().optional(),
+  paymentMethod: z.enum(paymentMethods).default("Efectivo"),
+  cardFolio: z.string().optional(),
+  transferFolio: z.string().optional(),
+}).refine(data => {
+  if ((data.paymentMethod === "Tarjeta" || data.paymentMethod === "Tarjeta+Transferencia") && !data.cardFolio) return false;
+  return true;
+}, { message: "El folio de la tarjeta es obligatorio.", path: ["cardFolio"] })
+.refine(data => {
+  if ((data.paymentMethod === "Transferencia" || data.paymentMethod === "Efectivo+Transferencia" || data.paymentMethod === "Tarjeta+Transferencia") && !data.transferFolio) return false;
+  return true;
+}, { message: "El folio de la transferencia es obligatorio.", path: ["transferFolio"] });
+
+type POSFormValues = z.infer<typeof posFormSchema>;
 
 export default function NuevaVentaPage() {
   const { toast } = useToast(); 
   const router = useRouter();
-  const ticketContentRef = useRef<HTMLDivElement>(null);
   
   const [currentInventoryItems, setCurrentInventoryItems] = useState<InventoryItem[]>([]);
-  const [isPrintPreviewOpen, setIsPrintPreviewOpen] = useState(false);
-  const [currentSaleForTicket, setCurrentSaleForTicket] = useState<SaleReceipt | null>(null);
-  const [workshopInfo, setWorkshopInfo] = useState<WorkshopInfo | undefined>(undefined);
+  const [allCategories, setAllCategories] = useState<InventoryCategory[]>([]);
+  const [allSuppliers, setAllSuppliers] = useState<Supplier[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    const unsub = inventoryService.onItemsUpdate((items) => {
-        setCurrentInventoryItems(items);
-        setIsLoading(false);
-    });
-    
-    const stored = localStorage.getItem('workshopTicketInfo');
-    if (stored) setWorkshopInfo(JSON.parse(stored));
+  const methods = useForm<POSFormValues>({
+    resolver: zodResolver(posFormSchema),
+    defaultValues: {
+      items: [],
+      customerName: "Cliente Mostrador",
+      paymentMethod: "Efectivo",
+      cardFolio: "",
+      transferFolio: "",
+    },
+  });
 
-    return () => unsub();
+  useEffect(() => {
+    const unsubs = [
+      inventoryService.onItemsUpdate((items) => {
+        setCurrentInventoryItems(items);
+        setIsLoading(false); // Only set loading to false after items are fetched
+      }),
+      inventoryService.onCategoriesUpdate(setAllCategories),
+      inventoryService.onSuppliersUpdate(setAllSuppliers),
+    ];
+    return () => unsubs.forEach(unsub => unsub());
   }, []);
 
-  const handleSaleCompletion = (saleData: SaleReceipt) => {
-    setCurrentSaleForTicket(saleData);
-    setIsPrintPreviewOpen(true);
-  };
+  const handleSaleCompletion = async (values: POSFormValues) => {
+    if (!db) return;
+    const batch = writeBatch(db);
+    try {
+      const saleId = await operationsService.registerSale(values, currentInventoryItems, batch);
+      await batch.commit();
 
-  const handlePreviewDialogClose = () => {
-    setIsPrintPreviewOpen(false);
-    setCurrentSaleForTicket(null); 
-    router.push('/pos');
-  };
-
-  const handlePrintTicket = () => {
-    window.print();
+      const newSaleReceipt: SaleReceipt = {
+        id: saleId,
+        saleDate: new Date().toISOString(),
+        ...values,
+        subTotal: 0, // Recalculate or get from service
+        tax: 0,
+        totalAmount: values.items.reduce((sum, item) => sum + item.totalPrice, 0),
+        status: 'Completado'
+      };
+      
+      toast({ title: 'Venta Registrada', description: `La venta #${saleId} se ha completado.` });
+      router.push('/pos');
+    } catch(e) {
+      console.error(e);
+      toast({ title: "Error al Registrar Venta", variant: "destructive"});
+    }
   };
   
-  const handleCopyAsImage = async () => {
-    if (!ticketContentRef.current) {
-        toast({ title: "Error", description: "No se encontró el contenido del ticket.", variant: "destructive" });
-        return;
-    }
-    const html2canvas = (await import('html2canvas')).default;
-    try {
-        const canvas = await html2canvas(ticketContentRef.current, {
-            useCORS: true,
-            backgroundColor: '#ffffff',
-            scale: 2.5, 
-        });
-        canvas.toBlob(async (blob) => {
-            if (blob) {
-                try {
-                    await navigator.clipboard.write([
-                        new ClipboardItem({ 'image/png': blob })
-                    ]);
-                    toast({ title: "Copiado", description: "La imagen del ticket ha sido copiada." });
-                } catch (clipboardErr) {
-                    console.error('Clipboard API error:', clipboardErr);
-                    toast({ title: "Error de Copiado", description: "Tu navegador no pudo copiar la imagen. Intenta imprimir.", variant: "destructive" });
-                }
-            } else {
-                 toast({ title: "Error de Conversión", description: "No se pudo convertir el ticket a imagen.", variant: "destructive" });
-            }
-        }, 'image/png');
-    } catch (e) {
-        console.error("html2canvas error:", e);
-        toast({ title: "Error de Captura", description: "No se pudo generar la imagen del ticket.", variant: "destructive" });
-    }
-  };
-
-  const handleInventoryItemCreated = async (formData: InventoryItemFormValues): Promise<InventoryItem> => {
+  const handleNewInventoryItemCreated = async (formData: InventoryItemFormValues): Promise<InventoryItem> => {
     const newItem = await inventoryService.addItem(formData);
-    // The main listener in the parent component (`pos/page.tsx`) already handles this
-    // via onSnapshot, so we don't need to manually update local state here.
     return newItem;
   };
-
 
   if (isLoading) {
       return <div className="text-center p-8 text-muted-foreground flex justify-center items-center"><Loader2 className="mr-2 h-5 w-5 animate-spin" />Cargando...</div>;
   }
 
   return (
-    <>
+    <FormProvider {...methods}>
       <PageHeader
         title="Registrar Nueva Venta"
         description="Complete los artículos y detalles para la nueva venta."
@@ -110,32 +125,10 @@ export default function NuevaVentaPage() {
       <PosForm
         inventoryItems={currentInventoryItems} 
         onSaleComplete={handleSaleCompletion}
-        onInventoryItemCreated={handleInventoryItemCreated}
+        onInventoryItemCreated={handleNewInventoryItemCreated}
+        categories={allCategories}
+        suppliers={allSuppliers}
       />
-
-      {currentSaleForTicket && (
-        <PrintTicketDialog
-          open={isPrintPreviewOpen} 
-          onOpenChange={(isOpen) => { 
-            if (!isOpen) handlePreviewDialogClose();
-          }}
-          title="Ticket de Venta"
-          onDialogClose={handlePreviewDialogClose}
-          dialogContentClassName="printable-content"
-          footerActions={
-             <div className="flex flex-col-reverse sm:flex-row gap-2">
-                <Button variant="outline" onClick={handleCopyAsImage}>
-                    <Copy className="mr-2 h-4 w-4"/> Copiar Imagen
-                </Button>
-                <Button onClick={handlePrintTicket}>
-                    <Printer className="mr-2 h-4 w-4" /> Imprimir Ticket
-                </Button>
-             </div>
-          }
-        >
-          <TicketContent ref={ticketContentRef} sale={currentSaleForTicket} previewWorkshopInfo={workshopInfo} />
-        </PrintTicketDialog>
-      )}
-    </>
+    </FormProvider>
   );
 }
