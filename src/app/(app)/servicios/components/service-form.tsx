@@ -190,26 +190,22 @@ export function ServiceForm(props:Props){
   }, [initialDataService, reset, defaultValues]);
   
   useEffect(() => {
-    const subscription = watch((value, { name, type }) => {
-        if (name === 'status') {
-            const currentStatus = value.status;
-            if (currentStatus === 'Agendado' && !value.serviceDate) {
-                setValue('serviceDate', new Date());
-                setValue('appointmentStatus', 'Creada');
-            }
-            if (currentStatus === 'En Taller' && !value.receptionDateTime) {
-                setValue('receptionDateTime', new Date());
-            }
-        }
-        if (name === 'vehicleId') {
-            const selectedVehicle = parentVehicles.find(v => v.id === value.vehicleId);
-            if(selectedVehicle) {
-                setValue('customerName', selectedVehicle.ownerName);
-            }
-        }
-    });
-    return () => subscription.unsubscribe();
-  }, [watch, setValue, parentVehicles]);
+    const currentStatus = watch('status');
+    if (currentStatus === 'Agendado' && !watch('serviceDate')) {
+        setValue('serviceDate', new Date());
+        setValue('appointmentStatus', 'Creada');
+    }
+    if (currentStatus === 'En Taller' && !watch('receptionDateTime')) {
+        setValue('receptionDateTime', new Date());
+    }
+  }, [watchedStatus, watch, setValue]);
+  
+  useEffect(() => {
+      const selectedVehicle = parentVehicles.find(v => v.id === watchedVehicleId);
+      if (selectedVehicle) {
+          setValue('customerName', selectedVehicle.ownerName);
+      }
+  }, [watchedVehicleId, parentVehicles, setValue]);
   
   const [activeTab, setActiveTab] = useState('details')
   const [isNewVehicleDialogOpen, setIsNewVehicleDialogOpen] = useState(false)
