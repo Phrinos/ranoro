@@ -58,7 +58,7 @@ export function PrintTicketDialog({
         </DialogHeader>
         
         <div className="flex-grow overflow-y-auto bg-muted/30 p-2 sm:p-4 rounded-md">
-            <div className="printable-content">
+            <div id="printable-area">
                 {children}
             </div>
         </div>
