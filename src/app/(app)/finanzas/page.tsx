@@ -111,17 +111,29 @@ function ResumenFinancieroPageComponent() {
         const totalIncomeFromSales = salesInRange.reduce((sum, s) => sum + s.totalAmount, 0);
         const totalProfitFromSales = salesInRange.reduce((sum, s) => sum + calculateSaleProfit(s, allInventory), 0);
         
-        const serviceIncomeBreakdown: Record<string, { income: number; profit: number }> = {};
+        const serviceIncomeBreakdown: Record<string, { income: number; profit: number; count: number }> = {};
+
+        // Process Sales
+        if (salesInRange.length > 0) {
+            serviceIncomeBreakdown['Venta'] = {
+                income: totalIncomeFromSales,
+                profit: totalProfitFromSales,
+                count: salesInRange.length
+            };
+        }
+
+        // Process Services
         servicesInRange.forEach(s => {
           const type = s.serviceType || 'Servicio General';
-          if (!serviceIncomeBreakdown[type]) serviceIncomeBreakdown[type] = { income: 0, profit: 0 };
+          if (!serviceIncomeBreakdown[type]) serviceIncomeBreakdown[type] = { income: 0, profit: 0, count: 0 };
           serviceIncomeBreakdown[type].income += s.totalCost;
           serviceIncomeBreakdown[type].profit += s.serviceProfit || 0;
+          serviceIncomeBreakdown[type].count += 1;
         });
 
-        const totalIncomeFromServices = Object.values(serviceIncomeBreakdown).reduce((sum, b) => sum + b.income, 0);
-        const totalProfitFromServices = Object.values(serviceIncomeBreakdown).reduce((sum, b) => sum + b.profit, 0);
-
+        const totalIncomeFromServices = servicesInRange.reduce((sum, s) => sum + s.totalCost, 0);
+        const totalProfitFromServices = servicesInRange.reduce((sum, s) => sum + (s.serviceProfit || 0), 0);
+        
         const totalOperationalIncome = totalIncomeFromSales + totalIncomeFromServices;
         const totalOperationalProfit = totalProfitFromSales + totalProfitFromServices;
 
@@ -295,7 +307,28 @@ function ResumenFinancieroPageComponent() {
                       </Card>
                       <Card>
                         <CardHeader><CardTitle className="text-xl flex items-center gap-2"><TrendingUp className="h-6 w-6 text-green-500" />Ingresos y Ganancia Bruta</CardTitle><CardDescription>Detalle de operaciones en el periodo</CardDescription></CardHeader>
-                        <CardContent className="space-y-4 text-base"><div className="grid grid-cols-3 gap-4 font-semibold text-sm text-muted-foreground border-b pb-2"><div className="col-span-1">Categoría</div><div className="col-span-1 text-right">Ingresos</div><div className="col-span-1 text-right">Ganancia</div></div><div className="space-y-3 text-sm"><div className="grid grid-cols-3 gap-4 items-center"><div className="col-span-1 font-semibold">Ventas (POS)</div><div className="col-span-1 text-right font-medium">{formatCurrency(financialSummary.totalIncomeFromSales)}</div><div className="col-span-1 text-right font-medium text-green-600">{formatCurrency(financialSummary.totalProfitFromSales)}</div></div>{Object.entries(financialSummary.serviceIncomeBreakdown).map(([type, data]) => (<div key={type} className="grid grid-cols-3 gap-4 items-center"><div className="col-span-1 font-semibold">{type}</div><div className="col-span-1 text-right font-medium">{formatCurrency(data.income)}</div><div className="col-span-1 text-right font-medium text-green-600">{formatCurrency(data.profit)}</div></div>))}</div><div className="grid grid-cols-3 gap-4 items-center font-bold text-lg pt-4 border-t mt-4"><div className="col-span-2 text-right">Ganancia Bruta Operativa Total:</div><div className="col-span-1 text-right text-xl text-green-600">{formatCurrency(financialSummary.totalOperationalProfit)}</div></div></CardContent>
+                        <CardContent className="space-y-4 text-base">
+                            <div className="grid grid-cols-4 gap-4 font-semibold text-sm text-muted-foreground border-b pb-2">
+                                <div className="col-span-1">Categoría</div>
+                                <div className="col-span-1 text-right">Operaciones</div>
+                                <div className="col-span-1 text-right">Ingresos</div>
+                                <div className="col-span-1 text-right">Ganancia</div>
+                            </div>
+                            <div className="space-y-3 text-sm">
+                                {Object.entries(financialSummary.serviceIncomeBreakdown).map(([type, data]) => (
+                                    <div key={type} className="grid grid-cols-4 gap-4 items-center">
+                                        <div className="col-span-1 font-semibold">{type}</div>
+                                        <div className="col-span-1 text-right font-medium">{data.count}</div>
+                                        <div className="col-span-1 text-right font-medium">{formatCurrency(data.income)}</div>
+                                        <div className="col-span-1 text-right font-medium text-green-600">{formatCurrency(data.profit)}</div>
+                                    </div>
+                                ))}
+                            </div>
+                            <div className="grid grid-cols-4 gap-4 items-center font-bold text-lg pt-4 border-t mt-4">
+                                <div className="col-span-3 text-right">Ganancia Bruta Operativa Total:</div>
+                                <div className="col-span-1 text-right text-xl text-green-600">{formatCurrency(financialSummary.totalOperationalProfit)}</div>
+                            </div>
+                        </CardContent>
                       </Card>
                       <Card>
                           <CardHeader><div className="flex items-center justify-between"><CardTitle className="text-xl flex items-center gap-2"><TrendingDown className="h-6 w-6 text-red-500" />Egresos Fijos y Variables</CardTitle><Button variant="outline" size="sm" onClick={() => setIsExpensesDialogOpen(true)}><Pencil className="mr-2 h-4 w-4" />Editar Gastos Fijos</Button></div><CardDescription>Detalle de gastos fijos y variables del periodo.</CardDescription></CardHeader>
@@ -367,4 +400,5 @@ export default function FinanzasPageWrapper() {
         </Suspense>
     );
 }
+
 
