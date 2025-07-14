@@ -29,19 +29,16 @@ export default function AppLayout({
 }) {
   const [isLoading, setIsLoading] = useState(true);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [newSignatureServices, setNewSignatureServices] = useState<ServiceRecord[]>([]);
   const router = useRouter();
 
   useEffect(() => {
     if (!auth || !db) {
-        // Firebase no está listo, podría ser un render del lado del servidor inicial
         setIsLoading(true);
         return;
     }
 
     const unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
         if (user) {
-            // El usuario está autenticado en Firebase
             const userDocRef = doc(db, 'users', user.uid);
             const userDoc = await getDoc(userDocRef);
 
@@ -50,14 +47,12 @@ export default function AppLayout({
                 localStorage.setItem(AUTH_USER_LOCALSTORAGE_KEY, JSON.stringify(userData));
                 setCurrentUser(userData);
             } else {
-                // Caso raro: autenticado pero sin documento.
                 await signOut(auth);
                 localStorage.removeItem(AUTH_USER_LOCALSTORAGE_KEY);
                 setCurrentUser(null);
                 router.push('/login');
             }
         } else {
-            // Usuario no ha iniciado sesión
             setCurrentUser(null);
             localStorage.removeItem(AUTH_USER_LOCALSTORAGE_KEY);
             router.push('/login');
@@ -65,54 +60,14 @@ export default function AppLayout({
         setIsLoading(false);
     });
     
-    // El listener de serviceRecords para notificaciones de firma
-    const q = query(
-      collection(db, "publicServices"),
-      where("status", "in", ["Entregado", "En Taller"])
-    );
-
-    const unsubscribeServices = onSnapshot(q, (snapshot) => {
-      const unreadServices = snapshot.docs
-        .map((doc) => ({ id: doc.data().id, ...doc.data() } as ServiceRecord))
-        .filter(
-          (s) =>
-            (s.customerSignatureReception && !s.receptionSignatureViewed) ||
-            (s.customerSignatureDelivery && !s.deliverySignatureViewed)
-        );
-      setNewSignatureServices(unreadServices);
-    });
-
     return () => {
         unsubscribeAuth();
-        unsubscribeServices();
     };
   }, [router]);
-  
-  const handleNotificationsViewed = async () => {
-    if (newSignatureServices.length === 0 || !db) return;
-
-    const batch = writeBatch(db);
-    newSignatureServices.forEach((service) => {
-      const serviceRef = doc(db, "serviceRecords", service.id);
-      const publicServiceRef = doc(db, "publicServices", service.publicId!);
-      const updateData: { receptionSignatureViewed?: boolean; deliverySignatureViewed?: boolean } = {};
-      if (service.customerSignatureReception && !service.receptionSignatureViewed) {
-        updateData.receptionSignatureViewed = true;
-      }
-      if (service.customerSignatureDelivery && !service.deliverySignatureViewed) {
-        updateData.deliverySignatureViewed = true;
-      }
-      batch.update(serviceRef, updateData);
-      batch.update(publicServiceRef, updateData);
-    });
-    
-    await batch.commit();
-  };
   
   const handleLogout = async () => {
       if (!auth) return;
       await signOut(auth);
-      // onAuthStateChanged se encargará de la redirección
   };
 
   if (isLoading || !currentUser) {
@@ -144,8 +99,6 @@ export default function AppLayout({
     <SidebarProvider defaultOpen={true}>
       <AppSidebar 
         currentUser={currentUser}
-        newSignatureServices={newSignatureServices}
-        onNotificationsViewed={handleNotificationsViewed}
         onLogout={handleLogout}
       />
       <div className="fixed top-4 left-4 z-50 md:hidden">
