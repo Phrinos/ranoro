@@ -171,7 +171,7 @@ export function ServiceDialog({
         toast({
             title: `Error al Guardar ${mode === 'quote' ? 'Cotización' : 'Servicio'}`,
             description: `Ocurrió un problema al intentar guardar desde el diálogo.`,
-            variant: 'destructive',
+            variant: "destructive",
         });
     }
   };
@@ -229,6 +229,7 @@ export function ServiceDialog({
           isReadOnly={isReadOnly}
           mode={mode}
           onStatusChange={setFormStatus}
+          onVehicleCreated={onVehicleCreated}
         />
       </DialogContent>
     </Dialog>
