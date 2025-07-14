@@ -2,29 +2,29 @@
 
 "use client";
 
-import { useState, useMemo, useEffect, useCallback, Suspense, useRef } from 'react';
+import { useState, useMemo, useEffect, Suspense, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
 import {
   calculateSaleProfit,
-} from "@/lib/placeholder-data";
-import type { MonthlyFixedExpense, InventoryItem, FinancialOperation, PaymentMethod, ServiceTypeRecord, SaleReceipt, ServiceRecord, Technician, AdministrativeStaff, InventoryMovement } from "@/types";
+} from '@/lib/placeholder-data';
+import type { MonthlyFixedExpense, InventoryItem, FinancialOperation, PaymentMethod, ServiceTypeRecord, SaleReceipt, ServiceRecord, Technician, AdministrativeStaff, InventoryMovement } from '@/types';
 import {
   format,
   parseISO,
   isWithinInterval,
   isValid,
   startOfDay, endOfDay, startOfWeek, endOfWeek, isSameDay, startOfMonth, endOfMonth, compareDesc, compareAsc
-} from "date-fns";
+} from 'date-fns';
 import { es } from 'date-fns/locale';
-import { CalendarIcon, DollarSign, TrendingUp, TrendingDown, Pencil, BadgeCent, Search, LineChart, PackageSearch, ListFilter, Filter, Package as PackageIcon } from "lucide-react";
-import { cn, formatCurrency } from "@/lib/utils";
-import { FixedExpensesDialog } from "./components/fixed-expenses-dialog"; 
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import type { DateRange } from "react-day-picker";
+import { CalendarIcon, DollarSign, TrendingUp, TrendingDown, Pencil, BadgeCent, Search, LineChart, PackageSearch, ListFilter, Filter, Package as PackageIcon } from 'lucide-react';
+import { cn, formatCurrency } from '@/lib/utils';
+import { FixedExpensesDialog } from './components/fixed-expenses-dialog'; 
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import type { DateRange } from 'react-day-picker';
 import { operationsService, inventoryService, personnelService } from '@/lib/services';
 import { Loader2 } from 'lucide-react';
 import { parseDate } from '@/lib/forms';
@@ -77,7 +77,7 @@ function FinanzasPageComponent() {
 
     const financialSummary = useMemo(() => {
         const emptyState = { 
-            monthYearLabel: "Cargando...", totalOperationalIncome: 0, totalIncomeFromSales: 0, totalIncomeFromServices: 0,
+            monthYearLabel: 'Cargando...', totalOperationalIncome: 0, totalIncomeFromSales: 0, totalIncomeFromServices: 0,
             totalProfitFromSales: 0, totalProfitFromServices: 0, totalCostOfGoods: 0, totalOperationalProfit: 0, totalSalaries: 0, 
             totalTechnicianSalaries: 0, totalAdministrativeSalaries: 0, totalFixedExpenses: 0, totalMonthlyExpenses: 0, 
             totalTechnicianCommissions: 0, totalAdministrativeCommissions: 0, totalExpenses: 0, netProfit: 0, 
@@ -158,8 +158,8 @@ function FinanzasPageComponent() {
         const netProfit = totalOperationalProfit - totalExpenses;
 
         const dateLabel = dateRange.to && !isSameDay(dateRange.from, dateRange.to)
-            ? `${format(from, "dd MMM", { locale: es })} - ${format(to, "dd MMM, yyyy", { locale: es })}`
-            : format(from, "dd 'de' MMMM, yyyy", { locale: es });
+            ? `${format(from, 'dd MMM', { locale: es })} - ${format(to, 'dd MMM, yyyy', { locale: es })}`
+            : format(from, 'dd \'de\' MMMM, yyyy', { locale: es });
 
         const totalInventoryValue = allInventory
             .filter(item => !item.isService)
@@ -236,9 +236,9 @@ function FinanzasPageComponent() {
             <Button variant="outline" size="sm" onClick={() => { const range = { from: startOfMonth(new Date()), to: endOfMonth(new Date()) }; setDateRange(range); setTempDateRange(range); }} className="bg-card">Este Mes</Button>
             <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
                 <PopoverTrigger asChild>
-                    <Button variant={"outline"} className={cn("w-full sm:w-[240px] justify-start text-left font-normal bg-card", !dateRange && "text-muted-foreground")}>
+                    <Button variant={'outline'} className={cn('w-full sm:w-[240px] justify-start text-left font-normal bg-card', !dateRange && 'text-muted-foreground')}>
                         <CalendarIcon className="mr-2 h-4 w-4" />
-                        {dateRange?.from ? (dateRange.to ? (`${format(dateRange.from, "LLL dd, y", { locale: es })} - ${format(dateRange.to, "LLL dd, y", { locale: es })}`) : format(dateRange.from, "LLL dd, y", { locale: es })) : (<span>Seleccione rango</span>)}
+                        {dateRange?.from ? (dateRange.to ? (`${format(dateRange.from, 'LLL dd, y', { locale: es })} - ${format(dateRange.to, 'LLL dd, y', { locale: es })}`) : format(dateRange.from, 'LLL dd, y', { locale: es })) : (<span>Seleccione rango</span>)}
                     </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="end">
@@ -275,7 +275,7 @@ function FinanzasPageComponent() {
                         <CardContent className="space-y-4 text-base">
                             <div className="space-y-2"><div className="flex justify-between items-center"><span className="text-muted-foreground">Ingresos Operativos Totales:</span><span className="font-semibold text-lg">{formatCurrency(financialSummary.totalOperationalIncome)}</span></div><div className="flex justify-between items-center"><span className="text-muted-foreground">(-) Costo Total de Insumos:</span><span className="font-semibold text-lg text-orange-500">-{formatCurrency(financialSummary.totalCostOfGoods)}</span></div><hr className="my-2 border-dashed"/><div className="flex justify-between items-center font-bold text-xl pt-1"><span className="text-foreground">(=) Ganancia Bruta Operativa:</span><span className="text-xl text-green-600">{formatCurrency(financialSummary.totalOperationalProfit)}</span></div></div>
                             <hr className="my-4 border-border"/>
-                            <div className="space-y-2"><div className="flex justify-between items-center"><span className="text-muted-foreground">(-) Gastos Mensuales Fijos:</span><span className="font-semibold text-lg text-red-500">-{formatCurrency(financialSummary.totalMonthlyExpenses)}</span></div><div className="flex justify-between items-center"><span className="text-muted-foreground">(-) Comisiones Variables:</span><span className="font-semibold text-lg text-red-500">-{formatCurrency(financialSummary.totalTechnicianCommissions + financialSummary.totalAdministrativeCommissions)}</span></div>{!financialSummary.isProfitableForCommissions && (<p className="text-xs text-right text-muted-foreground pt-1">Las comisiones no se aplican porque la ganancia no cubrió los gastos fijos.</p>)}<hr className="my-2 border-dashed"/><div className="flex justify-between items-center font-bold text-2xl pt-1"><span className="text-foreground">(=) Resultado Neto del Periodo:</span><span className={cn("text-2xl", financialSummary.netProfit >= 0 ? "text-green-600" : "text-red-600")}>{formatCurrency(financialSummary.netProfit)}</span></div></div>
+                            <div className="space-y-2"><div className="flex justify-between items-center"><span className="text-muted-foreground">(-) Gastos Mensuales Fijos:</span><span className="font-semibold text-lg text-red-500">-{formatCurrency(financialSummary.totalMonthlyExpenses)}</span></div><div className="flex justify-between items-center"><span className="text-muted-foreground">(-) Comisiones Variables:</span><span className="font-semibold text-lg text-red-500">-{formatCurrency(financialSummary.totalTechnicianCommissions + financialSummary.totalAdministrativeCommissions)}</span></div>{!financialSummary.isProfitableForCommissions && (<p className="text-xs text-right text-muted-foreground pt-1">Las comisiones no se aplican porque la ganancia no cubrió los gastos fijos.</p>)}<hr className="my-2 border-dashed"/><div className="flex justify-between items-center font-bold text-2xl pt-1"><span className="text-foreground">(=) Resultado Neto del Periodo:</span><span className={cn('text-2xl', financialSummary.netProfit >= 0 ? 'text-green-600' : 'text-red-600')}>{formatCurrency(financialSummary.netProfit)}</span></div></div>
                         </CardContent>
                       </Card>
                       <Card>

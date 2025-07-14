@@ -61,42 +61,42 @@ const BASE_NAV_STRUCTURE: ReadonlyArray<Omit<NavigationEntry, 'isActive'>> = [
     label: 'Nuevo Servicio', 
     path: '/servicios/nuevo', 
     icon: PlusCircle, 
-    groupTag: "Mi Taller",
+    groupTag: 'Mi Taller',
     permissions: ['services:create']
   },
   { 
     label: 'Tablero', 
     path: '/tablero', 
     icon: LayoutGrid, 
-    groupTag: "Mi Taller",
+    groupTag: 'Mi Taller',
     permissions: ['dashboard:view']
   },
   { 
     label: 'Cotizaciones', 
     path: '/cotizaciones/historial', 
     icon: FileText, 
-    groupTag: "Mi Taller",
+    groupTag: 'Mi Taller',
     permissions: ['services:create'] 
   },
   { 
     label: 'Agenda', 
     path: '/servicios/agenda', 
     icon: CalendarDays, 
-    groupTag: "Mi Taller",
+    groupTag: 'Mi Taller',
     permissions: ['services:create']
   },
   { 
     label: 'Servicios', 
     path: '/servicios/historial', 
     icon: Wrench, 
-    groupTag: "Mi Taller",
+    groupTag: 'Mi Taller',
     permissions: ['services:view_history']
   },
   { 
     label: 'Vehículos', 
     path: '/vehiculos', 
     icon: Car, 
-    groupTag: "Mi Taller",
+    groupTag: 'Mi Taller',
     permissions: ['vehicles:manage']
   },
   
@@ -105,21 +105,21 @@ const BASE_NAV_STRUCTURE: ReadonlyArray<Omit<NavigationEntry, 'isActive'>> = [
     label: 'Nueva Venta',
     path: '/pos/nuevo',
     icon: ShoppingCart,
-    groupTag: "Operaciones",
+    groupTag: 'Operaciones',
     permissions: ['pos:create_sale']
   },
   {
     label: 'Punto de Venta',
     path: '/pos',
     icon: Receipt,
-    groupTag: "Operaciones",
+    groupTag: 'Operaciones',
     permissions: ['pos:create_sale', 'pos:view_sales']
   },
   { 
     label: 'Inventario', 
     path: '/inventario', 
     icon: Package, 
-    groupTag: "Operaciones", 
+    groupTag: 'Operaciones', 
     permissions: ['inventory:view'] 
   },
   
@@ -128,14 +128,14 @@ const BASE_NAV_STRUCTURE: ReadonlyArray<Omit<NavigationEntry, 'isActive'>> = [
     label: 'Registar Pago',
     path: '/rentas',
     icon: DollarSign,
-    groupTag: "Mi Flotilla",
+    groupTag: 'Mi Flotilla',
     permissions: ['fleet:manage']
   },
   {
     label: 'Flotilla',
     path: '/flotilla',
     icon: Truck,
-    groupTag: "Mi Flotilla",
+    groupTag: 'Mi Flotilla',
     permissions: ['fleet:manage']
   },
   
@@ -144,7 +144,7 @@ const BASE_NAV_STRUCTURE: ReadonlyArray<Omit<NavigationEntry, 'isActive'>> = [
     label: 'Finanzas',
     path: '/finanzas',
     icon: Landmark,
-    groupTag: "Análisis",
+    groupTag: 'Análisis',
     permissions: ['finances:view_report']
   },
 
@@ -153,33 +153,33 @@ const BASE_NAV_STRUCTURE: ReadonlyArray<Omit<NavigationEntry, 'isActive'>> = [
     label: 'Personal', 
     path: '/personal', 
     icon: Users, 
-    groupTag: "Opciones",
+    groupTag: 'Opciones',
     permissions: ['technicians:manage']
   },
   {
     label: 'Opciones',
     path: '/opciones',
     icon: Settings,
-    groupTag: "Opciones",
+    groupTag: 'Opciones',
     permissions: ['dashboard:view'] // All users can see options
   },
   {
     label: 'Mensajería',
     path: '/mensajeria',
     icon: MessageSquare,
-    groupTag: "Opciones",
+    groupTag: 'Opciones',
     permissions: ['messaging:manage']
   },
   {
     label: 'Administración',
     path: '/administracion',
     icon: Shield,
-    groupTag: "Opciones",
+    groupTag: 'Opciones',
     permissions: ['users:manage', 'roles:manage', 'audits:view']
   }
 ];
 
-const DESIRED_GROUP_ORDER = ["Mi Taller", "Operaciones", "Mi Flotilla", "Análisis", "Opciones"];
+const DESIRED_GROUP_ORDER = ['Mi Taller', 'Operaciones', 'Mi Flotilla', 'Análisis', 'Opciones'];
 
 
 const useNavigation = (): NavigationEntry[] => {
@@ -190,13 +190,13 @@ const useNavigation = (): NavigationEntry[] => {
   React.useEffect(() => {
     // This effect ensures the hook re-evaluates when the user logs in/out,
     // but now uses a more reliable direct import for roles.
-    if (typeof window !== "undefined") {
+    if (typeof window !== 'undefined') {
         const authUserString = localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY);
         if (authUserString) {
             try {
                 setCurrentUser(JSON.parse(authUserString));
             } catch (e) {
-                console.error("Failed to parse authUser, defaulting.", e);
+                console.error('Failed to parse authUser, defaulting.', e);
                 setCurrentUser(defaultSuperAdmin);
             }
         } else {

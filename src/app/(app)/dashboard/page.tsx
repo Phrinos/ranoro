@@ -1,23 +1,23 @@
 
 "use client";
 
-import React, { useEffect, useState, useCallback, useRef, useMemo } from "react";
-import dynamic from "next/dynamic";
-import { parseISO, isToday, isValid, isSameDay } from "date-fns";
-import { PageHeader } from "@/components/page-header";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { AUTH_USER_LOCALSTORAGE_KEY, calculateSaleProfit } from "@/lib/placeholder-data";
-import type { User, CapacityAnalysisOutput, PurchaseRecommendation, ServiceRecord, SaleReceipt, InventoryItem, Technician, InventoryRecommendation } from "@/types";
-import { BrainCircuit, Loader2, ShoppingCart, AlertTriangle, Printer, Wrench, DollarSign, PackageSearch, CheckCircle } from "lucide-react"; 
-import { useToast } from "@/hooks/use-toast";
+import React, { useEffect, useState, useRef, useMemo } from 'react';
+import dynamic from 'next/dynamic';
+import { parseISO, isToday, isValid, isSameDay } from 'date-fns';
+import { PageHeader } from '@/components/page-header';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { AUTH_USER_LOCALSTORAGE_KEY, calculateSaleProfit } from '@/lib/placeholder-data';
+import type { User, CapacityAnalysisOutput, PurchaseRecommendation, ServiceRecord, SaleReceipt, InventoryItem, Technician, InventoryRecommendation } from '@/types';
+import { BrainCircuit, Loader2, ShoppingCart, AlertTriangle, Printer, Wrench, DollarSign, PackageSearch, CheckCircle } from 'lucide-react'; 
+import { useToast } from '@/hooks/use-toast';
 import { getPurchaseRecommendations } from '@/ai/flows/purchase-recommendation-flow';
 import { analyzeWorkshopCapacity } from '@/ai/flows/capacity-analysis-flow';
 import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
 import { PurchaseOrderContent } from './components/purchase-order-content';
-import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
 import { analyzeInventory } from '@/ai/flows/inventory-analysis-flow';
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { operationsService, inventoryService, personnelService } from '@/lib/services';
 import { parseDate } from '@/lib/forms';
 
@@ -73,9 +73,9 @@ const handleAiError = (error: any, toast: any, context: string): string => {
     console.error(`AI Error in ${context}:`, error);
     let message = `La IA no pudo completar la acción de ${context}.`;
     if (error instanceof Error && error.message.includes('503')) {
-        message = "El modelo de IA está sobrecargado. Por favor, inténtelo de nuevo más tarde.";
+        message = 'El modelo de IA está sobrecargado. Por favor, inténtelo de nuevo más tarde.';
     }
-    toast({ title: "Error de IA", description: message, variant: "destructive" });
+    toast({ title: 'Error de IA', description: message, variant: 'destructive' });
     return message; // Return the user-friendly message
 };
 
@@ -170,7 +170,7 @@ export default function DashboardPage() {
           const authUser: User = JSON.parse(authUserString);
           setUserName(authUser.name);
         } catch (e) {
-          console.error("Failed to parse authUser for dashboard welcome message:", e);
+          console.error('Failed to parse authUser for dashboard welcome message:', e);
         }
       }
       const storedWorkshopInfo = localStorage.getItem('workshopTicketInfo');
@@ -178,7 +178,7 @@ export default function DashboardPage() {
         try {
           const info = JSON.parse(storedWorkshopInfo);
           if (info.name) setWorkshopName(info.name);
-        } catch (e) { console.error("Failed to parse workshop info", e); }
+        } catch (e) { console.error('Failed to parse workshop info', e); }
       }
     }
   }, []);
@@ -198,7 +198,7 @@ export default function DashboardPage() {
 
         if (servicesForToday.length === 0) {
             const totalAvailable = allTechnicians.filter(t => !t.isArchived).reduce((sum, t) => sum + (t.standardHoursPerDay || 8), 0);
-            setCapacityInfo({ totalRequiredHours: 0, totalAvailableHours: totalAvailable, recommendation: "Taller disponible", capacityPercentage: 0 });
+            setCapacityInfo({ totalRequiredHours: 0, totalAvailableHours: totalAvailable, recommendation: 'Taller disponible', capacityPercentage: 0 });
             return;
         }
 
@@ -239,7 +239,7 @@ export default function DashboardPage() {
       });
 
       if (servicesForToday.length === 0) {
-        toast({ title: "No hay servicios", description: "No hay servicios agendados para hoy que requieran compras.", variant: 'default' });
+        toast({ title: 'No hay servicios', description: 'No hay servicios agendados para hoy que requieran compras.', variant: 'default' });
         setIsPurchaseLoading(false);
         return;
       }
@@ -255,7 +255,7 @@ export default function DashboardPage() {
 
       const result = await getPurchaseRecommendations(input);
       setPurchaseRecommendations(result.recommendations);
-      toast({ title: "Orden de Compra Generada", description: result.reasoning, duration: 6000 });
+      toast({ title: 'Orden de Compra Generada', description: result.reasoning, duration: 6000 });
       if (result.recommendations.length > 0) {
         setIsPurchaseOrderDialogOpen(true);
       }
@@ -294,9 +294,9 @@ export default function DashboardPage() {
 
       setAnalysisResult(result.recommendations);
       toast({
-        title: "Análisis Completado",
+        title: 'Análisis Completado',
         description: `La IA ha generado ${result.recommendations.length} recomendaciones.`,
-        variant: "default"
+        variant: 'default'
       });
 
     } catch (e) {
@@ -310,7 +310,7 @@ export default function DashboardPage() {
   return (
     <div className="container mx-auto py-8 flex flex-col">
       <PageHeader
-        title={userName ? `¡Bienvenido, ${userName}!` : "Panel Principal de Taller"}
+        title={userName ? `¡Bienvenido, ${userName}!` : 'Panel Principal de Taller'}
         description="Vista del estado actual de los servicios y herramientas de IA."
       />
 

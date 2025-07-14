@@ -6,10 +6,10 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { PageHeader } from "@/components/page-header";
-import { PosForm } from "../components/pos-form";
+import { PageHeader } from '@/components/page-header';
+import { PosForm } from '../components/pos-form';
 import type { SaleReceipt, InventoryItem, PaymentMethod, InventoryCategory, Supplier, WorkshopInfo } from '@/types'; 
-import { useToast } from "@/hooks/use-toast";
+import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { inventoryService, operationsService } from '@/lib/services';
 import { Loader2, Copy, Printer } from 'lucide-react';
@@ -23,9 +23,9 @@ import html2canvas from 'html2canvas';
 
 // --- Schema Definitions ---
 const saleItemSchema = z.object({
-  inventoryItemId: z.string().min(1, "Seleccione un artículo."),
+  inventoryItemId: z.string().min(1, 'Seleccione un artículo.'),
   itemName: z.string(),
-  quantity: z.coerce.number().min(0.001, "La cantidad debe ser mayor a 0."),
+  quantity: z.coerce.number().min(0.001, 'La cantidad debe ser mayor a 0.'),
   unitPrice: z.coerce.number(),
   totalPrice: z.coerce.number(),
   isService: z.boolean().optional(),
@@ -33,23 +33,23 @@ const saleItemSchema = z.object({
 });
 
 const paymentMethods: [PaymentMethod, ...PaymentMethod[]] = [
-  "Efectivo", "Tarjeta", "Transferencia", "Efectivo+Transferencia", "Tarjeta+Transferencia"
+  'Efectivo', 'Tarjeta', 'Transferencia', 'Efectivo+Transferencia', 'Tarjeta+Transferencia'
 ];
 
 const posFormSchema = z.object({
-  items: z.array(saleItemSchema).min(1, "Debe agregar al menos un artículo a la venta."),
+  items: z.array(saleItemSchema).min(1, 'Debe agregar al menos un artículo a la venta.'),
   customerName: z.string().optional(),
-  paymentMethod: z.enum(paymentMethods).default("Efectivo"),
+  paymentMethod: z.enum(paymentMethods).default('Efectivo'),
   cardFolio: z.string().optional(),
   transferFolio: z.string().optional(),
 }).refine(data => {
-  if ((data.paymentMethod === "Tarjeta" || data.paymentMethod === "Tarjeta+Transferencia") && !data.cardFolio) return false;
+  if ((data.paymentMethod === 'Tarjeta' || data.paymentMethod === 'Tarjeta+Transferencia') && !data.cardFolio) return false;
   return true;
-}, { message: "El folio de la tarjeta es obligatorio.", path: ["cardFolio"] })
+}, { message: 'El folio de la tarjeta es obligatorio.', path: ['cardFolio'] })
 .refine(data => {
-  if ((data.paymentMethod === "Transferencia" || data.paymentMethod === "Efectivo+Transferencia" || data.paymentMethod === "Tarjeta+Transferencia") && !data.transferFolio) return false;
+  if ((data.paymentMethod === 'Transferencia' || data.paymentMethod === 'Efectivo+Transferencia' || data.paymentMethod === 'Tarjeta+Transferencia') && !data.transferFolio) return false;
   return true;
-}, { message: "El folio de la transferencia es obligatorio.", path: ["transferFolio"] });
+}, { message: 'El folio de la transferencia es obligatorio.', path: ['transferFolio'] });
 
 type POSFormValues = z.infer<typeof posFormSchema>;
 
@@ -72,10 +72,10 @@ export default function NuevaVentaPage() {
     resolver: zodResolver(posFormSchema),
     defaultValues: {
       items: [],
-      customerName: "Cliente Mostrador",
-      paymentMethod: "Efectivo",
-      cardFolio: "",
-      transferFolio: "",
+      customerName: 'Cliente Mostrador',
+      paymentMethod: 'Efectivo',
+      cardFolio: '',
+      transferFolio: '',
     },
   });
 
@@ -122,7 +122,7 @@ export default function NuevaVentaPage() {
 
     } catch(e) {
       console.error(e);
-      toast({ title: "Error al Registrar Venta", variant: "destructive"});
+      toast({ title: 'Error al Registrar Venta', variant: 'destructive'});
     }
   };
   
@@ -144,12 +144,12 @@ export default function NuevaVentaPage() {
       canvas.toBlob((blob) => {
         if (blob) {
           navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
-          toast({ title: "Copiado", description: "La imagen ha sido copiada." });
+          toast({ title: 'Copiado', description: 'La imagen ha sido copiada.' });
         }
       });
     } catch (e) {
-      console.error("Error copying image:", e);
-      toast({ title: "Error", description: "No se pudo copiar la imagen del ticket.", variant: "destructive" });
+      console.error('Error copying image:', e);
+      toast({ title: 'Error', description: 'No se pudo copiar la imagen del ticket.', variant: 'destructive' });
     }
   }, [toast]);
   
