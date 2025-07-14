@@ -10,13 +10,14 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
-import { Car as CarIcon, AlertCircle, User, Fingerprint, History, Phone, CalendarCheck, ArrowRight } from 'lucide-react';
+import { Car as CarIcon, AlertCircle, User, Fingerprint, History, Phone, CalendarCheck, ArrowRight, Edit } from 'lucide-react';
 import type { Vehicle, ServiceRecord } from '@/types';
 import { format, isValid, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { operationsService } from '@/lib/services';
 import Link from 'next/link';
+import { parseDate } from '@/lib/forms';
 
 interface VehicleSelectionCardProps {
   isReadOnly?: boolean;
@@ -59,8 +60,8 @@ export function VehicleSelectionCard({
         const vehicleServices = serviceHistory
           .filter(s => s.vehicleId === vehicle.id)
           .sort((a, b) => {
-              const dateA = a.deliveryDateTime ? parseISO(a.deliveryDateTime) : a.serviceDate ? parseISO(a.serviceDate) : new Date(0);
-              const dateB = b.deliveryDateTime ? parseISO(b.deliveryDateTime) : b.serviceDate ? parseISO(b.serviceDate) : new Date(0);
+              const dateA = parseDate(a.deliveryDateTime) || parseDate(a.serviceDate) || new Date(0);
+              const dateB = parseDate(b.deliveryDateTime) || parseDate(b.serviceDate) || new Date(0);
               if (!isValid(dateA)) return 1;
               if (!isValid(dateB)) return -1;
               return dateB.getTime() - dateA.getTime();
@@ -123,8 +124,8 @@ export function VehicleSelectionCard({
     const vehicleServices = serviceHistory
       .filter(s => s.vehicleId === vehicle.id)
       .sort((a, b) => {
-        const dateA = a.deliveryDateTime ? parseISO(a.deliveryDateTime) : a.serviceDate ? parseISO(a.serviceDate) : new Date(0);
-        const dateB = b.deliveryDateTime ? parseISO(b.deliveryDateTime) : b.serviceDate ? parseISO(b.serviceDate) : new Date(0);
+        const dateA = parseDate(a.deliveryDateTime) || parseDate(a.serviceDate) || new Date(0);
+        const dateB = parseDate(b.deliveryDateTime) || parseDate(b.serviceDate) || new Date(0);
         if (!isValid(dateA)) return 1;
         if (!isValid(dateB)) return -1;
         return dateB.getTime() - dateA.getTime();
@@ -170,20 +171,19 @@ export function VehicleSelectionCard({
   
   const formatServiceInfo = (service: ServiceRecord | null): string => {
     if (!service) return 'No hay registro.';
-    const relevantDate = service.deliveryDateTime || service.serviceDate;
-    const date = new Date(relevantDate);
+    const relevantDate = parseDate(service.deliveryDateTime) || parseDate(service.serviceDate);
     const description = service.description || service.serviceItems?.map(item => item.name).join(', ') || 'Servicio General';
-    if (!isValid(date)) return 'Fecha inválida.';
-    return `${service.mileage ? `${service.mileage.toLocaleString('es-ES')} km - ` : ''}${format(date, "dd MMM yyyy", { locale: es })} - ${description}`;
+    if (!relevantDate || !isValid(relevantDate)) return 'Fecha inválida.';
+    return `${service.mileage ? `${service.mileage.toLocaleString('es-ES')} km - ` : ''}${format(relevantDate, "dd MMM yyyy", { locale: es })} - ${description}`;
   };
 
   const formatNextServiceInfo = (info: { date: string; mileage?: number } | null): string => {
       if (!info || !info.date) return 'No programado.';
-      const parsedDate = parseISO(info.date);
-      if(!isValid(parsedDate)) return 'Fecha inválida.';
+      const parsedDate = parseDate(info.date);
+      if(!parsedDate || !isValid(parsedDate)) return 'Fecha inválida.';
       
       const datePart = `Fecha: ${format(parsedDate, "dd MMM yyyy", { locale: es })}`;
-      const mileagePart = info.mileage ? ` / KM: ${info.mileage.toLocaleString('es-ES')}` : '';
+      const mileagePart = info.mileage ? ` / KM: ${info.mileage.toLocaleString('es-MX')}` : '';
       return datePart + mileagePart;
   };
 
@@ -278,7 +278,10 @@ export function VehicleSelectionCard({
                         <div className="text-xs pt-2 mt-auto border-t space-y-1">
                             <p className="font-semibold flex items-center gap-1"><History className="h-3 w-3" /> Último Servicio:</p>
                             <p className="text-muted-foreground truncate" title={formatServiceInfo(lastService)}>{formatServiceInfo(lastService)}</p>
-                            <p className="font-semibold flex items-center gap-1 mt-1"><CalendarCheck className="h-3 w-3 text-blue-500" /> Próximo Servicio:</p>
+                            <div className="font-semibold flex items-center gap-1 mt-1 justify-between">
+                                <span className="flex items-center gap-1"><CalendarCheck className="h-3 w-3 text-blue-500" /> Próximo Servicio:</span>
+                                <Button asChild variant="ghost" size="icon" className="h-5 w-5"><Link href={`/vehiculos/${selectedVehicle.id}`}><Edit className="h-3 w-3" /></Link></Button>
+                            </div>
                             <p className="text-muted-foreground truncate" title={formatNextServiceInfo(nextServiceInfo)}>{formatNextServiceInfo(nextServiceInfo)}</p>
                         </div>
                     </div>
@@ -307,4 +310,3 @@ export function VehicleSelectionCard({
     </Card>
   );
 }
-

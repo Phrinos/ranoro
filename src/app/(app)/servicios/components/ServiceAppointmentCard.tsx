@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React from 'react';
@@ -75,8 +76,9 @@ export const ServiceAppointmentCard = React.memo(({
     const isCompleted = service.status === 'Entregado';
     const isCancelled = service.status === 'Cancelado';
 
-    // Prioritize reception date for workshop status, otherwise use service date
-    const displayDate = isWorkshop ? parseDate(service.receptionDateTime) || parseDate(service.serviceDate) || new Date() : parseDate(service.serviceDate) || new Date();
+    const displayDate = isWorkshop 
+      ? parseDate(service.receptionDateTime) || parseDate(service.serviceDate) || new Date() 
+      : parseDate(service.serviceDate) || new Date();
 
     const technicianName = technicians.find(t => t.id === service.technicianId)?.name;
 
