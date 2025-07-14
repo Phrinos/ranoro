@@ -44,22 +44,32 @@ export const InventoryPrintContent = React.forwardRef<HTMLDivElement, InventoryP
         data-format="letter"
         className="font-sans bg-white text-black shadow-lg mx-auto p-8 text-sm"
       >
-        <header className="mb-8 border-b border-gray-300 pb-4">
-          <div className="flex justify-between items-center">
-            {workshopInfo?.logoUrl && (
-              <Image 
-                src={workshopInfo.logoUrl} 
-                alt={`${workshopInfo.name} Logo`} 
-                width={150} 
-                height={50} 
-                style={{ objectFit: 'contain' }}
-                data-ai-hint="workshop logo"
-              />
-            )}
+        <header className="mb-8 border-b-2 border-black pb-4">
+          <div className="flex justify-between items-start">
+            <div className="flex flex-col">
+              {workshopInfo?.logoUrl && (
+                <Image 
+                  src={workshopInfo.logoUrl} 
+                  alt={`${workshopInfo.name || 'Taller'} Logo`} 
+                  width={150} 
+                  height={50} 
+                  style={{ objectFit: 'contain', height: 'auto' }}
+                  data-ai-hint="workshop logo"
+                />
+              )}
+               <div className="mt-2 text-xs">
+                <p className="font-bold text-base">{workshopInfo?.name || 'Taller'}</p>
+                <p>{workshopInfo?.addressLine1}</p>
+                {workshopInfo?.addressLine2 && <p>{workshopInfo.addressLine2}</p>}
+                <p>{workshopInfo?.cityState}</p>
+                <p>Tel: {workshopInfo?.phone}</p>
+              </div>
+            </div>
             <div className="text-right">
-              <h1 className="text-2xl font-bold">{workshopInfo?.name || 'Taller'}</h1>
-              <p className="text-xs text-gray-500">Reporte de Inventario General</p>
-              <p className="text-xs text-gray-500">Generado el: {format(new Date(), "dd 'de' MMMM 'de' yyyy", { locale: es })}</p>
+              <h1 className="text-2xl font-bold">Reporte de Inventario General</h1>
+              <p className="text-sm text-gray-500">
+                Generado el: {format(new Date(), "dd 'de' MMMM 'de' yyyy", { locale: es })}
+              </p>
             </div>
           </div>
         </header>
