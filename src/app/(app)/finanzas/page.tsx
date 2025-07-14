@@ -54,6 +54,9 @@ function ResumenFinancieroPageComponent() {
     const [fixedExpenses, setFixedExpenses] = useState<MonthlyFixedExpense[]>([]);
     const [serviceTypes, setServiceTypes] = useState<ServiceTypeRecord[]>([]);
     
+    const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+    const [tempDateRange, setTempDateRange] = useState<DateRange | undefined>(dateRange);
+    
     // States for reportes filtering/sorting
     const [reporteOpSearchTerm, setReporteOpSearchTerm] = useState("");
     const [reporteOpTypeFilter, setReporteOpTypeFilter] = useState<OperationTypeFilter>("all");
@@ -80,7 +83,9 @@ function ResumenFinancieroPageComponent() {
         ];
         
         const now = new Date();
-        setDateRange({ from: startOfMonth(now), to: endOfMonth(now) });
+        const initialRange = { from: startOfMonth(now), to: endOfMonth(now) };
+        setDateRange(initialRange);
+        setTempDateRange(initialRange);
 
         return () => unsubs.forEach(unsub => unsub());
     }, []);
@@ -277,12 +282,30 @@ function ResumenFinancieroPageComponent() {
     
     const paymentMethods: PaymentMethod[] = ['Efectivo', 'Tarjeta', 'Transferencia', 'Efectivo+Transferencia', 'Tarjeta+Transferencia'];
 
+    const handleApplyDateFilter = () => {
+        setDateRange(tempDateRange);
+        setIsCalendarOpen(false);
+    };
+
     const dateFilterComponent = (
         <div className="flex items-center gap-2 flex-wrap justify-start sm:justify-end">
-            <Button variant="outline" size="sm" onClick={() => setDateRange({ from: startOfDay(new Date()), to: endOfDay(new Date()) })} className="bg-card">Hoy</Button>
-            <Button variant="outline" size="sm" onClick={() => setDateRange({ from: startOfWeek(new Date(), { weekStartsOn: 1 }), to: endOfWeek(new Date(), { weekStartsOn: 1 }) })} className="bg-card">Esta Semana</Button>
-            <Button variant="outline" size="sm" onClick={() => setDateRange({ from: startOfMonth(new Date()), to: endOfMonth(new Date()) })} className="bg-card">Este Mes</Button>
-            <Popover><PopoverTrigger asChild><Button variant={"outline"} className={cn("w-full sm:w-[240px] justify-start text-left font-normal bg-card", !dateRange && "text-muted-foreground")}><CalendarIcon className="mr-2 h-4 w-4" />{dateRange?.from ? (dateRange.to ? (`${format(dateRange.from, "LLL dd, y", { locale: es })} - ${format(dateRange.to, "LLL dd, y", { locale: es })}`) : format(dateRange.from, "LLL dd, y", { locale: es })) : (<span>Seleccione rango</span>)}</Button></PopoverTrigger><PopoverContent className="w-auto p-0" align="end"><Calendar initialFocus mode="range" defaultMonth={dateRange?.from} selected={dateRange} onSelect={setDateRange} numberOfMonths={2} locale={es} /></PopoverContent></Popover>
+            <Button variant="outline" size="sm" onClick={() => { setDateRange({ from: startOfDay(new Date()), to: endOfDay(new Date()) }); setTempDateRange({ from: startOfDay(new Date()), to: endOfDay(new Date()) }); }} className="bg-card">Hoy</Button>
+            <Button variant="outline" size="sm" onClick={() => { const range = { from: startOfWeek(new Date(), { weekStartsOn: 1 }), to: endOfWeek(new Date(), { weekStartsOn: 1 }) }; setDateRange(range); setTempDateRange(range); }} className="bg-card">Esta Semana</Button>
+            <Button variant="outline" size="sm" onClick={() => { const range = { from: startOfMonth(new Date()), to: endOfMonth(new Date()) }; setDateRange(range); setTempDateRange(range); }} className="bg-card">Este Mes</Button>
+            <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
+                <PopoverTrigger asChild>
+                    <Button variant={"outline"} className={cn("w-full sm:w-[240px] justify-start text-left font-normal bg-card", !dateRange && "text-muted-foreground")}>
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {dateRange?.from ? (dateRange.to ? (`${format(dateRange.from, "LLL dd, y", { locale: es })} - ${format(dateRange.to, "LLL dd, y", { locale: es })}`) : format(dateRange.from, "LLL dd, y", { locale: es })) : (<span>Seleccione rango</span>)}
+                    </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="end">
+                    <Calendar initialFocus mode="range" defaultMonth={tempDateRange?.from} selected={tempDateRange} onSelect={setTempDateRange} numberOfMonths={2} locale={es} showOutsideDays={false}/>
+                    <div className="p-2 border-t flex justify-end">
+                        <Button size="sm" onClick={handleApplyDateFilter}>Aceptar</Button>
+                    </div>
+                </PopoverContent>
+            </Popover>
         </div>
     );
 
@@ -434,6 +457,7 @@ export default function FinanzasPageWrapper() {
         </Suspense>
     );
 }
+
 
 
 

@@ -1,7 +1,7 @@
 
 "use client";
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import type { DateRange } from 'react-day-picker';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,7 +10,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Search, ListFilter, CalendarIcon as CalendarDateIcon, Filter } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { format } from "date-fns";
+import { format, startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from "date-fns";
 import { es } from 'date-fns/locale';
 
 interface SortOption {
@@ -56,17 +56,26 @@ export const TableToolbar: React.FC<TableToolbarProps> = ({
   searchPlaceholder = 'Buscar...',
 }) => {
     
-    const setDateToToday = () => onDateRangeChange({ from: new Date(), to: new Date() });
-    const setDateToThisWeek = () => {
-        const now = new Date();
-        const start = new Date(now.setDate(now.getDate() - now.getDay()));
-        const end = new Date(now.setDate(now.getDate() - now.getDay() + 6));
-        onDateRangeChange({ from: start, to: end });
+    const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+    const [tempDateRange, setTempDateRange] = useState<DateRange | undefined>(dateRange);
+
+    useEffect(() => {
+        setTempDateRange(dateRange);
+    }, [dateRange]);
+
+    const handleApplyDateFilter = () => {
+        onDateRangeChange(tempDateRange);
+        setIsCalendarOpen(false);
     };
-    const setDateToThisMonth = () => {
-        const now = new Date();
-        onDateRangeChange({ from: new Date(now.getFullYear(), now.getMonth(), 1), to: new Date(now.getFullYear(), now.getMonth() + 1, 0) });
+
+    const setPresetDateRange = (range: DateRange) => {
+        onDateRangeChange(range);
+        setTempDateRange(range);
     };
+
+    const setDateToToday = () => setPresetDateRange({ from: startOfDay(new Date()), to: endOfDay(new Date()) });
+    const setDateToThisWeek = () => setPresetDateRange({ from: startOfWeek(new Date(), { weekStartsOn: 1 }), to: endOfWeek(new Date(), { weekStartsOn: 1 }) });
+    const setDateToThisMonth = () => setPresetDateRange({ from: startOfMonth(new Date()), to: endOfMonth(new Date()) });
     
     
   return (
@@ -82,7 +91,7 @@ export const TableToolbar: React.FC<TableToolbarProps> = ({
               onChange={(e) => onSearchTermChange(e.target.value)}
             />
           </div>
-          <Popover>
+          <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
             <PopoverTrigger asChild>
               <Button variant={"outline"} className={cn("min-w-[240px] justify-start text-left font-normal flex-1 sm:flex-initial bg-card", !dateRange && "text-muted-foreground")}>
                 <CalendarDateIcon className="mr-2 h-4 w-4" />
@@ -95,7 +104,10 @@ export const TableToolbar: React.FC<TableToolbarProps> = ({
                     <Button variant="ghost" size="sm" onClick={setDateToThisWeek}>Semana</Button>
                     <Button variant="ghost" size="sm" onClick={setDateToThisMonth}>Mes</Button>
                 </div>
-              <Calendar initialFocus mode="range" defaultMonth={dateRange?.from} selected={dateRange} onSelect={onDateRangeChange} numberOfMonths={2} locale={es} />
+              <Calendar initialFocus mode="range" defaultMonth={tempDateRange?.from} selected={tempDateRange} onSelect={setTempDateRange} numberOfMonths={2} locale={es} showOutsideDays={false} />
+               <div className="p-2 border-t flex justify-end">
+                  <Button size="sm" onClick={handleApplyDateFilter}>Aceptar</Button>
+               </div>
             </PopoverContent>
           </Popover>
 
