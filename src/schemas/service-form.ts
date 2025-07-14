@@ -1,3 +1,4 @@
+
 // src/schemas/service-form.ts
 import * as z from 'zod';
 
@@ -99,6 +100,8 @@ export const serviceFormSchema = z.object({
       date: z.string(),
       mileage: z.number().optional()
     }).optional(),
+    customerName: z.string().optional(),
+    totalCost: z.number().optional(),
 }).refine(
     (d) => !(d.status === 'Agendado' && !d.serviceDate),
     {

@@ -237,6 +237,7 @@ export interface ServiceRecord {
   photoReports?: PhotoReportGroup[];
   appointmentStatus?: 'Creada' | 'Confirmada';
   quoteDate?: string;
+  customerName?: string;
 }
 
 export interface Technician {

@@ -12,7 +12,7 @@ import { useCallback, useMemo, useState, useEffect, useRef } from 'react'
 import { nanoid } from 'nanoid'
 import {
   Ban, Camera, CheckCircle, Download, Eye, ShieldCheck, Trash2, Wrench, BrainCircuit, Loader2, PlusCircle, Signature,
-  CalendarIcon, Wallet, DollarSign
+  CalendarIcon, Wallet, DollarSign, CalendarCheck
 } from 'lucide-react'
 import {
   Card,
@@ -356,6 +356,8 @@ export function ServiceForm(props:Props){
 
     onSubmit(dataToSubmit);
   };
+  
+  const nextServiceInfo = watch('nextServiceInfo');
 
   return (
     <>
@@ -433,6 +435,27 @@ export function ServiceForm(props:Props){
                 </Tabs>
                  {watchedStatus === 'Entregado' && (
                     <div className="grid md:grid-cols-2 gap-6 mt-6">
+                        {nextServiceInfo && (
+                            <Card className="border-blue-200 bg-blue-50 dark:bg-blue-900/30">
+                                <CardHeader>
+                                    <CardTitle className="flex items-center gap-2 text-lg text-blue-800 dark:text-blue-300">
+                                        <CalendarCheck className="h-5 w-5" />Próximo Servicio Recomendado
+                                    </CardTitle>
+                                </CardHeader>
+                                <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <div>
+                                        <p className="font-semibold">Fecha:</p>
+                                        <p>{format(parseISO(nextServiceInfo.date), "dd 'de' MMMM 'de' yyyy", { locale: es })}</p>
+                                    </div>
+                                    {nextServiceInfo.mileage && (
+                                        <div>
+                                            <p className="font-semibold">Kilometraje:</p>
+                                            <p>{nextServiceInfo.mileage.toLocaleString("es-MX")} km</p>
+                                        </div>
+                                    )}
+                                </CardContent>
+                            </Card>
+                        )}
                         <Card>
                             <CardHeader><CardTitle className="flex items-center gap-2"><Wallet/>Detalles de Pago</CardTitle></CardHeader>
                             <CardContent><PaymentSection isReadOnly={isReadOnly} /></CardContent>

@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Wallet, CreditCard, Send, WalletCards, ArrowRightLeft } from 'lucide-react';
 import type { PaymentMethod } from '@/types';
 import { cn } from '@/lib/utils';
+import { capitalizeWords } from '@/lib/utils';
 
 
 const paymentMethods: [PaymentMethod, ...PaymentMethod[]] = [
@@ -46,7 +47,7 @@ export function PaymentSection({ isReadOnly = false }: { isReadOnly?: boolean })
             <FormItem>
               <FormLabel>Nombre del Cliente</FormLabel>
               <FormControl>
-                <Input placeholder="Ej: Cliente Mostrador" {...field} disabled={isReadOnly} />
+                <Input placeholder="Ej: Cliente Mostrador" {...field} onChange={(e) => field.onChange(capitalizeWords(e.target.value))} disabled={isReadOnly} />
               </FormControl>
             </FormItem>
           )}
