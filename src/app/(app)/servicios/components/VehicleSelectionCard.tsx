@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
-import { Car as CarIcon, AlertCircle, User, Fingerprint, History, Phone } from 'lucide-react';
+import { Car as CarIcon, AlertCircle, User, Fingerprint, History, Phone, CalendarCheck } from 'lucide-react';
 import type { Vehicle, ServiceRecord } from '@/types';
 import { format, isValid, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -37,7 +37,7 @@ export function VehicleSelectionCard({
   const [vehicleSearchResults, setVehicleSearchResults] = useState<Vehicle[]>([]);
   const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
   const [lastService, setLastService] = useState<ServiceRecord | null>(null);
-  const [penultimateService, setPenultimateService] = useState<ServiceRecord | null>(null);
+  const [nextServiceInfo, setNextServiceInfo] = useState<{ date: string; mileage?: number } | null>(null);
   const [vehicleNotFound, setVehicleNotFound] = useState(false);
   const [serviceHistory, setServiceHistory] = useState<ServiceRecord[]>([]);
 
@@ -54,14 +54,25 @@ export function VehicleSelectionCard({
       if (vehicle) {
         setSelectedVehicle(vehicle);
         setVehicleLicensePlateSearch(vehicle.licensePlate);
-        const vehicleServices = serviceHistory.filter(s => s.vehicleId === vehicle.id).sort((a, b) => new Date(b.serviceDate).getTime() - new Date(a.serviceDate).getTime());
-        setLastService(vehicleServices[0] || null);
-        setPenultimateService(vehicleServices[1] || null);
+        
+        const vehicleServices = serviceHistory
+          .filter(s => s.vehicleId === vehicle.id)
+          .sort((a, b) => new Date(b.serviceDate).getTime() - new Date(a.serviceDate).getTime());
+          
+        const latestService = vehicleServices[0] || null;
+        setLastService(latestService);
+
+        const lastCompletedServiceWithNextInfo = vehicleServices
+          .filter(s => s.status === 'Completado' && s.nextServiceInfo)
+          .sort((a,b) => parseISO(b.deliveryDateTime!).getTime() - parseISO(a.deliveryDateTime!).getTime())[0];
+
+        setNextServiceInfo(lastCompletedServiceWithNextInfo?.nextServiceInfo || null);
+
       }
     } else {
         setSelectedVehicle(null);
         setLastService(null);
-        setPenultimateService(null);
+        setNextServiceInfo(null);
     }
   }, [vehicleId, localVehicles, serviceHistory]);
 
@@ -79,7 +90,7 @@ export function VehicleSelectionCard({
       setValue('vehicleId', undefined);
       setVehicleNotFound(true);
       setLastService(null);
-      setPenultimateService(null);
+      setNextServiceInfo(null);
       toast({ title: "Vehículo No Encontrado", description: "Puede registrarlo si es nuevo.", variant: "default" });
     }
   };
@@ -93,9 +104,18 @@ export function VehicleSelectionCard({
     }
     setVehicleNotFound(false);
     setVehicleSearchResults([]);
-    const vehicleServices = serviceHistory.filter(s => s.vehicleId === vehicle.id).sort((a, b) => new Date(b.serviceDate).getTime() - new Date(a.serviceDate).getTime());
-    setLastService(vehicleServices[0] || null);
-    setPenultimateService(vehicleServices[1] || null);
+    const vehicleServices = serviceHistory
+      .filter(s => s.vehicleId === vehicle.id)
+      .sort((a, b) => new Date(b.serviceDate).getTime() - new Date(a.serviceDate).getTime());
+      
+    const latestService = vehicleServices[0] || null;
+    setLastService(latestService);
+    
+    const lastCompletedServiceWithNextInfo = vehicleServices
+        .filter(s => s.status === 'Completado' && s.nextServiceInfo)
+        .sort((a,b) => parseISO(b.deliveryDateTime!).getTime() - parseISO(a.deliveryDateTime!).getTime())[0];
+        
+    setNextServiceInfo(lastCompletedServiceWithNextInfo?.nextServiceInfo || null);
     onVehicleSelected(vehicle);
   };
   
@@ -132,6 +152,13 @@ export function VehicleSelectionCard({
     const description = service.description || '';
     if (!isValid(date)) return 'Fecha inválida.';
     return `${service.mileage ? `${service.mileage.toLocaleString('es-ES')} km - ` : ''}${format(date, "dd MMM yyyy", { locale: es })} - ${description}`;
+  };
+
+  const formatNextServiceInfo = (info: { date: string; mileage?: number } | null): string => {
+      if (!info) return 'No programado.';
+      const datePart = `Fecha: ${format(parseISO(info.date), "dd MMM yyyy", { locale: es })}`;
+      const mileagePart = info.mileage ? ` / KM: ${info.mileage.toLocaleString('es-ES')}` : '';
+      return datePart + mileagePart;
   };
 
   return (
@@ -218,9 +245,10 @@ export function VehicleSelectionCard({
                             <p className="flex items-center gap-2"><Phone className="h-4 w-4 text-muted-foreground" /> {selectedVehicle.ownerPhone || 'Tel. no registrado'}</p>
                         </div>
                         <div className="text-xs pt-2 mt-auto border-t space-y-1">
-                            <p className="font-semibold flex items-center gap-1"><History className="h-3 w-3" /> Historial Reciente:</p>
-                            <p className="text-muted-foreground truncate" title={formatServiceInfo(lastService)}><strong>Último:</strong> {formatServiceInfo(lastService)}</p>
-                            <p className="text-muted-foreground truncate" title={formatServiceInfo(penultimateService)}><strong>Anterior:</strong> {formatServiceInfo(penultimateService)}</p>
+                            <p className="font-semibold flex items-center gap-1"><History className="h-3 w-3" /> Último Servicio:</p>
+                            <p className="text-muted-foreground truncate" title={formatServiceInfo(lastService)}>{formatServiceInfo(lastService)}</p>
+                            <p className="font-semibold flex items-center gap-1 mt-1"><CalendarCheck className="h-3 w-3 text-blue-500" /> Próximo Servicio:</p>
+                            <p className="text-muted-foreground truncate" title={formatNextServiceInfo(nextServiceInfo)}>{formatNextServiceInfo(nextServiceInfo)}</p>
                         </div>
                     </div>
                 )}
