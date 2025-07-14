@@ -162,20 +162,23 @@ export default function PublicServiceSheetPage() {
 
   return (
     <div className="container mx-auto">
-      <Card className="max-w-4xl mx-auto mb-6 print:hidden">
-        <CardHeader>
-          <CardTitle>Vista Pública: {service.status === 'Cotizacion' ? 'Cotización' : 'Orden de Servicio'} #{service.id}</CardTitle>
-          <CardDescription>Revise los detalles y firme digitalmente si es necesario.</CardDescription>
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full pt-2">
-                <TabsList className={`grid w-full ${gridColsClass}`}>
-                    {tabs.map(tab => <TabsTrigger key={tab.value} value={tab.value} className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">{tab.label}</TabsTrigger>)}
-                </TabsList>
-            </Tabs>
-        </CardHeader>
-        <CardContent className="flex justify-end">
-            <Button variant="outline" onClick={() => window.print()}><Printer className="mr-2 h-4 w-4"/> Imprimir</Button>
-        </CardContent>
-      </Card>
+      <div className="max-w-4xl mx-auto mb-6 print:hidden">
+          <div className="flex justify-between items-center mb-4">
+              <div>
+                  <h1 className="text-xl font-bold">Vista Pública: {service.status === 'Cotizacion' ? 'Cotización' : 'Orden de Servicio'} #{service.id}</h1>
+                  <p className="text-sm text-muted-foreground">Revise los detalles y firme digitalmente si es necesario.</p>
+              </div>
+              <Button variant="outline" size="icon" onClick={() => window.print()} title="Imprimir">
+                  <Printer className="h-5 w-5" />
+              </Button>
+          </div>
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+              <TabsList className={`grid w-full ${gridColsClass}`}>
+                  {tabs.map(tab => <TabsTrigger key={tab.value} value={tab.value} className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">{tab.label}</TabsTrigger>)}
+              </TabsList>
+          </Tabs>
+      </div>
+
       <div id="printable-area" className="w-[8.5in] h-[11in] bg-white mx-auto shadow-2xl p-8 printable-content">
         <ServiceSheetContent
           ref={serviceSheetRef}
