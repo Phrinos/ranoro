@@ -180,13 +180,13 @@ export const TicketContent = React.forwardRef<HTMLDivElement, TicketContentProps
             </>
         )}
 
-        {service?.nextServiceInfo && isValid(parseDate(service.nextServiceInfo.date)!) && (
+        {service?.nextServiceInfo && service.nextServiceInfo.date && isValid(parseDate(service.nextServiceInfo.date)!) && (
           <>
               {renderDashedLine()}
               <div className="mt-1 text-center" style={{ fontSize: `${bodyFontSize}px` }}>
                 <div className="font-semibold">PRÓXIMO SERVICIO</div>
                 <p className="text-xs">
-                    {format(parseISO(service.nextServiceInfo.date), "dd MMMM yyyy", { locale: es })}
+                    {format(parseDate(service.nextServiceInfo.date)!, "dd MMMM yyyy", { locale: es })}
                     {service.nextServiceInfo.mileage && typeof service.nextServiceInfo.mileage === 'number' && isFinite(service.nextServiceInfo.mileage) && (
                       <>
                         <br/>

@@ -99,8 +99,6 @@ export default function VehicleDetailPage() {
     inventoryService.onVehiclesUpdate(setAllVehicles); // to pass to dialog
   }, [fetchVehicleAndServices]);
 
-  const nextServiceInfo = vehicle?.nextServiceInfo;
-
   const handleSaveEditedVehicle = async (formData: VehicleFormValues) => {
     if (!vehicle) return;
     try {
@@ -179,7 +177,7 @@ export default function VehicleDetailPage() {
                         {vehicle.notes && (<div className="pt-2"><p className="font-semibold">Notas del Vehículo:</p><p className="text-sm text-muted-foreground whitespace-pre-wrap">{vehicle.notes}</p></div>)}
                     </CardContent>
                 </Card>
-                 {nextServiceInfo && isValid(parseDate(nextServiceInfo.date)!) && (
+                 {vehicle.nextServiceInfo && vehicle.nextServiceInfo.date && isValid(parseDate(vehicle.nextServiceInfo.date)) && (
                     <Card className="border-blue-200 bg-blue-50 dark:bg-blue-900/30">
                         <CardHeader>
                             <CardTitle className="flex items-center gap-2 text-lg text-blue-800 dark:text-blue-300">
@@ -189,12 +187,12 @@ export default function VehicleDetailPage() {
                         <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
                                 <p className="font-semibold">Fecha:</p>
-                                <p>{format(parseDate(nextServiceInfo.date)!, "dd 'de' MMMM 'de' yyyy", { locale: es })}</p>
+                                <p>{format(parseDate(vehicle.nextServiceInfo.date)!, "dd 'de' MMMM 'de' yyyy", { locale: es })}</p>
                             </div>
-                            {nextServiceInfo.mileage && (
+                            {vehicle.nextServiceInfo.mileage && (
                                 <div>
                                     <p className="font-semibold">Kilometraje:</p>
-                                    <p>{nextServiceInfo.mileage.toLocaleString("es-MX")} km</p>
+                                    <p>{vehicle.nextServiceInfo.mileage.toLocaleString("es-MX")} km</p>
                                 </div>
                             )}
                         </CardContent>
