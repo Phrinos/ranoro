@@ -132,7 +132,7 @@ function HistorialServiciosPageComponent() {
   } = useTableManager<ServiceRecord>({
     initialData: allServices.filter((s) => s.status !== "Cotizacion"),
     searchKeys: ["id", "vehicleIdentifier", "description"],
-    dateFilterKey: "serviceDate",
+    dateFilterKey: "deliveryDateTime",
     initialSortOption: "date_desc",
   });
 
@@ -193,15 +193,14 @@ function HistorialServiciosPageComponent() {
             description: `El servicio para ${service.vehicleIdentifier} ha sido marcado como entregado.`,
         });
         
-        // After successfully completing, open ticket dialog
-        const updatedService = { ...service, ...dataToUpdate, status: 'Entregado' } as ServiceRecord;
+        const updatedService = { ...service, ...dataToUpdate, status: 'Entregado', deliveryDateTime: new Date().toISOString() } as ServiceRecord;
         handlePrintTicket(updatedService);
 
       } catch (e) {
         toast({ title: "Error", description: "No se pudo completar el servicio.", variant: "destructive"});
       } finally {
         setIsCompleteDialogOpen(false);
-        setIsEditDialogOpen(false); // Also close the main edit dialog
+        setIsEditDialogOpen(false);
       }
     },
     [toast]
@@ -250,7 +249,6 @@ function HistorialServiciosPageComponent() {
     if (printWindow) {
       printWindow.document.write('<html><head><title>Imprimir Ticket</title>');
       
-      // Link to the main stylesheet
       const stylesheets = Array.from(document.getElementsByTagName('link'));
       stylesheets.forEach(sheet => {
           printWindow.document.write(sheet.outerHTML);
@@ -262,7 +260,6 @@ function HistorialServiciosPageComponent() {
       
       printWindow.document.close();
       printWindow.focus();
-      // Use a timeout to ensure styles are loaded before printing
       setTimeout(() => {
         printWindow.print();
         printWindow.close();

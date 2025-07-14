@@ -193,7 +193,7 @@ const completeService = async (service: ServiceRecord, paymentAndNextServiceDeta
     
     const updatedServiceData = {
       status: 'Entregado',
-      deliveryDateTime: new Date().toISOString(), // Ensure deliveryDateTime is set on completion
+      deliveryDateTime: new Date().toISOString(),
       ...paymentAndNextServiceDetails,
     };
     
@@ -208,10 +208,9 @@ const completeService = async (service: ServiceRecord, paymentAndNextServiceDeta
       const vehicleRef = doc(db, 'vehicles', service.vehicleId);
       batch.update(vehicleRef, { 
         nextServiceInfo: paymentAndNextServiceDetails.nextServiceInfo,
-        lastServiceDate: new Date().toISOString(), // Also update last service date
+        lastServiceDate: new Date().toISOString(),
        });
     } else if (service.vehicleId) {
-      // Still update last service date even if there's no next service info
       const vehicleRef = doc(db, 'vehicles', service.vehicleId);
       batch.update(vehicleRef, { lastServiceDate: new Date().toISOString() });
     }
@@ -261,19 +260,13 @@ const saveMigratedServices = async (services: ExtractedService[], vehicles: Extr
         if (!parsedDate) continue; // Skip if date is invalid
 
         const newServiceRef = doc(collection(db, "serviceRecords"));
-        // Find the vehicle that was just added in this batch
-        const correspondingVehicle = vehicles.find(v => v.licensePlate === service.vehicleLicensePlate);
         
-        // This is a simplification. For a real-world scenario, you would need to
-        // get the generated vehicle ID after committing the first batch, then run a second batch.
-        // For this local simulation, we assume we can link them conceptually.
-        // The AI flow is instructed not to create services for existing vehicles, so we only handle new ones.
         const serviceRecord: Omit<ServiceRecord, 'id'|'vehicleId'> & {vehicleIdentifier: string} = {
             vehicleIdentifier: service.vehicleLicensePlate,
             serviceDate: parsedDate.toISOString(),
             description: service.description,
             totalCost: service.totalCost,
-            status: 'Completado', 
+            status: 'Completado',
             deliveryDateTime: parsedDate.toISOString(),
             subTotal: service.totalCost / 1.16,
             taxAmount: service.totalCost - (service.totalCost / 1.16),
@@ -326,7 +319,6 @@ const saveIndividualMigratedService = async (data: {
 
     const docRef = await addDoc(collection(db, 'serviceRecords'), cleanObjectForFirestore(newService));
 
-    // Update vehicle's last service date
     const vehicleRef = doc(db, "vehicles", data.vehicleId);
     await updateDoc(vehicleRef, { lastServiceDate: data.serviceDate.toISOString() });
     
