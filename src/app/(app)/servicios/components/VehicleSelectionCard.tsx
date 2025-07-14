@@ -246,11 +246,6 @@ export function VehicleSelectionCard({
             <div>
                 {selectedVehicle && (
                     <div className="p-3 border rounded-md bg-amber-50 dark:bg-amber-950/50 text-sm space-y-2 h-full flex flex-col justify-center relative">
-                         <Button asChild size="icon" variant="ghost" className="absolute top-1 right-1 h-7 w-7">
-                            <Link href={`/vehiculos/${selectedVehicle.id}`} target="_blank">
-                                <ArrowRight className="h-4 w-4" />
-                            </Link>
-                        </Button>
                         <div>
                             <p className="font-bold text-lg">{selectedVehicle.licensePlate} - {selectedVehicle.make} {selectedVehicle.model} {selectedVehicle.year}</p>
                         </div>
@@ -263,7 +258,6 @@ export function VehicleSelectionCard({
                             <p className="text-muted-foreground truncate" title={formatServiceInfo(lastService)}>{formatServiceInfo(lastService)}</p>
                             <div className="font-semibold flex items-center gap-1 mt-1 justify-between">
                                 <span className="flex items-center gap-1"><CalendarCheck className="h-3 w-3 text-blue-500" /> Próximo Servicio:</span>
-                                <Button asChild variant="ghost" size="icon" className="h-5 w-5"><Link href={`/vehiculos/${selectedVehicle.id}`}><Edit className="h-3 w-3" /></Link></Button>
                             </div>
                             <p className="text-muted-foreground truncate" title={formatNextServiceInfo(selectedVehicle.nextServiceInfo)}>{formatNextServiceInfo(selectedVehicle.nextServiceInfo)}</p>
                         </div>
