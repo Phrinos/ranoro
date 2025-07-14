@@ -120,9 +120,9 @@ export function ServiceDialog({
 
   const handleInternalCompletion = async (service: ServiceRecord, paymentDetails: any, nextServiceInfo?: any) => {
     if (onComplete) {
-      await onComplete(service, paymentDetails, nextServiceInfo);
+      const serviceWithAllData = { ...service, ...fullFormDataForCompletion };
+      await onComplete(serviceWithAllData, paymentDetails, nextServiceInfo);
     }
-    // Update local state to reflect completion, which will cause the form to re-render
     setLocalService(prev => ({ ...prev, ...paymentDetails, status: 'Entregado', nextServiceInfo } as ServiceRecord));
     setIsCompleteDialogOpen(false);
   };
@@ -237,7 +237,6 @@ export function ServiceDialog({
           service={serviceToComplete}
           onConfirm={handleInternalCompletion}
           inventoryItems={inventoryItems}
-          fullFormData={fullFormDataForCompletion}
         />
       )}
     </>

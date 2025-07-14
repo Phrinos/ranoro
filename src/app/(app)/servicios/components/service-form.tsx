@@ -41,7 +41,7 @@ import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from '
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Textarea } from '@/components/ui/textarea'
 import { useToast } from '@/hooks/use-toast'
-import { cn } from '@/lib/utils'
+import { cn, formatCurrency } from '@/lib/utils'
 import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data'
 
 import type {
@@ -67,7 +67,6 @@ import { inventoryService } from "@/lib/services";
 import type { InventoryItemFormValues } from "../../inventario/components/inventory-item-form";
 import { PaymentSection } from '../../pos/components/payment-section';
 import Link from 'next/link';
-import { formatCurrency } from "@/lib/utils";
 
 /* ░░░░░░  COMPONENTE  ░░░░░░ */
 interface Props {
@@ -118,6 +117,7 @@ export function ServiceForm(props:Props){
         paymentMethod: initialDataService.paymentMethod || 'Efectivo',
         cardFolio: initialDataService.cardFolio || '',
         transferFolio: initialDataService.transferFolio || '',
+        nextServiceInfo: initialDataService.nextServiceInfo || undefined,
         serviceItems:
           initialDataService.serviceItems?.length
             ? initialDataService.serviceItems
@@ -159,6 +159,7 @@ export function ServiceForm(props:Props){
       paymentMethod: 'Efectivo',
       cardFolio: '',
       transferFolio: '',
+      nextServiceInfo: undefined,
       serviceItems: [{
         id: nanoid(),
         name: firstType,
@@ -181,7 +182,7 @@ export function ServiceForm(props:Props){
     defaultValues,
   });
   
-  const { control, setValue, watch, formState, handleSubmit, reset } = form;
+  const { control, setValue, watch, formState, handleSubmit, reset, getValues } = form;
   const { totalCost, totalSuppliesWorkshopCost, serviceProfit } = useServiceTotals(form);
   
   const watchedStatus = watch('status');
@@ -238,7 +239,7 @@ export function ServiceForm(props:Props){
 
   const handleEnhanceText = useCallback(async (fieldName: any) => {
     setIsEnhancingText(fieldName);
-    const textToEnhance = form.getValues(fieldName);
+    const textToEnhance = getValues(fieldName);
     const contextMap: { [key: string]: string } = {
         notes: "Notas Generales del Servicio",
         vehicleConditions: "Condiciones del Vehículo",
@@ -253,17 +254,17 @@ export function ServiceForm(props:Props){
 
     try {
         const enhancedText = await enhanceText({ text: textToEnhance, context });
-        form.setValue(fieldName, enhancedText, { shouldDirty: true });
+        setValue(fieldName, enhancedText, { shouldDirty: true });
     } catch (e) {
         toast({ title: 'Error de IA', description: 'No se pudo mejorar el texto.', variant: 'destructive' });
     } finally {
         setIsEnhancingText(null);
     }
-  }, [form, toast]);
+  }, [getValues, setValue, toast]);
 
   const handleGenerateQuote = useCallback(async () => {
     setIsGeneratingQuote(true)
-    const values = form.getValues()
+    const values = getValues()
     const vehicle = parentVehicles.find(v => v.id === values.vehicleId)
     if (!vehicle) {
       toast({ title: "Vehículo no seleccionado", variant: "destructive" })
@@ -295,15 +296,15 @@ export function ServiceForm(props:Props){
           }
         }),
       }]
-      form.setValue('serviceItems', newServiceItems)
-      form.setValue('notes', result.reasoning)
+      setValue('serviceItems', newServiceItems)
+      setValue('notes', result.reasoning)
       toast({ title: "Cotización Sugerida", description: "La IA ha generado una sugerencia." })
     } catch (e) {
       toast({ title: "Error de IA", variant: "destructive" })
     } finally {
       setIsGeneratingQuote(false)
     }
-  }, [form, parentVehicles, invItems, toast])
+  }, [getValues, setValue, parentVehicles, invItems, toast])
 
   const onVehicleCreated = useCallback(async (newVehicleData: VehicleFormValues) => {
     console.log("Creating vehicle:", newVehicleData);
@@ -316,16 +317,16 @@ export function ServiceForm(props:Props){
   }, [toast]);
   
   const handlePhotoUploaded = useCallback((reportIndex: number, url: string) => {
-    const currentPhotos = form.getValues(`photoReports.${reportIndex}.photos`) || [];
-    form.setValue(`photoReports.${reportIndex}.photos`, [...currentPhotos, url]);
-  }, [form]);
+    const currentPhotos = getValues(`photoReports.${reportIndex}.photos`) || [];
+    setValue(`photoReports.${reportIndex}.photos`, [...currentPhotos, url]);
+  }, [getValues, setValue]);
 
   const handleChecklistPhotoUploaded = useCallback((itemName: string, url: string) => {
       const fieldName: `safetyInspection.${keyof SafetyInspection}` = `safetyInspection.${itemName as keyof SafetyInspection}`;
-      const currentCheckValue = form.getValues(fieldName) as SafetyCheckValue || { status: 'na', photos: [] };
+      const currentCheckValue = getValues(fieldName) as SafetyCheckValue || { status: 'na', photos: [] };
       const updatedPhotos = [...(currentCheckValue.photos || []), url];
-      form.setValue(fieldName, { ...currentCheckValue, photos: updatedPhotos });
-  }, [form]);
+      setValue(fieldName, { ...currentCheckValue, photos: updatedPhotos });
+  }, [getValues, setValue]);
 
   const handleViewImage = (url: string) => {
     setViewingImageUrl(url);
@@ -340,7 +341,7 @@ export function ServiceForm(props:Props){
             'customerSignatureDelivery';
         
         const safeValue = signatureDataUrl?.trim() ? signatureDataUrl : null;
-        form.setValue(fieldName, safeValue, { shouldDirty: true });
+        setValue(fieldName, safeValue, { shouldDirty: true });
         setIsSignatureDialogOpen(false);
         setSignatureType(null);
         toast({ title: "Firma capturada correctamente." });
@@ -372,7 +373,7 @@ export function ServiceForm(props:Props){
                 <VehicleSelectionCard
                     isReadOnly={props.isReadOnly}
                     localVehicles={parentVehicles}
-                    onVehicleSelected={(v) => form.setValue('vehicleIdentifier', v?.licensePlate)}
+                    onVehicleSelected={(v) => setValue('vehicleIdentifier', v?.licensePlate)}
                     onOpenNewVehicleDialog={() => setIsNewVehicleDialogOpen(true)}
                 />
 
@@ -440,7 +441,7 @@ export function ServiceForm(props:Props){
                 </Tabs>
                  {watchedStatus === 'Entregado' && (
                     <div className="grid md:grid-cols-2 gap-6 mt-6">
-                        {nextServiceInfo && isValid(parseDate(nextServiceInfo.date)) && (
+                        {nextServiceInfo && isValid(parseDate(nextServiceInfo.date)!) && (
                             <Card className="border-blue-200 bg-blue-50 dark:bg-blue-900/30">
                                 <CardHeader className="flex flex-row items-center justify-between pb-2">
                                     <CardTitle className="flex items-center gap-2 text-lg text-blue-800 dark:text-blue-300">
