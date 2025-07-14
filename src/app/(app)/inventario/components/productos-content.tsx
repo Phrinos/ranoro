@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import type { InventoryItem } from '@/types';
-import { Search, ListFilter, PlusCircle } from 'lucide-react';
+import { Search, ListFilter, PlusCircle, Printer } from 'lucide-react';
 import { InventoryTable } from './inventory-table';
 
 type InventorySortOption = 
@@ -21,9 +21,10 @@ type InventorySortOption =
 interface ProductosContentProps {
   inventoryItems: InventoryItem[];
   onNewItem: () => void;
+  onPrint: () => void;
 }
 
-export function ProductosContent({ inventoryItems, onNewItem }: ProductosContentProps) {
+export function ProductosContent({ inventoryItems, onNewItem, onPrint }: ProductosContentProps) {
   const [searchTerm, setSearchTerm] = React.useState("");
   const [sortOption, setSortOption] = React.useState<InventorySortOption>("stock_status_name_asc");
 
@@ -100,6 +101,9 @@ export function ProductosContent({ inventoryItems, onNewItem }: ProductosContent
               </DropdownMenuRadioGroup>
             </DropdownMenuContent>
           </DropdownMenu>
+          <Button onClick={onPrint} variant="outline" className="w-full sm:w-auto">
+            <Printer className="mr-2 h-4 w-4" /> Imprimir
+          </Button>
           <Button onClick={onNewItem} className="w-full sm:w-auto">
               <PlusCircle className="mr-2 h-4 w-4" /> Nuevo Producto / Servicio
           </Button>
