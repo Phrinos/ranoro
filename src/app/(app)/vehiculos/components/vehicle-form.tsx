@@ -27,7 +27,7 @@ const vehicleFormSchema = z.object({
   model: z.string().min(1, "El modelo es obligatorio."),
   year: z.coerce.number().min(1900, "El año debe ser posterior a 1900.").max(new Date().getFullYear() + 1, `El año no puede ser mayor a ${new Date().getFullYear() + 1}.`),
   vin: z.string().length(17, "El VIN debe tener 17 caracteres.").optional().or(z.literal('')),
-  licensePlate: z.string().min(1, "La placa no puede estar vacía. Ingrese 'SINPLACA' si es necesario."),
+  licensePlate: z.string().min(1, "La placa no puede estar vacía. Ingrese 'SINPLACA' si es necesario.").toUpperCase(),
   color: z.string().optional().or(z.literal('')),
   ownerName: z.string().min(2, "El nombre del propietario es obligatorio."),
   ownerPhone: z.string().min(7, "Ingrese un número de teléfono válido."),
@@ -58,10 +58,10 @@ export function VehicleForm({ initialData, onSubmit, onClose }: VehicleFormProps
       color: initialData.color || "",
       vin: initialData.vin || "",
       notes: initialData.notes || "",
-      dailyRentalCost: initialData.dailyRentalCost ?? undefined,
-      gpsMonthlyCost: initialData.gpsMonthlyCost ?? undefined,
-      adminMonthlyCost: initialData.adminMonthlyCost ?? undefined,
-      insuranceMonthlyCost: initialData.insuranceMonthlyCost ?? undefined,
+      dailyRentalCost: initialData.dailyRentalCost ?? '',
+      gpsMonthlyCost: initialData.gpsMonthlyCost ?? '',
+      adminMonthlyCost: initialData.adminMonthlyCost ?? '',
+      insuranceMonthlyCost: initialData.insuranceMonthlyCost ?? '',
     }
     : {
       make: "",
@@ -74,10 +74,10 @@ export function VehicleForm({ initialData, onSubmit, onClose }: VehicleFormProps
       ownerPhone: "",
       ownerEmail: "",
       notes: "",
-      dailyRentalCost: undefined,
-      gpsMonthlyCost: undefined,
-      adminMonthlyCost: undefined,
-      insuranceMonthlyCost: undefined,
+      dailyRentalCost: '',
+      gpsMonthlyCost: '',
+      adminMonthlyCost: '',
+      insuranceMonthlyCost: '',
     },
   });
 
