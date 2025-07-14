@@ -176,7 +176,7 @@ function ResumenFinancieroPageComponent() {
             .filter(s => s.status === 'Completado')
             .map(s => ({ 
                 id: s.id, 
-                date: s.deliveryDateTime || s.serviceDate, // Use delivery date if available
+                date: s.deliveryDateTime || s.serviceDate, 
                 type: s.serviceType || 'Servicio General', 
                 description: s.description || (s.serviceItems || []).map(i => i.name).join(', '), 
                 totalAmount: s.totalCost, 
@@ -192,8 +192,8 @@ function ResumenFinancieroPageComponent() {
         const from = startOfDay(dateRange.from);
         const to = dateRange.to ? endOfDay(dateRange.to) : endOfDay(dateRange.from);
         let list = combinedOperations.filter(op => {
-            const dateToParse = (op.originalObject as SaleReceipt | ServiceRecord).status === 'Completado'
-                ? (op.originalObject as ServiceRecord).deliveryDateTime || op.date
+            const dateToParse = (op.originalObject as any).status === 'Completado' && 'deliveryDateTime' in op.originalObject
+                ? (op.originalObject as ServiceRecord).deliveryDateTime
                 : op.date;
             
             if (!dateToParse) return false;
@@ -368,5 +368,6 @@ export default function FinanzasPageWrapper() {
         </Suspense>
     );
 }
+
 
 
