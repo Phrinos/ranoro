@@ -150,7 +150,6 @@ const ChecklistItemPhotoUploader = ({
 const SafetyCheckRow = ({ 
   name, 
   label, 
-  control, 
   isReadOnly, 
   serviceId, 
   onPhotoUploaded, 
@@ -160,7 +159,6 @@ const SafetyCheckRow = ({
 }: { 
   name: string;
   label: string;
-  control: Control<ServiceFormValues>;
   isReadOnly?: boolean;
   serviceId: string;
   onPhotoUploaded: (itemName: string, url: string) => void;
@@ -168,6 +166,7 @@ const SafetyCheckRow = ({
   isEnhancingText: string | null;
   handleEnhanceText: (fieldName: any) => void;
 }) => {
+  const { control } = useFormContext<ServiceFormValues>();
   return (
     <Controller
       name={name as any}
@@ -246,8 +245,7 @@ const SafetyCheckRow = ({
 };
 
 
-export const SafetyChecklist = ({ control, isReadOnly, onSignatureClick, signatureDataUrl, isEnhancingText, handleEnhanceText, serviceId, onPhotoUploaded, onViewImage }: { 
-  control: Control<ServiceFormValues>; 
+export const SafetyChecklist = ({ isReadOnly, onSignatureClick, signatureDataUrl, isEnhancingText, handleEnhanceText, serviceId, onPhotoUploaded, onViewImage }: { 
   isReadOnly?: boolean; 
   onSignatureClick: () => void;
   signatureDataUrl?: string;
@@ -257,7 +255,7 @@ export const SafetyChecklist = ({ control, isReadOnly, onSignatureClick, signatu
   onPhotoUploaded: (itemName: string, url: string) => void;
   onViewImage: (url: string) => void;
 }) => {
-  const { getValues } = useFormContext();
+  const { control, getValues } = useFormContext();
   return (
     <Card>
       <CardHeader>
