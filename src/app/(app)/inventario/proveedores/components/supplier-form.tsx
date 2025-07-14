@@ -63,12 +63,12 @@ const supplierFormSchema = z.object({
 export type SupplierFormValues = z.infer<typeof supplierFormSchema>;
 
 interface SupplierFormProps {
+  id?: string; // Form ID
   initialData?: Supplier | null;
   onSubmit: (values: SupplierFormValues) => Promise<void>;
-  onClose: () => void;
 }
 
-export function SupplierForm({ initialData, onSubmit, onClose }: SupplierFormProps) {
+export function SupplierForm({ id, initialData, onSubmit }: SupplierFormProps) {
   const form = useForm<SupplierFormValues>({
     resolver: zodResolver(supplierFormSchema),
     defaultValues: initialData || {
@@ -84,13 +84,9 @@ export function SupplierForm({ initialData, onSubmit, onClose }: SupplierFormPro
     },
   });
 
-  const handleFormSubmit = async (values: SupplierFormValues) => {
-    await onSubmit(values);
-  };
-
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-6">
+      <form id={id} onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         <FormField
           control={form.control}
           name="name"
@@ -228,14 +224,6 @@ export function SupplierForm({ initialData, onSubmit, onClose }: SupplierFormPro
               </FormItem>
             )}
           />
-        </div>
-        <div className="flex justify-end gap-2 pt-4">
-          <Button type="button" variant="outline" onClick={onClose}>
-            Cancelar
-          </Button>
-          <Button type="submit" disabled={form.formState.isSubmitting}>
-            {form.formState.isSubmitting ? "Guardando..." : (initialData ? "Actualizar Proveedor" : "Crear Proveedor")}
-          </Button>
         </div>
       </form>
     </Form>
