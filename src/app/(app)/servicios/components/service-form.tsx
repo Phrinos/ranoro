@@ -443,42 +443,60 @@ export function ServiceForm(props:Props){
                     </Tabs>
                     
                     {watchedStatus === 'Entregado' && (
-                        <div className="grid md:grid-cols-5 gap-6 mt-6">
-                            <div className="md:col-span-3">
-                                <PaymentSection isReadOnly={isReadOnly} />
-                                {watchedNextServiceInfo && isValid(parseDate(watchedNextServiceInfo.date)) && (
-                                    <Card className="border-blue-200 bg-blue-50 dark:bg-blue-900/30 mt-6">
-                                        <CardHeader className="flex flex-row items-center justify-between pb-2">
-                                            <CardTitle className="flex items-center gap-2 text-lg text-blue-800 dark:text-blue-300">
-                                                <CalendarCheck className="h-5 w-5" />Próximo Servicio
-                                            </CardTitle>
+                        <div className="space-y-6 mt-6">
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle className="text-lg flex items-center gap-2">
+                                        <CalendarCheck className="h-5 w-5 text-blue-600" />
+                                        Próximo Servicio Recomendado
+                                    </CardTitle>
+                                </CardHeader>
+                                <CardContent className="space-y-4">
+                                     <div className="flex gap-2 justify-end">
+                                        <Button type="button" size="sm" variant="outline" onClick={() => setValue('nextServiceInfo.date', addMonths(new Date(), 6).toISOString())}>6 Meses</Button>
+                                        <Button type="button" size="sm" variant="outline" onClick={() => setValue('nextServiceInfo.date', addYears(new Date(), 1).toISOString())}>1 Año</Button>
+                                    </div>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        <FormField
+                                            control={control}
+                                            name="nextServiceInfo.date"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel>Fecha Próximo Servicio</FormLabel>
+                                                    <FormControl><Input type="date" value={field.value ? format(parseDate(field.value)!, 'yyyy-MM-dd') : ''} onChange={(e) => field.onChange(e.target.valueAsDate?.toISOString())} disabled={isReadOnly}/></FormControl>
+                                                </FormItem>
+                                            )}
+                                        />
+                                        <FormField
+                                            control={control}
+                                            name="nextServiceInfo.mileage"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel>Kilometraje Próximo Servicio</FormLabel>
+                                                    <FormControl><Input type="number" placeholder="Ej: 135000" {...field} value={field.value ?? ''} disabled={isReadOnly} /></FormControl>
+                                                </FormItem>
+                                            )}
+                                        />
+                                    </div>
+                                </CardContent>
+                            </Card>
+
+                            <div className="grid md:grid-cols-5 gap-6">
+                                <div className="md:col-span-3">
+                                    <PaymentSection isReadOnly={isReadOnly} />
+                                </div>
+                                <div className="md:col-span-2">
+                                    <Card>
+                                        <CardHeader>
+                                            <CardTitle className="text-lg">Totales</CardTitle>
                                         </CardHeader>
-                                        <CardContent>
-                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1">
-                                                <div>
-                                                    <p className="font-semibold">Fecha:</p>
-                                                    <p>{format(parseDate(watchedNextServiceInfo.date)!, "dd 'de' MMMM 'de' yyyy", { locale: es })}</p>
-                                                </div>
-                                                {watchedNextServiceInfo.mileage && (
-                                                    <div>
-                                                        <p className="font-semibold">Kilometraje:</p>
-                                                        <p>{watchedNextServiceInfo.mileage.toLocaleString("es-MX")} km</p>
-                                                    </div>
-                                                )}
-                                            </div>
+                                        <CardContent className="space-y-2">
+                                            <div className="flex justify-between font-semibold"><p>Ganancia:</p><p className="text-green-600">{formatCurrency(serviceProfit)}</p></div>
+                                            <div className="flex justify-between"><p className="text-muted-foreground">Costo Insumos:</p><p>{formatCurrency(totalSuppliesWorkshopCost)}</p></div>
+                                            <div className="flex justify-between font-bold text-base pt-2 border-t"><p>Total Cliente (IVA Inc.):</p><p>{formatCurrency(totalCost)}</p></div>
                                         </CardContent>
                                     </Card>
-                                )}
-                            </div>
-                            <div className="md:col-span-2">
-                                <Card>
-                                    <CardHeader><CardTitle className="text-lg">Totales</CardTitle></CardHeader>
-                                    <CardContent className="space-y-2 text-sm">
-                                        <div className="flex justify-between font-semibold"><p>Ganancia:</p><p className="text-green-600">{formatCurrency(serviceProfit)}</p></div>
-                                        <div className="flex justify-between"><p className="text-muted-foreground">Costo Insumos:</p><p>{formatCurrency(totalSuppliesWorkshopCost)}</p></div>
-                                        <div className="flex justify-between font-bold text-base pt-2 border-t"><p>Total Cliente (IVA Inc.):</p><p>{formatCurrency(totalCost)}</p></div>
-                                    </CardContent>
-                                </Card>
+                                </div>
                             </div>
                         </div>
                     )}
