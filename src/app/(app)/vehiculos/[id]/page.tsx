@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
@@ -16,6 +17,7 @@ import type {
   Technician,
   QuoteRecord,
   InventoryItem,
+  ServiceTypeRecord,
 } from "@/types";
 import { PageHeader } from "@/components/page-header";
 import {
@@ -68,6 +70,7 @@ export default function VehicleDetailPage() {
   const [services, setServices] = useState<ServiceRecord[]>([]);
   const [technicians, setTechnicians] = useState<Technician[]>([]);
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
+  const [serviceTypes, setServiceTypes] = useState<ServiceTypeRecord[]>([]);
   const [allVehicles, setAllVehicles] = useState<Vehicle[]>([]);
 
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -91,16 +94,11 @@ export default function VehicleDetailPage() {
     fetchVehicleAndServices();
     personnelService.onTechniciansUpdate(setTechnicians);
     inventoryService.onItemsUpdate(setInventory);
+    inventoryService.onServiceTypesUpdate(setServiceTypes);
     inventoryService.onVehiclesUpdate(setAllVehicles); // to pass to dialog
   }, [fetchVehicleAndServices]);
 
-  const nextServiceInfo = useMemo(() => {
-    if (!services || services.length === 0) return null;
-    const completedServicesWithNextInfo = services
-      .filter((s) => s.status === "Completado" && s.nextServiceInfo && s.deliveryDateTime)
-      .sort((a, b) => parseISO(b.deliveryDateTime!).getTime() - parseISO(a.deliveryDateTime!).getTime());
-    return completedServicesWithNextInfo.length > 0 ? completedServicesWithNextInfo[0].nextServiceInfo : null;
-  }, [services]);
+  const nextServiceInfo = vehicle?.nextServiceInfo;
 
   const handleSaveEditedVehicle = async (formData: VehicleFormValues) => {
     if (!vehicle) return;
@@ -150,7 +148,7 @@ export default function VehicleDetailPage() {
   }
 
   const getStatusVariant = (status: ServiceRecord["status"]): "default" | "secondary" | "outline" | "destructive" | "success" => {
-    switch (status) { case "Completado": return "success"; case "Reparando": return "secondary"; case "Cancelado": return "destructive"; case "Agendado": return "default"; default: return "default"; }
+    switch (status) { case "Completado": case "Entregado": return "success"; case "En Taller": return "secondary"; case "Cancelado": return "destructive"; case "Agendado": return "default"; default: return "default"; }
   };
 
   const getServiceDescriptionText = (service: ServiceRecord) => {
@@ -209,7 +207,7 @@ export default function VehicleDetailPage() {
         </TabsContent>
       </Tabs>
       {vehicle && (<VehicleDialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen} vehicle={vehicle} onSave={handleSaveEditedVehicle}/>)}
-      {selectedService && (<ServiceDialog open={isViewServiceDialogOpen} onOpenChange={setIsViewServiceDialogOpen} service={selectedService} vehicles={allVehicles} technicians={technicians} inventoryItems={inventory} isReadOnly={false} onSave={handleServiceUpdated} mode="service" serviceTypes={[]} />)}
+      {selectedService && (<ServiceDialog open={isViewServiceDialogOpen} onOpenChange={setIsViewServiceDialogOpen} service={selectedService} vehicles={allVehicles} technicians={technicians} inventoryItems={inventory} isReadOnly={false} onSave={handleServiceUpdated} mode="service" serviceTypes={serviceTypes} />)}
     </div>
   );
 }
