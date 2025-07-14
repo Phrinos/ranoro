@@ -1,9 +1,10 @@
 
+
 "use client";
 
 import React, { useState, useEffect } from 'react';
 import { useFormContext } from 'react-hook-form';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Receipt } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
@@ -29,9 +30,12 @@ export function SaleSummary() {
   }, [watchedItems]);
 
   return (
-    <Card>
-      <CardContent className="pt-6 flex flex-col items-end space-y-2 h-full justify-between">
-        <div>
+    <Card className="h-full flex flex-col">
+      <CardHeader>
+        <CardTitle>Resumen de Venta</CardTitle>
+      </CardHeader>
+      <CardContent className="pt-0 flex flex-col items-end space-y-2 flex-grow justify-between">
+        <div className="w-full">
           <div className="text-lg w-full flex justify-between"><span>Subtotal:</span> <span className="font-semibold">{formatCurrency(subTotal)}</span></div>
           <div className="text-sm text-muted-foreground w-full flex justify-between"><span>IVA ({(IVA_RATE * 100).toFixed(0)}%):</span> <span className="font-semibold">{formatCurrency(tax)}</span></div>
           <div className="text-2xl font-bold w-full flex justify-between"><span>Total:</span> <span className="text-primary">{formatCurrency(total)}</span></div>
