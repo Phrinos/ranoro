@@ -1,6 +1,7 @@
+
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -8,12 +9,10 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog";
-import { ServiceForm } from "./components/service-form";
-import type { ServiceRecord, Vehicle, Technician, InventoryItem, QuoteRecord, User, ServiceTypeRecord } from "@/types";
-import { useToast } from "@/hooks/use-toast"; 
-import { db } from '@/lib/firebaseClient.js';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+} from '@/components/ui/dialog';
+import { ServiceForm } from './components/service-form';
+import type { ServiceRecord, Vehicle, Technician, InventoryItem, QuoteRecord, User, ServiceTypeRecord } from '@/types';
+import { useToast } from '@/hooks/use-toast'; 
 import { operationsService } from '@/lib/services';
 
 
@@ -79,7 +78,7 @@ export function ServiceDialog({
         toast({
             title: `Error al Guardar ${mode === 'quote' ? 'Cotización' : 'Servicio'}`,
             description: `Ocurrió un problema al intentar guardar desde el diálogo.`,
-            variant: "destructive",
+            variant: 'destructive',
         });
     }
   };
@@ -90,26 +89,26 @@ export function ServiceDialog({
 
     if (isReadOnly) {
         switch (status) {
-            case 'Cotizacion': return { title: "Detalles de la Cotización", description: "Visualizando los detalles de la cotización." };
-            case 'Agendado': return { title: "Detalles de la Cita", description: "Visualizando los detalles de la cita agendada." };
-            default: return { title: "Detalles del Servicio", description: "Visualizando los detalles de la orden de servicio." };
+            case 'Cotizacion': return { title: 'Detalles de la Cotización', description: 'Visualizando los detalles de la cotización.' };
+            case 'Agendado': return { title: 'Detalles de la Cita', description: 'Visualizando los detalles de la cita agendada.' };
+            default: return { title: 'Detalles del Servicio', description: 'Visualizando los detalles de la orden de servicio.' };
         }
     }
 
     if (currentRecord?.id) { // Editing existing record
         switch (status) {
-            case 'Cotizacion': return { title: "Editar Cotización", description: "Actualiza los detalles de la cotización." };
-            case 'Agendado': return { title: "Editar Cita", description: "Actualiza los detalles de la cita." };
-            default: return { title: "Editar Servicio", description: "Actualiza los detalles de la orden de servicio." };
+            case 'Cotizacion': return { title: 'Editar Cotización', description: 'Actualiza los detalles de la cotización.' };
+            case 'Agendado': return { title: 'Editar Cita', description: 'Actualiza los detalles de la cita.' };
+            default: return { title: 'Editar Servicio', description: 'Actualiza los detalles de la orden de servicio.' };
         }
     }
     
     // Creating new record
     switch (status) {
-        case 'Cotizacion': return { title: "Nueva Cotización", description: "Completa la información para una nueva cotización." };
-        case 'Agendado': return { title: "Nueva Cita", description: "Completa la información para una nueva cita." };
-        case 'En Taller': return { title: "Nuevo Servicio", description: "Completa la información para una nueva orden de servicio." };
-        default: return { title: "Nuevo Registro", description: "Selecciona un estado para continuar." };
+        case 'Cotizacion': return { title: 'Nueva Cotización', description: 'Completa la información para una nueva cotización.' };
+        case 'Agendado': return { title: 'Nueva Cita', description: 'Completa la información para una nueva cita.' };
+        case 'En Taller': return { title: 'Nuevo Servicio', description: 'Completa la información para una nueva orden de servicio.' };
+        default: return { title: 'Nuevo Registro', description: 'Selecciona un estado para continuar.' };
     }
   };
 

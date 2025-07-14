@@ -1,13 +1,9 @@
 
 // src/hooks/use-service-form-hooks.ts
 
-import { useEffect, useMemo } from 'react';
-import { useFormContext, useWatch, type UseFormReturn } from 'react-hook-form';
+import { useMemo } from 'react';
+import { useWatch, type UseFormReturn } from 'react-hook-form';
 import type { ServiceFormValues } from '@/schemas/service-form';
-import { parseDate } from '@/lib/forms';
-import { nanoid } from 'nanoid';
-import type { ServiceRecord, QuoteRecord, User, ServiceTypeRecord } from '@/types';
-import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
 
 /**
  * Custom hook to calculate service totals dynamically based on form values.

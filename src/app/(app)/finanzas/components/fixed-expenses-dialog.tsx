@@ -9,8 +9,8 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
 import {
   Table,
   TableBody,
@@ -18,12 +18,12 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { PlusCircle, Edit, Trash2 } from "lucide-react";
-import { FixedExpenseForm, type FixedExpenseFormValues } from "./fixed-expense-form";
-import type { MonthlyFixedExpense } from "@/types";
-import { useToast } from "@/hooks/use-toast";
+} from '@/components/ui/table';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { PlusCircle, Edit, Trash2 } from 'lucide-react';
+import { FixedExpenseForm, type FixedExpenseFormValues } from './fixed-expense-form';
+import type { MonthlyFixedExpense } from '@/types';
+import { useToast } from '@/hooks/use-toast';
 import { collection, onSnapshot, addDoc, doc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebaseClient';
 
@@ -55,33 +55,33 @@ export function FixedExpensesDialog({
   };
 
   const handleSaveExpense = async (values: FixedExpenseFormValues) => {
-    if (!db) return toast({ title: "Error de base de datos", variant: "destructive" });
+    if (!db) return toast({ title: 'Error de base de datos', variant: 'destructive' });
     const dataToSave = { name: values.name, amount: Number(values.amount), notes: values.notes || '' };
     try {
       if (editingExpense) {
         await updateDoc(doc(db, 'fixedMonthlyExpenses', editingExpense.id), dataToSave);
-        toast({ title: "Gasto Actualizado" });
+        toast({ title: 'Gasto Actualizado' });
       } else {
         await addDoc(collection(db, 'fixedMonthlyExpenses'), dataToSave);
-        toast({ title: "Gasto Agregado" });
+        toast({ title: 'Gasto Agregado' });
       }
       setIsSubFormOpen(false);
       setEditingExpense(null);
       // Parent will get update from Firestore listener
     } catch (e) {
-      console.error("Error saving fixed expense:", e);
-      toast({ title: "Error al guardar", variant: "destructive" });
+      console.error('Error saving fixed expense:', e);
+      toast({ title: 'Error al guardar', variant: 'destructive' });
     }
   };
 
   const handleDeleteExpense = async (expenseId: string) => {
-    if (!db) return toast({ title: "Error de base de datos", variant: "destructive" });
+    if (!db) return toast({ title: 'Error de base de datos', variant: 'destructive' });
     try {
       await deleteDoc(doc(db, 'fixedMonthlyExpenses', expenseId));
-      toast({ title: "Gasto Eliminado" });
+      toast({ title: 'Gasto Eliminado' });
     } catch (e) {
-      console.error("Error deleting fixed expense:", e);
-      toast({ title: "Error al eliminar", variant: "destructive" });
+      console.error('Error deleting fixed expense:', e);
+      toast({ title: 'Error al eliminar', variant: 'destructive' });
     }
   };
   

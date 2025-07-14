@@ -6,12 +6,12 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Save, Upload, Loader2, Building, User, Crop, Globe } from 'lucide-react';
 import type { WorkshopInfo } from '@/types';
 import { useToast } from '@/hooks/use-toast';
@@ -38,15 +38,15 @@ const TIMEZONE_OPTIONS = [
   { value: 'Europe/Madrid', label: '(GMT+1) Madrid, París (CET/CEST)' },
 ];
 
-const LOCALSTORAGE_KEY = "workshopTicketInfo";
-const FIRESTORE_DOC_ID = "main"; // Document ID for the single config
+const LOCALSTORAGE_KEY = 'workshopTicketInfo';
+const FIRESTORE_DOC_ID = 'main'; // Document ID for the single config
 
 const tallerSchema = z.object({
-  name: z.string().min(1, "El nombre del taller es obligatorio"),
-  phone: z.string().min(7, "Mínimo 7 dígitos"),
-  addressLine1: z.string().min(5, "La dirección es obligatoria"),
-  googleMapsUrl: z.string().url("Ingrese una URL válida de Google Maps.").optional().or(z.literal('')),
-  logoUrl: z.string().url("Debe proporcionar una URL del logo o subir una imagen."),
+  name: z.string().min(1, 'El nombre del taller es obligatorio'),
+  phone: z.string().min(7, 'Mínimo 7 dígitos'),
+  addressLine1: z.string().min(5, 'La dirección es obligatoria'),
+  googleMapsUrl: z.string().url('Ingrese una URL válida de Google Maps.').optional().or(z.literal('')),
+  logoUrl: z.string().url('Debe proporcionar una URL del logo o subir una imagen.'),
   timezone: z.string().optional(),
   contactPersonName: z.string().optional(),
   contactPersonPhone: z.string().optional(),
@@ -69,7 +69,7 @@ export function ConfigTallerPageContent() {
   const form = useForm<TallerFormValues>({
     resolver: zodResolver(tallerSchema),
     defaultValues: {
-        name: "RANORO", phone: "", addressLine1: "", logoUrl: "/ranoro-logo.png", timezone: 'America/Mexico_City'
+        name: 'RANORO', phone: '', addressLine1: '', logoUrl: '/ranoro-logo.png', timezone: 'America/Mexico_City'
     },
   });
 
@@ -106,9 +106,9 @@ export function ConfigTallerPageContent() {
         await setDoc(configRef, data, { merge: true });
       }
 
-      toast({ title: "Información guardada", description: "Se actualizaron los datos del taller.", duration: 3000 });
+      toast({ title: 'Información guardada', description: 'Se actualizaron los datos del taller.', duration: 3000 });
     } catch {
-      toast({ title: "Error al guardar", variant: "destructive", duration: 3000 });
+      toast({ title: 'Error al guardar', variant: 'destructive', duration: 3000 });
     }
   };
 
@@ -120,18 +120,18 @@ export function ConfigTallerPageContent() {
       reader.readAsDataURL(e.target.files[0]);
       setIsCropping(true);
     }
-    if (e.target) e.target.value = "";
+    if (e.target) e.target.value = '';
   };
   
   const handleCropComplete = () => {
-    if (!previewCanvasRef.current) return toast({ title: "Error de recorte", variant: "destructive" });
+    if (!previewCanvasRef.current) return toast({ title: 'Error de recorte', variant: 'destructive' });
     const canvas = previewCanvasRef.current;
     const croppedDataUrl = canvas.toDataURL('image/png');
     uploadCroppedImage(croppedDataUrl);
   };
   
   const uploadCroppedImage = async (dataUrl: string) => {
-    if (!storage) return toast({ title: "Error de Configuración", variant: "destructive" });
+    if (!storage) return toast({ title: 'Error de Configuración', variant: 'destructive' });
 
     setIsUploading(true);
     setIsCropping(false);
@@ -205,7 +205,7 @@ export function ConfigTallerPageContent() {
                   <FormLabel>Subir Nuevo Logo</FormLabel>
                   <Button type="button" variant="outline" className="w-full" onClick={() => fileInputRef.current?.click()} disabled={isUploading}>
                     {isUploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}
-                    {isUploading ? "Subiendo..." : "Seleccionar Imagen"}
+                    {isUploading ? 'Subiendo...' : 'Seleccionar Imagen'}
                   </Button>
                   <input type="file" ref={fileInputRef} className="hidden" accept="image/png, image/jpeg, image/webp" onChange={onSelectFile} />
                   <FormMessage>{form.formState.errors.logoUrl?.message}</FormMessage>
@@ -247,7 +247,7 @@ export function ConfigTallerPageContent() {
             </Card>
             
             <div className="flex justify-end pt-4">
-              <Button type="submit" disabled={form.formState.isSubmitting}><Save className="mr-2 h-4 w-4" />{form.formState.isSubmitting ? "Guardando..." : "Guardar Información"}</Button>
+              <Button type="submit" disabled={form.formState.isSubmitting}><Save className="mr-2 h-4 w-4" />{form.formState.isSubmitting ? 'Guardando...' : 'Guardar Información'}</Button>
             </div>
           </CardContent>
         </form>
