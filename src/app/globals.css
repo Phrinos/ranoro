@@ -206,11 +206,6 @@
     }
   }
 
-  #printable-area > [data-format="letter"] {
-      transform-origin: top center;
-      margin: 0 auto; /* Center the document */
-  }
-
   @media (max-width: 890px) { /* 8.5in is roughly 816px, plus padding */
     #printable-area > [data-format="letter"] {
         transform: scale(0.9);
