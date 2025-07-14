@@ -180,7 +180,7 @@ export const TicketContent = React.forwardRef<HTMLDivElement, TicketContentProps
             </>
         )}
 
-        {service?.nextServiceInfo && isValid(parseDate(service.nextServiceInfo.date)) && (
+        {service?.nextServiceInfo && isValid(parseDate(service.nextServiceInfo.date)!) && (
           <>
               {renderDashedLine()}
               <div className="mt-1 text-center" style={{ fontSize: `${bodyFontSize}px` }}>
