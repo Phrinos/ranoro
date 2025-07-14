@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState, useMemo, useEffect, useCallback, Suspense, useRef } from 'react';
@@ -95,7 +96,7 @@ function ResumenFinancieroPageComponent() {
         if (isLoading || !dateRange?.from) return emptyState;
         
         const from = startOfDay(dateRange.from);
-        const to = dateRange.to ? endOfDay(dateRange.to) : endOfDay(dateRange.from);
+        const to = dateRange.to ? endOfDay(dateRange.from) : endOfDay(dateRange.from);
         
         const salesInRange = allSales.filter(s => s.status !== 'Cancelado' && isValid(parseISO(s.saleDate)) && isWithinInterval(parseISO(s.saleDate), { start: from, end: to }));
         const servicesInRange = allServices.filter(s => s.status === 'Completado' && s.deliveryDateTime && isValid(parseISO(s.deliveryDateTime)) && isWithinInterval(parseISO(s.deliveryDateTime), { start: from, end: to }));
@@ -117,7 +118,7 @@ function ResumenFinancieroPageComponent() {
         const totalOperationalIncome = totalIncomeFromSales + totalIncomeFromServices;
         const totalOperationalProfit = totalProfitFromSales + totalProfitFromServices;
 
-        const totalCostOfGoods = salesInRange.reduce((cost, s) => cost + s.items.reduce((c, i) => c + ((allInventory.find(inv => inv.id === i.inventoryItemId)?.unitPrice || 0) * i.quantity), 0), 0) + servicesInRange.reduce((cost, s) => cost + (s.totalSuppliesCost || 0), 0);
+        const totalCostOfGoods = salesInRange.reduce((cost, s) => cost + s.items.reduce((c, i) => c + ((allInventory.find(inv => inv.id === i.inventoryItemId)?.unitPrice || 0) * i.quantity), 0), 0) + servicesInRange.reduce((cost, s) => cost + (s.totalSuppliesWorkshopCost || 0), 0);
 
         const totalTechnicianSalaries = allTechnicians.filter(t => !t.isArchived).reduce((sum, tech) => sum + (tech.monthlySalary || 0), 0);
         const totalAdministrativeSalaries = allAdminStaff.filter(s => !s.isArchived).reduce((sum, staff) => sum + (staff.monthlySalary || 0), 0);
@@ -158,8 +159,24 @@ function ResumenFinancieroPageComponent() {
     // --- Reportes Logic ---
     const combinedOperations = useMemo((): FinancialOperation[] => {
         if (isLoading) return [];
-        const saleOperations: FinancialOperation[] = allSales.map(s => ({ id: s.id, date: s.saleDate, type: 'Venta', description: s.items.map(i => i.itemName).join(', '), totalAmount: s.totalAmount, profit: calculateSaleProfit(s, allInventory), originalObject: s }));
-        const serviceOperations: FinancialOperation[] = allServices.filter(s => s.status === 'Completado').map(s => ({ id: s.id, date: s.deliveryDateTime || s.serviceDate, type: s.serviceType || 'Servicio General', description: s.description || (s.serviceItems || []).map(i => i.name).join(', '), totalAmount: s.totalCost, profit: s.serviceProfit || 0, originalObject: s }));
+        const saleOperations: FinancialOperation[] = allSales.map(s => ({
+            id: s.id, date: s.saleDate, type: 'Venta', 
+            description: s.items.map(i => i.itemName).join(', '), 
+            totalAmount: s.totalAmount, profit: calculateSaleProfit(s, allInventory), originalObject: s 
+        }));
+        
+        const serviceOperations: FinancialOperation[] = allServices
+            .filter(s => s.status === 'Completado')
+            .map(s => ({ 
+                id: s.id, 
+                date: s.deliveryDateTime || s.serviceDate, // Use delivery date if available
+                type: s.serviceType || 'Servicio General', 
+                description: s.description || (s.serviceItems || []).map(i => i.name).join(', '), 
+                totalAmount: s.totalCost, 
+                profit: s.serviceProfit || 0, 
+                originalObject: s 
+            }));
+            
         return [...saleOperations, ...serviceOperations];
     }, [isLoading, allSales, allServices, allInventory]);
     
@@ -167,7 +184,16 @@ function ResumenFinancieroPageComponent() {
         if (isLoading || !dateRange?.from) return [];
         const from = startOfDay(dateRange.from);
         const to = dateRange.to ? endOfDay(dateRange.to) : endOfDay(dateRange.from);
-        let list = combinedOperations.filter(op => op.date && isValid(parseISO(op.date)) && isWithinInterval(parseISO(op.date), { start: from, end: to }));
+        let list = combinedOperations.filter(op => {
+            // For services, prioritize deliveryDateTime for filtering if it exists
+            const dateToParse = (op.originalObject as ServiceRecord).status === 'Completado' 
+                ? (op.originalObject as ServiceRecord).deliveryDateTime || op.date 
+                : op.date;
+            
+            if (!dateToParse) return false;
+            const parsedDate = parseISO(dateToParse);
+            return isValid(parsedDate) && isWithinInterval(parsedDate, { start: from, end: to });
+        });
         
         if (reporteOpTypeFilter !== 'all') { list = list.filter(op => op.type === reporteOpTypeFilter); }
         if (reporteOpPaymentMethodFilter !== 'all') { list = list.filter(op => (op.originalObject as SaleReceipt | ServiceRecord).paymentMethod === reporteOpPaymentMethodFilter); }
@@ -336,3 +362,4 @@ export default function FinanzasPageWrapper() {
         </Suspense>
     );
 }
+
