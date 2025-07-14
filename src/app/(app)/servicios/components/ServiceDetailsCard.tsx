@@ -63,6 +63,7 @@ export function ServiceDetailsCard({
   const { fields: serviceItemsFields, append: appendServiceItem, remove: removeServiceItem } = useFieldArray({ control, name: "serviceItems" });
   
   const watchedStatus = watch('status');
+  const serviceId = watch('id');
 
   const [isServiceDatePickerOpen, setIsServiceDatePickerOpen] = useState(false);
   
@@ -74,8 +75,9 @@ export function ServiceDetailsCard({
   };
   
   const showAppointmentFields = useMemo(() => {
-    return watchedStatus === 'Agendado' || watchedStatus === 'En Taller' || watchedStatus === 'Entregado';
-  }, [watchedStatus]);
+    // Only show if status is Agendado, or if it's an existing service in taller/entregado
+    return watchedStatus === 'Agendado' || (!!serviceId && (watchedStatus === 'En Taller' || watchedStatus === 'Entregado'));
+  }, [watchedStatus, serviceId]);
 
   const showTechnicianField = useMemo(() => {
     return watchedStatus === 'En Taller' || watchedStatus === 'Entregado';
