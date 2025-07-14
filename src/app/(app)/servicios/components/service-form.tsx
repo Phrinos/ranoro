@@ -189,6 +189,8 @@ export function ServiceForm(props:Props){
   
   const watchedStatus = watch('status');
   const watchedVehicleId = watch('vehicleId');
+  const nextServiceInfo = watch('nextServiceInfo');
+  const customerName = watch('customerName');
   
   useEffect(() => {
     reset(defaultValues);
@@ -369,9 +371,6 @@ export function ServiceForm(props:Props){
 
     onSubmit(dataToSubmit);
   };
-  
-  const nextServiceInfo = watch('nextServiceInfo');
-  const customerName = watch('customerName');
 
   return (
     <>
@@ -404,7 +403,7 @@ export function ServiceForm(props:Props){
                                 onGenerateQuoteWithAI={handleGenerateQuote}
                                 isGeneratingQuote={isGeneratingQuote}
                                 isEnhancingText={isEnhancingText}
-                                handleEnhanceText={handleEnhanceText}
+                                handleEnhanceText={handleEnhanceText as any}
                                 onNewInventoryItemCreated={handleNewInventoryItemCreated}
                                 categories={allCategories}
                                 suppliers={allSuppliers}
@@ -440,49 +439,36 @@ export function ServiceForm(props:Props){
                             />
                         </TabsContent>
                     </Tabs>
-                    {watchedStatus === 'Entregado' && (
+                    {(watchedStatus === 'Entregado' && nextServiceInfo && isValid(parseDate(nextServiceInfo.date))) && (
                         <div className="grid md:grid-cols-2 gap-6 mt-6">
-                            {nextServiceInfo && isValid(parseDate(nextServiceInfo.date)!) && (
-                                <Card className="border-blue-200 bg-blue-50 dark:bg-blue-900/30">
-                                    <CardHeader className="flex flex-row items-center justify-between pb-2">
-                                        <CardTitle className="flex items-center gap-2 text-lg text-blue-800 dark:text-blue-300">
-                                            <CalendarCheck className="h-5 w-5" />Próximo Servicio
-                                        </CardTitle>
-                                        <Button asChild variant="ghost" size="icon" className="h-7 w-7">
-                                            <Link href={`/vehiculos/${watchedVehicleId}`}>
-                                                <Edit className="h-4 w-4" />
-                                            </Link>
-                                        </Button>
-                                    </CardHeader>
-                                    <CardContent>
-                                        <p className="text-xs text-blue-700 dark:text-blue-300 mb-2">Lo que ocurra primero:</p>
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1">
-                                            <div>
-                                                <p className="font-semibold">Fecha:</p>
-                                                <p>{format(parseDate(nextServiceInfo.date)!, "dd 'de' MMMM 'de' yyyy", { locale: es })}</p>
-                                            </div>
-                                            {nextServiceInfo.mileage && (
-                                                <div>
-                                                    <p className="font-semibold">Kilometraje:</p>
-                                                    <p>{nextServiceInfo.mileage.toLocaleString("es-MX")} km</p>
-                                                </div>
-                                            )}
-                                        </div>
-                                    </CardContent>
-                                </Card>
-                            )}
-                            <PaymentSection isReadOnly={isReadOnly} customerName={customerName}/>
-                            <Card>
-                                <CardHeader><CardTitle className="flex items-center gap-2"><DollarSign/>Resumen de Costos</CardTitle></CardHeader>
+                            <Card className="border-blue-200 bg-blue-50 dark:bg-blue-900/30">
+                                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                                    <CardTitle className="flex items-center gap-2 text-lg text-blue-800 dark:text-blue-300">
+                                        <CalendarCheck className="h-5 w-5" />Próximo Servicio
+                                    </CardTitle>
+                                    <Button asChild variant="ghost" size="icon" className="h-7 w-7">
+                                        <Link href={`/vehiculos/${watchedVehicleId}`}>
+                                            <Edit className="h-4 w-4" />
+                                        </Link>
+                                    </Button>
+                                </CardHeader>
                                 <CardContent>
-                                    <div className="space-y-1 text-sm">
-                                        <div className="flex justify-between font-bold text-lg text-primary"><span>Total (IVA Inc.):</span><span>{formatCurrency(totalCost)}</span></div>
-                                        <div className="flex justify-between text-xs"><span>(-) Costo Insumos:</span><span className="font-medium text-red-600 dark:text-red-400">{formatCurrency(totalSuppliesWorkshopCost)}</span></div>
-                                        <hr className="my-1 border-dashed"/>
-                                        <div className="flex justify-between font-bold text-green-700 dark:text-green-400"><span>(=) Ganancia:</span><span>{formatCurrency(serviceProfit)}</span></div>
+                                    <p className="text-xs text-blue-700 dark:text-blue-300 mb-2">Lo que ocurra primero:</p>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1">
+                                        <div>
+                                            <p className="font-semibold">Fecha:</p>
+                                            <p>{format(parseDate(nextServiceInfo.date)!, "dd 'de' MMMM 'de' yyyy", { locale: es })}</p>
+                                        </div>
+                                        {nextServiceInfo.mileage && (
+                                            <div>
+                                                <p className="font-semibold">Kilometraje:</p>
+                                                <p>{nextServiceInfo.mileage.toLocaleString("es-MX")} km</p>
+                                            </div>
+                                        )}
                                     </div>
                                 </CardContent>
                             </Card>
+                            <PaymentSection isReadOnly={isReadOnly} customerName={customerName}/>
                         </div>
                     )}
                 </div>
