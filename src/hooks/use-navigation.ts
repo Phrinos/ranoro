@@ -101,6 +101,13 @@ const BASE_NAV_STRUCTURE: ReadonlyArray<Omit<NavigationEntry, 'isActive'>> = [
   
   // Operaciones
   {
+    label: 'Nueva Venta',
+    path: '/pos/nuevo',
+    icon: ShoppingCart,
+    groupTag: "Operaciones",
+    permissions: ['pos:create_sale']
+  },
+  {
     label: 'Punto de Venta',
     path: '/pos',
     icon: Receipt,
@@ -246,6 +253,7 @@ const useNavigation = (): NavigationEntry[] => {
     if (entry.path === '/servicios/historial' && (pathname.startsWith('/servicios/agenda') || pathname.startsWith('/servicios/nuevo'))) isActive = false;
     if (entry.path === '/finanzas/resumen' && pathname.startsWith('/finanzas/reporte')) isActive = false;
     if (entry.path === '/flotilla' && pathname.startsWith('/rentas')) isActive = false;
+    if (entry.path === '/pos' && pathname.startsWith('/pos/nuevo')) isActive = false;
 
 
     return { ...entry, isActive };

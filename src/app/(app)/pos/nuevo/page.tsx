@@ -2,20 +2,24 @@
 
 "use client";
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { PageHeader } from "@/components/page-header";
 import { PosForm } from "../components/pos-form";
-import type { SaleReceipt, InventoryItem, PaymentMethod, InventoryCategory, Supplier } from '@/types'; 
+import type { SaleReceipt, InventoryItem, PaymentMethod, InventoryCategory, Supplier, WorkshopInfo } from '@/types'; 
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from 'next/navigation';
 import { inventoryService, operationsService } from '@/lib/services';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Copy, Printer } from 'lucide-react';
 import type { InventoryItemFormValues } from '../../inventario/components/inventory-item-form';
 import { db } from '@/lib/firebaseClient';
 import { writeBatch, doc } from 'firebase/firestore';
+import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
+import { TicketContent } from '@/components/ticket-content';
+import { Button } from '@/components/ui/button';
+import html2canvas from 'html2canvas';
 
 // --- Schema Definitions ---
 const saleItemSchema = z.object({
@@ -57,6 +61,12 @@ export default function NuevaVentaPage() {
   const [allCategories, setAllCategories] = useState<InventoryCategory[]>([]);
   const [allSuppliers, setAllSuppliers] = useState<Supplier[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  
+  const [isTicketDialogOpen, setIsTicketDialogOpen] = useState(false);
+  const [saleForTicket, setSaleForTicket] = useState<SaleReceipt | null>(null);
+  const [workshopInfo, setWorkshopInfo] = useState<WorkshopInfo | null>(null);
+  const ticketContentRef = useRef<HTMLDivElement>(null);
+
 
   const methods = useForm<POSFormValues>({
     resolver: zodResolver(posFormSchema),
@@ -73,11 +83,17 @@ export default function NuevaVentaPage() {
     const unsubs = [
       inventoryService.onItemsUpdate((items) => {
         setCurrentInventoryItems(items);
-        setIsLoading(false); // Only set loading to false after items are fetched
+        setIsLoading(false);
       }),
       inventoryService.onCategoriesUpdate(setAllCategories),
       inventoryService.onSuppliersUpdate(setAllSuppliers),
     ];
+    
+    const storedWorkshopInfo = localStorage.getItem('workshopTicketInfo');
+    if (storedWorkshopInfo) {
+      try { setWorkshopInfo(JSON.parse(storedWorkshopInfo)); } catch (e) { console.error(e); }
+    }
+
     return () => unsubs.forEach(unsub => unsub());
   }, []);
 
@@ -99,7 +115,11 @@ export default function NuevaVentaPage() {
       };
       
       toast({ title: 'Venta Registrada', description: `La venta #${saleId} se ha completado.` });
-      router.push('/pos');
+      
+      // Open ticket dialog after successful sale
+      setSaleForTicket(newSaleReceipt);
+      setIsTicketDialogOpen(true);
+
     } catch(e) {
       console.error(e);
       toast({ title: "Error al Registrar Venta", variant: "destructive"});
@@ -110,25 +130,101 @@ export default function NuevaVentaPage() {
     const newItem = await inventoryService.addItem(formData);
     return newItem;
   };
+  
+  const handleDialogClose = () => {
+    setIsTicketDialogOpen(false);
+    setSaleForTicket(null);
+    router.push('/pos');
+  };
+  
+  const handleCopyAsImage = useCallback(async () => {
+    if (!ticketContentRef.current) return;
+    try {
+      const canvas = await html2canvas(ticketContentRef.current, { scale: 2.5, backgroundColor: null });
+      canvas.toBlob((blob) => {
+        if (blob) {
+          navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+          toast({ title: "Copiado", description: "La imagen ha sido copiada." });
+        }
+      });
+    } catch (e) {
+      console.error("Error copying image:", e);
+      toast({ title: "Error", description: "No se pudo copiar la imagen del ticket.", variant: "destructive" });
+    }
+  }, [toast]);
+  
+  const handlePrint = () => {
+    const content = document.querySelector('.printable-content')?.innerHTML;
+    if (!content) return;
+    
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+      printWindow.document.write('<html><head><title>Imprimir Ticket</title>');
+      
+      const stylesheets = Array.from(document.getElementsByTagName('link'));
+      stylesheets.forEach(sheet => {
+          printWindow.document.write(sheet.outerHTML);
+      });
+      
+      printWindow.document.write('<style>@media print { body { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; } .printable-content { margin: 0; padding: 0; } }</style></head><body class="bg-white">');
+      printWindow.document.write(content);
+      printWindow.document.write('</body></html>');
+      
+      printWindow.document.close();
+      printWindow.focus();
+      setTimeout(() => {
+        printWindow.print();
+        printWindow.close();
+      }, 500);
+    }
+  };
 
   if (isLoading) {
       return <div className="text-center p-8 text-muted-foreground flex justify-center items-center"><Loader2 className="mr-2 h-5 w-5 animate-spin" />Cargando...</div>;
   }
 
   return (
-    <FormProvider {...methods}>
-      <PageHeader
-        title="Registrar Nueva Venta"
-        description="Complete los artículos y detalles para la nueva venta."
-      />
-      
-      <PosForm
-        inventoryItems={currentInventoryItems} 
-        onSaleComplete={handleSaleCompletion}
-        onInventoryItemCreated={handleNewInventoryItemCreated}
-        categories={allCategories}
-        suppliers={allSuppliers}
-      />
-    </FormProvider>
+    <>
+      <FormProvider {...methods}>
+        <PageHeader
+          title="Registrar Nueva Venta"
+          description="Complete los artículos y detalles para la nueva venta."
+        />
+        
+        <PosForm
+          inventoryItems={currentInventoryItems} 
+          onSaleComplete={handleSaleCompletion}
+          onInventoryItemCreated={handleNewInventoryItemCreated}
+          categories={allCategories}
+          suppliers={allSuppliers}
+        />
+      </FormProvider>
+
+      {saleForTicket && (
+        <PrintTicketDialog
+          open={isTicketDialogOpen}
+          onOpenChange={handleDialogClose}
+          title="Venta Completada"
+          description={`Ticket para la venta #${saleForTicket.id}`}
+          dialogContentClassName="sm:max-w-md"
+          footerActions={
+            <div className="flex flex-col-reverse sm:flex-row gap-2 w-full sm:w-auto">
+              <Button variant="outline" onClick={handleCopyAsImage} className="w-full sm:w-auto">
+                  <Copy className="mr-2 h-4 w-4"/> Copiar Imagen
+              </Button>
+              <Button onClick={handlePrint} className="w-full sm:w-auto">
+                  <Printer className="mr-2 h-4 w-4"/>Imprimir
+              </Button>
+            </div>
+          }
+        >
+          <TicketContent
+            ref={ticketContentRef}
+            sale={saleForTicket}
+            previewWorkshopInfo={workshopInfo || undefined}
+          />
+        </PrintTicketDialog>
+      )}
+    </>
   );
 }
