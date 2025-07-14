@@ -1,13 +1,13 @@
 
 "use client";
 
-import React, { useEffect, useState, useCallback, useRef } from "react";
+import React, { useEffect, useState, useCallback, useRef, useMemo } from "react";
 import dynamic from "next/dynamic";
 import { parseISO, isToday, isValid, isSameDay } from "date-fns";
 import { PageHeader } from "@/components/page-header";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { AUTH_USER_LOCALSTORAGE_KEY, calculateSaleProfit } from "@/lib/placeholder-data";
-import type { User, CapacityAnalysisOutput, PurchaseRecommendation, ServiceRecord, SaleReceipt, InventoryItem, Technician } from "@/types";
+import type { User, CapacityAnalysisOutput, PurchaseRecommendation, ServiceRecord, SaleReceipt, InventoryItem, Technician, InventoryRecommendation } from "@/types";
 import { BrainCircuit, Loader2, ShoppingCart, AlertTriangle, Printer, Wrench, DollarSign, PackageSearch, CheckCircle } from "lucide-react"; 
 import { useToast } from "@/hooks/use-toast";
 import { getPurchaseRecommendations } from '@/ai/flows/purchase-recommendation-flow';
@@ -16,9 +16,10 @@ import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
 import { PurchaseOrderContent } from './components/purchase-order-content';
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { analyzeInventory, type InventoryRecommendation } from '@/ai/flows/inventory-analysis-flow';
+import { analyzeInventory } from '@/ai/flows/inventory-analysis-flow';
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { operationsService, inventoryService, personnelService } from '@/lib/services';
+import { parseDate } from '@/lib/forms';
 
 
 const ChartLoadingSkeleton = () => (
@@ -101,15 +102,8 @@ export default function DashboardPage() {
   const [allTechnicians, setAllTechnicians] = useState<Technician[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  const [kpiData, setKpiData] = useState({
-    dailyRevenue: 0,
-    dailyProfit: 0,
-    activeServices: 0,
-    lowStockAlerts: 0,
-  });
-
   const [capacityInfo, setCapacityInfo] = useState<CapacityAnalysisOutput | null>(null);
-  const [isCapacityLoading, setIsCapacityLoading] = useState(true);
+  const [isCapacityLoading, setIsCapacityLoading] = useState(false);
   const [capacityError, setCapacityError] = useState<string | null>(null);
   
   // Real-time data subscriptions
@@ -119,26 +113,40 @@ export default function DashboardPage() {
       operationsService.onServicesUpdate(setAllServices),
       operationsService.onSalesUpdate(setAllSales),
       inventoryService.onItemsUpdate(setAllInventory),
-      personnelService.onTechniciansUpdate((techs) => {
-        setAllTechnicians(techs);
-        setIsLoading(false); // Mark as loaded after last subscription is set up
-      })
+      personnelService.onTechniciansUpdate(setAllTechnicians),
     ];
+    
+    // Check when all initial data loads are complete
+    Promise.all([
+        operationsService.onServicesUpdatePromise(),
+        operationsService.onSalesUpdatePromise(),
+        inventoryService.onItemsUpdatePromise(),
+        personnelService.onTechniciansUpdatePromise(),
+    ]).then(() => setIsLoading(false));
+
     return () => unsubs.forEach(unsub => unsub());
   }, []);
 
-  const calculateKpiData = useCallback(() => {
+  const kpiData = useMemo(() => {
     const clientToday = new Date();
     
-    const repairingServices = allServices.filter(s => s.status === 'Reparando');
+    const repairingServices = allServices.filter(s => s.status === 'En Taller');
     const scheduledTodayServices = allServices.filter(s => {
-      if (s.status !== 'Agendado' || !s.serviceDate || typeof s.serviceDate !== 'string') return false;
-      const serviceDay = parseISO(s.serviceDate);
-      return isValid(serviceDay) && isToday(serviceDay);
+      if (s.status !== 'Agendado') return false;
+      const serviceDay = parseDate(s.serviceDate);
+      return serviceDay && isValid(serviceDay) && isToday(serviceDay);
     });
 
-    const salesToday = allSales.filter(s => s.saleDate && isValid(parseISO(s.saleDate)) && isSameDay(parseISO(s.saleDate), clientToday));
-    const servicesCompletedToday = allServices.filter(s => s.status === 'Completado' && s.deliveryDateTime && isValid(parseISO(s.deliveryDateTime)) && isSameDay(parseISO(s.deliveryDateTime), clientToday));
+    const salesToday = allSales.filter(s => {
+        const saleDay = parseDate(s.saleDate);
+        return saleDay && isValid(saleDay) && isSameDay(saleDay, clientToday);
+    });
+    
+    const servicesCompletedToday = allServices.filter(s => {
+      if (s.status !== 'Completado') return false;
+      const deliveryDay = parseDate(s.deliveryDateTime);
+      return deliveryDay && isValid(deliveryDay) && isSameDay(deliveryDay, clientToday);
+    });
     
     const revenueFromSales = salesToday.reduce((sum, s) => sum + s.totalAmount, 0);
     const revenueFromServices = servicesCompletedToday.reduce((sum, s) => sum + (s.totalCost || 0), 0);
@@ -146,19 +154,15 @@ export default function DashboardPage() {
     const profitFromSales = salesToday.reduce((sum, s) => sum + calculateSaleProfit(s, allInventory), 0);
     const profitFromServices = servicesCompletedToday.reduce((sum, s) => sum + (s.serviceProfit || 0), 0);
 
-    setKpiData({
+    return {
         dailyRevenue: revenueFromSales + revenueFromServices,
         dailyProfit: profitFromSales + profitFromServices,
         activeServices: repairingServices.length + scheduledTodayServices.length,
         lowStockAlerts: allInventory.filter(item => !item.isService && item.quantity <= item.lowStockThreshold).length
-    });
+    };
   }, [allServices, allSales, allInventory]);
 
-
   useEffect(() => {
-    if (!isLoading) {
-      calculateKpiData();
-    }
     if (typeof window !== 'undefined') {
       const authUserString = localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY);
       if (authUserString) {
@@ -167,45 +171,34 @@ export default function DashboardPage() {
           setUserName(authUser.name);
         } catch (e) {
           console.error("Failed to parse authUser for dashboard welcome message:", e);
-          setUserName(null);
         }
-      } else {
-          setUserName(null);
       }
-      const stored = localStorage.getItem('workshopTicketInfo');
-      if (stored) {
+      const storedWorkshopInfo = localStorage.getItem('workshopTicketInfo');
+      if (storedWorkshopInfo) {
         try {
-          const info = JSON.parse(stored);
+          const info = JSON.parse(storedWorkshopInfo);
           if (info.name) setWorkshopName(info.name);
         } catch (e) { console.error("Failed to parse workshop info", e); }
       }
     }
-  }, [isLoading, calculateKpiData]);
+  }, []);
   
   useEffect(() => {
     const runCapacityAnalysis = async () => {
-      if (isLoading) return;
+      if (isLoading || allServices.length === 0 || allTechnicians.length === 0) return;
+      
       setIsCapacityLoading(true);
       setCapacityError(null);
+      
       try {
         const servicesForToday = allServices.filter(s => {
-          if (!s.serviceDate || typeof s.serviceDate !== 'string') return false;
-          const serviceDay = parseISO(s.serviceDate);
-          return isValid(serviceDay) && isToday(serviceDay) && s.status !== 'Completado' && s.status !== 'Cancelado';
+          const serviceDay = parseDate(s.serviceDate);
+          return serviceDay && isValid(serviceDay) && isToday(serviceDay) && s.status !== 'Completado' && s.status !== 'Cancelado';
         });
 
         if (servicesForToday.length === 0) {
-            const totalAvailable = allTechnicians
-                .filter(t => !t.isArchived)
-                .reduce((sum, t) => sum + (t.standardHoursPerDay || 8), 0);
-            
-            setCapacityInfo({
-                totalRequiredHours: 0,
-                totalAvailableHours: totalAvailable,
-                recommendation: "Taller disponible",
-                capacityPercentage: 0,
-            });
-            setIsCapacityLoading(false);
+            const totalAvailable = allTechnicians.filter(t => !t.isArchived).reduce((sum, t) => sum + (t.standardHoursPerDay || 8), 0);
+            setCapacityInfo({ totalRequiredHours: 0, totalAvailableHours: totalAvailable, recommendation: "Taller disponible", capacityPercentage: 0 });
             return;
         }
 
@@ -213,13 +206,16 @@ export default function DashboardPage() {
             servicesForDay: servicesForToday.map(s => ({ description: s.description || '' })),
             technicians: allTechnicians.filter(t => !t.isArchived).map(t => ({ id: t.id, standardHoursPerDay: t.standardHoursPerDay || 8 })),
             serviceHistory: allServices
-              .filter(s => s.serviceDate && typeof s.serviceDate === 'string')
-              .map(s => ({
-                description: s.description || '',
-                serviceDate: s.serviceDate,
-                // Only include deliveryDateTime if it's a valid string
-                ...(s.deliveryDateTime && { deliveryDateTime: s.deliveryDateTime }),
-            })),
+              .filter(s => s.serviceDate)
+              .map(s => {
+                  const serviceDate = parseDate(s.serviceDate);
+                  const deliveryDateTime = parseDate(s.deliveryDateTime);
+                  return {
+                      description: s.description || '',
+                      serviceDate: serviceDate ? serviceDate.toISOString() : undefined,
+                      deliveryDateTime: deliveryDateTime ? deliveryDateTime.toISOString() : undefined,
+                  };
+              }),
         });
         setCapacityInfo(result);
       } catch (e) {
@@ -229,7 +225,7 @@ export default function DashboardPage() {
       }
     };
     runCapacityAnalysis();
-  }, [toast, allServices, allTechnicians, isLoading]);
+  }, [allServices, allTechnicians, isLoading, toast]);
   
   const handleGeneratePurchaseOrder = async () => {
     setIsPurchaseLoading(true);
@@ -238,9 +234,8 @@ export default function DashboardPage() {
 
     try {
       const servicesForToday = allServices.filter(s => {
-        if (!s.serviceDate || typeof s.serviceDate !== 'string') return false;
-        const serviceDay = parseISO(s.serviceDate);
-        return isValid(serviceDay) && isToday(serviceDay) && s.status !== 'Completado' && s.status !== 'Cancelado';
+        const serviceDay = parseDate(s.serviceDate);
+        return serviceDay && isValid(serviceDay) && isToday(serviceDay) && s.status !== 'Completado' && s.status !== 'Cancelado';
       });
 
       if (servicesForToday.length === 0) {
@@ -261,8 +256,9 @@ export default function DashboardPage() {
       const result = await getPurchaseRecommendations(input);
       setPurchaseRecommendations(result.recommendations);
       toast({ title: "Orden de Compra Generada", description: result.reasoning, duration: 6000 });
-      setIsPurchaseOrderDialogOpen(true);
-
+      if (result.recommendations.length > 0) {
+        setIsPurchaseOrderDialogOpen(true);
+      }
     } catch (e) {
       setPurchaseError(handleAiError(e, toast, 'recomendación de compra'));
     } finally {
@@ -284,7 +280,7 @@ export default function DashboardPage() {
       }));
 
       const servicesForAI = allServices.map(service => ({
-        serviceDate: service.serviceDate,
+        serviceDate: parseDate(service.serviceDate)?.toISOString(),
         suppliesUsed: (service.serviceItems || []).flatMap(item => item.suppliesUsed || []).map(supply => ({
           supplyId: supply.supplyId,
           quantity: supply.quantity,
@@ -325,8 +321,8 @@ export default function DashboardPage() {
             <DollarSign className="h-5 w-5 text-green-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold font-headline">{formatCurrency(kpiData.dailyRevenue)}</div>
-            <p className="text-xs text-muted-foreground">Ganancia del día: {formatCurrency(kpiData.dailyProfit)}</p>
+            {isLoading ? <Skeleton className="h-8 w-3/4" /> : <div className="text-2xl font-bold font-headline">{formatCurrency(kpiData.dailyRevenue)}</div>}
+            {isLoading ? <Skeleton className="h-4 w-1/2 mt-1" /> : <p className="text-xs text-muted-foreground">Ganancia del día: {formatCurrency(kpiData.dailyProfit)}</p>}
           </CardContent>
         </Card>
         <Card>
@@ -335,8 +331,8 @@ export default function DashboardPage() {
             <Wrench className="h-5 w-5 text-blue-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold font-headline">{kpiData.activeServices}</div>
-            <p className="text-xs text-muted-foreground">Reparando y agendados para hoy</p>
+            {isLoading ? <Skeleton className="h-8 w-1/4" /> : <div className="text-2xl font-bold font-headline">{kpiData.activeServices}</div>}
+            {isLoading ? <Skeleton className="h-4 w-3/4 mt-1" /> : <p className="text-xs text-muted-foreground">Reparando y agendados para hoy</p>}
           </CardContent>
         </Card>
         <Card>
@@ -345,8 +341,8 @@ export default function DashboardPage() {
             <AlertTriangle className="h-5 w-5 text-orange-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold font-headline">{kpiData.lowStockAlerts}</div>
-            <p className="text-xs text-muted-foreground">Ítems que necesitan reposición</p>
+            {isLoading ? <Skeleton className="h-8 w-1/4" /> : <div className="text-2xl font-bold font-headline">{kpiData.lowStockAlerts}</div>}
+            {isLoading ? <Skeleton className="h-4 w-2/3 mt-1" /> : <p className="text-xs text-muted-foreground">Ítems que necesitan reposición</p>}
           </CardContent>
         </Card>
         <Card>
