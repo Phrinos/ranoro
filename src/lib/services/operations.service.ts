@@ -87,7 +87,6 @@ const saveService = async (data: Partial<ServiceRecord>): Promise<ServiceRecord>
     const cleanedData = cleanObjectForFirestore({ ...data, id: docId });
 
     // Use setDoc with merge: true to handle both creation and updates safely.
-    // This creates the document if it doesn't exist, and updates/merges fields if it does.
     await setDoc(docRef, cleanedData, { merge: true });
     
     const newDocSnap = await getDoc(docRef);
@@ -161,6 +160,27 @@ const completeService = async (service: ServiceRecord, paymentAndNextServiceDeta
         const publicDocRef = doc(db, 'publicServices', service.publicId);
         batch.update(publicDocRef, cleanObjectForFirestore(updatedServiceData));
     }
+
+    // Deduct inventory
+    const allSupplies = service.serviceItems.flatMap(item => item.suppliesUsed || []);
+    const inventoryUpdates = new Map<string, number>();
+
+    allSupplies.forEach(supply => {
+        if (!supply.isService) {
+            inventoryUpdates.set(supply.supplyId, (inventoryUpdates.get(supply.supplyId) || 0) + supply.quantity);
+        }
+    });
+
+    const inventoryItems = await inventoryService.onItemsUpdatePromise();
+
+    inventoryUpdates.forEach((quantityToDeduct, itemId) => {
+        const item = inventoryItems.find(inv => inv.id === itemId);
+        if(item) {
+            const itemRef = doc(db, "inventory", itemId);
+            const newQuantity = Math.max(0, item.quantity - quantityToDeduct);
+            batch.update(itemRef, { quantity: newQuantity });
+        }
+    });
 };
 
 const saveMigratedServices = async (services: ExtractedService[], vehicles: ExtractedVehicle[]): Promise<void> => {

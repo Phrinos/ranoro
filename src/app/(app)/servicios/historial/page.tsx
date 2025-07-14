@@ -11,7 +11,7 @@ import { TableToolbar } from "@/components/shared/table-toolbar";
 import type { ServiceRecord, Vehicle, Technician, InventoryItem, QuoteRecord, ServiceTypeRecord, WorkshopInfo } from "@/types";
 import { useToast } from "@/hooks/use-toast";
 import { useTableManager } from "@/hooks/useTableManager";
-import { isSameDay, isValid } from "date-fns";
+import { isSameDay, isValid, isToday } from "date-fns";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ServiceAppointmentCard } from "../components/ServiceAppointmentCard";
 import { Loader2 } from "lucide-react";
@@ -93,34 +93,33 @@ function HistorialServiciosPageComponent() {
 
 
   const activeServices = useMemo(() => {
-    const today = new Date();
     return allServices
       .filter((s) => {
-        const status = s.status as string;
-        
-        // Include services currently in the workshop, regardless of their original serviceDate
-        if (status === "En Taller" || s.subStatus === "Reparando" || s.subStatus === "En Espera de Refacciones") return true;
+        const status = s.status;
+        const serviceDate = parseDate(s.serviceDate);
+
+        // Include services currently being worked on
+        if (status === "En Taller") return true;
 
         // Include services scheduled for today
-        const serviceDate = parseDate(s.serviceDate);
-        if (status === "Agendado" && serviceDate && isValid(serviceDate) && isSameDay(serviceDate, today)) {
+        if (status === "Agendado" && serviceDate && isToday(serviceDate)) {
             return true;
         }
 
         // Include services that were delivered or cancelled today
-        const actionDate = parseDate(s.deliveryDateTime) || parseDate(s.serviceDate);
-        if ((status === "Entregado" || status === "Cancelado") && actionDate && isValid(actionDate) && isSameDay(actionDate, today)) {
+        const actionDate = parseDate(s.deliveryDateTime) || serviceDate;
+        if ((status === "Entregado" || status === "Cancelado") && actionDate && isToday(actionDate)) {
           return true;
         }
 
         return false;
       })
       .sort((a, b) => {
-        // Sort by status first: Cancelled services go to the bottom
-        if (a.status === 'Cancelado' && b.status !== 'Cancelado') return 1;
-        if (a.status !== 'Cancelado' && b.status === 'Cancelado') return -1;
+        const statusOrder = { 'En Taller': 1, 'Agendado': 2, 'Entregado': 3, 'Cancelado': 4 };
+        const orderA = statusOrder[a.status as keyof typeof statusOrder] || 99;
+        const orderB = statusOrder[b.status as keyof typeof statusOrder] || 99;
+        if (orderA !== orderB) return orderA - orderB;
         
-        // Then sort by date
         const dateA = a.serviceDate ? parseDate(a.serviceDate)?.getTime() ?? 0 : 0;
         const dateB = b.serviceDate ? parseDate(b.serviceDate)?.getTime() ?? 0 : 0;
         return dateA - dateB;

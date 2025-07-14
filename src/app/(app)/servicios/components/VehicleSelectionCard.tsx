@@ -15,11 +15,11 @@ import type { Vehicle, ServiceRecord } from '@/types';
 import { format, isValid, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
+import { operationsService } from '@/lib/services';
 
 interface VehicleSelectionCardProps {
   isReadOnly?: boolean;
   localVehicles: Vehicle[];
-  serviceHistory: ServiceRecord[];
   onVehicleSelected: (vehicle: Vehicle | null) => void;
   onOpenNewVehicleDialog: () => void;
 }
@@ -27,7 +27,6 @@ interface VehicleSelectionCardProps {
 export function VehicleSelectionCard({
   isReadOnly,
   localVehicles,
-  serviceHistory,
   onVehicleSelected,
   onOpenNewVehicleDialog,
 }: VehicleSelectionCardProps) {
@@ -40,8 +39,14 @@ export function VehicleSelectionCard({
   const [lastService, setLastService] = useState<ServiceRecord | null>(null);
   const [penultimateService, setPenultimateService] = useState<ServiceRecord | null>(null);
   const [vehicleNotFound, setVehicleNotFound] = useState(false);
+  const [serviceHistory, setServiceHistory] = useState<ServiceRecord[]>([]);
 
   const vehicleId = watch('vehicleId');
+
+  useEffect(() => {
+    // Fetch all services once
+    operationsService.onServicesUpdate(setServiceHistory);
+  }, []);
 
   useEffect(() => {
     if (vehicleId) {
