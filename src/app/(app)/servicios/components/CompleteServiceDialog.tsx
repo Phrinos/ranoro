@@ -27,7 +27,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import type { ServiceRecord, PaymentMethod, InventoryItem } from "@/types";
 import { Wallet, CreditCard, Send, WalletCards, ArrowRightLeft } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
-import { addDays, addMonths, addYears } from "date-fns";
+import { addMonths } from "date-fns";
 import type { ServiceFormValues } from "@/schemas/service-form";
 
 const paymentMethods: [PaymentMethod, ...PaymentMethod[]] = [
@@ -76,7 +76,6 @@ interface CompleteServiceDialogProps {
   service: ServiceRecord;
   onConfirm: (service: ServiceRecord, paymentDetails: CompleteServiceFormValues, nextServiceInfo?: { date: string, mileage?: number }) => void;
   inventoryItems: InventoryItem[];
-  fullFormData?: ServiceFormValues; // To pass all form data
 }
 
 export function CompleteServiceDialog({
@@ -85,7 +84,6 @@ export function CompleteServiceDialog({
   service,
   onConfirm,
   inventoryItems,
-  fullFormData,
 }: CompleteServiceDialogProps) {
   const form = useForm<CompleteServiceFormValues>({
     resolver: zodResolver(completeServiceSchema),
@@ -101,21 +99,19 @@ export function CompleteServiceDialog({
   const handleFormSubmit = (values: CompleteServiceFormValues) => {
     let nextServiceInfo: { date: string, mileage?: number } | undefined = undefined;
     
-    const serviceData = fullFormData || service; // Use full form data if available
-    
-    const serviceType = serviceData.serviceType?.toLowerCase() || '';
+    const serviceType = service.serviceType?.toLowerCase() || '';
     if (serviceType.includes('afinación') || serviceType.includes('cambio de aceite')) {
         const today = new Date();
         const nextServiceDate = addMonths(today, 6);
         
-        const oilItem = (serviceData.serviceItems || [])
+        const oilItem = (service.serviceItems || [])
             .flatMap(item => item.suppliesUsed || [])
             .map(supply => inventoryItems.find(inv => inv.id === supply?.supplyId))
             .find(invItem => invItem?.category.toLowerCase().includes('aceite') && invItem.rendimiento);
 
         let nextMileage: number | undefined = undefined;
-        if (oilItem && serviceData.mileage && oilItem.rendimiento) {
-            nextMileage = serviceData.mileage + oilItem.rendimiento;
+        if (oilItem && service.mileage && oilItem.rendimiento) {
+            nextMileage = service.mileage + oilItem.rendimiento;
         }
 
         nextServiceInfo = {
@@ -123,10 +119,8 @@ export function CompleteServiceDialog({
             mileage: nextMileage,
         };
     }
-    
-    const finalServiceData = { ...service, ...fullFormData };
 
-    onConfirm(finalServiceData, values, nextServiceInfo);
+    onConfirm(service, values, nextServiceInfo);
   };
   
   return (
@@ -141,7 +135,7 @@ export function CompleteServiceDialog({
         <div className="py-4 space-y-4">
             <div className="text-center p-4 bg-muted rounded-lg">
                 <p className="text-sm text-muted-foreground">Total a Pagar</p>
-                <p className="text-4xl font-bold text-primary">{formatCurrency(fullFormData?.totalCost || service.totalCost)}</p>
+                <p className="text-4xl font-bold text-primary">{formatCurrency(service.totalCost)}</p>
             </div>
             <Form {...form}>
                 <form id="complete-service-form" onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4">

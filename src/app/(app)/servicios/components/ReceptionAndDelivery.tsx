@@ -31,6 +31,7 @@ import type { ServiceFormValues } from "@/schemas/service-form";
 import { format, parseISO, isValid } from "date-fns";
 import { es } from "date-fns/locale";
 import { normalizeDataUrl } from "@/lib/utils";
+import { parseDate } from "@/lib/forms";
 
 const fuelLevels = [
   "Vacío",
@@ -66,7 +67,7 @@ export const ReceptionAndDelivery = ({
   handleEnhanceText,
   onOpenSignature
 }: ReceptionAndDeliveryProps) => {
-  const { watch } = useFormContext<ServiceFormValues>();
+  const { watch, getValues } = useFormContext<ServiceFormValues>();
   const customerSignatureReception = watch("customerSignatureReception");
   const customerSignatureDelivery = watch("customerSignatureDelivery");
 
@@ -137,7 +138,7 @@ export const ReceptionAndDelivery = ({
                   <FormLabel className="flex justify-between items-center w-full">
                     <span>Condiciones del Vehículo</span>
                     {!isReadOnly && (
-                      <Button type="button" size="sm" variant="ghost" onClick={() => handleEnhanceText("vehicleConditions")} disabled={isEnhancingText === "vehicleConditions" || !field.value}>
+                      <Button type="button" size="sm" variant="ghost" onClick={() => handleEnhanceText("vehicleConditions")} disabled={isEnhancingText === "vehicleConditions" || !getValues("vehicleConditions")}>
                         {isEnhancingText === "vehicleConditions" ? <Loader2 className="animate-spin" /> : <BrainCircuit className="h-4 w-4" />}
                       </Button>
                     )}
@@ -156,7 +157,7 @@ export const ReceptionAndDelivery = ({
                   <FormLabel className="flex justify-between items-center w-full">
                     <span>Pertenencias del Cliente</span>
                     {!isReadOnly && (
-                      <Button type="button" size="sm" variant="ghost" onClick={() => handleEnhanceText("customerItems")} disabled={isEnhancingText === "customerItems" || !field.value}>
+                      <Button type="button" size="sm" variant="ghost" onClick={() => handleEnhanceText("customerItems")} disabled={isEnhancingText === "customerItems" || !getValues("customerItems")}>
                         {isEnhancingText === "customerItems" ? <Loader2 className="animate-spin" /> : <BrainCircuit className="h-4 w-4" />}
                       </Button>
                     )}

@@ -212,7 +212,7 @@ const SafetyCheckRow = ({
                      <div className="flex justify-between items-center">
                         <FormLabel className="text-xs">Notas de este punto</FormLabel>
                         {!isReadOnly && (
-                            <Button type="button" size="xs" variant="ghost" onClick={() => handleEnhanceText(`${name}.notes`)} disabled={isEnhancingText === `${name}.notes` || !notesField.value}>
+                            <Button type="button" size="xs" variant="ghost" onClick={() => handleEnhanceText(`${name}.notes` as const)} disabled={isEnhancingText === `${name}.notes` || !notesField.value}>
                                 {isEnhancingText === `${name}.notes` ? <Loader2 className="animate-spin h-3 w-3" /> : <BrainCircuit className="h-3 w-3" />}
                             </Button>
                         )}
@@ -257,6 +257,7 @@ export const SafetyChecklist = ({ control, isReadOnly, onSignatureClick, signatu
   onPhotoUploaded: (itemName: string, url: string) => void;
   onViewImage: (url: string) => void;
 }) => {
+  const { getValues } = useFormContext();
   return (
     <Card>
       <CardHeader>
@@ -306,7 +307,7 @@ export const SafetyChecklist = ({ control, isReadOnly, onSignatureClick, signatu
                     <FormLabel className="text-base font-semibold flex justify-between items-center w-full">
                       <span>Observaciones Generales de la Inspección</span>
                       {!isReadOnly && (
-                        <Button type="button" size="sm" variant="ghost" onClick={() => handleEnhanceText('safetyInspection.inspectionNotes')} disabled={isEnhancingText === 'safetyInspection.inspectionNotes' || !field.value}>
+                        <Button type="button" size="sm" variant="ghost" onClick={() => handleEnhanceText('safetyInspection.inspectionNotes')} disabled={isEnhancingText === 'safetyInspection.inspectionNotes' || !getValues('safetyInspection.inspectionNotes')}>
                             {isEnhancingText === 'safetyInspection.inspectionNotes' ? <Loader2 className="animate-spin" /> : <BrainCircuit className="h-4 w-4" />}
                             <span className="ml-2 hidden sm:inline">Mejorar texto</span>
                         </Button>
