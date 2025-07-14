@@ -12,6 +12,7 @@ import { operationsService, inventoryService, personnelService } from '@/lib/ser
 import type { ServiceRecord, Vehicle, Technician, InventoryItem, ServiceTypeRecord, QuoteRecord, WorkshopInfo } from "@/types";
 import { Button } from '@/components/ui/button';
 import { UnifiedPreviewDialog } from '@/components/shared/unified-preview-dialog';
+import type { VehicleFormValues } from '../../vehiculos/components/vehicle-form';
 
 
 // This page now renders the form for creating a new service record locally.
@@ -56,6 +57,15 @@ export default function NuevoServicioPage() {
       toast({ title: 'Error al Guardar', description: 'No se pudo crear el nuevo registro.', variant: 'destructive' });
     }
   };
+  
+  const handleVehicleCreated = async (newVehicle: VehicleFormValues) => {
+      try {
+        await inventoryService.addVehicle(newVehicle);
+        toast({ title: 'Vehículo Creado', description: 'El nuevo vehículo ha sido registrado.' });
+      } catch (error) {
+        toast({ title: 'Error', description: 'No se pudo crear el vehículo', variant: 'destructive' });
+      }
+  };
 
 
   if (isLoading) {
@@ -76,6 +86,7 @@ export default function NuevoServicioPage() {
         onSubmit={handleSaveNewService}
         onClose={() => router.push('/servicios/historial')}
         mode="quote" // Start as a quote by default
+        onVehicleCreated={handleVehicleCreated}
       />
       
       {serviceForPreview && (
