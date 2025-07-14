@@ -12,7 +12,7 @@ import { useCallback, useMemo, useState, useEffect, useRef } from 'react'
 import { nanoid } from 'nanoid'
 import {
   Ban, Camera, CheckCircle, Download, Eye, ShieldCheck, Trash2, Wrench, BrainCircuit, Loader2, PlusCircle, Signature,
-  CalendarIcon, Wallet
+  CalendarIcon, Wallet, DollarSign
 } from 'lucide-react'
 import {
   Card,
@@ -390,9 +390,6 @@ export function ServiceForm(props:Props){
                             inventoryItems={invItems}
                             serviceTypes={serviceTypes}
                             mode={props.mode || 'service'}
-                            totalCost={totalCost}
-                            totalSuppliesWorkshopCost={totalSuppliesWorkshopCost}
-                            serviceProfit={serviceProfit}
                             onGenerateQuoteWithAI={handleGenerateQuote}
                             isGeneratingQuote={isGeneratingQuote}
                             isEnhancingText={isEnhancingText}
