@@ -101,7 +101,7 @@ export function VehicleForm({ id, initialData, onSubmit }: VehicleFormProps) {
 
   return (
     <Form {...form}>
-      <form id={id} onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-6 py-4">
+      <form id={id} onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-6 pt-4">
         
         <div className="space-y-2">
             <h3 className="font-semibold">Datos del Vehículo</h3>

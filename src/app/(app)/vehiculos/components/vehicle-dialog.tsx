@@ -66,11 +66,11 @@ export function VehicleDialog({
       {trigger && !isControlled && <DialogTrigger asChild onClick={() => onOpenChange(true)}>{trigger}</DialogTrigger>}
       {open && (
         <DialogContent className="sm:max-w-2xl max-h-[90vh] flex flex-col p-0">
-            <DialogHeader className="p-6 pb-0">
+            <DialogHeader className="p-6 pb-0 flex-shrink-0">
                 <DialogTitle>{dialogTitle}</DialogTitle>
                 <DialogDescription>{dialogDescription}</DialogDescription>
             </DialogHeader>
-            <div className="flex-grow overflow-y-auto px-6 pb-12">
+            <div className="flex-grow overflow-y-auto px-6 pb-16">
                 <VehicleForm
                     id="vehicle-form"
                     initialData={vehicle}
@@ -90,4 +90,3 @@ export function VehicleDialog({
     </Dialog>
   );
 }
-

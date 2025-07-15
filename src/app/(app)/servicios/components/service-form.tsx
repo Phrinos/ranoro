@@ -391,7 +391,6 @@ export function ServiceForm(props:Props){
     onSubmit(dataToSubmit);
   };
 
-  const showCancelButton = !isReadOnly && initialDataService?.id && initialDataService.status !== 'Entregado' && initialDataService.status !== 'Cancelado';
   const showNextServiceCard = useMemo(() => {
     return (watchedStatus === 'En Taller' && watchedSubStatus === 'Completado') || watchedStatus === 'Entregado';
   }, [watchedStatus, watchedSubStatus]);
@@ -401,7 +400,7 @@ export function ServiceForm(props:Props){
     <>
         <FormProvider {...form}>
             <form id="service-form" onSubmit={handleSubmit(formSubmitWrapper)} className="flex flex-col flex-grow overflow-hidden">
-                <div className="flex-grow overflow-y-auto px-6 space-y-6">
+                <div className="flex-grow overflow-y-auto pt-4 space-y-6">
                     <VehicleSelectionCard
                         isReadOnly={props.isReadOnly}
                         localVehicles={parentVehicles}
@@ -510,52 +509,6 @@ export function ServiceForm(props:Props){
                             </Card>
                         </div>
                     )}
-                </div>
-                
-                 <div className="p-6 pt-4 border-t flex-shrink-0 bg-background flex justify-between items-center">
-                    <div>
-                        {showCancelButton && (
-                            <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                    <Button type="button" variant="destructive">
-                                        <Ban className="mr-2 h-4 w-4" />
-                                        Cancelar Servicio
-                                    </Button>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent>
-                                    <AlertDialogHeader>
-                                        <AlertDialogTitle>¿Estás seguro de cancelar este servicio?</AlertDialogTitle>
-                                        <AlertDialogDescription>
-                                            Esta acción es permanente. Por favor, especifica un motivo para la cancelación.
-                                        </AlertDialogDescription>
-                                    </AlertDialogHeader>
-                                    <Textarea 
-                                        placeholder="Motivo de la cancelación..."
-                                        value={cancellationReason}
-                                        onChange={(e) => setCancellationReason(e.target.value)}
-                                    />
-                                    <AlertDialogFooter>
-                                        <AlertDialogCancel onClick={() => setCancellationReason('')}>Cerrar</AlertDialogCancel>
-                                        <AlertDialogAction
-                                            disabled={!cancellationReason.trim()}
-                                            onClick={() => onCancelService?.(initialDataService!.id, cancellationReason)}
-                                        >
-                                            Confirmar Cancelación
-                                        </AlertDialogAction>
-                                    </AlertDialogFooter>
-                                </AlertDialogContent>
-                            </AlertDialog>
-                        )}
-                    </div>
-                    <div className="flex justify-end gap-2">
-                       <Button variant="outline" type="button" onClick={onClose}>Cerrar</Button>
-                       {!isReadOnly && (
-                           <Button type="submit" disabled={formState.isSubmitting}>
-                                {formState.isSubmitting ? <Loader2 className="animate-spin mr-2" /> : null}
-                                {initialDataService?.id ? 'Actualizar Registro' : 'Crear Registro'}
-                           </Button>
-                       )}
-                    </div>
                 </div>
             </form>
         </FormProvider>

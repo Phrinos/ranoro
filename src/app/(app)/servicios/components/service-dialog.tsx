@@ -209,26 +209,28 @@ export function ServiceDialog({
     <>
     <Dialog open={open} onOpenChange={onOpenChange}>
       {trigger && !isControlled && <DialogTrigger asChild onClick={() => onOpenChange(true)}>{trigger}</DialogTrigger>}
-      <DialogContent className="sm:max-w-6xl flex flex-col max-h-[90vh] p-0">
-        <DialogHeader className="p-6 pb-0">
+      <DialogContent className="sm:max-w-6xl max-h-[90vh] flex flex-col p-0">
+        <DialogHeader className="p-6 pb-0 flex-shrink-0">
           <DialogTitle>{dialogTitle}</DialogTitle>
           <DialogDescription>{dialogDescription}</DialogDescription>
         </DialogHeader>
-        <ServiceForm
-          initialDataService={service}
-          vehicles={vehicles} 
-          technicians={technicians}
-          inventoryItems={inventoryItems}
-          serviceTypes={serviceTypes}
-          onSubmit={internalOnSave}
-          onClose={() => onOpenChange(false)}
-          onCancelService={onCancelService}
-          isReadOnly={isReadOnly}
-          mode={mode}
-          onStatusChange={setFormStatus}
-          onVehicleCreated={onVehicleCreated}
-        />
-        <DialogFooter className="p-6 pt-4 border-t sticky bottom-0 bg-background flex justify-between items-center">
+        <div className="flex-grow overflow-y-auto px-6 pb-16"> {/* Add padding bottom */}
+            <ServiceForm
+              initialDataService={service}
+              vehicles={vehicles} 
+              technicians={technicians}
+              inventoryItems={inventoryItems}
+              serviceTypes={serviceTypes}
+              onSubmit={internalOnSave}
+              onClose={() => onOpenChange(false)}
+              onCancelService={onCancelService}
+              isReadOnly={isReadOnly}
+              mode={mode}
+              onStatusChange={setFormStatus}
+              onVehicleCreated={onVehicleCreated}
+            />
+        </div>
+        <DialogFooter className="p-6 pt-4 border-t sticky bottom-0 bg-background flex justify-between items-center w-full">
             <div>
                 {showCancelButton && onCancelService && (
                     <AlertDialog>
@@ -266,7 +268,7 @@ export function ServiceDialog({
             <div className="flex justify-end gap-2">
                <Button variant="outline" type="button" onClick={() => onOpenChange(false)}>Cerrar</Button>
                {!isReadOnly && (
-                   <Button type="submit" form="service-form" disabled={false /* formState.isSubmitting is now internal to ServiceForm */}>
+                   <Button type="submit" form="service-form" disabled={false}>
                        {service?.id ? 'Actualizar Registro' : 'Crear Registro'}
                    </Button>
                )}
@@ -287,4 +289,3 @@ export function ServiceDialog({
     </>
   );
 }
-
