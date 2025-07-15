@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import React, { useState, useEffect } from 'react';
@@ -10,12 +9,12 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/components/ui/dialog';
-import { ServiceForm } from './service-form';
-import type { ServiceRecord, Vehicle, Technician, InventoryItem, QuoteRecord, User, ServiceTypeRecord } from '@/types';
-import { useToast } from '@/hooks/use-toast'; 
+} from "@/components/ui/dialog";
+import { ServiceForm } from "./service-form";
+import type { ServiceRecord, Vehicle, Technician, InventoryItem, QuoteRecord, User, ServiceTypeRecord } from "@/types";
+import { useToast } from "@/hooks/use-toast"; 
 import { db } from '@/lib/firebaseClient.js';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, onSnapshot } from 'firebase/firestore';
 import { operationsService } from '@/lib/services';
 import { CompleteServiceDialog } from './CompleteServiceDialog';
 
@@ -80,61 +79,51 @@ export function ServiceDialog({
   }, [open, service]);
 
   useEffect(() => {
-    const syncAndMarkAsViewed = async () => {
-      if (open && service?.id && mode === 'service') { // Only run if service exists
-        let changed = false;
+    if (!open || !service?.id || mode !== 'service' || !db) return;
+
+    // Listen for real-time signature updates from the public document
+    const publicDocRef = doc(db, 'publicServices', service.publicId || service.id);
+    const unsubscribe = onSnapshot(publicDocRef, async (publicDocSnap) => {
+        if (!publicDocSnap.exists()) return;
+
+        const publicData = publicDocSnap.data() as ServiceRecord;
         const serviceDocRef = doc(db, 'serviceRecords', service.id);
-        const currentDocSnap = await getDoc(serviceDocRef);
+        const currentServiceSnap = await getDoc(serviceDocRef);
+        
+        if (!currentServiceSnap.exists()) return;
+        const currentServiceData = currentServiceSnap.data() as ServiceRecord;
+        
+        let changed = false;
+        const updates: Partial<ServiceRecord> = {};
 
-        if (!currentDocSnap.exists()) return; // Don't try to update a non-existent doc
-
-        let serviceToUpdate = { ...currentDocSnap.data() } as ServiceRecord;
-
-        if (service.publicId) {
-          try {
-            const publicDocRef = doc(db, 'publicServices', service.publicId);
-            const publicDocSnap = await getDoc(publicDocRef);
-
-            if (publicDocSnap.exists()) {
-              const publicData = publicDocSnap.data() as ServiceRecord;
-              if (publicData.customerSignatureReception && !serviceToUpdate.customerSignatureReception) {
-                serviceToUpdate.customerSignatureReception = publicData.customerSignatureReception;
-                changed = true;
-              }
-              if (publicData.customerSignatureDelivery && !serviceToUpdate.customerSignatureDelivery) {
-                serviceToUpdate.customerSignatureDelivery = publicData.customerSignatureDelivery;
-                changed = true;
-              }
-            }
-          } catch (e) {
-            console.error('Failed to sync signatures from public doc:', e);
-          }
+        if (publicData.customerSignatureReception && !currentServiceData.customerSignatureReception) {
+            updates.customerSignatureReception = publicData.customerSignatureReception;
+            changed = true;
+        }
+        if (publicData.customerSignatureDelivery && !currentServiceData.customerSignatureDelivery) {
+            updates.customerSignatureDelivery = publicData.customerSignatureDelivery;
+            changed = true;
         }
 
-        if (serviceToUpdate.customerSignatureReception && !serviceToUpdate.receptionSignatureViewed) {
-          serviceToUpdate.receptionSignatureViewed = true;
-          changed = true;
+        if (updates.customerSignatureReception && !currentServiceData.receptionSignatureViewed) {
+            updates.receptionSignatureViewed = true;
+            changed = true;
         }
-        if (serviceToUpdate.customerSignatureDelivery && !serviceToUpdate.deliverySignatureViewed) {
-          serviceToUpdate.deliverySignatureViewed = true;
-          changed = true;
+        if (updates.customerSignatureDelivery && !currentServiceData.deliverySignatureViewed) {
+            updates.deliverySignatureViewed = true;
+            changed = true;
         }
         
         if (changed) {
-          // Use setDoc with merge to safely update or create fields
-          await setDoc(serviceDocRef, { 
-              customerSignatureReception: serviceToUpdate.customerSignatureReception,
-              customerSignatureDelivery: serviceToUpdate.customerSignatureDelivery,
-              receptionSignatureViewed: serviceToUpdate.receptionSignatureViewed,
-              deliverySignatureViewed: serviceToUpdate.deliverySignatureViewed,
-           }, { merge: true });
+            await setDoc(serviceDocRef, updates, { merge: true });
         }
-      }
-    };
-    if (open) {
-      syncAndMarkAsViewed();
-    }
+    }, (error) => {
+        console.error("Error listening to public service document:", error);
+    });
+
+    return () => unsubscribe(); // Cleanup the listener when the dialog closes or dependencies change
   }, [open, service, mode]);
+
   
   const handleInternalCompletion = async (service: ServiceRecord, paymentDetails: any, nextServiceInfo?: any) => {
     if (onComplete) {
