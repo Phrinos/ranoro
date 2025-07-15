@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React, { useState, useEffect } from 'react';
@@ -90,7 +91,6 @@ export default function MensajeriaPage() {
   const handleSendTestMessage = async () => {
     setIsSendingTest(true);
     
-    // Get the most recent values directly from the form state
     const { apiKey, fromPhoneNumberId } = form.getValues();
 
     if (!apiKey || !fromPhoneNumberId) {
