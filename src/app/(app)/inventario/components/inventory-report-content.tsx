@@ -1,3 +1,4 @@
+
 // src/app/(app)/inventario/components/inventory-report-content.tsx
 "use client";
 
@@ -8,6 +9,7 @@ import { es } from 'date-fns/locale';
 import Image from 'next/image';
 import { formatCurrency } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import {
   Table,
   TableBody,
@@ -15,8 +17,9 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-  TableFooter, // Importar TableFooter
 } from "@/components/ui/table";
+import { Package, DollarSign, TrendingUp } from 'lucide-react';
+
 
 interface InventoryReportContentProps {
   items: InventoryItem[];
@@ -27,8 +30,11 @@ export const InventoryReportContent = React.forwardRef<HTMLDivElement, Inventory
   ({ items, workshopInfo }, ref) => {
     const now = new Date();
     const formattedDate = format(now, "dd 'de' MMMM 'de' yyyy, HH:mm:ss", { locale: es });
-    const totalInventoryCost = items.reduce((sum, item) => sum + (item.quantity * item.unitPrice), 0);
-    const totalInventoryValue = items.reduce((sum, item) => sum + (item.quantity * item.sellingPrice), 0);
+    
+    const productsOnly = items.filter(item => !item.isService);
+    const totalInventoryCost = productsOnly.reduce((sum, item) => sum + (item.quantity * item.unitPrice), 0);
+    const totalInventoryValue = productsOnly.reduce((sum, item) => sum + (item.quantity * item.sellingPrice), 0);
+    const totalProductsCount = productsOnly.length;
 
     return (
       <div
@@ -58,6 +64,41 @@ export const InventoryReportContent = React.forwardRef<HTMLDivElement, Inventory
         </header>
 
         <main>
+          <div className="grid grid-cols-3 gap-4 mb-8">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Total de Productos</CardTitle>
+                <Package className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{totalProductsCount}</div>
+                <p className="text-xs text-muted-foreground">Productos únicos en stock.</p>
+              </CardContent>
+            </Card>
+             <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Valor Total (Costo)</CardTitle>
+                <DollarSign className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{formatCurrency(totalInventoryCost)}</div>
+                <p className="text-xs text-muted-foreground">Valor del inventario a precio de compra.</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Valor Total (Venta)</CardTitle>
+                <TrendingUp className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{formatCurrency(totalInventoryValue)}</div>
+                 <p className="text-xs text-muted-foreground">Valor potencial de venta del inventario.</p>
+              </CardContent>
+            </Card>
+          </div>
+
+
+          <h3 className="text-xl font-semibold mb-2">Detalle del Inventario</h3>
           <Table>
             <TableHeader>
               <TableRow className="bg-gray-100">
@@ -93,16 +134,6 @@ export const InventoryReportContent = React.forwardRef<HTMLDivElement, Inventory
                 </TableRow>
               )}
             </TableBody>
-            <TableFooter>
-                <TableRow className="font-bold border-t-2 border-black">
-                    <TableCell colSpan={6} className="text-right">Valor Total del Inventario (Costo):</TableCell>
-                    <TableCell className="text-right">{formatCurrency(totalInventoryCost)}</TableCell>
-                </TableRow>
-                 <TableRow className="font-bold">
-                    <TableCell colSpan={6} className="text-right">Valor Total del Inventario (Venta):</TableCell>
-                    <TableCell className="text-right">{formatCurrency(totalInventoryValue)}</TableCell>
-                </TableRow>
-            </TableFooter>
           </Table>
         </main>
       </div>
