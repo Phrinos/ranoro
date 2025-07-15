@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import Link from "next/link";
@@ -46,6 +47,7 @@ import { es } from 'date-fns/locale';
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { parseDate } from '@/lib/forms';
+import { cn } from "@/lib/utils";
 
 
 export function AppSidebar({
@@ -91,7 +93,7 @@ export function AppSidebar({
   }, [groupedByTag, navItems]);
 
   return (
-    <Sidebar collapsible="icon" side="left" variant="sidebar">
+    <Sidebar collapsible="icon" side="left" variant="sidebar" className="app-sidebar">
       <SidebarHeader className="border-b border-sidebar-border h-16 flex items-center justify-center">
         <Link
           href="/dashboard"
