@@ -8,11 +8,11 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { PageHeader } from '@/components/page-header';
 import { PosForm } from '../components/pos-form';
-import type { SaleReceipt, InventoryItem, PaymentMethod, InventoryCategory, Supplier, WorkshopInfo } from '@/types'; 
+import type { SaleReceipt, InventoryItem, PaymentMethod, InventoryCategory, Supplier, WorkshopInfo, Vehicle } from '@/types'; 
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { inventoryService, operationsService } from '@/lib/services';
-import { Loader2, Copy, Printer } from 'lucide-react';
+import { Loader2, Copy, Printer, MessageSquare } from 'lucide-react';
 import type { InventoryItemFormValues } from '../../inventario/components/inventory-item-form';
 import { db } from '@/lib/firebaseClient';
 import { writeBatch, doc } from 'firebase/firestore';
@@ -220,14 +220,15 @@ export default function NuevaVentaPage() {
               </Button>
             </div>
           }
+          whatsappMessage={`Ticket de su compra en ${workshopInfo?.name || 'nuestro taller'}. Folio: ${saleForTicket.id}`}
+          customerPhone={undefined} // No hay vehículo asociado en una venta de mostrador
+          contentRef={ticketContentRef}
         >
-          <div className="ticket-preview-content">
-            <TicketContent
-              ref={ticketContentRef}
-              sale={saleForTicket}
-              previewWorkshopInfo={workshopInfo || undefined}
-            />
-          </div>
+          <TicketContent
+            ref={ticketContentRef}
+            sale={saleForTicket}
+            previewWorkshopInfo={workshopInfo || undefined}
+          />
         </PrintTicketDialog>
       )}
     </>

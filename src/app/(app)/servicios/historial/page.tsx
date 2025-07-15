@@ -22,7 +22,7 @@ import { writeBatch } from 'firebase/firestore';
 import { TicketContent } from '@/components/ticket-content';
 import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
 import { Button } from "@/components/ui/button";
-import { Printer, Copy } from "lucide-react";
+import { Printer, Copy, MessageSquare } from "lucide-react";
 import html2canvas from 'html2canvas';
 
 const serviceStatusOptions: { value: ServiceRecord['status'] | 'all'; label: string }[] = [
@@ -243,49 +243,6 @@ function HistorialServiciosPageComponent() {
     },
     [toast]
   );
-  
-  const handleCopyAsImage = useCallback(async () => {
-    if (!ticketContentRef.current) return;
-    try {
-      const canvas = await html2canvas(ticketContentRef.current, { scale: 2.5, backgroundColor: null });
-      canvas.toBlob((blob) => {
-        if (blob) {
-          navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
-          toast({ title: "Copiado", description: "La imagen ha sido copiada." });
-        }
-      });
-    } catch (e) {
-      console.error("Error copying image:", e);
-      toast({ title: "Error", description: "No se pudo copiar la imagen del ticket.", variant: "destructive" });
-    }
-  }, [toast]);
-  
-  const handlePrint = () => {
-    const content = ticketContentRef.current?.innerHTML;
-    if (!content) return;
-    
-    const printWindow = window.open('', '_blank');
-    if (printWindow) {
-      printWindow.document.write('<html><head><title>Imprimir Ticket</title>');
-      
-      const stylesheets = Array.from(document.getElementsByTagName('link'));
-      stylesheets.forEach(sheet => {
-          printWindow.document.write(sheet.outerHTML);
-      });
-      
-      printWindow.document.write('<style>@media print { body { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; } .printable-content { margin: 0; padding: 0; } }</style></head><body class="bg-white">');
-      printWindow.document.write(content);
-      printWindow.document.write('</body></html>');
-      
-      printWindow.document.close();
-      printWindow.focus();
-      setTimeout(() => {
-        printWindow.print();
-        printWindow.close();
-      }, 500);
-    }
-  };
-
 
   if (isLoading) {
     return (
@@ -440,16 +397,19 @@ function HistorialServiciosPageComponent() {
             onOpenChange={setIsTicketDialogOpen}
             title="Ticket de Servicio"
             dialogContentClassName="sm:max-w-md"
-            footerActions={<>
-                <div className="flex flex-col-reverse sm:flex-row gap-2">
-                    <Button variant="outline" onClick={handleCopyAsImage} className="w-full sm:w-auto">
-                        <Copy className="mr-2 h-4 w-4"/> Copiar Imagen
-                    </Button>
-                    <Button onClick={handlePrint} className="w-full sm:w-auto">
-                        <Printer className="mr-2 h-4 w-4"/>Imprimir
-                    </Button>
-                </div>
-            </>}
+            footerActions={
+              <div className="flex flex-col-reverse sm:flex-row gap-2">
+                <Button variant="outline" onClick={() => {
+                  const vehicle = vehicles.find(v => v.id === serviceForTicket.vehicleId);
+                  const message = `Ticket de servicio para ${vehicle?.make} ${vehicle?.model}. Folio: ${serviceForTicket.id}`;
+                  window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
+                }}>
+                  <MessageSquare className="mr-2 h-4 w-4" /> Enviar por WhatsApp
+                </Button>
+                <Button onClick={() => window.print()}><Printer className="mr-2 h-4 w-4"/>Imprimir</Button>
+              </div>
+            }
+            contentRef={ticketContentRef}
         >
           <TicketContent
             ref={ticketContentRef}

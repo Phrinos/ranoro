@@ -2,7 +2,7 @@
 
 "use client";
 
-import React from 'react';
+import React, { useCallback } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -12,6 +12,10 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
+import { Button } from './button';
+import { MessageSquare } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import html2canvas from 'html2canvas';
 
 interface PrintTicketDialogProps {
   open: boolean;
@@ -22,18 +26,65 @@ interface PrintTicketDialogProps {
   onDialogClose?: () => void; 
   dialogContentClassName?: string;
   footerActions?: React.ReactNode;
+  whatsappMessage?: string;
+  customerPhone?: string;
+  contentRef: React.RefObject<HTMLDivElement>;
 }
 
 export function PrintTicketDialog({
   open,
   onOpenChange,
   title,
-  description = "Contenido del documento listo para imprimir.",
+  description = "Contenido del documento listo para imprimir o compartir.",
   children,
   onDialogClose,
   dialogContentClassName = "",
-  footerActions
+  footerActions,
+  whatsappMessage,
+  customerPhone,
+  contentRef,
 }: PrintTicketDialogProps) {
+    const { toast } = useToast();
+
+    const handleShareOnWhatsApp = useCallback(async () => {
+    if (!contentRef.current) return;
+
+    const message = whatsappMessage || "Aquí está su recibo.";
+    const phone = customerPhone ? customerPhone.replace(/\D/g, '') : '';
+    
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    
+    try {
+        const canvas = await html2canvas(contentRef.current, { scale: 2.5, backgroundColor: null });
+        
+        if (isMobile && navigator.canShare && navigator.canShare({ files: [new File([], '')] })) {
+            canvas.toBlob(async (blob) => {
+                if (blob) {
+                    const file = new File([blob], "ticket.png", { type: "image/png" });
+                    try {
+                        await navigator.share({
+                            files: [file],
+                            title: 'Ticket de Servicio',
+                            text: message,
+                        });
+                    } catch (err) {
+                        console.error("Share failed:", err);
+                        toast({ title: 'Compartir cancelado', variant: 'default' });
+                    }
+                }
+            }, 'image/png');
+        } else {
+            // Desktop fallback
+            const url = `https://web.whatsapp.com/send?${phone ? `phone=${phone}&` : ''}text=${encodeURIComponent(message)}`;
+            window.open(url, '_blank');
+            toast({ title: 'Abriendo WhatsApp Web', description: 'Por favor, copie y pegue la imagen del ticket en el chat.', duration: 5000 });
+        }
+    } catch (e) {
+        console.error("Error generating or sharing image:", e);
+        toast({ title: 'Error', description: 'No se pudo generar o compartir la imagen del ticket.', variant: 'destructive' });
+    }
+  }, [contentRef, whatsappMessage, customerPhone, toast]);
+
 
   const handleClose = () => {
     onOpenChange(false);
@@ -63,9 +114,16 @@ export function PrintTicketDialog({
             </div>
         </div>
 
-        {footerActions && (
-          <DialogFooter className="print:hidden flex-shrink-0 flex-col-reverse sm:flex-row gap-2 sm:justify-end">
-            {footerActions}
+        {(footerActions || whatsappMessage) && (
+          <DialogFooter className="print:hidden flex-shrink-0 flex-col-reverse sm:flex-row gap-2 sm:justify-between items-center w-full">
+            {whatsappMessage && (
+                <Button onClick={handleShareOnWhatsApp} variant="success" className="bg-green-600 hover:bg-green-700 w-full sm:w-auto">
+                    <MessageSquare className="mr-2 h-4 w-4" /> Compartir en WhatsApp
+                </Button>
+            )}
+            <div className="flex justify-end gap-2 w-full sm:w-auto">
+                {footerActions}
+            </div>
           </DialogFooter>
         )}
       </DialogContent>
