@@ -105,7 +105,7 @@ export default function LandingPage() {
               width={140}
               height={40}
               className="dark:invert w-auto h-auto"
-              style={{ width: 'auto', height: 'auto' }}
+              style={{ width: '140px', height: 'auto' }}
               data-ai-hint="ranoro logo"
             />
           </Link>
