@@ -1,4 +1,5 @@
 
+
 // src/app/(app)/inventario/components/inventory-report-content.tsx
 "use client";
 
@@ -17,7 +18,6 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-  TableFooter,
 } from "@/components/ui/table";
 import { Package, DollarSign, TrendingUp } from 'lucide-react';
 
@@ -125,7 +125,7 @@ export const InventoryReportContent = React.forwardRef<HTMLDivElement, Inventory
 
 
           <h3 className="text-xl font-semibold mb-2">Detalle del Inventario</h3>
-          <Table>
+          <Table className="w-full table-fixed border-collapse">
             <TableHeader>
               <TableRow className="bg-gray-100">
                 <TableHead className="font-bold text-gray-700">Categoría</TableHead>
