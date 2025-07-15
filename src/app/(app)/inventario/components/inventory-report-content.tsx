@@ -1,10 +1,9 @@
-
 // src/app/(app)/inventario/components/inventory-report-content.tsx
 "use client";
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import type { InventoryItem, WorkshopInfo } from '@/types';
-import { format, parseISO, isValid } from 'date-fns';
+import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import Image from 'next/image';
 import { formatCurrency } from '@/lib/utils';
@@ -20,6 +19,14 @@ import {
 } from "@/components/ui/table";
 import { Package, DollarSign, TrendingUp } from 'lucide-react';
 
+const LOCALSTORAGE_KEY = 'workshopTicketInfo';
+const initialWorkshopInfo: WorkshopInfo = {
+  name: "RANORO",
+  phone: "4491425323",
+  addressLine1: "Av. de la Convencion de 1914 No. 1421",
+  logoUrl: "/ranoro-logo.png",
+  cityState: "Aguascalientes, Ags.",
+};
 
 interface InventoryReportContentProps {
   items: InventoryItem[];
@@ -27,7 +34,19 @@ interface InventoryReportContentProps {
 }
 
 export const InventoryReportContent = React.forwardRef<HTMLDivElement, InventoryReportContentProps>(
-  ({ items, workshopInfo }, ref) => {
+  ({ items, workshopInfo: passedWorkshopInfo }, ref) => {
+    const [workshopInfo, setWorkshopInfo] = useState<WorkshopInfo>(initialWorkshopInfo);
+
+    useEffect(() => {
+        const infoFromProps = passedWorkshopInfo;
+        const storedInfoStr = localStorage.getItem(LOCALSTORAGE_KEY);
+        let infoFromStorage: WorkshopInfo | null = null;
+        if(storedInfoStr) {
+            try { infoFromStorage = JSON.parse(storedInfoStr); } catch {}
+        }
+        setWorkshopInfo({ ...initialWorkshopInfo, ...infoFromStorage, ...infoFromProps });
+    }, [passedWorkshopInfo]);
+
     const now = new Date();
     const formattedDate = format(now, "dd 'de' MMMM 'de' yyyy, HH:mm:ss", { locale: es });
     
