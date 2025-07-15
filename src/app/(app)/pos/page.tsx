@@ -274,49 +274,17 @@ function PosPageComponent() {
     toast({ title: `Se registró una ${type.toLowerCase()} de caja.` });
   }, [toast]);
   
-  const handleSendWhatsapp = async (sale: SaleReceipt) => {
-    if (!sale.whatsappNumber) {
-      toast({ title: "Sin Número", description: "Esta venta no tiene un número de WhatsApp registrado.", variant: "destructive" });
-      return;
-    }
-    const messagingConfigStr = localStorage.getItem('messagingConfig');
-    if (!messagingConfigStr) {
-      toast({ title: 'Configuración Faltante', description: 'No se ha configurado la API de WhatsApp.', variant: 'destructive' });
-      return;
-    }
-    const { apiKey, fromPhoneNumberId } = JSON.parse(messagingConfigStr);
-    if (!apiKey || !fromPhoneNumberId) {
-      toast({ title: 'Credenciales Faltantes', description: 'API Key y Phone ID son requeridos.', variant: 'destructive' });
-      return;
-    }
+  const handleCopySaleForWhatsapp = useCallback((sale: SaleReceipt) => {
+    const workshopName = JSON.parse(localStorage.getItem('workshopTicketInfo') || '{}').name || 'nuestro taller';
+    const message = `Hola ${sale.customerName || 'Cliente'}, aquí tienes los detalles de tu compra en ${workshopName}.
+Folio de Venta: ${sale.id}
+Total: ${formatCurrency(sale.totalAmount)}
+¡Gracias por tu preferencia!`;
 
-    // Set the sale to be rendered in the hidden dialog, then generate and send.
-    setSelectedSaleForReprint(sale);
-    
-    // We need a short delay to allow React to render the ticket content in the hidden dialog
-    setTimeout(async () => {
-        if (!ticketContentRef.current) {
-          setSelectedSaleForReprint(null); // Clean up if ref is not available
-          return;
-        }
-        
-        toast({ title: 'Generando imagen del ticket...' });
-        const canvas = await html2canvas(ticketContentRef.current, { scale: 2.5, backgroundColor: '#ffffff' });
-
-        toast({ title: 'Enviando ticket por WhatsApp...' });
-        const result = await messagingService.sendWhatsappImage(apiKey, fromPhoneNumberId, sale.whatsappNumber!, canvas, `Ticket de compra. Folio: ${sale.id}`);
-        
-        toast({
-            title: result.success ? 'Ticket Enviado' : 'Error al Enviar',
-            description: result.message,
-            variant: result.success ? 'default' : 'destructive'
-        });
-
-        // Clean up
-        setSelectedSaleForReprint(null);
-
-    }, 200);
-  };
+    navigator.clipboard.writeText(message).then(() => {
+      toast({ title: 'Mensaje Copiado', description: 'El mensaje para WhatsApp ha sido copiado.' });
+    });
+  }, [toast]);
   
   const setDateToToday = () => setDateRange({ from: startOfDay(new Date()), to: endOfDay(new Date()) });
   const setDateToThisWeek = () => setDateRange({ from: startOfWeek(new Date(), { weekStartsOn: 1 }), to: endOfWeek(new Date(), { weekStartsOn: 1 }) });
@@ -377,19 +345,13 @@ function PosPageComponent() {
       <PrintTicketDialog open={isReprintDialogOpen && !!selectedSaleForReprint} onOpenChange={setIsReprintDialogOpen} title="Reimprimir Ticket" footerActions={<><Button variant="outline" onClick={handleCopyAsImage}><Copy className="mr-2 h-4 w-4"/>Copiar</Button><Button onClick={() => window.print()}><Printer className="mr-2 h-4 w-4"/>Imprimir</Button></>}>
         {selectedSaleForReprint && <TicketContent ref={ticketContentRef} sale={selectedSaleForReprint} />}
       </PrintTicketDialog>
-      {selectedSale && <ViewSaleDialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen} sale={selectedSale} onCancelSale={handleCancelSale} onSendWhatsapp={handleSendWhatsapp} />}
+      {selectedSale && <ViewSaleDialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen} sale={selectedSale} onCancelSale={handleCancelSale} onSendWhatsapp={handleCopySaleForWhatsapp} />}
       <Dialog open={isInitialBalanceDialogOpen} onOpenChange={setIsInitialBalanceDialogOpen}>
         <DialogContent><DialogHeader><DialogTitle>Saldo Inicial de Caja</DialogTitle></DialogHeader><div className="py-4"><Input type="number" placeholder="500.00" value={initialBalanceAmount} onChange={(e) => setInitialBalanceAmount(e.target.value === '' ? '' : Number(e.target.value))}/></div><DialogFooter><Button onClick={handleSetInitialBalance}>Guardar</Button></DialogFooter></DialogContent>
       </Dialog>
       <PrintTicketDialog open={isCorteDialogOpen} onOpenChange={setIsCorteDialogOpen} title="Corte de Caja">
          <CorteDiaContent reportData={cajaSummaryData} date={dateRange?.from || new Date()} transactions={allCashTransactions.filter(t => isWithinInterval(parseISO(t.date), {start: startOfDay(dateRange?.from || new Date()), end: endOfDay(dateRange?.to || dateRange?.from || new Date())}))}/>
       </PrintTicketDialog>
-       {/* Hidden dialog for generating tickets for WhatsApp */}
-      <div className="hidden">
-        <PrintTicketDialog open={!!selectedSaleForReprint} onOpenChange={() => {}} title="">
-            {selectedSaleForReprint && <TicketContent ref={ticketContentRef} sale={selectedSaleForReprint} />}
-        </PrintTicketDialog>
-      </div>
     </>
   );
 }

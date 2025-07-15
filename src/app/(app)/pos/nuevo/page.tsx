@@ -20,6 +20,7 @@ import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
 import { TicketContent } from '@/components/ticket-content';
 import { Button } from '@/components/ui/button';
 import html2canvas from 'html2canvas';
+import { formatCurrency } from '@/lib/utils';
 
 // --- Schema Definitions ---
 const saleItemSchema = z.object({
@@ -108,37 +109,19 @@ export default function NuevaVentaPage() {
     return () => unsubs.forEach(unsub => unsub());
   }, []);
   
-  const sendTicketByWhatsapp = useCallback(async () => {
-    if (!ticketContentRef.current || !saleForTicket || !phoneForTicket) return;
-    
-    const messagingConfigStr = localStorage.getItem('messagingConfig');
-    if (!messagingConfigStr) {
-        toast({ title: 'Configuración de Mensajería Faltante', description: 'No se ha configurado la API de WhatsApp en Opciones.', variant: 'destructive' });
-        return;
-    }
-    const { apiKey, fromPhoneNumberId } = JSON.parse(messagingConfigStr);
-    if (!apiKey || !fromPhoneNumberId) {
-        toast({ title: 'Credenciales Faltantes', description: 'API Key y Phone ID son requeridos.', variant: 'destructive' });
-        return;
-    }
+  const handleCopySaleForWhatsapp = useCallback(() => {
+    if (!saleForTicket) return;
+    const workshopName = workshopInfo?.name || 'nuestro taller';
+    const message = `Hola ${saleForTicket.customerName || 'Cliente'}, gracias por tu compra en ${workshopName}.
+Folio de Venta: ${saleForTicket.id}
+Total: ${formatCurrency(saleForTicket.totalAmount)}
 
-    toast({ title: 'Generando imagen del ticket...' });
-    
-    // We need a short delay to allow React to render the ticket content in the hidden dialog
-    setTimeout(async () => {
-        if (!ticketContentRef.current) return;
-        const canvas = await html2canvas(ticketContentRef.current, { scale: 2.5, backgroundColor: '#ffffff' });
+¡Agradecemos tu preferencia!`;
 
-        toast({ title: 'Enviando ticket por WhatsApp...' });
-        const result = await messagingService.sendWhatsappImage(apiKey, fromPhoneNumberId, phoneForTicket, canvas, `Ticket de compra. Folio: ${saleForTicket.id}`);
-        
-        toast({
-            title: result.success ? 'Ticket Enviado' : 'Error al Enviar',
-            description: result.message,
-            variant: result.success ? 'default' : 'destructive'
-        });
-    }, 200); // 200ms delay
-}, [toast, ticketContentRef, saleForTicket, phoneForTicket]);
+    navigator.clipboard.writeText(message).then(() => {
+      toast({ title: 'Mensaje Copiado', description: 'El mensaje para WhatsApp ha sido copiado.' });
+    });
+  }, [saleForTicket, workshopInfo, toast]);
 
 
   const handleSaleCompletion = async (values: POSFormValues) => {
@@ -265,11 +248,9 @@ export default function NuevaVentaPage() {
           dialogContentClassName="sm:max-w-md"
           footerActions={
             <div className="flex flex-col-reverse sm:flex-row gap-2 w-full justify-end">
-              {phoneForTicket && (
-                <Button onClick={sendTicketByWhatsapp} className="w-full sm:w-auto bg-green-600 hover:bg-green-700">
-                    <MessageSquare className="mr-2 h-4 w-4" /> Enviar por WhatsApp
-                </Button>
-              )}
+              <Button onClick={handleCopySaleForWhatsapp} variant="outline" className="w-full sm:w-auto">
+                <MessageSquare className="mr-2 h-4 w-4" /> Copiar para WhatsApp
+              </Button>
               <Button variant="outline" onClick={handleCopyAsImage} className="w-full sm:w-auto">
                   <Copy className="mr-2 h-4 w-4"/> Copiar Imagen
               </Button>

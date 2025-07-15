@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState } from "react";
@@ -19,7 +20,6 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -151,7 +151,7 @@ export function ViewSaleDialog({ open, onOpenChange, sale, onCancelSale, onSendW
             </div>
             <div className="flex gap-2">
                 <Button variant="outline" onClick={() => onSendWhatsapp(sale)} disabled={isCancelled}>
-                    <MessageSquare className="mr-2 h-4 w-4" /> Enviar por WhatsApp
+                    <MessageSquare className="mr-2 h-4 w-4" /> Copiar para WhatsApp
                 </Button>
                 <Button variant="outline" onClick={() => onOpenChange(false)}>
                     Cerrar

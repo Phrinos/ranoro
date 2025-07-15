@@ -404,7 +404,7 @@ function HistorialServiciosPageComponent() {
                   const message = `Ticket de servicio para ${vehicle?.make} ${vehicle?.model}. Folio: ${serviceForTicket.id}`;
                   window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
                 }}>
-                  <MessageSquare className="mr-2 h-4 w-4" /> Enviar por WhatsApp
+                  <MessageSquare className="mr-2 h-4 w-4" /> Copiar para WhatsApp
                 </Button>
                 <Button onClick={() => window.print()}><Printer className="mr-2 h-4 w-4"/>Imprimir</Button>
               </div>
