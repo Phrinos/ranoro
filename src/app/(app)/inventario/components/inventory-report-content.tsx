@@ -33,7 +33,7 @@ export const InventoryReportContent = React.forwardRef<HTMLDivElement, Inventory
         data-format="letter"
         className="font-sans bg-white text-black p-8 text-sm"
       >
-        <header className="mb-8 border-b border-gray-300 pb-4">
+        <header className="mb-8 border-b-2 border-black pb-4">
           <div className="flex justify-between items-center">
             {workshopInfo?.logoUrl ? (
                 <Image 
@@ -56,21 +56,21 @@ export const InventoryReportContent = React.forwardRef<HTMLDivElement, Inventory
 
         <main>
           <Table>
-            <TableHeader className="bg-black text-white">
-              <TableRow>
-                <TableHead className="text-white">Categoría</TableHead>
-                <TableHead className="text-white">Marca</TableHead>
-                <TableHead className="text-white w-[30%]">Nombre</TableHead>
-                <TableHead className="text-white">SKU</TableHead>
-                <TableHead className="text-right text-white">Stock</TableHead>
-                <TableHead className="text-right text-white">Costo</TableHead>
-                <TableHead className="text-right text-white">Precio Venta</TableHead>
+            <TableHeader>
+              <TableRow className="bg-gray-100">
+                <TableHead className="font-bold text-gray-700">Categoría</TableHead>
+                <TableHead className="font-bold text-gray-700">Marca</TableHead>
+                <TableHead className="font-bold text-gray-700 w-[30%]">Nombre</TableHead>
+                <TableHead className="font-bold text-gray-700">SKU</TableHead>
+                <TableHead className="text-right font-bold text-gray-700">Stock</TableHead>
+                <TableHead className="text-right font-bold text-gray-700">Costo</TableHead>
+                <TableHead className="text-right font-bold text-gray-700">Precio Venta</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {items.length > 0 ? (
                 items.map(item => (
-                  <TableRow key={item.id}>
+                  <TableRow key={item.id} className="border-b">
                     <TableCell>{item.category}</TableCell>
                     <TableCell>{item.brand || 'N/A'}</TableCell>
                     <TableCell className="font-medium">{item.name}</TableCell>
