@@ -1,21 +1,15 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  //--------------------------------------------------------
-  // 1.  Ajustes de compilación
-  //--------------------------------------------------------
+  // 1. Ajustes de compilación
   typescript: { ignoreBuildErrors: true },
-  eslint:     { ignoreDuringBuilds: true },
+  eslint: { ignoreDuringBuilds: true },
 
-  //--------------------------------------------------------
-  // 2.  Indicador del modo dev (solo puedes cambiar position)
-  //--------------------------------------------------------
+  // 2. Indicador de dev
   devIndicators: {
-    position: 'bottom-right',      // válido, reemplaza al viejo buildActivityPosition
+    position: 'bottom-right',
   },
 
-  //--------------------------------------------------------
-  // 3.  Imágenes remotas permitidas
-  //--------------------------------------------------------
+  // 3. Imágenes remotas
   images: {
     remotePatterns: [
       { protocol: 'https', hostname: 'placehold.co', pathname: '/**' },
@@ -23,28 +17,28 @@ const nextConfig = {
     ],
   },
 
-  //--------------------------------------------------------
-  // 4.  Cabeceras CORS globales
-  //--------------------------------------------------------
+  // 4. CORS global
   async headers() {
     return [
       {
         source: '/:path*',
         headers: [
           { key: 'Access-Control-Allow-Credentials', value: 'true' },
-          { key: 'Access-Control-Allow-Origin',      value: '*'   },
-          { key: 'Access-Control-Allow-Methods',     value: 'GET,DELETE,PATCH,POST,PUT,OPTIONS' },
-          { key: 'Access-Control-Allow-Headers',     value: 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version' },
+          { key: 'Access-Control-Allow-Origin', value: '*' },
+          { key: 'Access-Control-Allow-Methods', value: 'GET,DELETE,PATCH,POST,PUT,OPTIONS' },
+          { key: 'Access-Control-Allow-Headers', value: 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version' },
         ],
       },
-    ]
+    ];
   },
 
-  //--------------------------------------------------------
-  // 5.  Excluir paquetes nativos del bundle de RSC/Webpack
-  //     (antes era experimental.serverComponentsExternalPackages)
-  //--------------------------------------------------------
+  // 5. Excluir paquetes nativos
   serverExternalPackages: ['handlebars'],
-}
 
-module.exports = nextConfig
+  // ✅ 6. allowedDevOrigins → en raíz
+  allowedDevOrigins: [
+    "https://3000-firebase-studio-1750318222114.cluster-hf4yr35cmnbd4vhbxvfvc6cp5q.cloudworkstations.dev"
+  ],
+};
+
+module.exports = nextConfig;
