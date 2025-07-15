@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React from 'react';
@@ -56,8 +57,8 @@ export function PrintTicketDialog({
           <DialogDescription>{description}</DialogDescription>
         </DialogHeader>
         
-        <div className="flex-grow overflow-y-auto bg-muted/30 p-2 sm:p-4 rounded-md">
-            <div id="printable-area" className="w-[8.5in] h-auto bg-white mx-auto my-4 shadow-lg printable-content">
+        <div id="printable-area-dialog" className="flex-grow overflow-y-auto bg-muted/30 p-2 sm:p-4 rounded-md">
+            <div className="printable-content">
                 {children}
             </div>
         </div>

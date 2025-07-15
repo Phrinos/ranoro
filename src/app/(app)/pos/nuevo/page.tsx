@@ -154,7 +154,7 @@ export default function NuevaVentaPage() {
   }, [toast]);
   
   const handlePrint = () => {
-    const content = document.querySelector('.printable-content')?.innerHTML;
+    const content = ticketContentRef.current;
     if (!content) return;
     
     const printWindow = window.open('', '_blank');
@@ -163,12 +163,15 @@ export default function NuevaVentaPage() {
       
       const stylesheets = Array.from(document.getElementsByTagName('link'));
       stylesheets.forEach(sheet => {
-          printWindow.document.write(sheet.outerHTML);
+          if(sheet.rel === 'stylesheet' && sheet.href) {
+            printWindow.document.write(`<link rel="stylesheet" href="${sheet.href}">`);
+          }
       });
       
-      printWindow.document.write('<style>@media print { body { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; } .printable-content { margin: 0; padding: 0; } }</style></head><body class="bg-white">');
-      printWindow.document.write(content);
-      printWindow.document.write('</body></html>');
+      printWindow.document.write('<style>@media print { body { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; } }</style></head><body class="bg-white">');
+      printWindow.document.write('<div class="printable-content">');
+      printWindow.document.write(content.innerHTML);
+      printWindow.document.write('</div></body></html>');
       
       printWindow.document.close();
       printWindow.focus();
@@ -218,11 +221,13 @@ export default function NuevaVentaPage() {
             </div>
           }
         >
-          <TicketContent
-            ref={ticketContentRef}
-            sale={saleForTicket}
-            previewWorkshopInfo={workshopInfo || undefined}
-          />
+          <div className="ticket-preview-content">
+            <TicketContent
+              ref={ticketContentRef}
+              sale={saleForTicket}
+              previewWorkshopInfo={workshopInfo || undefined}
+            />
+          </div>
         </PrintTicketDialog>
       )}
     </>
