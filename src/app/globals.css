@@ -127,6 +127,7 @@
   body {
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
+    background-color: white !important;
   }
 
   /* Hide everything by default */
@@ -134,59 +135,43 @@
     visibility: hidden;
   }
   
-  /* Make the printable area and its contents visible */
-  #printable-area-dialog .printable-content,
-  #printable-area-dialog .printable-content * {
+  .printable-area, .printable-area * {
     visibility: visible;
   }
 
-  /* Position the printable area to take up the whole page */
-  #printable-area-dialog {
+  .printable-area {
     position: absolute;
     left: 0;
     top: 0;
-    margin: 0 !important;
-    padding: 0 !important;
     width: 100%;
     height: auto;
+    margin: 0 !important;
+    padding: 1cm !important;
     box-shadow: none !important;
-    background: transparent !important;
+    background: white !important;
+    color: black !important;
   }
 
-  /* --- Styles specific to thermal receipt printing --- */
-  .printable-content[data-format="receipt"] {
+  /* Styles for receipt format */
+  .printable-area[data-format="receipt"] {
       width: 80mm !important; 
-      margin: 0 !important; 
       padding: 3mm !important;
-      color: black !important;
-      background: white !important;
   }
 
-  /* --- Styles specific to letter-sized document printing --- */
-  .printable-content[data-format="letter"] {
-      width: 100%;
-      min-height: auto; 
-      padding: 1cm !important;
-      margin: 0 !important;
-      color: black !important;
-      background: white !important;
+  /* Styles for letter format */
+  .printable-area[data-format="letter"] {
+      width: 21.59cm;
+      min-height: 27.94cm;
   }
 
+  /* Ensure Dialog specific content is hidden */
+  .printable-area dialog, .printable-area [role="dialog"] {
+      display: none !important;
+  }
 
-  /* Styles for inventory list printing */
-  .inventory-page-print-context {
-    font-size: 10px;
-  }
-  .inventory-page-print-context h1 {
-    font-size: 18px;
-  }
-  .inventory-page-print-context table {
-    font-size: 10px;
-  }
-  .inventory-page-print-context th,
-  .inventory-page-print-context td {
-    padding-top: 4px;
-    padding-bottom: 4px;
+  /* Hide UI elements that shouldn't be printed */
+  .print-hidden {
+    display: none !important;
   }
 }
 
@@ -205,36 +190,6 @@
   @media (min-width: 341px) and (max-width: 640px) {
     .ticket-preview-content[data-format="receipt"] {
       transform: scale(1);
-    }
-  }
-
-  @media (max-width: 890px) { /* 8.5in is roughly 816px, plus padding */
-    .printable-content[data-format="letter"] {
-        transform: scale(0.9);
-    }
-  }
-  
-  @media (max-width: 790px) {
-    .printable-content[data-format="letter"] {
-        transform: scale(0.8);
-    }
-  }
-
-  @media (max-width: 690px) {
-    .printable-content[data-format="letter"] {
-        transform: scale(0.7);
-    }
-  }
-
-  @media (max-width: 590px) {
-    .printable-content[data-format="letter"] {
-        transform: scale(0.5);
-    }
-  }
-
-  @media (max-width: 450px) {
-    .printable-content[data-format="letter"] {
-        transform: scale(0.4);
     }
   }
 }

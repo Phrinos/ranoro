@@ -26,12 +26,14 @@ export const InventoryReportContent = React.forwardRef<HTMLDivElement, Inventory
   ({ items, workshopInfo }, ref) => {
     const now = new Date();
     const formattedDate = format(now, "dd 'de' MMMM 'de' yyyy, HH:mm:ss", { locale: es });
+    const totalInventoryCost = items.reduce((sum, item) => sum + (item.quantity * item.unitPrice), 0);
+    const totalInventoryValue = items.reduce((sum, item) => sum + (item.quantity * item.sellingPrice), 0);
 
     return (
       <div
         ref={ref}
         data-format="letter"
-        className="font-sans bg-white text-black p-8 text-sm"
+        className="font-sans bg-white text-black p-4 text-sm"
       >
         <header className="mb-8 border-b-2 border-black pb-4">
           <div className="flex justify-between items-center">
@@ -90,6 +92,16 @@ export const InventoryReportContent = React.forwardRef<HTMLDivElement, Inventory
                 </TableRow>
               )}
             </TableBody>
+            <tfoot>
+                <TableRow className="font-bold border-t-2 border-black">
+                    <TableCell colSpan={6} className="text-right">Valor Total del Inventario (Costo):</TableCell>
+                    <TableCell className="text-right">{formatCurrency(totalInventoryCost)}</TableCell>
+                </TableRow>
+                 <TableRow className="font-bold">
+                    <TableCell colSpan={6} className="text-right">Valor Total del Inventario (Venta):</TableCell>
+                    <TableCell className="text-right">{formatCurrency(totalInventoryValue)}</TableCell>
+                </TableRow>
+            </tfoot>
           </Table>
         </main>
       </div>

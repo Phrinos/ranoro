@@ -236,7 +236,7 @@ function InventarioPageComponent() {
 
 export default function InventarioPageWrapper() {
     return (
-        <Suspense fallback={<div>Cargando...</div>}>
+        <Suspense fallback={<div className="flex justify-center items-center h-64"><Loader2 className="h-8 w-8 animate-spin" /></div>}>
             <InventarioPageComponent />
         </Suspense>
     )

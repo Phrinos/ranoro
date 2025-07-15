@@ -2,7 +2,7 @@
 
 "use client";
 
-import React, { useCallback } from 'react';
+import React from 'react';
 import {
   Dialog,
   DialogContent,
@@ -12,10 +12,6 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
-import { Button } from './button';
-import { MessageSquare } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
-import html2canvas from 'html2canvas';
 
 interface PrintTicketDialogProps {
   open: boolean;
@@ -37,10 +33,9 @@ export function PrintTicketDialog({
   children,
   onDialogClose,
   dialogContentClassName = "",
+  contentRef, // The ref is passed but not used directly on the div here
   footerActions,
-  contentRef,
 }: PrintTicketDialogProps) {
-    const { toast } = useToast();
 
   const handleClose = () => {
     onOpenChange(false);
@@ -59,19 +54,20 @@ export function PrintTicketDialog({
         "flex flex-col max-h-[90vh]", // Ensure dialog doesn't overflow viewport
         dialogContentClassName 
       )}>
-        <DialogHeader className="print:hidden flex-shrink-0">
+        <DialogHeader className="print-hidden flex-shrink-0">
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription>{description}</DialogDescription>
         </DialogHeader>
         
-        <div id="printable-area-dialog" className="flex-grow overflow-y-auto bg-muted/30 p-2 sm:p-4 rounded-md">
-            <div className="printable-content">
-                {children}
+        <div className="flex-grow overflow-y-auto bg-muted/30 p-2 sm:p-4 rounded-md">
+            {/* The child component (report content) should have the ref and the printable-area id */}
+            <div className="printable-area" id="printable-area-dialog">
+                 {children}
             </div>
         </div>
 
         {footerActions && (
-          <DialogFooter className="print:hidden flex-shrink-0">
+          <DialogFooter className="print-hidden flex-shrink-0">
             {footerActions}
           </DialogFooter>
         )}
