@@ -6,7 +6,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { PageHeader } from '@/components/page-header';
+import { PageHeader } from "@/components/page-header";
 import { PosForm } from '../components/pos-form';
 import type { SaleReceipt, InventoryItem, PaymentMethod, InventoryCategory, Supplier, WorkshopInfo, Vehicle } from '@/types'; 
 import { useToast } from '@/hooks/use-toast';
@@ -21,6 +21,7 @@ import { TicketContent } from '@/components/ticket-content';
 import { Button } from '@/components/ui/button';
 import html2canvas from 'html2canvas';
 import { formatCurrency } from '@/lib/utils';
+import { nanoid } from 'nanoid';
 
 // --- Schema Definitions ---
 const saleItemSchema = z.object({
@@ -125,20 +126,27 @@ Total: ${formatCurrency(saleForTicket.totalAmount)}
 
 
   const handleSaleCompletion = async (values: POSFormValues) => {
-    if (!db) return;
+    if (!db) return toast({ title: 'Error de base de datos', variant: 'destructive'});
+
     const batch = writeBatch(db);
     
     try {
-      const saleId = await operationsService.registerSale(values, currentInventoryItems, batch);
+      const saleId = `SALE-${nanoid(8).toUpperCase()}`;
+      await operationsService.registerSale(saleId, values, currentInventoryItems, batch);
       await batch.commit();
+
+      const totalAmount = values.items.reduce((sum, item) => sum + item.totalPrice, 0);
+      const IVA_RATE = 0.16;
+      const subTotal = totalAmount / (1 + IVA_RATE);
+      const tax = totalAmount - subTotal;
 
       const newSaleReceipt: SaleReceipt = {
         id: saleId,
         saleDate: new Date().toISOString(),
         ...values,
-        subTotal: 0, 
-        tax: 0,
-        totalAmount: values.items.reduce((sum, item) => sum + item.totalPrice, 0),
+        subTotal, 
+        tax,
+        totalAmount,
         status: 'Completado'
       };
       
@@ -163,7 +171,8 @@ Total: ${formatCurrency(saleForTicket.totalAmount)}
     setIsTicketDialogOpen(false);
     setSaleForTicket(null);
     setPhoneForTicket(undefined);
-    router.push('/pos');
+    methods.reset(); // Reset the form for a new sale
+    router.push('/pos'); // Navigate to the main POS page
   };
   
   const handleCopyAsImage = useCallback(async () => {

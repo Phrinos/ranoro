@@ -352,7 +352,7 @@ const onSalesUpdatePromise = async (): Promise<SaleReceipt[]> => {
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as SaleReceipt));
 }
 
-const registerSale = async (saleData: Omit<SaleReceipt, 'id' | 'saleDate'>, inventoryItems: InventoryItem[], batch: ReturnType<typeof writeBatch>): Promise<string> => {
+const registerSale = async (saleId: string, saleData: Omit<SaleReceipt, 'id' | 'saleDate' | 'subTotal' | 'tax' | 'totalAmount' | 'status'>, inventoryItems: InventoryItem[], batch: ReturnType<typeof writeBatch>): Promise<void> => {
     const IVA_RATE = 0.16;
     const totalAmount = saleData.items.reduce((sum, item) => sum + (item.totalPrice || 0), 0);
     const subTotal = totalAmount / (1 + IVA_RATE);
@@ -365,7 +365,7 @@ const registerSale = async (saleData: Omit<SaleReceipt, 'id' | 'saleDate'>, inve
       status: 'Completado',
     };
     
-    const newSaleRef = doc(collection(db, "sales"));
+    const newSaleRef = doc(db, "sales", saleId);
     batch.set(newSaleRef, newSale);
 
     saleData.items.forEach(soldItem => {
@@ -376,19 +376,17 @@ const registerSale = async (saleData: Omit<SaleReceipt, 'id' | 'saleDate'>, inve
         }
     });
     
-    if (newSale.paymentMethod === 'Efectivo') {
+    if (newSale.paymentMethod?.includes('Efectivo')) {
         const cashTransactionRef = doc(collection(db, "cashDrawerTransactions"));
         batch.set(cashTransactionRef, {
             date: new Date().toISOString(),
             type: 'Entrada',
             amount: totalAmount,
-            concept: `Venta POS #${newSaleRef.id.slice(0, 6)}`,
+            concept: `Venta POS #${saleId.slice(0, 6)}`,
             userId: 'system',
             userName: 'Sistema',
         });
     }
-    
-    return newSaleRef.id;
 };
 
 // --- Cash Drawer ---
