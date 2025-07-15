@@ -119,49 +119,35 @@
 }
 
 @media print {
-  @page {
-    margin: 0;
-    size: letter;
-  }
-
   body {
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
     background-color: white !important;
   }
 
-  /* Hide UI elements that shouldn't be printed */
-  .print-hidden, 
-  [data-sidebar="sidebar"],
-  header:not(.printable-header) {
-    display: none !important;
+  /* Hide everything in the body by default */
+  body * {
+    visibility: hidden;
   }
   
-  /* Make the printable content fill the page */
-  .printable-content {
-    display: block !important;
+  /* Make the printable container and everything inside it visible */
+  .printable-document-container, .printable-document-container * {
+    visibility: visible;
+  }
+  
+  /* Position the printable container to take up the whole page */
+  .printable-document-container {
     position: absolute;
     left: 0;
     top: 0;
     width: 100%;
     height: auto;
     margin: 0 !important;
-    padding: 1cm !important;
+    padding: 1cm !important; /* Optional: standard page margin */
     box-shadow: none !important;
-    background: white !important;
-    color: black !important;
-  }
-  
-  .printable-content [data-format="receipt"] {
-      width: 80mm !important; 
-      padding: 3mm !important;
-  }
-
-  .printable-content[data-format="letter"] {
-      width: 21.59cm;
-      min-height: 27.94cm;
   }
 }
+
 
 @layer utilities {
   /* For responsive ticket preview */
