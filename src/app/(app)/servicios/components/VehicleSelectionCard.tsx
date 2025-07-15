@@ -166,7 +166,7 @@ export function VehicleSelectionCard({
       if(!parsedDate || !isValid(parsedDate)) return 'Fecha inválida.';
       
       const datePart = `Fecha: ${format(parsedDate, "dd MMM yyyy", { locale: es })}`;
-      const mileagePart = info.mileage ? ` / KM: ${info.mileage.toLocaleString('es-MX')}` : '';
+      const mileagePart = (info.mileage && isFinite(info.mileage)) ? ` / KM: ${info.mileage.toLocaleString('es-MX')}` : '';
       return datePart + mileagePart;
   };
 
