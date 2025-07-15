@@ -26,7 +26,7 @@ import { operationsService } from '@/lib/services/operations.service';
 import { adminService } from '@/lib/services/admin.service';
 import { addDoc, collection, doc, writeBatch } from 'firebase/firestore';
 import { db } from '@/lib/firebaseClient';
-import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
+import { DocumentPreviewDialog } from '@/components/shared/DocumentPreviewDialog';
 import { InventoryReportContent } from './components/inventory-report-content';
 
 
@@ -216,19 +216,14 @@ function InventarioPageComponent() {
         suppliers={suppliers}
       />
 
-      <PrintTicketDialog
+      <DocumentPreviewDialog
           open={isPrintDialogOpen}
           onOpenChange={setIsPrintDialogOpen}
-          title="Vista Previa de Reporte de Inventario"
-          dialogContentClassName="max-w-4xl"
-          footerActions={
-            <Button onClick={() => window.print()}>
-              <Printer className="mr-2 h-4 w-4" /> Imprimir Reporte
-            </Button>
-          }
+          title="Reporte de Inventario"
+          onPrint={() => window.print()}
       >
         <InventoryReportContent ref={printRef} items={itemsToPrint} workshopInfo={workshopInfo}/>
-      </PrintTicketDialog>
+      </DocumentPreviewDialog>
     </>
   );
 }
