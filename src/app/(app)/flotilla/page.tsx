@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { useState, useMemo, useEffect, useCallback, Suspense, useRef } from 'react';
@@ -11,8 +10,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuLabel, DropdownMenuRadio
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { AddVehicleToFleetDialog } from "./components/add-vehicle-to-fleet-dialog";
 import { FineCheckDialog } from "./components/fine-check-dialog";
-import { placeholderVehicles, persistToFirestore, AUTH_USER_LOCALSTORAGE_KEY, placeholderDrivers, placeholderRentalPayments } from '@/lib/placeholder-data';
-import type { User, Vehicle, Driver } from '@/types';
+import type { User, Vehicle, Driver, RentalPayment } from '@/types';
 import { useToast } from "@/hooks/use-toast";
 import { subDays, isBefore, parseISO, isValid, differenceInCalendarDays, startOfToday, isAfter, compareAsc, startOfMonth, endOfMonth, getDate, isWithinInterval, format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -24,6 +22,7 @@ import type { DriverFormValues } from '../conductores/components/driver-form';
 import Link from 'next/link';
 import { inventoryService, personnelService, operationsService } from '@/lib/services';
 import { Loader2 } from 'lucide-react';
+import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
 
 
 type FlotillaSortOption = "plate_asc" | "plate_desc" | "owner_asc" | "owner_desc" | "rent_asc" | "rent_desc";
@@ -381,3 +380,5 @@ export default function FlotillaPageWrapper() {
         </Suspense>
     )
 }
+
+  
