@@ -66,25 +66,27 @@ export function VehicleDialog({
       {trigger && !isControlled && <DialogTrigger asChild onClick={() => onOpenChange(true)}>{trigger}</DialogTrigger>}
       {open && (
         <DialogContent className="sm:max-w-2xl max-h-[90vh] flex flex-col p-0">
-            <DialogHeader className="p-6 pb-0 flex-shrink-0">
-                <DialogTitle>{dialogTitle}</DialogTitle>
-                <DialogDescription>{dialogDescription}</DialogDescription>
+            <DialogHeader className="p-6 pb-4 flex-shrink-0 border-b flex flex-row justify-between items-center">
+                <div>
+                    <DialogTitle>{dialogTitle}</DialogTitle>
+                    <DialogDescription>{dialogDescription}</DialogDescription>
+                </div>
+                <div className="flex gap-2">
+                    <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+                        Cancelar
+                    </Button>
+                    <Button type="submit" form="vehicle-form">
+                        {vehicle && 'id' in vehicle && vehicle.id ? "Actualizar Vehículo" : "Crear Vehículo"}
+                    </Button>
+                </div>
             </DialogHeader>
-            <div className="flex-grow overflow-y-auto px-6 pb-16">
+            <div className="flex-grow overflow-y-auto px-6">
                 <VehicleForm
                     id="vehicle-form"
                     initialData={vehicle}
                     onSubmit={handleSubmit}
                 />
             </div>
-            <DialogFooter className="p-6 pt-4 border-t sticky bottom-0 bg-background">
-                <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-                    Cancelar
-                </Button>
-                <Button type="submit" form="vehicle-form">
-                    {vehicle && 'id' in vehicle && vehicle.id ? "Actualizar Vehículo" : "Crear Vehículo"}
-                </Button>
-            </DialogFooter>
         </DialogContent>
       )}
     </Dialog>
