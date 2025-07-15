@@ -60,7 +60,7 @@ export function PrintTicketDialog({
         </DialogHeader>
         
         <div className="flex-grow overflow-y-auto bg-muted/30 p-2 sm:p-4 rounded-md">
-            <div className="printable-area" id="printable-area-dialog" ref={contentRef}>
+            <div id="printable-area-dialog" ref={contentRef}>
                  {children}
             </div>
         </div>

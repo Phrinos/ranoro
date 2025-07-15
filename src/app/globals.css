@@ -119,21 +119,47 @@
 }
 
 @media print {
-  body {
-    background: white;
+  body * {
+    visibility: hidden;
+  }
+  #printable-area-dialog, #printable-area-dialog * {
+    visibility: visible;
+  }
+  #printable-area-dialog {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    box-shadow: none;
+    border: none;
+    background-color: white !important;
+  }
+
+  /* Specific for thermal receipt printing */
+  @page {
+    size: 80mm auto; /* Adjust width as needed */
     margin: 0;
   }
 
+  [data-format='receipt'] {
+    width: 80mm !important;
+    padding: 2mm !important;
+    box-shadow: none !important;
+    page-break-after: always; /* Auto-cut command */
+    visibility: visible !important;
+  }
+
+  /* Specific for letter size document printing */
   [data-format='letter'] {
     width: 210mm !important;
     min-height: 297mm !important;
     padding: 25mm;
     box-shadow: none !important;
     page-break-after: always;
-  }
-
-  .no-print {
-    display: none !important;
+    visibility: visible !important;
   }
 }
 
