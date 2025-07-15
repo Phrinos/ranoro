@@ -204,15 +204,19 @@ const completeService = async (service: ServiceRecord, paymentAndNextServiceDeta
         batch.update(publicDocRef, cleanObjectForFirestore(updatedServiceData));
     }
 
-    if (service.vehicleId && paymentAndNextServiceDetails.nextServiceInfo) {
+    if (service.vehicleId && updatedServiceData.nextServiceInfo) {
       const vehicleRef = doc(db, 'vehicles', service.vehicleId);
       batch.update(vehicleRef, { 
-        nextServiceInfo: paymentAndNextServiceDetails.nextServiceInfo,
+        nextServiceInfo: updatedServiceData.nextServiceInfo,
         lastServiceDate: new Date().toISOString(),
+        mileage: service.mileage // Also update the vehicle's mileage
        });
     } else if (service.vehicleId) {
       const vehicleRef = doc(db, 'vehicles', service.vehicleId);
-      batch.update(vehicleRef, { lastServiceDate: new Date().toISOString() });
+      batch.update(vehicleRef, { 
+          lastServiceDate: new Date().toISOString(),
+          mileage: service.mileage 
+      });
     }
 
     // Deduct inventory

@@ -99,8 +99,7 @@ export function CompleteServiceDialog({
   const handleFormSubmit = (values: CompleteServiceFormValues) => {
     let nextServiceInfo: { date: string, mileage?: number } | undefined = undefined;
     
-    const serviceType = service.serviceType?.toLowerCase() || '';
-    
+    // Check if any service item description includes "aceite" or "afinación"
     const isMaintenanceService = (service.serviceItems || []).some(item => 
         item.name.toLowerCase().includes('afinación') || 
         item.name.toLowerCase().includes('cambio de aceite')
@@ -110,10 +109,12 @@ export function CompleteServiceDialog({
         const today = new Date();
         const nextServiceDate = addMonths(today, 6);
         
+        // Find the oil with the highest performance in the service
         const oilItem = (service.serviceItems || [])
             .flatMap(item => item.suppliesUsed || [])
             .map(supply => inventoryItems.find(inv => inv.id === supply?.supplyId))
-            .find(invItem => invItem?.category.toLowerCase().includes('aceite') && invItem.rendimiento);
+            .filter((invItem): invItem is InventoryItem => !!invItem && invItem.category.toLowerCase().includes('aceite') && !!invItem.rendimiento)
+            .sort((a, b) => (b.rendimiento || 0) - (a.rendimiento || 0))[0];
 
         let nextMileage: number | undefined = undefined;
         if (oilItem && service.mileage && oilItem.rendimiento) {
