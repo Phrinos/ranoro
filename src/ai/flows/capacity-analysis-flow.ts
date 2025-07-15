@@ -53,10 +53,10 @@ const CapacityAnalysisPromptInputSchema = z.object({
 
 const capacityAnalysisPrompt = ai.definePrompt({
   name: 'capacityAnalysisPrompt',
+  system: 'You are an expert workshop manager. Your task is to estimate the time required for a list of scheduled services based on a history of past work.',
   input: { schema: CapacityAnalysisPromptInputSchema },
   output: { schema: z.object({ serviceDurations: z.array(z.object({ description: z.string(), estimatedHours: z.number() })) }) },
-  prompt: `You are an expert workshop manager. Your task is to estimate the time required for a list of scheduled services based on a history of past work.
-
+  prompt: `
 **Instructions:**
 1.  **Analyze Historical Data:** Review the \`processedServiceHistory\`. This contains job descriptions and their actual durations in hours. Learn the typical duration for different types of job descriptions.
 2.  **Estimate Durations for Today's Services:** For each service in the \`servicesForDay\` list, use the knowledge gained from the historical data to estimate its duration in hours.
@@ -111,12 +111,20 @@ const capacityAnalysisFlow = ai.defineFlow(
       processedServiceHistory: processedServiceHistory,
     };
     
-    const { output } = await capacityAnalysisPrompt(promptInput, {
-      config: { temperature: 0.2 },
-    });
+    let output;
+    try {
+      const result = await capacityAnalysisPrompt(promptInput, {
+        config: { temperature: 0.2 },
+      });
+      output = result.output;
+    } catch (error) {
+      console.error('AI Error in análisis de capacidad:', error);
+      throw new Error('Ocurrió un error al consultar la IA. Por favor, intente de nuevo más tarde.');
+    }
+
 
     if (!output || !output.serviceDurations) {
-      throw new Error("AI failed to provide estimated durations.");
+      throw new Error("AI failed to provide estimated durations. Output was null or malformed.");
     }
     
     const totalRequiredHours = output.serviceDurations.reduce((sum, s) => sum + s.estimatedHours, 0);

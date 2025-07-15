@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import type { ServiceRecord, Vehicle, QuoteRecord, WorkshopInfo, SafetyInspection, SafetyCheckStatus, PhotoReportGroup, Driver } from '@/types';
@@ -108,7 +109,7 @@ const SafetyChecklistDisplay = ({
         <div className="mt-4 print:mt-0">
             <header className="mb-4 pb-2 border-b-2 border-black">
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
-                    <img src={workshopInfo.logoUrl} alt={`${workshopInfo.name} Logo`} style={{ width: '150px', height: 'auto' }} data-ai-hint="workshop logo" />
+                    <img src={workshopInfo.logoUrl} alt={`${workshopInfo.name} Logo`} style={{ width: '150px', height: 'auto' }} data-ai-hint="workshop logo" crossOrigin="anonymous" />
                     <div className="text-left sm:text-right">
                     <h1 className="text-base sm:text-lg font-bold">REVISIÓN DE PUNTOS DE SEGURIDAD</h1>
                     <p className="font-mono text-xs">Folio de Servicio: <span className="font-semibold">{service.id}</span></p>
@@ -159,7 +160,7 @@ const SafetyChecklistDisplay = ({
                                                         key={pIndex} 
                                                         className="relative aspect-video w-full bg-gray-100 rounded overflow-hidden border group"
                                                     >
-                                                        <Image src={photoUrl} alt={`Evidencia para ${item.label}`} layout="fill" objectFit="cover" className="transition-transform duration-300 group-hover:scale-105"/>
+                                                        <Image src={photoUrl} alt={`Evidencia para ${item.label}`} layout="fill" objectFit="cover" className="transition-transform duration-300 group-hover:scale-105" crossOrigin="anonymous"/>
                                                         <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity group-hover:opacity-100">
                                                             <Eye className="h-6 w-6 text-white" />
                                                         </div>
@@ -183,7 +184,7 @@ const SafetyChecklistDisplay = ({
             {inspection.technicianSignature && (
                  <div className="mt-8 border-t pt-4 text-center flex flex-col items-center">
                     <div className="h-24 w-full max-w-[200px] relative">
-                        <Image src={normalizeDataUrl(inspection.technicianSignature)} alt="Firma del técnico" unoptimized width={200} height={96} style={{ objectFit: 'contain' }}/>
+                        <Image src={normalizeDataUrl(inspection.technicianSignature)} alt="Firma del técnico" unoptimized width={200} height={96} style={{ objectFit: 'contain' }} crossOrigin="anonymous"/>
                     </div>
                     <div className="mt-2 pt-1 w-64 text-center">
                         <p className="text-xs font-bold">FIRMA DEL TÉCNICO ({format(new Date(), "dd/MM/yyyy")})</p>
@@ -246,7 +247,7 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
         )}
         <header className="mb-2 pb-2 border-b-2 border-black">
           <div className="flex justify-between items-start gap-2">
-            <Image src={effectiveWorkshopInfo.logoUrl} alt={`${effectiveWorkshopInfo.name} Logo`} width={150} height={40} style={{ width: '150px', height: 'auto' }} data-ai-hint="workshop logo" unoptimized />
+            <img src={effectiveWorkshopInfo.logoUrl} alt={`${effectiveWorkshopInfo.name} Logo`} style={{ width: '150px', height: 'auto' }} data-ai-hint="workshop logo" crossOrigin="anonymous" />
             <div className="text-right">
               <h1 className="text-xl font-bold">ORDEN DE SERVICIO</h1>
               <p className="font-mono text-base">Folio: <span className="font-bold">{service.id}</span></p>
@@ -368,7 +369,7 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
                     <div className="flex-grow flex items-center justify-center w-full min-h-[50px]">
                         {service.serviceAdvisorSignatureDataUrl && (
                             <div className="relative w-full h-full">
-                                <Image src={normalizeDataUrl(service.serviceAdvisorSignatureDataUrl)} alt="Firma del asesor" layout="fill" objectFit="contain" unoptimized />
+                                <Image src={normalizeDataUrl(service.serviceAdvisorSignatureDataUrl)} alt="Firma del asesor" layout="fill" objectFit="contain" unoptimized crossOrigin="anonymous" />
                             </div>
                         )}
                     </div>
@@ -381,7 +382,7 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
                     <div className="flex-grow flex items-center justify-center w-full min-h-[50px]">
                         {service.customerSignatureReception ? (
                             <div className="relative w-full h-full">
-                                <Image src={normalizeDataUrl(service.customerSignatureReception)} alt="Firma de recepción" layout="fill" objectFit="contain" unoptimized />
+                                <Image src={normalizeDataUrl(service.customerSignatureReception)} alt="Firma de recepción" layout="fill" objectFit="contain" unoptimized crossOrigin="anonymous" />
                             </div>
                         ) : (
                             isPublicView && showSignReception && onSignClick && (
@@ -402,7 +403,7 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
                     <div className="flex-grow flex items-center justify-center w-full min-h-[50px]">
                         {service.customerSignatureDelivery ? (
                             <div className="relative w-full h-full">
-                            <Image src={normalizeDataUrl(service.customerSignatureDelivery)} alt="Firma de conformidad" layout="fill" objectFit="contain" unoptimized/>
+                            <Image src={normalizeDataUrl(service.customerSignatureDelivery)} alt="Firma de conformidad" layout="fill" objectFit="contain" unoptimized crossOrigin="anonymous"/>
                             </div>
                         ) : (
                             isPublicView && showSignDelivery && onSignClick && (
@@ -472,6 +473,7 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
                             objectFit="cover"
                             className="transition-transform duration-300 group-hover:scale-105"
                             data-ai-hint="car damage photo"
+                            crossOrigin="anonymous"
                         />
                          <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity group-hover:opacity-100">
                             <Eye className="h-8 w-8 text-white" />

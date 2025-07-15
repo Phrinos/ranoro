@@ -68,6 +68,7 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
               height={50}
               style={{ objectFit: 'contain' }}
               data-ai-hint="workshop logo"
+              crossOrigin="anonymous"
             />
             <h2 className="text-2xl sm:text-3xl font-semibold text-primary text-left sm:text-right w-full sm:w-auto">COTIZACIÓN</h2>
           </div>
@@ -202,13 +203,11 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
                 <div className="text-right flex flex-col items-center justify-end mt-4 sm:mt-0">
                     <div className="relative flex justify-center items-center h-16 w-40 mb-1">
                         {quote.serviceAdvisorSignatureDataUrl && (
-                           <Image
+                           <img
                                 src={normalizeDataUrl(quote.serviceAdvisorSignatureDataUrl)}
                                 alt="Firma del asesor"
-                                width={160}
-                                height={64}
-                                style={{ objectFit: 'contain' }}
-                                unoptimized
+                                style={{ maxHeight: '100%', maxWidth: '100%', objectFit: 'contain' }}
+                                crossOrigin="anonymous"
                             />
                         )}
                     </div>

@@ -33,6 +33,7 @@ import { format, parseISO, isValid } from "date-fns";
 import { es } from 'date-fns/locale';
 import { normalizeDataUrl } from "@/lib/utils";
 import { parseDate } from "@/lib/forms";
+import Image from "next/image";
 
 const fuelLevels = [
   "Vacío",
@@ -175,11 +176,14 @@ export const ReceptionAndDelivery = ({
             <FormLabel className="font-semibold text-base">Firma de Recepción</FormLabel>
             <div className="mt-2 p-3 min-h-[100px] border rounded-md bg-muted/50 flex items-center justify-center">
                 {customerSignatureReception ? (
-                    <div 
-                        className="w-full h-full max-w-[250px] aspect-[2.5/1] bg-contain bg-no-repeat bg-center"
-                        style={{ backgroundImage: `url(${normalizeDataUrl(customerSignatureReception)})` }}
-                        aria-label="Firma de recepción capturada"
-                    ></div>
+                    <Image 
+                        src={normalizeDataUrl(customerSignatureReception)}
+                        alt="Firma de recepción"
+                        width={250}
+                        height={100}
+                        style={{ objectFit: 'contain' }}
+                        unoptimized
+                    />
                 ) : (
                     <div className="text-center text-muted-foreground">
                         <Clock className="mx-auto h-6 w-6 mb-1"/>
@@ -239,11 +243,14 @@ export const ReceptionAndDelivery = ({
               <FormLabel className="font-semibold text-base">Firma de Conformidad</FormLabel>
               <div className="mt-2 p-3 min-h-[100px] border rounded-md bg-muted/50 flex items-center justify-center">
                 {customerSignatureDelivery ? (
-                   <div 
-                        className="w-full h-full max-w-[250px] aspect-[2.5/1] bg-contain bg-no-repeat bg-center"
-                        style={{ backgroundImage: `url(${normalizeDataUrl(customerSignatureDelivery)})` }}
-                        aria-label="Firma de entrega capturada"
-                    ></div>
+                   <Image 
+                        src={normalizeDataUrl(customerSignatureDelivery)}
+                        alt="Firma de entrega"
+                        width={250}
+                        height={100}
+                        style={{ objectFit: 'contain' }}
+                        unoptimized
+                    />
                 ) : (
                   <div className="text-center text-muted-foreground">
                     <Clock className="mx-auto h-6 w-6 mb-1"/>

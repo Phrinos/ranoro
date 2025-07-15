@@ -44,7 +44,7 @@ export function AnalisisIaContent({ inventoryItems }: AnalisisIaContentProps) {
     } catch (e) {
       console.error(e);
       const errorMessage = e instanceof Error ? e.message : "Ocurrió un error desconocido.";
-      setAnalysisError(`La IA no pudo completar el análisis. ${errorMessage}`);
+      setAnalysisError(errorMessage);
       toast({ title: "Error de Análisis", description: errorMessage, variant: "destructive" });
     } finally {
       setIsAnalysisLoading(false);
