@@ -5,7 +5,7 @@
 import { useState, useMemo, useEffect, useCallback, Suspense, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Printer } from "lucide-react";
+import { PlusCircle } from "lucide-react";
 import { InventoryItemDialog } from "./components/inventory-item-dialog";
 import type { InventoryItem, InventoryCategory, Supplier, CashDrawerTransaction, PurchaseRecommendation, WorkshopInfo } from "@/types";
 import type { InventoryItemFormValues } from "./components/inventory-item-form";
@@ -26,8 +26,6 @@ import { operationsService } from '@/lib/services/operations.service';
 import { adminService } from '@/lib/services/admin.service';
 import { addDoc, collection, doc, writeBatch } from 'firebase/firestore';
 import { db } from '@/lib/firebaseClient';
-import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
-import { InventoryPrintContent } from './components/inventory-print-content';
 
 
 function InventarioPageComponent() {
@@ -46,9 +44,6 @@ function InventarioPageComponent() {
   const [isItemDialogOpen, setIsItemDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<Partial<InventoryItem> | null>(null);
 
-  const [isPrintDialogOpen, setIsPrintDialogOpen] = useState(false);
-  const [workshopInfo, setWorkshopInfo] = useState<WorkshopInfo | null>(null);
-
   useEffect(() => {
     const unsubs: (() => void)[] = [];
     setIsLoading(true);
@@ -59,11 +54,6 @@ function InventarioPageComponent() {
       setSuppliers(data);
       setIsLoading(false); // Mark loading as false after the last required dataset is fetched
     }));
-
-    const storedInfo = localStorage.getItem('workshopTicketInfo');
-    if (storedInfo) {
-      setWorkshopInfo(JSON.parse(storedInfo));
-    }
 
     return () => unsubs.forEach(unsub => unsub());
   }, []);
@@ -138,9 +128,9 @@ function InventarioPageComponent() {
     setIsItemDialogOpen(false); // Close dialog on success
   }, [toast]);
   
-  const handleInventoryItemCreatedFromPurchase = useCallback(async (itemData: InventoryItemFormValues): Promise<InventoryItem> => {
+  const handleInventoryItemCreatedFromPurchase = useCallback(async (formData: InventoryItemFormValues): Promise<InventoryItem> => {
       // This is for items created during a purchase registration
-      const newItem = await inventoryService.addItem(itemData);
+      const newItem = await inventoryService.addItem(formData);
       toast({ title: "Producto Creado", description: `"${newItem.name}" ha sido agregado al inventario.` });
       return newItem;
   }, [toast]);
@@ -176,7 +166,7 @@ function InventarioPageComponent() {
             <ProductosContent 
                 inventoryItems={inventoryItems} 
                 onNewItem={handleOpenItemDialog}
-                onPrint={() => setIsPrintDialogOpen(true)}
+                onPrint={() => { /* Print functionality removed */ }}
             />
         </TabsContent>
         <TabsContent value="categorias">
@@ -208,20 +198,6 @@ function InventarioPageComponent() {
         categories={categories}
         suppliers={suppliers}
       />
-
-      <PrintTicketDialog
-        open={isPrintDialogOpen}
-        onOpenChange={setIsPrintDialogOpen}
-        title="Reporte de Inventario"
-        description="Vista previa del inventario para impresión."
-        dialogContentClassName="printable-quote-dialog max-w-4xl"
-        footerActions={<Button onClick={() => window.print()}><Printer className="mr-2 h-4 w-4"/>Imprimir Reporte</Button>}
-      >
-        <InventoryPrintContent
-          inventoryItems={inventoryItems}
-          workshopInfo={workshopInfo || undefined}
-        />
-      </PrintTicketDialog>
     </>
   );
 }
