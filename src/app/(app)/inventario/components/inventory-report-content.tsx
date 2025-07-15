@@ -61,7 +61,7 @@ export const InventoryReportContent = React.forwardRef<HTMLDivElement, Inventory
       <div
         ref={ref}
         data-format="letter"
-        className="font-sans bg-white text-black p-4 text-sm"
+        className="font-sans bg-white text-black text-sm p-4"
       >
         <header className="mb-8 border-b-2 border-black pb-4">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -140,11 +140,11 @@ export const InventoryReportContent = React.forwardRef<HTMLDivElement, Inventory
             <TableBody>
               {items.length > 0 ? (
                 items.map(item => (
-                  <TableRow key={item.id} className="border-b break-all">
-                    <TableCell>{item.category}</TableCell>
-                    <TableCell>{item.brand || 'N/A'}</TableCell>
-                    <TableCell className="font-medium">{item.name}</TableCell>
-                    <TableCell>{item.sku || 'N/A'}</TableCell>
+                  <TableRow key={item.id} className="border-b">
+                    <TableCell className="break-all">{item.category}</TableCell>
+                    <TableCell className="break-all">{item.brand || 'N/A'}</TableCell>
+                    <TableCell className="font-medium break-all">{item.name}</TableCell>
+                    <TableCell className="break-all">{item.sku || 'N/A'}</TableCell>
                     <TableCell className="text-right">
                       {item.isService ? <Badge variant="secondary">Servicio</Badge> : item.quantity}
                     </TableCell>
