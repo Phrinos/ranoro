@@ -42,12 +42,12 @@ const vehicleFormSchema = z.object({
 export type VehicleFormValues = z.infer<typeof vehicleFormSchema>;
 
 interface VehicleFormProps {
+  id?: string;
   initialData?: Partial<Vehicle> | null;
   onSubmit: (values: VehicleFormValues) => Promise<void>;
-  onClose: () => void;
 }
 
-export function VehicleForm({ initialData, onSubmit, onClose }: VehicleFormProps) {
+export function VehicleForm({ id, initialData, onSubmit }: VehicleFormProps) {
   const form = useForm<VehicleFormValues>({
     resolver: zodResolver(vehicleFormSchema),
     defaultValues: initialData ?
@@ -89,7 +89,6 @@ export function VehicleForm({ initialData, onSubmit, onClose }: VehicleFormProps
   }, [initialData, form]);
 
   const handleFormSubmit = async (values: VehicleFormValues) => {
-    // Sanitize optional numeric fields: convert empty strings or NaN from coercion to null.
     const submissionData = {
       ...values,
       dailyRentalCost: values.dailyRentalCost || null,
@@ -102,7 +101,7 @@ export function VehicleForm({ initialData, onSubmit, onClose }: VehicleFormProps
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-6">
+      <form id={id} onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-6">
         
         <Card>
           <CardHeader>
@@ -274,15 +273,6 @@ export function VehicleForm({ initialData, onSubmit, onClose }: VehicleFormProps
             </CardContent>
           </Card>
         )}
-
-        <div className="flex justify-end gap-2 pt-4">
-          <Button type="button" variant="outline" onClick={onClose}>
-            Cancelar
-          </Button>
-          <Button type="submit" disabled={form.formState.isSubmitting}>
-            {form.formState.isSubmitting ? "Guardando..." : (initialData && 'id' in initialData ? "Actualizar Vehículo" : "Crear Vehículo")}
-          </Button>
-        </div>
       </form>
     </Form>
   );

@@ -10,18 +10,20 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import { VehicleForm } from "./vehicle-form";
 import type { Vehicle } from "@/types";
 import { useToast } from "@/hooks/use-toast";
-import type { VehicleFormValues } from "./vehicle-form"; // Import VehicleFormValues
+import type { VehicleFormValues } from "./vehicle-form";
+import { Button } from '@/components/ui/button';
 
 interface VehicleDialogProps {
-  trigger?: React.ReactNode; // Make trigger optional for programmatic control
+  trigger?: React.ReactNode; 
   vehicle?: Partial<Vehicle> | null;
-  onSave?: (data: VehicleFormValues) => Promise<void>; // Use specific form values type
-  open?: boolean; // To control dialog externally
-  onOpenChange?: (isOpen: boolean) => void; // To control dialog externally
+  onSave?: (data: VehicleFormValues) => Promise<void>;
+  open?: boolean;
+  onOpenChange?: (isOpen: boolean) => void;
 }
 
 export function VehicleDialog({
@@ -43,7 +45,7 @@ export function VehicleDialog({
       if (onSave) {
         await onSave(values);
       }
-      onOpenChange(false); // Close dialog
+      onOpenChange(false);
     } catch (error) {
       console.error("Error saving vehicle:", error);
       toast({
@@ -63,16 +65,26 @@ export function VehicleDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       {trigger && !isControlled && <DialogTrigger asChild onClick={() => onOpenChange(true)}>{trigger}</DialogTrigger>}
       {open && (
-        <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>{dialogTitle}</DialogTitle>
-            <DialogDescription>{dialogDescription}</DialogDescription>
-          </DialogHeader>
-          <VehicleForm
-            initialData={vehicle}
-            onSubmit={handleSubmit}
-            onClose={() => onOpenChange(false)}
-          />
+        <DialogContent className="sm:max-w-[500px] max-h-[90vh] flex flex-col p-0">
+            <DialogHeader className="p-6 pb-0">
+                <DialogTitle>{dialogTitle}</DialogTitle>
+                <DialogDescription>{dialogDescription}</DialogDescription>
+            </DialogHeader>
+            <div className="flex-grow overflow-y-auto px-6">
+                <VehicleForm
+                    id="vehicle-form"
+                    initialData={vehicle}
+                    onSubmit={handleSubmit}
+                />
+            </div>
+            <DialogFooter className="p-6 pt-4 border-t sticky bottom-0 bg-background">
+                <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+                    Cancelar
+                </Button>
+                <Button type="submit" form="vehicle-form">
+                    {vehicle && 'id' in vehicle && vehicle.id ? "Actualizar Vehículo" : "Crear Vehículo"}
+                </Button>
+            </DialogFooter>
         </DialogContent>
       )}
     </Dialog>
