@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import Link from 'next/link';
@@ -118,7 +119,7 @@ export default function LandingPage() {
           </nav>
           <div className="flex items-center gap-2">
             <Button asChild>
-                <Link href="/login">Registrarte/Iniciar Sesión</Link>
+                <Link href="/login">Registrarte / Iniciar Sesión</Link>
             </Button>
           </div>
         </div>

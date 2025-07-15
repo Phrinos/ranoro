@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -9,7 +10,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { PlusCircle, Trash2, Wrench, X } from "lucide-react";
+import { PlusCircle, Trash2, Wrench, X, Tags } from "lucide-react";
 import type { VehiclePriceList, InventoryItem, ServiceSupply, InventoryCategory, Supplier } from "@/types";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
@@ -21,6 +22,7 @@ import { AddSupplyDialog } from "../../servicios/components/add-supply-dialog";
 import { InventoryItemDialog } from "../../inventario/components/inventory-item-dialog";
 import { inventoryService } from "@/lib/services";
 import type { InventoryItemFormValues } from "../../inventario/components/inventory-item-form";
+import { AddToPriceListDialog } from "./add-to-price-list-dialog";
 
 const supplySchema = z.object({
   supplyId: z.string(),

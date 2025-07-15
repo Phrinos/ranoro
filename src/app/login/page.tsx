@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState } from 'react';
@@ -7,7 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Loader2 } from 'lucide-react';
+import { Loader2, AlertTriangle } from 'lucide-react';
 import Image from "next/image";
 import Link from 'next/link';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -25,7 +26,7 @@ import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
 import type { User } from '@/types';
 
 const GoogleIcon = () => (
-  <svg className="mr-2 h-4 w-4" aria-hidden="true" focusable="false" data-prefix="fab" data-icon="google" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 488 512">
+  <svg className="mr-3 h-5 w-5" aria-hidden="true" focusable="false" data-prefix="fab" data-icon="google" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 488 512">
     <path fill="currentColor" d="M488 261.8C488 403.3 391.1 504 248 504 110.8 504 0 393.2 0 256S110.8 8 248 8c66.8 0 126 23.4 172.9 61.9l-69.2 69.2c-20.3-19.6-48.8-31.8-79.7-31.8-62.3 0-113.5 51.6-113.5 115.6s51.2 115.6 113.5 115.6c69.2 0 98.6-46.4 103.3-72.2h-103.3v-91.1h199.1c1.2 10.8 1.8 22.3 1.8 34.9z"></path>
   </svg>
 );
@@ -91,55 +92,6 @@ export default function LoginPage() {
       });
     } finally {
       setIsLoading(false);
-    }
-  };
-
-  const handleRegister = async (event: React.FormEvent) => {
-    event.preventDefault();
-    if (passwordRegister.length < 6) {
-        toast({ title: "Contraseña Corta", description: "La contraseña debe tener al menos 6 caracteres.", variant: 'destructive' });
-        return;
-    }
-    if (passwordRegister !== confirmPasswordRegister) {
-        toast({ title: "Las contraseñas no coinciden", variant: 'destructive' });
-        return;
-    }
-    setIsLoading(true);
-    try {
-      if (!auth || !db) throw new Error("Firebase no está inicializado.");
-      const userCredential = await createUserWithEmailAndPassword(auth, emailRegister, passwordRegister);
-      const user = userCredential.user;
-      
-      const newUserProfile: User = {
-        id: user.uid,
-        name: nameRegister,
-        email: emailRegister,
-        role: 'Admin', // Default role for new sign-ups
-      };
-
-      await setDoc(doc(db, 'users', user.uid), {
-        name: newUserProfile.name,
-        email: newUserProfile.email,
-        role: newUserProfile.role,
-        createdAt: new Date(),
-      });
-      
-      localStorage.setItem(AUTH_USER_LOCALSTORAGE_KEY, JSON.stringify(newUserProfile));
-
-      toast({ title: 'Registro Exitoso', description: `Bienvenido, ${nameRegister}.` });
-      router.push('/dashboard');
-    } catch (error: any) {
-        console.error("Error en registro:", error);
-        const errorMessage = error.code === 'auth/email-already-in-use'
-                ? 'Este correo electrónico ya está en uso.'
-                : 'Ocurrió un error inesperado.';
-        toast({
-            title: 'Error al Registrarse',
-            description: errorMessage,
-            variant: 'destructive',
-        });
-    } finally {
-        setIsLoading(false);
     }
   };
   
@@ -231,8 +183,8 @@ export default function LoginPage() {
                             {isLoading ? 'Ingresando...' : 'Ingresar al Sistema'}
                         </Button>
                          <Button variant="outline" type="button" className="w-full" onClick={handleGoogleSignIn} disabled={isLoading}>
-                          <GoogleIcon />
-                          Continuar con Google
+                            <GoogleIcon />
+                            <span>Continuar con Google</span>
                         </Button>
                     </form>
                     <div className="mt-4 text-center text-sm">
@@ -249,29 +201,34 @@ export default function LoginPage() {
                    <CardDescription className="text-center pt-4">
                       Crea tu cuenta para empezar a optimizar tu taller.
                    </CardDescription>
-                   <form onSubmit={handleRegister} className="space-y-4 pt-4">
-                        <div className="grid gap-2 text-left">
-                            <Label htmlFor="name-register">Nombre Completo</Label>
-                            <Input id="name-register" type="text" placeholder="Ej: Juan Pérez" required value={nameRegister} onChange={(e) => setNameRegister(capitalizeWords(e.target.value))} disabled={isLoading}/>
-                        </div>
-                        <div className="grid gap-2 text-left">
-                            <Label htmlFor="email-register">Correo Electrónico</Label>
-                            <Input id="email-register" type="email" placeholder="nuevo.usuario@ranoro.mx" required value={emailRegister} onChange={(e) => setEmailRegister(e.target.value)} disabled={isLoading}/>
-                        </div>
-                        <div className="grid grid-cols-2 gap-4">
-                          <div className="grid gap-2 text-left">
-                              <Label htmlFor="password-register">Contraseña</Label>
-                              <Input id="password-register" type="password" required value={passwordRegister} onChange={(e) => setPasswordRegister(e.target.value)} disabled={isLoading}/>
-                          </div>
-                           <div className="grid gap-2 text-left">
-                              <Label htmlFor="confirm-password-register">Confirmar Contraseña</Label>
-                              <Input id="confirm-password-register" type="password" required value={confirmPasswordRegister} onChange={(e) => setConfirmPasswordRegister(e.target.value)} disabled={isLoading}/>
-                          </div>
-                        </div>
-                        <Button type="submit" className="w-full" disabled={isLoading}>
-                            {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                            {isLoading ? 'Registrando...' : 'Crear Cuenta'}
-                        </Button>
+                   <form className="space-y-4 pt-4">
+                        <fieldset disabled className="space-y-4 opacity-50 cursor-not-allowed">
+                            <div className="grid gap-2 text-left">
+                                <Label htmlFor="name-register">Nombre Completo</Label>
+                                <Input id="name-register" type="text" placeholder="Ej: Juan Pérez" required disabled />
+                            </div>
+                            <div className="grid gap-2 text-left">
+                                <Label htmlFor="email-register">Correo Electrónico</Label>
+                                <Input id="email-register" type="email" placeholder="nuevo.usuario@ranoro.mx" required disabled />
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                              <div className="grid gap-2 text-left">
+                                  <Label htmlFor="password-register">Contraseña</Label>
+                                  <Input id="password-register" type="password" required disabled />
+                              </div>
+                               <div className="grid gap-2 text-left">
+                                  <Label htmlFor="confirm-password-register">Confirmar Contraseña</Label>
+                                  <Input id="confirm-password-register" type="password" required disabled />
+                              </div>
+                            </div>
+                            <div className="flex items-center p-3 text-sm text-amber-800 bg-amber-100 rounded-md border border-amber-200">
+                                <AlertTriangle className="h-4 w-4 mr-2" />
+                                <span>El registro por correo está en desarrollo.</span>
+                            </div>
+                            <Button type="button" className="w-full" disabled>
+                                Crear Cuenta
+                            </Button>
+                        </fieldset>
                          <Button variant="outline" type="button" className="w-full" onClick={handleGoogleSignIn} disabled={isLoading}>
                           <GoogleIcon />
                           Registrarse con Google

@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import {
@@ -9,7 +10,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { PriceListForm } from "./price-list-form";
-import type { VehiclePriceList } from "@/types";
+import type { VehiclePriceList, InventoryItem, ServiceTypeRecord, InventoryCategory, Supplier } from "@/types";
 import type { PriceListFormValues } from "./price-list-form";
 
 interface PriceListDialogProps {
@@ -17,9 +18,12 @@ interface PriceListDialogProps {
   onOpenChange: (isOpen: boolean) => void;
   onSave: (data: PriceListFormValues) => void;
   record?: VehiclePriceList | null;
+  inventoryItems: InventoryItem[];
+  categories: InventoryCategory[];
+  suppliers: Supplier[];
 }
 
-export function PriceListDialog({ open, onOpenChange, onSave, record }: PriceListDialogProps) {
+export function PriceListDialog({ open, onOpenChange, onSave, record, inventoryItems, categories, suppliers }: PriceListDialogProps) {
   const dialogTitle = record ? "Editar Lista de Precios" : "Nueva Lista de Precios";
   const dialogDescription = record
     ? `Actualiza la información para ${record.make} ${record.model}.`
@@ -37,6 +41,9 @@ export function PriceListDialog({ open, onOpenChange, onSave, record }: PriceLis
             initialData={record}
             onSubmit={onSave}
             onClose={() => onOpenChange(false)}
+            inventoryItems={inventoryItems}
+            categories={categories}
+            suppliers={suppliers}
           />
         </div>
       </DialogContent>

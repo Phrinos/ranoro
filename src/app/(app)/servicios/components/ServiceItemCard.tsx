@@ -7,15 +7,17 @@ import { Button } from "@/components/ui/button";
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Card } from '@/components/ui/card';
-import { Plus, PlusCircle, Trash2, Wrench } from "lucide-react";
-import type { InventoryItem, ServiceSupply, InventoryCategory, Supplier } from "@/types";
-import { useState } from "react";
+import { Plus, PlusCircle, Trash2, Wrench, Tags } from "lucide-react";
+import type { InventoryItem, ServiceSupply, InventoryCategory, Supplier, PricedService, VehiclePriceList } from "@/types";
+import { useState, useCallback } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { AddSupplyDialog } from './add-supply-dialog';
 import { capitalizeWords, formatCurrency, cn } from '@/lib/utils';
 import type { ServiceFormValues } from "@/schemas/service-form";
 import { InventoryItemDialog } from '../../inventario/components/inventory-item-dialog';
 import type { InventoryItemFormValues } from '../../inventario/components/inventory-item-form';
+import { AddToPriceListDialog } from "../../precios/components/add-to-price-list-dialog";
+import { inventoryService } from "@/lib/services";
 
 
 // Sub-component for a single Service Item card
@@ -50,6 +52,8 @@ export function ServiceItemCard({
     const [isAddSupplyDialogOpen, setIsAddSupplyDialogOpen] = useState(false);
     const [isNewItemDialogOpen, setIsNewItemDialogOpen] = useState(false);
     const [newItemSearchTerm, setNewItemSearchTerm] = useState('');
+    const [isAddToPriceListDialogOpen, setIsAddToPriceListDialogOpen] = useState(false);
+
     
     const serviceItemErrors = errors.serviceItems?.[serviceIndex];
     
@@ -106,6 +110,19 @@ export function ServiceItemCard({
         }
     };
 
+    const handleSaveToPriceList = async (list: VehiclePriceList, service: Omit<PricedService, 'id'>) => {
+      try {
+        const serviceWithId = { ...service, id: `SVC_${Date.now()}` };
+        const updatedServices = [...list.services, serviceWithId];
+        await inventoryService.savePriceList({ ...list, services: updatedServices }, list.id);
+        toast({ title: "Servicio Guardado", description: `Se ha añadido "${service.serviceName}" a la lista de precios de ${list.make} ${list.model}.` });
+        setIsAddToPriceListDialogOpen(false);
+      } catch (e) {
+        toast({ title: "Error", description: "No se pudo guardar en la lista de precios.", variant: "destructive" });
+      }
+    };
+
+
     return (
         <Card className="p-4 bg-muted/30">
             <div className="flex justify-between items-start mb-4">
@@ -113,7 +130,16 @@ export function ServiceItemCard({
                     <Wrench className="h-5 w-5 text-muted-foreground"/>
                     Trabajo a Realizar #{serviceIndex + 1}
                 </h4>
-                {!isReadOnly && <Button type="button" variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => removeServiceItem(serviceIndex)}><Trash2 className="h-4 w-4"/></Button>}
+                 {!isReadOnly && (
+                    <div className="flex items-center">
+                        <Button type="button" variant="ghost" size="icon" className="h-7 w-7 text-primary" onClick={() => setIsAddToPriceListDialogOpen(true)} title="Guardar en Precotizaciones">
+                            <Tags className="h-4 w-4"/>
+                        </Button>
+                        <Button type="button" variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => removeServiceItem(serviceIndex)} title="Eliminar Trabajo">
+                            <Trash2 className="h-4 w-4"/>
+                        </Button>
+                    </div>
+                )}
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField
@@ -195,6 +221,12 @@ export function ServiceItemCard({
                 item={{ name: newItemSearchTerm }}
                 categories={categories}
                 suppliers={suppliers}
+            />
+             <AddToPriceListDialog
+                open={isAddToPriceListDialogOpen}
+                onOpenChange={setIsAddToPriceListDialogOpen}
+                serviceToSave={getValues(`serviceItems.${serviceIndex}`)}
+                onSave={handleSaveToPriceList}
             />
         </Card>
     );

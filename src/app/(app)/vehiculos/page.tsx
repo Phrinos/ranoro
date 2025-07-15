@@ -1,13 +1,14 @@
 
 
+
 "use client";
 
 import { useState, useMemo, useEffect, useCallback, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Car, AlertTriangle, Activity, CalendarX, BarChart3 } from "lucide-react";
+import { PlusCircle, Car, AlertTriangle, Activity, CalendarX, BarChart3, Tags } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import type { Vehicle, VehiclePriceList } from "@/types";
+import type { Vehicle, VehiclePriceList, InventoryItem, InventoryCategory, Supplier } from "@/types";
 import type { VehicleFormValues } from "./components/vehicle-form";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -48,19 +49,28 @@ function VehiculosPageComponent() {
     
     const [allVehicles, setAllVehicles] = useState<Vehicle[]>([]);
     const [priceLists, setPriceLists] = useState<VehiclePriceList[]>([]);
+    const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
+    const [categories, setCategories] = useState<InventoryCategory[]>([]);
+    const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+
   
     useEffect(() => {
         setIsLoading(true);
-        const unsubscribeVehicles = inventoryService.onVehiclesUpdate((data) => {
-            setAllVehicles(data);
-            setIsLoading(false);
-        });
-
+        const unsubscribeVehicles = inventoryService.onVehiclesUpdate(setAllVehicles);
         const unsubscribePriceLists = inventoryService.onPriceListsUpdate(setPriceLists);
+        const unsubscribeInventory = inventoryService.onItemsUpdate(setInventoryItems);
+        const unsubscribeCategories = inventoryService.onCategoriesUpdate(setCategories);
+        const unsubscribeSuppliers = inventoryService.onSuppliersUpdate((data) => {
+            setSuppliers(data);
+            setIsLoading(false); // Consider loading finished after all data is fetched
+        });
 
         return () => {
             unsubscribeVehicles();
             unsubscribePriceLists();
+            unsubscribeInventory();
+            unsubscribeCategories();
+            unsubscribeSuppliers();
         };
     }, []);
 
@@ -229,6 +239,9 @@ function VehiculosPageComponent() {
                 onOpenChange={setIsPriceListDialogOpen}
                 onSave={handleSavePriceListRecord}
                 record={editingPriceRecord}
+                inventoryItems={inventoryItems}
+                categories={categories}
+                suppliers={suppliers}
             />
         </>
     );
@@ -241,4 +254,5 @@ export default function VehiculosPageWrapper() {
         </Suspense>
     );
 }
+
 
