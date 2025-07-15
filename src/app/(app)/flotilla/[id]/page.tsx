@@ -118,7 +118,7 @@ export default function FleetVehicleDetailPage() {
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>
-            <Button variant="outline" onClick={() => router.back()}>
+            <Button variant="outline" className="bg-white text-black hover:bg-gray-100" onClick={() => router.back()}>
               <ArrowLeft className="mr-2 h-4 w-4"/> Volver
             </Button>
           </div>
@@ -127,10 +127,10 @@ export default function FleetVehicleDetailPage() {
 
       <Tabs defaultValue="details" className="w-full">
         <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4">
-          <TabsTrigger value="details">Detalles</TabsTrigger>
-          <TabsTrigger value="maintenances">Mantenimientos</TabsTrigger>
-          <TabsTrigger value="fines">Multas</TabsTrigger>
-          <TabsTrigger value="paperwork">Trámites</TabsTrigger>
+          <TabsTrigger value="details" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Detalles</TabsTrigger>
+          <TabsTrigger value="maintenances" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Mantenimientos</TabsTrigger>
+          <TabsTrigger value="fines" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Multas</TabsTrigger>
+          <TabsTrigger value="paperwork" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Trámites</TabsTrigger>
         </TabsList>
 
         <TabsContent value="details" className="space-y-6">
