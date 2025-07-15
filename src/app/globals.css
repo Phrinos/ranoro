@@ -135,36 +135,38 @@
   }
   
   /* Make the printable area and its contents visible */
-  #printable-area, #printable-area * {
+  #printable-area-dialog .printable-content,
+  #printable-area-dialog .printable-content * {
     visibility: visible;
   }
 
   /* Position the printable area to take up the whole page */
-  #printable-area {
+  #printable-area-dialog {
     position: absolute;
     left: 0;
     top: 0;
     margin: 0 !important;
-    padding: 1cm !important;
+    padding: 0 !important;
     width: 100%;
     height: auto;
     box-shadow: none !important;
+    background: transparent !important;
   }
 
   /* --- Styles specific to thermal receipt printing --- */
-  #printable-area [data-format="receipt"] {
+  .printable-content[data-format="receipt"] {
       width: 80mm !important; 
-      margin: 0 auto !important; 
-      padding: 5mm 3mm !important;
+      margin: 0 !important; 
+      padding: 3mm !important;
       color: black !important;
       background: white !important;
   }
 
   /* --- Styles specific to letter-sized document printing --- */
-  #printable-area [data-format="letter"] {
+  .printable-content[data-format="letter"] {
       width: 100%;
       min-height: auto; 
-      padding: 0;
+      padding: 1cm !important;
       margin: 0 !important;
       color: black !important;
       background: white !important;
@@ -190,48 +192,48 @@
 
 @layer utilities {
   /* For responsive ticket preview */
-  #printable-area > [data-format="receipt"] {
+  .ticket-preview-content[data-format="receipt"] {
       transform-origin: top center;
       margin: 0 auto; /* Center the ticket */
   }
 
   @media (max-width: 340px) {
-    #printable-area > [data-format="receipt"] {
+    .ticket-preview-content[data-format="receipt"] {
       transform: scale(0.9);
     }
   }
   @media (min-width: 341px) and (max-width: 640px) {
-    #printable-area > [data-format="receipt"] {
+    .ticket-preview-content[data-format="receipt"] {
       transform: scale(1);
     }
   }
 
   @media (max-width: 890px) { /* 8.5in is roughly 816px, plus padding */
-    #printable-area > [data-format="letter"] {
+    .printable-content[data-format="letter"] {
         transform: scale(0.9);
     }
   }
   
   @media (max-width: 790px) {
-    #printable-area > [data-format="letter"] {
+    .printable-content[data-format="letter"] {
         transform: scale(0.8);
     }
   }
 
   @media (max-width: 690px) {
-    #printable-area > [data-format="letter"] {
+    .printable-content[data-format="letter"] {
         transform: scale(0.7);
     }
   }
 
   @media (max-width: 590px) {
-    #printable-area > [data-format="letter"] {
+    .printable-content[data-format="letter"] {
         transform: scale(0.5);
     }
   }
 
   @media (max-width: 450px) {
-    #printable-area > [data-format="letter"] {
+    .printable-content[data-format="letter"] {
         transform: scale(0.4);
     }
   }

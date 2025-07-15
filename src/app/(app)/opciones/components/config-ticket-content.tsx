@@ -6,12 +6,12 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form";
-import { Slider } from "@/components/ui/slider";
-import { Textarea } from "@/components/ui/textarea";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
+import { Slider } from '@/components/ui/slider';
+import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from "@/components/ui/checkbox";
 import { Save, Upload, Loader2, Bold, Printer } from 'lucide-react';
 import type { SaleReceipt, WorkshopInfo } from '@/types';
@@ -127,7 +127,7 @@ export function ConfiguracionTicketPageContent() {
   };
   
   const handlePrint = () => {
-    const content = document.getElementById('ticket-preview-printable')?.innerHTML;
+    const content = document.querySelector('.ticket-preview-content')?.innerHTML;
     if (!content) return;
 
     const printWindow = window.open('', '_blank');
@@ -141,7 +141,7 @@ export function ConfiguracionTicketPageContent() {
           }
       });
       
-      printWindow.document.write('<style>@media print { body { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; } .printable-content { margin: 0; padding: 0; } }</style></head><body>');
+      printWindow.document.write('<style>@media print { body { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; } .ticket-preview-content { margin: 0; padding: 0; } }</style></head><body>');
       printWindow.document.write(content);
       printWindow.document.write('</body></html>');
       
@@ -198,7 +198,7 @@ export function ConfiguracionTicketPageContent() {
                     <Button onClick={handlePrint} variant="outline"><Printer className="mr-2 h-4 w-4"/>Imprimir</Button>
                 </CardHeader>
                 <CardContent className="bg-gray-200 dark:bg-gray-800 p-4 sm:p-8 flex justify-center overflow-auto">
-                    <div id="ticket-preview-printable" className="w-[300px] bg-white shadow-lg">
+                    <div className="ticket-preview-content">
                         <TicketContent ref={ticketContentRef} sale={sampleSale} previewWorkshopInfo={watchedValues as WorkshopInfo} />
                     </div>
                 </CardContent>
