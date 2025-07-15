@@ -11,7 +11,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuLabel, DropdownMenuRadio
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { AddVehicleToFleetDialog } from "./components/add-vehicle-to-fleet-dialog";
 import { FineCheckDialog } from "./components/fine-check-dialog";
-import { placeholderVehicles, persistToFirestore, hydrateReady, AUTH_USER_LOCALSTORAGE_KEY, placeholderDrivers, placeholderRentalPayments } from '@/lib/placeholder-data';
+import { placeholderVehicles, persistToFirestore, AUTH_USER_LOCALSTORAGE_KEY, placeholderDrivers, placeholderRentalPayments } from '@/lib/placeholder-data';
 import type { User, Vehicle, Driver } from '@/types';
 import { useToast } from "@/hooks/use-toast";
 import { subDays, isBefore, parseISO, isValid, differenceInCalendarDays, startOfToday, isAfter, compareAsc, startOfMonth, endOfMonth, getDate, isWithinInterval, format } from 'date-fns';
@@ -22,6 +22,9 @@ import { formatCurrency, cn } from "@/lib/utils";
 import { DriverDialog } from '../conductores/components/driver-dialog';
 import type { DriverFormValues } from '../conductores/components/driver-form';
 import Link from 'next/link';
+import { inventoryService, personnelService, operationsService } from '@/lib/services';
+import { Loader2 } from 'lucide-react';
+
 
 type FlotillaSortOption = "plate_asc" | "plate_desc" | "owner_asc" | "owner_desc" | "rent_asc" | "rent_desc";
 type DriverSortOption = 'name_asc' | 'name_desc';
@@ -56,8 +59,7 @@ function FlotillaPageComponent() {
   const searchParams = useSearchParams();
   const defaultTab = searchParams.get('tab') || 'informe';
 
-  const [version, setVersion] = useState(0);
-  const [hydrated, setHydrated] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState(defaultTab);
   
   const [isAddVehicleDialogOpen, setIsAddVehicleDialogOpen] = useState(false);
@@ -75,32 +77,41 @@ function FlotillaPageComponent() {
 
   const [lastFineCheckDate, setLastFineCheckDate] = useState<Date | null>(null);
 
+  const [allVehicles, setAllVehicles] = useState<Vehicle[]>([]);
+  const [allDrivers, setAllDrivers] = useState<Driver[]>([]);
+  const [allPayments, setAllPayments] = useState<RentalPayment[]>([]);
+
   useEffect(() => {
-    hydrateReady.then(() => setHydrated(true));
+    setIsLoading(true);
+    const unsubs = [
+        inventoryService.onVehiclesUpdate(setAllVehicles),
+        personnelService.onDriversUpdate(setAllDrivers),
+        operationsService.onRentalPaymentsUpdate((data) => {
+            setAllPayments(data);
+            setIsLoading(false);
+        }),
+    ];
+    
     const savedDateStr = localStorage.getItem(FINE_CHECK_STORAGE_KEY);
     if (savedDateStr) {
       const savedDate = new Date(savedDateStr);
       if (!isNaN(savedDate.getTime())) setLastFineCheckDate(savedDate);
     }
-    const forceUpdate = () => setVersion(v => v + 1);
-    window.addEventListener('databaseUpdated', forceUpdate);
-    return () => window.removeEventListener('databaseUpdated', forceUpdate);
+    
+    return () => unsubs.forEach(unsub => unsub());
   }, []);
-
-  const allVehicles = useMemo(() => hydrated ? [...placeholderVehicles] : [], [hydrated, version]);
-  const allDrivers = useMemo(() => hydrated ? [...placeholderDrivers] : [], [hydrated, version]);
 
   const fleetVehicles = useMemo(() => allVehicles.filter(v => v.isFleetVehicle), [allVehicles]);
   const nonFleetVehicles = useMemo(() => allVehicles.filter(v => !v.isFleetVehicle), [allVehicles]);
 
   const monthlyBalances = useMemo((): MonthlyBalance[] => {
-    if (!hydrated) return [];
+    if (isLoading) return [];
     
     const today = new Date();
     const monthStart = startOfMonth(today);
     const monthEnd = endOfMonth(today);
 
-    const paymentsThisMonthByDriver = placeholderRentalPayments.filter(p => {
+    const paymentsThisMonthByDriver = allPayments.filter(p => {
         const pDate = parseISO(p.paymentDate);
         return isValid(pDate) && isWithinInterval(pDate, { start: monthStart, end: monthEnd });
     }).reduce((acc, p) => {
@@ -147,10 +158,10 @@ function FlotillaPageComponent() {
             daysOwed: daysOwed,
         };
     }).sort((a,b) => a.driverName.localeCompare(b.driverName));
-  }, [hydrated, version, allDrivers, allVehicles]);
+  }, [isLoading, allDrivers, allVehicles, allPayments]);
   
   const overduePaperwork = useMemo((): OverduePaperworkItem[] => {
-    if (!hydrated) return [];
+    if (isLoading) return [];
     const today = startOfToday();
     const alerts: OverduePaperworkItem[] = [];
     fleetVehicles.forEach(vehicle => {
@@ -170,7 +181,7 @@ function FlotillaPageComponent() {
       });
     });
     return alerts.sort((a, b) => compareAsc(parseISO(a.dueDate), parseISO(b.dueDate)));
-  }, [hydrated, version, fleetVehicles]);
+  }, [isLoading, fleetVehicles]);
 
   const filteredFleetVehicles = useMemo(() => {
     let vehicles = [...fleetVehicles];
@@ -192,11 +203,20 @@ function FlotillaPageComponent() {
   const uniqueOwners = useMemo(() => Array.from(new Set(fleetVehicles.map(v => v.ownerName))).sort(), [fleetVehicles]);
 
   const handleAddVehicleToFleet = async (vehicleId: string, costs: { dailyRentalCost: number; gpsMonthlyCost: number; adminMonthlyCost: number; insuranceMonthlyCost: number; }) => {
-    const vehicleIndex = placeholderVehicles.findIndex(v => v.id === vehicleId);
-    if (vehicleIndex === -1) return toast({ title: "Error", description: "Vehículo no encontrado.", variant: "destructive" });
-    placeholderVehicles[vehicleIndex] = { ...placeholderVehicles[vehicleIndex], isFleetVehicle: true, ...costs };
-    await persistToFirestore(['vehicles']);
-    toast({ title: "Vehículo Añadido", description: `${placeholderVehicles[vehicleIndex].licensePlate} ha sido añadido a la flotilla.` });
+    const vehicle = allVehicles.find(v => v.id === vehicleId);
+    if (!vehicle) return toast({ title: "Error", description: "Vehículo no encontrado.", variant: "destructive" });
+
+    const updatedVehicleData = { 
+        ...vehicle, 
+        isFleetVehicle: true, 
+        dailyRentalCost: costs.dailyRentalCost,
+        gpsMonthlyCost: costs.gpsMonthlyCost,
+        adminMonthlyCost: costs.adminMonthlyCost,
+        insuranceMonthlyCost: costs.insuranceMonthlyCost,
+    };
+    
+    await inventoryService.saveVehicle(updatedVehicleData, vehicleId);
+    toast({ title: "Vehículo Añadido", description: `${vehicle.licensePlate} ha sido añadido a la flotilla.` });
     setIsAddVehicleDialogOpen(false);
   };
 
@@ -205,36 +225,33 @@ function FlotillaPageComponent() {
     if (!authUserString) return toast({ title: "Error", description: "No se pudo identificar al usuario.", variant: "destructive" });
     const currentUser: User = JSON.parse(authUserString);
     const now = new Date();
-    checkedVehicleIds.forEach(id => {
-      const vehicleIndex = placeholderVehicles.findIndex(v => v.id === id);
-      if (vehicleIndex > -1) {
-        const vehicle = placeholderVehicles[vehicleIndex];
-        if (!vehicle.fineCheckHistory) vehicle.fineCheckHistory = [];
-        vehicle.fineCheckHistory.push({ date: now.toISOString(), checkedBy: currentUser.name, checkedById: currentUser.id });
-      }
+    
+    const updates = checkedVehicleIds.map(id => {
+        const vehicle = allVehicles.find(v => v.id === id);
+        if (!vehicle) return null;
+        
+        const newHistoryEntry = { date: now.toISOString(), checkedBy: currentUser.name, checkedById: currentUser.id };
+        const updatedHistory = [...(vehicle.fineCheckHistory || []), newHistoryEntry];
+        
+        return inventoryService.saveVehicle({ ...vehicle, fineCheckHistory: updatedHistory }, id);
     });
+
+    await Promise.all(updates.filter(Boolean));
+    
     localStorage.setItem(FINE_CHECK_STORAGE_KEY, now.toISOString());
     setLastFineCheckDate(now);
-    await persistToFirestore(['vehicles']);
     setIsFineCheckDialogOpen(false);
     toast({ title: "Revisión Confirmada", description: "Se ha guardado el historial de revisión de multas." });
-  }, [toast]);
+  }, [toast, allVehicles]);
   
   const handleOpenDriverDialog = useCallback((driver: Driver | null = null) => { setEditingDriver(driver); setIsDriverDialogOpen(true); }, []);
   const handleSaveDriver = useCallback(async (formData: DriverFormValues) => {
-    const isEditing = !!editingDriver;
-    const driverId = editingDriver ? editingDriver.id : `DRV_${Date.now().toString(36)}`;
-    const newDriverData: Driver = { id: driverId, ...editingDriver, ...formData, documents: editingDriver?.documents || {} };
-    if (isEditing) {
-        const dIndex = placeholderDrivers.findIndex(d => d.id === driverId);
-        if (dIndex > -1) placeholderDrivers[dIndex] = newDriverData;
-    } else {
-        placeholderDrivers.push(newDriverData);
-    }
-    await persistToFirestore(['drivers']);
-    toast({ title: `Conductor ${isEditing ? 'Actualizado' : 'Creado'}`, description: `Se han guardado los datos para ${formData.name}.` });
+    await personnelService.saveDriver(formData, editingDriver?.id);
+    toast({ title: `Conductor ${editingDriver ? 'Actualizado' : 'Creado'}` });
     setIsDriverDialogOpen(false);
   }, [editingDriver, toast]);
+
+  if (isLoading) { return <div className="flex justify-center items-center h-64"><Loader2 className="h-8 w-8 animate-spin" /></div>; }
 
   return (
     <>
