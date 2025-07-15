@@ -144,13 +144,15 @@ function HistorialServiciosPageComponent() {
         return dateA - dateB;
       });
   }, [allServices]);
+  
+  const allHistoricalServices = useMemo(() => allServices.filter((s) => s.status !== "Cotizacion"), [allServices]);
 
   const {
-    filteredData: historicalServices,
+    filteredData,
     setOtherFilters,
     ...tableManager
   } = useTableManager<ServiceRecord>({
-    initialData: allServices.filter((s) => s.status !== "Cotizacion"),
+    initialData: allHistoricalServices,
     searchKeys: ["id", "vehicleIdentifier", "description"],
     dateFilterKey: "deliveryDateTime",
     initialSortOption: "deliveryDateTime_desc",
@@ -330,8 +332,8 @@ function HistorialServiciosPageComponent() {
             onFilterChange={setOtherFilters}
             searchPlaceholder="Buscar por folio, placa, descripción..."
           />
-          {historicalServices && historicalServices.length > 0 ? (
-            historicalServices.map((service) => (
+          {filteredData && filteredData.length > 0 ? (
+            filteredData.map((service) => (
               <ServiceAppointmentCard
                 key={service.id}
                 service={service}

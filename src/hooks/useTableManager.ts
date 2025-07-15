@@ -2,7 +2,7 @@
 
 "use client";
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import type { DateRange } from 'react-day-picker';
 import { isWithinInterval, isValid, startOfDay, endOfDay, compareAsc, compareDesc } from 'date-fns';
 import { parseDate } from '@/lib/forms'; // Import the robust date parser
