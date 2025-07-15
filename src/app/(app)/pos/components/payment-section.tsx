@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Wallet, CreditCard, Send, WalletCards, ArrowRightLeft } from 'lucide-react';
+import { Wallet, CreditCard, Send, WalletCards, ArrowRightLeft, MessageSquare } from 'lucide-react';
 import type { PaymentMethod } from '@/types';
 import { cn } from '@/lib/utils';
 import { capitalizeWords } from '@/lib/utils';
@@ -55,6 +55,27 @@ export function PaymentSection({ isReadOnly = false, customerName }: { isReadOnl
                   disabled={isReadOnly} 
                 />
               </FormControl>
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={control}
+          name="whatsappNumber"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Número de WhatsApp (Opcional)</FormLabel>
+               <div className="relative">
+                 <MessageSquare className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <FormControl>
+                    <Input 
+                      type="tel"
+                      placeholder="Ej: 4491234567" 
+                      {...field} 
+                      disabled={isReadOnly} 
+                      className="pl-8"
+                    />
+                  </FormControl>
+               </div>
             </FormItem>
           )}
         />
