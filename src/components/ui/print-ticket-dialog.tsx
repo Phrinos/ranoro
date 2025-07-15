@@ -22,6 +22,7 @@ interface PrintTicketDialogProps {
   onDialogClose?: () => void; 
   dialogContentClassName?: string;
   footerActions?: React.ReactNode;
+  contentRef?: React.RefObject<HTMLDivElement>; // Added ref for external access
 }
 
 export function PrintTicketDialog({
@@ -33,6 +34,7 @@ export function PrintTicketDialog({
   onDialogClose,
   dialogContentClassName = "",
   footerActions,
+  contentRef,
 }: PrintTicketDialogProps) {
 
   const handleClose = () => {
@@ -58,7 +60,7 @@ export function PrintTicketDialog({
         </DialogHeader>
         
         <div className="flex-grow overflow-y-auto bg-muted/30 p-2 sm:p-4 rounded-md">
-            <div className="printable-area" id="printable-area-dialog">
+            <div className="printable-area" id="printable-area-dialog" ref={contentRef}>
                  {children}
             </div>
         </div>
