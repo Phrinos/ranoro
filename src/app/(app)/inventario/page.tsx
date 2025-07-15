@@ -220,7 +220,7 @@ function InventarioPageComponent() {
           open={isPrintDialogOpen}
           onOpenChange={setIsPrintDialogOpen}
           title="Vista Previa de Reporte de Inventario"
-          dialogContentClassName="printable-quote-dialog max-w-4xl"
+          dialogContentClassName="max-w-4xl"
           footerActions={
             <Button onClick={() => window.print()}>
               <Printer className="mr-2 h-4 w-4" /> Imprimir Reporte
