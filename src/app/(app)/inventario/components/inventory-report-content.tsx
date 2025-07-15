@@ -15,6 +15,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
+  TableFooter, // Importar TableFooter
 } from "@/components/ui/table";
 
 interface InventoryReportContentProps {
