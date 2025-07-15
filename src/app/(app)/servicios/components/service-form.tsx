@@ -1,5 +1,3 @@
-
-
 /* app/(app)/servicios/components/service-form.tsx */
 'use client'
 
@@ -380,6 +378,15 @@ export function ServiceForm(props:Props){
     const IVA = 0.16;
     dataToSubmit.subTotal = totalCost / (1 + IVA);
     dataToSubmit.taxAmount = totalCost - (totalCost / (1 + IVA));
+
+    // Ensure advisor signature is a data URL if it's a new service
+    if (!initialDataService?.id && dataToSubmit.serviceAdvisorSignatureDataUrl && !dataToSubmit.serviceAdvisorSignatureDataUrl.startsWith('data:')) {
+        const authUser = JSON.parse(localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY) || 'null');
+        if (authUser?.signatureDataUrl) {
+            dataToSubmit.serviceAdvisorSignatureDataUrl = authUser.signatureDataUrl;
+        }
+    }
+
 
     onSubmit(dataToSubmit);
   };
