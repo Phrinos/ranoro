@@ -5,7 +5,7 @@ import type { ServiceRecord, Vehicle, QuoteRecord, WorkshopInfo, SafetyInspectio
 import { format, parseISO, isValid, addDays } from 'date-fns';
 import { es } from 'date-fns/locale';
 import React from 'react';
-import { cn, normalizeDataUrl, calculateDriverDebt, formatCurrency } from "@/lib/utils";
+import { cn, normalizeDataUrl, calculateDriverDebt, formatCurrency, capitalizeWords } from "@/lib/utils";
 import { TabsContent } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Check, Eye, Signature, Loader2, AlertCircle, CalendarCheck } from 'lucide-react';
@@ -379,7 +379,7 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
                         )}
                     </div>
                     <div className="w-full text-center mt-auto pt-1 leading-tight">
-                        <p className="font-bold text-sm leading-tight">{service.serviceAdvisorName?.toUpperCase() || ''}</p>
+                        <p className="font-bold text-sm leading-tight">{capitalizeWords(service.serviceAdvisorName || '')}</p>
                     </div>
                 </div>
                 <div className="border-2 border-black rounded-md overflow-hidden flex flex-col justify-between items-center p-1 min-h-[180px]">
@@ -399,7 +399,7 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
                         )}
                     </div>
                     <div className="w-full text-center mt-auto pt-1 leading-tight">
-                        <p className="font-bold text-sm leading-tight">{vehicle?.ownerName?.toUpperCase() || ''}</p>
+                        <p className="font-bold text-sm leading-tight">{capitalizeWords(vehicle?.ownerName || '')}</p>
                         <p className="text-[7px] text-gray-600">Autorizo que se realicen estos servicios</p>
                     </div>
                 </div>
@@ -420,7 +420,7 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
                         )}
                     </div>
                     <div className="w-full text-center mt-auto pt-1 leading-tight">
-                        <p className="font-bold text-sm leading-tight">{vehicle?.ownerName?.toUpperCase() || ''}</p>
+                        <p className="font-bold text-sm leading-tight">{capitalizeWords(vehicle?.ownerName || '')}</p>
                         <p className="text-[7px] text-gray-600">Recibo de conformidad</p>
                     </div>
                 </div>

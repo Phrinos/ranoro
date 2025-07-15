@@ -213,7 +213,7 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
                         )}
                     </div>
                     <div className="border-t-2 border-gray-300/30 pt-1 w-56 text-center">
-                        <p className="font-bold">
+                        <p className="font-bold text-sm">
                            ASESOR: {capitalizeWords((quote.serviceAdvisorName || '').toLowerCase()) || '________________________________'}
                         </p>
                     </div>
