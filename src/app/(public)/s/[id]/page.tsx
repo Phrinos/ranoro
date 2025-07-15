@@ -190,7 +190,7 @@ export default function PublicServicePage() {
             <DialogContent className="max-w-4xl p-2">
                 <DialogHeader><DialogTitle>Vista Previa de Imagen</DialogTitle></DialogHeader>
                 <div className="relative aspect-video w-full">
-                    {viewingImageUrl && (<Image src={viewingImageUrl} alt="Vista ampliada" fill className="object-contain" crossOrigin="anonymous"/>)}
+                    {viewingImageUrl && (<Image src={viewingImageUrl} alt="Vista ampliada" fill className="object-contain" crossOrigin="anonymous" />)}
                 </div>
                 <DialogFooter>
                     <Button onClick={() => window.open(viewingImageUrl || '', '_blank')?.focus()}><Download className="mr-2 h-4 w-4"/>Descargar</Button>
