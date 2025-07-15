@@ -20,8 +20,12 @@ export function DetailsTabContent({ vehicle, onEdit }: DetailsTabContentProps) {
   return (
     <>
       <Card>
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>Información del Vehículo</CardTitle>
+           <Button variant="outline" size="sm" onClick={onEdit}>
+              <Edit className="mr-2 h-4 w-4" />
+              Editar Vehículo
+          </Button>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
@@ -52,7 +56,7 @@ export function DetailsTabContent({ vehicle, onEdit }: DetailsTabContentProps) {
           <CardTitle>Costos y Deducciones Fijas</CardTitle>
           <Button variant="outline" size="sm" onClick={onEdit}>
               <Edit className="mr-2 h-4 w-4" />
-              Editar
+              Editar Costos
           </Button>
         </CardHeader>
         <CardContent className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 text-center">
