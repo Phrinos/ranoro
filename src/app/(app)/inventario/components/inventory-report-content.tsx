@@ -26,6 +26,7 @@ const initialWorkshopInfo: WorkshopInfo = {
   addressLine1: "Av. de la Convencion de 1914 No. 1421",
   logoUrl: "/ranoro-logo.png",
   cityState: "Aguascalientes, Ags.",
+  fixedFooterText: "© 2025 Ranoro® Sistema de Administracion de Talleres. Todos los derechos reservados - Diseñado y Desarrollado por Arturo Valdelamar +524493930914",
 };
 
 interface InventoryReportContentProps {
@@ -62,23 +63,28 @@ export const InventoryReportContent = React.forwardRef<HTMLDivElement, Inventory
         className="font-sans bg-white text-black p-4 text-sm"
       >
         <header className="mb-8 border-b-2 border-black pb-4">
-          <div className="flex justify-between items-center">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             {workshopInfo?.logoUrl ? (
-                <Image 
-                    src={workshopInfo.logoUrl} 
-                    alt={`${workshopInfo.name} Logo`} 
-                    width={150} 
-                    height={50} 
-                    style={{ objectFit: 'contain' }}
-                    data-ai-hint="workshop logo"
-                />
-            ) : (
-                <h1 className="text-3xl font-bold text-primary">{workshopInfo?.name || 'Taller'}</h1>
-            )}
-            <div className="text-right">
+              <Image 
+                  src={workshopInfo.logoUrl} 
+                  alt={`${workshopInfo.name} Logo`} 
+                  width={150} 
+                  height={50} 
+                  style={{ objectFit: 'contain' }}
+                  data-ai-hint="workshop logo"
+              />
+            ) : <div className="h-[50px]"></div>}
+             <div className="text-left sm:text-right">
               <h2 className="text-2xl font-semibold">Reporte de Inventario</h2>
               <p className="text-xs text-gray-500">Generado el: {formattedDate}</p>
             </div>
+          </div>
+          <div className="mt-4 text-xs">
+            <p className="font-bold text-base">{workshopInfo.name}</p>
+            <p>{workshopInfo.addressLine1}</p>
+            {workshopInfo.addressLine2 && <p>{workshopInfo.addressLine2}</p>}
+            <p>{workshopInfo.cityState}</p>
+            <p>Tel: {workshopInfo.phone}</p>
           </div>
         </header>
 
@@ -155,6 +161,10 @@ export const InventoryReportContent = React.forwardRef<HTMLDivElement, Inventory
             </TableBody>
           </Table>
         </main>
+        
+         <footer className="text-center mt-16 pt-4 border-t border-gray-200">
+            <p className="text-[10px] text-muted-foreground whitespace-pre-wrap">{workshopInfo.fixedFooterText}</p>
+         </footer>
       </div>
     );
   }
