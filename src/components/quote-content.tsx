@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import type { QuoteRecord, Vehicle, Technician, WorkshopInfo, Driver, RentalPayment } from '@/types';
@@ -60,15 +61,16 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
       >
         <header className="mb-4 pb-2 border-b-2 border-black">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div className="relative w-[150px] h-[50px]">
              <Image 
               src={effectiveWorkshopInfo.logoUrl} 
               alt={`${effectiveWorkshopInfo.name} Logo`} 
-              width={150}
-              height={50}
+              fill
               style={{ objectFit: 'contain' }}
               data-ai-hint="workshop logo"
               crossOrigin="anonymous"
             />
+            </div>
             <h2 className="text-2xl sm:text-3xl font-semibold text-primary text-left sm:text-right w-full sm:w-auto">COTIZACIÓN</h2>
           </div>
 
@@ -202,14 +204,15 @@ export const QuoteContent = React.forwardRef<HTMLDivElement, QuoteContentProps>(
                 <div className="text-right flex flex-col items-center justify-end mt-4 sm:mt-0">
                     <div className="relative flex justify-center items-center h-16 w-40 mb-1">
                         {quote.serviceAdvisorSignatureDataUrl && (
-                           <Image
-                                src={normalizeDataUrl(quote.serviceAdvisorSignatureDataUrl)}
-                                alt="Firma del asesor"
-                                width={200}
-                                height={80}
-                                style={{ objectFit: 'contain' }}
-                                crossOrigin="anonymous"
-                            />
+                           <div className="relative w-[200px] h-[80px]">
+                                <Image
+                                    src={normalizeDataUrl(quote.serviceAdvisorSignatureDataUrl)}
+                                    alt="Firma del asesor"
+                                    fill
+                                    style={{ objectFit: 'contain' }}
+                                    crossOrigin="anonymous"
+                                />
+                           </div>
                         )}
                     </div>
                     <div className="border-t-2 border-gray-300/30 pt-1 w-56 text-center">

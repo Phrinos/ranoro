@@ -32,14 +32,13 @@ export default function ServiceSheetLayout({
     <div className="bg-muted/40 min-h-screen">
         <header className="py-2 px-4 sm:px-6 bg-background/80 backdrop-blur-sm sticky top-0 z-50 border-b print:hidden">
            <div className="container mx-auto flex justify-between items-center">
-             <Link href="/login">
+             <Link href="/login" className="relative w-[140px] h-[40px]">
                 <Image
                   src="/ranoro-logo.png"
                   alt="Ranoro Logo"
-                  width={140}
-                  height={40}
-                  className="dark:invert h-auto"
-                  style={{ width: 'auto', height: 'auto' }}
+                  fill
+                  style={{ objectFit: 'contain' }}
+                  className="dark:invert"
                   data-ai-hint="ranoro logo"
                 />
              </Link>

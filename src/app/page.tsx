@@ -98,14 +98,13 @@ export default function LandingPage() {
     <div className="bg-background text-foreground">
       <header className="sticky top-0 z-50 bg-white border-b">
         <div className="container mx-auto flex h-20 items-center justify-between px-4 md:px-6">
-          <Link href="/" className="flex items-center gap-2">
+          <Link href="/" className="relative w-[140px] h-[40px]">
             <Image
               src="/ranoro-logo.png"
               alt="Ranoro Logo"
-              width={140}
-              height={40}
-              className="dark:invert w-auto h-auto"
-              style={{ width: '140px', height: 'auto' }}
+              fill
+              style={{objectFit: 'contain'}}
+              className="dark:invert"
               data-ai-hint="ranoro logo"
             />
           </Link>
@@ -416,13 +415,12 @@ export default function LandingPage() {
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-16">
             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-8">
                 <div className="col-span-2 lg:col-span-2">
-                    <Link href="#" className="flex items-center gap-2">
+                    <Link href="#" className="relative inline-block w-[140px] h-[40px]">
                         <Image
                           src="/ranoro-logo-negro.png"
                           alt="Ranoro Logo"
-                          width={140}
-                          height={40}
-                          style={{height: 'auto', width: 'auto'}}
+                          fill
+                          style={{objectFit: 'contain'}}
                           data-ai-hint="ranoro logo"
                         />
                     </Link>

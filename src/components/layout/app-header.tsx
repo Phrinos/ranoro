@@ -106,13 +106,13 @@ export function AppHeader() {
             </SheetTrigger>
             <SheetContent side="left" className="w-[280px] p-0">
               <div className="flex items-center justify-center border-b p-4">
-                <Link href="/dashboard" className="flex items-center gap-2" onClick={() => setIsSheetOpen(false)}>
+                <Link href="/dashboard" className="relative w-[120px] h-[30px]" onClick={() => setIsSheetOpen(false)}>
                   <Image
                     src="/ranoro-logo.png"
                     alt="Ranoro Logo"
-                    width={120}
-                    height={30}
-                    className="dark:invert w-auto h-auto"
+                    fill
+                    style={{objectFit: 'contain'}}
+                    className="dark:invert"
                     data-ai-hint="ranoro logo"
                   />
                 </Link>
@@ -122,13 +122,13 @@ export function AppHeader() {
           </Sheet>
         ) : (
           <div className="mr-4 hidden md:flex">
-            <Link href="/dashboard" className="mr-6 flex items-center space-x-2">
+            <Link href="/dashboard" className="mr-6 flex items-center space-x-2 relative w-[120px] h-[30px]">
               <Image
                 src="/ranoro-logo.png"
                 alt="Ranoro Logo"
-                width={120}
-                height={30}
-                className="dark:invert w-[120px] h-auto"
+                fill
+                style={{objectFit: 'contain'}}
+                className="dark:invert"
                 data-ai-hint="ranoro logo"
               />
             </Link>

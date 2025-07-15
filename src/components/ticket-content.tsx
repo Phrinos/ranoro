@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import type { SaleReceipt, ServiceRecord, Vehicle, Technician, ServiceItem, WorkshopInfo } from '@/types';
@@ -7,6 +8,8 @@ import { es } from 'date-fns/locale';
 import React from 'react';
 import { cn } from "@/lib/utils";
 import { parseDate } from '@/lib/forms';
+import Image from 'next/image';
+
 
 const initialWorkshopInfo: WorkshopInfo = {
   name: "RANORO",
@@ -83,20 +86,22 @@ export const TicketContent = React.forwardRef<HTMLDivElement, TicketContentProps
       <div 
         ref={ref}
         data-format="receipt"
-        className="font-mono bg-white text-black px-2 py-4 max-w-[300px] mx-auto leading-tight print:max-w-full print:p-0"
+        className="font-mono bg-white text-black px-2 py-4 max-w-[300px] mx-auto leading-tight print:max-w-full print:text-[9px] print:p-0"
       >
         {Array.from({ length: blankLinesTop || 0 }).map((_, i) => <div key={`top-${i}`} style={{ height: `10px` }}>&nbsp;</div>)}
 
         <div className="text-center mb-1 space-y-0 leading-tight">
           {workshopInfo.logoUrl && (
-            <img 
-              src={workshopInfo.logoUrl} 
-              alt="Logo" 
-              className="mx-auto mb-1" 
-              style={{ width: logoWidth ? `${logoWidth}px` : '120px' }}
-              data-ai-hint="workshop logo"
-              crossOrigin="anonymous"
-            />
+            <div className="mx-auto mb-1 relative" style={{ width: logoWidth ? `${logoWidth}px` : '120px', height: `${(logoWidth || 120) / 3}px` }}>
+                <Image 
+                src={workshopInfo.logoUrl} 
+                alt="Logo" 
+                fill
+                style={{ objectFit: 'contain' }}
+                crossOrigin="anonymous"
+                data-ai-hint="workshop logo"
+                />
+            </div>
           )}
           <div style={{ fontSize: `${headerFontSize}px` }}>
               <p className={cn({"font-bold": nameBold})}>{name}</p>

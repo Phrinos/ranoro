@@ -139,21 +139,20 @@ export default function LoginPage() {
           alt="Ranoro Login"
           fill
           className="object-cover object-center"
- sizes="(max-width: 768px) 100vw, 50vw"
- priority
+          sizes="(max-width: 768px) 100vw, 50vw"
+          priority
         />
       </div>
       <div className="flex items-center justify-center py-12 bg-gray-50 dark:bg-gray-900">
         <Card className="mx-4 w-full sm:mx-auto sm:w-[420px] max-w-full animate-fade-in-up shadow-xl transition-all">
           <CardHeader className="text-center">
-            <Link href="/" className="mb-4 inline-block">
+            <Link href="/" className="mb-4 inline-block relative w-[180px] h-[45px] mx-auto">
               <Image
                   src="/ranoro-logo.png"
                   alt="Ranoro Logo"
-                  width={180}
-                  height={45}
-                  className="mx-auto dark:invert w-auto h-auto"
-                  style={{width: 'auto', height: 'auto'}}
+                  fill
+                  style={{objectFit: 'contain'}}
+                  className="dark:invert"
                   data-ai-hint="ranoro logo"
               />
             </Link>

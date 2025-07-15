@@ -66,14 +66,15 @@ export const InventoryReportContent = React.forwardRef<HTMLDivElement, Inventory
         <header className="mb-8 border-b-2 border-black pb-4">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             {workshopInfo?.logoUrl ? (
-              <Image 
-                  src={workshopInfo.logoUrl} 
-                  alt={`${workshopInfo.name} Logo`} 
-                  width={150} 
-                  height={50} 
-                  style={{ objectFit: 'contain' }}
-                  data-ai-hint="workshop logo"
-              />
+              <div className="relative w-[150px] h-[50px]">
+                <Image 
+                    src={workshopInfo.logoUrl} 
+                    alt={`${workshopInfo.name} Logo`} 
+                    fill
+                    style={{ objectFit: 'contain' }}
+                    data-ai-hint="workshop logo"
+                />
+              </div>
             ) : <div className="h-[50px]"></div>}
              <div className="text-left sm:text-right">
               <h2 className="text-2xl font-semibold">Reporte de Inventario</h2>

@@ -1,11 +1,12 @@
 
+
 "use client";
 
 import type { ServiceRecord, Vehicle, QuoteRecord, WorkshopInfo, SafetyInspection, SafetyCheckStatus, PhotoReportGroup, Driver } from '@/types';
 import { format, parseISO, isValid, addDays } from 'date-fns';
 import { es } from 'date-fns/locale';
 import React from 'react';
-import { cn, normalizeDataUrl, calculateDriverDebt, formatCurrency } from "@/lib/utils";
+import { cn, normalizeDataUrl, calculateDriverDebt, formatCurrency, capitalizeWords } from "@/lib/utils";
 import { TabsContent } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Check, Eye, Signature, Loader2, AlertCircle, CalendarCheck } from 'lucide-react';
@@ -108,7 +109,9 @@ const SafetyChecklistDisplay = ({
         <div className="mt-4 print:mt-0">
             <header className="mb-4 pb-2 border-b-2 border-black">
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
-                    <img src={workshopInfo.logoUrl} alt={`${workshopInfo.name} Logo`} style={{ width: '150px', height: 'auto' }} data-ai-hint="workshop logo" crossOrigin="anonymous" />
+                    <div className="relative w-[150px] h-auto">
+                        <Image src={workshopInfo.logoUrl} alt={`${workshopInfo.name} Logo`} width={150} height={50} style={{objectFit: 'contain'}} data-ai-hint="workshop logo" crossOrigin="anonymous" />
+                    </div>
                     <div className="text-left sm:text-right">
                     <h1 className="text-base sm:text-lg font-bold">REVISIÓN DE PUNTOS DE SEGURIDAD</h1>
                     <p className="font-mono text-xs">Folio de Servicio: <span className="font-semibold">{service.id}</span></p>
@@ -159,7 +162,7 @@ const SafetyChecklistDisplay = ({
                                                         key={pIndex} 
                                                         className="relative aspect-video w-full bg-gray-100 rounded overflow-hidden border group"
                                                     >
-                                                        <Image src={photoUrl} alt={`Evidencia para ${item.label}`} layout="fill" objectFit="cover" className="transition-transform duration-300 group-hover:scale-105" crossOrigin="anonymous"/>
+                                                        <Image src={photoUrl} alt={`Evidencia para ${item.label}`} fill style={{objectFit: 'cover'}} className="transition-transform duration-300 group-hover:scale-105" crossOrigin="anonymous"/>
                                                         <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity group-hover:opacity-100">
                                                             <Eye className="h-6 w-6 text-white" />
                                                         </div>
@@ -182,8 +185,8 @@ const SafetyChecklistDisplay = ({
             )}
             {inspection.technicianSignature && (
                  <div className="mt-8 border-t pt-4 text-center flex flex-col items-center">
-                    <div className="h-24 w-full max-w-[200px] relative">
-                        <Image src={normalizeDataUrl(inspection.technicianSignature)} alt="Firma del técnico" unoptimized width={200} height={96} style={{ objectFit: 'contain' }} crossOrigin="anonymous"/>
+                    <div className="relative w-full h-full max-w-[200px] aspect-video">
+                        <Image src={normalizeDataUrl(inspection.technicianSignature)} alt="Firma del técnico" fill style={{objectFit: 'contain'}} crossOrigin="anonymous"/>
                     </div>
                     <div className="mt-2 pt-1 w-64 text-center">
                         <p className="text-xs font-bold">FIRMA DEL TÉCNICO ({format(new Date(), "dd/MM/yyyy")})</p>
@@ -235,6 +238,8 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
 
     const driverDebt = driver && vehicle ? calculateDriverDebt(driver, placeholderRentalPayments, [vehicle]) : { totalDebt: 0, rentalDebt: 0, depositDebt: 0, manualDebt: 0 };
     
+    const shouldShowNextService = service.nextServiceInfo && service.status === 'Entregado';
+
     const ServiceOrderContent = (
       <div className="flex flex-col min-h-full relative">
         {service.status === 'Cancelado' && (
@@ -246,7 +251,9 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
         )}
         <header className="mb-2 pb-2 border-b-2 border-black">
           <div className="flex justify-between items-start gap-2">
-            <img src={effectiveWorkshopInfo.logoUrl} alt={`${effectiveWorkshopInfo.name} Logo`} style={{ width: '150px', height: 'auto' }} data-ai-hint="workshop logo" crossOrigin="anonymous" />
+            <div className="relative w-[150px] h-auto">
+                <Image src={effectiveWorkshopInfo.logoUrl} alt={`${effectiveWorkshopInfo.name} Logo`} width={150} height={50} style={{objectFit: 'contain'}} data-ai-hint="workshop logo" crossOrigin="anonymous" />
+            </div>
             <div className="text-right">
               <h1 className="text-xl font-bold">ORDEN DE SERVICIO</h1>
               <p className="font-mono text-base">Folio: <span className="font-bold">{service.id}</span></p>
@@ -268,15 +275,15 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
 
         <main className="flex-grow">
            <section className="grid grid-cols-3 gap-2 mb-2 text-xs">
-                <div className="border-2 border-black rounded-md overflow-hidden flex-1">
+              <div className="border-2 border-black rounded-md overflow-hidden flex-1">
                 <h3 className="font-bold p-1 bg-gray-700 text-white text-xs text-center">DATOS DEL CLIENTE</h3>
                 <div className="space-y-0.5 p-2 text-sm">
-                  <p><span className="font-semibold">Nombre:</span> <span className="font-bold">{vehicle?.ownerName?.toUpperCase() || ''}</span></p>
+                  <p><span className="font-semibold">Nombre:</span> <span className="font-bold">{capitalizeWords(vehicle?.ownerName || '')}</span></p>
                   <p><span className="font-semibold">Teléfono:</span> <span className="font-bold">{vehicle?.ownerPhone || ''}</span></p>
                   {vehicle?.ownerEmail && <p><span className="font-semibold">Email:</span> <span className="font-bold">{vehicle.ownerEmail}</span></p>}
                 </div>
               </div>
-              <div className="border-2 border-black rounded-md overflow-hidden flex-1">
+              <div className={cn("border-2 border-black rounded-md overflow-hidden flex-1", shouldShowNextService ? "col-span-1" : "col-span-2")}>
                   <h3 className="font-bold p-1 bg-gray-700 text-white text-xs text-center">DATOS DEL VEHÍCULO</h3>
                   <div className="space-y-0.5 p-2 text-sm">
                       <p><span className="font-semibold">Vehículo:</span> <span className="font-bold">{vehicle ? `${vehicle.year} ${vehicle.make} ${vehicle.model}` : 'N/A'}</span></p>
@@ -285,16 +292,16 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
                       {service.mileage && <p><span className="font-semibold">Kilometraje:</span> <span className="font-bold">{service.mileage.toLocaleString('es-MX')} km</span></p>}
                   </div>
               </div>
-              {service.nextServiceInfo && service.status === 'Entregado' && (
+              {shouldShowNextService && (
                   <div className="border-2 border-red-700 rounded-md overflow-hidden flex-1">
                     <h3 className="font-bold p-1 bg-red-700 text-white text-xs text-center">PRÓXIMO SERVICIO</h3>
                     <div className="p-2 space-y-1 text-center text-sm">
                         <p className="text-[10px] font-semibold">Lo que ocurra primero</p>
-                        {service.nextServiceInfo.date && isValid(parseDate(service.nextServiceInfo.date)) && (
-                            <p className="font-bold">Fecha: {format(parseDate(service.nextServiceInfo.date)!, "dd/MMMM/yyyy", { locale: es })}</p>
+                        {service.nextServiceInfo!.date && isValid(parseDate(service.nextServiceInfo!.date)) && (
+                            <p className="font-bold">Fecha: {format(parseDate(service.nextServiceInfo!.date)!, "dd/MMMM/yyyy", { locale: es })}</p>
                         )}
-                        {service.nextServiceInfo.mileage && (
-                            <p className="font-bold">Kilometraje: {service.nextServiceInfo.mileage.toLocaleString('es-MX')} km</p>
+                        {service.nextServiceInfo!.mileage && (
+                            <p className="font-bold">Kilometraje: {service.nextServiceInfo!.mileage.toLocaleString('es-MX')} km</p>
                         )}
                     </div>
                   </div>
@@ -342,11 +349,11 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
           <section className="grid grid-cols-5 gap-2 mb-2 text-xs">
               <div className="border-2 border-black rounded-md overflow-hidden col-span-3 flex flex-col">
                  <h3 className="font-bold p-1 bg-gray-700 text-white text-xs text-center">CONDICIONES DEL VEHÍCULO</h3>
-                 <p className="whitespace-pre-wrap p-2 min-h-[10px] text-sm flex-grow">{service.vehicleConditions || 'No especificado.'}</p>
+                 <p className="whitespace-pre-wrap p-2 text-base flex-grow">{service.vehicleConditions || 'No especificado.'}</p>
               </div>
               <div className="border-2 border-black rounded-md overflow-hidden col-span-1 flex flex-col">
                   <h3 className="font-bold p-1 bg-gray-700 text-white text-xs text-center">PERTENENCIAS</h3>
-                  <p className="whitespace-pre-wrap p-2 min-h-[10px] text-sm flex-grow">{service.customerItems || 'No especificado.'}</p>
+                  <p className="whitespace-pre-wrap p-2 text-base flex-grow">{service.customerItems || 'No especificado.'}</p>
               </div>
               <div className="border-2 border-black rounded-md overflow-hidden col-span-1 flex flex-col justify-center min-h-[60px]">
                   <h3 className="font-bold p-1 bg-gray-700 text-white text-center text-xs">COMBUSTIBLE</h3>
@@ -354,7 +361,7 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
                     <div className="h-2 w-full bg-gray-200 rounded-full overflow-hidden border border-gray-300">
                         <div className={cn("h-full transition-all", fuelColor)} style={{ width: `${fuelPercentage}%` }} />
                     </div>
-                    <div className="w-full flex justify-between text-[8px] mt-0.5 px-0.5">
+                    <div className="w-full flex justify-between text-base mt-0.5 px-0.5">
                         <span>E</span>
                         <span>F</span>
                     </div>
@@ -363,25 +370,31 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
               </div>
           </section>
            <section className="mt-auto pt-2 grid grid-cols-3 gap-2 text-xs">
-                <div className="border-2 border-black rounded-md overflow-hidden flex flex-col justify-between items-center p-1 min-h-[120px] col-span-1">
+                <div className="border-2 border-black rounded-md overflow-hidden flex flex-col justify-between items-center p-1 min-h-[180px] col-span-1">
                     <h3 className="font-bold p-1 w-full bg-gray-700 text-white text-xs text-center rounded-sm">ASESOR</h3>
                     <div className="flex-grow flex items-center justify-center w-full min-h-[50px]">
                         {service.serviceAdvisorSignatureDataUrl && (
                             <div className="relative w-full h-full">
-                                <Image src={normalizeDataUrl(service.serviceAdvisorSignatureDataUrl)} alt="Firma del asesor" layout="fill" objectFit="contain" unoptimized crossOrigin="anonymous" />
+                                <Image
+                                  src={normalizeDataUrl(service.serviceAdvisorSignatureDataUrl)}
+                                  alt="Firma del asesor"
+                                  fill
+                                  style={{ objectFit: 'contain' }}
+                                  crossOrigin="anonymous"
+                                />
                             </div>
                         )}
                     </div>
-                    <div className="w-full text-center mt-auto pt-1">
-                        <p className="font-bold text-[8px]">{service.serviceAdvisorName?.toUpperCase() || ''}</p>
+                    <div className="w-full text-center mt-auto pt-1 leading-tight">
+                        <p className="font-bold text-sm leading-tight">{capitalizeWords(service.serviceAdvisorName || '')}</p>
                     </div>
                 </div>
-                <div className="border-2 border-black rounded-md overflow-hidden flex flex-col justify-between items-center p-1 min-h-[120px]">
+                <div className="border-2 border-black rounded-md overflow-hidden flex flex-col justify-between items-center p-1 min-h-[180px]">
                     <h3 className="font-bold p-1 w-full bg-gray-700 text-white text-xs text-center rounded-sm">ENTRADA AL TALLER</h3>
                     <div className="flex-grow flex items-center justify-center w-full min-h-[50px]">
                         {service.customerSignatureReception ? (
                             <div className="relative w-full h-full">
-                                <Image src={normalizeDataUrl(service.customerSignatureReception)} alt="Firma de recepción" layout="fill" objectFit="contain" unoptimized crossOrigin="anonymous" />
+                                <Image src={normalizeDataUrl(service.customerSignatureReception)} alt="Firma de recepción" fill style={{objectFit: 'contain'}} unoptimized crossOrigin="anonymous" />
                             </div>
                         ) : (
                             isPublicView && showSignReception && onSignClick && (
@@ -392,17 +405,17 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
                             )
                         )}
                     </div>
-                    <div className="w-full text-center mt-auto pt-1">
-                        <p className="font-bold text-[8px]">{vehicle?.ownerName?.toUpperCase() || ''}</p>
+                    <div className="w-full text-center mt-auto pt-1 leading-tight">
+                        <p className="font-bold text-sm leading-tight">{capitalizeWords(vehicle?.ownerName || '')}</p>
                         <p className="text-[7px] text-gray-600">Autorizo que se realicen estos servicios</p>
                     </div>
                 </div>
-                <div className="border-2 border-black rounded-md overflow-hidden flex flex-col justify-between items-center p-1 min-h-[120px]">
+                <div className="border-2 border-black rounded-md overflow-hidden flex flex-col justify-between items-center p-1 min-h-[180px]">
                     <h3 className="font-bold p-1 w-full bg-gray-700 text-white text-xs text-center rounded-sm">SALIDA DEL TALLER</h3>
                     <div className="flex-grow flex items-center justify-center w-full min-h-[50px]">
                         {service.customerSignatureDelivery ? (
                             <div className="relative w-full h-full">
-                            <Image src={normalizeDataUrl(service.customerSignatureDelivery)} alt="Firma de conformidad" layout="fill" objectFit="contain" unoptimized crossOrigin="anonymous"/>
+                            <Image src={normalizeDataUrl(service.customerSignatureDelivery)} alt="Firma de conformidad" fill style={{objectFit: 'contain'}} unoptimized crossOrigin="anonymous"/>
                             </div>
                         ) : (
                             isPublicView && showSignDelivery && onSignClick && (
@@ -413,8 +426,8 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
                             )
                         )}
                     </div>
-                    <div className="w-full text-center mt-auto pt-1">
-                        <p className="font-bold text-[8px]">{vehicle?.ownerName?.toUpperCase() || ''}</p>
+                    <div className="w-full text-center mt-auto pt-1 leading-tight">
+                        <p className="font-bold text-sm leading-tight">{capitalizeWords(vehicle?.ownerName || '')}</p>
                         <p className="text-[7px] text-gray-600">Recibo de conformidad</p>
                     </div>
                 </div>
@@ -468,8 +481,8 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
                         <Image
                             src={photoUrl}
                             alt={`Foto ${photoIndex + 1}`}
-                            layout="fill"
-                            objectFit="cover"
+                            fill
+                            style={{objectFit: 'cover'}}
                             className="transition-transform duration-300 group-hover:scale-105"
                             data-ai-hint="car damage photo"
                             crossOrigin="anonymous"

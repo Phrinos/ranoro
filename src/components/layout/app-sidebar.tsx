@@ -99,15 +99,16 @@ export function AppSidebar({
           href="/dashboard"
           className="flex items-center justify-center text-lg font-semibold text-sidebar-foreground hover:text-sidebar-primary transition-colors h-full"
         >
-          <Image
-            src="/ranoro-logo.png"
-            alt="Ranoro Logo"
-            width={120}
-            height={30}
-            className="dark:invert"
-            style={{ width: "120px", height: "auto" }}
-            data-ai-hint="ranoro logo"
-          />
+          <div className="relative w-[120px] h-[30px]">
+            <Image
+                src="/ranoro-logo.png"
+                alt="Ranoro Logo"
+                fill
+                style={{objectFit: 'contain'}}
+                className="dark:invert"
+                data-ai-hint="ranoro logo"
+            />
+          </div>
         </Link>
       </SidebarHeader>
       <SidebarContent className="p-0">

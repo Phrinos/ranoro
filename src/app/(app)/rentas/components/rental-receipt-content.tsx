@@ -1,10 +1,11 @@
+
 "use client";
 
 import type { RentalPayment, WorkshopInfo, Driver } from '@/types';
 import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 import React, { useMemo } from 'react';
-import Image from "next/legacy/image";
+import Image from "next/image";
 import { placeholderDrivers, placeholderVehicles, placeholderRentalPayments } from '@/lib/placeholder-data';
 import { calculateDriverDebt, formatCurrency } from '@/lib/utils';
 import { AlertTriangle } from 'lucide-react';
@@ -45,16 +46,16 @@ export const RentalReceiptContent = React.forwardRef<HTMLDivElement, RentalRecei
       >
         <div className="text-center mb-2">
            {workshopInfo.logoUrl && (
-            <Image 
-              src={workshopInfo.logoUrl} 
-              alt="Logo" 
-              className="mx-auto mb-1" 
-              width={workshopInfo.logoWidth || 120}
-              height={40} // Approximate height
-              style={{ objectFit: 'contain' }}
-              crossOrigin="anonymous"
-              data-ai-hint="workshop logo"
-            />
+            <div className="mx-auto mb-1 relative" style={{ width: `${workshopInfo.logoWidth || 120}px`, height: `${(workshopInfo.logoWidth || 120) / 3}px`}}>
+                <Image 
+                    src={workshopInfo.logoUrl} 
+                    alt="Logo" 
+                    fill
+                    style={{ objectFit: 'contain' }}
+                    crossOrigin="anonymous"
+                    data-ai-hint="workshop logo"
+                />
+            </div>
           )}
           <h1 className="text-lg font-bold">{workshopInfo.name}</h1>
           <p>{workshopInfo.addressLine1}</p>

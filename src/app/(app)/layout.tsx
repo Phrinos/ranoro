@@ -22,7 +22,7 @@ import type { ServiceRecord, User, Vehicle, Technician, InventoryItem, Driver } 
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
 import { cn } from "@/lib/utils";
-import { RegisterPaymentDialog } from './rentas/components/register-payment-dialog';
+import { RegisterPaymentDialog } from '../rentas/components/register-payment-dialog';
 import { useToast } from "@/hooks/use-toast";
 import { operationsService, personnelService, inventoryService } from '@/lib/services';
 
@@ -110,16 +110,17 @@ export default function AppLayout({
     return (
       <div className="flex h-screen w-screen items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-4">
-          <Image
-            src="/ranoro-logo.png"
-            alt="Ranoro Logo"
-            width={200}
-            height={50}
-            className="dark:invert"
-            style={{width: 'auto', height: 'auto'}}
-            priority
-            data-ai-hint="ranoro logo"
-          />
+          <div className="relative w-[200px] h-[50px]">
+            <Image
+              src="/ranoro-logo.png"
+              alt="Ranoro Logo"
+              fill
+              className="dark:invert"
+              style={{objectFit: 'contain'}}
+              priority
+              data-ai-hint="ranoro logo"
+            />
+          </div>
           <div className="flex items-center">
             <Loader2 className="h-6 w-6 animate-spin" />
             <span className="ml-3 text-lg text-muted-foreground">
