@@ -145,7 +145,7 @@ function HistorialServiciosPageComponent() {
       });
   }, [allServices]);
   
-  const allHistoricalServices = useMemo(() => allServices.filter((s) => s.status !== "Cotizacion"), [allServices]);
+  const allHistoricalServices = useMemo(() => (allServices || []).filter((s) => s.status !== "Cotizacion"), [allServices]);
 
   const {
     filteredData,
@@ -283,7 +283,7 @@ function HistorialServiciosPageComponent() {
         </TabsList>
 
         <TabsContent value="activos" className="mt-0 space-y-4">
-          {activeServices && activeServices.length > 0 ? (
+          {(activeServices || []).length > 0 ? (
             activeServices.map((service) => (
               <ServiceAppointmentCard
                 key={service.id}
@@ -332,8 +332,8 @@ function HistorialServiciosPageComponent() {
             onFilterChange={setOtherFilters}
             searchPlaceholder="Buscar por folio, placa, descripción..."
           />
-          {filteredData && filteredData.length > 0 ? (
-            filteredData.map((service) => (
+          {(filteredData || []).length > 0 ? (
+            (filteredData || []).map((service) => (
               <ServiceAppointmentCard
                 key={service.id}
                 service={service}

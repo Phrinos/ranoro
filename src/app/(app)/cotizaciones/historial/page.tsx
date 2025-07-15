@@ -49,7 +49,7 @@ function HistorialCotizacionesPageComponent() {
   }, []);
   
   const quotesData = useMemo(() => {
-    return allServices.filter(service => service.status === 'Cotizacion');
+    return (allServices || []).filter(service => service.status === 'Cotizacion');
   }, [allServices]);
 
   const {
@@ -118,8 +118,8 @@ function HistorialCotizacionesPageComponent() {
             onSortOptionChange={tableManager.setSortOption}
             searchPlaceholder="Buscar por folio o vehículo..."
          />
-        {filteredData.length > 0 ? (
-          filteredData.map(quote => (
+        {(filteredData || []).length > 0 ? (
+          (filteredData || []).map(quote => (
             <ServiceAppointmentCard 
               key={quote.id}
               service={quote}
