@@ -1,6 +1,4 @@
 
-
-
 "use client";
 
 import { useEffect } from 'react';
@@ -304,13 +302,12 @@ export function InventoryItemForm({ initialData, onSubmit, onClose, categories, 
           </CardContent>
         </Card>
         
-        {!isServiceWatch && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Precios y Stock</CardTitle>
-              <CardDescription>Define los costos y controla el inventario del producto.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
+        <Card>
+          <CardHeader>
+            <CardTitle>Precios</CardTitle>
+            <CardDescription>Define los costos y el precio de venta al público.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
@@ -350,7 +347,16 @@ export function InventoryItemForm({ initialData, onSubmit, onClose, categories, 
                   )}
                 />
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          </CardContent>
+        </Card>
+        
+        {!isServiceWatch && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Control de Stock</CardTitle>
+              <CardDescription>Define las cantidades para el control de inventario.</CardDescription>
+            </CardHeader>
+            <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
                   name="quantity"
@@ -381,7 +387,6 @@ export function InventoryItemForm({ initialData, onSubmit, onClose, categories, 
                     </FormItem>
                   )}
                 />
-              </div>
             </CardContent>
           </Card>
         )}
