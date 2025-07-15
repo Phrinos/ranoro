@@ -2,13 +2,7 @@
 "use client";
 
 import { useParams, useRouter } from 'next/navigation';
-import { 
-  placeholderDrivers, 
-  placeholderVehicles,
-  placeholderRentalPayments,
-  persistToFirestore 
-} from '@/lib/placeholder-data';
-import type { Driver, RentalPayment, ManualDebtEntry } from '@/types';
+import type { Driver, RentalPayment, ManualDebtEntry, Vehicle } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -16,7 +10,7 @@ import { ShieldAlert, Edit, User, Phone, Home, FileText, Upload, AlertTriangle, 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import Link from 'next/link';
-import { useEffect, useState, useMemo, useRef } from 'react';
+import { useEffect, useState, useMemo, useRef, useCallback } from 'react';
 import { DriverDialog } from '../components/driver-dialog';
 import type { DriverFormValues } from '../components/driver-form';
 import { useToast } from '@/hooks/use-toast';
@@ -31,6 +25,7 @@ import { RegisterPaymentDialog } from '../components/register-payment-dialog';
 import { DebtDialog, type DebtFormValues } from '../components/debt-dialog';
 import { ref, uploadString, getDownloadURL } from "firebase/storage";
 import { storage } from '@/lib/firebaseClient';
+import { operationsService, personnelService, inventoryService } from '@/lib/services';
 
 type DocType = 'ineUrl' | 'licenseUrl' | 'proofOfAddressUrl' | 'promissoryNoteUrl';
 
@@ -45,6 +40,7 @@ export default function DriverDetailPage() {
 
   const [driver, setDriver] = useState<Driver | null | undefined>(undefined);
   const [driverPayments, setDriverPayments] = useState<RentalPayment[]>([]);
+  const [allVehicles, setAllVehicles] = useState<Vehicle[]>([]);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isContractDialogOpen, setIsContractDialogOpen] = useState(false);
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
@@ -52,23 +48,36 @@ export default function DriverDetailPage() {
   const [uploadingDocType, setUploadingDocType] = useState<DocType | null>(null);
   const [isUploading, setIsUploading] = useState(false);
 
-  useEffect(() => {
-    isMounted.current = true;
-    return () => { isMounted.current = false; };
-  }, []);
+  const fetchDriverData = useCallback(async () => {
+    if (!driverId) return;
+    try {
+        const [fetchedDriver, payments, vehiclesData] = await Promise.all([
+            personnelService.getDriverById(driverId),
+            operationsService.getPaymentsForDriver(driverId),
+            inventoryService.onVehiclesUpdatePromise()
+        ]);
+        if (isMounted.current) {
+            setDriver(fetchedDriver || null);
+            setDriverPayments(payments.sort((a,b) => parseISO(b.paymentDate).getTime() - parseISO(a.paymentDate).getTime()));
+            setAllVehicles(vehiclesData);
+        }
+    } catch (error) {
+        console.error("Failed to fetch driver data:", error);
+        if (isMounted.current) setDriver(null);
+    }
+  }, [driverId]);
 
   useEffect(() => {
-    const foundDriver = placeholderDrivers.find(d => d.id === driverId);
-    setDriver(foundDriver || null);
-    
-    const payments = placeholderRentalPayments.filter(p => p.driverId === driverId).sort((a,b) => parseISO(b.paymentDate).getTime() - parseISO(a.paymentDate).getTime());
-    setDriverPayments(payments);
-  }, [driverId]);
+    isMounted.current = true;
+    fetchDriverData();
+    return () => { isMounted.current = false; };
+  }, [fetchDriverData]);
+
 
   const assignedVehicle = useMemo(() => {
     if (!driver?.assignedVehicleId) return null;
-    return placeholderVehicles.find(v => v.id === driver.assignedVehicleId);
-  }, [driver]);
+    return allVehicles.find(v => v.id === driver.assignedVehicleId);
+  }, [driver, allVehicles]);
   
   const debtInfo = useMemo(() => {
     if (!driver || !assignedVehicle?.dailyRentalCost) {
@@ -108,34 +117,25 @@ export default function DriverDetailPage() {
 
 
   const handleSaveDriver = async (formData: DriverFormValues) => {
-    if (!driver) return;
-    
-     const updatedDriver = { 
-        ...driver, 
-        ...formData,
-        contractDate: formData.contractDate ? new Date(formData.contractDate).toISOString() : undefined,
-    };
-    
-    setDriver(updatedDriver);
-
-    const dIndex = placeholderDrivers.findIndex(d => d.id === driverId);
-    if (dIndex > -1) placeholderDrivers[dIndex] = updatedDriver;
-    
-    await persistToFirestore(['drivers']);
-    setIsEditDialogOpen(false);
-    toast({ title: "Datos Actualizados", description: `Se guardaron los cambios para ${driver.name}.` });
+    try {
+        await personnelService.saveDriver(formData, driverId);
+        await fetchDriverData(); // Refresh data
+        setIsEditDialogOpen(false);
+        toast({ title: "Datos Actualizados", description: `Se guardaron los cambios para ${formData.name}.` });
+    } catch (error) {
+        toast({ title: "Error al Guardar", variant: "destructive"});
+    }
   };
   
   const handleAssignVehicle = async (vehicleId: string) => {
-    if (!driver) return;
-    const updatedDriver = { ...driver, assignedVehicleId: vehicleId };
-    setDriver(updatedDriver);
-
-    const dIndex = placeholderDrivers.findIndex(d => d.id === driverId);
-    if (dIndex > -1) placeholderDrivers[dIndex].assignedVehicleId = vehicleId;
-    
-    await persistToFirestore(['drivers']);
-    toast({ title: "Vehículo Asignado", description: "Se ha asignado el nuevo vehículo al conductor." });
+    try {
+        await inventoryService.saveVehicle({ assignedVehicleId: vehicleId } as any, driver?.assignedVehicleId);
+        await personnelService.saveDriver({ assignedVehicleId: vehicleId } as any, driverId);
+        await fetchDriverData();
+        toast({ title: "Vehículo Asignado", description: "Se ha asignado el nuevo vehículo al conductor." });
+    } catch(e) {
+         toast({ title: "Error al Asignar", variant: "destructive"});
+    }
   }
 
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -157,9 +157,7 @@ export default function DriverDetailPage() {
       return;
     }
 
-    if (isMounted.current) {
-        setIsUploading(true);
-    }
+    if (isMounted.current) setIsUploading(true);
     
     try {
       toast({ title: 'Procesando imagen...', description: `Optimizando ${file.name}...` });
@@ -171,27 +169,12 @@ export default function DriverDetailPage() {
       await uploadString(storageRef, optimizedDataUrl, 'data_url');
       const downloadURL = await getDownloadURL(storageRef);
 
-      const driverIndex = placeholderDrivers.findIndex(d => d.id === currentDriverId);
-      if (driverIndex === -1) {
-        throw new Error("No se pudo encontrar el conductor para actualizar después de la subida.");
-      }
-      
-      const currentDriverData = placeholderDrivers[driverIndex];
-
-      const updatedDriver: Driver = {
-        ...currentDriverData,
-        documents: {
-          ...(currentDriverData.documents || {}),
-          [uploadingDocType]: downloadURL,
-        },
+      const updatedDriverData: Partial<Driver> = {
+          documents: { ...driver.documents, [uploadingDocType]: downloadURL }
       };
       
-      placeholderDrivers[driverIndex] = updatedDriver;
-      await persistToFirestore(['drivers']);
-      
-      if (isMounted.current) {
-        setDriver(updatedDriver);
-      }
+      await personnelService.saveDriver(updatedDriverData as any, driverId);
+      await fetchDriverData();
 
       toast({
         title: '¡Documento Subido!',
@@ -216,23 +199,8 @@ export default function DriverDetailPage() {
   const handleRegisterPayment = async (details: { amount: number; daysCovered: number; }) => {
     if (!driver || !assignedVehicle) return;
 
-    const newPayment: RentalPayment = {
-        id: `PAY_${Date.now().toString(36)}`,
-        driverId: driver.id,
-        driverName: driver.name,
-        vehicleLicensePlate: assignedVehicle.licensePlate,
-        paymentDate: new Date().toISOString(),
-        amount: details.amount,
-        daysCovered: details.daysCovered,
-    };
-    
-    placeholderRentalPayments.push(newPayment);
-    await persistToFirestore(['rentalPayments']);
-    
-    const updatedPayments = placeholderRentalPayments
-        .filter(p => p.driverId === driverId)
-        .sort((a,b) => parseISO(b.paymentDate).getTime() - parseISO(a.paymentDate).getTime());
-    setDriverPayments(updatedPayments);
+    await operationsService.addRentalPayment(driverId, details.amount, undefined, undefined);
+    await fetchDriverData();
     
     toast({ title: "Pago Registrado", description: `Se ha registrado el pago de ${formatCurrency(details.amount)}.` });
   };
@@ -246,26 +214,20 @@ export default function DriverDetailPage() {
         ...formData
     };
 
-    const updatedDriver: Driver = {
-        ...driver,
+    const updatedDriver: Partial<Driver> = {
         manualDebts: [...(driver.manualDebts || []), newDebt]
     };
 
-    setDriver(updatedDriver);
+    await personnelService.saveDriver(updatedDriver as any, driverId);
+    await fetchDriverData();
 
-    const dIndex = placeholderDrivers.findIndex(d => d.id === driverId);
-    if (dIndex > -1) {
-        placeholderDrivers[dIndex] = updatedDriver;
-    }
-    
-    await persistToFirestore(['drivers']);
     setIsDebtDialogOpen(false);
     toast({ title: "Adeudo Registrado", description: `Se ha añadido un nuevo cargo de ${formatCurrency(formData.amount)}.` });
   };
 
 
   if (driver === undefined) {
-    return <div className="container mx-auto py-8 text-center">Cargando datos del conductor...</div>;
+    return <div className="container mx-auto py-8 text-center"><Loader2 className="h-8 w-8 animate-spin" /></div>;
   }
 
   if (!driver) {
@@ -278,7 +240,7 @@ export default function DriverDetailPage() {
     );
   }
 
-  const fleetVehicles = placeholderVehicles.filter(v => v.isFleetVehicle);
+  const fleetVehicles = allVehicles.filter(v => v.isFleetVehicle);
 
   return (
     <>
@@ -531,7 +493,7 @@ export default function DriverDetailPage() {
           onOpenChange={setIsPaymentDialogOpen}
           driver={driver}
           vehicle={assignedVehicle}
-          onSave={handleRegisterPayment}
+          onSave={(details) => handleRegisterPayment(details)}
       />
     )}
 
@@ -553,3 +515,6 @@ export default function DriverDetailPage() {
     </>
   );
 }
+
+
+    
