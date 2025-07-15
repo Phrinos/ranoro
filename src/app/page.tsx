@@ -133,6 +133,7 @@ export default function LandingPage() {
               fill
               className="object-cover object-center"
               priority
+              data-ai-hint="mechanic workshop"
             />
             <div className="absolute inset-0 bg-black/60 bg-gradient-to-t from-black/70 via-black/40 to-transparent"></div>
           </div>
