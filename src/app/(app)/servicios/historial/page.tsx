@@ -152,7 +152,7 @@ function HistorialServiciosPageComponent() {
     initialData: allServices.filter((s) => s.status !== "Cotizacion"),
     searchKeys: ["id", "vehicleIdentifier", "description"],
     dateFilterKey: "deliveryDateTime",
-    initialSortOption: "date_desc",
+    initialSortOption: "deliveryDateTime_desc",
   });
 
   const handleSaveService = useCallback(
