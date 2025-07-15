@@ -41,10 +41,12 @@ const LOCALSTORAGE_KEY = 'messagingConfig';
 export default function MensajeriaPage() {
   const { toast } = useToast();
   const [isSendingTest, setIsSendingTest] = useState(false);
+  const [apiKey, setApiKey] = useState(''); // Add state for API Key
 
   const form = useForm<MessagingConfigValues>({
     resolver: zodResolver(messagingConfigSchema),
     defaultValues: {
+      apiKey: '',
       appointmentConfirmationEnabled: true,
       appointmentConfirmationTemplate: "Hola {cliente}, te confirmamos tu cita para el vehículo {vehiculo} el día {fecha}. ¡Te esperamos en {taller}!",
       appointmentReminderEnabled: true,
@@ -60,7 +62,11 @@ export default function MensajeriaPage() {
     const storedConfig = localStorage.getItem(LOCALSTORAGE_KEY);
     if (storedConfig) {
       try {
-        form.reset(JSON.parse(storedConfig));
+        const parsedConfig = JSON.parse(storedConfig);
+        form.reset(parsedConfig);
+        if (parsedConfig.apiKey) {
+          setApiKey(parsedConfig.apiKey); // Set API key from localStorage
+        }
       } catch (e) {
         console.error("Failed to parse messaging config from localStorage", e);
       }
@@ -70,6 +76,9 @@ export default function MensajeriaPage() {
   const onSubmit = (data: MessagingConfigValues) => {
     try {
       localStorage.setItem(LOCALSTORAGE_KEY, JSON.stringify(data));
+      if (data.apiKey) {
+        setApiKey(data.apiKey); // Update state on save
+      }
       toast({
         title: "Configuración Guardada",
         description: "Tus preferencias de mensajería han sido actualizadas.",
@@ -85,7 +94,6 @@ export default function MensajeriaPage() {
 
   const handleSendTestMessage = async () => {
     setIsSendingTest(true);
-    const apiKey = form.getValues('apiKey');
     if (!apiKey) {
         toast({ title: 'Falta API Key', description: 'Por favor, guarda tu API Key antes de enviar un mensaje de prueba.', variant: 'destructive'});
         setIsSendingTest(false);
