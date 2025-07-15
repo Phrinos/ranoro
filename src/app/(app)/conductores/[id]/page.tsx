@@ -283,7 +283,7 @@ export default function DriverDetailPage() {
     <>
     <div className="container mx-auto py-8">
       <div className="mb-4">
-        <Button variant="outline" size="sm" onClick={() => router.back()}>
+        <Button variant="outline" size="sm" className="bg-white text-black hover:bg-gray-100" onClick={() => router.back()}>
             <ArrowLeft className="mr-2 h-4 w-4" />
             Volver
         </Button>

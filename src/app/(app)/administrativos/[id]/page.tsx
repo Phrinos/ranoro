@@ -149,7 +149,7 @@ export default function AdministrativeStaffDetailPage() {
       </Card>
 
       <div className="mt-8 flex items-center justify-between">
-        <Button variant="outline" onClick={() => router.back()}>
+        <Button variant="outline" className="bg-white text-black hover:bg-gray-100" onClick={() => router.back()}>
             <ArrowLeft className="mr-2 h-4 w-4" />
             Volver
         </Button>
