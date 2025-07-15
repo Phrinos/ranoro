@@ -9,8 +9,13 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import type { Driver } from "@/types";
-import { DollarSign } from "lucide-react";
+import { DollarSign, CalendarIcon } from "lucide-react";
 import { capitalizeWords } from "@/lib/utils";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { cn } from "@/lib/utils";
+import { format } from "date-fns";
+import { es } from "date-fns/locale";
 
 const driverFormSchema = z.object({
   name: z.string().min(3, "El nombre debe tener al menos 3 caracteres."),
@@ -18,37 +23,40 @@ const driverFormSchema = z.object({
   phone: z.string().min(7, "Ingrese un número de teléfono válido."),
   emergencyPhone: z.string().min(7, "Ingrese un teléfono de emergencia válido."),
   depositAmount: z.coerce.number().min(0, "El depósito no puede ser negativo.").optional(),
-  contractDate: z.string().optional(),
+  contractDate: z.date({
+    required_error: "La fecha del contrato es requerida.",
+    invalid_type_error: "Por favor seleccione una fecha válida.",
+  }).optional(),
 });
 
 export type DriverFormValues = z.infer<typeof driverFormSchema>;
 
 interface DriverFormProps {
+  id?: string;
   initialData?: Driver | null;
   onSubmit: (values: DriverFormValues) => Promise<void>;
-  onClose: () => void;
 }
 
-export function DriverForm({ initialData, onSubmit, onClose }: DriverFormProps) {
+export function DriverForm({ id, initialData, onSubmit }: DriverFormProps) {
   const form = useForm<DriverFormValues>({
     resolver: zodResolver(driverFormSchema),
     defaultValues: initialData ? {
         ...initialData,
         depositAmount: initialData.depositAmount ?? undefined,
-        contractDate: initialData.contractDate ? new Date(initialData.contractDate).toISOString().split('T')[0] : '',
+        contractDate: initialData.contractDate ? new Date(initialData.contractDate) : undefined,
     } : {
       name: "",
       address: "",
       phone: "",
       emergencyPhone: "",
       depositAmount: undefined,
-      contractDate: '',
+      contractDate: new Date(),
     },
   });
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+      <form id={id} onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 pt-4 pb-4">
         <FormField
           control={form.control}
           name="name"
@@ -113,25 +121,29 @@ export function DriverForm({ initialData, onSubmit, onClose }: DriverFormProps) 
                 )}
             />
             <FormField
-                control={form.control}
-                name="contractDate"
-                render={({ field }) => (
-                <FormItem>
-                    <FormLabel>Fecha del Contrato</FormLabel>
-                    <FormControl>
-                    <Input type="date" {...field} />
-                    </FormControl>
-                    <FormMessage />
+              control={form.control}
+              name="contractDate"
+              render={({ field }) => (
+                <FormItem className="flex flex-col">
+                  <FormLabel>Fecha del Contrato</FormLabel>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <FormControl>
+                        <Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
+                          {field.value ? (format(field.value, "PPP", { locale: es })) : (<span>Seleccione fecha</span>)}
+                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                        </Button>
+                      </FormControl>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus locale={es}/>
+                    </PopoverContent>
+                  </Popover>
+                  <FormMessage />
                 </FormItem>
-                )}
+              )}
             />
          </div>
-        <div className="flex justify-end gap-2 pt-4">
-          <Button type="button" variant="outline" onClick={onClose}>Cancelar</Button>
-          <Button type="submit" disabled={form.formState.isSubmitting}>
-            {form.formState.isSubmitting ? "Guardando..." : (initialData ? "Actualizar Conductor" : "Crear Conductor")}
-          </Button>
-        </div>
       </form>
     </Form>
   );
