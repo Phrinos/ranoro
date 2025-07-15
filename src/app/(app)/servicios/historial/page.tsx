@@ -111,6 +111,7 @@ function HistorialServiciosPageComponent() {
 
 
   const activeServices = useMemo(() => {
+    if (!allServices) return [];
     return allServices
       .filter((s) => {
         const status = s.status;
@@ -149,7 +150,7 @@ function HistorialServiciosPageComponent() {
     setOtherFilters,
     ...tableManager
   } = useTableManager<ServiceRecord>({
-    initialData: allServices.filter((s) => s.status !== "Cotizacion"),
+    initialData: allServices ? allServices.filter((s) => s.status !== "Cotizacion") : [],
     searchKeys: ["id", "vehicleIdentifier", "description"],
     dateFilterKey: "deliveryDateTime",
     initialSortOption: "deliveryDateTime_desc",
@@ -280,7 +281,7 @@ function HistorialServiciosPageComponent() {
         </TabsList>
 
         <TabsContent value="activos" className="mt-0 space-y-4">
-          {activeServices.length > 0 ? (
+          {activeServices && activeServices.length > 0 ? (
             activeServices.map((service) => (
               <ServiceAppointmentCard
                 key={service.id}
@@ -329,7 +330,7 @@ function HistorialServiciosPageComponent() {
             onFilterChange={setOtherFilters}
             searchPlaceholder="Buscar por folio, placa, descripción..."
           />
-          {historicalServices.length > 0 ? (
+          {historicalServices && historicalServices.length > 0 ? (
             historicalServices.map((service) => (
               <ServiceAppointmentCard
                 key={service.id}
