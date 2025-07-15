@@ -42,7 +42,6 @@ const LOCALSTORAGE_KEY = 'messagingConfig';
 export default function MensajeriaPage() {
   const { toast } = useToast();
   const [isSendingTest, setIsSendingTest] = useState(false);
-  const [config, setConfig] = useState<MessagingConfigValues | null>(null);
 
   const form = useForm<MessagingConfigValues>({
     resolver: zodResolver(messagingConfigSchema),
@@ -66,7 +65,6 @@ export default function MensajeriaPage() {
       try {
         const parsedConfig = JSON.parse(storedConfig);
         form.reset(parsedConfig);
-        setConfig(parsedConfig);
       } catch (e) {
         console.error("Failed to parse messaging config from localStorage", e);
       }
@@ -76,7 +74,6 @@ export default function MensajeriaPage() {
   const onSubmit = (data: MessagingConfigValues) => {
     try {
       localStorage.setItem(LOCALSTORAGE_KEY, JSON.stringify(data));
-      setConfig(data);
       toast({
         title: "Configuración Guardada",
         description: "Tus preferencias de mensajería han sido actualizadas.",
@@ -92,20 +89,31 @@ export default function MensajeriaPage() {
 
   const handleSendTestMessage = async () => {
     setIsSendingTest(true);
-    if (!config?.apiKey || !config.fromPhoneNumberId) {
-        toast({ title: 'Faltan Datos', description: 'Por favor, guarda tu API Key y el ID del Número de Teléfono antes de enviar un mensaje de prueba.', variant: 'destructive'});
+    
+    // Get the most recent values directly from the form state
+    const { apiKey, fromPhoneNumberId } = form.getValues();
+
+    if (!apiKey || !fromPhoneNumberId) {
+        toast({ 
+            title: 'Faltan Datos', 
+            description: 'Por favor, asegúrate de que los campos "Token de Acceso" y "ID del Número de Teléfono" estén completos antes de enviar una prueba.', 
+            variant: 'destructive'
+        });
         setIsSendingTest(false);
         return;
     }
-    const result = await messagingService.sendTestMessage(config.apiKey, config.fromPhoneNumberId, '+524493930914');
+
+    const result = await messagingService.sendTestMessage(apiKey, fromPhoneNumberId, '+524493930914');
     
     toast({
         title: result.success ? 'Resultado del Envío' : 'Error en el Envío',
         description: result.message,
-        variant: result.success ? 'default' : 'destructive'
+        variant: result.success ? 'default' : 'destructive',
+        duration: 9000,
     });
     setIsSendingTest(false);
   };
+
 
   const renderTemplateCard = (
     fieldId: keyof MessagingConfigValues,
