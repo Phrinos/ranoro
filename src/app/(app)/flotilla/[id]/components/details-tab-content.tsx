@@ -31,8 +31,9 @@ export function DetailsTabContent({ vehicle, onEdit }: DetailsTabContentProps) {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
             <div className="space-y-1">
               <p className="font-medium text-muted-foreground flex items-center gap-2"><Car className="h-4 w-4" />Vehículo</p>
-              <p className="font-semibold text-base">{vehicle.make} {vehicle.model} ({vehicle.year})</p>
-              <p>Placa: {vehicle.licensePlate}</p>
+              <p className="font-bold text-lg">{vehicle.licensePlate}</p>
+              <p className="text-base">{vehicle.make} {vehicle.model} ({vehicle.year})</p>
+              <p className="text-sm">Color: {vehicle.color || 'N/A'}</p>
             </div>
             <div className="space-y-1">
               <p className="font-medium text-muted-foreground flex items-center gap-2"><Gauge className="h-4 w-4" />Kilometraje Actual</p>
