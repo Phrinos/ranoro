@@ -125,16 +125,16 @@ export const InventoryReportContent = React.forwardRef<HTMLDivElement, Inventory
 
 
           <h3 className="text-xl font-semibold mb-2">Detalle del Inventario</h3>
-          <Table className="w-full table-fixed border-collapse">
+          <Table style={{ width: '100%', tableLayout: 'fixed' }}>
             <TableHeader>
               <TableRow className="bg-gray-100">
-                <TableHead className="w-[15%] font-bold text-gray-700">Categoría</TableHead>
-                <TableHead className="w-[15%] font-bold text-gray-700">Marca</TableHead>
-                <TableHead className="w-[30%] font-bold text-gray-700">Nombre</TableHead>
-                <TableHead className="w-[10%] font-bold text-gray-700">SKU</TableHead>
-                <TableHead className="w-[10%] text-right font-bold text-gray-700">Stock</TableHead>
-                <TableHead className="w-[10%] text-right font-bold text-gray-700">Costo</TableHead>
-                <TableHead className="w-[10%] text-right font-bold text-gray-700">P. Venta</TableHead>
+                <TableHead style={{ width: '15%' }}>Categoría</TableHead>
+                <TableHead style={{ width: '15%' }}>Marca</TableHead>
+                <TableHead style={{ width: '30%' }}>Nombre</TableHead>
+                <TableHead style={{ width: '10%' }}>SKU</TableHead>
+                <TableHead style={{ width: '10%', textAlign: 'right' }}>Stock</TableHead>
+                <TableHead style={{ width: '10%', textAlign: 'right' }}>Costo</TableHead>
+                <TableHead style={{ width: '10%', textAlign: 'right' }}>P. Venta</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
