@@ -10,6 +10,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import { ServiceForm } from "./service-form";
 import type { ServiceRecord, Vehicle, Technician, InventoryItem, QuoteRecord, User, ServiceTypeRecord } from "@/types";
@@ -18,6 +19,10 @@ import { db } from '@/lib/firebaseClient.js';
 import { doc, getDoc, setDoc, onSnapshot } from 'firebase/firestore';
 import { operationsService } from '@/lib/services';
 import { CompleteServiceDialog } from './CompleteServiceDialog';
+import { Button } from '@/components/ui/button';
+import { Ban, Loader2 } from 'lucide-react';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Textarea } from '@/components/ui/textarea';
 
 
 interface ServiceDialogProps {
@@ -71,6 +76,7 @@ export function ServiceDialog({
   const [serviceToComplete, setServiceToComplete] = useState<ServiceRecord | null>(null);
   const [isCompleteDialogOpen, setIsCompleteDialogOpen] = useState(false);
   const [fullFormDataForCompletion, setFullFormDataForCompletion] = useState<any>(null);
+  const [cancellationReason, setCancellationReason] = useState("");
 
 
   useEffect(() => {
@@ -197,6 +203,7 @@ export function ServiceDialog({
 
 
   const { title: dialogTitle, description: dialogDescription } = getDynamicTitles();
+  const showCancelButton = !isReadOnly && service?.id && service.status !== 'Entregado' && service.status !== 'Cancelado';
       
   return (
     <>
@@ -221,6 +228,50 @@ export function ServiceDialog({
           onStatusChange={setFormStatus}
           onVehicleCreated={onVehicleCreated}
         />
+        <DialogFooter className="p-6 pt-4 border-t sticky bottom-0 bg-background flex justify-between items-center">
+            <div>
+                {showCancelButton && onCancelService && (
+                    <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                            <Button type="button" variant="destructive">
+                                <Ban className="mr-2 h-4 w-4" />
+                                Cancelar Servicio
+                            </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                            <AlertDialogHeader>
+                                <AlertDialogTitle>¿Estás seguro de cancelar este servicio?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                    Esta acción es permanente. Por favor, especifica un motivo para la cancelación.
+                                </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <Textarea 
+                                placeholder="Motivo de la cancelación..."
+                                value={cancellationReason}
+                                onChange={(e) => setCancellationReason(e.target.value)}
+                            />
+                            <AlertDialogFooter>
+                                <AlertDialogCancel onClick={() => setCancellationReason('')}>Cerrar</AlertDialogCancel>
+                                <AlertDialogAction
+                                    disabled={!cancellationReason.trim()}
+                                    onClick={() => onCancelService?.(service!.id, cancellationReason)}
+                                >
+                                    Confirmar Cancelación
+                                </AlertDialogAction>
+                            </AlertDialogFooter>
+                        </AlertDialogContent>
+                    </AlertDialog>
+                )}
+            </div>
+            <div className="flex justify-end gap-2">
+               <Button variant="outline" type="button" onClick={() => onOpenChange(false)}>Cerrar</Button>
+               {!isReadOnly && (
+                   <Button type="submit" form="service-form" disabled={false /* formState.isSubmitting is now internal to ServiceForm */}>
+                       {service?.id ? 'Actualizar Registro' : 'Crear Registro'}
+                   </Button>
+               )}
+            </div>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
 
@@ -236,3 +287,4 @@ export function ServiceDialog({
     </>
   );
 }
+

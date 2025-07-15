@@ -70,7 +70,7 @@ export function VehicleDialog({
                 <DialogTitle>{dialogTitle}</DialogTitle>
                 <DialogDescription>{dialogDescription}</DialogDescription>
             </DialogHeader>
-            <div className="flex-grow overflow-y-auto px-6">
+            <div className="flex-grow overflow-y-auto px-6 pb-12">
                 <VehicleForm
                     id="vehicle-form"
                     initialData={vehicle}
@@ -90,3 +90,4 @@ export function VehicleDialog({
     </Dialog>
   );
 }
+
