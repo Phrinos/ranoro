@@ -8,8 +8,8 @@ import { cleanObjectForFirestore } from './forms';
 
 
 type DocumentData = Partial<ServiceRecord> & {
-    id: string;
-    publicId: string;
+    id?: string;
+    publicId?: string;
     vehicle?: Vehicle;
     workshopInfo?: WorkshopInfo;
 };
@@ -26,7 +26,7 @@ type Result = {
  */
 export const savePublicDocument = async (
   type: 'service' | 'quote' | 'ownerReport',
-  data: any,
+  data: DocumentData,
   vehicle?: Vehicle,
   workshopInfo?: WorkshopInfo,
 ): Promise<Result> => {

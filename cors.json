@@ -1,7 +1,7 @@
 
 [
   {
-    "origin": ["http://localhost:3000", "https://ranoro-jm8l0.web.app", "https://ranoro-jm8l0.firebaseapp.com"],
+    "origin": ["http://localhost:3000", "https://ranoro-jm8l0.web.app", "https://ranoro-jm8l0.firebaseapp.com", "https://ranoro.mx"],
     "method": ["GET"],
     "maxAgeSeconds": 3600
   }
