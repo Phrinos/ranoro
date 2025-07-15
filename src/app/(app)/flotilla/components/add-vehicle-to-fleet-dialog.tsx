@@ -41,9 +41,9 @@ export function AddVehicleToFleetDialog({
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
   const [dailyRentalCost, setDailyRentalCost] = useState<number | ''>('');
-  const [gpsMonthlyCost, setGpsMonthlyCost] = useState<number | ''>(150);
-  const [adminMonthlyCost, setAdminMonthlyCost] = useState<number | ''>(200);
-  const [insuranceMonthlyCost, setInsuranceMonthlyCost] = useState<number | ''>(250);
+  const [gpsMonthlyCost, setGpsMonthlyCost] = useState<number | ''>('');
+  const [adminMonthlyCost, setAdminMonthlyCost] = useState<number | ''>('');
+  const [insuranceMonthlyCost, setInsuranceMonthlyCost] = useState<number | ''>('');
 
   const filteredVehicles = useMemo(() => {
     if (!searchTerm.trim()) return vehicles.slice(0, 10);
@@ -78,9 +78,9 @@ export function AddVehicleToFleetDialog({
     setSearchTerm('');
     setSelectedVehicle(null);
     setDailyRentalCost('');
-    setGpsMonthlyCost(150);
-    setAdminMonthlyCost(200);
-    setInsuranceMonthlyCost(250);
+    setGpsMonthlyCost('');
+    setAdminMonthlyCost('');
+    setInsuranceMonthlyCost('');
   }
 
   const handleOpenChange = (isOpen: boolean) => {
@@ -151,15 +151,15 @@ export function AddVehicleToFleetDialog({
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                  <div>
                     <Label htmlFor="gps-cost">GPS</Label>
-                    <div className="relative mt-1"><DollarSign className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" /><Input id="gps-cost" type="number" placeholder="150" value={gpsMonthlyCost} onChange={(e) => setGpsMonthlyCost(e.target.value === '' ? '' : Number(e.target.value))} className="pl-8" /></div>
+                    <div className="relative mt-1"><DollarSign className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" /><Input id="gps-cost" type="number" placeholder="0.00" value={gpsMonthlyCost} onChange={(e) => setGpsMonthlyCost(e.target.value === '' ? '' : Number(e.target.value))} className="pl-8" /></div>
                  </div>
                  <div>
                     <Label htmlFor="admin-cost">Administración</Label>
-                    <div className="relative mt-1"><DollarSign className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" /><Input id="admin-cost" type="number" placeholder="200" value={adminMonthlyCost} onChange={(e) => setAdminMonthlyCost(e.target.value === '' ? '' : Number(e.target.value))} className="pl-8" /></div>
+                    <div className="relative mt-1"><DollarSign className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" /><Input id="admin-cost" type="number" placeholder="0.00" value={adminMonthlyCost} onChange={(e) => setAdminMonthlyCost(e.target.value === '' ? '' : Number(e.target.value))} className="pl-8" /></div>
                  </div>
                  <div>
                     <Label htmlFor="insurance-cost">Seguro Mutual</Label>
-                    <div className="relative mt-1"><DollarSign className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" /><Input id="insurance-cost" type="number" placeholder="250" value={insuranceMonthlyCost} onChange={(e) => setInsuranceMonthlyCost(e.target.value === '' ? '' : Number(e.target.value))} className="pl-8" /></div>
+                    <div className="relative mt-1"><DollarSign className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" /><Input id="insurance-cost" type="number" placeholder="0.00" value={insuranceMonthlyCost} onChange={(e) => setInsuranceMonthlyCost(e.target.value === '' ? '' : Number(e.target.value))} className="pl-8" /></div>
                  </div>
               </div>
             </div>
