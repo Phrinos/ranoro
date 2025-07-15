@@ -6,7 +6,7 @@ import type { Driver, RentalPayment, ManualDebtEntry, Vehicle } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { ShieldAlert, Edit, User, Phone, Home, FileText, Upload, AlertTriangle, Car, DollarSign, Printer, ArrowLeft, PlusCircle, Loader2, FileX, Receipt } from 'lucide-react';
+import { ShieldAlert, Edit, User as UserIcon, Phone, Home, FileText, Upload, AlertTriangle, Car, DollarSign, Printer, ArrowLeft, PlusCircle, Loader2, FileX, Receipt } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import Link from 'next/link';
@@ -20,7 +20,7 @@ import { format, parseISO, differenceInCalendarDays, startOfToday, isAfter, star
 import { es } from 'date-fns/locale';
 import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
 import { ContractContent } from '../components/contract-content';
-import Image from "next/legacy/image";
+import Image from "next/image";
 import { RegisterPaymentDialog } from '../components/register-payment-dialog';
 import { DebtDialog, type DebtFormValues } from '../components/debt-dialog';
 import { ref, uploadString, getDownloadURL } from "firebase/storage";
@@ -53,12 +53,12 @@ export default function DriverDetailPage() {
     try {
         const [fetchedDriver, payments, vehiclesData] = await Promise.all([
             personnelService.getDriverById(driverId),
-            operationsService.getPaymentsForDriver(driverId),
+            operationsService.onRentalPaymentsUpdatePromise(),
             inventoryService.onVehiclesUpdatePromise()
         ]);
         if (isMounted.current) {
             setDriver(fetchedDriver || null);
-            setDriverPayments(payments.sort((a,b) => parseISO(b.paymentDate).getTime() - parseISO(a.paymentDate).getTime()));
+            setDriverPayments(payments.filter(p => p.driverId === driverId).sort((a,b) => parseISO(b.paymentDate).getTime() - parseISO(a.paymentDate).getTime()));
             setAllVehicles(vehiclesData);
         }
     } catch (error) {
@@ -81,7 +81,7 @@ export default function DriverDetailPage() {
   
   const debtInfo = useMemo(() => {
     if (!driver || !assignedVehicle?.dailyRentalCost) {
-      return { totalDebt: 0, daysOwed: 0, calculatedRentDebt: 0 };
+      return { totalDebt: 0, daysOwed: 0, calculatedRentDebt: 0, manualDebt: 0 };
     }
     
     const today = startOfToday();
@@ -277,7 +277,7 @@ export default function DriverDetailPage() {
                 </Button>
               </CardHeader>
               <CardContent className="space-y-4 text-sm">
-                <div className="flex items-center gap-3"><User className="h-4 w-4 text-muted-foreground" /><span>{driver.name}</span></div>
+                <div className="flex items-center gap-3"><UserIcon className="h-4 w-4 text-muted-foreground" /><span>{driver.name}</span></div>
                 <div className="flex items-center gap-3"><Home className="h-4 w-4 text-muted-foreground" /><span>{driver.address}</span></div>
                 <div className="flex items-center gap-3"><Phone className="h-4 w-4 text-muted-foreground" /><span>{driver.phone}</span></div>
                 <div className="flex items-center gap-3"><AlertTriangle className="h-4 w-4 text-muted-foreground" /><span>Tel. Emergencia: {driver.emergencyPhone}</span></div>
@@ -341,9 +341,9 @@ export default function DriverDetailPage() {
                 <Card key={type}>
                   <CardHeader><CardTitle className="text-base">{label}</CardTitle></CardHeader>
                   <CardContent className="flex flex-col items-center gap-4">
-                    <div className="w-full h-40 bg-muted rounded-md flex items-center justify-center border">
+                    <div className="w-full h-40 bg-muted rounded-md flex items-center justify-center border relative">
                       {driver.documents?.[type as keyof Driver['documents']] ? (
-                        <Image src={driver.documents[type as keyof Driver['documents']]!} alt={label} fill className="object-contain" data-ai-hint="document photo"/>
+                        <Image src={driver.documents[type as keyof Driver['documents']]!} alt={label} layout="fill" className="object-contain" data-ai-hint="document photo"/>
                       ) : (
                         <div className="flex flex-col items-center gap-2 text-muted-foreground">
                             <FileX className="h-8 w-8" />
@@ -515,6 +515,3 @@ export default function DriverDetailPage() {
     </>
   );
 }
-
-
-    
