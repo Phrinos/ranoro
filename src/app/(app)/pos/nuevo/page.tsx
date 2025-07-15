@@ -39,16 +39,15 @@ const paymentMethods: [PaymentMethod, ...PaymentMethod[]] = [
 const posFormSchema = z.object({
   items: z.array(saleItemSchema).min(1, 'Debe agregar al menos un artículo a la venta.'),
   customerName: z.string().optional(),
+  whatsappNumber: z.string().optional(),
   paymentMethod: z.enum(paymentMethods).default('Efectivo'),
   cardFolio: z.string().optional(),
   transferFolio: z.string().optional(),
 }).refine(data => {
   if ((data.paymentMethod === 'Tarjeta' || data.paymentMethod === 'Tarjeta+Transferencia') && !data.cardFolio) return false;
-  return true;
 }, { message: 'El folio de la tarjeta es obligatorio.', path: ['cardFolio'] })
 .refine(data => {
   if ((data.paymentMethod === 'Transferencia' || data.paymentMethod === 'Efectivo+Transferencia' || data.paymentMethod === 'Tarjeta+Transferencia') && !data.transferFolio) return false;
-  return true;
 }, { message: 'El folio de la transferencia es obligatorio.', path: ['transferFolio'] });
 
 type POSFormValues = z.infer<typeof posFormSchema>;
@@ -64,6 +63,7 @@ export default function NuevaVentaPage() {
   
   const [isTicketDialogOpen, setIsTicketDialogOpen] = useState(false);
   const [saleForTicket, setSaleForTicket] = useState<SaleReceipt | null>(null);
+  const [phoneForTicket, setPhoneForTicket] = useState<string | undefined>(undefined);
   const [workshopInfo, setWorkshopInfo] = useState<WorkshopInfo | null>(null);
   const ticketContentRef = useRef<HTMLDivElement>(null);
 
@@ -73,6 +73,7 @@ export default function NuevaVentaPage() {
     defaultValues: {
       items: [],
       customerName: 'Cliente Mostrador',
+      whatsappNumber: '',
       paymentMethod: 'Efectivo',
       cardFolio: '',
       transferFolio: '',
@@ -116,8 +117,8 @@ export default function NuevaVentaPage() {
       
       toast({ title: 'Venta Registrada', description: `La venta #${saleId} se ha completado.` });
       
-      // Open ticket dialog after successful sale
       setSaleForTicket(newSaleReceipt);
+      setPhoneForTicket(values.whatsappNumber);
       setIsTicketDialogOpen(true);
 
     } catch(e) {
@@ -134,6 +135,7 @@ export default function NuevaVentaPage() {
   const handleDialogClose = () => {
     setIsTicketDialogOpen(false);
     setSaleForTicket(null);
+    setPhoneForTicket(undefined);
     router.push('/pos');
   };
   
@@ -221,7 +223,7 @@ export default function NuevaVentaPage() {
             </div>
           }
           whatsappMessage={`Ticket de su compra en ${workshopInfo?.name || 'nuestro taller'}. Folio: ${saleForTicket.id}`}
-          customerPhone={undefined} // No hay vehículo asociado en una venta de mostrador
+          customerPhone={phoneForTicket}
           contentRef={ticketContentRef}
         >
           <TicketContent

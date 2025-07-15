@@ -52,12 +52,13 @@ export function PrintTicketDialog({
     const message = whatsappMessage || "Aquí está su recibo.";
     const phone = customerPhone ? customerPhone.replace(/\D/g, '') : '';
     
-    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-    
+    // Check if we can use the Web Share API (primarily on mobile)
+    const canShareFiles = !!navigator.share && !!navigator.canShare && navigator.canShare({ files: [new File([], '')] });
+
     try {
         const canvas = await html2canvas(contentRef.current, { scale: 2.5, backgroundColor: null });
         
-        if (isMobile && navigator.canShare && navigator.canShare({ files: [new File([], '')] })) {
+        if (canShareFiles) {
             canvas.toBlob(async (blob) => {
                 if (blob) {
                     const file = new File([blob], "ticket.png", { type: "image/png" });
@@ -68,13 +69,15 @@ export function PrintTicketDialog({
                             text: message,
                         });
                     } catch (err) {
-                        console.error("Share failed:", err);
-                        toast({ title: 'Compartir cancelado', variant: 'default' });
+                        if ((err as Error).name !== 'AbortError') {
+                          console.error("Share failed:", err);
+                          toast({ title: 'Error al compartir', variant: 'destructive' });
+                        }
                     }
                 }
             }, 'image/png');
         } else {
-            // Desktop fallback
+            // Desktop fallback: Open WhatsApp Web
             const url = `https://web.whatsapp.com/send?${phone ? `phone=${phone}&` : ''}text=${encodeURIComponent(message)}`;
             window.open(url, '_blank');
             toast({ title: 'Abriendo WhatsApp Web', description: 'Por favor, copie y pegue la imagen del ticket en el chat.', duration: 5000 });
