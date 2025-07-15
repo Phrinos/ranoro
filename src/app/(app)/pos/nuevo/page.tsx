@@ -123,16 +123,21 @@ export default function NuevaVentaPage() {
     }
 
     toast({ title: 'Generando imagen del ticket...' });
-    const canvas = await html2canvas(ticketContentRef.current, { scale: 2.5, backgroundColor: '#ffffff' });
-
-    toast({ title: 'Enviando ticket por WhatsApp...' });
-    const result = await messagingService.sendWhatsappImage(apiKey, fromPhoneNumberId, phoneForTicket, canvas, `Ticket de compra. Folio: ${saleForTicket.id}`);
     
-    toast({
-        title: result.success ? 'Ticket Enviado' : 'Error al Enviar',
-        description: result.message,
-        variant: result.success ? 'default' : 'destructive'
-    });
+    // We need a short delay to allow React to render the ticket content in the hidden dialog
+    setTimeout(async () => {
+        if (!ticketContentRef.current) return;
+        const canvas = await html2canvas(ticketContentRef.current, { scale: 2.5, backgroundColor: '#ffffff' });
+
+        toast({ title: 'Enviando ticket por WhatsApp...' });
+        const result = await messagingService.sendWhatsappImage(apiKey, fromPhoneNumberId, phoneForTicket, canvas, `Ticket de compra. Folio: ${saleForTicket.id}`);
+        
+        toast({
+            title: result.success ? 'Ticket Enviado' : 'Error al Enviar',
+            description: result.message,
+            variant: result.success ? 'default' : 'destructive'
+        });
+    }, 200); // 200ms delay
 }, [toast, ticketContentRef, saleForTicket, phoneForTicket]);
 
 
