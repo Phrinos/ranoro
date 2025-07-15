@@ -5,7 +5,7 @@
 import { useState, useMemo, useEffect, useCallback, Suspense, useRef } from 'react';
 import { PageHeader } from '@/components/page-header';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, Printer, Copy, Loader2 } from 'lucide-react';
+import { PlusCircle, Printer, Copy, Loader2, ArrowUpCircle, ArrowDownCircle } from 'lucide-react';
 import { RegisterPaymentDialog } from './components/register-payment-dialog';
 import type { RentalPayment, Driver, Vehicle, WorkshopInfo, VehicleExpense, OwnerWithdrawal } from '@/types';
 import { useToast } from "@/hooks/use-toast";
@@ -113,22 +113,25 @@ function RentasPageComponent() {
   return (
     <>
       <div className="bg-primary text-primary-foreground rounded-lg p-6 mb-6">
-          <div className="flex flex-col md:flex-row justify-between md:items-center gap-4">
-              <div>
-                  <h1 className="text-3xl font-bold tracking-tight">Ingresos de Flotilla</h1>
-                  <p className="text-primary-foreground/80 mt-1">Registra y consulta los pagos de renta, gastos y retiros.</p>
-              </div>
-              <div className="flex flex-col sm:flex-row gap-2">
-                <Button onClick={() => setIsWithdrawalDialogOpen(true)} variant="outline" className="bg-primary-foreground/10 hover:bg-primary-foreground/20 text-primary-foreground border-primary-foreground/30">Retiro</Button>
-                <Button onClick={() => setIsExpenseDialogOpen(true)} variant="outline" className="bg-primary-foreground/10 hover:bg-primary-foreground/20 text-primary-foreground border-primary-foreground/30">Gasto</Button>
-                <Button onClick={() => setIsPaymentDialogOpen(true)} className="bg-white text-primary hover:bg-gray-200">
-                    <PlusCircle className="mr-2 h-4 w-4" />
-                    Registrar Pago
-                </Button>
-              </div>
-          </div>
+        <h1 className="text-3xl font-bold tracking-tight">Ingresos de Flotilla</h1>
+        <p className="text-primary-foreground/80 mt-1">Registra y consulta los pagos de renta, gastos y retiros.</p>
       </div>
       
+      <div className="flex flex-col sm:flex-row gap-2 mb-6">
+          <Button onClick={() => setIsWithdrawalDialogOpen(true)} variant="outline" className="bg-white hover:bg-gray-100 text-black border-gray-300 w-full sm:w-auto">
+            <ArrowDownCircle className="mr-2 h-4 w-4 text-red-500"/>
+            Retiro
+          </Button>
+          <Button onClick={() => setIsExpenseDialogOpen(true)} variant="outline" className="bg-white hover:bg-gray-100 text-black border-gray-300 w-full sm:w-auto">
+             <ArrowDownCircle className="mr-2 h-4 w-4 text-red-500"/>
+             Gasto
+          </Button>
+          <Button onClick={() => setIsPaymentDialogOpen(true)} className="w-full sm:w-auto">
+              <PlusCircle className="mr-2 h-4 w-4" />
+              Registrar Pago
+          </Button>
+      </div>
+
       <Card>
           <CardHeader><CardTitle>Historial de Pagos de Renta</CardTitle></CardHeader>
           <CardContent>
@@ -216,3 +219,4 @@ function RentasPageComponent() {
 export default function RentasPageWrapper() {
     return (<Suspense fallback={<div>Cargando...</div>}><RentasPageComponent /></Suspense>)
 }
+
