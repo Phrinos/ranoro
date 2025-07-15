@@ -22,7 +22,7 @@ import type { ServiceRecord, User, Vehicle, Technician, InventoryItem, Driver } 
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
 import { cn } from "@/lib/utils";
-import { RegisterPaymentDialog } from '../rentas/components/register-payment-dialog';
+import { RegisterPaymentDialog } from '@/app/(app)/rentas/components/register-payment-dialog';
 import { useToast } from "@/hooks/use-toast";
 import { operationsService, personnelService, inventoryService } from '@/lib/services';
 
