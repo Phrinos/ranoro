@@ -302,6 +302,47 @@ export function InventoryItemForm({ initialData, onSubmit, onClose, categories, 
           </CardContent>
         </Card>
         
+        {!isServiceWatch && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Control de Stock</CardTitle>
+              <CardDescription>Define las cantidades para el control de inventario.</CardDescription>
+            </CardHeader>
+            <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="quantity"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>
+                        {unitTypeWatch === 'ml' ? 'Cantidad Total en Stock (ml)' : unitTypeWatch === 'liters' ? 'Cantidad Total en Stock (L)' : 'Cantidad en Stock'}
+                      </FormLabel>
+                      <FormControl>
+                        <Input type="number" placeholder="Ej: 50" {...field} value={field.value ?? ''} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="lowStockThreshold"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>
+                        {unitTypeWatch === 'ml' ? 'Umbral de Stock Bajo (ml)' : unitTypeWatch === 'liters' ? 'Umbral de Stock Bajo (L)' : 'Umbral de Stock Bajo'}
+                      </FormLabel>
+                      <FormControl>
+                        <Input type="number" placeholder="Ej: 5" {...field} value={field.value ?? ''} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+            </CardContent>
+          </Card>
+        )}
+
         <Card>
           <CardHeader>
             <CardTitle>Precios</CardTitle>
@@ -349,47 +390,6 @@ export function InventoryItemForm({ initialData, onSubmit, onClose, categories, 
               </div>
           </CardContent>
         </Card>
-        
-        {!isServiceWatch && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Control de Stock</CardTitle>
-              <CardDescription>Define las cantidades para el control de inventario.</CardDescription>
-            </CardHeader>
-            <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="quantity"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>
-                        {unitTypeWatch === 'ml' ? 'Cantidad Total en Stock (ml)' : unitTypeWatch === 'liters' ? 'Cantidad Total en Stock (L)' : 'Cantidad en Stock'}
-                      </FormLabel>
-                      <FormControl>
-                        <Input type="number" placeholder="Ej: 50" {...field} value={field.value ?? ''} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="lowStockThreshold"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>
-                        {unitTypeWatch === 'ml' ? 'Umbral de Stock Bajo (ml)' : unitTypeWatch === 'liters' ? 'Umbral de Stock Bajo (L)' : 'Umbral de Stock Bajo'}
-                      </FormLabel>
-                      <FormControl>
-                        <Input type="number" placeholder="Ej: 5" {...field} value={field.value ?? ''} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-            </CardContent>
-          </Card>
-        )}
         
         <div className="flex justify-end gap-2 pt-4">
           <Button type="button" variant="outline" onClick={onClose}>Cancelar</Button>
