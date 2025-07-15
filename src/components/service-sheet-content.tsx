@@ -182,8 +182,8 @@ const SafetyChecklistDisplay = ({
             )}
             {inspection.technicianSignature && (
                  <div className="mt-8 border-t pt-4 text-center flex flex-col items-center">
-                    <div className="h-24 w-full max-w-[200px] relative">
-                        <Image src={normalizeDataUrl(inspection.technicianSignature)} alt="Firma del técnico" width={200} height={96} style={{ objectFit: 'contain' }} crossOrigin="anonymous"/>
+                    <div className="relative w-full h-full max-w-[200px] aspect-video">
+                        <Image src={normalizeDataUrl(inspection.technicianSignature)} alt="Firma del técnico" fill className="object-contain" crossOrigin="anonymous"/>
                     </div>
                     <div className="mt-2 pt-1 w-64 text-center">
                         <p className="text-xs font-bold">FIRMA DEL TÉCNICO ({format(new Date(), "dd/MM/yyyy")})</p>
@@ -379,7 +379,7 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
                         )}
                     </div>
                     <div className="w-full text-center mt-auto pt-1 leading-tight">
-                        <p className="font-bold text-lg leading-tight">{service.serviceAdvisorName?.toUpperCase() || ''}</p>
+                        <p className="font-bold text-sm leading-tight">{service.serviceAdvisorName?.toUpperCase() || ''}</p>
                     </div>
                 </div>
                 <div className="border-2 border-black rounded-md overflow-hidden flex flex-col justify-between items-center p-1 min-h-[180px]">
@@ -399,7 +399,7 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
                         )}
                     </div>
                     <div className="w-full text-center mt-auto pt-1 leading-tight">
-                        <p className="font-bold text-lg leading-tight">{vehicle?.ownerName?.toUpperCase() || ''}</p>
+                        <p className="font-bold text-sm leading-tight">{vehicle?.ownerName?.toUpperCase() || ''}</p>
                         <p className="text-[7px] text-gray-600">Autorizo que se realicen estos servicios</p>
                     </div>
                 </div>
@@ -420,7 +420,7 @@ export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheet
                         )}
                     </div>
                     <div className="w-full text-center mt-auto pt-1 leading-tight">
-                        <p className="font-bold text-lg leading-tight">{vehicle?.ownerName?.toUpperCase() || ''}</p>
+                        <p className="font-bold text-sm leading-tight">{vehicle?.ownerName?.toUpperCase() || ''}</p>
                         <p className="text-[7px] text-gray-600">Recibo de conformidad</p>
                     </div>
                 </div>
