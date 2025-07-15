@@ -5,7 +5,7 @@
 import { useState, useMemo, useEffect, useCallback, Suspense, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Button } from "@/components/ui/button";
-import { PlusCircle } from "lucide-react";
+import { PlusCircle, Printer } from "lucide-react";
 import { InventoryItemDialog } from "./components/inventory-item-dialog";
 import type { InventoryItem, InventoryCategory, Supplier, CashDrawerTransaction, PurchaseRecommendation, WorkshopInfo } from "@/types";
 import type { InventoryItemFormValues } from "./components/inventory-item-form";
@@ -26,6 +26,8 @@ import { operationsService } from '@/lib/services/operations.service';
 import { adminService } from '@/lib/services/admin.service';
 import { addDoc, collection, doc, writeBatch } from 'firebase/firestore';
 import { db } from '@/lib/firebaseClient';
+import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
+import { InventoryReportContent } from './components/inventory-report-content';
 
 
 function InventarioPageComponent() {
@@ -44,6 +46,11 @@ function InventarioPageComponent() {
   const [isItemDialogOpen, setIsItemDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<Partial<InventoryItem> | null>(null);
 
+  const [isPrintDialogOpen, setIsPrintDialogOpen] = useState(false);
+  const [itemsToPrint, setItemsToPrint] = useState<InventoryItem[]>([]);
+  const printRef = useRef<HTMLDivElement>(null);
+  const [workshopInfo, setWorkshopInfo] = useState<WorkshopInfo | null>(null);
+
   useEffect(() => {
     const unsubs: (() => void)[] = [];
     setIsLoading(true);
@@ -54,8 +61,18 @@ function InventarioPageComponent() {
       setSuppliers(data);
       setIsLoading(false); // Mark loading as false after the last required dataset is fetched
     }));
+    
+    const storedInfo = localStorage.getItem('workshopTicketInfo');
+    if (storedInfo) {
+      try { setWorkshopInfo(JSON.parse(storedInfo)); } catch {}
+    }
 
     return () => unsubs.forEach(unsub => unsub());
+  }, []);
+  
+  const handlePrint = useCallback((items: InventoryItem[]) => {
+      setItemsToPrint(items);
+      setIsPrintDialogOpen(true);
   }, []);
 
   const handleOpenItemDialog = useCallback(() => {
@@ -166,7 +183,7 @@ function InventarioPageComponent() {
             <ProductosContent 
                 inventoryItems={inventoryItems} 
                 onNewItem={handleOpenItemDialog}
-                onPrint={() => { /* Print functionality removed */ }}
+                onPrint={handlePrint}
             />
         </TabsContent>
         <TabsContent value="categorias">
@@ -198,6 +215,21 @@ function InventarioPageComponent() {
         categories={categories}
         suppliers={suppliers}
       />
+
+      <PrintTicketDialog
+          open={isPrintDialogOpen}
+          onOpenChange={setIsPrintDialogOpen}
+          title="Vista Previa de Reporte de Inventario"
+          dialogContentClassName="printable-quote-dialog max-w-4xl"
+          footerActions={
+            <Button onClick={() => window.print()}>
+              <Printer className="mr-2 h-4 w-4" /> Imprimir Reporte
+            </Button>
+          }
+          contentRef={printRef}
+      >
+        <InventoryReportContent ref={printRef} items={itemsToPrint} workshopInfo={workshopInfo}/>
+      </PrintTicketDialog>
     </>
   );
 }
