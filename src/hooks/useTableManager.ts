@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState, useMemo } from 'react';
@@ -48,7 +49,7 @@ export function useTableManager<T extends { [key: string]: any }>({
     }
 
     Object.entries(otherFilters).forEach(([key, value]) => {
-      if (value !== 'all') {
+      if (value !== 'all' && value !== undefined) {
         data = data.filter(item => item[key] === value);
       }
     });

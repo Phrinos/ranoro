@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React, { useState, useEffect } from 'react';
@@ -7,20 +8,21 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { Search, ListFilter, CalendarIcon as CalendarDateIcon, Filter } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format, startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from "date-fns";
 import { es } from 'date-fns/locale';
 
-interface SortOption {
+interface Option {
     value: string;
     label: string;
 }
 
-interface FilterOption {
-    value: string;
-    label: string;
+interface FilterGroup {
+    value: string; // e.g., 'status'
+    label: string; // e.g., 'Estado'
+    options: Option[];
 }
 
 interface TableToolbarProps {
@@ -30,11 +32,10 @@ interface TableToolbarProps {
   onDateRangeChange: (range?: DateRange) => void;
   sortOption: string;
   onSortOptionChange: (value: string) => void;
-  sortOptions?: SortOption[];
-  filterOption?: string;
-  onFilterOptionChange?: (value: string) => void;
-  filterOptions?: FilterOption[];
-  filterLabel?: string;
+  sortOptions?: Option[];
+  otherFilters?: Record<string, string | 'all'>;
+  onFilterChange: (filters: Record<string, string | 'all'>) => void;
+  filterOptions?: FilterGroup[];
   searchPlaceholder?: string;
 }
 
@@ -49,10 +50,9 @@ export const TableToolbar: React.FC<TableToolbarProps> = ({
     { value: 'date_desc', label: 'Más Reciente' },
     { value: 'date_asc', label: 'Más Antiguo' }
   ],
-  filterOption,
-  onFilterOptionChange,
-  filterOptions,
-  filterLabel = 'Filtrar',
+  otherFilters = {},
+  onFilterChange,
+  filterOptions = [],
   searchPlaceholder = 'Buscar...',
 }) => {
     
@@ -91,61 +91,71 @@ export const TableToolbar: React.FC<TableToolbarProps> = ({
               onChange={(e) => onSearchTermChange(e.target.value)}
             />
           </div>
-          <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
-            <PopoverTrigger asChild>
-              <Button variant={"outline"} className={cn("min-w-[240px] justify-start text-left font-normal flex-1 sm:flex-initial bg-card", !dateRange && "text-muted-foreground")}>
-                <CalendarDateIcon className="mr-2 h-4 w-4" />
-                {dateRange?.from ? (dateRange.to ? (`${format(dateRange.from, "LLL dd, y", { locale: es })} - ${format(dateRange.to, "LLL dd, y", { locale: es })}`) : format(dateRange.from, "LLL dd, y", { locale: es })) : (<span>Seleccione rango</span>)}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="end">
-                <div className="flex p-2">
-                    <Button variant="ghost" size="sm" onClick={setDateToToday}>Hoy</Button>
-                    <Button variant="ghost" size="sm" onClick={setDateToThisWeek}>Semana</Button>
-                    <Button variant="ghost" size="sm" onClick={setDateToThisMonth}>Mes</Button>
+          <div className="flex items-center gap-2 flex-wrap">
+            <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
+                <PopoverTrigger asChild>
+                <Button variant={"outline"} className={cn("min-w-[240px] justify-start text-left font-normal flex-1 sm:flex-initial bg-card", !dateRange && "text-muted-foreground")}>
+                    <CalendarDateIcon className="mr-2 h-4 w-4" />
+                    {dateRange?.from ? (dateRange.to ? (`${format(dateRange.from, "LLL dd, y", { locale: es })} - ${format(dateRange.to, "LLL dd, y", { locale: es })}`) : format(dateRange.from, "LLL dd, y", { locale: es })) : (<span>Seleccione rango</span>)}
+                </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="end">
+                    <div className="flex p-2">
+                        <Button variant="ghost" size="sm" onClick={setDateToToday}>Hoy</Button>
+                        <Button variant="ghost" size="sm" onClick={setDateToThisWeek}>Semana</Button>
+                        <Button variant="ghost" size="sm" onClick={setDateToThisMonth}>Mes</Button>
+                    </div>
+                <Calendar initialFocus mode="range" defaultMonth={tempDateRange?.from} selected={tempDateRange} onSelect={setTempDateRange} numberOfMonths={2} locale={es} showOutsideDays={false} />
+                <div className="p-2 border-t flex justify-end">
+                    <Button size="sm" onClick={handleApplyDateFilter}>Aceptar</Button>
                 </div>
-              <Calendar initialFocus mode="range" defaultMonth={tempDateRange?.from} selected={tempDateRange} onSelect={setTempDateRange} numberOfMonths={2} locale={es} showOutsideDays={false} />
-               <div className="p-2 border-t flex justify-end">
-                  <Button size="sm" onClick={handleApplyDateFilter}>Aceptar</Button>
-               </div>
-            </PopoverContent>
-          </Popover>
+                </PopoverContent>
+            </Popover>
 
-          {filterOptions && onFilterOptionChange && filterOption && (
-             <DropdownMenu>
+            {filterOptions.length > 0 && (
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                    <Button variant="outline" className="min-w-[150px] flex-1 sm:flex-initial bg-card">
+                        <Filter className="mr-2 h-4 w-4" />
+                        <span>Filtros</span>
+                    </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                        {filterOptions.map((group, index) => (
+                            <React.Fragment key={group.value}>
+                                {index > 0 && <DropdownMenuSeparator />}
+                                <DropdownMenuLabel>{group.label}</DropdownMenuLabel>
+                                <DropdownMenuRadioGroup
+                                    value={otherFilters[group.value] || 'all'}
+                                    onValueChange={(value) => onFilterChange({ ...otherFilters, [group.value]: value })}
+                                >
+                                    {group.options.map(opt => (
+                                        <DropdownMenuRadioItem key={opt.value} value={opt.value}>{opt.label}</DropdownMenuRadioItem>
+                                    ))}
+                                </DropdownMenuRadioGroup>
+                            </React.Fragment>
+                        ))}
+                    </DropdownMenuContent>
+                </DropdownMenu>
+            )}
+
+            <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="outline" className="min-w-[150px] flex-1 sm:flex-initial bg-card">
-                    <Filter className="mr-2 h-4 w-4" />
-                    <span>{filterOptions.find(f=> f.value === filterOption)?.label || filterLabel}</span>
-                  </Button>
+                <Button variant="outline" className="min-w-[150px] flex-1 sm:flex-initial bg-card">
+                    <ListFilter className="mr-2 h-4 w-4" />
+                    <span>Ordenar</span>
+                </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuLabel>{filterLabel}</DropdownMenuLabel>
-                  <DropdownMenuRadioGroup value={filterOption} onValueChange={onFilterOptionChange}>
-                    {filterOptions.map(opt => (
+                <DropdownMenuLabel>Ordenar por</DropdownMenuLabel>
+                <DropdownMenuRadioGroup value={sortOption} onValueChange={onSortOptionChange}>
+                    {sortOptions.map(opt => (
                         <DropdownMenuRadioItem key={opt.value} value={opt.value}>{opt.label}</DropdownMenuRadioItem>
                     ))}
-                  </DropdownMenuRadioGroup>
+                </DropdownMenuRadioGroup>
                 </DropdownMenuContent>
             </DropdownMenu>
-          )}
-
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="min-w-[150px] flex-1 sm:flex-initial bg-card">
-                <ListFilter className="mr-2 h-4 w-4" />
-                <span>Ordenar</span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuLabel>Ordenar por</DropdownMenuLabel>
-              <DropdownMenuRadioGroup value={sortOption} onValueChange={onSortOptionChange}>
-                {sortOptions.map(opt => (
-                    <DropdownMenuRadioItem key={opt.value} value={opt.value}>{opt.label}</DropdownMenuRadioItem>
-                ))}
-              </DropdownMenuRadioGroup>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          </div>
         </div>
     </div>
   );

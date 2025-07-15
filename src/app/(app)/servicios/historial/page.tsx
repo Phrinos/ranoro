@@ -8,7 +8,7 @@ import { ServiceDialog } from "../components/service-dialog";
 import { UnifiedPreviewDialog } from '@/components/shared/unified-preview-dialog';
 import { CompleteServiceDialog } from "../components/CompleteServiceDialog";
 import { TableToolbar } from "@/components/shared/table-toolbar";
-import type { ServiceRecord, Vehicle, Technician, InventoryItem, QuoteRecord, ServiceTypeRecord, WorkshopInfo } from "@/types";
+import type { ServiceRecord, Vehicle, Technician, InventoryItem, QuoteRecord, ServiceTypeRecord, WorkshopInfo, PaymentMethod } from "@/types";
 import { useToast } from "@/hooks/use-toast";
 import { useTableManager } from "@/hooks/useTableManager";
 import { isSameDay, isValid, isToday } from "date-fns";
@@ -24,6 +24,24 @@ import { PrintTicketDialog } from '@/components/ui/print-ticket-dialog';
 import { Button } from "@/components/ui/button";
 import { Printer, Copy } from "lucide-react";
 import html2canvas from 'html2canvas';
+
+const serviceStatusOptions: { value: ServiceRecord['status'] | 'all'; label: string }[] = [
+    { value: 'all', label: 'Todos los Estados' },
+    { value: 'Agendado', label: 'Agendado' },
+    { value: 'En Taller', label: 'En Taller' },
+    { value: 'Entregado', label: 'Entregado' },
+    { value: 'Cancelado', label: 'Cancelado' },
+];
+
+const paymentMethodOptions: { value: PaymentMethod | 'all'; label: string }[] = [
+    { value: 'all', label: 'Todos los Métodos' },
+    { value: 'Efectivo', label: 'Efectivo' },
+    { value: 'Tarjeta', label: 'Tarjeta' },
+    { value: 'Transferencia', label: 'Transferencia' },
+    { value: 'Efectivo+Transferencia', label: 'Efectivo+Transferencia' },
+    { value: 'Tarjeta+Transferencia', label: 'Tarjeta+Transferencia' },
+];
+
 
 function HistorialServiciosPageComponent() {
   const { toast } = useToast();
@@ -128,6 +146,7 @@ function HistorialServiciosPageComponent() {
 
   const {
     filteredData: historicalServices,
+    setOtherFilters,
     ...tableManager
   } = useTableManager<ServiceRecord>({
     initialData: allServices.filter((s) => s.status !== "Cotizacion"),
@@ -339,6 +358,18 @@ function HistorialServiciosPageComponent() {
             onDateRangeChange={tableManager.setDateRange}
             sortOption={tableManager.sortOption}
             onSortOptionChange={tableManager.setSortOption}
+            sortOptions={[
+                { value: 'deliveryDateTime_desc', label: 'Fecha Entrega (Reciente)' },
+                { value: 'deliveryDateTime_asc', label: 'Fecha Entrega (Antiguo)' },
+                { value: 'totalCost_desc', label: 'Costo (Mayor a Menor)' },
+                { value: 'totalCost_asc', label: 'Costo (Menor a Mayor)' },
+            ]}
+            filterOptions={[
+                { value: 'status', label: 'Estado', options: serviceStatusOptions },
+                { value: 'paymentMethod', label: 'Método de Pago', options: paymentMethodOptions },
+            ]}
+            otherFilters={tableManager.otherFilters}
+            onFilterChange={setOtherFilters}
             searchPlaceholder="Buscar por folio, placa, descripción..."
           />
           {historicalServices.length > 0 ? (
