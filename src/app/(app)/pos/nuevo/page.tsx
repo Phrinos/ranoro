@@ -11,7 +11,7 @@ import { PosForm } from '../components/pos-form';
 import type { SaleReceipt, InventoryItem, PaymentMethod, InventoryCategory, Supplier, WorkshopInfo, Vehicle } from '@/types'; 
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
-import { inventoryService, operationsService } from '@/lib/services';
+import { inventoryService, operationsService, messagingService } from '@/lib/services';
 import { Loader2, Copy, Printer, MessageSquare } from 'lucide-react';
 import type { InventoryItemFormValues } from '../../inventario/components/inventory-item-form';
 import { db } from '@/lib/firebaseClient';
@@ -107,19 +107,49 @@ export default function NuevaVentaPage() {
 
     return () => unsubs.forEach(unsub => unsub());
   }, []);
+  
+  const sendTicketByWhatsapp = useCallback(async (sale: SaleReceipt, phone: string) => {
+    if (!ticketContentRef.current) return;
+    
+    const messagingConfigStr = localStorage.getItem('messagingConfig');
+    if (!messagingConfigStr) {
+        toast({ title: 'Configuración de Mensajería Faltante', description: 'No se ha configurado la API de WhatsApp en Opciones.', variant: 'destructive' });
+        return;
+    }
+    const { apiKey, fromPhoneNumberId } = JSON.parse(messagingConfigStr);
+    if (!apiKey || !fromPhoneNumberId) {
+        toast({ title: 'Credenciales Faltantes', description: 'API Key y Phone ID son requeridos.', variant: 'destructive' });
+        return;
+    }
+
+    toast({ title: 'Generando imagen del ticket...' });
+    const canvas = await html2canvas(ticketContentRef.current, { scale: 2.5, backgroundColor: '#ffffff' });
+
+    toast({ title: 'Enviando ticket por WhatsApp...' });
+    const result = await messagingService.sendWhatsappImage(apiKey, fromPhoneNumberId, phone, canvas, `Ticket de compra. Folio: ${sale.id}`);
+    
+    toast({
+        title: result.success ? 'Ticket Enviado' : 'Error al Enviar',
+        description: result.message,
+        variant: result.success ? 'default' : 'destructive'
+    });
+}, [toast, ticketContentRef]);
+
 
   const handleSaleCompletion = async (values: POSFormValues) => {
     if (!db) return;
     const batch = writeBatch(db);
+    let newSaleReceipt: SaleReceipt | null = null;
+    
     try {
       const saleId = await operationsService.registerSale(values, currentInventoryItems, batch);
       await batch.commit();
 
-      const newSaleReceipt: SaleReceipt = {
+      newSaleReceipt = {
         id: saleId,
         saleDate: new Date().toISOString(),
         ...values,
-        subTotal: 0, // Recalculate or get from service
+        subTotal: 0, 
         tax: 0,
         totalAmount: values.items.reduce((sum, item) => sum + item.totalPrice, 0),
         status: 'Completado'
@@ -129,11 +159,27 @@ export default function NuevaVentaPage() {
       
       setSaleForTicket(newSaleReceipt);
       setPhoneForTicket(values.whatsappNumber);
-      setIsTicketDialogOpen(true);
-
+      
     } catch(e) {
       console.error(e);
       toast({ title: 'Error al Registrar Venta', variant: 'destructive'});
+    }
+
+    if (newSaleReceipt && values.whatsappNumber) {
+        // We need a slight delay for the dialog with the ticket to render so we can grab its content.
+        setTimeout(() => {
+            sendTicketByWhatsapp(newSaleReceipt!, values.whatsappNumber!);
+            // Close the dialog after attempting to send, regardless of success.
+             setTimeout(() => {
+                setIsTicketDialogOpen(false);
+                router.push('/pos');
+            }, 3000);
+        }, 500);
+    }
+
+    // Always open the dialog for manual printing/sharing if no number is provided
+    if (!values.whatsappNumber) {
+        setIsTicketDialogOpen(true);
     }
   };
   
