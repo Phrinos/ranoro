@@ -10,14 +10,16 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { DebtForm, type DebtFormValues } from "./debt-form";
+import type { ManualDebtEntry } from '@/types';
 
 interface DebtDialogProps {
   open: boolean;
   onOpenChange: (isOpen: boolean) => void;
   onSave: (data: DebtFormValues) => void;
+  initialData?: ManualDebtEntry;
 }
 
-export function DebtDialog({ open, onOpenChange, onSave }: DebtDialogProps) {
+export function DebtDialog({ open, onOpenChange, onSave, initialData }: DebtDialogProps) {
   const handleSubmit = async (values: DebtFormValues) => {
     onSave(values);
     onOpenChange(false);
@@ -27,14 +29,15 @@ export function DebtDialog({ open, onOpenChange, onSave }: DebtDialogProps) {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Añadir Adeudo Manual</DialogTitle>
+          <DialogTitle>{initialData ? 'Editar Adeudo Manual' : 'Añadir Adeudo Manual'}</DialogTitle>
           <DialogDescription>
-            Registre un cargo adicional para el conductor, como una multa o el costo de un daño.
+            {initialData ? 'Modifique los detalles del cargo.' : 'Registre un cargo adicional para el conductor, como una multa o el costo de un daño.'}
           </DialogDescription>
         </DialogHeader>
         <DebtForm
           onSubmit={handleSubmit}
           onClose={() => onOpenChange(false)}
+          initialData={initialData}
         />
       </DialogContent>
     </Dialog>

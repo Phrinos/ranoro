@@ -20,12 +20,13 @@ export type DebtFormValues = z.infer<typeof debtFormSchema>;
 interface DebtFormProps {
   onSubmit: (values: DebtFormValues) => Promise<void>;
   onClose: () => void;
+  initialData?: Partial<DebtFormValues>;
 }
 
-export function DebtForm({ onSubmit, onClose }: DebtFormProps) {
+export function DebtForm({ onSubmit, onClose, initialData }: DebtFormProps) {
   const form = useForm<DebtFormValues>({
     resolver: zodResolver(debtFormSchema),
-    defaultValues: {
+    defaultValues: initialData || {
       amount: undefined,
       note: "",
     },

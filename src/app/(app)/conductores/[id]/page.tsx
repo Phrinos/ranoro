@@ -6,7 +6,7 @@ import type { Driver, RentalPayment, ManualDebtEntry, Vehicle } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { ShieldAlert, Edit, User as UserIcon, Phone, Home, FileText, Upload, AlertTriangle, Car, DollarSign, Printer, ArrowLeft, PlusCircle, Loader2, FileX, Receipt } from 'lucide-react';
+import { ShieldAlert, Edit, User as UserIcon, Phone, Home, FileText, Upload, AlertTriangle, Car, DollarSign, Printer, ArrowLeft, PlusCircle, Loader2, FileX, Receipt, Trash2 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import Link from 'next/link';
@@ -26,6 +26,17 @@ import { DebtDialog, type DebtFormValues } from '../components/debt-dialog';
 import { ref, uploadString, getDownloadURL } from "firebase/storage";
 import { storage } from '@/lib/firebaseClient';
 import { operationsService, personnelService, inventoryService } from '@/lib/services';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 type DocType = 'ineUrl' | 'licenseUrl' | 'proofOfAddressUrl' | 'promissoryNoteUrl';
 
@@ -47,6 +58,9 @@ export default function DriverDetailPage() {
   const [isDebtDialogOpen, setIsDebtDialogOpen] = useState(false);
   const [uploadingDocType, setUploadingDocType] = useState<DocType | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  
+  const [editingDebt, setEditingDebt] = useState<ManualDebtEntry | null>(null);
+
 
   const fetchDriverData = useCallback(async () => {
     if (!driverId) return;
@@ -205,25 +219,48 @@ export default function DriverDetailPage() {
     toast({ title: "Pago Registrado", description: `Se ha registrado el pago de ${formatCurrency(details.amount)}.` });
   };
   
+  const handleOpenDebtDialog = (debt: ManualDebtEntry | null = null) => {
+    setEditingDebt(debt);
+    setIsDebtDialogOpen(true);
+  };
+  
   const handleSaveDebt = async (formData: DebtFormValues) => {
     if (!driver) return;
+    let updatedDebts: ManualDebtEntry[];
     
-    const newDebt: ManualDebtEntry = {
-        id: `DEBT_${Date.now().toString(36)}`,
-        date: new Date().toISOString(),
-        ...formData
-    };
+    if (editingDebt) {
+        // Update existing debt
+        updatedDebts = (driver.manualDebts || []).map(d => d.id === editingDebt.id ? { ...d, ...formData } : d);
+    } else {
+        // Add new debt
+        const newDebt: ManualDebtEntry = {
+            id: `DEBT_${Date.now().toString(36)}`,
+            date: new Date().toISOString(),
+            ...formData
+        };
+        updatedDebts = [...(driver.manualDebts || []), newDebt];
+    }
 
-    const updatedDriver: Partial<Driver> = {
-        manualDebts: [...(driver.manualDebts || []), newDebt]
-    };
-
+    const updatedDriver: Partial<Driver> = { manualDebts: updatedDebts };
     await personnelService.saveDriver(updatedDriver as any, driverId);
     await fetchDriverData();
 
     setIsDebtDialogOpen(false);
-    toast({ title: "Adeudo Registrado", description: `Se ha añadido un nuevo cargo de ${formatCurrency(formData.amount)}.` });
+    setEditingDebt(null);
+    toast({ title: `Adeudo ${editingDebt ? 'actualizado' : 'registrado'}` });
   };
+  
+  const handleDeleteDebt = async (debtId: string) => {
+    if (!driver) return;
+    
+    const updatedDebts = (driver.manualDebts || []).filter(d => d.id !== debtId);
+    const updatedDriver: Partial<Driver> = { manualDebts: updatedDebts };
+
+    await personnelService.saveDriver(updatedDriver as any, driverId);
+    await fetchDriverData();
+    toast({ title: 'Adeudo Eliminado', variant: 'destructive' });
+  };
+
 
 
   if (driver === undefined) {
@@ -402,14 +439,19 @@ export default function DriverDetailPage() {
                     <CardTitle>Historial de Adeudos Manuales</CardTitle>
                     <CardDescription>Cargos adicionales como multas, daños, etc.</CardDescription>
                   </div>
-                  <Button onClick={() => setIsDebtDialogOpen(true)}>
+                  <Button onClick={() => handleOpenDebtDialog(null)}>
                     <PlusCircle className="mr-2 h-4 w-4" /> Añadir Adeudo
                   </Button>
                 </CardHeader>
                 <CardContent>
                     <div className="rounded-md border overflow-x-auto">
                       <Table>
-                        <TableHeader className="bg-black"><TableRow><TableHead className="text-white">Fecha</TableHead><TableHead className="text-white">Concepto</TableHead><TableHead className="text-right text-white">Monto</TableHead></TableRow></TableHeader>
+                        <TableHeader className="bg-black"><TableRow>
+                          <TableHead className="text-white">Fecha</TableHead>
+                          <TableHead className="text-white">Concepto</TableHead>
+                          <TableHead className="text-right text-white">Monto</TableHead>
+                          <TableHead className="text-right text-white">Acciones</TableHead>
+                        </TableRow></TableHeader>
                         <TableBody>
                           {(driver.manualDebts || []).length > 0 ? (
                             [...driver.manualDebts].sort((a,b) => parseISO(b.date).getTime() - parseISO(a.date).getTime()).map(debt => (
@@ -417,10 +459,20 @@ export default function DriverDetailPage() {
                                 <TableCell>{format(parseISO(debt.date), "dd MMM, yyyy", { locale: es })}</TableCell>
                                 <TableCell>{debt.note}</TableCell>
                                 <TableCell className="text-right font-semibold text-destructive">{formatCurrency(debt.amount)}</TableCell>
+                                <TableCell className="text-right">
+                                  <Button variant="ghost" size="icon" className="mr-2" onClick={() => handleOpenDebtDialog(debt)}><Edit className="h-4 w-4" /></Button>
+                                  <AlertDialog>
+                                    <AlertDialogTrigger asChild><Button variant="ghost" size="icon"><Trash2 className="h-4 w-4 text-destructive" /></Button></AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                      <AlertDialogHeader><AlertDialogTitle>¿Eliminar Adeudo?</AlertDialogTitle><AlertDialogDescription>Se eliminará el cargo de "{debt.note}" por {formatCurrency(debt.amount)}. Esta acción no se puede deshacer.</AlertDialogDescription></AlertDialogHeader>
+                                      <AlertDialogFooter><AlertDialogCancel>Cancelar</AlertDialogCancel><AlertDialogAction onClick={() => handleDeleteDebt(debt.id)} className="bg-destructive hover:bg-destructive/90">Sí, Eliminar</AlertDialogAction></AlertDialogFooter>
+                                    </AlertDialogContent>
+                                  </AlertDialog>
+                                </TableCell>
                               </TableRow>
                             ))
                           ) : (
-                            <TableRow><TableCell colSpan={3} className="h-24 text-center">No hay adeudos manuales registrados.</TableCell></TableRow>
+                            <TableRow><TableCell colSpan={4} className="h-24 text-center">No hay adeudos manuales registrados.</TableCell></TableRow>
                           )}
                         </TableBody>
                       </Table>
@@ -484,6 +536,7 @@ export default function DriverDetailPage() {
         open={isDebtDialogOpen}
         onOpenChange={setIsDebtDialogOpen}
         onSave={handleSaveDebt}
+        initialData={editingDebt ?? undefined}
       />
     </div>
 
