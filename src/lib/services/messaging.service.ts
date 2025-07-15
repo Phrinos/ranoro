@@ -11,16 +11,32 @@ interface SendMessageResponse {
   data?: any;
 }
 
+const formatPhoneNumber = (phone: string): string => {
+    let cleaned = phone.replace(/\D/g, ''); // Remove all non-digit characters
+    
+    // If it's a 10-digit number (common for Mexico), prepend 52.
+    if (cleaned.length === 10) {
+        return `52${cleaned}`;
+    }
+    // If it already includes the country code (e.g., starts with 52), use it as is.
+    if (cleaned.length === 12 && cleaned.startsWith('52')) {
+        return cleaned;
+    }
+    
+    return cleaned; // Return cleaned number for other cases
+};
+
 const sendTestMessage = async (apiKey: string, fromPhoneNumberId: string, toPhoneNumber: string): Promise<SendMessageResponse> => {
   if (!apiKey || !fromPhoneNumberId) {
     return { success: false, message: 'La API Key y el ID del Número de Teléfono son obligatorios.' };
   }
 
+  const formattedToNumber = formatPhoneNumber(toPhoneNumber);
   const url = `https://graph.facebook.com/${WHATSAPP_API_VERSION}/${fromPhoneNumberId}/messages`;
   
   const body = {
     messaging_product: 'whatsapp',
-    to: toPhoneNumber,
+    to: formattedToNumber,
     type: 'template',
     template: {
       name: 'hello_world', // Template estándar de prueba de Meta
@@ -73,7 +89,8 @@ const sendWhatsappImage = async (
       }
       const storageRef = ref(storage, `whatsapp-tickets/${Date.now()}.png`);
       try {
-        await uploadString(storageRef, URL.createObjectURL(blob), 'data_url', {contentType: 'image/png'});
+        const dataUrl = URL.createObjectURL(blob);
+        await uploadString(storageRef, dataUrl, 'data_url', {contentType: 'image/png'});
         const downloadURL = await getDownloadURL(storageRef);
         resolve(downloadURL);
       } catch (e) {
@@ -83,10 +100,11 @@ const sendWhatsappImage = async (
   });
 
   // 2. Send the image URL via WhatsApp API
+  const formattedToNumber = formatPhoneNumber(toPhoneNumber);
   const url = `https://graph.facebook.com/${WHATSAPP_API_VERSION}/${fromPhoneNumberId}/messages`;
   const body = {
     messaging_product: 'whatsapp',
-    to: toPhoneNumber,
+    to: formattedToNumber,
     type: 'image',
     image: {
       link: imageUrl,

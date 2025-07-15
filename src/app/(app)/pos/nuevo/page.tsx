@@ -108,8 +108,8 @@ export default function NuevaVentaPage() {
     return () => unsubs.forEach(unsub => unsub());
   }, []);
   
-  const sendTicketByWhatsapp = useCallback(async (sale: SaleReceipt, phone: string) => {
-    if (!ticketContentRef.current) return;
+  const sendTicketByWhatsapp = useCallback(async () => {
+    if (!ticketContentRef.current || !saleForTicket || !phoneForTicket) return;
     
     const messagingConfigStr = localStorage.getItem('messagingConfig');
     if (!messagingConfigStr) {
@@ -126,26 +126,25 @@ export default function NuevaVentaPage() {
     const canvas = await html2canvas(ticketContentRef.current, { scale: 2.5, backgroundColor: '#ffffff' });
 
     toast({ title: 'Enviando ticket por WhatsApp...' });
-    const result = await messagingService.sendWhatsappImage(apiKey, fromPhoneNumberId, phone, canvas, `Ticket de compra. Folio: ${sale.id}`);
+    const result = await messagingService.sendWhatsappImage(apiKey, fromPhoneNumberId, phoneForTicket, canvas, `Ticket de compra. Folio: ${saleForTicket.id}`);
     
     toast({
         title: result.success ? 'Ticket Enviado' : 'Error al Enviar',
         description: result.message,
         variant: result.success ? 'default' : 'destructive'
     });
-}, [toast, ticketContentRef]);
+}, [toast, ticketContentRef, saleForTicket, phoneForTicket]);
 
 
   const handleSaleCompletion = async (values: POSFormValues) => {
     if (!db) return;
     const batch = writeBatch(db);
-    let newSaleReceipt: SaleReceipt | null = null;
     
     try {
       const saleId = await operationsService.registerSale(values, currentInventoryItems, batch);
       await batch.commit();
 
-      newSaleReceipt = {
+      const newSaleReceipt: SaleReceipt = {
         id: saleId,
         saleDate: new Date().toISOString(),
         ...values,
@@ -159,27 +158,11 @@ export default function NuevaVentaPage() {
       
       setSaleForTicket(newSaleReceipt);
       setPhoneForTicket(values.whatsappNumber);
+      setIsTicketDialogOpen(true); // Open dialog to show ticket and actions
       
     } catch(e) {
       console.error(e);
       toast({ title: 'Error al Registrar Venta', variant: 'destructive'});
-    }
-
-    if (newSaleReceipt && values.whatsappNumber) {
-        // We need a slight delay for the dialog with the ticket to render so we can grab its content.
-        setTimeout(() => {
-            sendTicketByWhatsapp(newSaleReceipt!, values.whatsappNumber!);
-            // Close the dialog after attempting to send, regardless of success.
-             setTimeout(() => {
-                setIsTicketDialogOpen(false);
-                router.push('/pos');
-            }, 3000);
-        }, 500);
-    }
-
-    // Always open the dialog for manual printing/sharing if no number is provided
-    if (!values.whatsappNumber) {
-        setIsTicketDialogOpen(true);
     }
   };
   
@@ -269,7 +252,12 @@ export default function NuevaVentaPage() {
           description={`Ticket para la venta #${saleForTicket.id}`}
           dialogContentClassName="sm:max-w-md"
           footerActions={
-            <div className="flex flex-col-reverse sm:flex-row gap-2 w-full sm:w-auto">
+            <div className="flex flex-col-reverse sm:flex-row gap-2 w-full justify-end">
+              {phoneForTicket && (
+                <Button onClick={sendTicketByWhatsapp} className="w-full sm:w-auto bg-green-600 hover:bg-green-700">
+                    <MessageSquare className="mr-2 h-4 w-4" /> Enviar por WhatsApp
+                </Button>
+              )}
               <Button variant="outline" onClick={handleCopyAsImage} className="w-full sm:w-auto">
                   <Copy className="mr-2 h-4 w-4"/> Copiar Imagen
               </Button>
@@ -278,8 +266,6 @@ export default function NuevaVentaPage() {
               </Button>
             </div>
           }
-          whatsappMessage={`Ticket de su compra en ${workshopInfo?.name || 'nuestro taller'}. Folio: ${saleForTicket.id}`}
-          customerPhone={phoneForTicket}
           contentRef={ticketContentRef}
         >
           <TicketContent

@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React, { useState, useEffect } from 'react';
@@ -19,7 +20,7 @@ export function SaleSummary() {
   const [total, setTotal] = useState(0);
 
   useEffect(() => {
-    const newTotalAmount = watchedItems.reduce((sum: number, item: any) => sum + (item.totalPrice || 0), 0);
+    const newTotalAmount = watchedItems?.reduce((sum: number, item: any) => sum + (item.totalPrice || 0), 0) || 0;
     const newSubTotal = newTotalAmount / (1 + IVA_RATE);
     const newTax = newTotalAmount - newSubTotal;
     
