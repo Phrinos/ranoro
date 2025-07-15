@@ -15,6 +15,7 @@ import {
 } from 'firebase/firestore';
 import { db } from '../firebaseClient';
 import type { User, AppRole, AuditLog } from "@/types";
+import { cleanObjectForFirestore } from '../forms';
 
 const logAudit = async (
   actionType: AuditLog['actionType'],
@@ -69,13 +70,15 @@ const saveUser = async (user: Partial<User>, adminUser: User): Promise<User> => 
     
     const description = `Se ${isEditing ? 'actualizó el perfil del' : 'creó el'} usuario "${user.name}" (Email: ${user.email}).`;
 
+    const cleanedData = cleanObjectForFirestore(userData);
+
     if (isEditing) {
         if(!userId) throw new Error("User ID is missing for an update operation.");
         const userRef = doc(db, 'users', userId);
-        await updateDoc(userRef, userData);
+        await updateDoc(userRef, cleanedData);
     } else {
         // For creation, add createdAt timestamp
-        const newUserRef = await addDoc(collection(db, 'users'), { ...userData, createdAt: new Date().toISOString() });
+        const newUserRef = await addDoc(collection(db, 'users'), { ...cleanedData, createdAt: new Date().toISOString() });
         userId = newUserRef.id;
     }
     
@@ -104,10 +107,12 @@ const saveRole = async (role: Omit<AppRole, 'id'>, adminUser: User, roleId?: str
     const description = `Se ${isEditing ? 'actualizó el' : 'creó la nueva'} rol: "${role.name}".`;
     let id = roleId;
 
+    const cleanedData = cleanObjectForFirestore(role);
+
     if (isEditing) {
-        await updateDoc(doc(db, 'appRoles', id!), role);
+        await updateDoc(doc(db, 'appRoles', id!), cleanedData);
     } else {
-        const newRoleRef = await addDoc(collection(db, 'appRoles'), role);
+        const newRoleRef = await addDoc(collection(db, 'appRoles'), cleanedData);
         id = newRoleRef.id;
     }
     
@@ -132,7 +137,7 @@ const updateUserProfile = async (user: User): Promise<User> => {
     if (!id) throw new Error("User ID is required to update profile.");
     
     const userRef = doc(db, 'users', id);
-    await updateDoc(userRef, userData);
+    await updateDoc(userRef, cleanObjectForFirestore(userData));
 
     return user;
 };

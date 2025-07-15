@@ -249,7 +249,7 @@ const saveMigratedServices = async (services: ExtractedService[], vehicles: Extr
     // First, create the new vehicles to get their IDs
     for (const vehicle of vehicles) {
         const newVehicleRef = doc(collection(db, 'vehicles'));
-        batch.set(newVehicleRef, vehicle);
+        batch.set(newVehicleRef, cleanObjectForFirestore(vehicle));
     }
     
     // Create the services, linking them to the new vehicle IDs
@@ -281,7 +281,7 @@ const saveMigratedServices = async (services: ExtractedService[], vehicles: Extr
             serviceAdvisorName: 'Migración',
             serviceItems: [{ id: 'migrated-item', name: service.description, price: service.totalCost, suppliesUsed: [] }],
         };
-        batch.set(newServiceRef, serviceRecord);
+        batch.set(newServiceRef, cleanObjectForFirestore(serviceRecord));
     }
     await batch.commit();
 }
@@ -366,7 +366,7 @@ const registerSale = async (saleId: string, saleData: Omit<SaleReceipt, 'id' | '
     };
     
     const newSaleRef = doc(db, "sales", saleId);
-    batch.set(newSaleRef, newSale);
+    batch.set(newSaleRef, cleanObjectForFirestore(newSale));
 
     saleData.items.forEach(soldItem => {
         const inventoryItem = inventoryItems.find(invItem => invItem.id === soldItem.inventoryItemId);
@@ -460,7 +460,7 @@ const addRentalPayment = async (driverId: string, amount: number, note: string |
     
     const batch = writeBatch(db);
     const newPaymentRef = doc(collection(db, "rentalPayments"));
-    batch.set(newPaymentRef, newPayment);
+    batch.set(newPaymentRef, cleanObjectForFirestore(newPayment));
 
     if (mileage !== undefined) {
         const vehicleRef = doc(db, "vehicles", vehicle.id);
@@ -487,14 +487,14 @@ const addVehicleExpense = async (data: Omit<VehicleExpense, 'id' | 'date' | 'veh
         vehicleLicensePlate: vehicle.licensePlate,
         date: new Date().toISOString(),
     };
-    const docRef = await addDoc(collection(db, 'vehicleExpenses'), newExpense);
+    const docRef = await addDoc(collection(db, 'vehicleExpenses'), cleanObjectForFirestore(newExpense));
     return { id: docRef.id, ...newExpense };
 };
 
 const addOwnerWithdrawal = async (data: Omit<OwnerWithdrawal, 'id' | 'date'>): Promise<OwnerWithdrawal> => {
     if (!db) throw new Error("Database not initialized.");
     const newWithdrawal = { ...data, date: new Date().toISOString() };
-    const docRef = await addDoc(collection(db, 'ownerWithdrawals'), newWithdrawal);
+    const docRef = await addDoc(collection(db, 'ownerWithdrawals'), cleanObjectForFirestore(newWithdrawal));
     return { id: docRef.id, ...newWithdrawal };
 };
 

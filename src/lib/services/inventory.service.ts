@@ -18,6 +18,7 @@ import type { VehicleFormValues } from "@/app/(app)/vehiculos/components/vehicle
 import type { PriceListFormValues } from "@/app/(app)/precios/components/price-list-form";
 import type { SupplierFormValues } from '@/app/(app)/inventario/proveedores/components/supplier-form';
 import { logAudit } from '../placeholder-data';
+import { cleanObjectForFirestore } from '../forms';
 
 // --- Inventory Items ---
 
@@ -45,7 +46,7 @@ const addItem = async (data: InventoryItemFormValues): Promise<InventoryItem> =>
       unitPrice: Number(data.unitPrice) || 0,
       sellingPrice: Number(data.sellingPrice) || 0,
     };
-    const docRef = await addDoc(collection(db, 'inventory'), newItemData);
+    const docRef = await addDoc(collection(db, 'inventory'), cleanObjectForFirestore(newItemData));
     return { id: docRef.id, ...newItemData };
 };
 
@@ -125,10 +126,10 @@ const saveSupplier = async (data: SupplierFormValues, id?: string): Promise<Supp
     const dataToSave = { ...data, debtAmount: Number(data.debtAmount) || 0 };
 
     if (id) {
-        await updateDoc(doc(db, 'suppliers', id), dataToSave);
+        await updateDoc(doc(db, 'suppliers', id), cleanObjectForFirestore(dataToSave));
         return { id, ...dataToSave };
     } else {
-        const docRef = await addDoc(collection(db, 'suppliers'), dataToSave);
+        const docRef = await addDoc(collection(db, 'suppliers'), cleanObjectForFirestore(dataToSave));
         return { id: docRef.id, ...dataToSave };
     }
 };
@@ -169,21 +170,29 @@ const addVehicle = async (data: VehicleFormValues): Promise<Vehicle> => {
       ...data,
       year: Number(data.year),
     };
-    const docRef = await addDoc(collection(db, 'vehicles'), newVehicleData);
+    const docRef = await addDoc(collection(db, 'vehicles'), cleanObjectForFirestore(newVehicleData));
     return { id: docRef.id, ...newVehicleData } as Vehicle;
 };
 
-const saveVehicle = async (data: VehicleFormValues, id?: string): Promise<Vehicle> => {
+const saveVehicle = async (data: Partial<VehicleFormValues>, id: string): Promise<Vehicle> => {
     if (!db) throw new Error("Database not initialized.");
-    const dataToSave = { ...data, year: Number(data.year) };
-    if (id) {
-        await updateDoc(doc(db, 'vehicles', id), dataToSave);
-        return { id, ...dataToSave };
-    } else {
-        const docRef = await addDoc(collection(db, 'vehicles'), dataToSave);
-        return { id: docRef.id, ...dataToSave };
-    }
+    const dataToSave = { ...data, year: data.year ? Number(data.year) : undefined };
+    
+    const docRef = doc(db, 'vehicles', id);
+    await updateDoc(docRef, cleanObjectForFirestore(dataToSave));
+
+    const updatedDoc = await getDoc(docRef);
+    return { id: updatedDoc.id, ...updatedDoc.data() } as Vehicle;
 };
+
+const updateVehicle = async (id: string, data: Partial<Vehicle>): Promise<Vehicle> => {
+  if (!db) throw new Error("Database not initialized.");
+  const docRef = doc(db, 'vehicles', id);
+  await updateDoc(docRef, cleanObjectForFirestore(data));
+  const updatedDoc = await getDoc(docRef);
+  return { id, ...(updatedDoc.data() as Omit<Vehicle, 'id'>) };
+}
+
 
 // --- Price Lists ---
 
@@ -200,10 +209,10 @@ const savePriceList = async (formData: PriceListFormValues, recordId?: string): 
     const dataToSave = { ...formData, years: formData.years.sort((a,b) => a-b) };
     if (recordId) {
         const docRef = doc(db, 'vehiclePriceLists', recordId);
-        await updateDoc(docRef, dataToSave);
+        await updateDoc(docRef, cleanObjectForFirestore(dataToSave));
         return { id: recordId, ...dataToSave };
     } else {
-        const docRef = await addDoc(collection(db, 'vehiclePriceLists'), dataToSave);
+        const docRef = await addDoc(collection(db, 'vehiclePriceLists'), cleanObjectForFirestore(dataToSave));
         return { id: docRef.id, ...dataToSave };
     }
 };
@@ -245,6 +254,7 @@ export const inventoryService = {
     getVehicleById,
     addVehicle,
     saveVehicle,
+    updateVehicle,
     onPriceListsUpdate,
     savePriceList,
     deletePriceList,
