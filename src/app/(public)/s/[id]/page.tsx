@@ -17,9 +17,6 @@ import Image from 'next/image';
 import { Download } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
-import { operationsService } from '@/lib/services';
-import { inventoryService } from '@/lib/services';
-
 
 export default function PublicServicePage() {
   const params = useParams();
