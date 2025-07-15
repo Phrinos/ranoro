@@ -75,7 +75,7 @@ export default function PublicServicePage() {
         [fieldToUpdate]: signatureDataUrl,
       };
 
-      // Use the new centralized function to save the signature
+      // Use the new centralized function to save the signature to the public collection
       const result = await savePublicDocument('service', dataToSave);
 
       if (result.success) {

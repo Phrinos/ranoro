@@ -1,6 +1,5 @@
 
 
-
 import { db } from './firebasePublic';
 import { doc, setDoc } from 'firebase/firestore';
 import type { ServiceRecord, QuoteRecord, Vehicle, WorkshopInfo, PublicOwnerReport } from '@/types';
@@ -26,7 +25,7 @@ type Result = {
  */
 export const savePublicDocument = async (
   type: 'service' | 'quote' | 'ownerReport',
-  data: DocumentData,
+  data: DocumentData | PublicOwnerReport,
   vehicle?: Vehicle,
   workshopInfo?: WorkshopInfo,
 ): Promise<Result> => {
@@ -35,7 +34,7 @@ export const savePublicDocument = async (
   }
 
   try {
-    const docId = data.publicId || data.id; 
+    const docId = 'publicId' in data ? data.publicId : data.id; 
     if (!docId) {
       return { success: false, error: 'Document ID (id or publicId) is missing.' };
     }
@@ -72,7 +71,7 @@ export const savePublicDocument = async (
     
     return { success: true };
   } catch (error) {
-    console.error(`Error saving public document (type: ${type}, id: ${data.id || data.publicId}):`, error);
+    console.error(`Error saving public document (type: ${type}, id: ${'id' in data ? data.id : 'N/A'}):`, error);
     return { success: false, error: error instanceof Error ? error.message : 'An unknown error occurred.' };
   }
 };
