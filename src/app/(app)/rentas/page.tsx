@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState, useMemo, useEffect, useCallback, Suspense, useRef } from 'react';
@@ -111,20 +112,22 @@ function RentasPageComponent() {
 
   return (
     <>
-      <PageHeader
-        title="Gestión de Pagos de Flotilla"
-        description="Registra y consulta los pagos de renta, gastos de vehículos y retiros de propietarios."
-        actions={
-          <div className="flex flex-col sm:flex-row gap-2">
-            <Button onClick={() => setIsWithdrawalDialogOpen(true)} variant="outline">Retiro</Button>
-            <Button onClick={() => setIsExpenseDialogOpen(true)} variant="outline">Gasto</Button>
-            <Button onClick={() => setIsPaymentDialogOpen(true)}>
-                <PlusCircle className="mr-2 h-4 w-4" />
-                Registrar Pago
-            </Button>
+      <div className="bg-primary text-primary-foreground rounded-lg p-6 mb-6">
+          <div className="flex flex-col md:flex-row justify-between md:items-center gap-4">
+              <div>
+                  <h1 className="text-3xl font-bold tracking-tight">Ingresos de Flotilla</h1>
+                  <p className="text-primary-foreground/80 mt-1">Registra y consulta los pagos de renta, gastos y retiros.</p>
+              </div>
+              <div className="flex flex-col sm:flex-row gap-2">
+                <Button onClick={() => setIsWithdrawalDialogOpen(true)} variant="outline" className="bg-primary-foreground/10 hover:bg-primary-foreground/20 text-primary-foreground border-primary-foreground/30">Retiro</Button>
+                <Button onClick={() => setIsExpenseDialogOpen(true)} variant="outline" className="bg-primary-foreground/10 hover:bg-primary-foreground/20 text-primary-foreground border-primary-foreground/30">Gasto</Button>
+                <Button onClick={() => setIsPaymentDialogOpen(true)} className="bg-white text-primary hover:bg-gray-200">
+                    <PlusCircle className="mr-2 h-4 w-4" />
+                    Registrar Pago
+                </Button>
+              </div>
           </div>
-        }
-      />
+      </div>
       
       <Card>
           <CardHeader><CardTitle>Historial de Pagos de Renta</CardTitle></CardHeader>
