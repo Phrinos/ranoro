@@ -130,16 +130,16 @@
     background-color: white !important;
   }
 
-  /* Hide everything by default */
-  body * {
-    visibility: hidden;
+  /* Hide UI elements that shouldn't be printed */
+  .print-hidden, 
+  [data-sidebar="sidebar"],
+  header:not(.printable-header) {
+    display: none !important;
   }
   
-  .printable-area, .printable-area * {
-    visibility: visible;
-  }
-
-  .printable-area {
+  /* Make the printable content fill the page */
+  .printable-content {
+    display: block !important;
     position: absolute;
     left: 0;
     top: 0;
@@ -151,27 +151,15 @@
     background: white !important;
     color: black !important;
   }
-
-  /* Styles for receipt format */
-  .printable-area[data-format="receipt"] {
+  
+  .printable-content [data-format="receipt"] {
       width: 80mm !important; 
       padding: 3mm !important;
   }
 
-  /* Styles for letter format */
-  .printable-area[data-format="letter"] {
+  .printable-content[data-format="letter"] {
       width: 21.59cm;
       min-height: 27.94cm;
-  }
-
-  /* Ensure Dialog specific content is hidden */
-  .printable-area dialog, .printable-area [role="dialog"] {
-      display: none !important;
-  }
-
-  /* Hide UI elements that shouldn't be printed */
-  .print-hidden {
-    display: none !important;
   }
 }
 

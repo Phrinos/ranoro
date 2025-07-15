@@ -271,7 +271,6 @@ export default function NuevaVentaPage() {
               </Button>
             </div>
           }
-          contentRef={ticketContentRef}
         >
           <TicketContent
             ref={ticketContentRef}

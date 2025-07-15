@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React from 'react';
@@ -35,18 +36,18 @@ export function DocumentPreviewDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col p-0">
-        <DialogHeader className="p-6 pb-2 flex-shrink-0 print:hidden">
+        <DialogHeader className="p-6 pb-2 flex-shrink-0 print-hidden">
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription>{description}</DialogDescription>
         </DialogHeader>
         
         <div className="flex-grow overflow-y-auto px-6 bg-muted/30">
-            <div id="printable-area-document" className="bg-white mx-auto my-4 shadow-lg">
+            <div id="printable-area-document" className="bg-white mx-auto my-4 shadow-lg printable-content">
                  {children}
             </div>
         </div>
 
-        <DialogFooter className="p-6 pt-4 border-t flex-shrink-0 bg-background sm:justify-end print:hidden">
+        <DialogFooter className="p-6 pt-4 border-t flex-shrink-0 bg-background sm:justify-end print-hidden">
             <Button onClick={onPrint || (() => window.print())}>
                 <Printer className="mr-2 h-4 w-4" /> Imprimir
             </Button>
