@@ -75,6 +75,9 @@ export const TicketContent = React.forwardRef<HTMLDivElement, TicketContentProps
     const renderDashedLine = () => (
       <div className="border-t border-dashed border-neutral-400 mt-2 mb-1"></div>
     );
+    
+    const customerNameToDisplay = sale?.customerName || vehicle?.ownerName || 'Cliente Mostrador';
+
 
     return (
       <div 
@@ -110,8 +113,7 @@ export const TicketContent = React.forwardRef<HTMLDivElement, TicketContentProps
             <div>Fecha: {formattedDateTime}</div>
             <div>Folio: {operationId}</div>
             {vehicle && <div>Vehículo: {vehicle.make} {vehicle.model} ({vehicle.licensePlate})</div>}
-            {sale?.customerName && <div>Cliente: {sale.customerName}</div>}
-            {!sale?.customerName && vehicle && <div>Cliente: {vehicle.ownerName}</div>}
+            <div>Cliente: {customerNameToDisplay}</div>
             {service?.serviceAdvisorName && <div>Asesor: {service.serviceAdvisorName}</div>}
             {technician && <div>Técnico: {technician.name}</div>}
         </div>
