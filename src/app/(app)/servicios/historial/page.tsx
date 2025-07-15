@@ -284,7 +284,7 @@ function HistorialServiciosPageComponent() {
 
         <TabsContent value="activos" className="mt-0 space-y-4">
           {(activeServices || []).length > 0 ? (
-            activeServices.map((service) => (
+            (activeServices || []).map((service) => (
               <ServiceAppointmentCard
                 key={service.id}
                 service={service}
