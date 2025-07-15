@@ -202,25 +202,32 @@ export default function NuevaVentaPage() {
   const handlePrint = () => {
     const content = ticketContentRef.current;
     if (!content) return;
-    
     const printWindow = window.open('', '_blank');
     if (printWindow) {
-      printWindow.document.write('<html><head><title>Imprimir Ticket</title>');
+      printWindow.document.write('<div class="printable-content">');
+      printWindow.document.write(content.innerHTML);
+      printWindow.document.write('</div>');
       
       const stylesheets = Array.from(document.getElementsByTagName('link'));
       stylesheets.forEach(sheet => {
-          if(sheet.rel === 'stylesheet' && sheet.href) {
-            printWindow.document.write(`<link rel="stylesheet" href="${sheet.href}">`);
+          if (sheet.rel === 'stylesheet' && sheet.href) {
+            const link = printWindow.document.createElement('link');
+            link.rel = 'stylesheet';
+            link.href = sheet.href;
+            printWindow.document.head.appendChild(link);
           }
       });
-      
-      printWindow.document.write('<style>@media print { body { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; } }</style></head><body class="bg-white">');
-      printWindow.document.write('<div class="printable-content">');
-      printWindow.document.write(content.innerHTML);
-      printWindow.document.write('</div></body></html>');
-      
-      printWindow.document.close();
-      printWindow.focus();
+
+      const style = printWindow.document.createElement('style');
+      style.innerHTML = `
+        @media print {
+          body * { visibility: hidden; }
+          .printable-content, .printable-content * { visibility: visible; }
+          .printable-content { position: absolute; left: 0; top: 0; }
+        }
+      `;
+      printWindow.document.head.appendChild(style);
+
       setTimeout(() => {
         printWindow.print();
         printWindow.close();
@@ -272,11 +279,13 @@ export default function NuevaVentaPage() {
             </div>
           }
         >
-          <TicketContent
-            ref={ticketContentRef}
-            sale={saleForTicket}
-            previewWorkshopInfo={workshopInfo || undefined}
-          />
+          <div className="printable-content">
+            <TicketContent
+              ref={ticketContentRef}
+              sale={saleForTicket}
+              previewWorkshopInfo={workshopInfo || undefined}
+            />
+          </div>
         </PrintTicketDialog>
       )}
     </>

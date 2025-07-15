@@ -48,7 +48,6 @@ function InventarioPageComponent() {
 
   const [isPrintDialogOpen, setIsPrintDialogOpen] = useState(false);
   const [itemsToPrint, setItemsToPrint] = useState<InventoryItem[]>([]);
-  const printRef = useRef<HTMLDivElement>(null);
   const [workshopInfo, setWorkshopInfo] = useState<WorkshopInfo | null>(null);
 
   useEffect(() => {
@@ -222,7 +221,7 @@ function InventarioPageComponent() {
           title="Reporte de Inventario"
           onPrint={() => window.print()}
       >
-        <InventoryReportContent ref={printRef} items={itemsToPrint} workshopInfo={workshopInfo}/>
+        <InventoryReportContent items={itemsToPrint} workshopInfo={workshopInfo}/>
       </DocumentPreviewDialog>
     </>
   );
