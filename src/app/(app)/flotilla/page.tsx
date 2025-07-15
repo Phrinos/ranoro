@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState, useMemo, useEffect, useCallback, Suspense, useRef } from 'react';
@@ -293,7 +294,11 @@ function FlotillaPageComponent() {
                             <TableBody>
                                 {monthlyBalances.length > 0 ? (
                                     monthlyBalances.map(mb => (
-                                        <TableRow key={mb.driverId} className={cn(mb.daysOwed > 2 && "bg-red-50 dark:bg-red-900/30")}>
+                                        <TableRow 
+                                            key={mb.driverId} 
+                                            className={cn("cursor-pointer hover:bg-muted/50", mb.daysOwed > 2 && "bg-red-50 dark:bg-red-900/30")}
+                                            onClick={() => router.push(`/conductores/${mb.driverId}`)}
+                                        >
                                             <TableCell className="font-semibold">{mb.driverName}</TableCell>
                                             <TableCell>{mb.vehicleInfo}</TableCell>
                                             <TableCell className="text-right text-green-600">{formatCurrency(mb.payments)}</TableCell>
